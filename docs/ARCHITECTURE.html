@@ -151,7 +151,7 @@ td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
       <text x="614" y="97" class="d-ts">3D graphics (WebGL)</text>
       <!-- contract -->
       <rect x="20" y="146" width="842" height="56" rx="6" class="d-contract"/>
-      <text x="36" y="170" class="d-tb">Contract — HTTP API under /v1 (29 routes, JSON) · output descriptions · result package · sheet schema</text>
+      <text x="36" y="170" class="d-tb">Contract — HTTP API under /v1 (30 routes, JSON) · output descriptions · result package · sheet schema</text>
       <text x="36" y="190" class="d-ts">the only thing both sides depend on; changed only with both sides' review</text>
       <!-- backend -->
       <rect x="20" y="216" width="560" height="112" rx="6" class="d-out"/>
@@ -226,7 +226,7 @@ td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
       <path d="M610 161 L572 161" class="d-a" marker-end="url(#p-ah)"/>
       <rect x="20" y="250" width="530" height="70" rx="6" class="d-both"/>
       <text x="36" y="272" class="d-tb">CI on every pull request</text>
-      <text x="36" y="290" class="d-ts">frontend: panel checks, on the mock and on the real engine</text>
+      <text x="36" y="290" class="d-ts">frontend: the page on the mock; panel checks on the engine</text>
       <text x="36" y="306" class="d-ts">backend: gate, tests, contract tests</text>
       <rect x="570" y="250" width="292" height="70" rx="6" class="d-slate"/>
       <text x="586" y="274" class="d-tb">One release ships both</text>
@@ -237,13 +237,13 @@ td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
   <div class="tbl"><table>
     <thead><tr><th>Piece</th><th>What it is</th><th>State</th></tr></thead>
     <tbody>
-      <tr><td>The HTTP API</td><td>29 routes under <code>/v1</code>, JSON, served from the same origin as the pages — so the browser's cross-origin rules never apply.</td><td><span class="tag t-now">exists</span></td></tr>
+      <tr><td>The HTTP API</td><td>30 routes under <code>/v1</code>, JSON, served from the same origin as the pages — so the browser's cross-origin rules never apply.</td><td><span class="tag t-now">exists</span></td></tr>
       <tr><td>Version and identity</td><td><code>/v1/version</code> reports the engine version, kernel and graph hashes; a node page carries its sheet hash and refuses to show a stale one.</td><td><span class="tag t-now">exists</span></td></tr>
-      <tr><td><code>contract/</code></td><td>One JSON Schema per route (request and answer) and per file format; example answers recorded from the real engine.</td><td><span class="tag t-new">phase 7</span></td></tr>
-      <tr><td>Contract tests</td><td>Run in <code>cargo test</code>: every route's live answer validates against its schema; a changed answer without a changed example fails.</td><td><span class="tag t-new">phase 7</span></td></tr>
-      <tr><td>Mock engine</td><td><code>python3 tools/mock_engine.py</code> serves the recorded answers on the same routes; the panel checks run against it as well as against the real engine.</td><td><span class="tag t-new">phase 7</span></td></tr>
-      <tr><td>The versioning rule</td><td>Within <code>/v1</code>: add routes and fields only. Remove or re-mean anything: <code>/v2</code> beside <code>/v1</code> for one release. The page reads <code>contract</code> from <code>/v1/version</code> and names a mismatch instead of misbehaving.</td><td><span class="tag t-new">phase 7</span></td></tr>
-      <tr><td>Ownership</td><td>CODEOWNERS gains a frontend team (<code>web/</code>, <code>panels/</code>, templates), a backend team (engine and server) and a data team (<code>vleo-data</code>, formats); <code>contract/</code> needs a reviewer from both frontend and backend.</td><td><span class="tag t-new">phase 7</span></td></tr>
+      <tr><td><code>contract/</code></td><td>Every route in <code>routes.toml</code> with the requests the tests make; a JSON Schema per kind of JSON answer; the CSV file formats (a result, a sweep, the case); answers recorded from the real engine. <code>contract/README.md</code> is the whole of it.</td><td><span class="tag t-now">exists</span></td></tr>
+      <tr><td>Contract tests</td><td>In <code>cargo test</code>: the real server answers every request <code>routes.toml</code> lists; each answer validates against its schema, and a field the schema does not declare fails; every recorded example still validates; every documented route is listed, and the contract version agrees in three places.</td><td><span class="tag t-now">exists</span></td></tr>
+      <tr><td>Mock engine</td><td><code>python3 tools/mock_engine.py</code> serves <code>web/</code> and the recorded answers with no Rust; <code>tools/mock_check.py</code> walks the page on it in a browser, in a pipeline job with no Rust toolchain. The full panel checks still run against the real engine.</td><td><span class="tag t-now">exists</span></td></tr>
+      <tr><td>The versioning rule</td><td>Within <code>/v1</code>: add routes and fields only. Remove or re-mean anything: <code>/v2</code> beside <code>/v1</code> for one release. The page reads <code>contract</code> from <code>/v1/version</code> and names a mismatch instead of misbehaving.</td><td><span class="tag t-now">exists</span></td></tr>
+      <tr><td>Ownership</td><td>CODEOWNERS names a frontend team (<code>web/</code>, <code>panels/</code>, their checks, the mock engine), a backend team (engine, server, generators) and a data team (<code>vleo-data</code>, <code>bundles/</code>); <code>contract/</code> names both sides, and its formats all three. GitHub asks any one owner, so a reviewer from each side is a rule in <code>CONTRIBUTING.md</code>.</td><td><span class="tag t-now">exists</span></td></tr>
       <tr><td>Markup owned by the frontend</td><td>Page generators in <code>vleo-sheet</code> build HTML as Rust strings today. They move to templates in <code>web/</code>, filled with data by the generator — so every piece of HTML, CSS and JavaScript lives with the frontend.</td><td><span class="tag t-new">phase 9</span></td></tr>
     </tbody>
   </table></div>
@@ -481,9 +481,10 @@ td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
     <thead><tr><th>What</th><th>Measured</th><th>Kept how</th></tr></thead>
     <tbody>
       <tr><td>A case — all 128 inputs</td><td class="num">9 KB</td><td>Each distinct set stored once, by hash. A run records the hash and only the values that differ from that release's defaults.</td></tr>
+      <tr><td>A saved result</td><td class="num">folder</td><td>One folder per question: <code>result.csv</code>, <code>sweep.csv</code> for a sweep, and <code>report.html</code> — the one file to send, which draws its sweep and uploads back whole. <b>Kept once:</b> the row, the inputs, the engine (its code included), the tree, the data and what a sweep moved are one key, and a question already kept is shown from its result — named on screen — rather than run again. <span class="tag t-done">done</span></td></tr>
       <tr><td>Result summary</td><td class="num">≈ 2 KB</td><td>Always. KPIs, verdicts, what was blocked, chain hash, input hash, who, when, tags, pin.</td></tr>
       <tr><td>All 1,396 row values of a run</td><td class="num">182 KB · 27 KB compressed</td><td>Compressed while recent (30 days) or pinned; then an unpinned result thins to its summary. Opening a thinned result reruns it and, if the engine has changed, shows what moved.</td></tr>
-      <tr><td>Figures, sweeps, animation frames</td><td class="num">—</td><td>Saved with the result when pinned or when a figure declares them — the outputs the figure needs, not every row at every point.</td></tr>
+      <tr><td>Figures, sweeps, animation frames</td><td class="num">—</td><td>Sweeps are saved with their result today, and drawn again from their points. Animation frames and other figures: saved with the result when pinned or when a figure declares them — the outputs the figure needs, not every row at every point.</td></tr>
       <tr><td>Large arrays</td><td class="num">—</td><td>Parquet above ~100,000 values — columnar, typed, several times smaller, read directly by Python, MATLAB and Excel. Loaded into a page as an overview first (each pixel's minimum and maximum, so no peak is lost) and detail on zoom.</td></tr>
       <tr><td>The index of all results</td><td class="num">—</td><td>A small index file, rebuilt from the results if lost. Moves to SQLite — one embedded file, no server — past ~50,000 results or when queries across runs are needed.</td></tr>
       <tr><td>Crash logs</td><td class="num">&lt; 1 KB each</td><td><code>~/.vleo/log/</code>, the newest 50 kept.</td></tr>
@@ -602,27 +603,28 @@ td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
       <path d="M604 154 L584 154" class="d-a" marker-end="url(#s-ah)"/><path d="M444 154 L424 154" class="d-a" marker-end="url(#s-ah)"/><path d="M286 154 L266 154" class="d-a" marker-end="url(#s-ah)"/>
     </svg>
   </figure>
-  <p class="col">The shape every writing command prints (phase 6) — an illustration of the format, with an illustrative author and node:</p>
-  <div class="term" role="img" aria-label="Illustrative terminal output: a command stops at step 3, gives the reason, the state of the files and the retry command.">xtask intake --apply sw_ap_design.node-form.html
-  <span class="ok">1/5 · read the form</span>              sw_ap_design, 14 fields, by Ana Sharma
-  <span class="ok">2/5 · check every interface</span>      3 inputs, each a row of the quantity expected
-  <span class="bad">3/5 · apply to the sheet</span>          stopped
-      why       the sheet changed since this form was made (field: upper)
-      files     unchanged — the sheet was put back as it was
-      retry     cargo run -p xtask -- form sw_ap_design   (send the author a fresh form)
-      code      the function and step name to search for
-      trace     target/xtask-trace/&lt;time&gt;-intake.log</div>
+  <p class="col">What a writing command prints when a step stops — real output of <code>xtask publish</code> on a row that is already published:</p>
+  <div class="term" role="img" aria-label="Terminal output: publish stops at step 2 of 2, with the reason, the state of the files, the retry command, where the code is and the trace.">xtask publish sw_ap_design
+  <span class="ok">1/2 · read the sheet</span>
+      sw_ap_design — Ap design value
+  <span class="bad">2/2 · publish, generate and gate — stopped</span>
+      why       this row is not ready to publish — this row is already 'published'; …
+      files     as they were — a publish that does not gate is put back whole
+      retry     `cargo run -p xtask -- declare sw_ap_design` says what is still open; then …
+      code      xtask/src/main.rs — the step "publish, generate and gate" in cmd_publish
+      trace     target/xtask-trace/2026-09-29T18-26-26Z-publish.log</div>
   <div class="grid2">
     <div class="card"><h3>For every command</h3>
       <ul class="plain">
-        <li><code>xtask explain &lt;command&gt;</code> — reads, writes, checks, how to undo, where its code is</li>
-        <li><code>--dry-run</code> — what would happen, doing nothing</li>
-        <li>a trace of each run; <code>xtask trace</code> shows the last</li>
+        <li><code>xtask explain &lt;command&gt;</code> — its stage, what it reads, writes and checks, how to undo it, its steps and where its code is; <code>explain</code> alone, the whole journey</li>
+        <li><code>--dry-run</code> — its own check where it has one, otherwise the plan; nothing touched</li>
+        <li>a trace of each writing run in <code>target/xtask-trace/</code>, the newest 50; <code>xtask trace</code> shows the last</li>
+        <li><code>docs/PIPELINE.md</code> — the table as a page, regenerated by <code>xtask pipeline</code></li>
       </ul></div>
     <div class="card"><h3>For every node</h3>
       <ul class="plain">
-        <li><code>xtask why &lt;node&gt;</code> — every form taken and who wrote it, its versions, builds and last gate result</li>
-        <li>step names in the code equal the printed names, so an error message finds its line</li>
+        <li><code>xtask why &lt;node&gt;</code> — every recorded version and who made it, the commits that changed it, its approvals, how its code came to be, and its gate, run now</li>
+        <li>step names in the code equal the printed names — a test holds them — so an error message finds its line</li>
       </ul></div>
   </div>
 </section>
@@ -658,9 +660,10 @@ td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
       <tr><td class="num">1–2</td><td>Local server safety; bad sheets refused at build; tests for every checker</td><td>backend</td><td><span class="tag t-done">done</span></td></tr>
       <tr><td class="num">3–4</td><td>Code restructured; three branches; team code owners; a release only from a merged pull request; CI timeouts; the evidence headline; the glossary</td><td>all</td><td><span class="tag t-done">done</span></td></tr>
       <tr><td class="num">5</td><td>When something breaks: unwinding build, per-request guard, connection places, the C boundary, crash log, whole writes, empty variables</td><td>backend · data</td><td><span class="tag t-done">done</span></td></tr>
-      <tr><td class="num">6</td><td>Scripts that explain themselves: the pipeline table, <code>explain</code>, uniform steps, <code>--dry-run</code>, traces, <code>why</code>, generated <code>PIPELINE.md</code></td><td>backend</td><td><span class="tag t-new">next</span></td></tr>
-      <tr><td class="num">7</td><td>The contract: <code>contract/</code> schemas and recorded answers, contract tests, the mock engine, the versioning rule, frontend / backend / data teams in CODEOWNERS, split CI</td><td>all</td><td></td></tr>
-      <tr><td class="num">8</td><td>Storage and outputs: output types — number, table, figure, text, <b>animation, 3D scene</b>; the result package (folder + <code>.vleo</code>); tiers and thinning; input dedupe; the index behind one interface; the shared folder; reports with SVG figures; PNG and CSV export; sweeps saved</td><td>data · backend</td><td></td></tr>
+      <tr><td class="num">—</td><td>Results kept once and reused: a result is a folder; a question already kept is shown from its saved result instead of run, in the browser and in <code>vleo</code>; sweeps saved and drawn again; the report draws its sweep and uploads back whole; the engine's identity covers the kernel's code</td><td>data · backend · frontend</td><td><span class="tag t-done">done</span></td></tr>
+      <tr><td class="num">6</td><td>Scripts that explain themselves: the pipeline table, <code>explain</code>, uniform steps, <code>--dry-run</code>, traces, <code>why</code>, generated <code>PIPELINE.md</code></td><td>backend</td><td><span class="tag t-done">done</span></td></tr>
+      <tr><td class="num">7</td><td>The contract: <code>contract/</code> schemas and recorded answers, contract tests, the mock engine, the versioning rule, frontend / backend / data teams in CODEOWNERS, split CI</td><td>all</td><td><span class="tag t-done">done</span></td></tr>
+      <tr><td class="num">8</td><td>Storage and outputs: output types — number, table, figure, text, <b>animation, 3D scene</b>; the result package grows with them (a zipped <code>.vleo</code> only for a result one report page cannot carry); tiers and thinning; input dedupe; the index behind one interface, so finding a kept question does not read every result; PNG and CSV export</td><td>data · backend</td><td><span class="tag t-new">next</span></td></tr>
       <tr><td class="num">9</td><td>Frontend: the component library and one page template in <code>web/</code>; <code>lesson.toml</code>; widgets computed by the kernel in the browser; <b>the animation player and the 3D viewer</b>; bundled fonts and shared assets; the lesson form; the docs folder for readers; the first lesson</td><td>frontend</td><td></td></tr>
       <tr><td class="num">10</td><td>Figure numbers move into the kernel, solar first; each approved reference picture must stay the same</td><td>backend · frontend</td><td></td></tr>
       <tr><td class="num">11</td><td>Readability: a guide to changing the code (a node, a route, a component, an output kind), the two 3,200-line files split, generator examples, required docs; typed errors</td><td>all</td><td></td></tr>
@@ -668,7 +671,7 @@ td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
       <tr><td class="num">—</td><td>Content, by people: 124 of 190 computing rows have no outside check and 137 have no theory. Filled through forms, alongside every phase</td><td>design</td><td><span class="tag t-grow">continuous</span></td></tr>
     </tbody>
   </table></div>
-  <p class="col muted">Not on the roadmap, deliberately: a database server now; a web framework; moving the design out of git; caching — a full run of all 1,396 rows takes 12 ms. New dependencies arrive only with the phase that needs them — a zip library (8); bundled fonts and a WebGL library for 3D (9); Parquet and SQLite when their thresholds are reached — each recorded in <code>ADOPTION.lock</code> with its licence and fallback. The kernel stays free of all of them.</p>
+  <p class="col muted">Not on the roadmap, deliberately: a database server now; a web framework; moving the design out of git; a hidden cache — a full run of all 1,396 rows takes 12 ms, so the reason to reuse a kept answer is that it is named, shared and kept once, never speed, and it is always shown as the saved result it is. New dependencies arrive only with the phase that needs them — a zip library (8); bundled fonts and a WebGL library for 3D (9); Parquet and SQLite when their thresholds are reached — each recorded in <code>ADOPTION.lock</code> with its licence and fallback. The kernel stays free of all of them.</p>
 </section>
 
 <!-- ────────────────────────────────────────────────────────────── 11 ── -->
@@ -680,7 +683,8 @@ td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
     <tbody>
       <tr><td>Where the tool runs</td><td>On each person's computer, with a shared results folder for the team (<code>VLEO_RESULTS</code>). No server to run, works offline, one archive for everyone.</td><td>People need to see each other's runs live, or who may run what must be controlled — then one team server behind sign-in and HTTPS, on the same storage interface.</td></tr>
       <tr><td>Database</td><td>No database server. Files and a rebuildable index; SQLite as an embedded index only past ~50,000 results.</td><td>The index grows past that, or queries across runs are needed.</td></tr>
-      <tr><td>How a result is saved and shared</td><td>A folder on disk; one <code>.vleo</code> file to share, with a self-contained <code>report.html</code>.</td><td>—</td></tr>
+      <tr><td>How a result is saved and shared</td><td>A folder on disk; to share, its <code>report.html</code> — one file that opens in any browser, draws its sweep, and uploads back whole.</td><td>A result carries what one page cannot — animation frames, a 3D scene — then one zipped <code>.vleo</code> file.</td></tr>
+      <tr><td>The same question asked twice</td><td>Answered from its saved result, never silently: the answer names the result and when it was saved, and <i>run again anyway</i> runs it fresh. A question is kept once.</td><td>Finding a kept question is slow — then the index of phase 8 answers it instead of reading every result.</td></tr>
       <tr><td>How long results are kept</td><td>Summaries forever; all values for 30 days; pinned and shared results forever.</td><td>The shared folder's size says otherwise — the numbers are settings.</td></tr>
       <tr><td>Where page content lives</td><td><code>lesson.toml</code> beside <code>node.toml</code>, per node or per group of nodes; outside the sheet hash.</td><td>—</td></tr>
       <tr><td>Animation and 3D</td><td>Part of the core output model (phase 8) and the frontend (phase 9) — not an afterthought — with 3D growing richer over time in the same format.</td><td>—</td></tr>

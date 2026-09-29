@@ -1,0 +1,7 @@
+# The case: one row per input, a blank value meaning the default. What the
+# Inputs page downloads and uploads, and `vleo run --inputs` reads. Written by
+# vleo_modules::inputs::csv_with; read by inputs::read.
+format = "case"
+marker = "template"
+meta = ["template"]
+columns = ["group", "id", "name", "value", "unit", "default", "min", "max"]

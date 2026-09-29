@@ -18,6 +18,115 @@ pub(super) fn results_dir() -> PathBuf {
     vleo_data::results_path()
 }
 
+/// A yes/no parameter: present as `1`, `true` or `yes`.
+pub(super) fn flag(params: &str, name: &str) -> bool {
+    matches!(
+        param(params, name).map(decode).as_deref(),
+        Some("1" | "true" | "yes")
+    )
+}
+
+/// The question a request asks, as a saved result's key.
+pub(super) fn question_of(case: &Case, sweep: Option<(&str, f64, f64, usize)>) -> String {
+    vleo_modules::results::question_for(case, sweep)
+}
+
+/// Which saved result an answer was read from — said on every answer that was
+/// not run just now, so it is never mistaken for one that was.
+pub(super) fn from_saved_json(j: &mut Json, file: &str, s: &vleo_modules::results::Saved, q: &str) {
+    j.key("from_saved").raw("{");
+    j.str_field("file", file);
+    j.str_field("saved", &s.saved);
+    j.str_field("name", &s.name);
+    j.str_field("question", q);
+    j.close_obj();
+}
+
+/// A saved result, answered as a run: the same fields a run returns, read from
+/// the record, with `from_saved` naming it. The checks against known-good
+/// values are not repeated — they ran when the result was made — so there are
+/// none here, and the face says so.
+pub(super) fn saved_run_json(
+    params: &str,
+    file: &str,
+    s: &vleo_modules::results::Saved,
+    q: &str,
+) -> String {
+    let mut j = Json::new();
+    j.raw("{");
+    j.bool_field("ok", true);
+    from_saved_json(&mut j, file, s, q);
+    inputs_note(&mut j, params);
+    j.key("values").open_arr();
+    let mut first = true;
+    for o in &s.outputs {
+        let Some(si) = o.si else { continue };
+        if !first {
+            j.raw(",");
+        }
+        first = false;
+        let (symbol, unit) = match Vleo::find(&o.id) {
+            Some(k) => (VARS[k as usize].symbol, VARS[k as usize].unit),
+            None => ("", vleo_units::Unit::One),
+        };
+        let (shown, sym) = vleo_bus::present(si, unit, 6);
+        j.raw("{");
+        j.str_field("id", &o.id);
+        j.str_field("symbol", symbol);
+        j.str_field("label", &o.name);
+        j.num_field("si", si);
+        j.str_field("shown", &shown);
+        j.str_field("unit", sym);
+        j.num_field("cred", o.credibility.parse::<f64>().unwrap_or(0.0));
+        j.str_field("governing", &o.governing);
+        j.key("vec").open_arr();
+        for (k, c) in o.cred.chars().filter_map(|c| c.to_digit(10)).enumerate() {
+            if k > 0 {
+                j.raw(",");
+            }
+            j.raw(&c.to_string());
+        }
+        j.close_arr();
+        j.close_obj();
+    }
+    j.close_arr();
+    j.key("blocked").open_arr();
+    for (i, b) in s.blocked.iter().enumerate() {
+        if i > 0 {
+            j.raw(",");
+        }
+        j.raw("{");
+        j.str_field("id", &b.id);
+        j.str_field("kind", "blocked");
+        j.str_field("message", &b.note);
+        j.close_obj();
+    }
+    j.close_arr();
+    j.key("verdicts").raw("[]");
+    j.key("manifest").raw("{");
+    j.str_field("node", &s.target);
+    j.str_field("mode", &s.mode);
+    j.str_field("kernel", &s.kernel);
+    j.str_field("graph", &s.graph);
+    j.str_field("case", &s.case);
+    j.str_field("chain", &s.chain);
+    j.str_field("endpoint", "saved result");
+    j.num_field("ran", s.ran as f64);
+    j.num_field("blocked", s.blocked_count as f64);
+    j.num_field("iterations", 0.0);
+    j.key("data").open_arr();
+    for (i, d) in s.data.iter().enumerate() {
+        if i > 0 {
+            j.raw(",");
+        }
+        j.push_string(d);
+    }
+    j.close_arr();
+    j.close_obj();
+    j.raw("}");
+    j.0
+}
+
 pub(super) fn rows_json(j: &mut Json, key: &str, rows: &[vleo_modules::results::Row]) {
     j.key(key).open_arr();
     for (k, r) in rows.iter().enumerate() {
@@ -58,6 +167,19 @@ pub(super) fn result_head(j: &mut Json, s: &vleo_modules::results::Saved) {
     j.num_field("ran", s.ran as f64);
     j.num_field("blocked", s.blocked_count as f64);
     j.num_field("changed", s.changed() as f64);
+    j.str_field("question", &s.question());
+    match &s.sweep {
+        Some(w) => {
+            j.key("sweep").raw("{");
+            j.str_field("over", &w.over);
+            j.num_field("points", w.points as f64);
+            j.num_field("refused", w.refused.len() as f64);
+            j.close_obj();
+        }
+        None => {
+            j.key("sweep").raw("null");
+        }
+    }
     // The node versions it rests on, and those whose record has moved on
     // since: each a belief the result rested on that has broken.
     j.key("versions").open_arr();
@@ -146,48 +268,99 @@ pub(super) fn result_json(params: &str) -> String {
     rows_json(&mut j, "inputs", &s.inputs);
     rows_json(&mut j, "outputs", &s.outputs);
     rows_json(&mut j, "blocked_rows", &s.blocked);
+    if let Some(w) = &s.sweep {
+        // The same wire form a sweep run now has, so one drawing serves both.
+        j.key("sweep_data").raw(&sweep_wire(&s.target, w, None));
+    }
     j.raw("}");
     j.0
 }
 
-pub(super) fn result_file(params: &str, report: bool) -> (&'static str, &'static str, Vec<u8>) {
+/// One file of a saved result, to download: its `csv`, its `sweep`, or its
+/// `report` page.
+pub(super) fn result_file(params: &str, kind: &str) -> (&'static str, &'static str, Vec<u8>) {
     let name = param(params, "name").map(decode).unwrap_or_default();
     match vleo_modules::results::store::open(&results_dir(), &name) {
-        Ok(s) if report => (
-            "200 OK",
-            "text/html; charset=utf-8",
-            vleo_modules::results::html(&s).into_bytes(),
-        ),
-        Ok(s) => (
-            "200 OK",
-            "text/csv; charset=utf-8",
-            vleo_modules::results::csv(&s).into_bytes(),
-        ),
+        Ok(s) => match kind {
+            "report" => (
+                "200 OK",
+                "text/html; charset=utf-8",
+                vleo_modules::results::html(&s).into_bytes(),
+            ),
+            "sweep" => match &s.sweep {
+                Some(w) => (
+                    "200 OK",
+                    "text/csv; charset=utf-8",
+                    vleo_modules::results::sweep_csv(w).into_bytes(),
+                ),
+                None => (
+                    "404 Not Found",
+                    "text/plain; charset=utf-8",
+                    format!("{name}: this result is not a sweep").into_bytes(),
+                ),
+            },
+            _ => (
+                "200 OK",
+                "text/csv; charset=utf-8",
+                vleo_modules::results::csv(&s).into_bytes(),
+            ),
+        },
         Err(e) => ("404 Not Found", "text/plain; charset=utf-8", e.into_bytes()),
     }
 }
 
 /// Run a row on the saved case — with whatever the request sets on top — and
-/// keep what it returned.
+/// keep what it returned. With `over`, `from`, `to` and `points` it is a sweep:
+/// the run at the case, and the answer across the range, kept together.
+///
+/// Kept once: a question already saved is not saved again, and the answer
+/// names the result that already holds it (`already`).
 pub(super) fn result_save(params: &str, ctx: &Ctx) -> String {
     if let Some(why) = case_refused(params, ctx) {
         return failed(&why);
     }
     let case = build_case(params, ctx);
+    for (id, _) in &case.supply {
+        if let Some(why) = unsuppliable(id) {
+            return refuse(id, &why);
+        }
+    }
+    let sweep = if param(params, "over").is_some() {
+        match run_sweep(params, ctx) {
+            Ok(w) => Some(w),
+            Err(refusal) => return refusal,
+        }
+    } else {
+        None
+    };
     let mut scratch = Scratch::new();
     let r = match vleo_modules::evaluate(&case, &mut scratch) {
         Ok(r) => r,
         Err(f) => return failed(&format!("{f}")),
     };
     let label = param(params, "label").map(decode).unwrap_or_default();
-    let s = vleo_modules::results::from_run(&r, &case.supply, &now_utc(), label.trim());
-    match vleo_modules::results::store::save(&results_dir(), &s) {
-        Ok(file) => {
+    let mut s = vleo_modules::results::from_run(&r, &case.supply, &now_utc(), label.trim());
+    s.sweep = sweep;
+    kept_json(&s)
+}
+
+/// Keep a result and answer with where — or with the result that already
+/// answers the same question.
+fn kept_json(s: &vleo_modules::results::Saved) -> String {
+    match vleo_modules::results::store::save(&results_dir(), s) {
+        Ok((file, already)) => {
+            let kept = if already {
+                vleo_modules::results::store::open(&results_dir(), &file)
+                    .unwrap_or_else(|_| s.clone())
+            } else {
+                s.clone()
+            };
             let mut j = Json::new();
             j.raw("{");
             j.bool_field("ok", true);
             j.str_field("file", &file);
-            result_head(&mut j, &s);
+            j.bool_field("already", already);
+            result_head(&mut j, &kept);
             j.raw("}");
             j.0
         }
@@ -284,25 +457,26 @@ pub(super) fn derisk_json(ctx: &Ctx) -> String {
     j.0
 }
 
-/// Keep a result somebody sent — its CSV, or the report page it rides in.
+/// Keep a result somebody sent — its report page, which carries everything, or
+/// its `result.csv` with, for a sweep, its `sweep.csv` beside it.
 pub(super) fn result_upload(params: &str) -> String {
     let text = param(params, "csv").map(decode).unwrap_or_default();
-    let s = match vleo_modules::results::read(&vleo_modules::results::unwrap_report(&text)) {
+    let mut s = match vleo_modules::results::read(&vleo_modules::results::unwrap_report(&text)) {
         Ok(s) => s,
         Err(e) => return failed(&e),
     };
-    match vleo_modules::results::store::save(&results_dir(), &s) {
-        Ok(file) => {
-            let mut j = Json::new();
-            j.raw("{");
-            j.bool_field("ok", true);
-            j.str_field("file", &file);
-            result_head(&mut j, &s);
-            j.raw("}");
-            j.0
+    let sweep_text = vleo_modules::results::unwrap_sweep(&text).or_else(|| {
+        param(params, "sweep")
+            .map(decode)
+            .filter(|t| !t.trim().is_empty())
+    });
+    if let Some(t) = sweep_text {
+        match vleo_modules::results::read_sweep(&t) {
+            Ok(w) => s.sweep = Some(w),
+            Err(e) => return failed(&format!("the sweep that came with it: {e}")),
         }
-        Err(e) => failed(&e),
     }
+    kept_json(&s)
 }
 
 pub(super) fn result_delete(params: &str) -> String {

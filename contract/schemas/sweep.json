@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "sweep",
+  "type": "object",
+  "properties": {
+    "ok": {
+      "type": "boolean"
+    },
+    "x_id": {
+      "type": "string"
+    },
+    "y_id": {
+      "type": "string"
+    },
+    "x_unit": {
+      "type": "string"
+    },
+    "y_unit": {
+      "type": "string"
+    },
+    "x_factor": {
+      "type": "number"
+    },
+    "y_factor": {
+      "type": "number"
+    },
+    "x": {
+      "type": "array",
+      "items": {
+        "type": "number"
+      }
+    },
+    "y": {
+      "type": "array",
+      "items": {
+        "type": "number"
+      }
+    },
+    "refused": {
+      "type": "array"
+    }
+  },
+  "required": [
+    "ok",
+    "x_id",
+    "y_id",
+    "x_unit",
+    "y_unit",
+    "x_factor",
+    "y_factor",
+    "x",
+    "y",
+    "refused"
+  ]
+}

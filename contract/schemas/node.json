@@ -1,0 +1,84 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "node",
+  "type": "object",
+  "properties": {
+    "ok": {
+      "type": "boolean"
+    },
+    "id": {
+      "type": "string"
+    },
+    "folder": {
+      "type": "string"
+    },
+    "subsystem": {
+      "type": "string"
+    },
+    "state": {
+      "type": "string"
+    },
+    "sheet_hash": {
+      "type": "string"
+    },
+    "impl_hash": {
+      "type": "string"
+    },
+    "steps": {
+      "type": "number"
+    },
+    "inputs": {
+      "type": "number"
+    },
+    "outputs": {
+      "type": "number"
+    },
+    "fixtures": {
+      "type": "number"
+    },
+    "artefacts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "written": {
+            "type": "string"
+          },
+          "what": {
+            "type": "string"
+          },
+          "present": {
+            "type": "boolean"
+          },
+          "bytes": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "name",
+          "written",
+          "what",
+          "present",
+          "bytes"
+        ]
+      }
+    }
+  },
+  "required": [
+    "ok",
+    "id",
+    "folder",
+    "subsystem",
+    "state",
+    "sheet_hash",
+    "impl_hash",
+    "steps",
+    "inputs",
+    "outputs",
+    "fixtures",
+    "artefacts"
+  ]
+}

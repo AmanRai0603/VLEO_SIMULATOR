@@ -363,23 +363,39 @@ id = "browser-results"
 title = "Keep a result, send it, and see it again without running"
 who = "user"
 kind = "how-to"
-answer = "Save a run as a result, and see it again later without running anything — or send it as a CSV or a report page. A result keeps the node versions it rested on, and says when one of those beliefs has broken since."
+answer = "Save a run or a sweep as a result, and see it again later without running anything — or send its report page. A question already answered is not run again: the tool shows the saved answer and says so. A result keeps the node versions it rested on, and says when one of those beliefs has broken since."
 body = """
 A run is worth keeping when somebody will ask about it later. **Save** it and \
-the tool writes one CSV: every value the run returned with its unit, its \
-credibility and what governs it, every row it blocked on and why, and **every \
-input it ran on**. The file is kept on this machine, in `~/.vleo/results/` or \
-wherever `VLEO_RESULTS` points — outside the repository, like the case.
+the tool keeps a **folder**: `result.csv` — every value the run returned with \
+its unit, its credibility and what governs it, every row it blocked on and why, \
+and **every input it ran on** — `sweep.csv` when it is a sweep, and \
+`report.html`, the page to send. It is kept in `~/.vleo/results/` or wherever \
+`VLEO_RESULTS` points — outside the repository, like the case.
+
+**A question already answered is not run again.** Everything that decides an \
+answer — the row, how much of the graph, every input, the engine, the tree and \
+the reference data, and for a sweep what it moved and how — is one key. Press \
+**run** or **sweep** on a question already kept and the saved answer is shown, \
+with a line saying which result it came from and when; **run again anyway** \
+runs it fresh. Saving the same question twice keeps it once. With \
+`VLEO_RESULTS` on a shared folder, that includes questions a colleague \
+answered. A change to the engine's code or to the tree is a different key, so \
+an answer from before a correction is never shown for the corrected tool.
 
 The **Results** tab lists every saved result and shows any of them as it was \
 — **nothing runs**, so a result saved before a release reads exactly the same \
 after it. Two results can be compared value by value, and the inputs that \
 differ between them are listed first, because that is usually the answer.
 
-To send one, download it as the **CSV** — it opens in any spreadsheet — or as \
-a **report**: one HTML page that reads without the tool, and carries the CSV \
-inside it, so uploading the report gives the result back whole. A result \
-somebody sent you is uploaded the same way.
+A saved **sweep** is drawn again on the Results page from its saved points, \
+with the same chart the run panel uses — hover, zoom and copy the numbers — \
+and nothing runs.
+
+To send one, download its **report**: one HTML page that reads without the \
+tool, draws the sweep, and carries the CSVs inside it, so uploading the report \
+gives the result back whole. The **CSV** opens in any spreadsheet. A result \
+somebody sent you is uploaded the same way: its report, or its `result.csv` \
+with its `sweep.csv`.
 
 **A result's inputs can become the case.** That puts every input back to what \
 the result ran on — the way to reproduce it, or to carry on from it. It is \
@@ -409,6 +425,14 @@ ui = "upload a result…"
 [[layer.section.step]]
 say = "Run on exactly what it ran on."
 ui = "use its inputs as the case"
+
+[[layer.section.step]]
+say = "After a sweep, keep it the same way: the run at the case and the line across the range, together."
+ui = "save this sweep"
+
+[[layer.section.step]]
+say = "A question already kept is shown from its saved result, and the line above it says which. To run it fresh anyway:"
+ui = "run again anyway"
 
 
 [[layer.section]]
@@ -1118,8 +1142,11 @@ fixed: each row's declared value, then the case's, then `--set`.
 `--set` only changes a **declared** number — never a computed one, which would \
 be overwritten the moment it was evaluated — and it never writes the sheet.
 
-`--save` keeps the run as a **result**: the same CSV the browser's Results page \
-keeps, and `vleo result` shows it again without running anything.
+`--save` writes the run as a **result** file where you say; `--keep` keeps it \
+in the results folder the browser's Results page shows, once. A question \
+already kept there is shown from its saved result instead of run — the first \
+line says so — and `--again` runs it anyway. `vleo result` shows a result \
+again, from its folder, its CSV or its report, without running anything.
 
 Two of the steps use a **closure**, `l3_solar_ach_01`: the room the sustained \
 F10.7 requirement has left once the design flux is taken from it. The launch \
@@ -1385,6 +1412,112 @@ run = "cargo run -p xtask -- release <version>"
 check = "writes"
 why = "stamps `release` on every unreleased node version, sets the version in Cargo.toml and Cargo.lock, and regenerates"
 
+
+[[layer.section]]
+id = "term-pipeline"
+title = "What a command does, where it stopped, and why a node is what it is"
+who = "developer"
+kind = "how-to"
+answer = "Every xtask command is described in one table: explain prints a command's place in a node's journey, what it reads, writes and checks, how to undo it and where its code is. A command that writes prints numbered steps, says why it stopped and how to retry, leaves a trace, and takes --dry-run. why puts a node's history in one place."
+body = """
+**One table describes every command** — `xtask/src/pipeline.rs`. `explain` \
+prints it for one command, or the whole journey with none; \
+`docs/PIPELINE.md` is the same table as a page, regenerated by \
+`xtask pipeline`; and a test fails when the table, `help` and the code \
+disagree.
+
+**A command that writes runs as numbered steps** — `take`, `intake --apply`, \
+`publish`, `fill`, `build-node`, `release` and `ship`. Each step prints \
+`n/total · name` as it starts and what it found when it ends. A step that \
+stops prints **why**, the state the **files** are in, the exact command to \
+**retry**, and the **code**: the file, and the step's name — a string in that \
+file, so searching for the printed name finds the line.
+
+**Every such run leaves a trace** in `target/xtask-trace/` — the command line, \
+the commit, each step with its time and result. `xtask trace` shows the last \
+one, `trace <command>` the last of one command, `trace --list` every one kept \
+(the newest 50).
+
+**--dry-run, on any command that writes**, does nothing: it runs the \
+command's own check where it has one (`intake` without `--apply`, \
+`release --check`, `method-wasm --check`, `pipeline --check`), and otherwise \
+prints the plan — its steps, what it would write, how to undo it.
+
+**why <node>** answers "how did this node come to be this?": every recorded \
+version and who made it, the commits that changed it, its approvals, how its \
+code came to be, and its gate, run now."""
+
+[[layer.section.step]]
+say = "The whole journey, and the command at each step."
+run = "cargo run -p xtask -- explain"
+check = "exits"
+expect = "A node's journey"
+
+[[layer.section.step]]
+say = "One command: where it sits, what it reads, writes and checks, how to undo it, and where its code is."
+run = "cargo run -p xtask -- explain intake"
+check = "exits"
+expect = "undo"
+
+[[layer.section.step]]
+say = "What a command would do, doing nothing."
+run = "cargo run -p xtask -- publish sw_ap_design --dry-run"
+check = "exits"
+expect = "nothing was read or written"
+
+[[layer.section.step]]
+say = "A node's history in one place, and its gate now."
+run = "cargo run -p xtask -- why sw_ap_design"
+check = "exits"
+expect = "its gate, run now"
+
+[[layer.section]]
+id = "term-contract"
+title = "Work on the page without the engine, and change what they share"
+who = "developer"
+kind = "how-to"
+answer = "The page and the engine meet at one contract in contract/: every route, a schema for every answer, the file formats, and answers recorded from the real engine. A frontend developer runs the page on the mock engine with no Rust; a backend developer proves the engine keeps the contract with cargo test. Inside /v1 a change may only add."
+body = """
+**The contract is `contract/`** — `routes.toml` lists every route and the \
+requests the tests make; `schemas/` has one schema per kind of answer; \
+`formats/` the CSV files people keep and send; `examples/` answers recorded \
+from the real engine. `contract/README.md` is the whole of it.
+
+**The backend keeps it.** The contract tests start the real server and make \
+every request: every answer must validate against its schema, and a field \
+the schema does not declare is a failure — so the page may read only what \
+the contract lists. They run in `cargo test`.
+
+**The frontend builds against it.** `tools/mock_engine.py` serves the page \
+from `web/` and every answer from the recorded examples, with no Rust built; \
+the page says **MOCK ENGINE** at the top, because every number on it is an \
+example. `tools/mock_check.py` walks the page on it in a browser, and the \
+pipeline runs that with no Rust toolchain at all.
+
+**Changing it.** Within `/v1`, add only: a new route or field breaks nobody. \
+A field goes into the schema first, in a pull request both sides review; \
+then either side can use it. Removing or re-meaning one is `/v2`, beside \
+`/v1` for a release. When an answer's shape changes, re-record the examples. \
+The page carries the contract version it was built for and names an engine \
+that speaks another."""
+
+[[layer.section.step]]
+say = "The mock engine checks itself: every recorded example reads, and each request finds the answer it should."
+run = "python3 tools/mock_engine.py --selftest"
+check = "exits"
+expect = "selftest: ok"
+
+[[layer.section.step]]
+say = "The page on recorded answers, with no Rust — then open the address it prints."
+run = "python3 tools/mock_engine.py"
+check = "serves"
+expect = "http://127.0.0.1:"
+
+[[layer.section.step]]
+say = "Re-record the examples from the real engine after an answer's shape changes. A schema is never rewritten: that is the contract, changed by hand."
+run = "VLEO_CONTRACT_RECORD=1 cargo test -p vleo-server --test the_contract_holds"
+check = "writes"
+why = "rewrites contract/examples/ from the real engine, and drafts a schema for a route that has none"
 
 [[layer.section]]
 id = "term-kit"
@@ -2105,6 +2238,38 @@ effect = "reads"
 
 [[command]]
 tool = "xtask"
+name = "explain"
+usage = "explain [<command>]"
+what = "Where a command sits in a node's journey, what it reads, writes and checks, how to undo it, its steps and where its code is — from the one table docs/PIPELINE.md is written from. With no command, the whole journey."
+who = "developer"
+effect = "reads"
+
+[[command]]
+tool = "xtask"
+name = "why"
+usage = "why <node>"
+what = "A node's history in one place: every recorded version and who made it, the commits that changed it, its approvals, how its code came to be, and its gate, run now."
+who = "developer"
+effect = "reads"
+
+[[command]]
+tool = "xtask"
+name = "trace"
+usage = "trace [<command>] [--list]"
+what = "The last run's trace from target/xtask-trace/ — every command that writes leaves one, the newest 50 kept — or the last of one command, or --list every one kept."
+who = "developer"
+effect = "reads"
+
+[[command]]
+tool = "xtask"
+name = "pipeline"
+usage = "pipeline [--check]"
+what = "Write docs/PIPELINE.md from the pipeline table; --check only says whether it is current."
+who = "developer"
+effect = "writes"
+
+[[command]]
+tool = "xtask"
 name = "take"
 usage = "take <form.html> --for <author> [--again] [--no-push] [--no-test]"
 what = "Takes a filled node form in: checks it, and if it cannot be taken writes `<form>.returned.txt` to send back and changes nothing; otherwise puts it on its own branch `form/<author>/<node>` from a fresh `maintainer`, applies it, regenerates, gates, tests, commits naming the author and pushes. The push builds the author's preview."
@@ -2226,16 +2391,16 @@ effect = "writes"
 [[command]]
 tool = "vleo"
 name = "run"
-usage = "run <node> [--inputs <file.csv> | --defaults] [--mode alone|branch|all] [--set id=value ...] [--save <file.csv>]"
-what = "Evaluate a row and everything it needs. Always n ran, m blocked, with the blocked named. `--save` keeps the run and its inputs as a result file."
+usage = "run <node> [--inputs <file.csv> | --defaults] [--mode alone|branch|all] [--set id=value ...] [--save <file.csv>] [--keep] [--again]"
+what = "Evaluate a row and everything it needs. Always n ran, m blocked, with the blocked named. `--save` writes the run and its inputs as a result file; `--keep` keeps it in the results folder, once. A question already kept there is shown from its saved result; `--again` runs it anyway."
 who = "user"
 effect = "reads"
 
 [[command]]
 tool = "vleo"
 name = "sweep"
-usage = "sweep <node> --over <input> --from <a> --to <b> [--points n] [--inputs <file.csv> | --defaults]"
-what = "Sweep a declared input across a range. Refused points are recorded, never dropped."
+usage = "sweep <node> --over <input> --from <a> --to <b> [--points n] [--inputs <file.csv> | --defaults] [--keep] [--again]"
+what = "Sweep a declared input across a range. Refused points are recorded, never dropped. `--keep` and `--again` as for run."
 who = "user"
 effect = "reads"
 
@@ -2282,8 +2447,8 @@ effect = "reads"
 [[command]]
 tool = "vleo"
 name = "result"
-usage = "result <file> [--html <out.html>]"
-what = "A saved result shown as it was — nothing runs. Reads the CSV `run --save` writes, or the report page it rides in; `--html` writes that report, to send."
+usage = "result <file|folder> [--html <out.html>]"
+what = "A saved result shown as it was — nothing runs. Reads a result's folder, the CSV `run --save` writes, or the report page it rides in; `--html` writes that report, to send."
 who = "user"
 effect = "reads"
 
@@ -2333,7 +2498,7 @@ what = "The page's modules, one per concern, served as they are written — no b
 [[route]]
 method = "GET"
 path = "/v1/version"
-what = "The engine's identity: kernel, graph, row count and data versions."
+what = "The engine's identity: the contract version it speaks, kernel, graph, row count and data versions."
 
 [[route]]
 method = "GET"
@@ -2358,7 +2523,7 @@ what = "This manual, with what is true of the running tool right now."
 [[route]]
 method = "GET"
 path = "/v1/run"
-what = "Evaluate a row on the saved case. `node`, and optionally `mode`, `set`, and `inputs=defaults` to run the declared defaults instead."
+what = "Evaluate a row on the saved case. `node`, and optionally `mode`, `set`, and `inputs=defaults` to run the declared defaults instead. With `reuse=1`, a question already kept in the results folder is answered from its saved result, named in `from_saved`; `again=1` runs it anyway."
 
 [[route]]
 method = "POST"
@@ -2422,18 +2587,23 @@ what = "A saved result's CSV, to keep or send: `name`."
 
 [[route]]
 method = "GET"
+path = "/v1/result.sweep.csv"
+what = "A saved sweep's points as CSV, to keep or send: `name`."
+
+[[route]]
+method = "GET"
 path = "/v1/result.html"
-what = "A saved result as a report page that reads without the tool and carries its CSV: `name`."
+what = "A saved result as a report page that reads without the tool, draws its sweep, and carries its CSVs: `name`."
 
 [[route]]
 method = "POST"
 path = "/v1/results/save"
-what = "Run, and keep what it returned and the inputs it ran on as a result: the parameters of `/v1/run`, and `label`. Written outside the repository."
+what = "Run, and keep what it returned and the inputs it ran on as a result folder: the parameters of `/v1/run`, and `label`; with `over`, `from`, `to` and `points` the sweep is kept with it. Kept once: a question already kept answers `already` and names it. Written outside the repository."
 
 [[route]]
 method = "POST"
 path = "/v1/results/upload"
-what = "Keep a result somebody sent: `csv=` its CSV, or the text of its report."
+what = "Keep a result somebody sent: `csv=` its CSV or the text of its report, and `sweep=` its sweep CSV when it is one. Kept once, as a save is."
 
 [[route]]
 method = "POST"
@@ -2448,7 +2618,7 @@ what = "Make a saved result's inputs the case: `name`. Checked like any case, an
 [[route]]
 method = "GET"
 path = "/v1/sweep"
-what = "A behaviour sweep, as `vleo sweep`. Refused points are reported with their reason."
+what = "A behaviour sweep, as `vleo sweep`. Refused points are reported with their reason. `reuse=1` and `again=1` as for `/v1/run`."
 
 [[route]]
 method = "GET"
@@ -2485,6 +2655,11 @@ what = "Where the saved case is kept — the CSV the Inputs page and `vleo run` 
 default = "$HOME/.vleo/case/inputs.csv"
 
 [[env]]
+name = "VLEO_CONTRACT_RECORD"
+what = "Set to `1` when running the contract tests, to record contract/examples/ again from the real engine after an answer's shape changes, and draft a schema for a route that has none. It never rewrites a schema. Unset, the tests only check."
+default = "unset — check"
+
+[[env]]
 name = "VLEO_GOLDEN"
 what = "Set to `write` when running the translator's golden test, to write the golden files again after an intended change to how methods are translated. Unset, the test compares and fails on any difference."
 default = "unset — compare"
@@ -2496,7 +2671,7 @@ default = "$HOME/.vleo/log"
 
 [[env]]
 name = "VLEO_RESULTS"
-what = "Where saved results are kept — the Results page and `vleo run --save` without a path of its own. Outside the repository. Point it at a shared or synced folder and the team keeps one archive: names are unique and every write is whole. Set but empty counts as unset."
+what = "Where saved results are kept, one folder each — the Results page and `vleo run --keep`. Outside the repository. Point it at a shared or synced folder and the team keeps one archive: each question is kept once, a question a colleague answered is shown rather than run again, and every result is written whole. Set but empty counts as unset."
 default = "$HOME/.vleo/results"
 
 [[env]]
@@ -2614,6 +2789,11 @@ what = "The pipeline, the dependency bot and the pull-request template."
 who = "developer"
 
 [[folder]]
+name = "contract"
+what = "Where the page and the engine meet: every /v1 route, a schema for every answer, the file formats, and answers recorded from the real engine that the mock engine serves. Checked by the contract tests; reviewed by both sides (contract/README.md)."
+who = "developer"
+
+[[folder]]
 name = "approvals"
 what = "Each form branch's author approval of the exact preview build they tried, recorded by `xtask approve`. A form branch merges only with one that matches."
 who = "maintainer"
@@ -2716,6 +2896,10 @@ what = "The rings, the layers and the reasoning behind them."
 [[doc]]
 path = "docs/ARCHITECTURE.html"
 what = "The whole tool end to end, with diagrams: frontend, backend and data and the contract between them, how pictures and pages are made, how data is kept without flooding, who reaches what, and the roadmap. Opens in any browser, offline."
+
+[[doc]]
+path = "docs/PIPELINE.md"
+what = "Every xtask command in a node's journey: what it reads, writes and checks, how to undo it, its steps and where its code is. Generated from the pipeline table; never edited."
 
 [[doc]]
 path = "docs/WORK_MODEL.md"

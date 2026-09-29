@@ -1,0 +1,20 @@
+{
+  "ok": true,
+  "node": "sw_ap_design",
+  "base": 132,
+  "levers": [
+    {
+      "id": "sw_storm_design_level",
+      "symbol": "G_design",
+      "label": "Storm level designed for",
+      "unit": "-",
+      "factor": 1,
+      "lower": 1,
+      "upper": 3,
+      "at_lower": 48,
+      "at_upper": 132,
+      "span": 0.6363636363636364,
+      "why": ""
+    }
+  ]
+}

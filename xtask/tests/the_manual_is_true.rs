@@ -49,9 +49,15 @@ fn the_manual() -> Manual {
 /// yielding an empty set, which would let every manual entry pass as "not a
 /// command, but nothing to compare against either".
 fn dispatched(src: &str) -> BTreeSet<String> {
+    // `vleo` matches in main; `xtask` in `fn dispatch`, which `--dry-run`
+    // also calls.
     let start = src
         .find("let r = match cmd {")
-        .expect("the dispatch `let r = match cmd {` is where the commands are; it has moved");
+        .or_else(|| {
+            let d = src.find("fn dispatch(")?;
+            src[d..].find("match cmd {").map(|k| d + k)
+        })
+        .expect("the dispatch `match cmd {` is where the commands are; it has moved");
     let mut out = BTreeSet::new();
     for line in src[start..].lines().skip(1) {
         let t = line.trim();
@@ -267,6 +273,21 @@ fn command_ok(line: &str, k: &Known) -> Result<(), String> {
             ["cargo", "test", "-p", krate] => {
                 if !k.crates.contains(*krate) {
                     return Err(format!("`{line}`: there is no crate '{krate}'"));
+                }
+            }
+            // One integration test of one crate: the crate, and the test file.
+            ["cargo", "test", "-p", krate, "--test", test] => {
+                if !k.crates.contains(*krate) {
+                    return Err(format!("`{line}`: there is no crate '{krate}'"));
+                }
+                if !root()
+                    .join("crates")
+                    .join(krate)
+                    .join("tests")
+                    .join(format!("{test}.rs"))
+                    .is_file()
+                {
+                    return Err(format!("`{line}`: {krate} has no test called '{test}'"));
                 }
             }
             // The Python package: installing a file of it, and the module it

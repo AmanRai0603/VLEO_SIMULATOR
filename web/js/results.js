@@ -3,9 +3,16 @@
 
   A run is a question somebody asked, and the answer is worth keeping — to look
   at again, to send, to compare with the next one. A result is saved from the
-  run panel (or `vleo run --save`) as one CSV: every input it ran on, every
-  value it returned, every row it could not run, and the run's identity. The
-  daemon keeps it outside the repository, beside the saved case.
+  run panel (or `vleo run --keep`) as a folder: `result.csv` — every input it
+  ran on, every value it returned, every row it could not run, and the run's
+  identity — `sweep.csv` when it is a sweep, and `report.html`, the one file to
+  send, which carries both. The daemon keeps it outside the repository, in the
+  results folder (the team's, when VLEO_RESULTS names a shared one).
+
+  A QUESTION IS KEPT ONCE, AND NOT ASKED AGAIN. Everything that decides an
+  answer — the row, the inputs, the engine, the data, what a sweep moved — is
+  one key. Saving the same question twice keeps one result; running or sweeping
+  a question already kept shows the kept one, and says so.
 
   NOTHING ON THIS PAGE RUNS THE ENGINE. A saved result is a record of what the
   engine said then; running it again today is a different result, and showing
@@ -20,6 +27,7 @@
 'use strict';
 
 import { $, $$, esc, fmt, plural, answerFirst } from './dom.js';
+import { drawChart, attachHover, tableFor, tableTsv, INK, watchScheme } from './chart.js';
 import { caseChanged } from './state.js';
 
 const POST = { method: 'POST', headers: { 'content-type': 'application/x-www-form-urlencoded' } };
@@ -50,14 +58,16 @@ export async function renderResults(host) {
     return;
   }
   let h = '<div class="node-head"><h2>Results — what runs returned</h2></div>' +
-    answerFirst('A result is one run, kept exactly as it came out: the inputs it ran on, every value it ' +
-      'returned, and the beliefs it rested on. Showing one runs nothing.',
-      ['Download it as a CSV or a report page to send to someone.',
+    answerFirst('A result is one run — or one sweep — kept exactly as it came out: the inputs it ran on, ' +
+      'every value it returned, and the beliefs it rested on. Showing one runs nothing.',
+      ['A question already kept is not run again: the run panel and the sweep show the kept answer, and say so.',
+       'Send the report page: it opens in any browser, and uploaded here it brings back everything, sweep included.',
        'If a belief it rested on has changed since, it says which.'], 'how-to');
   h += '<div class="runbar res-actions"><label class="ctl res-up-l">upload a result…' +
-    '<input type="file" class="res-up" accept=".csv,.html,text/csv,text/html" hidden></label>' +
-    '<span class="muted">a result CSV, or the report page it rides in. Kept at <code>' + esc(list.path) +
-    '</code> — outside the repository.</span><span class="why res-said"></span></div>';
+    '<input type="file" class="res-up" accept=".csv,.html,text/csv,text/html" multiple hidden></label>' +
+    '<span class="muted">its report page, or its <code>result.csv</code> (with its <code>sweep.csv</code> for a ' +
+    'sweep). Kept at <code>' + esc(list.path) + '</code> — outside the repository.</span>' +
+    '<span class="why res-said"></span></div>';
   if (!list.results.length) {
     h += '<p class="empty">No result is saved yet. Run a row — on its page, or on <b>4 The run</b> — and ' +
       'press <b>save this result</b>.</p>';
@@ -66,7 +76,9 @@ export async function renderResults(host) {
       '<th>inputs</th><th>ran</th><th></th></tr></thead><tbody>' + list.results.map(r =>
         '<tr class="res-row' + (r.file === PAGE.open ? ' sel' : '') + '" data-file="' + esc(r.file) + '">' +
         '<td>' + esc(r.saved) + (r.name ? '<div class="muted">' + esc(r.name) + '</div>' : '') + '</td>' +
-        '<td><code>' + esc(r.target) + '</code></td><td><b>' + esc(answerText(r)) + '</b></td>' +
+        '<td><code>' + esc(r.target) + '</code>' + (r.sweep ? '<span class="res-kind" title="a sweep over ' +
+          esc(r.sweep.over) + ', ' + r.sweep.points + ' points">sweep</span>' : '') + '</td><td><b>' +
+          esc(answerText(r)) + '</b></td>' +
         '<td>' + r.changed + ' changed</td><td>' + r.ran + ' · ' + r.blocked + ' blocked</td>' +
         '<td><button class="ctl res-open" data-file="' + esc(r.file) + '">open</button></td></tr>').join('') +
       '</tbody></table></div>';
@@ -81,15 +93,25 @@ export async function renderResults(host) {
 
   $$('.res-open', host).forEach(b => b.onclick = () => { openResult(b.dataset.file); renderResults(host); });
   $('.res-up', host).onchange = async e => {
-    const f = e.target.files && e.target.files[0];
+    const files = [...(e.target.files || [])];
     e.target.value = '';
-    if (!f) return;
+    if (!files.length) return;
     const said = $('.res-said', host);
-    said.textContent = 'reading ' + f.name + '…';
-    const r = await post('/v1/results/upload', { csv: await f.text() });
+    said.textContent = 'reading ' + files.map(f => f.name).join(', ') + '…';
+    // Which file is which is read from the files, not their names: a result
+    // says `#! result`, a sweep says `#! sweep`, and a report page carries both.
+    const texts = await Promise.all(files.map(f => f.text()));
+    const result = texts.find(t => /id="vleo-result"|^#! result/m.test(t));
+    const sweep = texts.find(t => t !== result && /^#! sweep/m.test(t));
+    if (!result) { said.textContent = 'not kept: none of these is a saved result'; return; }
+    const r = await post('/v1/results/upload', sweep ? { csv: result, sweep } : { csv: result });
     if (!r.ok) { said.textContent = 'not kept: ' + (r.message || 'refused'); return; }
     openResult(r.file);
-    renderResults(host);
+    await renderResults(host);
+    if (r.already) {
+      const s2 = $('.res-said', host);
+      if (s2) s2.textContent = 'already kept — the same question was saved ' + r.saved + ', and is kept once';
+    }
   };
   if (PAGE.open && list.results.some(r => r.file === PAGE.open)) {
     await view($('.res-view', host), host, list.results);
@@ -121,9 +143,12 @@ async function view(el, host, all) {
     (r.versions.length ? '<p class="muted">rests on ' + r.versions.map(v => '<a class="xref" data-goto="' +
       esc(v.node) + '">' + esc(v.node) + '</a> v' + v.n + ' (' + esc(v.release) + ')').join(', ') + '</p>' : '') +
     '<div class="runbar res-do">' +
-      '<a class="ctl" href="/v1/result.csv?name=' + q + '" download="' + esc(PAGE.open) + '">download CSV</a>' +
-      '<a class="ctl" href="/v1/result.html?name=' + q + '" download="' + esc(PAGE.open.replace(/\.csv$/, '.html')) +
+      '<a class="ctl" href="/v1/result.csv?name=' + q + '" download="' + esc(PAGE.open.replace(/\.csv$/, '') + '.csv') +
+        '">download CSV</a>' +
+      '<a class="ctl" href="/v1/result.html?name=' + q + '" download="' + esc(PAGE.open.replace(/\.csv$/, '') + '.html') +
         '">download report</a>' +
+      (r.sweep_data ? '<a class="ctl" href="/v1/result.sweep.csv?name=' + q + '" download="' +
+        esc(PAGE.open.replace(/\.csv$/, '') + '.sweep.csv') + '">download sweep CSV</a>' : '') +
       '<button class="ctl res-case" title="make the inputs this result ran on the saved case">use its inputs as the case</button>' +
       '<button class="ctl res-del">delete</button><span class="why res-do-said"></span></div>';
   const others = all.filter(x => x.file !== PAGE.open);
@@ -133,6 +158,14 @@ async function view(el, host, all) {
         esc(x.saved + ' · ' + x.target + (x.name ? ' · ' + x.name : '')) + '</option>').join('') + '</select></div>';
   }
   h += '<div class="res-cmp-out"></div>';
+  if (r.sweep_data) {
+    h += '<h4>The sweep it keeps</h4><p class="muted res-sw-said"></p>' +
+      '<canvas class="plot res-sw-plot" width="900" height="320"></canvas>' +
+      '<div class="runbar"><button class="ctl res-sw-copy" type="button">copy as TSV</button>' +
+      '<span class="res-sw-copied"></span><span class="muted">hover to read a point, drag to zoom, ' +
+      'double-click to undo</span></div>' +
+      '<details><summary>the numbers behind this picture</summary><div class="res-sw-table"></div></details>';
+  }
   const changed = r.inputs.filter(i => i.note === 'changed');
   h += '<h4>Inputs changed from their defaults</h4>' + (changed.length
     ? '<div class="ri-wrap"><table class="fx"><tbody>' + changed.map(i => '<tr><td><code>' + esc(i.id) +
@@ -171,9 +204,58 @@ async function view(el, host, all) {
     const res = await post('/v1/results/delete', { name: PAGE.open });
     if (res.ok) { PAGE.open = null; renderResults(host); }
   };
+  if (r.sweep_data) drawSweep(el, r);
   const cmp = $('.res-cmp', el);
   if (cmp) cmp.onchange = () => { PAGE.compare = cmp.value; compare($('.res-cmp-out', el), r); };
   if (PAGE.compare) compare($('.res-cmp-out', el), r);
+}
+
+/**
+ * A saved sweep, drawn from its record with the same chart the run panel uses.
+ * Nothing is run: the points are the ones the engine returned when it was
+ * saved, and a refused point is a gap in the line, as it was then.
+ */
+function drawSweep(el, r) {
+  const w = r.sweep_data;
+  const c = $('.res-sw-plot', el);
+  const fx = w.x_factor || 1, fy = w.y_factor || 1;
+  const pts = w.x.map((x, i) => [x, w.y[i]]).concat(w.refused.map(q => [q.x, null]))
+    .sort((a, b) => a[0] - b[0]);
+  const u = x => (!x || x === '-') ? 'dimensionless' : x;
+  const at = r.inputs.find(i => i.id === w.x_id);
+  const ans = r.outputs.find(o => o.id === r.target);
+  const here = at && ans && at.si !== null && ans.si !== null ? { x: at.si / fx, y: ans.si / fy } : null;
+  let zoom = null;
+  const spec = () => ({
+    x: { label: w.x_id + '  [' + u(w.x_unit) + ']', ...(zoom ? { min: zoom[0], max: zoom[1] } : {}) },
+    y: { label: w.y_id + '  [' + u(w.y_unit) + ']' },
+    series: [{ name: '', kind: 'line', colour: INK.series[0], width: 2.2,
+               x: pts.map(p => p[0] / fx), y: pts.map(p => (p[1] === null ? null : p[1] / fy)) }]
+      .concat(here ? [{ name: '', kind: 'dots', x: [here.x], y: [here.y], width: 5, alpha: 1, colour: INK.text }] : []),
+    marks: [],
+    notes: here ? [{ x: here.x, y: here.y, text: 'this case' }] : [],
+  });
+  const paint = () => {
+    if (!c.isConnected) return;
+    const sp = spec();
+    drawChart(c, sp);
+    attachHover(c, {
+      onBrush: win => { if (win.x) { zoom = win.x; paint(); } },
+      onReset: () => { if (zoom) { zoom = null; paint(); } },
+    });
+    $('.res-sw-table', el).innerHTML = tableFor(sp);
+  };
+  paint();
+  watchScheme(paint);
+  $('.res-sw-said', el).innerHTML = esc(w.y_id) + ' across <b>' + esc(w.x_id) + '</b>: ' +
+    plural(w.x.length, 'point') + ' answered' + (w.refused.length ? ', <b>' + w.refused.length +
+    ' refused</b> — ' + esc(w.refused[0].why) + ' — drawn as gaps' : ', none refused') +
+    '. Every point was computed when this was saved; nothing here runs.';
+  $('.res-sw-copy', el).onclick = async () => {
+    let okay = false;
+    try { await navigator.clipboard.writeText(tableTsv(spec())); okay = true; } catch (e) { okay = false; }
+    $('.res-sw-copied', el).textContent = okay ? 'copied' : 'could not reach the clipboard';
+  };
 }
 
 /** Two records, side by side: every value either returned, and how far it moved. */

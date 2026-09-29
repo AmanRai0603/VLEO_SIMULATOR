@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "inputs-reading",
+  "type": "object",
+  "properties": {
+    "ok": {
+      "type": "boolean"
+    },
+    "changed": {
+      "type": "number"
+    },
+    "defaulted": {
+      "type": "number"
+    },
+    "set": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "value": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "id",
+          "value"
+        ]
+      }
+    },
+    "refused": {
+      "type": "array"
+    },
+    "template": {
+      "type": "null"
+    },
+    "outdated": {
+      "type": "boolean"
+    },
+    "upgrade": {
+      "type": "null"
+    },
+    "path": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "ok",
+    "changed",
+    "defaulted",
+    "set",
+    "refused",
+    "template",
+    "outdated",
+    "upgrade"
+  ]
+}

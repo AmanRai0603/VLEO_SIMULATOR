@@ -470,6 +470,13 @@ h4 { font-size: 10px; text-transform: uppercase; letter-spacing: .08em;
 .run-for { font-size: 11px; color: var(--ink-2); margin: 0 0 .4rem; }
 .run-stale { font-size: 11px; color: var(--out); background: var(--out-pale);
   border: 1px solid var(--out); border-radius: 3px; padding: .3rem .6rem; margin: .4rem 0; }
+/* an answer read back from a saved result: said first, in the "saved" hue */
+.run-saved { display: block; font-size: 11px; color: var(--in); background: var(--in-pale);
+  border: 1px solid var(--in); border-radius: 3px; padding: .3rem .6rem; margin: .4rem 0; }
+.run-saved .ctl { margin-left: .3rem; }
+.sw-keep { margin-top: .4rem; }
+.res-kind { font: 10px var(--mono); color: var(--in); border: 1px solid var(--in);
+  border-radius: 3px; padding: 0 4px; margin-left: .3rem; }
 .run-evidence > summary, .run-blocked > summary { font-size: 10.5px; cursor: pointer;
   color: var(--ink-2); margin: .5rem 0 .2rem; }
 .run-evidence > summary { color: var(--both); }
@@ -1068,6 +1075,12 @@ table.risks td { vertical-align: top; }
 /* A PREVIEW build: one author's change, before it is approved. The banner is on
    every view and never scrolls away, so a preview is never mistaken for a
    release; amber, the colour this face already uses for "not settled". */
+#contract-bar { padding: .45rem .8rem; font-size: 12px; background: var(--out-pale); color: var(--ink);
+  border-bottom: 2px solid var(--out); }
+#mock-bar { padding: .45rem .8rem; font-size: 12px; background: var(--in-pale); color: var(--ink);
+  border-bottom: 2px solid var(--in); }
+#mock-bar b { color: var(--in); letter-spacing: .04em; }
+#contract-bar b { color: var(--out); letter-spacing: .04em; }
 #preview-bar {
   position: sticky; top: 0; z-index: 50;
   background: var(--out-pale); color: var(--ink); border-bottom: 2px solid var(--out);

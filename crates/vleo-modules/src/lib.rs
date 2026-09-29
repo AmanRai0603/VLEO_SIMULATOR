@@ -35,6 +35,8 @@ pub mod tables {
     include!(concat!(env!("OUT_DIR"), "/tables.rs"));
 }
 
+include!(concat!(env!("OUT_DIR"), "/engine_source.rs"));
+
 pub use tables::{
     CaseDef, CycleDef, GroupDef, CASES, GROUPS, MAX_INPUTS, MAX_OUTPUTS, NODES, NODE_COUNT,
     RELATIONS, VARS, VAR_COUNT,
@@ -81,6 +83,10 @@ impl Vleo {
     pub fn kernel_hash() -> u64 {
         let mut h = vleo_core::hash::Hasher::new();
         h.write_str(env!("CARGO_PKG_VERSION"));
+        // The relations every node calls, not only each node's own code: a
+        // saved result is reused on this identity, so a corrected formula
+        // must be a different engine.
+        h.write_u64(ENGINE_SOURCE);
         for n in NODES.iter() {
             h.write_u64(n.impl_hash);
         }
@@ -640,7 +646,7 @@ fn collect(
     }
 }
 
-fn hex(h: u64) -> String {
+pub(crate) fn hex(h: u64) -> String {
     let b = vleo_core::hash::short_hex(h);
     core::str::from_utf8(&b).unwrap_or("......").to_string()
 }

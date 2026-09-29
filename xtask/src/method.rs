@@ -357,14 +357,11 @@ pub fn cmd_rerun(root: &Path, args: &[&str]) -> Result<(), String> {
 // ---------------------------------------------------------------------------
 // build-node: every stage, in order, stopping at the first that fails
 
-fn stage(n: &str, what: &str) {
-    println!("\n\x1b[1m{n} · {what}\x1b[0m");
-}
-
 /// `build-node <node>` — from the node's method to a node that may be
 /// connected: translate, test against the author's cases, rerun their code,
 /// prove the tests test, and only then check the interface.
 pub fn cmd_build_node(root: &Path, args: &[&str]) -> Result<(), String> {
+    use crate::pipeline::{OnStop, Run};
     let id = args
         .iter()
         .find(|a| !a.starts_with("--"))
@@ -375,89 +372,144 @@ pub fn cmd_build_node(root: &Path, args: &[&str]) -> Result<(), String> {
         .sheets
         .get(id)
         .ok_or_else(|| format!("no node '{id}'"))?;
+    let mut run = Run::start(root, "build-node", args, 6);
+    let again = format!("cargo run -p xtask -- build-node {id}");
+    let built = "the kernel's translation and the node's generated files are written; the node \
+                 is NOT connected — `git diff` shows them";
 
-    stage("M ", "the method, against the author's cases");
-    if sh.method.text.trim().is_empty() {
-        return Err(format!(
-            "{id} has no method. Its code is its hand-written holes, built and tested by \
-             `gate` and `cargo test` as before; build-node starts from a method."
-        ));
-    }
-    cmd_method(root, &[id])?;
+    run.step(
+        "the method, against the author's cases",
+        OnStop::new(
+            "unchanged — nothing was written",
+            format!("fix the method on the node's form, then {again}"),
+        ),
+        || {
+            if sh.method.text.trim().is_empty() {
+                return Err(format!(
+                    "{id} has no method. Its code is its hand-written holes, built and tested by \
+                     `gate` and `cargo test` as before; build-node starts from a method."
+                ));
+            }
+            cmd_method(root, &[id])?;
+            Ok((
+                (),
+                format!("{} case(s) come out as the author said", sh.cases.len()),
+            ))
+        },
+    )?;
 
-    stage(
-        "G1",
-        "translate the method into the kernel, and regenerate the node",
-    );
-    crate::cmd_docs(root, &[id])?;
     let path = root
         .join("crates/vleo-core/src/physics/methods")
         .join(format!("{}.rs", sh.rust_ident()));
-    println!(
-        "  {} — translated by rule",
-        path.strip_prefix(root).unwrap_or(&path).display()
-    );
+    run.step(
+        "translate the method into the kernel, and regenerate the node",
+        OnStop::new("part written — `git diff` shows what", &again),
+        || {
+            crate::cmd_docs(root, &[id])?;
+            Ok((
+                (),
+                format!(
+                    "{} — translated by rule",
+                    path.strip_prefix(root).unwrap_or(&path).display()
+                ),
+            ))
+        },
+    )?;
 
-    stage(
-        "T1+T2",
+    run.step(
         "the node's tests: the author's cases, and the translation against the method",
-    );
-    let ok = Command::new("cargo")
-        .args(["test", "-q", "-p", &sh.crate_name, "--", &format!("{id}::")])
-        .current_dir(root)
-        .status()
-        .map_err(|e| e.to_string())?
-        .success();
-    if !ok {
-        return Err(format!(
-            "{id}: its tests fail. A case that disagrees goes back to the author; a translation \
-             test that fails is a translator defect for a developer. The node is NOT connected."
-        ));
-    }
-
-    stage("T3", "the author's own code, run again on their cases");
-    cmd_rerun(root, &[id])?;
-
-    stage(
-        "T4",
-        "the tests really test: the answer is moved and the tests must notice",
-    );
-    crate::cmd_mutate(root, &[id])?;
-
-    stage("I1", "only now, the interface: the node in the tree");
-    crate::cmd_gate(root, &[id])?;
-    let tree = vleo_sheet::load_all(root)?;
-    let checks = vleo_sheet::gate::validate_tree(&tree);
-    let failed: Vec<String> = checks
-        .iter()
-        .filter(|c| c.failed())
-        .map(|c| format!("{} — {:?}", c.name, c.verdict))
-        .collect();
-    if !failed.is_empty() {
-        return Err(format!(
-            "the tree does not assemble with {id}: {}",
-            failed.join("; ")
-        ));
-    }
-    let readers: Vec<&str> = tree
-        .ordered()
-        .into_iter()
-        .filter(|s| s.inputs.iter().any(|i| i.var == id))
-        .map(|s| s.id.as_str())
-        .collect();
-    println!(
-        "  the tree assembles. {} row(s) read {id}{}",
-        readers.len(),
-        if readers.is_empty() {
-            String::new()
-        } else {
+        OnStop::new(
+            built,
             format!(
-                ": {} — their answers move with it; `cargo test` checks them",
-                readers.join(", ")
-            )
-        }
-    );
-    println!("\nbuild-node: {id} is built from its method, tested against its author's cases, and connected.");
+                "a case that disagrees goes back to the author; a translation test that fails is a \
+                 translator defect for a developer. Then {again}"
+            ),
+        ),
+        || {
+            let ok = Command::new("cargo")
+                .args(["test", "-q", "-p", &sh.crate_name, "--", &format!("{id}::")])
+                .current_dir(root)
+                .status()
+                .map_err(|e| e.to_string())?
+                .success();
+            if !ok {
+                return Err(format!("{id}: its tests fail"));
+            }
+            Ok(((), format!("{} — its tests pass", sh.crate_name)))
+        },
+    )?;
+
+    run.step(
+        "the author's own code, run again on their cases",
+        OnStop::new(
+            built,
+            format!("take the disagreement to the author, then {again}"),
+        ),
+        || {
+            cmd_rerun(root, &[id])?;
+            Ok(((), String::new()))
+        },
+    )?;
+
+    run.step(
+        "the tests really test: the answer is moved and the tests must notice",
+        OnStop::new(
+            built,
+            format!("add a case the moved answer fails, on the node's form; then {again}"),
+        ),
+        || {
+            crate::cmd_mutate(root, &[id])?;
+            Ok(((), String::new()))
+        },
+    )?;
+
+    run.step(
+        "only now, the interface: the node in the tree",
+        OnStop::new(
+            built,
+            format!("`cargo run -p xtask -- gate {id}` says which check; then {again}"),
+        ),
+        || {
+            crate::cmd_gate(root, &[id])?;
+            let tree = vleo_sheet::load_all(root)?;
+            let checks = vleo_sheet::gate::validate_tree(&tree);
+            let failed: Vec<String> = checks
+                .iter()
+                .filter(|c| c.failed())
+                .map(|c| format!("{} — {:?}", c.name, c.verdict))
+                .collect();
+            if !failed.is_empty() {
+                return Err(format!(
+                    "the tree does not assemble with {id}: {}",
+                    failed.join("; ")
+                ));
+            }
+            let readers: Vec<&str> = tree
+                .ordered()
+                .into_iter()
+                .filter(|s| s.inputs.iter().any(|i| i.var == id))
+                .map(|s| s.id.as_str())
+                .collect();
+            Ok((
+                (),
+                format!(
+                    "the tree assembles. {} row(s) read {id}{}",
+                    readers.len(),
+                    if readers.is_empty() {
+                        String::new()
+                    } else {
+                        format!(
+                            ": {} — their answers move with it; `cargo test` checks them",
+                            readers.join(", ")
+                        )
+                    }
+                ),
+            ))
+        },
+    )?;
+    run.done(&format!(
+        "build-node: {id} is built from its method, tested against its author's cases, and connected."
+    ));
     Ok(())
 }
 

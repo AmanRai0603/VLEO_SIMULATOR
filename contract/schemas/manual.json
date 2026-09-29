@@ -1,0 +1,411 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "manual",
+  "type": "object",
+  "properties": {
+    "ok": {
+      "type": "boolean"
+    },
+    "manual": {
+      "type": "object",
+      "properties": {
+        "layers": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              },
+              "lede": {
+                "type": "string"
+              },
+              "sections": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "who": {
+                      "type": "string"
+                    },
+                    "kind": {
+                      "type": "string"
+                    },
+                    "answer": {
+                      "type": "string"
+                    },
+                    "body": {
+                      "type": "string"
+                    },
+                    "steps": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "say": {
+                            "type": "string"
+                          },
+                          "ui": {
+                            "type": [
+                              "null",
+                              "string"
+                            ]
+                          },
+                          "run": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "check": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "expect": {
+                            "type": [
+                              "null",
+                              "string"
+                            ]
+                          },
+                          "why": {
+                            "type": [
+                              "null",
+                              "string"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "say",
+                          "ui",
+                          "run",
+                          "check",
+                          "expect",
+                          "why"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "title",
+                    "who",
+                    "kind",
+                    "answer",
+                    "body",
+                    "steps"
+                  ]
+                }
+              }
+            },
+            "required": [
+              "id",
+              "title",
+              "lede",
+              "sections"
+            ]
+          }
+        },
+        "commands": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "tool": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "usage": {
+                "type": "string"
+              },
+              "what": {
+                "type": "string"
+              },
+              "who": {
+                "type": "string"
+              },
+              "effect": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "tool",
+              "name",
+              "usage",
+              "what",
+              "who",
+              "effect"
+            ]
+          }
+        },
+        "routes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "method": {
+                "type": "string"
+              },
+              "path": {
+                "type": "string"
+              },
+              "what": {
+                "type": "string"
+              },
+              "writes": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "method",
+              "path",
+              "what",
+              "writes"
+            ]
+          }
+        },
+        "env": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "what": {
+                "type": "string"
+              },
+              "default": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "name",
+              "what",
+              "default"
+            ]
+          }
+        },
+        "folders": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "what": {
+                "type": "string"
+              },
+              "who": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "name",
+              "what",
+              "who"
+            ]
+          }
+        },
+        "docs": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "path": {
+                "type": "string"
+              },
+              "what": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "path",
+              "what"
+            ]
+          }
+        },
+        "cannot": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "place": {
+                "type": "string"
+              },
+              "what": {
+                "type": "string"
+              },
+              "why": {
+                "type": "string"
+              },
+              "instead": {
+                "type": "string"
+              },
+              "who": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "place",
+              "what",
+              "why",
+              "instead",
+              "who"
+            ]
+          }
+        }
+      },
+      "required": [
+        "layers",
+        "commands",
+        "routes",
+        "env",
+        "folders",
+        "docs",
+        "cannot"
+      ]
+    },
+    "live": {
+      "type": "object",
+      "properties": {
+        "case_path": {
+          "type": "string"
+        },
+        "case_stored": {
+          "type": "boolean"
+        },
+        "case_changed": {
+          "type": "number"
+        },
+        "port": {
+          "type": "number"
+        },
+        "rows": {
+          "type": "number"
+        },
+        "published": {
+          "type": "number"
+        },
+        "seeded": {
+          "type": "number"
+        },
+        "fields": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "field": {
+                "type": "string"
+              },
+              "group": {
+                "type": "string"
+              },
+              "ask": {
+                "type": "string"
+              },
+              "why": {
+                "type": "string"
+              },
+              "shape": {
+                "type": "string"
+              },
+              "blocks": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "field",
+              "group",
+              "ask",
+              "why",
+              "shape",
+              "blocks"
+            ]
+          }
+        },
+        "arrays": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "label": {
+                "type": "string"
+              },
+              "why": {
+                "type": "string"
+              },
+              "end_only": {
+                "type": "boolean"
+              },
+              "keys": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            },
+            "required": [
+              "name",
+              "label",
+              "why",
+              "end_only",
+              "keys"
+            ]
+          }
+        },
+        "locked": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "field": {
+                "type": "string"
+              },
+              "why": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "field",
+              "why"
+            ]
+          }
+        }
+      },
+      "required": [
+        "case_path",
+        "case_stored",
+        "case_changed",
+        "port",
+        "rows",
+        "published",
+        "seeded",
+        "fields",
+        "arrays",
+        "locked"
+      ]
+    }
+  },
+  "required": [
+    "ok",
+    "manual",
+    "live"
+  ]
+}

@@ -1,0 +1,134 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "derisk",
+  "type": "object",
+  "properties": {
+    "ok": {
+      "type": "boolean"
+    },
+    "changes": {
+      "type": "number"
+    },
+    "published": {
+      "type": "number"
+    },
+    "versioned": {
+      "type": "number"
+    },
+    "register": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "owner": {
+            "type": "string"
+          },
+          "why": {
+            "type": "string"
+          },
+          "row": {
+            "type": "string"
+          },
+          "row_label": {
+            "type": "string"
+          },
+          "registered": {
+            "type": "string"
+          },
+          "now": {
+            "type": "string"
+          },
+          "moves": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "node": {
+                  "type": "string"
+                },
+                "label": {
+                  "type": "string"
+                },
+                "n": {
+                  "type": "number"
+                },
+                "date": {
+                  "type": "string"
+                },
+                "release": {
+                  "type": "string"
+                },
+                "what": {
+                  "type": "string"
+                },
+                "learned": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "node",
+                "label",
+                "n",
+                "date",
+                "release",
+                "what",
+                "learned"
+              ]
+            }
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "owner",
+          "why",
+          "row",
+          "row_label",
+          "registered",
+          "now",
+          "moves"
+        ]
+      }
+    },
+    "nodes": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "n": {
+            "type": "number"
+          },
+          "release": {
+            "type": "string"
+          },
+          "rests_on": {
+            "type": "string"
+          },
+          "learned": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "n",
+          "release",
+          "rests_on",
+          "learned"
+        ]
+      }
+    }
+  },
+  "required": [
+    "ok",
+    "changes",
+    "published",
+    "versioned",
+    "register",
+    "nodes"
+  ]
+}

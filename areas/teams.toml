@@ -14,6 +14,18 @@
 [maintainers]
 members = ["@AmanRai0603"]
 
+# THE THREE PARTS (docs/ARCHITECTURE.html, section 2). The frontend owns what
+# a person sees — the page, the panels, their checks and the mock engine; the
+# backend owns the engine, the server and the tools that build them; the data
+# team owns how data is kept and the file formats. contract/ is where the
+# frontend and the backend meet, so it is owned by both — and its file
+# formats by all three. They override the maintainers on their own paths,
+# and each node folder is still owned by its subsystem's developers.
+[parts]
+frontend = ["@AmanRai0603"]
+backend = ["@AmanRai0603"]
+data = ["@AmanRai0603"]
+
 [developers]
 aero = ["@AmanRai0603"]
 avionics = ["@AmanRai0603"]

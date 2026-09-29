@@ -1,0 +1,20 @@
+{
+  "ok": true,
+  "x_id": "sw_storm_design_level",
+  "y_id": "sw_ap_design",
+  "x_unit": "-",
+  "y_unit": "-",
+  "x_factor": 1,
+  "y_factor": 1,
+  "x": [
+    1,
+    2,
+    3
+  ],
+  "y": [
+    48,
+    80,
+    132
+  ],
+  "refused": []
+}

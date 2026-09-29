@@ -1,0 +1,326 @@
+# The contract between the frontend and the backend: every route the engine
+# serves, what kind of answer it gives, and the requests the contract tests
+# make of it (crates/vleo-server/tests/the_contract_holds.rs).
+#
+# Reviewed by both sides — see contract/README.md. Inside /v1 a change may
+# only ADD a route or a field. Anything that removes or re-means one is /v2,
+# served beside /v1 for one release.
+#
+# Each route:
+#   method, path   as the manual lists it (docs/manual.toml [[route]])
+#   answer         json | html | csv | css | js
+#   schema         for a json answer: contract/schemas/<schema>.json
+#   format         for a csv answer that is one of the file formats:
+#                  contract/formats/<format>.toml
+#   contains       for an html, css or js answer: text it must carry
+#
+# Each example is a request the tests make, in the order written here — the
+# results routes save, read, upload and delete in that order. A json answer is
+# recorded as contract/examples/<name>.json, and the mock engine serves it.
+#   path     when the route has a part in its path (default: the route's)
+#   params   [key, value] pairs: the query for GET, the body for POST.
+#            "@saved" is the `file` of the last result saved or uploaded;
+#            "@get:<path>" is the text of that GET, made first.
+
+# --- the page ---------------------------------------------------------------
+
+[[route]]
+method = "GET"
+path = "/"
+answer = "html"
+contains = "<script"
+
+[[route]]
+method = "GET"
+path = "/app.css"
+answer = "css"
+contains = ":root"
+
+[[route]]
+method = "GET"
+path = "/js/<module>"
+answer = "js"
+contains = "import"
+[[route.example]]
+name = "js-app"
+path = "/js/app.js"
+
+# --- what the engine is -------------------------------------------------------
+
+[[route]]
+method = "GET"
+path = "/v1/version"
+answer = "json"
+schema = "version"
+[[route.example]]
+name = "version"
+
+[[route]]
+method = "GET"
+path = "/v1/index"
+answer = "json"
+schema = "index"
+[[route.example]]
+name = "index"
+
+[[route]]
+method = "GET"
+path = "/v1/manual"
+answer = "json"
+schema = "manual"
+[[route.example]]
+name = "manual"
+
+[[route]]
+method = "GET"
+path = "/v1/fragment/<id>"
+answer = "html"
+contains = "sw_ap_design"
+[[route.example]]
+name = "fragment-sw_ap_design"
+path = "/v1/fragment/sw_ap_design"
+
+[[route]]
+method = "GET"
+path = "/v1/node/<id>"
+answer = "json"
+schema = "node"
+[[route.example]]
+name = "node-sw_ap_design"
+path = "/v1/node/sw_ap_design"
+
+[[route]]
+method = "GET"
+path = "/v1/derisk"
+answer = "json"
+schema = "derisk"
+[[route.example]]
+name = "derisk"
+
+# --- running ------------------------------------------------------------------
+
+[[route]]
+method = "GET"
+path = "/v1/run"
+answer = "json"
+schema = "run"
+[[route.example]]
+name = "run-sw_ap_design"
+params = [["node", "sw_ap_design"], ["mode", "branch"]]
+[[route.example]]
+name = "run-refused"
+params = [["node", "sw_ap_design"], ["set", "sw_ap_design:100"]]
+
+[[route]]
+method = "POST"
+path = "/v1/run"
+answer = "json"
+schema = "run"
+[[route.example]]
+name = "run-closure"
+params = [["node", "l3_solar_ach_01"], ["mode", "branch"]]
+
+[[route]]
+method = "GET"
+path = "/v1/sweep"
+answer = "json"
+schema = "sweep"
+[[route.example]]
+name = "sweep-sw_ap_design"
+params = [["node", "sw_ap_design"], ["over", "sw_storm_design_level"], ["from", "1"], ["to", "3"], ["points", "3"], ["mode", "branch"]]
+
+[[route]]
+method = "GET"
+path = "/v1/probe"
+answer = "json"
+schema = "probe"
+[[route.example]]
+name = "probe-sw_ap_design"
+params = [["node", "sw_ap_design"], ["in", "sw_storm_design_level:2"]]
+
+[[route]]
+method = "GET"
+path = "/v1/levers"
+answer = "json"
+schema = "levers"
+[[route.example]]
+name = "levers-sw_ap_design"
+params = [["node", "sw_ap_design"]]
+
+[[route]]
+method = "GET"
+path = "/v1/branches"
+answer = "json"
+schema = "branches"
+[[route.example]]
+name = "branches-sw_ap_design"
+params = [["node", "sw_ap_design"]]
+
+# --- the case -----------------------------------------------------------------
+
+[[route]]
+method = "GET"
+path = "/v1/inputs"
+answer = "json"
+schema = "inputs"
+[[route.example]]
+name = "inputs"
+
+[[route]]
+method = "GET"
+path = "/v1/inputs.csv"
+answer = "csv"
+format = "case"
+[[route.example]]
+name = "inputs-csv"
+
+[[route]]
+method = "POST"
+path = "/v1/inputs/check"
+answer = "json"
+schema = "inputs-reading"
+[[route.example]]
+name = "inputs-check"
+params = [["set", "sw_storm_design_level:2"]]
+
+[[route]]
+method = "POST"
+path = "/v1/inputs"
+answer = "json"
+schema = "inputs-reading"
+[[route.example]]
+name = "inputs-save"
+params = [["set", "sw_storm_design_level:2"]]
+
+[[route]]
+method = "POST"
+path = "/v1/inputs/reset"
+answer = "json"
+schema = "inputs-reset"
+[[route.example]]
+name = "inputs-reset"
+
+# --- forms --------------------------------------------------------------------
+
+[[route]]
+method = "GET"
+path = "/v1/form/<id>"
+answer = "html"
+contains = "orbit_velocity"
+[[route.example]]
+name = "form-orbit_velocity"
+path = "/v1/form/orbit_velocity"
+
+[[route]]
+method = "POST"
+path = "/v1/form/check"
+answer = "json"
+schema = "form-check"
+[[route.example]]
+name = "form-check"
+params = [["html", "@get:/v1/form/orbit_velocity"]]
+
+# --- results: saved, read, sent, taken back -----------------------------------
+
+[[route]]
+method = "POST"
+path = "/v1/results/save"
+answer = "json"
+schema = "result-kept"
+[[route.example]]
+name = "results-save"
+params = [["node", "sw_ap_design"], ["mode", "branch"], ["label", "the contract"]]
+[[route.example]]
+name = "results-save-sweep"
+params = [["node", "sw_ap_design"], ["mode", "branch"], ["over", "sw_storm_design_level"], ["from", "1"], ["to", "3"], ["points", "3"], ["label", "the contract, swept"]]
+
+[[route]]
+method = "GET"
+path = "/v1/results"
+answer = "json"
+schema = "results"
+[[route.example]]
+name = "results"
+
+[[route]]
+method = "GET"
+path = "/v1/result"
+answer = "json"
+schema = "result"
+[[route.example]]
+name = "result"
+params = [["name", "@saved"]]
+
+[[route]]
+method = "GET"
+path = "/v1/result.csv"
+answer = "csv"
+format = "result"
+[[route.example]]
+name = "result-csv"
+params = [["name", "@saved"]]
+
+[[route]]
+method = "GET"
+path = "/v1/result.sweep.csv"
+answer = "csv"
+format = "sweep"
+[[route.example]]
+name = "result-sweep-csv"
+params = [["name", "@saved"]]
+
+[[route]]
+method = "GET"
+path = "/v1/result.html"
+answer = "html"
+contains = "id=\"vleo-result\""
+[[route.example]]
+name = "result-html"
+params = [["name", "@saved"]]
+
+[[route]]
+method = "POST"
+path = "/v1/results/upload"
+answer = "json"
+schema = "result-kept"
+[[route.example]]
+name = "results-upload"
+params = [["csv", "@get:/v1/result.html?name=@saved"]]
+
+[[route]]
+method = "POST"
+path = "/v1/results/as-case"
+answer = "json"
+schema = "inputs-reading"
+[[route.example]]
+name = "results-as-case"
+params = [["name", "@saved"]]
+
+[[route]]
+method = "POST"
+path = "/v1/results/delete"
+answer = "json"
+schema = "ok"
+[[route.example]]
+name = "results-delete"
+params = [["name", "@saved"]]
+
+# --- reference data ------------------------------------------------------------
+
+[[route]]
+method = "GET"
+path = "/v1/bundle/<name>"
+answer = "csv"
+contains = ","
+[[route.example]]
+name = "bundle-monthly_means"
+path = "/v1/bundle/solar-weather/monthly_means.csv"
+
+[[route]]
+method = "GET"
+path = "/v1/parity/<name>"
+answer = "csv"
+contains = ","
+[[route.example]]
+name = "parity-mission_drivers"
+path = "/v1/parity/mission_drivers.csv"

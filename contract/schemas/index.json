@@ -1,0 +1,262 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "index",
+  "type": "object",
+  "properties": {
+    "nodes": {
+      "type": "number"
+    },
+    "rows": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "i": {
+            "type": "number"
+          },
+          "id": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "parent": {
+            "type": "string"
+          },
+          "layer": {
+            "type": "number"
+          },
+          "order": {
+            "type": "number"
+          },
+          "crosses": {
+            "type": "string"
+          },
+          "sub": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string"
+          },
+          "state": {
+            "type": "string"
+          },
+          "fn": {
+            "type": "boolean"
+          },
+          "derived": {
+            "type": "boolean"
+          },
+          "kpi_reach": {
+            "type": "boolean"
+          },
+          "readby": {
+            "type": "number"
+          },
+          "by": {
+            "type": "string"
+          },
+          "owner": {
+            "type": "string"
+          },
+          "tier": {
+            "type": "string"
+          },
+          "unit": {
+            "type": "string"
+          },
+          "symbol": {
+            "type": "string"
+          },
+          "question": {
+            "type": "string"
+          },
+          "lo": {
+            "type": "number"
+          },
+          "hi": {
+            "type": "number"
+          },
+          "factor": {
+            "type": "number"
+          },
+          "why_lo": {
+            "type": "string"
+          },
+          "why_hi": {
+            "type": "string"
+          },
+          "fixtures": {
+            "type": "number"
+          },
+          "in": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          },
+          "kpi": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "i",
+          "id",
+          "label",
+          "parent",
+          "layer",
+          "order",
+          "crosses",
+          "sub",
+          "kind",
+          "state",
+          "fn",
+          "derived",
+          "kpi_reach",
+          "readby",
+          "by",
+          "owner",
+          "tier",
+          "unit",
+          "symbol",
+          "question",
+          "lo",
+          "hi",
+          "factor",
+          "why_lo",
+          "why_hi",
+          "fixtures",
+          "in",
+          "kpi"
+        ]
+      }
+    },
+    "groups": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "parent": {
+            "type": "string"
+          },
+          "owner": {
+            "type": "string"
+          },
+          "layer": {
+            "type": "number"
+          },
+          "order": {
+            "type": "number"
+          },
+          "box": {
+            "type": "boolean"
+          },
+          "tone": {
+            "type": "string"
+          },
+          "cases": {
+            "type": "array"
+          }
+        },
+        "required": [
+          "id",
+          "label",
+          "parent",
+          "owner",
+          "layer",
+          "order",
+          "box",
+          "tone",
+          "cases"
+        ]
+      }
+    },
+    "relations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "from": {
+            "type": "string"
+          },
+          "to": {
+            "type": "string"
+          },
+          "why": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "from",
+          "to",
+          "why"
+        ]
+      }
+    },
+    "crates": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "nodes": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "name",
+          "nodes"
+        ]
+      }
+    },
+    "cases": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "note": {
+            "type": "string"
+          },
+          "cycles": {
+            "type": "number"
+          },
+          "supply": {
+            "type": "array"
+          }
+        },
+        "required": [
+          "id",
+          "label",
+          "note",
+          "cycles",
+          "supply"
+        ]
+      }
+    }
+  },
+  "required": [
+    "nodes",
+    "rows",
+    "groups",
+    "relations",
+    "crates",
+    "cases"
+  ]
+}

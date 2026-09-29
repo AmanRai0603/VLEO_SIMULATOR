@@ -454,6 +454,27 @@ jobs:
           done < changed-nodes.txt
           exit $rc
 
+  # THE FRONTEND ON ITS OWN. A frontend developer works against the contract,
+  # not a build of the engine (contract/README.md), so this job has no Rust
+  # toolchain at all: the page, served by tools/mock_engine.py from the
+  # recorded answers in contract/examples, must load, draw the tree, run a row
+  # and list results in a real browser. That the engine keeps the contract is
+  # the contract tests' job, in `cargo test`.
+  frontend-mock:
+    name: the page on the mock engine, no Rust
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: the browser
+        run: |
+          pip install --quiet playwright
+          python3 -m playwright install --with-deps chromium
+      - name: the mock engine checks itself
+        run: python3 tools/mock_check.py --selftest
+      - name: the page, on recorded answers only
+        run: python3 tools/mock_check.py
+
   panels:
     name: the panels render, move and match
     runs-on: ubuntu-latest

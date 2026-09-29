@@ -202,17 +202,20 @@ The **Forms** tab has all three in one place.
 | form | who fills it | what it changes | applied by |
 |---|---|---|---|
 | the case CSV — *Inputs* | anyone using the tool | the values a run is on | the tool itself, on upload; never git |
-| a result — a CSV, or its HTML report | saved from a run | nothing: it is a record of what a run returned and the inputs it ran on | the tool, on the *Results* tab — shown without running |
+| a result — its folder, its CSV, or its HTML report | saved from a run or a sweep | nothing: it is a record of what a run returned and the inputs it ran on | the tool, on the *Results* tab — shown without running |
 | a node's form — one HTML file per node, or per new node | whoever should say what that node is | the node's sheet: its question, relation, bounds, steps, assumptions — or a new node in its place in the tree | a developer, `xtask intake <file> --apply`, then git and a release |
 
 **A result is kept, sent and seen again without running.** Save one after a run
-(`vleo run … --save <file.csv>`, or *save this result* in the browser) and the
-tool writes every value returned, every row blocked and every input it ran on
-to one CSV, kept in `~/.vleo/results/` or wherever `VLEO_RESULTS` points. The
-*Results* tab lists them, shows any of them as it was, compares two, downloads
-one as a report page that reads without the tool and carries its CSV inside, and
-can make a result's inputs the case again. `vleo result <file>` does the same
-from a terminal.
+or a sweep (*save this result* or *save this sweep* in the browser, `vleo run …
+--keep` in a terminal) and the tool keeps a folder — every value returned, every
+row blocked, every input it ran on, the sweep's points, and a report page — in
+`~/.vleo/results/` or wherever `VLEO_RESULTS` points. **A question already kept
+is not run again:** the same row, inputs, engine and data is shown from its saved
+result, which the page names, and saved once. The *Results* tab lists them,
+shows any of them as it was — sweeps drawn again from their points — compares
+two, downloads the report page that reads without the tool and uploads back
+whole, and can make a result's inputs the case again. `vleo result <folder>` does
+the same from a terminal.
 
 A node's form is downloaded from the node's page or the Forms tab (or
 `xtask form <node>`; `xtask form --new` for a node the design does not have

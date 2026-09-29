@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "branches",
+  "type": "object",
+  "properties": {
+    "ok": {
+      "type": "boolean"
+    },
+    "node": {
+      "type": "string"
+    },
+    "read_by": {
+      "type": "number"
+    },
+    "branches": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "sub": {
+            "type": "string"
+          },
+          "rows": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "id",
+          "label",
+          "sub",
+          "rows"
+        ]
+      }
+    }
+  },
+  "required": [
+    "ok",
+    "node",
+    "read_by",
+    "branches"
+  ]
+}

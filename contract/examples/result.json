@@ -1,0 +1,1365 @@
+{
+  "ok": true,
+  "file": "2026-09-29T18-50-02Z_sw_ap_design_889478e62c60599b",
+  "target": "sw_ap_design",
+  "name": "the contract, swept",
+  "saved": "2026-09-29T18:50:02Z",
+  "mode": "branch",
+  "chain": "075c5d",
+  "kernel": "d0a5e2",
+  "graph": "adb684",
+  "template": "48afb0100e92",
+  "template_current": true,
+  "data": "solar-drivers@2026.09.04#54784567db11b868 solar-weather@2026.09.14#f3557eb8443bfdaa",
+  "ran": 2,
+  "blocked": 0,
+  "changed": 0,
+  "question": "889478e62c60599b",
+  "sweep": {
+    "over": "sw_storm_design_level",
+    "points": 3,
+    "refused": 0
+  },
+  "versions": [
+    {
+      "node": "sw_storm_design_level",
+      "n": 1,
+      "release": "0.1.1"
+    },
+    {
+      "node": "sw_ap_design",
+      "n": 1,
+      "release": "0.1.1"
+    }
+  ],
+  "moved": [],
+  "answer": {
+    "value": "132",
+    "unit": "-"
+  },
+  "inputs": [
+    {
+      "id": "aero_appendage_area",
+      "name": "Appendage frontal area",
+      "value": "0.05",
+      "unit": "m^2",
+      "si": 0.05,
+      "credibility": "",
+      "governing": "",
+      "note": "default"
+    },
+    {
+      "id": "aero_body_diameter",
+      "name": "Body diameter",
+      "value": "0.6",
+      "unit": "m",
+      "si": 0.6,
+      "credibility": "",
+      "governing": "",
+      "note": "default"
+    },
+    {
+      "id": "aero_body_length",
+      "name": "Body length",
+      "value": "2",
+      "unit": "m",
+      "si": 2,
+      "credibility": "",
+      "governing": "",
+      "note": "default"
+    },
+    {
+      "id": "aero_cp_cm_offset",
+      "name": "Centre of pressure to centre of mass offset",
+      "value": "0.15",
+      "unit": "m",
+      "si": 0.15,
+      "credibility": "",
+      "governing": "",
+      "note": "default"
+    },
+    {
+      "id": "com_antenna_diameter",
+      "name": "Spacecraft antenna diameter",
+      "value": "0.3",
+      "unit": "m",
+      "si": 0.3,
+      "credibility": "",
+      "governing": "",
+      "note": "default"
+    },
+    {
+      "id": "com_antenna_efficiency",
+      "name": "Antenna aperture efficiency",
+      "value": "0.6",
+      "unit": "-",
+      "si": 0.6,
+      "credibility": "",
+      "governing": "",
+      "note": "default"
+    },
+    {
+      "id": "com_atmospheric_loss",
+      "name": "Atmospheric and polarisation loss",
+      "value": "1.8",
+      "unit": "-",
+      "si": 1.8,
+      "credibility": "",
+      "governing": "",
+      "note": "default"
+    },
+    {
+      "id": "com_frequency",
+      "name": "Downlink carrier frequency",
+      "value": "8.2",
+      "unit": "GHz",
+      "si": 8199999999.999999,
+      "credibility": "",
+      "governing": "",
+      "note": "default"
+    },
+    {
+      "id": "com_gs_antenna_diameter",
+      "name": "Ground station antenna diameter",
+      "value": "5.4",
+      "unit": "m",
+      "si": 5.4,
+      "credibility": "",
+      "governing": "",
+      "note": "default"
+    },
+    {
+      "id": "com_gs_noise_temperature",
+      "name": "Ground station antenna noise temperature",
+      "value": "60",
+      "unit": "K",
+      "si": 60,
+      "credibility": "",
+      "governing": "",
+      "note": "default"
+    },
+    {
+      "id": "com_implementation_loss",
+      "name": "Implementation loss",
+      "value": "1.5",
+      "unit": "-",
+      "si": 1.5,
+      "credibility": "",
+      "governing": "",
+      "note": "default"
+    },
+    {
+      "id": "com_line_loss",
+      "name": "Transmit line loss",
+      "value": "1.2",
+      "unit": "-",
+      "si": 1.2,
+      "credibility": "",
+      "governing": "",
+      "note": "default"
+    },
+    {
+      "id": "com_link_margin_required",
+      "name": "Required link margin",
+      "value": "3",
+      "unit": "-",
+      "si": 3,
+      "credibility": "",
+      "governing": "",
+      "note": "default"
+    },
+    {
+      "id": "com_passes_per_day",
+      "name": "Usable passes per day",
+      "value": "9",
+      "unit": "-",
+      "si": 9,
+      "credibility": "",
+      "governing": "",
+      "note": "default"
+    },
+    {
+      "id": "com_required_ebn0",
+      "name": "Required energy per bit over noise density",
+      "value": "4.5",
+      "unit": "-",
+      "si": 4.5,
+      "credibility": "",
+      "governing": "",
+      "note": "default"
+    },
+    {
+      "id": "com_tx_power",
+      "name": "Transmitter radio-frequency output power",
+      "value": "8",
+      "unit": "W",
+      "si": 8,
+      "credibility": "",
+      "governing": "",
+      "note": "default"
+    },
+    {
+      "id": "cost_annual_operations",
+      "name": "Annual operations cost",
+      "value": "4.5",
+      "unit": "MUSD",
+      "si": 4500000,
+      "credibility": "",
+      "governing": "",
+      "note": "default"
+    },
+    {
+      "id": "cost_inflation",
+      "name": "Annual inflation rate",
+      "value": "0.03",
+      "unit": "-",
+      "si": 0.03,
+      "credibility": "",
+      "governing": "",
+      "note": "default"
+    },
+    {
+      "id": "cost_launch_per_satellite",
+      "name": "Launch cost per satellite",
+      "value": "1.8",
+      "unit": "MUSD",
+      "si": 1800000,
+      "credibility": "",
+      "governing": "",
+      "note": "default"
+    },
+    {
+      "id": "cost_learning_slope",
+      "name": "Production learning curve slope",
+      "value": "0.92",
+      "unit": "-",
+      "si": 0.92,
+      "credibility": "",
+      "governing": "",
+      "note": "default"
+    },
+    {
+      "id": "gnc_alignment_error",
+      "name": "Payload to sensor alignment error",
+      "value": "30",
+      "unit": "arcsec",
+      "si": 0.0001454441043328608,
+      "credibility": "",
+      "governing": "",
+      "note": "default"
+    },
+    {
+      "id": "gnc_control_error",
+      "name": "Attitude control error",
+      "value": "40",
+      "unit": "arcsec",
+      "si": 0.0001939254724438144,
+      "credibility": "",
+      "governing": "",
+      "note": "default"
+    },
+    {
+      "id": "gnc_dump_time",
+      "name": "Momentum dump interval",
+      "value": "45",
+      "unit": "min",
+      "si": 2700,
+      "credibility": "",
+      "governing": "",
+      "note": "default"
+    },
+    {
+      "id": "gnc_gdop",
+      "name": "Geometric dilution of precision",
+      "value": "2.5",
+      "unit": "-",
+      "si": 2.5,
+      "credibility": "",
+      "governing": "",
+      "note": "default"
+    },
+    {
+      "id": "gnc_inertia_max",
+      "name": "Largest principal moment of inertia",
+      "value": "8",
+      "unit": "-",
+      "si": 8,
+      "credibility": "",
+      "governing": "",
+      "note": "default"
+    },
+    {
+      "id": "gnc_inertia_min",
+      "name": "Smallest principal moment of inertia",
+      "value": "1.2",
+      "unit": "-",
+      "si": 1.2,
+      "credibility": "",
+      "governing": "",
+      "note": "default"
+    },
+    {
+      "id": "gnc_magnetic_latitude",
+      "name": "Magnetic latitude",
+      "value": "45",
+      "unit": "deg",
+      "si": 0.7853981633974483,
+      "credibility": "",
+      "governing": "",
+      "note": "default"
+    },
+    {
+      "id": "gnc_residual_dipole",
+      "name": "Residual magnetic dipole",
+      "value": "0.05",
+      "unit": "A.m^2",
+      "si": 0.05,
+      "credibility": "",
+      "governing": "",
+      "note": "default"
+    },
+    {
+      "id": "gnc_sensor_noise",
+      "name": "Attitude sensor noise",
+      "value": "12",
+      "unit": "arcsec",
+      "si": 0.00005817764173314432,
+      "credibility": "",
+      "governing": "",
+      "note": "default"
+    },
+    {
+      "id": "gnc_thermal_distortion",
+      "name": "Thermal distortion error",
+      "value": "20",
+      "unit": "arcsec",
+      "si": 0.0000969627362219072,
+      "credibility": "",
+      "governing": "",
+      "note": "default"
+    },
+    {
+      "id": "gnc_user_range_error",
+      "name": "GNSS user range error",
+      "value": "1.5",
+      "unit": "m",
+      "si": 1.5,
+      "credibility": "",
+      "governing": "",
+      "note": "default"
+    },
+    {
+      "id": "kpi_availability_required",
+      "name": "Service availability — required",
+      "value": "0.99",
+      "unit": "-",
+      "si": 0.99,
+      "credibility": "",
+      "governing": "",
+      "note": "default"
+    },
+    {
+      "id": "kpi_cost_per_year_required",
+      "name": "Cost per operational year — required",
+      "value": "45",
+      "unit": "MUSD",
+      "si": 45000000,
+      "credibility": "",
+      "governing": "",
+      "note": "default"
+    },
+    {
+      "id": "kpi_data_volume_required",
+      "name": "Daily downlink volume — required",
+      "value": "500",
+      "unit": "Gbit",
+      "si": 500000000000,
+      "credibility": "",
+      "governing": "",
+      "note": "default"
+    },
+    {
+      "id": "kpi_geolocation_required",
+      "name": "Emitter geolocation accuracy — required",
+      "value": "500",
+      "unit": "m",
+      "si": 500,
+      "credibility": "",
+      "governing": "",
+      "note": "default"
+    },
+    {
+      "id": "kpi_gsd_required",
+      "name": "Ground sample distance — required",
+      "value": "1",
+      "unit": "m",
+      "si": 1,
+      "credibility": "",
+      "governing": "",
+      "note": "default"
+    },
+    {
+      "id": "kpi_latency_required",
+      "name": "End to end latency — required",
+      "value": "30",
+      "unit": "min",
+      "si": 1800,
+      "credibility": "",
+      "governing": "",
+      "note": "default"
+    },
+    {
+      "id": "kpi_mass_margin_required",
+      "name": "Mass margin — required",
+      "value": "0.1",
+      "unit": "-",
+      "si": 0.1,
+      "credibility": "",
+      "governing": "",
+      "note": "default"
+    },
+    {
+      "id": "kpi_power_margin_required",
+      "name": "Power margin — required",
+      "value": "0.2",
+      "unit": "-",
+      "si": 0.2,
+      "credibility": "",
+      "governing": "",
+      "note": "default"
+    },
+    {
+      "id": "kpi_revisit_required",
+      "name": "Mean revisit time — required",
+      "value": "6",
+      "unit": "h",
+      "si": 21600,
+      "credibility": "",
+      "governing": "",
+      "note": "default"
+    },
+    {
+      "id": "kpi_service_lifetime_required",
+      "name": "Service lifetime — required",
+      "value": "5",
+      "unit": "yr",
+      "si": 157788000,
+      "credibility": "",
+      "governing": "",
+      "note": "default"
+    },
+    {
+      "id": "kpi_thermal_margin_required",
+      "name": "Thermal margin — required",
+      "value": "10",
+      "unit": "K",
+      "si": 10,
+      "credibility": "",
+      "governing": "",
+      "note": "default"
+    },
+    {
+      "id": "kpi_thrust_margin_required",
+      "name": "Thrust to drag closure — required",
+      "value": "1",
+      "unit": "-",
+      "si": 1,
+      "credibility": "",
+      "governing": "",
+      "note": "default"
+    },
+    {
+      "id": "l3_solar_req_01",
+      "name": "Required — F10.7, sustained",
+      "value": "260",
+      "unit": "-",
+      "si": 260,
+      "credibility": "",
+      "governing": "",
+      "note": "default"
+    },
+    {
+      "id": "l3_solar_req_02",
+      "name": "Required — F10.7, single day",
+      "value": "350",
+      "unit": "-",
+      "si": 350,
+      "credibility": "",
+      "governing": "",
+      "note": "default"
+    },
+    {
+      "id": "l3_solar_req_03",
+      "name": "Required — Ap, survival",
+      "value": "207",
+      "unit": "-",
+      "si": 207,
+      "credibility": "",
+      "governing": "",
+      "note": "default"
+    },
+    {
+      "id": "l3_solar_req_04",
+      "name": "Required — Ap, sustained",
+      "value": "48",
+      "unit": "-",
+      "si": 48,
+      "credibility": "",
+      "governing": "",
+      "note": "default"
+    },
+    {
+      "id": "l3_solar_req_05",
+      "name": "Required — Ap, single day",
+      "value": "132",
+      "unit": "-",
+      "si": 132,
+      "credibility": "",
+      "governing": "",
+      "note": "default"
+    },
+    {
+      "id": "mass_avionics",
+      "name": "Avionics mass",
+      "value": "9",
+      "unit": "kg",
+      "si": 9,
+      "credibility": "",
+      "governing": "",
+      "note": "default"
+    },
+    {
+      "id": "mass_comms_hw",
+      "name": "Communications hardware mass",
+      "value": "7.5",
+      "unit": "kg",
+      "si": 7.5,
+      "credibility": "",
+      "governing": "",
+      "note": "default"
+    },
+    {
+      "id": "mass_gnc_hw",
+      "name": "GNC hardware mass",
+      "value": "11",
+      "unit": "kg",
+      "si": 11,
+      "credibility": "",
+      "governing": "",
+      "note": "default"
+    },
+    {
+      "id": "mass_harness",
+      "name": "Harness and thermal hardware mass",
+      "value": "12",
+      "unit": "kg",
+      "si": 12,
+      "credibility": "",
+      "governing": "",
+      "note": "default"
+    },
+    {
+      "id": "mass_limit",
+      "name": "Mass limit",
+      "value": "250",
+      "unit": "kg",
+      "si": 250,
+      "credibility": "",
+      "governing": "",
+      "note": "default"
+    },
+    {
+      "id": "mass_payload",
+      "name": "Payload mass",
+      "value": "55",
+      "unit": "kg",
+      "si": 55,
+      "credibility": "",
+      "governing": "",
+      "note": "default"
+    },
+    {
+      "id": "mass_propulsion_hw",
+      "name": "Propulsion hardware mass",
+      "value": "26",
+      "unit": "kg",
+      "si": 26,
+      "credibility": "",
+      "governing": "",
+      "note": "default"
+    },
+    {
+      "id": "mass_structure",
+      "name": "Structure and mechanisms mass",
+      "value": "38",
+      "unit": "kg",
+      "si": 38,
+      "credibility": "",
+      "governing": "",
+      "note": "default"
+    },
+    {
+      "id": "mass_system_margin",
+      "name": "System-level mass margin",
+      "value": "0.2",
+      "unit": "-",
+      "si": 0.2,
+      "credibility": "",
+      "governing": "",
+      "note": "default"
+    },
+    {
+      "id": "mis_delivery_time",
+      "name": "Delivery time to the customer",
+      "value": "3",
+      "unit": "min",
+      "si": 180,
+      "credibility": "",
+      "governing": "",
+      "note": "default"
+    },
+    {
+      "id": "mis_processing_time",
+      "name": "Ground processing time",
+      "value": "8",
+      "unit": "min",
+      "si": 480,
+      "credibility": "",
+      "governing": "",
+      "note": "default"
+    },
+    {
+      "id": "mis_satellites",
+      "name": "Number of satellites",
+      "value": "24",
+      "unit": "-",
+      "si": 24,
+      "credibility": "",
+      "governing": "",
+      "note": "default"
+    },
+    {
+      "id": "mis_unit_availability",
+      "name": "Single satellite availability",
+      "value": "0.97",
+      "unit": "-",
+      "si": 0.97,
+      "credibility": "",
+      "governing": "",
+      "note": "default"
+    },
+    {
+      "id": "pay_aperture",
+      "name": "Optical aperture diameter",
+      "value": "0.3",
+      "unit": "m",
+      "si": 0.3,
+      "credibility": "",
+      "governing": "",
+      "note": "default"
+    },
+    {
+      "id": "pay_bits_per_pixel",
+      "name": "Bits per pixel",
+      "value": "12",
+      "unit": "-",
+      "si": 12,
+      "credibility": "",
+      "governing": "",
+      "note": "default"
+    },
+    {
+      "id": "pay_compression",
+      "name": "Image compression ratio",
+      "value": "3",
+      "unit": "-",
+      "si": 3,
+      "credibility": "",
+      "governing": "",
+      "note": "default"
+    },
+    {
+      "id": "pay_focal_length",
+      "name": "Optical focal length",
+      "value": "2.4",
+      "unit": "m",
+      "si": 2.4,
+      "credibility": "",
+      "governing": "",
+      "note": "default"
+    },
+    {
+      "id": "pay_pixel_pitch",
+      "name": "Detector pixel pitch",
+      "value": "5.5",
+      "unit": "um",
+      "si": 0.0000055,
+      "credibility": "",
+      "governing": "",
+      "note": "default"
+    },
+    {
+      "id": "pay_pixels_across",
+      "name": "Detector pixels across track",
+      "value": "8192",
+      "unit": "-",
+      "si": 8192,
+      "credibility": "",
+      "governing": "",
+      "note": "default"
+    },
+    {
+      "id": "pay_power",
+      "name": "Payload orbit-average power",
+      "value": "120",
+      "unit": "W",
+      "si": 120,
+      "credibility": "",
+      "governing": "",
+      "note": "default"
+    },
+    {
+      "id": "pay_quantum_efficiency",
+      "name": "Detector quantum efficiency",
+      "value": "0.75",
+      "unit": "-",
+      "si": 0.75,
+      "credibility": "",
+      "governing": "",
+      "note": "default"
+    },
+    {
+      "id": "pay_radiance",
+      "name": "At-aperture spectral radiance",
+      "value": "60",
+      "unit": "-",
+      "si": 60,
+      "credibility": "",
+      "governing": "",
+      "note": "default"
+    },
+    {
+      "id": "pay_read_noise",
+      "name": "Detector read noise",
+      "value": "8",
+      "unit": "-",
+      "si": 8,
+      "credibility": "",
+      "governing": "",
+      "note": "default"
+    },
+    {
+      "id": "pay_rf_bandwidth",
+      "name": "Intercept receiver bandwidth",
+      "value": "20",
+      "unit": "MHz",
+      "si": 20000000,
+      "credibility": "",
+      "governing": "",
+      "note": "default"
+    },
+    {
+      "id": "pay_rf_gdop",
+      "name": "Geolocation geometric dilution",
+      "value": "4",
+      "unit": "-",
+      "si": 4,
+      "credibility": "",
+      "governing": "",
+      "note": "default"
+    },
+    {
+      "id": "pay_rf_integration",
+      "name": "Intercept integration time",
+      "value": "0.01",
+      "unit": "s",
+      "si": 0.01,
+      "credibility": "",
+      "governing": "",
+      "note": "default"
+    },
+    {
+      "id": "pay_rf_snr",
+      "name": "Intercept signal to noise ratio",
+      "value": "10",
+      "unit": "-",
+      "si": 10,
+      "credibility": "",
+      "governing": "",
+      "note": "default"
+    },
+    {
+      "id": "pay_transmission",
+      "name": "Optical transmission",
+      "value": "0.72",
+      "unit": "-",
+      "si": 0.72,
+      "credibility": "",
+      "governing": "",
+      "note": "default"
+    },
+    {
+      "id": "pay_wavelength",
+      "name": "Centre wavelength",
+      "value": "550",
+      "unit": "nm",
+      "si": 0.00000055,
+      "credibility": "",
+      "governing": "",
+      "note": "default"
+    },
+    {
+      "id": "prop_beam_voltage",
+      "name": "Beam accelerating voltage",
+      "value": "300",
+      "unit": "V",
+      "si": 300,
+      "credibility": "",
+      "governing": "",
+      "note": "default"
+    },
+    {
+      "id": "prop_beta_backflow",
+      "name": "Duct back-flow transmission",
+      "value": "0.06",
+      "unit": "-",
+      "si": 0.06,
+      "credibility": "",
+      "governing": "",
+      "note": "default"
+    },
+    {
+      "id": "prop_div_efficiency",
+      "name": "Beam divergence efficiency",
+      "value": "0.97",
+      "unit": "-",
+      "si": 0.97,
+      "credibility": "",
+      "governing": "",
+      "note": "default"
+    },
+    {
+      "id": "prop_double_ion_factor",
+      "name": "Doubly-charged ion correction",
+      "value": "0.97",
+      "unit": "-",
+      "si": 0.97,
+      "credibility": "",
+      "governing": "",
+      "note": "default"
+    },
+    {
+      "id": "prop_eta_geo",
+      "name": "Intake geometric transmission",
+      "value": "0.9",
+      "unit": "-",
+      "si": 0.9,
+      "credibility": "",
+      "governing": "",
+      "note": "default"
+    },
+    {
+      "id": "prop_intake_area",
+      "name": "Intake mouth area",
+      "value": "0.2",
+      "unit": "m^2",
+      "si": 0.2,
+      "credibility": "",
+      "governing": "",
+      "note": "default"
+    },
+    {
+      "id": "prop_ionisation_cost",
+      "name": "Energy cost per ion",
+      "value": "250",
+      "unit": "-",
+      "si": 250,
+      "credibility": "",
+      "governing": "",
+      "note": "default"
+    },
+    {
+      "id": "prop_other_losses",
+      "name": "Other thruster losses",
+      "value": "0.15",
+      "unit": "-",
+      "si": 0.15,
+      "credibility": "",
+      "governing": "",
+      "note": "default"
+    },
+    {
+      "id": "prop_ppu_efficiency",
+      "name": "Power processing unit efficiency",
+      "value": "0.9",
+      "unit": "-",
+      "si": 0.9,
+      "credibility": "",
+      "governing": "",
+      "note": "default"
+    },
+    {
+      "id": "prop_throat_area",
+      "name": "Intake throat area",
+      "value": "0.01",
+      "unit": "m^2",
+      "si": 0.01,
+      "credibility": "",
+      "governing": "",
+      "note": "default"
+    },
+    {
+      "id": "prop_utilisation",
+      "name": "Propellant utilisation efficiency",
+      "value": "0.4",
+      "unit": "-",
+      "si": 0.4,
+      "credibility": "",
+      "governing": "",
+      "note": "default"
+    },
+    {
+      "id": "pwr_array_area",
+      "name": "Solar array area",
+      "value": "6",
+      "unit": "m^2",
+      "si": 6,
+      "credibility": "",
+      "governing": "",
+      "note": "default"
+    },
+    {
+      "id": "pwr_array_areal_density",
+      "name": "Array areal density",
+      "value": "2.8",
+      "unit": "-",
+      "si": 2.8,
+      "credibility": "",
+      "governing": "",
+      "note": "default"
+    },
+    {
+      "id": "pwr_array_incidence",
+      "name": "Mean solar incidence angle on the array",
+      "value": "25",
+      "unit": "deg",
+      "si": 0.4363323129985824,
+      "credibility": "",
+      "governing": "",
+      "note": "default"
+    },
+    {
+      "id": "pwr_avionics_load",
+      "name": "Avionics and housekeeping load",
+      "value": "35",
+      "unit": "W",
+      "si": 35,
+      "credibility": "",
+      "governing": "",
+      "note": "default"
+    },
+    {
+      "id": "pwr_battery_specific_energy",
+      "name": "Battery specific energy",
+      "value": "150",
+      "unit": "-",
+      "si": 150,
+      "credibility": "",
+      "governing": "",
+      "note": "default"
+    },
+    {
+      "id": "pwr_cell_efficiency",
+      "name": "Solar cell efficiency",
+      "value": "0.3",
+      "unit": "-",
+      "si": 0.3,
+      "credibility": "",
+      "governing": "",
+      "note": "default"
+    },
+    {
+      "id": "pwr_cell_temperature_coefficient",
+      "name": "Cell power temperature coefficient",
+      "value": "-0.0025",
+      "unit": "-",
+      "si": -0.0025,
+      "credibility": "",
+      "governing": "",
+      "note": "default"
+    },
+    {
+      "id": "pwr_degradation_rate",
+      "name": "Annual array degradation rate",
+      "value": "0.025",
+      "unit": "-",
+      "si": 0.025,
+      "credibility": "",
+      "governing": "",
+      "note": "default"
+    },
+    {
+      "id": "pwr_discharge_efficiency",
+      "name": "Battery discharge path efficiency",
+      "value": "0.92",
+      "unit": "-",
+      "si": 0.92,
+      "credibility": "",
+      "governing": "",
+      "note": "default"
+    },
+    {
+      "id": "pwr_dod",
+      "name": "Battery depth of discharge",
+      "value": "0.2",
+      "unit": "-",
+      "si": 0.2,
+      "credibility": "",
+      "governing": "",
+      "note": "default"
+    },
+    {
+      "id": "pwr_harness_loss",
+      "name": "Harness and distribution loss",
+      "value": "0.06",
+      "unit": "-",
+      "si": 0.06,
+      "credibility": "",
+      "governing": "",
+      "note": "default"
+    },
+    {
+      "id": "pwr_packing",
+      "name": "Array packing factor",
+      "value": "0.88",
+      "unit": "-",
+      "si": 0.88,
+      "credibility": "",
+      "governing": "",
+      "note": "default"
+    },
+    {
+      "id": "pwr_thermal_load",
+      "name": "Thermal control load",
+      "value": "15",
+      "unit": "W",
+      "si": 15,
+      "credibility": "",
+      "governing": "",
+      "note": "default"
+    },
+    {
+      "id": "sys_mission_requirements_mission_duration",
+      "name": "Mission duration",
+      "value": "5",
+      "unit": "yr",
+      "si": 157788000,
+      "credibility": "",
+      "governing": "",
+      "note": "default"
+    },
+    {
+      "id": "sys_mission_requirements_mission_epoch",
+      "name": "Mission epoch",
+      "value": "9862",
+      "unit": "d",
+      "si": 852076800,
+      "credibility": "",
+      "governing": "",
+      "note": "default"
+    },
+    {
+      "id": "thm_absorptivity",
+      "name": "Solar absorptivity",
+      "value": "0.3",
+      "unit": "-",
+      "si": 0.3,
+      "credibility": "",
+      "governing": "",
+      "note": "default"
+    },
+    {
+      "id": "thm_emissivity",
+      "name": "Infrared emissivity",
+      "value": "0.85",
+      "unit": "-",
+      "si": 0.85,
+      "credibility": "",
+      "governing": "",
+      "note": "default"
+    },
+    {
+      "id": "thm_internal_dissipation",
+      "name": "Internal dissipation",
+      "value": "0",
+      "unit": "W",
+      "si": 0,
+      "credibility": "",
+      "governing": "",
+      "note": "default"
+    },
+    {
+      "id": "thm_radiator_area",
+      "name": "Radiator area",
+      "value": "2.5",
+      "unit": "m^2",
+      "si": 2.5,
+      "credibility": "",
+      "governing": "",
+      "note": "default"
+    },
+    {
+      "id": "thm_temperature_limit",
+      "name": "Upper temperature limit",
+      "value": "323",
+      "unit": "K",
+      "si": 323,
+      "credibility": "",
+      "governing": "",
+      "note": "default"
+    },
+    {
+      "id": "env_chamber_temperature",
+      "name": "Intake chamber gas temperature",
+      "value": "600",
+      "unit": "K",
+      "si": 600,
+      "credibility": "",
+      "governing": "",
+      "note": "default"
+    },
+    {
+      "id": "env_wall_temperature",
+      "name": "Spacecraft surface temperature",
+      "value": "300",
+      "unit": "K",
+      "si": 300,
+      "credibility": "",
+      "governing": "",
+      "note": "default"
+    },
+    {
+      "id": "orbit_altitude",
+      "name": "Orbit altitude",
+      "value": "250",
+      "unit": "km",
+      "si": 250000,
+      "credibility": "",
+      "governing": "",
+      "note": "default"
+    },
+    {
+      "id": "orbit_beta_angle",
+      "name": "Beta angle",
+      "value": "29.999999999999996",
+      "unit": "deg",
+      "si": 0.5235987755982988,
+      "credibility": "",
+      "governing": "",
+      "note": "default"
+    },
+    {
+      "id": "orbit_eccentricity",
+      "name": "Orbit eccentricity",
+      "value": "0",
+      "unit": "-",
+      "si": 0,
+      "credibility": "",
+      "governing": "",
+      "note": "default"
+    },
+    {
+      "id": "orbit_inclination",
+      "name": "Orbit inclination",
+      "value": "96.6",
+      "unit": "deg",
+      "si": 1.6859880574265222,
+      "credibility": "",
+      "governing": "",
+      "note": "default"
+    },
+    {
+      "id": "orbit_min_elevation",
+      "name": "Minimum useful elevation angle",
+      "value": "10",
+      "unit": "deg",
+      "si": 0.17453292519943295,
+      "credibility": "",
+      "governing": "",
+      "note": "default"
+    },
+    {
+      "id": "sw_ap_central_expectation",
+      "name": "Expected Ap over the mission window",
+      "value": "22.095389",
+      "unit": "-",
+      "si": 22.095389,
+      "credibility": "",
+      "governing": "",
+      "note": "default"
+    },
+    {
+      "id": "sw_ap_mean_band_spread",
+      "name": "Ap rotation-forecast residual spread",
+      "value": "3.593688",
+      "unit": "-",
+      "si": 3.593688,
+      "credibility": "",
+      "governing": "",
+      "note": "default"
+    },
+    {
+      "id": "sw_band_coverage",
+      "name": "Stated band coverage",
+      "value": "0.9509267569",
+      "unit": "-",
+      "si": 0.9509267569,
+      "credibility": "",
+      "governing": "",
+      "note": "default"
+    },
+    {
+      "id": "sw_cycle_repeatability",
+      "name": "Cycle-to-cycle repeatability",
+      "value": "0.7701397224",
+      "unit": "-",
+      "si": 0.7701397224,
+      "credibility": "",
+      "governing": "",
+      "note": "default"
+    },
+    {
+      "id": "sw_event_duration",
+      "name": "F10.7 burst duration",
+      "value": "3.3114754098000003",
+      "unit": "d",
+      "si": 286111.47540672,
+      "credibility": "",
+      "governing": "",
+      "note": "default"
+    },
+    {
+      "id": "sw_f107_observed",
+      "name": "Observed F10.7, the forecast's anchor",
+      "value": "150",
+      "unit": "-",
+      "si": 150,
+      "credibility": "",
+      "governing": "",
+      "note": "default"
+    },
+    {
+      "id": "sw_f107a_ratio",
+      "name": "Daily F10.7 scatter about F10.7A",
+      "value": "0.1222100376",
+      "unit": "-",
+      "si": 0.1222100376,
+      "credibility": "",
+      "governing": "",
+      "note": "default"
+    },
+    {
+      "id": "sw_mean_band_spread",
+      "name": "Rotation-forecast residual spread",
+      "value": "13.454382",
+      "unit": "-",
+      "si": 13.454382,
+      "credibility": "",
+      "governing": "",
+      "note": "default"
+    },
+    {
+      "id": "sw_recurrence_lag",
+      "name": "Rotation recurrence lag",
+      "value": "26",
+      "unit": "d",
+      "si": 2246400,
+      "credibility": "",
+      "governing": "",
+      "note": "default"
+    },
+    {
+      "id": "sw_recurrence_strength",
+      "name": "Rotation recurrence strength",
+      "value": "0.375988",
+      "unit": "-",
+      "si": 0.375988,
+      "credibility": "",
+      "governing": "",
+      "note": "default"
+    },
+    {
+      "id": "sw_semiannual_amplitude",
+      "name": "Semiannual Ap amplitude",
+      "value": "1.278112",
+      "unit": "-",
+      "si": 1.278112,
+      "credibility": "",
+      "governing": "",
+      "note": "default"
+    },
+    {
+      "id": "sw_spike_threshold",
+      "name": "F10.7 spike threshold",
+      "value": "1.3048655732",
+      "unit": "-",
+      "si": 1.3048655732,
+      "credibility": "",
+      "governing": "",
+      "note": "default"
+    },
+    {
+      "id": "sw_storm_design_level",
+      "name": "Storm level designed for",
+      "value": "3",
+      "unit": "-",
+      "si": 3,
+      "credibility": "",
+      "governing": "",
+      "note": "default"
+    }
+  ],
+  "outputs": [
+    {
+      "id": "sw_storm_design_level",
+      "name": "Storm level designed for",
+      "value": "3",
+      "unit": "-",
+      "si": 3,
+      "credibility": "1",
+      "governing": "uncertainty",
+      "note": ""
+    },
+    {
+      "id": "sw_ap_design",
+      "name": "Ap design value",
+      "value": "132",
+      "unit": "-",
+      "si": 132,
+      "credibility": "1",
+      "governing": "mathematics",
+      "note": ""
+    }
+  ],
+  "blocked_rows": [],
+  "sweep_data": {
+    "ok": true,
+    "x_id": "sw_storm_design_level",
+    "y_id": "sw_ap_design",
+    "x_unit": "-",
+    "y_unit": "-",
+    "x_factor": 1,
+    "y_factor": 1,
+    "x": [
+      1,
+      2,
+      3
+    ],
+    "y": [
+      48,
+      80,
+      132
+    ],
+    "refused": []
+  }
+}

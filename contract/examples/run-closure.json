@@ -1,0 +1,376 @@
+{
+  "ok": true,
+  "inputs": {
+    "defaults": false,
+    "changed": 0,
+    "upgraded": false,
+    "set_aside": 0,
+    "new": 0
+  },
+  "values": [
+    {
+      "id": "l3_solar_req_01",
+      "symbol": "F107_req_long",
+      "label": "Required — F10.7, sustained",
+      "si": 260,
+      "shown": "260.000",
+      "unit": "-",
+      "cred": 1,
+      "governing": "uncertainty",
+      "vec": [
+        4,
+        4,
+        4,
+        3,
+        4,
+        1,
+        3,
+        4
+      ]
+    },
+    {
+      "id": "sw_mean_band_spread",
+      "symbol": "sigma_total",
+      "label": "Rotation-forecast residual spread",
+      "si": 13.454382,
+      "shown": "13.4544",
+      "unit": "-",
+      "cred": 1,
+      "governing": "uncertainty",
+      "vec": [
+        4,
+        4,
+        4,
+        3,
+        4,
+        1,
+        3,
+        4
+      ]
+    },
+    {
+      "id": "sys_mission_requirements_mission_epoch",
+      "symbol": "T_epoch",
+      "label": "Mission epoch",
+      "si": 852076800,
+      "shown": "9862.00",
+      "unit": "d",
+      "cred": 1,
+      "governing": "uncertainty",
+      "vec": [
+        4,
+        4,
+        4,
+        3,
+        4,
+        1,
+        3,
+        4
+      ]
+    },
+    {
+      "id": "sys_mission_requirements_mission_duration",
+      "symbol": "T_mis_req",
+      "label": "Mission duration",
+      "si": 157788000,
+      "shown": "5.00000",
+      "unit": "yr",
+      "cred": 1,
+      "governing": "uncertainty",
+      "vec": [
+        4,
+        3,
+        4,
+        3,
+        4,
+        1,
+        3,
+        4
+      ]
+    },
+    {
+      "id": "orbit_mission_duration",
+      "symbol": "T_mis",
+      "label": "Mission duration",
+      "si": 157788000,
+      "shown": "5.00000",
+      "unit": "yr",
+      "cred": 0,
+      "governing": "validation",
+      "vec": [
+        1,
+        2,
+        4,
+        0,
+        4,
+        1,
+        3,
+        4
+      ]
+    },
+    {
+      "id": "sw_f107_observed",
+      "symbol": "F107_obs",
+      "label": "Observed F10.7, the forecast's anchor",
+      "si": 150,
+      "shown": "150.000",
+      "unit": "-",
+      "cred": 1,
+      "governing": "uncertainty",
+      "vec": [
+        4,
+        4,
+        4,
+        3,
+        4,
+        1,
+        3,
+        4
+      ]
+    },
+    {
+      "id": "sw_central_expectation",
+      "symbol": "F107_central",
+      "label": "F10.7 central expectation at a lead",
+      "si": 86.84972489094359,
+      "shown": "86.8497",
+      "unit": "-",
+      "cred": 0,
+      "governing": "validation",
+      "vec": [
+        1,
+        2,
+        4,
+        0,
+        4,
+        1,
+        3,
+        4
+      ]
+    },
+    {
+      "id": "sw_f107_design_long",
+      "symbol": "F107_long",
+      "label": "Sustained F10.7 to design to",
+      "si": 104.07133385094359,
+      "shown": "104.071",
+      "unit": "-",
+      "cred": 0,
+      "governing": "validation",
+      "vec": [
+        1,
+        2,
+        4,
+        0,
+        4,
+        1,
+        3,
+        4
+      ]
+    },
+    {
+      "id": "l3_solar_ach_01",
+      "symbol": "M_f107_long",
+      "label": "Closure — F10.7, sustained",
+      "si": 0.5997256390348324,
+      "shown": "0.599726",
+      "unit": "-",
+      "cred": 0,
+      "governing": "validation",
+      "vec": [
+        1,
+        2,
+        4,
+        0,
+        4,
+        1,
+        3,
+        4
+      ]
+    }
+  ],
+  "blocked": [],
+  "verdicts": [
+    {
+      "node": "sw_central_expectation",
+      "label": "the declared case — epoch 2027-01-01, a five-year mission",
+      "expected": 86.84972489094359,
+      "got": 86.84972489094359,
+      "error": 0,
+      "tolerance": 0.000000000001,
+      "passed": true,
+      "provenance": "independent-derivation",
+      "source": "noaa_swpc"
+    },
+    {
+      "node": "sw_central_expectation",
+      "label": "fifteen years — the window spans more than a cycle, so the mean settles near the record's own level",
+      "expected": 105.72687096778448,
+      "got": 105.72687096778448,
+      "error": 0,
+      "tolerance": 0.000000000001,
+      "passed": true,
+      "provenance": "independent-derivation",
+      "source": "noaa_swpc"
+    },
+    {
+      "node": "sw_central_expectation",
+      "label": "half a Julian year, the shortest mission — the one lead where today's 150 sfu is still faintly visible",
+      "expected": 105.5465798678905,
+      "got": 105.5465798678905,
+      "error": 0,
+      "tolerance": 0.000000000001,
+      "passed": true,
+      "provenance": "independent-derivation",
+      "source": "noaa_swpc"
+    },
+    {
+      "node": "sw_central_expectation",
+      "label": "a quiet day today changes nothing at five years",
+      "expected": 86.84972489094359,
+      "got": 86.84972489094359,
+      "error": 0,
+      "tolerance": 0.000000000001,
+      "passed": true,
+      "provenance": "independent-derivation",
+      "source": "noaa_swpc"
+    },
+    {
+      "node": "sw_central_expectation",
+      "label": "nor does a very active one — at five years the answer is the window climatology alone",
+      "expected": 86.84972489094359,
+      "got": 86.84972489094359,
+      "error": 0,
+      "tolerance": 0.000000000001,
+      "passed": true,
+      "provenance": "independent-derivation",
+      "source": "noaa_swpc"
+    },
+    {
+      "node": "sw_central_expectation",
+      "label": "the earliest epoch the range allows, 2018-01-01 — a mission rising into cycle 25's maximum",
+      "expected": 115.03865410832137,
+      "got": 115.03865410832137,
+      "error": 0,
+      "tolerance": 0.000000000001,
+      "passed": true,
+      "provenance": "independent-derivation",
+      "source": "noaa_swpc"
+    },
+    {
+      "node": "sw_central_expectation",
+      "label": "an epoch near the next maximum, 2032-11-08 — the same mission, a different sky, and one cycle 25's size does not vouch for",
+      "expected": 144.9367498101883,
+      "got": 144.9367498101883,
+      "error": 0,
+      "tolerance": 0.000000000001,
+      "passed": true,
+      "provenance": "independent-derivation",
+      "source": "noaa_swpc"
+    },
+    {
+      "node": "sw_central_expectation",
+      "label": "the latest epoch the range allows, 2040-01-01",
+      "expected": 88.67145559562236,
+      "got": 88.67145559562236,
+      "error": 0,
+      "tolerance": 0.000000000001,
+      "passed": true,
+      "provenance": "independent-derivation",
+      "source": "noaa_swpc"
+    },
+    {
+      "node": "sw_central_expectation",
+      "label": "one whole cycle period later — epoch 14040 is 4178 days after 9862, so the SHAPE repeats; the answer does not, because the amplitude hands over",
+      "expected": 78.21016904177215,
+      "got": 78.21016904177215,
+      "error": 0,
+      "tolerance": 0.000000000001,
+      "passed": true,
+      "provenance": "independent-derivation",
+      "source": "noaa_swpc"
+    },
+    {
+      "node": "sw_f107_design_long",
+      "label": "a mid-cycle centre of 160 with this repository's own measured spread — 160 + 1.28 × 13.454382",
+      "expected": 177.22160896,
+      "got": 177.22160896,
+      "error": 0,
+      "tolerance": 0.000000000001,
+      "passed": true,
+      "provenance": "independent-derivation",
+      "source": "noaa_swpc"
+    },
+    {
+      "node": "sw_f107_design_long",
+      "label": "round numbers, so the arithmetic is checkable without a calculator — 100 + 1.28 × 20",
+      "expected": 125.6,
+      "got": 125.6,
+      "error": 0,
+      "tolerance": 0.000000000001,
+      "passed": true,
+      "provenance": "independent-derivation",
+      "source": "noaa_swpc"
+    },
+    {
+      "node": "sw_f107_design_long",
+      "label": "a cycle-maximum centre of 240, which is where the upper guard starts to matter",
+      "expected": 257.22160896,
+      "got": 257.22160896,
+      "error": 0,
+      "tolerance": 0.000000000001,
+      "passed": true,
+      "provenance": "independent-derivation",
+      "source": "noaa_swpc"
+    },
+    {
+      "node": "l3_solar_ach_01",
+      "label": "the sustained F10.7 the record presents against the 260 sfu commitment",
+      "expected": 0.599725639035,
+      "got": 0.599725639035,
+      "error": 0,
+      "tolerance": 0.000000000001,
+      "passed": true,
+      "provenance": "independent-derivation",
+      "source": "noaa_swpc"
+    },
+    {
+      "node": "l3_solar_ach_01",
+      "label": "exactly on the bound, where the margin must be zero and the closure still closed",
+      "expected": 0,
+      "got": 0,
+      "error": 0,
+      "tolerance": 0.000000000001,
+      "passed": true,
+      "provenance": "independent-derivation",
+      "source": "noaa_swpc"
+    },
+    {
+      "node": "l3_solar_ach_01",
+      "label": "twice the bound, where the margin must be -1 and the closure must fail",
+      "expected": -1,
+      "got": -1,
+      "error": 0,
+      "tolerance": 0.000000000001,
+      "passed": true,
+      "provenance": "independent-derivation",
+      "source": "noaa_swpc"
+    }
+  ],
+  "manifest": {
+    "node": "l3_solar_ach_01",
+    "mode": "branch",
+    "kernel": "d0a5e2",
+    "graph": "adb684",
+    "case": "cc8aca",
+    "chain": "358a84",
+    "endpoint": "local-daemon",
+    "ran": 9,
+    "blocked": 0,
+    "iterations": 0,
+    "data": [
+      "solar-drivers@2026.09.04#54784567db11b868",
+      "solar-weather@2026.09.14#f3557eb8443bfdaa"
+    ]
+  }
+}

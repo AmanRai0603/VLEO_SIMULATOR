@@ -43,9 +43,42 @@ pub struct Row {
     pub si: Option<f64>,
     pub credibility: String,
     pub governing: String,
-    /// For an input, `changed` or `default`; for a blocked row, why.
+    /// For an input, `changed`, `default`, or `supplied` for a declared row
+    /// the run was given that is not one of the case's inputs; for a blocked
+    /// row, why.
     pub note: String,
+    /// The eight credibility factors, one digit each (`34233333`), so a result
+    /// shown again draws the same bars the run did. Empty in a result saved
+    /// before it was recorded.
+    pub cred: String,
 }
+
+/// One answer across a range of one input: what a sweep returned, kept so it
+/// can be drawn again without running.
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct Sweep {
+    /// The input moved, and its label.
+    pub over: String,
+    pub over_name: String,
+    /// Display units and their factor to SI, for the axis a person reads.
+    pub x_unit: String,
+    pub x_factor: f64,
+    pub y_unit: String,
+    pub y_factor: f64,
+    /// The range asked for, in SI, and how many points across it.
+    pub from: f64,
+    pub to: f64,
+    pub points: usize,
+    /// Every point that answered, in SI.
+    pub x: Vec<f64>,
+    pub y: Vec<f64>,
+    /// Every point that was refused, with why. Kept, never dropped: a gap in
+    /// the line is a fact about the design.
+    pub refused: Vec<(f64, String)>,
+}
+
+/// What a sweep file declares itself to be.
+pub const SWEEP_FORMAT: &str = "vleo-sweep/1";
 
 /// A saved result.
 #[derive(Clone, Debug, Default, PartialEq)]
@@ -75,6 +108,8 @@ pub struct Saved {
     /// `#! versions` line, empty or not. One saved before the tool recorded
     /// beliefs has none, and nothing can be said about what has moved since.
     pub versions_known: bool,
+    /// The sweep, when the result is one.
+    pub sweep: Option<Sweep>,
 }
 
 impl Saved {
@@ -85,6 +120,20 @@ impl Saved {
     /// How many inputs it ran at a value other than their default.
     pub fn changed(&self) -> usize {
         self.inputs.iter().filter(|r| r.note == "changed").count()
+    }
+    /// The question this result answers — see [`question`].
+    pub fn question(&self) -> String {
+        question(
+            &self.target,
+            &self.mode,
+            &self.kernel,
+            &self.graph,
+            &self.data,
+            &self.inputs,
+            self.sweep
+                .as_ref()
+                .map(|w| (w.over.as_str(), w.from, w.to, w.points)),
+        )
     }
     /// The inputs it ran on, in SI — to load back as the case.
     pub fn case_values(&self) -> Vec<(String, f64)> {
@@ -115,29 +164,7 @@ pub fn from_run(r: &vleo_bus::Results, supply: &[(String, f64)], saved: &str, na
         blocked_count: m.blocked_count,
         ..Default::default()
     };
-    for i in case_inputs() {
-        // The last value supplied wins, exactly as the run applied them.
-        let si = supply
-            .iter()
-            .rev()
-            .find(|(k, _)| k == i.id)
-            .map(|(_, v)| *v)
-            .unwrap_or(i.default);
-        s.inputs.push(Row {
-            id: i.id.to_string(),
-            name: i.label.to_string(),
-            value: num(i.shown(si)),
-            unit: i.unit.to_string(),
-            si: Some(si),
-            note: if si != i.default {
-                "changed"
-            } else {
-                "default"
-            }
-            .to_string(),
-            ..Default::default()
-        });
-    }
+    s.inputs = ran_inputs(supply);
     for v in &r.values {
         let (shown, unit) = match Vleo::find(&v.id) {
             Some(k) => {
@@ -154,6 +181,12 @@ pub fn from_run(r: &vleo_bus::Results, supply: &[(String, f64)], saved: &str, na
             si: Some(v.value),
             credibility: v.cred.governing_score().to_string(),
             governing: v.governing.to_string(),
+            cred: v
+                .cred
+                .0
+                .iter()
+                .map(|c| char::from(b'0' + (*c).min(9)))
+                .collect(),
             ..Default::default()
         });
     }
@@ -174,6 +207,138 @@ pub fn from_run(r: &vleo_bus::Results, supply: &[(String, f64)], saved: &str, na
         });
     }
     s
+}
+
+/// The inputs a run applied: every one of the case's inputs at the value it ran
+/// at — the last value supplied wins, exactly as the run applied them — then
+/// any other declared row the run was given, which a result records too.
+pub fn ran_inputs(supply: &[(String, f64)]) -> Vec<Row> {
+    let last = |id: &str| supply.iter().rev().find(|(k, _)| k == id).map(|(_, v)| *v);
+    let all = case_inputs();
+    let mut rows = Vec::new();
+    for i in &all {
+        let si = last(i.id).unwrap_or(i.default);
+        rows.push(Row {
+            id: i.id.to_string(),
+            name: i.label.to_string(),
+            value: num(i.shown(si)),
+            unit: i.unit.to_string(),
+            si: Some(si),
+            note: if si != i.default {
+                "changed"
+            } else {
+                "default"
+            }
+            .to_string(),
+            ..Default::default()
+        });
+    }
+    let mut extra: Vec<&str> = supply
+        .iter()
+        .map(|(k, _)| k.as_str())
+        .filter(|k| !all.iter().any(|i| i.id == *k))
+        .collect();
+    extra.sort_unstable();
+    extra.dedup();
+    for id in extra {
+        let si = last(id).unwrap_or_default();
+        let (name, value, unit) = match Vleo::find(id) {
+            Some(k) => {
+                let v = &VARS[k as usize];
+                (
+                    v.label.to_string(),
+                    num(si / v.unit.si_factor()),
+                    v.unit.symbol(),
+                )
+            }
+            None => (String::new(), num(si), "-"),
+        };
+        rows.push(Row {
+            id: id.to_string(),
+            name,
+            value,
+            unit: unit.to_string(),
+            si: Some(si),
+            note: "supplied".to_string(),
+            ..Default::default()
+        });
+    }
+    rows
+}
+
+/// The engine that answers here, as a run's manifest and so a result records
+/// it: `(kernel, graph)`.
+pub fn engine() -> (String, String) {
+    (
+        crate::hex(Vleo::kernel_hash()),
+        crate::hex(Vleo::graph_hash()),
+    )
+}
+
+/// The question a result answers, as one key: which row, how much of the graph,
+/// which engine and tree, which reference data, every input it ran at, and —
+/// for a sweep — what was swept and how.
+///
+/// Two results with the same key are the same answer: the engine is
+/// deterministic, and everything it reads is in the key. So a question already
+/// answered is shown from its saved result rather than asked again, and saved
+/// once rather than twice. The key is worked out from what a result records,
+/// never read from the file, so a result saved before keys existed has one, and
+/// a file cannot claim a key its contents do not produce.
+pub fn question(
+    target: &str,
+    mode: &str,
+    kernel: &str,
+    graph: &str,
+    data: &[String],
+    inputs: &[Row],
+    sweep: Option<(&str, f64, f64, usize)>,
+) -> String {
+    let mut h = vleo_core::hash::Hasher::new();
+    for part in [target, mode, kernel, graph] {
+        h.write_str(part);
+    }
+    let mut d: Vec<&str> = data.iter().map(String::as_str).collect();
+    d.sort_unstable();
+    for x in d {
+        h.write_str(x);
+    }
+    let mut ins: Vec<(&str, f64)> = inputs
+        .iter()
+        .filter_map(|r| r.si.map(|v| (r.id.as_str(), v)))
+        .collect();
+    ins.sort_by(|a, b| a.0.cmp(b.0));
+    for (id, v) in ins {
+        h.write_str(id);
+        h.write_f64(v);
+    }
+    match sweep {
+        Some((over, from, to, points)) => {
+            h.write_str("sweep");
+            h.write_str(over);
+            h.write_f64(from);
+            h.write_f64(to);
+            h.write_u64(points as u64);
+        }
+        None => h.write_str("point"),
+    }
+    format!("{:016x}", h.finish())
+}
+
+/// The question a case asks, as a saved result's key — worked out from the case
+/// exactly as the run would apply it, so a question answered and saved by the
+/// browser is found by the command line, and on another laptop.
+pub fn question_for(case: &vleo_bus::Case, sweep: Option<(&str, f64, f64, usize)>) -> String {
+    let (kernel, graph) = engine();
+    question(
+        &case.target,
+        case.mode.name(),
+        &kernel,
+        &graph,
+        &case.data_versions,
+        &ran_inputs(&case.supply),
+        sweep,
+    )
 }
 
 /// A node's current recorded version and the release that carried it, as
@@ -285,7 +450,9 @@ pub fn csv(s: &Saved) -> String {
             }
         ));
     }
-    o.push_str("section,id,name,value,unit,si,credibility,governing,note\n");
+    // `cred` is last: every column is read by its name, so a tool from before
+    // it was added still reads a result that has it.
+    o.push_str("section,id,name,value,unit,si,credibility,governing,note,cred\n");
     for (section, rows) in [
         ("input", &s.inputs),
         ("output", &s.outputs),
@@ -293,7 +460,7 @@ pub fn csv(s: &Saved) -> String {
     ] {
         for r in rows {
             o.push_str(&format!(
-                "{section},{},{},{},{},{},{},{},{}\n",
+                "{section},{},{},{},{},{},{},{},{},{}\n",
                 field(&r.id),
                 field(&r.name),
                 field(&r.value),
@@ -301,7 +468,8 @@ pub fn csv(s: &Saved) -> String {
                 r.si.map(num).unwrap_or_default(),
                 field(&r.credibility),
                 field(&r.governing),
-                field(&r.note)
+                field(&r.note),
+                field(&r.cred)
             ));
         }
     }
@@ -412,6 +580,7 @@ pub fn read(text: &str) -> Result<Saved, String> {
             credibility: col("credibility"),
             governing: col("governing"),
             note: col("note"),
+            cred: col("cred"),
         };
         match col("section").as_str() {
             "input" => s.inputs.push(row),
@@ -438,14 +607,14 @@ pub fn read(text: &str) -> Result<Saved, String> {
     Ok(s)
 }
 
-/// A file name for a result: when, what, and which chain — so two saves of the
-/// same question on different inputs never collide, and a listing sorts by time.
+/// A folder name for a result: when, what, and which question — so two saves of
+/// different questions never collide, one question is kept once, and a listing
+/// sorts by time.
 ///
-/// Every part is reduced to letters, digits, `_` and `-`: the target and the
-/// chain come from the file, and an uploaded file can say anything there. A
-/// `..` or a slash in them once built a name that wrote outside the results
-/// folder.
-pub fn file_name(s: &Saved) -> String {
+/// Every part is reduced to letters, digits, `_` and `-`: the target comes from
+/// the file, and an uploaded file can say anything there. A `..` or a slash in
+/// it once built a name that wrote outside the results folder.
+pub fn folder_name(s: &Saved) -> String {
     let plain = |t: &str, keep: char| -> String {
         let p: String = t
             .chars()
@@ -460,11 +629,146 @@ pub fn file_name(s: &Saved) -> String {
         p.trim_matches('-').to_string()
     };
     format!(
-        "{}_{}_{}.csv",
+        "{}_{}_{}",
         plain(&s.saved, '-'),
         plain(&s.target, '_'),
-        plain(&s.chain, '-')
+        s.question()
     )
+}
+
+/// A sweep as the CSV it is kept beside its result as: one row per point, in
+/// the units a person reads and in SI, refused points kept with why.
+pub fn sweep_csv(w: &Sweep) -> String {
+    let mut o = String::new();
+    o.push_str("# VLEO multipayload — a saved sweep: one answer across a range of one input.\n");
+    o.push_str(
+        "# `x` and `y` are in the units named below; `x_si` and `y_si` are what the tool reads.\n",
+    );
+    o.push_str(
+        "# A refused point has no y, and says why: it is a gap in the line, never joined across.\n",
+    );
+    o.push_str(&format!("#! sweep {SWEEP_FORMAT}\n"));
+    for (k, v) in [
+        ("over", w.over.clone()),
+        ("over_name", w.over_name.clone()),
+        ("x_unit", w.x_unit.clone()),
+        ("x_factor", num(w.x_factor)),
+        ("y_unit", w.y_unit.clone()),
+        ("y_factor", num(w.y_factor)),
+        ("from", num(w.from)),
+        ("to", num(w.to)),
+        ("points", w.points.to_string()),
+    ] {
+        o.push_str(&format!("#! {k} {}\n", meta(&v)));
+    }
+    o.push_str("x,y,x_si,y_si,refused\n");
+    let f = |v: f64, k: f64| num(if k != 0.0 { v / k } else { v });
+    let mut pts: Vec<(f64, Option<f64>, &str)> =
+        w.x.iter()
+            .zip(&w.y)
+            .map(|(x, y)| (*x, Some(*y), ""))
+            .chain(w.refused.iter().map(|(x, why)| (*x, None, why.as_str())))
+            .collect();
+    pts.sort_by(|a, b| a.0.partial_cmp(&b.0).unwrap_or(core::cmp::Ordering::Equal));
+    for (x, y, why) in pts {
+        o.push_str(&format!(
+            "{},{},{},{},{}\n",
+            f(x, w.x_factor),
+            y.map(|y| f(y, w.y_factor)).unwrap_or_default(),
+            num(x),
+            y.map(num).unwrap_or_default(),
+            field(why)
+        ));
+    }
+    o
+}
+
+/// Read a sweep back. Refuses what is not one, by what is missing.
+pub fn read_sweep(text: &str) -> Result<Sweep, String> {
+    // Said first, before any row is read: a file of something else would
+    // otherwise be refused for a column, which says nothing about what it is.
+    if !text.lines().any(|l| {
+        l.trim_start()
+            .trim_start_matches('\u{feff}')
+            .starts_with("#! sweep")
+    }) {
+        return Err("this is not a saved sweep: it has no `#! sweep` line".into());
+    }
+    let mut w = Sweep::default();
+    let mut format_ok = false;
+    let mut header: Option<Vec<String>> = None;
+    let number = |k: &str, v: &str| {
+        v.parse::<f64>()
+            .map_err(|_| format!("sweep: `{k}` is '{v}', which is not a number"))
+    };
+    for (n, raw) in text.lines().enumerate() {
+        let t = raw.trim().trim_start_matches('\u{feff}');
+        if let Some(m) = t.strip_prefix("#!") {
+            let m = m.trim();
+            let (k, v) = m.split_once(' ').unwrap_or((m, ""));
+            let v = v.trim();
+            match k {
+                "sweep" => {
+                    if v != SWEEP_FORMAT {
+                        return Err(format!(
+                            "this is a `{v}` sweep, and this tool reads `{SWEEP_FORMAT}`"
+                        ));
+                    }
+                    format_ok = true;
+                }
+                "over" => w.over = v.to_string(),
+                "over_name" => w.over_name = v.to_string(),
+                "x_unit" => w.x_unit = v.to_string(),
+                "y_unit" => w.y_unit = v.to_string(),
+                "x_factor" => w.x_factor = number(k, v)?,
+                "y_factor" => w.y_factor = number(k, v)?,
+                "from" => w.from = number(k, v)?,
+                "to" => w.to = number(k, v)?,
+                "points" => {
+                    w.points = v
+                        .parse()
+                        .map_err(|_| format!("sweep: `points` is '{v}', which is not a count"))?
+                }
+                _ => {}
+            }
+            continue;
+        }
+        if t.is_empty() || t.starts_with('#') {
+            continue;
+        }
+        let cells = crate::inputs::split_csv(t);
+        let Some(h) = &header else {
+            header = Some(
+                cells
+                    .iter()
+                    .map(|c| c.trim().to_ascii_lowercase())
+                    .collect(),
+            );
+            continue;
+        };
+        let col = |name: &str| {
+            h.iter()
+                .position(|c| c == name)
+                .and_then(|k| cells.get(k))
+                .map(|x| x.trim().to_string())
+                .unwrap_or_default()
+        };
+        let x = number(&format!("line {} x_si", n + 1), &col("x_si"))?;
+        let y = col("y_si");
+        if y.is_empty() {
+            w.refused.push((x, col("refused")));
+        } else {
+            w.x.push(x);
+            w.y.push(number(&format!("line {} y_si", n + 1), &y)?);
+        }
+    }
+    if !format_ok {
+        return Err("this is not a saved sweep: it has no `#! sweep` line".into());
+    }
+    if w.over.is_empty() || w.points == 0 {
+        return Err("this sweep names no input it moved, or no points".into());
+    }
+    Ok(w)
 }
 
 // ---------------------------------------------------------------------------
@@ -591,6 +895,9 @@ pub fn html(s: &Saved) -> String {
             format!(" · data {}", he(&s.data.join(", ")))
         }
     ));
+    if let Some(w) = &s.sweep {
+        o.push_str(&sweep_section(s, w));
+    }
     o.push_str(&format!(
         "<section><h2>Said simply <span class=\"dx\">explanation</span></h2><p>On {} inputs, \
          <b>{}</b> comes out at <b>{}</b>. Every number below was worked out by the tool from the \
@@ -718,9 +1025,190 @@ pub fn html(s: &Saved) -> String {
     o.push_str("</details>\n");
     o.push_str(&format!(
         "<!-- The result itself, as CSV. Upload this page on the Results page and this is what \
-         is read. -->\n<script type=\"text/csv\" id=\"vleo-result\">\n{data}</script>\n</body>\n</html>\n"
+         is read. -->\n<script type=\"text/csv\" id=\"vleo-result\">\n{data}</script>\n"
     ));
+    if let Some(w) = &s.sweep {
+        o.push_str(&format!(
+            "<script type=\"text/csv\" id=\"vleo-sweep\">\n{}</script>\n",
+            sweep_csv(w).replace("</", "<\\/")
+        ));
+    }
+    o.push_str("</body>\n</html>\n");
     o
+}
+
+/// A sweep, drawn: the answer across the range, refused points as gaps, where
+/// the case sits. A picture a reader can open anywhere — plain SVG in the page,
+/// no script, nothing fetched.
+fn sweep_section(s: &Saved, w: &Sweep) -> String {
+    let fx = if w.x_factor != 0.0 { w.x_factor } else { 1.0 };
+    let fy = if w.y_factor != 0.0 { w.y_factor } else { 1.0 };
+    let xs: Vec<f64> = w.x.iter().map(|x| x / fx).collect();
+    let ys: Vec<f64> = w.y.iter().map(|y| y / fy).collect();
+    let unit = |u: &str| {
+        if u == "-" || u.is_empty() {
+            String::new()
+        } else {
+            format!(" {u}")
+        }
+    };
+    let over_name = if w.over_name.is_empty() {
+        w.over.as_str()
+    } else {
+        w.over_name.as_str()
+    };
+    let mut o = format!(
+        "<section><h2>The sweep <span class=\"dx\">figure</span></h2><p>{} across <b>{}</b> from \
+         {}{} to {}{}, {} points: {} answered{}.</p>",
+        he(&s.target),
+        he(over_name),
+        num(w.from / fx),
+        he(&unit(&w.x_unit)),
+        num(w.to / fx),
+        he(&unit(&w.x_unit)),
+        w.points,
+        w.x.len(),
+        if w.refused.is_empty() {
+            String::new()
+        } else {
+            format!(
+                ", <b>{} refused</b> — {} — drawn as gaps, never joined across",
+                w.refused.len(),
+                he(&w.refused[0].1)
+            )
+        }
+    );
+    if xs.is_empty() {
+        o.push_str(
+            "<p class=\"m\">No point answered, so there is no line to draw.</p></section>\n",
+        );
+        return o;
+    }
+    let span = |v: &[f64]| {
+        let lo = v.iter().cloned().fold(f64::INFINITY, f64::min);
+        let hi = v.iter().cloned().fold(f64::NEG_INFINITY, f64::max);
+        if hi > lo {
+            (lo, hi)
+        } else {
+            (lo - 0.5 * lo.abs().max(1.0), hi + 0.5 * hi.abs().max(1.0))
+        }
+    };
+    let xr = {
+        let (a, b) = (w.from / fx, w.to / fx);
+        if a < b {
+            (a, b)
+        } else if b < a {
+            (b, a)
+        } else {
+            span(&xs)
+        }
+    };
+    let (y0, y1) = span(&ys);
+    let pad = (y1 - y0) * 0.06;
+    let yr = (y0 - pad, y1 + pad);
+    let (w_px, h_px, l, r, t, b) = (720.0, 320.0, 72.0, 16.0, 12.0, 44.0);
+    let px = |x: f64| l + (x - xr.0) / (xr.1 - xr.0) * (w_px - l - r);
+    let py = |y: f64| h_px - b - (y - yr.0) / (yr.1 - yr.0) * (h_px - t - b);
+    o.push_str(&format!(
+        "<svg viewBox=\"0 0 {w_px} {h_px}\" role=\"img\" style=\"width:100%;height:auto;background:var(--card)\" \
+         aria-label=\"{} against {}\">",
+        he(&s.target),
+        he(&w.over)
+    ));
+    for k in 0..=4 {
+        let fy_ = yr.0 + (yr.1 - yr.0) * k as f64 / 4.0;
+        let fx_ = xr.0 + (xr.1 - xr.0) * k as f64 / 4.0;
+        o.push_str(&format!(
+            "<line x1=\"{l}\" x2=\"{}\" y1=\"{y:.1}\" y2=\"{y:.1}\" stroke=\"var(--rule)\"/>\
+             <text x=\"{}\" y=\"{:.1}\" font-size=\"11\" text-anchor=\"end\" fill=\"var(--ink2)\">{}</text>\
+             <text x=\"{x:.1}\" y=\"{}\" font-size=\"11\" text-anchor=\"middle\" fill=\"var(--ink2)\">{}</text>",
+            w_px - r,
+            l - 6.0,
+            py(fy_) + 4.0,
+            num(round4(fy_)),
+            h_px - b + 16.0,
+            num(round4(fx_)),
+            y = py(fy_),
+            x = px(fx_),
+        ));
+    }
+    // One path, broken wherever a point was refused.
+    let mut pts: Vec<(f64, Option<f64>)> =
+        xs.iter().zip(&ys).map(|(x, y)| (*x, Some(*y))).collect();
+    pts.extend(w.refused.iter().map(|(x, _)| (x / fx, None)));
+    pts.sort_by(|a, b| a.0.partial_cmp(&b.0).unwrap_or(core::cmp::Ordering::Equal));
+    let mut d = String::new();
+    let mut pen = false;
+    for (x, y) in pts {
+        match y {
+            Some(y) => {
+                d.push_str(&format!(
+                    "{}{:.1},{:.1} ",
+                    if pen { "L" } else { "M" },
+                    px(x),
+                    py(y)
+                ));
+                pen = true;
+            }
+            None => pen = false,
+        }
+    }
+    o.push_str(&format!(
+        "<path d=\"{}\" fill=\"none\" stroke=\"var(--accent)\" stroke-width=\"2\"/>",
+        d.trim_end()
+    ));
+    // Where this case sits on the line: the swept input's own value, and the
+    // answer the run returned there — not read off the curve.
+    let at = s.inputs.iter().find(|i| i.id == w.over).and_then(|i| i.si);
+    if let (Some(x), Some(y)) = (at, s.answer().and_then(|a| a.si)) {
+        let (x, y) = (x / fx, y / fy);
+        if x >= xr.0 && x <= xr.1 && y >= yr.0 && y <= yr.1 {
+            o.push_str(&format!(
+                "<circle cx=\"{:.1}\" cy=\"{:.1}\" r=\"4.5\" fill=\"var(--ink)\"/>\
+                 <text x=\"{:.1}\" y=\"{:.1}\" font-size=\"11\" fill=\"var(--ink)\">this case</text>",
+                px(x),
+                py(y),
+                px(x) + 8.0,
+                py(y) - 8.0
+            ));
+        }
+    }
+    o.push_str(&format!(
+        "<text x=\"{}\" y=\"{}\" font-size=\"12\" text-anchor=\"middle\" fill=\"var(--ink)\">{} [{}]</text>\
+         <text x=\"14\" y=\"{}\" font-size=\"12\" text-anchor=\"middle\" fill=\"var(--ink)\" \
+         transform=\"rotate(-90 14 {})\">{} [{}]</text></svg>",
+        (l + w_px - r) / 2.0,
+        h_px - 6.0,
+        he(&w.over),
+        he(if w.x_unit.is_empty() || w.x_unit == "-" { "dimensionless" } else { &w.x_unit }),
+        (t + h_px - b) / 2.0,
+        (t + h_px - b) / 2.0,
+        he(&s.target),
+        he(if w.y_unit.is_empty() || w.y_unit == "-" { "dimensionless" } else { &w.y_unit }),
+    ));
+    o.push_str(
+        "<p class=\"m\">Every point on this line was computed by the engine when the result was \
+                saved; nothing is interpolated or run again.</p></section>\n",
+    );
+    o
+}
+
+/// A tick label, to four significant figures.
+fn round4(v: f64) -> f64 {
+    if v == 0.0 || !v.is_finite() {
+        return v;
+    }
+    use vleo_units::pmath;
+    let m = pmath::powi(10.0, 3 - pmath::floor(pmath::log10(v.abs())) as i32);
+    pmath::round(v * m) / m
+}
+
+/// The sweep inside a report page, when it carries one.
+pub fn unwrap_sweep(text: &str) -> Option<String> {
+    let at = text.find("id=\"vleo-sweep\"")?;
+    let open = text[at..].find('>').map(|k| at + k + 1)?;
+    let close = text[open..].find("</script>").map(|k| open + k)?;
+    Some(text[open..close].replace("<\\/", "</"))
 }
 
 /// The CSV inside a report page, or the text itself when it is not one.
@@ -762,13 +1250,25 @@ details { margin-top: 24px; }
 // kept on disk
 
 /// Results kept in a directory outside the repository.
+///
+/// A result is a folder: `result.csv` (the values and the inputs they ran
+/// on), `sweep.csv` when it is a sweep, and `report.html` — the page to
+/// send, which carries both and uploads back whole. A folder is written
+/// aside and renamed into place, so another laptop or a sync client never
+/// lists a result half made. A result saved as one `.csv` before results
+/// were folders is still listed, opened and removed.
 #[cfg(feature = "std")]
 pub mod store {
     use super::*;
     use std::path::Path;
 
-    /// What a directory holds: each result by its file name, and each file
-    /// that does not read as one, with why.
+    /// The files in a result's folder.
+    pub const RESULT: &str = "result.csv";
+    pub const SWEEP: &str = "sweep.csv";
+    pub const REPORT: &str = "report.html";
+
+    /// What a directory holds: each result by its name, and each entry that
+    /// does not read as one, with why.
     pub type Listing = (Vec<(String, Saved)>, Vec<(String, String)>);
 
     /// Every result in the directory, newest first, with any that no longer
@@ -781,13 +1281,15 @@ pub mod store {
         };
         for e in rd.flatten() {
             let name = e.file_name().to_string_lossy().into_owned();
-            if !name.ends_with(".csv") {
+            // A folder still being written, or anything else hidden.
+            if name.starts_with('.') {
                 continue;
             }
-            match std::fs::read_to_string(e.path())
-                .map_err(|x| x.to_string())
-                .and_then(|t| read(&t))
-            {
+            let is_dir = e.path().is_dir();
+            if !is_dir && !name.ends_with(".csv") {
+                continue;
+            }
+            match open_path(&e.path(), is_dir) {
                 Ok(s) => good.push((name, s)),
                 Err(why) => bad.push((name, why)),
             }
@@ -796,40 +1298,99 @@ pub mod store {
         (good, bad)
     }
 
-    /// Keep a result. Returns the file name it is kept under.
-    pub fn save(dir: &Path, s: &Saved) -> Result<String, String> {
-        std::fs::create_dir_all(dir).map_err(|e| format!("{}: {e}", dir.display()))?;
-        let name = file_name(s);
-        if !is_plain(&name) {
-            return Err(format!("'{name}' is not a result's file name"));
-        }
-        // Whole: a results folder may be shared or synced, and another laptop
-        // or a sync client must never read a result half written.
-        vleo_data::write_whole(&dir.join(&name), csv(s)).map_err(|e| format!("{name}: {e}"))?;
-        Ok(name)
+    /// The result that already answers this question, if one is kept — the
+    /// newest, when more than one is.
+    pub fn find(dir: &Path, question: &str) -> Option<(String, Saved)> {
+        list(dir)
+            .0
+            .into_iter()
+            .find(|(_, s)| s.question() == question)
     }
 
-    /// One result by its file name. The name must be a plain file name in the
-    /// directory: a path read from a request never reaches anywhere else.
+    /// Keep a result, once. Returns the name it is kept under and whether it
+    /// was already kept: the same question saved twice is one result, because
+    /// the same engine on the same inputs gives the same answer.
+    pub fn save(dir: &Path, s: &Saved) -> Result<(String, bool), String> {
+        if let Some((name, _)) = find(dir, &s.question()) {
+            return Ok((name, true));
+        }
+        std::fs::create_dir_all(dir).map_err(|e| format!("{}: {e}", dir.display()))?;
+        let name = folder_name(s);
+        if !is_plain(&name) {
+            return Err(format!("'{name}' is not a result's name"));
+        }
+        let at = dir.join(&name);
+        if at.exists() {
+            return Ok((name, true));
+        }
+        // Whole: made aside under a hidden name, then renamed into place in
+        // one step. A results folder may be shared or synced.
+        let aside = dir.join(format!(".{name}.part-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&aside);
+        let made = (|| -> Result<(), String> {
+            std::fs::create_dir_all(&aside).map_err(|e| format!("{}: {e}", aside.display()))?;
+            vleo_data::write_whole(&aside.join(RESULT), csv(s))
+                .map_err(|e| format!("{RESULT}: {e}"))?;
+            if let Some(w) = &s.sweep {
+                vleo_data::write_whole(&aside.join(SWEEP), sweep_csv(w))
+                    .map_err(|e| format!("{SWEEP}: {e}"))?;
+            }
+            vleo_data::write_whole(&aside.join(REPORT), html(s))
+                .map_err(|e| format!("{REPORT}: {e}"))?;
+            std::fs::rename(&aside, &at).map_err(|e| format!("{name}: {e}"))
+        })();
+        if let Err(e) = made {
+            let _ = std::fs::remove_dir_all(&aside);
+            return Err(e);
+        }
+        Ok((name, false))
+    }
+
+    /// One result by its name. The name must be a plain name in the directory:
+    /// a path read from a request never reaches anywhere else.
     pub fn open(dir: &Path, name: &str) -> Result<Saved, String> {
         if !is_plain(name) {
-            return Err(format!("'{name}' is not a result's file name"));
+            return Err(format!("'{name}' is not a result's name"));
         }
-        let text = std::fs::read_to_string(dir.join(name)).map_err(|e| format!("{name}: {e}"))?;
-        read(&text)
+        let p = dir.join(name);
+        open_path(&p, p.is_dir()).map_err(|e| format!("{name}: {e}"))
     }
 
-    /// Remove one result.
+    /// Remove one result — its folder, or the one file an older result is.
     pub fn remove(dir: &Path, name: &str) -> Result<(), String> {
         if !is_plain(name) {
-            return Err(format!("'{name}' is not a result's file name"));
+            return Err(format!("'{name}' is not a result's name"));
         }
-        std::fs::remove_file(dir.join(name)).map_err(|e| format!("{name}: {e}"))
+        let p = dir.join(name);
+        if p.is_dir() {
+            // Only a folder that is a result: the name came from a request.
+            if !p.join(RESULT).is_file() {
+                return Err(format!(
+                    "{name}: not a result's folder, so it was left alone"
+                ));
+            }
+            std::fs::remove_dir_all(&p).map_err(|e| format!("{name}: {e}"))
+        } else {
+            std::fs::remove_file(&p).map_err(|e| format!("{name}: {e}"))
+        }
+    }
+
+    fn open_path(p: &Path, is_dir: bool) -> Result<Saved, String> {
+        if !is_dir {
+            let text = std::fs::read_to_string(p).map_err(|e| e.to_string())?;
+            return read(&text);
+        }
+        let text = std::fs::read_to_string(p.join(RESULT)).map_err(|e| format!("{RESULT}: {e}"))?;
+        let mut s = read(&text)?;
+        if let Ok(t) = std::fs::read_to_string(p.join(SWEEP)) {
+            s.sweep = Some(read_sweep(&t).map_err(|e| format!("{SWEEP}: {e}"))?);
+        }
+        Ok(s)
     }
 
     fn is_plain(name: &str) -> bool {
-        name.ends_with(".csv")
-            && !name.is_empty()
+        !name.is_empty()
+            && !name.starts_with('.')
             && name
                 .chars()
                 .all(|c| c.is_ascii_alphanumeric() || matches!(c, '_' | '-' | '.'))
