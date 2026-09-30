@@ -267,9 +267,11 @@ pub(super) fn results_list() -> String {
 /// claim. A panel with no numbers here yet is refused by name.
 pub(super) fn record_figure(ctx: &Ctx, id: &str) -> String {
     const BUNDLE: &str = "solar-weather";
-    if id != "density" {
+    const KNOWN: [&str; 3] = ["density", "storm-scale", "kp-ap"];
+    if !KNOWN.contains(&id) {
         return failed(&format!(
-            "no figure of the record called '{id}'. The engine works out: density"
+            "no figure of the record called '{id}'. The engine works out: {}",
+            KNOWN.join(", ")
         ));
     }
     let Some((dir, _)) = ctx.bundles.get(BUNDLE) else {
@@ -277,17 +279,33 @@ pub(super) fn record_figure(ctx: &Ctx, id: &str) -> String {
             "{BUNDLE} is not installed here, so there is no record to work the figure out from"
         ));
     };
-    let days = match vleo_data::load_bundle(dir).and_then(|b| vleo_data::read_solar_days(&b)) {
+    let bundle = match vleo_data::load_bundle(dir) {
+        Ok(b) => b,
+        Err(e) => return failed(&e),
+    };
+    let days = match vleo_data::read_solar_days(&bundle) {
         Ok(d) => d,
         Err(e) => return failed(&e),
     };
-    let d = vleo_modules::record::density(&days);
     let opt = |j: &mut Json, k: &str, v: Option<f64>| {
         match v {
             Some(v) => j.num_field(k, v),
             None => j.key(k).raw("null"),
         };
     };
+    // An array of numbers, a missing one written as null: the page draws a
+    // gap there, and the number it would have been is never invented.
+    let arr = |j: &mut Json, v: &[Option<f64>]| {
+        j.open_arr();
+        for (i, x) in v.iter().enumerate() {
+            if i > 0 {
+                j.raw(",");
+            }
+            j.raw(&x.map_or_else(|| "null".to_string(), crate::json::num));
+        }
+        j.close_arr();
+    };
+    let some = |v: &[f64]| v.iter().map(|&x| Some(x)).collect::<Vec<_>>();
     let mut j = Json::new();
     j.raw("{");
     j.bool_field("ok", true);
@@ -301,13 +319,77 @@ pub(super) fn record_figure(ctx: &Ctx, id: &str) -> String {
                 .unwrap_or_default()
         ),
     );
-    j.num_field("days", d.days as f64);
-    opt(&mut j, "r", d.r);
-    opt(&mut j, "median_f107", d.median_f107);
-    opt(&mut j, "median_ap", d.median_ap);
-    j.num_field("below_both_pct", d.below_both_pct);
-    j.num_field("storm_ap", vleo_modules::record::STORM_AP);
-    j.num_field("storm_deciles", d.storm_deciles as f64);
+    match id {
+        "density" => {
+            let d = vleo_modules::record::density(&days);
+            j.num_field("days", d.days as f64);
+            opt(&mut j, "r", d.r);
+            opt(&mut j, "median_f107", d.median_f107);
+            opt(&mut j, "median_ap", d.median_ap);
+            j.num_field("below_both_pct", d.below_both_pct);
+            j.num_field("storm_ap", vleo_modules::record::STORM_AP);
+            j.num_field("storm_deciles", d.storm_deciles as f64);
+        }
+        "storm-scale" => {
+            let cycles = match vleo_data::read_solar_cycles(&bundle) {
+                Ok(c) => c,
+                Err(e) => return failed(&e),
+            };
+            let s = vleo_modules::record::storm_scale(&days, &cycles);
+            j.key("levels").open_arr();
+            for (k, (name, _)) in vleo_modules::record::STORM_LEVELS.iter().enumerate() {
+                j.open_obj();
+                j.str_field("name", name);
+                j.num_field("ap", s.level_ap[k]);
+                j.close_obj();
+            }
+            j.close_arr();
+            let n = |v: &[u32]| v.iter().map(|&x| Some(x as f64)).collect::<Vec<_>>();
+            j.key("cycles");
+            arr(&mut j, &n(&s.cycles));
+            j.key("days");
+            arr(
+                &mut j,
+                &s.days.iter().map(|&x| Some(x as f64)).collect::<Vec<_>>(),
+            );
+            j.key("max_ap");
+            arr(&mut j, &s.max_ap);
+            j.key("per_year").open_arr();
+            for (k, row) in s.per_year.iter().enumerate() {
+                if k > 0 {
+                    j.raw(",");
+                }
+                arr(&mut j, row);
+            }
+            j.close_arr();
+            opt(&mut j, "evenness", s.evenness);
+            j.key("busiest");
+            arr(
+                &mut j,
+                &s.busiest
+                    .iter()
+                    .map(|b| b.map(|n| n as f64))
+                    .collect::<Vec<_>>(),
+            );
+        }
+        _ => {
+            let k = vleo_modules::record::kp_ap(&days);
+            j.key("kp");
+            arr(&mut j, &some(&k.kp));
+            j.key("median");
+            arr(&mut j, &k.median);
+            j.key("p10");
+            arr(&mut j, &k.p10);
+            j.key("p90");
+            arr(&mut j, &k.p90);
+            j.key("table");
+            arr(&mut j, &k.table);
+            j.num_field("above_median", k.above_median as f64);
+            j.num_field("above_p90", k.above_p90 as f64);
+            opt(&mut j, "kp7_table", k.kp7_table);
+            opt(&mut j, "kp7_median", k.kp7_median);
+        }
+    }
     j.raw("}");
     j.0
 }

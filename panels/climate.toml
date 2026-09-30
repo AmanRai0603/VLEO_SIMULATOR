@@ -90,3 +90,14 @@ why = """the three variables have different scales and different axis labels"""
 name = "by"
 drive = "(() => { const s = document.querySelector('.sw-opt[data-k=by]'); if (!s) throw new Error('no by control'); s.value = 'kpap'; s.dispatchEvent(new Event('change')); })()"
 why = """the five aggregates are five different horizontal axes; the Kp-against-ap setting in particular changes the picture completely"""
+
+# THE KP-AGAINST-AP VIEW'S NUMBERS ARE THE ENGINE'S (phase 10b): the day's Ap at
+# each worst-slot Kp, its spread, the published line — read off the kernel's
+# table, so this page holds no copy of it — and the two counts the finding
+# states are vleo_modules::record::kp_ap's. Check 2c moves each in the engine's
+# reply with the view on Kp against ap and demands the panel say something
+# different.
+[[figures]]
+id = "kp-ap"
+state = "(() => { const s = document.querySelector('.sw-opt[data-k=by]'); if (!s) throw new Error('no by control'); s.value = 'kpap'; s.dispatchEvent(new Event('change')); })()"
+reads = ["kp", "median", "p10", "p90", "table", "above_median", "above_p90", "kp7_table", "kp7_median"]

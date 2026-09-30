@@ -285,6 +285,12 @@ schema = "record-figure"
 [[route.example]]
 name = "figures-solar-density"
 path = "/v1/figures/solar/density"
+[[route.example]]
+name = "figures-solar-storm-scale"
+path = "/v1/figures/solar/storm-scale"
+[[route.example]]
+name = "figures-solar-kp-ap"
+path = "/v1/figures/solar/kp-ap"
 
 [[route]]
 method = "GET"

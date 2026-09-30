@@ -690,6 +690,72 @@ pub fn read_solar_days(b: &Bundle) -> Result<Vec<SolarDay>, String> {
     Ok(out)
 }
 
+/// One solar cycle as the record's own table bounds it.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct SolarCycle {
+    /// The cycle's number, 23 onward in this record.
+    pub n: u32,
+    /// Days since 2000-01-01 of the opening minimum. A day belongs to the
+    /// cycle from here...
+    pub start: i32,
+    /// ...up to, and not including, this day. For the cycle still running it
+    /// is where the RECORD stops, not where the cycle does.
+    pub end: i32,
+}
+
+/// The cycles `solar_cycles.csv` lists, in its order.
+///
+/// Read by the column names in its header, like the daily record, and refused
+/// whole on a row that does not say what a cycle is: a cycle guessed from a
+/// broken row would put days in the wrong one and nothing downstream could
+/// tell.
+pub fn read_solar_cycles(b: &Bundle) -> Result<Vec<SolarCycle>, String> {
+    if !b.verified {
+        return Err(format!(
+            "{} is present but does not verify — refusing to read it",
+            b.manifest.name
+        ));
+    }
+    let p = b.dir.join("solar_cycles.csv");
+    let text = fs::read_to_string(&p).map_err(|e| format!("{}: {e}", p.display()))?;
+    let mut cols: Option<Vec<String>> = None;
+    let mut out = Vec::new();
+    for (n, line) in text.lines().enumerate() {
+        let line = line.trim();
+        if line.is_empty() || line.starts_with('#') {
+            continue;
+        }
+        let f: Vec<&str> = line.split(',').map(str::trim).collect();
+        let Some(h) = &cols else {
+            cols = Some(f.iter().map(|s| s.to_string()).collect());
+            continue;
+        };
+        let at = |name: &str| -> Option<&str> {
+            h.iter()
+                .position(|c| c == name)
+                .and_then(|i| f.get(i).copied())
+        };
+        let bad = |what: &str| format!("{}:{}: {what}", p.display(), n + 1);
+        let cycle = at("cycle")
+            .and_then(|v| v.parse().ok())
+            .ok_or_else(|| bad("no cycle number"))?;
+        let date = |k: &str| {
+            at(k)
+                .and_then(days_since_2000)
+                .ok_or_else(|| bad(&format!("no '{k}' date")))
+        };
+        out.push(SolarCycle {
+            n: cycle,
+            start: date("start")?,
+            end: date("end")?,
+        });
+    }
+    if out.is_empty() {
+        return Err(format!("{}: no cycles", p.display()));
+    }
+    Ok(out)
+}
+
 /// The row for one day, or `None` if the record does not cover it.
 ///
 /// Binary search rather than a scan: the caller is a design window asking for

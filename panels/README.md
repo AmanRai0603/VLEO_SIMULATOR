@@ -107,6 +107,17 @@ a 2 per cent tolerance, and a panel that asks for the figure and then prints a
 number of its own passes the pixel match every day until the record changes.
 The selftest carries that panel.
 
+A figure drawn only in one view of a panel names the `state` that reaches it —
+the same JavaScript an `[[input]]` drives with — and a number may be a list, or a
+list of lists: every number under the field is moved.
+
+```toml
+[[figures]]
+id = "storm-scale"
+state = "(() => { ... s.value = 'storm'; s.dispatchEvent(new Event('change')); })()"
+reads = ["per_year", "evenness", "busiest"]
+```
+
 ## Why `correct` is prose
 
 Checks one and two are mechanical and catch the mechanical failures. `correct`

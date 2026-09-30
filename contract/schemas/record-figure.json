@@ -2,67 +2,274 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "record-figure",
   "description": "The numbers one figure of the solar-weather record states, worked out by the engine (crates/vleo-modules/src/record.rs). A number the record cannot give is null, never a stand-in.",
-  "type": "object",
-  "properties": {
-    "ok": {
-      "type": "boolean"
-    },
-    "figure": {
-      "type": "string",
-      "enum": [
-        "density"
+  "anyOf": [
+    {
+      "type": "object",
+      "description": "The density figure: how the two drivers a density model takes sit against each other.",
+      "properties": {
+        "ok": {
+          "type": "boolean"
+        },
+        "bundle": {
+          "type": "string",
+          "description": "The bundle and version the numbers were worked out from."
+        },
+        "figure": {
+          "type": "string",
+          "enum": [
+            "density"
+          ]
+        },
+        "days": {
+          "type": "number",
+          "description": "Days carrying both F10.7 and Ap."
+        },
+        "r": {
+          "type": [
+            "null",
+            "number"
+          ],
+          "description": "Pearson correlation of F10.7 with Ap; null under three days or with no spread."
+        },
+        "median_f107": {
+          "type": [
+            "null",
+            "number"
+          ]
+        },
+        "median_ap": {
+          "type": [
+            "null",
+            "number"
+          ]
+        },
+        "below_both_pct": {
+          "type": "number",
+          "description": "Per cent of those days below both medians."
+        },
+        "storm_ap": {
+          "type": "number",
+          "description": "The daily Ap at or above which a day is a storm day."
+        },
+        "storm_deciles": {
+          "type": "number",
+          "description": "How many of the ten F10.7 deciles hold at least one storm day."
+        }
+      },
+      "required": [
+        "ok",
+        "figure",
+        "bundle",
+        "days",
+        "r",
+        "median_f107",
+        "median_ap",
+        "below_both_pct",
+        "storm_ap",
+        "storm_deciles"
       ]
     },
-    "bundle": {
-      "type": "string",
-      "description": "The bundle and version the numbers were worked out from."
-    },
-    "days": {
-      "type": "number",
-      "description": "Days carrying both F10.7 and Ap."
-    },
-    "r": {
-      "type": [
-        "null",
-        "number"
-      ],
-      "description": "Pearson correlation of F10.7 with Ap; null under three days or with no spread."
-    },
-    "median_f107": {
-      "type": [
-        "null",
-        "number"
+    {
+      "type": "object",
+      "description": "The storm-scale figure: how storms are shared out between the cycles the record holds.",
+      "properties": {
+        "ok": {
+          "type": "boolean"
+        },
+        "bundle": {
+          "type": "string",
+          "description": "The bundle and version the numbers were worked out from."
+        },
+        "figure": {
+          "type": "string",
+          "enum": [
+            "storm-scale"
+          ]
+        },
+        "levels": {
+          "type": "array",
+          "description": "G1 to G3, each with its daily-Ap threshold: the published table's ap at Kp 5, 6 and 7.",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "ap": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "name",
+              "ap"
+            ]
+          }
+        },
+        "cycles": {
+          "type": "array",
+          "description": "The cycles, in the record's table order.",
+          "items": {
+            "type": "number"
+          }
+        },
+        "days": {
+          "type": "array",
+          "description": "Days in each cycle carrying an Ap.",
+          "items": {
+            "type": "number"
+          }
+        },
+        "max_ap": {
+          "type": "array",
+          "description": "The largest daily Ap in each cycle; null for a cycle with no days.",
+          "items": {
+            "type": [
+              "null",
+              "number"
+            ]
+          }
+        },
+        "per_year": {
+          "type": "array",
+          "description": "Days a year at or above each level, per cycle: [level][cycle].",
+          "items": {
+            "type": "array",
+            "items": {
+              "type": [
+                "null",
+                "number"
+              ]
+            }
+          }
+        },
+        "evenness": {
+          "type": [
+            "null",
+            "number"
+          ],
+          "description": "The busiest cycle's G1 rate over the quietest's; null unless two cycles reach G1."
+        },
+        "busiest": {
+          "type": "array",
+          "description": "The cycle with the most days a year at each level; null where none has a rate.",
+          "items": {
+            "type": [
+              "null",
+              "number"
+            ]
+          }
+        }
+      },
+      "required": [
+        "ok",
+        "figure",
+        "bundle",
+        "levels",
+        "cycles",
+        "days",
+        "max_ap",
+        "per_year",
+        "evenness",
+        "busiest"
       ]
     },
-    "median_ap": {
-      "type": [
-        "null",
-        "number"
+    {
+      "type": "object",
+      "description": "The Kp-against-Ap figure: the daily Ap at each worst three-hourly Kp, beside the published table.",
+      "properties": {
+        "ok": {
+          "type": "boolean"
+        },
+        "bundle": {
+          "type": "string",
+          "description": "The bundle and version the numbers were worked out from."
+        },
+        "figure": {
+          "type": "string",
+          "enum": [
+            "kp-ap"
+          ]
+        },
+        "kp": {
+          "type": "array",
+          "description": "Every worst-slot Kp the record holds, ascending.",
+          "items": {
+            "type": "number"
+          }
+        },
+        "median": {
+          "type": "array",
+          "items": {
+            "type": [
+              "null",
+              "number"
+            ]
+          }
+        },
+        "p10": {
+          "type": "array",
+          "items": {
+            "type": [
+              "null",
+              "number"
+            ]
+          }
+        },
+        "p90": {
+          "type": "array",
+          "items": {
+            "type": [
+              "null",
+              "number"
+            ]
+          }
+        },
+        "table": {
+          "type": "array",
+          "description": "The published three-hourly ap at each Kp; null off the scale.",
+          "items": {
+            "type": [
+              "null",
+              "number"
+            ]
+          }
+        },
+        "above_median": {
+          "type": "number",
+          "description": "At how many of those Kp the table is above the median day."
+        },
+        "above_p90": {
+          "type": "number",
+          "description": "...and above the 90th percentile."
+        },
+        "kp7_table": {
+          "type": [
+            "null",
+            "number"
+          ]
+        },
+        "kp7_median": {
+          "type": [
+            "null",
+            "number"
+          ],
+          "description": "The median day at Kp 7; null where the record has none."
+        }
+      },
+      "required": [
+        "ok",
+        "figure",
+        "bundle",
+        "kp",
+        "median",
+        "p10",
+        "p90",
+        "table",
+        "above_median",
+        "above_p90",
+        "kp7_table",
+        "kp7_median"
       ]
-    },
-    "below_both_pct": {
-      "type": "number",
-      "description": "Per cent of those days below both medians."
-    },
-    "storm_ap": {
-      "type": "number",
-      "description": "The daily Ap at or above which a day is a storm day."
-    },
-    "storm_deciles": {
-      "type": "number",
-      "description": "How many of the ten F10.7 deciles hold at least one storm day."
     }
-  },
-  "required": [
-    "ok",
-    "figure",
-    "bundle",
-    "days",
-    "r",
-    "median_f107",
-    "median_ap",
-    "below_both_pct",
-    "storm_ap",
-    "storm_deciles"
   ]
 }
