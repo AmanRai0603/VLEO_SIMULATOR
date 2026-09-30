@@ -90,3 +90,13 @@ why = """the bin count sets the resolution of every line; doubling it must visib
 id = "storm-scale"
 state = "(() => { const s = document.querySelector('.sw-opt[data-k=view]'); if (!s) throw new Error('no view control'); s.value = 'storm'; s.dispatchEvent(new Event('change')); })()"
 reads = ["levels", "cycles", "max_ap", "per_year", "evenness", "busiest"]
+
+# THE MEAN CYCLE'S NUMBERS ARE THE ENGINE'S TOO (phase 10d): every cycle stacked
+# on phase, the mean of the complete ones, and the correlation, bins, gaps and
+# peaks the answer, finding and note state are vleo_modules::record::mean_cycle,
+# asked for with the driver and bins the controls hold. The panel's opening view
+# is this one, so it needs no state. `complete` is a flag per cycle and not a
+# number, so it is not moved; the dashes it sets are drawn from it all the same.
+[[figures]]
+id = "mean-cycle"
+reads = ["phase", "cycles", "curves", "mean_cycle", "pair", "r", "usable", "above", "gap_rise", "gap_fall", "peak", "min_days", "bins"]

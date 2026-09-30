@@ -137,12 +137,14 @@ export async function engineAt(node, sets) {
 /**
  * The numbers a figure of the record draws, worked out by the engine
  * (`/v1/figures/solar/<id>`, phase 10). The page draws the record's own days
- * and these; it works out neither. A refusal comes back as the engine's own
+ * and these; it works out neither. `params` are the figure's own settings
+ * (the mean cycle's driver and bins). A refusal comes back as the engine's own
  * words, and a panel that gets one says it rather than drawing without them.
  */
-export async function engineFigure(id) {
+export async function engineFigure(id, params) {
   try {
-    const r = await fetch('/v1/figures/solar/' + encodeURIComponent(id));
+    const q = params ? '?' + new URLSearchParams(params).toString() : '';
+    const r = await fetch('/v1/figures/solar/' + encodeURIComponent(id) + q);
     const d = await r.json();
     return d.ok ? d : { refused: d.message || 'refused' };
   } catch (e) {

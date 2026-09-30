@@ -208,34 +208,25 @@ const PANELS = [
       { k: 'bins', label: 'phase bins', when: o => o.view === 'stack',
         opts: [['20', '20'], ['10', '10'], ['40', '40']] },
     ],
-    // The storm view's numbers are the engine's (phase 10); the mean-cycle
-    // view still draws its own and asks for nothing.
-    data: o => (o.view === 'storm' ? engineFigure('storm-scale') : null),
+    // THE NUMBERS ARE THE ENGINE'S (phases 10b and 10d): the storm view's from
+    // vleo_modules::record::storm_scale, the mean cycle's from
+    // record::mean_cycle — every cycle stacked on the phase sw_cycle_phase
+    // folds by, the mean of the complete ones, and how well the last two
+    // complete cycles repeat each other. The page draws them.
+    data: o => (o.view === 'storm' ? engineFigure('storm-scale')
+      : engineFigure('mean-cycle', { v: o.v, bins: o.bins })),
     build(rec, o, fig) {
       if (o.view === 'storm') return stormScale(fig);
-      const nb = +o.bins, key = o.v;
-      const per = new Map();
-      for (const c of rec.cycles) per.set(c.n, Array.from({ length: nb }, () => []));
-      for (const d of rec.days) {
-        if (d.phase === null || d[key] === null) continue;
-        const b = Math.min(nb - 1, Math.floor(d.phase * nb));
-        per.get(d.cycle)[b].push(d[key]);
-      }
-      const xs = Array.from({ length: nb }, (_, i) => (i + 0.5) / nb);
-      const mean = a => (a.length ? a.reduce((p, c) => p + c, 0) / a.length : null);
+      if (fig.refused) throw new Error('the engine did not work the figure out: ' + fig.refused);
+      const nb = fig.bins, key = fig.variable, xs = fig.phase;
       const series = [];
-      const complete = rec.cycles.filter(c => c.n !== 25);
-      const meanCycle = xs.map((_, i) => {
-        const v = complete.map(c => mean(per.get(c.n)[i])).filter(x => x !== null);
-        return v.length ? v.reduce((p, c) => p + c, 0) / v.length : null;
-      });
-      series.push({ name: 'mean of the complete cycles', kind: 'line', x: xs, y: meanCycle, colour: INK.text, width: 2.4 });
-      rec.cycles.forEach((c, i) => {
+      series.push({ name: 'mean of the complete cycles', kind: 'line', x: xs, y: fig.mean_cycle, colour: INK.text, width: 2.4 });
+      fig.cycles.forEach((n, i) => {
         series.push({
-          name: 'cycle ' + c.n + (c.n === 25 ? ' (incomplete)' : ''),
-          kind: 'line', x: xs, y: xs.map((_, k) => mean(per.get(c.n)[k])),
+          name: 'cycle ' + n + (fig.complete[i] ? '' : ' (incomplete)'),
+          kind: 'line', x: xs, y: fig.curves[i],
           colour: INK.series[i % INK.series.length], width: 1.4,
-          dash: c.n === 25 ? [4, 3] : null,
+          dash: fig.complete[i] ? null : [4, 3],
           // CONTEXT. §34.1 named this frame: the mean cycle and the individual
           // ones carried the same contrast, so five curves arrived at once and
           // a reader had to be told in prose which one the panel is about. The
@@ -246,29 +237,15 @@ const PANELS = [
           context: true,
         });
       });
-      // A bin thinned by the 2017 gap is dropped, not averaged. sw_cycle_repeatability
-      // is measured the same way: a bin holding 141 days against the usual 201 is a
-      // mean of a different thing, and including it moves the correlation by 0.006.
-      const MIN = 150;
-      const ok = i => per.get(23)[i].length >= MIN && per.get(24)[i].length >= MIN;
-      const a = xs.map((_, i) => (ok(i) ? mean(per.get(23)[i]) : null));
-      const b = xs.map((_, i) => (ok(i) ? mean(per.get(24)[i]) : null));
-      const r = corr(a, b);
-      const usable = a.filter((v, i) => v !== null && b[i] !== null).length;
-      // How far apart the two complete cycles run, on the rise and after it.
-      // Measured, because "they converge" is the kind of clause that is written
-      // once from one picture and then carried through every variable.
-      const gapIn = (lo, hi) => {
-        const d = [];
-        for (let i = 0; i < xs.length; i++) {
-          if (xs[i] >= lo && xs[i] < hi && a[i] !== null && b[i] !== null) d.push(a[i] - b[i]);
-        }
-        return d.length ? d.reduce((q, c) => q + c, 0) / d.length : null;
-      };
+      // A bin thinned by the 2017 gap is dropped, not averaged — the engine
+      // compares only the bins both cycles fill with MIN days, as
+      // sw_cycle_repeatability is measured: a bin holding 141 days against the
+      // usual 201 is a mean of a different thing.
+      const MIN = fig.min_days, r = fig.r, usable = fig.usable;
+      const [c1, c2] = fig.pair || ['\u2014', '\u2014'];
       // The peak disagreement is measured for the variable on screen. The figure
       // used to be 28 per cent under all three, which is F10.7's.
-      const pk = n => Math.max(...xs.map((_, i) => mean(per.get(n)[i])).filter(v => v !== null));
-      const p23 = pk(23), p24 = pk(24);
+      const [p23, p24] = fig.peak || [NaN, NaN];
       const vname = key === 'f107' ? 'F10.7' : key === 'ap' ? 'Ap' : 'the sunspot number';
       return {
         // THE CORRELATION IS THE ANSWER AND THE RATIO IS WHY IT IS NOT ENOUGH.
@@ -277,27 +254,27 @@ const PANELS = [
         answer: r === null
           ? { value: '\u2014', of: 'no phase bin both complete cycles populate' }
           : { value: r.toFixed(3),
-              of: 'how well cycle 24 repeats 23\u2019s ' + vname + ' SHAPE \u2014 while its peak is '
-                + (p24 / p23).toFixed(2) + ' of 23\u2019s' },
+              of: 'how well cycle ' + c2 + ' repeats ' + c1 + '\u2019s ' + vname + ' SHAPE \u2014 while its peak is '
+                + (p24 / p23).toFixed(2) + ' of ' + c1 + '\u2019s' },
         spec: {
           // THE FINDING IS NOT THE ANSWER. The answer above the chart is the
           // correlation, which is a number about the two cycles; this is a
           // relation between two curves a reader can check by looking at which
           // one is on top and over how much of the axis.
-          finding: 'cycle 23 runs above cycle 24 in ' +
-            a.filter((v, i) => v !== null && b[i] !== null && v > b[i]).length +
-            ' of the ' + usable + ' phase bins both fill, by ' + sig(gapIn(0, 0.6)) +
-            ' on the rise and ' + sig(gapIn(0.6, 1)) + ' after phase 0.6',
+          finding: 'cycle ' + c1 + ' runs above cycle ' + c2 + ' in ' + fig.above +
+            ' of the ' + usable + ' phase bins both fill, by ' + sig(fig.gap_rise) +
+            ' on the rise and ' + sig(fig.gap_fall) + ' after phase 0.6',
           x: { label: 'cycle phase  [0 = minimum, 1 = the next]', min: 0, max: 1 },
           y: { label: key === 'f107' ? 'F10.7  [sfu]' : key === 'ap' ? 'Ap  [-]' : 'sunspot number  [-]' },
           series,
         },
-        note: 'Cycles 23 and 24 are the only complete ones, and their ' + vname + ' shapes correlate at ' +
+        note: 'Cycles ' + c1 + ' and ' + c2 + ' are the only complete ones, and their ' + vname + ' shapes correlate at ' +
           (r === null ? '—' : r.toFixed(4)) + ' over the ' + usable + ' of ' + nb +
           ' bins both populate with at least ' + MIN + ' days. A correlation is scale-free, so it is ' +
           'blind to the thing a drag design cares about, and here that blindness costs: the stacked ' +
-          'peaks are ' + sig(p23) + ' for cycle 23 against ' + sig(p24) + ' for cycle 24, a ratio of ' +
-          (p24 / p23).toFixed(3) + '. The shape repeats and the size does not. Cycle 25 is dashed and ' +
+          'peaks are ' + sig(p23) + ' for cycle ' + c1 + ' against ' + sig(p24) + ' for cycle ' + c2 + ', a ratio of ' +
+          (p24 / p23).toFixed(3) + '. The shape repeats and the size does not. Cycle ' +
+          fig.cycles.filter((_, i) => !fig.complete[i]).join(' and ') + ' is dashed and ' +
           'stops part way because it is still running: its end in solar_cycles.csv is the record’s ' +
           'end rather than a minimum, so its phase is folded against the mean length of the ' +
           'complete cycles — the same fold sw_cycle_phase uses — and the record simply has no days ' +

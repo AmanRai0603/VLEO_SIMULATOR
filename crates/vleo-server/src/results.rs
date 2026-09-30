@@ -265,15 +265,16 @@ pub(super) fn results_list() -> String {
 /// Python or a script can ask for them too. Read from the same verified
 /// bundle `/v1/bundle` serves the page, so the picture and the numbers are one
 /// claim. A panel with no numbers here yet is refused by name.
-pub(super) fn record_figure(ctx: &Ctx, id: &str) -> String {
+pub(super) fn record_figure(ctx: &Ctx, id: &str, params: &str) -> String {
     const BUNDLE: &str = "solar-weather";
-    const KNOWN: [&str; 6] = [
+    const KNOWN: [&str; 7] = [
         "density",
         "storm-scale",
         "kp-ap",
         "recurrence-f107",
         "recurrence-ap",
         "spikes",
+        "mean-cycle",
     ];
     if !KNOWN.contains(&id) {
         return failed(&format!(
@@ -296,7 +297,8 @@ pub(super) fn record_figure(ctx: &Ctx, id: &str) -> String {
     };
     // Only the figures that fold by cycle read the cycle table; one that is
     // missing refuses them and nothing else.
-    let cycles = if matches!(id, "storm-scale" | "spikes") {
+    use vleo_modules::record::Driver;
+    let cycles = if matches!(id, "storm-scale" | "spikes" | "mean-cycle") {
         match vleo_data::read_solar_cycles(&bundle) {
             Ok(c) => c,
             Err(e) => return failed(&e),
@@ -348,9 +350,7 @@ pub(super) fn record_figure(ctx: &Ctx, id: &str) -> String {
             j.num_field("storm_deciles", d.storm_deciles as f64);
         }
         "recurrence-f107" | "recurrence-ap" => {
-            use vleo_modules::record::{
-                recurrence, Driver, RECURRENCE_MAX_LAG, RECURRENCE_WINDOWS,
-            };
+            use vleo_modules::record::{recurrence, RECURRENCE_MAX_LAG, RECURRENCE_WINDOWS};
             let driver = if id == "recurrence-ap" {
                 Driver::Ap
             } else {
@@ -396,6 +396,78 @@ pub(super) fn record_figure(ctx: &Ctx, id: &str) -> String {
             );
             j.num_field("above_long", r.above_long as f64);
             j.num_field("compared", r.compared as f64);
+        }
+        "mean-cycle" => {
+            use vleo_modules::record::{mean_cycle, MEAN_CYCLE_MIN_DAYS};
+            // The mean cycle is asked for over one driver in some number of phase
+            // bins, and says which it was given; anything else is refused by name.
+            let driver = match param(params, "v").unwrap_or("f107") {
+                "f107" => Driver::F107,
+                "ap" => Driver::Ap,
+                "ssn" => Driver::Ssn,
+                other => {
+                    return failed(&format!(
+                        "no driver '{other}' in the record's figures: f107, ap or ssn"
+                    ))
+                }
+            };
+            let bins = match param(params, "bins").unwrap_or("20").parse::<usize>() {
+                Ok(n) if (2..=100).contains(&n) => n,
+                _ => return failed("bins is a whole number of phase bins from 2 to 100"),
+            };
+            let m = mean_cycle(&days, &cycles, driver, bins, MEAN_CYCLE_MIN_DAYS);
+            j.str_field(
+                "variable",
+                match driver {
+                    Driver::F107 => "f107",
+                    Driver::Ap => "ap",
+                    Driver::Ssn => "ssn",
+                },
+            );
+            j.num_field("bins", bins as f64);
+            j.num_field("min_days", MEAN_CYCLE_MIN_DAYS as f64);
+            j.key("phase");
+            arr(&mut j, &some(&m.phase));
+            j.key("cycles");
+            arr(
+                &mut j,
+                &m.cycles.iter().map(|&n| Some(n as f64)).collect::<Vec<_>>(),
+            );
+            j.key("complete").open_arr();
+            for (k, done) in m.complete.iter().enumerate() {
+                j.raw(if k > 0 { "," } else { "" });
+                j.raw(if *done { "true" } else { "false" });
+            }
+            j.close_arr();
+            j.key("curves").open_arr();
+            for (k, c) in m.curves.iter().enumerate() {
+                if k > 0 {
+                    j.raw(",");
+                }
+                arr(&mut j, c);
+            }
+            j.close_arr();
+            j.key("mean_cycle");
+            arr(&mut j, &m.mean_cycle);
+            j.key("pair");
+            match m.pair {
+                Some((a, b)) => arr(&mut j, &[Some(a as f64), Some(b as f64)]),
+                None => {
+                    j.raw("null");
+                }
+            }
+            opt(&mut j, "r", m.r);
+            j.num_field("usable", m.usable as f64);
+            j.num_field("above", m.above as f64);
+            opt(&mut j, "gap_rise", m.gap_rise);
+            opt(&mut j, "gap_fall", m.gap_fall);
+            j.key("peak");
+            match m.peak {
+                Some((a, b)) => arr(&mut j, &[Some(a), Some(b)]),
+                None => {
+                    j.raw("null");
+                }
+            }
         }
         "spikes" => {
             let s = vleo_modules::record::spikes(&days, &cycles);

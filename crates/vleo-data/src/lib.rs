@@ -584,6 +584,8 @@ pub struct SolarDay {
     /// gap, which is not the same as zero and must not become it.
     pub kp: [Option<f64>; 8],
     pub kp_max: Option<f64>,
+    /// The day's sunspot number (SESC), which the cycle figures stack.
+    pub ssn: Option<f64>,
 }
 
 /// Days since 2000-01-01 from `YYYY-MM-DD`.
@@ -673,6 +675,7 @@ pub fn read_solar_days(b: &Bundle) -> Result<Vec<SolarDay>, String> {
             ap: at("ap_planetary").and_then(cell),
             kp,
             kp_max: at("kp_max").and_then(cell),
+            ssn: at("ssn_sesc").and_then(cell),
         });
     }
     if out.is_empty() {

@@ -436,6 +436,155 @@
         "phase",
         "rate"
       ]
+    },
+    {
+      "type": "object",
+      "description": "The mean-cycle figure: every cycle stacked on phase, the mean of the complete ones, and how well the last two complete cycles repeat.",
+      "properties": {
+        "ok": {
+          "type": "boolean"
+        },
+        "bundle": {
+          "type": "string",
+          "description": "The bundle and version the numbers were worked out from."
+        },
+        "figure": {
+          "type": "string",
+          "enum": [
+            "mean-cycle"
+          ]
+        },
+        "variable": {
+          "type": "string",
+          "enum": [
+            "f107",
+            "ap",
+            "ssn"
+          ],
+          "description": "The driver stacked."
+        },
+        "bins": {
+          "type": "number",
+          "description": "How many phase bins."
+        },
+        "min_days": {
+          "type": "number",
+          "description": "The fewest days a bin must hold in both compared cycles to count toward the correlation."
+        },
+        "phase": {
+          "type": "array",
+          "description": "The centre of each phase bin.",
+          "items": {
+            "type": "number"
+          }
+        },
+        "cycles": {
+          "type": "array",
+          "description": "The cycles, in the record's table order.",
+          "items": {
+            "type": "number"
+          }
+        },
+        "complete": {
+          "type": "array",
+          "description": "Whether each cycle is complete; the one still running folds by the mean length of the others.",
+          "items": {
+            "type": "boolean"
+          }
+        },
+        "curves": {
+          "type": "array",
+          "description": "Each cycle's mean in each bin: [cycle][bin]; null for an empty bin.",
+          "items": {
+            "type": "array",
+            "items": {
+              "type": [
+                "null",
+                "number"
+              ]
+            }
+          }
+        },
+        "mean_cycle": {
+          "type": "array",
+          "description": "The mean over the complete cycles of their bin means.",
+          "items": {
+            "type": [
+              "null",
+              "number"
+            ]
+          }
+        },
+        "pair": {
+          "type": [
+            "null",
+            "array"
+          ],
+          "description": "The two cycles compared — the last two complete — earlier first.",
+          "items": {
+            "type": "number"
+          }
+        },
+        "r": {
+          "type": [
+            "null",
+            "number"
+          ],
+          "description": "Their correlation over the bins both fill; null under three."
+        },
+        "usable": {
+          "type": "number",
+          "description": "How many bins that is."
+        },
+        "above": {
+          "type": "number",
+          "description": "In how many the earlier cycle runs above the later."
+        },
+        "gap_rise": {
+          "type": [
+            "null",
+            "number"
+          ],
+          "description": "The mean of earlier minus later before phase 0.6."
+        },
+        "gap_fall": {
+          "type": [
+            "null",
+            "number"
+          ],
+          "description": "...and from phase 0.6."
+        },
+        "peak": {
+          "type": [
+            "null",
+            "array"
+          ],
+          "description": "The two cycles' largest bin means.",
+          "items": {
+            "type": "number"
+          }
+        }
+      },
+      "required": [
+        "ok",
+        "figure",
+        "bundle",
+        "variable",
+        "bins",
+        "min_days",
+        "phase",
+        "cycles",
+        "complete",
+        "curves",
+        "mean_cycle",
+        "pair",
+        "r",
+        "usable",
+        "above",
+        "gap_rise",
+        "gap_fall",
+        "peak"
+      ]
     }
   ]
 }
