@@ -323,6 +323,14 @@ params = [["v", "f107"], ["by", "year"]]
 name = "figures-solar-smoother"
 path = "/v1/figures/solar/smoother"
 params = [["v", "f107"]]
+[[route.example]]
+name = "figures-solar-growth"
+path = "/v1/figures/solar/growth"
+params = [["v", "f107"], ["by", "all"]]
+[[route.example]]
+name = "figures-solar-growth-cycle"
+path = "/v1/figures/solar/growth"
+params = [["v", "f107"], ["by", "cycle"]]
 
 [[route]]
 method = "GET"

@@ -530,8 +530,13 @@ const PANELS = [
       { k: 'v', label: 'variable', opts: [['f107', 'F10.7'], ['ap', 'Ap']] },
       { k: 'by', label: 'split', opts: [['all', 'the whole record'], ['cycle', 'by cycle']] },
     ],
-    build(rec, o) {
-      const key = o.v, maxL = 5478;
+    // THE NUMBERS ARE THE ENGINE'S (phase 10g): the signed change over each
+    // lead at four percentiles, the pairs behind each, the lead a year out and
+    // where the eleven-year cycle shows through are vleo_modules::record::growth;
+    // the per-cycle curves are record::growth_by_cycle. The page draws them.
+    data: o => engineFigure('growth', { v: o.v, by: o.by }),
+    build(rec, o, fig) {
+      if (fig.refused) throw new Error('the engine did not work the figure out: ' + fig.refused);
       // The percentiles, lightest to darkest, and the one the row publishes.
       // Validated as an ordinal ramp: monotone lightness, every adjacent gap
       // clear, and the light end at 2.11:1 against the surface — re-run when
@@ -549,55 +554,28 @@ const PANELS = [
         { q: 0.95, name: '95th — the published one', colour: INK.ramp4[2], width: 2.4 },
         { q: 0.99, name: '99th', colour: INK.ramp4[3], width: 1.4 },
       ];
-      if (o.by === 'cycle') return growthByCycle(rec, key, 0.95, maxL);
-      const byDay = new Map();
-      for (const d of rec.days) if (d[key] !== null) byDay.set(d.t, d[key]);
-      const leads = [];
-      for (let L = 30; L <= maxL; L = Math.round(L * 1.35)) leads.push(L);
-      const xs = [], ns = [], ys = QS.map(() => []);
-      for (const L of leads) {
-        const ch = [];
-        for (const [t, v] of byDay) {
-          const w = byDay.get(t + L);
-          if (w !== undefined) ch.push(w - v);
-        }
-        // SORTED ONCE FOR ALL FOUR. The percentiles differ only in where they
-        // read the same sorted sample, and sorting it four times would be four
-        // chances for them to disagree about what the sample was.
-        ch.sort((a, b) => a - b);
-        xs.push(L / 365.25); ns.push(ch.length);
-        QS.forEach((Q, i) => ys[i].push(quantile(ch, Q.q)));
-      }
+      if (fig.by === 'cycle') return growthByCycle(fig, 0.95);
+      const key = fig.variable;
+      const xs = fig.lead_years, ns = fig.pairs, ys = fig.change;
       const name = key === 'f107' ? 'F10.7' : 'Ap';
       const unit = key === 'f107' ? 'sfu' : '';
       const P95 = 2;
       const y95 = ys[P95];
-      // Whether the eleven-year cycle is visible is a property of the curve
-      // rather than of a setting, now that the axis always runs the whole way.
-      const mid = y95.filter((y, i) => y !== null && xs[i] >= 3 && xs[i] <= 6);
-      const late = y95.filter((y, i) => y !== null && xs[i] >= 9 && xs[i] <= 12);
-      const humped = mid.length && late.length && Math.max(...mid) > Math.max(...late);
+      // Whether the eleven-year cycle is visible is a property of the curve —
+      // the 95th's highest point between 3 and 6 years standing above its
+      // highest between 9 and 12 — and the engine measures it.
+      const humped = fig.humped;
       // How much the answer depends on which percentile is taken, at the lead
-      // the row itself is read at. Measured rather than asserted.
-      const atYear = xs.reduce((b, x, i) => (Math.abs(x - 1) < Math.abs(xs[b] - 1) ? i : b), 0);
+      // the row itself is read at.
+      const atYear = fig.at_year;
       const spread = QS.map((Q, i) => ys[i][atYear]).filter(v => v !== null && isFinite(v));
       const at1 = y95[atYear];
       // THE TWO FEATURES THE PROSE POINTS AT, POINTED AT. The hump and the dip
       // are the eleven-year cycle showing through a statistic that was never
-      // told about it, and the sentence saying so sat four paragraphs below the
-      // place it is about. Found the same way the prose finds them — the
+      // told about it; the engine finds them the way the prose does — the
       // largest of the mid-lead points and the smallest of the late ones — so
       // the label cannot drift from the curve under it.
-      const pick = (lo, hi, want) => {
-        let bi = -1;
-        for (let i = 0; i < xs.length; i++) {
-          const v = y95[i];
-          if (v === null || !isFinite(v) || xs[i] < lo || xs[i] > hi) continue;
-          if (bi < 0 || (want === 'max' ? v > y95[bi] : v < y95[bi])) bi = i;
-        }
-        return bi;
-      };
-      const iHump = pick(3, 6, 'max'), iDip = pick(9, 12, 'min');
+      const hump = fig.hump, dip = fig.dip;
       // How wide the fan is at one lead, for the case where there is no hump to
       // name. Measured off the two edges the fill is drawn between.
       const fanAt = i => {
@@ -605,12 +583,12 @@ const PANELS = [
         return (a === null || b === null || !isFinite(a) || !isFinite(b)) ? null : a - b;
       };
       const notes = [];
-      if (humped && iHump >= 0) {
-        notes.push({ x: xs[iHump], y: y95[iHump],
+      if (humped && hump) {
+        notes.push({ x: hump[0], y: hump[1],
           text: 'half a cycle — the lead most likely to land on the opposite phase' });
       }
-      if (humped && iDip >= 0) {
-        notes.push({ x: xs[iDip], y: y95[iDip], text: 'about a full cycle, back to a similar one' });
+      if (humped && dip) {
+        notes.push({ x: dip[0], y: dip[1], text: 'about a full cycle, back to a similar one' });
       }
       return {
         answer: at1 === null || !isFinite(at1)
@@ -622,10 +600,10 @@ const PANELS = [
           // The shape of the published percentile, off the published percentile.
           // The answer above the chart is its value at a year; this is what the
           // curve DOES, which is the thing a monotone-looking fan hides.
-          finding: (iHump >= 0 && iDip >= 0 && humped)
-            ? 'the 95th rises to ' + sig(y95[iHump]) + (unit ? ' ' + unit : '') + ' at ' +
-              xs[iHump].toFixed(1) + ' yr, falls to ' + sig(y95[iDip]) + ' at ' +
-              xs[iDip].toFixed(1) + ', and rises again \u2014 that is the eleven-year cycle'
+          finding: (hump && dip && humped)
+            ? 'the 95th rises to ' + sig(hump[1]) + (unit ? ' ' + unit : '') + ' at ' +
+              hump[0].toFixed(1) + ' yr, falls to ' + sig(dip[1]) + ' at ' +
+              dip[0].toFixed(1) + ', and rises again \u2014 that is the eleven-year cycle'
             : 'the fan between the 50th and the 99th opens from ' + sig(fanAt(0)) +
               (unit ? ' ' + unit : '') + ' at the shortest lead to ' + sig(fanAt(xs.length - 1)) +
               ' at the longest',
@@ -2001,33 +1979,16 @@ function regimeByPhase(fig) {
 }
 
 /** Predict · by cycle. The same growth curve, computed inside each cycle. */
-function growthByCycle(rec, key, q, maxL) {
-  const leads = [];
-  for (let L = 30; L <= Math.min(maxL, 1826); L = Math.round(L * 1.5)) leads.push(L);
-  const series = rec.cycles.map((c, i) => {
-    const by = new Map();
-    for (const d of rec.days) if (d.cycle === c.n && d[key] !== null) by.set(d.t, d[key]);
-    const ys = leads.map(L => {
-      const ch = [];
-      for (const [t, v] of by) { const w = by.get(t + L); if (w !== undefined) ch.push(w - v); }
-      ch.sort((a, b) => a - b);
-      return ch.length > 30 ? quantile(ch, q) : null;
-    });
-    return { name: 'cycle ' + c.n, kind: 'line', x: leads.map(L => L / 365.25), y: ys, colour: INK.series[i] };
-  });
-  // How far apart the cycles actually are, at the longest lead all of them reach.
-  // "They disagree" was the claim and it was never measured; this measures it.
-  const name = key === 'f107' ? 'F10.7' : 'Ap';
-  const unit = key === 'f107' ? ' sfu' : '';
-  let shared = -1, spread = null;
-  for (let i = leads.length - 1; i >= 0; i--) {
-    const vs = series.map(s => s.y[i]).filter(v => v !== null && isFinite(v));
-    if (vs.length === series.length) {
-      shared = leads[i] / 365.25;
-      spread = [Math.min(...vs), Math.max(...vs)];
-      break;
-    }
-  }
+function growthByCycle(fig, q) {
+  // THE NUMBERS ARE THE ENGINE'S: vleo_modules::record::growth_by_cycle takes
+  // the pairs only within a cycle, draws a lead only above thirty of them, and
+  // finds the longest lead every cycle reaches and how far apart they are there.
+  const series = fig.cycles.map((n, i) => ({
+    name: 'cycle ' + n, kind: 'line', x: fig.lead_years, y: fig.change[i], colour: INK.series[i],
+  }));
+  const name = fig.variable === 'f107' ? 'F10.7' : 'Ap';
+  const unit = fig.variable === 'f107' ? ' sfu' : '';
+  const shared = fig.shared, spread = fig.spread;
   return {
     answer: !spread
       ? { value: '\u2014', of: 'no lead is reached by all of the cycles \u2014 shorten it until they overlap' }

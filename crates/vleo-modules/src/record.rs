@@ -944,6 +944,193 @@ pub fn smoother(months: &[MonthlyMean], driver: Driver) -> Smoother {
     }
 }
 
+/// The percentiles the growth figure draws, the published one (95th) third.
+pub const GROWTH_PERCENTILES: [f64; 4] = [0.50, 0.90, 0.95, 0.99];
+
+/// The longest lead the growth figure reaches, in days — fifteen years.
+pub const GROWTH_MAX_LEAD: u32 = 5478;
+
+/// The leads a growth curve is drawn at: from 30 days, each the one before
+/// times `step` rounded to a whole day, up to `max`.
+fn leads(step: f64, max: u32) -> Vec<u32> {
+    let mut out = Vec::new();
+    let mut l = 30u32;
+    while l <= max {
+        out.push(l);
+        l = pmath::round(l as f64 * step) as u32;
+    }
+    out
+}
+
+/// The signed change in a driver over each lead, every pair of days `lead`
+/// apart that both carry it, sorted: `(day, value)` in record order.
+fn changes(by_day: &alloc::collections::BTreeMap<i32, f64>, lead: u32) -> Vec<f64> {
+    let mut ch: Vec<f64> = by_day
+        .iter()
+        .filter_map(|(t, v)| Some(by_day.get(&(t + lead as i32))? - v))
+        .collect();
+    ch.sort_by(f64::total_cmp);
+    ch
+}
+
+/// The growth figure's numbers: how far a driver moves over a lead, at four
+/// percentiles, pooled over the whole record.
+#[derive(Clone, Debug, PartialEq)]
+pub struct Growth {
+    /// Each lead, in years, and the pairs of days behind it.
+    pub lead_years: Vec<f64>,
+    pub pairs: Vec<u32>,
+    /// The change at each of [`GROWTH_PERCENTILES`], at each lead:
+    /// `[percentile][lead]`.
+    pub change: Vec<Vec<Option<f64>>>,
+    /// The lead nearest a year, where the row is read — the first on a tie.
+    pub at_year: usize,
+    /// The 95th's highest point between 3 and 6 years and lowest between 9
+    /// and 12 — the eleven-year cycle showing through — and whether the one
+    /// stands above the other.
+    pub hump: Option<usize>,
+    pub dip: Option<usize>,
+    pub humped: bool,
+}
+
+/// The growth figure's numbers over one driver.
+pub fn growth(record: &[SolarDay], driver: Driver) -> Growth {
+    let by_day: alloc::collections::BTreeMap<i32, f64> = record
+        .iter()
+        .filter_map(|d| Some((d.day, driver.of(d)?)))
+        .collect();
+    let ls = leads(1.35, GROWTH_MAX_LEAD);
+    let mut pairs = Vec::new();
+    let mut change: Vec<Vec<Option<f64>>> = GROWTH_PERCENTILES.iter().map(|_| Vec::new()).collect();
+    for &l in &ls {
+        let ch = changes(&by_day, l);
+        pairs.push(ch.len() as u32);
+        for (k, q) in GROWTH_PERCENTILES.iter().enumerate() {
+            change[k].push(quantile(&ch, *q));
+        }
+    }
+    let x: Vec<f64> = ls.iter().map(|&l| l as f64 / 365.25).collect();
+    let y95 = &change[2];
+    let at_year = (0..x.len()).fold(0, |b, i| {
+        if pmath::abs(x[i] - 1.0) < pmath::abs(x[b] - 1.0) {
+            i
+        } else {
+            b
+        }
+    });
+    let pick = |lo: f64, hi: f64, max: bool| {
+        let mut best: Option<usize> = None;
+        for i in 0..x.len() {
+            let Some(v) = y95[i].filter(|v| v.is_finite()) else {
+                continue;
+            };
+            if x[i] < lo || x[i] > hi {
+                continue;
+            }
+            if best.is_none_or(|b| {
+                let bv = y95[b].unwrap_or(f64::NAN);
+                if max {
+                    v > bv
+                } else {
+                    v < bv
+                }
+            }) {
+                best = Some(i);
+            }
+        }
+        best
+    };
+    let in_range = |lo: f64, hi: f64| -> Vec<f64> {
+        (0..x.len())
+            .filter(|&i| x[i] >= lo && x[i] <= hi)
+            .filter_map(|i| y95[i])
+            .collect()
+    };
+    let (mid, late) = (in_range(3.0, 6.0), in_range(9.0, 12.0));
+    let top = |v: &[f64]| v.iter().copied().fold(f64::NEG_INFINITY, f64::max);
+    Growth {
+        humped: !mid.is_empty() && !late.is_empty() && top(&mid) > top(&late),
+        hump: pick(3.0, 6.0, true),
+        dip: pick(9.0, 12.0, false),
+        at_year,
+        lead_years: x,
+        pairs,
+        change,
+    }
+}
+
+/// The by-cycle growth figure's numbers: the 95th-percentile change over each
+/// lead, one curve per cycle, pairs taken only within a cycle.
+#[derive(Clone, Debug, PartialEq)]
+pub struct GrowthByCycle {
+    pub lead_years: Vec<f64>,
+    pub cycles: Vec<u32>,
+    /// `[cycle][lead]`; none at a lead with thirty pairs or fewer.
+    pub change: Vec<Vec<Option<f64>>>,
+    /// The longest lead every cycle reaches, in years, and the lowest and
+    /// highest cycle there.
+    pub shared: Option<f64>,
+    pub spread: Option<(f64, f64)>,
+}
+
+/// The by-cycle growth figure's numbers over one driver, to five years.
+pub fn growth_by_cycle(
+    record: &[SolarDay],
+    cycles: &[SolarCycle],
+    driver: Driver,
+) -> GrowthByCycle {
+    let ls = leads(1.5, GROWTH_MAX_LEAD.min(1826));
+    let change: Vec<Vec<Option<f64>>> = cycles
+        .iter()
+        .enumerate()
+        .map(|(ci, _)| {
+            let by_day: alloc::collections::BTreeMap<i32, f64> = record
+                .iter()
+                .filter(|d| {
+                    cycles
+                        .iter()
+                        .position(|c| d.day >= c.start && d.day < c.end)
+                        == Some(ci)
+                })
+                .filter_map(|d| Some((d.day, driver.of(d)?)))
+                .collect();
+            ls.iter()
+                .map(|&l| {
+                    let ch = changes(&by_day, l);
+                    if ch.len() > 30 {
+                        quantile(&ch, 0.95)
+                    } else {
+                        None
+                    }
+                })
+                .collect()
+        })
+        .collect();
+    let x: Vec<f64> = ls.iter().map(|&l| l as f64 / 365.25).collect();
+    let (mut shared, mut spread) = (None, None);
+    for i in (0..ls.len()).rev() {
+        let vs: Vec<f64> = change
+            .iter()
+            .filter_map(|c| c[i].filter(|v| v.is_finite()))
+            .collect();
+        if vs.len() == cycles.len() {
+            shared = Some(x[i]);
+            spread = Some((
+                vs.iter().copied().fold(f64::INFINITY, f64::min),
+                vs.iter().copied().fold(f64::NEG_INFINITY, f64::max),
+            ));
+            break;
+        }
+    }
+    GrowthByCycle {
+        lead_years: x,
+        cycles: cycles.iter().map(|c| c.n).collect(),
+        change,
+        shared,
+        spread,
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1339,6 +1526,56 @@ mod tests {
             (a.raw_range, a.rms, a.crossings, a.missing),
             (0.0, 0.0, 0, 5)
         );
+    }
+
+    #[test]
+    fn a_driver_that_rises_a_unit_a_day_changes_by_its_lead() {
+        // Value = day, for 200 days: every change over a lead is the lead
+        // itself, at every percentile, over 200 − lead pairs.
+        let rec: Vec<SolarDay> = (0..200).map(|i| day(i, Some(i as f64), None)).collect();
+        let g = growth(&rec, Driver::F107);
+        // 30, then ×1.35 to the whole day: 41, 55, 74, 100, 135, 182, …
+        assert_eq!(g.lead_years.len(), 18);
+        assert_eq!(
+            g.lead_years[..3],
+            [30.0 / 365.25, 41.0 / 365.25, 55.0 / 365.25]
+        );
+        assert_eq!(g.pairs[..6], [170, 159, 145, 126, 100, 65]);
+        for q in &g.change {
+            assert_eq!(q[0], Some(30.0));
+            assert_eq!(q[5], Some(135.0));
+            // 246 days is past the record: no pair, no change.
+            assert_eq!(q[7], None);
+        }
+        // 332 days is the lead nearest a year.
+        assert_eq!(g.at_year, 8);
+        // Nothing past 200 days, so no hump, no dip, no cycle to see.
+        assert_eq!((g.hump, g.dip, g.humped), (None, None, false));
+    }
+
+    #[test]
+    fn a_cycles_changes_are_taken_inside_it() {
+        // The same ramp in two cycles of 100 and 200 days; leads 30, 45, 68,
+        // 102, 153, 230 … ×1.5. A lead is drawn only above thirty pairs.
+        let rec: Vec<SolarDay> = (0..300).map(|i| day(i, Some(i as f64), None)).collect();
+        let g = growth_by_cycle(&rec, &[cycle(1, 0, 100), cycle(2, 100, 300)], Driver::F107);
+        // Cycle 1 has 32 pairs at 68 days and none at 102.
+        assert_eq!(g.change[0][..4], [Some(30.0), Some(45.0), Some(68.0), None]);
+        // Cycle 2 has 47 at 153 and none at 230.
+        assert_eq!(
+            g.change[1][..6],
+            [
+                Some(30.0),
+                Some(45.0),
+                Some(68.0),
+                Some(102.0),
+                Some(153.0),
+                None
+            ]
+        );
+        // 68 days is the longest lead both reach, and there they agree.
+        assert_eq!(g.shared, Some(68.0 / 365.25));
+        assert_eq!(g.spread, Some((68.0, 68.0)));
     }
 
     #[test]

@@ -982,6 +982,205 @@
         "crossings",
         "max_departure"
       ]
+    },
+    {
+      "type": "object",
+      "description": "The growth figure over the whole record: how far a driver moves over a lead, at four percentiles.",
+      "properties": {
+        "ok": {
+          "type": "boolean"
+        },
+        "bundle": {
+          "type": "string",
+          "description": "The bundle and version the numbers were worked out from."
+        },
+        "figure": {
+          "type": "string",
+          "enum": [
+            "growth"
+          ]
+        },
+        "variable": {
+          "type": "string",
+          "enum": [
+            "f107",
+            "ap",
+            "ssn"
+          ]
+        },
+        "lead_years": {
+          "type": "array",
+          "description": "Each lead, in years.",
+          "items": {
+            "type": "number"
+          }
+        },
+        "change": {
+          "type": "array",
+          "description": "The signed change over each lead: [percentile][lead] over the whole record, or [cycle][lead] at the 95th within each cycle; null where too few pairs.",
+          "items": {
+            "type": "array",
+            "items": {
+              "type": [
+                "null",
+                "number"
+              ]
+            }
+          }
+        },
+        "by": {
+          "type": "string",
+          "enum": [
+            "all"
+          ]
+        },
+        "percentiles": {
+          "type": "array",
+          "description": "The percentiles drawn, the published one (0.95) third.",
+          "items": {
+            "type": "number"
+          }
+        },
+        "pairs": {
+          "type": "array",
+          "description": "The pairs of days behind each lead.",
+          "items": {
+            "type": "number"
+          }
+        },
+        "at_year": {
+          "type": "number",
+          "description": "The index of the lead nearest a year."
+        },
+        "hump": {
+          "type": [
+            "null",
+            "array"
+          ],
+          "description": "The 95th's highest point between 3 and 6 years: [lead in years, change].",
+          "items": {
+            "type": "number"
+          }
+        },
+        "dip": {
+          "type": [
+            "null",
+            "array"
+          ],
+          "description": "Its lowest point between 9 and 12 years: [lead in years, change].",
+          "items": {
+            "type": "number"
+          }
+        },
+        "humped": {
+          "type": "boolean",
+          "description": "Whether the hump stands above everything between 9 and 12 years — the eleven-year cycle showing through."
+        }
+      },
+      "required": [
+        "ok",
+        "figure",
+        "bundle",
+        "variable",
+        "by",
+        "lead_years",
+        "change",
+        "percentiles",
+        "pairs",
+        "at_year",
+        "hump",
+        "dip",
+        "humped"
+      ]
+    },
+    {
+      "type": "object",
+      "description": "The growth figure by cycle: the 95th-percentile change over each lead, pairs taken only within a cycle.",
+      "properties": {
+        "ok": {
+          "type": "boolean"
+        },
+        "bundle": {
+          "type": "string",
+          "description": "The bundle and version the numbers were worked out from."
+        },
+        "figure": {
+          "type": "string",
+          "enum": [
+            "growth"
+          ]
+        },
+        "variable": {
+          "type": "string",
+          "enum": [
+            "f107",
+            "ap",
+            "ssn"
+          ]
+        },
+        "lead_years": {
+          "type": "array",
+          "description": "Each lead, in years.",
+          "items": {
+            "type": "number"
+          }
+        },
+        "change": {
+          "type": "array",
+          "description": "The signed change over each lead: [percentile][lead] over the whole record, or [cycle][lead] at the 95th within each cycle; null where too few pairs.",
+          "items": {
+            "type": "array",
+            "items": {
+              "type": [
+                "null",
+                "number"
+              ]
+            }
+          }
+        },
+        "by": {
+          "type": "string",
+          "enum": [
+            "cycle"
+          ]
+        },
+        "cycles": {
+          "type": "array",
+          "description": "The cycles, one curve each.",
+          "items": {
+            "type": "number"
+          }
+        },
+        "shared": {
+          "type": [
+            "null",
+            "number"
+          ],
+          "description": "The longest lead every cycle reaches, in years."
+        },
+        "spread": {
+          "type": [
+            "null",
+            "array"
+          ],
+          "description": "The lowest and highest cycle there.",
+          "items": {
+            "type": "number"
+          }
+        }
+      },
+      "required": [
+        "ok",
+        "figure",
+        "bundle",
+        "variable",
+        "by",
+        "lead_years",
+        "change",
+        "cycles",
+        "shared",
+        "spread"
+      ]
     }
   ]
 }

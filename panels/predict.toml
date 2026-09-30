@@ -93,3 +93,19 @@ why = """the two drivers have different units and different spreads; one curve f
 name = "by"
 drive = "(() => { const s = document.querySelector('.sw-opt[data-k=by]'); if (!s) throw new Error('no by control'); s.value = 'cycle'; s.dispatchEvent(new Event('change')); })()"
 why = """splitting by cycle must replace one curve with several; a single curve under both settings means the split is not wired"""
+
+# THE NUMBERS ARE THE ENGINE'S (phase 10g): the change at each lead and
+# percentile, the pairs behind it, the lead a year out and the hump and dip the
+# eleven-year cycle makes are vleo_modules::record::growth; the per-cycle curves
+# and where they part are record::growth_by_cycle. Check 2c moves each in the
+# engine's reply and demands the panel say something different. `humped` is a
+# flag rather than a number and is not moved; `percentiles` is in the reply and
+# the page's ramp is drawn from its own four.
+[[figures]]
+id = "growth"
+reads = ["lead_years", "pairs", "change", "at_year", "hump", "dip"]
+
+[[figures]]
+id = "growth"
+state = "(() => { const s = document.querySelector('.sw-opt[data-k=by]'); if (!s) throw new Error('no by control'); s.value = 'cycle'; s.dispatchEvent(new Event('change')); })()"
+reads = ["lead_years", "cycles", "change", "shared", "spread"]
