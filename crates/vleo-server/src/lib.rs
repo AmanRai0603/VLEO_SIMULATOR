@@ -178,12 +178,25 @@ fn accept(listener: TcpListener, ctx: std::sync::Arc<Ctx>) {
     // writes sheets and regenerates folders, and two saves interleaving would
     // be a race this tool has never had to think about and should not start to.
     let one_at_a_time = std::sync::Arc::new(std::sync::Mutex::new(()));
+    // AT MOST `MAX_OPEN` CONNECTIONS ARE BEING READ AT ONCE, and the count is
+    // given back by a guard's Drop — so a handler that panics still returns
+    // its slot. A count lowered by hand at the end of the thread is one that a
+    // panic skips, and after enough of them every connection is refused.
+    let open = std::sync::Arc::new(std::sync::atomic::AtomicUsize::new(0));
     for stream in listener.incoming() {
         match stream {
-            Ok(s) => {
+            Ok(mut s) => {
+                if open.fetch_add(1, std::sync::atomic::Ordering::SeqCst) >= MAX_OPEN {
+                    open.fetch_sub(1, std::sync::atomic::Ordering::SeqCst);
+                    let _ = respond(&mut s, "503 Service Unavailable", "text/plain; charset=utf-8",
+                        b"the tool is busy with other connections; try again");
+                    continue;
+                }
+                let slot = Slot(open.clone());
                 let ctx = ctx.clone();
                 let gate = one_at_a_time.clone();
                 std::thread::spawn(move || {
+                    let _slot = slot;
                     if let Err(e) = serve_one(s, &ctx, &gate) {
                         eprintln!("vleo: {e}");
                     }
@@ -192,6 +205,66 @@ fn accept(listener: TcpListener, ctx: std::sync::Arc<Ctx>) {
             Err(e) => eprintln!("vleo: accept: {e}"),
         }
     }
+}
+
+/// Connections read at once. A browser keeps a handful; this is far above
+/// what a page needs and far below what exhausts threads.
+const MAX_OPEN: usize = 64;
+/// The request line plus headers, and the body. The largest real body is a
+/// filled node form or an uploaded result, both well under a megabyte.
+const MAX_HEAD: usize = 64 * 1024;
+const MAX_BODY: usize = 32 * 1024 * 1024;
+
+/// One open connection's place in the count, given back when it is dropped.
+struct Slot(std::sync::Arc<std::sync::atomic::AtomicUsize>);
+impl Drop for Slot {
+    fn drop(&mut self) {
+        self.0.fetch_sub(1, std::sync::atomic::Ordering::SeqCst);
+    }
+}
+
+fn respond(stream: &mut TcpStream, status: &str, ctype: &str, payload: &[u8]) -> std::io::Result<()> {
+    let head = format!(
+        "HTTP/1.1 {status}\r\nContent-Type: {ctype}\r\nContent-Length: {}\r\nCache-Control: no-store\r\nX-Content-Type-Options: nosniff\r\nConnection: close\r\n\r\n",
+        payload.len()
+    );
+    stream.write_all(head.as_bytes())?;
+    stream.write_all(payload)?;
+    stream.flush()
+}
+
+/// Whether a request may be served: it is addressed to this machine, and a
+/// write comes from this tool's own page.
+///
+/// THE SERVER LISTENS ON LOOPBACK, BUT A WEB PAGE ON ANY SITE RUNS ON THIS
+/// MACHINE TOO. Without these checks a page you visit could post to the tool —
+/// reset your case, delete results — and, by rebinding its own name to
+/// 127.0.0.1, read the answers back. So:
+/// - `Host` must name loopback on this port (a rebound name does not);
+/// - a POST from a browser must say it comes from this origin. Browsers send
+///   `Origin` and `Sec-Fetch-Site` on every cross-site POST and cannot be made
+///   to omit them; a script (the Python tools, curl) sends neither, and is a
+///   program the person ran themselves.
+pub(crate) fn allowed(method: &str, host: Option<&str>, origin: Option<&str>, fetch_site: Option<&str>, port: u16) -> Result<(), &'static str> {
+    let here = [format!("127.0.0.1:{port}"), format!("localhost:{port}"), format!("[::1]:{port}")];
+    match host {
+        Some(h) if here.iter().any(|x| x.eq_ignore_ascii_case(h.trim())) => {}
+        _ => return Err("this tool answers only requests addressed to 127.0.0.1 or localhost on its own port"),
+    }
+    if method != "GET" && method != "HEAD" {
+        if let Some(o) = origin {
+            let o = o.trim();
+            if !here.iter().any(|x| o.eq_ignore_ascii_case(&format!("http://{x}"))) {
+                return Err("a change may only come from this tool's own page");
+            }
+        }
+        if let Some(f) = fetch_site {
+            if !matches!(f.trim(), "same-origin" | "none") {
+                return Err("a change may only come from this tool's own page");
+            }
+        }
+    }
+    Ok(())
 }
 
 struct Ctx {
@@ -347,7 +420,9 @@ fn serve_one(mut stream: TcpStream, ctx: &Ctx, gate: &std::sync::Mutex<()>) -> s
     // Long enough for any real request to arrive; a connection that has sent
     // nothing by then is a spare the browser kept warm, and it is let go.
     stream.set_read_timeout(Some(std::time::Duration::from_secs(20)))?;
-    let mut reader = BufReader::new(stream.try_clone()?);
+    // The head is read through a limit: a request line or header that never
+    // ends is cut at MAX_HEAD rather than read until memory runs out.
+    let mut reader = BufReader::new(std::io::Read::take(stream.try_clone()?, (MAX_HEAD + MAX_BODY) as u64));
     let mut request = String::new();
     match reader.read_line(&mut request) {
         Ok(0) => return Ok(()),
@@ -367,18 +442,38 @@ fn serve_one(mut stream: TcpStream, ctx: &Ctx, gate: &std::sync::Mutex<()>) -> s
     let target = parts.next().unwrap_or("/").to_string();
 
     let mut length = 0usize;
+    let (mut host, mut origin, mut fetch_site) = (None, None, None);
+    let mut head_bytes = request.len();
     loop {
         let mut line = String::new();
         if reader.read_line(&mut line)? == 0 {
             break;
         }
+        head_bytes += line.len();
+        if head_bytes > MAX_HEAD {
+            return respond(&mut stream, "431 Request Header Fields Too Large", "text/plain; charset=utf-8", b"the request's headers are too large");
+        }
         let l = line.trim_end();
         if l.is_empty() {
             break;
         }
-        if let Some(v) = l.to_ascii_lowercase().strip_prefix("content-length:") {
-            length = v.trim().parse().unwrap_or(0);
+        let Some((k, v)) = l.split_once(':') else { continue };
+        match k.trim().to_ascii_lowercase().as_str() {
+            "content-length" => match v.trim().parse::<usize>() {
+                Ok(n) => length = n,
+                Err(_) => return respond(&mut stream, "400 Bad Request", "text/plain; charset=utf-8", b"Content-Length is not a number"),
+            },
+            "host" => host = Some(v.trim().to_string()),
+            "origin" => origin = Some(v.trim().to_string()),
+            "sec-fetch-site" => fetch_site = Some(v.trim().to_string()),
+            _ => {}
         }
+    }
+    if let Err(why) = allowed(&method, host.as_deref(), origin.as_deref(), fetch_site.as_deref(), ctx.port) {
+        return respond(&mut stream, "403 Forbidden", "text/plain; charset=utf-8", why.as_bytes());
+    }
+    if length > MAX_BODY {
+        return respond(&mut stream, "413 Payload Too Large", "text/plain; charset=utf-8", b"the request body is larger than this tool accepts");
     }
     let mut body = vec![0u8; length];
     if length > 0 {
@@ -403,13 +498,7 @@ fn serve_one(mut stream: TcpStream, ctx: &Ctx, gate: &std::sync::Mutex<()>) -> s
         let _one = gate.lock().unwrap_or_else(|p| p.into_inner());
         route(&method, &path, &params, ctx)
     };
-    let head = format!(
-        "HTTP/1.1 {status}\r\nContent-Type: {ctype}\r\nContent-Length: {}\r\nCache-Control: no-store\r\nX-Content-Type-Options: nosniff\r\nConnection: close\r\n\r\n",
-        payload.len()
-    );
-    stream.write_all(head.as_bytes())?;
-    stream.write_all(&payload)?;
-    stream.flush()
+    respond(&mut stream, status, ctype, &payload)
 }
 
 fn route(
@@ -1074,10 +1163,20 @@ fn decode(s: &str) -> String {
                 out.push(b' ');
                 i += 1;
             }
-            b'%' if i + 2 < b.len() => {
-                out.push(u8::from_str_radix(&s[i + 1..i + 3], 16).unwrap_or(b'?'));
-                i += 3;
-            }
+            // Hex read from the BYTES. Slicing the text here panicked when a
+            // '%' was followed by a multi-byte character, and one request like
+            // that ended the whole tool. A '%' with no two hex digits after it
+            // is kept as the character it is.
+            b'%' if i + 2 < b.len() => match (hex(b[i + 1]), hex(b[i + 2])) {
+                (Some(h), Some(l)) => {
+                    out.push(h * 16 + l);
+                    i += 3;
+                }
+                _ => {
+                    out.push(b'%');
+                    i += 1;
+                }
+            },
             c => {
                 out.push(c);
                 i += 1;
@@ -1085,6 +1184,15 @@ fn decode(s: &str) -> String {
         }
     }
     String::from_utf8_lossy(&out).into_owned()
+}
+
+fn hex(c: u8) -> Option<u8> {
+    match c {
+        b'0'..=b'9' => Some(c - b'0'),
+        b'a'..=b'f' => Some(c - b'a' + 10),
+        b'A'..=b'F' => Some(c - b'A' + 10),
+        _ => None,
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -2631,5 +2739,48 @@ mod start_by_name {
         assert!(!opens_by_name("vleo-daemon"));
         assert!(!opens_by_name("vleo"));
         assert!(!opens_by_name("Start VLEO (1)"));
+    }
+}
+
+#[cfg(test)]
+mod requests {
+    use super::{allowed, decode};
+
+    #[test]
+    fn a_percent_before_a_multibyte_character_does_not_end_the_tool() {
+        // Slicing the text at a byte position inside "é" used to panic, and a
+        // release build aborts on a panic.
+        assert_eq!(decode("%é"), "%é");
+        assert_eq!(decode("a%"), "a%");
+        assert_eq!(decode("%4"), "%4");
+        assert_eq!(decode("%zz"), "%zz");
+    }
+
+    #[test]
+    fn percent_escapes_still_decode_as_bytes() {
+        assert_eq!(decode("%C2%B0C"), "°C");
+        assert_eq!(decode("a+b%41"), "a bA");
+    }
+
+    #[test]
+    fn a_request_addressed_elsewhere_is_refused() {
+        // A page that rebinds its own name to 127.0.0.1 still sends its name.
+        assert!(allowed("GET", Some("evil.example:7777"), None, None, 7777).is_err());
+        assert!(allowed("GET", None, None, None, 7777).is_err());
+        assert!(allowed("GET", Some("127.0.0.1:7778"), None, None, 7777).is_err());
+        assert!(allowed("GET", Some("127.0.0.1:7777"), None, None, 7777).is_ok());
+        assert!(allowed("GET", Some("localhost:7777"), None, None, 7777).is_ok());
+    }
+
+    #[test]
+    fn a_write_from_another_site_is_refused_and_one_from_this_page_is_not() {
+        let h = Some("127.0.0.1:7777");
+        assert!(allowed("POST", h, Some("https://evil.example"), Some("cross-site"), 7777).is_err());
+        // Another port on localhost is the same site but not the same origin.
+        assert!(allowed("POST", h, Some("http://localhost:8080"), Some("same-site"), 7777).is_err());
+        assert!(allowed("POST", h, None, Some("cross-site"), 7777).is_err());
+        assert!(allowed("POST", h, Some("http://127.0.0.1:7777"), Some("same-origin"), 7777).is_ok());
+        // A script the person ran (the Python tools, curl) sends neither header.
+        assert!(allowed("POST", h, None, None, 7777).is_ok());
     }
 }

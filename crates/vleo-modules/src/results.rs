@@ -446,7 +446,15 @@ pub fn file_name(s: &Saved) -> String {
         .chars()
         .map(|c| if c.is_ascii_alphanumeric() { c } else { '-' })
         .collect();
-    format!("{}_{}_{}.csv", when.trim_matches('-'), s.target, s.chain)
+    // The target and chain come from the file being kept, which may be an
+    // upload. Only the characters a result's name is allowed to hold survive,
+    // so a crafted `..\` never becomes a path on Windows (where `\` is one).
+    let plain = |x: &str| -> String {
+        x.chars()
+            .map(|c| if c.is_ascii_alphanumeric() || matches!(c, '_' | '-') { c } else { '-' })
+            .collect()
+    };
+    format!("{}_{}_{}.csv", when.trim_matches('-'), plain(&s.target), plain(&s.chain))
 }
 
 // ---------------------------------------------------------------------------
@@ -782,6 +790,11 @@ pub mod store {
     pub fn save(dir: &Path, s: &Saved) -> Result<String, String> {
         std::fs::create_dir_all(dir).map_err(|e| format!("{}: {e}", dir.display()))?;
         let name = file_name(s);
+        // The same rule `open` and `remove` hold a name to, applied before the
+        // write rather than trusted from `file_name`.
+        if !is_plain(&name) {
+            return Err(format!("'{name}' is not a result's file name"));
+        }
         std::fs::write(dir.join(&name), csv(s)).map_err(|e| format!("{name}: {e}"))?;
         Ok(name)
     }
