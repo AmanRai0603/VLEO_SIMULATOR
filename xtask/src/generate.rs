@@ -209,7 +209,33 @@ pub(crate) fn cmd_codeowners(root: &Path) -> Result<(), String> {
     o.push_str("/layers/                  @integrator @systems\n");
     o.push_str("/cases/                   @integrator\n");
     o.push_str("/sources/                 @integrator @systems\n");
-    o.push_str("/web/                     @web-owner @integrator\n\n");
+    o.push_str("/web/                     @web-owner @integrator\n");
+    // What decides what merges, and what every run passes through, is owned
+    // like the kernel: a defect there reaches everything at once.
+    o.push_str("/.github/                 @integrator @kernel-deputy\n");
+    o.push_str("/tools/                   @integrator @kernel-deputy\n");
+    o.push_str("/crates/vleo-bus/         @integrator @kernel-deputy\n");
+    o.push_str("/crates/vleo-modules/     @integrator @kernel-deputy\n");
+    o.push_str("/crates/vleo-data/        @integrator @systems\n");
+    o.push_str("/bundles/                 @integrator @systems\n");
+    // The faces: the doors onto the one kernel.
+    for face in [
+        "vleo-server",
+        "vleo-daemon",
+        "vleo-app",
+        "vleo-cli",
+        "vleo-ffi",
+        "vleo-py",
+        "vleo-wasm",
+        "vleo-method-wasm",
+    ] {
+        o.push_str(&format!(
+            "/crates/{face}/{:w$}@integrator\n",
+            "",
+            w = 17 - face.len()
+        ));
+    }
+    o.push_str("/docs/                    @integrator\n\n");
     let mut by_owner: BTreeMap<&str, Vec<&str>> = BTreeMap::new();
     for sh in tree.ordered() {
         by_owner

@@ -869,7 +869,7 @@ developer's choice of assistants, not more code.
 | every pull request, and every push to `main` | an advisory review that cannot fail the build | same file, `review` job |
 | every night | six passes over the whole tree, the ledger, and yesterday's state | `.github/workflows/nightly.yml` |
 | weekly | a dependency bot, on its own branch, majors excluded | `.github/dependabot.yml` |
-| on a tag | prove, build, and one human approval | `.github/workflows/release.yml` |
+| on a `vMAJOR.MINOR.PATCH` tag | prove, build, publish with checksums; pushing the tag is the decision | `.github/workflows/release.yml` |
 
 A hook is not a control — it only fires inside the tool that installed it. Every
 rule above also runs in the pipeline, from the same file, which is why the two

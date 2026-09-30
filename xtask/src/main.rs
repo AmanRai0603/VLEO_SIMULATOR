@@ -612,4 +612,25 @@ mod moving_a_node {
         let wrong = crate::crate_direction(&root).unwrap();
         assert!(wrong.is_empty(), "{wrong:#?}");
     }
+
+    /// Every crate has somebody who reviews it: a node crate by its nodes'
+    /// owners, every other by a rule of its own. A crate added without one is
+    /// routed to nobody.
+    #[test]
+    fn every_crate_has_an_owner() {
+        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("..");
+        let owners = std::fs::read_to_string(root.join("CODEOWNERS")).unwrap();
+        for e in std::fs::read_dir(root.join("crates")).unwrap().flatten() {
+            let name = e.file_name().to_string_lossy().into_owned();
+            let rule = if name.starts_with("vleo-mod-") {
+                format!("/crates/{name}/nodes/")
+            } else {
+                format!("/crates/{name}/ ")
+            };
+            assert!(
+                owners.contains(&rule),
+                "no CODEOWNERS rule for crates/{name}"
+            );
+        }
+    }
 }

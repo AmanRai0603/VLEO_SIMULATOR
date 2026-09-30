@@ -3,8 +3,35 @@
 
 use super::*;
 
+/// The evidence the tree still owes, as one line: of the rows specified, how
+/// many computed ones have no fixture checking them, and how many written
+/// relations have nobody's name against them. Put first, because a count
+/// people see every day is the one that goes down.
+pub(crate) fn evidence_debt(tree: &Tree) -> String {
+    let rows = tree.sheets.len();
+    let specified: Vec<_> = tree
+        .ordered()
+        .into_iter()
+        .filter(|s| !s.is_seeded())
+        .collect();
+    let computed: Vec<_> = specified.iter().filter(|s| !s.is_declared()).collect();
+    let unchecked = computed.iter().filter(|s| s.fixtures.is_empty()).count();
+    let unnamed = specified
+        .iter()
+        .filter(|s| s.state == "published" && !s.is_declared() && s.relation_by.trim().is_empty())
+        .count();
+    format!(
+        "evidence debt: {} of {rows} rows specified; {unchecked} of {} computed rows have no \
+         fixture, {unnamed} relations carry nobody's name, {} rows are still seeded",
+        specified.len(),
+        computed.len(),
+        rows - specified.len()
+    )
+}
+
 pub(crate) fn cmd_status(root: &Path) -> Result<(), String> {
     let tree = load(root)?;
+    println!("{}\n", evidence_debt(&tree));
     let names = ["", "management", "the system", "subsystem", "the run"];
     let mut by_layer: BTreeMap<u8, [usize; 2]> = BTreeMap::new();
     for sh in tree.ordered() {

@@ -11,3 +11,22 @@
 bundles/** -text
 
 *.png binary
+
+# Generated files: committed, regenerated and compared by the pipeline on
+# every push, and never edited by hand. Marked so a pull request folds them
+# away and the reviewer reads the sheet that changed, not the thousand lines
+# it regenerated. model.rs is not here: its HOLE blocks are written by people.
+crates/vleo-mod-*/nodes/*/contract.rs linguist-generated=true
+crates/vleo-mod-*/nodes/*/mod.rs linguist-generated=true
+crates/vleo-mod-*/nodes/*/evidence.rs linguist-generated=true
+crates/vleo-mod-*/nodes/*/page.html linguist-generated=true
+crates/vleo-mod-*/nodes/*/meta.json linguist-generated=true
+crates/vleo-core/src/physics/methods/*.rs linguist-generated=true
+docs/VARIABLES.md linguist-generated=true
+docs/PSEUDOCODE.md linguist-generated=true
+docs/DERISK_NARRATIVE.md linguist-generated=true
+docs/derisking.csv linguist-generated=true
+docs/PIPELINE.md linguist-generated=true
+docs/roles/*.html linguist-generated=true
+CODEOWNERS linguist-generated=true
+web/method.wasm.gz linguist-generated=true
