@@ -1363,16 +1363,9 @@ fn form_file(ctx: &Ctx, id: &str) -> (&'static str, &'static str, Vec<u8>) {
 // ---------------------------------------------------------------------------
 // saved results
 
-/// Now, as a result records it: UTC, to the second. Through `date` rather than a
-/// crate, as xtask stamps its dates.
+/// Now, as a result records it: UTC, to the second (vleo_data::clock).
 fn now_utc() -> String {
-    std::process::Command::new("date")
-        .args(["-u", "+%Y-%m-%dT%H:%M:%SZ"])
-        .output()
-        .ok()
-        .and_then(|o| String::from_utf8(o.stdout).ok())
-        .map(|s| s.trim().to_string())
-        .unwrap_or_default()
+    vleo_data::clock::now_utc()
 }
 
 fn results_dir() -> PathBuf {
@@ -1893,7 +1886,14 @@ fn inputs_json() -> String {
 fn inputs_reading(params: &str) -> vleo_modules::inputs::Reading {
     match param(params, "csv") {
         Some(csv) => vleo_modules::inputs::read_csv(&decode(csv)),
-        None => vleo_modules::inputs::check_values(&sets(params)),
+        None => match sets_checked(params) {
+            Ok(v) => vleo_modules::inputs::check_values(&v),
+            Err(why) => {
+                let mut r = vleo_modules::inputs::Reading::default();
+                r.refused.push((0, String::new(), why));
+                r
+            }
+        },
     }
 }
 
@@ -1972,19 +1972,36 @@ fn inputs_reset() -> String {
 
 /// `set=id:value` repeated. Values are SI, always: a face converts for display
 /// and never for transport.
+/// Every `set=id:value` in the request, or the first one that is not one.
+///
+/// A MALFORMED VALUE IS REFUSED, NOT DROPPED. This used to skip a `set=` it
+/// could not read — no colon, "12,5", a typo — and run on the saved value as if
+/// the request had asked for nothing, reported as a success. And it accepted
+/// "NaN": every comparison against NaN is false, so it passed each node's
+/// domain guard and ran. The CLI refused both; now the two faces agree.
+fn sets_checked(params: &str) -> Result<Vec<(String, f64)>, String> {
+    let mut out = Vec::new();
+    for kv in params.split('&') {
+        let Some((k, v)) = kv.split_once('=') else { continue };
+        if k != "set" {
+            continue;
+        }
+        let d = decode(v);
+        let Some((id, val)) = d.split_once(':') else {
+            return Err(format!("set={d} is not id:value"));
+        };
+        match val.trim().parse::<f64>() {
+            Ok(x) if x.is_finite() => out.push((id.to_string(), x)),
+            _ => return Err(format!("set={d}: '{val}' is not a finite number")),
+        }
+    }
+    Ok(out)
+}
+
+/// The values, once `case_refused` / `inputs_reading` has already refused a
+/// request carrying a malformed one.
 fn sets(params: &str) -> Vec<(String, f64)> {
-    params
-        .split('&')
-        .filter_map(|kv| {
-            let (k, v) = kv.split_once('=')?;
-            if k != "set" {
-                return None;
-            }
-            let d = decode(v);
-            let (id, val) = d.split_once(':')?;
-            Some((id.to_string(), val.parse().ok()?))
-        })
-        .collect()
+    sets_checked(params).unwrap_or_default()
 }
 
 /// A supplied value only survives on a row that declares its own number.
@@ -2037,6 +2054,16 @@ fn refuse(node: &str, message: &str) -> String {
 /// unknown name or a condition that cannot be applied comes back as a sentence
 /// rather than as the declared design with a customer's name on it.
 fn case_refused(params: &str, ctx: &Ctx) -> Option<String> {
+    if let Err(why) = sets_checked(params) {
+        let mut j = Json::new();
+        j.raw("{");
+        j.bool_field("ok", false);
+        j.str_field("fault", "input-refused");
+        j.str_field("node", "");
+        j.str_field("message", &why);
+        j.raw("}");
+        return Some(j.0);
+    }
     let case = build_case(params, ctx);
     let why = vleo_modules::case_refusal(&case)?;
     let mut j = Json::new();
@@ -2782,5 +2809,20 @@ mod requests {
         assert!(allowed("POST", h, Some("http://127.0.0.1:7777"), Some("same-origin"), 7777).is_ok());
         // A script the person ran (the Python tools, curl) sends neither header.
         assert!(allowed("POST", h, None, None, 7777).is_ok());
+    }
+}
+
+#[cfg(test)]
+mod supplied_values {
+    use super::sets_checked;
+
+    #[test]
+    fn a_malformed_or_non_finite_set_is_refused_by_name() {
+        assert!(sets_checked("set=alt:NaN").is_err());
+        assert!(sets_checked("set=alt:inf").is_err());
+        assert!(sets_checked("set=alt:12%2C5").is_err());
+        assert!(sets_checked("set=alt").is_err());
+        assert_eq!(sets_checked("node=x&set=alt:250000").unwrap(), vec![("alt".to_string(), 250000.0)]);
+        assert_eq!(sets_checked("node=x").unwrap(), vec![]);
     }
 }
