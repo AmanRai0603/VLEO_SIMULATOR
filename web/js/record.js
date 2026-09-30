@@ -233,28 +233,6 @@ export async function engineLevers(node) {
   return d.ok ? (d.levers || []) : [];
 }
 
-/**
- * Another implementation's saved answers, for a figure that checks this one.
- *
- * Kept apart from `bundleFile` on purpose, and the separation is the point. A
- * bundle is verified reference data — what was OBSERVED, with a provenance and a
- * licence. `matlab/reference/mission_drivers.csv` is what a DIFFERENT PROGRAM
- * computed, saved by its author. Drawing the two with one function would be the
- * first step toward a figure that presents a second implementation's output as
- * evidence about the sky.
- */
-export async function parityFile(file) {
-  const key = 'parity/' + file;
-  if (cache.has(key)) return cache.get(key);
-  const p = (async () => {
-    const r = await fetch('/v1/parity/' + file);
-    if (!r.ok) throw new Error(await r.text());
-    return parseCsv(await r.text());
-  })();
-  cache.set(key, p);
-  return p;
-}
-
 export async function bundleFile(name, file) {
   const key = name + '/' + file;
   if (cache.has(key)) return cache.get(key);

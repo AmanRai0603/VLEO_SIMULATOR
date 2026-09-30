@@ -343,6 +343,10 @@ params = [["view", "year"]]
 name = "figures-solar-forecast-age"
 path = "/v1/figures/solar/forecast"
 params = [["view", "age"]]
+[[route.example]]
+name = "figures-solar-drivers"
+path = "/v1/figures/solar/drivers"
+params = []
 
 [[route]]
 method = "GET"

@@ -317,6 +317,13 @@
           "type": "number",
           "description": "The pairs behind the first window's correlation at lag 1."
         },
+        "naive_band": {
+          "type": [
+            "null",
+            "number"
+          ],
+          "description": "The naive white-noise band on that correlation, 2/sqrt(n); null with no pairs."
+        },
         "band": {
           "type": "array",
           "description": "Bartlett's 95 per cent half-width on the first curve, at every lag.",
@@ -368,6 +375,7 @@
         "windows",
         "r",
         "n_lag1",
+        "naive_band",
         "band",
         "outside",
         "peak_lag",
@@ -1553,6 +1561,146 @@
         "mean",
         "commonest",
         "over_a_day_pct"
+      ]
+    },
+    {
+      "type": "object",
+      "description": "The drivers figure: the solar crossing's twenty-five cells, run on the saved case, against the legacy tool's own run of the same cells.",
+      "properties": {
+        "ok": {
+          "type": "boolean"
+        },
+        "bundle": {
+          "type": "string",
+          "description": "The bundle and version the numbers were worked out from."
+        },
+        "figure": {
+          "type": "string",
+          "enum": [
+            "drivers"
+          ]
+        },
+        "node": {
+          "type": "string",
+          "description": "The crossing run for this tree's cells."
+        },
+        "legacy": {
+          "type": "string",
+          "description": "The file the legacy run's cells are read from."
+        },
+        "scenarios": {
+          "type": "array",
+          "description": "The five scenarios, cold to hot.",
+          "items": {
+            "type": "string"
+          }
+        },
+        "quantities": {
+          "type": "array",
+          "description": "The five quantities at each scenario.",
+          "items": {
+            "type": "string"
+          }
+        },
+        "ours": {
+          "type": "array",
+          "description": "This tree's cells: [quantity][scenario]; null where the run gave none.",
+          "items": {
+            "type": "array",
+            "items": {
+              "type": [
+                "null",
+                "number"
+              ]
+            }
+          }
+        },
+        "theirs": {
+          "type": "array",
+          "description": "The legacy run's cells: [quantity][scenario]; null where it has none.",
+          "items": {
+            "type": "array",
+            "items": {
+              "type": [
+                "null",
+                "number"
+              ]
+            }
+          }
+        },
+        "ratio": {
+          "type": "array",
+          "description": "This tree over the legacy run; null where either is missing or the legacy cell is zero.",
+          "items": {
+            "type": "array",
+            "items": {
+              "type": [
+                "null",
+                "number"
+              ]
+            }
+          }
+        },
+        "gap": {
+          "type": "array",
+          "description": "This tree minus the legacy run.",
+          "items": {
+            "type": "array",
+            "items": {
+              "type": [
+                "null",
+                "number"
+              ]
+            }
+          }
+        },
+        "widest": {
+          "type": "array",
+          "description": "For each quantity, the scenario where the gap is widest either way; null where there is no gap.",
+          "items": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        },
+        "agree": {
+          "type": "number",
+          "description": "How many ratios are within a tenth of a per cent of one."
+        },
+        "below": {
+          "type": "number",
+          "description": "How many sit below that."
+        },
+        "above": {
+          "type": "number",
+          "description": "How many sit above it."
+        },
+        "factor": {
+          "type": [
+            "null",
+            "number"
+          ],
+          "description": "How far the worst cell is out, as a factor of at least one either way."
+        }
+      },
+      "required": [
+        "ok",
+        "figure",
+        "bundle",
+        "node",
+        "legacy",
+        "scenarios",
+        "quantities",
+        "ours",
+        "theirs",
+        "ratio",
+        "gap",
+        "widest",
+        "agree",
+        "below",
+        "above",
+        "factor"
       ]
     }
   ]

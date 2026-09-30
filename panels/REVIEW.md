@@ -298,7 +298,7 @@ Current: `UNCONFIRMED / re-recorded 2026-09-19, §34 moves 1–9; awaiting a loo
 
 ## `drivers` — Drivers — the five scenarios, against the legacy run
 
-- **no pixel reference, declared.** the twenty-five cells it draws are asserted numerically by tools/mat_parity.py against the MATLAB tool's own saved run, and check 2b proves it reads them from the engine rather than holding them
+- **no pixel reference, declared.** the twenty-five cells it draws are asserted numerically by tools/mat_parity.py against the MATLAB tool's own saved run, and check 2c proves it draws the engine's comparison rather than holding one
 
   Checks 1, 2, 2b and 4 still run on it. There is no picture to
   look at here, so look at the panel itself in the running tool.

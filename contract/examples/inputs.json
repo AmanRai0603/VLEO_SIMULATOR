@@ -3,7 +3,7 @@
   "case": "multipayload",
   "label": "VLEO multipayload",
   "note": "The one case: every input of the multipayload design, grouped into what the customer chooses and the condition it flies in. Defaults are the values declared on each row; a saved case, uploaded as CSV or edited on the Inputs page, changes them without touching the repository.",
-  "path": "/tmp/vleo-contract-14329/case.csv",
+  "path": "/tmp/vleo-contract-11148/case.csv",
   "stored": false,
   "template_now": "48afb0100e92",
   "changed": 0,
