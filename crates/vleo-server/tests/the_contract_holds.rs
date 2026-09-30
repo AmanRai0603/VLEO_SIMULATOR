@@ -827,6 +827,7 @@ fn every_route_answers_as_the_contract_says() {
                 "csv" => "text/csv",
                 "css" => "text/css",
                 "js" => "javascript",
+                "font" => "font/woff2",
                 other => {
                     errs.push(format!("{label}: `{other}` is not an answer kind"));
                     continue;

@@ -475,6 +475,47 @@ jobs:
       - name: the page, on recorded answers only
         run: python3 tools/mock_check.py
 
+  # THE READERS' FOLDER, AS A READER OPENS IT. `xtask readers` builds the pages
+  # a team reads with no tool running, and the engine they carry; its own last
+  # step proves every link is in the folder. This proves the pages WORK: opened
+  # from file:// in Chromium, the engine compiled for the browser answers,
+  # refuses and sweeps, and a widget on a row page is answered by it. Then the
+  # same engine built natively is asked every question the page was asked, and
+  # each answer must be the same text — the page's numbers are the tool's.
+  readers:
+    name: the readers' folder, opened from a file
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+            crates/vleo-kernel-wasm/target
+          key: ${{ runner.os }}-readers-${{ hashFiles('**/Cargo.lock', 'rust-toolchain.toml') }}
+          restore-keys: ${{ runner.os }}-readers-
+      - run: rustup target add wasm32-unknown-unknown
+      - name: the browser
+        run: |
+          pip install --quiet playwright
+          python3 -m playwright install --with-deps chromium
+      # The folder, and generated/index.json beside it: the check asks the
+      # page's engine every computed row, and the index is what says which.
+      - name: the folder
+        run: |
+          cargo run -p xtask -- readers
+          cargo run -p xtask -- assemble
+      - name: the pages, the engine in the page, and a widget, from file://
+        run: |
+          python3 tools/readers_check.py --selftest
+          python3 tools/readers_check.py --answers "$RUNNER_TEMP/answers.tsv"
+      - name: the page's answers are the tool's
+        working-directory: crates/vleo-kernel-wasm
+        run: VLEO_BROWSER_ANSWERS="$RUNNER_TEMP/answers.tsv" cargo test --locked -- --include-ignored
+
   panels:
     name: the panels render, move and match
     runs-on: ubuntu-latest

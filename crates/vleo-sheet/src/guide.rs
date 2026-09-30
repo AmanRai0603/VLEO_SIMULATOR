@@ -337,15 +337,8 @@ pub fn render(m: &Manual, role: &str, version: &str) -> Result<String, String> {
         .collect::<Vec<_>>()
         .join(" · ");
 
-    Ok(format!(
-        r#"<!doctype html>
-<html lang="en"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>VLEO · {title} guide</title>
-<meta name="generator" content="cargo run -p xtask -- guides — from docs/manual.toml; edit the manual, never this file">
-<style>{css}</style></head>
-<body data-depth="read">
-<header class="top">
+    let body = format!(
+        r#"<header class="top">
 <div class="eyebrow">VLEO design tool · version {version} · the {role} guide</div>
 <h1>Guide for the {lower}</h1>
 <p class="kinds"><span class="kind k-tutorial">tutorial</span><span class="kind k-how-to">how-to</span><span class="kind k-reference">reference</span><span class="kind k-explanation">explanation</span> — each block below says which it is</p>
@@ -370,10 +363,7 @@ pub fn render(m: &Manual, role: &str, version: &str) -> Result<String, String> {
 {cannot_block}
 </main>
 <footer><p>Generated from <code>docs/manual.toml</code> by <code>cargo run -p xtask -- guides</code>. Every command and label above is checked against the tool by the repository's tests (<code>the_manual_is_true</code>, <code>tools/manual_check.py</code>) — edit the manual, never this file. The standard it follows is <code>docs/EXPLAINING.md</code>.</p></footer>
-<script>{js}</script>
-</body></html>
-"#,
-        title = esc(&r.title),
+<script>{js}</script>"#,
         lower = esc(&r.title.to_lowercase()),
         role = esc(role),
         version = esc(version),
@@ -392,9 +382,17 @@ pub fn render(m: &Manual, role: &str, version: &str) -> Result<String, String> {
                  </table></section>"
             )
         },
-        css = CSS,
         js = JS,
-    ))
+    );
+    Ok(crate::shell::fill(&crate::shell::Page {
+        title: &format!("VLEO · {} guide", r.title),
+        head: &format!(
+            "<meta name=\"generator\" content=\"cargo run -p xtask -- guides — from docs/manual.toml; \
+             edit the manual, never this file\">\n<style>{CSS}</style>"
+        ),
+        body_attrs: " data-depth=\"read\"",
+        body: &body,
+    }))
 }
 
 const CSS: &str = r#"

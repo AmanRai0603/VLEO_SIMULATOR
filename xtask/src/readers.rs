@@ -294,6 +294,15 @@ fn write_folder(
     }
     let w = |p: PathBuf, t: &str| fs::write(&p, t).map_err(|e| format!("{}: {e}", p.display()));
     fs::copy(root.join("web/app.css"), assets.join("app.css")).map_err(|e| e.to_string())?;
+    // The face's type, beside the stylesheet that names it, with its licence.
+    let fonts = assets.join("fonts");
+    fs::create_dir_all(&fonts).map_err(|e| format!("{}: {e}", fonts.display()))?;
+    for e in fs::read_dir(root.join("web/fonts"))
+        .map_err(|e| format!("web/fonts: {e}"))?
+        .flatten()
+    {
+        fs::copy(e.path(), fonts.join(e.file_name())).map_err(|e| e.to_string())?;
+    }
     w(assets.join("vleo.js"), script)?;
     w(
         assets.join("kernel.js"),
@@ -348,14 +357,21 @@ const DEPTH: &str = "<span class=\"grp\" id=\"depth\" role=\"group\" aria-label=
 <button class=\"ctl dp\" data-depth=\"learn\">Learn</button><button class=\"ctl dp\" data-depth=\"read\">Read</button>\
 <button class=\"ctl dp\" data-depth=\"expert\">Expert</button></span>";
 
+/// A readers' page: the one page template (`web/page.html`), with the tool's
+/// stylesheet linked and the folder's own header.
 fn shell(title: &str, up: &str, body: &str, tail: &str) -> String {
-    format!(
-        "<!doctype html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\">\n\
-         <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n\
-         <title>{title}</title>\n<link rel=\"stylesheet\" href=\"{up}assets/app.css\">\n<style>{READERS_CSS}</style>\n</head>\n\
-         <body class=\"readers\">\n<header class=\"rd-top\"><a class=\"ctl\" href=\"{up}index.html\">VLEO design — for readers</a> {DEPTH}</header>\n\
-         <main class=\"rd-main\" id=\"node-body\">\n{body}\n</main>\n{tail}</body>\n</html>\n"
-    )
+    vleo_sheet::shell::fill(&vleo_sheet::shell::Page {
+        title,
+        head: &format!(
+            "<link rel=\"stylesheet\" href=\"{up}assets/app.css\">\n<style>{READERS_CSS}</style>"
+        ),
+        body_attrs: " class=\"readers\"",
+        body: &format!(
+            "<header class=\"rd-top\"><a class=\"ctl\" href=\"{up}index.html\">VLEO design — for readers</a> {DEPTH}</header>\n\
+             <main class=\"rd-main\" id=\"node-body\">\n{body}\n</main>\n{}",
+            tail.trim_end()
+        ),
+    })
 }
 
 fn row_page(
@@ -403,7 +419,7 @@ fn row_page(
         ));
     }
     tail.push_str("<script src=\"../assets/vleo.js\"></script>\n");
-    shell(&format!("{} — VLEO", he(&sh.label)), "../", &body, &tail)
+    shell(&format!("{} — VLEO", sh.label), "../", &body, &tail)
 }
 
 fn index_page(tree: &Tree, lessons: &[(String, String, String)]) -> String {
@@ -460,22 +476,32 @@ fn index_page(tree: &Tree, lessons: &[(String, String, String)]) -> String {
     )
 }
 
-/// Every `href` and `src` that points into the folder, that is not there.
+/// Every `href` and `src` a page points into the folder with, and every
+/// `url(...)` a stylesheet does, that is not there.
 fn broken_links(out: &Path) -> Result<Vec<String>, String> {
     let mut missing = BTreeSet::new();
     let mut pages = vec![out.join("index.html")];
-    for e in fs::read_dir(out.join("rows"))
-        .map_err(|e| e.to_string())?
-        .flatten()
-    {
-        pages.push(e.path());
+    for dir in ["rows", "assets"] {
+        for e in fs::read_dir(out.join(dir))
+            .map_err(|e| format!("{dir}: {e}"))?
+            .flatten()
+        {
+            let p = e.path();
+            if dir == "rows" || p.extension().is_some_and(|x| x == "css") {
+                pages.push(p);
+            }
+        }
     }
     for p in pages {
         let text = fs::read_to_string(&p).map_err(|e| e.to_string())?;
         let base = p.parent().unwrap_or(out);
-        for attr in ["href=\"", "src=\""] {
+        for attr in ["href=\"", "src=\"", "url("] {
             for part in text.split(attr).skip(1) {
-                let link = part.split('"').next().unwrap_or("");
+                let link = part
+                    .split(['"', ')'])
+                    .next()
+                    .unwrap_or("")
+                    .trim_matches('\'');
                 if link.is_empty() || link.starts_with('#') || link.contains(':') {
                     continue;
                 }
@@ -584,5 +610,60 @@ mod tests {
             body.contains("const { a, b, } = __m[\"x.js\"];") && body.ends_with("return { c };\n"),
             "{body}"
         );
+    }
+
+    /// A readers' page is the one page template, filled, with the tool's
+    /// stylesheet linked from where the page sits.
+    #[test]
+    fn a_readers_page_is_the_template_filled() {
+        let p = shell(
+            "a <row>",
+            "../",
+            "<p>body</p>",
+            "<script src=\"x.js\"></script>\n",
+        );
+        vleo_sheet::shell::is_filled(vleo_sheet::shell::TEMPLATE, &p).unwrap();
+        assert!(p.contains("<title>a &lt;row&gt;</title>"), "{p}");
+        assert!(p.contains("href=\"../assets/app.css\""), "{p}");
+        assert!(p.contains("<body class=\"readers\">"), "{p}");
+    }
+
+    /// The folder's last step finds a page's missing link, a missing script
+    /// and a font its stylesheet names that is not there — and passes the
+    /// same folder once they are.
+    #[test]
+    fn the_link_check_finds_what_a_page_names_and_the_folder_lacks() {
+        let out = std::env::temp_dir().join(format!("vleo-readers-links-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&out);
+        fs::create_dir_all(out.join("rows")).unwrap();
+        fs::create_dir_all(out.join("assets/fonts")).unwrap();
+        fs::write(
+            out.join("index.html"),
+            "<a href=\"rows/a.html\">a</a> <a href=\"#top\">top</a> <a href=\"https://x.org\">x</a>",
+        )
+        .unwrap();
+        fs::write(
+            out.join("rows/a.html"),
+            "<a href=\"b.html\">b</a><script src=\"../assets/vleo.js\"></script>",
+        )
+        .unwrap();
+        fs::write(
+            out.join("assets/app.css"),
+            "@font-face{src:url(fonts/f.woff2) format(\"woff2\")} i{background:url(\"data:image/png;base64,AA\")}",
+        )
+        .unwrap();
+        let missing = broken_links(&out).unwrap();
+        for want in ["b.html", "../assets/vleo.js", "fonts/f.woff2"] {
+            assert!(
+                missing.iter().any(|m| m.starts_with(want)),
+                "{want} not found in {missing:?}"
+            );
+        }
+        assert_eq!(missing.len(), 3, "{missing:?}");
+        fs::write(out.join("rows/b.html"), "").unwrap();
+        fs::write(out.join("assets/vleo.js"), "").unwrap();
+        fs::write(out.join("assets/fonts/f.woff2"), "").unwrap();
+        assert_eq!(broken_links(&out).unwrap(), Vec::<String>::new());
+        let _ = fs::remove_dir_all(&out);
     }
 }

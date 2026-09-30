@@ -69,6 +69,46 @@ fn the_report_carries_the_result_and_reads_back_as_it() {
     assert_eq!(read(&unwrap_report(&page)).unwrap(), s);
 }
 
+/// The page is the one page template (`web/page.html`) with its slots filled:
+/// every part of the template's own text, in order, nothing before or after.
+/// The same test `vleo_sheet::shell::is_filled` holds every other page to.
+#[test]
+fn the_report_is_the_one_page_template_filled() {
+    let t = vleo_modules::results::PAGE_TEMPLATE;
+    let t = &t[t
+        .find("<!doctype html>")
+        .expect("the template has no doctype")..];
+    let parts: Vec<&str> = t
+        .split("{{")
+        .enumerate()
+        .map(|(k, p)| {
+            if k == 0 {
+                p
+            } else {
+                &p[p.find("}}").unwrap() + 2..]
+            }
+        })
+        .collect();
+    let (s, _, _) = a_result();
+    let page = html(&s);
+    assert!(
+        page.starts_with(parts[0]),
+        "the page does not begin as the template does"
+    );
+    assert!(
+        page.ends_with(parts[parts.len() - 1]),
+        "the page does not end as the template does"
+    );
+    let mut from = 0;
+    for p in &parts {
+        from = page[from..]
+            .find(p)
+            .map(|i| i + from + p.len())
+            .unwrap_or_else(|| panic!("the page lost the template's {p:?}"));
+    }
+    assert_eq!(page.matches("<!doctype html>").count(), 1);
+}
+
 #[test]
 fn what_is_not_a_result_is_refused_by_name() {
     assert!(read("id,value\nx,1\n")

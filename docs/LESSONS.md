@@ -46,7 +46,9 @@ request; a lesson that fails is refused with its reasons, never drawn half-right
 In the tool, on the row's page. And in **the readers' folder** —
 `cargo run -p xtask -- readers` — every row's page and every lesson as plain
 pages for a shared drive or an internal web server, drawn by the same
-components, with the engine running in the page to answer the widgets.
+components, with the engine running in the page to answer the widgets —
+the same numbers as the tool's, which the pipeline proves on every push
+(`tools/readers_check.py`, then `cargo test` in `crates/vleo-kernel-wasm`).
 
 ## How one arrives
 
@@ -89,3 +91,8 @@ or a saved result's key.
   not placed beside the row. And that row does not answer today (its relation
   is stated, not derived), so a widget on it shows the engine's refusal — which
   is the right thing for it to show.
+- **A group cannot carry a lesson.** A lesson sits beside a row's `node.toml`,
+  and a group — a subsystem such as `l3_prop` — has none. A lesson about a
+  whole subsystem hangs on its interface row: the first one planned, on the
+  propulsion subsystem, has its form made for `l3_prop_interface` and waits
+  on the propulsion owner to write it.

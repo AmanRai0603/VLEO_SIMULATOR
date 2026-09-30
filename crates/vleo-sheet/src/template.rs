@@ -905,12 +905,6 @@ fn page(
     checker: &[u8],
 ) -> String {
     let mut o = String::with_capacity(160 * 1024);
-    o.push_str("<!doctype html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\">\n");
-    o.push_str("<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n");
-    o.push_str(&format!("<title>{}</title>\n", he(title)));
-    o.push_str("<style>\n");
-    o.push_str(PAGE_CSS);
-    o.push_str("</style>\n</head>\n<body>\n");
     o.push_str(
         "<header class=\"nf-head\">\n<p class=\"nf-kicker\">VLEO design tool · node form</p>\n",
     );
@@ -952,8 +946,13 @@ fn page(
     ));
     o.push_str("<script>\n");
     o.push_str(PAGE_JS);
-    o.push_str("</script>\n</body>\n</html>\n");
-    o
+    o.push_str("</script>");
+    crate::shell::fill(&crate::shell::Page {
+        title,
+        head: &format!("<style>\n{PAGE_CSS}</style>"),
+        body: &o,
+        ..Default::default()
+    })
 }
 
 // ---------------------------------------------------------------------------

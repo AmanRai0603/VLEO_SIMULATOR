@@ -1580,6 +1580,11 @@ run = "cargo run -p xtask -- readers"
 check = "writes"
 why = "writes target/readers"
 
+[[layer.section.step]]
+say = "Open that folder as a reader does — from a file, in a browser: the pages load, the engine in the page answers, refuses and sweeps, and a widget moves. With --answers it writes every answer down, and cargo test in crates/vleo-kernel-wasm, given the file in VLEO_BROWSER_ANSWERS, holds each one to the engine built natively."
+run = "python3 tools/readers_check.py"
+check = "ci"
+
 [[layer.section]]
 id = "term-kit"
 title = "Share the tool with the team"
@@ -2575,6 +2580,11 @@ what = "The page's modules, one per concern, served as they are written — no b
 
 [[route]]
 method = "GET"
+path = "/fonts/<font>"
+what = "The page's type, bundled with the tool (web/fonts, IBM Plex Mono under the SIL Open Font License): the page looks the same everywhere and fetches nothing to do it."
+
+[[route]]
+method = "GET"
 path = "/v1/version"
 what = "The engine's identity: the contract version it speaks, kernel, graph, row count and data versions."
 
@@ -2756,6 +2766,11 @@ default = "$HOME/.vleo/case/inputs.csv"
 name = "VLEO_CONTRACT_RECORD"
 what = "Set to `1` when running the contract tests, to record contract/examples/ again from the real engine after an answer's shape changes, and draft a schema for a route that has none. It never rewrites a schema. Unset, the tests only check."
 default = "unset — check"
+
+[[env]]
+name = "VLEO_BROWSER_ANSWERS"
+what = "The file `tools/readers_check.py --answers` wrote: every answer the engine in a readers' page gave. Set when running `cargo test -- --include-ignored` in crates/vleo-kernel-wasm, it holds each of those answers to the same engine built natively, byte for byte. Unset, that one test refuses to run and says why; the pipeline's readers job sets it."
+default = "unset — the comparison is not run"
 
 [[env]]
 name = "VLEO_GOLDEN"

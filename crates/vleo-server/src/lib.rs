@@ -286,6 +286,8 @@ fn route(
         // the thing that runs, and the first time they disagree the disagreement
         // is invisible.
         ("GET", p) if p.starts_with("/js/") => module(ctx, p.trim_start_matches("/js/")),
+        // The face's type, bundled beside the stylesheet (web/fonts).
+        ("GET", p) if p.starts_with("/fonts/") => font(ctx, p.trim_start_matches("/fonts/")),
         ("GET", "/v1/version") => ok_json(version_json(ctx)),
         // The manual, with what is true of this running copy right now.
         ("GET", "/v1/manual") => manual_endpoint(ctx),

@@ -122,6 +122,31 @@ pub(super) fn module(ctx: &Ctx, name: &str) -> (&'static str, &'static str, Vec<
     }
 }
 
+/// One of the face's fonts, by name. The same guard as `module`: a plain
+/// `.woff2` name under `web/fonts`, or refused before the filesystem.
+pub(super) fn font(ctx: &Ctx, name: &str) -> (&'static str, &'static str, Vec<u8>) {
+    let stem = name.strip_suffix(".woff2").unwrap_or("");
+    let ok = !stem.is_empty()
+        && stem
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '-');
+    if !ok {
+        return (
+            "400 Bad Request",
+            "text/plain; charset=utf-8",
+            b"not a font name".to_vec(),
+        );
+    }
+    match std::fs::read(ctx.root.join("web").join("fonts").join(name)) {
+        Ok(b) => ("200 OK", "font/woff2", b),
+        Err(_) => (
+            "404 Not Found",
+            "text/plain; charset=utf-8",
+            format!("web/fonts/{name} is not on disk").into_bytes(),
+        ),
+    }
+}
+
 /// The manual the page shows about the tool, and what is true of THIS copy.
 ///
 /// The file says how things work. Only the running copy knows where its saved

@@ -170,7 +170,7 @@ fn run(q: &Request) -> String {
                 text(VARS[i].label),
                 num(v.value),
                 text(&shown),
-                text(&unit)
+                text(unit)
             )
         })
         .collect();
@@ -241,4 +241,83 @@ fn text(s: &str) -> String {
 
 fn hex(h: u64) -> String {
     format!("{h:016x}")[..12].to_string()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn a_request_reads_as_the_page_writes_it() {
+        let q =
+            Request::read("node a\nover b\nfrom 1\nto 2.5\npoints 7\nset c 3\nset d 1e-3\nnoise\n");
+        assert_eq!((q.node.as_str(), q.over.as_str()), ("a", "b"));
+        assert_eq!((q.from, q.to, q.points), (1.0, 2.5, 7));
+        assert_eq!(q.sets, vec![("c".into(), 3.0), ("d".into(), 1e-3)]);
+        assert_eq!(Request::read("node a\n").points, 25);
+    }
+
+    #[test]
+    fn what_the_engine_would_refuse_is_refused_here() {
+        let no_row = run(&Request::read("node no_such_row\n"));
+        assert!(
+            no_row.starts_with("{\"ok\":false") && no_row.contains("no_such_row"),
+            "{no_row}"
+        );
+        let supplied = run(&Request::read(
+            "node sw_ap_design_long\nset sw_ap_design_long 3\n",
+        ));
+        assert!(supplied.starts_with("{\"ok\":false"), "{supplied}");
+        let nan = run(&Request::read(
+            "node sw_ap_design_long\nset sw_ap_central_expectation x\n",
+        ));
+        assert!(nan.contains("not a number"), "{nan}");
+        let short = sweep(&Request::read(
+            "node sw_ap_design_long\nover sw_ap_central_expectation\nfrom 1\nto 2\npoints 1\n",
+        ));
+        assert!(short.contains("between 2 and 400"), "{short}");
+    }
+
+    /// THE PAGE'S NUMBERS ARE THE TOOL'S. `tools/readers_check.py --answers`
+    /// asks the engine the readers' folder carries — compiled to WebAssembly,
+    /// loaded in Chromium from a file — every question it asks, and writes each
+    /// answer down. The same engine built here natively is asked the same
+    /// questions, and every answer must be the same text: the same values to
+    /// the last bit (they print as the shortest text that reads back as the
+    /// same f64), the same refusals, the same sweep. The kernel's maths is
+    /// portable (`vleo_core::units::pmath`) precisely so this holds.
+    #[test]
+    #[ignore = "needs VLEO_BROWSER_ANSWERS, written by tools/readers_check.py --answers"]
+    fn the_page_answers_every_question_as_the_tool_does() {
+        let path = std::env::var("VLEO_BROWSER_ANSWERS")
+            .expect("VLEO_BROWSER_ANSWERS: the file tools/readers_check.py --answers wrote");
+        let text = std::fs::read_to_string(&path).unwrap_or_else(|e| panic!("{path}: {e}"));
+        let mut asked = 0;
+        let mut differ = Vec::new();
+        for line in text.lines() {
+            let (q, page) = line
+                .split_once('\t')
+                .expect("a line is <question>\\t<answer>");
+            let here = match q {
+                "@supplied" => run(&Request::read(
+                    "node sw_ap_design_long\nset sw_ap_design_long 3\n",
+                )),
+                "@sweep" => sweep(&Request::read(
+                    "node sw_ap_design_long\nover sw_ap_central_expectation\nfrom 5\nto 35\npoints 7\n",
+                )),
+                id => run(&Request::read(&format!("node {id}\n"))),
+            };
+            asked += 1;
+            if here != page {
+                differ.push(format!("{q}\n  page: {page}\n  tool: {here}"));
+            }
+        }
+        assert!(asked > 100, "only {asked} answers in {path}");
+        assert!(
+            differ.is_empty(),
+            "{} of {asked} differ:\n{}",
+            differ.len(),
+            differ.join("\n")
+        );
+    }
 }
