@@ -188,3 +188,31 @@ fn the_monthly_means_are_the_file_as_written() {
     );
     assert!(months.windows(2).all(|w| w[1].day > w[0].day));
 }
+
+#[test]
+fn the_issued_forecasts_are_the_file_as_written() {
+    let b = bundle();
+    let fc = vleo_data::read_forecast_issued(&b).unwrap();
+    // The file's 30047 rows, first and last read straight off it.
+    assert_eq!(fc.len(), 30_047);
+    let d = |s| vleo_data::days_since_2000(s).unwrap();
+    assert_eq!(
+        fc[0],
+        vleo_data::IssuedForecast {
+            issue: d("1997-08-12"),
+            target: d("1997-08-13"),
+            lead: Some(1.0),
+            f107: Some(82.0),
+        }
+    );
+    let last = fc[fc.len() - 1];
+    assert_eq!(
+        (last.issue, last.target, last.lead, last.f107),
+        (d("2025-12-29"), d("2026-01-24"), Some(26.0), Some(175.0))
+    );
+    // Its index: one date per issue, the quoted flags after it not in the way.
+    let issues = vleo_data::read_forecast_issues(&b).unwrap();
+    assert_eq!(issues.len(), 1437);
+    assert_eq!(issues[0], d("1997-06-10"));
+    assert_eq!(issues[issues.len() - 1], d("2025-12-29"));
+}

@@ -854,6 +854,112 @@ pub fn read_solar_cycles(b: &Bundle) -> Result<Vec<SolarCycle>, String> {
     Ok(out)
 }
 
+/// One row of `forecast_issued.csv`: what one issued outlook said about one
+/// day.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct IssuedForecast {
+    /// Days since 2000-01-01 of the issue, and of the day it forecasts.
+    pub issue: i32,
+    pub target: i32,
+    /// Days from the issue to the target, as the outlook indexed it — from 0
+    /// on most issues and from 1 on the rest, so not always the difference of
+    /// the two dates.
+    pub lead: Option<f64>,
+    pub f107: Option<f64>,
+}
+
+/// Every forecast `forecast_issued.csv` holds, in its order, read by the
+/// column names in its header. A row whose dates do not parse is refused with
+/// the file: a forecast scored against the wrong day is a wrong score nothing
+/// downstream could tell from a right one.
+pub fn read_forecast_issued(b: &Bundle) -> Result<Vec<IssuedForecast>, String> {
+    if !b.verified {
+        return Err(format!(
+            "{} is present but does not verify — refusing to read it",
+            b.manifest.name
+        ));
+    }
+    let p = b.dir.join("forecast_issued.csv");
+    let text = fs::read_to_string(&p).map_err(|e| format!("{}: {e}", p.display()))?;
+    let mut cols: Option<Vec<String>> = None;
+    let mut out = Vec::new();
+    for (n, line) in text.lines().enumerate() {
+        let line = line.trim();
+        if line.is_empty() || line.starts_with('#') {
+            continue;
+        }
+        let f: Vec<&str> = line.split(',').map(str::trim).collect();
+        let Some(h) = &cols else {
+            cols = Some(f.iter().map(|s| s.to_string()).collect());
+            continue;
+        };
+        let at = |name: &str| -> Option<&str> {
+            h.iter()
+                .position(|c| c == name)
+                .and_then(|i| f.get(i).copied())
+        };
+        let bad = |what: &str| format!("{}:{}: {what}", p.display(), n + 1);
+        let date = |k: &str| {
+            at(k)
+                .and_then(days_since_2000)
+                .ok_or_else(|| bad(&format!("no '{k}'")))
+        };
+        let value = |k: &str| at(k).and_then(cell).filter(|v| !v.is_nan());
+        out.push(IssuedForecast {
+            issue: date("issue_date")?,
+            target: date("target_date")?,
+            lead: value("lead_days"),
+            f107: value("f107"),
+        });
+    }
+    if out.is_empty() {
+        return Err(format!("{}: no forecasts", p.display()));
+    }
+    Ok(out)
+}
+
+/// The day each outlook in `forecast_issues.csv` was issued, in its order.
+///
+/// Only the issue date is read. The file's flags column is quoted and holds
+/// commas, and it comes after the date, so the date is found by the header
+/// without a quoting parser for a column nothing reads.
+pub fn read_forecast_issues(b: &Bundle) -> Result<Vec<i32>, String> {
+    if !b.verified {
+        return Err(format!(
+            "{} is present but does not verify — refusing to read it",
+            b.manifest.name
+        ));
+    }
+    let p = b.dir.join("forecast_issues.csv");
+    let text = fs::read_to_string(&p).map_err(|e| format!("{}: {e}", p.display()))?;
+    let mut at: Option<usize> = None;
+    let mut out = Vec::new();
+    for (n, line) in text.lines().enumerate() {
+        let line = line.trim();
+        if line.is_empty() || line.starts_with('#') {
+            continue;
+        }
+        let f: Vec<&str> = line.split(',').map(str::trim).collect();
+        let Some(i) = at else {
+            at = Some(
+                f.iter()
+                    .position(|c| *c == "issue_date")
+                    .ok_or_else(|| format!("{}: no 'issue_date' column", p.display()))?,
+            );
+            continue;
+        };
+        let date = f.get(i).copied().unwrap_or("");
+        out.push(
+            days_since_2000(date)
+                .ok_or_else(|| format!("{}:{}: '{date}' is not a date", p.display(), n + 1))?,
+        );
+    }
+    if out.is_empty() {
+        return Err(format!("{}: no issues", p.display()));
+    }
+    Ok(out)
+}
+
 /// The row for one day, or `None` if the record does not cover it.
 ///
 /// Binary search rather than a scan: the caller is a design window asking for

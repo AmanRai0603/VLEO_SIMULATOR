@@ -17,7 +17,7 @@ use alloc::vec::Vec;
 use vleo_core::math::{bartlett_halfwidth, centred_mean, lagged_corr, mean_sd, pearson, quantile};
 use vleo_core::physics::env::ap_at_kp;
 use vleo_core::units::pmath;
-use vleo_data::{MonthlyMean, SolarCycle, SolarDay};
+use vleo_data::{IssuedForecast, MonthlyMean, SolarCycle, SolarDay};
 
 /// The storm-level daily Ap the density figure counts: G1, the level the
 /// panels call a storm.
@@ -1131,6 +1131,326 @@ pub fn growth_by_cycle(
     }
 }
 
+/// The furthest back persistence looks for an observation, in days.
+pub const PERSISTENCE_REACH: i32 = 15;
+
+/// The leads the by-lead forecast figure scores: the outlook's nominal span.
+pub const FORECAST_LEADS: u32 = 27;
+
+/// The lead band every year of the archive populates, and the fewest pairs a
+/// year needs to be scored.
+pub const FORECAST_YEAR_LEADS: (f64, f64) = (1.0, 14.0);
+pub const FORECAST_YEAR_MIN_PAIRS: u32 = 200;
+
+/// Where a gap between issues is counted as "30 or more".
+pub const ISSUE_GAP_CAP: u32 = 30;
+
+/// The running sums one score is made of: the forecast's errors over every
+/// pair with an observation, and each persistence baseline's over the pairs it
+/// reaches.
+#[derive(Clone, Copy, Default)]
+struct Sums {
+    e2: f64,
+    se: f64,
+    n: u32,
+    e2s: f64,
+    p2s: f64,
+    ns: u32,
+    e2l: f64,
+    p2l: f64,
+    nl: u32,
+}
+
+impl Sums {
+    fn add(&mut self, e: f64, obs: f64, strict: Option<f64>, leaky: Option<f64>) {
+        self.e2 += e * e;
+        self.se += e;
+        self.n += 1;
+        if let Some(p) = strict {
+            self.e2s += e * e;
+            self.p2s += (p - obs) * (p - obs);
+            self.ns += 1;
+        }
+        if let Some(p) = leaky {
+            self.e2l += e * e;
+            self.p2l += (p - obs) * (p - obs);
+            self.nl += 1;
+        }
+    }
+
+    /// One minus the ratio of mean squared errors; none where the baseline
+    /// reached no pair or never missed.
+    fn skill(e2: f64, p2: f64, n: u32) -> Option<f64> {
+        (n != 0 && p2 != 0.0).then(|| 1.0 - (e2 / n as f64) / (p2 / n as f64))
+    }
+}
+
+/// The record's F10.7 by day, and whether a day is in the record at all —
+/// persistence needs the second: an issue on a day the record lacks has no
+/// baseline, even where the days before it do.
+struct Observed<'a> {
+    record: &'a [SolarDay],
+    f107: alloc::collections::BTreeMap<i32, f64>,
+}
+
+impl<'a> Observed<'a> {
+    fn new(record: &'a [SolarDay]) -> Self {
+        let f107 = record
+            .iter()
+            .filter_map(|d| Some((d.day, d.f107?)))
+            .collect();
+        Observed { record, f107 }
+    }
+
+    /// Persistence at an issue: the latest observation from `first` days
+    /// before it back to [`PERSISTENCE_REACH`]. `first = 1` is what a
+    /// forecaster had; `first = 0` hands it the issue date itself, which most
+    /// issues also forecast — the leak.
+    fn persistence(&self, issue: i32, first: i32) -> Option<f64> {
+        self.record.binary_search_by_key(&issue, |d| d.day).ok()?;
+        (first..=PERSISTENCE_REACH).find_map(|b| self.f107.get(&(issue - b)).copied())
+    }
+
+    /// Every issued forecast with an observation on its target day, as
+    /// `(forecast, error, observed, strict, leaky)`, in the file's order.
+    fn scored<'f>(
+        &'f self,
+        issued: &'f [IssuedForecast],
+    ) -> impl Iterator<Item = (&'f IssuedForecast, f64, f64, Option<f64>, Option<f64>)> + 'f {
+        issued.iter().filter_map(move |r| {
+            let f = r.f107?;
+            let obs = *self.f107.get(&r.target)?;
+            Some((
+                r,
+                f - obs,
+                obs,
+                self.persistence(r.issue, 1),
+                self.persistence(r.issue, 0),
+            ))
+        })
+    }
+}
+
+/// The by-lead forecast figure's numbers: the issued outlook scored against
+/// what arrived at each lead from 1 to [`FORECAST_LEADS`].
+#[derive(Clone, Debug, PartialEq)]
+pub struct ForecastByLead {
+    /// The leads with at least one scored pair, and the pairs behind each
+    /// score: every pair with an observation, and those each baseline reaches.
+    pub lead: Vec<u32>,
+    pub pairs: Vec<u32>,
+    pub pairs_strict: Vec<u32>,
+    pub pairs_leaky: Vec<u32>,
+    /// Skill against persistence from the day before the issue, and from the
+    /// issue date itself.
+    pub skill_strict: Vec<Option<f64>>,
+    pub skill_leaky: Vec<Option<f64>>,
+    /// Forecast minus observed, its mean and its root mean square.
+    pub bias: Vec<f64>,
+    pub rmse: Vec<f64>,
+    /// Where the strict skill peaks — the first on a tie.
+    pub peak: Option<usize>,
+    /// The lead where the strict baseline misses the most pairs the forecast
+    /// has — the first on a tie.
+    pub widest: Option<u32>,
+}
+
+/// The by-lead forecast figure's numbers.
+pub fn forecast_by_lead(record: &[SolarDay], issued: &[IssuedForecast]) -> ForecastByLead {
+    let obs = Observed::new(record);
+    let mut sums = [Sums::default(); FORECAST_LEADS as usize];
+    for (r, e, o, ps, pl) in obs.scored(issued) {
+        let Some(l) = r.lead else { continue };
+        if (1..=FORECAST_LEADS).any(|k| l == k as f64) {
+            sums[l as usize - 1].add(e, o, ps, pl);
+        }
+    }
+    let mut out = ForecastByLead {
+        lead: Vec::new(),
+        pairs: Vec::new(),
+        pairs_strict: Vec::new(),
+        pairs_leaky: Vec::new(),
+        skill_strict: Vec::new(),
+        skill_leaky: Vec::new(),
+        bias: Vec::new(),
+        rmse: Vec::new(),
+        peak: None,
+        widest: None,
+    };
+    for (i, s) in sums.iter().enumerate() {
+        if s.n == 0 {
+            continue;
+        }
+        out.lead.push(i as u32 + 1);
+        out.pairs.push(s.n);
+        out.pairs_strict.push(s.ns);
+        out.pairs_leaky.push(s.nl);
+        out.bias.push(s.se / s.n as f64);
+        out.rmse.push(pmath::sqrt(s.e2 / s.n as f64));
+        out.skill_strict.push(Sums::skill(s.e2s, s.p2s, s.ns));
+        out.skill_leaky.push(Sums::skill(s.e2l, s.p2l, s.nl));
+    }
+    for (i, v) in out.skill_strict.iter().enumerate() {
+        let Some(v) = v else { continue };
+        if out
+            .peak
+            .is_none_or(|b| *v > out.skill_strict[b].unwrap_or(f64::NAN))
+        {
+            out.peak = Some(i);
+        }
+    }
+    let mut by = 0;
+    for i in 0..out.lead.len() {
+        let miss = out.pairs[i] - out.pairs_strict[i];
+        if miss > by {
+            by = miss;
+            out.widest = Some(out.lead[i]);
+        }
+    }
+    out
+}
+
+/// The by-year forecast figure's numbers: the outlook scored on leads
+/// [`FORECAST_YEAR_LEADS`] in the calendar year it was issued in.
+#[derive(Clone, Debug, PartialEq)]
+pub struct ForecastByYear {
+    /// Every year from the first issue to the last. A year with fewer than
+    /// [`FORECAST_YEAR_MIN_PAIRS`] pairs, or none, is a hole: none in every
+    /// series below, so a line breaks there rather than stepping over it.
+    pub year: Vec<i32>,
+    pub pairs: Vec<Option<u32>>,
+    pub pairs_strict: Vec<Option<u32>>,
+    pub pairs_leaky: Vec<Option<u32>>,
+    pub skill_strict: Vec<Option<f64>>,
+    pub skill_leaky: Vec<Option<f64>>,
+    pub bias: Vec<Option<f64>>,
+    pub rmse: Vec<Option<f64>>,
+    /// The years that hold some pairs but too few, in order.
+    pub thin: Vec<i32>,
+    /// The scored years where the strict skill is lowest and highest, and
+    /// the year the bias is lowest — each the first on a tie.
+    pub worst: Option<i32>,
+    pub best: Option<i32>,
+    pub lowest_bias: Option<i32>,
+}
+
+/// The by-year forecast figure's numbers.
+pub fn forecast_by_year(record: &[SolarDay], issued: &[IssuedForecast]) -> ForecastByYear {
+    let obs = Observed::new(record);
+    let (lo, hi) = FORECAST_YEAR_LEADS;
+    let mut acc: alloc::collections::BTreeMap<i32, Sums> = alloc::collections::BTreeMap::new();
+    for (r, e, o, ps, pl) in obs.scored(issued) {
+        if !r.lead.is_some_and(|l| l >= lo && l <= hi) {
+            continue;
+        }
+        let y = vleo_data::civil_from_days(r.issue).0;
+        acc.entry(y).or_default().add(e, o, ps, pl);
+    }
+    let span: Vec<i32> = match (acc.keys().next(), acc.keys().next_back()) {
+        (Some(&a), Some(&b)) => (a..=b).collect(),
+        _ => Vec::new(),
+    };
+    let ok = |y: &i32| acc.get(y).filter(|s| s.n >= FORECAST_YEAR_MIN_PAIRS);
+    let col = |f: &dyn Fn(&Sums) -> Option<f64>| -> Vec<Option<f64>> {
+        span.iter().map(|y| ok(y).and_then(f)).collect()
+    };
+    let count = |f: &dyn Fn(&Sums) -> u32| -> Vec<Option<u32>> {
+        span.iter().map(|y| ok(y).map(f)).collect()
+    };
+    let skill_strict = col(&|s| Sums::skill(s.e2s, s.p2s, s.ns));
+    let bias = col(&|s| Some(s.se / s.n as f64));
+    let pick = |v: &[Option<f64>], low: bool| -> Option<usize> {
+        let mut best: Option<usize> = None;
+        for (i, x) in v.iter().enumerate() {
+            let Some(x) = x.filter(|x| x.is_finite()) else {
+                continue;
+            };
+            if best.is_none_or(|b| {
+                let bv = v[b].unwrap_or(f64::NAN);
+                if low {
+                    x < bv
+                } else {
+                    x > bv
+                }
+            }) {
+                best = Some(i);
+            }
+        }
+        best
+    };
+    ForecastByYear {
+        pairs: count(&|s| s.n),
+        pairs_strict: count(&|s| s.ns),
+        pairs_leaky: count(&|s| s.nl),
+        skill_leaky: col(&|s| Sums::skill(s.e2l, s.p2l, s.nl)),
+        rmse: col(&|s| Some(pmath::sqrt(s.e2 / s.n as f64))),
+        thin: acc
+            .iter()
+            .filter(|(_, s)| s.n < FORECAST_YEAR_MIN_PAIRS)
+            .map(|(y, _)| *y)
+            .collect(),
+        worst: pick(&skill_strict, true).map(|i| span[i]),
+        best: pick(&skill_strict, false).map(|i| span[i]),
+        lowest_bias: pick(&bias, true).map(|i| span[i]),
+        skill_strict,
+        bias,
+        year: span,
+    }
+}
+
+/// The issue-age figure's numbers: how many days pass between one outlook
+/// and the next.
+#[derive(Clone, Debug, PartialEq)]
+pub struct IssueAge {
+    /// The issues the index lists.
+    pub issues: usize,
+    /// Each gap length in days, [`ISSUE_GAP_CAP`] standing for that or more,
+    /// and how many gaps have it. Two issues on one day make no gap.
+    pub gap: Vec<u32>,
+    pub count: Vec<u32>,
+    pub median: Option<f64>,
+    pub mean: Option<f64>,
+    /// The commonest gap — the shortest on a tie — and the share of gaps
+    /// longer than a day, in per cent.
+    pub commonest: Option<u32>,
+    pub over_a_day_pct: Option<f64>,
+}
+
+/// The issue-age figure's numbers from the index of issue dates.
+pub fn issue_age(issues: &[i32]) -> IssueAge {
+    let mut ds = issues.to_vec();
+    ds.sort_unstable();
+    let mut gaps: Vec<f64> = ds
+        .windows(2)
+        .map(|w| w[1] - w[0])
+        .filter(|g| *g > 0)
+        .map(|g| g as f64)
+        .collect();
+    let mut hist: alloc::collections::BTreeMap<u32, u32> = alloc::collections::BTreeMap::new();
+    for g in &gaps {
+        *hist.entry((*g as u32).min(ISSUE_GAP_CAP)).or_default() += 1;
+    }
+    // The mean in date order, before the sort the median needs.
+    let mean = (!gaps.is_empty()).then(|| gaps.iter().sum::<f64>() / gaps.len() as f64);
+    let over = gaps.iter().filter(|g| **g > 1.0).count();
+    gaps.sort_by(f64::total_cmp);
+    let mut commonest: Option<(u32, u32)> = None;
+    for (&g, &c) in &hist {
+        if commonest.is_none_or(|(_, bc)| c > bc) {
+            commonest = Some((g, c));
+        }
+    }
+    IssueAge {
+        issues: issues.len(),
+        median: quantile(&gaps, 0.5),
+        mean,
+        commonest: commonest.map(|(g, _)| g),
+        over_a_day_pct: (!gaps.is_empty()).then(|| 100.0 * over as f64 / gaps.len() as f64),
+        gap: hist.keys().copied().collect(),
+        count: hist.values().copied().collect(),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1576,6 +1896,107 @@ mod tests {
         // 68 days is the longest lead both reach, and there they agree.
         assert_eq!(g.shared, Some(68.0 / 365.25));
         assert_eq!(g.spread, Some((68.0, 68.0)));
+    }
+
+    fn issued(issue: i32, target: i32, lead: Option<f64>, f107: f64) -> IssuedForecast {
+        IssuedForecast {
+            issue,
+            target,
+            lead,
+            f107: Some(f107),
+        }
+    }
+
+    #[test]
+    fn a_forecast_is_scored_against_the_day_it_forecast() {
+        // Days 0 to 9 at F10.7 = 100 + day, day 5 missing.
+        let rec: Vec<SolarDay> = (0..10)
+            .map(|i| day(i, (i != 5).then_some(100.0 + i as f64), None))
+            .collect();
+        let fc = [
+            // Lead 1 from day 3: error +2; strict persistence is day 2 (102,
+            // off by −2), leaky is day 3 itself (103, off by −1).
+            issued(3, 4, Some(1.0), 106.0),
+            // Its target is the missing day: no observation, no pair at all.
+            issued(3, 5, Some(2.0), 110.0),
+            // Lead 2: error −6; persistence off by −4 and −3.
+            issued(3, 6, Some(2.0), 100.0),
+            // Lead 1 from day 6: error 0. The day before is missing, so the
+            // strict baseline reaches back to day 4 (off by −3); leaky is day
+            // 6 (off by −1).
+            issued(6, 7, Some(1.0), 107.0),
+            // Issued on a day the record lacks: scored, but no baseline.
+            issued(20, 8, Some(1.0), 110.0),
+            // No lead, and a lead past the span: neither is scored.
+            issued(3, 4, None, 50.0),
+            issued(3, 4, Some(28.0), 50.0),
+        ];
+        let f = forecast_by_lead(&rec, &fc);
+        assert_eq!(f.lead, [1, 2]);
+        assert_eq!(
+            (f.pairs, f.pairs_strict, f.pairs_leaky),
+            (vec![3, 1], vec![2, 1], vec![2, 1])
+        );
+        // Lead 1: errors 2, 0, 2 — mean 4/3, RMS √(8/3). Strict: forecast
+        // squares 4 + 0 against baseline 4 + 9, skill 1 − 4/13 = 9/13; leaky:
+        // 4 against 1 + 1, skill −1.
+        assert_eq!(f.bias, [4.0 / 3.0, -6.0]);
+        assert!((f.rmse[0] - (8.0f64 / 3.0).sqrt()).abs() < 1e-12);
+        assert!((f.rmse[1] - 6.0).abs() < 1e-12);
+        assert!((f.skill_strict[0].unwrap() - 9.0 / 13.0).abs() < 1e-12);
+        assert_eq!(f.skill_leaky[0], Some(-1.0));
+        // Lead 2: 36 against 16 and against 9.
+        assert_eq!(
+            (f.skill_strict[1], f.skill_leaky[1]),
+            (Some(-1.25), Some(-3.0))
+        );
+        // Skill peaks at lead 1, and the strict baseline misses a pair only
+        // there.
+        assert_eq!((f.peak, f.widest), (Some(0), Some(1)));
+    }
+
+    #[test]
+    fn a_forecast_year_is_its_issue_year_and_a_thin_one_is_a_hole() {
+        // Every day from 2000-01-01 (day 0) to 2004, F10.7 on a three-day
+        // cycle so persistence always misses.
+        let rec: Vec<SolarDay> = (0..1500)
+            .map(|i| day(i, Some(100.0 + 10.0 * (i % 3) as f64), None))
+            .collect();
+        let obs = |t: i32| 100.0 + 10.0 * (t % 3) as f64;
+        let mut fc = Vec::new();
+        // 2000: 250 issues at lead 1, each 1 high.
+        fc.extend((10..260).map(|i| issued(i, i + 1, Some(1.0), obs(i + 1) + 1.0)));
+        // 2001 (from day 366): ten — too few to score.
+        fc.extend((400..410).map(|i| issued(i, i + 1, Some(1.0), obs(i + 1))));
+        // 2002 (from day 731): only leads past the band, so not in it at all.
+        fc.extend((800..805).map(|i| issued(i, i + 15, Some(15.0), obs(i + 15))));
+        // 2003 (from day 1096): 300 issues, each 2 low.
+        fc.extend((1100..1400).map(|i| issued(i, i + 1, Some(1.0), obs(i + 1) - 2.0)));
+        let f = forecast_by_year(&rec, &fc);
+        assert_eq!(f.year, [2000, 2001, 2002, 2003]);
+        assert_eq!(f.pairs, [Some(250), None, None, Some(300)]);
+        assert_eq!(f.thin, [2001]);
+        assert_eq!(f.bias, [Some(1.0), None, None, Some(-2.0)]);
+        assert_eq!(f.rmse, [Some(1.0), None, None, Some(2.0)]);
+        assert_eq!(f.lowest_bias, Some(2003));
+        // The baseline misses by the same spread in both years, so the year
+        // the forecast misses by more has the lower skill.
+        assert_eq!((f.worst, f.best), (Some(2003), Some(2000)));
+        assert!(f.skill_strict[1].is_none() && f.skill_leaky[2].is_none());
+    }
+
+    #[test]
+    fn the_age_of_an_issue_is_the_gap_before_the_next() {
+        // Sorted: 0 3 7 7 10 11 50 — gaps 3 4 3 1 39, the repeat making none.
+        let a = issue_age(&[0, 7, 7, 10, 50, 3, 11]);
+        assert_eq!(a.issues, 7);
+        // 39 days counts as "30 or more".
+        assert_eq!((a.gap, a.count), (vec![1, 3, 4, 30], vec![1, 2, 1, 1]));
+        // Mean 50 / 5; sorted 1 3 3 4 39, median 3.
+        assert_eq!((a.mean, a.median), (Some(10.0), Some(3.0)));
+        assert_eq!(a.commonest, Some(3));
+        // Four of the five gaps are longer than a day.
+        assert_eq!(a.over_a_day_pct, Some(80.0));
     }
 
     #[test]

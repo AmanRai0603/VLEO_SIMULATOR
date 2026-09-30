@@ -1,0 +1,30 @@
+{
+  "ok": true,
+  "figure": "forecast",
+  "bundle": "solar-weather@2026.09.14",
+  "view": "age",
+  "issues": 1437,
+  "cap": 30,
+  "gap": [
+    6,
+    7,
+    8,
+    14,
+    21,
+    28,
+    30
+  ],
+  "count": [
+    10,
+    1381,
+    9,
+    14,
+    6,
+    1,
+    2
+  ],
+  "median": 7,
+  "mean": 7.32888264230499,
+  "commonest": 7,
+  "over_a_day_pct": 100
+}
