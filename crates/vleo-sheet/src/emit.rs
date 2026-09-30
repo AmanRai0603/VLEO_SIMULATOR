@@ -23,6 +23,17 @@ fn esc(s: &str) -> String {
     s.replace('\\', "\\\\").replace('"', "\\\"")
 }
 
+/// Sheet text made safe to sit on ONE comment line of generated code.
+///
+/// A line break in a question, label or source ended the `///` comment it was
+/// written into, and whatever followed became code: text typed into a form
+/// could put a line of Rust into the engine. Every piece of sheet text that
+/// lands in a comment goes through here, and the escape for a string literal
+/// (`esc`) stays what it was.
+fn cmt(s: &str) -> String {
+    s.replace("\r\n", " ").replace(['\n', '\r', '\u{2028}', '\u{2029}'], " ")
+}
+
 // ---------------------------------------------------------------------------
 // 1. the implementation scaffold
 // ---------------------------------------------------------------------------
@@ -46,9 +57,9 @@ pub fn model_rs(sh: &Sheet, holes: &BTreeMap<u32, String>) -> String {
     o.push_str("use vleo_core::units::pmath;\n");
     o.push_str("use vleo_core::units::*;\n\n");
 
-    o.push_str(&format!("/// {}\n///\n", sh.question));
-    o.push_str(&format!("/// `{}`\n///\n", sh.expression));
-    o.push_str(&format!("/// Source: `{}`\n", sh.source));
+    o.push_str(&format!("/// {}\n///\n", cmt(&sh.question)));
+    o.push_str(&format!("/// `{}`\n///\n", cmt(&sh.expression)));
+    o.push_str(&format!("/// Source: `{}`\n", cmt(&sh.source)));
     if !sh.note.is_empty() {
         o.push_str("///\n");
         for line in wrap(&sh.note, 74) {
@@ -58,7 +69,7 @@ pub fn model_rs(sh: &Sheet, holes: &BTreeMap<u32, String>) -> String {
     if !sh.assumptions.is_empty() {
         o.push_str("///\n/// # Assumptions\n///\n");
         for a in &sh.assumptions {
-            o.push_str(&format!("/// * {} — fails when {}\n", a.text, a.fails_when));
+            o.push_str(&format!("/// * {} — fails when {}\n", cmt(&a.text), cmt(&a.fails_when)));
         }
     }
     o.push_str("pub const NODE_ID: &str = \"");
@@ -91,14 +102,14 @@ pub fn model_rs(sh: &Sheet, holes: &BTreeMap<u32, String>) -> String {
         o.push_str("#[allow(non_snake_case)]\npub struct Answer {\n");
         o.push_str(&format!(
             "    /// {} — this node's own answer.\n    pub {}: {},\n",
-            esc(&sh.label),
+            cmt(&esc(&sh.label)),
             field_name(&sh.symbol),
             sh.ty
         ));
         for pb in &sh.publishes {
             o.push_str(&format!(
                 "    /// {} — published as `{}.{}`.\n    pub {}: {},\n",
-                esc(&pb.label),
+                cmt(&esc(&pb.label)),
                 sh.id,
                 pb.id,
                 field_name(&pb.symbol),
@@ -469,8 +480,8 @@ pub fn contract_rs(sh: &Sheet) -> String {
     o.push_str("use vleo_core::units::*;\n\n");
     o.push_str(&format!(
         "/// What this node publishes: `{}` ({}), in `{}`.\n",
-        sh.symbol,
-        sh.label,
+        cmt(&sh.symbol),
+        cmt(&sh.label),
         unit_of(&sh.unit).symbol()
     ));
     o.push_str("pub const NODE_ID: &str = \"");
@@ -586,8 +597,8 @@ pub fn contract_rs(sh: &Sheet) -> String {
 pub fn mod_rs(sh: &Sheet) -> String {
     let mut o = String::new();
     o.push_str(BANNER);
-    o.push_str(&format!("//! `{}` — {}\n//!\n", sh.id, sh.label));
-    o.push_str(&format!("//! {}\n", sh.question));
+    o.push_str(&format!("//! `{}` — {}\n//!\n", sh.id, cmt(&sh.label)));
+    o.push_str(&format!("//! {}\n", cmt(&sh.question)));
     o.push_str("\n#[path = \"model.rs\"]\npub mod model;\n");
     o.push_str("#[path = \"contract.rs\"]\npub mod contract;\n");
     o.push_str("#[cfg(test)]\n#[path = \"evidence.rs\"]\nmod evidence;\n\n");
@@ -642,10 +653,10 @@ pub fn evidence_rs(sh: &Sheet) -> String {
     o.push_str("fn relative_error(got: f64, expected: f64) -> f64 {\n");
     o.push_str("    if expected == 0.0 { pmath::abs(got) } else { pmath::abs((got - expected) / expected) }\n}\n\n");
     for (n, fx) in sh.fixtures.iter().enumerate() {
-        o.push_str(&format!("/// {}\n", fx.label));
+        o.push_str(&format!("/// {}\n", cmt(&fx.label)));
         o.push_str(&format!(
             "///\n/// Provenance: `{}`, source `{}`.\n",
-            fx.provenance, fx.source
+            cmt(&fx.provenance), cmt(&fx.source)
         ));
         o.push_str(&format!("#[test]\nfn fixture_{n}() {{\n"));
         let mut args = Vec::new();
@@ -721,7 +732,7 @@ fn author_cases(sh: &Sheet, o: &mut String) {
     let who = if sh.author.name.trim().is_empty() {
         "the author".to_string()
     } else {
-        sh.author.name.trim().to_string()
+        cmt(sh.author.name.trim())
     };
     let lang = sh.author.language.trim();
     let has_method = crate::method::node_program(sh).is_some();
@@ -729,8 +740,8 @@ fn author_cases(sh: &Sheet, o: &mut String) {
         let n = n + 1;
         o.push_str(&format!(
             "/// {who}'s case «{}», from their own {} code.\n#[test]\nfn case_{n}() {{\n",
-            esc(&c.label),
-            if lang.is_empty() { "" } else { lang }
+            cmt(&esc(&c.label)),
+            if lang.is_empty() { String::new() } else { cmt(lang) }
         ));
         let call = format!("model::evaluate({})", typed_args(sh, &c.inputs));
         match c.expect {
@@ -1187,7 +1198,7 @@ fn properties(sh: &Sheet, o: &mut String) {
     o.push_str("///\n");
     o.push_str(&format!(
         "/// Derived from `{}` and the declared domain {lo} … {hi}.\n",
-        esc(&base.label)
+        cmt(&esc(&base.label))
     ));
     o.push_str("///\n");
     o.push_str("/// One per cent, not a decade. These domains are design bands — an altitude\n");
@@ -1644,6 +1655,67 @@ fn crate_ident(c: &str) -> String {
 /// Wednesday's graph — so they are generated as tables and compiled in. Adding
 /// an edge is therefore a rebuild, which is correct: it changes what the engine
 /// computes, so it should go through the gate.
+/// Every name the generated tables would have to guess at, as a list of
+/// sentences. Empty when the tree is wired completely.
+///
+/// A REFUSAL IS NEVER A SUBSTITUTION, AND THE BUILD USED TO SUBSTITUTE. An
+/// input naming a variable that does not exist became variable 0; an unknown
+/// cycle member or seed was dropped; a fixture with no value for an input ran
+/// it at 0.0. Each produced an engine that compiled and answered, wired to the
+/// wrong thing, and only `xtask gate` noticed. The build script calls this
+/// first and stops on anything it returns.
+pub fn wiring_errors(tree: &Tree) -> Vec<String> {
+    let sheets = tree.ordered();
+    let mut known: std::collections::BTreeSet<String> = sheets.iter().map(|s| s.id.clone()).collect();
+    for sh in sheets.iter() {
+        for pb in &sh.publishes {
+            known.insert(format!("{}.{}", sh.id, pb.id));
+        }
+    }
+    let mut e = Vec::new();
+    for sh in sheets.iter() {
+        for i in &sh.inputs {
+            if !known.contains(&i.var) {
+                e.push(format!("{}: input '{}' names '{}', which no row publishes", sh.id, i.binding, i.var));
+            }
+        }
+        for f in &sh.fixtures {
+            // The row's own symbol is its primary answer, slot 0 (as the gate reads it).
+            if !f.variable.is_empty() && f.variable != sh.symbol && !sh.publishes.iter().any(|pb| pb.id == f.variable) {
+                e.push(format!("{}: fixture '{}' is for '{}', which this row does not publish", sh.id, f.label, f.variable));
+            }
+            for i in &sh.inputs {
+                if !f.inputs.iter().any(|(k, _)| *k == i.binding) {
+                    e.push(format!("{}: fixture '{}' gives no value for input '{}'", sh.id, f.label, i.binding));
+                }
+            }
+        }
+    }
+    for c in tree.cases.values() {
+        for (k, _) in &c.supply {
+            if !known.contains(k) {
+                e.push(format!("case {}: supplies '{k}', which no row publishes", c.id));
+            }
+        }
+        for cy in &c.cycles {
+            for n in &cy.nodes {
+                if !known.contains(n) {
+                    e.push(format!("case {}: a cycle names '{n}', which is not a row", c.id));
+                }
+            }
+            for (k, _) in &cy.seeds {
+                if !known.contains(k) {
+                    e.push(format!("case {}: a cycle seeds '{k}', which no row publishes", c.id));
+                }
+            }
+            if !known.contains(&cy.converge_on) {
+                e.push(format!("case {}: a cycle converges on '{}', which no row publishes", c.id, cy.converge_on));
+            }
+        }
+    }
+    e
+}
+
 pub fn tables_rs(tree: &Tree) -> String {
     let sheets = tree.ordered();
     let n = sheets.len();

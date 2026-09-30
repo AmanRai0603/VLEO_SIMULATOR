@@ -39,6 +39,18 @@ fn main() {
             std::process::exit(1);
         }
     };
+    // A NAME THE TABLES WOULD HAVE TO GUESS AT STOPS THE BUILD. The emitter
+    // used to connect an unknown input to variable 0 and drop an unknown cycle
+    // member, and a plain `cargo build` produced an engine wired to the wrong
+    // thing without a word. Refused here, every build sees it, not only the gate.
+    let wiring = vleo_sheet::emit::wiring_errors(&tree);
+    if !wiring.is_empty() {
+        for w in &wiring {
+            println!("cargo:warning=wiring: {w}");
+        }
+        println!("cargo:warning={} wiring problem(s): the engine is not built from a tree it would have to guess at", wiring.len());
+        std::process::exit(1);
+    }
     let out = PathBuf::from(std::env::var("OUT_DIR").expect("OUT_DIR"));
     std::fs::write(out.join("tables.rs"), vleo_sheet::emit::tables_rs(&tree))
         .expect("write tables.rs");
