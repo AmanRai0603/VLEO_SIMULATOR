@@ -330,6 +330,9 @@ pub struct Recurrence {
     pub r: [Vec<Option<f64>>; 3],
     /// The pairs behind the first window's correlation at lag 1.
     pub n_lag1: usize,
+    /// The naive white-noise band on that correlation, ±2/√n — the band the
+    /// figure explains it does not draw. None with no pairs.
+    pub naive_band: Option<f64>,
     /// Bartlett's 95 per cent half-width on the first curve, at every lag.
     pub band: Vec<Option<f64>>,
     /// At how many lags the first curve is outside that band.
@@ -409,6 +412,7 @@ pub fn recurrence(record: &[SolarDay], driver: Driver) -> Recurrence {
     Recurrence {
         r: [curve(&a), curve(&short), curve(&long)],
         n_lag1: a[0].1,
+        naive_band: (a[0].1 > 0).then(|| 2.0 / pmath::sqrt(a[0].1 as f64)),
         band,
         outside,
         peaks: [peak(18, 36), peak(45, 65), peak(72, 95)],
@@ -1451,6 +1455,92 @@ pub fn issue_age(issues: &[i32]) -> IssueAge {
     }
 }
 
+/// The five design scenarios the solar crossing publishes, cold to hot — a
+/// ladder, so every quantity drawn across them should rise.
+pub const DRIVER_SCENARIOS: [&str; 5] = ["coldday", "coldmean", "nominal", "hotmean", "hotday"];
+
+/// The five quantities it publishes at each.
+pub const DRIVER_QUANTITIES: [&str; 5] = ["f107", "f107bar", "ap", "kp_mean", "kp_peak"];
+
+/// How close a ratio to the legacy run has to be to one to count as agreeing:
+/// a tenth of a per cent.
+pub const PARITY_AGREES: f64 = 0.001;
+
+/// The drivers figure's numbers: the crossing's twenty-five cells against the
+/// legacy run's, `[quantity][scenario]` in the order of [`DRIVER_QUANTITIES`]
+/// and [`DRIVER_SCENARIOS`].
+#[derive(Clone, Debug, PartialEq)]
+pub struct DriversParity {
+    /// This tree over the legacy run; none where either is missing or the
+    /// legacy cell is zero.
+    pub ratio: [[Option<f64>; 5]; 5],
+    /// This tree minus the legacy run.
+    pub gap: [[Option<f64>; 5]; 5],
+    /// For each quantity, the scenario where the gap is widest either way —
+    /// the first on a tie.
+    pub widest: [Option<usize>; 5],
+    /// Of the ratios there are, how many agree, how many sit below and how
+    /// many above.
+    pub agree: u32,
+    pub below: u32,
+    pub above: u32,
+    /// The furthest ratio from one on a log scale, as a factor of at least one
+    /// either way — how far the worst cell is out. None with no ratio.
+    pub factor: Option<f64>,
+}
+
+/// The drivers figure's numbers from the two tables.
+pub fn drivers_parity(
+    ours: &[[Option<f64>; 5]; 5],
+    theirs: &[[Option<f64>; 5]; 5],
+) -> DriversParity {
+    let mut ratio = [[None; 5]; 5];
+    let mut gap = [[None; 5]; 5];
+    let mut widest = [None; 5];
+    let (mut agree, mut below, mut above) = (0, 0, 0);
+    let mut worst: Option<f64> = None;
+    for q in 0..5 {
+        for sc in 0..5 {
+            let (Some(a), Some(b)) = (ours[q][sc], theirs[q][sc]) else {
+                continue;
+            };
+            gap[q][sc] = Some(a - b);
+            if widest[q]
+                .is_none_or(|w: usize| pmath::abs(a - b) > pmath::abs(gap[q][w].unwrap_or(0.0)))
+            {
+                widest[q] = Some(sc);
+            }
+            if b == 0.0 {
+                continue;
+            }
+            let r = a / b;
+            ratio[q][sc] = Some(r);
+            if pmath::abs(r - 1.0) < PARITY_AGREES {
+                agree += 1;
+            } else if r < 1.0 - PARITY_AGREES {
+                below += 1;
+            } else {
+                above += 1;
+            }
+            let m = worst.unwrap_or(1.0);
+            worst = Some(if pmath::abs(pmath::ln(r)) > pmath::abs(pmath::ln(m)) {
+                r
+            } else {
+                m
+            });
+        }
+    }
+    DriversParity {
+        ratio,
+        gap,
+        widest,
+        agree,
+        below,
+        above,
+        factor: worst.map(|w| if w > 1.0 { w } else { 1.0 / w }),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1610,6 +1700,8 @@ mod tests {
         // The 365-day detrend needs more than 219 values in its window, so the
         // first and last 37 days have none: 1926 residuals, 1925 pairs at lag 1.
         assert_eq!(r.n_lag1, 1925);
+        // And the naive band on it, ±2/√1925 — 0.0456.
+        assert!((r.naive_band.unwrap() - 2.0 / 1925f64.sqrt()).abs() < 1e-15);
         assert!(r.outside > 0 && r.compared as usize == RECURRENCE_MAX_LAG);
         // No Ap in this record: every correlation over Ap is refused.
         assert!(recurrence(&rec, Driver::Ap).r[0]
@@ -1997,6 +2089,38 @@ mod tests {
         assert_eq!(a.commonest, Some(3));
         // Four of the five gaps are longer than a day.
         assert_eq!(a.over_a_day_pct, Some(80.0));
+    }
+
+    #[test]
+    fn the_drivers_are_compared_cell_by_cell() {
+        let mut ours = [[None; 5]; 5];
+        let mut theirs = [[None; 5]; 5];
+        // F10.7: half the legacy value at every scenario but the last, which
+        // the legacy run has no number for.
+        for sc in 0..4 {
+            ours[0][sc] = Some(50.0 + sc as f64);
+            theirs[0][sc] = Some(2.0 * (50.0 + sc as f64));
+        }
+        ours[0][4] = Some(80.0);
+        // Ap: agreeing to 1e-5 at two, a factor of 3 high at the worst day,
+        // and a legacy zero, which has a gap but no ratio.
+        ours[2] = [Some(10.0), Some(20.00002), Some(0.5), None, Some(30.0)];
+        theirs[2] = [Some(10.0), Some(20.0), Some(0.0), Some(7.0), Some(10.0)];
+        let p = drivers_parity(&ours, &theirs);
+        assert_eq!(
+            p.ratio[0],
+            [Some(0.5), Some(0.5), Some(0.5), Some(0.5), None]
+        );
+        assert_eq!(p.ratio[2][2], None);
+        assert_eq!(p.gap[2][2], Some(0.5));
+        assert_eq!(p.ratio[2][4], Some(3.0));
+        // F10.7's gap widens with the value: widest at the fourth scenario.
+        // Ap's is widest at the worst day (20).
+        assert_eq!(p.widest, [Some(3), None, Some(4), None, None]);
+        // Seven ratios: two agree, four sit below, one above.
+        assert_eq!((p.agree, p.below, p.above), (2, 4, 1));
+        // A third is ln 3 from one and a half ln 2, so the worst is Ap's 3.
+        assert_eq!(p.factor, Some(3.0));
     }
 
     #[test]

@@ -20,7 +20,7 @@
 
 import { $, esc } from './dom.js';
 import { S } from './state.js';
-import { solarRecord, parityFile, engineValues, engineSweep, engineAt,
+import { solarRecord, engineValues, engineSweep, engineAt,
   engineProbe, probeSweep, engineFigure,
   engineLevers, num } from './record.js';
 import { drawChart, attachHover, tableFor, tableTsv, viewSpec, viewIsOn,
@@ -406,7 +406,7 @@ const PANELS = [
             '\n\nThe dashed band is the 95 per cent interval under Bartlett\u2019s large-lag ' +
             'standard error, which widens with lag because the variance of a correlation grows ' +
             'with every correlation below it. The naive \u00b12/\u221an band — ' +
-            (fig.n_lag1 ? '\u00b1' + (2 / Math.sqrt(fig.n_lag1)).toFixed(4) : 'a flat line') +
+            (fig.naive_band !== null ? '\u00b1' + fig.naive_band.toFixed(4) : 'a flat line') +
             ' — tests whether the series is white noise, which it obviously is not, and would ' +
             'pass everything drawn here. Bartlett\u2019s asks the question a reader actually ' +
             'has: is this bump more than the decay beneath it already produces. The 365 curve ' +
@@ -817,9 +817,6 @@ const PANELS = [
       'sw_ap_design_long', 'sw_ap_design_short', 'sw_ap_mean_band_spread',
       'sw_daily_band_drop', 'sw_daily_band_spread', 'sw_kp_scenarios',
       'sw_mean_band_spread'],
-    // One run returns the crossing and all twenty-four of its members, so the
-    // whole table costs one question.
-    engine: ['l3_solar_interface'],
     label: 'Drivers',
     draws: 'The five design scenarios this subsystem publishes, against the legacy run’s own.',
     asks: 'What does this subsystem hand upward, and does it agree with the study it ports?',
@@ -833,10 +830,14 @@ const PANELS = [
         ['kp_mean', 'Kp, mean slot'], ['kp_peak', 'Kp, peak slot'],
       ] },
     ],
-    async data() {
-      return { legacy: await parityFile('mission_drivers.csv') };
-    },
-    build(rec, o, extra, eng) {
+    // THE COMPARISON IS THE ENGINE'S: vleo_modules::record::drivers_parity, the
+    // crossing run on the saved case — one run returns it and all twenty-four of
+    // its members — against matlab/reference/mission_drivers.csv, cell by cell:
+    // the ratio, the gap, where each quantity's gap is widest, how many cells
+    // agree, and how far the worst is out. The page draws them.
+    data: () => engineFigure('drivers'),
+    build(rec, o, fig) {
+      if (fig.refused) throw new Error('the engine did not work the figure out: ' + fig.refused);
       // COLD TO HOT, which is an ordering and not an alphabet. The five
       // scenarios are a ladder — the quietest single day, the cold sustained
       // level, where the mission sits, the hot sustained level, the worst single
@@ -852,25 +853,14 @@ const PANELS = [
         { k: 'kp_mean', label: 'Kp, mean slot', unit: '-' },
         { k: 'kp_peak', label: 'Kp, peak slot', unit: '-' },
       ];
-      // OURS, FROM THE ENGINE, THROUGH THE DOT. The crossing publishes a set and
-      // a member is `<node>.<member>`; the node's own answer is f107_hotmean,
-      // which is the one cell that is not a member, so it is reached by the node
-      // id. Written as a lookup rather than a table of literals for the reason
-      // §21 gives: three copied numbers in `design` went stale without anything
-      // noticing.
-      const ours = (q, sc) => {
-        const id = q === 'f107' && sc === 'hotmean'
-          ? 'l3_solar_interface'
-          : 'l3_solar_interface.' + q + '_' + sc;
-        const v = eng[id];
-        return v && v.si !== undefined && isFinite(v.si) ? v.si : null;
+      // A cell by quantity and scenario name, from the engine's tables — ours,
+      // the legacy run's, their ratio and their gap.
+      const cell = (table, q, sc) => {
+        const qi = fig.quantities.indexOf(q), si = fig.scenarios.indexOf(sc);
+        return qi < 0 || si < 0 ? null : table[qi][si];
       };
-      const legacyRows = new Map((extra.legacy.rows || []).map(r => [r.scenario, r]));
-      const theirs = (q, sc) => {
-        const r = legacyRows.get(sc);
-        const v = r ? num(r[q]) : null;
-        return v === null || !isFinite(v) ? null : v;
-      };
+      const ours = (q, sc) => cell(fig.ours, q, sc);
+      const theirs = (q, sc) => cell(fig.theirs, q, sc);
       const xs = ORDER.map((_, i) => i);
       const fmtX = v => SHOWN[Math.round(v)] || '';
       // A LITTLE ROOM AT BOTH ENDS. With the extent exactly 0 to 4 the first and
@@ -894,18 +884,11 @@ const PANELS = [
         // line, which is what they are.
         const series = QS.map((Q, i) => ({
           name: Q.label, kind: 'line', x: xs,
-          y: ORDER.map(sc => {
-            const a = ours(Q.k, sc), b = theirs(Q.k, sc);
-            return a === null || b === null || b === 0 ? null : a / b;
-          }),
+          y: ORDER.map(sc => cell(fig.ratio, Q.k, sc)),
           colour: INK.series[i % INK.series.length],
         }));
         const all = series.flatMap(s => s.y).filter(v => v !== null);
-        const worst = all.length
-          ? all.reduce((m, v) => (Math.abs(Math.log(v)) > Math.abs(Math.log(m)) ? v : m), 1)
-          : null;
-        const near = all.filter(v => Math.abs(v - 1) < 0.001).length;
-        const off = worst === null ? null : (worst > 1 ? worst : 1 / worst);
+        const near = fig.agree, off = fig.factor;
         return {
           answer: { value: near + ' of ' + all.length,
             of: 'cells agree with the legacy run to a tenth of a per cent'
@@ -913,12 +896,9 @@ const PANELS = [
               + ', and both families of disagreement are deliberate' },
           spec: {
             aspect: 1.5,
-            finding: (() => {
-              const lowTop = all.filter(v => v < 0.999).length;
-              return near + ' of the ' + all.length + ' points sit on the line, ' + lowTop +
-                ' below it and ' + (all.length - near - lowTop) + ' above \u2014 the ' +
-                'disagreement is not scattered, it is two families';
-            })(),
+            finding: near + ' of the ' + all.length + ' points sit on the line, ' + fig.below +
+              ' below it and ' + fig.above + ' above \u2014 the ' +
+              'disagreement is not scattered, it is two families',
             x: { label: 'scenario', ...XPAD },
             y: { label: 'this tree ÷ the legacy run  [-]', log: true },
             series,
@@ -930,7 +910,7 @@ const PANELS = [
             '0.5 apart, which makes the two directions of error look like different sizes.\n\n' +
             near + ' of ' + all.length + ' cells agree to within a tenth of a per cent, and they are ' +
             'the SUSTAINED Ap and Kp scenarios. The rest disagree, the furthest by a factor of ' +
-            (worst === null ? '—' : (worst > 1 ? worst.toFixed(2) : (1 / worst).toFixed(2))) +
+            (off === null ? '—' : off.toFixed(2)) +
             ', and BOTH families of disagreement are deliberate.\n\n' +
             'F10.7 is low across every scenario because the two tools centre the window differently. ' +
             'The study holds its last 27-day rotation forecast flat and gets 158.33 sfu for its own ' +
@@ -951,9 +931,9 @@ const PANELS = [
       const Q = QS.find(x => x.k === o.q) || QS[0];
       const mine = ORDER.map(sc => ours(Q.k, sc));
       const theirsY = ORDER.map(sc => theirs(Q.k, sc));
-      const gap = mine.map((v, i) => (v === null || theirsY[i] === null ? null : v - theirsY[i]));
-      const worstI = gap.reduce((b, v, i) =>
-        (v !== null && (b < 0 || Math.abs(v) > Math.abs(gap[b])) ? i : b), -1);
+      const gap = ORDER.map(sc => cell(fig.gap, Q.k, sc));
+      const widest = fig.widest[fig.quantities.indexOf(Q.k)];
+      const worstI = widest === null || widest === undefined ? -1 : ORDER.indexOf(widest);
       const u = Q.unit === '-' ? '' : ' ' + Q.unit;
       return {
         answer: worstI < 0

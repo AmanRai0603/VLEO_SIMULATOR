@@ -267,7 +267,7 @@ pub(super) fn results_list() -> String {
 /// claim. A panel with no numbers here yet is refused by name.
 pub(super) fn record_figure(ctx: &Ctx, id: &str, params: &str) -> String {
     const BUNDLE: &str = "solar-weather";
-    const KNOWN: [&str; 13] = [
+    const KNOWN: [&str; 14] = [
         "density",
         "storm-scale",
         "kp-ap",
@@ -281,6 +281,7 @@ pub(super) fn record_figure(ctx: &Ctx, id: &str, params: &str) -> String {
         "smoother",
         "growth",
         "forecast",
+        "drivers",
     ];
     if !KNOWN.contains(&id) {
         return failed(&format!(
@@ -398,6 +399,7 @@ pub(super) fn record_figure(ctx: &Ctx, id: &str, params: &str) -> String {
             }
             j.close_arr();
             j.num_field("n_lag1", r.n_lag1 as f64);
+            opt(&mut j, "naive_band", r.naive_band);
             j.key("band");
             arr(&mut j, &r.band);
             j.num_field("outside", r.outside as f64);
@@ -781,6 +783,118 @@ pub(super) fn record_figure(ctx: &Ctx, id: &str, params: &str) -> String {
                     point(&mut j, "lowest_bias", f.lowest_bias.and_then(at));
                 }
             }
+        }
+        "drivers" => {
+            use vleo_modules::record::{drivers_parity, DRIVER_QUANTITIES, DRIVER_SCENARIOS};
+            // OURS: the solar crossing run on the saved case, as every panel's
+            // engine values are — its members are `<node>.<quantity>_<scenario>`,
+            // and its own answer is the one cell that is not a member.
+            const NODE: &str = "l3_solar_interface";
+            let case = build_case(&format!("node={NODE}"), ctx);
+            let mut scratch = Scratch::new();
+            let run = match vleo_modules::evaluate(&case, &mut scratch) {
+                Ok(r) => r,
+                Err(f) => return failed(&format!("{NODE} did not run: {f}")),
+            };
+            let value = |id: &str| {
+                run.values
+                    .iter()
+                    .find(|v| v.id == id)
+                    .map(|v| v.value)
+                    .filter(|v| v.is_finite())
+            };
+            let mut ours = [[None; 5]; 5];
+            for (q, qn) in DRIVER_QUANTITIES.iter().enumerate() {
+                for (sc, sn) in DRIVER_SCENARIOS.iter().enumerate() {
+                    ours[q][sc] = if *qn == "f107" && *sn == "hotmean" {
+                        value(NODE)
+                    } else {
+                        value(&format!("{NODE}.{qn}_{sn}"))
+                    };
+                }
+            }
+            // THEIRS: the legacy tool's own answers for the same cells, read by
+            // the column names in the file's header. Read from matlab/reference
+            // and never through the bundle readers, on purpose: a bundle is what
+            // was OBSERVED, with a provenance and a licence, and this is what a
+            // DIFFERENT PROGRAM computed. One reader for both is the first step
+            // toward presenting a second implementation's output as evidence
+            // about the sky.
+            const LEGACY: &str = "mission_drivers.csv";
+            let path = ctx.root.join("matlab").join("reference").join(LEGACY);
+            let text = match std::fs::read_to_string(&path) {
+                Ok(t) => t,
+                Err(_) => return failed(&format!("matlab/reference/{LEGACY} is not on disk")),
+            };
+            let mut theirs = [[None; 5]; 5];
+            let mut head: Option<Vec<&str>> = None;
+            for line in text.lines().map(str::trim) {
+                if line.is_empty() || line.starts_with('#') {
+                    continue;
+                }
+                let f: Vec<&str> = line.split(',').map(str::trim).collect();
+                let Some(h) = &head else {
+                    head = Some(f);
+                    continue;
+                };
+                let at = |name: &str| h.iter().position(|c| *c == name).and_then(|i| f.get(i));
+                let Some(sc) =
+                    at("scenario").and_then(|s| DRIVER_SCENARIOS.iter().position(|x| x == s))
+                else {
+                    continue;
+                };
+                for (q, qn) in DRIVER_QUANTITIES.iter().enumerate() {
+                    theirs[q][sc] = at(qn)
+                        .and_then(|v| v.parse::<f64>().ok())
+                        .filter(|v| v.is_finite());
+                }
+            }
+            let p = drivers_parity(&ours, &theirs);
+            let names = |j: &mut Json, k: &str, v: &[&str]| {
+                j.key(k).open_arr();
+                for (i, n) in v.iter().enumerate() {
+                    if i > 0 {
+                        j.raw(",");
+                    }
+                    j.raw(&crate::json::string(n));
+                }
+                j.close_arr();
+            };
+            let rows = |j: &mut Json, k: &str, v: &[[Option<f64>; 5]; 5]| {
+                j.key(k).open_arr();
+                for (i, c) in v.iter().enumerate() {
+                    if i > 0 {
+                        j.raw(",");
+                    }
+                    arr(j, c);
+                }
+                j.close_arr();
+            };
+            j.str_field("node", NODE);
+            j.str_field("legacy", &format!("matlab/reference/{LEGACY}"));
+            names(&mut j, "scenarios", &DRIVER_SCENARIOS);
+            names(&mut j, "quantities", &DRIVER_QUANTITIES);
+            rows(&mut j, "ours", &ours);
+            rows(&mut j, "theirs", &theirs);
+            rows(&mut j, "ratio", &p.ratio);
+            rows(&mut j, "gap", &p.gap);
+            // Where each quantity's gap is widest, as the scenario's name — a
+            // name the page looks up, not an index it has to trust.
+            j.key("widest").open_arr();
+            for (i, w) in p.widest.iter().enumerate() {
+                if i > 0 {
+                    j.raw(",");
+                }
+                j.raw(&w.map_or_else(
+                    || "null".to_string(),
+                    |w| crate::json::string(DRIVER_SCENARIOS[w]),
+                ));
+            }
+            j.close_arr();
+            j.num_field("agree", p.agree as f64);
+            j.num_field("below", p.below as f64);
+            j.num_field("above", p.above as f64);
+            opt(&mut j, "factor", p.factor);
         }
         "smoother" => {
             let driver = match any_driver() {

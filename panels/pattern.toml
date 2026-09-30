@@ -103,7 +103,7 @@ why = """Ap and F10.7 recur differently — Ap's rotation signal is the weaker o
 # proves the page asks for it.
 [[figures]]
 id = "recurrence-f107"
-reads = ["windows", "r", "n_lag1", "band", "outside", "peak_lag", "peak_r", "above_long", "compared", "max_lag"]
+reads = ["windows", "r", "naive_band", "band", "outside", "peak_lag", "peak_r", "above_long", "compared", "max_lag"]
 
 [[figures]]
 id = "recurrence-ap"
