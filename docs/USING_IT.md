@@ -776,6 +776,18 @@ reporting or regeneration; none of it decides anything.
 | `cargo run -p xtask -- bundle verify` | re-check every hash in `bundles/` |
 | `cargo run -p xtask -- setup` | point git at `tools/githooks` on this clone |
 
+### Before you run one: what it will do
+
+`cargo run -p xtask -- explain <command>` prints what a command does, in order,
+which files it writes and which programs it starts — `take` and `ship` push, and
+say so. Add `--dry-run` to any command to see the same and run nothing.
+`cargo run -p xtask -- why <path>` names the commands that write a file, so you
+know whether to edit it or the sheet it comes from. All three read one table,
+the `steps`, `writes` and `runs` of each command in `docs/manual.toml`; `cargo
+run -p xtask -- pipeline` writes it out as `docs/PIPELINE.md`, and a test holds
+that page to the table. Every run leaves a line in `target/xtask-trace.log`:
+when, what, how long, and how it ended.
+
 `variables` and `codeowners` write files that are committed, so run them after
 a change that moves a bound or an owner, and commit what they produce. The
 regeneration diff in the pipeline catches it if you forget.

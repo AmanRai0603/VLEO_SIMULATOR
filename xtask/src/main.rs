@@ -602,4 +602,14 @@ mod moving_a_node {
         }
         assert!(n > 1000);
     }
+
+    /// The rings point inward, checked by `cargo test` and not only by the
+    /// manual's run of `xtask graph`: a crate that reached outward for a
+    /// helper once went unseen until that run.
+    #[test]
+    fn every_crate_dependency_points_inward() {
+        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("..");
+        let wrong = crate::crate_direction(&root).unwrap();
+        assert!(wrong.is_empty(), "{wrong:#?}");
+    }
 }

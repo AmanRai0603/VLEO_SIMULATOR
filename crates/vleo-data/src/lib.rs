@@ -39,7 +39,9 @@
 //! text, and until then a format anybody can read in a text editor is worth
 //! more than one that needs a library to inspect.
 
-pub mod clock;
+/// The clock lives in ring 0 (vleo_units::clock); kept here by name so every
+/// caller of `vleo_data::clock` reads the same one.
+pub use vleo_units::clock;
 pub mod crash;
 
 use std::collections::BTreeMap;

@@ -84,9 +84,9 @@ pub fn refuse_agent_attribution(root: &std::path::Path, who: &str) -> Result<(),
     Ok(())
 }
 
-/// Today, as the sheets write it (vleo_data::clock).
+/// Today, as the sheets write it (vleo_units::clock).
 pub(crate) fn today() -> String {
-    vleo_data::clock::today()
+    vleo_units::clock::today()
 }
 
 /// Put a name against the relation, replacing whatever was there.

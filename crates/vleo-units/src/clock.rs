@@ -5,6 +5,9 @@
 //! empty timestamp, and every form an empty date. The calendar arithmetic is
 //! Howard Hinnant's days-to-civil conversion, eleven lines and exact for any
 //! date the tool will see.
+//!
+//! In ring 0 because every ring above writes a date, and the calendar is
+//! integer arithmetic; only reading the system clock needs `std`.
 
 /// Seconds since 1970-01-01T00:00:00Z; 0 if the clock is before it.
 fn unix_seconds() -> i64 {

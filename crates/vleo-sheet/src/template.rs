@@ -1543,9 +1543,9 @@ fn risk_problems(tree: &Tree, d: &Derisk) -> Option<String> {
     (!bad.is_empty()).then(|| bad.join("; "))
 }
 
-/// Today, as YYYY-MM-DD, from the system clock (vleo_data::clock).
+/// Today, as YYYY-MM-DD, from the system clock (vleo_units::clock).
 pub fn today() -> String {
-    vleo_data::clock::today()
+    vleo_units::clock::today()
 }
 
 /// A form, planned; `first` when it is a new node's first version.
