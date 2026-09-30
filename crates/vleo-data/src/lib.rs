@@ -290,6 +290,20 @@ pub fn results_path() -> PathBuf {
         .unwrap_or_else(|| PathBuf::from(".vleo/results"))
 }
 
+/// How many days a saved result keeps every value before it is thinned to
+/// its answer, its inputs and its chain — `VLEO_KEEP_DAYS`, 30 when unset.
+/// `0` keeps every value of every result for ever. A pinned result is never
+/// thinned. Anything that is not a whole number is refused by name rather
+/// than read as a guess.
+pub fn keep_days() -> Result<u32, String> {
+    match std::env::var("VLEO_KEEP_DAYS") {
+        Ok(v) if !v.trim().is_empty() => v.trim().parse().map_err(|_| {
+            format!("VLEO_KEEP_DAYS is '{v}': it must be a whole number of days, or 0 for never")
+        }),
+        _ => Ok(30),
+    }
+}
+
 /// The person's home folder: `HOME`, or `USERPROFILE` where there is no `HOME`.
 ///
 /// Windows sets `USERPROFILE` and usually not `HOME`. Reading `HOME` alone put

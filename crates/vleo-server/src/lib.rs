@@ -189,8 +189,12 @@ fn accept(listener: TcpListener, ctx: std::sync::Arc<Ctx>) {
             Ok(mut s) => {
                 if open.fetch_add(1, std::sync::atomic::Ordering::SeqCst) >= MAX_OPEN {
                     open.fetch_sub(1, std::sync::atomic::Ordering::SeqCst);
-                    let _ = respond(&mut s, "503 Service Unavailable", "text/plain; charset=utf-8",
-                        b"the tool is busy with other connections; try again");
+                    let _ = respond(
+                        &mut s,
+                        "503 Service Unavailable",
+                        "text/plain; charset=utf-8",
+                        b"the tool is busy with other connections; try again",
+                    );
                     continue;
                 }
                 let slot = Slot(open.clone());
@@ -224,7 +228,12 @@ impl Drop for Slot {
     }
 }
 
-fn respond(stream: &mut TcpStream, status: &str, ctype: &str, payload: &[u8]) -> std::io::Result<()> {
+fn respond(
+    stream: &mut TcpStream,
+    status: &str,
+    ctype: &str,
+    payload: &[u8],
+) -> std::io::Result<()> {
     let head = format!(
         "HTTP/1.1 {status}\r\nContent-Type: {ctype}\r\nContent-Length: {}\r\nCache-Control: no-store\r\nX-Content-Type-Options: nosniff\r\nConnection: close\r\n\r\n",
         payload.len()
@@ -246,16 +255,31 @@ fn respond(stream: &mut TcpStream, status: &str, ctype: &str, payload: &[u8]) ->
 ///   `Origin` and `Sec-Fetch-Site` on every cross-site POST and cannot be made
 ///   to omit them; a script (the Python tools, curl) sends neither, and is a
 ///   program the person ran themselves.
-pub(crate) fn allowed(method: &str, host: Option<&str>, origin: Option<&str>, fetch_site: Option<&str>, port: u16) -> Result<(), &'static str> {
-    let here = [format!("127.0.0.1:{port}"), format!("localhost:{port}"), format!("[::1]:{port}")];
+pub(crate) fn allowed(
+    method: &str,
+    host: Option<&str>,
+    origin: Option<&str>,
+    fetch_site: Option<&str>,
+    port: u16,
+) -> Result<(), &'static str> {
+    let here = [
+        format!("127.0.0.1:{port}"),
+        format!("localhost:{port}"),
+        format!("[::1]:{port}"),
+    ];
     match host {
         Some(h) if here.iter().any(|x| x.eq_ignore_ascii_case(h.trim())) => {}
-        _ => return Err("this tool answers only requests addressed to 127.0.0.1 or localhost on its own port"),
+        _ => return Err(
+            "this tool answers only requests addressed to 127.0.0.1 or localhost on its own port",
+        ),
     }
     if method != "GET" && method != "HEAD" {
         if let Some(o) = origin {
             let o = o.trim();
-            if !here.iter().any(|x| o.eq_ignore_ascii_case(&format!("http://{x}"))) {
+            if !here
+                .iter()
+                .any(|x| o.eq_ignore_ascii_case(&format!("http://{x}")))
+            {
                 return Err("a change may only come from this tool's own page");
             }
         }
@@ -423,7 +447,10 @@ fn serve_one(mut stream: TcpStream, ctx: &Ctx, gate: &std::sync::Mutex<()>) -> s
     stream.set_read_timeout(Some(std::time::Duration::from_secs(20)))?;
     // The head is read through a limit: a request line or header that never
     // ends is cut at MAX_HEAD rather than read until memory runs out.
-    let mut reader = BufReader::new(std::io::Read::take(stream.try_clone()?, (MAX_HEAD + MAX_BODY) as u64));
+    let mut reader = BufReader::new(std::io::Read::take(
+        stream.try_clone()?,
+        (MAX_HEAD + MAX_BODY) as u64,
+    ));
     let mut request = String::new();
     match reader.read_line(&mut request) {
         Ok(0) => return Ok(()),
@@ -452,17 +479,31 @@ fn serve_one(mut stream: TcpStream, ctx: &Ctx, gate: &std::sync::Mutex<()>) -> s
         }
         head_bytes += line.len();
         if head_bytes > MAX_HEAD {
-            return respond(&mut stream, "431 Request Header Fields Too Large", "text/plain; charset=utf-8", b"the request's headers are too large");
+            return respond(
+                &mut stream,
+                "431 Request Header Fields Too Large",
+                "text/plain; charset=utf-8",
+                b"the request's headers are too large",
+            );
         }
         let l = line.trim_end();
         if l.is_empty() {
             break;
         }
-        let Some((k, v)) = l.split_once(':') else { continue };
+        let Some((k, v)) = l.split_once(':') else {
+            continue;
+        };
         match k.trim().to_ascii_lowercase().as_str() {
             "content-length" => match v.trim().parse::<usize>() {
                 Ok(n) => length = n,
-                Err(_) => return respond(&mut stream, "400 Bad Request", "text/plain; charset=utf-8", b"Content-Length is not a number"),
+                Err(_) => {
+                    return respond(
+                        &mut stream,
+                        "400 Bad Request",
+                        "text/plain; charset=utf-8",
+                        b"Content-Length is not a number",
+                    )
+                }
             },
             "host" => host = Some(v.trim().to_string()),
             "origin" => origin = Some(v.trim().to_string()),
@@ -470,11 +511,27 @@ fn serve_one(mut stream: TcpStream, ctx: &Ctx, gate: &std::sync::Mutex<()>) -> s
             _ => {}
         }
     }
-    if let Err(why) = allowed(&method, host.as_deref(), origin.as_deref(), fetch_site.as_deref(), ctx.port) {
-        return respond(&mut stream, "403 Forbidden", "text/plain; charset=utf-8", why.as_bytes());
+    if let Err(why) = allowed(
+        &method,
+        host.as_deref(),
+        origin.as_deref(),
+        fetch_site.as_deref(),
+        ctx.port,
+    ) {
+        return respond(
+            &mut stream,
+            "403 Forbidden",
+            "text/plain; charset=utf-8",
+            why.as_bytes(),
+        );
     }
     if length > MAX_BODY {
-        return respond(&mut stream, "413 Payload Too Large", "text/plain; charset=utf-8", b"the request body is larger than this tool accepts");
+        return respond(
+            &mut stream,
+            "413 Payload Too Large",
+            "text/plain; charset=utf-8",
+            b"the request body is larger than this tool accepts",
+        );
     }
     let mut body = vec![0u8; length];
     if length > 0 {
@@ -501,7 +558,9 @@ fn serve_one(mut stream: TcpStream, ctx: &Ctx, gate: &std::sync::Mutex<()>) -> s
         // logged by vleo_data::crash, the page is told where, and the next
         // request is served. Every write of a case or result is whole-or-not
         // (vleo_modules::files), so nothing the person saved is half written.
-        match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| route(&method, &path, &params, ctx))) {
+        match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            route(&method, &path, &params, ctx)
+        })) {
             Ok(r) => r,
             Err(_) => {
                 let log = vleo_data::crash::last_log()
@@ -564,9 +623,11 @@ fn route(
         // outside the repository. Viewing one runs nothing.
         ("GET", "/v1/derisk") => ok_json(derisk_json(ctx)),
         ("GET", "/v1/results") => ok_json(results_list()),
-        ("GET", "/v1/result") => ok_json(result_json(params)),
+        ("GET", "/v1/result") => ok_json(result_json(params, ctx)),
         ("GET", "/v1/result.csv") => result_file(params, false),
         ("GET", "/v1/result.html") => result_file(params, true),
+        ("GET", "/v1/result.vleo") => result_share(params),
+        ("POST", "/v1/results/pin") => ok_json(result_pin(params)),
         ("POST", "/v1/results/save") => ok_json(result_save(params, ctx)),
         ("POST", "/v1/results/upload") => ok_json(result_upload(params)),
         ("POST", "/v1/results/delete") => ok_json(result_delete(params)),
@@ -1423,6 +1484,7 @@ fn rows_json(j: &mut Json, key: &str, rows: &[vleo_modules::results::Row]) {
 
 fn result_head(j: &mut Json, s: &vleo_modules::results::Saved) {
     j.str_field("target", &s.target);
+    j.str_field("thinned", &s.thinned);
     j.str_field("name", &s.name);
     j.str_field("saved", &s.saved);
     j.str_field("mode", &s.mode);
@@ -1480,11 +1542,31 @@ fn result_head(j: &mut Json, s: &vleo_modules::results::Saved) {
 /// Every saved result, newest first — and any file that no longer reads,
 /// named with why rather than left out of the list.
 fn results_list() -> String {
-    let (good, bad) = vleo_modules::results::store::list(&results_dir());
+    let dir = results_dir();
+    // THINNED WHEN LISTED, not by a clock of its own: a result past its days
+    // keeps its answer, its inputs and its chain and drops every other value.
+    // Every machine sharing the folder may do it; each writes the same bytes,
+    // whole, so two doing it at once is the same as one.
+    let keep = match vleo_data::keep_days() {
+        Ok(k) => k,
+        Err(e) => return failed(&e),
+    };
+    let thinned = if keep == 0 {
+        Vec::new()
+    } else {
+        vleo_modules::results::store::thin(
+            &dir,
+            &vleo_data::clock::days_ago(keep),
+            &vleo_data::clock::today(),
+        )
+    };
+    let (good, bad) = vleo_modules::results::store::list(&dir);
     let mut j = Json::new();
     j.raw("{");
     j.bool_field("ok", true);
-    j.str_field("path", &results_dir().display().to_string());
+    j.str_field("path", &dir.display().to_string());
+    j.num_field("keep_days", keep as f64);
+    j.num_field("thinned_now", thinned.len() as f64);
     j.key("results").open_arr();
     for (k, (file, s)) in good.iter().enumerate() {
         if k > 0 {
@@ -1492,6 +1574,7 @@ fn results_list() -> String {
         }
         j.raw("{");
         j.str_field("file", file);
+        j.bool_field("pinned", vleo_modules::results::store::pinned(&dir, file));
         result_head(&mut j, s);
         j.close_obj();
     }
@@ -1520,23 +1603,91 @@ fn failed(message: &str) -> String {
     j.0
 }
 
-/// One saved result, whole.
-fn result_json(params: &str) -> String {
+/// One saved result, whole — as it was, and nothing runs.
+///
+/// A thinned one keeps only its answer and the inputs it changed. With
+/// `rerun=1` it is run again on those inputs and today's engine, and every
+/// value that run returns is shown BESIDE the record, never in its place: the
+/// record's own answer stays, and the two chains say whether the run is the
+/// same one. Same chain, same engine, tree and inputs — the values are what
+/// it returned then. Another chain, and they are today's, said so.
+fn result_json(params: &str, ctx: &Ctx) -> String {
+    let dir = results_dir();
     let name = param(params, "name").map(decode).unwrap_or_default();
-    let s = match vleo_modules::results::store::open(&results_dir(), &name) {
+    let s = match vleo_modules::results::store::open(&dir, &name) {
         Ok(s) => s,
         Err(e) => return failed(&e),
     };
+    let again =
+        if !s.thinned.is_empty() && param(params, "rerun").map(decode).as_deref() == Some("1") {
+            let case = Case {
+                base: String::new(),
+                supply: s.case_values(),
+                target: s.target.clone(),
+                mode: RunMode::from_name(&s.mode),
+                data: ctx.data.clone(),
+                data_versions: ctx.data_versions.clone(),
+            };
+            match vleo_modules::evaluate(&case, &mut Scratch::new()) {
+                Ok(r) => Some(vleo_modules::results::from_run(
+                    &r,
+                    &case.supply,
+                    &s.saved,
+                    &s.name,
+                )),
+                Err(f) => return failed(&format!("it did not run again: {f}")),
+            }
+        } else {
+            None
+        };
     let mut j = Json::new();
     j.raw("{");
     j.bool_field("ok", true);
     j.str_field("file", &name);
+    j.bool_field("pinned", vleo_modules::results::store::pinned(&dir, &name));
     result_head(&mut j, &s);
-    rows_json(&mut j, "inputs", &s.inputs);
-    rows_json(&mut j, "outputs", &s.outputs);
-    rows_json(&mut j, "blocked_rows", &s.blocked);
+    let rows = again.as_ref().unwrap_or(&s);
+    if let Some(a) = &again {
+        j.key("rerun").raw("{");
+        j.str_field("chain", &a.chain);
+        j.bool_field("same", a.chain == s.chain);
+        j.close_obj();
+    }
+    rows_json(&mut j, "inputs", &rows.inputs);
+    rows_json(&mut j, "outputs", &rows.outputs);
+    rows_json(&mut j, "blocked_rows", &rows.blocked);
     j.raw("}");
     j.0
+}
+
+/// A result as one file to send: its CSV, its report and a manifest, zipped.
+fn result_share(params: &str) -> (&'static str, &'static str, Vec<u8>) {
+    let name = param(params, "name").map(decode).unwrap_or_default();
+    match vleo_modules::results::store::open(&results_dir(), &name) {
+        Ok(s) => (
+            "200 OK",
+            "application/zip",
+            vleo_modules::results::share::pack(&s),
+        ),
+        Err(e) => ("404 Not Found", "text/plain; charset=utf-8", e.into_bytes()),
+    }
+}
+
+/// Pin a result — kept whole whatever its age — or unpin it: `name`, `on`.
+fn result_pin(params: &str) -> String {
+    let name = param(params, "name").map(decode).unwrap_or_default();
+    let on = param(params, "on").map(decode).as_deref() != Some("0");
+    match vleo_modules::results::store::pin(&results_dir(), &name, on) {
+        Ok(()) => {
+            let mut j = Json::new();
+            j.raw("{");
+            j.bool_field("ok", true);
+            j.bool_field("pinned", on);
+            j.raw("}");
+            j.0
+        }
+        Err(e) => failed(&e),
+    }
 }
 
 fn result_file(params: &str, report: bool) -> (&'static str, &'static str, Vec<u8>) {
@@ -1673,10 +1824,20 @@ fn derisk_json(ctx: &Ctx) -> String {
     j.0
 }
 
-/// Keep a result somebody sent — its CSV, or the report page it rides in.
+/// Keep a result somebody sent — `csv=` its CSV or the report page it rides
+/// in, or `vleo=` its share file in base64.
 fn result_upload(params: &str) -> String {
-    let text = param(params, "csv").map(decode).unwrap_or_default();
-    let s = match vleo_modules::results::read(&vleo_modules::results::unwrap_report(&text)) {
+    let read = match param(params, "vleo").map(decode) {
+        Some(b64) => match base64_decode(&b64) {
+            Some(bytes) => vleo_modules::results::share::unpack(&bytes),
+            None => Err("the .vleo file did not arrive whole".to_string()),
+        },
+        None => {
+            let text = param(params, "csv").map(decode).unwrap_or_default();
+            vleo_modules::results::read(&vleo_modules::results::unwrap_report(&text))
+        }
+    };
+    let s = match read {
         Ok(s) => s,
         Err(e) => return failed(&e),
     };
@@ -1692,6 +1853,31 @@ fn result_upload(params: &str) -> String {
         }
         Err(e) => failed(&e),
     }
+}
+
+/// Standard base64, as a browser's `btoa` or `FileReader` writes it. Anything
+/// else is `None`: a file that did not arrive whole is not guessed at.
+fn base64_decode(s: &str) -> Option<Vec<u8>> {
+    let s = s.trim().trim_end_matches('=');
+    let mut out = Vec::with_capacity(s.len() * 3 / 4);
+    let (mut acc, mut bits) = (0u32, 0);
+    for c in s.bytes() {
+        let v = match c {
+            b'A'..=b'Z' => c - b'A',
+            b'a'..=b'z' => c - b'a' + 26,
+            b'0'..=b'9' => c - b'0' + 52,
+            b'+' => 62,
+            b'/' => 63,
+            _ => return None,
+        };
+        acc = ((acc << 6) | u32::from(v)) & 0xFFFF;
+        bits += 6;
+        if bits >= 8 {
+            bits -= 8;
+            out.push((acc >> bits) as u8);
+        }
+    }
+    Some(out)
 }
 
 fn result_delete(params: &str) -> String {
@@ -2008,7 +2194,9 @@ fn inputs_reset() -> String {
 fn sets_checked(params: &str) -> Result<Vec<(String, f64)>, String> {
     let mut out = Vec::new();
     for kv in params.split('&') {
-        let Some((k, v)) = kv.split_once('=') else { continue };
+        let Some((k, v)) = kv.split_once('=') else {
+            continue;
+        };
         if k != "set" {
             continue;
         }
@@ -2828,11 +3016,32 @@ mod requests {
     #[test]
     fn a_write_from_another_site_is_refused_and_one_from_this_page_is_not() {
         let h = Some("127.0.0.1:7777");
-        assert!(allowed("POST", h, Some("https://evil.example"), Some("cross-site"), 7777).is_err());
+        assert!(allowed(
+            "POST",
+            h,
+            Some("https://evil.example"),
+            Some("cross-site"),
+            7777
+        )
+        .is_err());
         // Another port on localhost is the same site but not the same origin.
-        assert!(allowed("POST", h, Some("http://localhost:8080"), Some("same-site"), 7777).is_err());
+        assert!(allowed(
+            "POST",
+            h,
+            Some("http://localhost:8080"),
+            Some("same-site"),
+            7777
+        )
+        .is_err());
         assert!(allowed("POST", h, None, Some("cross-site"), 7777).is_err());
-        assert!(allowed("POST", h, Some("http://127.0.0.1:7777"), Some("same-origin"), 7777).is_ok());
+        assert!(allowed(
+            "POST",
+            h,
+            Some("http://127.0.0.1:7777"),
+            Some("same-origin"),
+            7777
+        )
+        .is_ok());
         // A script the person ran (the Python tools, curl) sends neither header.
         assert!(allowed("POST", h, None, None, 7777).is_ok());
     }
@@ -2848,7 +3057,40 @@ mod supplied_values {
         assert!(sets_checked("set=alt:inf").is_err());
         assert!(sets_checked("set=alt:12%2C5").is_err());
         assert!(sets_checked("set=alt").is_err());
-        assert_eq!(sets_checked("node=x&set=alt:250000").unwrap(), vec![("alt".to_string(), 250000.0)]);
+        assert_eq!(
+            sets_checked("node=x&set=alt:250000").unwrap(),
+            vec![("alt".to_string(), 250000.0)]
+        );
         assert_eq!(sets_checked("node=x").unwrap(), vec![]);
+    }
+}
+
+#[cfg(test)]
+mod share_files {
+    use super::base64_decode;
+
+    #[test]
+    fn base64_reads_what_a_browser_writes_and_refuses_the_rest() {
+        assert_eq!(base64_decode("UEsDBA==").unwrap(), b"PK\x03\x04");
+        assert_eq!(base64_decode("aGVsbG8gd29ybGQ").unwrap(), b"hello world");
+        let long: Vec<u8> = (0..=255u8).cycle().take(5000).collect();
+        let enc: String = long
+            .chunks(3)
+            .flat_map(|c| {
+                const A: &[u8] =
+                    b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+                let n = c
+                    .iter()
+                    .enumerate()
+                    .fold(0u32, |a, (i, &b)| a | u32::from(b) << (16 - 8 * i));
+                (0..c.len() + 1).map(move |i| A[(n >> (18 - 6 * i) & 63) as usize] as char)
+            })
+            .collect();
+        assert_eq!(
+            base64_decode(&enc).unwrap(),
+            long,
+            "a long file did not come back whole"
+        );
+        assert!(base64_decode("not base64!").is_none());
     }
 }

@@ -384,7 +384,23 @@ somebody sent you is uploaded the same way.
 **A result's inputs can become the case.** That puts every input back to what \
 the result ran on — the way to reproduce it, or to carry on from it. It is \
 checked like any other case, and refused whole if a release has since retired \
-or re-ranged something it sets."""
+or re-ranged something it sets.
+
+To send it as **one file**, download the **.vleo**: a zip holding the CSV, the \
+report and a manifest. Any unzip tool opens it, and uploading it gives the \
+result back whole.
+
+**Old results are thinned, not deleted.** After 30 days (`VLEO_KEEP_DAYS`) a \
+result keeps its answer, the inputs it changed and its chain, and drops the \
+rest of its values. **Pin** a result to keep every value for ever. A thinned \
+result says so, and **run it again** shows every value beside the record: the \
+same chain means the same run, and another chain means today's values, said \
+so under the answer it gave then.
+
+**A shared results folder works.** Point `VLEO_RESULTS` at a folder the team \
+shares and every laptop lists the same results. Each result, its summary \
+and its pin are separate files, written whole, so two machines saving at \
+once never overwrite each other."""
 
 [[layer.section.step]]
 say = "After a run, give the result a name if you like, then keep it."
@@ -2280,8 +2296,8 @@ effect = "reads"
 [[command]]
 tool = "vleo"
 name = "result"
-usage = "result <file> [--html <out.html>]"
-what = "A saved result shown as it was — nothing runs. Reads the CSV `run --save` writes, or the report page it rides in; `--html` writes that report, to send."
+usage = "result <file> [--html <out.html>] [--vleo <out.vleo>]"
+what = "A saved result shown as it was — nothing runs. Reads the CSV `run --save` writes, the report page it rides in, or a `.vleo`; `--html` writes that report and `--vleo` the share file, to send."
 who = "user"
 effect = "reads"
 
@@ -2406,12 +2422,12 @@ what = "Every registered risk, where it stands and every node version that moved
 [[route]]
 method = "GET"
 path = "/v1/results"
-what = "Every result kept on this machine, newest first, and where they are kept."
+what = "Every result kept, newest first, each as its summary — answer, inputs changed, pinned, thinned — and where they are kept. Results past `VLEO_KEEP_DAYS` that are not pinned are thinned first."
 
 [[route]]
 method = "GET"
 path = "/v1/result"
-what = "One saved result, as it was: `name`. Nothing runs."
+what = "One saved result, as it was: `name`. Nothing runs — except `rerun=1` on a thinned result, which runs it again on the inputs it kept and shows every value beside the record, with whether the chain is the same."
 
 [[route]]
 method = "GET"
@@ -2424,6 +2440,16 @@ path = "/v1/result.html"
 what = "A saved result as a report page that reads without the tool and carries its CSV: `name`."
 
 [[route]]
+method = "GET"
+path = "/v1/result.vleo"
+what = "A saved result as one file to send: a zip of its CSV, its report page and a manifest: `name`."
+
+[[route]]
+method = "POST"
+path = "/v1/results/pin"
+what = "Pin a result so it keeps every value whatever its age, or unpin it: `name`, `on=1` or `on=0`."
+
+[[route]]
 method = "POST"
 path = "/v1/results/save"
 what = "Run, and keep what it returned and the inputs it ran on as a result: the parameters of `/v1/run`, and `label`. Written outside the repository."
@@ -2431,7 +2457,7 @@ what = "Run, and keep what it returned and the inputs it ran on as a result: the
 [[route]]
 method = "POST"
 path = "/v1/results/upload"
-what = "Keep a result somebody sent: `csv=` its CSV, or the text of its report."
+what = "Keep a result somebody sent: `csv=` its CSV or the text of its report, or `vleo=` its `.vleo` file in base64."
 
 [[route]]
 method = "POST"
@@ -2491,6 +2517,11 @@ default = "$HOME/.vleo/case/inputs.csv"
 name = "VLEO_GOLDEN"
 what = "Set to `write` when running the translator's golden test, to write the golden files again after an intended change to how methods are translated. Unset, the test compares and fails on any difference."
 default = "unset — compare"
+
+[[env]]
+name = "VLEO_KEEP_DAYS"
+what = "How many days a saved result keeps every value. After that, unless pinned, it keeps its answer, the inputs it changed and its chain — enough to say what it was and to run it again. `0` keeps every value for ever."
+default = "30"
 
 [[env]]
 name = "VLEO_RESULTS"

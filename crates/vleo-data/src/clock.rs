@@ -35,6 +35,12 @@ pub fn today() -> String {
     format!("{y:04}-{m:02}-{d:02}")
 }
 
+/// The date `days` before today, as `today` writes it.
+pub fn days_ago(days: u32) -> String {
+    let (y, m, d, ..) = civil(unix_seconds() - i64::from(days) * 86_400);
+    format!("{y:04}-{m:02}-{d:02}")
+}
+
 /// Now, as a result records it: `YYYY-MM-DDTHH:MM:SSZ`, UTC, to the second.
 pub fn now_utc() -> String {
     let (y, m, d, h, mi, s) = civil(unix_seconds());
