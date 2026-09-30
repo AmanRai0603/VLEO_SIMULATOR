@@ -40,6 +40,7 @@
 //! more than one that needs a library to inspect.
 
 pub mod clock;
+pub mod crash;
 
 use std::collections::BTreeMap;
 use std::fs;
@@ -267,7 +268,9 @@ impl Store {
 /// points. One place, read by the daemon and the command line alike, so the
 /// browser and the terminal always run the same case.
 pub fn case_path() -> PathBuf {
-    if let Ok(p) = std::env::var("VLEO_CASE") {
+    // An empty value counts as unset, as it does for VLEO_DATA and HOME: an
+    // empty path is the CURRENT folder, and a case saved there is lost with it.
+    if let Some(p) = std::env::var_os("VLEO_CASE").filter(|v| !v.is_empty()) {
         return PathBuf::from(p);
     }
     home()
@@ -279,7 +282,7 @@ pub fn case_path() -> PathBuf {
 /// inputs they ran on. Outside the repository like the case —
 /// `~/.vleo/results/`, or wherever `VLEO_RESULTS` points.
 pub fn results_path() -> PathBuf {
-    if let Ok(p) = std::env::var("VLEO_RESULTS") {
+    if let Some(p) = std::env::var_os("VLEO_RESULTS").filter(|v| !v.is_empty()) {
         return PathBuf::from(p);
     }
     home()

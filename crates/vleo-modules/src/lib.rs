@@ -146,6 +146,8 @@ pub fn case_refusal(case: &vleo_bus::Case) -> Option<String> {
     })
 }
 
+#[cfg(feature = "std")]
+pub mod files;
 pub mod inputs;
 pub mod results;
 

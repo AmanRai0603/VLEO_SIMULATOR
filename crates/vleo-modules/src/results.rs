@@ -795,7 +795,7 @@ pub mod store {
         if !is_plain(&name) {
             return Err(format!("'{name}' is not a result's file name"));
         }
-        std::fs::write(dir.join(&name), csv(s)).map_err(|e| format!("{name}: {e}"))?;
+        crate::files::write_whole(&dir.join(&name), csv(s)).map_err(|e| format!("{name}: {e}"))?;
         Ok(name)
     }
 
