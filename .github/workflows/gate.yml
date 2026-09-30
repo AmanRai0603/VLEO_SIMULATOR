@@ -502,12 +502,12 @@ jobs:
         run: |
           pip install --quiet playwright
           python3 -m playwright install --with-deps chromium
-      # The folder, and generated/index.json beside it: the check asks the
-      # page's engine every computed row, and the index is what says which.
+      # The generated pages first: each row's page in the folder is its
+      # generated fragment, and generated/index.json says which rows compute.
       - name: the folder
         run: |
-          cargo run -p xtask -- readers
           cargo run -p xtask -- assemble
+          cargo run -p xtask -- readers
       - name: the pages, the engine in the page, and a widget, from file://
         run: |
           python3 tools/readers_check.py --selftest

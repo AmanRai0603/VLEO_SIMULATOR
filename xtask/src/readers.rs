@@ -29,6 +29,15 @@ pub(super) fn cmd_readers(root: &Path, args: &[&str]) -> Result<(), String> {
         .and_then(|i| args.get(i + 1))
         .map(PathBuf::from)
         .unwrap_or_else(|| root.join("target/readers"));
+    // Every row's page is its generated fragment. Without them the folder would
+    // be 1396 pages each saying it has none — refused here, before the build.
+    if !root.join("generated/fragments").is_dir() {
+        return Err(
+            "no generated/fragments: each row's page in the folder is its generated \
+                    page — build them first with `cargo run -p xtask -- assemble`"
+                .into(),
+        );
+    }
     let mut run = Run::start(root, "readers", args, 4);
     let retry = format!("cargo run -p xtask -- readers --out {}", out.display());
     let kernel = run.step(
@@ -349,13 +358,10 @@ fn write_folder(
 
 /// The few lines of layout a readers' page needs that the tool's shell does
 /// not: a header of its own and a column to read in.
-const READERS_CSS: &str = ".rd-top{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;\
-padding:10px 16px;border-bottom:1px solid var(--rule);position:sticky;top:0;background:var(--paper);z-index:5}\
-.rd-main{max-width:1100px;margin:0 auto;padding:8px 16px 64px}.rd-lessons li,.rd-rows li{margin:4px 0}";
+const READERS_CSS: &str = include_str!("../../web/pages/readers.css");
 
-const DEPTH: &str = "<span class=\"grp\" id=\"depth\" role=\"group\" aria-label=\"how deep the page goes\"><span class=\"lbl\">depth</span>\
-<button class=\"ctl dp\" data-depth=\"learn\">Learn</button><button class=\"ctl dp\" data-depth=\"read\">Read</button>\
-<button class=\"ctl dp\" data-depth=\"expert\">Expert</button></span>";
+/// A readers' page's body, with its slots (`web/pages/readers.html`).
+const BODY: &str = include_str!("../../web/pages/readers.html");
 
 /// A readers' page: the one page template (`web/page.html`), with the tool's
 /// stylesheet linked and the folder's own header.
@@ -366,11 +372,11 @@ fn shell(title: &str, up: &str, body: &str, tail: &str) -> String {
             "<link rel=\"stylesheet\" href=\"{up}assets/app.css\">\n<style>{READERS_CSS}</style>"
         ),
         body_attrs: " class=\"readers\"",
-        body: &format!(
-            "<header class=\"rd-top\"><a class=\"ctl\" href=\"{up}index.html\">VLEO design — for readers</a> {DEPTH}</header>\n\
-             <main class=\"rd-main\" id=\"node-body\">\n{body}\n</main>\n{}",
-            tail.trim_end()
-        ),
+        body: &vleo_sheet::shell::fill_part(
+            BODY,
+            &[("up", up), ("body", body), ("tail", tail.trim_end())],
+        )
+        .unwrap_or_else(|e| panic!("web/pages/readers.html: {e}")),
     })
 }
 

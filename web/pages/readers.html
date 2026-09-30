@@ -1,0 +1,16 @@
+<!--
+  A READERS' PAGE — the body of each page `xtask readers` writes (the index,
+  and one per row), filled by xtask/src/readers.rs. The whole page is
+  web/page.html with this in its body, the tool's own web/app.css linked, and
+  web/pages/readers.css for the folder's header and column.
+
+  Slots, each filled once:
+    {{up}}    the way back to the folder's top: "" or "../"
+    {{body}}  the page — the index, or the row's own generated page
+    {{tail}}  the page's scripts
+-->
+<header class="rd-top"><a class="ctl" href="{{up}}index.html">VLEO design — for readers</a> <span class="grp" id="depth" role="group" aria-label="how deep the page goes"><span class="lbl">depth</span><button class="ctl dp" data-depth="learn">Learn</button><button class="ctl dp" data-depth="read">Read</button><button class="ctl dp" data-depth="expert">Expert</button></span></header>
+<main class="rd-main" id="node-body">
+{{body}}
+</main>
+{{tail}}
