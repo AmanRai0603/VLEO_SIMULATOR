@@ -81,11 +81,8 @@ pub fn from_file(text: &str, node: Option<&str>) -> Result<(String, String), Str
 fn page(sh: &Sheet, tree: &Tree, l: &Lesson, toml_text: &str) -> String {
     let rows = format!("node {}\n{}", sh.id, lesson::rows_block(tree));
     let list = |v: &[&str]| v.join(",");
-    format!(
-        "<!doctype html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\">\n\
-         <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n\
-         <title>{label} — lesson form</title>\n<style>\n{css}{lcss}</style>\n</head>\n<body>\n\
-         <header class=\"nf-head\"><p class=\"nf-kicker\">VLEO design tool · lesson form</p>\n\
+    let body = format!(
+        "<header class=\"nf-head\"><p class=\"nf-kicker\">VLEO design tool · lesson form</p>\n\
          <h1>{label}</h1>\n<p class=\"nf-id\"><code>{id}</code> · {subsystem} · owner {owner}</p>\n\
          <section class=\"nf-intro\"><p><b>Answer first.</b> Write how this row is taught: the plain \
          words, the real relation and where it comes from, where it stops being true, a slider to try \
@@ -105,14 +102,12 @@ fn page(sh: &Sheet, tree: &Tree, l: &Lesson, toml_text: &str) -> String {
          <textarea hidden id=\"vleo-lesson\">{toml}</textarea>\n\
          <script type=\"text/plain\" id=\"vleo-lesson-rows\">{rows}</script>\n\
          <script type=\"application/octet-stream\" id=\"vleo-method-wasm\">{wasm}</script>\n\
-         <script>\n{js}</script>\n</body>\n</html>\n",
+         <script>\n{js}</script>",
         label = he(&sh.label),
         id = he(&sh.id),
         subsystem = he(&sh.subsystem),
         owner = he(&sh.owner),
         question = he(&sh.question),
-        css = PAGE_CSS,
-        lcss = LESSON_CSS,
         kinds = list(KINDS),
         stations = list(STATIONS),
         claims = list(CLAIMS),
@@ -121,7 +116,13 @@ fn page(sh: &Sheet, tree: &Tree, l: &Lesson, toml_text: &str) -> String {
         rows = rows,
         wasm = crate::template::base64(&crate::template::checker(tree)),
         js = LESSON_JS,
-    )
+    );
+    crate::shell::fill(&crate::shell::Page {
+        title: &format!("{} — lesson form", sh.label),
+        head: &format!("<style>\n{PAGE_CSS}{LESSON_CSS}</style>"),
+        body: &body,
+        ..Default::default()
+    })
 }
 
 fn unhe(s: &str) -> String {

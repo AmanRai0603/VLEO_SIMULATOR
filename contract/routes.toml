@@ -8,7 +8,7 @@
 #
 # Each route:
 #   method, path   as the manual lists it (docs/manual.toml [[route]])
-#   answer         json | html | csv | css | js
+#   answer         json | html | csv | css | js | font
 #   schema         for a json answer: contract/schemas/<schema>.json
 #   format         for a csv answer that is one of the file formats:
 #                  contract/formats/<format>.toml
@@ -44,6 +44,14 @@ contains = "import"
 [[route.example]]
 name = "js-app"
 path = "/js/app.js"
+
+[[route]]
+method = "GET"
+path = "/fonts/<font>"
+answer = "font"
+[[route.example]]
+name = "font-regular"
+path = "/fonts/ibm-plex-mono-latin-400-normal.woff2"
 
 # --- what the engine is -------------------------------------------------------
 

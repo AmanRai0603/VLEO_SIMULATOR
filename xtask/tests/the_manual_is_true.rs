@@ -114,6 +114,8 @@ fn routed(src: &str) -> BTreeSet<String> {
             let prefix = &p[..p.find('"').unwrap()];
             let tail = if prefix == "/js/" {
                 "<module>"
+            } else if prefix == "/fonts/" {
+                "<font>"
             } else if prefix.contains("bundle") || prefix.contains("parity") {
                 "<name>"
             } else {

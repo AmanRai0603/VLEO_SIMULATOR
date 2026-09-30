@@ -898,12 +898,6 @@ pub fn html(s: &Saved) -> String {
         })
         .unwrap_or_else(|| "not computed on this run".to_string());
     let mut o = String::with_capacity(64 * 1024);
-    o.push_str("<!doctype html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\">\n");
-    o.push_str("<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n");
-    o.push_str(&format!(
-        "<title>{} — result</title>\n<style>\n{REPORT_CSS}</style>\n</head>\n<body>\n",
-        he(&s.target)
-    ));
     // ANSWER FIRST (docs/EXPLAINING.md E1): the number, then the three things
     // a reader needs before trusting it — how credible it is and what holds it
     // down, what could not run, and what it was run on. Then it said simply,
@@ -1147,7 +1141,42 @@ pub fn html(s: &Saved) -> String {
             sweep_csv(w).replace("</", "<\\/")
         ));
     }
-    o.push_str("</body>\n</html>\n");
+    page(
+        &format!("{} — result", s.target),
+        &format!("<style>\n{REPORT_CSS}</style>"),
+        o.trim_end(),
+    )
+}
+
+/// The one page template every page the tool writes is filled from
+/// (`web/page.html`; `vleo_sheet::shell` says how it works). This crate cannot
+/// depend on that one, so it carries this copy of the filler; the tests hold
+/// the page it writes to the same template.
+pub const PAGE_TEMPLATE: &str = include_str!("../../../web/page.html");
+
+/// [`PAGE_TEMPLATE`] from its doctype on, each slot filled once, in one pass.
+fn page(title: &str, head: &str, body: &str) -> String {
+    let t = PAGE_TEMPLATE;
+    let mut rest = &t[t
+        .find("<!doctype html>")
+        .expect("web/page.html has no doctype")..];
+    let mut o = String::with_capacity(rest.len() + head.len() + body.len() + 256);
+    while let Some(i) = rest.find("{{") {
+        o.push_str(&rest[..i]);
+        let j = rest[i..]
+            .find("}}")
+            .expect("web/page.html: a slot never closed")
+            + i;
+        match &rest[i + 2..j] {
+            "title" => o.push_str(&he(title)),
+            "head" => o.push_str(head),
+            "body_attrs" => {}
+            "body" => o.push_str(body),
+            other => panic!("web/page.html has a slot `{other}` this page does not fill"),
+        }
+        rest = &rest[j + 2..];
+    }
+    o.push_str(rest);
     o
 }
 

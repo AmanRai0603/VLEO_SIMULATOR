@@ -113,6 +113,11 @@ sent back; `xtask lesson apply` writes it beside the row. → `docs/LESSONS.md`
 by `xtask readers` for a shared drive or an internal web server; the engine
 runs in the page to answer a lesson's widgets. → `docs/SHARING.md`, section 4
 
+**Page template** — `web/page.html`: the one page every file the tool writes
+is filled from — node and lesson forms, a saved result, the role guides, the
+readers' pages — with four slots its generator fills. A generator that writes
+a page of its own is refused by a test. → `crates/vleo-sheet/src/shell.rs`
+
 **Component library** — `web/js/components.js`: every part a page is built
 from, by name — station, equation, widget, check-yourself, claim tag,
 references, figure. A page that needs something new gets it added there once.

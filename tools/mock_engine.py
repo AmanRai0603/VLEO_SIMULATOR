@@ -5,7 +5,7 @@ A frontend developer works on web/ — pages, charts, animation, 3D — against
 the contract (contract/README.md), not against a build of the engine. This
 serves exactly what the real engine serves, from files:
 
-  * the page itself — web/index.html, web/app.css, web/js/* — as it is on disk,
+  * the page itself — web/index.html, web/app.css, web/js/*, web/fonts/* — as it is on disk,
     so an edit shows on reload;
   * every /v1 JSON answer from the example contract/routes.toml records for it
     (contract/examples/*.json), picked by the request's parameters: the example
@@ -42,6 +42,7 @@ TYPES = {
     ".csv": "text/csv; charset=utf-8",
     ".json": "application/json; charset=utf-8",
     ".gz": "application/gzip",
+    ".woff2": "font/woff2",
 }
 
 
@@ -128,6 +129,8 @@ def static(path):
         return os.path.join(ROOT, "web", "app.css")
     if path.startswith("/js/") and plain(path[4:]):
         return os.path.join(ROOT, "web", "js", path[4:])
+    if path.startswith("/fonts/") and plain(path[7:]):
+        return os.path.join(ROOT, "web", "fonts", path[7:])
     if path.startswith("/v1/fragment/"):
         return node_page(path[len("/v1/fragment/"):])
     if path.startswith("/v1/parity/") and plain(path[len("/v1/parity/"):]):

@@ -465,9 +465,9 @@ the docs folder for readers: every row's page and every lesson, read with no too
 
 | | |
 |---|---|
-| reads | the tree, generated/fragments, every lesson.toml, web/js and web/app.css, crates/vleo-kernel-wasm |
+| reads | the tree, generated/fragments, every lesson.toml, web/page.html, web/js, web/app.css and web/fonts, crates/vleo-kernel-wasm |
 | writes | the readers' docs folder: target/readers, or --out — rebuilt whole; nothing committed |
-| checks | every lesson passes its check; every link and asset a page names is in the folder |
+| checks | every lesson passes its check; every link and asset a page names, and every font its stylesheet names, is in the folder; tools/readers_check.py then opens it in a browser |
 | undo | delete the folder |
 | steps | 1 build the engine for the browser · 2 bundle the page script · 3 write the pages · 4 check every page has what it links |
 | dry run | --dry-run prints this plan — the steps, what it would write, how to undo it — and touches nothing |

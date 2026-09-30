@@ -97,6 +97,13 @@ A lesson's try-it widgets work there too: the folder carries the engine compiled
 the tool runs, on the declared values. It carries no reference data, so a row that reads a data
 bundle refuses in the page and says to open it in the tool. Rebuild the folder with each release.
 
+The pages look as the tool does: they are the one page template (`web/page.html`) with the tool's
+stylesheet, and the tool's type (IBM Plex Mono, `web/fonts`, with its licence) travels in
+`assets/fonts`. The pipeline builds the folder on every push and opens it from a file in a
+browser (`tools/readers_check.py`): the pages load, the engine answers, refuses and sweeps, a
+widget moves — and every answer the page's engine gave is asked again of the engine built
+natively, and must be the same, byte for byte.
+
 ## Where the simple version breaks
 
 A kit is read-only by design, but nothing stops a teammate editing a file inside it. That edit is

@@ -126,9 +126,11 @@ export async function mountWidget(el, w) {
   let seq = 0;
   const run = async () => {
     const mine = ++seq;
+    // The value the engine is given, not the slider's: a range input snaps to
+    // its step, and the row's own value is rarely on one.
     el.querySelectorAll('.ls-slider').forEach(l => {
-      const inp = l.querySelector('input');
-      l.querySelector('.ls-v').textContent = (+inp.value).toPrecision(4);
+      const id = l.querySelector('input').dataset.id;
+      l.querySelector('.ls-v').textContent = (+fromSI(S.byId.get(id), vals.get(id))).toPrecision(4);
     });
     const shown = new Map();
     for (const target of w.outputs) {

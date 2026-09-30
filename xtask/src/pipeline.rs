@@ -110,9 +110,9 @@ pub(crate) const PIPELINE: &[Cmd] = &[
     Cmd {
         name: "readers",
         stage: "release",
-        reads: "the tree, generated/fragments, every lesson.toml, web/js and web/app.css, crates/vleo-kernel-wasm",
+        reads: "the tree, generated/fragments, every lesson.toml, web/page.html, web/js, web/app.css and web/fonts, crates/vleo-kernel-wasm",
         writes: "the readers' docs folder: target/readers, or --out — rebuilt whole; nothing committed",
-        checks: "every lesson passes its check; every link and asset a page names is in the folder",
+        checks: "every lesson passes its check; every link and asset a page names, and every font its stylesheet names, is in the folder; tools/readers_check.py then opens it in a browser",
         undo: "delete the folder",
         code: ("xtask/src/readers.rs", "cmd_readers"),
         steps: &["build the engine for the browser", "bundle the page script", "write the pages", "check every page has what it links"],
