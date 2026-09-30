@@ -1181,6 +1181,379 @@
         "shared",
         "spread"
       ]
+    },
+    {
+      "type": "object",
+      "description": "The forecast figure by lead: the issued 27-day outlook scored against what arrived at each lead.",
+      "properties": {
+        "ok": {
+          "type": "boolean"
+        },
+        "bundle": {
+          "type": "string",
+          "description": "The bundle and version the numbers were worked out from."
+        },
+        "figure": {
+          "type": "string",
+          "enum": [
+            "forecast"
+          ]
+        },
+        "view": {
+          "type": "string",
+          "enum": [
+            "lead"
+          ]
+        },
+        "lead": {
+          "type": "array",
+          "description": "The leads with at least one scored pair, in days.",
+          "items": {
+            "type": "number"
+          }
+        },
+        "pairs": {
+          "type": "array",
+          "description": "The pairs with an observation at each lead, which bias and RMS error are over.",
+          "items": {
+            "type": "number"
+          }
+        },
+        "pairs_strict": {
+          "type": "array",
+          "description": "The pairs the strict persistence baseline reaches.",
+          "items": {
+            "type": "number"
+          }
+        },
+        "pairs_leaky": {
+          "type": "array",
+          "description": "The pairs the leaky persistence baseline reaches.",
+          "items": {
+            "type": "number"
+          }
+        },
+        "skill_strict": {
+          "type": "array",
+          "description": "Skill against the last observation before the issue; null where the baseline reached no pair.",
+          "items": {
+            "type": [
+              "null",
+              "number"
+            ]
+          }
+        },
+        "skill_leaky": {
+          "type": "array",
+          "description": "Skill against the observation on the issue date, which leaks.",
+          "items": {
+            "type": [
+              "null",
+              "number"
+            ]
+          }
+        },
+        "bias": {
+          "type": "array",
+          "description": "Mean forecast minus observed, in sfu.",
+          "items": {
+            "type": "number"
+          }
+        },
+        "rmse": {
+          "type": "array",
+          "description": "Root mean square of forecast minus observed, in sfu.",
+          "items": {
+            "type": "number"
+          }
+        },
+        "peak": {
+          "type": [
+            "null",
+            "array"
+          ],
+          "description": "Where the strict skill peaks: the lead and the skill there.",
+          "items": {
+            "type": "number"
+          }
+        },
+        "widest": {
+          "type": [
+            "null",
+            "number"
+          ],
+          "description": "The lead where the strict baseline misses the most pairs the forecast has."
+        }
+      },
+      "required": [
+        "ok",
+        "figure",
+        "bundle",
+        "view",
+        "lead",
+        "pairs",
+        "pairs_strict",
+        "pairs_leaky",
+        "skill_strict",
+        "skill_leaky",
+        "bias",
+        "rmse",
+        "peak",
+        "widest"
+      ]
+    },
+    {
+      "type": "object",
+      "description": "The forecast figure by year: the outlook scored on one lead band in the calendar year it was issued in.",
+      "properties": {
+        "ok": {
+          "type": "boolean"
+        },
+        "bundle": {
+          "type": "string",
+          "description": "The bundle and version the numbers were worked out from."
+        },
+        "figure": {
+          "type": "string",
+          "enum": [
+            "forecast"
+          ]
+        },
+        "view": {
+          "type": "string",
+          "enum": [
+            "year"
+          ]
+        },
+        "leads": {
+          "type": "array",
+          "description": "The lead band every year is scored on, first and last, in days.",
+          "items": {
+            "type": "number"
+          }
+        },
+        "min_pairs": {
+          "type": "number",
+          "description": "The fewest pairs a year needs to be scored."
+        },
+        "year": {
+          "type": "array",
+          "description": "Every year from the first issue to the last.",
+          "items": {
+            "type": "number"
+          }
+        },
+        "pairs": {
+          "type": "array",
+          "description": "The pairs with an observation in each year; null for a year too thin to score.",
+          "items": {
+            "type": [
+              "null",
+              "number"
+            ]
+          }
+        },
+        "pairs_strict": {
+          "type": "array",
+          "description": "The pairs the strict baseline reaches in each year.",
+          "items": {
+            "type": [
+              "null",
+              "number"
+            ]
+          }
+        },
+        "pairs_leaky": {
+          "type": "array",
+          "description": "The pairs the leaky baseline reaches in each year.",
+          "items": {
+            "type": [
+              "null",
+              "number"
+            ]
+          }
+        },
+        "skill_strict": {
+          "type": "array",
+          "description": "Skill against the strict baseline in each year.",
+          "items": {
+            "type": [
+              "null",
+              "number"
+            ]
+          }
+        },
+        "skill_leaky": {
+          "type": "array",
+          "description": "Skill against the leaky baseline in each year.",
+          "items": {
+            "type": [
+              "null",
+              "number"
+            ]
+          }
+        },
+        "bias": {
+          "type": "array",
+          "description": "Mean forecast minus observed in each year, in sfu.",
+          "items": {
+            "type": [
+              "null",
+              "number"
+            ]
+          }
+        },
+        "rmse": {
+          "type": "array",
+          "description": "Root mean square of forecast minus observed in each year, in sfu.",
+          "items": {
+            "type": [
+              "null",
+              "number"
+            ]
+          }
+        },
+        "thin": {
+          "type": "array",
+          "description": "The years that hold some pairs but too few to score.",
+          "items": {
+            "type": "number"
+          }
+        },
+        "worst": {
+          "type": [
+            "null",
+            "number"
+          ],
+          "description": "The scored year with the lowest strict skill."
+        },
+        "best": {
+          "type": [
+            "null",
+            "number"
+          ],
+          "description": "The scored year with the highest strict skill."
+        },
+        "lowest_bias": {
+          "type": [
+            "null",
+            "array"
+          ],
+          "description": "The year the bias is lowest, and the bias then.",
+          "items": {
+            "type": "number"
+          }
+        }
+      },
+      "required": [
+        "ok",
+        "figure",
+        "bundle",
+        "view",
+        "leads",
+        "min_pairs",
+        "year",
+        "pairs",
+        "pairs_strict",
+        "pairs_leaky",
+        "skill_strict",
+        "skill_leaky",
+        "bias",
+        "rmse",
+        "thin",
+        "worst",
+        "best",
+        "lowest_bias"
+      ]
+    },
+    {
+      "type": "object",
+      "description": "The forecast figure by issue age: the days between one issued outlook and the next.",
+      "properties": {
+        "ok": {
+          "type": "boolean"
+        },
+        "bundle": {
+          "type": "string",
+          "description": "The bundle and version the numbers were worked out from."
+        },
+        "figure": {
+          "type": "string",
+          "enum": [
+            "forecast"
+          ]
+        },
+        "view": {
+          "type": "string",
+          "enum": [
+            "age"
+          ]
+        },
+        "issues": {
+          "type": "number",
+          "description": "The issues the index lists."
+        },
+        "cap": {
+          "type": "number",
+          "description": "The gap, in days, that stands for itself or more."
+        },
+        "gap": {
+          "type": "array",
+          "description": "Each gap length in days.",
+          "items": {
+            "type": "number"
+          }
+        },
+        "count": {
+          "type": "array",
+          "description": "How many gaps have each length.",
+          "items": {
+            "type": "number"
+          }
+        },
+        "median": {
+          "type": [
+            "null",
+            "number"
+          ],
+          "description": "The median gap, in days."
+        },
+        "mean": {
+          "type": [
+            "null",
+            "number"
+          ],
+          "description": "The mean gap, in days."
+        },
+        "commonest": {
+          "type": [
+            "null",
+            "number"
+          ],
+          "description": "The commonest gap, the shortest on a tie."
+        },
+        "over_a_day_pct": {
+          "type": [
+            "null",
+            "number"
+          ],
+          "description": "The share of gaps longer than a day, in per cent."
+        }
+      },
+      "required": [
+        "ok",
+        "figure",
+        "bundle",
+        "view",
+        "issues",
+        "cap",
+        "gap",
+        "count",
+        "median",
+        "mean",
+        "commonest",
+        "over_a_day_pct"
+      ]
     }
   ]
 }

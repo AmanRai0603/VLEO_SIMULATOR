@@ -267,7 +267,7 @@ pub(super) fn results_list() -> String {
 /// claim. A panel with no numbers here yet is refused by name.
 pub(super) fn record_figure(ctx: &Ctx, id: &str, params: &str) -> String {
     const BUNDLE: &str = "solar-weather";
-    const KNOWN: [&str; 12] = [
+    const KNOWN: [&str; 13] = [
         "density",
         "storm-scale",
         "kp-ap",
@@ -280,6 +280,7 @@ pub(super) fn record_figure(ctx: &Ctx, id: &str, params: &str) -> String {
         "climate",
         "smoother",
         "growth",
+        "forecast",
     ];
     if !KNOWN.contains(&id) {
         return failed(&format!(
@@ -664,6 +665,121 @@ pub(super) fn record_figure(ctx: &Ctx, id: &str, params: &str) -> String {
                     }
                 }
                 j.bool_field("humped", g.humped);
+            }
+        }
+        "forecast" => {
+            use vleo_modules::record::{
+                forecast_by_lead, forecast_by_year, issue_age, FORECAST_YEAR_LEADS,
+                FORECAST_YEAR_MIN_PAIRS, ISSUE_GAP_CAP,
+            };
+            let view = param(params, "view").unwrap_or("lead");
+            if !matches!(view, "lead" | "year" | "age") {
+                return failed(&format!(
+                    "no view '{view}': lead (scored at each lead), year (by the year of issue) \
+                     or age (the gap between issues)"
+                ));
+            }
+            j.str_field("view", view);
+            let counts = |v: &[u32]| v.iter().map(|&n| Some(n as f64)).collect::<Vec<_>>();
+            let holes = |v: &[Option<u32>]| v.iter().map(|n| n.map(f64::from)).collect::<Vec<_>>();
+            // A point the page names — where a line peaks, the year the bias is
+            // lowest — as the two numbers drawn there, not an index into
+            // arrays the reader has to hold together.
+            let point = |j: &mut Json, k: &str, at: Option<(f64, f64)>| {
+                j.key(k);
+                match at {
+                    Some((x, y)) => arr(j, &[Some(x), Some(y)]),
+                    None => {
+                        j.raw("null");
+                    }
+                }
+            };
+            if view == "age" {
+                let issues = match vleo_data::read_forecast_issues(&bundle) {
+                    Ok(i) => i,
+                    Err(e) => return failed(&e),
+                };
+                let a = issue_age(&issues);
+                j.num_field("issues", a.issues as f64);
+                j.num_field("cap", ISSUE_GAP_CAP as f64);
+                j.key("gap");
+                arr(&mut j, &counts(&a.gap));
+                j.key("count");
+                arr(&mut j, &counts(&a.count));
+                opt(&mut j, "median", a.median);
+                opt(&mut j, "mean", a.mean);
+                opt(&mut j, "commonest", a.commonest.map(f64::from));
+                opt(&mut j, "over_a_day_pct", a.over_a_day_pct);
+            } else {
+                let issued = match vleo_data::read_forecast_issued(&bundle) {
+                    Ok(f) => f,
+                    Err(e) => return failed(&e),
+                };
+                if view == "lead" {
+                    let f = forecast_by_lead(&days, &issued);
+                    j.key("lead");
+                    arr(&mut j, &counts(&f.lead));
+                    j.key("pairs");
+                    arr(&mut j, &counts(&f.pairs));
+                    j.key("pairs_strict");
+                    arr(&mut j, &counts(&f.pairs_strict));
+                    j.key("pairs_leaky");
+                    arr(&mut j, &counts(&f.pairs_leaky));
+                    j.key("skill_strict");
+                    arr(&mut j, &f.skill_strict);
+                    j.key("skill_leaky");
+                    arr(&mut j, &f.skill_leaky);
+                    j.key("bias");
+                    arr(&mut j, &some(&f.bias));
+                    j.key("rmse");
+                    arr(&mut j, &some(&f.rmse));
+                    point(
+                        &mut j,
+                        "peak",
+                        f.peak
+                            .and_then(|i| Some((f.lead[i] as f64, f.skill_strict[i]?))),
+                    );
+                    opt(&mut j, "widest", f.widest.map(f64::from));
+                } else {
+                    let f = forecast_by_year(&days, &issued);
+                    j.key("leads");
+                    arr(
+                        &mut j,
+                        &[Some(FORECAST_YEAR_LEADS.0), Some(FORECAST_YEAR_LEADS.1)],
+                    );
+                    j.num_field("min_pairs", FORECAST_YEAR_MIN_PAIRS as f64);
+                    j.key("year");
+                    arr(
+                        &mut j,
+                        &f.year.iter().map(|&y| Some(y as f64)).collect::<Vec<_>>(),
+                    );
+                    j.key("pairs");
+                    arr(&mut j, &holes(&f.pairs));
+                    j.key("pairs_strict");
+                    arr(&mut j, &holes(&f.pairs_strict));
+                    j.key("pairs_leaky");
+                    arr(&mut j, &holes(&f.pairs_leaky));
+                    j.key("skill_strict");
+                    arr(&mut j, &f.skill_strict);
+                    j.key("skill_leaky");
+                    arr(&mut j, &f.skill_leaky);
+                    j.key("bias");
+                    arr(&mut j, &f.bias);
+                    j.key("rmse");
+                    arr(&mut j, &f.rmse);
+                    j.key("thin");
+                    arr(
+                        &mut j,
+                        &f.thin.iter().map(|&y| Some(y as f64)).collect::<Vec<_>>(),
+                    );
+                    opt(&mut j, "worst", f.worst.map(f64::from));
+                    opt(&mut j, "best", f.best.map(f64::from));
+                    let at = |y: i32| {
+                        let i = f.year.iter().position(|&v| v == y)?;
+                        Some((y as f64, f.bias[i]?))
+                    };
+                    point(&mut j, "lowest_bias", f.lowest_bias.and_then(at));
+                }
             }
         }
         "smoother" => {

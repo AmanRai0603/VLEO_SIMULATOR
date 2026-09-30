@@ -378,22 +378,3 @@ export function solarRecord() {
   return recordP;
 }
 
-/**
- * A percentile of a sorted sample, interpolated between order statistics.
- *
- * THE CONVENTION IS THE ONE THE ROWS WERE MEASURED UNDER, and it is not the only
- * defensible one. A nearest-rank percentile — take the element at floor(q*n) —
- * was what this used to do, and it disagreed with sw_uncertainty_growth by up to
- * 0.7 sfu: that row's table holds 68.3 and 113.3 at one- and five-year leads, and
- * neither is a value the record contains, because they sit between two adjacent
- * observations. Linear interpolation at h = (n-1)q reproduces both exactly. A
- * panel that illustrates a row must compute the row's quantity the row's way, or
- * the picture and the claim drift apart in the fourth figure and nobody notices.
- */
-export function quantile(sorted, q) {
-  if (!sorted.length) return null;
-  if (sorted.length === 1) return sorted[0];
-  const h = (sorted.length - 1) * q;
-  const lo = Math.floor(h), hi = Math.min(sorted.length - 1, lo + 1);
-  return sorted[lo] + (h - lo) * (sorted[hi] - sorted[lo]);
-}

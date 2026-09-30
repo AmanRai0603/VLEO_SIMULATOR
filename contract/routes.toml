@@ -331,6 +331,18 @@ params = [["v", "f107"], ["by", "all"]]
 name = "figures-solar-growth-cycle"
 path = "/v1/figures/solar/growth"
 params = [["v", "f107"], ["by", "cycle"]]
+[[route.example]]
+name = "figures-solar-forecast"
+path = "/v1/figures/solar/forecast"
+params = [["view", "lead"]]
+[[route.example]]
+name = "figures-solar-forecast-year"
+path = "/v1/figures/solar/forecast"
+params = [["view", "year"]]
+[[route.example]]
+name = "figures-solar-forecast-age"
+path = "/v1/figures/solar/forecast"
+params = [["view", "age"]]
 
 [[route]]
 method = "GET"

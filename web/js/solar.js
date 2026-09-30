@@ -20,9 +20,9 @@
 
 import { $, esc } from './dom.js';
 import { S } from './state.js';
-import { solarRecord, bundleFile, parityFile, engineValues, engineSweep, engineAt,
+import { solarRecord, parityFile, engineValues, engineSweep, engineAt,
   engineProbe, probeSweep, engineFigure,
-  engineLevers, quantile, num, daysSince2000 } from './record.js';
+  engineLevers, num } from './record.js';
 import { drawChart, attachHover, tableFor, tableTsv, viewSpec, viewIsOn,
   watchScheme, sizeCanvas, cssSize, INK, exportFigure } from './chart.js';
 
@@ -690,88 +690,35 @@ const PANELS = [
       // rather than having to remember the other picture. 13 combinations
       // become 3 views.
     ],
-    async data() {
-      const [fc, idx] = await Promise.all([
-        bundleFile('solar-weather', 'forecast_issued.csv'),
-        bundleFile('solar-weather', 'forecast_issues.csv'),
-      ]);
-      return { fc, idx };
-    },
-    build(rec, o, extra) {
-      const fc = extra.fc.rows;
-      if (o.view === 'age') return issueAge(extra.idx.rows);
-      const byDay = new Map();
-      for (const d of rec.days) if (d.f107 !== null) byDay.set(d.t, d.f107);
-      const tOf = new Map();
-      for (const d of rec.days) tOf.set(d.date, d.t);
-      // BOTH BASELINES, BUILT ONCE. `leaky` is allowed to use the issue date
-      // itself; `strict` is what a forecaster actually had. Two lookups from one
-      // function rather than two functions, because two functions is two places
-      // for the one-day difference between them to stop being one day.
-      const persistFrom = (issue, first) => {
-        const t = tOf.get(issue);
-        if (t === undefined) return null;
-        for (let b = first; b <= 15; b++) {
-          const v = byDay.get(t - b);
-          if (v !== undefined) return v;
-        }
-        return null;
-      };
-      const pcS = new Map(), pcL = new Map();
-      const strict = i => { if (!pcS.has(i)) pcS.set(i, persistFrom(i, 1)); return pcS.get(i); };
-      const leaky = i => { if (!pcL.has(i)) pcL.set(i, persistFrom(i, 0)); return pcL.get(i); };
-
-      if (o.view === 'year') return byIssueYear(fc, byDay, tOf, strict, leaky);
-
-      // EACH METRIC OVER THE PAIRS ITS OWN DEFINITION COVERS, and that is a
-      // correction rather than a nicety. Bias and RMS error use no baseline —
-      // sw_forecast_bias is the mean of (forecast − observed) at a lead, full
-      // stop — but this panel used to drop every row whose persistence lookup
-      // came back empty before computing them, so it quoted the row's quantity
-      // over a subset the row does not take. The note carried the claim that the
-      // baseline "changes nothing on this metric", which was very nearly true
-      // and not exactly, which is the worst kind.
-      const xs = [], nObs = [], nStr = [], nLk = [];
-      const skS = [], skL = [], bias = [], rmse = [];
-      for (let L = 1; L <= 27; L++) {
-        let e2 = 0, se = 0, n = 0;
-        let e2s = 0, p2s = 0, ns = 0, e2l = 0, p2l = 0, nl = 0;
-        for (const r of fc) {
-          if (+r.lead_days !== L || r.f107 === null) continue;
-          const tt = tOf.get(r.target_date);
-          const obs = tt === undefined ? undefined : byDay.get(tt);
-          if (obs === undefined) continue;
-          const e = +r.f107 - obs;
-          e2 += e * e; se += e; n++;
-          const ps = strict(r.issue_date);
-          if (ps !== null) { e2s += e * e; p2s += (ps - obs) * (ps - obs); ns++; }
-          const pl = leaky(r.issue_date);
-          if (pl !== null) { e2l += e * e; p2l += (pl - obs) * (pl - obs); nl++; }
-        }
-        if (!n) continue;
-        xs.push(L); nObs.push(n); nStr.push(ns); nLk.push(nl);
-        bias.push(se / n); rmse.push(Math.sqrt(e2 / n));
-        skS.push(ns && p2s ? 1 - (e2s / ns) / (p2s / ns) : null);
-        skL.push(nl && p2l ? 1 - (e2l / nl) / (p2l / nl) : null);
-      }
+    // The scores are vleo_modules::record::forecast_by_lead, forecast_by_year
+    // and issue_age, worked out by the engine from the two forecast files: each
+    // metric over the pairs its own definition covers — bias and RMS error over
+    // every pair with an observation, each skill over the pairs its baseline
+    // reaches — and both baselines, the strict one a forecaster had and the
+    // leaky one handed the issue date. The page draws them.
+    data: o => engineFigure('forecast', { view: o.view }),
+    build(rec, o, fig) {
+      if (fig.refused) throw new Error('the engine did not work the figure out: ' + fig.refused);
+      if (fig.view === 'age') return issueAge(fig);
+      if (fig.view === 'year') return byIssueYear(fig);
+      const xs = fig.lead, nObs = fig.pairs, nStr = fig.pairs_strict, nLk = fig.pairs_leaky;
+      const skS = fig.skill_strict, skL = fig.skill_leaky, bias = fig.bias, rmse = fig.rmse;
       const last = xs[xs.length - 1];
       const at = (arr, L) => { const k = xs.indexOf(L); return k < 0 ? null : arr[k]; };
-      // WHERE THE TWO SAMPLES ACTUALLY DIFFER, named rather than assumed. The
-      // first example this note reached for was lead 27, where they happen to be
-      // equal — a sentence about a correction, illustrated with the one case the
-      // correction does not touch.
-      let gapAt = -1, gapBy = 0;
-      for (let k = 0; k < xs.length; k++) {
-        if (nObs[k] - nStr[k] > gapBy) { gapBy = nObs[k] - nStr[k]; gapAt = xs[k]; }
-      }
+      // WHERE THE TWO SAMPLES ACTUALLY DIFFER, named rather than assumed — the
+      // lead where the strict baseline misses the most pairs, which the engine
+      // finds. The first example this note reached for was lead 27, where they
+      // happen to be equal: a sentence about a correction, illustrated with the
+      // one case the correction does not touch.
+      const gapAt = fig.widest;
       const sig2 = v => (v === null ? '—' : v.toFixed(3));
       const runOf = arr => arr.filter(v => v !== null && isFinite(v) && v > 0).length;
-      const best = skS.reduce((b, v, i) => (v !== null && (b < 0 || v > skS[b]) ? i : b), -1);
+      const peak = fig.peak;
       return {
-        answer: best < 0
+        answer: peak === null
           ? { value: '—', of: 'no lead scored' }
-          : { value: (skS[best] >= 0 ? '+' : '') + skS[best].toFixed(3),
-              of: 'peak skill against persistence, at lead ' + xs[best] +
+          : { value: (peak[1] >= 0 ? '+' : '') + peak[1].toFixed(3),
+              of: 'peak skill against persistence, at lead ' + peak[0] +
                 ' — above zero the outlook beats assuming nothing changes' },
         spec: {
           // The sentence panels/forecast.toml asks a reader to check, counted:
@@ -2043,66 +1990,33 @@ function growthByCycle(fig, q) {
  * at fourteen days that is about 4 per cent of a year's rows landing one year
  * late, which moves nothing and is stated rather than corrected for.
  */
-function byIssueYear(fc, byDay, tOf, strict, leaky) {
-  const LO = 1, HI = 14;
+function byIssueYear(fig) {
+  const LO = fig.leads[0], HI = fig.leads[1];
   //: A year with few pairs produces a skill that is arithmetic rather than
-  //: evidence — 2010 has 25 of them and scores -11.8. Dropped, and counted in
-  //: the note, on the same principle the Repeatability panel drops thin bins.
-  const MIN = 200;
-  const acc = new Map();
-  for (const r of fc) {
-    const L = +r.lead_days;
-    if (!(L >= LO && L <= HI) || r.f107 === null) continue;
-    const tt = tOf.get(r.target_date);
-    const obs = tt === undefined ? undefined : byDay.get(tt);
-    if (obs === undefined) continue;
-    const y = +String(r.issue_date).slice(0, 4);
-    if (!isFinite(y)) continue;
-    if (!acc.has(y)) acc.set(y, { e2: 0, se: 0, n: 0, e2s: 0, p2s: 0, ns: 0, e2l: 0, p2l: 0, nl: 0 });
-    const a = acc.get(y), e = +r.f107 - obs;
-    // Bias and RMS error over every pair; each skill over the pairs its own
-    // baseline reaches. Same rule as the by-lead view, for the same reason.
-    a.e2 += e * e; a.se += e; a.n++;
-    const ps = strict(r.issue_date);
-    if (ps !== null) { a.e2s += e * e; a.p2s += (ps - obs) * (ps - obs); a.ns++; }
-    const pl = leaky(r.issue_date);
-    if (pl !== null) { a.e2l += e * e; a.p2l += (pl - obs) * (pl - obs); a.nl++; }
-  }
-  const years = [...acc.keys()].sort((a, b) => a - b);
-  const thin = years.filter(y => acc.get(y).n < MIN);
-  //: A dropped year is a HOLE, not an absence. Filtering the thin years out of
-  //: the series entirely leaves the line joining 2008 straight to 2011, and
-  //: that segment reads as two years of evidence rather than as the gap it is.
-  //: A null breaks the line here the same way it does everywhere else.
-  const span = [];
-  for (let y = years[0]; y <= years[years.length - 1]; y++) span.push(y);
-  const ok = y => acc.has(y) && acc.get(y).n >= MIN;
-  const col = f => span.map(y => (ok(y) ? f(acc.get(y)) : null));
-  const skS = col(a => (a.ns && a.p2s ? 1 - (a.e2s / a.ns) / (a.p2s / a.ns) : null));
-  const skL = col(a => (a.nl && a.p2l ? 1 - (a.e2l / a.nl) / (a.p2l / a.nl) : null));
-  const bias = col(a => a.se / a.n);
-  const rmse = col(a => Math.sqrt(a.e2 / a.n));
-  const nObs = col(a => a.n), nStr = col(a => a.ns), nLk = col(a => a.nl);
-  const kept = span.filter((y, i) => skS[i] !== null);
-  const keptS = kept.map(y => {
-    const a = acc.get(y);
-    return a.ns && a.p2s ? 1 - (a.e2s / a.ns) / (a.p2s / a.ns) : null;
-  });
-  const worst = kept.length ? kept[keptS.indexOf(Math.min(...keptS))] : null;
-  const best = kept.length ? kept[keptS.indexOf(Math.max(...keptS))] : null;
+  //: evidence — 2010 has 25 of them and scores -11.8. The engine drops it, and
+  //: the note counts it, on the same principle the Repeatability panel drops
+  //: thin bins.
+  const MIN = fig.min_pairs;
+  //: A dropped year is a HOLE, not an absence: the engine gives every year from
+  //: the first issue to the last, and a null there breaks the line the same way
+  //: it does everywhere else, rather than joining 2008 straight to 2011.
+  const span = fig.year, thin = fig.thin;
+  const skS = fig.skill_strict, skL = fig.skill_leaky, bias = fig.bias, rmse = fig.rmse;
+  const nObs = fig.pairs, nStr = fig.pairs_strict, nLk = fig.pairs_leaky;
+  const keptS = skS.filter(v => v !== null);
+  const worst = fig.worst, best = fig.best;
   // The worst annual bias, measured off the middle frame. Not the skill: the
   // year-to-year skill swing is mostly the record's difficulty, and the bias is
   // the one line here a design is read off wrongly.
-  const low = bias.reduce((b, v, i) =>
-    (v !== null && isFinite(v) && (b < 0 || v < bias[b]) ? i : b), -1);
+  const low = fig.lowest_bias;
   return {
-    answer: low < 0
+    answer: low === null
       ? { value: '\u2014', of: 'no year holds enough usable pairs to score' }
-      : { value: (bias[low] > 0 ? '+' : '') + bias[low].toFixed(1) + ' sfu',
-          of: 'the worst annual bias, in ' + span[low] + ' \u2014 the outlook came in LOW, which is '
+      : { value: (low[1] > 0 ? '+' : '') + low[1].toFixed(1) + ' sfu',
+          of: 'the worst annual bias, in ' + low[0] + ' \u2014 the outlook came in LOW, which is '
             + 'the direction that costs propellant' },
     spec: {
-      finding: 'of the ' + kept.length + ' years with enough pairs to score, ' +
+      finding: 'of the ' + keptS.length + ' years with enough pairs to score, ' +
         keptS.filter(v => v !== null && v > 0).length + ' beat persistence and ' +
         bias.filter(v => v !== null && isFinite(v) && v < 0).length +
         ' came in low; the RMS frame tracks the level, not the skill',
@@ -2204,31 +2118,26 @@ function scoreBaseline(metric) {
   return [];
 }
 
-function issueAge(idx) {
-  const ds = idx.map(r => daysSince2000(r.issue_date)).filter(x => isFinite(x)).sort((a, b) => a - b);
-  const gaps = [];
-  for (let i = 1; i < ds.length; i++) { const g = ds[i] - ds[i - 1]; if (g > 0) gaps.push(g); }
-  const hist = new Map();
-  for (const g of gaps) hist.set(Math.min(g, 30), (hist.get(Math.min(g, 30)) || 0) + 1);
-  const xs = [...hist.keys()].sort((a, b) => a - b);
-  const mean = gaps.reduce((p, c) => p + c, 0) / gaps.length;
-  gaps.sort((a, b) => a - b);
+function issueAge(fig) {
+  // The gaps between issues, their median and mean, the commonest and how
+  // many run past a day are vleo_modules::record::issue_age; the page draws
+  // the bars.
+  const xs = fig.gap, ys = fig.count;
   return {
-    answer: { value: quantile(gaps, 0.5) + ' days',
+    answer: { value: fig.median + ' days',
       of: 'the median gap between one outlook and the next \u2014 how stale the newest one already '
         + 'is on a typical day, which no lead_days column says' },
     spec: {
-      finding: 'the tallest bar is at ' + xs[xs.map(k => hist.get(k))
-        .indexOf(Math.max(...xs.map(k => hist.get(k))))] + ' days, and ' +
-        (100 * gaps.filter(g => g > 1).length / gaps.length).toFixed(0) +
-        '% of the gaps are longer than one day',
-      x: { label: 'days between one issue and the next  [30 = 30 or more]', min: 0 },
+      finding: 'the tallest bar is at ' + fig.commonest + ' days, and ' +
+        fig.over_a_day_pct.toFixed(0) + '% of the gaps are longer than one day',
+      x: { label: 'days between one issue and the next  [' + fig.cap + ' = ' + fig.cap +
+        ' or more]', min: 0 },
       y: { label: 'number of gaps', min: 0 },
-      series: [{ name: '', kind: 'bars', x: xs, y: xs.map(k => hist.get(k)) }],
+      series: [{ name: '', kind: 'bars', x: xs, y: ys }],
     },
-    note: 'From forecast_issues.csv, the index of ' + idx.length + ' issues \u2014 the one table in ' +
+    note: 'From forecast_issues.csv, the index of ' + fig.issues + ' issues \u2014 the one table in ' +
       'this bundle nothing else reads. The outlook is not published daily: the gap between issues is ' +
-      'a median of ' + quantile(gaps, 0.5) + ' days and a mean of ' + mean.toFixed(2) +
+      'a median of ' + fig.median + ' days and a mean of ' + fig.mean.toFixed(2) +
       ', so on a typical day the newest outlook is already that old and its nominal lead understates ' +
       'the real one. A verification keyed on lead_days alone, as the rows here are, measures the ' +
       'forecast and not the staleness a user actually meets.',
