@@ -975,6 +975,16 @@ def _tree_sig(root):
     return h
 
 
+def _asks_and_ignores(d):
+    """Selftest: `design` asks the engine for a row, declares it, ignores it."""
+    js = d / "web" / "js" / "solar.js"
+    js.write_text(js.read_text().replace(
+        "    label: 'Design',\n",
+        "    engine: ['l3_solar_req_03'],\n    label: 'Design',\n", 1))
+    spec = d / "panels" / "design.toml"
+    spec.write_text(spec.read_text() + '\n[[engine]]\nrow = "l3_solar_req_03"\n')
+
+
 def selftest():
     """A panel wired to nothing must fail check two, and a blank one check one.
 
@@ -1033,11 +1043,13 @@ def selftest():
         # matches yesterday's reference — because it is drawing a perfectly
         # steady picture of a number nobody computed. Four of `design`'s numbers
         # were in exactly this state, one of them two revisions stale.
+        #
+        # No panel declares an `engine` row since phase 10 — every one reads an
+        # engine figure, which 2c holds — so the case builds the defect in the
+        # throwaway tree: `design` asks for the survival requirement's run, its
+        # spec says it reads it, and the picture takes nothing from the answer.
         ("a panel that asks the engine and ignores the answer",
-         lambda d: (d / "web" / "js" / "solar.js").write_text(
-             (d / "web" / "js" / "solar.js").read_text().replace(
-                 "      const req = rq.si;",
-                 "      const req = 150;")),
+         lambda d: _asks_and_ignores(d),
          "2b reads"),
         # 2c's: a panel that asks the engine for a figure and states a number
         # of its own. Renders, moves, matches — a correlation is four digits.
@@ -1065,11 +1077,13 @@ def selftest():
         # And the hole 2b's failed-state probe closes: before it, a panel whose
         # render THREW passed check 2, because a failed render blanks the canvas
         # and a blank canvas has a different signature from a drawn one.
+        # Only the F10.7 view asks for the row that is not there, so the panel
+        # opens and draws, and throws when check 2 moves its driver.
         ("a panel whose render throws",
          lambda d: (d / "web" / "js" / "solar.js").write_text(
              (d / "web" / "js" / "solar.js").read_text().replace(
-                 "engine: ['l3_solar_req_01',",
-                 "engine: ['sw_no_such_row',")),
+                 "{ v, reqf: o.reqf || 'l3_solar_req_01' }",
+                 "{ v, reqf: 'sw_no_such_row' }")),
          "2 moves"),
     ]
     for label, break_it, want in cases:
