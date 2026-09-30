@@ -74,15 +74,19 @@ fn known_keys() -> &'static std::collections::BTreeSet<&'static str> {
     static KNOWN: std::sync::OnceLock<std::collections::BTreeSet<&'static str>> =
         std::sync::OnceLock::new();
     KNOWN.get_or_init(|| {
-        let src: &'static str = include_str!("load.rs");
+        // Every file that reads a sheet's keys: the loader, and the method
+        // module, which reads the author's `[[case]]` blocks itself.
         let mut k = std::collections::BTreeSet::new();
-        let mut rest = src;
-        while let Some(i) = rest.find(".get(\"") {
-            rest = &rest[i + 6..];
-            if let Some(j) = rest.find('"') {
-                let key = &rest[..j];
-                if !key.is_empty() && key.chars().all(|c| c.is_ascii_alphanumeric() || c == '_') {
-                    k.insert(key);
+        for src in [include_str!("load.rs"), include_str!("method.rs")] {
+            let mut rest: &'static str = src;
+            while let Some(i) = rest.find(".get(\"") {
+                rest = &rest[i + 6..];
+                if let Some(j) = rest.find('"') {
+                    let key = &rest[..j];
+                    if !key.is_empty() && key.chars().all(|c| c.is_ascii_alphanumeric() || c == '_')
+                    {
+                        k.insert(key);
+                    }
                 }
             }
         }
@@ -828,5 +832,22 @@ impl Tree {
     }
     pub fn ordered(&self) -> Vec<&Sheet> {
         self.sheets.values().collect()
+    }
+}
+
+#[cfg(test)]
+mod keys_read {
+    /// A key read anywhere a sheet is read is a key the loader accepts: the
+    /// author's cases are read by the method module, not the loader, and a
+    /// node form carrying them was once refused as misspelt.
+    #[test]
+    fn the_keys_of_an_authors_case_are_known() {
+        let k = super::known_keys();
+        for key in ["case", "label", "refuse", "expect", "tolerance", "inputs"] {
+            assert!(
+                k.contains(key),
+                "`{key}` is read from a sheet and not known to the loader"
+            );
+        }
     }
 }
