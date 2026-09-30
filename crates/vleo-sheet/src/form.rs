@@ -1569,16 +1569,9 @@ pub fn refuse_agent_attribution(root: &std::path::Path, who: &str) -> Result<(),
     Ok(())
 }
 
-/// Today, as the sheets write it. Through `date` rather than a crate, as xtask
-/// does and for the reason it gives.
+/// Today, as the sheets write it (vleo_data::clock).
 fn today() -> String {
-    std::process::Command::new("date")
-        .arg("+%Y-%m-%d")
-        .output()
-        .ok()
-        .and_then(|o| String::from_utf8(o.stdout).ok())
-        .map(|s| s.trim().to_string())
-        .unwrap_or_default()
+    vleo_data::clock::today()
 }
 
 /// Put a name against the relation, replacing whatever was there.

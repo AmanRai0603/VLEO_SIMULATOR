@@ -10,6 +10,7 @@ repository.workspace = true
 
 [dependencies]
 toml = { workspace = true }
+vleo-data = { workspace = true }
 vleo-units = { workspace = true }
 
 [lints.rust]

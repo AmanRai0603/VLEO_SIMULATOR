@@ -39,6 +39,8 @@
 //! text, and until then a format anybody can read in a text editor is worth
 //! more than one that needs a library to inspect.
 
+pub mod clock;
+
 use std::collections::BTreeMap;
 use std::fs;
 use std::path::{Path, PathBuf};

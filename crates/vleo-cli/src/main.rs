@@ -720,15 +720,9 @@ fn cmd_cases() -> Result<(), String> {
     Ok(())
 }
 
-/// Now, as a result records it: UTC, to the second.
+/// Now, as a result records it: UTC, to the second (vleo_data::clock).
 fn now_utc() -> String {
-    std::process::Command::new("date")
-        .args(["-u", "+%Y-%m-%dT%H:%M:%SZ"])
-        .output()
-        .ok()
-        .and_then(|o| String::from_utf8(o.stdout).ok())
-        .map(|s| s.trim().to_string())
-        .unwrap_or_default()
+    vleo_data::clock::now_utc()
 }
 
 /// A saved result, as it was when it was saved. Runs nothing: a result read
