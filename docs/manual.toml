@@ -2125,7 +2125,7 @@ who = "developer"
 [[cannot]]
 place = "terminal"
 what = "Show a figure, or click from a number to where it came from"
-why = "The terminal prints the numbers, the chain behind each and every blocked row; pictures are the browser's."
+why = "The terminal prints the numbers — a row's, the chain behind each and every blocked row, and with `vleo figure` the numbers a panel draws; pictures are the browser's."
 instead = "The browser: the row's page, and the panels on layer 3."
 who = "user"
 
@@ -2533,6 +2533,14 @@ name = "result"
 usage = "result <file|folder> [--html <out.html>]"
 what = "A saved result shown as it was — nothing runs. Reads a result's folder, the CSV `run --save` writes, or the report page it rides in; `--html` writes that report, to send."
 who = "user"
+effect = "reads"
+
+[[command]]
+tool = "vleo"
+name = "figure"
+usage = "figure <id> [key=value ...]"
+what = "The numbers one figure of the solar-weather record draws, as the JSON its panel reads — the same function as `/v1/figures/solar/<id>`, on the same bundle and saved case. From Python, `vleo.figure(id, **params)` returns the same as a dict. An unknown id or key is refused by name, with a failing exit status."
+who = "everyone"
 effect = "reads"
 
 [[command]]

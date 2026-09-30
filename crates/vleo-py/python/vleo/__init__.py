@@ -91,9 +91,32 @@ def serve(port=7777, open=True):
     return _engine.serve(kit_root(), port, open)
 
 
+def figure(id, **params):
+    """The numbers one figure of the solar-weather record draws, as a dict.
+
+    The same answer the tool's panel reads, from the same function, bundle and
+    saved case — so a picture can be checked, kept or drawn again here::
+
+        vleo.figure("growth", v="ap", by="cycle")["change"]
+
+    An id, driver or view the engine does not know is refused: the dict
+    carries ``ok: False`` and a ``message`` naming what it would accept, and
+    this raises ``ValueError`` with that message rather than hand back a
+    figure that is not the one asked for.
+    """
+    import json
+    from urllib.parse import urlencode
+
+    answer = json.loads(_engine.figure(id, urlencode({k: str(v) for k, v in params.items()}),
+                                       kit_root()))
+    if not answer.get("ok"):
+        raise ValueError(answer.get("message", "the engine refused the figure"))
+    return answer
+
+
 try:
     from ._build import VERSION as __version__
 except ImportError:  # a developer's build
     __version__ = "dev"
 
-__all__ = ["Result_", "nodes", "evaluate", "sweep", "version", "serve", "kit_root"]
+__all__ = ["Result_", "nodes", "evaluate", "sweep", "version", "serve", "kit_root", "figure"]

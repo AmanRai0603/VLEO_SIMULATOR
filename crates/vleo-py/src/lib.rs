@@ -195,6 +195,17 @@ fn version() -> (String, String, usize) {
     )
 }
 
+/// One figure of the solar-weather record, as the JSON text the browser's
+/// panel reads — the same function the tool's `/v1/figures/solar/<id>` route
+/// answers with, from the same bundle and the same saved case. `query` is a
+/// query string; `vleo.figure` builds it from keyword arguments and parses
+/// the answer.
+#[pyfunction]
+#[pyo3(signature = (id, query = "", root = None))]
+fn figure(py: Python<'_>, id: &str, query: &str, root: Option<String>) -> String {
+    py.allow_threads(|| vleo_server::figure(root.map(Into::into), id, query))
+}
+
 /// Start the whole tool — the pages and the engine — on loopback, in the
 /// background, and return the port it took. `root` is where the pages and the
 /// tree are; the package passes the copy it carries.
@@ -213,5 +224,6 @@ fn _vleo(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(evaluate, m)?)?;
     m.add_function(wrap_pyfunction!(sweep, m)?)?;
     m.add_function(wrap_pyfunction!(version, m)?)?;
+    m.add_function(wrap_pyfunction!(figure, m)?)?;
     Ok(())
 }

@@ -89,6 +89,7 @@ fn main() -> ExitCode {
         "cases" => cmd_cases(),
         "inputs" => cmd_inputs(&rest),
         "result" => cmd_result(&rest),
+        "figure" => cmd_figure(&rest),
         "selftest" => cmd_selftest(),
         "data" => cmd_data(&rest),
         "version" => {
@@ -154,6 +155,13 @@ vleo <command>
                        result's folder, the CSV `run --save` writes, or the
                        report page it rides in; --html writes that report, to
                        send to someone.
+  figure <id> [key=value ...]
+                       the numbers one figure of the solar-weather record
+                       draws, as the JSON the browser's panel reads — the same
+                       function, the same bundle, the same saved case. The ids
+                       and their keys are listed in the manual; an unknown one
+                       is refused by name and the exit status says so.
+                       e.g. `vleo figure growth v=ap by=cycle`
   selftest             every fixture declaration in the tree is sound —
                        provenance outside the code, a positive tolerance.
                        It does not execute them: `cargo test` does.
@@ -666,6 +674,35 @@ fn cmd_list(args: &[&str]) -> Result<(), String> {
     println!();
     for (s, n) in by_sub {
         println!("  {s:<10} {n}");
+    }
+    Ok(())
+}
+
+/// One figure of the record, as the engine works it out for the panel that
+/// draws it. Printed as the JSON the page reads, so what a person sees on the
+/// canvas can be checked, kept or plotted again from a script.
+fn cmd_figure(args: &[&str]) -> Result<(), String> {
+    let id = *args
+        .first()
+        .ok_or("usage: vleo figure <id> [key=value ...]  — e.g. vleo figure growth v=ap")?;
+    let mut query = Vec::new();
+    for a in &args[1..] {
+        let (k, v) = a
+            .split_once('=')
+            .ok_or_else(|| format!("'{a}' is not key=value"))?;
+        // The pair is carried as a query string; a character that would
+        // change what the query says is refused rather than quietly split.
+        if k.is_empty() || [k, v].iter().any(|s| s.contains(['&', '#', '?', ' '])) {
+            return Err(format!("'{a}' is not a plain key=value"));
+        }
+        query.push(format!("{k}={v}"));
+    }
+    let json = vleo_server::figure(None, id, &query.join("&"));
+    println!("{json}");
+    if json.starts_with("{\"ok\":false") {
+        return Err(format!(
+            "the engine refused the figure '{id}' — the message is above"
+        ));
     }
     Ok(())
 }

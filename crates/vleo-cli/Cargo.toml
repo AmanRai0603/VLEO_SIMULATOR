@@ -17,6 +17,9 @@ vleo-modules = { workspace = true, features = ["std"] }
 vleo-bus = { workspace = true, features = ["std"] }
 vleo-core = { workspace = true, features = ["std"] }
 vleo-data = { workspace = true }
+# The one place a figure of the record is worked out — the same function the
+# daemon's /v1/figures route answers with, so `vleo figure` cannot drift from it.
+vleo-server = { workspace = true }
 
 [lints.rust]
 unsafe_code = "forbid"
