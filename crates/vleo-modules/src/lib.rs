@@ -190,6 +190,7 @@ pub fn why_not_suppliable(id: &str) -> Option<String> {
     ))
 }
 
+pub mod design;
 pub mod figure;
 pub mod inputs;
 /// The numbers the record's figures draw (phase 10): read from the reference

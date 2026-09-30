@@ -153,6 +153,23 @@ export async function engineFigure(id, params) {
 }
 
 /**
+ * A figure worked out ON THE CASE THE READER IS LOOKING AT: the saved case with
+ * their overrides laid over it, as `engineSweep` and `engineLevers` ask. The
+ * design and closure figures sweep the design itself, so they take it; a figure
+ * of the record alone has no case to take and asks `engineFigure`.
+ *
+ * Kept for as long as the page is open, per question — the overrides are part
+ * of the question, so changing one asks again and changing it back does not.
+ */
+const onCase = new Map();
+export function engineFigureOnCase(id, params) {
+  const q = withOverrides(new URLSearchParams(params));
+  const key = id + '?' + q.toString();
+  if (!onCase.has(key)) onCase.set(key, engineFigure(id, q));
+  return onCase.get(key);
+}
+
+/**
  * ONE RELATION, AT GIVEN INPUTS — `/v1/probe`, and not `/v1/run`.
  *
  * The two answer different questions and only recently had to. `run` asks what

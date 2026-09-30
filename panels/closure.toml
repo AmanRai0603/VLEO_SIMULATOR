@@ -88,20 +88,31 @@ ready = """(async () => {
 
 
 # Check 3, the pixel comparison, is declined for this panel. Checks 1, 2,
-# 2b and 4 still run: it renders, it moves, it reads the engine and it
-# undoes an interaction to the pixel.
+# 2c and 4 still run: it renders, it moves, it states what the engine worked
+# out and it undoes an interaction to the pixel.
 pixel_reference = false
-pixel_reference_why = """a closure's margin and sense are checked by gate 7d and 7e on the sheet, and check 2b proves this panel reads the closure rather than restating it"""
+pixel_reference_why = """a closure's margin and sense are checked by gate 7d and 7e on the sheet, and check 2c proves this panel draws the engine's closure rather than restating it"""
 
 [[input]]
 name = "pair"
 drive = "(() => { const s = document.querySelector('.sw-opt[data-k=pair]'); if (!s) throw new Error('no pair control'); s.value = '03'; s.dispatchEvent(new Event('change')); })()"
 why = """each pair is a different requirement, a different achieved quantity and a different sweep axis; one picture for two of them means the control is ignored"""
 
-[[engine]]
-row = "l3_solar_ach_04"
-why = """the bottom frame IS this row — a panel drawing a margin that does not move when the engine's margin moves is drawing a literal"""
-
-[[engine]]
-row = "l3_solar_req_04"
-why = """the dashed line is this row's declared value, and it was the requirement literals in the design panel that went two revisions stale before anything noticed"""
+# THE WHOLE PICTURE IS THE ENGINE'S (phase 10l). The `closure` figure takes
+# /v1/levers' own ranking of what spends this margin fastest, sweeps the margin
+# and the achieved quantity over it on the reader's case, reads both rows' own
+# answers, and finds where each runs out (vleo_modules::design). It replaces
+# the two [[engine]] rows this panel declared — l3_solar_ach_04, whose margin
+# the bottom frame IS, and l3_solar_req_04, the dashed line — because the page
+# no longer runs them itself: the figure carries them as `now` and `req`, and
+# check 2c moves each number in it and demands the panel say something
+# different.
+#
+# `cross` and `cross_q` are not declared, and cannot be: no pair's margin runs
+# out anywhere in its lever's declared range as the tree stands, so both are
+# null and there is no number for the check to move. vleo_modules::design's
+# own tests hold the crossing, and it was compared with the page's former code
+# on a forced crossing when it moved. `agree` is a yes or no, not a number.
+[[figures]]
+id = "closure"
+reads = ["lever", "x", "margin", "value", "req", "now", "points_refused"]

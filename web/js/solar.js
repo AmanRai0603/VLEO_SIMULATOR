@@ -20,9 +20,7 @@
 
 import { $, esc } from './dom.js';
 import { S } from './state.js';
-import { solarRecord, engineValues, engineSweep, engineAt,
-  engineProbe, probeSweep, engineFigure,
-  engineLevers, num } from './record.js';
+import { solarRecord, engineValues, engineFigure, engineFigureOnCase } from './record.js';
 import { drawChart, attachHover, tableFor, tableTsv, viewSpec, viewIsOn,
   watchScheme, sizeCanvas, cssSize, INK, exportFigure } from './chart.js';
 
@@ -106,22 +104,21 @@ function shape(xs, ys, unit, xunit, xname) {
 // the panels
 
 /**
- * The five closures, as the panel beneath needs to name them.
- *
- * `q` is the ACHIEVED QUANTITY's row, which is not the closure row: since §20 an
- * achieved row publishes the signed margin and reads the quantity as an input, so
- * a picture of "what the record gives" has to sweep the input rather than the row
- * that is named for it. Written out once here because getting that wrong would
- * draw a margin on an axis labelled sfu and look entirely plausible.
+ * What a figure's sweeps refused, said rather than drawn around. A point the
+ * engine would not answer is left out of the curve, and a curve joined across a
+ * gap looks like one that has none; empty when every point answered.
  */
-const QUANTITY_OF = {
-  '01': 'sw_f107_design_long',
-  '02': 'sw_f107_design_short',
-  '03': 'sw_storm_return_level',
-  '04': 'sw_ap_design_long',
-  '05': 'sw_ap_design_short',
-};
+function refusedPoints(n) {
+  return n ? '\n\n' + n + (n === 1 ? ' swept point was' : ' swept points were') +
+    ' refused by the engine and ' + (n === 1 ? 'is' : 'are') +
+    ' not drawn: the curve is joined across the gap, and the gap is not a value.' : '';
+}
 
+/**
+ * The five closures, as the panel beneath needs to name them. Which quantity
+ * each compares is the engine's (vleo_modules::design::CLOSURE_PAIRS) and
+ * comes back on the figure; what a person calls it is the face's.
+ */
 const PAIR_LABEL = {
   '01': { q: 'sustained F10.7 to design to', u: 'sfu', text:
     'The F10.7 level the mission must sustain, against the level the record gives it. Both sides ' +
@@ -147,10 +144,6 @@ const PAIR_LABEL = {
     'survival pair disagree by a factor of 1.75 without either being wrong.' },
 };
 
-// One sweep per pair, kept for as long as the page is open. The five pairs do not
-// change while a reader clicks between them, and re-asking the engine for a sweep
-// it has already answered is four questions nobody is looking at.
-const CLOSURE_CACHE = {};
 
 
 /**
@@ -1017,12 +1010,6 @@ const PANELS = [
       'sw_f107_cold_short', 'l3_solar_req_01',
       // §26 D4's leftover: the one row in the subsystem that no figure cited.
       'sw_window_peak_level'],
-    // WHAT THIS PANEL ASKS THE ENGINE FOR, rather than carrying a copy of.
-    // `rows` says what the picture argues about; `engine` says what it reads,
-    // and panel_check holds it to the second. The literals these replace had
-    // gone stale by two revisions — §21.1 lists them.
-    engine: ['l3_solar_req_01', 'l3_solar_req_03',
-      'l3_solar_req_04', 'l3_solar_req_05', 'l3_solar_req_02'],
     label: 'Design',
     draws: 'The design window: what the record expects against what the vehicle is built for.',
     asks: 'Will the design be exceeded, and if so beyond what mission length?',
@@ -1051,109 +1038,62 @@ const PANELS = [
         ['l3_solar_req_02', 'single day — req_02'],
       ] },
     ],
-    // THE TWO RELATIONS THIS PANEL DRAWS, ASKED OF THE ENGINE RATHER THAN
-    // COPIED. `A = 92.515531, B = 40.926516` were sw_storm_return_level's fit
-    // constants written out here, and `{1: 48, 2: 80, 3: 132}` was sw_ap_design's
-    // G-to-Ap conversion written out here. A figure carrying a row's constants
-    // is a second copy of that row, and it goes stale silently: the centre this
-    // panel drew was two revisions old before anything noticed. Both are swept
-    // from the rows now, so the picture is the relation the engine computes.
+    // THE RELATIONS THIS PANEL DRAWS, AND WHAT IT SAYS ABOUT THEM, ARE THE
+    // ENGINE'S. `A = 92.515531, B = 40.926516` were sw_storm_return_level's fit
+    // constants written out here once, and `{1: 48, 2: 80, 3: 132}` was
+    // sw_ap_design's G-to-Ap conversion; a figure carrying a row's constants is a
+    // second copy of that row, and it goes stale silently — §21. Both were
+    // swept from the rows after that, and the crossings, the record's days above
+    // the bound and the F10.7 window's width were still worked out here. The
+    // `design` figure now does all of it (vleo_modules::design), on the case the
+    // reader is looking at, overrides and all, and the page draws:
     //
-    // Neither sweep depends on a control, so both are fetched once here rather
-    // than on every redraw.
-    async data() {
-      const dur = S.byId.get('sys_mission_requirements_mission_duration');
-      const glv = S.byId.get('sw_storm_design_level');
-      // The F10.7 half is the four rows §20 built for it — hot and cold, each
-      // sustained and single-day. That IS the design window, and it is built
-      // with the within-rotation spread conditioned on the level it applies at.
-      // The panel used to compute `centre + p95` here, which is the relation of
-      // sw_f107_design — the row §20 DEPRECATED, and the method the record puts
-      // 74 per cent high. Drawing a retired method beside live rows is how a
-      // figure tells a reader something the tree has stopped believing.
-      const [ret, gmap, fl, fs, cl, cs, pk] = await Promise.all([
-        engineSweep('sw_storm_return_level', 'sys_mission_requirements_mission_duration',
-          dur.lo, dur.hi, 120),
-        engineSweep('sw_ap_design', 'sw_storm_design_level', glv.lo, glv.hi, 3),
-        engineSweep('sw_f107_design_long', 'sys_mission_requirements_mission_duration',
-          dur.lo, dur.hi, 60),
-        engineSweep('sw_f107_design_short', 'sys_mission_requirements_mission_duration',
-          dur.lo, dur.hi, 60),
-        engineSweep('sw_f107_cold_long', 'sys_mission_requirements_mission_duration',
-          dur.lo, dur.hi, 60),
-        engineSweep('sw_f107_cold_short', 'sys_mission_requirements_mission_duration',
-          dur.lo, dur.hi, 60),
-        // THE LAST ROW IN THE SUBSYSTEM WITH NO FIGURE, and it belongs here.
-        //
-        // sw_window_peak_level is the maximum of the same cycle analogue the four
-        // design rows are built on a MEAN of, over the same window, against the
-        // same axis. It was the one row §26's D4 left over — nothing read it and
-        // no panel cited it — and the reason it was worth keeping rather than
-        // removing is visible only when it is drawn beside them: it rises
-        // monotonically with mission length, because a longer window can only
-        // contain more of the cycle, while every design curve follows the window
-        // MEAN and wanders with where the window ends. Past about eight years the
-        // analogue's own peak is above the hot single-day design value, which is
-        // a design sized on a mean sitting under the thing it averages.
-        engineSweep('sw_window_peak_level', 'sys_mission_requirements_mission_duration',
-          dur.lo, dur.hi, 60),
-      ]);
-      return { ret, gmap, win: { fl, fs, cl, cs, pk } };
+    //   Ap:    sw_storm_return_level swept over the mission duration, the bound
+    //          read off sw_ap_design swept over the G level, the requirement's
+    //          own answer, where the curve reaches each, and the days of the
+    //          record at or above the bound, in how many runs.
+    //   F10.7: the four rows §20 built for the window — hot and cold, each
+    //          sustained and single-day — and sw_window_peak_level, swept over
+    //          the mission duration; the worst single day, the window's width
+    //          and where the analogue's peak first climbs above the hot day.
+    //
+    // The F10.7 half used to draw `centre + p95`, which is sw_f107_design's
+    // relation — the row §20 DEPRECATED, and the method the record puts 74 per
+    // cent high. sw_window_peak_level was §26 D4's leftover, the one row in the
+    // subsystem no figure cited; it belongs here because it is the MAXIMUM of
+    // the analogue the four design rows are built on a MEAN of, and past about
+    // eight years it stands above the hot single-day design value.
+    data(o) {
+      const v = (o && o.v) || 'ap';
+      return engineFigureOnCase('design', v === 'f107'
+        ? { v, reqf: o.reqf || 'l3_solar_req_01' }
+        : { v, g: o.g || '3', req: o.req || 'l3_solar_req_03' });
     },
-    build(rec, o, extra, eng) {
-      if (o.v === 'f107') return f107Window(extra, o, eng);
-      // The relation as the ENGINE computes it, swept from sw_storm_return_level
-      // rather than re-stated from its constants. A figure that carries a row's
-      // coefficients is a second copy of that row.
-      const YR = 31557600;
-      const xs = extra.ret.x.map(v => v / YR);
-      const ys = extra.ret.y.slice();
-      // sw_ap_design's own G-to-Ap conversion, swept over the G level. The
-      // sweep returns the three points in the order of the level, so the bound
-      // is read off by index rather than from a table written out here.
-      const gi = extra.gmap.x.indexOf(+o.g);
-      if (gi < 0 || extra.gmap.y[gi] === undefined) {
-        throw new Error('sw_ap_design did not answer at G' + o.g);
-      }
-      const bound = extra.gmap.y[gi];
-      const rq = eng[o.req];
-      if (!rq || rq.si === undefined) {
-        throw new Error(o.req + ' did not answer: ' + ((rq && rq.refused) || 'not asked'));
-      }
-      const req = rq.si;
-      // Where the curve crosses a level, read off the swept points by
-      // interpolation. The closed form needed the fit constants; this needs
-      // only the curve, which is the thing actually drawn.
-      const cross = (ap) => {
-        for (let i = 1; i < ys.length; i++) {
-          if ((ys[i - 1] - ap) * (ys[i] - ap) <= 0 && ys[i] !== ys[i - 1]) {
-            const f = (ap - ys[i - 1]) / (ys[i] - ys[i - 1]);
-            return xs[i - 1] + f * (xs[i] - xs[i - 1]);
-          }
-        }
-        return ap <= ys[0] ? xs[0] : NaN;
-      };
-      // What the record actually did above the bound, counted here from the
-      // record rather than taken from the rows, because the panel must be able
-      // to answer for a level the rows are not set to.
-      const days = rec.days.filter(d => d.ap !== null);
-      const years = days.length / 365.25;
-      const above = days.filter(d => d.ap >= bound);
-      let runs = 0, prev = -99;
-      for (const d of above) { if (d.t !== prev + 1) runs++; prev = d.t; }
-      const rate = above.length / years;
-      const hitsAt = cross(bound);
+    build(rec, o, fig) {
+      if (fig.refused) throw new Error('the engine did not work the figure out: ' + fig.refused);
+      if (fig.view === 'f107') return f107Window(fig);
+      // Mission length in years, and the return level the engine swept across
+      // it — the relation as the engine computes it.
+      const xs = fig.years, ys = fig.level;
+      const bound = fig.bound, req = fig.req, g = fig.g, reqId = fig.req_id;
+      // Where the curve reaches the bound and the requirement, read off the
+      // swept points by the engine; null where it never does inside the range.
+      const hitsAt = fig.hits_at, reqAt = fig.req_at;
+      const yr2 = v => (v === null ? 'never inside the declared range' : v.toFixed(2));
+      // What the record did above the bound, counted by the engine from the
+      // record itself, so it answers for a level the rows are not set to.
+      const r = fig.record;
       return {
-        answer: !isFinite(hitsAt)
+        answer: hitsAt === null
           ? { value: 'never', of: 'the design level is not reached inside the declared range' }
           : { value: sig(hitsAt) + ' yr', of: 'before the record expects a storm above the ' +
-              'G' + o.g + ' design level of Ap ' + bound.toFixed(0) },
+              'G' + g + ' design level of Ap ' + bound.toFixed(0) },
         spec: {
-          finding: !isFinite(hitsAt)
+          finding: hitsAt === null
             ? 'the curve stays under the design level across the whole declared range'
             : 'the curve enters the shaded region at ' + hitsAt.toFixed(2) +
-              ' yr and never leaves it; ' + (isFinite(cross(req))
-                ? 'it reaches the requirement at ' + cross(req).toFixed(2) + ' yr'
+              ' yr and never leaves it; ' + (reqAt !== null
+                ? 'it reaches the requirement at ' + reqAt.toFixed(2) + ' yr'
                 : 'the requirement is not reached inside the declared range'),
           x: { label: 'mission length  [years]', min: xs[0], max: xs[xs.length - 1] },
           y: { label: 'daily Ap the record expects once in that time  [-]' },
@@ -1174,28 +1114,32 @@ const PANELS = [
             // Ap 207 — so the wash started at one line and was coloured like the
             // other. A region belongs to the edge it opens at.
             { axis: 'y', from: bound, label: '', colour: INK.mark, alpha: 0.05 },
-            { axis: 'y', at: bound, label: 'designed for G' + o.g + ' = Ap ' + bound.toFixed(0) +
+            { axis: 'y', at: bound, label: 'designed for G' + g + ' = Ap ' + bound.toFixed(0) +
               '  (sw_ap_design)', row: 'sw_ap_design' },
-            { axis: 'y', at: req, label: 'required ≤ ' + req.toFixed(0) + '  (' + o.req + ')',
-              colour: INK.bound, row: o.req },
+            { axis: 'y', at: req, label: 'required ≤ ' + req.toFixed(0) + '  (' + reqId + ')',
+              colour: INK.bound, row: reqId },
           ],
           // A NOTE, NOT A RULE. This was a dashed line the full height of the
           // frame carrying "exceeds the design at 2.62 yr" at the top, which is
           // a fact about a POINT ON THE CURVE told at the ceiling. It now points
           // where it happens, and the frame is one long dashed line lighter for
           // it.
-          notes: !isFinite(hitsAt) ? [] : [{
+          notes: hitsAt === null ? [] : [{
             x: hitsAt, y: bound,
             text: 'exceeded here — ' + hitsAt.toFixed(2) + ' yr',
           }],
         },
-        note: 'The design bound is exceeded beyond a ' + cross(bound).toFixed(2) + '-year mission and the ' +
-          o.req + '\u2019s ' + req.toFixed(0) + ' beyond ' + cross(req).toFixed(2) +
+        note: 'The design bound is exceeded beyond a ' + yr2(hitsAt) + '-year mission and the ' +
+          reqId + '\u2019s ' + req.toFixed(0) + (reqAt === null
+            ? ' is not reached inside the declared range'
+            : ' beyond ' + reqAt.toFixed(2)) +
           '. Over a 5-year mission the record holds ' +
-          (5 * rate).toFixed(2) + ' days above Ap ' + bound.toFixed(0) + ', in about ' + (5 * runs / years).toFixed(2) +
-          ' separate events — ' + above.length + ' days in ' + runs + ' events across ' +
-          years.toFixed(2) + ' years of record. That the exceedance is brief and rare is what makes ' +
-          'the bound acceptable rather than failed, and it is only knowable because it is counted.',
+          (5 * r.rate).toFixed(2) + ' days above Ap ' + bound.toFixed(0) + ', in about ' +
+          (5 * r.runs / r.years).toFixed(2) +
+          ' separate events — ' + r.above + ' days in ' + r.runs + ' events across ' +
+          r.years.toFixed(2) + ' years of record. That the exceedance is brief and rare is what makes ' +
+          'the bound acceptable rather than failed, and it is only knowable because it is counted.' +
+          refusedPoints(fig.points_refused),
       };
     },
   },
@@ -1226,12 +1170,6 @@ const PANELS = [
       'l3_solar_req_04', 'l3_solar_req_05',
       'l3_solar_ach_01', 'l3_solar_ach_02', 'l3_solar_ach_03',
       'l3_solar_ach_04', 'l3_solar_ach_05'],
-    // Both sides of all five, so the panel never computes a margin itself: the
-    // achieved rows ARE the margins and the requirement rows are the bounds.
-    engine: ['l3_solar_ach_01', 'l3_solar_ach_02', 'l3_solar_ach_03',
-      'l3_solar_ach_04', 'l3_solar_ach_05',
-      'l3_solar_req_01', 'l3_solar_req_02', 'l3_solar_req_03',
-      'l3_solar_req_04', 'l3_solar_req_05'],
     label: 'Closure',
     draws: 'Each requirement against what the record gives it, and the margin between them.',
     asks: 'Does the design close against the sky, and what spends the margin fastest?',
@@ -1253,84 +1191,43 @@ const PANELS = [
       const m = /^l3_solar_(?:ach|req)_(0[1-5])$/.exec(rowId);
       if (m) o.pair = m[1];
     },
-    async data(o) {
-      const n = (o && o.pair) || '01';
-      const ach = 'l3_solar_ach_' + n, req = 'l3_solar_req_' + n;
-      const key = ach;
-      CLOSURE_CACHE.want = CLOSURE_CACHE.want || new Map();
-      if (CLOSURE_CACHE.want.has(key)) return CLOSURE_CACHE.want.get(key);
-      const pr = (async () => {
-        // THE AXIS IS THE ENGINE'S ANSWER, NOT THE AUTHOR'S. Levers come back
-        // ordered by how much they move this row, and the requirement is always
-        // near the top of that list because a margin is a fraction OF it —
-        // moving the bound moves the margin by construction and says nothing
-        // about the sky. What a designer wants is the decision that spends the
-        // margin they have, so the bound is skipped and the next one taken.
-        const levers = await engineLevers(ach);
-        const lv = levers.find(l => l.id !== req && l.span > 0) || null;
-        if (!lv) return { lv: null };
-        const quantity = QUANTITY_OF[n];
-        const [mar, qty] = await Promise.all([
-          engineSweep(ach, lv.id, lv.lower, lv.upper, 90),
-          engineSweep(quantity, lv.id, lv.lower, lv.upper, 90),
-        ]);
-        return { lv, quantity, mar, qty };
-      })();
-      CLOSURE_CACHE.want.set(key, pr);
-      return pr;
+    // THE WHOLE PICTURE IS THE ENGINE'S, including what it says. The `closure`
+    // figure asks /v1/levers' own ranking which decision spends this margin
+    // fastest — skipping the requirement, which a margin is a fraction OF, so
+    // moving it moves the margin by construction and says nothing about the sky
+    // — sweeps the margin and the achieved quantity over it, on the case the
+    // reader is looking at, and finds where each runs out: the margin through
+    // zero, and, from a different array, the achieved curve through the
+    // requirement. panels/closure.toml says those are the same x, and the
+    // figure measures it (vleo_modules::design). The achieved rows ARE the
+    // margins and the requirement rows the bounds, so nothing here computes one.
+    data(o) {
+      return engineFigureOnCase('closure', { pair: (o && o.pair) || '01' });
     },
-    build(rec, o, extra, eng) {
-      const n = o.pair || '01';
-      const ach = 'l3_solar_ach_' + n, req = 'l3_solar_req_' + n;
+    build(rec, o, fig) {
+      if (fig.refused) throw new Error('the engine did not work the figure out: ' + fig.refused);
+      const n = fig.pair;
+      const ach = fig.ach, req = fig.req_id;
       const title = PAIR_LABEL[n];
-      if (!extra || !extra.lv) {
+      if (!fig.lever) {
         throw new Error('no decision upstream of ' + ach + ' moves its margin, so there is ' +
           'nothing to sweep it over — which is itself worth knowing and not worth drawing');
       }
-      const { lv, quantity, mar, qty } = extra;
-      // SI out of the engine, divided back by the factor the sweep reports, the
-      // same boundary rule every other panel here obeys.
-      const x = mar.x.map(v => v / mar.x_factor);
-      const margin = mar.y.map(v => v / mar.y_factor);
-      const value = qty.y.map(v => v / qty.y_factor);
+      const lv = fig.lever, quantity = fig.quantity;
+      // In the units a person reads, as the engine divided them back.
+      const x = fig.x, margin = fig.margin, value = fig.value;
       // The requirement is a declared number: it does not move when an
       // environmental decision does, and drawing it as a flat line is the whole
-      // point — it is what the achieved curve has to stay under. Divided by the
-      // sweep's own factor rather than read off `shown`, which is a formatted
-      // string for a person.
-      const rq = eng[req];
-      const reqV = rq && isFinite(rq.si) ? rq.si / (qty.y_factor || 1) : null;
-      // Where the two cross, which is where the margin goes through zero.
-      let cross = null;
-      for (let k = 1; k < margin.length; k++) {
-        const a = margin[k - 1], b = margin[k];
-        if (a === null || b === null || !isFinite(a) || !isFinite(b)) continue;
-        if ((a > 0) !== (b > 0)) { cross = x[k - 1] + (x[k] - x[k - 1]) * a / (a - b); break; }
-      }
-      // THE TOP FRAME'S CROSSING, COMPUTED FROM THE TOP FRAME. `cross` above is
-      // where the MARGIN goes through zero; this is where the achieved curve
-      // meets the requirement line. panels/closure.toml says the two must be the
-      // same x, and until now that was a check a person made by looking — which
-      // is exactly the kind of agreement worth measuring, because the two come
-      // from different arrays and a panel where they disagreed would still draw.
-      let crossQ = null;
-      if (reqV !== null) {
-        for (let k = 1; k < value.length; k++) {
-          const a2 = value[k - 1] - reqV, b2 = value[k] - reqV;
-          if (a2 === null || b2 === null || !isFinite(a2) || !isFinite(b2)) continue;
-          if ((a2 > 0) !== (b2 > 0)) {
-            crossQ = x[k - 1] + (x[k] - x[k - 1]) * a2 / (a2 - b2);
-            break;
-          }
-        }
-      }
-      const agree = cross !== null && crossQ !== null &&
-        Math.abs(cross - crossQ) <= Math.abs(x[x.length - 1] - x[0]) * 1e-6;
-      const now = eng[ach] && isFinite(eng[ach].si) ? eng[ach].si : null;
+      // point — it is what the achieved curve has to stay under.
+      const reqV = fig.req;
+      const cross = fig.cross, crossQ = fig.cross_q, agree = fig.agree;
+      const now = fig.now;
       const marks = cross === null ? [] : [{ axis: 'x', at: cross,
         label: 'the margin runs out here' }];
       // The achieved curve on one side of zero margin, cut exactly where the
-      // margin changes sign. `want` true is the side with margin left.
+      // margin changes sign. `want` true is the side with margin left. This is
+      // drawing — where one fill stops and the other starts — and it cuts at
+      // the same interpolation the engine's crossing is.
       const bandSide = want => {
         const xx = [], yy = [];
         const sgn = k => (margin[k] === null || !isFinite(margin[k]) ? null : margin[k] >= 0);
@@ -1455,7 +1352,8 @@ const PANELS = [
           '\n\nThe top frame and the bottom one are the same fact twice, and both are here ' +
           'because they answer different questions. The crossing says WHERE; the signed fraction ' +
           'says HOW MUCH, in a unit that compares across the five closures — the requirements are ' +
-          'in sfu and in Ap and cannot be set beside each other, and their margins can.',
+          'in sfu and in Ap and cannot be set beside each other, and their margins can.' +
+          refusedPoints(fig.points_refused),
       };
     },
   },
@@ -2049,40 +1947,25 @@ function issueAge(fig) {
  * rather than one spread used at every level. Together they ARE the design
  * window, which is what this panel's own label has always claimed to draw.
  */
-function f107Window(extra, o, eng) {
-  const rq = eng && eng[o.reqf];
-  if (!rq || rq.si === undefined) {
-    throw new Error((o.reqf || 'the F10.7 requirement') + ' did not answer: ' +
-      ((rq && rq.refused) || 'the engine was not asked'));
-  }
-  const REQ = rq.si;
-  // sw_central_expectation is NOT read here any more, and the panel no longer
-  // declares it. The four design-window rows carry the centre inside
-  // themselves; guarding on a value this figure does not draw would be a
-  // declaration the panel cannot honour, and 2b says so — it caught exactly
-  // that within a minute of this rewrite.
-  const YR = 31557600;
-  const w = extra.win;
-  const xs = w.fl.x.map(v => v / YR);
-  const hot = w.fs.y, hotLong = w.fl.y, coldLong = w.cl.y, cold = w.cs.y;
-  const analogue = w.pk.y;
-  const peak = Math.max(...hot);
-  // How wide the filled window actually is, along its length — the fill's own
-  // two edges, so the sentence and the area are the same measurement.
-  const band = xs.map((_, k) => hot[k] - cold[k]).filter(v => v !== null && isFinite(v));
-  // Where the analogue's own maximum climbs above the hot single-day design
-  // value, which is the finding this fifth line is here for.
-  let over = null;
-  for (let k = 0; k < xs.length; k++) {
-    if (analogue[k] !== null && hot[k] !== null && analogue[k] > hot[k]) { over = xs[k]; break; }
-  }
+function f107Window(fig) {
+  // The requirement's own answer, the five curves swept over mission length,
+  // and what the engine says about them — the worst single day, the margin
+  // left above it, the window's width along its length (its own two edges, so
+  // the sentence and the area are one measurement) and where the analogue's
+  // peak first climbs above the hot single day (vleo_modules::design).
+  const REQ = fig.req, reqf = fig.reqf;
+  const xs = fig.years;
+  const hot = fig.hot, hotLong = fig.hot_long, coldLong = fig.cold_long, cold = fig.cold;
+  const analogue = fig.analogue;
+  if (fig.peak === null) throw new Error('sw_f107_design_short answered nowhere in the declared range');
+  const peak = fig.peak, margin = fig.margin, over = fig.over;
   return {
-    answer: { value: (REQ - peak >= 0 ? '+' : '') + (REQ - peak).toFixed(1) + ' sfu',
-      of: 'margin against ' + o.reqf + '\u2019s ' + REQ.toFixed(0)
+    answer: { value: (margin >= 0 ? '+' : '') + margin.toFixed(1) + ' sfu',
+      of: 'margin against ' + reqf + '\u2019s ' + REQ.toFixed(0)
         + ' \u2014 the worst single day any declared window reaches is ' + peak.toFixed(1) },
     spec: {
-      finding: 'the window is ' + sig(Math.max(...band)) + ' sfu wide at its widest and ' +
-        sig(Math.min(...band)) + ' at its narrowest, and the dashed peak ' +
+      finding: 'the window is ' + sig(fig.widest) + ' sfu wide at its widest and ' +
+        sig(fig.narrowest) + ' at its narrowest, and the dashed peak ' +
         (over === null ? 'stays under the hot single-day curve throughout'
           : 'crosses above it at ' + over.toFixed(1) + ' yr'),
       x: { label: 'mission length  [years]', min: xs[0], max: xs[xs.length - 1] },
@@ -2115,8 +1998,8 @@ function f107Window(extra, o, eng) {
         // Above the bound is the side that fails, and the bound binds one way:
         // the requirement's sense is `<=`, so the region is everything over it.
         { axis: 'y', from: REQ, label: '', colour: INK.bound, alpha: 0.06 },
-        { axis: 'y', at: REQ, label: 'required \u2264 ' + REQ.toFixed(0) + '  (' + o.reqf + ')',
-          colour: INK.bound, row: o.reqf },
+        { axis: 'y', at: REQ, label: 'required \u2264 ' + REQ.toFixed(0) + '  (' + reqf + ')',
+          colour: INK.bound, row: reqf },
       ],
     },
     note: 'The F10.7 half of what crosses to the system, as the four rows §20 built for it compute ' +
@@ -2129,7 +2012,7 @@ function f107Window(extra, o, eng) {
       'that 74 per cent high. That row is deprecated and this figure no longer draws it.\n\n' +
       'Every curve moves with mission length because the window mean rises and falls with where the ' +
       'window ends in the cycle \u2014 the cycle showing through a statistic that was never told ' +
-      'about it. ' + o.reqf + '\u2019s ' + REQ.toFixed(0) + ' sfu is ' +
+      'about it. ' + reqf + '\u2019s ' + REQ.toFixed(0) + ' sfu is ' +
       (peak <= REQ ? 'met across the whole declared range; the worst single day the window reaches is '
         + peak.toFixed(1) + '.' : 'exceeded inside the declared range, at ' + peak.toFixed(1) + '.') +
       '\n\nThe dashed line is not a design value. sw_window_peak_level is the MAXIMUM of the same ' +
@@ -2141,7 +2024,8 @@ function f107Window(extra, o, eng) {
         : 'They cross at about ' + over.toFixed(1) + ' years: past there the analogue\u2019s own ' +
           'peak is ABOVE the hot single-day design value, which is a design sized on a mean sitting ' +
           'under the thing it averages. That is worth a reviewer\u2019s attention and it is the ' +
-          'reason this row is kept rather than removed.'),
+          'reason this row is kept rather than removed.') +
+      refusedPoints(fig.points_refused),
   };
 }
 
