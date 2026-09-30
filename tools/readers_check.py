@@ -112,7 +112,11 @@ PROBE_LESSON = {
 
 
 def computed_rows():
-    idx = json.loads((ROOT / "generated" / "index.json").read_text(encoding="utf-8"))
+    path = ROOT / "generated" / "index.json"
+    if not path.is_file():
+        raise SystemExit("no generated/index.json, which says which rows compute — "
+                         "build it with: cargo run -p xtask -- assemble")
+    idx = json.loads(path.read_text(encoding="utf-8"))
     return [r["id"] for r in idx["rows"] if r.get("kind") == "computed" and r.get("state") == "published"]
 
 
