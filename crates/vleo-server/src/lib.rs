@@ -24,6 +24,7 @@
 //! Loopback by default. Exposing it to a network is an explicit, separate act,
 //! which also avoids a firewall prompt on first run.
 
+mod app;
 mod case;
 mod http;
 mod json;
@@ -31,6 +32,7 @@ mod pages;
 mod runs;
 mod saved;
 
+pub use app::{app, app_at};
 use case::*;
 use http::*;
 use pages::*;
@@ -49,8 +51,8 @@ use vleo_modules::{tables, Scratch, Vleo, GROUPS, NODES, RELATIONS, VARS};
 /// Start the tool from the command line: `vleo-daemon [--open]`.
 ///
 /// It opens the browser itself with `--open`, or when the program is named
-/// `Start VLEO` — the Windows kit's name for it, so a double-click is the whole
-/// of starting it and no script has to launch it.
+/// `Start VLEO`: the Windows kit's name for it before the desktop app, kept
+/// so a copy renamed that way still starts on a double-click.
 pub fn main() {
     let port_pref: u16 = std::env::var("VLEO_PORT")
         .ok()
@@ -208,12 +210,21 @@ fn repo_root() -> PathBuf {
             return r;
         }
     }
-    let starts = [
-        std::env::current_dir().ok(),
-        std::env::current_exe()
-            .ok()
-            .and_then(|e| e.parent().map(Path::to_path_buf)),
-    ];
+    let exe_dir = std::env::current_exe()
+        .ok()
+        .and_then(|e| e.parent().map(Path::to_path_buf));
+    // Inside a macOS app the program is in Contents/MacOS and the tool's
+    // files in Contents/Resources.
+    if let Some(res) = exe_dir
+        .as_ref()
+        .and_then(|d| d.parent())
+        .map(|c| c.join("Resources"))
+    {
+        if holds(&res) {
+            return res;
+        }
+    }
+    let starts = [std::env::current_dir().ok(), exe_dir];
     for start in starts.into_iter().flatten() {
         let mut p = start;
         loop {
@@ -260,7 +271,13 @@ fn route(
     params: &str,
     ctx: &Ctx,
 ) -> (&'static str, &'static str, Vec<u8>) {
+    // Any request is a page that is still open; the desktop app ends only
+    // when none has been heard from for a while.
+    app::seen();
     match (method, path) {
+        // The desktop app's page says it is still open, and may quit it.
+        ("GET", "/v1/alive") => ok_json("{\"ok\":true}".to_string()),
+        ("POST", "/v1/quit") => ok_json(app::quit_json()),
         // A route that panics on purpose, present only when VLEO_TEST_PANIC is
         // set: how the crash handling is proved on a running copy (and in CI).
         ("GET", "/v1/__panic") if std::env::var_os("VLEO_TEST_PANIC").is_some() => {

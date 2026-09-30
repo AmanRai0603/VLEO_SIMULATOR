@@ -137,7 +137,7 @@ jobs:
       - run: rustup target add ${{ matrix.target }}
       # The three doors onto one kernel: the command line, the local server the
       # browser face talks to, and the shared library the wheel and MATLAB bind.
-      - run: cargo build --release --target ${{ matrix.target }} -p vleo-cli -p vleo-daemon -p vleo-ffi
+      - run: cargo build --release --target ${{ matrix.target }} -p vleo-cli -p vleo-daemon -p vleo-app -p vleo-ffi
       # WHAT THE TEAM GETS: a kit, not the repository. The programs alone do not
       # run — the daemon reads the web face, the tree and every node's page — so
       # each platform ships as one zip of the programs beside exactly those files,
@@ -157,12 +157,91 @@ jobs:
           # what Chrome blocked in the first 0.3.0 Windows kit; the kit carries
           # it as web/method.wasm.gz instead, read when a form is made.
           python tools/checker_not_built_in.py web/method.wasm.gz "kit/$kit"
+          echo "KIT=$kit" >> "$GITHUB_ENV"
+
+      # SIGNING, SWITCHED ON BY ITS SECRETS. With no certificate this step
+      # says so and changes nothing: the programs ship unsigned, with their
+      # name, version and icon, and docs/FIRST_RUN.md says how to open them.
+      # With WINDOWS_CERT_PFX (base64) and WINDOWS_CERT_PASSWORD set, every
+      # program in the kit is signed and timestamped before it is zipped.
+      - name: sign the Windows programs, when there is a certificate
+        if: runner.os == 'Windows'
+        shell: bash
+        env:
+          PFX: ${{ secrets.WINDOWS_CERT_PFX }}
+          PFX_PASSWORD: ${{ secrets.WINDOWS_CERT_PASSWORD }}
+        run: |
+          if [ -z "$PFX" ]; then
+            echo "no WINDOWS_CERT_PFX secret: the programs ship unsigned (docs/RELEASE_SETUP.md)"
+            exit 0
+          fi
+          echo "$PFX" | base64 -d > "$RUNNER_TEMP/cert.pfx"
+          signtool=$(ls "/c/Program Files (x86)/Windows Kits/10/bin/"*/x64/signtool.exe | sort | tail -1)
+          for exe in "kit/$KIT"/*.exe; do
+            "$signtool" sign /fd sha256 /f "$RUNNER_TEMP/cert.pfx" /p "$PFX_PASSWORD" \
+              /tr http://timestamp.digicert.com /td sha256 /d "VLEO Design Tool" "$exe"
+          done
+          rm -f "$RUNNER_TEMP/cert.pfx"
+
+      - name: zip the kit
+        shell: bash
+        run: |
+          kit="$KIT"
           cd kit
           if [ "$RUNNER_OS" = "Windows" ]; then 7z a -tzip "../$kit.zip" "$kit" >/dev/null; else zip -qr "../$kit.zip" "$kit"; fi
       - uses: actions/upload-artifact@v4
         with:
           name: vleo-${{ matrix.target }}
           path: vleo-${{ needs.prove.outputs.version }}-${{ matrix.target }}.zip
+
+      # THE MAC APP: VLEO Design Tool.app, made from this kit. Signed with the
+      # Developer ID and notarised when the Apple secrets exist; otherwise
+      # signed ad hoc, which carries no identity but is what lets an
+      # Apple-silicon Mac open it after one confirmation instead of calling it
+      # damaged. `ditto` zips it with the bundle intact.
+      - name: the Mac app
+        if: runner.os == 'macOS'
+        shell: bash
+        env:
+          P12: ${{ secrets.APPLE_CERT_P12 }}
+          P12_PASSWORD: ${{ secrets.APPLE_CERT_PASSWORD }}
+          IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          APP_PASSWORD: ${{ secrets.APPLE_APP_PASSWORD }}
+        run: |
+          v="${{ needs.prove.outputs.version }}"
+          cargo run --release -p xtask -- app --kit "kit/$KIT" --out app
+          a="app/VLEO Design Tool.app"
+          if [ -n "$P12" ] && [ -n "$IDENTITY" ]; then
+            kc="$RUNNER_TEMP/sign.keychain-db"
+            security create-keychain -p ci "$kc"
+            security set-keychain-settings -lut 3600 "$kc"
+            security unlock-keychain -p ci "$kc"
+            echo "$P12" | base64 -d > "$RUNNER_TEMP/cert.p12"
+            security import "$RUNNER_TEMP/cert.p12" -k "$kc" -P "$P12_PASSWORD" -T /usr/bin/codesign
+            security set-key-partition-list -S apple-tool:,apple: -s -k ci "$kc"
+            security list-keychains -d user -s "$kc"
+            codesign --force --deep --options runtime --timestamp -s "$IDENTITY" "$a"
+            if [ -n "$APPLE_ID" ] && [ -n "$TEAM_ID" ] && [ -n "$APP_PASSWORD" ]; then
+              ditto -c -k --keepParent "$a" "$RUNNER_TEMP/notarise.zip"
+              xcrun notarytool submit "$RUNNER_TEMP/notarise.zip" --apple-id "$APPLE_ID" \
+                --team-id "$TEAM_ID" --password "$APP_PASSWORD" --wait
+              xcrun stapler staple "$a"
+            fi
+            rm -f "$RUNNER_TEMP/cert.p12"
+          else
+            echo "no Apple signing secrets: the app is signed ad hoc (docs/RELEASE_SETUP.md)"
+            codesign --force --deep -s - "$a"
+          fi
+          codesign --verify --deep --strict "$a"
+          ditto -c -k --keepParent "$a" "VLEO-Design-Tool-$v-macos-arm64.zip"
+      - uses: actions/upload-artifact@v4
+        if: runner.os == 'macOS'
+        with:
+          name: app-macos
+          path: VLEO-Design-Tool-${{ needs.prove.outputs.version }}-macos-arm64.zip
+          if-no-files-found: error
       # THE ENGINE FOR THE PYTHON PACKAGE: the same code as the daemon, built as
       # a Python module. One per system; the `wheel` job below puts all of them
       # in one file.

@@ -36,6 +36,7 @@ Every `cargo xtask` command: what it does, in order, what it writes and what it 
 | [`approve`](#approve) | writes | `approvals/<author>--<node>.toml` | `git switch, add, commit`<br>`git push origin <branch>` |
 | [`queue`](#queue) | reads | — | `git fetch --prune origin` |
 | [`ship`](#ship) | writes | `crates/<crate>/nodes/<node>/node.toml`<br>`crates/<crate>/nodes/<node>/model.rs`<br>`crates/<crate>/nodes/<node>/contract.rs`<br>`crates/<crate>/nodes/<node>/mod.rs`<br>`crates/<crate>/nodes/<node>/evidence.rs`<br>`crates/<crate>/nodes/<node>/page.html`<br>`crates/<crate>/nodes/<node>/meta.json`<br>`crates/vleo-core/src/physics/methods/*.rs`<br>`docs/PSEUDOCODE.md`<br>`docs/DERISK_NARRATIVE.md`<br>`docs/derisking.csv`<br>`docs/VARIABLES.md`<br>`docs/roles/*.html`<br>`CODEOWNERS`<br>`Cargo.toml`<br>`Cargo.lock`<br>`crates/*/Cargo.lock` | `git fetch, switch, add, commit`<br>`git push origin release/<version>`<br>`cargo metadata`<br>`cargo test`<br>`rustfmt` |
+| [`app`](#app) | writes | `dist/VLEO Design Tool.app/**` | — |
 | [`kit`](#kit) | writes | `dist/vleo-<version>/**` | `git rev-parse --short HEAD` |
 | [`derisk`](#derisk) | writes | `docs/DERISK_NARRATIVE.md`<br>`docs/derisking.csv` | — |
 | [`release`](#release) | writes | `crates/<crate>/nodes/<node>/node.toml`<br>`Cargo.toml`<br>`Cargo.lock`<br>`crates/*/Cargo.lock`<br>`crates/<crate>/nodes/<node>/model.rs`<br>`crates/<crate>/nodes/<node>/contract.rs`<br>`crates/<crate>/nodes/<node>/mod.rs`<br>`crates/<crate>/nodes/<node>/evidence.rs`<br>`crates/<crate>/nodes/<node>/page.html`<br>`crates/<crate>/nodes/<node>/meta.json`<br>`crates/vleo-core/src/physics/methods/*.rs`<br>`docs/PSEUDOCODE.md`<br>`docs/DERISK_NARRATIVE.md`<br>`docs/derisking.csv` | `cargo metadata --offline`<br>`rustfmt` |
@@ -321,16 +322,27 @@ Cuts a release from main on its own branch `release/<version>`: the de-risking n
 6. gate; cargo test unless --no-test
 7. commit; push unless --no-push
 
+## app
+
+`cargo xtask app --kit <dir> [--out <dir>]`
+
+The macOS desktop app, VLEO Design Tool.app, from a macOS kit: the program in Contents/MacOS, the files it reads in Contents/Resources, its icon and its Info.plist. The release workflow signs it and zips it.
+
+1. refuse a kit with no vleo-app program in it
+2. empty <out>/VLEO Design Tool.app
+3. copy the kit's files into Contents/Resources and the program into Contents/MacOS
+4. write the icon, Info.plist and PkgInfo
+
 ## kit
 
 `cargo xtask kit [--bin <dir>] [--out <dir>] [--files-only]`
 
-The tool as a team member gets it: the two release-built programs beside exactly the files they read, with START_HERE.md and VERSION (and start.sh off Windows, where the daemon ships as Start VLEO.exe), in dist/vleo-<version>/. Zip it and share it; see docs/SHARING.md. --files-only leaves the programs out: the files the Python package carries.
+The tool as a team member gets it: the three release-built programs beside exactly the files they read, with START_HERE.md, FIRST_RUN.md and VERSION (and start.sh off Windows, where the desktop app ships as VLEO Design Tool.exe), in dist/vleo-<version>/. Zip it and share it; see docs/SHARING.md. --files-only leaves the programs out: the files the Python package carries.
 
 1. empty --out (default dist/vleo-<version>/)
 2. copy the web face, the tree, its pages and the reference data
-3. copy the programs; on Windows the daemon becomes Start VLEO.exe
-4. write START_HERE.md, VERSION and start.sh
+3. copy the programs; on Windows the desktop app becomes VLEO Design Tool.exe
+4. write START_HERE.md, FIRST_RUN.md, VERSION and start.sh
 
 ## derisk
 
@@ -471,6 +483,7 @@ Write docs/VARIABLES.md — every variable, its unit, its range and why.
 | `crates/<crate>/nodes/<node>/node.toml` | `new`, `intake`, `publish`, `take`, `ship`, `release`, `confirm` |
 | `crates/<crate>/nodes/<node>/page.html` | `docs`, `intake`, `publish`, `build-node`, `take`, `ship`, `release` |
 | `crates/vleo-core/src/physics/methods/*.rs` | `docs`, `intake`, `publish`, `build-node`, `take`, `ship`, `release` |
+| `dist/VLEO Design Tool.app/**` | `app` |
 | `dist/vleo-<version>/**` | `kit` |
 | `docs/DERISK_NARRATIVE.md` | `take`, `ship`, `derisk`, `release` |
 | `docs/PIPELINE.md` | `pipeline` |

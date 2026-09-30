@@ -74,7 +74,7 @@ say = "Open the address it printed, normally `http://127.0.0.1:7777`."
 say = "In a Codespace there is nothing to type: the tool is already running and port 7777 opens as a preview."
 
 [[layer.section.step]]
-say = "Without a repository, the tool comes two ways. The one file for every laptop: `python -m pip install vleo-<version>-py3-none-any.whl` once, then `python -m vleo` — it runs inside Python, so Windows has no new program to stop. Or a kit, the zip for your system: double-click `Start VLEO.exe` on Windows, or run `./start.sh` on macOS and Linux. Either opens the page itself; `START_HERE.md` says the rest."
+say = "Without a repository, the tool comes two ways. The one file for every laptop: `python -m pip install vleo-<version>-py3-none-any.whl` once, then `python -m vleo` — it runs inside Python, so Windows has no new program to stop. Or the desktop app: on Windows unzip the kit and double-click `VLEO Design Tool.exe`; on a Mac unzip `VLEO Design Tool` and open it; on Linux run `./vleo-app`. Either opens the page itself; `START_HERE.md` says the rest."
 
 
 [[layer.section]]
@@ -1411,8 +1411,9 @@ The daemon reads the web face, the tree and every node's page at run time, so \
 the programs alone do not run. `xtask kit` puts them beside exactly those files \
 — no git history, no generators, no kernel source — in `dist/vleo-<version>/`, \
 with `START_HERE.md` (from `docs/TEAM_GUIDE.md`) and `VERSION` — and `start.sh` \
-off Windows; on Windows the daemon ships as `Start VLEO.exe`, which opens the \
-browser itself. Zip it and share it. A kit runs on the platform that built it; \
+off Windows; the desktop app ships beside the daemon, on Windows as `VLEO Design \
+Tool.exe`, with its icon and no console window, and `xtask app` makes the Mac's \
+`VLEO Design Tool.app` from a Mac kit. Zip it and share it. A kit runs on the platform that built it; \
 the release pipeline builds one for Linux, macOS and Windows, and one Python \
 package, `vleo-<version>-py3-none-any.whl`, that carries the engine for every \
 system and runs with `python -m vleo` — no new program for Windows or an \
@@ -2485,16 +2486,34 @@ runs = [
 
 [[command]]
 tool = "xtask"
+name = "app"
+usage = "app --kit <dir> [--out <dir>]"
+what = "The macOS desktop app, VLEO Design Tool.app, from a macOS kit: the program in Contents/MacOS, the files it reads in Contents/Resources, its icon and its Info.plist. The release workflow signs it and zips it."
+who = "developer"
+effect = "writes"
+steps = [
+  "refuse a kit with no vleo-app program in it",
+  "empty <out>/VLEO Design Tool.app",
+  "copy the kit's files into Contents/Resources and the program into Contents/MacOS",
+  "write the icon, Info.plist and PkgInfo",
+]
+writes = [
+  "dist/VLEO Design Tool.app/**",
+]
+runs = []
+
+[[command]]
+tool = "xtask"
 name = "kit"
 usage = "kit [--bin <dir>] [--out <dir>] [--files-only]"
-what = "The tool as a team member gets it: the two release-built programs beside exactly the files they read, with START_HERE.md and VERSION (and start.sh off Windows, where the daemon ships as Start VLEO.exe), in dist/vleo-<version>/. Zip it and share it; see docs/SHARING.md. --files-only leaves the programs out: the files the Python package carries."
+what = "The tool as a team member gets it: the three release-built programs beside exactly the files they read, with START_HERE.md, FIRST_RUN.md and VERSION (and start.sh off Windows, where the desktop app ships as VLEO Design Tool.exe), in dist/vleo-<version>/. Zip it and share it; see docs/SHARING.md. --files-only leaves the programs out: the files the Python package carries."
 who = "developer"
 effect = "writes"
 steps = [
   "empty --out (default dist/vleo-<version>/)",
   "copy the web face, the tree, its pages and the reference data",
-  "copy the programs; on Windows the daemon becomes Start VLEO.exe",
-  "write START_HERE.md, VERSION and start.sh",
+  "copy the programs; on Windows the desktop app becomes VLEO Design Tool.exe",
+  "write START_HERE.md, FIRST_RUN.md, VERSION and start.sh",
 ]
 writes = [
   "dist/vleo-<version>/**",
@@ -2949,6 +2968,16 @@ what = "Make a saved result's inputs the case: `name`. Checked like any case, an
 
 [[route]]
 method = "GET"
+path = "/v1/alive"
+what = "A page saying it is still open. The desktop app ends a few minutes after the last page stops saying so."
+
+[[route]]
+method = "POST"
+path = "/v1/quit"
+what = "End the desktop app, from its page's Quit. Refused by a server started any other way: whoever started it stops it."
+
+[[route]]
+method = "GET"
 path = "/v1/__panic"
 what = "Panics on purpose, to prove a bug in one request is caught, logged and survived. Present only when `VLEO_TEST_PANIC` is set; a normal run has no such route."
 
@@ -2995,6 +3024,11 @@ default = "$HOME/.vleo/case/inputs.csv"
 name = "VLEO_GOLDEN"
 what = "Set to `write` when running the translator's golden test, to write the golden files again after an intended change to how methods are translated. Unset, the test compares and fails on any difference."
 default = "unset — compare"
+
+[[env]]
+name = "VLEO_APP_IDLE_MINUTES"
+what = "How many minutes the desktop app keeps running with no page open before it ends by itself. Quit on the page ends it at once."
+default = "5"
 
 [[env]]
 name = "VLEO_KEEP_DAYS"
@@ -3253,6 +3287,10 @@ what = "Every recorded change by release, and every risk as it stands. Generated
 [[doc]]
 path = "docs/VARIABLES.md"
 what = "Every variable in the tree. Generated by xtask variables."
+
+[[doc]]
+path = "docs/FIRST_RUN.md"
+what = "What Windows and macOS ask the first time they open the unsigned app, what to press, and how to check a download against SHA256SUMS.txt. Shipped in every kit beside START_HERE.md."
 
 [[doc]]
 path = "docs/GLOSSARY.md"

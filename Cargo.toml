@@ -8,7 +8,7 @@
 #   RING 3  vleo-mod-*    one crate per subsystem — a sibling it did not declare will not compile
 #           vleo-modules  facade + dispatch table; re-exports the twelve, holds no formula
 #           vleo-server   the local server both the daemon and the Python package start
-#   FACES   vleo-cli · vleo-daemon · vleo-wasm · vleo-ffi · vleo-py
+#   FACES   vleo-cli · vleo-daemon · vleo-app · vleo-wasm · vleo-ffi · vleo-py
 [workspace]
 resolver = "2"
 members = [
@@ -42,6 +42,7 @@ members = [
     "crates/vleo-modules",
     "crates/vleo-cli",
     "crates/vleo-daemon",
+    "crates/vleo-app",
     "crates/vleo-server",
     "crates/vleo-ffi",
     "xtask",

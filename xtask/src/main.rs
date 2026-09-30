@@ -105,6 +105,7 @@ fn main() -> ExitCode {
         "derisk" => cmd_derisk(&root, &rest),
         "release" => cmd_release(&root, &rest),
         "kit" => cmd_kit(&root, &rest),
+        "app" => cmd_app(&root, &rest),
         "take" => flow::cmd_take(&root, &rest),
         "guides" => cmd_guides(&root),
         "preview" => flow::cmd_preview(&root, &rest),
@@ -235,15 +236,19 @@ cargo xtask <command>
                      and every registered risk as it stands. Generated from the
                      sheets' [[version]] and [[risk]] records, never edited.
   kit [--bin <dir>] [--out <dir>] [--files-only]
-                     the tool as a team member gets it: the two programs and
+                     the tool as a team member gets it: the three programs and
                      the files they read (the web face, the tree, its pages,
                      the reference data) in one folder, with START_HERE.md —
-                     on Windows the daemon is `Start VLEO.exe`, elsewhere
-                     start.sh starts it. No git, no Rust source beyond the node
+                     on Windows the desktop app is `VLEO Design Tool.exe`,
+                     elsewhere start.sh starts the daemon. No git, no Rust source beyond the node
                      folders. Zip the folder and share it. --bin is where the
                      release-built programs are (default target/release);
                      --files-only leaves the programs out, for the Python
                      package (tools/build_wheel.py).
+  app --kit <dir> [--out <dir>]
+                     the macOS desktop app, VLEO Design Tool.app, from a macOS
+                     kit: the program, the files it reads, its icon and its
+                     Info.plist. The release workflow signs and zips it.
   guides             the three role guides, docs/roles/user.html,
                      maintainer.html and developer.html, rendered from
                      docs/manual.toml. Never
@@ -631,6 +636,21 @@ mod moving_a_node {
                 owners.contains(&rule),
                 "no CODEOWNERS rule for crates/{name}"
             );
+        }
+    }
+
+    /// The Mac app says who it is, in the version being released, and runs
+    /// the program the bundle carries.
+    #[test]
+    fn the_mac_app_names_itself_and_its_version() {
+        let p = crate::info_plist("1.2.3");
+        for want in [
+            "<key>CFBundleName</key><string>VLEO Design Tool</string>",
+            "<key>CFBundleShortVersionString</key><string>1.2.3</string>",
+            "<key>CFBundleExecutable</key><string>vleo-app</string>",
+            "<key>CFBundleIconFile</key><string>vleo</string>",
+        ] {
+            assert!(p.contains(want), "Info.plist lacks {want}");
         }
     }
 }

@@ -22,19 +22,23 @@ The loop, end to end:
 
 ## 1 · Build a kit
 
-    cargo build --release -p vleo-daemon -p vleo-cli
+    cargo build --release -p vleo-daemon -p vleo-cli -p vleo-app
     cargo run -p xtask -- kit                   # → dist/vleo-<version>/
+    cargo run -p xtask -- app --kit dist/vleo-<version>   # on a Mac: VLEO Design Tool.app
 
 `dist/vleo-<version>/` holds:
-- the two programs: `vleo-daemon` and `vleo` — on Windows `Start VLEO.exe` (the daemon, which opens
-  the browser itself because of its name) and `vleo.exe`;
+- the three programs: the desktop app `vleo-app` — on Windows `VLEO Design Tool.exe`, with its
+  icon and no console window — the daemon `vleo-daemon`, and the command line `vleo`;
 - the files they read: `web/`, `layers/`, `cases/`, `sources/`, `bundles/`, `docs/manual.toml`,
   and every node folder;
-- `START_HERE.md` (this repository's `docs/TEAM_GUIDE.md`), `VERSION`, and `start.sh` off Windows.
+- `START_HERE.md` (this repository's `docs/TEAM_GUIDE.md`), `FIRST_RUN.md`, `VERSION`, and
+  `start.sh` off Windows.
 
 No script starts the Windows program: a script launching an unknown program is one more thing an
 antivirus weighs against it. The programs carry Windows version information (Orbitt Space, VLEO
-design tool, the version) for the same reason — `tools/windows_identity.rs`.
+Design Tool, the version) and the app its icon, for the same reason — `tools/windows_identity.rs`.
+They are not signed yet; `docs/FIRST_RUN.md` is what the first start asks, and
+`docs/RELEASE_SETUP.md` how signing is switched on.
 
 There is no git history in it, no generator, and no kernel source. Zip the folder and share the
 zip. `dist/` is ignored by git.

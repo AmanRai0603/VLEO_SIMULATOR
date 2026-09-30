@@ -186,7 +186,7 @@ pub(crate) fn cmd_kit(root: &Path, args: &[&str]) -> Result<(), String> {
     let wanted: &[&str] = if files_only {
         &[]
     } else {
-        &["vleo-daemon", "vleo"]
+        &["vleo-daemon", "vleo", "vleo-app"]
     };
     let programs: Vec<PathBuf> = wanted
         .iter()
@@ -194,7 +194,7 @@ pub(crate) fn cmd_kit(root: &Path, args: &[&str]) -> Result<(), String> {
             exe(n).ok_or_else(|| {
                 format!(
                     "no {n} in {} — build the programs first: \
-                     cargo build --release -p vleo-daemon -p vleo-cli",
+                     cargo build --release -p vleo-daemon -p vleo-cli -p vleo-app",
                     bin.display()
                 )
             })
@@ -253,17 +253,18 @@ pub(crate) fn cmd_kit(root: &Path, args: &[&str]) -> Result<(), String> {
         let from = root.join("crates").join(c).join("nodes");
         files += copy_tree(&from, &out.join("crates").join(c).join("nodes"))?;
     }
-    // On Windows the daemon ships as `Start VLEO.exe`: the program itself is
-    // what a person double-clicks, and it opens the browser because of its
-    // name. No script starts it — a script launching a program is one more
-    // thing an antivirus heuristic weighs against an unknown file.
+    // On Windows the desktop app ships as `VLEO Design Tool.exe`: the program
+    // a person double-clicks, with its own name, icon and version, and no
+    // console window. No script starts it — a script launching a program is
+    // one more thing an antivirus heuristic weighs against an unknown file.
+    // The daemon keeps its own name, for anyone who wants its console.
     let windows = programs
         .iter()
         .any(|p| p.extension().is_some_and(|e| e == "exe"));
     for p in &programs {
         let name = p.file_name().unwrap().to_string_lossy().into_owned();
-        let as_named = if name == "vleo-daemon.exe" {
-            "Start VLEO.exe".to_string()
+        let as_named = if name == "vleo-app.exe" {
+            "VLEO Design Tool.exe".to_string()
         } else {
             name
         };
@@ -272,6 +273,9 @@ pub(crate) fn cmd_kit(root: &Path, args: &[&str]) -> Result<(), String> {
     let guide = fs::read_to_string(root.join("docs/TEAM_GUIDE.md"))
         .map_err(|e| format!("docs/TEAM_GUIDE.md: {e}"))?;
     fs::write(out.join("START_HERE.md"), guide).map_err(|e| e.to_string())?;
+    // Beside it, what the first start asks on each system and how to answer.
+    fs::copy(root.join("docs/FIRST_RUN.md"), out.join("FIRST_RUN.md"))
+        .map_err(|e| format!("docs/FIRST_RUN.md: {e}"))?;
     let commit = std::process::Command::new("git")
         .args(["rev-parse", "--short", "HEAD"])
         .current_dir(root)
@@ -299,7 +303,7 @@ pub(crate) fn cmd_kit(root: &Path, args: &[&str]) -> Result<(), String> {
     #[cfg(unix)]
     {
         use std::os::unix::fs::PermissionsExt;
-        for f in ["start.sh", "vleo-daemon", "vleo"] {
+        for f in ["start.sh", "vleo-daemon", "vleo", "vleo-app"] {
             let p = out.join(f);
             if p.is_file() {
                 let _ = fs::set_permissions(&p, fs::Permissions::from_mode(0o755));
@@ -309,7 +313,7 @@ pub(crate) fn cmd_kit(root: &Path, args: &[&str]) -> Result<(), String> {
     let start = if files_only {
         "installs the Python package that carries it"
     } else if windows {
-        "double-clicks Start VLEO.exe"
+        "double-clicks VLEO Design Tool.exe"
     } else {
         "runs start.sh"
     };
@@ -452,4 +456,122 @@ pub(crate) fn cmd_release(root: &Path, args: &[&str]) -> Result<(), String> {
          Next: `cargo run -p xtask -- gate && cargo test`, commit, then tag v{v}."
     );
     Ok(())
+}
+
+/// The name the desktop app goes by: its window title, its Windows file name,
+/// its macOS bundle.
+pub(crate) const APP_NAME: &str = "VLEO Design Tool";
+
+/// `app --kit <dir> [--out <dir>]`: the macOS desktop app, made from a macOS
+/// kit — `VLEO Design Tool.app`, with the program in Contents/MacOS, the files
+/// it reads in Contents/Resources, its icon and its Info.plist. The kit's
+/// other programs stay in the kit. Signing is the release workflow's.
+pub(crate) fn cmd_app(root: &Path, args: &[&str]) -> Result<(), String> {
+    let after = |flag: &str| {
+        args.iter()
+            .position(|a| *a == flag)
+            .and_then(|i| args.get(i + 1))
+            .map(PathBuf::from)
+    };
+    let kit = after("--kit").ok_or("usage: cargo xtask app --kit <dir> [--out <dir>]")?;
+    let out = after("--out").unwrap_or_else(|| root.join("dist"));
+    let version = workspace_version(root)?;
+    let program = kit.join("vleo-app");
+    if !program.is_file() {
+        return Err(format!(
+            "no vleo-app in {} — make the kit from a macOS build first",
+            kit.display()
+        ));
+    }
+    let app = out.join(format!("{APP_NAME}.app"));
+    if app.exists() {
+        fs::remove_dir_all(&app).map_err(|e| format!("{}: {e}", app.display()))?;
+    }
+    let contents = app.join("Contents");
+    let resources = contents.join("Resources");
+    let macos = contents.join("MacOS");
+    fs::create_dir_all(&macos).map_err(|e| e.to_string())?;
+    fs::create_dir_all(&resources).map_err(|e| e.to_string())?;
+
+    fn copy_tree(from: &Path, to: &Path) -> Result<usize, String> {
+        let mut n = 0;
+        fs::create_dir_all(to).map_err(|e| format!("{}: {e}", to.display()))?;
+        for e in fs::read_dir(from).map_err(|e| format!("{}: {e}", from.display()))? {
+            let p = e.map_err(|e| e.to_string())?.path();
+            let dest = to.join(p.file_name().unwrap());
+            if p.is_dir() {
+                n += copy_tree(&p, &dest)?;
+            } else {
+                fs::copy(&p, &dest).map_err(|e| format!("{}: {e}", p.display()))?;
+                n += 1;
+            }
+        }
+        Ok(n)
+    }
+    // Everything the tool reads; the programs and the kit's start script are
+    // not part of the app.
+    let mut files = 0;
+    for e in fs::read_dir(&kit).map_err(|e| format!("{}: {e}", kit.display()))? {
+        let p = e.map_err(|e| e.to_string())?.path();
+        let name = p.file_name().unwrap().to_string_lossy().into_owned();
+        if matches!(
+            name.as_str(),
+            "vleo-app" | "vleo-daemon" | "vleo" | "start.sh"
+        ) {
+            continue;
+        }
+        if p.is_dir() {
+            files += copy_tree(&p, &resources.join(&name))?;
+        } else {
+            fs::copy(&p, resources.join(&name)).map_err(|e| e.to_string())?;
+            files += 1;
+        }
+    }
+    fs::copy(&program, macos.join("vleo-app")).map_err(|e| e.to_string())?;
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        fs::set_permissions(macos.join("vleo-app"), fs::Permissions::from_mode(0o755))
+            .map_err(|e| e.to_string())?;
+    }
+    fs::copy(
+        root.join("crates/vleo-app/icon/vleo.icns"),
+        resources.join("vleo.icns"),
+    )
+    .map_err(|e| format!("crates/vleo-app/icon/vleo.icns: {e}"))?;
+    fs::write(contents.join("Info.plist"), info_plist(&version)).map_err(|e| e.to_string())?;
+    fs::write(contents.join("PkgInfo"), "APPL????").map_err(|e| e.to_string())?;
+    println!(
+        "app: {} — vleo {version}, {files} files. Sign it (the release workflow does), then \
+         zip it with `ditto -c -k --keepParent`, which keeps the bundle whole.",
+        app.display()
+    );
+    Ok(())
+}
+
+/// The app's Info.plist. `LSUIElement`: the app has no window of its own —
+/// the browser is its window — so it takes no place in the Dock, where a
+/// program with no window reads as one that has hung.
+pub(crate) fn info_plist(version: &str) -> String {
+    format!(
+        r#"<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>CFBundleName</key><string>{APP_NAME}</string>
+  <key>CFBundleDisplayName</key><string>{APP_NAME}</string>
+  <key>CFBundleIdentifier</key><string>space.orbitt.vleo</string>
+  <key>CFBundleVersion</key><string>{version}</string>
+  <key>CFBundleShortVersionString</key><string>{version}</string>
+  <key>CFBundleExecutable</key><string>vleo-app</string>
+  <key>CFBundleIconFile</key><string>vleo</string>
+  <key>CFBundlePackageType</key><string>APPL</string>
+  <key>CFBundleInfoDictionaryVersion</key><string>6.0</string>
+  <key>LSMinimumSystemVersion</key><string>11.0</string>
+  <key>LSUIElement</key><true/>
+  <key>NSHumanReadableCopyright</key><string>Copyright © Orbitt Space</string>
+</dict>
+</plist>
+"#
+    )
 }

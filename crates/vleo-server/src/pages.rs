@@ -358,6 +358,8 @@ pub(crate) fn version_json(ctx: &Ctx) -> String {
     j.str_field("graph", &short(Vleo::graph_hash()));
     j.str_field("version", env!("CARGO_PKG_VERSION"));
     j.str_field("endpoint", "local-daemon");
+    // The desktop app: the page offers Quit and says it is still open.
+    j.bool_field("app", app::APP.load(std::sync::atomic::Ordering::Relaxed));
     j.num_field("port", ctx.port as f64);
     j.num_field("nodes", NODES.len() as f64);
     if let Some(p) = &ctx.preview {
