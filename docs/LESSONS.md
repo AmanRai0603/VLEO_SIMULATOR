@@ -41,6 +41,13 @@ output across the input's range from the figure the engine describes
 (`/v1/sweep`, `figure`). Served by `GET /v1/lesson/<id>`, checked again on every
 request; a lesson that fails is refused with its reasons, never drawn half-right.
 
+## Where it is read
+
+In the tool, on the row's page. And in **the readers' folder** —
+`cargo run -p xtask -- readers` — every row's page and every lesson as plain
+pages for a shared drive or an internal web server, drawn by the same
+components, with the engine running in the page to answer the widgets.
+
 ## How one arrives
 
 Like a change to a node: through a form, filled by the person who knows the
@@ -72,8 +79,11 @@ or a saved result's key.
 
 ## Where this breaks
 
-- **A widget needs the engine running.** The page asks the local engine;
-  a lesson read from a static copy of the docs has no widgets that answer.
+- **Read without the tool, a widget runs on the declared values only.** The
+  readers' folder (`xtask readers`, docs/SHARING.md) carries the engine
+  compiled for the browser, so its widgets answer — on the declared values,
+  not a saved case, and with no reference data, so a row that reads a data
+  bundle refuses there by name.
 - **No row has a lesson yet.** The example is an example: its text is taken
   from what `orbit_velocity`'s own sheet says, its `by` names nobody, and it is
   not placed beside the row. And that row does not answer today (its relation

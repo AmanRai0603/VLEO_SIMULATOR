@@ -91,14 +91,32 @@ export function widget(w, i) {
 const POST = { method: 'POST', headers: { 'content-type': 'application/x-www-form-urlencoded' } };
 
 /**
- * Make a widget live: a slider per input row, in the row's own unit and range;
- * each change runs the engine with those values supplied and shows the output
- * rows it returns; with `sweep`, the first output across that input's range,
- * as the engine describes the figure.
+ * WHERE A WIDGET'S ANSWERS COME FROM. The running engine, by default; a page
+ * read without it — the readers' docs folder — sets the engine compiled for
+ * the browser (`xtask readers`, crates/vleo-kernel-wasm). Either way the
+ * answer is the engine's, in the shape `/v1/run` and `/v1/sweep` give it.
  */
-export function mountWidget(el, w) {
+let ENGINE = {
+  run: async p => (await fetch('/v1/run', { ...POST, body: p.toString() })).json(),
+  sweep: async q => (await fetch('/v1/sweep?' + q.toString())).json(),
+};
+export function useEngine(e) { ENGINE = e; }
+
+/**
+ * Make a widget live: a slider per input row, in the row's own unit and range,
+ * starting where the engine says the row stands — the case in the tool, the
+ * declared value in a page read without it; each change runs the engine with
+ * those values supplied and shows the output rows it returns; with `sweep`,
+ * the first output across that input's range, as the engine describes it.
+ */
+export async function mountWidget(el, w) {
   const rows = w.inputs.map(id => S.byId.get(id)).filter(Boolean);
-  const vals = new Map(rows.map(r => [r.id, r.value != null ? +r.value : (r.lo + r.hi) / 2]));
+  const ask = async p => {
+    try { return await ENGINE.run(p); } catch (e) { return { ok: false, message: 'the engine did not answer: ' + e }; }
+  };
+  const start = await ask(new URLSearchParams({ node: w.outputs[0] || '', mode: 'branch' }));
+  const at = id => ((start && start.values) || []).find(v => v.id === id);
+  const vals = new Map(rows.map(r => [r.id, at(r.id) ? at(r.id).si : (r.lo + r.hi) / 2]));
   el.querySelector('.ls-sliders').innerHTML = rows.map(r =>
     '<label class="ls-slider"><span>' + esc(r.label) + ' <code>' + esc(r.id) + '</code></span>' +
     '<input type="range" data-id="' + esc(r.id) + '" min="' + fromSI(r, r.lo) + '" max="' + fromSI(r, r.hi) +
@@ -117,10 +135,7 @@ export function mountWidget(el, w) {
       if (shown.has(target)) continue;
       const p = new URLSearchParams({ node: target, mode: 'branch' });
       for (const [id, si] of vals) p.append('set', id + ':' + si);
-      let r;
-      try { r = await (await fetch('/v1/run', { ...POST, body: p.toString() })).json(); } catch (e) {
-        r = { ok: false, message: 'the engine did not answer: ' + e };
-      }
+      const r = await ask(p);
       if (mine !== seq) return;
       if (!r.ok) { shown.set(target, { refused: r.message || r.fault || 'refused' }); continue; }
       for (const v of r.values || []) if (w.outputs.includes(v.id) && !shown.has(v.id)) shown.set(v.id, v);
@@ -145,7 +160,8 @@ export function mountWidget(el, w) {
   if (w.sweep && S.byId.get(w.sweep)) {
     const r = S.byId.get(w.sweep);
     const q = new URLSearchParams({ node: w.outputs[0], mode: 'branch', over: w.sweep, from: r.lo, to: r.hi, points: 25 });
-    fetch('/v1/sweep?' + q.toString()).then(x => x.json()).then(sw => {
+    for (const [id, si] of vals) if (id !== w.sweep) q.append('set', id + ':' + si);
+    Promise.resolve().then(() => ENGINE.sweep(q)).then(sw => {
       const host = el.querySelector('.ls-fig');
       if (!sw.ok || !sw.figure) { host.innerHTML = '<p class="muted">the sweep did not run: ' + esc(sw.message || '') + '</p>'; return; }
       drawFigureInto(host, sw.figure, w.outputs[0] + '_across_' + w.sweep);

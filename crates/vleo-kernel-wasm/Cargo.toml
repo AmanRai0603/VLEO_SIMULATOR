@@ -1,0 +1,27 @@
+[package]
+name = "vleo-kernel-wasm"
+description = "FACE — the engine for a page read without the engine. The whole kernel, compiled to WebAssembly for the readers' docs folder, so a lesson's try-it widgets are answered by the same relations the tool runs. No bindings crate: raw exports and a buffer, like the form checker."
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.94"
+license = "UNLICENSED"
+authors = ["Orbitt Space"]
+repository = "https://github.com/AmanRai0603/VLEO_SIMULATOR"
+
+# Excluded from the workspace, like vleo-wasm and vleo-method-wasm: it needs
+# the wasm32 target. `cargo run -p xtask -- readers` builds it into the docs
+# folder; nothing built from it is committed.
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+vleo-modules = { path = "../vleo-modules" }
+vleo-bus = { path = "../vleo-bus" }
+
+[profile.release]
+opt-level = "s"
+lto = "fat"
+panic = "abort"
+codegen-units = 1
+strip = "symbols"

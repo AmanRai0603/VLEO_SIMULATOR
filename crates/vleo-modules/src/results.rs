@@ -348,6 +348,68 @@ pub fn thin(s: &Saved, today: &str) -> Saved {
     t
 }
 
+/// A behaviour sweep: `node` answered across the input `over`, from `from` to
+/// `to` (SI) in `points` evenly spaced steps, with every other input as `base`
+/// sets it. Each refused point is kept with why, never dropped — a sweep in
+/// which some points quietly used a substituted value is a sweep whose
+/// conclusion is unknown.
+///
+/// The one loop every face runs: the local engine for `/v1/sweep`, and the
+/// engine compiled for the browser for a page read without it.
+pub fn sweep(
+    base: &vleo_bus::Case,
+    node: &str,
+    over: &str,
+    from: f64,
+    to: f64,
+    points: usize,
+) -> Result<Sweep, String> {
+    // The axis has to be a row a reader can actually move. Sweeping a computed
+    // one drew a flat line and reported no refusals, which is the same silent
+    // substitution as `set=` on one and reads as a real result.
+    if let Some(why) = crate::why_not_suppliable(over) {
+        return Err(why);
+    }
+    let (ni, oi) = match (Vleo::find(node), Vleo::find(over)) {
+        (Some(a), Some(b)) => (a as usize, b as usize),
+        _ => return Err("the sweep names a node that does not exist".to_string()),
+    };
+    if points < 2 {
+        return Err("a sweep needs at least two points".to_string());
+    }
+    let mut w = Sweep {
+        over: over.to_string(),
+        over_name: VARS[oi].label.to_string(),
+        x_unit: VARS[oi].unit.symbol().to_string(),
+        x_factor: VARS[oi].unit.si_factor(),
+        y_unit: VARS[ni].unit.symbol().to_string(),
+        y_factor: VARS[ni].unit.si_factor(),
+        from,
+        to,
+        points,
+        ..Default::default()
+    };
+    let mut scratch = crate::Scratch::new();
+    for i in 0..points {
+        let t = i as f64 / (points - 1) as f64;
+        let x = from + t * (to - from);
+        let mut case = base.clone();
+        case.target = node.to_string();
+        case.supply.push((over.to_string(), x));
+        match crate::evaluate(&case, &mut scratch) {
+            Ok(r) => match r.values.iter().find(|v| v.id == node) {
+                Some(v) => {
+                    w.x.push(x);
+                    w.y.push(v.value);
+                }
+                None => w.refused.push((x, "blocked".to_string())),
+            },
+            Err(f) => w.refused.push((x, format!("{f}"))),
+        }
+    }
+    Ok(w)
+}
+
 /// What a saved result draws, described by the engine (see [`crate::figure`]):
 /// for a sweep, the answer across what it moved, with the case it was saved at
 /// called out. A single run draws nothing; its answer is a number.

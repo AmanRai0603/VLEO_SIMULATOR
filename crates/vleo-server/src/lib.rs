@@ -1000,50 +1000,14 @@ fn sweep_spec(params: &str) -> (String, String, f64, f64, usize) {
 /// sweep cannot make at all comes back as the wire refusal.
 fn run_sweep(params: &str, ctx: &Ctx) -> Result<vleo_modules::results::Sweep, String> {
     let (node, over, from, to, points) = sweep_spec(params);
-    // The axis has to be a row a reader can actually move. Sweeping a computed
-    // one drew a flat line and reported no refusals, which is the same silent
-    // substitution as `set=` on one and reads as a real result.
     if let Some(why) = unsuppliable(&over) {
         return Err(refuse(&over, &why));
     }
     if let Some(refusal) = case_refused(params, ctx) {
         return Err(refusal);
     }
-    let (ni, oi) = match (Vleo::find(&node), Vleo::find(&over)) {
-        (Some(a), Some(b)) => (a, b),
-        _ => return Err(failed("the sweep names a node that does not exist")),
-    };
-    let mut w = vleo_modules::results::Sweep {
-        over: over.clone(),
-        over_name: VARS[oi as usize].label.to_string(),
-        x_unit: VARS[oi as usize].unit.symbol().to_string(),
-        x_factor: VARS[oi as usize].unit.si_factor(),
-        y_unit: VARS[ni as usize].unit.symbol().to_string(),
-        y_factor: VARS[ni as usize].unit.si_factor(),
-        from,
-        to,
-        points,
-        ..Default::default()
-    };
-    let mut scratch = Scratch::new();
-    for i in 0..points {
-        let t = i as f64 / (points - 1) as f64;
-        let x = from + t * (to - from);
-        let mut case = build_case(params, ctx);
-        case.target = node.clone();
-        case.supply.push((over.clone(), x));
-        match vleo_modules::evaluate(&case, &mut scratch) {
-            Ok(r) => match r.values.iter().find(|v| v.id == node) {
-                Some(v) => {
-                    w.x.push(x);
-                    w.y.push(v.value);
-                }
-                None => w.refused.push((x, "blocked".to_string())),
-            },
-            Err(f) => w.refused.push((x, format!("{f}"))),
-        }
-    }
-    Ok(w)
+    vleo_modules::results::sweep(&build_case(params, ctx), &node, &over, from, to, points)
+        .map_err(|e| failed(&e))
 }
 
 /// A behaviour sweep. Refused points are recorded with their reason, never

@@ -108,6 +108,17 @@ pub(crate) const PIPELINE: &[Cmd] = &[
         dry: Dry::Check("lesson check <file>: every reason it would be refused, nothing written"),
     },
     Cmd {
+        name: "readers",
+        stage: "release",
+        reads: "the tree, generated/fragments, every lesson.toml, web/js and web/app.css, crates/vleo-kernel-wasm",
+        writes: "the readers' docs folder: target/readers, or --out — rebuilt whole; nothing committed",
+        checks: "every lesson passes its check; every link and asset a page names is in the folder",
+        undo: "delete the folder",
+        code: ("xtask/src/readers.rs", "cmd_readers"),
+        steps: &["build the engine for the browser", "bundle the page script", "write the pages", "check every page has what it links"],
+        dry: Dry::Plan,
+    },
+    Cmd {
         name: "take",
         stage: "take",
         reads: "the filled form, the `maintainer` branch, the tree",
