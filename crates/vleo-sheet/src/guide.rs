@@ -23,6 +23,28 @@ use crate::manual::{Check, Manual, Role, Section, Who};
 
 use crate::text::html as esc;
 
+/// The guide's parts (`web/pages/guide.html`), read once.
+fn parts() -> &'static crate::shell::Parts {
+    static P: std::sync::OnceLock<crate::shell::Parts> = std::sync::OnceLock::new();
+    P.get_or_init(|| {
+        crate::shell::Parts::parse(
+            "web/pages/guide.html",
+            include_str!("../../../web/pages/guide.html"),
+        )
+        .unwrap_or_else(|e| panic!("{e}"))
+    })
+}
+
+/// A part as written.
+fn t(name: &str) -> &'static str {
+    parts().text(name)
+}
+
+/// A part with its slots filled.
+fn f(name: &str, slots: &[(&str, &str)]) -> String {
+    parts().fill(name, slots)
+}
+
 /// The manual's own light markup — `code`, **bold**, *italic*, a blank line
 /// between paragraphs — the same rules the browser's Manual view applies.
 fn inline(text: &str) -> String {
@@ -35,9 +57,7 @@ fn inline(text: &str) -> String {
         out.push_str(&emphasis(before));
         match after[1..].find('`') {
             Some(j) => {
-                out.push_str("<code>");
-                out.push_str(&after[1..1 + j]);
-                out.push_str("</code>");
+                out.push_str(&f("md-code", &[("text", &after[1..1 + j])]));
                 rest = &after[2 + j..];
             }
             None => {
@@ -57,12 +77,12 @@ fn emphasis(s: &str) -> String {
     while let Some(part) = it.next() {
         out.push_str(&italic(part));
         if it.peek().is_some() {
-            out.push_str(if bold { "</b>" } else { "<b>" });
+            out.push_str(t(if bold { "b-close" } else { "b-open" }));
             bold = !bold;
         }
     }
     if bold {
-        out.push_str("</b>");
+        out.push_str(t("b-close"));
     }
     out
 }
@@ -75,12 +95,12 @@ fn italic(s: &str) -> String {
     let mut out = String::new();
     for (i, p) in parts.iter().enumerate() {
         if i > 0 {
-            out.push_str(if i % 2 == 1 { "<i>" } else { "</i>" });
+            out.push_str(t(if i % 2 == 1 { "i-open" } else { "i-close" }));
         }
         out.push_str(p);
     }
     if parts.len().is_multiple_of(2) {
-        out.push_str("</i>");
+        out.push_str(t("i-close"));
     }
     out
 }
@@ -90,9 +110,12 @@ fn paragraphs(text: &str) -> String {
         .map(str::trim)
         .filter(|p| !p.is_empty())
         .map(|p| {
-            format!(
-                "<p>{}</p>",
-                inline(&p.split_whitespace().collect::<Vec<_>>().join(" "))
+            f(
+                "para",
+                &[(
+                    "text",
+                    &inline(&p.split_whitespace().collect::<Vec<_>>().join(" ")),
+                )],
             )
         })
         .collect()
@@ -102,14 +125,12 @@ fn paragraphs(text: &str) -> String {
 /// pasting it (E15).
 fn check_note(c: Option<Check>) -> &'static str {
     match c {
-        Some(Check::Exits) => "<span class=\"tag ok\">safe to run — only reads</span>",
-        Some(Check::Fails) => {
-            "<span class=\"tag refuse\">shows a refusal — it is meant to fail here</span>"
-        }
-        Some(Check::Serves) => "<span class=\"tag ok\">starts the tool</span>",
-        Some(Check::Writes) => "<span class=\"tag writes\">changes files</span>",
-        Some(Check::Ci) => "<span class=\"tag ok\">the pipeline runs this too</span>",
-        Some(Check::Probe) => "<span class=\"tag ok\">asks the running tool</span>",
+        Some(Check::Exits) => t("check-exits"),
+        Some(Check::Fails) => t("check-fails"),
+        Some(Check::Serves) => t("check-serves"),
+        Some(Check::Writes) => t("check-writes"),
+        Some(Check::Ci) => t("check-ci"),
+        Some(Check::Probe) => t("check-probe"),
         None => "",
     }
 }
@@ -117,7 +138,7 @@ fn check_note(c: Option<Check>) -> &'static str {
 fn kind_badges(kind: &str) -> String {
     kind.split('+')
         .map(str::trim)
-        .map(|k| format!("<span class=\"kind k-{k}\">{k}</span>", k = esc(k)))
+        .map(|k| f("kind-badge", &[("kind", &esc(k))]))
         .collect()
 }
 
@@ -131,51 +152,45 @@ fn anchor(id: &str) -> String {
 fn section(s: &Section) -> String {
     let mut steps = String::new();
     for st in &s.steps {
-        let mut li = format!("<div class=\"say\">{}</div>", inline(&st.say));
+        let mut li = f("step-say", &[("text", &inline(&st.say))]);
         if let Some(ui) = &st.ui {
-            li.push_str(&format!(
-                "<div class=\"ui\">look for <span class=\"uilabel\">{}</span></div>",
-                esc(ui)
-            ));
+            li.push_str(&f("step-ui", &[("ui", &esc(ui))]));
         }
         if let Some(run) = &st.run {
-            li.push_str(&format!(
-                "<div class=\"cmd\"><code>{}</code><button class=\"copy\" type=\"button\" \
-                 data-copy=\"{}\" aria-label=\"copy the command\">copy</button></div>{}",
-                esc(run),
-                esc(run),
-                check_note(st.check)
+            li.push_str(&f(
+                "step-cmd",
+                &[("run", &esc(run)), ("note", check_note(st.check))],
             ));
             if let Some(why) = &st.why {
-                li.push_str(&format!("<div class=\"why\">{}</div>", inline(why)));
+                li.push_str(&f("step-why", &[("text", &inline(why))]));
             }
             if let Some(expect) = &st.expect {
-                li.push_str(&format!(
-                    "<div class=\"why\">it says: <code>{}</code></div>",
-                    esc(expect)
-                ));
+                li.push_str(&f("step-expect", &[("text", &esc(expect))]));
             }
         }
-        steps.push_str(&format!("<li>{li}</li>"));
+        steps.push_str(&f("li", &[("text", &li)]));
     }
-    format!(
-        "<section class=\"sec\" id=\"{id}\" data-text=\"{text}\">\
-         <h3>{title} {kinds}</h3>\
-         <div class=\"answer\"><span class=\"lbl\">answer first</span>{answer}</div>\
-         <div class=\"body d-lr\">{body}</div>\
-         {steps}\
-         </section>",
-        id = anchor(&s.id),
-        text = esc(&format!("{} {} {}", s.title, s.answer, s.body).to_lowercase()),
-        title = esc(&s.title),
-        kinds = kind_badges(&s.kind),
-        answer = inline(&s.answer),
-        body = paragraphs(&s.body),
-        steps = if steps.is_empty() {
-            String::new()
-        } else {
-            format!("<ol class=\"steps\">{steps}</ol>")
-        }
+    f(
+        "section",
+        &[
+            ("id", &anchor(&s.id)),
+            (
+                "text",
+                &esc(&format!("{} {} {}", s.title, s.answer, s.body).to_lowercase()),
+            ),
+            ("title", &esc(&s.title)),
+            ("kinds", &kind_badges(&s.kind)),
+            ("answer", &inline(&s.answer)),
+            ("body", &paragraphs(&s.body)),
+            (
+                "steps",
+                &if steps.is_empty() {
+                    String::new()
+                } else {
+                    f("steps", &[("steps", &steps)])
+                },
+            ),
+        ],
     )
 }
 
@@ -187,78 +202,37 @@ fn for_role(who: Who, role: &str) -> bool {
 /// The loop, drawn once, with this role's part lit (E6, E7: the whole first,
 /// its parts named where they sit).
 fn loop_svg(role: &str) -> String {
-    let lane = |id: &str, y: i32, label: &str| {
-        let on = if id == role { " on" } else { "" };
-        format!(
-            "<g class=\"lane{on}\"><rect x=\"4\" y=\"{y}\" width=\"712\" height=\"54\" rx=\"4\"/>\
-             <text x=\"16\" y=\"{}\" class=\"who\">{label}</text></g>",
-            y + 32
-        )
-    };
-    let step = |x: i32, y: i32, w: i32, text: &str| {
-        format!(
-            "<g class=\"step\"><rect x=\"{x}\" y=\"{}\" width=\"{w}\" height=\"30\" rx=\"3\"/>\
-             <text x=\"{}\" y=\"{}\" text-anchor=\"middle\">{text}</text></g>",
-            y + 12,
-            x + w / 2,
-            y + 32
-        )
-    };
-    let mut g = String::new();
-    g.push_str(&lane("user", 4, "user"));
-    g.push_str(&lane("maintainer", 64, "maintainer"));
-    g.push_str(&lane("developer", 124, "developer"));
-    g.push_str(&step(120, 4, 120, "fills a node form"));
-    g.push_str(&step(470, 4, 130, "tries · approves"));
-    g.push_str(&step(120, 64, 90, "take"));
-    g.push_str(&step(230, 64, 110, "preview"));
-    g.push_str(&step(360, 64, 90, "approve"));
-    g.push_str(&step(470, 64, 90, "merge"));
-    g.push_str(&step(580, 64, 110, "ship · share"));
-    g.push_str(&step(230, 124, 360, "code a form needs · the tool itself"));
-    format!(
-        "<svg class=\"loop\" viewBox=\"0 0 720 184\" role=\"img\" aria-label=\"The loop: a user \
-         fills a node form; the maintainer takes it, previews it, records the approval, merges and \
-         ships; the user tries the preview and approves; a developer writes what needs code. \
-         Your part is lit.\">{g}\
-         <path class=\"flow\" d=\"M180 50 V64 M275 94 V118 M300 94 C 360 40 450 40 530 50 \
-         M530 50 C 480 60 420 70 405 76\"/></svg>"
+    let on = |id: &str| if id == role { " on" } else { "" };
+    f(
+        "loop",
+        &[
+            ("on_user", on("user")),
+            ("on_maintainer", on("maintainer")),
+            ("on_developer", on("developer")),
+        ],
     )
 }
 
 fn role_intro(r: &Role) -> String {
     let li = |xs: &[String]| {
         xs.iter()
-            .map(|x| format!("<li>{}</li>", inline(x)))
+            .map(|x| f("li", &[("text", &inline(x))]))
             .collect::<String>()
     };
-    format!(
-        "<section class=\"af\"><span class=\"lbl\">answer first <span class=\"tag decl\">declared · \
-         the repository's rules</span></span><p>{answer}</p></section>\
-         <div class=\"eyebrow\">your role, in four steps</div>\
-         <div class=\"cgrid\">\
-         <div class=\"card s1 d-lr\"><div class=\"n\">1</div><h3>Say it simply</h3><p>{simply}</p>\
-         <p class=\"tag ill\">illustrative — an analogy, see step 3 for where it stops</p></div>\
-         <div class=\"card s2\"><div class=\"n\">2</div><h3>Now the real thing</h3>{svg}\
-         <h4>You do</h4><ul>{does}</ul></div>\
-         <div class=\"card s3\"><div class=\"n\">3</div><h3>Where the simple picture breaks</h3>\
-         <p>{breaks}</p><h4>You never</h4><ul class=\"never\">{never}</ul></div>\
-         <div class=\"card s4 d-l\"><div class=\"n\">4</div><h3>Try it · predict first</h3>\
-         <p>{predict}</p><details><summary>Say your answer, then open</summary><p>{reveal}</p>\
-         </details></div>\
-         </div>\
-         <section class=\"wrong\"><span class=\"lbl\">common wrong idea</span>\
-         <p class=\"w\">“{wrong}”</p><p>{right}</p></section>",
-        answer = inline(&r.answer),
-        simply = inline(&r.simply),
-        svg = loop_svg(&r.id),
-        does = li(&r.does),
-        breaks = inline(&r.breaks),
-        never = li(&r.never),
-        predict = inline(&r.predict),
-        reveal = inline(&r.reveal),
-        wrong = esc(&r.wrong),
-        right = inline(&r.right),
+    f(
+        "intro",
+        &[
+            ("answer", &inline(&r.answer)),
+            ("simply", &inline(&r.simply)),
+            ("svg", &loop_svg(&r.id)),
+            ("does", &li(&r.does)),
+            ("breaks", &inline(&r.breaks)),
+            ("never", &li(&r.never)),
+            ("predict", &inline(&r.predict)),
+            ("reveal", &inline(&r.reveal)),
+            ("wrong", &esc(&r.wrong)),
+            ("right", &inline(&r.right)),
+        ],
     )
 }
 
@@ -282,21 +256,19 @@ pub fn render(m: &Manual, role: &str, version: &str) -> Result<String, String> {
         if secs.is_empty() {
             continue;
         }
-        toc.push_str(&format!("<li class=\"tl\">{}</li>", esc(&l.title)));
-        work.push_str(&format!(
-            "<div class=\"layer\"><h2>{}</h2><div class=\"lede d-lr\">{}</div>",
-            esc(&l.title),
-            paragraphs(&l.lede)
+        toc.push_str(&f("toc-layer", &[("title", &esc(&l.title))]));
+        work.push_str(&f(
+            "layer-open",
+            &[("title", &esc(&l.title)), ("lede", &paragraphs(&l.lede))],
         ));
         for s in secs {
-            toc.push_str(&format!(
-                "<li><a href=\"#{}\">{}</a></li>",
-                anchor(&s.id),
-                esc(&s.title)
+            toc.push_str(&f(
+                "toc-item",
+                &[("id", &anchor(&s.id)), ("title", &esc(&s.title))],
             ));
             work.push_str(&section(s));
         }
-        work.push_str("</div>");
+        work.push_str(t("layer-close"));
     }
 
     let commands: String = m
@@ -304,16 +276,21 @@ pub fn render(m: &Manual, role: &str, version: &str) -> Result<String, String> {
         .iter()
         .filter(|c| for_role(c.who, role))
         .map(|c| {
-            format!(
-                "<tr><td><code>{} {}</code></td><td>{}</td><td>{}</td></tr>",
-                esc(if c.tool == "xtask" {
-                    "cargo run -p xtask --"
-                } else {
-                    "vleo"
-                }),
-                esc(&c.usage),
-                inline(&c.what),
-                esc(&c.effect)
+            f(
+                "command",
+                &[
+                    (
+                        "tool",
+                        &esc(t(if c.tool == "xtask" {
+                            "tool-xtask"
+                        } else {
+                            "tool-vleo"
+                        })),
+                    ),
+                    ("usage", &esc(&c.usage)),
+                    ("what", &inline(&c.what)),
+                    ("effect", &esc(&c.effect)),
+                ],
             )
         })
         .collect();
@@ -322,33 +299,30 @@ pub fn render(m: &Manual, role: &str, version: &str) -> Result<String, String> {
         .iter()
         .filter(|c| for_role(c.who, role))
         .map(|c| {
-            format!(
-                "<tr><td>{}</td><td>{}</td><td>{}</td></tr>",
-                inline(&c.what),
-                inline(&c.why),
-                inline(&c.instead)
+            f(
+                "cannot",
+                &[
+                    ("what", &inline(&c.what)),
+                    ("why", &inline(&c.why)),
+                    ("instead", &inline(&c.instead)),
+                ],
             )
         })
         .collect();
     let others: String = crate::manual::ROLES
         .iter()
         .filter(|o| **o != role)
-        .map(|o| format!("<a href=\"{o}.html\">{o}</a>"))
+        .map(|o| f("other-guide", &[("role", o)]))
         .collect::<Vec<_>>()
-        .join(" · ");
+        .join(t("others-sep"));
 
     let cannot_block = if cannot.is_empty() {
         String::new()
     } else {
-        format!(
-            "<section class=\"ref\"><h3>What you cannot do here, and where it is done \
-             <span class=\"kind k-reference\">reference</span></h3><table><thead><tr><th>you \
-             cannot</th><th>why</th><th>instead</th></tr></thead><tbody>{cannot}</tbody>\
-             </table></section>"
-        )
+        f("cannot-block", &[("rows", &cannot)])
     };
-    let body = crate::shell::fill_part(
-        BODY,
+    let body = f(
+        "body",
         &[
             ("version", &esc(version)),
             ("role", &esc(role)),
@@ -361,20 +335,14 @@ pub fn render(m: &Manual, role: &str, version: &str) -> Result<String, String> {
             ("cannot_block", &cannot_block),
             ("js", JS),
         ],
-    )?;
+    );
     Ok(crate::shell::fill(&crate::shell::Page {
-        title: &format!("VLEO · {} guide", r.title),
-        head: &format!(
-            "<meta name=\"generator\" content=\"cargo run -p xtask -- guides — from docs/manual.toml; \
-             edit the manual, never this file\">\n<style>{CSS}</style>"
-        ),
-        body_attrs: " data-depth=\"read\"",
+        title: &f("title", &[("title", &r.title)]),
+        head: &f("head", &[("css", CSS)]),
+        body_attrs: t("body-attrs"),
         body: &body,
     }))
 }
-
-/// The guide's body, with its slots (`web/pages/guide.html`).
-const BODY: &str = include_str!("../../../web/pages/guide.html");
 
 const CSS: &str = include_str!("../../../web/pages/guide.css");
 

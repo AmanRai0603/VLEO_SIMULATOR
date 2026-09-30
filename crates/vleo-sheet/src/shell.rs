@@ -1,11 +1,11 @@
 //! The one page template, `web/page.html`, and the one way to fill it.
 //!
 //! Every page the tool writes as a file — a node form, a lesson form, a role
-//! guide, each page of the readers' folder, and (from `vleo-modules`, which
-//! carries its own copy of [`fill`] because it cannot depend on this crate) a
-//! saved result — is that template with its four slots filled. The markup the
-//! pages share lives with the frontend, in `web/`, and a generator supplies
-//! only what is its own: a title, what it adds to the head, the body.
+//! guide, a row's page, a saved result, each page of the readers' folder — is
+//! that template with its four slots filled. What each page puts in it is its
+//! own parts file in `web/pages` ([`Parts`]): every word and tag, by name, so
+//! a generator decides only which part, how often and with what. The markup
+//! lives with the frontend, and a test refuses a generator that writes any.
 
 /// `web/page.html`, as it is on disk when the tool is built.
 pub const TEMPLATE: &str = include_str!("../../../web/page.html");
@@ -60,27 +60,6 @@ pub fn fill_from(template: &str, p: &Page) -> Result<String, String> {
     }
     o.push_str(rest);
     Ok(o)
-}
-
-/// One part of a page from its template in `web/pages`: the note the file
-/// opens with (an HTML comment, for whoever edits the template) dropped, as is
-/// the newline the file ends with; then every `{{slot}}` filled once from
-/// `slots`, in one pass, markup placed as given.
-///
-/// A slot the template holds that is not given, or one given that the
-/// template does not hold, is refused: either is a template and a generator
-/// that have drifted apart, and the page would silently lose a part.
-pub fn fill_part(template: &str, slots: &[(&str, &str)]) -> Result<String, String> {
-    let mut rest = template;
-    if rest.starts_with("<!--") {
-        let end = rest
-            .find("-->")
-            .ok_or("the template's opening note is never closed")?;
-        rest = rest[end + 3..]
-            .strip_prefix('\n')
-            .unwrap_or(&rest[end + 3..]);
-    }
-    fill_slots(rest.strip_suffix('\n').unwrap_or(rest), slots)
 }
 
 /// Every `{{slot}}` in `text` filled once from `slots`, in one pass; a slot
@@ -263,16 +242,6 @@ mod tests {
             .unwrap_err()
             .contains("footer"));
         assert!(fill_from("<!doctype html>{{title", &Page::default()).is_err());
-    }
-
-    #[test]
-    fn a_part_is_its_template_with_every_slot_filled_and_no_other() {
-        let t = "<!--\n  a note {{not_a_slot}}\n-->\n<p>{{a}} and {{b}}</p>\n";
-        let o = fill_part(t, &[("a", "{{b}}"), ("b", "<i>x</i>")]).unwrap();
-        assert_eq!(o, "<p>{{b}} and <i>x</i></p>");
-        assert!(fill_part(t, &[("a", "1")]).unwrap_err().contains("`b`"));
-        let extra = fill_part(t, &[("a", "1"), ("b", "2"), ("c", "3")]).unwrap_err();
-        assert!(extra.contains("`c`"), "{extra}");
     }
 
     #[test]

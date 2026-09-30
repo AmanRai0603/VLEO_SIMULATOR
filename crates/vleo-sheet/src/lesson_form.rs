@@ -84,8 +84,8 @@ fn page(sh: &Sheet, tree: &Tree, l: &Lesson, toml_text: &str) -> String {
     let wasm = crate::template::base64(&crate::template::checker(tree));
     let (kinds, stations, claims) = (list(KINDS), list(STATIONS), list(CLAIMS));
     let json = lesson::json(l).replace('<', "\\u003c");
-    let body = crate::shell::fill_part(
-        BODY,
+    let body = f(
+        "body",
         &[
             ("label", &he(&sh.label)),
             ("id", &he(&sh.id)),
@@ -101,11 +101,10 @@ fn page(sh: &Sheet, tree: &Tree, l: &Lesson, toml_text: &str) -> String {
             ("wasm", &wasm),
             ("js", LESSON_JS),
         ],
-    )
-    .unwrap_or_else(|e| panic!("web/pages/lesson-form.html: {e}"));
+    );
     crate::shell::fill(&crate::shell::Page {
-        title: &format!("{} — lesson form", sh.label),
-        head: &format!("<style>\n{PAGE_CSS}{LESSON_CSS}</style>"),
+        title: &f("title", &[("label", &sh.label)]),
+        head: &f("head", &[("css", PAGE_CSS), ("lesson_css", LESSON_CSS)]),
         body: &body,
         ..Default::default()
     })
@@ -126,8 +125,22 @@ fn he(s: &str) -> String {
         .replace('"', "&quot;")
 }
 
-/// The page's body, with its slots (`web/pages/lesson-form.html`).
-const BODY: &str = include_str!("../../../web/pages/lesson-form.html");
+/// The form's parts (`web/pages/lesson-form.html`), read once.
+fn parts() -> &'static crate::shell::Parts {
+    static P: std::sync::OnceLock<crate::shell::Parts> = std::sync::OnceLock::new();
+    P.get_or_init(|| {
+        crate::shell::Parts::parse(
+            "web/pages/lesson-form.html",
+            include_str!("../../../web/pages/lesson-form.html"),
+        )
+        .unwrap_or_else(|e| panic!("{e}"))
+    })
+}
+
+/// A part with its slots filled.
+fn f(name: &str, slots: &[(&str, &str)]) -> String {
+    parts().fill(name, slots)
+}
 /// The node form's look, so the two forms read as one family.
 const PAGE_CSS: &str = include_str!("../../../web/pages/node-form.css");
 const LESSON_CSS: &str = include_str!("../../../web/pages/lesson-form.css");

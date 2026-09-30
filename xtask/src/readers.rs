@@ -327,12 +327,7 @@ fn write_folder(
             root.join("generated/fragments")
                 .join(format!("{}.html", sh.id)),
         )
-        .unwrap_or_else(|_| {
-            format!(
-                "<p class=\"empty\">{} has no generated page yet.</p>",
-                he(&sh.id)
-            )
-        });
+        .unwrap_or_else(|_| f("no-page", &[("id", &he(&sh.id))]));
         let lesson = match vleo_sheet::lesson::load(&sh.dir, &sh.id) {
             Some(Ok(l)) if vleo_sheet::lesson::problems(&l, tree).is_empty() => Some(l),
             Some(Ok(_)) | Some(Err(_)) => {
@@ -360,23 +355,17 @@ fn write_folder(
 /// not: a header of its own and a column to read in.
 const READERS_CSS: &str = include_str!("../../web/pages/readers.css");
 
-/// A readers' page's body, with its slots (`web/pages/readers.html`).
-const BODY: &str = include_str!("../../web/pages/readers.html");
-
 /// A readers' page: the one page template (`web/page.html`), with the tool's
 /// stylesheet linked and the folder's own header.
 fn shell(title: &str, up: &str, body: &str, tail: &str) -> String {
     vleo_sheet::shell::fill(&vleo_sheet::shell::Page {
         title,
-        head: &format!(
-            "<link rel=\"stylesheet\" href=\"{up}assets/app.css\">\n<style>{READERS_CSS}</style>"
-        ),
-        body_attrs: " class=\"readers\"",
-        body: &vleo_sheet::shell::fill_part(
-            BODY,
+        head: &f("head", &[("up", up), ("css", READERS_CSS)]),
+        body_attrs: t("body-attrs"),
+        body: &f(
+            "body",
             &[("up", up), ("body", body), ("tail", tail.trim_end())],
-        )
-        .unwrap_or_else(|e| panic!("web/pages/readers.html: {e}")),
+        ),
     })
 }
 
@@ -389,10 +378,7 @@ fn row_page(
     let mut body = fragment.to_string();
     let mut tail = String::new();
     if let Some(l) = lesson {
-        body.push_str(
-            "\n<section class=\"seg\" data-seg=\"lesson\"><h3 class=\"seg-h\">the lesson — how this row is taught</h3>\
-             <div id=\"row-lesson\"></div></section>\n",
-        );
+        body.push_str(t("lesson-seg"));
         // The rows its widgets name, and only those: what a slider needs to
         // know of a row — its range, its unit and the factor to SI.
         let ids: BTreeSet<&String> = l
@@ -416,39 +402,39 @@ fn row_page(
                 )
             })
             .collect();
-        tail.push_str(&format!(
-            "<script type=\"application/json\" id=\"vleo-rows\">[{}]</script>\n\
-             <script type=\"application/json\" id=\"vleo-lesson-json\">{}</script>\n\
-             <script src=\"../assets/kernel.js\"></script>\n",
-            rows.join(",").replace('<', "\\u003c"),
-            vleo_sheet::lesson::json(l).replace('<', "\\u003c")
+        tail.push_str(&f(
+            "lesson-tail",
+            &[
+                ("rows", &rows.join(",").replace('<', "\\u003c")),
+                (
+                    "lesson",
+                    &vleo_sheet::lesson::json(l).replace('<', "\\u003c"),
+                ),
+            ],
         ));
     }
-    tail.push_str("<script src=\"../assets/vleo.js\"></script>\n");
-    shell(&format!("{} — VLEO", sh.label), "../", &body, &tail)
+    tail.push_str(&f("script", &[("up", "../")]));
+    shell(
+        &f("title-row", &[("label", &sh.label)]),
+        "../",
+        &body,
+        &tail,
+    )
 }
 
 fn index_page(tree: &Tree, lessons: &[(String, String, String)]) -> String {
-    let mut b = String::from(
-        "<section class=\"answer-first view-af\"><p class=\"af-k\">Answer first <span class=\"dx dx-reference\">reference</span></p>\
-         <p class=\"af-a\">Every row of the VLEO design, and every lesson, as the tool shows them — read here with no tool running.</p>\
-         <ul class=\"af-points\"><li>A row's page is the tool's own: what it asks, the real thing and its source, where it breaks, its record.</li>\
-         <li>A lesson's widgets are answered by the engine, running in the page on the declared values. A row that reads reference data refuses here and says so.</li>\
-         <li>To run a case of your own, save a result or send a form, open the tool.</li></ul></section>\n",
-    );
-    b.push_str("<h2>Lessons</h2>\n");
+    let mut b = t("index-intro").to_string();
     if lessons.is_empty() {
-        b.push_str("<p class=\"empty\">No row has a lesson yet. A lesson is written by the person who knows the row, through its lesson form.</p>\n");
+        b.push_str(t("lessons-none"));
     } else {
-        b.push_str("<ul class=\"rd-lessons\">\n");
+        b.push_str(t("lessons-open"));
         for (id, title, answer) in lessons {
-            b.push_str(&format!(
-                "<li><a href=\"rows/{id}.html\"><b>{}</b></a> <code>{id}</code><br><span class=\"muted\">{}</span></li>\n",
-                he(title),
-                he(answer)
+            b.push_str(&f(
+                "lesson-item",
+                &[("id", id), ("title", &he(title)), ("answer", &he(answer))],
             ));
         }
-        b.push_str("</ul>\n");
+        b.push_str(t("list-close"));
     }
     for layer in 1..=4 {
         let rows: Vec<&vleo_sheet::model::Sheet> = tree
@@ -459,27 +445,42 @@ fn index_page(tree: &Tree, lessons: &[(String, String, String)]) -> String {
         if rows.is_empty() {
             continue;
         }
-        b.push_str(&format!("<h2>Layer {layer}</h2>\n<ul class=\"rd-rows\">\n"));
+        b.push_str(&f("layer-open", &[("layer", &layer.to_string())]));
         for s in rows {
-            b.push_str(&format!(
-                "<li><a href=\"rows/{id}.html\">{}</a> <code>{id}</code>{}</li>\n",
-                he(&s.label),
-                if s.is_seeded() {
-                    " <span class=\"muted\">seeded</span>"
-                } else {
-                    ""
-                },
-                id = he(&s.id)
+            b.push_str(&f(
+                "row-item",
+                &[
+                    ("id", &he(&s.id)),
+                    ("label", &he(&s.label)),
+                    ("seeded", if s.is_seeded() { t("seeded") } else { "" }),
+                ],
             ));
         }
-        b.push_str("</ul>\n");
+        b.push_str(t("list-close"));
     }
-    shell(
-        "VLEO design — for readers",
-        "",
-        &b,
-        "<script src=\"assets/vleo.js\"></script>\n",
-    )
+    shell(t("title-index"), "", &b, &f("script", &[("up", "")]))
+}
+
+/// The readers' pages' parts (`web/pages/readers.html`), read once.
+fn parts() -> &'static vleo_sheet::shell::Parts {
+    static P: std::sync::OnceLock<vleo_sheet::shell::Parts> = std::sync::OnceLock::new();
+    P.get_or_init(|| {
+        vleo_sheet::shell::Parts::parse(
+            "web/pages/readers.html",
+            include_str!("../../web/pages/readers.html"),
+        )
+        .unwrap_or_else(|e| panic!("{e}"))
+    })
+}
+
+/// A part as written.
+fn t(name: &str) -> &'static str {
+    parts().text(name)
+}
+
+/// A part with its slots filled.
+fn f(name: &str, slots: &[(&str, &str)]) -> String {
+    parts().fill(name, slots)
 }
 
 /// Every `href` and `src` a page points into the folder with, and every

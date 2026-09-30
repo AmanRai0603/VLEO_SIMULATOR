@@ -278,32 +278,72 @@ fn every_page_s_markup_style_and_script_lives_in_web() {
     }
 }
 
+/// Every page generator, and the parts file it writes its page from.
+const GENERATORS: [(&str, &str); 6] = [
+    ("crates/vleo-sheet/src/page.rs", "web/pages/row.html"),
+    ("crates/vleo-sheet/src/guide.rs", "web/pages/guide.html"),
+    (
+        "crates/vleo-sheet/src/template.rs",
+        "web/pages/node-form.html",
+    ),
+    (
+        "crates/vleo-sheet/src/lesson_form.rs",
+        "web/pages/lesson-form.html",
+    ),
+    (
+        "crates/vleo-modules/src/results.rs",
+        "web/pages/report.html",
+    ),
+    ("xtask/src/readers.rs", "web/pages/readers.html"),
+];
+
+/// Strings with a tag in them that a generator may hold because it READS a
+/// page or ESCAPES text for one, never because it writes markup: finding the
+/// end of a block a filled form carries, and keeping text from closing it.
+/// (`<u0021` is how this reader sees `"<\\u0021"`, the escape that keeps `<!`
+/// out of JSON a page carries.) And one message that names a command's
+/// argument the way usage lines do.
+const READ_NOT_WRITTEN: [&str; 5] = [
+    "</",
+    "<u0021",
+    "</script>",
+    "</textarea>",
+    "this is not a lesson form; for a bare lesson.toml, name its row with --for <node>",
+];
+
+/// A part family the data chooses by name at run time — a claim's title, a
+/// tier's blind spot, a table's title and columns — used by its prefix.
+const FAMILIES: [&str; 5] = [
+    "claim-title-",
+    "kind-title-",
+    "tier-blind-",
+    "title-",
+    "cols-",
+];
+
 #[test]
-fn a_row_page_is_its_parts_and_nothing_else() {
-    let src = read("crates/vleo-sheet/src/page.rs");
-    let own = markup_in_strings(&src);
-    assert!(
-        own.is_empty(),
-        "crates/vleo-sheet/src/page.rs writes markup of its own — it belongs in \
-         web/pages/row.html: {own:#?}"
-    );
-    // And every part there is one the generator asks for: by its name, or —
-    // for a family chosen by the data, such as a claim's title — by the
-    // family's prefix.
-    let text: &'static str = Box::leak(read("web/pages/row.html").into_boxed_str());
-    let parts = shell::Parts::parse("web/pages/row.html", text).expect("row.html reads");
-    for name in parts.names() {
-        let family = ["claim-title-", "kind-title-", "tier-blind-"]
-            .iter()
-            .find(|p| name.starts_with(*p));
-        let used = match family {
-            Some(p) => src.contains(&format!("\"{p}")),
-            None => src.contains(&format!("\"{name}\"")),
-        };
+fn every_page_is_its_parts_and_no_generator_writes_markup() {
+    for (gen, file) in GENERATORS {
+        let src = read(gen);
+        let own: Vec<String> = markup_in_strings(&src)
+            .into_iter()
+            .filter(|l| !READ_NOT_WRITTEN.contains(&l.as_str()))
+            .collect();
         assert!(
-            used,
-            "web/pages/row.html has a part `{name}` the generator never uses"
+            own.is_empty(),
+            "{gen} writes markup of its own — it belongs in {file}: {own:#?}"
         );
+        // And every part there is one the generator asks for: by its name, or
+        // for a family the data chooses, by the family's prefix.
+        let text: &'static str = Box::leak(read(file).into_boxed_str());
+        let parts = shell::Parts::parse(file, text).unwrap_or_else(|e| panic!("{e}"));
+        for name in parts.names() {
+            let used = src.contains(&format!("\"{name}\""))
+                || FAMILIES
+                    .iter()
+                    .any(|p| name.starts_with(p) && src.contains(&format!("\"{p}")));
+            assert!(used, "{file} has a part `{name}` that {gen} never uses");
+        }
     }
 }
 

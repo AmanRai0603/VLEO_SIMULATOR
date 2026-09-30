@@ -8,7 +8,11 @@
 
 use vleo_bus::{Case, RunMode};
 use vleo_modules::inputs::case_inputs;
-use vleo_modules::results::{csv, from_run, html, read, unwrap_report, Saved};
+use vleo_modules::results::{csv, from_run, read, unwrap_report, Saved};
+// The page a result is written as needs the std feature: it reads its parts
+// from web/pages through vleo-sheet, which only a face that saves results has.
+#[cfg(feature = "std")]
+use vleo_modules::results::html;
 use vleo_modules::{evaluate, Scratch};
 
 /// A run of an input row as its own target, at a value off its default.
@@ -53,6 +57,7 @@ fn a_result_reads_back_exactly() {
     );
 }
 
+#[cfg(feature = "std")]
 #[test]
 fn the_report_carries_the_result_and_reads_back_as_it() {
     let (s, _, _) = a_result();
@@ -72,40 +77,13 @@ fn the_report_carries_the_result_and_reads_back_as_it() {
 /// The page is the one page template (`web/page.html`) with its slots filled:
 /// every part of the template's own text, in order, nothing before or after.
 /// The same test `vleo_sheet::shell::is_filled` holds every other page to.
+#[cfg(feature = "std")]
 #[test]
 fn the_report_is_the_one_page_template_filled() {
-    let t = vleo_modules::results::PAGE_TEMPLATE;
-    let t = &t[t
-        .find("<!doctype html>")
-        .expect("the template has no doctype")..];
-    let parts: Vec<&str> = t
-        .split("{{")
-        .enumerate()
-        .map(|(k, p)| {
-            if k == 0 {
-                p
-            } else {
-                &p[p.find("}}").unwrap() + 2..]
-            }
-        })
-        .collect();
     let (s, _, _) = a_result();
     let page = html(&s);
-    assert!(
-        page.starts_with(parts[0]),
-        "the page does not begin as the template does"
-    );
-    assert!(
-        page.ends_with(parts[parts.len() - 1]),
-        "the page does not end as the template does"
-    );
-    let mut from = 0;
-    for p in &parts {
-        from = page[from..]
-            .find(p)
-            .map(|i| i + from + p.len())
-            .unwrap_or_else(|| panic!("the page lost the template's {p:?}"));
-    }
+    vleo_sheet::shell::is_filled(vleo_sheet::shell::TEMPLATE, &page)
+        .unwrap_or_else(|e| panic!("the report is not the page template filled: {e}"));
     assert_eq!(page.matches("<!doctype html>").count(), 1);
 }
 
@@ -160,6 +138,7 @@ fn results_are_kept_listed_and_removed_and_a_path_is_never_followed() {
     let _ = std::fs::remove_dir_all(&dir);
 }
 
+#[cfg(feature = "std")]
 #[test]
 fn a_result_keeps_the_beliefs_it_rests_on_and_says_when_one_breaks() {
     // The only rows with a recorded history read a reference-data bundle, and
@@ -218,6 +197,7 @@ fn a_result_keeps_the_beliefs_it_rests_on_and_says_when_one_breaks() {
     );
 }
 
+#[cfg(feature = "std")]
 #[test]
 fn a_row_whose_first_belief_came_after_the_result_is_a_belief_that_moved() {
     // A run through rows with no recorded version says so — `#! versions none`
