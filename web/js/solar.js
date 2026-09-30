@@ -1716,35 +1716,27 @@ const PANELS = [
         opts: [['f107', 'F10.7'], ['ap', 'Ap'], ['ssn', 'sunspot number']] },
       { k: 'by', label: 'aggregate', opts: [['year', 'by year'], ['doy', 'by day of year'], ['month', 'by month'], ['smooth', 'the 13-month smoother'], ['kpap', 'Kp against ap']] },
     ],
-    // The Kp-against-ap view's numbers are the engine's (phase 10), asked for
-    // only when it is the view drawn.
-    async data(o) {
-      const m = await bundleFile('solar-weather', 'monthly_means.csv');
-      return o.by === 'kpap' ? { ...m, fig: await engineFigure('kp-ap') } : m;
-    },
-    build(rec, o, extra) {
-      if (o.by === 'smooth') return smoothed(extra.rows, o.v);
-      if (o.by === 'kpap') return kpAgainstAp(extra.fig);
-      const key = o.v;
-      const grp = new Map();
-      for (const d of rec.days) {
-        if (d[key] === null) continue;
-        const g = o.by === 'year' ? d.year : o.by === 'doy' ? Math.ceil(d.doy / 5) * 5 : (d.year * 12 + +d.date.slice(5, 7));
-        if (!grp.has(g)) grp.set(g, []);
-        grp.get(g).push(d[key]);
-      }
-      const ks = [...grp.keys()].sort((a, b) => a - b);
-      const xs = o.by === 'month' ? ks.map(k => Math.floor(k / 12) + (k % 12) / 12) : ks;
-      const ys = ks.map(k => grp.get(k).reduce((p, c) => p + c, 0) / grp.get(k).length);
+    // THE NUMBERS ARE THE ENGINE'S (phases 10b and 10f): every view asks for
+    // its own figure — the record grouped by year, day of year or month
+    // (vleo_modules::record::climate, on the record's own calendar), the
+    // 13-month smoother (record::smoother, from monthly_means.csv), or Kp
+    // against ap — and draws it.
+    data: o => (o.by === 'smooth' ? engineFigure('smoother', { v: o.v })
+      : o.by === 'kpap' ? engineFigure('kp-ap')
+        : engineFigure('climate', { v: o.v, by: o.by })),
+    build(rec, o, fig) {
+      if (fig.refused) throw new Error('the engine did not work the figure out: ' + fig.refused);
+      if (o.by === 'smooth') return smoothed(fig, o.v);
+      if (o.by === 'kpap') return kpAgainstAp(fig);
+      const key = fig.variable, ks = fig.key, xs = fig.x, ys = fig.mean;
       // THE RECORD'S MEAN IS OVER DAYS, NOT OVER GROUPS. Averaging the yearly
       // means weights 1997 — which the record joins in January and holds 357
       // days of — the same as a full year, and the answer then disagrees with
       // sw_central_expectation's climatology, which is the day mean. For F10.7
-      // the two are 113.78 and 114.84.
-      const allDays = rec.days.map(d => d[key]).filter(v => v !== null);
-      const overall = allDays.reduce((p, c) => p + c, 0) / allDays.length;
+      // the two are 113.78 and 114.84. The engine takes it over the days.
+      const overall = fig.overall;
       const marks = [{ axis: 'y', at: overall,
-        label: 'mean over the record’s ' + allDays.length + ' days = ' + overall.toFixed(2) }];
+        label: 'mean over the record’s ' + fig.days + ' days = ' + overall.toFixed(2) }];
       if (o.by === 'doy') {
         marks.push({ axis: 'x', at: 80, label: 'March equinox', colour: INK.series[1] });
         marks.push({ axis: 'x', at: 266, label: 'September equinox', colour: INK.series[1] });
@@ -1754,8 +1746,8 @@ const PANELS = [
       // which is fine until a second reader needs them and copies them.
       const vname = key === 'f107' ? 'F10.7' : key === 'ap' ? 'Ap' : 'the sunspot number';
       const unit = key === 'f107' ? 'sfu' : '';
-      const hi = Math.max(...ys), lo = Math.min(...ys);
-      const atHi = xs[ys.indexOf(hi)], atLo = xs[ys.indexOf(lo)];
+      const [hi, atHi] = fig.high || [NaN, NaN];
+      const [lo, atLo] = fig.low || [NaN, NaN];
       const gname = o.by === 'doy' ? '5-day bin' : o.by === 'year' ? 'year' : 'month';
       // THE GAP, POINTED AT. "The 2017 gap is 273 consecutive days and shows
       // here as a year drawn from nine months" is the last sentence of a
@@ -1767,7 +1759,7 @@ const PANELS = [
       if (o.by === 'year') {
         const gi = ks.indexOf(2017);
         if (gi >= 0) {
-          const held = rec.days.filter(d => d.year === 2017 && d[key] !== null).length;
+          const held = fig.days_in[gi];
           if (held < 330) {
             notes.push({ x: xs[gi], y: ys[gi],
               text: 'a year drawn from ' + held + ' days, not 365' });
@@ -1781,7 +1773,7 @@ const PANELS = [
               of: 'between the quietest ' + gname + ' of the record and the busiest \u2014 a mission '
                 + 'is sized against wherever in that range it falls' },
         spec: {
-          finding: ys.filter(v => v < overall).length + ' of the ' + ys.length + ' ' + gname +
+          finding: fig.below + ' of the ' + ys.length + ' ' + gname +
             's sit below the record mean of ' + overall.toFixed(1) + ', and the highest is ' +
             (hi / lo).toFixed(1) + ' times the lowest',
           notes,
@@ -1794,7 +1786,7 @@ const PANELS = [
           const spread = 'The ' + (o.by === 'doy' ? '5-day bins' : o.by === 'year' ? 'yearly means' : 'monthly means') +
             ' run from ' + sig(lo) + (unit ? ' ' + unit : '') + ' at ' + sig(atLo) + ' to ' + sig(hi) +
             (unit ? ' ' + unit : '') + ' at ' + sig(atHi) + ', a ratio of ' + (hi / lo).toFixed(2) +
-            ' about a mean of ' + overall.toFixed(2) + ' over the record’s ' + allDays.length +
+            ' about a mean of ' + overall.toFixed(2) + ' over the record’s ' + fig.days +
             ' days. ';
           if (o.by === 'doy' && key === 'ap') {
             return spread + 'That swing is the equinoctial effect and its SIZE is the point: the ' +
@@ -2746,37 +2738,16 @@ function thermoShape(extra, eng, decF, decFa, decKp) {
 }
 
 /** Climate · the 13-month smoother, the one view monthly_means.csv exists for. */
-function smoothed(rows, key) {
-  const col = key === 'f107' ? 'f107' : key === 'ap' ? 'ap' : 'ssn';
-  const xs = [], raw = [], sm = [];
-  for (const r of rows) {
-    const t = daysSince2000(r.month) / 365.25 + 2000;
-    xs.push(t);
-    raw.push(num(r[col + '_mean']));
-    sm.push(num(r[col + '_smooth']));
-  }
-  const missing = sm.filter(v => v === null).length;
-  // How much the smoother actually removes, for the variable on screen. The
-  // caption used to be the same sentence under all three.
-  const both = xs.map((_, i) => [raw[i], sm[i]]).filter(([a, b]) => a !== null && b !== null);
-  const amp = a => Math.max(...a) - Math.min(...a);
-  const rawAmp = both.length ? amp(both.map(b => b[0])) : 0;
-  const smAmp = both.length ? amp(both.map(b => b[1])) : 0;
-  const resid = both.length
-    ? Math.sqrt(both.reduce((p, [a, b]) => p + (a - b) * (a - b), 0) / both.length)
-    : 0;
+function smoothed(fig, key) {
+  // THE NUMBERS ARE THE ENGINE'S: vleo_modules::record::smoother reads each
+  // month's mean and 13-month smoothed value from monthly_means.csv and measures
+  // what the smoothing removes, how often the month crosses it and how far it
+  // strays, for the variable on screen.
+  const xs = fig.x, raw = fig.raw, sm = fig.smooth, missing = fig.missing;
+  const rawAmp = fig.raw_range, smAmp = fig.smooth_range, resid = fig.rms;
+  const crossings = fig.crossings, maxDev = fig.max_departure;
   const vname = key === 'f107' ? 'F10.7' : key === 'ap' ? 'Ap' : 'the sunspot number';
   const unit = key === 'f107' ? ' sfu' : '';
-  // How often the raw line actually cuts the smoother, and how far it ever
-  // strays — the two things a reader takes from this picture by eye.
-  let crossings = 0, maxDev = 0, prevSign = 0;
-  for (const [a2, b2] of both) {
-    const dv = a2 - b2;
-    if (Math.abs(dv) > maxDev) maxDev = Math.abs(dv);
-    const sgn = dv > 0 ? 1 : dv < 0 ? -1 : 0;
-    if (sgn && prevSign && sgn !== prevSign) crossings++;
-    if (sgn) prevSign = sgn;
-  }
   return {
     answer: { value: sig(resid) + unit,
       of: 'the rms a month keeps once the cycle is smoothed out of it \u2014 the part of '
@@ -2802,7 +2773,7 @@ function smoothed(rows, key) {
       ' down to ' + sig(smAmp) + unit + ', removing an rms of ' + sig(resid) + unit +
       ' \u2014 which is what is left of a month once the cycle is taken out, and is the part a ' +
       'design cannot plan around. ' +
-      'It is undefined for ' + missing + ' of ' + rows.length + ' months at the two ends of ' +
+      'It is undefined for ' + missing + ' of ' + fig.months + ' months at the two ends of ' +
       'the record, left empty rather than extrapolated: the line breaks there rather than being drawn ' +
       'across, because a smoother that runs to the edge of a record is claiming to know half a window ' +
       'it does not have.',

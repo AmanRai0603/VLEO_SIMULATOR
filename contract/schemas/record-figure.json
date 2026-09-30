@@ -770,6 +770,218 @@
         "quiet_low",
         "mirror"
       ]
+    },
+    {
+      "type": "object",
+      "description": "The climate figure: the record's mean in each year, five-day bin of the year, or month, on its own calendar.",
+      "properties": {
+        "ok": {
+          "type": "boolean"
+        },
+        "bundle": {
+          "type": "string",
+          "description": "The bundle and version the numbers were worked out from."
+        },
+        "figure": {
+          "type": "string",
+          "enum": [
+            "climate"
+          ]
+        },
+        "variable": {
+          "type": "string",
+          "enum": [
+            "f107",
+            "ap",
+            "ssn"
+          ]
+        },
+        "by": {
+          "type": "string",
+          "enum": [
+            "year",
+            "doy",
+            "month"
+          ]
+        },
+        "key": {
+          "type": "array",
+          "description": "Each group's key: a year, the last day of a five-day bin, or 12·year + month.",
+          "items": {
+            "type": "number"
+          }
+        },
+        "x": {
+          "type": "array",
+          "description": "Where each group is drawn.",
+          "items": {
+            "type": "number"
+          }
+        },
+        "mean": {
+          "type": "array",
+          "description": "The mean of each group's days.",
+          "items": {
+            "type": "number"
+          }
+        },
+        "days_in": {
+          "type": "array",
+          "description": "The days each group rests on.",
+          "items": {
+            "type": "number"
+          }
+        },
+        "overall": {
+          "type": [
+            "null",
+            "number"
+          ],
+          "description": "The mean over the record's days, not over its groups."
+        },
+        "days": {
+          "type": "number",
+          "description": "Days carrying the driver."
+        },
+        "high": {
+          "type": [
+            "null",
+            "array"
+          ],
+          "description": "The highest group mean and where it is drawn.",
+          "items": {
+            "type": "number"
+          }
+        },
+        "low": {
+          "type": [
+            "null",
+            "array"
+          ],
+          "description": "The lowest, and where.",
+          "items": {
+            "type": "number"
+          }
+        },
+        "below": {
+          "type": "number",
+          "description": "How many groups sit below the record's mean."
+        }
+      },
+      "required": [
+        "ok",
+        "figure",
+        "bundle",
+        "variable",
+        "by",
+        "key",
+        "x",
+        "mean",
+        "days_in",
+        "overall",
+        "days",
+        "high",
+        "low",
+        "below"
+      ]
+    },
+    {
+      "type": "object",
+      "description": "The smoother figure: each month's mean beside the 13-month smoothed value, from monthly_means.csv, and what the smoothing removes.",
+      "properties": {
+        "ok": {
+          "type": "boolean"
+        },
+        "bundle": {
+          "type": "string",
+          "description": "The bundle and version the numbers were worked out from."
+        },
+        "figure": {
+          "type": "string",
+          "enum": [
+            "smoother"
+          ]
+        },
+        "variable": {
+          "type": "string",
+          "enum": [
+            "f107",
+            "ap",
+            "ssn"
+          ]
+        },
+        "x": {
+          "type": "array",
+          "description": "Where each month is drawn, in years.",
+          "items": {
+            "type": "number"
+          }
+        },
+        "raw": {
+          "type": "array",
+          "description": "Each month's mean.",
+          "items": {
+            "type": [
+              "null",
+              "number"
+            ]
+          }
+        },
+        "smooth": {
+          "type": "array",
+          "description": "The 13-month smoothed value; null where the smoother would need months the record does not hold.",
+          "items": {
+            "type": [
+              "null",
+              "number"
+            ]
+          }
+        },
+        "missing": {
+          "type": "number",
+          "description": "Months the smoother is undefined for."
+        },
+        "months": {
+          "type": "number",
+          "description": "All the months."
+        },
+        "raw_range": {
+          "type": "number",
+          "description": "The range of the monthly means over the months carrying both."
+        },
+        "smooth_range": {
+          "type": "number",
+          "description": "...of the smoothed values."
+        },
+        "rms": {
+          "type": "number",
+          "description": "The rms of monthly mean minus smoothed value."
+        },
+        "crossings": {
+          "type": "number",
+          "description": "How often the monthly line crosses the smoother."
+        },
+        "max_departure": {
+          "type": "number",
+          "description": "Its largest departure from it."
+        }
+      },
+      "required": [
+        "ok",
+        "figure",
+        "bundle",
+        "variable",
+        "x",
+        "raw",
+        "smooth",
+        "missing",
+        "months",
+        "raw_range",
+        "smooth_range",
+        "rms",
+        "crossings",
+        "max_departure"
+      ]
     }
   ]
 }

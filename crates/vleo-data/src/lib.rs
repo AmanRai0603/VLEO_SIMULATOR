@@ -607,6 +607,11 @@ pub fn days_since_2000(s: &str) -> Option<i32> {
     if !(1..=12).contains(&m) || !(1..=31).contains(&d) {
         return None;
     }
+    i32::try_from(days_from_civil(y, m, d)).ok()
+}
+
+/// Hinnant's `days_from_civil`, from 2000-01-01.
+fn days_from_civil(y: i64, m: i64, d: i64) -> i64 {
     let y = if m <= 2 { y - 1 } else { y };
     let era = if y >= 0 { y } else { y - 399 } / 400;
     let yoe = y - era * 400;
@@ -614,7 +619,28 @@ pub fn days_since_2000(s: &str) -> Option<i32> {
     let doy = (153 * mp + 2) / 5 + d - 1;
     let doe = yoe * 365 + yoe / 4 - yoe / 100 + doy;
     // 719468 puts the epoch at 1970-01-01; 10957 shifts it to 2000-01-01.
-    i32::try_from(era * 146_097 + doe - 719_468 - 10_957).ok()
+    era * 146_097 + doe - 719_468 - 10_957
+}
+
+/// The calendar date of a day since 2000-01-01: `(year, month, day)`, and its
+/// day of the year from 1.
+///
+/// The other way round from [`days_since_2000`], by the same published
+/// algorithm (Hinnant's `civil_from_days`), so a date read in and written back
+/// out is the date it was. A figure that groups the record by year, month or
+/// day of year asks here rather than keeping a calendar of its own.
+pub fn civil_from_days(day: i32) -> (i32, u32, u32, u32) {
+    let z = day as i64 + 10_957 + 719_468;
+    let era = if z >= 0 { z } else { z - 146_096 } / 146_097;
+    let doe = z - era * 146_097;
+    let yoe = (doe - doe / 1_460 + doe / 36_524 - doe / 146_096) / 365;
+    let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);
+    let mp = (5 * doy + 2) / 153;
+    let d = doy - (153 * mp + 2) / 5 + 1;
+    let m = if mp < 10 { mp + 3 } else { mp - 9 };
+    let y = yoe + era * 400 + if m <= 2 { 1 } else { 0 };
+    let of_year = day as i64 - days_from_civil(y, 1, 1) + 1;
+    (y as i32, m as u32, d as u32, of_year as u32)
 }
 
 fn cell(v: &str) -> Option<f64> {
@@ -624,6 +650,75 @@ fn cell(v: &str) -> Option<f64> {
     } else {
         v.parse().ok()
     }
+}
+
+/// One month of `monthly_means.csv`: the mean of each driver over the
+/// month, and the 13-month smoothed value the cycles are counted on.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct MonthlyMean {
+    /// Days since 2000-01-01 of the date the month is filed under.
+    pub day: i32,
+    pub f107_mean: Option<f64>,
+    pub ap_mean: Option<f64>,
+    pub ssn_mean: Option<f64>,
+    /// None at the ends, where the smoother would need months the record does
+    /// not hold — left empty rather than extrapolated.
+    pub f107_smooth: Option<f64>,
+    pub ap_smooth: Option<f64>,
+    pub ssn_smooth: Option<f64>,
+}
+
+/// The months `monthly_means.csv` holds, in its order, read by the column
+/// names in its header. A value written as `NaN` is no value.
+pub fn read_monthly_means(b: &Bundle) -> Result<Vec<MonthlyMean>, String> {
+    if !b.verified {
+        return Err(format!(
+            "{} is present but does not verify — refusing to read it",
+            b.manifest.name
+        ));
+    }
+    let p = b.dir.join("monthly_means.csv");
+    let text = fs::read_to_string(&p).map_err(|e| format!("{}: {e}", p.display()))?;
+    let mut cols: Option<Vec<String>> = None;
+    let mut out = Vec::new();
+    for (n, line) in text.lines().enumerate() {
+        let line = line.trim();
+        if line.is_empty() || line.starts_with('#') {
+            continue;
+        }
+        let f: Vec<&str> = line.split(',').map(str::trim).collect();
+        let Some(h) = &cols else {
+            cols = Some(f.iter().map(|s| s.to_string()).collect());
+            continue;
+        };
+        let at = |name: &str| -> Option<f64> {
+            h.iter()
+                .position(|c| c == name)
+                .and_then(|i| f.get(i).copied())
+                .and_then(cell)
+                .filter(|v| !v.is_nan())
+        };
+        let month = h
+            .iter()
+            .position(|c| c == "month")
+            .and_then(|i| f.get(i).copied())
+            .ok_or_else(|| format!("{}: no 'month' column", p.display()))?;
+        let day = days_since_2000(month)
+            .ok_or_else(|| format!("{}:{}: '{month}' is not a date", p.display(), n + 1))?;
+        out.push(MonthlyMean {
+            day,
+            f107_mean: at("f107_mean"),
+            ap_mean: at("ap_mean"),
+            ssn_mean: at("ssn_mean"),
+            f107_smooth: at("f107_smooth"),
+            ap_smooth: at("ap_smooth"),
+            ssn_smooth: at("ssn_smooth"),
+        });
+    }
+    if out.is_empty() {
+        return Err(format!("{}: no months", p.display()));
+    }
+    Ok(out)
 }
 
 /// Read the daily observed record out of a `solar-weather` bundle.
