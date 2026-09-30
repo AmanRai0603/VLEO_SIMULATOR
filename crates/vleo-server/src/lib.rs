@@ -157,6 +157,29 @@ pub fn serve(
     Ok(port)
 }
 
+/// One figure of the solar-weather record, without a server: the JSON
+/// `GET /v1/figures/solar/<id>?<params>` answers, byte for byte, because it is
+/// the same function. The command line (`vleo figure`) and Python
+/// (`vleo.figure`) ask here, so a number a panel draws is a number either can
+/// reproduce, from the same bundle and the same saved case.
+///
+/// `params` is a query string (`v=ap&by=cycle`). An unknown id, driver, split
+/// or view is refused by name, as the route refuses it: the answer carries
+/// `"ok":false` and a message, never a stand-in figure.
+pub fn figure(root: Option<PathBuf>, id: &str, params: &str) -> String {
+    let root = root.unwrap_or_else(repo_root);
+    let (data, data_versions, bundles, _) = resolve_data(&root);
+    let ctx = Ctx {
+        root,
+        data,
+        data_versions,
+        bundles,
+        port: 0,
+        preview: None,
+    };
+    results::record_figure(&ctx, id, params)
+}
+
 /// Open the page in the default browser.
 ///
 /// On Windows through `explorer.exe`, which hands a web address to the default

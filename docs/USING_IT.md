@@ -121,6 +121,17 @@ vleo sweep sw_ap_design --over sw_storm_design_level --from 1 --to 3 --points 3
 # 3 ran, 0 refused. Refusals are recorded, never dropped.
 ```
 
+The numbers a solar panel draws come the same way — the answer its picture
+reads, from the same function, so a figure can be checked or kept from a script:
+
+```
+vleo figure density
+{"ok":true,"figure":"density","bundle":"solar-weather@2026.09.14","days":10296.0,"r":0.206670332572184,"median_f107":104.0,"median_ap":7.0,"below_both_pct":27.758352758352757,"storm_ap":26.0,"storm_deciles":10.0}
+```
+
+From Python it is a dict: `vleo.figure("growth", v="ap", by="cycle")["change"]`.
+The figure ids and their keys are in the manual, under `/v1/figures/solar/<id>`.
+
 You can only set a number a person declared. Ask for one the tool works out and
 it tells you so rather than quietly ignoring you:
 

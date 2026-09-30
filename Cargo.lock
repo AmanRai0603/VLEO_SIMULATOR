@@ -272,6 +272,7 @@ dependencies = [
  "vleo-core",
  "vleo-data",
  "vleo-modules",
+ "vleo-server",
 ]
 
 [[package]]

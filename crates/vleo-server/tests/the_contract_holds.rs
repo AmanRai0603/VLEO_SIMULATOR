@@ -813,6 +813,22 @@ fn every_route_answers_as_the_contract_says() {
                 })
                 .collect();
             let a = request(port, &r.method, &ex.path.replace("@saved", &saved), &params);
+            // A FIGURE OF THE RECORD IS THE SAME FROM EVERY FACE. The command
+            // line and Python ask `vleo_server::figure`, not the route; the
+            // two must answer byte for byte, or a script reproducing a panel
+            // is reproducing something else.
+            if let Some(id) = ex.path.strip_prefix("/v1/figures/solar/") {
+                let q: Vec<String> = params
+                    .iter()
+                    .map(|(k, v)| format!("{}={}", enc(k), enc(v)))
+                    .collect();
+                let direct = vleo_server::figure(Some(root()), id, &q.join("&"));
+                if direct != a.body {
+                    errs.push(format!(
+                        "{label}: vleo_server::figure answers differently from the route"
+                    ));
+                }
+            }
             if a.status != 200 {
                 errs.push(format!(
                     "{label}: answered {} — {}",
