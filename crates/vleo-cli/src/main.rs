@@ -73,6 +73,9 @@ fn quiet_when_the_reader_stops() {
 }
 
 fn main() -> ExitCode {
+    // The crash log first, so the quiet-on-a-closed-pipe hook wraps it: output
+    // piped into `head` ends the program silently and is not logged as a bug.
+    vleo_data::crash::install("vleo", env!("CARGO_PKG_VERSION"));
     quiet_when_the_reader_stops();
     let args: Vec<String> = std::env::args().skip(1).collect();
     let cmd = args.first().map(|s| s.as_str()).unwrap_or("help");
@@ -141,10 +144,11 @@ vleo <command>
   inputs [--inputs <file.csv> | --defaults]
                        every input as a CSV — group, id, value, unit, default,
                        range. Fill in `value` and pass the file with --inputs.
-  result <file> [--html <out.html>]
+  result <file> [--html <out.html>] [--vleo <out.vleo>]
                        a saved result, shown as it was — nothing runs. Reads the
-                       CSV `run --save` writes, or the report page it rides in;
-                       --html writes that report, to send to someone.
+                       CSV `run --save` writes, the report page it rides in, or
+                       a .vleo; --html writes the report and --vleo the share
+                       file (CSV, report and manifest), to send to someone.
   selftest             every fixture declaration in the tree is sound —
                        provenance outside the code, a positive tolerance.
                        It does not execute them: `cargo test` does.
@@ -329,7 +333,11 @@ fn cmd_run(args: &[&str]) -> Result<(), String> {
     // file the browser's Results page and `vleo result` read back unchanged.
     if let Some(path) = opt(args, "--save") {
         let s = vleo_modules::results::from_run(&results, &case.supply, &now_utc(), "");
-        std::fs::write(path, vleo_modules::results::csv(&s)).map_err(|e| format!("{path}: {e}"))?;
+        vleo_modules::files::write_whole(
+            std::path::Path::new(path),
+            vleo_modules::results::csv(&s),
+        )
+        .map_err(|e| format!("{path}: {e}"))?;
         eprintln!("saved the result to {path}");
     }
 
@@ -720,15 +728,9 @@ fn cmd_cases() -> Result<(), String> {
     Ok(())
 }
 
-/// Now, as a result records it: UTC, to the second.
+/// Now, as a result records it: UTC, to the second (vleo_data::clock).
 fn now_utc() -> String {
-    std::process::Command::new("date")
-        .args(["-u", "+%Y-%m-%dT%H:%M:%SZ"])
-        .output()
-        .ok()
-        .and_then(|o| String::from_utf8(o.stdout).ok())
-        .map(|s| s.trim().to_string())
-        .unwrap_or_default()
+    vleo_data::clock::now_utc()
 }
 
 /// A saved result, as it was when it was saved. Runs nothing: a result read
@@ -736,11 +738,29 @@ fn now_utc() -> String {
 fn cmd_result(args: &[&str]) -> Result<(), String> {
     let file = *args
         .first()
-        .ok_or("usage: vleo result <file> [--html <out.html>]")?;
-    let text = std::fs::read_to_string(file).map_err(|e| format!("{file}: {e}"))?;
-    let s = vleo_modules::results::read(&vleo_modules::results::unwrap_report(&text))?;
+        .ok_or("usage: vleo result <file> [--html <out.html>] [--vleo <out.vleo>]")?;
+    let bytes = std::fs::read(file).map_err(|e| format!("{file}: {e}"))?;
+    let s = if bytes.starts_with(b"PK\x03\x04") {
+        vleo_modules::results::share::unpack(&bytes)?
+    } else {
+        vleo_modules::results::read(&vleo_modules::results::unwrap_report(
+            &String::from_utf8_lossy(&bytes),
+        ))?
+    };
+    if let Some(out) = opt(args, "--vleo") {
+        vleo_modules::files::write_whole(
+            std::path::Path::new(out),
+            vleo_modules::results::share::pack(&s),
+        )
+        .map_err(|e| format!("{out}: {e}"))?;
+        eprintln!("wrote the share file to {out}");
+    }
     if let Some(out) = opt(args, "--html") {
-        std::fs::write(out, vleo_modules::results::html(&s)).map_err(|e| format!("{out}: {e}"))?;
+        vleo_modules::files::write_whole(
+            std::path::Path::new(out),
+            vleo_modules::results::html(&s),
+        )
+        .map_err(|e| format!("{out}: {e}"))?;
         eprintln!("wrote the report to {out}");
     }
     let unit = |u: &str| {
@@ -760,6 +780,12 @@ fn cmd_result(args: &[&str]) -> Result<(), String> {
         },
         s.saved
     );
+    if !s.thinned.is_empty() {
+        println!(
+            "  thinned on {}: its answer and the inputs it changed are kept, not every value",
+            s.thinned
+        );
+    }
     match s.answer() {
         Some(a) => println!(
             "  \x1b[1m{}{}\x1b[0m  credibility {} of 4, governed by {}",

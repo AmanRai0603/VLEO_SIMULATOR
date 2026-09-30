@@ -38,25 +38,34 @@ email, drives and browsers pass it like any other file.
        python -m vleo
 
    `python -m vleo --check` proves the install works on your computer without opening anything.
+   The install also adds two commands: `vleo-design-tool` (the same as `python -m vleo`) and
+   `vleo-app`, which starts it like the desktop app below — no terminal window to keep open, and
+   it closes by itself.
 
-### B · The kit — a folder for your system
+### B · The desktop app — double-click and it opens
 
-| on | do this |
-|---|---|
-| Windows | right-click the zip → **Properties** → tick **Unblock** → **OK**, then **Extract All** to `C:\vleo`; open the folder and double-click **`Start VLEO.exe`** |
-| macOS | open a terminal in the folder, run `xattr -dr com.apple.quarantine .` once, then `./start.sh` |
-| Linux | `./start.sh` in the folder |
+| on | download | do this |
+|---|---|---|
+| Windows | `vleo-<version>-x86_64-pc-windows-msvc.zip` | right-click the zip → **Properties** → tick **Unblock** → **OK**, then **Extract All** to `C:\vleo`; open the folder and double-click **`VLEO Design Tool.exe`** |
+| macOS | `VLEO-Design-Tool-<version>-macos-arm64.zip` | double-click the zip, drag **VLEO Design Tool** into **Applications**, then open it |
+| Linux | `vleo-<version>-x86_64-unknown-linux-gnu.zip` | `./vleo-app` in the folder (or `./start.sh` to see its log) |
 
-**Windows says "Windows protected your PC"?** The program is not signed, so Windows does not know
-it. Click **More info → Run anyway**; it asks once. **If your company's antivirus removes
-`Start VLEO.exe`** (it can, as an unknown program), use **A** — or ask IT to exclude the folder
-`C:\vleo`. The tool only listens on your own machine and never uses the network.
+The app opens in your browser. It has no window of its own to close: **Quit** at the top of the
+page ends it, and it also ends by itself a few minutes after you close the last tab. Opening it
+again while it runs just opens the page again.
+
+**The first time, your computer asks.** These programs are not signed yet, so Windows and macOS
+say they do not know them: on Windows click **More info → Run anyway**; on a Mac, open it, then
+**System Settings → Privacy & Security → Open Anyway**. Each asks once. [FIRST_RUN.md](FIRST_RUN.md)
+has the steps with every message you may see, and how to check the download is genuine. **If your
+company's antivirus removes the program**, use **A** — or ask IT to allow the folder. The tool only
+listens on your own machine and never uses the network.
 
 ### Either way
 
 The tool opens in your browser, normally at `http://127.0.0.1:7777`; if that port is taken it uses
-the next free one and opens that instead, and the window it runs in prints the address. It is only
-on your machine — nobody else can reach it. To stop it, close that window or press Ctrl-C.
+the next free one and opens that instead. It is only on your machine — nobody else can reach it.
+Started from a terminal, stop it by closing that window or pressing Ctrl-C; the app, with **Quit**.
 
 ## 2 · Use it
 

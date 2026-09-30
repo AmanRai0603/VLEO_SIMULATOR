@@ -410,6 +410,7 @@ version = "0.3.0"
 dependencies = [
  "toml 0.8.23",
  "vleo-core",
+ "vleo-units",
 ]
 
 [[package]]

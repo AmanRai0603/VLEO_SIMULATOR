@@ -61,5 +61,13 @@ def main(argv=None):
         return 0
 
 
+def app():
+    """The `vleo-app` launcher pip installs. On Windows it runs without
+    a console window; it ends from the page's Quit, or by itself once no page
+    has been open for a few minutes."""
+    vleo.app(int(os.environ.get("VLEO_PORT", "7777")))
+    return 0
+
+
 if __name__ == "__main__":
     sys.exit(main())

@@ -91,9 +91,16 @@ def serve(port=7777, open=True):
     return _engine.serve(kit_root(), port, open)
 
 
+def app(port=7777):
+    """The desktop app: start the tool, open it in the browser, and return when
+    it is quit from the page or no page has been open for a few minutes. If it
+    is already running, open that one and return at once."""
+    return _engine.app(kit_root(), port)
+
+
 try:
     from ._build import VERSION as __version__
 except ImportError:  # a developer's build
     __version__ = "dev"
 
-__all__ = ["Result_", "nodes", "evaluate", "sweep", "version", "serve", "kit_root"]
+__all__ = ["Result_", "nodes", "evaluate", "sweep", "version", "serve", "app", "kit_root"]

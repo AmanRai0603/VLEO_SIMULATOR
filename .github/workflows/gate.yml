@@ -48,6 +48,7 @@ jobs:
   gate:
     name: build, generate, gate, test
     runs-on: ubuntu-latest
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
 
@@ -131,6 +132,11 @@ jobs:
       - name: the gate
         run: cargo run -p xtask -- gate
 
+      # The count that should only go down, where every run shows it.
+      - name: evidence debt
+        run: |
+          cargo run -q -p xtask -- status | head -n 1 | tee -a "$GITHUB_STEP_SUMMARY"
+
       - name: assembly validations
         run: cargo run -p xtask -- assemble
 
@@ -173,6 +179,7 @@ jobs:
   method-end-to-end:
     name: a node built from its method, end to end
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
       - uses: actions/cache@v4
@@ -232,6 +239,7 @@ jobs:
   tooling:
     name: the tools check themselves
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
         with:
@@ -356,6 +364,7 @@ jobs:
   review:
     name: advisory review (never blocks)
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     continue-on-error: true
     permissions:
       contents: read
@@ -386,6 +395,7 @@ jobs:
   mutants:
     name: the changed nodes' tests are load-bearing
     runs-on: ubuntu-latest
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
         with:
@@ -449,6 +459,7 @@ jobs:
   panels:
     name: the panels render, move and match
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
       - uses: actions/cache@v4
@@ -541,6 +552,7 @@ jobs:
     name: the author approved this exact change
     if: github.event_name == 'pull_request' && startsWith(github.head_ref, 'form/')
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
         with:
@@ -555,6 +567,7 @@ jobs:
   excluded-faces:
     name: the faces outside the workspace
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
       - uses: actions/cache@v4
@@ -602,6 +615,7 @@ jobs:
   shipping-profile:
     name: the profile that ships
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
       # This job had NO cache and is the most expensive in the file: four
@@ -625,6 +639,7 @@ jobs:
   no-std:
     name: the kernel stays no_std
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - run: rustup target add thumbv7em-none-eabihf

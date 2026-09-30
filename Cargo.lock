@@ -256,6 +256,14 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e6e4313cd5fcd3dad5cafa179702e2b244f760991f45397d14d4ebf38247da75"
 
 [[package]]
+name = "vleo-app"
+version = "0.3.0"
+dependencies = [
+ "embed-resource",
+ "vleo-server",
+]
+
+[[package]]
 name = "vleo-bus"
 version = "0.3.0"
 dependencies = [
@@ -295,6 +303,7 @@ version = "0.3.0"
 dependencies = [
  "toml 0.8.23",
  "vleo-core",
+ "vleo-units",
 ]
 
 [[package]]
@@ -302,6 +311,7 @@ name = "vleo-ffi"
 version = "0.3.0"
 dependencies = [
  "vleo-bus",
+ "vleo-data",
  "vleo-modules",
 ]
 
@@ -622,6 +632,7 @@ name = "xtask"
 version = "0.3.0"
 dependencies = [
  "toml 0.8.23",
+ "toml_edit",
  "vleo-data",
  "vleo-sheet",
  "vleo-units",

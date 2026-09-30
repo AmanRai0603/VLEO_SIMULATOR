@@ -34,6 +34,9 @@ pub const VLEO_BLOCKED: c_int = 3;
 pub const VLEO_BAD_ARGUMENT: c_int = 4;
 /// A declared reference-data bundle is absent or does not verify.
 pub const VLEO_DATA: c_int = 5;
+/// The tool itself hit a bug. The call was abandoned, nothing the caller owns
+/// was touched, and `vleo_last_message` says where the crash log is.
+pub const VLEO_INTERNAL: c_int = 6;
 
 thread_local! {
     /// The last message, per thread. No global state: a sweep is a parallel map
@@ -146,6 +149,30 @@ pub extern "C" fn vleo_graph_hash() -> u64 {
 /// `out` must point to a writable [`VleoResult`].
 #[no_mangle]
 pub unsafe extern "C" fn vleo_evaluate(case: *const VleoCase, out: *mut VleoResult) -> c_int {
+    // A PANIC NEVER CROSSES INTO C. Unwinding across an `extern "C"` boundary
+    // aborts the caller's process; it is caught here, logged by
+    // vleo_data::crash, and returned as a code. The scratch is dropped so the
+    // next call starts from a clean one.
+    match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| evaluate_inner(case, out))) {
+        Ok(code) => code,
+        Err(_) => {
+            SCRATCH.with(|sc| {
+                if let Ok(mut sc) = sc.try_borrow_mut() {
+                    *sc = None;
+                }
+            });
+            let log = vleo_data::crash::last_log()
+                .map(|p| p.display().to_string())
+                .unwrap_or_else(|| vleo_data::crash::log_dir().display().to_string());
+            set_message(format!(
+                "the engine hit a bug evaluating this case; it was logged in {log}"
+            ));
+            VLEO_INTERNAL
+        }
+    }
+}
+
+unsafe fn evaluate_inner(case: *const VleoCase, out: *mut VleoResult) -> c_int {
     if case.is_null() || out.is_null() {
         set_message("a null pointer was passed where a case and a result were expected".into());
         return VLEO_BAD_ARGUMENT;

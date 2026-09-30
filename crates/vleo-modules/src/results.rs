@@ -75,6 +75,11 @@ pub struct Saved {
     /// `#! versions` line, empty or not. One saved before the tool recorded
     /// beliefs has none, and nothing can be said about what has moved since.
     pub versions_known: bool,
+    /// When the full values were dropped to keep the folder small, or
+    /// nothing. A thinned result keeps what it answered, what it was run on
+    /// and its chain — enough to say what it was and to run it again — and
+    /// says it was thinned rather than passing for whole.
+    pub thinned: String,
 }
 
 impl Saved {
@@ -93,6 +98,21 @@ impl Saved {
             .filter(|r| r.note == "changed")
             .filter_map(|r| r.si.map(|v| (r.id.clone(), v)))
             .collect()
+    }
+    /// What a listing needs and no more: the record's identity, the inputs it
+    /// changed, and its answer. Every other value and blocked row is left out.
+    pub fn summary(&self) -> Saved {
+        let mut s = self.clone();
+        s.inputs.retain(|r| r.note == "changed");
+        s.outputs = self.answer().cloned().into_iter().collect();
+        s.blocked.clear();
+        s
+    }
+    /// The summary, marked as what a thinned result keeps.
+    pub fn thinned_on(&self, date: &str) -> Saved {
+        let mut s = self.summary();
+        s.thinned = date.to_string();
+        s
     }
 }
 
@@ -285,6 +305,9 @@ pub fn csv(s: &Saved) -> String {
             }
         ));
     }
+    if !s.thinned.is_empty() {
+        o.push_str(&format!("#! thinned {}\n", meta(&s.thinned)));
+    }
     o.push_str("section,id,name,value,unit,si,credibility,governing,note\n");
     for (section, rows) in [
         ("input", &s.inputs),
@@ -351,6 +374,7 @@ pub fn read(text: &str) -> Result<Saved, String> {
                 "graph" => s.graph = v,
                 "case" => s.case = v,
                 "template" => s.template = v,
+                "thinned" => s.thinned = v,
                 "data" => s.data = v.split_whitespace().map(str::to_string).collect(),
                 "ran" => s.ran = v.parse().unwrap_or(0),
                 "blocked" => s.blocked_count = v.parse().unwrap_or(0),
@@ -446,7 +470,26 @@ pub fn file_name(s: &Saved) -> String {
         .chars()
         .map(|c| if c.is_ascii_alphanumeric() { c } else { '-' })
         .collect();
-    format!("{}_{}_{}.csv", when.trim_matches('-'), s.target, s.chain)
+    // The target and chain come from the file being kept, which may be an
+    // upload. Only the characters a result's name is allowed to hold survive,
+    // so a crafted `..\` never becomes a path on Windows (where `\` is one).
+    let plain = |x: &str| -> String {
+        x.chars()
+            .map(|c| {
+                if c.is_ascii_alphanumeric() || matches!(c, '_' | '-') {
+                    c
+                } else {
+                    '-'
+                }
+            })
+            .collect()
+    };
+    format!(
+        "{}_{}_{}.csv",
+        when.trim_matches('-'),
+        plain(&s.target),
+        plain(&s.chain)
+    )
 }
 
 // ---------------------------------------------------------------------------
@@ -702,6 +745,20 @@ pub fn html(s: &Saved) -> String {
         "<!-- The result itself, as CSV. Upload this page on the Results page and this is what \
          is read. -->\n<script type=\"text/csv\" id=\"vleo-result\">\n{data}</script>\n</body>\n</html>\n"
     ));
+    if !s.thinned.is_empty() {
+        // Said at the top, not left to be noticed: the tables below hold the
+        // answer and the changed inputs only.
+        o = o.replacen(
+            "</header>\n",
+            &format!(
+                "<p class=\"m\"><b>Thinned on {}:</b> only the answer and the inputs it changed are \
+                 kept. Its chain says exactly what ran; run it again on the same tool to see every \
+                 value.</p></header>\n",
+                he(&s.thinned)
+            ),
+            1,
+        );
+    }
     o
 }
 
@@ -743,18 +800,56 @@ details { margin-top: 24px; }
 // ---------------------------------------------------------------------------
 // kept on disk
 
-/// Results kept in a directory outside the repository.
+/// Results kept in a directory outside the repository — on one laptop, or in
+/// a folder the team shares.
+///
+/// Each result is its own file, and everything the folder knows about a
+/// result sits in files named after it: a summary a listing reads instead of
+/// the whole result, and a pin. There is no shared index file, so two
+/// machines saving into one shared folder never write the same file, and a
+/// summary lost or left stale is rebuilt from the result it summarises.
+///
+/// ```text
+/// <dir>/<result>.csv            the result — whole, or thinned
+/// <dir>/.index/<result>.head    its summary, rebuilt when missing or older
+/// <dir>/.index/<result>.pin     present: kept whole, whatever its age
+/// ```
 #[cfg(feature = "std")]
 pub mod store {
     use super::*;
-    use std::path::Path;
+    use std::path::{Path, PathBuf};
 
-    /// What a directory holds: each result by its file name, and each file
-    /// that does not read as one, with why.
+    /// Where the summaries and pins are kept, inside the results folder.
+    pub const INDEX: &str = ".index";
+
+    /// What a directory holds: each result's summary by its file name, and
+    /// each file that does not read as one, with why.
     pub type Listing = (Vec<(String, Saved)>, Vec<(String, String)>);
 
-    /// Every result in the directory, newest first, with any that no longer
-    /// read named rather than skipped.
+    fn head_path(dir: &Path, name: &str) -> PathBuf {
+        dir.join(INDEX).join(format!("{name}.head"))
+    }
+
+    fn pin_path(dir: &Path, name: &str) -> PathBuf {
+        dir.join(INDEX).join(format!("{name}.pin"))
+    }
+
+    fn modified(p: &Path) -> Option<std::time::SystemTime> {
+        std::fs::metadata(p).and_then(|m| m.modified()).ok()
+    }
+
+    /// Write a result's summary beside it. A folder that cannot take it — read
+    /// only, say — costs only speed: the listing reads the whole result instead.
+    fn write_head(dir: &Path, name: &str, s: &Saved) {
+        if std::fs::create_dir_all(dir.join(INDEX)).is_ok() {
+            let _ = crate::files::write_whole(&head_path(dir, name), csv(&s.summary()));
+        }
+    }
+
+    /// Every result in the directory, newest first, as its summary — the
+    /// answer, the inputs it changed and its identity, without reading every
+    /// value of every result. Any file that no longer reads is named rather
+    /// than skipped.
     pub fn list(dir: &Path) -> Listing {
         let mut good = Vec::new();
         let mut bad = Vec::new();
@@ -763,14 +858,34 @@ pub mod store {
         };
         for e in rd.flatten() {
             let name = e.file_name().to_string_lossy().into_owned();
-            if !name.ends_with(".csv") {
+            if !name.ends_with(".csv") || name.starts_with('.') {
                 continue;
+            }
+            // The summary, when it is at least as new as the result: a result
+            // replaced by another machine since its summary was written is
+            // read whole again.
+            let head = head_path(dir, &name);
+            let fresh = match (modified(&head), modified(&e.path())) {
+                (Some(h), Some(f)) => h >= f,
+                _ => false,
+            };
+            if fresh {
+                if let Ok(s) = std::fs::read_to_string(&head)
+                    .map_err(|x| x.to_string())
+                    .and_then(|t| read(&t))
+                {
+                    good.push((name, s));
+                    continue;
+                }
             }
             match std::fs::read_to_string(e.path())
                 .map_err(|x| x.to_string())
                 .and_then(|t| read(&t))
             {
-                Ok(s) => good.push((name, s)),
+                Ok(s) => {
+                    write_head(dir, &name, &s);
+                    good.push((name, s.summary()));
+                }
                 Err(why) => bad.push((name, why)),
             }
         }
@@ -782,7 +897,13 @@ pub mod store {
     pub fn save(dir: &Path, s: &Saved) -> Result<String, String> {
         std::fs::create_dir_all(dir).map_err(|e| format!("{}: {e}", dir.display()))?;
         let name = file_name(s);
-        std::fs::write(dir.join(&name), csv(s)).map_err(|e| format!("{name}: {e}"))?;
+        // The same rule `open` and `remove` hold a name to, applied before the
+        // write rather than trusted from `file_name`.
+        if !is_plain(&name) {
+            return Err(format!("'{name}' is not a result's file name"));
+        }
+        crate::files::write_whole(&dir.join(&name), csv(s)).map_err(|e| format!("{name}: {e}"))?;
+        write_head(dir, &name, s);
         Ok(name)
     }
 
@@ -796,20 +917,124 @@ pub mod store {
         read(&text)
     }
 
-    /// Remove one result.
+    /// Remove one result, with its summary and its pin.
     pub fn remove(dir: &Path, name: &str) -> Result<(), String> {
         if !is_plain(name) {
             return Err(format!("'{name}' is not a result's file name"));
         }
-        std::fs::remove_file(dir.join(name)).map_err(|e| format!("{name}: {e}"))
+        std::fs::remove_file(dir.join(name)).map_err(|e| format!("{name}: {e}"))?;
+        let _ = std::fs::remove_file(head_path(dir, name));
+        let _ = std::fs::remove_file(pin_path(dir, name));
+        Ok(())
+    }
+
+    /// Whether a result is pinned: kept whole whatever its age.
+    pub fn pinned(dir: &Path, name: &str) -> bool {
+        is_plain(name) && pin_path(dir, name).exists()
+    }
+
+    /// Pin a result, or unpin it. A pin is its own file, so pinning on one
+    /// machine never rewrites anything another machine is reading.
+    pub fn pin(dir: &Path, name: &str, on: bool) -> Result<(), String> {
+        if !is_plain(name) || !dir.join(name).is_file() {
+            return Err(format!("'{name}' is not a result kept here"));
+        }
+        if on {
+            std::fs::create_dir_all(dir.join(INDEX)).map_err(|e| format!("{INDEX}: {e}"))?;
+            crate::files::write_whole(&pin_path(dir, name), "pinned\n")
+                .map_err(|e| format!("{name}: {e}"))
+        } else {
+            match std::fs::remove_file(pin_path(dir, name)) {
+                Err(e) if e.kind() != std::io::ErrorKind::NotFound => Err(format!("{name}: {e}")),
+                _ => Ok(()),
+            }
+        }
+    }
+
+    /// Thin every result saved before `before` (a `YYYY-MM-DD` date) that is
+    /// neither pinned nor thinned already: keep its answer, the inputs it
+    /// changed and its identity, and drop every other value. Returns the
+    /// names thinned. The inputs it changed are its case, so a thinned result
+    /// can always be run again; what is dropped is only what that run would
+    /// return.
+    pub fn thin(dir: &Path, before: &str, today: &str) -> Vec<String> {
+        let mut done = Vec::new();
+        for (name, head) in list(dir).0 {
+            if !head.thinned.is_empty()
+                || head.saved.get(..10).is_none_or(|d| d >= before)
+                || pinned(dir, &name)
+            {
+                continue;
+            }
+            let Ok(whole) = open(dir, &name) else {
+                continue;
+            };
+            let thin = whole.thinned_on(today);
+            if crate::files::write_whole(&dir.join(&name), csv(&thin)).is_ok() {
+                write_head(dir, &name, &thin);
+                done.push(name);
+            }
+        }
+        done
     }
 
     fn is_plain(name: &str) -> bool {
         name.ends_with(".csv")
             && !name.is_empty()
+            && !name.starts_with('.')
             && name
                 .chars()
                 .all(|c| c.is_ascii_alphanumeric() || matches!(c, '_' | '-' | '.'))
             && !name.contains("..")
+    }
+}
+
+/// A result as one file to send: `.vleo`, a zip of the result's CSV, its
+/// report page and a manifest that says what it is. Any unzip tool opens it;
+/// the Results page takes it back whole.
+#[cfg(feature = "std")]
+pub mod share {
+    use super::*;
+
+    /// What a share file declares itself to be.
+    pub const FORMAT: &str = "vleo-share/1";
+
+    /// The share file of a result.
+    pub fn pack(s: &Saved) -> Vec<u8> {
+        let manifest = format!(
+            "# A VLEO result, to send. Open report.html in a browser; result.csv in a spreadsheet.\n\
+             format = \"{FORMAT}\"\nresult = \"result.csv\"\nreport = \"report.html\"\n\
+             target = \"{}\"\nsaved = \"{}\"\nchain = \"{}\"\nthinned = {}\n",
+            toml_str(&s.target),
+            toml_str(&s.saved),
+            toml_str(&s.chain),
+            !s.thinned.is_empty()
+        );
+        crate::files::zip(&[
+            ("manifest.toml", manifest.as_bytes()),
+            ("result.csv", csv(s).as_bytes()),
+            ("report.html", html(s).as_bytes()),
+        ])
+    }
+
+    /// The result inside a share file.
+    pub fn unpack(bytes: &[u8]) -> Result<Saved, String> {
+        let files =
+            crate::files::unzip(bytes).map_err(|e| format!("this is not a .vleo file: {e}"))?;
+        let get = |n: &str| files.iter().find(|(k, _)| k == n).map(|(_, v)| v);
+        let manifest = get("manifest.toml")
+            .map(|b| String::from_utf8_lossy(b).into_owned())
+            .ok_or("this .vleo file has no manifest.toml")?;
+        if !manifest.contains(&format!("format = \"{FORMAT}\"")) {
+            return Err(format!("this .vleo file is not `{FORMAT}`"));
+        }
+        let text = get("result.csv").ok_or("this .vleo file has no result.csv")?;
+        read(&String::from_utf8_lossy(text))
+    }
+
+    fn toml_str(s: &str) -> String {
+        s.replace('\\', "\\\\")
+            .replace('"', "\\\"")
+            .replace(['\n', '\r'], " ")
     }
 }

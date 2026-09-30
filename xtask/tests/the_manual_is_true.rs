@@ -717,3 +717,42 @@ fn a_malformed_manual_is_refused_by_name() {
         }
     }
 }
+
+// ── the pipeline page ────────────────────────────────────────────────────────
+
+/// docs/PIPELINE.md is what the manual's command table says, exactly — so the
+/// page a person follows is never older than the commands it describes.
+#[test]
+fn the_pipeline_page_is_current() {
+    let want = manual::pipeline_md(&the_manual());
+    assert!(
+        read("docs/PIPELINE.md") == want,
+        "docs/PIPELINE.md is not what docs/manual.toml says — run `cargo xtask pipeline`"
+    );
+}
+
+/// Every command that changes the repository says what it writes, and every
+/// generated file a gate or a test compares has a command that writes it —
+/// so `xtask why` never says "a source" of a file nobody should edit.
+#[test]
+fn every_generated_file_has_a_writer() {
+    let m = the_manual();
+    for path in [
+        "crates/vleo-mod-aero/nodes/drag/model.rs",
+        "crates/vleo-core/src/physics/methods/mod.rs",
+        "docs/VARIABLES.md",
+        "docs/PSEUDOCODE.md",
+        "docs/DERISK_NARRATIVE.md",
+        "docs/roles/user.html",
+        "docs/PIPELINE.md",
+        "CODEOWNERS",
+        "web/method.wasm.gz",
+        "generated/index.json",
+    ] {
+        assert!(
+            !manual::writers(&m, path).is_empty(),
+            "nothing is said to write {path}"
+        );
+    }
+    assert!(manual::writers(&m, "docs/manual.toml").is_empty());
+}

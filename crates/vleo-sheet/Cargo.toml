@@ -10,7 +10,7 @@ repository.workspace = true
 
 [dependencies]
 toml = { workspace = true }
-vleo-units = { workspace = true }
+vleo-units = { workspace = true, features = ["std"] }
 
 [lints.rust]
 unsafe_code = "forbid"
