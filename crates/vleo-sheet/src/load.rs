@@ -36,7 +36,10 @@ thread_local! {
 
 fn wrong(expected: &str, v: &toml::Value) {
     let shown: String = v.to_string().chars().take(60).collect();
-    WRONG.with(|w| w.borrow_mut().push(format!("expected {expected}, found {shown}")));
+    WRONG.with(|w| {
+        w.borrow_mut()
+            .push(format!("expected {expected}, found {shown}"))
+    });
 }
 
 /// Start collecting for one file.
@@ -50,7 +53,12 @@ fn finish(path: &Path) -> Result<(), String> {
     if found.is_empty() {
         Ok(())
     } else {
-        Err(format!("{}: {} value(s) of the wrong type: {}", path.display(), found.len(), found.join("; ")))
+        Err(format!(
+            "{}: {} value(s) of the wrong type: {}",
+            path.display(),
+            found.len(),
+            found.join("; ")
+        ))
     }
 }
 
@@ -63,7 +71,8 @@ fn finish(path: &Path) -> Result<(), String> {
 // be listed a second time. Tables whose keys are DATA (a fixture's or a case's
 // input values, keyed by binding) are not checked.
 fn known_keys() -> &'static std::collections::BTreeSet<&'static str> {
-    static KNOWN: std::sync::OnceLock<std::collections::BTreeSet<&'static str>> = std::sync::OnceLock::new();
+    static KNOWN: std::sync::OnceLock<std::collections::BTreeSet<&'static str>> =
+        std::sync::OnceLock::new();
     KNOWN.get_or_init(|| {
         let src: &'static str = include_str!("load.rs");
         let mut k = std::collections::BTreeSet::new();
@@ -87,7 +96,11 @@ fn unknown_keys(v: &toml::Value, at: &str, out: &mut Vec<String>) {
     match v {
         toml::Value::Table(t) => {
             for (k, x) in t {
-                let here = if at.is_empty() { k.clone() } else { format!("{at}.{k}") };
+                let here = if at.is_empty() {
+                    k.clone()
+                } else {
+                    format!("{at}.{k}")
+                };
                 if !known_keys().contains(k.as_str()) {
                     out.push(here.clone());
                 }

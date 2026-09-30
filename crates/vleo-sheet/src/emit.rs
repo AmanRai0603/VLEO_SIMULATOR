@@ -31,7 +31,8 @@ fn esc(s: &str) -> String {
 /// lands in a comment goes through here, and the escape for a string literal
 /// (`esc`) stays what it was.
 fn cmt(s: &str) -> String {
-    s.replace("\r\n", " ").replace(['\n', '\r', '\u{2028}', '\u{2029}'], " ")
+    s.replace("\r\n", " ")
+        .replace(['\n', '\r', '\u{2028}', '\u{2029}'], " ")
 }
 
 // ---------------------------------------------------------------------------
@@ -69,7 +70,11 @@ pub fn model_rs(sh: &Sheet, holes: &BTreeMap<u32, String>) -> String {
     if !sh.assumptions.is_empty() {
         o.push_str("///\n/// # Assumptions\n///\n");
         for a in &sh.assumptions {
-            o.push_str(&format!("/// * {} — fails when {}\n", cmt(&a.text), cmt(&a.fails_when)));
+            o.push_str(&format!(
+                "/// * {} — fails when {}\n",
+                cmt(&a.text),
+                cmt(&a.fails_when)
+            ));
         }
     }
     o.push_str("pub const NODE_ID: &str = \"");
@@ -656,7 +661,8 @@ pub fn evidence_rs(sh: &Sheet) -> String {
         o.push_str(&format!("/// {}\n", cmt(&fx.label)));
         o.push_str(&format!(
             "///\n/// Provenance: `{}`, source `{}`.\n",
-            cmt(&fx.provenance), cmt(&fx.source)
+            cmt(&fx.provenance),
+            cmt(&fx.source)
         ));
         o.push_str(&format!("#[test]\nfn fixture_{n}() {{\n"));
         let mut args = Vec::new();
@@ -741,7 +747,11 @@ fn author_cases(sh: &Sheet, o: &mut String) {
         o.push_str(&format!(
             "/// {who}'s case «{}», from their own {} code.\n#[test]\nfn case_{n}() {{\n",
             cmt(&esc(&c.label)),
-            if lang.is_empty() { String::new() } else { cmt(lang) }
+            if lang.is_empty() {
+                String::new()
+            } else {
+                cmt(lang)
+            }
         ));
         let call = format!("model::evaluate({})", typed_args(sh, &c.inputs));
         match c.expect {
@@ -1666,7 +1676,8 @@ fn crate_ident(c: &str) -> String {
 /// first and stops on anything it returns.
 pub fn wiring_errors(tree: &Tree) -> Vec<String> {
     let sheets = tree.ordered();
-    let mut known: std::collections::BTreeSet<String> = sheets.iter().map(|s| s.id.clone()).collect();
+    let mut known: std::collections::BTreeSet<String> =
+        sheets.iter().map(|s| s.id.clone()).collect();
     for sh in sheets.iter() {
         for pb in &sh.publishes {
             known.insert(format!("{}.{}", sh.id, pb.id));
@@ -1676,17 +1687,29 @@ pub fn wiring_errors(tree: &Tree) -> Vec<String> {
     for sh in sheets.iter() {
         for i in &sh.inputs {
             if !known.contains(&i.var) {
-                e.push(format!("{}: input '{}' names '{}', which no row publishes", sh.id, i.binding, i.var));
+                e.push(format!(
+                    "{}: input '{}' names '{}', which no row publishes",
+                    sh.id, i.binding, i.var
+                ));
             }
         }
         for f in &sh.fixtures {
             // The row's own symbol is its primary answer, slot 0 (as the gate reads it).
-            if !f.variable.is_empty() && f.variable != sh.symbol && !sh.publishes.iter().any(|pb| pb.id == f.variable) {
-                e.push(format!("{}: fixture '{}' is for '{}', which this row does not publish", sh.id, f.label, f.variable));
+            if !f.variable.is_empty()
+                && f.variable != sh.symbol
+                && !sh.publishes.iter().any(|pb| pb.id == f.variable)
+            {
+                e.push(format!(
+                    "{}: fixture '{}' is for '{}', which this row does not publish",
+                    sh.id, f.label, f.variable
+                ));
             }
             for i in &sh.inputs {
                 if !f.inputs.iter().any(|(k, _)| *k == i.binding) {
-                    e.push(format!("{}: fixture '{}' gives no value for input '{}'", sh.id, f.label, i.binding));
+                    e.push(format!(
+                        "{}: fixture '{}' gives no value for input '{}'",
+                        sh.id, f.label, i.binding
+                    ));
                 }
             }
         }
@@ -1694,22 +1717,34 @@ pub fn wiring_errors(tree: &Tree) -> Vec<String> {
     for c in tree.cases.values() {
         for (k, _) in &c.supply {
             if !known.contains(k) {
-                e.push(format!("case {}: supplies '{k}', which no row publishes", c.id));
+                e.push(format!(
+                    "case {}: supplies '{k}', which no row publishes",
+                    c.id
+                ));
             }
         }
         for cy in &c.cycles {
             for n in &cy.nodes {
                 if !known.contains(n) {
-                    e.push(format!("case {}: a cycle names '{n}', which is not a row", c.id));
+                    e.push(format!(
+                        "case {}: a cycle names '{n}', which is not a row",
+                        c.id
+                    ));
                 }
             }
             for (k, _) in &cy.seeds {
                 if !known.contains(k) {
-                    e.push(format!("case {}: a cycle seeds '{k}', which no row publishes", c.id));
+                    e.push(format!(
+                        "case {}: a cycle seeds '{k}', which no row publishes",
+                        c.id
+                    ));
                 }
             }
             if !known.contains(&cy.converge_on) {
-                e.push(format!("case {}: a cycle converges on '{}', which no row publishes", c.id, cy.converge_on));
+                e.push(format!(
+                    "case {}: a cycle converges on '{}', which no row publishes",
+                    c.id, cy.converge_on
+                ));
             }
         }
     }

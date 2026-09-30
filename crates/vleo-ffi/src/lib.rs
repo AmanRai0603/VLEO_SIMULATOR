@@ -164,7 +164,9 @@ pub unsafe extern "C" fn vleo_evaluate(case: *const VleoCase, out: *mut VleoResu
             let log = vleo_data::crash::last_log()
                 .map(|p| p.display().to_string())
                 .unwrap_or_else(|| vleo_data::crash::log_dir().display().to_string());
-            set_message(format!("the engine hit a bug evaluating this case; it was logged in {log}"));
+            set_message(format!(
+                "the engine hit a bug evaluating this case; it was logged in {log}"
+            ));
             VLEO_INTERNAL
         }
     }

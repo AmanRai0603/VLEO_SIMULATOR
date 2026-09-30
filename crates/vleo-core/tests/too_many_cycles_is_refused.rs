@@ -20,11 +20,18 @@ impl NodeTable for Empty {
 }
 
 fn run(cycles: usize) -> Result<(), Fault> {
-    let spec = CycleSpec { nodes: &[], converge_on: 0, tolerance: 1e-6, max_iter: 1, seeds: &[] };
+    let spec = CycleSpec {
+        nodes: &[],
+        converge_on: 0,
+        tolerance: 1e-6,
+        max_iter: 1,
+        seeds: &[],
+    };
     let specs = vec![spec; cycles];
     let mut slots: [Slot; 1] = [Slot::EMPTY];
     let mut store = Store::new(&mut slots);
-    let (mut order, mut mark, mut stack, mut ran, mut blocked) = ([0u16; 1], [0u8; 1], [0u16; 1], [0u16; 1], [0u16; 1]);
+    let (mut order, mut mark, mut stack, mut ran, mut blocked) =
+        ([0u16; 1], [0u8; 1], [0u16; 1], [0u16; 1], [0u16; 1]);
     let mut blocked_fault = [Fault::NotRun { node: "x" }; 1];
     let mut ws = Workspace {
         order: &mut order,

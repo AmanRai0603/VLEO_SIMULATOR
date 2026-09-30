@@ -41,16 +41,26 @@ pub fn install(program: &'static str, version: &'static str) {
         }
         previous(info);
         if let Some(p) = written {
-            eprintln!("vleo: this was a bug in the tool, logged in {}", p.display());
+            eprintln!(
+                "vleo: this was a bug in the tool, logged in {}",
+                p.display()
+            );
         }
     }));
 }
 
-fn write_log(program: &str, version: &str, info: &std::panic::PanicHookInfo<'_>) -> Option<PathBuf> {
+fn write_log(
+    program: &str,
+    version: &str,
+    info: &std::panic::PanicHookInfo<'_>,
+) -> Option<PathBuf> {
     let dir = log_dir();
     std::fs::create_dir_all(&dir).ok()?;
     let when = crate::clock::now_utc();
-    let stamp: String = when.chars().map(|c| if c.is_ascii_alphanumeric() { c } else { '-' }).collect();
+    let stamp: String = when
+        .chars()
+        .map(|c| if c.is_ascii_alphanumeric() { c } else { '-' })
+        .collect();
     // Two panics in one second must not share a file, or the second hides the first.
     let n = SEQ.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
     let path = dir.join(format!("crash-{stamp}-{}-{n}.txt", std::process::id()));
@@ -65,7 +75,10 @@ fn write_log(program: &str, version: &str, info: &std::panic::PanicHookInfo<'_>)
         .location()
         .map(|l| format!("{}:{}:{}", l.file(), l.line(), l.column()))
         .unwrap_or_else(|| "(unknown)".into());
-    let thread = std::thread::current().name().unwrap_or("(unnamed)").to_string();
+    let thread = std::thread::current()
+        .name()
+        .unwrap_or("(unnamed)")
+        .to_string();
     let text = format!(
         "{program} {version} crashed\n\
          when:    {when}\n\

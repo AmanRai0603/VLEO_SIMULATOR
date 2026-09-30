@@ -6,16 +6,17 @@ use vleo_sheet::emit;
 use vleo_sheet::model::Sheet;
 
 fn hostile() -> Sheet {
-    let mut sh = Sheet::default();
-    sh.id = "x_row".into();
-    sh.symbol = "x".into();
-    sh.label = "a label\npub fn injected_label() {}".into();
-    sh.question = "a question\npub fn injected() {} */ /* \r\nstill text".into();
-    sh.expression = "x = 1\nfn injected_expr() {}".into();
-    sh.source = "somewhere\u{2028}fn injected_src() {}".into();
-    sh.unit = "1".into();
-    sh.ty = "f64".into();
-    sh
+    Sheet {
+        id: "x_row".into(),
+        symbol: "x".into(),
+        label: "a label\npub fn injected_label() {}".into(),
+        question: "a question\npub fn injected() {} */ /* \r\nstill text".into(),
+        expression: "x = 1\nfn injected_expr() {}".into(),
+        source: "somewhere\u{2028}fn injected_src() {}".into(),
+        unit: "1".into(),
+        ty: "f64".into(),
+        ..Default::default()
+    }
 }
 
 /// Every line of generated code that mentions an injected name is a comment.
@@ -23,7 +24,10 @@ fn only_in_comments(code: &str) {
     for line in code.lines() {
         if line.contains("injected") {
             let t = line.trim_start();
-            assert!(t.starts_with("//"), "sheet text escaped its comment:\n{line}");
+            assert!(
+                t.starts_with("//"),
+                "sheet text escaped its comment:\n{line}"
+            );
         }
     }
 }
