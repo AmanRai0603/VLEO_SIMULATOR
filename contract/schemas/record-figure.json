@@ -2468,6 +2468,423 @@
         "excess",
         "split_at"
       ]
+    },
+    {
+      "type": "object",
+      "description": "The design figure's Ap half: sw_storm_return_level swept over the mission duration on the request's case, the G-level bound and the requirement, where the curve reaches each, and the record's days above the bound.",
+      "properties": {
+        "ok": {
+          "type": "boolean"
+        },
+        "bundle": {
+          "type": "string",
+          "description": "The bundle and version the numbers were worked out from."
+        },
+        "figure": {
+          "type": "string",
+          "enum": [
+            "design"
+          ]
+        },
+        "view": {
+          "type": "string",
+          "enum": [
+            "ap"
+          ]
+        },
+        "g": {
+          "type": "string",
+          "enum": [
+            "1",
+            "2",
+            "3"
+          ],
+          "description": "The G level the vehicle is designed for."
+        },
+        "req_id": {
+          "type": "string",
+          "enum": [
+            "l3_solar_req_03",
+            "l3_solar_req_04",
+            "l3_solar_req_05"
+          ]
+        },
+        "years": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "description": "Mission lengths swept, in Julian years."
+        },
+        "level": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "description": "sw_storm_return_level at each: the daily Ap the record expects once in that time."
+        },
+        "points_refused": {
+          "type": "number",
+          "description": "Swept points the engine refused; they are not in `years` or `level`."
+        },
+        "bound": {
+          "type": "number",
+          "description": "sw_ap_design at the G level — the Ap the vehicle is built for."
+        },
+        "req": {
+          "type": "number",
+          "description": "The requirement row's own answer on the saved case."
+        },
+        "hits_at": {
+          "type": [
+            "null",
+            "number"
+          ],
+          "description": "Mission length, in years, at which the curve first reaches the bound; null if never inside the range."
+        },
+        "req_at": {
+          "type": [
+            "null",
+            "number"
+          ],
+          "description": "The same for the requirement."
+        },
+        "record": {
+          "type": "object",
+          "description": "The record's own days at or above the bound.",
+          "properties": {
+            "days": {
+              "type": "number",
+              "description": "Days that carry an Ap."
+            },
+            "years": {
+              "type": "number",
+              "description": "Those days in years of 365.25."
+            },
+            "above": {
+              "type": "number",
+              "description": "Days at or above the bound."
+            },
+            "runs": {
+              "type": "number",
+              "description": "Separate runs of consecutive such days."
+            },
+            "rate": {
+              "type": "number",
+              "description": "Days above per year."
+            }
+          },
+          "required": [
+            "days",
+            "years",
+            "above",
+            "runs",
+            "rate"
+          ]
+        }
+      },
+      "required": [
+        "ok",
+        "figure",
+        "bundle",
+        "view",
+        "g",
+        "req_id",
+        "years",
+        "level",
+        "points_refused",
+        "bound",
+        "req",
+        "hits_at",
+        "req_at",
+        "record"
+      ]
+    },
+    {
+      "type": "object",
+      "description": "The design figure's F10.7 half: the four design-window rows and sw_window_peak_level swept over the mission duration on the request's case, against an F10.7 requirement.",
+      "properties": {
+        "ok": {
+          "type": "boolean"
+        },
+        "bundle": {
+          "type": "string",
+          "description": "The bundle and version the numbers were worked out from."
+        },
+        "figure": {
+          "type": "string",
+          "enum": [
+            "design"
+          ]
+        },
+        "view": {
+          "type": "string",
+          "enum": [
+            "f107"
+          ]
+        },
+        "reqf": {
+          "type": "string",
+          "enum": [
+            "l3_solar_req_01",
+            "l3_solar_req_02"
+          ]
+        },
+        "req": {
+          "type": "number",
+          "description": "The requirement row's own answer on the saved case."
+        },
+        "points_refused": {
+          "type": "number",
+          "description": "Swept points the engine refused, over the five sweeps."
+        },
+        "years": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "description": "Mission lengths swept, in Julian years."
+        },
+        "hot": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "description": "sw_f107_design_short — hot, single day."
+        },
+        "hot_long": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "description": "sw_f107_design_long — hot, sustained."
+        },
+        "cold_long": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "description": "sw_f107_cold_long — cold, sustained."
+        },
+        "cold": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "description": "sw_f107_cold_short — cold, single day."
+        },
+        "analogue": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "description": "sw_window_peak_level — the cycle analogue's own peak."
+        },
+        "peak": {
+          "type": [
+            "null",
+            "number"
+          ],
+          "description": "The worst single day any declared window reaches."
+        },
+        "margin": {
+          "type": [
+            "null",
+            "number"
+          ],
+          "description": "The requirement less that peak."
+        },
+        "narrowest": {
+          "type": [
+            "null",
+            "number"
+          ],
+          "description": "The window's narrowest width, hot single day less cold single day."
+        },
+        "widest": {
+          "type": [
+            "null",
+            "number"
+          ],
+          "description": "Its widest."
+        },
+        "over": {
+          "type": [
+            "null",
+            "number"
+          ],
+          "description": "The first mission length at which the analogue's peak stands above the hot single day; null if never."
+        }
+      },
+      "required": [
+        "ok",
+        "figure",
+        "bundle",
+        "view",
+        "reqf",
+        "req",
+        "points_refused",
+        "years",
+        "hot",
+        "hot_long",
+        "cold_long",
+        "cold",
+        "analogue",
+        "peak",
+        "margin",
+        "narrowest",
+        "widest",
+        "over"
+      ]
+    },
+    {
+      "type": "object",
+      "description": "The closure figure: one requirement and its achieved quantity swept over the decision that spends the margin fastest, on the request's case, and where each runs out.",
+      "properties": {
+        "ok": {
+          "type": "boolean"
+        },
+        "bundle": {
+          "type": "string",
+          "description": "The bundle and version the numbers were worked out from."
+        },
+        "figure": {
+          "type": "string",
+          "enum": [
+            "closure"
+          ]
+        },
+        "pair": {
+          "type": "string",
+          "enum": [
+            "01",
+            "02",
+            "03",
+            "04",
+            "05"
+          ]
+        },
+        "ach": {
+          "type": "string",
+          "description": "The achieved row, whose answer is the signed margin."
+        },
+        "req_id": {
+          "type": "string",
+          "description": "The requirement row."
+        },
+        "quantity": {
+          "type": "string",
+          "description": "The achieved quantity's row, which the margin is taken of."
+        },
+        "lever": {
+          "description": "The declared decision that moves the margin most, the requirement itself skipped; null when none moves it.",
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "label": {
+                  "type": "string"
+                },
+                "unit": {
+                  "type": "string"
+                },
+                "lower": {
+                  "type": "number",
+                  "description": "Its declared range, in SI."
+                },
+                "upper": {
+                  "type": "number"
+                },
+                "span": {
+                  "type": "number",
+                  "description": "How far it moves the margin across that range, relative to the answer on the case."
+                }
+              },
+              "required": [
+                "id",
+                "label",
+                "unit",
+                "lower",
+                "upper",
+                "span"
+              ]
+            }
+          ]
+        },
+        "x": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "description": "The decision swept, in its display unit."
+        },
+        "margin": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "description": "The signed fractional margin at each."
+        },
+        "value": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "description": "The achieved quantity at each, in its display unit."
+        },
+        "points_refused": {
+          "type": "number",
+          "description": "Swept points the engine refused, over both sweeps."
+        },
+        "req": {
+          "type": [
+            "null",
+            "number"
+          ],
+          "description": "The requirement's own answer, in the quantity's display unit."
+        },
+        "now": {
+          "type": [
+            "null",
+            "number"
+          ],
+          "description": "The achieved row's own answer — the margin as the tree stands."
+        },
+        "cross": {
+          "type": [
+            "null",
+            "number"
+          ],
+          "description": "Where the margin first goes through zero; null if it never does."
+        },
+        "cross_q": {
+          "type": [
+            "null",
+            "number"
+          ],
+          "description": "Where the achieved curve first meets the requirement — from a different array, and the same x when the two agree."
+        },
+        "agree": {
+          "type": "boolean",
+          "description": "Whether both were found and lie within a millionth of the axis's span."
+        }
+      },
+      "required": [
+        "ok",
+        "figure",
+        "bundle",
+        "pair",
+        "ach",
+        "req_id",
+        "quantity",
+        "lever"
+      ]
     }
   ]
 }

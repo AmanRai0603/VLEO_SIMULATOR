@@ -1,17 +1,17 @@
 {
   "ok": true,
-  "path": "/tmp/vleo-contract-8683/results",
+  "path": "/tmp/vleo-contract-21918/results",
   "results": [
     {
-      "file": "2026-09-30T12-03-42Z_sw_ap_design_b86134ec1ec4ae5d",
+      "file": "2026-09-30T14-45-16Z_sw_ap_design_625fc44a2c391e5c",
       "target": "sw_ap_design",
       "pinned": false,
       "thinned": "",
-      "name": "the contract",
-      "saved": "2026-09-30T12:03:42Z",
+      "name": "the contract, swept",
+      "saved": "2026-09-30T14:45:16Z",
       "mode": "branch",
       "chain": "075c5d",
-      "kernel": "03047d",
+      "kernel": "7fec07",
       "graph": "adb684",
       "template": "48afb0100e92",
       "template_current": true,
@@ -19,8 +19,12 @@
       "ran": 2,
       "blocked": 0,
       "changed": 0,
-      "question": "b86134ec1ec4ae5d",
-      "sweep": null,
+      "question": "625fc44a2c391e5c",
+      "sweep": {
+        "over": "sw_storm_design_level",
+        "points": 3,
+        "refused": 0
+      },
       "versions": [
         {
           "node": "sw_storm_design_level",
@@ -40,15 +44,15 @@
       }
     },
     {
-      "file": "2026-09-30T12-03-42Z_sw_ap_design_1b065c22f5b4981e",
+      "file": "2026-09-30T14-45-16Z_sw_ap_design_4b8bcdb829feccf7",
       "target": "sw_ap_design",
       "pinned": false,
       "thinned": "",
-      "name": "the contract, swept",
-      "saved": "2026-09-30T12:03:42Z",
+      "name": "the contract",
+      "saved": "2026-09-30T14:45:16Z",
       "mode": "branch",
       "chain": "075c5d",
-      "kernel": "03047d",
+      "kernel": "7fec07",
       "graph": "adb684",
       "template": "48afb0100e92",
       "template_current": true,
@@ -56,12 +60,8 @@
       "ran": 2,
       "blocked": 0,
       "changed": 0,
-      "question": "1b065c22f5b4981e",
-      "sweep": {
-        "over": "sw_storm_design_level",
-        "points": 3,
-        "refused": 0
-      },
+      "question": "4b8bcdb829feccf7",
+      "sweep": null,
       "versions": [
         {
           "node": "sw_storm_design_level",

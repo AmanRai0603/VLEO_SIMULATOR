@@ -1291,6 +1291,64 @@ fn levers_json(params: &str, ctx: &Ctx) -> String {
     j.bool_field("ok", true);
     j.str_field("node", &node);
 
+    let (base, out) = levers_of(params, ctx, &node, ni);
+    match base {
+        Some(b) => j.num_field("base", b),
+        None => j.key("base").raw("null"),
+    };
+
+    j.key("levers").open_arr();
+    for (i, lev) in out.iter().enumerate() {
+        if i > 0 {
+            j.raw(",");
+        }
+        let d = &VARS[lev.var as usize];
+        j.raw("{");
+        j.str_field("id", d.id);
+        j.str_field("symbol", d.symbol);
+        j.str_field("label", d.label);
+        j.str_field("unit", d.unit.symbol());
+        j.num_field("factor", d.unit.si_factor());
+        j.num_field("lower", d.limit.lower);
+        j.num_field("upper", d.limit.upper);
+        match lev.at_lower {
+            Some(x) => j.num_field("at_lower", x),
+            None => j.key("at_lower").raw("null"),
+        };
+        match lev.at_upper {
+            Some(x) => j.num_field("at_upper", x),
+            None => j.key("at_upper").raw("null"),
+        };
+        if lev.span < 0.0 {
+            j.key("span").raw("null");
+        } else {
+            j.num_field("span", lev.span);
+        }
+        j.str_field("why", &lev.why);
+        j.close_obj();
+    }
+    j.close_arr();
+    j.raw("}");
+    j.0
+}
+
+/// One decision and what moving it across its own declared range does to
+/// the answer. `span` is negative where an end could not be evaluated at
+/// all, which is a different fact from a span of zero.
+pub(crate) struct Lever {
+    pub(crate) span: f64,
+    pub(crate) var: u16,
+    pub(crate) at_lower: Option<f64>,
+    pub(crate) at_upper: Option<f64>,
+    pub(crate) why: String,
+}
+
+/// Every declared decision upstream of `node` and how far moving it across its
+/// own range moves the answer, most first — and the answer on the case, which
+/// a span is relative to. What `/v1/levers` sends, and what a figure choosing
+/// its own axis reads.
+pub(crate) fn levers_of(params: &str, ctx: &Ctx, node: &str, ni: u16) -> (Option<f64>, Vec<Lever>) {
+    let node = node.to_string();
     // Every declared row upstream, however far: a decision three rows away is
     // still a decision, and the reason a reader opens this row may be a choice
     // taken well before it.
@@ -1329,21 +1387,6 @@ fn levers_json(params: &str, ctx: &Ctx) -> String {
             .ok()
             .and_then(|r| r.values.iter().find(|v| v.id == node).map(|v| v.value))
     };
-    match base {
-        Some(b) => j.num_field("base", b),
-        None => j.key("base").raw("null"),
-    };
-
-    /// One decision and what moving it across its own declared range does to
-    /// the answer. `span` is negative where an end could not be evaluated at
-    /// all, which is a different fact from a span of zero.
-    struct Lever {
-        span: f64,
-        var: u16,
-        at_lower: Option<f64>,
-        at_upper: Option<f64>,
-        why: String,
-    }
     let mut out: Vec<Lever> = Vec::new();
     for v in cands {
         let d = &VARS[v as usize];
@@ -1396,39 +1439,7 @@ fn levers_json(params: &str, ctx: &Ctx) -> String {
             .then_with(|| VARS[a.var as usize].id.cmp(VARS[b.var as usize].id))
     });
 
-    j.key("levers").open_arr();
-    for (i, lev) in out.iter().enumerate() {
-        if i > 0 {
-            j.raw(",");
-        }
-        let d = &VARS[lev.var as usize];
-        j.raw("{");
-        j.str_field("id", d.id);
-        j.str_field("symbol", d.symbol);
-        j.str_field("label", d.label);
-        j.str_field("unit", d.unit.symbol());
-        j.num_field("factor", d.unit.si_factor());
-        j.num_field("lower", d.limit.lower);
-        j.num_field("upper", d.limit.upper);
-        match lev.at_lower {
-            Some(x) => j.num_field("at_lower", x),
-            None => j.key("at_lower").raw("null"),
-        };
-        match lev.at_upper {
-            Some(x) => j.num_field("at_upper", x),
-            None => j.key("at_upper").raw("null"),
-        };
-        if lev.span < 0.0 {
-            j.key("span").raw("null");
-        } else {
-            j.num_field("span", lev.span);
-        }
-        j.str_field("why", &lev.why);
-        j.close_obj();
-    }
-    j.close_arr();
-    j.raw("}");
-    j.0
+    (base, out)
 }
 
 #[cfg(test)]

@@ -363,6 +363,26 @@ params = [["view", "slot"]]
 name = "figures-solar-thermosphere-shape"
 path = "/v1/figures/solar/thermosphere"
 params = [["view", "shape"]]
+[[route.example]]
+name = "figures-solar-design"
+path = "/v1/figures/solar/design"
+params = [["v", "ap"], ["g", "3"], ["req", "l3_solar_req_03"]]
+[[route.example]]
+name = "figures-solar-design-req04"
+path = "/v1/figures/solar/design"
+params = [["v", "ap"], ["g", "2"], ["req", "l3_solar_req_04"]]
+[[route.example]]
+name = "figures-solar-design-f107"
+path = "/v1/figures/solar/design"
+params = [["v", "f107"], ["reqf", "l3_solar_req_01"]]
+[[route.example]]
+name = "figures-solar-closure"
+path = "/v1/figures/solar/closure"
+params = [["pair", "04"]]
+[[route.example]]
+name = "figures-solar-closure-survival"
+path = "/v1/figures/solar/closure"
+params = [["pair", "03"]]
 
 [[route]]
 method = "GET"

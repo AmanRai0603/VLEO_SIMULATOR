@@ -267,7 +267,7 @@ pub(super) fn results_list() -> String {
 /// claim. A panel with no numbers here yet is refused by name.
 pub(super) fn record_figure(ctx: &Ctx, id: &str, params: &str) -> String {
     const BUNDLE: &str = "solar-weather";
-    const KNOWN: [&str; 15] = [
+    const KNOWN: [&str; 17] = [
         "density",
         "storm-scale",
         "kp-ap",
@@ -283,6 +283,8 @@ pub(super) fn record_figure(ctx: &Ctx, id: &str, params: &str) -> String {
         "forecast",
         "drivers",
         "thermosphere",
+        "design",
+        "closure",
     ];
     if !KNOWN.contains(&id) {
         return failed(&format!(
@@ -899,6 +901,21 @@ pub(super) fn record_figure(ctx: &Ctx, id: &str, params: &str) -> String {
         }
         "thermosphere" => {
             if let Err(e) = thermosphere(ctx, param(params, "view").unwrap_or("solar"), &mut j) {
+                return failed(&e);
+            }
+        }
+        // Both run on the case the request carries, overrides and all, as the
+        // page's own sweeps did; a bad override is refused as a run's is.
+        "design" | "closure" => {
+            if let Some(refusal) = case_refused(params, ctx) {
+                return refusal;
+            }
+            let made = if id == "design" {
+                design(ctx, params, &days, &mut j)
+            } else {
+                closure(ctx, params, &mut j)
+            };
+            if let Err(e) = made {
                 return failed(&e);
             }
         }
@@ -1658,5 +1675,247 @@ fn thermosphere(ctx: &Ctx, view: &str, j: &mut Json) -> Result<(), String> {
             opt_field(j, "split_at", dep.split_at);
         }
     }
+    Ok(())
+}
+
+/// One row swept across the whole declared range of another, on the case the
+/// request carries — the saved case and the reader's overrides, as the page's
+/// own sweeps are.
+fn case_sweep(
+    ctx: &Ctx,
+    params: &str,
+    node: &str,
+    over: &str,
+    points: usize,
+) -> Result<vleo_modules::results::Sweep, String> {
+    let d = Vleo::find(over)
+        .map(|i| &VARS[i as usize])
+        .ok_or_else(|| format!("no row called {over}"))?;
+    vleo_modules::results::sweep(
+        &build_case(params, ctx),
+        node,
+        over,
+        d.limit.lower,
+        d.limit.upper,
+        points,
+    )
+}
+
+/// What a row answers on its own run of the saved case, or why it did not —
+/// without the request's overrides, as the page's engine values are: what the
+/// tree says as it stands, where the sweeps show what moving a decision does.
+fn own_answer(ctx: &Ctx, node: &str) -> Result<f64, String> {
+    let why = |e: String| format!("{node} did not answer: {e}");
+    run_on_saved_case(ctx, node)
+        .map_err(why)?
+        .get(node)
+        .copied()
+        .ok_or_else(|| why("the run did not return this row".into()))
+}
+
+/// The design figure: the return curve against the G-level bound and an Ap
+/// requirement, with the record's own days above that bound; or the F10.7
+/// window's four edges and the analogue's peak against an F10.7 requirement
+/// (vleo_modules::design).
+fn design(
+    ctx: &Ctx,
+    params: &str,
+    days: &[vleo_data::SolarDay],
+    j: &mut Json,
+) -> Result<(), String> {
+    use vleo_modules::design::{band_extent, exceedance, first_above, level_crossing};
+    const DURATION: &str = "sys_mission_requirements_mission_duration";
+    // A Julian year, the axis the panel is read in.
+    const YEAR: f64 = 31557600.0;
+    let pick = |k: &str, dflt: &str| param(params, k).map(decode).unwrap_or(dflt.into());
+    let years = |w: &vleo_modules::results::Sweep| w.x.iter().map(|v| v / YEAR).collect::<Vec<_>>();
+    let view = pick("v", "ap");
+    j.str_field("view", &view);
+    match view.as_str() {
+        "ap" => {
+            let g = pick("g", "3");
+            let req_id = pick("req", "l3_solar_req_03");
+            if !matches!(g.as_str(), "1" | "2" | "3") {
+                return Err(format!("no G level '{g}': 1, 2 or 3"));
+            }
+            if !matches!(
+                req_id.as_str(),
+                "l3_solar_req_03" | "l3_solar_req_04" | "l3_solar_req_05"
+            ) {
+                return Err(format!(
+                    "no Ap requirement '{req_id}': l3_solar_req_03, _04 or _05"
+                ));
+            }
+            let ret = case_sweep(ctx, params, "sw_storm_return_level", DURATION, 120)?;
+            let gmap = case_sweep(ctx, params, "sw_ap_design", "sw_storm_design_level", 3)?;
+            let level: f64 = g.parse().unwrap_or(f64::NAN);
+            // sw_ap_design's own G-to-Ap conversion, read off its sweep over
+            // the G level rather than from a table written out here.
+            let bound = gmap
+                .x
+                .iter()
+                .position(|x| *x == level)
+                .and_then(|i| gmap.y.get(i).copied())
+                .ok_or_else(|| format!("sw_ap_design did not answer at G{g}"))?;
+            let req = own_answer(ctx, &req_id)?;
+            let xs = years(&ret);
+            j.str_field("g", &g);
+            j.str_field("req_id", &req_id);
+            j.key("years");
+            nums(j, &xs);
+            j.key("level");
+            nums(j, &ret.y);
+            j.num_field("points_refused", ret.refused.len() as f64);
+            j.num_field("bound", bound);
+            j.num_field("req", req);
+            opt_field(j, "hits_at", level_crossing(&xs, &ret.y, bound));
+            opt_field(j, "req_at", level_crossing(&xs, &ret.y, req));
+            // What the record did above the bound, counted from the record
+            // itself, so it answers for a level the rows are not set to.
+            let ap: Vec<(i32, Option<f64>)> = days.iter().map(|d| (d.day, d.ap)).collect();
+            let e = exceedance(&ap, bound);
+            j.key("record").raw("{");
+            j.num_field("days", e.days as f64);
+            j.num_field("years", e.years);
+            j.num_field("above", e.above as f64);
+            j.num_field("runs", e.runs as f64);
+            j.num_field("rate", e.rate);
+            j.close_obj();
+        }
+        "f107" => {
+            let req_id = pick("reqf", "l3_solar_req_01");
+            if !matches!(req_id.as_str(), "l3_solar_req_01" | "l3_solar_req_02") {
+                return Err(format!(
+                    "no F10.7 requirement '{req_id}': l3_solar_req_01 or _02"
+                ));
+            }
+            let req = own_answer(ctx, &req_id)?;
+            let sw = |node: &str| case_sweep(ctx, params, node, DURATION, 60);
+            let (fl, fs) = (sw("sw_f107_design_long")?, sw("sw_f107_design_short")?);
+            let (cl, cs) = (sw("sw_f107_cold_long")?, sw("sw_f107_cold_short")?);
+            let pk = sw("sw_window_peak_level")?;
+            let xs = years(&fl);
+            let refused: usize = [&fl, &fs, &cl, &cs, &pk]
+                .iter()
+                .map(|w| w.refused.len())
+                .sum();
+            j.num_field("points_refused", refused as f64);
+            j.str_field("reqf", &req_id);
+            j.num_field("req", req);
+            j.key("years");
+            nums(j, &xs);
+            for (k, w) in [
+                ("hot", &fs),
+                ("hot_long", &fl),
+                ("cold_long", &cl),
+                ("cold", &cs),
+                ("analogue", &pk),
+            ] {
+                j.key(k);
+                nums(j, &w.y);
+            }
+            // The worst single day any declared window reaches, and what is
+            // left of the requirement above it.
+            let peak =
+                (!fs.y.is_empty()).then(|| fs.y.iter().copied().fold(f64::NEG_INFINITY, f64::max));
+            opt_field(j, "peak", peak);
+            opt_field(j, "margin", peak.map(|p| req - p));
+            // How wide the filled window is along its length — its own two
+            // edges, so the sentence and the area are one measurement.
+            let band = band_extent(&fs.y, &cs.y, xs.len());
+            opt_field(j, "narrowest", band.map(|b| b.0));
+            opt_field(j, "widest", band.map(|b| b.1));
+            // Where the analogue's own maximum first climbs above the hot
+            // single-day design value.
+            opt_field(j, "over", first_above(&xs, &pk.y, &fs.y));
+        }
+        other => {
+            return Err(format!(
+                "no driver '{other}' in the design figure: ap or f107"
+            ))
+        }
+    }
+    Ok(())
+}
+
+/// The closure figure: one requirement and its achieved quantity swept over
+/// the decision that spends the margin fastest, the margin itself over the
+/// same decision, and where each runs out (vleo_modules::design).
+fn closure(ctx: &Ctx, params: &str, j: &mut Json) -> Result<(), String> {
+    use vleo_modules::design::{same_crossing, zero_crossing, CLOSURE_PAIRS};
+    let pair = param(params, "pair").map(decode).unwrap_or("01".into());
+    let Some(&(_, quantity)) = CLOSURE_PAIRS.iter().find(|(n, _)| *n == pair) else {
+        return Err(format!("no closure '{pair}': 01 to 05"));
+    };
+    let (ach, req) = (
+        format!("l3_solar_ach_{pair}"),
+        format!("l3_solar_req_{pair}"),
+    );
+    j.str_field("pair", &pair);
+    j.str_field("ach", &ach);
+    j.str_field("req_id", &req);
+    j.str_field("quantity", quantity);
+    // THE AXIS IS THE ENGINE'S ANSWER, NOT THE AUTHOR'S. Levers come ordered
+    // by how much they move this row, and the requirement is always near the
+    // top because a margin is a fraction OF it — moving the bound moves the
+    // margin by construction and says nothing about the sky. So the bound is
+    // skipped and the next decision that moves it at all taken.
+    let ni = Vleo::find(&ach).ok_or_else(|| format!("no row called {ach}"))?;
+    let (_, levers) = crate::levers_of(params, ctx, &ach, ni);
+    let Some(lv) = levers
+        .iter()
+        .map(|l| (l, &VARS[l.var as usize]))
+        .find(|(l, d)| d.id != req && l.span > 0.0)
+    else {
+        j.key("lever").raw("null");
+        return Ok(());
+    };
+    let (lev, d) = lv;
+    j.key("lever").raw("{");
+    j.str_field("id", d.id);
+    j.str_field("label", d.label);
+    j.str_field("unit", d.unit.symbol());
+    j.num_field("lower", d.limit.lower);
+    j.num_field("upper", d.limit.upper);
+    j.num_field("span", lev.span);
+    j.close_obj();
+    let mar = case_sweep(ctx, params, &ach, d.id, 90)?;
+    let qty = case_sweep(ctx, params, quantity, d.id, 90)?;
+    // Divided back by the factors the sweeps report, the boundary rule every
+    // panel here obeys.
+    let x: Vec<f64> = mar.x.iter().map(|v| v / mar.x_factor).collect();
+    let margin: Vec<f64> = mar.y.iter().map(|v| v / mar.y_factor).collect();
+    let value: Vec<f64> = qty.y.iter().map(|v| v / qty.y_factor).collect();
+    let req_value = own_answer(ctx, &req).ok().map(|r| {
+        r / if qty.y_factor == 0.0 {
+            1.0
+        } else {
+            qty.y_factor
+        }
+    });
+    let now = own_answer(ctx, &ach).ok();
+    // Where the margin goes through zero, and — from a different array — where
+    // the achieved curve meets the requirement line. panels/closure.toml says
+    // they are the same x; the figure measures it rather than assuming it.
+    let cross = zero_crossing(&x, &margin);
+    let cross_q = req_value.and_then(|r| {
+        let over: Vec<f64> = value.iter().map(|v| v - r).collect();
+        zero_crossing(&x, &over)
+    });
+    j.key("x");
+    nums(j, &x);
+    j.key("margin");
+    nums(j, &margin);
+    j.key("value");
+    nums(j, &value);
+    j.num_field(
+        "points_refused",
+        (mar.refused.len() + qty.refused.len()) as f64,
+    );
+    opt_field(j, "req", req_value);
+    opt_field(j, "now", now);
+    opt_field(j, "cross", cross);
+    opt_field(j, "cross_q", cross_q);
+    j.bool_field("agree", same_crossing(cross, cross_q, &x));
     Ok(())
 }
