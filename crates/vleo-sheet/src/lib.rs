@@ -21,6 +21,7 @@
 
 pub mod derisk;
 pub mod emit;
+pub mod escape;
 pub mod example;
 pub mod form;
 pub mod guide;

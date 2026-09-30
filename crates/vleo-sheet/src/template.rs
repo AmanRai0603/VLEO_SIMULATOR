@@ -38,6 +38,7 @@
 //! written at all: a fixture is recorded by a person with its provenance, so
 //! the ones a form supplies come out as a request, ready for that person.
 
+use crate::escape::html as he;
 use std::collections::BTreeMap;
 use std::path::Path;
 
@@ -451,14 +452,6 @@ fn blank() -> Content {
 
 // ---------------------------------------------------------------------------
 // the document
-
-/// Text for HTML, outside a script.
-fn he(s: &str) -> String {
-    s.replace('&', "&amp;")
-        .replace('<', "&lt;")
-        .replace('>', "&gt;")
-        .replace('"', "&quot;")
-}
 
 /// JSON for a script block: `jq`, with `</` kept from closing the element.
 fn js(v: &str) -> String {

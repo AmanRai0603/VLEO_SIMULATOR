@@ -2,6 +2,7 @@
 //! change it, what it holds now, and what is still unanswered.
 
 use super::*;
+pub(crate) use crate::escape::json as jq;
 
 /// What kind of value a field holds.
 ///
@@ -642,25 +643,6 @@ pub fn value(sh: &Sheet, field: &str) -> String {
         "author_how_run" => sh.author.how_run.clone(),
         _ => String::new(),
     }
-}
-
-/// A JSON string body, escaped. Smaller to write than to depend on.
-pub(crate) fn jq(v: &str) -> String {
-    let mut o = String::with_capacity(v.len() + 2);
-    o.push('"');
-    for c in v.chars() {
-        match c {
-            '"' => o.push_str("\\\""),
-            '\\' => o.push_str("\\\\"),
-            '\n' => o.push_str("\\n"),
-            '\r' => o.push_str("\\r"),
-            '\t' => o.push_str("\\t"),
-            c if (c as u32) < 0x20 => o.push_str(&format!("\\u{:04x}", c as u32)),
-            c => o.push(c),
-        }
-    }
-    o.push('"');
-    o
 }
 
 /// The form as JSON, for a face to render.
