@@ -267,7 +267,7 @@ pub(super) fn results_list() -> String {
 /// claim. A panel with no numbers here yet is refused by name.
 pub(super) fn record_figure(ctx: &Ctx, id: &str, params: &str) -> String {
     const BUNDLE: &str = "solar-weather";
-    const KNOWN: [&str; 11] = [
+    const KNOWN: [&str; 12] = [
         "density",
         "storm-scale",
         "kp-ap",
@@ -279,6 +279,7 @@ pub(super) fn record_figure(ctx: &Ctx, id: &str, params: &str) -> String {
         "regime-phase",
         "climate",
         "smoother",
+        "growth",
     ];
     if !KNOWN.contains(&id) {
         return failed(&format!(
@@ -317,7 +318,9 @@ pub(super) fn record_figure(ctx: &Ctx, id: &str, params: &str) -> String {
         Driver::Ap => "ap",
         Driver::Ssn => "ssn",
     };
-    let cycles = if matches!(id, "storm-scale" | "spikes" | "mean-cycle" | "regime-phase") {
+    let cycles = if matches!(id, "storm-scale" | "spikes" | "mean-cycle" | "regime-phase")
+        || (id == "growth" && param(params, "by") == Some("cycle"))
+    {
         match vleo_data::read_solar_cycles(&bundle) {
             Ok(c) => c,
             Err(e) => return failed(&e),
@@ -592,6 +595,76 @@ pub(super) fn record_figure(ctx: &Ctx, id: &str, params: &str) -> String {
                 }
             }
             j.num_field("below", c.below as f64);
+        }
+        "growth" => {
+            use vleo_modules::record::{growth, growth_by_cycle, GROWTH_PERCENTILES};
+            let driver = match any_driver() {
+                Ok(d) => d,
+                Err(e) => return e,
+            };
+            let by = param(params, "by").unwrap_or("all");
+            if by != "all" && by != "cycle" {
+                return failed(&format!(
+                    "no split '{by}': all (the whole record) or cycle (pairs within each cycle)"
+                ));
+            }
+            j.str_field("variable", driver_name(driver));
+            j.str_field("by", by);
+            let rows = |j: &mut Json, k: &str, v: &[Vec<Option<f64>>]| {
+                j.key(k).open_arr();
+                for (i, c) in v.iter().enumerate() {
+                    if i > 0 {
+                        j.raw(",");
+                    }
+                    arr(j, c);
+                }
+                j.close_arr();
+            };
+            if by == "cycle" {
+                let g = growth_by_cycle(&days, &cycles, driver);
+                j.key("lead_years");
+                arr(&mut j, &some(&g.lead_years));
+                j.key("cycles");
+                arr(
+                    &mut j,
+                    &g.cycles.iter().map(|&n| Some(n as f64)).collect::<Vec<_>>(),
+                );
+                rows(&mut j, "change", &g.change);
+                opt(&mut j, "shared", g.shared);
+                j.key("spread");
+                match g.spread {
+                    Some((a, b)) => arr(&mut j, &[Some(a), Some(b)]),
+                    None => {
+                        j.raw("null");
+                    }
+                }
+            } else {
+                let g = growth(&days, driver);
+                j.key("percentiles");
+                arr(&mut j, &some(&GROWTH_PERCENTILES));
+                j.key("lead_years");
+                arr(&mut j, &some(&g.lead_years));
+                j.key("pairs");
+                arr(
+                    &mut j,
+                    &g.pairs.iter().map(|&n| Some(n as f64)).collect::<Vec<_>>(),
+                );
+                rows(&mut j, "change", &g.change);
+                j.num_field("at_year", g.at_year as f64);
+                // Where the hump and the dip are, as the lead in years and the
+                // 95th's change there — the two things drawn — rather than as
+                // indices into arrays the reader has to hold together.
+                for (k, at) in [("hump", g.hump), ("dip", g.dip)] {
+                    j.key(k);
+                    match at.and_then(|i| Some((g.lead_years[i], g.change[2][i]?))) {
+                        Some((x, y)) => arr(&mut j, &[Some(x), Some(y)]),
+                        None => {
+                            j.raw("null");
+                        }
+                    }
+                }
+                j.bool_field("humped", g.humped);
+            }
         }
         "smoother" => {
             let driver = match any_driver() {
