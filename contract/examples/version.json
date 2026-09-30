@@ -1,6 +1,6 @@
 {
   "contract": "1",
-  "kernel": "fd0413",
+  "kernel": "5f52c3",
   "graph": "adb684",
   "version": "0.3.0",
   "endpoint": "local-daemon",

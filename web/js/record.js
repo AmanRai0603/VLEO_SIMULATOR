@@ -376,30 +376,6 @@ export function solarRecord() {
   return recordP;
 }
 
-/**
- * A centred moving mean, and the reason it is centred.
- *
- * A trailing mean sits below the series during a rise and above it during a
- * fall, so a ratio against it is not symmetric and a threshold on that ratio
- * catches rises and misses falls. Centred costs the ability to compute it in
- * real time, which a descriptive statistic does not need.
- *
- * A window with fewer than `minFrac` of its days present returns null rather
- * than a mean of whatever was there — across the 2017 gap that would otherwise
- * be a mean of one side.
- */
-export function centredMean(vals, w, minFrac = 0.7) {
-  const half = Math.floor(w / 2), n = vals.length, out = new Array(n).fill(null);
-  for (let i = 0; i < n; i++) {
-    let s = 0, k = 0;
-    for (let j = Math.max(0, i - half); j < Math.min(n, i + half + 1); j++) {
-      if (vals[j] !== null) { s += vals[j]; k++; }
-    }
-    if (k > w * minFrac) out[i] = s / k;
-  }
-  return out;
-}
-
 /** Pearson correlation over the pairs where both are present. */
 export function corr(a, b) {
   const xs = [], ys = [];

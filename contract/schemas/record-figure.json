@@ -270,6 +270,172 @@
         "kp7_table",
         "kp7_median"
       ]
+    },
+    {
+      "type": "object",
+      "description": "The recurrence figure: the autocorrelation of the detrended record against lag, over F10.7 or Ap.",
+      "properties": {
+        "ok": {
+          "type": "boolean"
+        },
+        "bundle": {
+          "type": "string",
+          "description": "The bundle and version the numbers were worked out from."
+        },
+        "figure": {
+          "type": "string",
+          "enum": [
+            "recurrence-f107",
+            "recurrence-ap"
+          ]
+        },
+        "max_lag": {
+          "type": "number",
+          "description": "The longest lag, in days; the curves run from lag 1 to it."
+        },
+        "windows": {
+          "type": "array",
+          "description": "The three detrend windows in days; the first is the one the rows were measured under, and the band and peaks are read off it.",
+          "items": {
+            "type": "number"
+          }
+        },
+        "r": {
+          "type": "array",
+          "description": "The autocorrelation at every lag, one curve per window: [window][lag − 1]; null below three pairs.",
+          "items": {
+            "type": "array",
+            "items": {
+              "type": [
+                "null",
+                "number"
+              ]
+            }
+          }
+        },
+        "n_lag1": {
+          "type": "number",
+          "description": "The pairs behind the first window's correlation at lag 1."
+        },
+        "band": {
+          "type": "array",
+          "description": "Bartlett's 95 per cent half-width on the first curve, at every lag.",
+          "items": {
+            "type": [
+              "null",
+              "number"
+            ]
+          }
+        },
+        "outside": {
+          "type": "number",
+          "description": "At how many lags the first curve is outside the band."
+        },
+        "peak_lag": {
+          "type": "array",
+          "description": "The first curve's peak lag in 18–36, 45–65 and 72–95; null where there is none.",
+          "items": {
+            "type": [
+              "null",
+              "number"
+            ]
+          }
+        },
+        "peak_r": {
+          "type": "array",
+          "description": "The correlation at each of those peaks.",
+          "items": {
+            "type": [
+              "null",
+              "number"
+            ]
+          }
+        },
+        "above_long": {
+          "type": "number",
+          "description": "At how many lags the longest window's curve sits above the first's."
+        },
+        "compared": {
+          "type": "number",
+          "description": "At how many lags both are drawn."
+        }
+      },
+      "required": [
+        "ok",
+        "figure",
+        "bundle",
+        "max_lag",
+        "windows",
+        "r",
+        "n_lag1",
+        "band",
+        "outside",
+        "peak_lag",
+        "peak_r",
+        "above_long",
+        "compared"
+      ]
+    },
+    {
+      "type": "object",
+      "description": "The spike figure: the F10.7 days the smooth cycle does not explain, and where in the cycle they fall.",
+      "properties": {
+        "ok": {
+          "type": "boolean"
+        },
+        "bundle": {
+          "type": "string",
+          "description": "The bundle and version the numbers were worked out from."
+        },
+        "figure": {
+          "type": "string",
+          "enum": [
+            "spikes"
+          ]
+        },
+        "threshold": {
+          "type": [
+            "null",
+            "number"
+          ],
+          "description": "The ratio to the 81-day centred mean at which a day is a spike: the ratio's mean plus 2.5 standard deviations."
+        },
+        "days": {
+          "type": "number",
+          "description": "Spike days that have a cycle phase."
+        },
+        "bursts": {
+          "type": "number",
+          "description": "The separate runs of consecutive spike days they fall in."
+        },
+        "phase": {
+          "type": "array",
+          "description": "The centre of each phase bin.",
+          "items": {
+            "type": "number"
+          }
+        },
+        "rate": {
+          "type": "array",
+          "description": "Spike days per thousand days at each phase; null where the record never reaches it.",
+          "items": {
+            "type": [
+              "null",
+              "number"
+            ]
+          }
+        }
+      },
+      "required": [
+        "ok",
+        "figure",
+        "bundle",
+        "threshold",
+        "days",
+        "bursts",
+        "phase",
+        "rate"
+      ]
     }
   ]
 }

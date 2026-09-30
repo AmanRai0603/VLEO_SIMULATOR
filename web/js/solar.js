@@ -22,7 +22,7 @@ import { $, esc } from './dom.js';
 import { S } from './state.js';
 import { solarRecord, bundleFile, parityFile, engineValues, engineSweep, engineAt,
   engineProbe, probeSweep, engineFigure,
-  engineLevers, centredMean, corr, quantile, num, daysSince2000 } from './record.js';
+  engineLevers, corr, quantile, num, daysSince2000 } from './record.js';
 import { drawChart, attachHover, tableFor, tableTsv, viewSpec, viewIsOn,
   watchScheme, sizeCanvas, cssSize, INK, exportFigure } from './chart.js';
 
@@ -104,45 +104,6 @@ function shape(xs, ys, unit, xunit, xname) {
 
 // ---------------------------------------------------------------------------
 // the panels
-
-/**
- * The autocorrelation of a series at every lag to `maxLag`, and the pair count
- * behind each.
- *
- * Written out rather than calling corr() on two slices, and the reason is the
- * COUNT rather than the speed. Bartlett's band needs n at each lag, and corr()
- * returns a correlation and drops how many pairs it used — so the band would
- * have had to guess at the very number that sets its width.
- *
- * Pairing is res[i] against res[i+L], over the i where both are present, which
- * is what corr(res.slice(0, n-L), res.slice(L)) did. A null is skipped rather
- * than treated as zero: the record is missing 273 days, and counting them as no
- * departure from trend would pull every correlation toward the mean.
- */
-function laggedCorr(res, maxLag) {
-  const lags = [], r = [], n = [];
-  for (let L = 1; L <= maxLag; L++) {
-    let sa = 0, sb = 0, k = 0;
-    for (let i = 0; i + L < res.length; i++) {
-      const a = res[i], b = res[i + L];
-      if (a === null || b === null) continue;
-      sa += a; sb += b; k++;
-    }
-    lags.push(L);
-    if (k < 3) { r.push(null); n.push(k); continue; }
-    const ma = sa / k, mb = sb / k;
-    let sab = 0, saa = 0, sbb = 0;
-    for (let i = 0; i + L < res.length; i++) {
-      const a = res[i], b = res[i + L];
-      if (a === null || b === null) continue;
-      const da = a - ma, db = b - mb;
-      sab += da * db; saa += da * da; sbb += db * db;
-    }
-    r.push(saa && sbb ? sab / Math.sqrt(saa * sbb) : null);
-    n.push(k);
-  }
-  return { lags, r, n };
-}
 
 /**
  * The five closures, as the panel beneath needs to name them.
@@ -363,77 +324,40 @@ const PANELS = [
     // become 3 views, and every one of them says more than the nine did.
     controls: [
       { k: 'view', label: 'view', opts: [['acf', 'recurrence and decay'], ['spikes', 'spikes: size and timing']] },
-      // The spike view is spikes(rec) and reads nothing below it.
+      // The spike view is the engine's spikes figure and reads nothing below it.
       { k: 'v', label: 'variable', when: o => o.view === 'acf',
         opts: [['f107', 'F10.7'], ['ap', 'Ap']] },
     ],
-    build(rec, o) {
-      if (o.view === 'spikes') return spikes(rec);
-      const key = o.v;
-      const MAXLAG = 200;
-      const v = rec.days.map(d => d[key]);
-      // 0.6, the same completeness rule sw_recurrence_lag and
-      // sw_recurrence_strength were measured under. A panel that illustrates a
-      // row and quotes a different number for it is worse than no panel.
-      const acfFor = (W) => {
-        const trend = centredMean(v, W, 0.6);
-        const res = v.map((x, i) => (x === null || trend[i] === null ? null : x - trend[i]));
-        return laggedCorr(res, MAXLAG);
-      };
+    // THE NUMBERS ARE THE ENGINE'S (phase 10c). The detrend over each window
+    // with 0.6 of it present (the rule sw_recurrence_lag and
+    // sw_recurrence_strength were measured under), the autocorrelation and its
+    // pairs at every lag, Bartlett's band, the three peaks and the counts are
+    // vleo_modules::record::recurrence and spikes, on vleo_core::math::stats.
+    // The page draws them and says what they show.
+    data: o => engineFigure(o.view === 'spikes' ? 'spikes' : 'recurrence-' + o.v),
+    build(rec, o, fig) {
+      if (fig.refused) throw new Error('the engine did not work the figure out: ' + fig.refused);
+      if (o.view === 'spikes') return spikes(fig);
+      const MAXLAG = fig.max_lag;
       // 365 FIRST, so it takes the first hue — the one that means "the record"
       // everywhere in this tool — and so the peaks below are read off the curve
       // the rows were measured on.
-      const A = acfFor(365), Ashort = acfFor(181), Along = acfFor(731);
-      const xs = A.lags;
-
-      // THE BAND, AND WHY IT IS BARTLETT'S AND NOT 2/sqrt(n).
-      //
-      // The naive band tests each correlation against the hypothesis that the
-      // whole series is white noise. This series is emphatically not white — it
-      // decays from 0.94 at lag 1 — so that test is passed by everything and
-      // says nothing. The question a reader actually has at lag 26 is whether
-      // that bump is more than the decay below it would already produce, and
-      // Bartlett's large-lag standard error is the one that asks it: the
-      // variance of r_k grows with the correlations at every shorter lag.
-      //
-      //   se(r_k) = sqrt( (1 + 2 * sum_{j<k} r_j^2) / n )
-      //
-      // So the band WIDENS with lag, which is the honest shape: a correlation
-      // far out has to be bigger to mean the same thing. Computed on the 365
-      // curve, because that is the one it is drawn against.
-      const band = [];
-      let acc = 0, outside = 0;
-      for (let k = 0; k < xs.length; k++) {
-        const n = A.n[k];
-        const b = n > 2 ? 1.96 * Math.sqrt((1 + 2 * acc) / n) : null;
-        band.push(b);
-        const r = A.r[k];
-        if (r !== null && b !== null && Math.abs(r) > b) outside++;
-        if (r !== null) acc += r * r;
-      }
-
+      const [r365, r181, r731] = fig.r, [w0, w1, w2] = fig.windows;
+      const xs = r365.map((_, i) => i + 1);
+      // THE BAND IS BARTLETT'S AND NOT 2/sqrt(n): it widens with lag, because
+      // a correlation far out has to be bigger to mean the same thing. On the
+      // 365 curve, because that is the one it is drawn against.
+      const band = fig.band, outside = fig.outside;
       // The first bump's peak and its harmonics, which are what say what the
-      // period is. Measured on the 365 curve for the same reason the band is.
-      const peakIn = (lo, hi) => {
-        let best = null, at = null;
-        for (let L = lo; L <= hi && L <= MAXLAG; L++) {
-          const r = A.r[L - 1];
-          if (r !== null && (best === null || r > best)) { best = r; at = L; }
-        }
-        return { at, r: best };
-      };
-      const p1 = peakIn(18, 36), p2 = peakIn(45, 65), p3 = peakIn(72, 95);
+      // period is — on the 365 curve for the same reason the band is.
+      const peak = i => ({ at: fig.peak_lag[i], r: fig.peak_r[i] });
+      const p1 = peak(0), p2 = peak(1), p3 = peak(2);
       // THREE NOTES WHERE THERE WERE THREE FULL-HEIGHT RULES, and each now says
       // what its peak IMPLIES rather than only where it is. The harmonics are
       // the whole argument — the first bump rides on the decay from lag 1, which
       // pulls its apparent peak toward zero, and the far harmonics are clear of
-      // it — and the division that shows it was a sentence underneath. Three
-      // dashed lines down a frame of oscillating curves also cost more ink than
-      // any of them was worth.
-      //
-      // THE THIRD PEAK WAS COMPUTED, QUOTED IN THE PROSE AND NEVER DRAWN until
-      // §26; it is the one that settles the period, so leaving it to the prose
-      // asked a reader to take the most important of the three on trust.
+      // it. THE THIRD PEAK WAS COMPUTED, QUOTED IN THE PROSE AND NEVER DRAWN
+      // until §26; it is the one that settles the period.
       const marks = [];
       const notes = [];
       if (p1.at) notes.push({ x: p1.at, y: p1.r, text: 'first peak, lag ' + p1.at });
@@ -447,33 +371,27 @@ const PANELS = [
           text: 'third, ' + p3.at + ' → ' + (p3.at / 3).toFixed(1) + ' d per cycle',
           colour: INK.series[2] });
       }
-
-      // The claim panels/pattern.toml makes about this picture, counted rather
-      // than asserted: a longer detrend window calls less of the record trend,
-      // so more low-frequency signal survives and every correlation is higher.
-      let over = 0, pairs = 0;
-      for (let k = 0; k < xs.length; k++) {
-        const lo = A.r[k], hi = Along.r[k];
-        if (lo === null || hi === null || !isFinite(lo) || !isFinite(hi)) continue;
-        pairs++; if (hi > lo) over++;
-      }
+      // The claim panels/pattern.toml makes about this picture, counted by the
+      // engine rather than asserted: a longer detrend window calls less of the
+      // record trend, so more low-frequency signal survives.
+      const over = fig.above_long, pairs = fig.compared;
       return {
         spec: {
-          finding: 'the 731-day curve sits above the 365-day one at ' + over + ' of the ' +
-            pairs + ' lags, and the 365 curve is outside the band at ' + outside + ' of them',
+          finding: 'the ' + w2 + '-day curve sits above the ' + w0 + '-day one at ' + over + ' of the ' +
+            pairs + ' lags, and the ' + w0 + ' curve is outside the band at ' + outside + ' of them',
           x: { label: 'lag  [days]', min: 1, max: MAXLAG },
           y: { label: 'autocorrelation of the detrended series  [-]' },
           series: [
             { kind: 'band', x: xs, y: band,
               y0: band.map(b => (b === null ? null : -b)), colour: INK.muted, alpha: 0.16 },
-            { name: 'detrended over 365 d', kind: 'line', x: xs, y: A.r, width: 2.2 },
+            { name: 'detrended over ' + w0 + ' d', kind: 'line', x: xs, y: r365, width: 2.2 },
             // CONTEXT. 365 is the window sw_recurrence_lag and sw_recurrence_
             // strength were measured under, and it is the curve the band and
             // the three peak marks are computed on. The other two are here to
             // show that the published number is a CHOICE and how much it moves
             // — which is a job that wants them legible and not equal.
-            { name: '181 d', kind: 'line', x: xs, y: Ashort.r, width: 1.3, context: true },
-            { name: '731 d', kind: 'line', x: xs, y: Along.r, width: 1.3, context: true },
+            { name: w1 + ' d', kind: 'line', x: xs, y: r181, width: 1.3, context: true },
+            { name: w2 + ' d', kind: 'line', x: xs, y: r731, width: 1.3, context: true },
             // INSIDE THE BAND IS "SHAPE, NOT FINDING", which is a region and was
             // drawn as its two edges. The edges stay — they are where the band
             // ends and a reader reads a value off them — and the wash between
@@ -511,7 +429,7 @@ const PANELS = [
             '\n\nThe dashed band is the 95 per cent interval under Bartlett\u2019s large-lag ' +
             'standard error, which widens with lag because the variance of a correlation grows ' +
             'with every correlation below it. The naive \u00b12/\u221an band — ' +
-            (A.n[0] ? '\u00b1' + (2 / Math.sqrt(A.n[0])).toFixed(4) : 'a flat line') +
+            (fig.n_lag1 ? '\u00b1' + (2 / Math.sqrt(fig.n_lag1)).toFixed(4) : 'a flat line') +
             ' — tests whether the series is white noise, which it obviously is not, and would ' +
             'pass everything drawn here. Bartlett\u2019s asks the question a reader actually ' +
             'has: is this bump more than the decay beneath it already produces. The 365 curve ' +
@@ -2041,28 +1959,13 @@ function stormScale(fig) {
 }
 
 /** Pattern · spikes. What counts as one, how big, and when they fall. */
-function spikes(rec) {
-  const v = rec.days.map(d => d.f107);
-  const base = centredMean(v, 81, 0.7);
-  const ratio = rec.days.map((d, i) => (v[i] === null || base[i] === null ? null : v[i] / base[i]));
-  const ok = ratio.filter(x => x !== null);
-  const mu = ok.reduce((p, c) => p + c, 0) / ok.length;
-  const sd = Math.sqrt(ok.reduce((p, c) => p + (c - mu) * (c - mu), 0) / ok.length);
-  const thr = mu + 2.5 * sd;
-  const nb = 20, byPhase = new Array(nb).fill(0), allPhase = new Array(nb).fill(0);
-  let n = 0, runs = 0, prev = -99;
-  rec.days.forEach((d, i) => {
-    if (ratio[i] === null || d.phase === null) return;
-    const b = Math.min(nb - 1, Math.floor(d.phase * nb));
-    allPhase[b]++;
-    if (ratio[i] >= thr) {
-      byPhase[b]++; n++;
-      if (d.t !== prev + 1) runs++;
-      prev = d.t;
-    }
-  });
-  const xs = byPhase.map((_, i) => (i + 0.5) / nb);
-  const rate = byPhase.map((c, i) => (allPhase[i] ? 1000 * c / allPhase[i] : null));
+function spikes(fig) {
+  // THE NUMBERS ARE THE ENGINE'S: vleo_modules::record::spikes divides each
+  // day's F10.7 by its 81-day centred mean, sets the threshold at the ratio's
+  // mean plus 2.5 of its standard deviations, and counts the days above it per
+  // thousand days of each cycle phase — the phase sw_cycle_phase folds by.
+  const thr = fig.threshold, n = fig.days, runs = fig.bursts;
+  const xs = fig.phase, rate = fig.rate;
   const drawnRates = rate.filter(v => v !== null && isFinite(v));
   const rHi = drawnRates.length ? Math.max(...drawnRates) : null;
   const rLo = drawnRates.length ? Math.min(...drawnRates) : null;

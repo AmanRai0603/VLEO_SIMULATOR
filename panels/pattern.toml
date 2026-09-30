@@ -93,3 +93,24 @@ why = """the two views are different quantities on different axes; one picture f
 name = "v"
 drive = "(() => { const s = document.querySelector('.sw-opt[data-k=v]'); if (!s) throw new Error('no v control'); s.value = 'ap'; s.dispatchEvent(new Event('change')); })()"
 why = """Ap and F10.7 recur differently — Ap's rotation signal is the weaker of the two, so an identical curve for both is a chart drawing one of them twice"""
+
+# THE NUMBERS ARE THE ENGINE'S (phase 10c): the autocorrelation under three
+# detrend windows, Bartlett's band, the three peaks and the counts the finding
+# states are vleo_modules::record::recurrence; the spike threshold, the days,
+# the bursts and the rate per phase are vleo_modules::record::spikes. Check 2c
+# moves each in the engine's reply and demands the panel say something
+# different. Ap's recurrence is the same code on another id, so one number
+# proves the page asks for it.
+[[figures]]
+id = "recurrence-f107"
+reads = ["windows", "r", "n_lag1", "band", "outside", "peak_lag", "peak_r", "above_long", "compared", "max_lag"]
+
+[[figures]]
+id = "recurrence-ap"
+state = "(() => { const s = document.querySelector('.sw-opt[data-k=v]'); if (!s) throw new Error('no v control'); s.value = 'ap'; s.dispatchEvent(new Event('change')); })()"
+reads = ["r"]
+
+[[figures]]
+id = "spikes"
+state = "(() => { const s = document.querySelector('.sw-opt[data-k=view]'); if (!s) throw new Error('no view control'); s.value = 'spikes'; s.dispatchEvent(new Event('change')); })()"
+reads = ["threshold", "days", "bursts", "phase", "rate"]

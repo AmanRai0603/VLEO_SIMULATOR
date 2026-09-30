@@ -291,6 +291,15 @@ path = "/v1/figures/solar/storm-scale"
 [[route.example]]
 name = "figures-solar-kp-ap"
 path = "/v1/figures/solar/kp-ap"
+[[route.example]]
+name = "figures-solar-recurrence-f107"
+path = "/v1/figures/solar/recurrence-f107"
+[[route.example]]
+name = "figures-solar-recurrence-ap"
+path = "/v1/figures/solar/recurrence-ap"
+[[route.example]]
+name = "figures-solar-spikes"
+path = "/v1/figures/solar/spikes"
 
 [[route]]
 method = "GET"

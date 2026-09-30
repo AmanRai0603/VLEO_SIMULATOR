@@ -14,8 +14,9 @@
 //! approved is the picture it still draws.
 
 use alloc::vec::Vec;
-use vleo_core::math::{pearson, quantile};
+use vleo_core::math::{bartlett_halfwidth, centred_mean, lagged_corr, mean_sd, pearson, quantile};
 use vleo_core::physics::env::ap_at_kp;
+use vleo_core::units::pmath;
 use vleo_data::{SolarCycle, SolarDay};
 
 /// The storm-level daily Ap the density figure counts: G1, the level the
@@ -259,6 +260,230 @@ pub fn kp_ap(record: &[SolarDay]) -> KpAp {
     }
 }
 
+/// Each day's phase in its cycle: 0 at the opening minimum, 1 at the next.
+///
+/// A day in no cycle has none. A cycle something else opens after is
+/// complete and folds by its own length; the one still running folds by the
+/// MEAN length of the complete ones, because the "end" the table gives it is
+/// where the record stops — dividing by that stretched cycle 25 across the
+/// whole axis by 1.894. A day more than one mean length into the running
+/// cycle belongs to a cycle the record cannot name and has no phase, not one
+/// wrapped round. This is `sw_cycle_phase`'s fold, day by day.
+pub fn cycle_phase(record: &[SolarDay], cycles: &[SolarCycle]) -> Vec<Option<f64>> {
+    let done = |c: &SolarCycle| cycles.iter().any(|o| o.start >= c.end);
+    let complete: Vec<&SolarCycle> = cycles.iter().filter(|c| done(c)).collect();
+    let mean_len = (!complete.is_empty()).then(|| {
+        complete
+            .iter()
+            .map(|c| (c.end - c.start) as f64)
+            .sum::<f64>()
+            / complete.len() as f64
+    });
+    record
+        .iter()
+        .map(|d| {
+            let c = cycles.iter().find(|c| d.day >= c.start && d.day < c.end)?;
+            let len = if done(c) {
+                Some((c.end - c.start) as f64)
+            } else {
+                mean_len
+            };
+            let ph = (d.day - c.start) as f64 / len.filter(|l| *l != 0.0)?;
+            (ph <= 1.0).then_some(ph)
+        })
+        .collect()
+}
+
+/// The driver a figure of the record is drawn over.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Driver {
+    F107,
+    Ap,
+}
+
+impl Driver {
+    fn of(self, d: &SolarDay) -> Option<f64> {
+        match self {
+            Driver::F107 => d.f107,
+            Driver::Ap => d.ap,
+        }
+    }
+}
+
+/// The longest lag the recurrence figure reaches, in days.
+pub const RECURRENCE_MAX_LAG: usize = 200;
+
+/// The three detrend windows the recurrence figure compares, in days; the
+/// first is the one `sw_recurrence_lag` and `sw_recurrence_strength` were
+/// measured under, and the band and the peaks are read off it.
+pub const RECURRENCE_WINDOWS: [usize; 3] = [365, 181, 731];
+
+/// The recurrence figure's numbers: the autocorrelation of the detrended
+/// record against lag.
+#[derive(Clone, Debug, PartialEq)]
+pub struct Recurrence {
+    /// The autocorrelation at lags 1 to [`RECURRENCE_MAX_LAG`], one curve per
+    /// window of [`RECURRENCE_WINDOWS`], in that order.
+    pub r: [Vec<Option<f64>>; 3],
+    /// The pairs behind the first window's correlation at lag 1.
+    pub n_lag1: usize,
+    /// Bartlett's 95 per cent half-width on the first curve, at every lag.
+    pub band: Vec<Option<f64>>,
+    /// At how many lags the first curve is outside that band.
+    pub outside: u32,
+    /// The highest point of the first curve in each of the rotation's first
+    /// three bands, lags 18–36, 45–65 and 72–95: `(lag, r)`, the lowest lag
+    /// on a tie.
+    pub peaks: [Option<(usize, f64)>; 3],
+    /// At how many lags the longest window's curve sits above the first's,
+    /// and at how many both are drawn.
+    pub above_long: u32,
+    pub compared: u32,
+}
+
+/// The recurrence figure's numbers, over one driver.
+///
+/// The detrend is a centred mean over each window with 0.6 of it present —
+/// the completeness rule the rows were measured under.
+pub fn recurrence(record: &[SolarDay], driver: Driver) -> Recurrence {
+    let v: Vec<Option<f64>> = record.iter().map(|d| driver.of(d)).collect();
+    let mut trend = alloc::vec![None; v.len()];
+    let mut acf = |w: usize| {
+        centred_mean(&v, w, 0.6, &mut trend);
+        let res: Vec<Option<f64>> = v
+            .iter()
+            .zip(&trend)
+            .map(|(x, t)| Some((*x)? - (*t)?))
+            .collect();
+        (1..=RECURRENCE_MAX_LAG)
+            .map(|lag| lagged_corr(&res, lag))
+            .collect::<Vec<_>>()
+    };
+    let a = acf(RECURRENCE_WINDOWS[0]);
+    let short = acf(RECURRENCE_WINDOWS[1]);
+    let long = acf(RECURRENCE_WINDOWS[2]);
+    let (mut acc, mut outside) = (0.0, 0u32);
+    let band = a
+        .iter()
+        .map(|&(r, n)| {
+            let b = bartlett_halfwidth(acc, n);
+            if let (Some(r), Some(b)) = (r, b) {
+                if r.abs() > b {
+                    outside += 1;
+                }
+            }
+            if let Some(r) = r {
+                acc += r * r;
+            }
+            b
+        })
+        .collect();
+    let peak = |lo: usize, hi: usize| {
+        let mut best: Option<(usize, f64)> = None;
+        for lag in lo..=hi.min(RECURRENCE_MAX_LAG) {
+            if let Some(r) = a[lag - 1].0 {
+                if best.is_none_or(|(_, b)| r > b) {
+                    best = Some((lag, r));
+                }
+            }
+        }
+        best
+    };
+    let (mut above_long, mut compared) = (0u32, 0u32);
+    for (lo, hi) in a.iter().zip(&long) {
+        let (Some(lo), Some(hi)) = (lo.0, hi.0) else {
+            continue;
+        };
+        if !lo.is_finite() || !hi.is_finite() {
+            continue;
+        }
+        compared += 1;
+        if hi > lo {
+            above_long += 1;
+        }
+    }
+    let curve = |c: &[(Option<f64>, usize)]| c.iter().map(|p| p.0).collect::<Vec<_>>();
+    Recurrence {
+        r: [curve(&a), curve(&short), curve(&long)],
+        n_lag1: a[0].1,
+        band,
+        outside,
+        peaks: [peak(18, 36), peak(45, 65), peak(72, 95)],
+        above_long,
+        compared,
+    }
+}
+
+/// How many phase bins the spike figure counts in.
+pub const SPIKE_BINS: usize = 20;
+
+/// The spike figure's numbers: which F10.7 days the smooth cycle does not
+/// explain, and where in the cycle they fall.
+#[derive(Clone, Debug, PartialEq)]
+pub struct Spikes {
+    /// The ratio to the 81-day centred mean at which a day is a spike: the
+    /// ratio's mean plus 2.5 of its standard deviations, over the record.
+    pub threshold: Option<f64>,
+    /// Spike days that have a phase, and the separate bursts they fall in —
+    /// a burst being a run of spike days on consecutive calendar days.
+    pub days: u32,
+    pub bursts: u32,
+    /// The centre of each of [`SPIKE_BINS`] phase bins, and the spike days
+    /// per thousand days at that phase; none for a bin the record never
+    /// reaches.
+    pub phase: Vec<f64>,
+    pub rate: Vec<Option<f64>>,
+}
+
+/// The spike figure's numbers, from the record and its cycles.
+///
+/// The baseline is the 81-day centred mean with 0.7 of it present, the
+/// threshold 2.5 standard deviations above the ratio's mean — what
+/// `sw_spike_threshold` declares.
+pub fn spikes(record: &[SolarDay], cycles: &[SolarCycle]) -> Spikes {
+    let v: Vec<Option<f64>> = record.iter().map(|d| d.f107).collect();
+    let mut base = alloc::vec![None; v.len()];
+    centred_mean(&v, 81, 0.7, &mut base);
+    let ratio: Vec<Option<f64>> = v
+        .iter()
+        .zip(&base)
+        .map(|(x, b)| Some((*x)? / (*b)?))
+        .collect();
+    let present: Vec<f64> = ratio.iter().flatten().copied().collect();
+    let threshold = mean_sd(&present).map(|(mu, sd)| mu + 2.5 * sd);
+    let phase = cycle_phase(record, cycles);
+    let (mut by_phase, mut all_phase) = ([0u32; SPIKE_BINS], [0u32; SPIKE_BINS]);
+    let (mut days, mut bursts, mut prev) = (0u32, 0u32, None::<i32>);
+    for ((d, r), ph) in record.iter().zip(&ratio).zip(&phase) {
+        let (Some(r), Some(ph)) = (r, ph) else {
+            continue;
+        };
+        let b = (pmath::floor(ph * SPIKE_BINS as f64) as usize).min(SPIKE_BINS - 1);
+        all_phase[b] += 1;
+        if threshold.is_some_and(|t| *r >= t) {
+            by_phase[b] += 1;
+            days += 1;
+            if prev != Some(d.day - 1) {
+                bursts += 1;
+            }
+            prev = Some(d.day);
+        }
+    }
+    Spikes {
+        threshold,
+        days,
+        bursts,
+        phase: (0..SPIKE_BINS)
+            .map(|i| (i as f64 + 0.5) / SPIKE_BINS as f64)
+            .collect(),
+        rate: by_phase
+            .iter()
+            .zip(&all_phase)
+            .map(|(&c, &n)| (n > 0).then(|| 1000.0 * c as f64 / n as f64))
+            .collect(),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -382,6 +607,80 @@ mod tests {
         assert_eq!((k.above_median, k.above_p90), (1, 1));
         assert_eq!((k.kp7_table, k.kp7_median), (Some(132.0), Some(50.0)));
         assert_eq!(kp_ap(&[]).kp7_median, None);
+    }
+
+    #[test]
+    fn a_running_cycle_folds_by_the_mean_of_the_complete_ones() {
+        // Cycle 1 is complete (cycle 2 opens where it ends) and ten days long;
+        // cycle 2 is still running, and its table end of 30 is where the
+        // record stops, so it folds by 10 too.
+        let cycles = [cycle(1, 0, 10), cycle(2, 10, 30)];
+        let rec: Vec<SolarDay> = [5, 10, 15, 19, 22, 40]
+            .iter()
+            .map(|&n| day(n, None, None))
+            .collect();
+        // Day 22 is 1.2 of a mean length in: a cycle nobody can name yet.
+        assert_eq!(
+            cycle_phase(&rec, &cycles),
+            [Some(0.5), Some(0.0), Some(0.5), Some(0.9), None, None]
+        );
+    }
+
+    #[test]
+    fn a_27_day_recurrence_is_found_at_27_and_its_harmonics() {
+        // A 27-day sawtooth, 2000 days long: whatever the detrend leaves, the
+        // series repeats itself every 27 days and at nothing shorter.
+        let rec: Vec<SolarDay> = (0..2000)
+            .map(|i| day(i, Some(100.0 + (i % 27) as f64), None))
+            .collect();
+        let r = recurrence(&rec, Driver::F107);
+        let lags = r.peaks.map(|p| p.map(|(lag, _)| lag));
+        assert_eq!(lags, [Some(27), Some(54), Some(81)]);
+        assert!(r.peaks[0].unwrap().1 > 0.99);
+        assert!(r.r.iter().all(|c| c.len() == RECURRENCE_MAX_LAG));
+        assert_eq!(r.band.len(), RECURRENCE_MAX_LAG);
+        // The 365-day detrend needs more than 219 values in its window, so the
+        // first and last 37 days have none: 1926 residuals, 1925 pairs at lag 1.
+        assert_eq!(r.n_lag1, 1925);
+        assert!(r.outside > 0 && r.compared as usize == RECURRENCE_MAX_LAG);
+        // No Ap in this record: every correlation over Ap is refused.
+        assert!(recurrence(&rec, Driver::Ap).r[0]
+            .iter()
+            .all(Option::is_none));
+    }
+
+    #[test]
+    fn spikes_are_counted_in_bursts_and_per_thousand_days_of_phase() {
+        // 300 days of a flat 100 sfu with 200 on days 100, 101 and 200. The
+        // 81-day baseline needs 57 values, so days 16 to 283 have a ratio;
+        // cycle 1 is complete at 300 days, so a phase bin is 15 days.
+        let rec: Vec<SolarDay> = (0..300)
+            .map(|i| {
+                day(
+                    i,
+                    Some(if [100, 101, 200].contains(&i) {
+                        200.0
+                    } else {
+                        100.0
+                    }),
+                    None,
+                )
+            })
+            .collect();
+        let s = spikes(&rec, &[cycle(1, 0, 300), cycle(2, 300, 600)]);
+        let t = s.threshold.unwrap();
+        assert!(t > 1.1 && t < 1.5, "{t}");
+        // Three spike days, in two bursts: 100–101 and 200.
+        assert_eq!((s.days, s.bursts), (3, 2));
+        assert_eq!(s.phase.len(), SPIKE_BINS);
+        assert_eq!(s.phase[0], 0.025);
+        // Bin 0 has no day with a ratio, bin 1 fourteen (16–29), bin 6 two
+        // spikes in fifteen days (90–104), bin 13 one in fifteen (195–209).
+        assert_eq!(s.rate[0], None);
+        assert_eq!(s.rate[1], Some(0.0));
+        assert_eq!(s.rate[6], Some(1000.0 * 2.0 / 15.0));
+        assert_eq!(s.rate[13], Some(1000.0 / 15.0));
+        assert_eq!(s.rate[19], None);
     }
 
     #[test]

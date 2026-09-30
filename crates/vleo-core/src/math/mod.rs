@@ -17,5 +17,5 @@ pub mod table;
 
 pub use integrate::{rk4_scalar, simpson};
 pub use rootfind::{bisect, secant, RootError};
-pub use stats::{pearson, quantile};
+pub use stats::{bartlett_halfwidth, centred_mean, lagged_corr, mean_sd, pearson, quantile};
 pub use table::Table1;
