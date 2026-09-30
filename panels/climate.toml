@@ -101,3 +101,18 @@ why = """the five aggregates are five different horizontal axes; the Kp-against-
 id = "kp-ap"
 state = "(() => { const s = document.querySelector('.sw-opt[data-k=by]'); if (!s) throw new Error('no by control'); s.value = 'kpap'; s.dispatchEvent(new Event('change')); })()"
 reads = ["kp", "median", "p10", "p90", "table", "above_median", "above_p90", "kp7_table", "kp7_median"]
+
+# THE CLIMATE PANEL'S OWN VIEWS ARE THE ENGINE'S TOO (phase 10f): the record
+# grouped by year, day of year or month on its own calendar is
+# vleo_modules::record::climate, and the 13-month smoother and what it removes
+# is record::smoother, from monthly_means.csv. Check 2c moves each number in the
+# engine's reply and demands the panel say something different. The opening
+# view is by year, so the climate figure needs no state.
+[[figures]]
+id = "climate"
+reads = ["key", "x", "mean", "days_in", "overall", "days", "high", "low", "below"]
+
+[[figures]]
+id = "smoother"
+state = "(() => { const s = document.querySelector('.sw-opt[data-k=by]'); if (!s) throw new Error('no by control'); s.value = 'smooth'; s.dispatchEvent(new Event('change')); })()"
+reads = ["x", "raw", "smooth", "missing", "months", "raw_range", "smooth_range", "rms", "crossings", "max_departure"]

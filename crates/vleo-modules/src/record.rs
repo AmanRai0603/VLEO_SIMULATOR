@@ -17,7 +17,7 @@ use alloc::vec::Vec;
 use vleo_core::math::{bartlett_halfwidth, centred_mean, lagged_corr, mean_sd, pearson, quantile};
 use vleo_core::physics::env::ap_at_kp;
 use vleo_core::units::pmath;
-use vleo_data::{SolarCycle, SolarDay};
+use vleo_data::{MonthlyMean, SolarCycle, SolarDay};
 
 /// The storm-level daily Ap the density figure counts: G1, the level the
 /// panels call a storm.
@@ -772,6 +772,178 @@ pub fn regime_phase(record: &[SolarDay], cycles: &[SolarCycle]) -> RegimePhase {
     }
 }
 
+/// How the climate figure groups the record's days.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Grouping {
+    /// By calendar year.
+    Year,
+    /// By day of the year, in bins of five days named by their last day.
+    DayOfYear,
+    /// By calendar month.
+    Month,
+}
+
+/// The climate figure's numbers: the record's mean in each group, and how
+/// far the groups spread about the record's own mean.
+#[derive(Clone, Debug, PartialEq)]
+pub struct Climate {
+    /// Each group, in order, where it is drawn, its mean and the days it
+    /// rests on. A month is drawn at `floor(k/12) + (k mod 12)/12` for
+    /// `k = 12·year + month`, as the page drew it.
+    pub x: Vec<f64>,
+    pub mean: Vec<f64>,
+    pub days_in: Vec<u32>,
+    /// The key of each group — a year, a day-of-year bin, `12·year + month`.
+    pub key: Vec<i64>,
+    /// The mean over the record's DAYS, not over its groups: a year the
+    /// record holds 357 days of is not weighted as a full one.
+    pub overall: Option<f64>,
+    pub days: u32,
+    /// The highest and lowest group mean, and where each is drawn — the first
+    /// on a tie.
+    pub high: Option<(f64, f64)>,
+    pub low: Option<(f64, f64)>,
+    /// How many groups sit below the record's mean.
+    pub below: u32,
+}
+
+/// The climate figure's numbers over one driver.
+pub fn climate(record: &[SolarDay], driver: Driver, by: Grouping) -> Climate {
+    let mut groups: alloc::collections::BTreeMap<i64, Vec<f64>> = Default::default();
+    let mut all = Vec::new();
+    for d in record {
+        let Some(v) = driver.of(d) else { continue };
+        let (y, m, _, doy) = vleo_data::civil_from_days(d.day);
+        let k = match by {
+            Grouping::Year => y as i64,
+            Grouping::DayOfYear => (doy as i64 + 4) / 5 * 5,
+            Grouping::Month => y as i64 * 12 + m as i64,
+        };
+        groups.entry(k).or_default().push(v);
+        all.push(v);
+    }
+    let mean = |a: &[f64]| a.iter().sum::<f64>() / a.len() as f64;
+    let key: Vec<i64> = groups.keys().copied().collect();
+    let x: Vec<f64> = key
+        .iter()
+        .map(|&k| match by {
+            Grouping::Month => pmath::floor(k as f64 / 12.0) + (k % 12) as f64 / 12.0,
+            _ => k as f64,
+        })
+        .collect();
+    let means: Vec<f64> = groups.values().map(|v| mean(v)).collect();
+    let overall = (!all.is_empty()).then(|| mean(&all));
+    let pick = |high: bool| {
+        let mut best: Option<(f64, f64)> = None;
+        for (i, &v) in means.iter().enumerate() {
+            if best.is_none_or(|(b, _)| if high { v > b } else { v < b }) {
+                best = Some((v, x[i]));
+            }
+        }
+        best
+    };
+    Climate {
+        below: overall.map_or(0, |o| means.iter().filter(|&&v| v < o).count() as u32),
+        high: pick(true),
+        low: pick(false),
+        days_in: groups.values().map(|v| v.len() as u32).collect(),
+        days: all.len() as u32,
+        overall,
+        mean: means,
+        x,
+        key,
+    }
+}
+
+/// The smoother figure's numbers: each month's mean beside the 13-month
+/// smoothed value the cycles are counted on, and what the smoothing removes.
+#[derive(Clone, Debug, PartialEq)]
+pub struct Smoother {
+    /// Where each month is drawn, in years: days since 2000 over 365.25, plus
+    /// 2000.
+    pub x: Vec<f64>,
+    pub raw: Vec<Option<f64>>,
+    pub smooth: Vec<Option<f64>>,
+    /// Months the smoother is undefined for, of all the months.
+    pub missing: u32,
+    pub months: u32,
+    /// The range of the monthly means, and of the smoothed values, over the
+    /// months carrying both; the rms of their difference; how often the
+    /// monthly line crosses the smoother; its largest departure from it.
+    pub raw_range: f64,
+    pub smooth_range: f64,
+    pub rms: f64,
+    pub crossings: u32,
+    pub max_departure: f64,
+}
+
+/// The smoother figure's numbers over one driver.
+pub fn smoother(months: &[MonthlyMean], driver: Driver) -> Smoother {
+    let (raw, smooth): (Vec<Option<f64>>, Vec<Option<f64>>) = months
+        .iter()
+        .map(|m| match driver {
+            Driver::F107 => (m.f107_mean, m.f107_smooth),
+            Driver::Ap => (m.ap_mean, m.ap_smooth),
+            Driver::Ssn => (m.ssn_mean, m.ssn_smooth),
+        })
+        .unzip();
+    let both: Vec<(f64, f64)> = raw
+        .iter()
+        .zip(&smooth)
+        .filter_map(|(a, b)| Some(((*a)?, (*b)?)))
+        .collect();
+    let range = |v: &mut dyn Iterator<Item = f64>| {
+        let (lo, hi) = v.fold((f64::INFINITY, f64::NEG_INFINITY), |(lo, hi), x| {
+            (lo.min(x), hi.max(x))
+        });
+        if both.is_empty() {
+            0.0
+        } else {
+            hi - lo
+        }
+    };
+    let rms = if both.is_empty() {
+        0.0
+    } else {
+        pmath::sqrt(both.iter().map(|(a, b)| (a - b) * (a - b)).sum::<f64>() / both.len() as f64)
+    };
+    let (mut crossings, mut max_departure, mut prev) = (0u32, 0.0f64, 0i8);
+    for (a, b) in &both {
+        let dv = a - b;
+        if dv.abs() > max_departure {
+            max_departure = dv.abs();
+        }
+        let sign = if dv > 0.0 {
+            1
+        } else if dv < 0.0 {
+            -1
+        } else {
+            0
+        };
+        if sign != 0 && prev != 0 && sign != prev {
+            crossings += 1;
+        }
+        if sign != 0 {
+            prev = sign;
+        }
+    }
+    Smoother {
+        x: months
+            .iter()
+            .map(|m| m.day as f64 / 365.25 + 2000.0)
+            .collect(),
+        missing: smooth.iter().filter(|v| v.is_none()).count() as u32,
+        months: months.len() as u32,
+        raw_range: range(&mut both.iter().map(|p| p.0)),
+        smooth_range: range(&mut both.iter().map(|p| p.1)),
+        rms,
+        crossings,
+        max_departure,
+        raw,
+        smooth,
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1104,6 +1276,69 @@ mod tests {
         // The lowest quiet share is 0 at bins 0 and 2; the first wins.
         assert_eq!(r.quiet_low, Some((0.0, 0.025)));
         assert!((r.mirror.unwrap() + 0.6882472016116853).abs() < 1e-12);
+    }
+
+    #[test]
+    fn the_record_is_grouped_by_its_own_calendar() {
+        let at = |s: &str, v: Option<f64>| day(vleo_data::days_since_2000(s).unwrap(), v, None);
+        let rec = [
+            at("1999-12-31", Some(1.0)),
+            at("2000-01-01", Some(3.0)),
+            at("2000-01-02", Some(5.0)),
+            at("2000-02-01", Some(10.0)),
+            at("2000-02-02", None),
+        ];
+        // By year: 1999 holds 1, 2000 holds 3, 5, 10. The record's mean is over
+        // its four DAYS, 4.75, not over its two years.
+        let y = climate(&rec, Driver::F107, Grouping::Year);
+        assert_eq!(
+            (y.key.clone(), y.mean.clone(), y.days_in.clone()),
+            (vec![1999, 2000], vec![1.0, 6.0], vec![1, 3])
+        );
+        assert_eq!((y.overall, y.days, y.below), (Some(4.75), 4, 1));
+        assert_eq!((y.high, y.low), (Some((6.0, 2000.0)), Some((1.0, 1999.0))));
+        // By month: December 1999 is key 24000 and is drawn at 2000.0.
+        let m = climate(&rec, Driver::F107, Grouping::Month);
+        assert_eq!(m.key, [24000, 24001, 24002]);
+        assert_eq!(m.x, [2000.0, 2000.0 + 1.0 / 12.0, 2000.0 + 2.0 / 12.0]);
+        assert_eq!(m.mean, [1.0, 4.0, 10.0]);
+        // By day of year in fives: day 365 → 365, days 1 and 2 → 5, day 32 → 35.
+        let d = climate(&rec, Driver::F107, Grouping::DayOfYear);
+        assert_eq!((d.key, d.mean), (vec![5, 35, 365], vec![4.0, 10.0, 1.0]));
+    }
+
+    #[test]
+    fn the_smoother_removes_what_the_months_add() {
+        let mo = |i: i32, raw: f64, sm: Option<f64>| MonthlyMean {
+            day: i * 30,
+            f107_mean: Some(raw),
+            ap_mean: None,
+            ssn_mean: None,
+            f107_smooth: sm,
+            ap_smooth: None,
+            ssn_smooth: None,
+        };
+        let months = [
+            mo(0, 10.0, Some(9.0)),
+            mo(1, 8.0, Some(9.0)),
+            mo(2, 9.0, Some(9.0)),
+            mo(3, 12.0, None),
+            mo(4, 11.0, Some(10.0)),
+        ];
+        let s = smoother(&months, Driver::F107);
+        assert_eq!((s.missing, s.months), (1, 5));
+        // Departures +1, −1, 0, +1: it crosses twice, and a zero is not a
+        // crossing.
+        assert_eq!((s.crossings, s.max_departure), (2, 1.0));
+        assert_eq!((s.raw_range, s.smooth_range), (3.0, 1.0));
+        assert!((s.rms - 0.8660254037844386).abs() < 1e-15);
+        assert_eq!(s.x[1], 30.0 / 365.25 + 2000.0);
+        // No month carries Ap: nothing to measure, and none of it invented.
+        let a = smoother(&months, Driver::Ap);
+        assert_eq!(
+            (a.raw_range, a.rms, a.crossings, a.missing),
+            (0.0, 0.0, 0, 5)
+        );
     }
 
     #[test]

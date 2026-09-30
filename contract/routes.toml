@@ -315,6 +315,14 @@ params = [["v", "f107"]]
 [[route.example]]
 name = "figures-solar-regime-phase"
 path = "/v1/figures/solar/regime-phase"
+[[route.example]]
+name = "figures-solar-climate"
+path = "/v1/figures/solar/climate"
+params = [["v", "f107"], ["by", "year"]]
+[[route.example]]
+name = "figures-solar-smoother"
+path = "/v1/figures/solar/smoother"
+params = [["v", "f107"]]
 
 [[route]]
 method = "GET"

@@ -267,7 +267,7 @@ pub(super) fn results_list() -> String {
 /// claim. A panel with no numbers here yet is refused by name.
 pub(super) fn record_figure(ctx: &Ctx, id: &str, params: &str) -> String {
     const BUNDLE: &str = "solar-weather";
-    const KNOWN: [&str; 9] = [
+    const KNOWN: [&str; 11] = [
         "density",
         "storm-scale",
         "kp-ap",
@@ -277,6 +277,8 @@ pub(super) fn record_figure(ctx: &Ctx, id: &str, params: &str) -> String {
         "mean-cycle",
         "segments",
         "regime-phase",
+        "climate",
+        "smoother",
     ];
     if !KNOWN.contains(&id) {
         return failed(&format!(
@@ -300,6 +302,21 @@ pub(super) fn record_figure(ctx: &Ctx, id: &str, params: &str) -> String {
     // Only the figures that fold by cycle read the cycle table; one that is
     // missing refuses them and nothing else.
     use vleo_modules::record::Driver;
+    // The figures drawn over any of the three drivers say which; one they do
+    // not know is refused by name.
+    let any_driver = || match param(params, "v").unwrap_or("f107") {
+        "f107" => Ok(Driver::F107),
+        "ap" => Ok(Driver::Ap),
+        "ssn" => Ok(Driver::Ssn),
+        other => Err(failed(&format!(
+            "no driver '{other}' in the record's figures: f107, ap or ssn"
+        ))),
+    };
+    let driver_name = |d: Driver| match d {
+        Driver::F107 => "f107",
+        Driver::Ap => "ap",
+        Driver::Ssn => "ssn",
+    };
     let cycles = if matches!(id, "storm-scale" | "spikes" | "mean-cycle" | "regime-phase") {
         match vleo_data::read_solar_cycles(&bundle) {
             Ok(c) => c,
@@ -403,29 +420,16 @@ pub(super) fn record_figure(ctx: &Ctx, id: &str, params: &str) -> String {
             use vleo_modules::record::{mean_cycle, MEAN_CYCLE_MIN_DAYS};
             // The mean cycle is asked for over one driver in some number of phase
             // bins, and says which it was given; anything else is refused by name.
-            let driver = match param(params, "v").unwrap_or("f107") {
-                "f107" => Driver::F107,
-                "ap" => Driver::Ap,
-                "ssn" => Driver::Ssn,
-                other => {
-                    return failed(&format!(
-                        "no driver '{other}' in the record's figures: f107, ap or ssn"
-                    ))
-                }
+            let driver = match any_driver() {
+                Ok(d) => d,
+                Err(e) => return e,
             };
             let bins = match param(params, "bins").unwrap_or("20").parse::<usize>() {
                 Ok(n) if (2..=100).contains(&n) => n,
                 _ => return failed("bins is a whole number of phase bins from 2 to 100"),
             };
             let m = mean_cycle(&days, &cycles, driver, bins, MEAN_CYCLE_MIN_DAYS);
-            j.str_field(
-                "variable",
-                match driver {
-                    Driver::F107 => "f107",
-                    Driver::Ap => "ap",
-                    Driver::Ssn => "ssn",
-                },
-            );
+            j.str_field("variable", driver_name(driver));
             j.num_field("bins", bins as f64);
             j.num_field("min_days", MEAN_CYCLE_MIN_DAYS as f64);
             j.key("phase");
@@ -532,6 +536,87 @@ pub(super) fn record_figure(ctx: &Ctx, id: &str, params: &str) -> String {
                 }
             }
             opt(&mut j, "mirror", r.mirror);
+        }
+        "climate" => {
+            use vleo_modules::record::{climate, Grouping};
+            let driver = match any_driver() {
+                Ok(d) => d,
+                Err(e) => return e,
+            };
+            let by = match param(params, "by").unwrap_or("year") {
+                "year" => Grouping::Year,
+                "doy" => Grouping::DayOfYear,
+                "month" => Grouping::Month,
+                other => {
+                    return failed(&format!(
+                        "no grouping '{other}': year, doy (five-day bins of the year) or month"
+                    ))
+                }
+            };
+            let c = climate(&days, driver, by);
+            j.str_field("variable", driver_name(driver));
+            j.str_field(
+                "by",
+                match by {
+                    Grouping::Year => "year",
+                    Grouping::DayOfYear => "doy",
+                    Grouping::Month => "month",
+                },
+            );
+            j.key("key");
+            arr(
+                &mut j,
+                &c.key.iter().map(|&k| Some(k as f64)).collect::<Vec<_>>(),
+            );
+            j.key("x");
+            arr(&mut j, &some(&c.x));
+            j.key("mean");
+            arr(&mut j, &some(&c.mean));
+            j.key("days_in");
+            arr(
+                &mut j,
+                &c.days_in
+                    .iter()
+                    .map(|&n| Some(n as f64))
+                    .collect::<Vec<_>>(),
+            );
+            opt(&mut j, "overall", c.overall);
+            j.num_field("days", c.days as f64);
+            for (k, v) in [("high", c.high), ("low", c.low)] {
+                j.key(k);
+                match v {
+                    Some((v, x)) => arr(&mut j, &[Some(v), Some(x)]),
+                    None => {
+                        j.raw("null");
+                    }
+                }
+            }
+            j.num_field("below", c.below as f64);
+        }
+        "smoother" => {
+            let driver = match any_driver() {
+                Ok(d) => d,
+                Err(e) => return e,
+            };
+            let months = match vleo_data::read_monthly_means(&bundle) {
+                Ok(m) => m,
+                Err(e) => return failed(&e),
+            };
+            let s = vleo_modules::record::smoother(&months, driver);
+            j.str_field("variable", driver_name(driver));
+            j.key("x");
+            arr(&mut j, &some(&s.x));
+            j.key("raw");
+            arr(&mut j, &s.raw);
+            j.key("smooth");
+            arr(&mut j, &s.smooth);
+            j.num_field("missing", s.missing as f64);
+            j.num_field("months", s.months as f64);
+            j.num_field("raw_range", s.raw_range);
+            j.num_field("smooth_range", s.smooth_range);
+            j.num_field("rms", s.rms);
+            j.num_field("crossings", s.crossings as f64);
+            j.num_field("max_departure", s.max_departure);
         }
         "spikes" => {
             let s = vleo_modules::record::spikes(&days, &cycles);
