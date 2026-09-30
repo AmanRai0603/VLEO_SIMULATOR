@@ -247,8 +247,11 @@ const PANELS = [
       { k: 'bins', label: 'phase bins', when: o => o.view === 'stack',
         opts: [['20', '20'], ['10', '10'], ['40', '40']] },
     ],
-    build(rec, o) {
-      if (o.view === 'storm') return stormScale(rec);
+    // The storm view's numbers are the engine's (phase 10); the mean-cycle
+    // view still draws its own and asks for nothing.
+    data: o => (o.view === 'storm' ? engineFigure('storm-scale') : null),
+    build(rec, o, fig) {
+      if (o.view === 'storm') return stormScale(fig);
       const nb = +o.bins, key = o.v;
       const per = new Map();
       for (const c of rec.cycles) per.set(c.n, Array.from({ length: nb }, () => []));
@@ -1822,10 +1825,15 @@ const PANELS = [
         opts: [['f107', 'F10.7'], ['ap', 'Ap'], ['ssn', 'sunspot number']] },
       { k: 'by', label: 'aggregate', opts: [['year', 'by year'], ['doy', 'by day of year'], ['month', 'by month'], ['smooth', 'the 13-month smoother'], ['kpap', 'Kp against ap']] },
     ],
-    async data() { return bundleFile('solar-weather', 'monthly_means.csv'); },
+    // The Kp-against-ap view's numbers are the engine's (phase 10), asked for
+    // only when it is the view drawn.
+    async data(o) {
+      const m = await bundleFile('solar-weather', 'monthly_means.csv');
+      return o.by === 'kpap' ? { ...m, fig: await engineFigure('kp-ap') } : m;
+    },
     build(rec, o, extra) {
       if (o.by === 'smooth') return smoothed(extra.rows, o.v);
-      if (o.by === 'kpap') return kpAgainstAp(rec);
+      if (o.by === 'kpap') return kpAgainstAp(extra.fig);
       const key = o.v;
       const grp = new Map();
       for (const d of rec.days) {
@@ -1993,33 +2001,22 @@ const PANELS = [
 // the views the study's tabs name and the first pass did not draw
 
 /** Repeatability · storm scale. How unevenly the storms fall across cycles. */
-function stormScale(rec) {
-  const LV = [[48, 'G1'], [80, 'G2'], [132, 'G3']];
-  const per = rec.cycles.map(c => {
-    const d = rec.days.filter(x => x.cycle === c.n && x.ap !== null);
-    return { c, n: d.length, days: d };
-  });
-  const series = LV.map(([thr, name], i) => ({
-    name: name + ' (Ap \u2265 ' + thr + ')',
+function stormScale(fig) {
+  // THE NUMBERS ARE THE ENGINE'S: vleo_modules::record::storm_scale counts the
+  // days a year at each level, per cycle, and names the busiest; the levels are
+  // the published table's ap at Kp 5, 6 and 7. The page draws them.
+  if (fig.refused) throw new Error('the engine did not work the figure out: ' + fig.refused);
+  const series = fig.levels.map((lv, i) => ({
+    name: lv.name + ' (Ap \u2265 ' + lv.ap + ')',
     kind: 'bars',
-    x: per.map(p => p.c.n),
+    x: fig.cycles,
     // Per YEAR of the cycle, not per cycle: cycle 25 is six years long in this
-    // record and the other two are eleven, so raw counts would say more about
-    // how much of each cycle the record holds than about the Sun.
-    y: per.map(p => (p.n ? p.days.filter(d => d.ap >= thr).length / (p.n / 365.25) : null)),
+    // record and the other two are eleven.
+    y: fig.per_year[i],
     colour: INK.series[i],
   }));
-  const worst = per.map(p => ({ n: p.c.n, max: Math.max(...p.days.map(d => d.ap)) }));
-  // How uneven "unevenly" is, at the mildest level, measured off the bars drawn.
-  const g1 = (series[0].y || []).filter(v => v !== null && isFinite(v) && v > 0);
-  const evenness = g1.length > 1 ? Math.max(...g1) / Math.min(...g1) : null;
-  // Which cycle is busiest, at each level, off the bars themselves.
-  const topAt = series.map(sr => {
-    let bi = -1;
-    sr.y.forEach((v, i) => { if (v !== null && isFinite(v) && (bi < 0 || v > sr.y[bi])) bi = i; });
-    return bi;
-  });
-  const oneWinner = topAt.length && topAt.every(i => i >= 0 && i === topAt[0]);
+  const evenness = fig.evenness;
+  const oneWinner = fig.busiest.length && fig.busiest.every(n => n !== null && n === fig.busiest[0]);
   return {
     answer: evenness === null
       ? { value: '\u2014', of: 'not enough cycles reach G1 to compare' }
@@ -2027,16 +2024,16 @@ function stormScale(rec) {
           of: 'between the busiest cycle and the quietest, in days a year at G1 or above' },
     spec: {
       finding: oneWinner
-        ? 'cycle ' + per[topAt[0]].c.n + ' has the most days a year at all three levels'
+        ? 'cycle ' + fig.busiest[0] + ' has the most days a year at all three levels'
         : 'the busiest cycle is not the same at every level: ' +
-          LV.map(([, n], i) => n + ' \u2192 cycle ' +
-            (topAt[i] < 0 ? '\u2014' : per[topAt[i]].c.n)).join(', '),
+          fig.levels.map((lv, i) => lv.name + ' \u2192 cycle ' +
+            (fig.busiest[i] === null ? '\u2014' : fig.busiest[i])).join(', '),
       x: { label: 'solar cycle', ticks: 2 },
       y: { label: 'days a year at or above the level', min: 0 },
       series,
     },
     note: 'Storms are not shared out evenly between cycles. Largest daily Ap by cycle: ' +
-      worst.map(w => w.n + ' \u2192 ' + w.max).join(', ') +
+      fig.cycles.map((n, i) => n + ' \u2192 ' + (fig.max_ap[i] === null ? '\u2014' : fig.max_ap[i])).join(', ') +
       '. Counted per year of each cycle rather than per cycle, because this record holds all of 23 ' +
       'and 24 and only six years of 25. A design sized on the average cycle is sized for neither the ' +
       'cycle it will fly through nor the worst one here.',
@@ -2949,43 +2946,17 @@ function smoothed(rows, key) {
 }
 
 /** Climate · Kp against ap, which is what the two conversion rows are about. */
-function kpAgainstAp(rec) {
-  const per = new Map();
-  for (const d of rec.days) {
-    if (d.ap === null || d.kp === null) continue;
-    if (!per.has(d.kp)) per.set(d.kp, []);
-    per.get(d.kp).push(d.ap);
-  }
-  const ks = [...per.keys()].sort((a, b) => a - b);
-  const med = ks.map(k => { const v = per.get(k).sort((a, b) => a - b); return quantile(v, 0.5); });
-  const p90 = ks.map(k => quantile(per.get(k).sort((a, b) => a - b), 0.9));
-  const p10 = ks.map(k => quantile(per.get(k).sort((a, b) => a - b), 0.1));
-  // The published three-hourly equivalent amplitude, all 28 points — the same
-  // pairs sw_kp_from_ap carries in its parity grid.
-  //
-  // THIRTY-EIGHT, NOT TEN. Kp is reported in thirds, and the record's kp_max
-  // takes values like 1.33 and 6.67. A lookup on whole Kp returns nothing for
-  // two values in three, and because a null breaks a line rather than being
-  // skipped, the series drew as no line at all — present in the legend and
-  // absent from the picture. That is the failure this view was built to expose
-  // in the DATA, arriving first in the code that draws it.
-  const AP_AT_KP = [
-    0, 2, 3, 4, 5, 6, 7, 9, 12, 15, 18, 22, 27, 32, 39, 48,
-    56, 67, 80, 94, 111, 132, 154, 179, 207, 236, 300, 400,
-  ];
-  const tableAt = kp => {
-    const i = Math.round(kp * 3);
-    return i >= 0 && i < AP_AT_KP.length ? AP_AT_KP[i] : null;
-  };
-  const i7 = ks.indexOf(7);
-  const t7 = tableAt(7), m7 = i7 < 0 ? null : med[i7];
-  let aboveMed = 0, above90 = 0;
-  ks.forEach((kp, i) => {
-    const t = tableAt(kp);
-    if (t === null) return;
-    if (med[i] !== null && t > med[i]) aboveMed++;
-    if (p90[i] !== null && t > p90[i]) above90++;
-  });
+function kpAgainstAp(fig) {
+  // THE NUMBERS ARE THE ENGINE'S: vleo_modules::record::kp_ap groups the days by
+  // the worst slot's Kp and takes their percentiles, and reads the published
+  // line off the kernel's own table (vleo_core::physics::env::ap_at_kp) — the
+  // one kp_from_ap interpolates. This page held a third copy of the 28 values;
+  // it holds none now. Kp is reported in thirds, and a lookup on whole Kp once
+  // drew the published line as no line at all: the engine takes a Kp to its
+  // nearest third, as this page did.
+  if (fig.refused) throw new Error('the engine did not work the figure out: ' + fig.refused);
+  const ks = fig.kp, med = fig.median, p10 = fig.p10, p90 = fig.p90;
+  const t7 = fig.kp7_table, m7 = fig.kp7_median;
   return {
     answer: m7 === null || !m7 || t7 === null
       ? { value: '\u2014', of: 'the record holds no day whose worst slot reached Kp 7' }
@@ -2995,8 +2966,8 @@ function kpAgainstAp(rec) {
     spec: {
       // The claim panels/climate.toml makes about this view, counted at every Kp
       // the record holds rather than read off the drawing at one of them.
-      finding: 'the published table is above the median day at ' + aboveMed + ' of the ' +
-        ks.length + ' Kp the record holds, and above the 90th percentile at ' + above90,
+      finding: 'the published table is above the median day at ' + fig.above_median + ' of the ' +
+        ks.length + ' Kp the record holds, and above the 90th percentile at ' + fig.above_p90,
       x: { label: 'Kp reached that day  [worst three-hourly slot]', min: 0, max: 9 },
       y: { label: 'daily Ap  [-], log scale', log: true },
       series: [
@@ -3011,13 +2982,13 @@ function kpAgainstAp(rec) {
         { name: '10th and 90th percentile', kind: 'line', x: ks, y: p10, colour: INK.muted,
           width: 1, context: true },
         { name: '', kind: 'line', x: ks, y: p90, colour: INK.muted, width: 1, context: true },
-        { name: 'published ap at that Kp', kind: 'line', x: ks, y: ks.map(tableAt), colour: INK.bound, dash: [5, 4] },
+        { name: 'published ap at that Kp', kind: 'line', x: ks, y: fig.table, colour: INK.bound, dash: [5, 4] },
       ],
     },
     note: 'The published table converts a THREE-HOURLY Kp to a three-hourly ap; the record\u2019s daily ' +
       'Ap is the mean of eight such slots, and a day is labelled by its worst. So the two curves must ' +
       'diverge and the gap between them is the whole reason sw_kp_slot_bias exists \u2014 at Kp 7 the ' +
-      'table says ' + tableAt(7) + ' and the median day says ' + med[ks.indexOf(7)] + '. Reading the dashed line as ' +
+      'table says ' + t7 + ' and the median day says ' + med[ks.indexOf(7)] + '. Reading the dashed line as ' +
       'what a disturbed day looks like is the mistake this view is drawn to prevent, and it is also ' +
       'why sw_ap_design takes the table value as a design CEILING rather than as a typical day.',
   };

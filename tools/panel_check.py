@@ -273,6 +273,20 @@ def _intercept_figure(page, fig_id, field):
     """
     state = {"hit": False, "had": False}
 
+    # Every number under the field, however deep: a figure's numbers are as
+    # often a list per cycle, or a list of lists per level, as they are one.
+    def bend(v):
+        if isinstance(v, bool) or v is None:
+            return v
+        if isinstance(v, (int, float)):
+            state["had"] = True
+            return v * 1.75 + 13.0
+        if isinstance(v, list):
+            return [bend(x) for x in v]
+        if isinstance(v, dict):
+            return {k: bend(x) for k, x in v.items()}
+        return v
+
     def handler(route):
         state["hit"] = True
         try:
@@ -280,10 +294,8 @@ def _intercept_figure(page, fig_id, field):
         except Exception:
             route.continue_()
             return
-        v = body.get(field)
-        if isinstance(v, (int, float)) and not isinstance(v, bool):
-            state["had"] = True
-            body[field] = v * 1.75 + 13.0
+        if field in body:
+            body[field] = bend(body[field])
         route.fulfill(status=200, content_type="application/json", body=json.dumps(body))
 
     page.route("**/v1/figures/solar/%s" % fig_id, handler)
@@ -501,18 +513,20 @@ def check_all(ids=None, record=False):
             # `figures = [{ id = "density", reads = ["r", ...] }]`. Each is moved
             # on its own, and the panel must say something different. Not the
             # pixel match's job and it cannot do it: a wrong number is a few
-            # glyphs, well inside a 2 per cent tolerance.
+            # glyphs, well inside a 2 per cent tolerance. A figure drawn only in
+            # one view names the `state` that reaches it, as 2b's rows do.
             for fg in d.get("figures", []):
+                _state = fg.get("state")
                 for field in fg.get("reads", []):
                     what = "%s.%s" % (fg["id"], field)
-                    clean = _open(settle)
+                    clean = _open(settle, _state)
                     clean = page.evaluate(_SIG_HOST, mount) if clean is not None else None
                     if clean is None:
                         found.append((d["id"], "2c states",
                                       "the panel never drew, so %s could not be tested" % what))
                         continue
                     asked = _intercept_figure(page, fg["id"], field)
-                    moved = _open(settle)
+                    moved = _open(settle, _state)
                     moved = page.evaluate(_SIG_HOST, mount) if moved is not None else None
                     fail = _failed(page, mount)
                     page.unroute("**/v1/figures/solar/%s" % fg["id"])
