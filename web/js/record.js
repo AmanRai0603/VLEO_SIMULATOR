@@ -135,6 +135,22 @@ export async function engineAt(node, sets) {
 }
 
 /**
+ * The numbers a figure of the record draws, worked out by the engine
+ * (`/v1/figures/solar/<id>`, phase 10). The page draws the record's own days
+ * and these; it works out neither. A refusal comes back as the engine's own
+ * words, and a panel that gets one says it rather than drawing without them.
+ */
+export async function engineFigure(id) {
+  try {
+    const r = await fetch('/v1/figures/solar/' + encodeURIComponent(id));
+    const d = await r.json();
+    return d.ok ? d : { refused: d.message || 'refused' };
+  } catch (e) {
+    return { refused: String(e) };
+  }
+}
+
+/**
  * ONE RELATION, AT GIVEN INPUTS — `/v1/probe`, and not `/v1/run`.
  *
  * The two answer different questions and only recently had to. `run` asks what

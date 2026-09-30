@@ -2699,6 +2699,11 @@ path = "/v1/figures/samples"
 what = "One figure of every kind — line, scatter, bar, heatmap, animation, 3D scene — with illustrative numbers, as a result's `figures` carries them. What a face is built and checked against; not a result."
 
 [[route]]
+method = "GET"
+path = "/v1/figures/solar/<id>"
+what = "The numbers one figure of the solar-weather record states, worked out by the engine from the bundle it holds (`crates/vleo-modules/src/record.rs`): today `density` — the correlation of F10.7 with Ap, their medians, the share of days below both, and the F10.7 deciles that saw a storm day. The page draws them and computes none; an id the engine does not work out is refused by name."
+
+[[route]]
 method = "POST"
 path = "/v1/results/save"
 what = "Run, and keep what it returned and the inputs it ran on as a result folder: the parameters of `/v1/run`, and `label`; with `over`, `from`, `to` and `points` the sweep is kept with it. Kept once: a question already kept answers `already` and names it. Written outside the repository."

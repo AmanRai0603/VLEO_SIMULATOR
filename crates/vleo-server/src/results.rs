@@ -260,6 +260,58 @@ pub(super) fn results_list() -> String {
 }
 
 /// One figure of every kind, from [`vleo_modules::figure::samples`].
+/// A figure of the record's numbers, by the panel's id: what the page draws
+/// beside the record's own days, worked out here so a test holds them and
+/// Python or a script can ask for them too. Read from the same verified
+/// bundle `/v1/bundle` serves the page, so the picture and the numbers are one
+/// claim. A panel with no numbers here yet is refused by name.
+pub(super) fn record_figure(ctx: &Ctx, id: &str) -> String {
+    const BUNDLE: &str = "solar-weather";
+    if id != "density" {
+        return failed(&format!(
+            "no figure of the record called '{id}'. The engine works out: density"
+        ));
+    }
+    let Some((dir, _)) = ctx.bundles.get(BUNDLE) else {
+        return failed(&format!(
+            "{BUNDLE} is not installed here, so there is no record to work the figure out from"
+        ));
+    };
+    let days = match vleo_data::load_bundle(dir).and_then(|b| vleo_data::read_solar_days(&b)) {
+        Ok(d) => d,
+        Err(e) => return failed(&e),
+    };
+    let d = vleo_modules::record::density(&days);
+    let opt = |j: &mut Json, k: &str, v: Option<f64>| {
+        match v {
+            Some(v) => j.num_field(k, v),
+            None => j.key(k).raw("null"),
+        };
+    };
+    let mut j = Json::new();
+    j.raw("{");
+    j.bool_field("ok", true);
+    j.str_field("figure", id);
+    j.str_field(
+        "bundle",
+        &format!(
+            "{BUNDLE}@{}",
+            dir.file_name()
+                .map(|n| n.to_string_lossy())
+                .unwrap_or_default()
+        ),
+    );
+    j.num_field("days", d.days as f64);
+    opt(&mut j, "r", d.r);
+    opt(&mut j, "median_f107", d.median_f107);
+    opt(&mut j, "median_ap", d.median_ap);
+    j.num_field("below_both_pct", d.below_both_pct);
+    j.num_field("storm_ap", vleo_modules::record::STORM_AP);
+    j.num_field("storm_deciles", d.storm_deciles as f64);
+    j.raw("}");
+    j.0
+}
+
 pub(super) fn figure_samples() -> String {
     let mut j = Json::new();
     j.raw("{");

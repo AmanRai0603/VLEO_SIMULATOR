@@ -22,6 +22,11 @@ So a panel gets a spec like a node does, and three checks that need no person:
   2b · it reads    for every row the panel declares in `engine`, serve that row
                    a different answer and the picture must change. A panel that
                    asks the engine and then ignores the reply fails here
+  2c · it states   for every number the panel declares it takes from a figure
+                   the engine works out (`figures`), serve that number moved and
+                   the panel — its picture or its note — must change. The pixel
+                   match cannot see this: a correlation in the fourth decimal is
+                   a few glyphs, far inside its tolerance
   3 · it matches   against a stored reference, within tolerance — IN BOTH COLOUR
                    SCHEMES. A dark rendering nobody has looked at is a rendering
                    nobody has checked, and a canvas gets none of CSS's help: its
@@ -252,6 +257,39 @@ def _intercept_run(page, row_id):
     return state
 
 
+# The panel's picture and everything written about it: the canvas, and the
+# host's text — the answer, the finding and the note a figure's numbers go into.
+_SIG_HOST = """
+sel => { const e = document.querySelector(sel); if (!e) return null;
+         const h = e.closest('.row-figure') || e.parentElement;
+         return (e.tagName === 'CANVAS' ? e.toDataURL() : e.innerHTML)
+                + '\\u0000' + (h ? h.innerText : ''); }
+"""
+
+
+def _intercept_figure(page, fig_id, field):
+    """Serve one number of one engine figure moved, and report whether it was
+    ever asked for — 2b's interceptor, for `/v1/figures/solar/<id>`.
+    """
+    state = {"hit": False, "had": False}
+
+    def handler(route):
+        state["hit"] = True
+        try:
+            body = route.fetch().json()
+        except Exception:
+            route.continue_()
+            return
+        v = body.get(field)
+        if isinstance(v, (int, float)) and not isinstance(v, bool):
+            state["had"] = True
+            body[field] = v * 1.75 + 13.0
+        route.fulfill(status=200, content_type="application/json", body=json.dumps(body))
+
+    page.route("**/v1/figures/solar/%s" % fig_id, handler)
+    return state
+
+
 def _failed(page, mount):
     try:
         return page.evaluate(_FAILED, mount)
@@ -457,11 +495,52 @@ def check_all(ids=None, record=False):
                                   "the answer changed — it is not using the value"
                                   % (mount, rid)))
 
+            # 2c · it states what the engine worked out
+            #
+            # A panel whose numbers come from an engine figure declares them:
+            # `figures = [{ id = "density", reads = ["r", ...] }]`. Each is moved
+            # on its own, and the panel must say something different. Not the
+            # pixel match's job and it cannot do it: a wrong number is a few
+            # glyphs, well inside a 2 per cent tolerance.
+            for fg in d.get("figures", []):
+                for field in fg.get("reads", []):
+                    what = "%s.%s" % (fg["id"], field)
+                    clean = _open(settle)
+                    clean = page.evaluate(_SIG_HOST, mount) if clean is not None else None
+                    if clean is None:
+                        found.append((d["id"], "2c states",
+                                      "the panel never drew, so %s could not be tested" % what))
+                        continue
+                    asked = _intercept_figure(page, fg["id"], field)
+                    moved = _open(settle)
+                    moved = page.evaluate(_SIG_HOST, mount) if moved is not None else None
+                    fail = _failed(page, mount)
+                    page.unroute("**/v1/figures/solar/%s" % fg["id"])
+                    if fail:
+                        found.append((d["id"], "2c states",
+                                      "the panel FAILED when %s was moved: %s" % (what, fail)))
+                    elif moved is None:
+                        found.append((d["id"], "2c states",
+                                      "the panel stopped drawing when %s was moved" % what))
+                    elif not asked["hit"]:
+                        found.append((d["id"], "2c states",
+                                      "the panel never asked the engine for the figure %s, "
+                                      "though it declares it" % fg["id"]))
+                    elif not asked["had"]:
+                        found.append((d["id"], "2c states",
+                                      "the engine's %s figure has no number %s — the "
+                                      "declaration names a field that does not exist"
+                                      % (fg["id"], field)))
+                    elif moved == clean:
+                        found.append((d["id"], "2c states",
+                                      "the panel said the same thing when the engine's %s "
+                                      "changed — it is not using it" % what))
+
             # 2b leaves the page wherever `engine_state` put it, and check 3
             # photographs whatever is on screen. Reload, so the reference is
             # taken from the panel's own opening state and not from the branch
             # 2b happened to need.
-            if d.get("engine"):
+            if d.get("engine") or d.get("figures"):
                 page.goto(url, wait_until="networkidle")
                 if d.get("ready"):
                     try:
@@ -941,6 +1020,14 @@ def selftest():
                  "      const req = rq.si;",
                  "      const req = 150;")),
          "2b reads"),
+        # 2c's: a panel that asks the engine for a figure and states a number
+        # of its own. Renders, moves, matches — a correlation is four digits.
+        ("a panel that asks for a figure and states its own number",
+         lambda d: (d / "web" / "js" / "solar.js").write_text(
+             (d / "web" / "js" / "solar.js").read_text().replace(
+                 "const r = fig.r, quad = fig.below_both_pct,",
+                 "const r = 0.2067, quad = fig.below_both_pct,")),
+         "2c states"),
         # CHECK FOUR'S OWN TWO. The first is the invariant that matters: an
         # interaction a reader cannot undo to the pixel leaves them in a view
         # they did not mean to reach with no way back but a reload.
@@ -991,6 +1078,7 @@ def selftest():
             try:
                 which = ("sweep" if "canvas" in label
                          else "pattern" if "zoom" in label or "brush" in label
+                         else "density" if "figure" in label
                          else "design" if "engine" in label or "throws" in label
                          else "tree")
                 found = check_all(ids={which})

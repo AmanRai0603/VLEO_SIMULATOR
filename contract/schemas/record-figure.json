@@ -1,0 +1,68 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "record-figure",
+  "description": "The numbers one figure of the solar-weather record states, worked out by the engine (crates/vleo-modules/src/record.rs). A number the record cannot give is null, never a stand-in.",
+  "type": "object",
+  "properties": {
+    "ok": {
+      "type": "boolean"
+    },
+    "figure": {
+      "type": "string",
+      "enum": [
+        "density"
+      ]
+    },
+    "bundle": {
+      "type": "string",
+      "description": "The bundle and version the numbers were worked out from."
+    },
+    "days": {
+      "type": "number",
+      "description": "Days carrying both F10.7 and Ap."
+    },
+    "r": {
+      "type": [
+        "null",
+        "number"
+      ],
+      "description": "Pearson correlation of F10.7 with Ap; null under three days or with no spread."
+    },
+    "median_f107": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "median_ap": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "below_both_pct": {
+      "type": "number",
+      "description": "Per cent of those days below both medians."
+    },
+    "storm_ap": {
+      "type": "number",
+      "description": "The daily Ap at or above which a day is a storm day."
+    },
+    "storm_deciles": {
+      "type": "number",
+      "description": "How many of the ten F10.7 deciles hold at least one storm day."
+    }
+  },
+  "required": [
+    "ok",
+    "figure",
+    "bundle",
+    "days",
+    "r",
+    "median_f107",
+    "median_ap",
+    "below_both_pct",
+    "storm_ap",
+    "storm_deciles"
+  ]
+}

@@ -314,6 +314,11 @@ fn route(
         // One well-formed figure of every kind, with illustrative numbers: what
         // a face is built against before the engine sends that kind for a run.
         ("GET", "/v1/figures/samples") => ok_json(figure_samples()),
+        // The numbers a figure of the record draws, worked out by the engine
+        // from the bundle the page draws the record from (phase 10).
+        ("GET", p) if p.starts_with("/v1/figures/solar/") => {
+            ok_json(record_figure(ctx, p.trim_start_matches("/v1/figures/solar/")))
+        }
         ("GET", "/v1/result") => ok_json(result_json(params)),
         ("GET", "/v1/result.csv") => result_file(params, "csv"),
         ("GET", "/v1/result.sweep.csv") => result_file(params, "sweep"),
