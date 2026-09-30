@@ -105,6 +105,11 @@ pub enum Fault {
     /// The resolver was given a workspace too small for the graph. A caller
     /// error, reported rather than silently truncated.
     WorkspaceTooSmall { needed: usize, given: usize },
+    /// A case declared more cycles than the resolver tracks. The kernel does
+    /// not allocate, so the count it can hold is fixed; past it a cycle would
+    /// be swept again every time one of its members came up, so the run is
+    /// refused before it starts rather than allowed to misbehave.
+    TooManyCycles { declared: usize, limit: usize },
 }
 
 /// Which end of a declared range was broken.
@@ -132,7 +137,7 @@ impl Fault {
             | Fault::NotConverged { node, .. }
             | Fault::UndeclaredCycle { node, .. }
             | Fault::DependsOnWithdrawn { node, .. } => node,
-            Fault::WorkspaceTooSmall { .. } => "resolver",
+            Fault::WorkspaceTooSmall { .. } | Fault::TooManyCycles { .. } => "resolver",
         }
     }
 
@@ -152,6 +157,7 @@ impl Fault {
             Fault::UndeclaredCycle { .. } => "undeclared-cycle",
             Fault::DependsOnWithdrawn { .. } => "depends-on-withdrawn",
             Fault::WorkspaceTooSmall { .. } => "workspace-too-small",
+            Fault::TooManyCycles { .. } => "too-many-cycles",
         }
     }
 }
@@ -198,6 +204,9 @@ impl core::fmt::Display for Fault {
             ),
             Fault::WorkspaceTooSmall { needed, given } => {
                 write!(f, "resolver: workspace holds {given} slots, the graph needs {needed}")
+            }
+            Fault::TooManyCycles { declared, limit } => {
+                write!(f, "resolver: the case declares {declared} cycles; the resolver tracks at most {limit}")
             }
         }
     }
