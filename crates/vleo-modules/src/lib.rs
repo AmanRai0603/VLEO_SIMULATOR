@@ -192,6 +192,10 @@ pub fn why_not_suppliable(id: &str) -> Option<String> {
 
 pub mod figure;
 pub mod inputs;
+/// The numbers the record's figures draw (phase 10): read from the reference
+/// bundle, so only with the store that holds it.
+#[cfg(feature = "std")]
+pub mod record;
 pub mod results;
 
 impl NodeTable for Vleo {

@@ -279,6 +279,15 @@ params = []
 
 [[route]]
 method = "GET"
+path = "/v1/figures/solar/<id>"
+answer = "json"
+schema = "record-figure"
+[[route.example]]
+name = "figures-solar-density"
+path = "/v1/figures/solar/density"
+
+[[route]]
+method = "GET"
 path = "/v1/result"
 answer = "json"
 schema = "result"

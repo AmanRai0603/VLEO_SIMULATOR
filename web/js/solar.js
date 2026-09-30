@@ -21,7 +21,7 @@
 import { $, esc } from './dom.js';
 import { S } from './state.js';
 import { solarRecord, bundleFile, parityFile, engineValues, engineSweep, engineAt,
-  engineProbe, probeSweep,
+  engineProbe, probeSweep, engineFigure,
   engineLevers, centredMean, corr, quantile, num, daysSince2000 } from './record.js';
 import { drawChart, attachHover, tableFor, tableTsv, viewSpec, viewIsOn,
   watchScheme, sizeCanvas, cssSize, INK, exportFigure } from './chart.js';
@@ -1930,28 +1930,23 @@ const PANELS = [
     // Where the picture stops being true (docs/EXPLAINING.md E4).
     breaks: 'This is not a density: no atmosphere model is written in this tree yet, so the picture shows only the two drivers such a model would take.',
     controls: [],
-    build(rec) {
+    // THE NUMBERS ARE THE ENGINE'S (phase 10): the correlation, the medians,
+    // the share below both and the storm deciles are worked out by
+    // vleo_modules::record::density from the same bundle this page draws, and
+    // held by its tests. The page draws the record's own days and says what
+    // the engine found; it works out none of it.
+    data: () => engineFigure('density'),
+    build(rec, o, fig) {
+      if (fig.refused) throw new Error('the engine did not work the figure out: ' + fig.refused);
       const withBoth = rec.days.filter(d => d.f107 !== null && d.ap !== null);
-      // "Close to independent" was an assertion. It is now a measurement, because
-      // it is the claim this panel rests on: if the two drivers carried the same
-      // information a density model would not need both.
-      const r = corr(withBoth.map(d => d.f107), withBoth.map(d => d.ap));
-      // How much of the cloud sits below BOTH medians. Two independent drivers
-      // put a quarter of their days there; the distance from a quarter is the
-      // dependence, and it is the one thing a scatter of ten thousand dots does
-      // not tell a reader by looking.
-      const mf = quantile(withBoth.map(d => d.f107).sort((x, y) => x - y), 0.5);
-      const ma = quantile(withBoth.map(d => d.ap).sort((x, y) => x - y), 0.5);
-      const quad = 100 * withBoth.filter(d => d.f107 < mf && d.ap < ma).length / withBoth.length;
-      // And whether the tail really is everywhere along the flux axis, counted
-      // by decile rather than seen in a cloud of ten thousand dots.
-      const fSorted = withBoth.map(d => d.f107).sort((x, y) => x - y);
-      const edge = k => quantile(fSorted, k / 10);
-      let stormDecs = 0;
-      for (let k = 0; k < 10; k++) {
-        const lo = edge(k), hi2 = k === 9 ? Infinity : edge(k + 1);
-        if (withBoth.some(d => d.f107 >= lo && d.f107 < hi2 && d.ap >= 26)) stormDecs++;
+      // The dots are the record's days and the numbers the engine's, from one
+      // bundle. Were they ever two different sets of days, the picture and its
+      // numbers would be two claims — so it says so rather than drawing both.
+      if (withBoth.length !== fig.days) {
+        throw new Error('the page draws ' + withBoth.length + ' days and the engine worked out ' +
+          fig.days + ' (' + fig.bundle + ')');
       }
+      const r = fig.r, quad = fig.below_both_pct, stormDecs = fig.storm_deciles;
       return {
         // THE ANSWER IS A REFUSAL, AND IT SAYS SO. Rule 5: a refusal is never a
         // substitution. Putting the correlation in this slot would answer "what
