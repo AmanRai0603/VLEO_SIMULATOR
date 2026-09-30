@@ -267,7 +267,14 @@ pub(super) fn results_list() -> String {
 /// claim. A panel with no numbers here yet is refused by name.
 pub(super) fn record_figure(ctx: &Ctx, id: &str) -> String {
     const BUNDLE: &str = "solar-weather";
-    const KNOWN: [&str; 3] = ["density", "storm-scale", "kp-ap"];
+    const KNOWN: [&str; 6] = [
+        "density",
+        "storm-scale",
+        "kp-ap",
+        "recurrence-f107",
+        "recurrence-ap",
+        "spikes",
+    ];
     if !KNOWN.contains(&id) {
         return failed(&format!(
             "no figure of the record called '{id}'. The engine works out: {}",
@@ -286,6 +293,16 @@ pub(super) fn record_figure(ctx: &Ctx, id: &str) -> String {
     let days = match vleo_data::read_solar_days(&bundle) {
         Ok(d) => d,
         Err(e) => return failed(&e),
+    };
+    // Only the figures that fold by cycle read the cycle table; one that is
+    // missing refuses them and nothing else.
+    let cycles = if matches!(id, "storm-scale" | "spikes") {
+        match vleo_data::read_solar_cycles(&bundle) {
+            Ok(c) => c,
+            Err(e) => return failed(&e),
+        }
+    } else {
+        Vec::new()
     };
     let opt = |j: &mut Json, k: &str, v: Option<f64>| {
         match v {
@@ -330,11 +347,67 @@ pub(super) fn record_figure(ctx: &Ctx, id: &str) -> String {
             j.num_field("storm_ap", vleo_modules::record::STORM_AP);
             j.num_field("storm_deciles", d.storm_deciles as f64);
         }
-        "storm-scale" => {
-            let cycles = match vleo_data::read_solar_cycles(&bundle) {
-                Ok(c) => c,
-                Err(e) => return failed(&e),
+        "recurrence-f107" | "recurrence-ap" => {
+            use vleo_modules::record::{
+                recurrence, Driver, RECURRENCE_MAX_LAG, RECURRENCE_WINDOWS,
             };
+            let driver = if id == "recurrence-ap" {
+                Driver::Ap
+            } else {
+                Driver::F107
+            };
+            let r = recurrence(&days, driver);
+            j.num_field("max_lag", RECURRENCE_MAX_LAG as f64);
+            j.key("windows");
+            arr(
+                &mut j,
+                &RECURRENCE_WINDOWS
+                    .iter()
+                    .map(|&w| Some(w as f64))
+                    .collect::<Vec<_>>(),
+            );
+            j.key("r").open_arr();
+            for (k, c) in r.r.iter().enumerate() {
+                if k > 0 {
+                    j.raw(",");
+                }
+                arr(&mut j, c);
+            }
+            j.close_arr();
+            j.num_field("n_lag1", r.n_lag1 as f64);
+            j.key("band");
+            arr(&mut j, &r.band);
+            j.num_field("outside", r.outside as f64);
+            j.key("peak_lag");
+            arr(
+                &mut j,
+                &r.peaks
+                    .iter()
+                    .map(|p| p.map(|(lag, _)| lag as f64))
+                    .collect::<Vec<_>>(),
+            );
+            j.key("peak_r");
+            arr(
+                &mut j,
+                &r.peaks
+                    .iter()
+                    .map(|p| p.map(|(_, r)| r))
+                    .collect::<Vec<_>>(),
+            );
+            j.num_field("above_long", r.above_long as f64);
+            j.num_field("compared", r.compared as f64);
+        }
+        "spikes" => {
+            let s = vleo_modules::record::spikes(&days, &cycles);
+            opt(&mut j, "threshold", s.threshold);
+            j.num_field("days", s.days as f64);
+            j.num_field("bursts", s.bursts as f64);
+            j.key("phase");
+            arr(&mut j, &some(&s.phase));
+            j.key("rate");
+            arr(&mut j, &s.rate);
+        }
+        "storm-scale" => {
             let s = vleo_modules::record::storm_scale(&days, &cycles);
             j.key("levels").open_arr();
             for (k, (name, _)) in vleo_modules::record::STORM_LEVELS.iter().enumerate() {

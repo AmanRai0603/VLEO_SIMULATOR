@@ -2701,7 +2701,7 @@ what = "One figure of every kind — line, scatter, bar, heatmap, animation, 3D 
 [[route]]
 method = "GET"
 path = "/v1/figures/solar/<id>"
-what = "The numbers one figure of the solar-weather record states, worked out by the engine from the bundle it holds (`crates/vleo-modules/src/record.rs`): `density` — the correlation of F10.7 with Ap, their medians, the share of days below both, and the F10.7 deciles that saw a storm day; `storm-scale` — days a year at G1 to G3 in each cycle, the busiest cycle and the largest Ap in each; `kp-ap` — the daily Ap at each worst three-hourly Kp and where the published table sits above it. The page draws them and computes none; an id the engine does not work out is refused by name."
+what = "The numbers one figure of the solar-weather record states, worked out by the engine from the bundle it holds (`crates/vleo-modules/src/record.rs`): `density` — the correlation of F10.7 with Ap, their medians, the share of days below both, and the F10.7 deciles that saw a storm day; `storm-scale` — days a year at G1 to G3 in each cycle, the busiest cycle and the largest Ap in each; `kp-ap` — the daily Ap at each worst three-hourly Kp and where the published table sits above it; `recurrence-f107` and `recurrence-ap` — the autocorrelation of the detrended record against lag under three windows, Bartlett's band and the rotation's peaks; `spikes` — the F10.7 spike threshold, the spike days and bursts, and their rate per thousand days of cycle phase. The page draws them and computes none; an id the engine does not work out is refused by name."
 
 [[route]]
 method = "POST"
