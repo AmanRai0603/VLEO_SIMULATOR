@@ -315,6 +315,32 @@ fn load(root: &Path) -> Result<Tree, String> {
     load_all(root)
 }
 
+/// A node's place on the tree, set in its node.toml: the top-level `order`
+/// and nothing else, every comment and every other line kept as it was. A
+/// TOML edit rather than a line match, so an `order` in some table of the
+/// sheet is never the one changed.
+fn set_order(path: &Path, order: u32) -> Result<(), String> {
+    let text = fs::read_to_string(path).map_err(|e| format!("{}: {e}", path.display()))?;
+    fs::write(
+        path,
+        with_order(&text, order).map_err(|e| format!("{}: {e}", path.display()))?,
+    )
+    .map_err(|e| format!("{}: {e}", path.display()))
+}
+
+fn with_order(text: &str, order: u32) -> Result<String, String> {
+    let mut doc: toml_edit::DocumentMut = text.parse().map_err(|e| format!("{e}"))?;
+    let Some(item) = doc.get_mut("order").filter(|i| i.is_value()) else {
+        return Err("no top-level `order` to move".into());
+    };
+    let decor = item.as_value().map(|v| v.decor().clone());
+    *item = toml_edit::value(i64::from(order));
+    if let (Some(d), Some(v)) = (decor, item.as_value_mut()) {
+        *v.decor_mut() = d;
+    }
+    Ok(doc.to_string())
+}
+
 fn write_if_changed(path: &Path, text: &str) -> Result<bool, String> {
     if let Ok(existing) = fs::read_to_string(path) {
         if existing == text {
@@ -769,18 +795,7 @@ fn build_new_node(
         if sh.order <= after {
             continue;
         }
-        let f = sh.dir.join("node.toml");
-        let t = fs::read_to_string(&f).map_err(|e| e.to_string())?;
-        let mut w = String::new();
-        for line in t.lines() {
-            if line.trim_start().starts_with("order = ") {
-                w.push_str(&format!("order = {}\n", sh.order + 1));
-            } else {
-                w.push_str(line);
-                w.push('\n');
-            }
-        }
-        fs::write(&f, w).map_err(|e| e.to_string())?;
+        set_order(&sh.dir.join("node.toml"), sh.order + 1)?;
     }
     fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
     fs::write(dir.join("node.toml"), text).map_err(|e| e.to_string())?;
@@ -796,14 +811,9 @@ fn build_new_node(
 fn unbuild_new_node(root: &Path, dir: &Path) -> Result<(), String> {
     let order = fs::read_to_string(dir.join("node.toml"))
         .ok()
-        .and_then(|t| {
-            t.lines().find_map(|l| {
-                l.trim_start()
-                    .strip_prefix("order = ")
-                    .map(|v| v.trim().to_string())
-            })
-        })
-        .and_then(|v| v.parse::<u32>().ok());
+        .and_then(|t| t.parse::<toml_edit::DocumentMut>().ok())
+        .and_then(|d| d.get("order").and_then(|v| v.as_integer()))
+        .and_then(|v| u32::try_from(v).ok());
     fs::remove_dir_all(dir).map_err(|e| format!("{}: {e}", dir.display()))?;
     if let Some(at) = order {
         let tree = load(root)?;
@@ -811,18 +821,7 @@ fn unbuild_new_node(root: &Path, dir: &Path) -> Result<(), String> {
             if sh.order <= at {
                 continue;
             }
-            let f = sh.dir.join("node.toml");
-            let t = fs::read_to_string(&f).map_err(|e| e.to_string())?;
-            let mut w = String::new();
-            for line in t.lines() {
-                if line.trim_start().starts_with("order = ") {
-                    w.push_str(&format!("order = {}\n", sh.order - 1));
-                } else {
-                    w.push_str(line);
-                    w.push('\n');
-                }
-            }
-            fs::write(&f, w).map_err(|e| e.to_string())?;
+            set_order(&sh.dir.join("node.toml"), sh.order - 1)?;
         }
     }
     Ok(())
@@ -2414,15 +2413,11 @@ fn cmd_fill(root: &Path, args: &[&str]) -> Result<(), String> {
             return Err(format!("refused: {why} (found {needle:?})"));
         }
     }
-    for bad in [
-        ".sin()", ".cos()", ".exp()", ".ln()", ".powf(", ".sqrt()", ".atan2(", ".tan()", ".log10(",
-    ] {
-        if body.contains(bad) {
-            return Err(format!(
-                "refused: the body calls {bad} — route it through pmath, or cross-face agreement \
-                 fails on the first night for a reason that is not a defect"
-            ));
-        }
+    if let Some(bad) = gate::platform_maths(&body).first() {
+        return Err(format!(
+            "refused: the body calls {bad} — route it through pmath, or cross-face agreement \
+             fails on the first night for a reason that is not a defect"
+        ));
     }
 
     // Everything that can refuse, refuses before the file is touched. A splice
@@ -2702,18 +2697,7 @@ fn cmd_new(root: &Path, args: &[&str]) -> Result<(), String> {
         if sh.id.as_str() == *id || sh.order <= src_order {
             continue;
         }
-        let f = sh.dir.join("node.toml");
-        let t = fs::read_to_string(&f).map_err(|e| e.to_string())?;
-        let mut w = String::new();
-        for line in t.lines() {
-            if line.trim_start().starts_with("order = ") {
-                w.push_str(&format!("order = {}\n", sh.order + 1));
-            } else {
-                w.push_str(line);
-                w.push('\n');
-            }
-        }
-        fs::write(&f, w).map_err(|e| e.to_string())?;
+        set_order(&sh.dir.join("node.toml"), sh.order + 1)?;
         shifted += 1;
     }
     if shifted > 0 {
@@ -4241,5 +4225,37 @@ mod reach_tests {
         let (_, par) = graph(&[("a", "b"), ("b", "a")]);
         let all = |_: &str| true;
         assert_eq!(work_behind("a", &par, &all), 1);
+    }
+}
+
+#[cfg(test)]
+mod moving_a_node {
+    use super::with_order;
+
+    #[test]
+    fn only_the_top_level_order_moves_and_every_comment_stays() {
+        let text = "# why this row exists\nid = \"x\"\norder = 40   # its place\n\n[[case]]\norder = 3\n# a reason\n";
+        let out = with_order(text, 41).unwrap();
+        assert_eq!(
+            out,
+            "# why this row exists\nid = \"x\"\norder = 41   # its place\n\n[[case]]\norder = 3\n# a reason\n"
+        );
+        assert!(with_order("id = \"x\"\n[view]\norder = 2\n", 5).is_err());
+    }
+
+    /// On every sheet in the tree, setting a node's order to what it already
+    /// is gives back the file byte for byte: the edit changes the number and
+    /// nothing else a person wrote.
+    #[test]
+    fn every_sheet_in_the_tree_comes_back_unchanged() {
+        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("..");
+        let tree = vleo_sheet::load_all(&root).unwrap();
+        let mut n = 0;
+        for sh in tree.ordered() {
+            let text = std::fs::read_to_string(sh.dir.join("node.toml")).unwrap();
+            assert_eq!(with_order(&text, sh.order).unwrap(), text, "{}", sh.id);
+            n += 1;
+        }
+        assert!(n > 1000);
     }
 }
