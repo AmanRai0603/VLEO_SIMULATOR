@@ -267,7 +267,7 @@ pub(super) fn results_list() -> String {
 /// claim. A panel with no numbers here yet is refused by name.
 pub(super) fn record_figure(ctx: &Ctx, id: &str, params: &str) -> String {
     const BUNDLE: &str = "solar-weather";
-    const KNOWN: [&str; 14] = [
+    const KNOWN: [&str; 15] = [
         "density",
         "storm-scale",
         "kp-ap",
@@ -282,6 +282,7 @@ pub(super) fn record_figure(ctx: &Ctx, id: &str, params: &str) -> String {
         "growth",
         "forecast",
         "drivers",
+        "thermosphere",
     ];
     if !KNOWN.contains(&id) {
         return failed(&format!(
@@ -896,6 +897,11 @@ pub(super) fn record_figure(ctx: &Ctx, id: &str, params: &str) -> String {
             j.num_field("above", p.above as f64);
             opt(&mut j, "factor", p.factor);
         }
+        "thermosphere" => {
+            if let Err(e) = thermosphere(ctx, param(params, "view").unwrap_or("solar"), &mut j) {
+                return failed(&e);
+            }
+        }
         "smoother" => {
             let driver = match any_driver() {
                 Ok(d) => d,
@@ -1343,4 +1349,314 @@ pub(super) fn result_as_case(params: &str) -> String {
     }
     j.raw("}");
     j.0
+}
+
+/// One run of `node` on the saved case — what the page's engine values are —
+/// and every value on its path, by id.
+fn run_on_saved_case(ctx: &Ctx, node: &str) -> Result<BTreeMap<String, f64>, String> {
+    let case = build_case(&format!("node={node}"), ctx);
+    let mut scratch = Scratch::new();
+    let run = vleo_modules::evaluate(&case, &mut scratch).map_err(|f| format!("{node}: {f}"))?;
+    Ok(run
+        .values
+        .iter()
+        .filter(|v| v.value.is_finite())
+        .map(|v| (v.id.to_string(), v.value))
+        .collect())
+}
+
+/// One relation at chosen inputs, named by the variables they bind — the
+/// question `/v1/probe` answers. None where the relation refuses or an input
+/// is missing: a point that did not answer is a point not drawn.
+fn probe_at(node: &str, given: &[(&str, Option<f64>)]) -> Option<f64> {
+    let k = Vleo::find(node)?;
+    let def = &NODES[k as usize];
+    let mut inputs = Vec::with_capacity(def.inputs.len());
+    for &v in def.inputs {
+        let id = VARS[v as usize].id;
+        inputs.push(given.iter().find(|(g, _)| *g == id)?.1?);
+    }
+    vleo_modules::probe(k, &inputs)
+        .ok()
+        .map(|out| out[0])
+        .filter(|y| y.is_finite())
+}
+
+/// A sweep of one relation over one input, the others held, point by point:
+/// `points` evenly from `from` to `to`, a refused point recorded and not
+/// drawn — the shape the page's own probe sweep had.
+struct ProbeSweep {
+    over: &'static str,
+    node: &'static str,
+    x: Vec<f64>,
+    y: Vec<f64>,
+    refused: Vec<f64>,
+}
+
+fn probe_sweep(
+    node: &'static str,
+    over: &'static str,
+    (from, to, points): (f64, f64, usize),
+    held: &[(&str, Option<f64>)],
+) -> ProbeSweep {
+    let mut s = ProbeSweep {
+        over,
+        node,
+        x: Vec::new(),
+        y: Vec::new(),
+        refused: Vec::new(),
+    };
+    for i in 0..points {
+        let f = if points == 1 {
+            0.0
+        } else {
+            i as f64 / (points - 1) as f64
+        };
+        let x = from + (to - from) * f;
+        let mut given: Vec<(&str, Option<f64>)> = held.to_vec();
+        given.push((over, Some(x)));
+        match probe_at(node, &given) {
+            Some(y) => {
+                s.x.push(x);
+                s.y.push(y);
+            }
+            None => s.refused.push(x),
+        }
+    }
+    s
+}
+
+fn write_sweep(j: &mut Json, k: &str, s: &ProbeSweep) {
+    let var = |id: &str| Vleo::find(id).map(|i| VARS[i as usize].unit);
+    j.key(k).raw("{");
+    j.str_field("x_id", s.over);
+    j.str_field("y_id", s.node);
+    for (key, id) in [("x", s.over), ("y", s.node)] {
+        let u = var(id);
+        j.str_field(&format!("{key}_unit"), u.map(|u| u.symbol()).unwrap_or("-"));
+        j.num_field(
+            &format!("{key}_factor"),
+            u.map(|u| u.si_factor()).unwrap_or(1.0),
+        );
+    }
+    j.key("x");
+    nums(j, &s.x);
+    j.key("y");
+    nums(j, &s.y);
+    j.key("refused");
+    nums(j, &s.refused);
+    j.close_obj();
+}
+
+fn nums(j: &mut Json, v: &[f64]) {
+    j.open_arr();
+    for (i, x) in v.iter().enumerate() {
+        if i > 0 {
+            j.raw(",");
+        }
+        j.raw(&crate::json::num(*x));
+    }
+    j.close_arr();
+}
+
+fn opt_field(j: &mut Json, k: &str, v: Option<f64>) {
+    match v {
+        Some(v) => j.num_field(k, v),
+        None => j.key(k).raw("null"),
+    };
+}
+
+/// The thermosphere figure: the temperatures `env_exospheric_temperature`
+/// gives under each driver, run and probed as the panel's four views ask, and
+/// what the panel says about them (vleo_modules::thermo).
+fn thermosphere(ctx: &Ctx, view: &str, j: &mut Json) -> Result<(), String> {
+    use vleo_modules::record::DRIVER_SCENARIOS;
+    use vleo_modules::thermo::{departure, end_slope, gap_extent, widest_apart};
+    const T: &str = "env_exospheric_temperature";
+    const CROSSING: &str = "l3_solar_interface";
+    if !matches!(view, "solar" | "kp" | "slot" | "shape") {
+        return Err(format!(
+            "no view '{view}': solar (against the flux), kp (one curve per scenario), \
+             slot (the two Kp readings) or shape (where the geomagnetic term bends)"
+        ));
+    }
+    // What the design currently says, each row run on its own as the page's
+    // engine values are.
+    let own = |node: &str| run_on_saved_case(ctx, node).map(|v| v.get(node).copied());
+    let (f0, fa0, kp0) = (own("env_f107")?, own("env_f107a")?, own("env_kp")?);
+    let now = own(T)?;
+    let crossing = run_on_saved_case(ctx, CROSSING)?;
+    let si = crossing.get(CROSSING).copied();
+    j.str_field("view", view);
+    opt_field(j, "env_f107", f0);
+    opt_field(j, "env_f107a", fa0);
+    opt_field(j, "env_kp", kp0);
+    opt_field(j, "now", now);
+    opt_field(j, "crossing", si);
+    // One scenario's four drivers out of the crossing's run.
+    let drivers = |sc: &str| {
+        let at = |q: &str| crossing.get(&format!("{CROSSING}.{q}_{sc}")).copied();
+        (
+            if sc == "hotmean" { si } else { at("f107") },
+            at("f107bar"),
+            at("kp_mean"),
+            at("kp_peak"),
+        )
+    };
+    let ids = ("env_f107", "env_f107a", "env_kp");
+    match view {
+        "solar" => {
+            if f0.is_none() || fa0.is_none() || kp0.is_none() {
+                return Err("env_f107, env_f107a or env_kp did not answer".into());
+            }
+            // A sustained rise: the day and its 81-day mean moved together.
+            let (mut sx, mut sy) = (Vec::new(), Vec::new());
+            for i in 0..24 {
+                let x = 60.0 + (400.0 - 60.0) * i as f64 / 23.0;
+                if let Some(y) = probe_at(T, &[(ids.0, Some(x)), (ids.1, Some(x)), (ids.2, kp0)]) {
+                    sx.push(x);
+                    sy.push(y);
+                }
+            }
+            let fast = probe_sweep(
+                T,
+                "env_f107",
+                (60.0, 400.0, 60),
+                &[(ids.1, fa0), (ids.2, kp0)],
+            );
+            let slow = probe_sweep(
+                T,
+                "env_f107a",
+                (60.0, 400.0, 60),
+                &[(ids.0, f0), (ids.2, kp0)],
+            );
+            j.key("sustained").raw("{");
+            j.key("x");
+            nums(j, &sx);
+            j.key("y");
+            nums(j, &sy);
+            j.close_obj();
+            write_sweep(j, "day", &fast);
+            write_sweep(j, "mean", &slow);
+            let slope = |s: &ProbeSweep| end_slope(&s.x, &s.y);
+            opt_field(j, "slope_sustained", end_slope(&sx, &sy));
+            opt_field(j, "slope_day", slope(&fast));
+            opt_field(j, "slope_mean", slope(&slow));
+            // Whether the declared flux is what the crossing publishes, to the
+            // twentieth of an sfu the page shows it to.
+            j.key("agrees").raw(&match (si, f0) {
+                (Some(a), Some(b)) => (vleo_units::pmath::abs(a - b) < 0.05).to_string(),
+                _ => "null".into(),
+            });
+        }
+        "kp" => {
+            j.key("curves").open_arr();
+            let mut lines: Vec<Vec<Option<f64>>> = Vec::new();
+            let mut worst: Option<(usize, f64, f64, f64)> = None;
+            let mut kps = Vec::new();
+            for (n, sc) in DRIVER_SCENARIOS.iter().enumerate() {
+                let (f, fa, km, kpk) = drivers(sc);
+                kps.push((km, kpk));
+                if n > 0 {
+                    j.raw(",");
+                }
+                j.raw("{");
+                j.str_field("scenario", sc);
+                opt_field(j, "kp_mean", km);
+                opt_field(j, "kp_peak", kpk);
+                if f.is_none() || fa.is_none() {
+                    j.key("sweep").raw("null");
+                    j.key("t_mean").raw("null");
+                    j.key("t_peak").raw("null");
+                    j.close_obj();
+                    continue;
+                }
+                let s = probe_sweep(T, "env_kp", (0.0, 9.0, 46), &[(ids.0, f), (ids.1, fa)]);
+                let tm = probe_at(T, &[(ids.0, f), (ids.1, fa), (ids.2, km)]);
+                let tp = probe_at(T, &[(ids.0, f), (ids.1, fa), (ids.2, kpk)]);
+                write_sweep(j, "sweep", &s);
+                opt_field(j, "t_mean", tm);
+                opt_field(j, "t_peak", tp);
+                j.close_obj();
+                lines.push(s.y.iter().map(|y| Some(*y)).collect());
+                if let (Some(tm), Some(tp)) = (tm, tp) {
+                    if worst.is_none_or(|w| tp - tm > w.1) {
+                        worst = Some((n, tp - tm, tm, tp));
+                    }
+                }
+            }
+            j.close_arr();
+            match worst {
+                Some((n, gap, tm, tp)) => {
+                    j.key("worst").raw("{");
+                    j.str_field("scenario", DRIVER_SCENARIOS[n]);
+                    j.num_field("gap", gap);
+                    j.num_field("share_pct", 100.0 * gap / tm);
+                    j.num_field("t_mean", tm);
+                    j.num_field("t_peak", tp);
+                    opt_field(j, "kp_mean", kps[n].0);
+                    opt_field(j, "kp_peak", kps[n].1);
+                    j.close_obj();
+                }
+                None => {
+                    j.key("worst").raw("null");
+                }
+            }
+            // How close the two lightest curves ever come apart.
+            opt_field(
+                j,
+                "close",
+                (lines.len() > 1).then(|| widest_apart(&lines[0], &lines[1])),
+            );
+        }
+        "slot" => {
+            let mut gaps = Vec::new();
+            j.key("points").open_arr();
+            for (n, sc) in DRIVER_SCENARIOS.iter().enumerate() {
+                let (f, fa, km, kpk) = drivers(sc);
+                let (tm, tp) = if f.is_none() || km.is_none() || kpk.is_none() {
+                    (None, None)
+                } else {
+                    (
+                        probe_at(T, &[(ids.0, f), (ids.1, fa), (ids.2, km)]),
+                        probe_at(T, &[(ids.0, f), (ids.1, fa), (ids.2, kpk)]),
+                    )
+                };
+                let gap = tm.zip(tp).map(|(m, p)| p - m);
+                gaps.push(gap);
+                if n > 0 {
+                    j.raw(",");
+                }
+                j.raw("{");
+                j.str_field("scenario", sc);
+                opt_field(j, "t_mean", tm);
+                opt_field(j, "t_peak", tp);
+                opt_field(j, "gap", gap);
+                j.close_obj();
+            }
+            j.close_arr();
+            let (at, range) = gap_extent(&gaps);
+            j.key("widest").raw(&at.map_or_else(
+                || "null".to_string(),
+                |i| crate::json::string(DRIVER_SCENARIOS[i]),
+            ));
+            opt_field(j, "narrowest_gap", range.map(|r| r.0));
+            opt_field(j, "widest_gap", range.map(|r| r.1));
+        }
+        _ => {
+            if f0.is_none() || fa0.is_none() {
+                return Err("env_f107 or env_f107a did not answer".into());
+            }
+            let s = probe_sweep(T, "env_kp", (0.0, 9.0, 46), &[(ids.0, f0), (ids.1, fa0)]);
+            let dep = departure(&s.x, &s.y, 2.0).ok_or("the Kp sweep returned nothing to draw")?;
+            write_sweep(j, "sweep", &s);
+            j.key("d");
+            nums(j, &dep.d);
+            j.key("line");
+            nums(j, &dep.line);
+            j.num_field("excess", dep.excess);
+            opt_field(j, "split_at", dep.split_at);
+        }
+    }
+    Ok(())
 }

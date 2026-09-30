@@ -88,7 +88,7 @@
   "manifest": {
     "node": "sw_ap_design",
     "mode": "branch",
-    "kernel": "2015d0",
+    "kernel": "03047d",
     "graph": "adb684",
     "case": "1f25f9",
     "chain": "075c5d",

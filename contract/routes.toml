@@ -347,6 +347,22 @@ params = [["view", "age"]]
 name = "figures-solar-drivers"
 path = "/v1/figures/solar/drivers"
 params = []
+[[route.example]]
+name = "figures-solar-thermosphere"
+path = "/v1/figures/solar/thermosphere"
+params = [["view", "solar"]]
+[[route.example]]
+name = "figures-solar-thermosphere-kp"
+path = "/v1/figures/solar/thermosphere"
+params = [["view", "kp"]]
+[[route.example]]
+name = "figures-solar-thermosphere-slot"
+path = "/v1/figures/solar/thermosphere"
+params = [["view", "slot"]]
+[[route.example]]
+name = "figures-solar-thermosphere-shape"
+path = "/v1/figures/solar/thermosphere"
+params = [["view", "shape"]]
 
 [[route]]
 method = "GET"
