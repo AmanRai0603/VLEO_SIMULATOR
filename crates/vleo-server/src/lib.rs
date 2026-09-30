@@ -74,6 +74,7 @@ pub fn serve(
     open: bool,
     background: bool,
 ) -> Result<u16, String> {
+    vleo_data::crash::install("vleo", env!("CARGO_PKG_VERSION"));
     let root = root.unwrap_or_else(repo_root);
     let (data, data_versions, bundles, data_refused) = resolve_data(&root);
 
@@ -496,7 +497,27 @@ fn serve_one(mut stream: TcpStream, ctx: &Ctx, gate: &std::sync::Mutex<()>) -> s
         // request already failed, and refusing every later one would turn one
         // bad request into a dead tool.
         let _one = gate.lock().unwrap_or_else(|p| p.into_inner());
-        route(&method, &path, &params, ctx)
+        // A BUG IN ONE REQUEST ENDS THAT REQUEST, NOT THE TOOL. The panic is
+        // logged by vleo_data::crash, the page is told where, and the next
+        // request is served. Every write of a case or result is whole-or-not
+        // (vleo_modules::files), so nothing the person saved is half written.
+        match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| route(&method, &path, &params, ctx))) {
+            Ok(r) => r,
+            Err(_) => {
+                let log = vleo_data::crash::last_log()
+                    .map(|p| p.display().to_string())
+                    .unwrap_or_else(|| vleo_data::crash::log_dir().display().to_string());
+                (
+                    "500 Internal Server Error",
+                    "text/plain; charset=utf-8",
+                    format!(
+                        "the tool hit a bug handling {path}. It was logged in {log}. \
+                         Your saved case and results are safe, and the tool is still running."
+                    )
+                    .into_bytes(),
+                )
+            }
+        }
     };
     respond(&mut stream, status, ctype, &payload)
 }
@@ -508,6 +529,11 @@ fn route(
     ctx: &Ctx,
 ) -> (&'static str, &'static str, Vec<u8>) {
     match (method, path) {
+        // A route that panics on purpose, present only when VLEO_TEST_PANIC is
+        // set: how the crash handling is proved on a running copy (and in CI).
+        ("GET", "/v1/__panic") if std::env::var_os("VLEO_TEST_PANIC").is_some() => {
+            panic!("deliberate panic for the crash-handling check")
+        }
         ("GET", "/") => file(ctx, "index.html", "text/html; charset=utf-8"),
         ("GET", "/app.css") => file(ctx, "app.css", "text/css; charset=utf-8"),
         // The shell is one module per concern. They are served individually

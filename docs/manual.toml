@@ -2445,6 +2445,11 @@ what = "Make a saved result's inputs the case: `name`. Checked like any case, an
 
 [[route]]
 method = "GET"
+path = "/v1/__panic"
+what = "Panics on purpose, to prove a bug in one request is caught, logged and survived. Present only when `VLEO_TEST_PANIC` is set; a normal run has no such route."
+
+[[route]]
+method = "GET"
 path = "/v1/sweep"
 what = "A behaviour sweep, as `vleo sweep`. Refused points are reported with their reason."
 
@@ -2491,6 +2496,16 @@ default = "unset — compare"
 name = "VLEO_RESULTS"
 what = "Where saved results are kept — the Results page and `vleo run --save` without a path of its own. Outside the repository."
 default = "$HOME/.vleo/results"
+
+[[env]]
+name = "VLEO_LOG"
+what = "Where a crash log is written when the tool itself hits a bug — one file per crash, with the message, the place in the code, the version and a backtrace, to send to the maintainers. The page says where it went."
+default = "$HOME/.vleo/log"
+
+[[env]]
+name = "VLEO_TEST_PANIC"
+what = "Set, the daemon serves `GET /v1/__panic`, which panics on purpose — how the crash handling is checked on a running copy. Never set in normal use."
+default = "unset — no such route"
 
 [[env]]
 name = "VLEO_ROOT"

@@ -75,7 +75,11 @@ serde_json   = "1"
 opt-level = 3
 lto = "fat"
 codegen-units = 1
-panic = "abort"
+# UNWIND, NOT ABORT. With abort, one bug in any request ended the whole tool —
+# and the Python process that loaded the wheel with it — with nothing logged.
+# Unwinding lets the server catch a panic per request, the C interface per
+# call, and vleo_data::crash write the log. wasm32 keeps its own default
+# (abort): cargo passes -C panic only when a profile asks for abort.
 strip = "symbols"
 
 # Dependencies optimised once and cached; an unoptimised nalgebra-class dependency
