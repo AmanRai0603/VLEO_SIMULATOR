@@ -1956,6 +1956,26 @@ usage = "docs [<node>]"
 what = "Generate each row's files from its sheet. Never reads another row."
 who = "developer"
 effect = "writes"
+steps = [
+  "load the tree",
+  "refuse a published node with an unanswered field (after writing the rest)",
+  "write each node's generated files, only where they changed",
+  "write the kernel's method files, removing any no node has",
+  "write docs/PSEUDOCODE.md when no node is named",
+]
+writes = [
+  "crates/<crate>/nodes/<node>/model.rs",
+  "crates/<crate>/nodes/<node>/contract.rs",
+  "crates/<crate>/nodes/<node>/mod.rs",
+  "crates/<crate>/nodes/<node>/evidence.rs",
+  "crates/<crate>/nodes/<node>/page.html",
+  "crates/<crate>/nodes/<node>/meta.json",
+  "crates/vleo-core/src/physics/methods/*.rs",
+  "docs/PSEUDOCODE.md",
+]
+runs = [
+  "rustfmt",
+]
 
 [[command]]
 tool = "xtask"
@@ -1964,6 +1984,16 @@ usage = "assemble"
 what = "The assembly validations, then the index and the page fragments the browser serves."
 who = "developer"
 effect = "writes"
+steps = [
+  "load the tree",
+  "run the assembly validations; stop on a refusal unless --force",
+  "write the index and each node's page fragment",
+]
+writes = [
+  "generated/index.json",
+  "generated/fragments/*.html",
+]
+runs = []
 
 [[command]]
 tool = "xtask"
@@ -1972,6 +2002,16 @@ usage = "gate [<node>]"
 what = "The checks, in order. The one that must pass."
 who = "developer"
 effect = "reads"
+steps = [
+  "load the tree",
+  "every check on every node, or on the one named",
+  "the whole-tree checks",
+  "stop with the count of failures",
+]
+writes = []
+runs = [
+  "rustfmt",
+]
 
 [[command]]
 tool = "xtask"
@@ -1980,6 +2020,12 @@ usage = "status"
 what = "Counts by state and subsystem, and what is holding the tree back."
 who = "everyone"
 effect = "reads"
+steps = [
+  "load the tree",
+  "count by state and subsystem",
+]
+writes = []
+runs = []
 
 [[command]]
 tool = "xtask"
@@ -1988,6 +2034,12 @@ usage = "active [<subsystem>]"
 what = "Which rows answer, and for each that does not, whether its own derivation or a row it reads is missing."
 who = "everyone"
 effect = "reads"
+steps = [
+  "load the tree",
+  "for each row: answers, or what it is missing",
+]
+writes = []
+runs = []
 
 [[command]]
 tool = "xtask"
@@ -1996,6 +2048,12 @@ usage = "reach [<subsystem>]"
 what = "Where each answer goes, and which reach no customer target."
 who = "everyone"
 effect = "reads"
+steps = [
+  "load the tree",
+  "follow each answer to the KPI closures",
+]
+writes = []
+runs = []
 
 [[command]]
 tool = "xtask"
@@ -2004,6 +2062,12 @@ usage = "gap"
 what = "What every sheet promised and nothing yet covers."
 who = "developer"
 effect = "reads"
+steps = [
+  "load the tree",
+  "list every promise nothing covers",
+]
+writes = []
+runs = []
 
 [[command]]
 tool = "xtask"
@@ -2012,6 +2076,13 @@ usage = "graph"
 what = "The three graphs, their sizes, and the check that every crate depends inward."
 who = "developer"
 effect = "reads"
+steps = [
+  "load the tree",
+  "size the three graphs",
+  "check crate directions from each Cargo.toml",
+]
+writes = []
+runs = []
 
 [[command]]
 tool = "xtask"
@@ -2020,6 +2091,17 @@ usage = "new <id> --like <sibling>"
 what = "Start a row from a sibling's shape, with everything that must be re-decided blanked."
 who = "developer"
 effect = "writes"
+steps = [
+  "load the tree",
+  "clone the sibling's sheet, blanking what must be decided again",
+  "write the new node's folder, node.toml and fixtures.toml",
+  "move the order of every later node up by one",
+]
+writes = [
+  "crates/<crate>/nodes/<node>/node.toml",
+  "crates/<crate>/nodes/<node>/fixtures.toml",
+]
+runs = []
 
 [[command]]
 tool = "xtask"
@@ -2028,6 +2110,12 @@ usage = "declare <node>"
 what = "The questions a sheet still has open, and what goes wrong without each."
 who = "everyone"
 effect = "reads"
+steps = [
+  "load the tree",
+  "print the completion questions, in order",
+]
+writes = []
+runs = []
 
 [[command]]
 tool = "xtask"
@@ -2036,6 +2124,19 @@ usage = "fill <node> --hole <n> --body <file|-> [--by <who> --model <model>]"
 what = "Put the Rust for one numbered slot into a row's generated model. `--by` and `--model` record who wrote it, and with what."
 who = "developer"
 effect = "writes"
+steps = [
+  "refuse a body with markers, faults or platform maths",
+  "check who wrote it",
+  "splice it into model.rs and read it back",
+  "record the fill in fills.toml with --by and --model",
+]
+writes = [
+  "crates/<crate>/nodes/<node>/model.rs",
+  "crates/<crate>/nodes/<node>/fills.toml",
+]
+runs = [
+  "rustfmt",
+]
 
 [[command]]
 tool = "xtask"
@@ -2044,6 +2145,15 @@ usage = "differential <node>"
 what = "Compare two recorded bodies for the same slot, written by different model families."
 who = "developer"
 effect = "reads"
+steps = [
+  "for each recorded body of the hole: put it in model.rs and run the node's tests",
+  "put model.rs back",
+]
+writes = []
+runs = [
+  "rustfmt",
+  "cargo test",
+]
 
 [[command]]
 tool = "xtask"
@@ -2052,6 +2162,14 @@ usage = "form <node>|--new [--example] [--out <file.html>]"
 what = "A node's form: one self-contained HTML file that explains itself, asks every question the sheet answers, and saves a filled copy. `--new` is the form for a node the design does not have yet. Filled anywhere, by anyone. --example fills orbit_velocity's form with the worked example, only for the pipeline's end-to-end test of the method path; nothing it produces is committed."
 who = "developer"
 effect = "reads"
+steps = [
+  "load the tree",
+  "write the node's form — to --out, or to the screen",
+]
+writes = [
+  "<--out file>.html",
+]
+runs = []
 
 [[command]]
 tool = "xtask"
@@ -2060,6 +2178,29 @@ usage = "intake <file.html> [--apply [--partial]]"
 what = "The checker: what a filled node form would change, field by field, and every interface it declares — conflicts and refusals named. `--apply` writes (building a new node in its place), regenerates and gates as one edit, or puts everything back."
 who = "developer"
 effect = "writes"
+steps = [
+  "read the filled form and plan the change, field by field",
+  "stop here without --apply",
+  "with --apply: write node.toml (a new node: build its folder first)",
+  "regenerate, gate; on a refusal put every file back",
+  "a new node: rewrite CODEOWNERS",
+]
+writes = [
+  "crates/<crate>/nodes/<node>/node.toml",
+  "crates/<crate>/nodes/<node>/fixtures.toml",
+  "crates/<crate>/nodes/<node>/model.rs",
+  "crates/<crate>/nodes/<node>/contract.rs",
+  "crates/<crate>/nodes/<node>/mod.rs",
+  "crates/<crate>/nodes/<node>/evidence.rs",
+  "crates/<crate>/nodes/<node>/page.html",
+  "crates/<crate>/nodes/<node>/meta.json",
+  "crates/vleo-core/src/physics/methods/*.rs",
+  "CODEOWNERS",
+]
+runs = [
+  "rustfmt",
+  "git config user.name",
+]
 
 [[command]]
 tool = "xtask"
@@ -2068,6 +2209,25 @@ usage = "publish <node>"
 what = "Move a filled, seeded row to published, so its code is generated and its slots can be written. Refuses, naming every reason, while it is not ready."
 who = "developer"
 effect = "writes"
+steps = [
+  "load the tree",
+  "refuse, naming every reason, while it is not ready",
+  "set state = published in node.toml",
+  "generate its files for the first time and gate the whole tree; on a refusal put it back",
+]
+writes = [
+  "crates/<crate>/nodes/<node>/node.toml",
+  "crates/<crate>/nodes/<node>/model.rs",
+  "crates/<crate>/nodes/<node>/contract.rs",
+  "crates/<crate>/nodes/<node>/mod.rs",
+  "crates/<crate>/nodes/<node>/evidence.rs",
+  "crates/<crate>/nodes/<node>/page.html",
+  "crates/<crate>/nodes/<node>/meta.json",
+  "crates/vleo-core/src/physics/methods/*.rs",
+]
+runs = [
+  "rustfmt",
+]
 
 [[command]]
 tool = "xtask"
@@ -2076,6 +2236,14 @@ usage = "guides"
 what = "Renders the three role guides — docs/roles/user.html, maintainer.html and developer.html — from this manual. Never edited by hand: the pipeline regenerates them and fails when a committed one differs."
 who = "developer"
 effect = "writes"
+steps = [
+  "read docs/manual.toml",
+  "render each role guide",
+]
+writes = [
+  "docs/roles/*.html",
+]
+runs = []
 
 [[command]]
 tool = "xtask"
@@ -2084,6 +2252,12 @@ usage = "method <node>"
 what = "Checks a node's method in the method language and runs each of its author's test cases through it: what their code gave, what the method gives, and whether the set is complete — at least three answers and one refusal. The same check the node form runs as the author types, and the gate refuses on."
 who = "maintainer"
 effect = "reads"
+steps = [
+  "load the tree",
+  "check the node's method and run its cases",
+]
+writes = []
+runs = []
 
 [[command]]
 tool = "xtask"
@@ -2092,6 +2266,19 @@ usage = "method-wasm [--check]"
 what = "Builds the method checker every node form carries — vleo_sheet::method compiled to WebAssembly — into web/method.wasm.gz with the fingerprint of its sources; --check only says whether the committed file is current."
 who = "developer"
 effect = "writes"
+steps = [
+  "with --check: only say whether web/method.wasm.gz is current",
+  "build the checker for wasm32",
+  "gzip it and write the stamp",
+]
+writes = [
+  "web/method.wasm.gz",
+  "web/method.wasm.stamp",
+]
+runs = [
+  "cargo build --target wasm32-unknown-unknown",
+  "gzip",
+]
 
 [[command]]
 tool = "xtask"
@@ -2100,6 +2287,16 @@ usage = "rerun <node>|--all [--require]"
 what = "Runs each author's own code again on the cases recorded from it and says whether it still gives them: Python directly, MATLAB and Octave through Octave where it is installed. Code in any other language is kept and read, not rerun, and it says so; `--require` fails instead, for a pipeline that installed the runners."
 who = "maintainer"
 effect = "reads"
+steps = [
+  "write the author's code and a harness in a temporary folder",
+  "run it: python3, or octave",
+  "compare with the cases; remove the folder",
+]
+writes = []
+runs = [
+  "python3",
+  "octave",
+]
 
 [[command]]
 tool = "xtask"
@@ -2108,6 +2305,29 @@ usage = "build-node <node>"
 what = "Builds a node from its method, stage by stage, stopping at the first that fails: the method on its author's cases; the translation into the kernel; the node's tests — the author's cases and the translation against the method; the author's code rerun; a mutation the tests must catch; and only then the node in the tree."
 who = "maintainer"
 effect = "writes"
+steps = [
+  "M: the method on its cases",
+  "G1: generate the node's files",
+  "T1+T2: its tests",
+  "T3: the author's code run again",
+  "T4: a mutation its tests must catch",
+  "I1: gate the node and the tree",
+]
+writes = [
+  "crates/<crate>/nodes/<node>/model.rs",
+  "crates/<crate>/nodes/<node>/contract.rs",
+  "crates/<crate>/nodes/<node>/mod.rs",
+  "crates/<crate>/nodes/<node>/evidence.rs",
+  "crates/<crate>/nodes/<node>/page.html",
+  "crates/<crate>/nodes/<node>/meta.json",
+  "crates/vleo-core/src/physics/methods/*.rs",
+]
+runs = [
+  "rustfmt",
+  "cargo test",
+  "python3",
+  "octave",
+]
 
 [[command]]
 tool = "xtask"
@@ -2116,6 +2336,15 @@ usage = "migration [--owner <o>] [--subsystem <s>] [--forms <dir>]"
 what = "Says which computed rows still need a method, by owner, and with --forms writes each one's node form into <dir>/<owner>/ ready to send. It writes no method: each comes from the node's owner, on the node's form, through take like any other change."
 who = "maintainer"
 effect = "reads"
+steps = [
+  "load the tree",
+  "list the computed rows still without a method, by owner",
+  "with --forms: write each one's form",
+]
+writes = [
+  "<--forms dir>/<owner>/<node>.node-form.html",
+]
+runs = []
 
 [[command]]
 tool = "xtask"
@@ -2124,6 +2353,37 @@ usage = "take <form.html> --for <author> [--again] [--no-push] [--no-test]"
 what = "Takes a filled node form in: checks it, and if it cannot be taken writes `<form>.returned.txt` to send back and changes nothing; otherwise puts it on its own branch `form/<author>/<node>` from a fresh main, applies it, regenerates, gates, tests, commits naming the author and pushes. The push builds the author's preview."
 who = "maintainer"
 effect = "writes"
+steps = [
+  "check the form; if it cannot be taken, write <form>.returned.txt and stop",
+  "refuse an unclean working tree",
+  "branch form/<author>/<node> from a fresh origin/main",
+  "apply it (intake --apply)",
+  "regenerate CODEOWNERS, VARIABLES, the de-risking narrative",
+  "gate",
+  "build-node and cargo test, unless --no-test",
+  "commit naming the author; push unless --no-push",
+]
+writes = [
+  "<form>.returned.txt",
+  "crates/<crate>/nodes/<node>/node.toml",
+  "crates/<crate>/nodes/<node>/model.rs",
+  "crates/<crate>/nodes/<node>/contract.rs",
+  "crates/<crate>/nodes/<node>/mod.rs",
+  "crates/<crate>/nodes/<node>/evidence.rs",
+  "crates/<crate>/nodes/<node>/page.html",
+  "crates/<crate>/nodes/<node>/meta.json",
+  "crates/vleo-core/src/physics/methods/*.rs",
+  "CODEOWNERS",
+  "docs/VARIABLES.md",
+  "docs/DERISK_NARRATIVE.md",
+  "docs/derisking.csv",
+]
+runs = [
+  "git fetch, switch, add, commit",
+  "git push origin form/<author>/<node>",
+  "cargo test",
+  "rustfmt",
+]
 
 [[command]]
 tool = "xtask"
@@ -2132,6 +2392,15 @@ usage = "preview"
 what = "Where the current form branch's preview build is, and what to do with it. Every push to a form branch builds one by itself."
 who = "maintainer"
 effect = "reads"
+steps = [
+  "read the branch and its remote",
+  "say where its preview build is",
+]
+writes = []
+runs = [
+  "git rev-parse",
+  "git remote",
+]
 
 [[command]]
 tool = "xtask"
@@ -2140,6 +2409,20 @@ usage = "approve <approval.toml> [--no-push]"
 what = "Records the author's approval of a preview — the file the preview saves when they press Approve. Refused unless it is for the build of exactly what is on the branch now. `--verify <branch>` is the same check, as the pipeline runs it."
 who = "maintainer"
 effect = "writes"
+steps = [
+  "with --verify: only check the approval against the branch",
+  "refuse an unclean working tree",
+  "check the approval is for the build of what is here",
+  "copy it into approvals/",
+  "commit; push unless --no-push",
+]
+writes = [
+  "approvals/<author>--<node>.toml",
+]
+runs = [
+  "git switch, add, commit",
+  "git push origin <branch>",
+]
 
 [[command]]
 tool = "xtask"
@@ -2148,6 +2431,14 @@ usage = "queue"
 what = "Every form branch and where it stands: not pushed, waiting for the author's approval, approved and ready to merge, or merged."
 who = "maintainer"
 effect = "reads"
+steps = [
+  "fetch the remote",
+  "list every form branch and where it stands",
+]
+writes = []
+runs = [
+  "git fetch --prune origin",
+]
 
 [[command]]
 tool = "xtask"
@@ -2156,6 +2447,41 @@ usage = "ship <version> [--no-push] [--no-test]"
 what = "Cuts a release from main on its own branch `release/<version>`: the de-risking narrative, the version stamp, regeneration, the gate and the tests, one commit, pushed — and prints the tag commands for after the merge."
 who = "maintainer"
 effect = "writes"
+steps = [
+  "refuse unless on a clean main equal to origin/main",
+  "branch release/<version>",
+  "write the de-risking narrative",
+  "release <version>: stamp, set the version, regenerate",
+  "regenerate VARIABLES, CODEOWNERS, the guides, the lockfiles",
+  "gate; cargo test unless --no-test",
+  "commit; push unless --no-push",
+]
+writes = [
+  "crates/<crate>/nodes/<node>/node.toml",
+  "crates/<crate>/nodes/<node>/model.rs",
+  "crates/<crate>/nodes/<node>/contract.rs",
+  "crates/<crate>/nodes/<node>/mod.rs",
+  "crates/<crate>/nodes/<node>/evidence.rs",
+  "crates/<crate>/nodes/<node>/page.html",
+  "crates/<crate>/nodes/<node>/meta.json",
+  "crates/vleo-core/src/physics/methods/*.rs",
+  "docs/PSEUDOCODE.md",
+  "docs/DERISK_NARRATIVE.md",
+  "docs/derisking.csv",
+  "docs/VARIABLES.md",
+  "docs/roles/*.html",
+  "CODEOWNERS",
+  "Cargo.toml",
+  "Cargo.lock",
+  "crates/*/Cargo.lock",
+]
+runs = [
+  "git fetch, switch, add, commit",
+  "git push origin release/<version>",
+  "cargo metadata",
+  "cargo test",
+  "rustfmt",
+]
 
 [[command]]
 tool = "xtask"
@@ -2164,6 +2490,18 @@ usage = "kit [--bin <dir>] [--out <dir>] [--files-only]"
 what = "The tool as a team member gets it: the two release-built programs beside exactly the files they read, with START_HERE.md and VERSION (and start.sh off Windows, where the daemon ships as Start VLEO.exe), in dist/vleo-<version>/. Zip it and share it; see docs/SHARING.md. --files-only leaves the programs out: the files the Python package carries."
 who = "developer"
 effect = "writes"
+steps = [
+  "empty --out (default dist/vleo-<version>/)",
+  "copy the web face, the tree, its pages and the reference data",
+  "copy the programs; on Windows the daemon becomes Start VLEO.exe",
+  "write START_HERE.md, VERSION and start.sh",
+]
+writes = [
+  "dist/vleo-<version>/**",
+]
+runs = [
+  "git rev-parse --short HEAD",
+]
 
 [[command]]
 tool = "xtask"
@@ -2172,6 +2510,15 @@ usage = "derisk"
 what = "Write the de-risking narrative — docs/DERISK_NARRATIVE.md and docs/derisking.csv — from every node's `[[version]]` record and the risk register. Generated, never edited."
 who = "developer"
 effect = "writes"
+steps = [
+  "load the tree",
+  "write every recorded change and every registered risk",
+]
+writes = [
+  "docs/DERISK_NARRATIVE.md",
+  "docs/derisking.csv",
+]
+runs = []
 
 [[command]]
 tool = "xtask"
@@ -2180,6 +2527,33 @@ usage = "release <version> [--check]"
 what = "Stamp every node version still marked `next` with this release, set the workspace version and regenerate. `--check` refuses while anything is unstamped — the release pipeline runs it."
 who = "developer"
 effect = "writes"
+steps = [
+  "with --check: only refuse while anything is unstamped or newer",
+  "refuse a node version that names a later release",
+  "stamp every `next` node version with this release",
+  "set the workspace version; cargo refreshes the lockfiles",
+  "regenerate: docs, then derisk",
+]
+writes = [
+  "crates/<crate>/nodes/<node>/node.toml",
+  "Cargo.toml",
+  "Cargo.lock",
+  "crates/*/Cargo.lock",
+  "crates/<crate>/nodes/<node>/model.rs",
+  "crates/<crate>/nodes/<node>/contract.rs",
+  "crates/<crate>/nodes/<node>/mod.rs",
+  "crates/<crate>/nodes/<node>/evidence.rs",
+  "crates/<crate>/nodes/<node>/page.html",
+  "crates/<crate>/nodes/<node>/meta.json",
+  "crates/vleo-core/src/physics/methods/*.rs",
+  "docs/PSEUDOCODE.md",
+  "docs/DERISK_NARRATIVE.md",
+  "docs/derisking.csv",
+]
+runs = [
+  "cargo metadata --offline",
+  "rustfmt",
+]
 
 [[command]]
 tool = "xtask"
@@ -2188,6 +2562,15 @@ usage = "confirm <node> --by \"<name>\""
 what = "Put a person's name against a relation, after printing it and its source. `confirm --list` shows the ones with no name yet."
 who = "developer"
 effect = "writes"
+steps = [
+  "with --list: only list the relations nobody has confirmed",
+  "print the relation and its source",
+  "write confirmed_by into node.toml, and read it back",
+]
+writes = [
+  "crates/<crate>/nodes/<node>/node.toml",
+]
+runs = []
 
 [[command]]
 tool = "xtask"
@@ -2196,6 +2579,13 @@ usage = "ready [<node>]"
 what = "Whether a person should be asked to look yet."
 who = "developer"
 effect = "reads"
+steps = [
+  "the gate",
+  "the gap pass",
+  "what the node's criticality demands",
+]
+writes = []
+runs = []
 
 [[command]]
 tool = "xtask"
@@ -2204,6 +2594,14 @@ usage = "codeowners"
 what = "Regenerate CODEOWNERS from the layer files."
 who = "developer"
 effect = "writes"
+steps = [
+  "load the tree",
+  "write CODEOWNERS from the owners",
+]
+writes = [
+  "CODEOWNERS",
+]
+runs = []
 
 [[command]]
 tool = "xtask"
@@ -2212,6 +2610,14 @@ usage = "bundle publish <dir>"
 what = "`bundle verify` re-checks every published set's hashes. `bundle publish` publishes a new one, permanently."
 who = "developer"
 effect = "irreversible"
+steps = [
+  "verify: re-check every hash in bundles/",
+  "publish <dir>: hash every payload and write it into the manifest",
+]
+writes = [
+  "bundles/<name>/<version>/manifest.toml",
+]
+runs = []
 
 [[command]]
 tool = "xtask"
@@ -2220,6 +2626,15 @@ usage = "mutate [<node>]"
 what = "Perturb a row's answer and require its own tests to notice. Puts the row back."
 who = "developer"
 effect = "reads"
+steps = [
+  "for each published node: perturb its answer in model.rs",
+  "require its own tests to fail",
+  "put model.rs back",
+]
+writes = []
+runs = [
+  "cargo test",
+]
 
 [[command]]
 tool = "xtask"
@@ -2228,6 +2643,61 @@ usage = "setup"
 what = "Point git at the project's hooks. Once per checkout."
 who = "developer"
 effect = "writes"
+steps = [
+  "check the hooks in tools/githooks are executable",
+  "set git's core.hooksPath to tools/githooks",
+]
+writes = [
+  ".git/config",
+]
+runs = [
+  "git config core.hooksPath",
+]
+
+[[command]]
+tool = "xtask"
+name = "explain"
+usage = "explain [<command>]"
+what = "What a command does, in order, what it writes and what it starts — from this manual. `--dry-run` on any command prints the same and runs nothing."
+who = "everyone"
+effect = "reads"
+steps = [
+  "read docs/manual.toml",
+  "print the command's steps, writes and the programs it starts",
+]
+writes = []
+runs = []
+
+[[command]]
+tool = "xtask"
+name = "why"
+usage = "why <path>"
+what = "Which commands write a file — so whether it is generated, and what to change instead of it."
+who = "everyone"
+effect = "reads"
+steps = [
+  "read docs/manual.toml",
+  "match the path against every command's writes",
+]
+writes = []
+runs = []
+
+[[command]]
+tool = "xtask"
+name = "pipeline"
+usage = "pipeline [--check]"
+what = "Write docs/PIPELINE.md: every command's steps, and every generated file with the commands that write it. `--check` only says whether it is current."
+who = "developer"
+effect = "writes"
+steps = [
+  "read docs/manual.toml",
+  "with --check: only say whether docs/PIPELINE.md is current",
+  "write docs/PIPELINE.md",
+]
+writes = [
+  "docs/PIPELINE.md",
+]
+runs = []
 
 [[command]]
 tool = "xtask"
@@ -2236,6 +2706,14 @@ usage = "variables"
 what = "Write docs/VARIABLES.md — every variable, its unit, its range and why."
 who = "developer"
 effect = "writes"
+steps = [
+  "load the tree",
+  "write every variable, its unit, range and readers",
+]
+writes = [
+  "docs/VARIABLES.md",
+]
+runs = []
 
 [[command]]
 tool = "vleo"
@@ -2775,6 +3253,10 @@ what = "Every recorded change by release, and every risk as it stands. Generated
 [[doc]]
 path = "docs/VARIABLES.md"
 what = "Every variable in the tree. Generated by xtask variables."
+
+[[doc]]
+path = "docs/PIPELINE.md"
+what = "Every xtask command: its steps, what it writes and what it starts, and which command writes each generated file. Generated by xtask pipeline from this manual."
 
 [[doc]]
 path = "docs/DELIVERY_PLAN.md"

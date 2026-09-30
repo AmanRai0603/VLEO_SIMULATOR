@@ -157,6 +157,15 @@ pub struct Command {
     pub who: Who,
     /// `reads`, `writes` or `irreversible`.
     pub effect: String,
+    /// What it does, in order — what `xtask explain` and `--dry-run` print.
+    /// Required of every xtask command that writes: a command that changes
+    /// the repository says what it will do before anybody runs it.
+    pub steps: Vec<String>,
+    /// The paths it writes, as patterns: `<node>` a placeholder, `*` any
+    /// name. What `xtask why <path>` matches a file against.
+    pub writes: Vec<String>,
+    /// The programs it starts, and whether it pushes.
+    pub runs: Vec<String>,
 }
 
 /// One route the daemon answers.
@@ -266,6 +275,17 @@ fn need(v: &toml::Value, key: &str, at: &str) -> Result<String, String> {
         Some(x) if !x.trim().is_empty() => Ok(x),
         _ => Err(format!("{at}: `{key}` is missing or blank")),
     }
+}
+
+fn strs(v: &toml::Value, key: &str) -> Vec<String> {
+    v.get(key)
+        .and_then(|x| x.as_array())
+        .map(|a| {
+            a.iter()
+                .filter_map(|x| x.as_str().map(str::to_string))
+                .collect()
+        })
+        .unwrap_or_default()
 }
 
 fn who(v: &toml::Value, at: &str) -> Result<Who, String> {
@@ -426,6 +446,13 @@ pub fn parse(text: &str) -> Result<Manual, String> {
                 "{at}: usage `{usage}` must begin with the command's own name"
             ));
         }
+        let (steps, writes, runs) = (strs(c, "steps"), strs(c, "writes"), strs(c, "runs"));
+        if tool == "xtask" && effect != "reads" && (steps.is_empty() || writes.is_empty()) {
+            return Err(format!(
+                "{at}: it changes the repository, so it must say what it does — `steps` \
+                 and `writes`, which `xtask explain` and `--dry-run` print"
+            ));
+        }
         commands.push(Command {
             tool,
             name,
@@ -433,6 +460,9 @@ pub fn parse(text: &str) -> Result<Manual, String> {
             what: need(c, "what", &at)?,
             who: who(c, &at)?,
             effect,
+            steps,
+            writes,
+            runs,
         });
     }
 
@@ -657,4 +687,185 @@ pub fn json(m: &Manual) -> String {
             jq(c.who.name())
         )),
     )
+}
+
+// ── the pipeline, as the manual declares it ──────────────────────────────────
+
+/// Whether `path` is one a `writes` pattern names: `<x>` stands for one path
+/// segment, `*` for any part of one, `**` for any number of segments. A
+/// pattern with no folder of its own (`<--out file>.html`) names a file
+/// wherever it is.
+pub fn path_matches(pattern: &str, path: &str) -> bool {
+    fn seg(p: &[u8], s: &[u8]) -> bool {
+        match (p.first(), s.first()) {
+            (None, None) => true,
+            (Some(b'*'), _) => seg(&p[1..], s) || (!s.is_empty() && seg(p, &s[1..])),
+            (Some(b'<'), _) => match p.iter().position(|&c| c == b'>') {
+                Some(end) => (1..=s.len()).any(|k| seg(&p[end + 1..], &s[k..])),
+                None => false,
+            },
+            (Some(a), Some(b)) => a == b && seg(&p[1..], &s[1..]),
+            _ => false,
+        }
+    }
+    fn segs(p: &[&str], s: &[&str]) -> bool {
+        match (p.first(), s.first()) {
+            (None, None) => true,
+            (Some(&"**"), _) => segs(&p[1..], s) || (!s.is_empty() && segs(p, &s[1..])),
+            (Some(a), Some(b)) => seg(a.as_bytes(), b.as_bytes()) && segs(&p[1..], &s[1..]),
+            _ => false,
+        }
+    }
+    let path = path.replace('\\', "/");
+    let path = path.trim_start_matches("./");
+    let s: Vec<&str> = path.split('/').filter(|x| !x.is_empty()).collect();
+    let p: Vec<&str> = pattern.split('/').collect();
+    if p.len() == 1 && pattern.starts_with('<') {
+        return s.last().is_some_and(|last| segs(&p, &[last]));
+    }
+    segs(&p, &s)
+}
+
+/// The commands that write `path`, by the patterns the manual declares.
+pub fn writers<'a>(m: &'a Manual, path: &str) -> Vec<&'a Command> {
+    m.commands
+        .iter()
+        .filter(|c| c.tool == "xtask" && c.writes.iter().any(|w| path_matches(w, path)))
+        .collect()
+}
+
+/// One command, said in full: what it is for, what it does in order, what it
+/// writes and what it starts. What `xtask explain` and `--dry-run` print.
+pub fn explain(c: &Command) -> String {
+    let mut o = format!("cargo xtask {}\n  {}\n\n", c.usage, c.what);
+    o.push_str(&format!(
+        "  effect  {}\n",
+        match c.effect.as_str() {
+            "reads" => "reads — changes nothing in the repository",
+            "writes" => "writes the repository",
+            _ => "irreversible — cannot be undone by running it again",
+        }
+    ));
+    if !c.steps.is_empty() {
+        o.push_str("\n  steps\n");
+        for (i, s) in c.steps.iter().enumerate() {
+            o.push_str(&format!("    {}. {s}\n", i + 1));
+        }
+    }
+    if !c.writes.is_empty() {
+        o.push_str("\n  writes\n");
+        for w in &c.writes {
+            o.push_str(&format!("    {w}\n"));
+        }
+    }
+    if !c.runs.is_empty() {
+        o.push_str("\n  starts\n");
+        for r in &c.runs {
+            o.push_str(&format!("    {r}\n"));
+        }
+    }
+    o
+}
+
+/// docs/PIPELINE.md: every xtask command, its steps, what it writes and what
+/// it starts, and every generated path with the commands that write it.
+/// Generated from docs/manual.toml; a test holds the committed file to it.
+pub fn pipeline_md(m: &Manual) -> String {
+    let xt: Vec<&Command> = m.commands.iter().filter(|c| c.tool == "xtask").collect();
+    let mut o = String::from(
+        "# The pipeline\n\n\
+         <!-- Generated by `cargo xtask pipeline` from docs/manual.toml. Do not edit by hand. -->\n\n\
+         Every `cargo xtask` command: what it does, in order, what it writes and what it \
+         starts. `cargo xtask explain <command>` prints one of these; `--dry-run` on any \
+         command prints it and runs nothing; `cargo xtask why <path>` names the commands \
+         that write a file. Each run is recorded in `target/xtask-trace.log`.\n\n\
+         | command | effect | writes | starts |\n|---|---|---|---|\n",
+    );
+    let cell = |xs: &[String]| {
+        if xs.is_empty() {
+            "—".to_string()
+        } else {
+            xs.iter()
+                .map(|x| format!("`{}`", x.replace('|', "\\|")))
+                .collect::<Vec<_>>()
+                .join("<br>")
+        }
+    };
+    for c in &xt {
+        o.push_str(&format!(
+            "| [`{}`](#{}) | {} | {} | {} |\n",
+            c.name,
+            c.name,
+            c.effect,
+            cell(&c.writes),
+            cell(&c.runs)
+        ));
+    }
+    for c in &xt {
+        o.push_str(&format!(
+            "\n## {}\n\n`cargo xtask {}`\n\n{}\n",
+            c.name, c.usage, c.what
+        ));
+        if !c.steps.is_empty() {
+            o.push('\n');
+            for (i, s) in c.steps.iter().enumerate() {
+                o.push_str(&format!("{}. {s}\n", i + 1));
+            }
+        }
+    }
+    let mut paths: Vec<&String> = xt.iter().flat_map(|c| &c.writes).collect();
+    paths.sort();
+    paths.dedup();
+    o.push_str("\n## Which command writes a file\n\n| path | written by |\n|---|---|\n");
+    for p in paths {
+        let by: Vec<String> = xt
+            .iter()
+            .filter(|c| c.writes.contains(p))
+            .map(|c| format!("`{}`", c.name))
+            .collect();
+        o.push_str(&format!(
+            "| `{}` | {} |\n",
+            p.replace('|', "\\|"),
+            by.join(", ")
+        ));
+    }
+    o
+}
+
+#[cfg(test)]
+mod pipeline_paths {
+    use super::path_matches;
+
+    #[test]
+    fn a_pattern_names_the_files_it_should_and_no_others() {
+        let n = "crates/<crate>/nodes/<node>/model.rs";
+        assert!(path_matches(
+            n,
+            "crates/vleo-mod-aero/nodes/drag_area/model.rs"
+        ));
+        assert!(path_matches(
+            n,
+            "./crates/vleo-mod-aero/nodes/drag_area/model.rs"
+        ));
+        assert!(!path_matches(
+            n,
+            "crates/vleo-mod-aero/nodes/drag_area/node.toml"
+        ));
+        assert!(!path_matches(n, "crates/vleo-mod-aero/nodes/model.rs"));
+        assert!(path_matches("docs/roles/*.html", "docs/roles/user.html"));
+        assert!(!path_matches("docs/roles/*.html", "docs/roles/x/user.html"));
+        assert!(path_matches(
+            "dist/vleo-<version>/**",
+            "dist/vleo-0.4.0/web/js/app.js"
+        ));
+        assert!(path_matches(
+            "approvals/<author>--<node>.toml",
+            "approvals/ana--drag.toml"
+        ));
+        assert!(path_matches(
+            "<form>.returned.txt",
+            "/home/x/drag.returned.txt"
+        ));
+        assert!(!path_matches("CODEOWNERS", "docs/CODEOWNERS"));
+    }
 }

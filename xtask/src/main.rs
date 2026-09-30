@@ -12,6 +12,7 @@ use vleo_sheet::{emit, gate, load_all, page, Tree};
 
 mod flow;
 mod method;
+mod pipeline;
 
 /// A reader that stops early — `| head`, `| grep -m1`, a pager quit halfway —
 /// closes the pipe, and the next line printed panics with a backtrace that
@@ -37,10 +38,29 @@ fn quiet_when_the_reader_stops() {
 
 fn main() -> ExitCode {
     quiet_when_the_reader_stops();
+    let started = std::time::Instant::now();
     let args: Vec<String> = std::env::args().skip(1).collect();
     let cmd = args.first().map(|s| s.as_str()).unwrap_or("help");
     let root = repo_root();
-    let rest: Vec<&str> = args.iter().skip(1).map(|s| s.as_str()).collect();
+    let rest: Vec<&str> = args
+        .iter()
+        .skip(1)
+        .map(|s| s.as_str())
+        .filter(|a| *a != "--dry-run")
+        .collect();
+    // --dry-run on any command: what it would do, from the same table
+    // `explain` reads, and nothing run.
+    if args.iter().any(|a| a == "--dry-run") && !matches!(cmd, "help" | "--help" | "-h") {
+        let r = pipeline::dry_run(&root, cmd);
+        pipeline::trace(&root, &args, started, &r);
+        return match r {
+            Ok(()) => ExitCode::SUCCESS,
+            Err(e) => {
+                eprintln!("\x1b[31mxtask: {e}\x1b[0m");
+                ExitCode::FAILURE
+            }
+        };
+    }
 
     // The commands in the authoring loop. A person running one of these is
     // about to commit; a person running `status` or `graph` is reading.
@@ -85,6 +105,9 @@ fn main() -> ExitCode {
         "rerun" => method::cmd_rerun(&root, &rest),
         "build-node" => method::cmd_build_node(&root, &rest),
         "migration" => method::cmd_migration(&root, &rest),
+        "explain" => pipeline::cmd_explain(&root, &rest),
+        "why" => pipeline::cmd_why(&root, &rest),
+        "pipeline" => pipeline::cmd_pipeline(&root, &rest),
         "help" | "--help" | "-h" => {
             help();
             Ok(())
@@ -94,6 +117,7 @@ fn main() -> ExitCode {
         )),
     };
 
+    pipeline::trace(&root, &args, started, &r);
     match r {
         Ok(()) => ExitCode::SUCCESS,
         Err(e) => {
@@ -258,6 +282,13 @@ cargo xtask <command>
                      release, set the workspace version, and regenerate. The
                      node's record then says which release carried each belief.
                      --check refuses while anything is unstamped or newer.
+  explain [<command>] what a command does, in order, what it writes and what it
+                     starts — read from docs/manual.toml. `--dry-run` on any
+                     command prints the same and runs nothing.
+  why <path>         which commands write this file: generated, or a source.
+  pipeline [--check] write docs/PIPELINE.md, every command's steps and every
+                     generated file's writer; --check only says if it is current.
+                     Every run is recorded in target/xtask-trace.log.
   variables          write docs/VARIABLES.md — every variable in the tree, its
                      unit, its range, the reason for each bound, and what reads
                      it. Generated, because a register maintained by hand is a
