@@ -1702,6 +1702,772 @@
         "above",
         "factor"
       ]
+    },
+    {
+      "type": "object",
+      "description": "The thermosphere figure against the flux: three ways to raise it, and the slope of each.",
+      "properties": {
+        "ok": {
+          "type": "boolean"
+        },
+        "bundle": {
+          "type": "string",
+          "description": "The bundle and version the numbers were worked out from."
+        },
+        "figure": {
+          "type": "string",
+          "enum": [
+            "thermosphere"
+          ]
+        },
+        "env_f107": {
+          "type": [
+            "null",
+            "number"
+          ],
+          "description": "The design's F10.7, run on the saved case."
+        },
+        "env_f107a": {
+          "type": [
+            "null",
+            "number"
+          ],
+          "description": "Its 81-day mean."
+        },
+        "env_kp": {
+          "type": [
+            "null",
+            "number"
+          ],
+          "description": "Its Kp."
+        },
+        "now": {
+          "type": [
+            "null",
+            "number"
+          ],
+          "description": "env_exospheric_temperature, run on the saved case."
+        },
+        "crossing": {
+          "type": [
+            "null",
+            "number"
+          ],
+          "description": "What the solar crossing publishes for its hot sustained F10.7."
+        },
+        "view": {
+          "type": "string",
+          "enum": [
+            "solar"
+          ]
+        },
+        "sustained": {
+          "type": "object",
+          "description": "The day and its 81-day mean moved together.",
+          "properties": {
+            "x": {
+              "type": "array",
+              "description": "F10.7.",
+              "items": {
+                "type": "number"
+              }
+            },
+            "y": {
+              "type": "array",
+              "description": "The temperature.",
+              "items": {
+                "type": "number"
+              }
+            }
+          },
+          "required": [
+            "x",
+            "y"
+          ]
+        },
+        "day": {
+          "type": "object",
+          "description": "A probe sweep of env_exospheric_temperature over one driver, the others held; refused points are listed and not drawn.",
+          "properties": {
+            "x_id": {
+              "type": "string"
+            },
+            "y_id": {
+              "type": "string"
+            },
+            "x_unit": {
+              "type": "string"
+            },
+            "y_unit": {
+              "type": "string"
+            },
+            "x_factor": {
+              "type": "number"
+            },
+            "y_factor": {
+              "type": "number"
+            },
+            "x": {
+              "type": "array",
+              "description": "The driver at each drawn point, SI.",
+              "items": {
+                "type": "number"
+              }
+            },
+            "y": {
+              "type": "array",
+              "description": "The temperature there, SI.",
+              "items": {
+                "type": "number"
+              }
+            },
+            "refused": {
+              "type": "array",
+              "description": "Where the relation refused.",
+              "items": {
+                "type": "number"
+              }
+            }
+          },
+          "required": [
+            "x_id",
+            "y_id",
+            "x_unit",
+            "y_unit",
+            "x_factor",
+            "y_factor",
+            "x",
+            "y",
+            "refused"
+          ]
+        },
+        "mean": {
+          "type": "object",
+          "description": "A probe sweep of env_exospheric_temperature over one driver, the others held; refused points are listed and not drawn.",
+          "properties": {
+            "x_id": {
+              "type": "string"
+            },
+            "y_id": {
+              "type": "string"
+            },
+            "x_unit": {
+              "type": "string"
+            },
+            "y_unit": {
+              "type": "string"
+            },
+            "x_factor": {
+              "type": "number"
+            },
+            "y_factor": {
+              "type": "number"
+            },
+            "x": {
+              "type": "array",
+              "description": "The driver at each drawn point, SI.",
+              "items": {
+                "type": "number"
+              }
+            },
+            "y": {
+              "type": "array",
+              "description": "The temperature there, SI.",
+              "items": {
+                "type": "number"
+              }
+            },
+            "refused": {
+              "type": "array",
+              "description": "Where the relation refused.",
+              "items": {
+                "type": "number"
+              }
+            }
+          },
+          "required": [
+            "x_id",
+            "y_id",
+            "x_unit",
+            "y_unit",
+            "x_factor",
+            "y_factor",
+            "x",
+            "y",
+            "refused"
+          ]
+        },
+        "slope_sustained": {
+          "type": [
+            "null",
+            "number"
+          ],
+          "description": "K per sfu between the ends of the sustained curve."
+        },
+        "slope_day": {
+          "type": [
+            "null",
+            "number"
+          ],
+          "description": "The same for one day alone."
+        },
+        "slope_mean": {
+          "type": [
+            "null",
+            "number"
+          ],
+          "description": "The same for the mean alone."
+        },
+        "agrees": {
+          "type": [
+            "null",
+            "boolean"
+          ],
+          "description": "Whether the design's F10.7 is what the crossing publishes, to 0.05 sfu."
+        }
+      },
+      "required": [
+        "ok",
+        "figure",
+        "bundle",
+        "view",
+        "env_f107",
+        "env_f107a",
+        "env_kp",
+        "now",
+        "crossing",
+        "sustained",
+        "day",
+        "mean",
+        "slope_sustained",
+        "slope_day",
+        "slope_mean",
+        "agrees"
+      ]
+    },
+    {
+      "type": "object",
+      "description": "The thermosphere figure against Kp: one curve per scenario at its own flux, and its two Kp readings.",
+      "properties": {
+        "ok": {
+          "type": "boolean"
+        },
+        "bundle": {
+          "type": "string",
+          "description": "The bundle and version the numbers were worked out from."
+        },
+        "figure": {
+          "type": "string",
+          "enum": [
+            "thermosphere"
+          ]
+        },
+        "env_f107": {
+          "type": [
+            "null",
+            "number"
+          ],
+          "description": "The design's F10.7, run on the saved case."
+        },
+        "env_f107a": {
+          "type": [
+            "null",
+            "number"
+          ],
+          "description": "Its 81-day mean."
+        },
+        "env_kp": {
+          "type": [
+            "null",
+            "number"
+          ],
+          "description": "Its Kp."
+        },
+        "now": {
+          "type": [
+            "null",
+            "number"
+          ],
+          "description": "env_exospheric_temperature, run on the saved case."
+        },
+        "crossing": {
+          "type": [
+            "null",
+            "number"
+          ],
+          "description": "What the solar crossing publishes for its hot sustained F10.7."
+        },
+        "view": {
+          "type": "string",
+          "enum": [
+            "kp"
+          ]
+        },
+        "curves": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "scenario": {
+                "type": "string"
+              },
+              "kp_mean": {
+                "type": [
+                  "null",
+                  "number"
+                ]
+              },
+              "kp_peak": {
+                "type": [
+                  "null",
+                  "number"
+                ]
+              },
+              "sweep": {
+                "anyOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "type": "object",
+                    "description": "A probe sweep of env_exospheric_temperature over one driver, the others held; refused points are listed and not drawn.",
+                    "properties": {
+                      "x_id": {
+                        "type": "string"
+                      },
+                      "y_id": {
+                        "type": "string"
+                      },
+                      "x_unit": {
+                        "type": "string"
+                      },
+                      "y_unit": {
+                        "type": "string"
+                      },
+                      "x_factor": {
+                        "type": "number"
+                      },
+                      "y_factor": {
+                        "type": "number"
+                      },
+                      "x": {
+                        "type": "array",
+                        "description": "The driver at each drawn point, SI.",
+                        "items": {
+                          "type": "number"
+                        }
+                      },
+                      "y": {
+                        "type": "array",
+                        "description": "The temperature there, SI.",
+                        "items": {
+                          "type": "number"
+                        }
+                      },
+                      "refused": {
+                        "type": "array",
+                        "description": "Where the relation refused.",
+                        "items": {
+                          "type": "number"
+                        }
+                      }
+                    },
+                    "required": [
+                      "x_id",
+                      "y_id",
+                      "x_unit",
+                      "y_unit",
+                      "x_factor",
+                      "y_factor",
+                      "x",
+                      "y",
+                      "refused"
+                    ]
+                  }
+                ]
+              },
+              "t_mean": {
+                "type": [
+                  "null",
+                  "number"
+                ]
+              },
+              "t_peak": {
+                "type": [
+                  "null",
+                  "number"
+                ]
+              }
+            },
+            "required": [
+              "scenario",
+              "kp_mean",
+              "kp_peak",
+              "sweep",
+              "t_mean",
+              "t_peak"
+            ]
+          },
+          "description": "One per scenario, cold to hot."
+        },
+        "worst": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "object",
+              "properties": {
+                "scenario": {
+                  "type": "string"
+                },
+                "gap": {
+                  "type": "number"
+                },
+                "share_pct": {
+                  "type": "number"
+                },
+                "t_mean": {
+                  "type": "number"
+                },
+                "t_peak": {
+                  "type": "number"
+                },
+                "kp_mean": {
+                  "type": [
+                    "null",
+                    "number"
+                  ]
+                },
+                "kp_peak": {
+                  "type": [
+                    "null",
+                    "number"
+                  ]
+                }
+              },
+              "required": [
+                "scenario",
+                "gap",
+                "share_pct",
+                "t_mean",
+                "t_peak",
+                "kp_mean",
+                "kp_peak"
+              ]
+            }
+          ],
+          "description": "The scenario whose two Kp readings differ most."
+        },
+        "close": {
+          "type": [
+            "null",
+            "number"
+          ],
+          "description": "The most the first two curves differ by across the Kp range."
+        }
+      },
+      "required": [
+        "ok",
+        "figure",
+        "bundle",
+        "view",
+        "env_f107",
+        "env_f107a",
+        "env_kp",
+        "now",
+        "crossing",
+        "curves",
+        "worst",
+        "close"
+      ]
+    },
+    {
+      "type": "object",
+      "description": "The thermosphere figure's two Kp readings per scenario, and the gap between them.",
+      "properties": {
+        "ok": {
+          "type": "boolean"
+        },
+        "bundle": {
+          "type": "string",
+          "description": "The bundle and version the numbers were worked out from."
+        },
+        "figure": {
+          "type": "string",
+          "enum": [
+            "thermosphere"
+          ]
+        },
+        "env_f107": {
+          "type": [
+            "null",
+            "number"
+          ],
+          "description": "The design's F10.7, run on the saved case."
+        },
+        "env_f107a": {
+          "type": [
+            "null",
+            "number"
+          ],
+          "description": "Its 81-day mean."
+        },
+        "env_kp": {
+          "type": [
+            "null",
+            "number"
+          ],
+          "description": "Its Kp."
+        },
+        "now": {
+          "type": [
+            "null",
+            "number"
+          ],
+          "description": "env_exospheric_temperature, run on the saved case."
+        },
+        "crossing": {
+          "type": [
+            "null",
+            "number"
+          ],
+          "description": "What the solar crossing publishes for its hot sustained F10.7."
+        },
+        "view": {
+          "type": "string",
+          "enum": [
+            "slot"
+          ]
+        },
+        "points": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "scenario": {
+                "type": "string"
+              },
+              "t_mean": {
+                "type": [
+                  "null",
+                  "number"
+                ]
+              },
+              "t_peak": {
+                "type": [
+                  "null",
+                  "number"
+                ]
+              },
+              "gap": {
+                "type": [
+                  "null",
+                  "number"
+                ]
+              }
+            },
+            "required": [
+              "scenario",
+              "t_mean",
+              "t_peak",
+              "gap"
+            ]
+          },
+          "description": "One per scenario, cold to hot."
+        },
+        "widest": {
+          "type": [
+            "null",
+            "string"
+          ],
+          "description": "The scenario with the widest gap."
+        },
+        "narrowest_gap": {
+          "type": [
+            "null",
+            "number"
+          ]
+        },
+        "widest_gap": {
+          "type": [
+            "null",
+            "number"
+          ]
+        }
+      },
+      "required": [
+        "ok",
+        "figure",
+        "bundle",
+        "view",
+        "env_f107",
+        "env_f107a",
+        "env_kp",
+        "now",
+        "crossing",
+        "points",
+        "widest",
+        "narrowest_gap",
+        "widest_gap"
+      ]
+    },
+    {
+      "type": "object",
+      "description": "The thermosphere figure's Kp sweep at the design point, against the line its quiet end sets.",
+      "properties": {
+        "ok": {
+          "type": "boolean"
+        },
+        "bundle": {
+          "type": "string",
+          "description": "The bundle and version the numbers were worked out from."
+        },
+        "figure": {
+          "type": "string",
+          "enum": [
+            "thermosphere"
+          ]
+        },
+        "env_f107": {
+          "type": [
+            "null",
+            "number"
+          ],
+          "description": "The design's F10.7, run on the saved case."
+        },
+        "env_f107a": {
+          "type": [
+            "null",
+            "number"
+          ],
+          "description": "Its 81-day mean."
+        },
+        "env_kp": {
+          "type": [
+            "null",
+            "number"
+          ],
+          "description": "Its Kp."
+        },
+        "now": {
+          "type": [
+            "null",
+            "number"
+          ],
+          "description": "env_exospheric_temperature, run on the saved case."
+        },
+        "crossing": {
+          "type": [
+            "null",
+            "number"
+          ],
+          "description": "What the solar crossing publishes for its hot sustained F10.7."
+        },
+        "view": {
+          "type": "string",
+          "enum": [
+            "shape"
+          ]
+        },
+        "sweep": {
+          "type": "object",
+          "description": "A probe sweep of env_exospheric_temperature over one driver, the others held; refused points are listed and not drawn.",
+          "properties": {
+            "x_id": {
+              "type": "string"
+            },
+            "y_id": {
+              "type": "string"
+            },
+            "x_unit": {
+              "type": "string"
+            },
+            "y_unit": {
+              "type": "string"
+            },
+            "x_factor": {
+              "type": "number"
+            },
+            "y_factor": {
+              "type": "number"
+            },
+            "x": {
+              "type": "array",
+              "description": "The driver at each drawn point, SI.",
+              "items": {
+                "type": "number"
+              }
+            },
+            "y": {
+              "type": "array",
+              "description": "The temperature there, SI.",
+              "items": {
+                "type": "number"
+              }
+            },
+            "refused": {
+              "type": "array",
+              "description": "Where the relation refused.",
+              "items": {
+                "type": "number"
+              }
+            }
+          },
+          "required": [
+            "x_id",
+            "y_id",
+            "x_unit",
+            "y_unit",
+            "x_factor",
+            "y_factor",
+            "x",
+            "y",
+            "refused"
+          ]
+        },
+        "d": {
+          "type": "array",
+          "description": "The swept temperature minus its value at Kp 0.",
+          "items": {
+            "type": "number"
+          }
+        },
+        "line": {
+          "type": "array",
+          "description": "The straight line through Kp 0 and the point nearest Kp 2.",
+          "items": {
+            "type": "number"
+          }
+        },
+        "excess": {
+          "type": "number",
+          "description": "How far the curve stands above the line at the top."
+        },
+        "split_at": {
+          "type": [
+            "null",
+            "number"
+          ],
+          "description": "The Kp where the curve first stands clear of the line by a fiftieth of that."
+        }
+      },
+      "required": [
+        "ok",
+        "figure",
+        "bundle",
+        "view",
+        "env_f107",
+        "env_f107a",
+        "env_kp",
+        "now",
+        "crossing",
+        "sweep",
+        "d",
+        "line",
+        "excess",
+        "split_at"
+      ]
     }
   ]
 }

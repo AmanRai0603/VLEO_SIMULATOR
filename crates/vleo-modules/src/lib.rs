@@ -197,6 +197,7 @@ pub mod inputs;
 #[cfg(feature = "std")]
 pub mod record;
 pub mod results;
+pub mod thermo;
 
 impl NodeTable for Vleo {
     fn nodes(&self) -> &[NodeDef] {

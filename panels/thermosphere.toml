@@ -109,10 +109,30 @@ name = "view"
 drive = "(() => { const s = document.querySelector('.sw-opt[data-k=view]'); if (!s) throw new Error('no view control'); s.value = 'slot'; s.dispatchEvent(new Event('change')); })()"
 why = """the flux view is a temperature against sfu and the slot view is a temperature against five named scenarios; one picture for both means the control is ignored"""
 
-[[engine]]
-row = "env_f107"
-why = """the declared constant the whole density chain is sized on. It sets one of the two marks in the opening view, so a panel that does not move when it moves is drawing a literal where a row exists"""
+# THE TEMPERATURES AND WHAT THE PANEL SAYS ABOUT THEM ARE THE ENGINE'S (phase
+# 10j): the `thermosphere` figure runs the design's drivers, probes
+# env_exospheric_temperature as each view asks, and works out the slopes, the
+# gaps and the departure from the quiet-end line (vleo_modules::thermo). It
+# replaces the two [[engine]] rows this panel declared — env_f107 and
+# l3_solar_interface — because the page no longer runs them itself: the figure
+# carries both, as `env_f107` and `crossing`, and check 2c moves each number
+# in it and demands the panel say something different. The sweeps' own points
+# are moved with the rest, through `sustained`, `day`, `mean` and `sweep`.
+[[figures]]
+id = "thermosphere"
+reads = ["env_f107", "crossing", "now", "sustained", "day", "mean", "slope_sustained", "slope_day", "slope_mean"]
 
-[[engine]]
-row = "l3_solar_interface"
-why = """what the solar subsystem actually computes, drawn as the second mark beside the declared one. This is the comparison the panel exists to make, and it has to come from the crossing rather than from a number typed here"""
+[[figures]]
+id = "thermosphere"
+state = "(() => { const s = document.querySelector('.sw-opt[data-k=view]'); if (!s) throw new Error('no view control'); s.value = 'kp'; s.dispatchEvent(new Event('change')); })()"
+reads = ["env_kp", "curves", "worst", "close"]
+
+[[figures]]
+id = "thermosphere"
+state = "(() => { const s = document.querySelector('.sw-opt[data-k=view]'); if (!s) throw new Error('no view control'); s.value = 'slot'; s.dispatchEvent(new Event('change')); })()"
+reads = ["points", "narrowest_gap", "widest_gap"]
+
+[[figures]]
+id = "thermosphere"
+state = "(() => { const s = document.querySelector('.sw-opt[data-k=view]'); if (!s) throw new Error('no view control'); s.value = 'shape'; s.dispatchEvent(new Event('change')); })()"
+reads = ["sweep", "d", "line", "excess", "split_at"]
