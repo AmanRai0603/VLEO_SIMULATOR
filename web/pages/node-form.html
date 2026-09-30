@@ -1,22 +1,32 @@
 <!--
-  THE NODE FORM — the body of the page `xtask form <node>` writes (and the
-  new-node form, `xtask form --new`), filled by vleo-sheet/src/template.rs.
-  The whole page is web/page.html with this in its body; its style is
-  web/pages/node-form.css and its behaviour web/pages/node-form.js.
+  THE NODE FORM — the page `xtask form <node>` writes (and the new-node form,
+  `xtask form --new`, and the worked example the pipeline tests), filled by
+  vleo-sheet/src/template.rs. The whole page is web/page.html with the part
+  named body in its body; its style is web/pages/node-form.css and its
+  behaviour web/pages/node-form.js.
 
-  Slots, each filled once:
-    {{heading}}   the node's name, id and place — or "A new node"
-    {{schema}}    the questions, as JSON the page draws its fields from
-    {{original}}  the node as it was when the form was made (TOML)
-    {{data}}      the form's content (TOML) — what comes back
-    {{checker}}   the method checker, gzipped, as base64
-    {{script}}    web/pages/node-form.js
+  Its parts, by name — a part opens with a comment reading "part:" and its
+  name and runs to the next one; slots are double-braced names, filled once
+  each; text slots arrive escaped. The body's slots:
+    heading   the node's name, id and place — or "A new node"
+    schema    the questions, as JSON the page draws its fields from
+    original  the node as it was when the form was made (TOML)
+    data      the form's content (TOML) — what comes back
+    checker   the method checker, gzipped, as base64
+    script    web/pages/node-form.js
 
   The three block ids are what reading a filled form looks for
   (template::read): change one here and there together, or a form that comes
   back cannot be read.
 -->
-<header class="nf-head">
+<!-- part: head --><style>
+{{css}}</style><!-- part: title-node -->{{label}} — node form<!-- part: title-example -->{{label}} — node form (worked example)<!-- part: title-new -->A new node — node form<!-- part: heading-node --><h1>{{label}}</h1>
+<p class="nf-id"><code>{{id}}</code> · {{kind}} · {{subsystem}} · owner {{owner}} · {{state}}</p>
+<!-- part: heading-example --><h1>{{label}}</h1>
+<p class="nf-id"><code>{{id}}</code> · the worked example, for the pipeline's test</p>
+<!-- part: heading-new --><h1>A new node</h1>
+<p class="nf-id">a request for a node the design does not have yet — where it goes, what it asks, and what it reads</p>
+<!-- part: body --><header class="nf-head">
 <p class="nf-kicker">VLEO design tool · node form</p>
 {{heading}}<section class="nf-intro">
 <p class="nf-answer"><b>Answer first.</b> This file asks for one node of the design to change — or
@@ -64,4 +74,4 @@ an assistant, give it this file and ask it to edit only the block marked
 {{data}}</script>
 <script type="application/octet-stream" id="vleo-method-wasm">{{checker}}</script>
 <script>
-{{script}}</script>
+{{script}}</script><!-- end -->

@@ -875,6 +875,7 @@ pub fn read_sweep(text: &str) -> Result<Sweep, String> {
 // ---------------------------------------------------------------------------
 // the report
 
+#[cfg(feature = "std")]
 fn he(s: &str) -> String {
     s.replace('&', "&amp;")
         .replace('<', "&lt;")
@@ -882,6 +883,7 @@ fn he(s: &str) -> String {
         .replace('"', "&quot;")
 }
 
+#[cfg(feature = "std")]
 /// The same result as one HTML page that shows itself anywhere, for sending to
 /// somebody who does not run the tool. The CSV rides inside it, so the page can
 /// be uploaded in its place.
@@ -896,7 +898,7 @@ pub fn html(s: &Saved) -> String {
                 he(if a.unit == "-" { "" } else { &a.unit })
             )
         })
-        .unwrap_or_else(|| "not computed on this run".to_string());
+        .unwrap_or_else(|| t("answer-none").to_string());
     let mut o = String::with_capacity(64 * 1024);
     // ANSWER FIRST (docs/EXPLAINING.md E1): the number, then the three things
     // a reader needs before trusting it — how credible it is and what holds it
@@ -905,284 +907,258 @@ pub fn html(s: &Saved) -> String {
     let target = s.answer();
     let label = target.map(|a| a.name.as_str()).unwrap_or(s.target.as_str());
     let changed_inputs: Vec<&Row> = s.inputs.iter().filter(|r| r.note == "changed").collect();
-    let ran_line = format!(
-        "<b>{} ran, {} blocked</b>{}.",
-        s.ran,
-        s.blocked_count,
-        if s.blocked.is_empty() {
-            String::new()
-        } else {
-            format!(
-                " — {}",
-                he(&s
-                    .blocked
-                    .iter()
-                    .map(|b| b.id.as_str())
-                    .take(4)
-                    .collect::<Vec<_>>()
-                    .join(", "))
-            )
-        }
+    let which = if s.blocked.is_empty() {
+        String::new()
+    } else {
+        let ids = s
+            .blocked
+            .iter()
+            .map(|b| b.id.as_str())
+            .take(4)
+            .collect::<Vec<_>>()
+            .join(", ");
+        f("ran-which", &[("ids", &he(&ids))])
+    };
+    let ran_line = f(
+        "ran",
+        &[
+            ("ran", &s.ran.to_string()),
+            ("blocked", &s.blocked_count.to_string()),
+            ("which", &which),
+        ],
     );
     let moved = moved_since(s);
-    o.push_str(&format!(
-        "<header><p class=\"k\">VLEO design tool · saved result</p><h1>{}</h1>\n\
-         <section class=\"af\"><p class=\"afk\">Answer first</p><p class=\"answer\">{}</p>\n<ul>\
-         <li>{}</li><li>{}</li><li>{}</li><li>{}</li></ul></section>\n\
-         <p class=\"m\">{}saved {} · mode {} · chain <code>{}</code> · kernel <code>{}</code> · \
-         graph <code>{}</code>{}. This page is a record: it shows what the run returned when it was \
-         saved, and nothing here runs again.</p></header>\n",
-        he(&s.target),
-        answer,
-        match target {
-            Some(a) => format!(
-                "Credibility <b>{} of 4</b>, held down by <b>{}</b> — the weakest of eight factors.",
-                he(&a.credibility),
-                he(&a.governing)
-            ),
-            None => "The target did not answer on this run; see what could not run.".to_string(),
-        },
-        ran_line,
-        if changed_inputs.is_empty() {
-            format!("Run on the declared defaults: none of {} inputs changed.", s.inputs.len())
+    let cred = match target {
+        Some(a) => f(
+            "cred",
+            &[
+                ("cred", &he(&a.credibility)),
+                ("governing", &he(&a.governing)),
+            ],
+        ),
+        None => t("cred-none").to_string(),
+    };
+    let inputs = if changed_inputs.is_empty() {
+        f("inputs-default", &[("n", &s.inputs.len().to_string())])
+    } else {
+        let list = changed_inputs
+            .iter()
+            .take(4)
+            .map(|r| {
+                format!(
+                    "{} = {} {}",
+                    r.id,
+                    r.value,
+                    if r.unit == "-" { "" } else { &r.unit }
+                )
+            })
+            .collect::<Vec<_>>()
+            .join(", ");
+        f(
+            "inputs-changed",
+            &[
+                ("k", &changed_inputs.len().to_string()),
+                ("n", &s.inputs.len().to_string()),
+                ("list", &he(&list)),
+            ],
+        )
+    };
+    let rests = if !moved.is_empty() {
+        if moved.len() == 1 {
+            t("rests-moved-1").to_string()
         } else {
-            format!(
-                "Run on <b>{} of {}</b> inputs changed from their defaults: {}.",
-                changed_inputs.len(),
-                s.inputs.len(),
-                he(&changed_inputs
-                    .iter()
-                    .take(4)
-                    .map(|r| format!("{} = {} {}", r.id, r.value, if r.unit == "-" { "" } else { &r.unit }))
-                    .collect::<Vec<_>>()
-                    .join(", "))
-            )
-        },
-        if !moved.is_empty() {
-            format!(
-                "<b>{} belief{} it rests on {} since broken</b> — see where it breaks.",
-                moved.len(),
-                if moved.len() == 1 { "" } else { "s" },
-                if moved.len() == 1 { "has" } else { "have" }
-            )
-        } else if s.versions.is_empty() {
-            "No node it ran through had a recorded belief when it was saved.".to_string()
-        } else {
-            format!(
-                "It rests on {} recorded node version{}, none since replaced.",
-                s.versions.len(),
-                if s.versions.len() == 1 { "" } else { "s" }
-            )
-        },
-        if s.name.is_empty() {
-            String::new()
-        } else {
-            format!("<b>{}</b> · ", he(&s.name))
-        },
-        he(&s.saved),
-        he(&s.mode),
-        he(&s.chain),
-        he(&s.kernel),
-        he(&s.graph),
-        if s.data.is_empty() {
-            String::new()
-        } else {
-            format!(" · data {}", he(&s.data.join(", ")))
+            f("rests-moved-n", &[("n", &moved.len().to_string())])
         }
+    } else if s.versions.is_empty() {
+        t("rests-none").to_string()
+    } else if s.versions.len() == 1 {
+        t("rests-versions-1").to_string()
+    } else {
+        f("rests-versions-n", &[("n", &s.versions.len().to_string())])
+    };
+    let name = if s.name.is_empty() {
+        String::new()
+    } else {
+        f("name", &[("name", &he(&s.name))])
+    };
+    let data_line = if s.data.is_empty() {
+        String::new()
+    } else {
+        f("data", &[("data", &he(&s.data.join(", ")))])
+    };
+    o.push_str(&f(
+        "header",
+        &[
+            ("target", &he(&s.target)),
+            ("answer", &answer),
+            ("cred", &cred),
+            ("ran", &ran_line),
+            ("inputs", &inputs),
+            ("rests", &rests),
+            ("name", &name),
+            ("saved", &he(&s.saved)),
+            ("mode", &he(&s.mode)),
+            ("chain", &he(&s.chain)),
+            ("kernel", &he(&s.kernel)),
+            ("graph", &he(&s.graph)),
+            ("data", &data_line),
+        ],
     ));
     // Thinned, it says so before anything else is read from it: the values
     // not shown were let go, not zero and not lost by accident.
     if let Some((on, n)) = s.thinned.split_once(' ') {
-        o.push_str(&format!(
-            "<p class=\"m\"><b>Thinned to its summary on {}:</b> {} other value{} of the run \
-             {} let go. The inputs it ran on, its answer and what could not run are kept; run \
-             it again on those inputs to see every value.</p>\n",
-            he(on),
-            he(n),
-            if n == "1" { "" } else { "s" },
-            if n == "1" { "was" } else { "were" }
-        ));
+        o.push_str(&if n == "1" {
+            f("thinned-1", &[("on", &he(on))])
+        } else {
+            f("thinned-n", &[("on", &he(on)), ("n", &he(n))])
+        });
     }
     if let Some(w) = &s.sweep {
         o.push_str(&sweep_section(s, w));
     }
-    o.push_str(&format!(
-        "<section><h2>Said simply <span class=\"dx\">explanation</span></h2><p>On {} inputs, \
-         <b>{}</b> comes out at <b>{}</b>. Every number below was worked out by the tool from the \
-         relations its rows cite <span class=\"claim\">derived</span>, on inputs that are either a \
-         row's declared default <span class=\"claim\">declared</span> or a value this case set.</p></section>\n",
-        if changed_inputs.is_empty() { "the declared" } else { "this case's" },
-        he(label),
-        answer
+    let whose = if changed_inputs.is_empty() {
+        "simply-declared"
+    } else {
+        "simply-case"
+    };
+    o.push_str(&f(
+        "simply",
+        &[
+            ("which", t(whose)),
+            ("label", &he(label)),
+            ("answer", &answer),
+        ],
     ));
-    o.push_str("<section><h2>Where it breaks <span class=\"dx\">explanation</span></h2><ul>");
+    o.push_str(t("breaks-open"));
     if let Some(a) = target {
-        o.push_str(&format!(
-            "<li>The answer is only as credible as its weakest factor: <b>{}</b>.</li>",
-            he(&a.governing)
-        ));
+        o.push_str(&f("breaks-weakest", &[("governing", &he(&a.governing))]));
     }
     if s.blocked.is_empty() {
-        o.push_str("<li>Nothing on its chain was blocked.</li>");
+        o.push_str(t("breaks-none-blocked"));
+    } else if s.blocked.len() == 1 {
+        o.push_str(t("breaks-blocked-1"));
     } else {
-        o.push_str(&format!(
-            "<li>{} row{} could not run, and nothing that needed {} does — listed below with why.</li>",
-            s.blocked.len(),
-            if s.blocked.len() == 1 { "" } else { "s" },
-            if s.blocked.len() == 1 { "it" } else { "them" }
+        o.push_str(&f(
+            "breaks-blocked-n",
+            &[("n", &s.blocked.len().to_string())],
         ));
     }
     for (id, then, now) in &moved {
-        o.push_str(&format!(
-            "<li><b><code>{}</code> {}</b>: a belief this result rested on has broken since. Run \
-             it again to see what the new version says.</li>",
-            he(id),
-            moved_words(*then, *now)
+        o.push_str(&f(
+            "breaks-moved",
+            &[("id", &he(id)), ("words", &moved_words(*then, *now))],
         ));
     }
     if !s.versions.is_empty() {
-        o.push_str(&format!(
-            "<li>The node versions it rests on: {}.</li>",
-            he(&s
-                .versions
-                .iter()
-                .map(|(id, n, r)| format!("{id} v{n} ({r})"))
-                .collect::<Vec<_>>()
-                .join(", "))
-        ));
+        let list = s
+            .versions
+            .iter()
+            .map(|(id, n, r)| format!("{id} v{n} ({r})"))
+            .collect::<Vec<_>>()
+            .join(", ");
+        o.push_str(&f("breaks-versions", &[("list", &he(&list))]));
     }
-    o.push_str("</ul></section>\n");
-    let table = |title: &str, rows: &[&Row], cols: &[&str], cells: &dyn Fn(&Row) -> Vec<String>| {
-        let mut t = format!("<section><h2>{title} <span class=\"dx\">reference</span></h2>");
+    o.push_str(t("breaks-close"));
+    // A reference table: its title and columns are parts named for it.
+    let table = |which: &str, rows: &[&Row], cells: &dyn Fn(&Row) -> Vec<String>| {
+        let mut o = f("table-open", &[("title", t(&format!("title-{which}")))]);
         if rows.is_empty() {
-            t.push_str("<p class=\"m\">none</p></section>\n");
-            return t;
+            o.push_str(t("table-none"));
+            return o;
         }
-        t.push_str("<table><thead><tr>");
-        for c in cols {
-            t.push_str(&format!("<th>{c}</th>"));
+        o.push_str(t("table-head-open"));
+        for c in t(&format!("cols-{which}")).split('|') {
+            o.push_str(&f("th", &[("text", c)]));
         }
-        t.push_str("</tr></thead><tbody>");
+        o.push_str(t("table-head-close"));
         for r in rows {
-            t.push_str("<tr>");
+            o.push_str(t("tr-open"));
             for c in cells(r) {
-                t.push_str(&format!("<td>{c}</td>"));
+                o.push_str(&f("td", &[("text", &c)]));
             }
-            t.push_str("</tr>");
+            o.push_str(t("tr-close"));
         }
-        t.push_str("</tbody></table></section>\n");
-        t
+        o.push_str(t("table-close"));
+        o
     };
     let unit = |u: &str| he(if u == "-" { "" } else { u });
+    let code = |s: &str| f("code", &[("text", &he(s))]);
     let value_cells = |r: &Row| {
         vec![
-            format!("<code>{}</code>", he(&r.id)),
+            code(&r.id),
             he(&r.name),
             format!("{} {}", he(&r.value), unit(&r.unit)),
             he(&r.credibility),
             he(&r.governing),
         ]
     };
-    o.push_str(&table(
-        "Inputs changed from their defaults",
-        &changed_inputs,
-        &["input", "name", "ran at"],
-        &|r| {
-            vec![
-                format!("<code>{}</code>", he(&r.id)),
-                he(&r.name),
-                format!("{} {}", he(&r.value), unit(&r.unit)),
-            ]
-        },
-    ));
+    o.push_str(&table("changed", &changed_inputs, &|r| {
+        vec![
+            code(&r.id),
+            he(&r.name),
+            format!("{} {}", he(&r.value), unit(&r.unit)),
+        ]
+    }));
     let outs: Vec<&Row> = s.outputs.iter().collect();
-    o.push_str(&table(
-        "Every value the run returned",
-        &outs,
-        &["row", "name", "value", "credibility", "held down by"],
-        &value_cells,
-    ));
+    o.push_str(&table("values", &outs, &value_cells));
     let blocked: Vec<&Row> = s.blocked.iter().collect();
-    o.push_str(&table(
-        "What could not run, and why",
-        &blocked,
-        &["row", "name", "why"],
-        &|r| {
-            vec![
-                format!("<code>{}</code>", he(&r.id)),
-                he(&r.name),
-                he(&r.note),
-            ]
-        },
-    ));
+    o.push_str(&table("blocked", &blocked, &|r| {
+        vec![code(&r.id), he(&r.name), he(&r.note)]
+    }));
     let all: Vec<&Row> = s.inputs.iter().collect();
-    o.push_str("<details><summary>every input it ran on</summary>");
-    o.push_str(&table(
-        "All inputs",
-        &all,
-        &["input", "name", "ran at", ""],
-        &|r| {
-            vec![
-                format!("<code>{}</code>", he(&r.id)),
-                he(&r.name),
-                format!("{} {}", he(&r.value), unit(&r.unit)),
-                he(&r.note),
-            ]
-        },
-    ));
-    o.push_str("</details>\n");
-    o.push_str(&format!(
-        "<!-- The result itself, as CSV. Upload this page on the Results page and this is what \
-         is read. -->\n<script type=\"text/csv\" id=\"vleo-result\">\n{data}</script>\n"
-    ));
+    o.push_str(t("details-open"));
+    o.push_str(&table("all", &all, &|r| {
+        vec![
+            code(&r.id),
+            he(&r.name),
+            format!("{} {}", he(&r.value), unit(&r.unit)),
+            he(&r.note),
+        ]
+    }));
+    o.push_str(t("details-close"));
+    o.push_str(&f("result-block", &[("csv", &data)]));
     if let Some(w) = &s.sweep {
-        o.push_str(&format!(
-            "<script type=\"text/csv\" id=\"vleo-sweep\">\n{}</script>\n",
-            sweep_csv(w).replace("</", "<\\/")
+        o.push_str(&f(
+            "sweep-block",
+            &[("csv", &sweep_csv(w).replace("</", "<\\/"))],
         ));
     }
-    page(
-        &format!("{} — result", s.target),
-        &format!("<style>\n{REPORT_CSS}</style>"),
-        o.trim_end(),
-    )
+    vleo_sheet::shell::fill(&vleo_sheet::shell::Page {
+        title: &f("title", &[("target", &s.target)]),
+        head: &f("head", &[("css", REPORT_CSS)]),
+        body: o.trim_end(),
+        ..Default::default()
+    })
 }
 
-/// The one page template every page the tool writes is filled from
-/// (`web/page.html`; `vleo_sheet::shell` says how it works). This crate cannot
-/// depend on that one, so it carries this copy of the filler; the tests hold
-/// the page it writes to the same template.
-pub const PAGE_TEMPLATE: &str = include_str!("../../../web/page.html");
-
-/// [`PAGE_TEMPLATE`] from its doctype on, each slot filled once, in one pass.
-fn page(title: &str, head: &str, body: &str) -> String {
-    let t = PAGE_TEMPLATE;
-    let mut rest = &t[t
-        .find("<!doctype html>")
-        .expect("web/page.html has no doctype")..];
-    let mut o = String::with_capacity(rest.len() + head.len() + body.len() + 256);
-    while let Some(i) = rest.find("{{") {
-        o.push_str(&rest[..i]);
-        let j = rest[i..]
-            .find("}}")
-            .expect("web/page.html: a slot never closed")
-            + i;
-        match &rest[i + 2..j] {
-            "title" => o.push_str(&he(title)),
-            "head" => o.push_str(head),
-            "body_attrs" => {}
-            "body" => o.push_str(body),
-            other => panic!("web/page.html has a slot `{other}` this page does not fill"),
-        }
-        rest = &rest[j + 2..];
-    }
-    o.push_str(rest);
-    o
+#[cfg(feature = "std")]
+/// The report's parts (`web/pages/report.html`), read once.
+fn parts() -> &'static vleo_sheet::shell::Parts {
+    static P: std::sync::OnceLock<vleo_sheet::shell::Parts> = std::sync::OnceLock::new();
+    P.get_or_init(|| {
+        vleo_sheet::shell::Parts::parse(
+            "web/pages/report.html",
+            include_str!("../../../web/pages/report.html"),
+        )
+        .unwrap_or_else(|e| panic!("{e}"))
+    })
 }
 
-/// A sweep, drawn: the answer across the range, refused points as gaps, where
-/// the case sits. A picture a reader can open anywhere — plain SVG in the page,
-/// no script, nothing fetched.
+#[cfg(feature = "std")]
+/// A part as written.
+fn t(name: &str) -> &'static str {
+    parts().text(name)
+}
+
+#[cfg(feature = "std")]
+/// A part with its slots filled.
+fn f(name: &str, slots: &[(&str, &str)]) -> String {
+    parts().fill(name, slots)
+}
+
+#[cfg(feature = "std")]
+/// The sweep, drawn: the engine's points and nothing between them, broken
+/// wherever a point was refused.
 fn sweep_section(s: &Saved, w: &Sweep) -> String {
     let fx = if w.x_factor != 0.0 { w.x_factor } else { 1.0 };
     let fy = if w.y_factor != 0.0 { w.y_factor } else { 1.0 };
@@ -1200,31 +1176,32 @@ fn sweep_section(s: &Saved, w: &Sweep) -> String {
     } else {
         w.over_name.as_str()
     };
-    let mut o = format!(
-        "<section><h2>The sweep <span class=\"dx\">figure</span></h2><p>{} across <b>{}</b> from \
-         {}{} to {}{}, {} points: {} answered{}.</p>",
-        he(&s.target),
-        he(over_name),
-        num(w.from / fx),
-        he(&unit(&w.x_unit)),
-        num(w.to / fx),
-        he(&unit(&w.x_unit)),
-        w.points,
-        w.x.len(),
-        if w.refused.is_empty() {
-            String::new()
-        } else {
-            format!(
-                ", <b>{} refused</b> — {} — drawn as gaps, never joined across",
-                w.refused.len(),
-                he(&w.refused[0].1)
-            )
-        }
+    let refused = if w.refused.is_empty() {
+        String::new()
+    } else {
+        f(
+            "sweep-refused",
+            &[
+                ("n", &w.refused.len().to_string()),
+                ("why", &he(&w.refused[0].1)),
+            ],
+        )
+    };
+    let mut o = f(
+        "sweep-open",
+        &[
+            ("target", &he(&s.target)),
+            ("over", &he(over_name)),
+            ("from", &num(w.from / fx)),
+            ("xu", &he(&unit(&w.x_unit))),
+            ("to", &num(w.to / fx)),
+            ("points", &w.points.to_string()),
+            ("answered", &w.x.len().to_string()),
+            ("refused", &refused),
+        ],
     );
     if xs.is_empty() {
-        o.push_str(
-            "<p class=\"m\">No point answered, so there is no line to draw.</p></section>\n",
-        );
+        o.push_str(t("sweep-empty"));
         return o;
     }
     let span = |v: &[f64]| {
@@ -1249,30 +1226,35 @@ fn sweep_section(s: &Saved, w: &Sweep) -> String {
     let (y0, y1) = span(&ys);
     let pad = (y1 - y0) * 0.06;
     let yr = (y0 - pad, y1 + pad);
-    let (w_px, h_px, l, r, t, b) = (720.0, 320.0, 72.0, 16.0, 12.0, 44.0);
+    let (w_px, h_px, l, r, top, b) = (720.0, 320.0, 72.0, 16.0, 12.0, 44.0);
     let px = |x: f64| l + (x - xr.0) / (xr.1 - xr.0) * (w_px - l - r);
-    let py = |y: f64| h_px - b - (y - yr.0) / (yr.1 - yr.0) * (h_px - t - b);
-    o.push_str(&format!(
-        "<svg viewBox=\"0 0 {w_px} {h_px}\" role=\"img\" style=\"width:100%;height:auto;background:var(--card)\" \
-         aria-label=\"{} against {}\">",
-        he(&s.target),
-        he(&w.over)
+    let py = |y: f64| h_px - b - (y - yr.0) / (yr.1 - yr.0) * (h_px - top - b);
+    let d1 = |v: f64| format!("{v:.1}");
+    o.push_str(&f(
+        "svg-open",
+        &[
+            ("w", &w_px.to_string()),
+            ("h", &h_px.to_string()),
+            ("target", &he(&s.target)),
+            ("over", &he(&w.over)),
+        ],
     ));
     for k in 0..=4 {
         let fy_ = yr.0 + (yr.1 - yr.0) * k as f64 / 4.0;
         let fx_ = xr.0 + (xr.1 - xr.0) * k as f64 / 4.0;
-        o.push_str(&format!(
-            "<line x1=\"{l}\" x2=\"{}\" y1=\"{y:.1}\" y2=\"{y:.1}\" stroke=\"var(--rule)\"/>\
-             <text x=\"{}\" y=\"{:.1}\" font-size=\"11\" text-anchor=\"end\" fill=\"var(--ink2)\">{}</text>\
-             <text x=\"{x:.1}\" y=\"{}\" font-size=\"11\" text-anchor=\"middle\" fill=\"var(--ink2)\">{}</text>",
-            w_px - r,
-            l - 6.0,
-            py(fy_) + 4.0,
-            num(round4(fy_)),
-            h_px - b + 16.0,
-            num(round4(fx_)),
-            y = py(fy_),
-            x = px(fx_),
+        o.push_str(&f(
+            "svg-grid",
+            &[
+                ("l", &l.to_string()),
+                ("x2", &(w_px - r).to_string()),
+                ("y", &d1(py(fy_))),
+                ("tx", &(l - 6.0).to_string()),
+                ("ty", &d1(py(fy_) + 4.0)),
+                ("yl", &num(round4(fy_))),
+                ("x", &d1(px(fx_))),
+                ("by", &(h_px - b + 16.0).to_string()),
+                ("xl", &num(round4(fx_))),
+            ],
         ));
     }
     // One path, broken wherever a point was refused.
@@ -1296,46 +1278,48 @@ fn sweep_section(s: &Saved, w: &Sweep) -> String {
             None => pen = false,
         }
     }
-    o.push_str(&format!(
-        "<path d=\"{}\" fill=\"none\" stroke=\"var(--accent)\" stroke-width=\"2\"/>",
-        d.trim_end()
-    ));
+    o.push_str(&f("svg-path", &[("d", d.trim_end())]));
     // Where this case sits on the line: the swept input's own value, and the
     // answer the run returned there — not read off the curve.
     let at = s.inputs.iter().find(|i| i.id == w.over).and_then(|i| i.si);
     if let (Some(x), Some(y)) = (at, s.answer().and_then(|a| a.si)) {
         let (x, y) = (x / fx, y / fy);
         if x >= xr.0 && x <= xr.1 && y >= yr.0 && y <= yr.1 {
-            o.push_str(&format!(
-                "<circle cx=\"{:.1}\" cy=\"{:.1}\" r=\"4.5\" fill=\"var(--ink)\"/>\
-                 <text x=\"{:.1}\" y=\"{:.1}\" font-size=\"11\" fill=\"var(--ink)\">this case</text>",
-                px(x),
-                py(y),
-                px(x) + 8.0,
-                py(y) - 8.0
+            o.push_str(&f(
+                "svg-here",
+                &[
+                    ("x", &d1(px(x))),
+                    ("y", &d1(py(y))),
+                    ("tx", &d1(px(x) + 8.0)),
+                    ("ty", &d1(py(y) - 8.0)),
+                ],
             ));
         }
     }
-    o.push_str(&format!(
-        "<text x=\"{}\" y=\"{}\" font-size=\"12\" text-anchor=\"middle\" fill=\"var(--ink)\">{} [{}]</text>\
-         <text x=\"14\" y=\"{}\" font-size=\"12\" text-anchor=\"middle\" fill=\"var(--ink)\" \
-         transform=\"rotate(-90 14 {})\">{} [{}]</text></svg>",
-        (l + w_px - r) / 2.0,
-        h_px - 6.0,
-        he(&w.over),
-        he(if w.x_unit.is_empty() || w.x_unit == "-" { "dimensionless" } else { &w.x_unit }),
-        (t + h_px - b) / 2.0,
-        (t + h_px - b) / 2.0,
-        he(&s.target),
-        he(if w.y_unit.is_empty() || w.y_unit == "-" { "dimensionless" } else { &w.y_unit }),
+    let axis = |u: &str| {
+        if u.is_empty() || u == "-" {
+            t("dimensionless").to_string()
+        } else {
+            he(u)
+        }
+    };
+    o.push_str(&f(
+        "svg-axes",
+        &[
+            ("x", &((l + w_px - r) / 2.0).to_string()),
+            ("y", &(h_px - 6.0).to_string()),
+            ("over", &he(&w.over)),
+            ("xu", &axis(&w.x_unit)),
+            ("my", &((top + h_px - b) / 2.0).to_string()),
+            ("target", &he(&s.target)),
+            ("yu", &axis(&w.y_unit)),
+        ],
     ));
-    o.push_str(
-        "<p class=\"m\">Every point on this line was computed by the engine when the result was \
-                saved; nothing is interpolated or run again.</p></section>\n",
-    );
+    o.push_str(t("sweep-close"));
     o
 }
 
+#[cfg(feature = "std")]
 /// A tick label, to four significant figures.
 fn round4(v: f64) -> f64 {
     if v == 0.0 || !v.is_finite() {
@@ -1369,6 +1353,7 @@ pub fn unwrap_report(text: &str) -> String {
     text[open..close].replace("<\\/", "</")
 }
 
+#[cfg(feature = "std")]
 const REPORT_CSS: &str = include_str!("../../../web/pages/report.css");
 
 // ---------------------------------------------------------------------------

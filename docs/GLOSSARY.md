@@ -114,12 +114,11 @@ by `xtask readers` for a shared drive or an internal web server; the engine
 runs in the page to answer a lesson's widgets. → `docs/SHARING.md`, section 4
 
 **Page template** — `web/page.html`: the one page every file the tool writes
-is filled from — node and lesson forms, a saved result, the role guides, the
-readers' pages — with four slots its generator fills. A generator that writes
-a page of its own is refused by a test. Each page's own fixed markup, style
-and script are files in `web/pages/`, with named slots its generator fills;
-a row's page, whose shape the data decides, is `web/pages/row.html` as named
-parts. → `crates/vleo-sheet/src/shell.rs`
+is filled from — forms, a saved result, the role guides, a row's page, the
+readers' pages — with four slots. What each page puts in it is its parts file
+in `web/pages/`: every word and tag, by name, which the generator chooses and
+fills; a test refuses a generator that writes a tag of its own.
+→ `crates/vleo-sheet/src/shell.rs`
 
 **Component library** — `web/js/components.js`: every part a page is built
 from, by name — station, equation, widget, check-yourself, claim tag,

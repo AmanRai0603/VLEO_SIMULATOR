@@ -772,17 +772,19 @@ pub fn document(sh: &Sheet, tree: &Tree) -> String {
     let base = std::fs::read_to_string(sh.dir.join("node.toml"))
         .map(|t| form::file_hash(&t))
         .unwrap_or_default();
-    let head = format!(
-        "<h1>{}</h1>\n<p class=\"nf-id\"><code>{}</code> · {} · {} · owner {} · {}</p>\n",
-        he(&sh.label),
-        he(&sh.id),
-        he(&sh.kind),
-        he(&sh.subsystem),
-        he(&sh.owner),
-        he(&sh.state)
+    let head = f(
+        "heading-node",
+        &[
+            ("label", &he(&sh.label)),
+            ("id", &he(&sh.id)),
+            ("kind", &he(&sh.kind)),
+            ("subsystem", &he(&sh.subsystem)),
+            ("owner", &he(&sh.owner)),
+            ("state", &he(&sh.state)),
+        ],
     );
     page(
-        &format!("{} — node form", sh.label),
+        &f("title-node", &[("label", &sh.label)]),
         &head,
         &schema(Some(sh), tree),
         &original_toml(&sh.id, &base, &content(sh), false),
@@ -866,13 +868,12 @@ pub fn document_example(sh: &Sheet, tree: &Tree) -> Result<String, String> {
             1,
         );
     }
-    let head = format!(
-        "<h1>{}</h1>\n<p class=\"nf-id\"><code>{}</code> · the worked example, for the pipeline's test</p>\n",
-        he(&sh.label),
-        he(&sh.id)
+    let head = f(
+        "heading-example",
+        &[("label", &he(&sh.label)), ("id", &he(&sh.id))],
     );
     Ok(page(
-        &format!("{} — node form (worked example)", sh.label),
+        &f("title-example", &[("label", &sh.label)]),
         &head,
         &schema(Some(sh), tree),
         &original_toml(&sh.id, &base, &original, false),
@@ -886,9 +887,8 @@ pub fn document_example(sh: &Sheet, tree: &Tree) -> Result<String, String> {
 pub fn document_new(tree: &Tree) -> String {
     let c = blank();
     page(
-        "A new node — node form",
-        "<h1>A new node</h1>\n<p class=\"nf-id\">a request for a node the design does not have \
-         yet — where it goes, what it asks, and what it reads</p>\n",
+        t("title-new"),
+        t("heading-new"),
         &schema(None, tree),
         &original_toml("", "", &c, true),
         &data_toml("", "", &c, true),
@@ -906,8 +906,8 @@ fn page(
 ) -> String {
     // The method checker, gzipped, as base64. Never edited, and carried into every
     // saved copy, so a filled form still checks its method wherever it goes.
-    let o = crate::shell::fill_part(
-        BODY,
+    let o = f(
+        "body",
         &[
             ("heading", head),
             ("schema", schema),
@@ -916,11 +916,10 @@ fn page(
             ("checker", &base64(checker)),
             ("script", PAGE_JS),
         ],
-    )
-    .unwrap_or_else(|e| panic!("web/pages/node-form.html: {e}"));
+    );
     crate::shell::fill(&crate::shell::Page {
         title,
-        head: &format!("<style>\n{PAGE_CSS}</style>"),
+        head: &f("head", &[("css", PAGE_CSS)]),
         body: &o,
         ..Default::default()
     })
@@ -2192,8 +2191,27 @@ fn fixture_inputs(said: &str, inputs: &[BTreeMap<String, String>]) -> Option<Str
 // ---------------------------------------------------------------------------
 // the page
 
-/// The page's body, with its slots (`web/pages/node-form.html`).
-const BODY: &str = include_str!("../../../web/pages/node-form.html");
+/// The form's parts (`web/pages/node-form.html`), read once.
+fn parts() -> &'static crate::shell::Parts {
+    static P: std::sync::OnceLock<crate::shell::Parts> = std::sync::OnceLock::new();
+    P.get_or_init(|| {
+        crate::shell::Parts::parse(
+            "web/pages/node-form.html",
+            include_str!("../../../web/pages/node-form.html"),
+        )
+        .unwrap_or_else(|e| panic!("{e}"))
+    })
+}
+
+/// A part as written.
+fn t(name: &str) -> &'static str {
+    parts().text(name)
+}
+
+/// A part with its slots filled.
+fn f(name: &str, slots: &[(&str, &str)]) -> String {
+    parts().fill(name, slots)
+}
 
 const PAGE_CSS: &str = include_str!("../../../web/pages/node-form.css");
 

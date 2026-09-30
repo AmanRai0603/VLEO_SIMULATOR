@@ -1,16 +1,34 @@
 <!--
-  A READERS' PAGE — the body of each page `xtask readers` writes (the index,
-  and one per row), filled by xtask/src/readers.rs. The whole page is
-  web/page.html with this in its body, the tool's own web/app.css linked, and
+  A READERS' PAGE — each page `xtask readers` writes (the index, and one per
+  row), filled by xtask/src/readers.rs. The whole page is web/page.html with
+  the part named body in its body, the tool's own web/app.css linked, and
   web/pages/readers.css for the folder's header and column.
 
-  Slots, each filled once:
-    {{up}}    the way back to the folder's top: "" or "../"
-    {{body}}  the page — the index, or the row's own generated page
-    {{tail}}  the page's scripts
+  Its parts, by name — a part opens with a comment reading "part:" and its
+  name and runs to the next one; slots are double-braced names, filled once
+  each; text slots arrive escaped. The body's slots:
+    up    the way back to the folder's top: "" or "../"
+    body  the page — the index, or the row's own generated page
+    tail  the page's scripts
 -->
-<header class="rd-top"><a class="ctl" href="{{up}}index.html">VLEO design — for readers</a> <span class="grp" id="depth" role="group" aria-label="how deep the page goes"><span class="lbl">depth</span><button class="ctl dp" data-depth="learn">Learn</button><button class="ctl dp" data-depth="read">Read</button><button class="ctl dp" data-depth="expert">Expert</button></span></header>
+<!-- part: head --><link rel="stylesheet" href="{{up}}assets/app.css">
+<style>{{css}}</style><!-- part: body-attrs --> class="readers"<!-- part: title-row -->{{label}} — VLEO<!-- part: title-index -->VLEO design — for readers<!-- part: no-page --><p class="empty">{{id}} has no generated page yet.</p><!-- part: lesson-seg -->
+<section class="seg" data-seg="lesson"><h3 class="seg-h">the lesson — how this row is taught</h3><div id="row-lesson"></div></section>
+<!-- part: lesson-tail --><script type="application/json" id="vleo-rows">[{{rows}}]</script>
+<script type="application/json" id="vleo-lesson-json">{{lesson}}</script>
+<script src="../assets/kernel.js"></script>
+<!-- part: script --><script src="{{up}}assets/vleo.js"></script>
+<!-- part: index-intro --><section class="answer-first view-af"><p class="af-k">Answer first <span class="dx dx-reference">reference</span></p><p class="af-a">Every row of the VLEO design, and every lesson, as the tool shows them — read here with no tool running.</p><ul class="af-points"><li>A row's page is the tool's own: what it asks, the real thing and its source, where it breaks, its record.</li><li>A lesson's widgets are answered by the engine, running in the page on the declared values. A row that reads reference data refuses here and says so.</li><li>To run a case of your own, save a result or send a form, open the tool.</li></ul></section>
+<h2>Lessons</h2>
+<!-- part: lessons-none --><p class="empty">No row has a lesson yet. A lesson is written by the person who knows the row, through its lesson form.</p>
+<!-- part: lessons-open --><ul class="rd-lessons">
+<!-- part: lesson-item --><li><a href="rows/{{id}}.html"><b>{{title}}</b></a> <code>{{id}}</code><br><span class="muted">{{answer}}</span></li>
+<!-- part: list-close --></ul>
+<!-- part: layer-open --><h2>Layer {{layer}}</h2>
+<ul class="rd-rows">
+<!-- part: row-item --><li><a href="rows/{{id}}.html">{{label}}</a> <code>{{id}}</code>{{seeded}}</li>
+<!-- part: seeded --> <span class="muted">seeded</span><!-- part: body --><header class="rd-top"><a class="ctl" href="{{up}}index.html">VLEO design — for readers</a> <span class="grp" id="depth" role="group" aria-label="how deep the page goes"><span class="lbl">depth</span><button class="ctl dp" data-depth="learn">Learn</button><button class="ctl dp" data-depth="read">Read</button><button class="ctl dp" data-depth="expert">Expert</button></span></header>
 <main class="rd-main" id="node-body">
 {{body}}
 </main>
-{{tail}}
+{{tail}}<!-- end -->

@@ -1,10 +1,12 @@
 <!--
-  THE LESSON FORM — the body of the page `xtask lesson form <node>` writes,
-  filled by vleo-sheet/src/lesson_form.rs. The whole page is web/page.html
-  with this in its body; its style is web/pages/node-form.css then
+  THE LESSON FORM — the page `xtask lesson form <node>` writes, filled by
+  vleo-sheet/src/lesson_form.rs. The whole page is web/page.html with the
+  part named body in its body; its style is web/pages/node-form.css then
   web/pages/lesson-form.css, and its behaviour web/pages/lesson-form.js.
 
-  Slots, each filled once — text slots arrive escaped:
+  Its parts, by name — a part opens with a comment reading "part:" and its
+  name and runs to the next one. The body's slots, each filled once — text
+  slots arrive escaped:
     {{label}} {{id}} {{subsystem}} {{owner}} {{question}}   the row, as text
     {{kinds}} {{stations}} {{claims}}   what a lesson may say, comma-separated
     {{json}}     the lesson as the page edits it
@@ -16,7 +18,8 @@
   The block ids are what reading a filled form looks for
   (lesson_form::from_file): change one here and there together.
 -->
-<header class="nf-head"><p class="nf-kicker">VLEO design tool · lesson form</p>
+<!-- part: head --><style>
+{{css}}{{lesson_css}}</style><!-- part: title -->{{label}} — lesson form<!-- part: body --><header class="nf-head"><p class="nf-kicker">VLEO design tool · lesson form</p>
 <h1>{{label}}</h1>
 <p class="nf-id"><code>{{id}}</code> · {{subsystem}} · owner {{owner}}</p>
 <section class="nf-intro"><p><b>Answer first.</b> Write how this row is taught: the plain words, the real relation and where it comes from, where it stops being true, a slider to try it with, and a question to check yourself. Nobody writes HTML and nobody writes a formula for the page to compute — a widget names rows, and the tool computes them.</p>
@@ -31,4 +34,4 @@
 <script type="text/plain" id="vleo-lesson-rows">{{rows}}</script>
 <script type="application/octet-stream" id="vleo-method-wasm">{{wasm}}</script>
 <script>
-{{js}}</script>
+{{js}}</script><!-- end -->
