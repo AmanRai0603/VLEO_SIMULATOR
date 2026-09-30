@@ -3,7 +3,9 @@
   a node form, a lesson form, a saved result, a role guide, and each page of
   the readers' folder. The tool's own page, web/index.html, begins the same
   way. So the markup every page shares lives here, with the frontend, and a
-  change to it is one change (docs/ARCHITECTURE.html, section 5).
+  change to it is one change (docs/ARCHITECTURE.html, section 5). What each
+  page puts in its body — its fixed markup, its style, its script — is in
+  web/pages/, one file each, filled the same way (shell::fill_part).
 
   Four slots, each filled by the page's generator and by nothing else:
 

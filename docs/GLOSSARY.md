@@ -116,7 +116,9 @@ runs in the page to answer a lesson's widgets. → `docs/SHARING.md`, section 4
 **Page template** — `web/page.html`: the one page every file the tool writes
 is filled from — node and lesson forms, a saved result, the role guides, the
 readers' pages — with four slots its generator fills. A generator that writes
-a page of its own is refused by a test. → `crates/vleo-sheet/src/shell.rs`
+a page of its own is refused by a test. Each page's own fixed markup, style
+and script are files in `web/pages/`, with named slots its generator fills.
+→ `crates/vleo-sheet/src/shell.rs`
 
 **Component library** — `web/js/components.js`: every part a page is built
 from, by name — station, equation, widget, check-yourself, claim tag,

@@ -81,42 +81,28 @@ pub fn from_file(text: &str, node: Option<&str>) -> Result<(String, String), Str
 fn page(sh: &Sheet, tree: &Tree, l: &Lesson, toml_text: &str) -> String {
     let rows = format!("node {}\n{}", sh.id, lesson::rows_block(tree));
     let list = |v: &[&str]| v.join(",");
-    let body = format!(
-        "<header class=\"nf-head\"><p class=\"nf-kicker\">VLEO design tool · lesson form</p>\n\
-         <h1>{label}</h1>\n<p class=\"nf-id\"><code>{id}</code> · {subsystem} · owner {owner}</p>\n\
-         <section class=\"nf-intro\"><p><b>Answer first.</b> Write how this row is taught: the plain \
-         words, the real relation and where it comes from, where it stops being true, a slider to try \
-         it with, and a question to check yourself. Nobody writes HTML and nobody writes a formula for \
-         the page to compute — a widget names rows, and the tool computes them.</p>\n\
-         <p class=\"nf-muted\">The row asks: {question}</p>\n\
-         <p class=\"nf-muted\">The check below is the gate's own, run in this page. When it passes, \
-         press <b>save a filled copy</b> and send that file back; a developer places it with \
-         <code>cargo run -p xtask -- lesson apply &lt;file&gt;</code>.</p></section></header>\n\
-         <div class=\"nf-bar\"><button class=\"nf-primary\" id=\"ls-save\" type=\"button\">save a filled copy</button>\
-         <button id=\"ls-toml\" type=\"button\">download lesson.toml</button>\
-         <span class=\"nf-count\" id=\"ls-state\"></span></div>\n\
-         <main id=\"ls-main\"></main>\n\
-         <section class=\"ls-check\" id=\"ls-check\"><h2>The check</h2><div id=\"ls-problems\"></div></section>\n\
-         <script type=\"application/json\" id=\"vleo-lesson-schema\">{{\"kinds\":\"{kinds}\",\"stations\":\"{stations}\",\"claims\":\"{claims}\"}}</script>\n\
-         <script type=\"application/json\" id=\"vleo-lesson-json\">{json}</script>\n\
-         <textarea hidden id=\"vleo-lesson\">{toml}</textarea>\n\
-         <script type=\"text/plain\" id=\"vleo-lesson-rows\">{rows}</script>\n\
-         <script type=\"application/octet-stream\" id=\"vleo-method-wasm\">{wasm}</script>\n\
-         <script>\n{js}</script>",
-        label = he(&sh.label),
-        id = he(&sh.id),
-        subsystem = he(&sh.subsystem),
-        owner = he(&sh.owner),
-        question = he(&sh.question),
-        kinds = list(KINDS),
-        stations = list(STATIONS),
-        claims = list(CLAIMS),
-        json = lesson::json(l).replace('<', "\\u003c"),
-        toml = he(toml_text),
-        rows = rows,
-        wasm = crate::template::base64(&crate::template::checker(tree)),
-        js = LESSON_JS,
-    );
+    let wasm = crate::template::base64(&crate::template::checker(tree));
+    let (kinds, stations, claims) = (list(KINDS), list(STATIONS), list(CLAIMS));
+    let json = lesson::json(l).replace('<', "\\u003c");
+    let body = crate::shell::fill_part(
+        BODY,
+        &[
+            ("label", &he(&sh.label)),
+            ("id", &he(&sh.id)),
+            ("subsystem", &he(&sh.subsystem)),
+            ("owner", &he(&sh.owner)),
+            ("question", &he(&sh.question)),
+            ("kinds", &kinds),
+            ("stations", &stations),
+            ("claims", &claims),
+            ("json", &json),
+            ("toml", &he(toml_text)),
+            ("rows", &rows),
+            ("wasm", &wasm),
+            ("js", LESSON_JS),
+        ],
+    )
+    .unwrap_or_else(|e| panic!("web/pages/lesson-form.html: {e}"));
     crate::shell::fill(&crate::shell::Page {
         title: &format!("{} — lesson form", sh.label),
         head: &format!("<style>\n{PAGE_CSS}{LESSON_CSS}</style>"),
@@ -140,9 +126,11 @@ fn he(s: &str) -> String {
         .replace('"', "&quot;")
 }
 
+/// The page's body, with its slots (`web/pages/lesson-form.html`).
+const BODY: &str = include_str!("../../../web/pages/lesson-form.html");
 /// The node form's look, so the two forms read as one family.
-const PAGE_CSS: &str = include_str!("form_page/page.css");
-const LESSON_CSS: &str = include_str!("lesson_page/lesson.css");
+const PAGE_CSS: &str = include_str!("../../../web/pages/node-form.css");
+const LESSON_CSS: &str = include_str!("../../../web/pages/lesson-form.css");
 /// The page's behaviour: draw the lesson as fields, check it with the gate's
 /// own check, and save a copy with its blocks rewritten. No network.
-const LESSON_JS: &str = include_str!("lesson_page/lesson.js");
+const LESSON_JS: &str = include_str!("../../../web/pages/lesson-form.js");

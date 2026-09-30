@@ -62,6 +62,53 @@ pub fn fill_from(template: &str, p: &Page) -> Result<String, String> {
     Ok(o)
 }
 
+/// One part of a page from its template in `web/pages`: the note the file
+/// opens with (an HTML comment, for whoever edits the template) dropped, as is
+/// the newline the file ends with; then every `{{slot}}` filled once from
+/// `slots`, in one pass, markup placed as given.
+///
+/// A slot the template holds that is not given, or one given that the
+/// template does not hold, is refused: either is a template and a generator
+/// that have drifted apart, and the page would silently lose a part.
+pub fn fill_part(template: &str, slots: &[(&str, &str)]) -> Result<String, String> {
+    let mut rest = template;
+    if rest.starts_with("<!--") {
+        let end = rest
+            .find("-->")
+            .ok_or("the template's opening note is never closed")?;
+        rest = rest[end + 3..]
+            .strip_prefix('\n')
+            .unwrap_or(&rest[end + 3..]);
+    }
+    let rest_all = rest.strip_suffix('\n').unwrap_or(rest);
+    let mut rest = rest_all;
+    let mut used = vec![false; slots.len()];
+    let mut o = String::with_capacity(rest.len() + slots.iter().map(|s| s.1.len()).sum::<usize>());
+    while let Some(i) = rest.find("{{") {
+        o.push_str(&rest[..i]);
+        let j = rest[i..]
+            .find("}}")
+            .ok_or("a slot is opened and never closed")?
+            + i;
+        let name = &rest[i + 2..j];
+        let k = slots
+            .iter()
+            .position(|(n, _)| *n == name)
+            .ok_or_else(|| format!("the template has a slot `{name}` that nothing fills"))?;
+        o.push_str(slots[k].1);
+        used[k] = true;
+        rest = &rest[j + 2..];
+    }
+    o.push_str(rest);
+    if let Some(k) = used.iter().position(|u| !u) {
+        return Err(format!(
+            "`{}` is filled and the template has no slot for it",
+            slots[k].0
+        ));
+    }
+    Ok(o)
+}
+
 /// Whether a page is the template, filled: the template's own text, every
 /// part of it between the slots, in order, with nothing before it or after.
 /// The test every generator is held to.
@@ -138,6 +185,16 @@ mod tests {
             .unwrap_err()
             .contains("footer"));
         assert!(fill_from("<!doctype html>{{title", &Page::default()).is_err());
+    }
+
+    #[test]
+    fn a_part_is_its_template_with_every_slot_filled_and_no_other() {
+        let t = "<!--\n  a note {{not_a_slot}}\n-->\n<p>{{a}} and {{b}}</p>\n";
+        let o = fill_part(t, &[("a", "{{b}}"), ("b", "<i>x</i>")]).unwrap();
+        assert_eq!(o, "<p>{{b}} and <i>x</i></p>");
+        assert!(fill_part(t, &[("a", "1")]).unwrap_err().contains("`b`"));
+        let extra = fill_part(t, &[("a", "1"), ("b", "2"), ("c", "3")]).unwrap_err();
+        assert!(extra.contains("`c`"), "{extra}");
     }
 
     #[test]

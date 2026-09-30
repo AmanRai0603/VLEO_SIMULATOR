@@ -337,53 +337,31 @@ pub fn render(m: &Manual, role: &str, version: &str) -> Result<String, String> {
         .collect::<Vec<_>>()
         .join(" · ");
 
-    let body = format!(
-        r#"<header class="top">
-<div class="eyebrow">VLEO design tool · version {version} · the {role} guide</div>
-<h1>Guide for the {lower}</h1>
-<p class="kinds"><span class="kind k-tutorial">tutorial</span><span class="kind k-how-to">how-to</span><span class="kind k-reference">reference</span><span class="kind k-explanation">explanation</span> — each block below says which it is</p>
-<div class="controls">
-<span class="grp" role="group" aria-label="how much this page explains">depth
-<button type="button" data-depth="learn">Learn</button><button type="button" data-depth="read" class="sel">Read</button><button type="button" data-depth="expert">Expert</button></span>
-<input type="search" id="q" placeholder="find a step, a command, a word…" aria-label="find in this guide">
-<span class="others">other guides: {others}</span>
-</div>
-<p class="depth-note">Learn keeps every step, including a question to answer before you look. Read shows the answer, the plain words and the real thing. Expert keeps the answers and the commands.</p>
-</header>
-<main>
-{intro}
-<div class="eyebrow">the work, step by step</div>
-<div class="work">
-<nav class="toc" aria-label="contents"><ul>{toc}</ul></nav>
-<div class="secs">{work}<p class="none" hidden>Nothing in this guide matches.</p></div>
-</div>
-<div class="eyebrow">reference</div>
-<section class="ref"><h3>Every command for this role <span class="kind k-reference">reference</span></h3>
-<table><thead><tr><th>command</th><th>what it does</th><th>effect</th></tr></thead><tbody>{commands}</tbody></table></section>
-{cannot_block}
-</main>
-<footer><p>Generated from <code>docs/manual.toml</code> by <code>cargo run -p xtask -- guides</code>. Every command and label above is checked against the tool by the repository's tests (<code>the_manual_is_true</code>, <code>tools/manual_check.py</code>) — edit the manual, never this file. The standard it follows is <code>docs/EXPLAINING.md</code>.</p></footer>
-<script>{js}</script>"#,
-        lower = esc(&r.title.to_lowercase()),
-        role = esc(role),
-        version = esc(version),
-        others = others,
-        intro = role_intro(r),
-        toc = toc,
-        work = work,
-        commands = commands,
-        cannot_block = if cannot.is_empty() {
-            String::new()
-        } else {
-            format!(
-                "<section class=\"ref\"><h3>What you cannot do here, and where it is done \
-                 <span class=\"kind k-reference\">reference</span></h3><table><thead><tr><th>you \
-                 cannot</th><th>why</th><th>instead</th></tr></thead><tbody>{cannot}</tbody>\
-                 </table></section>"
-            )
-        },
-        js = JS,
-    );
+    let cannot_block = if cannot.is_empty() {
+        String::new()
+    } else {
+        format!(
+            "<section class=\"ref\"><h3>What you cannot do here, and where it is done \
+             <span class=\"kind k-reference\">reference</span></h3><table><thead><tr><th>you \
+             cannot</th><th>why</th><th>instead</th></tr></thead><tbody>{cannot}</tbody>\
+             </table></section>"
+        )
+    };
+    let body = crate::shell::fill_part(
+        BODY,
+        &[
+            ("version", &esc(version)),
+            ("role", &esc(role)),
+            ("lower", &esc(&r.title.to_lowercase())),
+            ("others", &others),
+            ("intro", &role_intro(r)),
+            ("toc", &toc),
+            ("work", &work),
+            ("commands", &commands),
+            ("cannot_block", &cannot_block),
+            ("js", JS),
+        ],
+    )?;
     Ok(crate::shell::fill(&crate::shell::Page {
         title: &format!("VLEO · {} guide", r.title),
         head: &format!(
@@ -395,98 +373,12 @@ pub fn render(m: &Manual, role: &str, version: &str) -> Result<String, String> {
     }))
 }
 
-const CSS: &str = r#"
-:root{--paper:#fbfaf7;--card:#fff;--ink:#1a1a1a;--ink-2:#4b4b4b;--ink-3:#8a8880;--rule:#ddd8cd;--rule-2:#ece8de;
---out:#b5731a;--out-pale:#f6e9d8;--in:#61399c;--both:#22704a;--both-pale:#dfeee6;--teal:#14807f;--teal-pale:#dcefee;
---no:#a23b2a;--mono:ui-monospace,"SF Mono","JetBrains Mono","IBM Plex Mono",Menlo,Consolas,monospace;}
-@media (prefers-color-scheme:dark){:root{--paper:#141310;--card:#1e1d19;--ink:#ecebe6;--ink-2:#b8b5ad;--ink-3:#8f8c84;
---rule:#3a382f;--rule-2:#2e2c27;--out:#d18a2b;--out-pale:#3a2c14;--in:#a98ae0;--both:#58b98a;--both-pale:#18301f;
---teal:#4cc0bd;--teal-pale:#14302f;--no:#e0826f;}}
-*{box-sizing:border-box}
-body{margin:0;background:var(--paper);color:var(--ink);font:15px/1.6 var(--mono)}
-header.top,main,footer{max-width:1100px;margin:0 auto;padding:0 24px}
-header.top{padding-top:28px}
-h1{font-weight:500;font-size:24px;margin:4px 0 6px}
-h2{font-weight:500;font-size:19px;margin:28px 0 6px}
-h3{font-weight:500;font-size:16px;margin:0 0 8px}
-h4{font-size:13px;margin:12px 0 4px;color:var(--ink-2);text-transform:uppercase;letter-spacing:.06em}
-.eyebrow{font-size:11px;letter-spacing:.13em;text-transform:uppercase;color:var(--teal);margin:26px 0 8px}
-.kinds{color:var(--ink-3);font-size:12px;margin:0 0 10px}
-.kind{display:inline-block;font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;border:1px solid currentColor;border-radius:3px;padding:0 5px;margin:0 4px 0 0;vertical-align:middle}
-.k-tutorial{color:var(--in)}.k-how-to{color:var(--teal)}.k-reference{color:var(--ink-3)}.k-explanation{color:var(--both)}
-.controls{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center}
-.grp{color:var(--ink-3);font-size:12px}
-.grp button{font:inherit;font-size:12px;margin-left:4px;padding:3px 10px;border:1px solid var(--rule);background:var(--card);color:var(--ink);border-radius:3px;cursor:pointer}
-.grp button.sel{background:var(--ink);color:var(--paper);border-color:var(--ink)}
-#q{font:inherit;font-size:13px;flex:1;min-width:200px;padding:5px 8px;border:1px solid var(--rule);border-radius:3px;background:var(--card);color:var(--ink)}
-.others{font-size:12px;color:var(--ink-3)}.others a{color:var(--teal)}
-.depth-note{font-size:12px;color:var(--ink-3);margin:8px 0 0}
-.af,.answer{border-left:3px solid var(--both);background:var(--both-pale);padding:8px 12px;border-radius:0 3px 3px 0}
-.af p{margin:4px 0 0;font-size:16px}
-.lbl{display:block;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--both);margin-bottom:2px}
-.tag{display:inline-block;font-size:10.5px;border:1px solid currentColor;border-radius:3px;padding:0 5px;margin-left:6px;text-transform:none;letter-spacing:0}
-.tag.decl{color:var(--ink-3)}.tag.ill{color:var(--in);border:none;padding:0;margin:0;font-size:12px}
-.tag.ok{color:var(--both)}.tag.writes{color:var(--out)}.tag.refuse{color:var(--no)}
-.cgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
-.card{position:relative;background:var(--card);border:1px solid var(--rule);border-radius:4px;padding:14px 16px 12px 46px}
-.card .n{position:absolute;left:12px;top:12px;width:24px;height:24px;border-radius:50%;background:var(--ink);color:var(--paper);font-size:12px;display:flex;align-items:center;justify-content:center}
-.card.s3{border-left:3px solid var(--out)}
-.card ul{padding-left:18px;margin:4px 0}.never li::marker{content:"✕  ";color:var(--no)}
-details summary{cursor:pointer;color:var(--teal)}
-.wrong{margin-top:12px;border-left:3px solid var(--no);background:var(--card);padding:8px 12px;border-radius:0 3px 3px 0}
-.wrong .lbl{color:var(--no)}.wrong .w{text-decoration:line-through;text-decoration-color:var(--no);color:var(--ink-2)}
-svg.loop{width:100%;height:auto;margin:6px 0}
-svg.loop .lane rect{fill:var(--paper);stroke:var(--rule)}
-svg.loop .lane.on rect{fill:var(--out-pale);stroke:var(--out);stroke-width:1.5}
-svg.loop .who{font:600 12px var(--mono);fill:var(--ink-3)}svg.loop .lane.on .who{fill:var(--out)}
-svg.loop .step rect{fill:var(--card);stroke:var(--ink-3)}
-svg.loop .step text{font:12px var(--mono);fill:var(--ink)}
-svg.loop .flow{fill:none;stroke:var(--ink-3);stroke-dasharray:3 3}
-.work{display:grid;grid-template-columns:240px minmax(0,1fr);gap:24px;align-items:start}
-.toc{position:sticky;top:12px;max-height:calc(100vh - 24px);overflow:auto;font-size:12.5px}
-.toc ul{list-style:none;padding:0;margin:0}.toc li{margin:2px 0}.toc .tl{margin-top:12px;color:var(--ink-3);text-transform:uppercase;font-size:10.5px;letter-spacing:.1em}
-.toc a{color:var(--ink-2);text-decoration:none}.toc a:hover{color:var(--teal)}
-.layer h2{border-bottom:1px solid var(--rule);padding-bottom:4px}
-.lede{color:var(--ink-2)}
-.sec{background:var(--card);border:1px solid var(--rule);border-radius:4px;padding:14px 16px;margin:12px 0}
-.sec .body{color:var(--ink-2)}
-.steps{padding-left:20px;margin:10px 0 0}.steps li{margin:10px 0}
-.ui{font-size:13px;color:var(--ink-3)}.uilabel{color:var(--ink);border:1px solid var(--rule);border-radius:3px;padding:0 5px;background:var(--paper)}
-.cmd{display:flex;gap:8px;align-items:flex-start;margin-top:6px;background:var(--paper);border:1px solid var(--rule-2);border-radius:3px;padding:6px 8px}
-.cmd code{flex:1;white-space:pre-wrap;word-break:break-word;font-size:13px}
-.copy{font:inherit;font-size:11px;padding:1px 8px;border:1px solid var(--rule);border-radius:3px;background:var(--card);color:var(--ink-2);cursor:pointer}
-.why{font-size:12.5px;color:var(--ink-3);margin-top:2px}
-code{font-family:var(--mono)}
-.af code,.card code,.sec code,.ref code,.wrong code,.lede code{background:var(--rule-2);border-radius:2px;padding:0 4px;color:var(--ink)}
-.cmd code{background:none;padding:0}
-table{width:100%;border-collapse:collapse;font-size:13px}
-th,td{text-align:left;vertical-align:top;border-top:1px solid var(--rule-2);padding:6px 8px}
-th{color:var(--ink-3);font-weight:500;font-size:11px;text-transform:uppercase;letter-spacing:.06em}
-.ref{background:var(--card);border:1px solid var(--rule);border-radius:4px;padding:14px 16px;margin:12px 0;overflow-x:auto}
-footer{color:var(--ink-3);font-size:12px;padding-bottom:40px;margin-top:24px}
-body[data-depth="read"] .d-l,body[data-depth="expert"] .d-l,body[data-depth="expert"] .d-lr{display:none}
-.sec.hide{display:none}
-@media (max-width:760px){header.top,main,footer{padding:0 16px}.cgrid{grid-template-columns:1fr}.work{grid-template-columns:1fr}.toc{position:static;max-height:none}}
-"#;
+/// The guide's body, with its slots (`web/pages/guide.html`).
+const BODY: &str = include_str!("../../../web/pages/guide.html");
 
-const JS: &str = r#"
-(function(){
-  var key='vleo-guide-depth';
-  function set(d){document.body.dataset.depth=d;
-    document.querySelectorAll('[data-depth]').forEach(function(b){if(b.tagName==='BUTTON')b.classList.toggle('sel',b.dataset.depth===d);});
-    try{localStorage.setItem(key,d);}catch(e){}}
-  try{var s=localStorage.getItem(key);if(s)set(s);}catch(e){}
-  document.querySelectorAll('button[data-depth]').forEach(function(b){b.onclick=function(){set(b.dataset.depth);};});
-  var q=document.getElementById('q'),none=document.querySelector('.none');
-  q.addEventListener('input',function(){var t=q.value.trim().toLowerCase(),shown=0;
-    document.querySelectorAll('.sec').forEach(function(s){var hit=!t||s.dataset.text.indexOf(t)>=0||s.textContent.toLowerCase().indexOf(t)>=0;
-      s.classList.toggle('hide',!hit);if(hit)shown++;});
-    none.hidden=shown>0;});
-  document.addEventListener('click',function(e){var b=e.target.closest&&e.target.closest('.copy');if(!b)return;
-    var done=function(){b.textContent='copied';setTimeout(function(){b.textContent='copy';},1200);};
-    if(navigator.clipboard)navigator.clipboard.writeText(b.dataset.copy).then(done,function(){});else done();});
-})();
-"#;
+const CSS: &str = include_str!("../../../web/pages/guide.css");
+
+const JS: &str = include_str!("../../../web/pages/guide.js");
 
 #[cfg(test)]
 mod tests {

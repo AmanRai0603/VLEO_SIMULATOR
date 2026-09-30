@@ -1,0 +1,34 @@
+<!--
+  THE LESSON FORM — the body of the page `xtask lesson form <node>` writes,
+  filled by vleo-sheet/src/lesson_form.rs. The whole page is web/page.html
+  with this in its body; its style is web/pages/node-form.css then
+  web/pages/lesson-form.css, and its behaviour web/pages/lesson-form.js.
+
+  Slots, each filled once — text slots arrive escaped:
+    {{label}} {{id}} {{subsystem}} {{owner}} {{question}}   the row, as text
+    {{kinds}} {{stations}} {{claims}}   what a lesson may say, comma-separated
+    {{json}}     the lesson as the page edits it
+    {{toml}}     the lesson as TOML, HTML-escaped — what comes back
+    {{rows}}     `node <id>` and the tree's rows, for the check
+    {{wasm}}     the checker every form carries, gzipped, as base64
+    {{js}}       web/pages/lesson-form.js
+
+  The block ids are what reading a filled form looks for
+  (lesson_form::from_file): change one here and there together.
+-->
+<header class="nf-head"><p class="nf-kicker">VLEO design tool · lesson form</p>
+<h1>{{label}}</h1>
+<p class="nf-id"><code>{{id}}</code> · {{subsystem}} · owner {{owner}}</p>
+<section class="nf-intro"><p><b>Answer first.</b> Write how this row is taught: the plain words, the real relation and where it comes from, where it stops being true, a slider to try it with, and a question to check yourself. Nobody writes HTML and nobody writes a formula for the page to compute — a widget names rows, and the tool computes them.</p>
+<p class="nf-muted">The row asks: {{question}}</p>
+<p class="nf-muted">The check below is the gate's own, run in this page. When it passes, press <b>save a filled copy</b> and send that file back; a developer places it with <code>cargo run -p xtask -- lesson apply &lt;file&gt;</code>.</p></section></header>
+<div class="nf-bar"><button class="nf-primary" id="ls-save" type="button">save a filled copy</button><button id="ls-toml" type="button">download lesson.toml</button><span class="nf-count" id="ls-state"></span></div>
+<main id="ls-main"></main>
+<section class="ls-check" id="ls-check"><h2>The check</h2><div id="ls-problems"></div></section>
+<script type="application/json" id="vleo-lesson-schema">{"kinds":"{{kinds}}","stations":"{{stations}}","claims":"{{claims}}"}</script>
+<script type="application/json" id="vleo-lesson-json">{{json}}</script>
+<textarea hidden id="vleo-lesson">{{toml}}</textarea>
+<script type="text/plain" id="vleo-lesson-rows">{{rows}}</script>
+<script type="application/octet-stream" id="vleo-method-wasm">{{wasm}}</script>
+<script>
+{{js}}</script>

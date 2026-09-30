@@ -904,49 +904,20 @@ fn page(
     data: &str,
     checker: &[u8],
 ) -> String {
-    let mut o = String::with_capacity(160 * 1024);
-    o.push_str(
-        "<header class=\"nf-head\">\n<p class=\"nf-kicker\">VLEO design tool · node form</p>\n",
-    );
-    o.push_str(head);
-    o.push_str(INTRO_HTML);
-    o.push_str("</header>\n");
-    o.push_str(
-        "<noscript><p class=\"nf-warn\">This page fills itself in with JavaScript. Without it, \
-         open this file in a text editor and edit the block marked <code>vleo-node-form</code> \
-         near the end — it is plain TOML, and every question is asked in the comments above \
-         it.</p></noscript>\n",
-    );
-    o.push_str("<main id=\"nf\"></main>\n");
-    o.push_str(&format!(
-        "<script type=\"application/json\" id=\"vleo-node-schema\">\n{}</script>\n",
-        schema
-    ));
-    o.push_str(&format!(
-        "<!-- The node as it was when this form was made. Do not edit: the developers compare \
-         it with the node as it is when the form comes back, so a change made meanwhile is not \
-         overwritten. -->\n<script type=\"application/toml\" id=\"{ORIGINAL_ID}\">\n{}</script>\n",
-        original
-    ));
-    o.push_str(&format!(
-        "<!-- THE FORM'S CONTENT. This block is what the developers read. Fill it on the page \
-         above, or edit it here directly — by hand, or with an assistant: it is TOML, one key \
-         per question, and [[input]], [[algorithm]], [[theory]], [[assumption]] and \
-         [[known_value]] repeat. Say in [filled_by] ai = \"none\", \"wording\" or \"relation\" \
-         how an assistant helped, and in [derisk] why the node is changing: what we believed, \
-         what we tested, what we now know, what changes, and what it rests on now. On a new node's form, [new] says where it goes: its id, the \
-         group it hangs under, and its kind. -->\n<script type=\"application/toml\" id=\"{DATA_ID}\">\n{}</script>\n",
-        data
-    ));
     // The method checker, gzipped, as base64. Never edited, and carried into every
     // saved copy, so a filled form still checks its method wherever it goes.
-    o.push_str(&format!(
-        "<script type=\"application/octet-stream\" id=\"vleo-method-wasm\">{}</script>\n",
-        base64(checker)
-    ));
-    o.push_str("<script>\n");
-    o.push_str(PAGE_JS);
-    o.push_str("</script>");
+    let o = crate::shell::fill_part(
+        BODY,
+        &[
+            ("heading", head),
+            ("schema", schema),
+            ("original", original),
+            ("data", data),
+            ("checker", &base64(checker)),
+            ("script", PAGE_JS),
+        ],
+    )
+    .unwrap_or_else(|e| panic!("web/pages/node-form.html: {e}"));
     crate::shell::fill(&crate::shell::Page {
         title,
         head: &format!("<style>\n{PAGE_CSS}</style>"),
@@ -2221,46 +2192,14 @@ fn fixture_inputs(said: &str, inputs: &[BTreeMap<String, String>]) -> Option<Str
 // ---------------------------------------------------------------------------
 // the page
 
-const INTRO_HTML: &str = r#"<section class="nf-intro">
-<p class="nf-answer"><b>Answer first.</b> This file asks for one node of the design to change — or
-for a new one — and it is the whole of the request: it needs no connection and nothing installed.
-Fill in what you know, say why it is changing, save a copy and send it to the maintainer. They check
-it, build it in, and send you a preview of your change to try; when it gives what you expect, you
-approve it, and the next release carries it for everyone.</p>
-<ol>
-<li><b>What is asked.</b> Every question the node answers, in the order it is read: what it is
-called and asks, <i>said simply</i>, the relation and where it comes from, the answer and its
-bounds, what it reads, and <i>where the simple version breaks</i>. Each question says why it is
-asked, and <i>Show the example</i> beside it shows the same question answered for one worked
-node. Leave what you cannot answer as it is.</li>
-<li><b>The method, your code, your cases.</b> Write the relation once more as a <i>method</i> — a
-few lines in a small fixed language — paste the code you wrote and tested, and give at least three
-test cases your code answered and one it refuses. The page runs your method on your cases as you
-type, with the same checker the maintainer runs: a case that disagrees is shown before you send
-anything. Flight software that belongs to this node can be kept here with its test.</li>
-<li><b>Why it is changing.</b> A node changes because a belief broke. If your changes move what
-the node computes — an input, the output, the model, the maths, the algorithm, how it is drawn —
-the section <i>Why it is changing</i> must say what was believed, what was tested, what we now
-know and what changes. Without it only your wording is applied. A worked example is in that
-section.</li>
-<li><b>What is not yours to change here.</b> Where the node sits in the tree, its kind and its
-owner are the developers'. If an assistant helped with the <b>relation</b> itself — the equation,
-its steps, its derivation, the method, your code or your cases — say so: those are then never
-taken from the form. Known values go under <i>known values</i>, with their source.</li>
-</ol>
-<p class="nf-muted">Tags: <span class="nf-tag req">needed</span> blocks the node until answered ·
-<span class="nf-tag rel">the relation</span> never taken from an assistant ·
-<span class="nf-tag dr">decision</span> moving it needs <i>why it is changing</i>. To fill it with
-an assistant, give it this file and ask it to edit only the block marked
-<code>vleo-node-form</code> near the end: plain TOML, one line per answer.</p>
-</section>
-"#;
+/// The page's body, with its slots (`web/pages/node-form.html`).
+const BODY: &str = include_str!("../../../web/pages/node-form.html");
 
-const PAGE_CSS: &str = include_str!("form_page/page.css");
+const PAGE_CSS: &str = include_str!("../../../web/pages/node-form.css");
 
 /// The page's behaviour: read the two blocks, draw the form, and save a copy
 /// with the data block rewritten. No network, no libraries.
-const PAGE_JS: &str = include_str!("form_page/page.js");
+const PAGE_JS: &str = include_str!("../../../web/pages/node-form.js");
 
 #[cfg(test)]
 mod tests {

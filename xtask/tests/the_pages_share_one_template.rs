@@ -11,6 +11,9 @@
 //!                                    HTML document, so a new generator that
 //!                                    writes its own is refused here, by name
 //!
+//! and every page's style, script and fixed markup is a file in `web/pages`,
+//! never a string in a generator;
+//!
 //! and the fonts the face names (`web/app.css`) are in `web/fonts`, with
 //! their licence, and nothing the face or the template names is fetched from
 //! anywhere else.
@@ -76,6 +79,37 @@ fn sources() -> Vec<(String, String)> {
         walk(&r.join(d), &r, &mut out);
     }
     out
+}
+
+/// Rust sources that carry a page's style or behaviour themselves, or take a
+/// page's markup, style or script from anywhere but `web/`. Style is found by
+/// its `:root` rule, behaviour by the DOM calls every page script makes.
+fn page_code_in_rust(files: &[(String, String)], root: &Path) -> Vec<String> {
+    let mut bad = Vec::new();
+    for (p, text) in files.iter().filter(|(p, _)| p.ends_with(".rs")) {
+        for needle in [":root{", ":root {", "addEventListener(", "querySelector("] {
+            if text.contains(needle) {
+                bad.push(format!(
+                    "{p} carries page code (`{needle}`) — it belongs in web/pages"
+                ));
+            }
+        }
+        for part in text.split("include_str!(\"").skip(1) {
+            let target = &part[..part.find('"').unwrap_or(0)];
+            if ![".css", ".js", ".html"].iter().any(|x| target.ends_with(x)) {
+                continue;
+            }
+            let at = root.join(p).parent().unwrap().join(target);
+            let under_web = at
+                .canonicalize()
+                .map(|a| a.starts_with(root.join("web")))
+                .unwrap_or(false);
+            if !under_web {
+                bad.push(format!("{p} takes {target} from outside web/"));
+            }
+        }
+    }
+    bad
 }
 
 /// What is wrong with the face's fonts: a font the stylesheet names that is
@@ -172,6 +206,30 @@ fn every_page_a_generator_writes_is_the_template_filled() {
 }
 
 #[test]
+fn every_page_s_markup_style_and_script_lives_in_web() {
+    let r = root();
+    let all = sources();
+    let bad = page_code_in_rust(&all, &r);
+    assert!(bad.is_empty(), "{bad:#?}");
+    // And nothing in web/pages is a leftover no generator reads.
+    let rust: String = all
+        .iter()
+        .filter(|(p, _)| p.ends_with(".rs"))
+        .map(|(_, t)| t.as_str())
+        .collect();
+    for e in std::fs::read_dir(r.join("web/pages"))
+        .expect("web/pages")
+        .flatten()
+    {
+        let name = e.file_name().to_string_lossy().into_owned();
+        assert!(
+            rust.contains(&format!("web/pages/{name}\")")),
+            "web/pages/{name} is read by no generator"
+        );
+    }
+}
+
+#[test]
 fn the_tools_own_page_begins_as_the_template_does() {
     let t = shell::fill(&shell::Page::default());
     let head = &t[..t.find("<title>").unwrap()];
@@ -199,6 +257,34 @@ fn a_generator_writing_its_own_page_is_named() {
         ),
     ];
     assert_eq!(own_documents(&files), vec!["own.rs".to_string()]);
+}
+
+#[test]
+fn page_code_left_in_rust_is_named() {
+    let r = root();
+    let files = vec![
+        (
+            "xtask/src/fine.rs".to_string(),
+            "include_str!(\"../../web/pages/readers.css\")".to_string(),
+        ),
+        (
+            "xtask/src/css.rs".to_string(),
+            "const C: &str = \":root{--ink:#000}\";".to_string(),
+        ),
+        (
+            "xtask/src/js.rs".to_string(),
+            "\"b.addEventListener('click', f)\"".to_string(),
+        ),
+        (
+            "xtask/src/away.rs".to_string(),
+            "include_str!(\"page/form.css\")".to_string(),
+        ),
+    ];
+    let bad = page_code_in_rust(&files, &r);
+    assert_eq!(bad.len(), 3, "{bad:#?}");
+    for f in ["css.rs", "js.rs", "away.rs"] {
+        assert!(bad.iter().any(|b| b.contains(f)), "{f} not named: {bad:#?}");
+    }
 }
 
 #[test]

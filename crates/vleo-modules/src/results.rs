@@ -1369,25 +1369,7 @@ pub fn unwrap_report(text: &str) -> String {
     text[open..close].replace("<\\/", "</")
 }
 
-const REPORT_CSS: &str = ":root { --paper:#faf9f5; --card:#fff; --ink:#1f1e1b; --ink2:#55524a; --rule:#dedbd2; --accent:#6b3fa0; }
-@media (prefers-color-scheme: dark) { :root { --paper:#1b1a18; --card:#23221f; --ink:#ecebe6; --ink2:#b3afa5; --rule:#3a3833; --accent:#b99ae0; } }
-body { margin: 0 auto; max-width: 980px; padding: 0 16px 48px; background: var(--paper); color: var(--ink);
-  font: 15px/1.5 system-ui, -apple-system, 'Segoe UI', sans-serif; }
-.k { font: 12px ui-monospace, Menlo, monospace; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); margin: 28px 0 4px; }
-h1 { font: 600 22px ui-monospace, Menlo, monospace; margin: 0; }
-h2 { font-size: 16px; margin: 28px 0 6px; border-bottom: 1px solid var(--rule); padding-bottom: 4px; }
-.answer { font-size: 30px; font-weight: 600; margin: 6px 0; }
-.m { color: var(--ink2); font-size: 13px; margin: 4px 0; }
-code { font: 12.5px ui-monospace, Menlo, monospace; }
-table { width: 100%; border-collapse: collapse; font-size: 13px; background: var(--card); }
-th, td { text-align: left; padding: 4px 8px; border-bottom: 1px solid var(--rule); vertical-align: top; overflow-wrap: anywhere; }
-th { font-weight: 500; color: var(--ink2); }
-details { margin-top: 24px; }
-.af { border-left: 3px solid var(--accent); padding: 4px 14px 8px; margin: 10px 0; background: var(--card); }
-.afk { font: 11px ui-monospace, Menlo, monospace; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); margin: 6px 0 0; }
-.af ul { margin: 4px 0; padding-left: 18px; font-size: 14px; }
-.dx, .claim { font: 10.5px ui-monospace, Menlo, monospace; border: 1px solid var(--rule); border-radius: 3px; padding: 0 5px; color: var(--ink2); font-weight: 400; vertical-align: 2px; }
-";
+const REPORT_CSS: &str = include_str!("../../../web/pages/report.css");
 
 // ---------------------------------------------------------------------------
 // kept on disk

@@ -216,6 +216,8 @@ def run(folder, answers_out, chromium):
             sample = sample[:: max(1, len(sample) // 25)] + ["sw_ap_design.html"]
             for name in sample:
                 pg.goto((folder / "rows" / name).as_uri())
+                if not pg.locator("article.node").count():
+                    found.append(("1 pages", "%s does not carry the row's generated page" % name))
                 tabs = pg.locator(".tabs .tab")
                 if tabs.count() > 1:
                     tabs.nth(1).click()
