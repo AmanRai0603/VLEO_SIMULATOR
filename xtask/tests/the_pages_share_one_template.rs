@@ -112,6 +112,55 @@ fn page_code_in_rust(files: &[(String, String)], root: &Path) -> Vec<String> {
     bad
 }
 
+/// The markup a Rust source writes itself: every string literal that holds a
+/// tag. For a generator whose every tag is in its parts file, there is none.
+fn markup_in_strings(src: &str) -> Vec<String> {
+    let mut found = Vec::new();
+    let code = src.split("#[cfg(test)]").next().unwrap_or(src);
+    for line in code.lines() {
+        let l = line.trim_start();
+        if l.starts_with("//") {
+            continue;
+        }
+        let mut in_str = false;
+        let mut lit = String::new();
+        let mut chars = l.chars().peekable();
+        while let Some(c) = chars.next() {
+            match (in_str, c) {
+                (false, '\'') => {
+                    // a char literal, such as '"' — step over it
+                    if chars.peek() == Some(&'\\') {
+                        chars.next();
+                    }
+                    chars.next();
+                    chars.next();
+                }
+                (false, '"') => {
+                    in_str = true;
+                    lit.clear();
+                }
+                (true, '\\') => {
+                    chars.next();
+                }
+                (true, '"') => {
+                    in_str = false;
+                    let tagged = lit.char_indices().any(|(i, ch)| {
+                        ch == '<'
+                            && lit[i + 1..]
+                                .starts_with(|n: char| n.is_ascii_lowercase() || n == '/')
+                    });
+                    if tagged {
+                        found.push(lit.clone());
+                    }
+                }
+                (true, ch) => lit.push(ch),
+                _ => {}
+            }
+        }
+    }
+    found
+}
+
 /// What is wrong with the face's fonts: a font the stylesheet names that is
 /// not in the folder, a font in the folder nobody names, a licence missing,
 /// or anything fetched from elsewhere.
@@ -230,6 +279,35 @@ fn every_page_s_markup_style_and_script_lives_in_web() {
 }
 
 #[test]
+fn a_row_page_is_its_parts_and_nothing_else() {
+    let src = read("crates/vleo-sheet/src/page.rs");
+    let own = markup_in_strings(&src);
+    assert!(
+        own.is_empty(),
+        "crates/vleo-sheet/src/page.rs writes markup of its own — it belongs in \
+         web/pages/row.html: {own:#?}"
+    );
+    // And every part there is one the generator asks for: by its name, or —
+    // for a family chosen by the data, such as a claim's title — by the
+    // family's prefix.
+    let text: &'static str = Box::leak(read("web/pages/row.html").into_boxed_str());
+    let parts = shell::Parts::parse("web/pages/row.html", text).expect("row.html reads");
+    for name in parts.names() {
+        let family = ["claim-title-", "kind-title-", "tier-blind-"]
+            .iter()
+            .find(|p| name.starts_with(*p));
+        let used = match family {
+            Some(p) => src.contains(&format!("\"{p}")),
+            None => src.contains(&format!("\"{name}\"")),
+        };
+        assert!(
+            used,
+            "web/pages/row.html has a part `{name}` the generator never uses"
+        );
+    }
+}
+
+#[test]
 fn the_tools_own_page_begins_as_the_template_does() {
     let t = shell::fill(&shell::Page::default());
     let head = &t[..t.find("<title>").unwrap()];
@@ -285,6 +363,22 @@ fn page_code_left_in_rust_is_named() {
     for f in ["css.rs", "js.rs", "away.rs"] {
         assert!(bad.iter().any(|b| b.contains(f)), "{f} not named: {bad:#?}");
     }
+}
+
+#[test]
+fn markup_written_in_a_string_is_found() {
+    let src = r#"
+        // a comment with <b>markup</b> is not a string
+        let q = '"';
+        o.push_str(t("tabs-open"));
+        o.push_str("<p class=\"x\">hi</p>");
+        let a = format!("{} < {}", 1, 2);
+        let b = "a </i> close";
+    "#;
+    let found = markup_in_strings(src);
+    assert_eq!(found.len(), 2, "{found:#?}");
+    assert!(found[0].contains("<p"), "{found:#?}");
+    assert!(found[1].contains("</i>"), "{found:#?}");
 }
 
 #[test]

@@ -80,8 +80,13 @@ pub fn fill_part(template: &str, slots: &[(&str, &str)]) -> Result<String, Strin
             .strip_prefix('\n')
             .unwrap_or(&rest[end + 3..]);
     }
-    let rest_all = rest.strip_suffix('\n').unwrap_or(rest);
-    let mut rest = rest_all;
+    fill_slots(rest.strip_suffix('\n').unwrap_or(rest), slots)
+}
+
+/// Every `{{slot}}` in `text` filled once from `slots`, in one pass; a slot
+/// with nothing to fill it, or a filling with no slot, refused.
+fn fill_slots(text: &str, slots: &[(&str, &str)]) -> Result<String, String> {
+    let mut rest = text;
     let mut used = vec![false; slots.len()];
     let mut o = String::with_capacity(rest.len() + slots.iter().map(|s| s.1.len()).sum::<usize>());
     while let Some(i) = rest.find("{{") {
@@ -107,6 +112,79 @@ pub fn fill_part(template: &str, slots: &[(&str, &str)]) -> Result<String, Strin
         ));
     }
     Ok(o)
+}
+
+/// A template file of named parts, for a page whose shape the data decides —
+/// a row's page, where a tab may be empty, a table has a row per input and a
+/// section appears only when the sheet says something.
+///
+/// `<!-- part: name -->` opens a part, which runs to the next marker; the file
+/// ends with `<!-- end -->`, and anything before the first part is the file's
+/// note. The newline straight after a marker is the marker's, so a part
+/// written on its own lines ends with a newline and one closed by the next
+/// marker on the same line does not.
+pub struct Parts {
+    file: &'static str,
+    parts: std::collections::BTreeMap<&'static str, &'static str>,
+}
+
+impl Parts {
+    /// Read a parts file; `file` is its path, for the messages.
+    pub fn parse(file: &'static str, text: &'static str) -> Result<Parts, String> {
+        const OPEN: &str = "<!-- part: ";
+        let end = text
+            .rfind("<!-- end -->")
+            .ok_or_else(|| format!("{file} does not end with <!-- end -->"))?;
+        let body = &text[..end];
+        // The file's own note comes first, and may well quote a marker.
+        let from = match body.strip_prefix("<!--") {
+            Some(_) if !body.starts_with(OPEN) => body
+                .find("-->")
+                .map(|k| k + 3)
+                .ok_or_else(|| format!("{file}: the opening note is never closed"))?,
+            _ => 0,
+        };
+        let mut parts = std::collections::BTreeMap::new();
+        let mut at = body[from..].find(OPEN).map(|k| k + from);
+        while let Some(i) = at {
+            let close = body[i..]
+                .find("-->")
+                .ok_or_else(|| format!("{file}: a part marker is never closed"))?
+                + i;
+            let name = body[i + OPEN.len()..close].trim();
+            let start = close + 3;
+            let start = if body[start..].starts_with('\n') {
+                start + 1
+            } else {
+                start
+            };
+            let next = body[start..].find(OPEN).map(|k| k + start);
+            let stop = next.unwrap_or(body.len());
+            if parts.insert(name, &body[start..stop]).is_some() {
+                return Err(format!("{file}: the part `{name}` is written twice"));
+            }
+            at = next;
+        }
+        Ok(Parts { file, parts })
+    }
+
+    /// A part as it is written.
+    pub fn text(&self, name: &str) -> &'static str {
+        self.parts
+            .get(name)
+            .unwrap_or_else(|| panic!("{} has no part `{name}`", self.file))
+    }
+
+    /// A part with its slots filled.
+    pub fn fill(&self, name: &str, slots: &[(&str, &str)]) -> String {
+        fill_slots(self.text(name), slots)
+            .unwrap_or_else(|e| panic!("{}, part `{name}`: {e}", self.file))
+    }
+
+    /// Every part's name.
+    pub fn names(&self) -> impl Iterator<Item = &&'static str> {
+        self.parts.keys()
+    }
 }
 
 /// Whether a page is the template, filled: the template's own text, every
@@ -195,6 +273,18 @@ mod tests {
         assert!(fill_part(t, &[("a", "1")]).unwrap_err().contains("`b`"));
         let extra = fill_part(t, &[("a", "1"), ("b", "2"), ("c", "3")]).unwrap_err();
         assert!(extra.contains("`c`"), "{extra}");
+    }
+
+    #[test]
+    fn parts_are_read_by_name_and_end_where_the_next_begins() {
+        let t = "<!-- note quoting <!-- part: q --> -->\n<!-- part: a -->\n<p>{{x}}</p>\n<!-- part: b --><i>{{y}}</i><!-- part: c -->z<!-- end -->\n";
+        let p = Parts::parse("t.html", t).unwrap();
+        assert_eq!(p.text("a"), "<p>{{x}}</p>\n");
+        assert_eq!(p.fill("b", &[("y", "1")]), "<i>1</i>");
+        assert_eq!(p.text("c"), "z");
+        assert_eq!(p.names().count(), 3);
+        assert!(Parts::parse("t.html", "<!-- part: a -->x").is_err());
+        assert!(Parts::parse("t.html", "<!-- part: a -->x<!-- part: a -->y<!-- end -->").is_err());
     }
 
     #[test]
