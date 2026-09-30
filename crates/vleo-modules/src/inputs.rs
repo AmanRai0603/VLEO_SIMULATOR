@@ -693,7 +693,7 @@ pub mod saved {
             });
         }
         let backup = backup_path(path, &note.from);
-        let kept = write_whole(&backup, &text);
+        let kept = std::fs::write(&backup, &text);
         note.backup = Some(backup.display().to_string());
         let upgraded = csv_with(&r.set, Some(&note));
         let written = kept.and_then(|_| write_whole(path, &upgraded));
@@ -747,9 +747,13 @@ pub mod saved {
         LOCK.lock().unwrap_or_else(|e| e.into_inner())
     }
 
-    /// Written beside itself, flushed, and renamed over (`crate::files`).
+    /// Written beside itself and renamed over, which replaces it in one step.
     fn write_whole(path: &Path, text: &str) -> std::io::Result<()> {
-        crate::files::write_whole(path, text)
+        let mut tmp = path.as_os_str().to_owned();
+        tmp.push(".writing");
+        let tmp = PathBuf::from(tmp);
+        std::fs::write(&tmp, text)?;
+        std::fs::rename(&tmp, path)
     }
 
     /// Beside the case, named for the template it was written for, and never

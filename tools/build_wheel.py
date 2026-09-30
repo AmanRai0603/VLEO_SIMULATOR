@@ -60,18 +60,6 @@ Tag: py3-none-any
 """
 
 
-#: What pip installs as commands. `vleo-design-tool` starts the tool in a
-#: terminal; `vleo-app` is a GUI script, which pip on Windows makes a
-#: launcher that runs without a console window — the desktop app from the one
-#: file, on a laptop that may not run downloaded programs.
-ENTRY_POINTS = """[console_scripts]
-vleo-design-tool = vleo.__main__:main
-
-[gui_scripts]
-vleo-app = vleo.__main__:app
-"""
-
-
 def record_hash(data):
     digest = hashlib.sha256(data).digest()
     return "sha256=" + base64.urlsafe_b64encode(digest).rstrip(b"=").decode("ascii")
@@ -100,7 +88,6 @@ def contents(version, kit, natives, preview=None):
     info = "vleo-%s.dist-info" % version
     out.append((info + "/METADATA", METADATA.format(version=version).encode()))
     out.append((info + "/WHEEL", WHEEL.encode()))
-    out.append((info + "/entry_points.txt", ENTRY_POINTS.encode()))
     return out, info
 
 
@@ -173,7 +160,6 @@ def selftest():
                      "vleo/_native/windows-x86_64/_vleo.pyd",
                      "vleo/_kit/web/index.html",
                      "vleo-9.9.9.dist-info/METADATA", "vleo-9.9.9.dist-info/WHEEL",
-                     "vleo-9.9.9.dist-info/entry_points.txt",
                      "vleo-9.9.9.dist-info/RECORD"):
             if need not in names:
                 failures.append("the wheel is missing " + need)

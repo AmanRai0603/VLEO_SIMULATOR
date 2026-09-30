@@ -14,8 +14,6 @@ vleo-sheet = { workspace = true }
 vleo-units = { workspace = true }
 vleo-data = { workspace = true }
 toml = { workspace = true }
-# Tooling only: edits a sheet key by key and keeps every comment in it.
-toml_edit = "0.22"
 
 [lints.rust]
 unsafe_code = "forbid"

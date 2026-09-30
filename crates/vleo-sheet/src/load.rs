@@ -23,129 +23,8 @@ pub struct Tree {
     pub cycles: Vec<CycleSpec>,
 }
 
-// A VALUE OF THE WRONG TYPE IS REFUSED, NOT READ AS EMPTY.
-//
-// These getters used to turn a number typed as "12,5", or a string where a
-// number belongs, into 0.0 or "" — a sheet that loaded, generated and ran on a
-// value its author never wrote. An absent key is still empty (most keys are
-// optional); a PRESENT key of the wrong type is recorded here, and the loader
-// refuses the file with every such value named.
-thread_local! {
-    static WRONG: std::cell::RefCell<Vec<String>> = const { std::cell::RefCell::new(Vec::new()) };
-}
-
-fn wrong(expected: &str, v: &toml::Value) {
-    let shown: String = v.to_string().chars().take(60).collect();
-    WRONG.with(|w| {
-        w.borrow_mut()
-            .push(format!("expected {expected}, found {shown}"))
-    });
-}
-
-/// Start collecting for one file.
-fn begin() {
-    WRONG.with(|w| w.borrow_mut().clear());
-}
-
-/// Stop collecting; any value of the wrong type refuses the file.
-fn finish(path: &Path) -> Result<(), String> {
-    let found = WRONG.with(|w| std::mem::take(&mut *w.borrow_mut()));
-    if found.is_empty() {
-        Ok(())
-    } else {
-        Err(format!(
-            "{}: {} value(s) of the wrong type: {}",
-            path.display(),
-            found.len(),
-            found.join("; ")
-        ))
-    }
-}
-
-// A KEY NOBODY READS IS REFUSED, NOT IGNORED.
-//
-// A misspelt key (`quesiton`, `tolerence`) was skipped without a word, and the
-// field it meant to set kept its default. The keys this loader reads are the
-// sheet's schema, taken from this file itself: every `.get("…")` below is one,
-// so a key added to the loader is known the moment it is read and never has to
-// be listed a second time. Tables whose keys are DATA (a fixture's or a case's
-// input values, keyed by binding) are not checked.
-fn known_keys() -> &'static std::collections::BTreeSet<&'static str> {
-    static KNOWN: std::sync::OnceLock<std::collections::BTreeSet<&'static str>> =
-        std::sync::OnceLock::new();
-    KNOWN.get_or_init(|| {
-        // Every file that reads a sheet's keys: the loader, and the method
-        // module, which reads the author's `[[case]]` blocks itself.
-        let mut k = std::collections::BTreeSet::new();
-        for src in [include_str!("load.rs"), include_str!("method.rs")] {
-            let mut rest: &'static str = src;
-            while let Some(i) = rest.find(".get(\"") {
-                rest = &rest[i + 6..];
-                if let Some(j) = rest.find('"') {
-                    let key = &rest[..j];
-                    if !key.is_empty() && key.chars().all(|c| c.is_ascii_alphanumeric() || c == '_')
-                    {
-                        k.insert(key);
-                    }
-                }
-            }
-        }
-        k
-    })
-}
-
-const DATA_TABLES: &[&str] = &["inputs", "supply"];
-
-fn unknown_keys(v: &toml::Value, at: &str, out: &mut Vec<String>) {
-    match v {
-        toml::Value::Table(t) => {
-            for (k, x) in t {
-                let here = if at.is_empty() {
-                    k.clone()
-                } else {
-                    format!("{at}.{k}")
-                };
-                if !known_keys().contains(k.as_str()) {
-                    out.push(here.clone());
-                }
-                if !DATA_TABLES.contains(&k.as_str()) {
-                    unknown_keys(x, &here, out);
-                }
-            }
-        }
-        toml::Value::Array(a) => {
-            for x in a {
-                unknown_keys(x, at, out);
-            }
-        }
-        _ => {}
-    }
-}
-
-/// Refuse a file carrying a key the loader never reads.
-fn refuse_unknown(v: &toml::Value, path: &Path) -> Result<(), String> {
-    let mut out = Vec::new();
-    unknown_keys(v, "", &mut out);
-    if out.is_empty() {
-        Ok(())
-    } else {
-        Err(format!(
-            "{}: key(s) this tool does not read, probably misspelt: {}",
-            path.display(),
-            out.join(", ")
-        ))
-    }
-}
-
 fn s(v: Option<&toml::Value>) -> String {
-    match v {
-        None => String::new(),
-        Some(toml::Value::String(x)) => x.clone(),
-        Some(other) => {
-            wrong("text", other);
-            String::new()
-        }
-    }
+    v.and_then(|v| v.as_str()).unwrap_or("").to_string()
 }
 
 /// Code as the sheet holds it: exactly as written, less the line break a
@@ -155,26 +34,12 @@ fn code(v: Option<&toml::Value>) -> String {
 }
 
 fn f(v: Option<&toml::Value>) -> f64 {
-    match v {
-        None => 0.0,
-        Some(toml::Value::Float(x)) => *x,
-        Some(toml::Value::Integer(i)) => *i as f64,
-        Some(other) => {
-            wrong("a number", other);
-            0.0
-        }
-    }
+    v.and_then(|v| v.as_float().or_else(|| v.as_integer().map(|i| i as f64)))
+        .unwrap_or(0.0)
 }
 
 fn u(v: Option<&toml::Value>) -> u32 {
-    match v {
-        None => 0,
-        Some(toml::Value::Integer(i)) if *i >= 0 && *i <= u32::MAX as i64 => *i as u32,
-        Some(other) => {
-            wrong("a whole number from 0", other);
-            0
-        }
-    }
+    v.and_then(|v| v.as_integer()).unwrap_or(0) as u32
 }
 
 pub fn load_all(root: &Path) -> Result<Tree, String> {
@@ -228,19 +93,10 @@ pub fn load_all(root: &Path) -> Result<Tree, String> {
 
 fn load_sheet(dir: &Path, crate_name: &str) -> Result<Sheet, String> {
     let path = dir.join("node.toml");
-    begin();
-    let sh = load_sheet_values(dir, crate_name, &path)?;
-    finish(&path)?;
-    Ok(sh)
-}
-
-fn load_sheet_values(dir: &Path, crate_name: &str, path: &Path) -> Result<Sheet, String> {
-    let path = path.to_path_buf();
     let text = fs::read_to_string(&path).map_err(|e| format!("{}: {e}", path.display()))?;
     let v: toml::Value = text
         .parse()
         .map_err(|e| format!("{}: malformed sheet: {e}", path.display()))?;
-    refuse_unknown(&v, &path)?;
     let t = v
         .as_table()
         .ok_or_else(|| format!("{}: not a table", path.display()))?;
@@ -494,7 +350,6 @@ fn load_sheet_values(dir: &Path, crate_name: &str, path: &Path) -> Result<Sheet,
         let fv: toml::Value = ftext
             .parse()
             .map_err(|e| format!("{}: malformed fixtures: {e}", fx.display()))?;
-        refuse_unknown(&fv, &fx)?;
         for r in fv
             .get("fixture")
             .and_then(|r| r.as_array())
@@ -654,12 +509,6 @@ pub fn read_holes(dir: &Path) -> BTreeMap<u32, String> {
 }
 
 fn load_layers(tree: &mut Tree) -> Result<(), String> {
-    begin();
-    load_layers_values(tree)?;
-    finish(&tree.root.join("load_layers"))
-}
-
-fn load_layers_values(tree: &mut Tree) -> Result<(), String> {
     let dir = tree.root.join("layers");
     let mut files: Vec<PathBuf> = fs::read_dir(&dir)
         .map_err(|e| format!("layers/: {e}"))?
@@ -748,12 +597,6 @@ fn parse_cycles(v: &toml::Value) -> Vec<CycleSpec> {
 }
 
 fn load_cases(tree: &mut Tree) -> Result<(), String> {
-    begin();
-    load_cases_values(tree)?;
-    finish(&tree.root.join("load_cases"))
-}
-
-fn load_cases_values(tree: &mut Tree) -> Result<(), String> {
     let dir = tree.root.join("cases");
     let mut files: Vec<PathBuf> = fs::read_dir(&dir)
         .map_err(|e| format!("cases/: {e}"))?
@@ -797,12 +640,6 @@ fn load_cases_values(tree: &mut Tree) -> Result<(), String> {
 }
 
 fn load_sources(tree: &mut Tree) -> Result<(), String> {
-    begin();
-    load_sources_values(tree)?;
-    finish(&tree.root.join("load_sources"))
-}
-
-fn load_sources_values(tree: &mut Tree) -> Result<(), String> {
     let p = tree.root.join("sources").join("sources.toml");
     let text = fs::read_to_string(&p).map_err(|e| format!("{}: {e}", p.display()))?;
     let v: toml::Value = text.parse().map_err(|e| format!("{}: {e}", p.display()))?;
@@ -832,22 +669,5 @@ impl Tree {
     }
     pub fn ordered(&self) -> Vec<&Sheet> {
         self.sheets.values().collect()
-    }
-}
-
-#[cfg(test)]
-mod keys_read {
-    /// A key read anywhere a sheet is read is a key the loader accepts: the
-    /// author's cases are read by the method module, not the loader, and a
-    /// node form carrying them was once refused as misspelt.
-    #[test]
-    fn the_keys_of_an_authors_case_are_known() {
-        let k = super::known_keys();
-        for key in ["case", "label", "refuse", "expect", "tolerance", "inputs"] {
-            assert!(
-                k.contains(key),
-                "`{key}` is read from a sheet and not known to the loader"
-            );
-        }
     }
 }

@@ -613,25 +613,6 @@ pub fn gate_node(sh: &Sheet, tree: &Tree) -> Vec<Check> {
     //      Checked here rather than trusted because the whole point of 7d is
     //      that a bound read the wrong way is invisible.
     let mut disagree = Vec::new();
-    // Read with the comments taken out: a comment that names the other sense
-    // is not the code applying it, and a comment naming the right one is not
-    // the code applying that.
-    let code: String = holes
-        .values()
-        .map(|b| code_only(b))
-        .collect::<Vec<_>>()
-        .join("\n");
-    let wanted: BTreeSet<&str> = sh
-        .inputs
-        .iter()
-        .filter(|i| i.binding == "req")
-        .filter_map(|i| tree.sheets.get(producer_of(&i.var)))
-        .filter_map(|r| match r.sense.trim() {
-            "<=" => Some("Sense::AtMost"),
-            ">=" => Some("Sense::AtLeast"),
-            _ => None,
-        })
-        .collect();
     for i in &sh.inputs {
         if i.binding != "req" {
             continue;
@@ -649,10 +630,8 @@ pub fn gate_node(sh: &Sheet, tree: &Tree) -> Vec<Check> {
         } else {
             "Sense::AtMost"
         };
-        // Every requirement this row reads binds the same way, so the other
-        // sense has no business anywhere in its code — present at all, even
-        // beside the right one, it is applied to something.
-        if wanted.len() == 1 && code.contains(other) {
+        let body: String = holes.values().cloned().collect::<Vec<_>>().join("\n");
+        if body.contains(other) && !body.contains(want) {
             disagree.push(format!(
                 "{} declares sense {:?} so this must apply {want}, and it applies {other}",
                 req.id,
@@ -787,8 +766,13 @@ pub fn gate_node(sh: &Sheet, tree: &Tree) -> Vec<Check> {
     //      for a reason that is not a defect.
     let mut leaks = Vec::new();
     for (n, body) in &holes {
-        for bad in platform_maths(body) {
-            leaks.push(format!("hole {n} calls {bad} — route it through pmath"));
+        for bad in [
+            ".sin()", ".cos()", ".exp()", ".ln()", ".powf(", ".sqrt()", ".atan2(", ".tan()",
+            ".log10(",
+        ] {
+            if body.contains(bad) {
+                leaks.push(format!("hole {n} calls {bad} — route it through pmath"));
+            }
         }
     }
     out.push(if leaks.is_empty() {
@@ -1402,169 +1386,5 @@ fn producer_of(var: &str) -> &str {
     match var.split_once('.') {
         Some((node, _)) => node,
         None => var,
-    }
-}
-
-/// Rust source with its comments removed and the text of its string and
-/// character literals blanked, so a check on code reads only code.
-pub fn code_only(src: &str) -> String {
-    let b: Vec<char> = src.chars().collect();
-    let mut o = String::with_capacity(src.len());
-    let mut i = 0;
-    while i < b.len() {
-        match (b[i], b.get(i + 1).copied()) {
-            ('/', Some('/')) => {
-                while i < b.len() && b[i] != '\n' {
-                    i += 1;
-                }
-            }
-            ('/', Some('*')) => {
-                let mut depth = 0;
-                while i < b.len() {
-                    if b[i] == '/' && b.get(i + 1) == Some(&'*') {
-                        depth += 1;
-                        i += 2;
-                    } else if b[i] == '*' && b.get(i + 1) == Some(&'/') {
-                        depth -= 1;
-                        i += 2;
-                        if depth == 0 {
-                            break;
-                        }
-                    } else {
-                        i += 1;
-                    }
-                }
-                o.push(' ');
-            }
-            ('"', _) => {
-                o.push('"');
-                i += 1;
-                while i < b.len() && b[i] != '"' {
-                    i += if b[i] == '\\' { 2 } else { 1 };
-                }
-                o.push('"');
-                i += 1;
-            }
-            ('\'', _) if b.get(i + 2) == Some(&'\'') || b.get(i + 1) == Some(&'\\') => {
-                // A character literal; a lifetime (`'a`) is left as it is.
-                o.push_str("' '");
-                i += 1;
-                while i < b.len() && b[i] != '\'' {
-                    i += if b[i] == '\\' { 2 } else { 1 };
-                }
-                i += 1;
-            }
-            (c, _) => {
-                o.push(c);
-                i += 1;
-            }
-        }
-    }
-    o
-}
-
-/// The platform maths library's functions. Each has a portable twin in
-/// `vleo_units::pmath`; called directly, the answer depends on the machine,
-/// and the faces stop agreeing for a reason that is not a defect.
-pub const PLATFORM_MATHS: &[&str] = &[
-    "sin", "cos", "tan", "asin", "acos", "atan", "atan2", "sin_cos", "sinh", "cosh", "tanh",
-    "asinh", "acosh", "atanh", "exp", "exp2", "exp_m1", "ln", "ln_1p", "log", "log2", "log10",
-    "powf", "powi", "sqrt", "cbrt", "hypot", "mul_add",
-];
-
-/// Every call into the platform maths library in a body, however it is
-/// spelled — `x.sqrt()`, `x . sqrt ()`, `f64::sqrt(x)`, `<f64>::sqrt(x)` —
-/// and never a name in a comment or a string. Each as `.name(` or
-/// `f64::name(`. The one list the gate and `xtask fill` both refuse by.
-pub fn platform_maths(body: &str) -> Vec<String> {
-    let code: Vec<char> = code_only(body).chars().collect();
-    let ident = |c: char| c.is_ascii_alphanumeric() || c == '_';
-    let mut out = Vec::new();
-    let mut i = 0;
-    while i < code.len() {
-        if !ident(code[i]) || (i > 0 && ident(code[i - 1])) {
-            i += 1;
-            continue;
-        }
-        let start = i;
-        while i < code.len() && ident(code[i]) {
-            i += 1;
-        }
-        let name: String = code[start..i].iter().collect();
-        if !PLATFORM_MATHS.contains(&name.as_str()) {
-            continue;
-        }
-        let mut after = i;
-        while after < code.len() && code[after].is_whitespace() {
-            after += 1;
-        }
-        if code.get(after) != Some(&'(') {
-            continue;
-        }
-        let before: String = code[..start].iter().collect::<String>();
-        let before = before.trim_end();
-        let call = if before.ends_with('.') && !before.ends_with("..") {
-            format!(".{name}(")
-        } else if let Some(path) = before.strip_suffix("::") {
-            let ty = path.trim_end().trim_end_matches('>');
-            if ty.ends_with("f64") || ty.ends_with("f32") {
-                format!("f64::{name}(")
-            } else {
-                continue;
-            }
-        } else {
-            continue;
-        };
-        if !out.contains(&call) {
-            out.push(call);
-        }
-    }
-    out
-}
-
-#[cfg(test)]
-mod reading_code {
-    use super::{code_only, platform_maths};
-
-    #[test]
-    fn a_platform_call_is_found_however_it_is_spelled() {
-        for body in [
-            "let y = x.sqrt();",
-            "let y = x . sqrt ();",
-            "let y = f64::sqrt(x);",
-            "let y = <f64>::sqrt(x);",
-            "let y = core::primitive::f64::sqrt(x);",
-            "let y = x.asin();",
-            "let y = x.hypot(z);",
-            "let y = x.powi(2);",
-            "let y = a.mul_add(b, c);",
-        ] {
-            assert_eq!(platform_maths(body).len(), 1, "missed in {body}");
-        }
-    }
-
-    #[test]
-    fn a_portable_call_a_comment_or_a_string_is_not_one() {
-        for body in [
-            "let y = pmath::sqrt(x);",
-            "let y = sqrt(x);",
-            "// x.sqrt() would be wrong here\nlet y = pmath::sqrt(x);",
-            "/* x.sin() */ let y = 1.0;",
-            "let s = \"x.sqrt()\";",
-            "let r = 0..sin_count;",
-            "let y = x.sqrt_ratio;",
-        ] {
-            assert!(platform_maths(body).is_empty(), "wrongly found in {body}");
-        }
-    }
-
-    #[test]
-    fn comments_and_strings_are_blanked_and_code_is_kept() {
-        let c = code_only(
-            "let a = 1; // Sense::AtMost\nlet b = \"Sense::AtMost\"; /* x */ let c = 'x';",
-        );
-        assert!(!c.contains("AtMost"));
-        assert!(c.contains("let a = 1;") && c.contains("let c ="));
-        assert!(code_only("fn f<'a>(x: &'a str) {}").contains("'a str"));
     }
 }

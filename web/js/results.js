@@ -13,13 +13,6 @@
   forbids. So a result is shown exactly as it was saved — and a result from
   somebody else is uploaded and shown the same way.
 
-  A result past its days (VLEO_KEEP_DAYS, 30) is THINNED: it keeps its answer,
-  the inputs it changed and its chain, and drops every other value. Pinned, it
-  is kept whole. The one thing on this page that runs is "run it again" on a
-  thinned result, pressed by a person: its values are shown beside the record,
-  under the record's own answer, and the two chains say whether it is the
-  same run or today's.
-
   Two results side by side is how a change is read: the same question on two
   sets of inputs, or before and after a release. The comparison is arithmetic
   on the two records, nothing more.
@@ -30,7 +23,7 @@ import { $, $$, esc, fmt, plural, answerFirst } from './dom.js';
 import { caseChanged } from './state.js';
 
 const POST = { method: 'POST', headers: { 'content-type': 'application/x-www-form-urlencoded' } };
-const PAGE = { open: null, compare: '', filter: '', rerun: null };
+const PAGE = { open: null, compare: '', filter: '' };
 
 async function get(url) {
   try { return await (await fetch(url)).json(); } catch (e) { return { ok: false, message: String(e) }; }
@@ -62,11 +55,9 @@ export async function renderResults(host) {
       ['Download it as a CSV or a report page to send to someone.',
        'If a belief it rested on has changed since, it says which.'], 'how-to');
   h += '<div class="runbar res-actions"><label class="ctl res-up-l">upload a result…' +
-    '<input type="file" class="res-up" accept=".vleo,.csv,.html,text/csv,text/html" hidden></label>' +
-    '<span class="muted">a <code>.vleo</code> file, a result CSV, or the report page it rides in. Kept at <code>' +
-    esc(list.path) + '</code> — outside the repository. ' + (list.keep_days
-      ? 'Every value is kept ' + list.keep_days + ' days; after that a result keeps its answer and inputs unless pinned.'
-      : 'Every value of every result is kept.') + '</span><span class="why res-said"></span></div>';
+    '<input type="file" class="res-up" accept=".csv,.html,text/csv,text/html" hidden></label>' +
+    '<span class="muted">a result CSV, or the report page it rides in. Kept at <code>' + esc(list.path) +
+    '</code> — outside the repository.</span><span class="why res-said"></span></div>';
   if (!list.results.length) {
     h += '<p class="empty">No result is saved yet. Run a row — on its page, or on <b>4 The run</b> — and ' +
       'press <b>save this result</b>.</p>';
@@ -74,9 +65,7 @@ export async function renderResults(host) {
     h += '<div class="ri-wrap"><table class="fx res-list"><thead><tr><th>saved</th><th>row</th><th>answer</th>' +
       '<th>inputs</th><th>ran</th><th></th></tr></thead><tbody>' + list.results.map(r =>
         '<tr class="res-row' + (r.file === PAGE.open ? ' sel' : '') + '" data-file="' + esc(r.file) + '">' +
-        '<td>' + (r.pinned ? '<span class="dx" title="kept whole whatever its age">pinned</span> ' : '') +
-        (r.thinned ? '<span class="dx" title="thinned on ' + esc(r.thinned) + ': answer and inputs only">thinned</span> ' : '') +
-        esc(r.saved) + (r.name ? '<div class="muted">' + esc(r.name) + '</div>' : '') + '</td>' +
+        '<td>' + esc(r.saved) + (r.name ? '<div class="muted">' + esc(r.name) + '</div>' : '') + '</td>' +
         '<td><code>' + esc(r.target) + '</code></td><td><b>' + esc(answerText(r)) + '</b></td>' +
         '<td>' + r.changed + ' changed</td><td>' + r.ran + ' · ' + r.blocked + ' blocked</td>' +
         '<td><button class="ctl res-open" data-file="' + esc(r.file) + '">open</button></td></tr>').join('') +
@@ -97,9 +86,7 @@ export async function renderResults(host) {
     if (!f) return;
     const said = $('.res-said', host);
     said.textContent = 'reading ' + f.name + '…';
-    const r = /\.vleo$/i.test(f.name)
-      ? await post('/v1/results/upload', { vleo: await base64(f) })
-      : await post('/v1/results/upload', { csv: await f.text() });
+    const r = await post('/v1/results/upload', { csv: await f.text() });
     if (!r.ok) { said.textContent = 'not kept: ' + (r.message || 'refused'); return; }
     openResult(r.file);
     renderResults(host);
@@ -109,18 +96,8 @@ export async function renderResults(host) {
   }
 }
 
-/** A file's bytes as base64, to carry a .vleo in a form post. */
-function base64(file) {
-  return new Promise((ok, no) => {
-    const fr = new FileReader();
-    fr.onload = () => ok(String(fr.result).replace(/^data:[^,]*,/, ''));
-    fr.onerror = () => no(fr.error);
-    fr.readAsDataURL(file);
-  });
-}
-
 async function view(el, host, all) {
-  const r = await get('/v1/result?name=' + encodeURIComponent(PAGE.open) + (PAGE.rerun === PAGE.open ? '&rerun=1' : ''));
+  const r = await get('/v1/result?name=' + encodeURIComponent(PAGE.open));
   if (!r.ok) { el.innerHTML = '<div class="blocked">' + esc(r.message || '') + '</div>'; return; }
   const q = encodeURIComponent(PAGE.open);
   let h = '<section class="res-one"><h3><code>' + esc(r.target) + '</code>' +
@@ -131,13 +108,6 @@ async function view(el, host, all) {
       esc(r.mode) + ' · <b>' + plural(r.changed, 'input') + ' changed</b> from the defaults</p>' +
     '<p class="chainline muted">chain <b>' + esc(r.chain) + '</b> · kernel ' + esc(r.kernel) + ' · graph ' +
       esc(r.graph) + (r.data ? ' · data ' + esc(r.data) : '') + '</p>' +
-    (r.thinned ? '<p class="run-stale"><b>Thinned on ' + esc(r.thinned) + '</b>: kept are its answer, the inputs it ' +
-      'changed and its chain. ' + (r.rerun
-        ? (r.rerun.same
-          ? 'Run again, it is <b>the same run</b> — same engine, tree and inputs — so every value below is what it returned then.'
-          : 'Run again, the chain is now <b>' + esc(r.rerun.chain) + '</b>: the engine, tree or data moved since, so the values ' +
-            'below are <b>today\'s</b>. The answer above is still the one it gave then.')
-        : '<button class="ctl res-rerun">run it again</button> to see every value.') + '</p>' : '') +
     (r.template_current ? '' : '<p class="run-stale">Saved against another set of inputs than this tool ' +
       'has now. It is shown as it was; loading its inputs as the case carries them over.</p>') +
     // WHAT IT RESTS ON. A result keeps the version of every row it ran
@@ -154,10 +124,6 @@ async function view(el, host, all) {
       '<a class="ctl" href="/v1/result.csv?name=' + q + '" download="' + esc(PAGE.open) + '">download CSV</a>' +
       '<a class="ctl" href="/v1/result.html?name=' + q + '" download="' + esc(PAGE.open.replace(/\.csv$/, '.html')) +
         '">download report</a>' +
-      '<a class="ctl" href="/v1/result.vleo?name=' + q + '" download="' + esc(PAGE.open.replace(/\.csv$/, '.vleo')) +
-        '" title="the CSV, the report and a manifest in one file to send">download .vleo</a>' +
-      '<button class="ctl res-pin" title="a pinned result keeps every value whatever its age">' +
-        (r.pinned ? 'unpin' : 'pin') + '</button>' +
       '<button class="ctl res-case" title="make the inputs this result ran on the saved case">use its inputs as the case</button>' +
       '<button class="ctl res-del">delete</button><span class="why res-do-said"></span></div>';
   const others = all.filter(x => x.file !== PAGE.open);
@@ -199,13 +165,6 @@ async function view(el, host, all) {
     if (!res.ok) { said.textContent = 'the case was not changed: ' + (res.message || 'refused'); return; }
     await caseChanged();
     said.textContent = 'the case is now the inputs this result ran on — ' + plural(res.changed, 'input') + ' changed';
-  };
-  const rerun = $('.res-rerun', el);
-  if (rerun) rerun.onclick = () => { PAGE.rerun = PAGE.open; view(el, host, all); };
-  $('.res-pin', el).onclick = async () => {
-    const res = await post('/v1/results/pin', { name: PAGE.open, on: r.pinned ? '0' : '1' });
-    if (!res.ok) { $('.res-do-said', el).textContent = res.message || 'refused'; return; }
-    renderResults(host);
   };
   $('.res-del', el).onclick = async () => {
     if (!confirm('Delete this saved result? Download it first to keep a copy.')) return;

@@ -16,21 +16,6 @@
 /cases/                   @integrator
 /sources/                 @integrator @systems
 /web/                     @web-owner @integrator
-/.github/                 @integrator @kernel-deputy
-/tools/                   @integrator @kernel-deputy
-/crates/vleo-bus/         @integrator @kernel-deputy
-/crates/vleo-modules/     @integrator @kernel-deputy
-/crates/vleo-data/        @integrator @systems
-/bundles/                 @integrator @systems
-/crates/vleo-server/      @integrator
-/crates/vleo-daemon/      @integrator
-/crates/vleo-app/         @integrator
-/crates/vleo-cli/         @integrator
-/crates/vleo-ffi/         @integrator
-/crates/vleo-py/          @integrator
-/crates/vleo-wasm/        @integrator
-/crates/vleo-method-wasm/ @integrator
-/docs/                    @integrator
 
 /crates/vleo-mod-massaero/nodes/aero_accommodation/ @aero
 /crates/vleo-mod-massaero/nodes/aero_ao_fluence/ @mass

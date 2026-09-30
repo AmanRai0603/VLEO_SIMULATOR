@@ -19,14 +19,6 @@ enum Kind {
 
 #[allow(dead_code)]
 fn windows_identity(file: &str, description: &str, kind: Kind) {
-    windows_identity_with_icon(file, description, kind, None)
-}
-
-// The same, with the icon Explorer, the taskbar and the Start menu show — a
-// path relative to the crate. A program with an icon of its own is one less
-// thing that reads as an anonymous download.
-#[allow(dead_code)]
-fn windows_identity_with_icon(file: &str, description: &str, kind: Kind, icon: Option<&str>) {
     if std::env::var("CARGO_CFG_TARGET_OS").as_deref() != Ok("windows") {
         return;
     }
@@ -42,16 +34,8 @@ fn windows_identity_with_icon(file: &str, description: &str, kind: Kind, icon: O
         Kind::Program => ("0x1", "exe"),
         Kind::Library => ("0x2", "dll"),
     };
-    // Forward slashes: the resource compiler reads a backslash in a quoted
-    // path as an escape.
-    let icon_line = icon
-        .map(|i| {
-            let dir = std::env::var("CARGO_MANIFEST_DIR").expect("CARGO_MANIFEST_DIR");
-            format!("1 ICON \"{}/{}\"\n", dir.replace('\\', "/"), i)
-        })
-        .unwrap_or_default();
     let rc = format!(
-        r#"{icon_line}1 VERSIONINFO
+        r#"1 VERSIONINFO
 FILEVERSION {dotted}
 PRODUCTVERSION {dotted}
 FILEFLAGSMASK 0x3f
@@ -70,7 +54,7 @@ BEGIN
       VALUE "InternalName", "{file}"
       VALUE "LegalCopyright", "Copyright (C) Orbitt Space"
       VALUE "OriginalFilename", "{file}.{extension}"
-      VALUE "ProductName", "VLEO Design Tool"
+      VALUE "ProductName", "VLEO design tool"
       VALUE "ProductVersion", "{version}"
     END
   END

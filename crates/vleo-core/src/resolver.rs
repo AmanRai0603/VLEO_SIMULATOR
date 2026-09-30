@@ -73,10 +73,6 @@ pub struct Workspace<'a> {
     pub blocked_fault: &'a mut [Fault],
 }
 
-/// The declared cycles one run can track. Fixed because the kernel does not
-/// allocate; a case declaring more is refused by `evaluate` before it starts.
-pub const MAX_CYCLES: usize = 32;
-
 const UNVISITED: u8 = 0;
 const IN_PROGRESS: u8 = 1;
 const DONE: u8 = 2;
@@ -123,12 +119,6 @@ pub fn evaluate<T: NodeTable + ?Sized>(
             given: ws.order.len(),
         });
     }
-    if cycles.len() > MAX_CYCLES {
-        return Err(Fault::TooManyCycles {
-            declared: cycles.len(),
-            limit: MAX_CYCLES,
-        });
-    }
     for m in ws.mark[..n].iter_mut() {
         *m = UNVISITED;
     }
@@ -157,7 +147,7 @@ pub fn evaluate<T: NodeTable + ?Sized>(
     let mut iterations = 0u32;
     let mut first_fault: Option<Fault> = None;
     // A node inside a declared cycle is run by the cycle sweep, not on its own.
-    let mut cycle_done = [false; MAX_CYCLES];
+    let mut cycle_done = [false; 32];
 
     let mut idx = 0usize;
     while idx < order_len {
@@ -231,7 +221,7 @@ pub fn evaluate<T: NodeTable + ?Sized>(
         // report it as eight independent missing dependencies. The seed is what
         // breaks the deadlock, and it is applied by the sweep.
         if let Some((ci, spec)) = cycle_of(cycles, node) {
-            if cycle_done[ci] {
+            if ci < 32 && cycle_done[ci] {
                 continue;
             }
             match sweep_cycle(table, store, spec, &mut iterations) {
@@ -248,7 +238,9 @@ pub fn evaluate<T: NodeTable + ?Sized>(
                     }
                 }
             }
-            cycle_done[ci] = true;
+            if ci < 32 {
+                cycle_done[ci] = true;
+            }
             continue;
         }
 

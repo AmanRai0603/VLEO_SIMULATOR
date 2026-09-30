@@ -16,8 +16,6 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 #![forbid(unsafe_code)]
 
-#[cfg(feature = "std")]
-pub mod clock;
 pub mod constants;
 pub mod frames;
 pub mod method_rt;

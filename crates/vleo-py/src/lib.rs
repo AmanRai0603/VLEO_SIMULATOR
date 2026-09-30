@@ -205,21 +205,10 @@ fn serve(py: Python<'_>, root: Option<String>, port: u16, open: bool) -> PyResul
         .map_err(PyRuntimeError::new_err)
 }
 
-/// The desktop app: serve, open the browser, and return when it is quit from
-/// the page or no page has been open for a few minutes — or at once, having
-/// opened the copy already running. What the `vleo-app` launcher runs.
-#[pyfunction]
-#[pyo3(signature = (root = None, port = 7777))]
-fn app(py: Python<'_>, root: Option<String>, port: u16) -> PyResult<()> {
-    py.allow_threads(|| vleo_server::app_at(root.map(Into::into), port))
-        .map_err(PyRuntimeError::new_err)
-}
-
 #[pymodule]
 fn _vleo(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<Result_>()?;
     m.add_function(wrap_pyfunction!(serve, m)?)?;
-    m.add_function(wrap_pyfunction!(app, m)?)?;
     m.add_function(wrap_pyfunction!(nodes, m)?)?;
     m.add_function(wrap_pyfunction!(evaluate, m)?)?;
     m.add_function(wrap_pyfunction!(sweep, m)?)?;

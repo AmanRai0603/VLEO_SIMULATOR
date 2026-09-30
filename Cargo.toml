@@ -8,7 +8,7 @@
 #   RING 3  vleo-mod-*    one crate per subsystem — a sibling it did not declare will not compile
 #           vleo-modules  facade + dispatch table; re-exports the twelve, holds no formula
 #           vleo-server   the local server both the daemon and the Python package start
-#   FACES   vleo-cli · vleo-daemon · vleo-app · vleo-wasm · vleo-ffi · vleo-py
+#   FACES   vleo-cli · vleo-daemon · vleo-wasm · vleo-ffi · vleo-py
 [workspace]
 resolver = "2"
 members = [
@@ -42,7 +42,6 @@ members = [
     "crates/vleo-modules",
     "crates/vleo-cli",
     "crates/vleo-daemon",
-    "crates/vleo-app",
     "crates/vleo-server",
     "crates/vleo-ffi",
     "xtask",
@@ -76,11 +75,7 @@ serde_json   = "1"
 opt-level = 3
 lto = "fat"
 codegen-units = 1
-# UNWIND, NOT ABORT. With abort, one bug in any request ended the whole tool —
-# and the Python process that loaded the wheel with it — with nothing logged.
-# Unwinding lets the server catch a panic per request, the C interface per
-# call, and vleo_data::crash write the log. wasm32 keeps its own default
-# (abort): cargo passes -C panic only when a profile asks for abort.
+panic = "abort"
 strip = "symbols"
 
 # Dependencies optimised once and cached; an unoptimised nalgebra-class dependency

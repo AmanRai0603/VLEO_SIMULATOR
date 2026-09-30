@@ -39,11 +39,6 @@
 //! text, and until then a format anybody can read in a text editor is worth
 //! more than one that needs a library to inspect.
 
-/// The clock lives in ring 0 (vleo_units::clock); kept here by name so every
-/// caller of `vleo_data::clock` reads the same one.
-pub use vleo_units::clock;
-pub mod crash;
-
 use std::collections::BTreeMap;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -270,9 +265,7 @@ impl Store {
 /// points. One place, read by the daemon and the command line alike, so the
 /// browser and the terminal always run the same case.
 pub fn case_path() -> PathBuf {
-    // An empty value counts as unset, as it does for VLEO_DATA and HOME: an
-    // empty path is the CURRENT folder, and a case saved there is lost with it.
-    if let Some(p) = std::env::var_os("VLEO_CASE").filter(|v| !v.is_empty()) {
+    if let Ok(p) = std::env::var("VLEO_CASE") {
         return PathBuf::from(p);
     }
     home()
@@ -284,26 +277,12 @@ pub fn case_path() -> PathBuf {
 /// inputs they ran on. Outside the repository like the case —
 /// `~/.vleo/results/`, or wherever `VLEO_RESULTS` points.
 pub fn results_path() -> PathBuf {
-    if let Some(p) = std::env::var_os("VLEO_RESULTS").filter(|v| !v.is_empty()) {
+    if let Ok(p) = std::env::var("VLEO_RESULTS") {
         return PathBuf::from(p);
     }
     home()
         .map(|h| h.join(".vleo").join("results"))
         .unwrap_or_else(|| PathBuf::from(".vleo/results"))
-}
-
-/// How many days a saved result keeps every value before it is thinned to
-/// its answer, its inputs and its chain — `VLEO_KEEP_DAYS`, 30 when unset.
-/// `0` keeps every value of every result for ever. A pinned result is never
-/// thinned. Anything that is not a whole number is refused by name rather
-/// than read as a guess.
-pub fn keep_days() -> Result<u32, String> {
-    match std::env::var("VLEO_KEEP_DAYS") {
-        Ok(v) if !v.trim().is_empty() => v.trim().parse().map_err(|_| {
-            format!("VLEO_KEEP_DAYS is '{v}': it must be a whole number of days, or 0 for never")
-        }),
-        _ => Ok(30),
-    }
 }
 
 /// The person's home folder: `HOME`, or `USERPROFILE` where there is no `HOME`.

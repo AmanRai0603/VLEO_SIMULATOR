@@ -10,7 +10,6 @@ repository.workspace = true
 
 [dependencies]
 vleo-core = { workspace = true, features = ["std"] }
-vleo-units = { workspace = true, features = ["std"] }
 toml = { workspace = true }
 
 [lints.rust]

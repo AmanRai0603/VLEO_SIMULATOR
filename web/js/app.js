@@ -27,31 +27,6 @@ import { loadOverrides, overrideCount, clearAllOverrides, clearOverride,
          fromSI, onOverrideChange } from './inputs.js';
 
 // ---------------------------------------------------------------------------
-// the desktop app
-
-/*
-  Started from the desktop app, there is no window to close the tool with. So
-  the page says it is still open every half minute, the app ends a few minutes
-  after no page has, and Quit ends it now. Started any other way, none of this
-  shows: the person who started the server stops it.
-*/
-function desktopApp() {
-  if (!S.version || !S.version.app) return;
-  setInterval(() => { fetch('/v1/alive').catch(() => {}); }, 30000);
-  const b = document.createElement('button');
-  b.className = 'ctl quit-app';
-  b.textContent = 'Quit';
-  b.title = 'close VLEO Design Tool. Your inputs and results are kept. It also closes by itself a few minutes after the last page is closed.';
-  b.onclick = async () => {
-    try { await fetch('/v1/quit', { method: 'POST' }); } catch (e) { /* already gone */ }
-    document.body.innerHTML = '<main style="font:16px/1.5 system-ui,sans-serif;max-width:560px;margin:64px auto;padding:0 16px">' +
-      '<h1 style="font-size:20px">VLEO Design Tool has closed.</h1><p>Your inputs and results are kept. ' +
-      'Open the app again to carry on. You can close this tab.</p></main>';
-  };
-  $('#masthead').appendChild(b);
-}
-
-// ---------------------------------------------------------------------------
 // boot
 
 async function boot() {
@@ -65,7 +40,6 @@ async function boot() {
   fillSubsys();
   // A preview build says so on every view, before anything else is drawn.
   showPreview();
-  desktopApp();
   // The saved case, so every status line and run panel can say which inputs
   // the numbers are for before the first run is asked for.
   await loadSaved();

@@ -779,9 +779,8 @@ def main():
     emit_supporting()
     crates = sorted({crate_for(n) for n in NODES})
     crate_skeleton.emit(crates, LAYERS, ROOT, write,
-                        "//! Wires this crate's node folders in. The one build script every node crate\n"
-                        "//! shares: tools/node_crate_build.rs.\n\n"
-                        "include!(\"../../tools/node_crate_build.rs\");\n")
+                        open(os.path.join(ROOT, "tools", "node_crate_build.rs"),
+                             encoding="utf-8").read())
     print("seeded %d node folders across %d owner crates" % (len(NODES), len(crates)))
     for c in crates:
         k = len([n for n in NODES if crate_for(n) == c])
