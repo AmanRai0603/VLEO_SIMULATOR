@@ -317,7 +317,11 @@ fn route(
         // The numbers a figure of the record draws, worked out by the engine
         // from the bundle the page draws the record from (phase 10).
         ("GET", p) if p.starts_with("/v1/figures/solar/") => {
-            ok_json(record_figure(ctx, p.trim_start_matches("/v1/figures/solar/")))
+            ok_json(record_figure(
+                ctx,
+                p.trim_start_matches("/v1/figures/solar/"),
+                params,
+            ))
         }
         ("GET", "/v1/result") => ok_json(result_json(params)),
         ("GET", "/v1/result.csv") => result_file(params, "csv"),

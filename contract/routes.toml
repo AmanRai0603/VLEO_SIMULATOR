@@ -300,6 +300,10 @@ path = "/v1/figures/solar/recurrence-ap"
 [[route.example]]
 name = "figures-solar-spikes"
 path = "/v1/figures/solar/spikes"
+[[route.example]]
+name = "figures-solar-mean-cycle"
+path = "/v1/figures/solar/mean-cycle"
+params = [["v", "f107"], ["bins", "20"]]
 
 [[route]]
 method = "GET"

@@ -299,6 +299,8 @@ pub fn cycle_phase(record: &[SolarDay], cycles: &[SolarCycle]) -> Vec<Option<f64
 pub enum Driver {
     F107,
     Ap,
+    /// The sunspot number.
+    Ssn,
 }
 
 impl Driver {
@@ -306,6 +308,7 @@ impl Driver {
         match self {
             Driver::F107 => d.f107,
             Driver::Ap => d.ap,
+            Driver::Ssn => d.ssn,
         }
     }
 }
@@ -484,6 +487,134 @@ pub fn spikes(record: &[SolarDay], cycles: &[SolarCycle]) -> Spikes {
     }
 }
 
+/// The fewest days a phase bin must hold in BOTH compared cycles for the
+/// repeatability correlation to use it. A bin thinned by the 2017 gap — 141
+/// days against the usual 201 — is a mean of a different thing, and
+/// `sw_cycle_repeatability` is measured without it.
+pub const MEAN_CYCLE_MIN_DAYS: usize = 150;
+
+/// The mean-cycle figure's numbers: every cycle the record holds, stacked on
+/// phase, the mean of the complete ones, and how well the last two complete
+/// cycles repeat each other.
+#[derive(Clone, Debug, PartialEq)]
+pub struct MeanCycle {
+    /// The centre of each phase bin.
+    pub phase: Vec<f64>,
+    /// The cycles in the table's order, and whether each is complete.
+    pub cycles: Vec<u32>,
+    pub complete: Vec<bool>,
+    /// Each cycle's mean in each bin: `[cycle][bin]`; none for an empty bin.
+    pub curves: Vec<Vec<Option<f64>>>,
+    /// The mean over the complete cycles of their bin means.
+    pub mean_cycle: Vec<Option<f64>>,
+    /// The two cycles compared — the last two complete — earlier first.
+    pub pair: Option<(u32, u32)>,
+    /// Their correlation over the bins both fill with
+    /// [`MEAN_CYCLE_MIN_DAYS`], and how many bins that is.
+    pub r: Option<f64>,
+    pub usable: u32,
+    /// In how many of those bins the earlier cycle runs above the later.
+    pub above: u32,
+    /// The mean of earlier minus later over those bins, before phase 0.6 and
+    /// from it.
+    pub gap_rise: Option<f64>,
+    pub gap_fall: Option<f64>,
+    /// Each of the two cycles' largest bin mean, over every bin it fills.
+    pub peak: Option<(f64, f64)>,
+}
+
+/// The mean-cycle figure's numbers, over one driver in `bins` phase bins; a
+/// bin counts toward the comparison when both cycles hold `min_days` in it
+/// ([`MEAN_CYCLE_MIN_DAYS`] for the figure).
+pub fn mean_cycle(
+    record: &[SolarDay],
+    cycles: &[SolarCycle],
+    driver: Driver,
+    bins: usize,
+    min_days: usize,
+) -> MeanCycle {
+    let phase = cycle_phase(record, cycles);
+    let mut per: Vec<Vec<Vec<f64>>> = cycles
+        .iter()
+        .map(|_| alloc::vec![Vec::new(); bins])
+        .collect();
+    for (d, ph) in record.iter().zip(&phase) {
+        let (Some(ph), Some(v)) = (ph, driver.of(d)) else {
+            continue;
+        };
+        let Some(c) = cycles
+            .iter()
+            .position(|c| d.day >= c.start && d.day < c.end)
+        else {
+            continue;
+        };
+        let b = (pmath::floor(ph * bins as f64) as usize).min(bins - 1);
+        per[c][b].push(v);
+    }
+    let mean = |a: &[f64]| (!a.is_empty()).then(|| a.iter().sum::<f64>() / a.len() as f64);
+    let curves: Vec<Vec<Option<f64>>> = per
+        .iter()
+        .map(|c| c.iter().map(|b| mean(b)).collect())
+        .collect();
+    let complete: Vec<bool> = cycles
+        .iter()
+        .map(|c| cycles.iter().any(|o| o.start >= c.end))
+        .collect();
+    let mean_cycle = (0..bins)
+        .map(|i| {
+            let v: Vec<f64> = curves
+                .iter()
+                .zip(&complete)
+                .filter(|(_, done)| **done)
+                .filter_map(|(c, _)| c[i])
+                .collect();
+            mean(&v)
+        })
+        .collect();
+    let phase_x: Vec<f64> = (0..bins).map(|i| (i as f64 + 0.5) / bins as f64).collect();
+    let done: Vec<usize> = (0..cycles.len()).filter(|&i| complete[i]).collect();
+    let (mut r, mut usable, mut above, mut gap_rise, mut gap_fall, mut peak) =
+        (None, 0, 0, None, None, None);
+    let pair = (done.len() >= 2).then(|| (done[done.len() - 2], done[done.len() - 1]));
+    if let Some((i, j)) = pair {
+        let ok = |k: usize| per[i][k].len() >= min_days && per[j][k].len() >= min_days;
+        let both: Vec<(usize, f64, f64)> = (0..bins)
+            .filter(|&k| ok(k))
+            .filter_map(|k| Some((k, curves[i][k]?, curves[j][k]?)))
+            .collect();
+        let (a, b): (Vec<f64>, Vec<f64>) = both.iter().map(|&(_, x, y)| (x, y)).unzip();
+        r = pearson(&a, &b);
+        usable = both.len() as u32;
+        above = both.iter().filter(|(_, x, y)| x > y).count() as u32;
+        let gap = |lo: f64, hi: f64| {
+            let d: Vec<f64> = both
+                .iter()
+                .filter(|(k, _, _)| phase_x[*k] >= lo && phase_x[*k] < hi)
+                .map(|(_, x, y)| x - y)
+                .collect();
+            mean(&d)
+        };
+        gap_rise = gap(0.0, 0.6);
+        gap_fall = gap(0.6, 1.0);
+        let top = |c: usize| curves[c].iter().flatten().copied().reduce(f64::max);
+        peak = top(i).zip(top(j));
+    }
+    MeanCycle {
+        phase: phase_x,
+        cycles: cycles.iter().map(|c| c.n).collect(),
+        complete,
+        curves,
+        mean_cycle,
+        pair: pair.map(|(i, j)| (cycles[i].n, cycles[j].n)),
+        r,
+        usable,
+        above,
+        gap_rise,
+        gap_fall,
+        peak,
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -495,6 +626,7 @@ mod tests {
             ap,
             kp: [None; 8],
             kp_max: None,
+            ssn: None,
         }
     }
 
@@ -681,6 +813,56 @@ mod tests {
         assert_eq!(s.rate[6], Some(1000.0 * 2.0 / 15.0));
         assert_eq!(s.rate[13], Some(1000.0 / 15.0));
         assert_eq!(s.rate[19], None);
+    }
+
+    #[test]
+    fn cycles_are_stacked_on_phase_and_the_last_two_complete_compared() {
+        // Cycles 1 and 2 are four days each and complete; cycle 3 is running
+        // and folds by their mean, four. Four bins: one day in each.
+        let v = [
+            10.0, 20.0, 30.0, 40.0, 12.0, 14.0, 50.0, 60.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0,
+        ];
+        let rec: Vec<SolarDay> = v
+            .iter()
+            .enumerate()
+            .map(|(i, &x)| day(i as i32, Some(x), None))
+            .collect();
+        let m = mean_cycle(
+            &rec,
+            &[cycle(1, 0, 4), cycle(2, 4, 8), cycle(3, 8, 30)],
+            Driver::F107,
+            4,
+            1,
+        );
+        assert_eq!(m.phase, [0.125, 0.375, 0.625, 0.875]);
+        assert_eq!(m.complete, [true, true, false]);
+        assert_eq!(
+            m.curves[0],
+            [Some(10.0), Some(20.0), Some(30.0), Some(40.0)]
+        );
+        // Day 12 is exactly one mean length in, phase 1, into the last bin;
+        // day 13 is past it and has no phase.
+        assert_eq!(m.curves[2], [Some(1.0); 4]);
+        assert_eq!(
+            m.mean_cycle,
+            [Some(11.0), Some(17.0), Some(40.0), Some(50.0)]
+        );
+        assert_eq!(m.pair, Some((1, 2)));
+        // 10 20 30 40 against 12 14 50 60: Σdadb 900, Σda² 500, Σdb² 1816.
+        assert!((m.r.unwrap() - 0.9444948303625054).abs() < 1e-15);
+        assert_eq!((m.usable, m.above), (4, 1));
+        // Before 0.6: (−2 + 6)/2; from it: (−20 − 20)/2.
+        assert_eq!((m.gap_rise, m.gap_fall), (Some(2.0), Some(-20.0)));
+        assert_eq!(m.peak, Some((40.0, 60.0)));
+        // A bin either cycle holds fewer days in than asked for is left out.
+        let thin = mean_cycle(
+            &rec,
+            &[cycle(1, 0, 4), cycle(2, 4, 8), cycle(3, 8, 30)],
+            Driver::F107,
+            4,
+            2,
+        );
+        assert_eq!((thin.r, thin.usable), (None, 0));
     }
 
     #[test]

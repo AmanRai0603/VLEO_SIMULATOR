@@ -64,6 +64,7 @@ import argparse
 import io
 import json
 import os
+import re
 import socket
 import subprocess
 import sys
@@ -298,7 +299,11 @@ def _intercept_figure(page, fig_id, field):
             body[field] = bend(body[field])
         route.fulfill(status=200, content_type="application/json", body=json.dumps(body))
 
-    page.route("**/v1/figures/solar/%s" % fig_id, handler)
+    # The id and nothing after it but the figure's own settings: a glob on
+    # the bare id missed a figure asked for with a query, and a prefix would
+    # catch `recurrence-ap` when `recurrence` was meant.
+    state["pattern"] = re.compile(r".*/v1/figures/solar/%s(\?.*)?$" % re.escape(fig_id))
+    page.route(state["pattern"], handler)
     return state
 
 
@@ -529,7 +534,7 @@ def check_all(ids=None, record=False):
                     moved = _open(settle, _state)
                     moved = page.evaluate(_SIG_HOST, mount) if moved is not None else None
                     fail = _failed(page, mount)
-                    page.unroute("**/v1/figures/solar/%s" % fg["id"])
+                    page.unroute(asked["pattern"])
                     if fail:
                         found.append((d["id"], "2c states",
                                       "the panel FAILED when %s was moved: %s" % (what, fail)))
