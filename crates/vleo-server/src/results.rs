@@ -267,7 +267,7 @@ pub(super) fn results_list() -> String {
 /// claim. A panel with no numbers here yet is refused by name.
 pub(super) fn record_figure(ctx: &Ctx, id: &str, params: &str) -> String {
     const BUNDLE: &str = "solar-weather";
-    const KNOWN: [&str; 7] = [
+    const KNOWN: [&str; 9] = [
         "density",
         "storm-scale",
         "kp-ap",
@@ -275,6 +275,8 @@ pub(super) fn record_figure(ctx: &Ctx, id: &str, params: &str) -> String {
         "recurrence-ap",
         "spikes",
         "mean-cycle",
+        "segments",
+        "regime-phase",
     ];
     if !KNOWN.contains(&id) {
         return failed(&format!(
@@ -298,7 +300,7 @@ pub(super) fn record_figure(ctx: &Ctx, id: &str, params: &str) -> String {
     // Only the figures that fold by cycle read the cycle table; one that is
     // missing refuses them and nothing else.
     use vleo_modules::record::Driver;
-    let cycles = if matches!(id, "storm-scale" | "spikes" | "mean-cycle") {
+    let cycles = if matches!(id, "storm-scale" | "spikes" | "mean-cycle" | "regime-phase") {
         match vleo_data::read_solar_cycles(&bundle) {
             Ok(c) => c,
             Err(e) => return failed(&e),
@@ -468,6 +470,68 @@ pub(super) fn record_figure(ctx: &Ctx, id: &str, params: &str) -> String {
                     j.raw("null");
                 }
             }
+        }
+        "segments" => {
+            // Banded by the rows that define the bands, so only the drivers
+            // a row bands: Ap by sw_regime, F10.7 by sw_activity_band.
+            let driver = match param(params, "v").unwrap_or("ap") {
+                "ap" => Driver::Ap,
+                "f107" => Driver::F107,
+                other => {
+                    return failed(&format!(
+                        "no row bands '{other}': ap (sw_regime) or f107 (sw_activity_band)"
+                    ))
+                }
+            };
+            let s = vleo_modules::record::segments(&days, driver);
+            j.str_field("variable", if driver == Driver::Ap { "ap" } else { "f107" });
+            j.num_field("days", s.days as f64);
+            j.num_field("refused", s.refused as f64);
+            j.num_field("bin_width", s.bin_width);
+            j.key("counts");
+            arr(
+                &mut j,
+                &s.counts.iter().map(|&c| Some(c as f64)).collect::<Vec<_>>(),
+            );
+            opt(&mut j, "max", s.max);
+            j.key("band_days");
+            arr(
+                &mut j,
+                &s.band_days
+                    .iter()
+                    .map(|&c| Some(c as f64))
+                    .collect::<Vec<_>>(),
+            );
+            j.key("band_pct");
+            arr(&mut j, &some(&s.band_pct));
+            j.key("below_cut");
+            arr(&mut j, &s.below_cut);
+            j.key("above_cut");
+            arr(&mut j, &s.above_cut);
+        }
+        "regime-phase" => {
+            let r = vleo_modules::record::regime_phase(&days, &cycles);
+            j.key("phase");
+            arr(&mut j, &some(&r.phase));
+            j.key("storm_pct");
+            arr(&mut j, &r.storm_pct);
+            j.key("quiet_pct");
+            arr(&mut j, &r.quiet_pct);
+            j.key("storm_peak");
+            match r.storm_peak {
+                Some((v, x)) => arr(&mut j, &[Some(v), Some(x)]),
+                None => {
+                    j.raw("null");
+                }
+            }
+            j.key("quiet_low");
+            match r.quiet_low {
+                Some((v, x)) => arr(&mut j, &[Some(v), Some(x)]),
+                None => {
+                    j.raw("null");
+                }
+            }
+            opt(&mut j, "mirror", r.mirror);
         }
         "spikes" => {
             let s = vleo_modules::record::spikes(&days, &cycles);

@@ -585,6 +585,191 @@
         "gap_fall",
         "peak"
       ]
+    },
+    {
+      "type": "object",
+      "description": "The segmentation figure: where the record sits, and how much of it each band holds, banded by the rows themselves (sw_regime for Ap, sw_activity_band for F10.7).",
+      "properties": {
+        "ok": {
+          "type": "boolean"
+        },
+        "bundle": {
+          "type": "string",
+          "description": "The bundle and version the numbers were worked out from."
+        },
+        "figure": {
+          "type": "string",
+          "enum": [
+            "segments"
+          ]
+        },
+        "variable": {
+          "type": "string",
+          "enum": [
+            "ap",
+            "f107"
+          ]
+        },
+        "days": {
+          "type": "number",
+          "description": "Days with a value."
+        },
+        "refused": {
+          "type": "number",
+          "description": "Days the row refused to band; counted, never guessed."
+        },
+        "bin_width": {
+          "type": "number",
+          "description": "The histogram's bin width."
+        },
+        "counts": {
+          "type": "array",
+          "description": "Days in each bin from 0.",
+          "items": {
+            "type": "number"
+          }
+        },
+        "max": {
+          "type": [
+            "null",
+            "number"
+          ],
+          "description": "The largest value in the record."
+        },
+        "band_days": {
+          "type": "array",
+          "description": "Days in each band.",
+          "items": {
+            "type": "number"
+          }
+        },
+        "band_pct": {
+          "type": "array",
+          "description": "Each band's share of the days banded, in per cent.",
+          "items": {
+            "type": "number"
+          }
+        },
+        "below_cut": {
+          "type": "array",
+          "description": "At each cut, the largest value the record holds below it.",
+          "items": {
+            "type": [
+              "null",
+              "number"
+            ]
+          }
+        },
+        "above_cut": {
+          "type": "array",
+          "description": "At each cut, the smallest value the record holds above it.",
+          "items": {
+            "type": [
+              "null",
+              "number"
+            ]
+          }
+        }
+      },
+      "required": [
+        "ok",
+        "figure",
+        "bundle",
+        "variable",
+        "days",
+        "refused",
+        "bin_width",
+        "counts",
+        "max",
+        "band_days",
+        "band_pct",
+        "below_cut",
+        "above_cut"
+      ]
+    },
+    {
+      "type": "object",
+      "description": "The regime-by-phase figure: the share of days at each cycle phase sw_regime calls storm, and quiet.",
+      "properties": {
+        "ok": {
+          "type": "boolean"
+        },
+        "bundle": {
+          "type": "string",
+          "description": "The bundle and version the numbers were worked out from."
+        },
+        "figure": {
+          "type": "string",
+          "enum": [
+            "regime-phase"
+          ]
+        },
+        "phase": {
+          "type": "array",
+          "description": "The centre of each of 20 phase bins.",
+          "items": {
+            "type": "number"
+          }
+        },
+        "storm_pct": {
+          "type": "array",
+          "description": "Per cent of the days in each bin that are storm; null where the record never reaches the bin.",
+          "items": {
+            "type": [
+              "null",
+              "number"
+            ]
+          }
+        },
+        "quiet_pct": {
+          "type": "array",
+          "description": "...that are quiet.",
+          "items": {
+            "type": [
+              "null",
+              "number"
+            ]
+          }
+        },
+        "storm_peak": {
+          "type": [
+            "null",
+            "array"
+          ],
+          "description": "The highest storm share and the phase it is at.",
+          "items": {
+            "type": "number"
+          }
+        },
+        "quiet_low": {
+          "type": [
+            "null",
+            "array"
+          ],
+          "description": "The lowest quiet share and its phase.",
+          "items": {
+            "type": "number"
+          }
+        },
+        "mirror": {
+          "type": [
+            "null",
+            "number"
+          ],
+          "description": "The correlation of the two shares across the bins."
+        }
+      },
+      "required": [
+        "ok",
+        "figure",
+        "bundle",
+        "phase",
+        "storm_pct",
+        "quiet_pct",
+        "storm_peak",
+        "quiet_low",
+        "mirror"
+      ]
     }
   ]
 }

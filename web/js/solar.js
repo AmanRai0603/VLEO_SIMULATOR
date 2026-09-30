@@ -22,7 +22,7 @@ import { $, esc } from './dom.js';
 import { S } from './state.js';
 import { solarRecord, bundleFile, parityFile, engineValues, engineSweep, engineAt,
   engineProbe, probeSweep, engineFigure,
-  engineLevers, corr, quantile, num, daysSince2000 } from './record.js';
+  engineLevers, quantile, num, daysSince2000 } from './record.js';
 import { drawChart, attachHover, tableFor, tableTsv, viewSpec, viewIsOn,
   watchScheme, sizeCanvas, cssSize, INK, exportFigure } from './chart.js';
 
@@ -433,35 +433,31 @@ const PANELS = [
       { k: 'scale', label: 'count axis', when: o => o.view === 'hist',
         opts: [['log', 'log'], ['lin', 'linear']] },
     ],
-    build(rec, o) {
-      if (o.view === 'phase') return regimeByPhase(rec);
-      const key = o.v;
-      // THE ROW'S OWN EDGES, AND ITS OWN COMPARISON. sw_activity_band cuts F10.7
-      // at 90, 130 and 170 with `>=`, so a flux sitting exactly on an edge
-      // belongs to the band the edge OPENS. This panel drew 90/120/180 with `>`
-      // and banded 1010 days — 9.8 per cent of the record — differently from the
-      // row it exists to illustrate, reporting the top band at 8.9 per cent where
-      // the row says 12.8. A panel that contradicts its own node is worse than no
-      // panel, so the edges are taken from the node rather than restated.
-      //
-      // Ap is an integer, so its marks sit BETWEEN the bands at 6.5 and 25.5;
-      // F10.7 is continuous and its marks sit on the edges themselves.
-      const cuts = key === 'ap' ? [6.5, 25.5] : [90, 130, 170];
+    // THE NUMBERS ARE THE ENGINE'S, AND THE BANDS ARE THE ROWS' (phase 10e).
+    // vleo_modules::record::segments puts every day in a band by calling
+    // sw_regime or sw_activity_band itself, so a flux on an edge belongs to the
+    // band the edge opens because the row says so, not because this page
+    // remembered to. This panel once drew 90/120/180 with `>` and banded 1010
+    // days differently from the row it illustrates; restating a row's edges is
+    // how that happens, and the page restates none now.
+    data: o => (o.view === 'phase' ? engineFigure('regime-phase')
+      : engineFigure('segments', { v: o.v })),
+    build(rec, o, fig) {
+      if (fig.refused) throw new Error('the engine did not work the figure out: ' + fig.refused);
+      if (o.view === 'phase') return regimeByPhase(fig);
+      const key = fig.variable;
+      // THE MARKS SIT WHERE THE RECORD CROSSES THE ROW'S CUTS. Ap is an integer,
+      // so its marks sit BETWEEN the bands — halfway from the largest quiet day
+      // to the smallest active one, 6.5 and 25.5; F10.7's sit on the edge each
+      // band opens, the smallest flux the row put in it.
+      const cuts = key === 'ap'
+        ? fig.below_cut.map((lo, i) => (lo + fig.above_cut[i]) / 2)
+        : fig.above_cut;
       const names = key === 'ap' ? ['quiet', 'active', 'storm'] : ['low', 'moderate', 'elevated', 'high'];
-      const vals = rec.days.map(d => d[key]).filter(x => x !== null);
-      const hi = Math.max(...vals);
-      const bw = key === 'ap' ? 2 : 5;
-      const nb = Math.ceil(hi / bw) + 1;
-      const counts = new Array(nb).fill(0);
-      for (const x of vals) counts[Math.floor(x / bw)]++;
-      const xs = counts.map((_, i) => (i + 0.5) * bw);
-      const ys = counts.map(c => (o.scale === 'log' ? (c ? Math.log10(c) : null) : c));
-      const share = new Array(cuts.length + 1).fill(0);
-      for (const x of vals) {
-        let k = 0; while (k < cuts.length && x >= cuts[k]) k++;
-        share[k]++;
-      }
-      const pc = i => (100 * share[i] / vals.length);
+      const hi = fig.max, bw = fig.bin_width;
+      const xs = fig.counts.map((_, i) => (i + 0.5) * bw);
+      const ys = fig.counts.map(c => (o.scale === 'log' ? (c ? Math.log10(c) : null) : c));
+      const pc = i => fig.band_pct[i];
       const TOP = names.length - 1;
       return {
         answer: { value: pc(TOP).toFixed(1) + '%',
@@ -486,8 +482,8 @@ const PANELS = [
           // answer line instead, where it is a number and not an area.
           marks: cuts.map((c, i) => ({ axis: 'x', at: c, label: names[i] + ' | ' + names[i + 1] })),
         },
-        note: 'Over ' + vals.length + ' days: ' +
-          share.map((n, i) => names[i] + ' ' + (100 * n / vals.length).toFixed(1) + '%').join(' · ') +
+        note: 'Over ' + fig.days + ' days: ' +
+          fig.band_pct.map((p, i) => names[i] + ' ' + p.toFixed(1) + '%').join(' · ') +
           (key === 'ap'
             ? '. These are the study’s own mixture boundaries, and they fell on integers: quiet ' +
               'holds Ap 0 to 6, active 7 to 25, storm 26 and above. sw_regime reproduces ' +
@@ -1970,27 +1966,15 @@ function spikes(fig) {
 }
 
 /** Segmentation · regime against cycle phase. Where in a cycle a storm is likely. */
-function regimeByPhase(rec) {
-  const nb = 20;
-  const tot = new Array(nb).fill(0), st = new Array(nb).fill(0), qt = new Array(nb).fill(0);
-  for (const d of rec.days) {
-    if (d.phase === null || d.ap === null) continue;
-    const b = Math.min(nb - 1, Math.floor(d.phase * nb));
-    tot[b]++;
-    if (d.ap >= 26) st[b]++;
-    else if (d.ap <= 6) qt[b]++;
-  }
-  const xs = tot.map((_, i) => (i + 0.5) / nb);
-  const stPc = st.map((c, i) => (tot[i] ? 100 * c / tot[i] : null));
-  const qtPc = qt.map((c, i) => (tot[i] ? 100 * c / tot[i] : null));
-  // Where the storm share peaks, off the curve rather than from the prose.
-  const drawn = stPc.filter(v => v !== null && isFinite(v));
-  const pk = drawn.length ? Math.max(...drawn) : null;
-  const atPk = pk === null ? null : xs[stPc.indexOf(pk)];
-  const qDrawn = qtPc.filter(v => v !== null && isFinite(v));
-  const qMin = qDrawn.length ? Math.min(...qDrawn) : null;
-  const qMinAt = qMin === null ? null : xs[qtPc.indexOf(qMin)];
-  const mirror = corr(stPc, qtPc);
+function regimeByPhase(fig) {
+  // THE NUMBERS ARE THE ENGINE'S: vleo_modules::record::regime_phase counts, at
+  // each cycle phase, the days sw_regime calls storm and the days it calls
+  // quiet — the row's own bands, not a `>= 26` restated here — and measures how
+  // closely the two shares mirror each other.
+  const xs = fig.phase, stPc = fig.storm_pct, qtPc = fig.quiet_pct;
+  const [pk, atPk] = fig.storm_peak || [null, null];
+  const [qMin, qMinAt] = fig.quiet_low || [null, null];
+  const mirror = fig.mirror;
   return {
     answer: pk === null
       ? { value: '\u2014', of: 'no phase bin holds a day with an Ap' }

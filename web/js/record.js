@@ -378,23 +378,6 @@ export function solarRecord() {
   return recordP;
 }
 
-/** Pearson correlation over the pairs where both are present. */
-export function corr(a, b) {
-  const xs = [], ys = [];
-  for (let i = 0; i < a.length; i++) {
-    if (a[i] !== null && b[i] !== null) { xs.push(a[i]); ys.push(b[i]); }
-  }
-  if (xs.length < 3) return null;
-  const ma = xs.reduce((p, c) => p + c, 0) / xs.length;
-  const mb = ys.reduce((p, c) => p + c, 0) / ys.length;
-  let sab = 0, sa = 0, sb = 0;
-  for (let i = 0; i < xs.length; i++) {
-    const da = xs[i] - ma, db = ys[i] - mb;
-    sab += da * db; sa += da * da; sb += db * db;
-  }
-  return sa && sb ? sab / Math.sqrt(sa * sb) : null;
-}
-
 /**
  * A percentile of a sorted sample, interpolated between order statistics.
  *

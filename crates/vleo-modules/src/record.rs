@@ -615,6 +615,163 @@ pub fn mean_cycle(
     }
 }
 
+/// Which band a day's value falls in, as the row that defines the bands
+/// says: `sw_activity_band` for F10.7, `sw_regime` for Ap. Counted from 0.
+/// `Err` is the row refusing the day, which is counted and never guessed.
+fn band_of(driver: Driver, x: f64) -> Result<usize, ()> {
+    use vleo_core::units::Ratio;
+    use vleo_mod_solar::nodes::{sw_activity_band, sw_regime};
+    let b = match driver {
+        Driver::F107 => sw_activity_band::model::evaluate(Ratio::new(x)),
+        Driver::Ap => sw_regime::model::evaluate(Ratio::new(x)),
+        Driver::Ssn => return Err(()),
+    }
+    .map_err(|_| ())?;
+    Ok(b.get() as usize - 1)
+}
+
+/// How many bands each row defines — its declared range, 1 to 4 for
+/// `sw_activity_band` and 1 to 3 for `sw_regime`.
+fn bands(driver: Driver) -> usize {
+    match driver {
+        Driver::F107 => 4,
+        _ => 3,
+    }
+}
+
+/// The segmentation figure's numbers: where the record sits, and how much of
+/// it each band holds, with the bands the rows themselves assign.
+#[derive(Clone, Debug, PartialEq)]
+pub struct Segments {
+    /// Days with a value, and how many of them the row refused to band.
+    pub days: u32,
+    pub refused: u32,
+    /// The histogram: its bin width, and the days in each bin from 0.
+    pub bin_width: f64,
+    pub counts: Vec<u32>,
+    /// The largest value in the record.
+    pub max: Option<f64>,
+    /// Days in each band, and their share of the days banded, in per cent.
+    pub band_days: Vec<u32>,
+    pub band_pct: Vec<f64>,
+    /// Where the record crosses each cut between band k and k + 1: the
+    /// largest value it holds in band k, and the smallest in band k + 1.
+    pub below_cut: Vec<Option<f64>>,
+    pub above_cut: Vec<Option<f64>>,
+}
+
+/// The segmentation figure's numbers over Ap or F10.7. Bins are 2 wide for
+/// Ap and 5 sfu for F10.7, as the page drew them.
+pub fn segments(record: &[SolarDay], driver: Driver) -> Segments {
+    let vals: Vec<f64> = record.iter().filter_map(|d| driver.of(d)).collect();
+    let bin_width = if driver == Driver::Ap { 2.0 } else { 5.0 };
+    let max = vals.iter().copied().reduce(f64::max);
+    let nb = max.map_or(0, |hi| pmath::ceil(hi / bin_width) as usize + 1);
+    let mut counts = alloc::vec![0u32; nb];
+    for x in &vals {
+        counts[pmath::floor(x / bin_width) as usize] += 1;
+    }
+    let nbands = bands(driver);
+    let (mut band_days, mut refused) = (alloc::vec![0u32; nbands], 0u32);
+    let (mut lo, mut hi) = (
+        alloc::vec![None::<f64>; nbands],
+        alloc::vec![None::<f64>; nbands],
+    );
+    for &x in &vals {
+        match band_of(driver, x) {
+            Ok(k) if k < nbands => {
+                band_days[k] += 1;
+                lo[k] = Some(lo[k].map_or(x, |m: f64| m.min(x)));
+                hi[k] = Some(hi[k].map_or(x, |m: f64| m.max(x)));
+            }
+            _ => refused += 1,
+        }
+    }
+    let banded = vals.len() as u32 - refused;
+    Segments {
+        days: vals.len() as u32,
+        refused,
+        bin_width,
+        counts,
+        max,
+        band_pct: band_days
+            .iter()
+            .map(|&n| 100.0 * n as f64 / banded as f64)
+            .collect(),
+        band_days,
+        below_cut: hi[..nbands - 1].to_vec(),
+        above_cut: lo[1..].to_vec(),
+    }
+}
+
+/// The regime-by-phase figure's numbers: the share of days at each cycle
+/// phase that `sw_regime` calls storm, and that it calls quiet.
+#[derive(Clone, Debug, PartialEq)]
+pub struct RegimePhase {
+    pub phase: Vec<f64>,
+    /// Per cent of the days in each bin; none for a bin the record never
+    /// reaches.
+    pub storm_pct: Vec<Option<f64>>,
+    pub quiet_pct: Vec<Option<f64>>,
+    /// The highest storm share and the phase it is at, the first on a tie;
+    /// the lowest quiet share and its phase.
+    pub storm_peak: Option<(f64, f64)>,
+    pub quiet_low: Option<(f64, f64)>,
+    /// How closely the two shares move against each other across the bins.
+    pub mirror: Option<f64>,
+}
+
+/// The regime-by-phase figure's numbers, in 20 phase bins.
+pub fn regime_phase(record: &[SolarDay], cycles: &[SolarCycle]) -> RegimePhase {
+    const NB: usize = 20;
+    let phase = cycle_phase(record, cycles);
+    let (mut tot, mut storm, mut quiet) = ([0u32; NB], [0u32; NB], [0u32; NB]);
+    for (d, ph) in record.iter().zip(&phase) {
+        let (Some(ph), Some(ap)) = (ph, d.ap) else {
+            continue;
+        };
+        let b = (pmath::floor(ph * NB as f64) as usize).min(NB - 1);
+        tot[b] += 1;
+        match band_of(Driver::Ap, ap) {
+            Ok(2) => storm[b] += 1,
+            Ok(0) => quiet[b] += 1,
+            _ => {}
+        }
+    }
+    let pct = |c: &[u32; NB]| -> Vec<Option<f64>> {
+        (0..NB)
+            .map(|i| (tot[i] > 0).then(|| 100.0 * c[i] as f64 / tot[i] as f64))
+            .collect()
+    };
+    let (storm_pct, quiet_pct) = (pct(&storm), pct(&quiet));
+    let x: Vec<f64> = (0..NB).map(|i| (i as f64 + 0.5) / NB as f64).collect();
+    let extreme = |v: &[Option<f64>], high: bool| {
+        let mut best: Option<(f64, f64)> = None;
+        for (i, s) in v.iter().enumerate() {
+            let Some(s) = s.filter(|s| s.is_finite()) else {
+                continue;
+            };
+            if best.is_none_or(|(b, _)| if high { s > b } else { s < b }) {
+                best = Some((s, x[i]));
+            }
+        }
+        best
+    };
+    let (a, b): (Vec<f64>, Vec<f64>) = storm_pct
+        .iter()
+        .zip(&quiet_pct)
+        .filter_map(|(s, q)| Some(((*s)?, (*q)?)))
+        .unzip();
+    RegimePhase {
+        storm_peak: extreme(&storm_pct, true),
+        quiet_low: extreme(&quiet_pct, false),
+        mirror: pearson(&a, &b),
+        phase: x,
+        storm_pct,
+        quiet_pct,
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -863,6 +1020,90 @@ mod tests {
             2,
         );
         assert_eq!((thin.r, thin.usable), (None, 0));
+    }
+
+    #[test]
+    fn the_bands_are_the_rows_own_and_the_cuts_are_where_the_record_crosses_them() {
+        // Ap either side of sw_regime's cuts, quiet to 6, active to 25.
+        let ap: Vec<SolarDay> = [
+            Some(0.0),
+            Some(6.0),
+            Some(7.0),
+            Some(25.0),
+            Some(26.0),
+            Some(40.0),
+            None,
+        ]
+        .iter()
+        .enumerate()
+        .map(|(i, a)| day(i as i32, None, *a))
+        .collect();
+        let s = segments(&ap, Driver::Ap);
+        assert_eq!(
+            (s.days, s.refused, s.bin_width, s.max),
+            (6, 0, 2.0, Some(40.0))
+        );
+        // Up to 40 in bins of 2 is 21 bins; 6 and 7 share bin 3.
+        assert_eq!(s.counts.len(), 21);
+        assert_eq!(
+            (
+                s.counts[0],
+                s.counts[3],
+                s.counts[12],
+                s.counts[13],
+                s.counts[20]
+            ),
+            (1, 2, 1, 1, 1)
+        );
+        assert_eq!(s.band_days, [2, 2, 2]);
+        assert_eq!(
+            (s.below_cut.clone(), s.above_cut.clone()),
+            (vec![Some(6.0), Some(25.0)], vec![Some(7.0), Some(26.0)])
+        );
+        // F10.7 either side of sw_activity_band's 90, 130 and 170: a flux ON
+        // an edge belongs to the band the edge opens.
+        let f: Vec<SolarDay> = [89.9, 90.0, 129.9, 130.0, 169.9, 170.0, 343.0]
+            .iter()
+            .enumerate()
+            .map(|(i, x)| day(i as i32, Some(*x), None))
+            .collect();
+        let s = segments(&f, Driver::F107);
+        assert_eq!(s.band_days, [1, 2, 2, 2]);
+        assert_eq!(s.above_cut, [Some(90.0), Some(130.0), Some(170.0)]);
+        assert_eq!(s.below_cut, [Some(89.9), Some(129.9), Some(169.9)]);
+        assert!((s.band_pct[0] - 100.0 / 7.0).abs() < 1e-12);
+        // Up to 343 sfu in bins of 5 is 70 bins.
+        assert_eq!(s.counts.len(), 70);
+    }
+
+    #[test]
+    fn storm_and_quiet_shares_are_counted_per_phase_by_the_regime_row() {
+        // Twenty days of one complete cycle: one day in each phase bin. Day
+        // 0 is a storm, day 2 active, the rest quiet.
+        let rec: Vec<SolarDay> = (0..20)
+            .map(|i| {
+                day(
+                    i,
+                    None,
+                    Some(match i {
+                        0 => 30.0,
+                        2 => 10.0,
+                        _ => 3.0,
+                    }),
+                )
+            })
+            .collect();
+        let r = regime_phase(&rec, &[cycle(1, 0, 20), cycle(2, 20, 40)]);
+        assert_eq!(r.storm_pct[0], Some(100.0));
+        assert_eq!(r.storm_pct[1], Some(0.0));
+        assert_eq!(
+            (r.quiet_pct[0], r.quiet_pct[2], r.quiet_pct[3]),
+            (Some(0.0), Some(0.0), Some(100.0))
+        );
+        assert_eq!(r.storm_peak, Some((100.0, 0.025)));
+        // The lowest quiet share is 0 at bins 0 and 2; the first wins.
+        assert_eq!(r.quiet_low, Some((0.0, 0.025)));
+        assert!((r.mirror.unwrap() + 0.6882472016116853).abs() < 1e-12);
     }
 
     #[test]

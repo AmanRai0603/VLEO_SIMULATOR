@@ -304,6 +304,17 @@ path = "/v1/figures/solar/spikes"
 name = "figures-solar-mean-cycle"
 path = "/v1/figures/solar/mean-cycle"
 params = [["v", "f107"], ["bins", "20"]]
+[[route.example]]
+name = "figures-solar-segments-ap"
+path = "/v1/figures/solar/segments"
+params = [["v", "ap"]]
+[[route.example]]
+name = "figures-solar-segments-f107"
+path = "/v1/figures/solar/segments"
+params = [["v", "f107"]]
+[[route.example]]
+name = "figures-solar-regime-phase"
+path = "/v1/figures/solar/regime-phase"
 
 [[route]]
 method = "GET"
