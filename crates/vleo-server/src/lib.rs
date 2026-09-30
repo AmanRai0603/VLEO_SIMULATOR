@@ -31,15 +31,10 @@ mod pages;
 mod runs;
 mod saved;
 
-#[allow(unused_imports)]
 use case::*;
-#[allow(unused_imports)]
 use http::*;
-#[allow(unused_imports)]
 use pages::*;
-#[allow(unused_imports)]
 use runs::*;
-#[allow(unused_imports)]
 use saved::*;
 
 use json::Json;

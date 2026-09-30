@@ -19,15 +19,10 @@ mod pipeline;
 mod release;
 mod report;
 
-#[allow(unused_imports)]
 use authoring::*;
-#[allow(unused_imports)]
 use forms::*;
-#[allow(unused_imports)]
 use generate::*;
-#[allow(unused_imports)]
 use release::*;
-#[allow(unused_imports)]
 use report::*;
 
 /// A reader that stops early — `| head`, `| grep -m1`, a pager quit halfway —

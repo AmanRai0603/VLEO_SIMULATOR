@@ -1,0 +1,88 @@
+:root { --paper:#faf9f5; --card:#ffffff; --ink:#1f1e1b; --ink2:#55524a; --ink3:#8a867b;
+  --rule:#dedbd2; --accent:#6b3fa0; --accent-pale:#efe8f7; --warn:#a4262c; --warn-pale:#fbeeee;
+  --ok:#2f6b3a; --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+@media (prefers-color-scheme: dark) { :root { --paper:#1b1a18; --card:#23221f; --ink:#ecebe6;
+  --ink2:#c4c1b8; --ink3:#8f8b80; --rule:#3a3833; --accent:#b99ae0; --accent-pale:#2e2638;
+  --warn:#ef8a8a; --warn-pale:#3a2323; --ok:#8fcf99; } }
+* { box-sizing: border-box; }
+body { margin: 0; padding: 0 16px 64px; background: var(--paper); color: var(--ink);
+  font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+.nf-head, main { max-width: 920px; margin: 0 auto; }
+.nf-kicker { font: 12px var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--accent);
+  margin: 28px 0 4px; }
+h1 { font-size: 26px; margin: 0 0 4px; }
+h2 { font-size: 18px; margin: 32px 0 6px; border-bottom: 1px solid var(--rule); padding-bottom: 4px; }
+code, .nf-id { font-family: var(--mono); font-size: 13px; }
+.nf-id { color: var(--ink2); margin: 0 0 12px; }
+.nf-intro { background: var(--card); border: 1px solid var(--rule); border-radius: 6px; padding: 8px 18px; }
+.nf-intro li { margin: 4px 0; }
+.nf-muted { color: var(--ink3); font-size: 13px; }
+.nf-warn { color: var(--warn); background: var(--warn-pale); padding: 10px 14px; border-radius: 6px; }
+.nf-bar { position: sticky; top: 0; z-index: 5; background: var(--paper); border-bottom: 1px solid var(--rule);
+  padding: 10px 0; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+button { font: 13px var(--mono); padding: 6px 12px; border: 1px solid var(--rule); border-radius: 4px;
+  background: var(--card); color: var(--ink); cursor: pointer; }
+button:hover { border-color: var(--ink3); }
+button.nf-primary { background: var(--accent); color: var(--paper); border-color: var(--accent); }
+button:disabled { opacity: .45; cursor: default; }
+.nf-count { font: 13px var(--mono); color: var(--ink2); }
+.nf-q { background: var(--card); border: 1px solid var(--rule); border-radius: 6px; padding: 10px 14px; margin: 10px 0; }
+.nf-q.changed { border-color: var(--accent); box-shadow: inset 3px 0 0 var(--accent); }
+.nf-q label { display: block; font-weight: 600; }
+.nf-why { color: var(--ink3); font-size: 13px; margin: 2px 0 6px; }
+.nf-was { color: var(--ink3); font-size: 12px; margin-top: 4px; white-space: pre-wrap; }
+.nf-was.nf-bad { color: var(--warn); font-weight: 600; }
+.nf-srcbox { display: block; }
+.nf-srcbox input { width: 100%; }
+.nf-src { margin-top: 4px; }
+.nf-src.bad { color: var(--warn); }
+.nf-tag { font: 11px var(--mono); padding: 0 6px; border-radius: 3px; margin-left: 6px; vertical-align: 1px;
+  border: 1px solid var(--rule); color: var(--ink3); font-weight: 400; }
+.nf-tag.req { color: var(--warn); border-color: var(--warn); }
+.nf-tag.rel { color: var(--accent); border-color: var(--accent); }
+.nf-tag.dr { color: var(--ok); border-color: var(--ok); }
+.nf-answer { font-size: 15px; }
+.nf-dr { border: 1px solid var(--ok); border-radius: 6px; padding: 4px 14px 10px; margin: 18px 0; }
+.nf-dr h2 { border-bottom-color: var(--ok); }
+.nf-dr-state { font: 13px var(--mono); padding: 6px 10px; border-radius: 4px; background: var(--accent-pale); }
+.nf-dr-state.bad { background: var(--warn-pale); color: var(--warn); }
+.nf-ex { font-size: 13px; color: var(--ink2); }
+.nf-ex dt { font-weight: 600; margin-top: 4px; }
+.nf-ex dd { margin: 0 0 0 12px; }
+input, textarea, select { width: 100%; font: 14px var(--mono); color: var(--ink); background: var(--paper);
+  border: 1px solid var(--rule); border-radius: 4px; padding: 6px 8px; }
+textarea { min-height: 70px; resize: vertical; }
+.nf-block { border: 1px dashed var(--rule); border-radius: 6px; padding: 8px 12px; margin: 8px 0; }
+.nf-block-h { display: flex; justify-content: space-between; align-items: center; font: 12px var(--mono);
+  color: var(--ink3); }
+.nf-block .nf-col { margin: 6px 0; }
+.nf-block .nf-col span { font-size: 13px; color: var(--ink2); }
+.nf-ctx { display: grid; grid-template-columns: max-content 1fr; gap: 4px 14px; font-size: 14px; }
+.nf-ctx dt { color: var(--ink3); }
+.nf-ctx dd { margin: 0; font-family: var(--mono); font-size: 13px; overflow-wrap: anywhere; }
+table.nf-fx { border-collapse: collapse; width: 100%; font-size: 13px; }
+table.nf-fx td, table.nf-fx th { border-bottom: 1px solid var(--rule); padding: 4px 6px; text-align: left;
+  vertical-align: top; overflow-wrap: anywhere; }
+.nf-changes li { margin: 3px 0; }
+.nf-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+@media (max-width: 640px) { .nf-grid2 { grid-template-columns: 1fr; } .nf-ctx { grid-template-columns: 1fr; } }
+textarea.nf-code { white-space: pre; overflow-wrap: normal; overflow-x: auto; tab-size: 2; font-size: 13px;
+  min-height: 120px; }
+.nf-exbox { margin-top: 6px; }
+.nf-exbox summary { cursor: pointer; color: var(--accent); font-size: 13px; }
+.nf-exbox pre, .nf-ref pre { background: var(--paper); border: 1px solid var(--rule); border-radius: 4px; padding: 8px 10px;
+  overflow-x: auto; font: 12.5px/1.45 var(--mono); white-space: pre; margin: 6px 0; }
+.nf-ref { font-size: 13px; }
+.nf-ref table { border-collapse: collapse; width: 100%; }
+.nf-ref td { border-bottom: 1px solid var(--rule); padding: 3px 6px; vertical-align: top; }
+.nf-ins { display: grid; grid-template-columns: max-content 1fr; gap: 4px 10px; align-items: center; }
+.nf-ins label { font: 13px var(--mono); font-weight: 400; }
+.nf-check { border: 1px solid var(--accent); border-radius: 6px; padding: 8px 14px; margin: 14px 0; background: var(--card); }
+.nf-check h3 { margin: 4px 0 6px; font-size: 15px; }
+.nf-check ul { margin: 4px 0; padding-left: 20px; }
+.nf-check li { margin: 2px 0; font-size: 13.5px; }
+.nf-check .ok, .nf-case-res.ok { color: var(--ok); }
+.nf-check .bad, .nf-case-res.bad { color: var(--warn); }
+.nf-sound { font: 13px var(--mono); padding: 6px 10px; border-radius: 4px; background: var(--accent-pale); }
+.nf-sound.bad { background: var(--warn-pale); color: var(--warn); }
+@media print { .nf-bar { display: none; } }
