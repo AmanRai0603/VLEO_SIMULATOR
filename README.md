@@ -664,6 +664,7 @@ showing an optimum near 300 km — recorded 15 September 2026](docs/img/sweep.pn
 | [`docs/ARCHITECTURE.html`](docs/ARCHITECTURE.html) | the whole tool end to end, with diagrams — frontend, backend and data, how pictures, pages and results are made and shared, and the roadmap. Open it in a browser |
 | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | why the rings are shaped the way they are |
 | [`docs/NODE_AUTHORING.md`](docs/NODE_AUTHORING.md) | the sheet, field by field |
+| [`docs/CHANGING.md`](docs/CHANGING.md) | changing the code — a node, a route, a component, an output kind — and what each brings with it; one field followed through the generators |
 | [`docs/PSEUDOCODE.md`](docs/PSEUDOCODE.md) | the method language — every statement, function, constant and unit, and the worked example in full — generated from the checker |
 | [`docs/EXPLAINING.md`](docs/EXPLAINING.md) | how the tool explains itself — the rules every page, form, result, figure and document follows, and what checks each |
 | [`docs/DERISKING.md`](docs/DERISKING.md) | why the design is what it is — beliefs, versions, the risk register, releases; the generated narrative is [`docs/DERISK_NARRATIVE.md`](docs/DERISK_NARRATIVE.md) |

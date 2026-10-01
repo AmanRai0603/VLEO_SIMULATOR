@@ -3026,6 +3026,10 @@ path = "docs/NODE_AUTHORING.md"
 what = "Every field of a sheet, and why it is there."
 
 [[doc]]
+path = "docs/CHANGING.md"
+what = "Changing the code — a node, a route, a component, an output kind — what each brings with it, and one field followed through the generators."
+
+[[doc]]
 path = "docs/ARCHITECTURE.md"
 what = "The rings, the layers and the reasoning behind them."
 
