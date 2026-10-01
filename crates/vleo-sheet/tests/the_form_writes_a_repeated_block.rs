@@ -138,14 +138,14 @@ fn a_numbered_block_is_numbered_by_the_form() {
     );
 
     let e = form::block_text(SHEET, "algorithm", "set", 0, &v(&[("number", "7")])).unwrap_err();
-    assert!(e.contains("never typed"), "{e}");
+    assert!(e.message().contains("never typed"), "{e}");
 }
 
 #[test]
 fn only_the_last_numbered_block_can_be_removed() {
     let e = form::block_text(SHEET, "algorithm", "remove", 0, &[]).unwrap_err();
     assert!(
-        e.contains("only the last"),
+        e.message().contains("only the last"),
         "removing from the middle renumbers the holes after it: {e}"
     );
     let out = form::block_text(SHEET, "algorithm", "remove", 1, &[]).unwrap();
@@ -222,7 +222,7 @@ fn an_optional_key_is_added_and_a_required_one_may_not_be_emptied() {
 
     let e = form::block_text(&out, "theory", "set", 0, &v(&[("text", "  ")])).unwrap_err();
     assert!(
-        e.contains("Remove the whole block"),
+        e.message().contains("Remove the whole block"),
         "emptying a required key leaves a block that says nothing: {e}"
     );
 }
@@ -230,7 +230,10 @@ fn an_optional_key_is_added_and_a_required_one_may_not_be_emptied() {
 #[test]
 fn a_block_with_a_required_key_missing_is_refused() {
     let e = form::block_text(SHEET, "input", "add", 0, &v(&[("binding", "t")])).unwrap_err();
-    assert!(e.contains("var"), "should name what is missing: {e}");
+    assert!(
+        e.message().contains("var"),
+        "should name what is missing: {e}"
+    );
 }
 
 #[test]
@@ -245,7 +248,7 @@ fn a_quantity_that_does_not_exist_is_refused_before_anything_is_written() {
         &v(&[("binding", "t"), ("var", "a_time"), ("type", "Nonsense")]),
     )
     .unwrap_err();
-    assert!(e.contains("not a quantity"), "{e}");
+    assert!(e.message().contains("not a quantity"), "{e}");
 }
 
 #[test]
@@ -342,7 +345,7 @@ fn a_view_that_carries_a_comment_or_a_key_it_does_not_know_is_refused() {
     );
     let e = form::view_rewrite(&commented, "number", "", "").unwrap_err();
     assert!(
-        e.contains("comment"),
+        e.message().contains("comment"),
         "every comment in a sheet is somebody's reason: {e}"
     );
 
@@ -352,7 +355,7 @@ fn a_view_that_carries_a_comment_or_a_key_it_does_not_know_is_refused() {
     );
     let e = form::view_rewrite(&strange, "number", "", "").unwrap_err();
     assert!(
-        e.contains("scale"),
+        e.message().contains("scale"),
         "it must name the key it does not know: {e}"
     );
 
@@ -362,7 +365,7 @@ fn a_view_that_carries_a_comment_or_a_key_it_does_not_know_is_refused() {
     );
     let e = form::view_rewrite(&heat, "line", "other_row", "60").unwrap_err();
     assert!(
-        e.contains("heatmap"),
+        e.message().contains("heatmap"),
         "turning a heatmap into a line throws an axis away: {e}"
     );
 
@@ -375,10 +378,13 @@ fn a_view_that_carries_a_comment_or_a_key_it_does_not_know_is_refused() {
     assert_eq!(v["view"]["points"].as_integer(), Some(60));
 
     let e = form::view_rewrite(SHEET, "line", "other_row", "1").unwrap_err();
-    assert!(e.contains("two points"), "one point is a number: {e}");
+    assert!(
+        e.message().contains("two points"),
+        "one point is a number: {e}"
+    );
     let e = form::view_rewrite(SHEET, "number", "other_row", "").unwrap_err();
     assert!(
-        e.contains("not drawn against anything"),
+        e.message().contains("not drawn against anything"),
         "a number has no row to sweep: {e}"
     );
 }

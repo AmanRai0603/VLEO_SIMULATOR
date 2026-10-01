@@ -1,0 +1,7 @@
+# A saved sweep's points: sweep.csv in a result's folder, and what a report
+# page carries inside it. Written by vleo_modules::results::sweep_csv, read
+# back by results::read_sweep. A refused point has no `y`, and says why.
+format = "vleo-sweep/1"
+marker = "sweep"
+meta = ["sweep", "over", "over_name", "x_unit", "x_factor", "y_unit", "y_factor", "from", "to", "points"]
+columns = ["x", "y", "x_si", "y_si", "refused"]

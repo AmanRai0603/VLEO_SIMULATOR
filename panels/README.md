@@ -89,6 +89,35 @@ fetch is slower than any pause anyone would write. Waiting on the condition is
 faster when it is quick and correct when it is not; a panel wired to nothing
 still fails, it just fails after the timeout rather than before it.
 
+## A number the engine worked out, and check 2c
+
+Some panels state numbers about the record — a correlation, a share of days, a
+count of deciles. Those are worked out by the engine (`vleo_modules::record`,
+served at `/v1/figures/solar/<id>`) and held by its tests; the panel draws them
+and computes none. The spec says which it states:
+
+```toml
+figures = [{ id = "density", reads = ["r", "below_both_pct", "storm_deciles"] }]
+```
+
+**2c · It states.** Each named number is moved in the engine's reply, one at a
+time, and the panel — the canvas or the note under it — must say something
+different. Check three cannot do this: a correlation is four glyphs, far inside
+a 2 per cent tolerance, and a panel that asks for the figure and then prints a
+number of its own passes the pixel match every day until the record changes.
+The selftest carries that panel.
+
+A figure drawn only in one view of a panel names the `state` that reaches it —
+the same JavaScript an `[[input]]` drives with — and a number may be a list, or a
+list of lists: every number under the field is moved.
+
+```toml
+[[figures]]
+id = "storm-scale"
+state = "(() => { ... s.value = 'storm'; s.dispatchEvent(new Event('change')); })()"
+reads = ["per_year", "evenness", "busiest"]
+```
+
 ## Why `correct` is prose
 
 Checks one and two are mechanical and catch the mechanical failures. `correct`

@@ -1,0 +1,168 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "results",
+  "type": "object",
+  "properties": {
+    "ok": {
+      "type": "boolean"
+    },
+    "path": {
+      "type": "string"
+    },
+    "results": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "file": {
+            "type": "string"
+          },
+          "target": {
+            "type": "string"
+          },
+          "pinned": {
+            "type": "boolean",
+            "description": "Kept whole for good: never thinned."
+          },
+          "thinned": {
+            "type": "string",
+            "description": "Empty while every value is kept; once thinned to its summary, the date and how many values were dropped."
+          },
+          "name": {
+            "type": "string"
+          },
+          "saved": {
+            "type": "string"
+          },
+          "mode": {
+            "type": "string"
+          },
+          "chain": {
+            "type": "string"
+          },
+          "kernel": {
+            "type": "string"
+          },
+          "graph": {
+            "type": "string"
+          },
+          "template": {
+            "type": "string"
+          },
+          "template_current": {
+            "type": "boolean"
+          },
+          "data": {
+            "type": "string"
+          },
+          "ran": {
+            "type": "number"
+          },
+          "blocked": {
+            "type": "number"
+          },
+          "changed": {
+            "type": "number"
+          },
+          "question": {
+            "type": "string"
+          },
+          "sweep": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "over": {
+                "type": "string"
+              },
+              "points": {
+                "type": "number"
+              },
+              "refused": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "over",
+              "points",
+              "refused"
+            ]
+          },
+          "versions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "node": {
+                  "type": "string"
+                },
+                "n": {
+                  "type": "number"
+                },
+                "release": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "node",
+                "n",
+                "release"
+              ]
+            }
+          },
+          "moved": {
+            "type": "array"
+          },
+          "answer": {
+            "type": "object",
+            "properties": {
+              "value": {
+                "type": "string"
+              },
+              "unit": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "value",
+              "unit"
+            ]
+          }
+        },
+        "required": [
+          "file",
+          "target",
+          "pinned",
+          "thinned",
+          "name",
+          "saved",
+          "mode",
+          "chain",
+          "kernel",
+          "graph",
+          "template",
+          "template_current",
+          "data",
+          "ran",
+          "blocked",
+          "changed",
+          "question",
+          "sweep",
+          "versions",
+          "moved",
+          "answer"
+        ]
+      }
+    },
+    "unreadable": {
+      "type": "array"
+    }
+  },
+  "required": [
+    "ok",
+    "path",
+    "results",
+    "unreadable"
+  ]
+}

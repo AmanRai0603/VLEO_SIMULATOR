@@ -135,6 +135,41 @@ export async function engineAt(node, sets) {
 }
 
 /**
+ * The numbers a figure of the record draws, worked out by the engine
+ * (`/v1/figures/solar/<id>`, phase 10). The page draws the record's own days
+ * and these; it works out neither. `params` are the figure's own settings
+ * (the mean cycle's driver and bins). A refusal comes back as the engine's own
+ * words, and a panel that gets one says it rather than drawing without them.
+ */
+export async function engineFigure(id, params) {
+  try {
+    const q = params ? '?' + new URLSearchParams(params).toString() : '';
+    const r = await fetch('/v1/figures/solar/' + encodeURIComponent(id) + q);
+    const d = await r.json();
+    return d.ok ? d : { refused: d.message || 'refused' };
+  } catch (e) {
+    return { refused: String(e) };
+  }
+}
+
+/**
+ * A figure worked out ON THE CASE THE READER IS LOOKING AT: the saved case with
+ * their overrides laid over it, as `engineSweep` and `engineLevers` ask. The
+ * design and closure figures sweep the design itself, so they take it; a figure
+ * of the record alone has no case to take and asks `engineFigure`.
+ *
+ * Kept for as long as the page is open, per question — the overrides are part
+ * of the question, so changing one asks again and changing it back does not.
+ */
+const onCase = new Map();
+export function engineFigureOnCase(id, params) {
+  const q = withOverrides(new URLSearchParams(params));
+  const key = id + '?' + q.toString();
+  if (!onCase.has(key)) onCase.set(key, engineFigure(id, q));
+  return onCase.get(key);
+}
+
+/**
  * ONE RELATION, AT GIVEN INPUTS — `/v1/probe`, and not `/v1/run`.
  *
  * The two answer different questions and only recently had to. `run` asks what
@@ -213,28 +248,6 @@ export async function engineLevers(node) {
     new URLSearchParams({ node })).toString());
   const d = await r.json();
   return d.ok ? (d.levers || []) : [];
-}
-
-/**
- * Another implementation's saved answers, for a figure that checks this one.
- *
- * Kept apart from `bundleFile` on purpose, and the separation is the point. A
- * bundle is verified reference data — what was OBSERVED, with a provenance and a
- * licence. `matlab/reference/mission_drivers.csv` is what a DIFFERENT PROGRAM
- * computed, saved by its author. Drawing the two with one function would be the
- * first step toward a figure that presents a second implementation's output as
- * evidence about the sky.
- */
-export async function parityFile(file) {
-  const key = 'parity/' + file;
-  if (cache.has(key)) return cache.get(key);
-  const p = (async () => {
-    const r = await fetch('/v1/parity/' + file);
-    if (!r.ok) throw new Error(await r.text());
-    return parseCsv(await r.text());
-  })();
-  cache.set(key, p);
-  return p;
 }
 
 export async function bundleFile(name, file) {
@@ -360,63 +373,3 @@ export function solarRecord() {
   return recordP;
 }
 
-/**
- * A centred moving mean, and the reason it is centred.
- *
- * A trailing mean sits below the series during a rise and above it during a
- * fall, so a ratio against it is not symmetric and a threshold on that ratio
- * catches rises and misses falls. Centred costs the ability to compute it in
- * real time, which a descriptive statistic does not need.
- *
- * A window with fewer than `minFrac` of its days present returns null rather
- * than a mean of whatever was there — across the 2017 gap that would otherwise
- * be a mean of one side.
- */
-export function centredMean(vals, w, minFrac = 0.7) {
-  const half = Math.floor(w / 2), n = vals.length, out = new Array(n).fill(null);
-  for (let i = 0; i < n; i++) {
-    let s = 0, k = 0;
-    for (let j = Math.max(0, i - half); j < Math.min(n, i + half + 1); j++) {
-      if (vals[j] !== null) { s += vals[j]; k++; }
-    }
-    if (k > w * minFrac) out[i] = s / k;
-  }
-  return out;
-}
-
-/** Pearson correlation over the pairs where both are present. */
-export function corr(a, b) {
-  const xs = [], ys = [];
-  for (let i = 0; i < a.length; i++) {
-    if (a[i] !== null && b[i] !== null) { xs.push(a[i]); ys.push(b[i]); }
-  }
-  if (xs.length < 3) return null;
-  const ma = xs.reduce((p, c) => p + c, 0) / xs.length;
-  const mb = ys.reduce((p, c) => p + c, 0) / ys.length;
-  let sab = 0, sa = 0, sb = 0;
-  for (let i = 0; i < xs.length; i++) {
-    const da = xs[i] - ma, db = ys[i] - mb;
-    sab += da * db; sa += da * da; sb += db * db;
-  }
-  return sa && sb ? sab / Math.sqrt(sa * sb) : null;
-}
-
-/**
- * A percentile of a sorted sample, interpolated between order statistics.
- *
- * THE CONVENTION IS THE ONE THE ROWS WERE MEASURED UNDER, and it is not the only
- * defensible one. A nearest-rank percentile — take the element at floor(q*n) —
- * was what this used to do, and it disagreed with sw_uncertainty_growth by up to
- * 0.7 sfu: that row's table holds 68.3 and 113.3 at one- and five-year leads, and
- * neither is a value the record contains, because they sit between two adjacent
- * observations. Linear interpolation at h = (n-1)q reproduces both exactly. A
- * panel that illustrates a row must compute the row's quantity the row's way, or
- * the picture and the claim drift apart in the fourth figure and nobody notices.
- */
-export function quantile(sorted, q) {
-  if (!sorted.length) return null;
-  if (sorted.length === 1) return sorted[0];
-  const h = (sorted.length - 1) * q;
-  const lo = Math.floor(h), hi = Math.min(sorted.length - 1, lo + 1);
-  return sorted[lo] + (h - lo) * (sorted[hi] - sorted[lo]);
-}

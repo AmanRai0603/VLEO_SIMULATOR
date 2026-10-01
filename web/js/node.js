@@ -17,6 +17,7 @@ import { mountTheory } from './theory.js';
 import { figuresForRow, drawRowFigure } from './solar.js';
 import { isInput, inputControl, mountInput } from './inputs.js';
 import { mountNodeForm } from './nodeform.js';
+import { renderLesson } from './components.js';
 
 export async function openNode(id) {
   const r = S.byId.get(id);
@@ -25,10 +26,15 @@ export async function openNode(id) {
   body.innerHTML = '<p class="muted">loading the node…</p>';
   const figs = figuresForRow(id);
 
-  const [meta, fragment] = await Promise.all([
+  const [meta, fragment, lesson] = await Promise.all([
     fetch('/v1/node/' + encodeURIComponent(id)).then(x => x.json()).catch(() => null),
     fetch('/v1/fragment/' + encodeURIComponent(id)).then(x => x.text()).catch(() => null),
+    fetch('/v1/lesson/' + encodeURIComponent(id)).then(x => x.json()).catch(() => null),
   ]);
+  // A LESSON IS CONTENT, drawn from the component library. Most rows have none,
+  // and say nothing about it; a lesson that fails its check says why instead of
+  // being drawn half-right.
+  const hasLesson = lesson && (lesson.lesson || !lesson.ok);
 
   body.innerHTML =
     // AND THIS COMES BEFORE EVEN THAT. Whether the row answers is the first
@@ -57,6 +63,11 @@ export async function openNode(id) {
       '<div class="tabrow sub sheet-tabs">' +
         '<button class="ctl sheet-tab sel" data-view="read">as written</button>' +
         '<button class="ctl sheet-tab" data-view="form">the node form — fill it anywhere</button>' +
+        // A LESSON IS WRITTEN THE SAME WAY: a form the expert fills anywhere and
+        // sends back, applied by a developer. Downloading it writes nothing.
+        '<a class="ctl lesson-form-dl" href="/v1/lesson-form/' + encodeURIComponent(id) + '" download="' +
+          esc(id) + '.lesson-form.html">' + (lesson && lesson.lesson ? 'the lesson form' : 'write a lesson — its form') +
+          '</a>' +
       '</div>' +
       '<div class="sheet-read">' +
         (fragment || '<p class="empty">The sheet for <code>' + esc(id) +
@@ -79,7 +90,15 @@ export async function openNode(id) {
               '">' + esc(f.label) + '</button>').join('') + '</div>'
           : '') +
         '<div class="row-figure"></div></section>'
+      : '') +
+    (hasLesson
+      ? '<section class="seg" data-seg="lesson"><h3 class="seg-h">' +
+        '<span class="seg-n">' + (figs.length ? 5 : 4) + '</span>the lesson — how this row is taught</h3>' +
+        (lesson.ok ? '<div class="row-lesson"></div>'
+          : '<div class="blocked"><b>this row\'s lesson is not shown</b><div>' + esc(lesson.message || '') +
+            '</div></div>') + '</section>'
       : '');
+  if (hasLesson && lesson.ok) renderLesson($('.row-lesson', body), lesson.lesson);
 
   if (isInput(r)) mountInput($('.ovr-panel', body), r);
 

@@ -79,3 +79,24 @@ why = """each variable has its own axis label and its own scale — a chart that
 name = "bins"
 drive = "(() => { const s = document.querySelector('.sw-opt[data-k=bins]'); if (!s) throw new Error('no bins control'); s.value = '40'; s.dispatchEvent(new Event('change')); })()"
 why = """the bin count sets the resolution of every line; doubling it must visibly change the curves"""
+
+# THE STORM VIEW'S NUMBERS ARE THE ENGINE'S (phase 10b): the rates per year of
+# each cycle, the busiest cycle at each level, how uneven the cycles are and the
+# largest Ap in each are vleo_modules::record::storm_scale's, the levels the
+# kernel's own ap-at-Kp table. Check 2c moves each in the engine's reply with
+# the view on storms and demands the panel say something different. `days` is
+# in the reply and drawn nowhere.
+[[figures]]
+id = "storm-scale"
+state = "(() => { const s = document.querySelector('.sw-opt[data-k=view]'); if (!s) throw new Error('no view control'); s.value = 'storm'; s.dispatchEvent(new Event('change')); })()"
+reads = ["levels", "cycles", "max_ap", "per_year", "evenness", "busiest"]
+
+# THE MEAN CYCLE'S NUMBERS ARE THE ENGINE'S TOO (phase 10d): every cycle stacked
+# on phase, the mean of the complete ones, and the correlation, bins, gaps and
+# peaks the answer, finding and note state are vleo_modules::record::mean_cycle,
+# asked for with the driver and bins the controls hold. The panel's opening view
+# is this one, so it needs no state. `complete` is a flag per cycle and not a
+# number, so it is not moved; the dashes it sets are drawn from it all the same.
+[[figures]]
+id = "mean-cycle"
+reads = ["phase", "cycles", "curves", "mean_cycle", "pair", "r", "usable", "above", "gap_rise", "gap_fall", "peak", "min_days", "bins"]

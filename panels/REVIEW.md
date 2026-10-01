@@ -109,7 +109,7 @@ Current: `UNCONFIRMED / re-recorded 2026-09-19, §34 moves 1–9; awaiting a loo
 
 ## `closure` — Closure — each requirement against what the record gives it
 
-- **no pixel reference, declared.** a closure's margin and sense are checked by gate 7d and 7e on the sheet, and check 2b proves this panel reads the closure rather than restating it
+- **no pixel reference, declared.** a closure's margin and sense are checked by gate 7d and 7e on the sheet, and check 2c proves this panel draws the engine's closure rather than restating it
 
   Checks 1, 2, 2b and 4 still run on it. There is no picture to
   look at here, so look at the panel itself in the running tool.
@@ -228,7 +228,7 @@ Current: `UNCONFIRMED / re-recorded 2026-09-19, §34 moves 1–9; awaiting a loo
 
 ## `design` — Design — the window against what the vehicle is built for
 
-- **no pixel reference, declared.** every number on it is a row the engine publishes, checked by that row's own fixtures, and check 2b proves the panel reads the engine rather than holding a copy
+- **no pixel reference, declared.** every number on it is a row the engine publishes, checked by that row's own fixtures, and check 2c proves the panel draws the engine's figure rather than holding a copy
 
   Checks 1, 2, 2b and 4 still run on it. There is no picture to
   look at here, so look at the panel itself in the running tool.
@@ -298,7 +298,7 @@ Current: `UNCONFIRMED / re-recorded 2026-09-19, §34 moves 1–9; awaiting a loo
 
 ## `drivers` — Drivers — the five scenarios, against the legacy run
 
-- **no pixel reference, declared.** the twenty-five cells it draws are asserted numerically by tools/mat_parity.py against the MATLAB tool's own saved run, and check 2b proves it reads them from the engine rather than holding them
+- **no pixel reference, declared.** the twenty-five cells it draws are asserted numerically by tools/mat_parity.py against the MATLAB tool's own saved run, and check 2c proves it draws the engine's comparison rather than holding one
 
   Checks 1, 2, 2b and 4 still run on it. There is no picture to
   look at here, so look at the panel itself in the running tool.

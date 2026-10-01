@@ -144,3 +144,34 @@ the forecast promises, age is what a user actually has in hand, and the median
 gap between issues is 7 days. A third option, 'rolling, by year', was offered
 here until this check demanded the canvas change and found it was read nowhere.
 """
+
+# THE NUMBERS ARE THE ENGINE'S (phase 10h): skill against both baselines, bias
+# and RMS error at each lead and in each year of issue, the pairs behind each,
+# where skill peaks, the lead the two samples differ most, the thin years and
+# the best, worst and lowest-bias ones are vleo_modules::record::forecast_by_lead
+# and forecast_by_year; the gaps between issues are record::issue_age. Check 2c
+# moves each in the engine's reply and demands the panel say something
+# different. The three views are three shapes of reply, so each is declared
+# behind its view; `leads`, `min_pairs` and `cap` are the band, floor and cap
+# the page quotes, and are moved with the rest.
+#
+# On the by-lead view `pairs_leaky` is not declared. It is read — it fades the
+# leaky line where its sample thins — but only as each lead's count against the
+# largest, on a line drawn at half contrast, and the move 2c makes (×1.75 + 13)
+# shifts that shade by about a thousandth: under one step of the canvas's 8-bit
+# alpha, so no pixel changes and the check could not tell it from a panel that
+# ignored the number. On the by-year view the counts differ enough between years
+# for the move to show, and there it is declared.
+[[figures]]
+id = "forecast"
+reads = ["lead", "pairs", "pairs_strict", "skill_strict", "skill_leaky", "bias", "rmse", "peak", "widest"]
+
+[[figures]]
+id = "forecast"
+state = "(() => { const s = document.querySelector('.sw-opt[data-k=view]'); if (!s) throw new Error('no view control'); s.value = 'year'; s.dispatchEvent(new Event('change')); })()"
+reads = ["leads", "min_pairs", "year", "pairs", "pairs_strict", "pairs_leaky", "skill_strict", "skill_leaky", "bias", "rmse", "thin", "worst", "best", "lowest_bias"]
+
+[[figures]]
+id = "forecast"
+state = "(() => { const s = document.querySelector('.sw-opt[data-k=view]'); if (!s) throw new Error('no view control'); s.value = 'age'; s.dispatchEvent(new Event('change')); })()"
+reads = ["issues", "cap", "gap", "count", "median", "mean", "commonest", "over_a_day_pct"]

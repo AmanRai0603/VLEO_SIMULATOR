@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "version",
+  "type": "object",
+  "properties": {
+    "contract": {
+      "type": "string"
+    },
+    "kernel": {
+      "type": "string"
+    },
+    "graph": {
+      "type": "string"
+    },
+    "version": {
+      "type": "string"
+    },
+    "endpoint": {
+      "type": "string"
+    },
+    "port": {
+      "type": "number"
+    },
+    "nodes": {
+      "type": "number"
+    },
+    "data": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "required": [
+    "contract",
+    "kernel",
+    "graph",
+    "version",
+    "endpoint",
+    "port",
+    "nodes",
+    "data"
+  ]
+}

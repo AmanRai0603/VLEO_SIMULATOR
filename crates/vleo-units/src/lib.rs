@@ -16,6 +16,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 #![forbid(unsafe_code)]
 
+pub mod calendar;
 pub mod constants;
 pub mod frames;
 pub mod method_rt;

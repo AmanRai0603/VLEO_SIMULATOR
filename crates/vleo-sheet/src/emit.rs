@@ -8,6 +8,7 @@
 
 use crate::model::*;
 use crate::{load::Tree, short_hex};
+use crate::{Error, ErrorKind};
 use std::collections::BTreeMap;
 use vleo_units::Unit;
 
@@ -19,13 +20,47 @@ fn unit_of(name: &str) -> Unit {
     Unit::from_name(name).unwrap_or(Unit::One)
 }
 
+/// Sheet text as the inside of a Rust string literal.
+///
+/// Line breaks and tabs are written as escapes, so a label with a line break
+/// in it stays one line of generated code.
 fn esc(s: &str) -> String {
-    s.replace('\\', "\\\\").replace('"', "\\\"")
+    s.replace('\\', "\\\\")
+        .replace('"', "\\\"")
+        .replace('\n', "\\n")
+        .replace('\r', "\\r")
+        .replace('\t', "\\t")
+}
+
+/// Sheet text inside a FORMAT string (`assert!`, `format!`): a brace in it
+/// would otherwise be read as a placeholder and the generated test would not
+/// compile.
+fn esc_fmt(s: &str) -> String {
+    esc(s).replace('{', "{{").replace('}', "}}")
 }
 
 // ---------------------------------------------------------------------------
 // 1. the implementation scaffold
 // ---------------------------------------------------------------------------
+
+/// Text from a sheet as a comment, one comment line per line of text.
+///
+/// Sheet text is written by people outside the repository, and a question or
+/// label may hold a line break. Written after one `///`, its second line
+/// became a line of generated Rust.
+fn comment(prefix: &str, text: &str) -> String {
+    let mut o = String::new();
+    for line in text.split('\n') {
+        let line = line.trim_end_matches('\r');
+        if line.is_empty() {
+            o.push_str(prefix);
+        } else {
+            o.push_str(&format!("{prefix} {line}"));
+        }
+        o.push('\n');
+    }
+    o
+}
 
 /// The whole file, with one hole per numbered step.
 ///
@@ -46,9 +81,11 @@ pub fn model_rs(sh: &Sheet, holes: &BTreeMap<u32, String>) -> String {
     o.push_str("use vleo_core::units::pmath;\n");
     o.push_str("use vleo_core::units::*;\n\n");
 
-    o.push_str(&format!("/// {}\n///\n", sh.question));
-    o.push_str(&format!("/// `{}`\n///\n", sh.expression));
-    o.push_str(&format!("/// Source: `{}`\n", sh.source));
+    o.push_str(&comment("///", &sh.question));
+    o.push_str("///\n");
+    o.push_str(&comment("///", &format!("`{}`", sh.expression)));
+    o.push_str("///\n");
+    o.push_str(&comment("///", &format!("Source: `{}`", sh.source)));
     if !sh.note.is_empty() {
         o.push_str("///\n");
         for line in wrap(&sh.note, 74) {
@@ -58,7 +95,10 @@ pub fn model_rs(sh: &Sheet, holes: &BTreeMap<u32, String>) -> String {
     if !sh.assumptions.is_empty() {
         o.push_str("///\n/// # Assumptions\n///\n");
         for a in &sh.assumptions {
-            o.push_str(&format!("/// * {} — fails when {}\n", a.text, a.fails_when));
+            o.push_str(&comment(
+                "///",
+                &format!("* {} — fails when {}", a.text, a.fails_when),
+            ));
         }
     }
     o.push_str("pub const NODE_ID: &str = \"");
@@ -586,8 +626,9 @@ pub fn contract_rs(sh: &Sheet) -> String {
 pub fn mod_rs(sh: &Sheet) -> String {
     let mut o = String::new();
     o.push_str(BANNER);
-    o.push_str(&format!("//! `{}` — {}\n//!\n", sh.id, sh.label));
-    o.push_str(&format!("//! {}\n", sh.question));
+    o.push_str(&comment("//!", &format!("`{}` — {}", sh.id, sh.label)));
+    o.push_str("//!\n");
+    o.push_str(&comment("//!", &sh.question));
     o.push_str("\n#[path = \"model.rs\"]\npub mod model;\n");
     o.push_str("#[path = \"contract.rs\"]\npub mod contract;\n");
     o.push_str("#[cfg(test)]\n#[path = \"evidence.rs\"]\nmod evidence;\n\n");
@@ -642,10 +683,13 @@ pub fn evidence_rs(sh: &Sheet) -> String {
     o.push_str("fn relative_error(got: f64, expected: f64) -> f64 {\n");
     o.push_str("    if expected == 0.0 { pmath::abs(got) } else { pmath::abs((got - expected) / expected) }\n}\n\n");
     for (n, fx) in sh.fixtures.iter().enumerate() {
-        o.push_str(&format!("/// {}\n", fx.label));
+        o.push_str(&comment("///", &fx.label));
         o.push_str(&format!(
-            "///\n/// Provenance: `{}`, source `{}`.\n",
-            fx.provenance, fx.source
+            "///\n{}",
+            comment(
+                "///",
+                &format!("Provenance: `{}`, source `{}`.", fx.provenance, fx.source)
+            )
         ));
         o.push_str(&format!("#[test]\nfn fixture_{n}() {{\n"));
         let mut args = Vec::new();
@@ -681,7 +725,7 @@ pub fn evidence_rs(sh: &Sheet) -> String {
         o.push_str(&format!(
             "    assert!(err <= {tol:?}, \"{label}: got {{}} want {expect:?}, relative error {{}} exceeds the declared tolerance {tol:?}. This is a physics disagreement, not a build failure — take it to the node owner. Do not widen the tolerance.\", got{acc}.get(), err);\n",
             tol = fx.tolerance,
-            label = esc(&fx.label),
+            label = esc_fmt(&fx.label),
             expect = fx.expect
         ));
         o.push_str("}\n\n");
@@ -721,7 +765,7 @@ fn author_cases(sh: &Sheet, o: &mut String) {
     let who = if sh.author.name.trim().is_empty() {
         "the author".to_string()
     } else {
-        sh.author.name.trim().to_string()
+        esc(sh.author.name.trim())
     };
     let lang = sh.author.language.trim();
     let has_method = crate::method::node_program(sh).is_some();
@@ -737,11 +781,11 @@ fn author_cases(sh: &Sheet, o: &mut String) {
             None if has_method => o.push_str(&format!(
                 "    let got = {call};\n    assert!(matches!(got, Err(vleo_core::fault::Fault::Refused {{ .. }})), \
                  \"{l}: the author's code refuses this case and the node gave {{got:?}}. Take it to the author.\");\n",
-                l = esc(&c.label)
+                l = esc_fmt(&c.label)
             )),
             None => o.push_str(&format!(
                 "    let got = {call};\n    assert!(got.is_err(), \"{l}: the author's code refuses this case and the node answered {{:?}}. Take it to the author.\", got.map(|v| v.get()));\n",
-                l = esc(&c.label)
+                l = esc_fmt(&c.label)
             )),
             Some(want) => {
                 o.push_str(&format!(
@@ -751,7 +795,7 @@ fn author_cases(sh: &Sheet, o: &mut String) {
                 o.push_str(&format!(
                     "    let err = relative_error(got.get(), {want:?});\n    assert!(err <= {tol:?}, \"{l}: got {{}} and the author's code gave {want:?}; relative error {{}} is more than their tolerance {tol:?}. Take it to the author; do not widen the tolerance.\", got.get(), err);\n",
                     tol = c.tolerance,
-                    l = esc(&c.label)
+                    l = esc_fmt(&c.label)
                 ));
             }
         }
@@ -862,9 +906,9 @@ pub fn rustfmt_standalone(text: &str) -> String {
 /// that node's sheet alone, and a `mod.rs` naming them. A module whose node no
 /// longer has a method is removed, so the kernel never carries code for a
 /// method nobody states. Returns how many files it wrote or removed.
-pub fn sync_methods(tree: &crate::load::Tree) -> Result<usize, String> {
+pub fn sync_methods(tree: &crate::load::Tree) -> Result<usize, Error> {
     let dir = tree.root.join("crates/vleo-core/src/physics/methods");
-    std::fs::create_dir_all(&dir).map_err(|e| format!("{}: {e}", dir.display()))?;
+    std::fs::create_dir_all(&dir).map_err(|e| Error::io(dir.display(), e))?;
     let mut changed = 0;
     let mut want: Vec<String> = Vec::new();
     for sh in tree.ordered() {
@@ -875,14 +919,16 @@ pub fn sync_methods(tree: &crate::load::Tree) -> Result<usize, String> {
         let text = rustfmt_standalone(&text);
         let p = dir.join(format!("{name}.rs"));
         if std::fs::read_to_string(&p).ok().as_deref() != Some(text.as_str()) {
-            std::fs::write(&p, &text).map_err(|e| format!("{}: {e}", p.display()))?;
+            std::fs::write(&p, &text).map_err(|e| Error::io(p.display(), e))?;
             changed += 1;
         }
         want.push(name);
     }
     want.sort();
-    for e in std::fs::read_dir(&dir).map_err(|e| format!("{}: {e}", dir.display()))? {
-        let p = e.map_err(|e| e.to_string())?.path();
+    for e in std::fs::read_dir(&dir).map_err(|e| Error::io(dir.display(), e))? {
+        let p = e
+            .map_err(|e| Error::new(ErrorKind::Malformed, e.to_string()))?
+            .path();
         let stem = p
             .file_stem()
             .and_then(|x| x.to_str())
@@ -892,7 +938,7 @@ pub fn sync_methods(tree: &crate::load::Tree) -> Result<usize, String> {
             && stem != "mod"
             && !want.contains(&stem)
         {
-            std::fs::remove_file(&p).map_err(|e| format!("{}: {e}", p.display()))?;
+            std::fs::remove_file(&p).map_err(|e| Error::io(p.display(), e))?;
             changed += 1;
         }
     }
@@ -911,7 +957,7 @@ pub fn sync_methods(tree: &crate::load::Tree) -> Result<usize, String> {
     // is what the formatter would make of it.
     let p = dir.join("mod.rs");
     if std::fs::read_to_string(&p).ok().as_deref() != Some(m.as_str()) {
-        std::fs::write(&p, &m).map_err(|e| format!("{}: {e}", p.display()))?;
+        std::fs::write(&p, &m).map_err(|e| Error::io(p.display(), e))?;
         changed += 1;
     }
     Ok(changed)
@@ -1635,6 +1681,87 @@ fn view_expr(v: &View) -> String {
 
 fn crate_ident(c: &str) -> String {
     c.replace('-', "_")
+}
+
+/// Every name the tables would have to resolve and cannot, one sentence each.
+///
+/// THE TABLES ONCE GUESSED. An input naming a variable that does not exist was
+/// wired to variable 0; an unknown cycle member, seed, supply or condition was
+/// left out; a fixture that did not bind an input fed it 0.0. Each compiled,
+/// and the engine it built answered a different question than the sheets ask.
+/// The gate caught most of them, but a plain `cargo build` did not, so the
+/// build now asks this first and stops on any of them (`vleo-modules/build.rs`).
+pub fn wiring_errors(tree: &Tree) -> Vec<String> {
+    let mut vars: std::collections::BTreeSet<String> = std::collections::BTreeSet::new();
+    for sh in tree.sheets.values() {
+        vars.insert(sh.id.clone());
+        for pb in &sh.publishes {
+            vars.insert(format!("{}.{}", sh.id, pb.id));
+        }
+    }
+    let known = |v: &str| vars.contains(v);
+    let mut e = Vec::new();
+    for sh in tree.ordered() {
+        for i in &sh.inputs {
+            if !known(&i.var) {
+                e.push(format!(
+                    "{}: input `{}` reads `{}`, which no row publishes",
+                    sh.id, i.binding, i.var
+                ));
+            }
+        }
+        for f in &sh.fixtures {
+            for i in &sh.inputs {
+                if !f.inputs.iter().any(|(k, _)| *k == i.binding) {
+                    e.push(format!(
+                        "{}: fixture '{}' gives no value for input `{}`",
+                        sh.id, f.label, i.binding
+                    ));
+                }
+            }
+            // A fixture names the variable it checks by a published id, or the
+            // row's own answer by its symbol or id; anything else is a typo.
+            let own = f.variable == sh.symbol || f.variable == sh.id;
+            if !f.variable.is_empty() && !own && !sh.publishes.iter().any(|pb| pb.id == f.variable)
+            {
+                e.push(format!(
+                    "{}: fixture '{}' checks `{}`, which this row does not publish",
+                    sh.id, f.label, f.variable
+                ));
+            }
+        }
+    }
+    for c in tree.cases.values() {
+        for (k, _) in &c.supply {
+            if !known(k) {
+                e.push(format!("case {}: supplies `{k}`, which is not a row", c.id));
+            }
+        }
+        for k in &c.conditions {
+            if !known(k) {
+                e.push(format!("case {}: condition `{k}` is not a row", c.id));
+            }
+        }
+        for cy in &c.cycles {
+            for n in cy.nodes.iter().chain([&cy.converge_on]) {
+                if !known(n) {
+                    e.push(format!(
+                        "case {}: cycle names `{n}`, which is not a row",
+                        c.id
+                    ));
+                }
+            }
+            for (k, _) in &cy.seeds {
+                if !known(k) {
+                    e.push(format!(
+                        "case {}: cycle seeds `{k}`, which is not a row",
+                        c.id
+                    ));
+                }
+            }
+        }
+    }
+    e
 }
 
 /// The whole graph, as compiled-in tables.

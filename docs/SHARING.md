@@ -83,6 +83,27 @@ The teammate replaces their folder with the new one. Their inputs, saved case an
 under `~/.vleo/`, outside the folder, so they carry over; an input that no longer exists is set
 aside by name, and a kept result whose belief has changed says so on the Results page.
 
+## 4 · The readers' folder — for people who only read
+
+    cargo run -p xtask -- readers               # → target/readers/
+
+A folder of plain pages for anyone who wants to read the design without running the tool:
+`index.html`, every row's page (the tool's own generated page) and every lesson. Put it on a
+shared drive — the pages open from a file — or on any internal web server. Nothing contacts a
+network, and nothing in it is committed.
+
+A lesson's try-it widgets work there too: the folder carries the engine compiled for the browser
+(`crates/vleo-kernel-wasm`, about 300 KB compressed), which answers them with the same relations
+the tool runs, on the declared values. It carries no reference data, so a row that reads a data
+bundle refuses in the page and says to open it in the tool. Rebuild the folder with each release.
+
+The pages look as the tool does: they are the one page template (`web/page.html`) with the tool's
+stylesheet, and the tool's type (IBM Plex Mono, `web/fonts`, with its licence) travels in
+`assets/fonts`. The pipeline builds the folder on every push and opens it from a file in a
+browser (`tools/readers_check.py`): the pages load, the engine answers, refuses and sweeps, a
+widget moves — and every answer the page's engine gave is asked again of the engine built
+natively, and must be the same, byte for byte.
+
 ## Where the simple version breaks
 
 A kit is read-only by design, but nothing stops a teammate editing a file inside it. That edit is

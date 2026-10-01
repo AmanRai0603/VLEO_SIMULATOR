@@ -67,8 +67,10 @@ on your machine — nobody else can reach it. To stop it, close that window or p
 - **Inputs** is your case: every number you can set, with its default. Change them on the page, or
   download the CSV, edit it and upload it back.
 - **Run** a row from its page. **save this result** keeps what it returned, with the inputs it ran
-  on; **Results** lists what you kept, and each can be downloaded as a CSV or a report page to send
-  to someone.
+  on — and **save this sweep** keeps a sweep. A question already kept is not run again: the tool
+  shows the saved answer and says which it is (**run again anyway** runs it fresh). **Results**
+  lists what you kept, draws saved sweeps again, and each can be downloaded as a report page to
+  send to someone — uploaded, it comes back whole.
 - **? Manual** answers "how do I…" for everything above.
 
 ## 3 · Ask for the design to change

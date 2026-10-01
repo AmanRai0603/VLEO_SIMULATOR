@@ -272,6 +272,7 @@ dependencies = [
  "vleo-core",
  "vleo-data",
  "vleo-modules",
+ "vleo-server",
 ]
 
 [[package]]
@@ -451,6 +452,7 @@ version = "0.3.0"
 dependencies = [
  "vleo-bus",
  "vleo-core",
+ "vleo-data",
  "vleo-mod-acs",
  "vleo-mod-atthw",
  "vleo-mod-closure",
@@ -479,6 +481,7 @@ dependencies = [
 name = "vleo-server"
 version = "0.3.0"
 dependencies = [
+ "toml 0.8.23",
  "vleo-bus",
  "vleo-core",
  "vleo-data",
@@ -492,6 +495,7 @@ name = "vleo-sheet"
 version = "0.3.0"
 dependencies = [
  "toml 0.8.23",
+ "toml_edit",
  "vleo-units",
 ]
 
@@ -622,6 +626,7 @@ name = "xtask"
 version = "0.3.0"
 dependencies = [
  "toml 0.8.23",
+ "toml_edit",
  "vleo-data",
  "vleo-sheet",
  "vleo-units",

@@ -3,9 +3,16 @@
 
   A run is a question somebody asked, and the answer is worth keeping — to look
   at again, to send, to compare with the next one. A result is saved from the
-  run panel (or `vleo run --save`) as one CSV: every input it ran on, every
-  value it returned, every row it could not run, and the run's identity. The
-  daemon keeps it outside the repository, beside the saved case.
+  run panel (or `vleo run --keep`) as a folder: `result.csv` — every input it
+  ran on, every value it returned, every row it could not run, and the run's
+  identity — `sweep.csv` when it is a sweep, and `report.html`, the one file to
+  send, which carries both. The daemon keeps it outside the repository, in the
+  results folder (the team's, when VLEO_RESULTS names a shared one).
+
+  A QUESTION IS KEPT ONCE, AND NOT ASKED AGAIN. Everything that decides an
+  answer — the row, the inputs, the engine, the data, what a sweep moved — is
+  one key. Saving the same question twice keeps one result; running or sweeping
+  a question already kept shows the kept one, and says so.
 
   NOTHING ON THIS PAGE RUNS THE ENGINE. A saved result is a record of what the
   engine said then; running it again today is a different result, and showing
@@ -20,7 +27,9 @@
 'use strict';
 
 import { $, $$, esc, fmt, plural, answerFirst } from './dom.js';
+import { drawChart, attachHover, tableFor, tableTsv, watchScheme, exportFigure, figureSpec } from './chart.js';
 import { caseChanged } from './state.js';
+import { drawFigureInto } from './figures.js';
 
 const POST = { method: 'POST', headers: { 'content-type': 'application/x-www-form-urlencoded' } };
 const PAGE = { open: null, compare: '', filter: '' };
@@ -50,14 +59,16 @@ export async function renderResults(host) {
     return;
   }
   let h = '<div class="node-head"><h2>Results — what runs returned</h2></div>' +
-    answerFirst('A result is one run, kept exactly as it came out: the inputs it ran on, every value it ' +
-      'returned, and the beliefs it rested on. Showing one runs nothing.',
-      ['Download it as a CSV or a report page to send to someone.',
+    answerFirst('A result is one run — or one sweep — kept exactly as it came out: the inputs it ran on, ' +
+      'every value it returned, and the beliefs it rested on. Showing one runs nothing.',
+      ['A question already kept is not run again: the run panel and the sweep show the kept answer, and say so.',
+       'Send the report page: it opens in any browser, and uploaded here it brings back everything, sweep included.',
        'If a belief it rested on has changed since, it says which.'], 'how-to');
   h += '<div class="runbar res-actions"><label class="ctl res-up-l">upload a result…' +
-    '<input type="file" class="res-up" accept=".csv,.html,text/csv,text/html" hidden></label>' +
-    '<span class="muted">a result CSV, or the report page it rides in. Kept at <code>' + esc(list.path) +
-    '</code> — outside the repository.</span><span class="why res-said"></span></div>';
+    '<input type="file" class="res-up" accept=".csv,.html,text/csv,text/html" multiple hidden></label>' +
+    '<span class="muted">its report page, or its <code>result.csv</code> (with its <code>sweep.csv</code> for a ' +
+    'sweep). Kept at <code>' + esc(list.path) + '</code> — outside the repository.</span>' +
+    '<span class="why res-said"></span></div>';
   if (!list.results.length) {
     h += '<p class="empty">No result is saved yet. Run a row — on its page, or on <b>4 The run</b> — and ' +
       'press <b>save this result</b>.</p>';
@@ -66,7 +77,11 @@ export async function renderResults(host) {
       '<th>inputs</th><th>ran</th><th></th></tr></thead><tbody>' + list.results.map(r =>
         '<tr class="res-row' + (r.file === PAGE.open ? ' sel' : '') + '" data-file="' + esc(r.file) + '">' +
         '<td>' + esc(r.saved) + (r.name ? '<div class="muted">' + esc(r.name) + '</div>' : '') + '</td>' +
-        '<td><code>' + esc(r.target) + '</code></td><td><b>' + esc(answerText(r)) + '</b></td>' +
+        '<td><code>' + esc(r.target) + '</code>' + (r.sweep ? '<span class="res-kind" title="a sweep over ' +
+          esc(r.sweep.over) + ', ' + r.sweep.points + ' points">sweep</span>' : '') +
+          (r.pinned ? '<span class="res-kind" title="kept whole for good">pinned</span>' : '') +
+          (r.thinned ? '<span class="res-kind" title="thinned to its summary">summary</span>' : '') + '</td><td><b>' +
+          esc(answerText(r)) + '</b></td>' +
         '<td>' + r.changed + ' changed</td><td>' + r.ran + ' · ' + r.blocked + ' blocked</td>' +
         '<td><button class="ctl res-open" data-file="' + esc(r.file) + '">open</button></td></tr>').join('') +
       '</tbody></table></div>';
@@ -81,15 +96,25 @@ export async function renderResults(host) {
 
   $$('.res-open', host).forEach(b => b.onclick = () => { openResult(b.dataset.file); renderResults(host); });
   $('.res-up', host).onchange = async e => {
-    const f = e.target.files && e.target.files[0];
+    const files = [...(e.target.files || [])];
     e.target.value = '';
-    if (!f) return;
+    if (!files.length) return;
     const said = $('.res-said', host);
-    said.textContent = 'reading ' + f.name + '…';
-    const r = await post('/v1/results/upload', { csv: await f.text() });
+    said.textContent = 'reading ' + files.map(f => f.name).join(', ') + '…';
+    // Which file is which is read from the files, not their names: a result
+    // says `#! result`, a sweep says `#! sweep`, and a report page carries both.
+    const texts = await Promise.all(files.map(f => f.text()));
+    const result = texts.find(t => /id="vleo-result"|^#! result/m.test(t));
+    const sweep = texts.find(t => t !== result && /^#! sweep/m.test(t));
+    if (!result) { said.textContent = 'not kept: none of these is a saved result'; return; }
+    const r = await post('/v1/results/upload', sweep ? { csv: result, sweep } : { csv: result });
     if (!r.ok) { said.textContent = 'not kept: ' + (r.message || 'refused'); return; }
     openResult(r.file);
-    renderResults(host);
+    await renderResults(host);
+    if (r.already) {
+      const s2 = $('.res-said', host);
+      if (s2) s2.textContent = 'already kept — the same question was saved ' + r.saved + ', and is kept once';
+    }
   };
   if (PAGE.open && list.results.some(r => r.file === PAGE.open)) {
     await view($('.res-view', host), host, list.results);
@@ -108,6 +133,13 @@ async function view(el, host, all) {
       esc(r.mode) + ' · <b>' + plural(r.changed, 'input') + ' changed</b> from the defaults</p>' +
     '<p class="chainline muted">chain <b>' + esc(r.chain) + '</b> · kernel ' + esc(r.kernel) + ' · graph ' +
       esc(r.graph) + (r.data ? ' · data ' + esc(r.data) : '') + '</p>' +
+    // KEPT IN TIERS. Every value for a time, the summary for good: an
+    // unpinned result older than the keep period keeps its inputs, its answer
+    // and what could not run. The rest is one run away, and it says so.
+    (r.thinned ? '<p class="run-stale res-thinned">Thinned to its summary on ' + esc(r.thinned.split(' ')[0]) +
+      ': ' + plural(+r.thinned.split(' ')[1] || 0, 'other value') + ' of the run ' +
+      (r.thinned.split(' ')[1] === '1' ? 'was' : 'were') + ' let go. The inputs it ran on, its answer and ' +
+      'what could not run are kept — use its inputs as the case and run it to see every value again.</p>' : '') +
     (r.template_current ? '' : '<p class="run-stale">Saved against another set of inputs than this tool ' +
       'has now. It is shown as it was; loading its inputs as the case carries them over.</p>') +
     // WHAT IT RESTS ON. A result keeps the version of every row it ran
@@ -121,10 +153,16 @@ async function view(el, host, all) {
     (r.versions.length ? '<p class="muted">rests on ' + r.versions.map(v => '<a class="xref" data-goto="' +
       esc(v.node) + '">' + esc(v.node) + '</a> v' + v.n + ' (' + esc(v.release) + ')').join(', ') + '</p>' : '') +
     '<div class="runbar res-do">' +
-      '<a class="ctl" href="/v1/result.csv?name=' + q + '" download="' + esc(PAGE.open) + '">download CSV</a>' +
-      '<a class="ctl" href="/v1/result.html?name=' + q + '" download="' + esc(PAGE.open.replace(/\.csv$/, '.html')) +
+      '<a class="ctl" href="/v1/result.csv?name=' + q + '" download="' + esc(PAGE.open.replace(/\.csv$/, '') + '.csv') +
+        '">download CSV</a>' +
+      '<a class="ctl" href="/v1/result.html?name=' + q + '" download="' + esc(PAGE.open.replace(/\.csv$/, '') + '.html') +
         '">download report</a>' +
+      (r.sweep_data ? '<a class="ctl" href="/v1/result.sweep.csv?name=' + q + '" download="' +
+        esc(PAGE.open.replace(/\.csv$/, '') + '.sweep.csv') + '">download sweep CSV</a>' : '') +
       '<button class="ctl res-case" title="make the inputs this result ran on the saved case">use its inputs as the case</button>' +
+      '<button class="ctl res-pin" title="' + (r.pinned ? 'let it be thinned to its summary once it is old'
+        : 'keep every value of this result for good; unpinned, it is thinned to its summary once it is old') + '">' +
+        (r.pinned ? 'unpin' : 'pin') + '</button>' +
       '<button class="ctl res-del">delete</button><span class="why res-do-said"></span></div>';
   const others = all.filter(x => x.file !== PAGE.open);
   if (others.length) {
@@ -133,6 +171,21 @@ async function view(el, host, all) {
         esc(x.saved + ' · ' + x.target + (x.name ? ' · ' + x.name : '')) + '</option>').join('') + '</select></div>';
   }
   h += '<div class="res-cmp-out"></div>';
+  const fig = (r.figures || []).find(f => f.id === 'sweep');
+  if (fig) {
+    h += '<h4>The sweep it keeps</h4><p class="muted res-sw-said"></p>' +
+      '<canvas class="plot res-sw-plot" width="900" height="320"></canvas>' +
+      '<div class="runbar"><button class="ctl res-sw-copy" type="button">copy as TSV</button>' +
+      '<button class="ctl res-sw-png" type="button">PNG</button><button class="ctl res-sw-csv" type="button">CSV</button>' +
+      '<span class="res-sw-copied"></span><span class="muted">hover to read a point, drag to zoom, ' +
+      'double-click to undo</span></div>' +
+      '<details><summary>the numbers behind this picture</summary><div class="res-sw-table"></div></details>';
+  }
+  // Any other figure the result describes, drawn by the figure player.
+  const more = (r.figures || []).filter(f => f.id !== 'sweep');
+  if (more.length) {
+    h += more.map((f, i) => '<h4>' + esc(f.title) + '</h4><div class="res-fig" data-i="' + i + '"></div>').join('');
+  }
   const changed = r.inputs.filter(i => i.note === 'changed');
   h += '<h4>Inputs changed from their defaults</h4>' + (changed.length
     ? '<div class="ri-wrap"><table class="fx"><tbody>' + changed.map(i => '<tr><td><code>' + esc(i.id) +
@@ -166,14 +219,64 @@ async function view(el, host, all) {
     await caseChanged();
     said.textContent = 'the case is now the inputs this result ran on — ' + plural(res.changed, 'input') + ' changed';
   };
+  $('.res-pin', el).onclick = async () => {
+    const res = await post('/v1/results/pin', { name: PAGE.open, on: r.pinned ? '0' : '1' });
+    if (!res.ok) { $('.res-do-said', el).textContent = 'not changed: ' + (res.message || 'refused'); return; }
+    renderResults(host);
+  };
   $('.res-del', el).onclick = async () => {
     if (!confirm('Delete this saved result? Download it first to keep a copy.')) return;
     const res = await post('/v1/results/delete', { name: PAGE.open });
     if (res.ok) { PAGE.open = null; renderResults(host); }
   };
+  if (fig) drawSweep(el, r, fig);
+  $$('.res-fig', el).forEach(d => drawFigureInto(d, more[+d.dataset.i], (r.name || r.target) + '_' + more[+d.dataset.i].id));
   const cmp = $('.res-cmp', el);
   if (cmp) cmp.onchange = () => { PAGE.compare = cmp.value; compare($('.res-cmp-out', el), r); };
   if (PAGE.compare) compare($('.res-cmp-out', el), r);
+}
+
+/**
+ * A saved sweep, drawn from the figure the engine described for it, with the
+ * same chart the run panel uses. Nothing is run: the points are the ones the
+ * engine returned when it was saved, and a refused point is a gap in the
+ * line, as it was then.
+ */
+function drawSweep(el, r, f) {
+  const c = $('.res-sw-plot', el);
+  let zoom = null;
+  const spec = () => figureSpec(f, { zoom });
+  if (!spec()) {
+    $('.res-sw-said', el).textContent = 'This result describes a ' + f.kind + ' figure, which this page does ' +
+      'not draw yet; its numbers are in the downloads.';
+    c.remove();
+    return;
+  }
+  const paint = () => {
+    if (!c.isConnected) return;
+    const sp = spec();
+    drawChart(c, sp);
+    attachHover(c, {
+      onBrush: win => { if (win.x) { zoom = win.x; paint(); } },
+      onReset: () => { if (zoom) { zoom = null; paint(); } },
+    });
+    $('.res-sw-table', el).innerHTML = tableFor(sp);
+  };
+  paint();
+  watchScheme(paint);
+  const answered = f.series[0].y.filter(v => v !== null).length;
+  $('.res-sw-said', el).innerHTML = esc(f.y.id) + ' across <b>' + esc(f.x.id) + '</b>: ' +
+    plural(answered, 'point') + ' answered' + (f.gaps.length ? ', <b>' + f.gaps.length +
+    ' refused</b> — ' + esc(f.gaps[0].why) + ' — drawn as gaps' : ', none refused') +
+    '. Every point was computed when this was saved; nothing here runs.';
+  const stem = (r.name || r.target).replace(/\s+/g, '_') + '_sweep';
+  $('.res-sw-png', el).onclick = () => exportFigure(c, spec(), stem, 'png');
+  $('.res-sw-csv', el).onclick = () => exportFigure(c, spec(), stem, 'csv');
+  $('.res-sw-copy', el).onclick = async () => {
+    let okay = false;
+    try { await navigator.clipboard.writeText(tableTsv(spec())); okay = true; } catch (e) { okay = false; }
+    $('.res-sw-copied', el).textContent = okay ? 'copied' : 'could not reach the clipboard';
+  };
 }
 
 /** Two records, side by side: every value either returned, and how far it moved. */

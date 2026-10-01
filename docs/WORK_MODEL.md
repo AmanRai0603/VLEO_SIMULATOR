@@ -27,7 +27,7 @@ it, and exactly three things cross it:
 |---|---|---|---|---|
 | X1 | **a node form** | team → developers | one HTML file per node, or per new node: every question the sheet answers, filled by whoever knows | `xtask intake` passes it — no conflict, no refusal, every interface a row that exists, of the quantity expected |
 | X2 | **a release** | developers → team | the tool, with every applied form in it | the gate is green, the reviews are done, and a person approves the release |
-| X3 | **a result** | team → anyone | a run's values and the inputs it ran on, as a CSV or a report page | it reads back — nothing runs, so it says the same after any release |
+| X3 | **a result** | team → anyone | a run's or a sweep's values and the inputs it ran on — a folder, sent as its report page | it reads back — nothing runs, so it says the same after any release; the same question is kept once and not run again |
 
 The case — the inputs — does not cross at all. It is the team's, it is kept on
 their machine, and a release carries it over on its own: what still applies is

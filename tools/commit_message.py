@@ -48,9 +48,16 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 
-#: The last commit written before the rule existed. It and its ancestors are
-#: exempt; everything after it is checked.
-ADOPTED_AFTER = "59aff9f"
+#: The last commit the rule does not reach. It and its ancestors are exempt;
+#: everything after it is checked.
+#:
+#: It was 59aff9f, the last commit written before the rule existed. It moved to
+#: c297ca1e, `developer` as phase 10 ended, because the squash titles of #61 to
+#: #84 were written at merge time — "Phase 10a — …" and the like — where no hook
+#: sees them, and they are published history nobody can edit without rewriting
+#: `developer`. Every one of those branches passed this check commit by commit;
+#: only the forge's titles fail. A squash title is `type(scope): …` from here on.
+ADOPTED_AFTER = "c297ca1e"
 
 #: What a change can be. Short on purpose: a type nobody can choose between is
 #: a type that gets chosen at random, and then the release notes are noise.

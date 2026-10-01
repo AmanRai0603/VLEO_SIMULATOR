@@ -726,6 +726,13 @@ def browser_walk():
             # back, made the case, and deleted.
             print("\nresults")
 
+            def kept_results():
+                # A result is a folder holding result.csv; one saved before
+                # results were folders is a single .csv, and still counts.
+                return [p for p in RESULTS.iterdir()
+                        if (p.is_dir() and (p / "result.csv").is_file()) or p.suffix == ".csv"] \
+                    if RESULTS.is_dir() else []
+
             def results_round_trip():
                 open_row(WALK_COMPUTED)
                 panel = "#run-panel"
@@ -735,9 +742,10 @@ def browser_walk():
                 button(panel, U("browser-results", 1)).click()
                 page.wait_for_function(
                     "() => /saved/.test(document.querySelector('#run-panel .res-saved').innerText)", timeout=30000)
-                kept = list(RESULTS.glob("*.csv"))
+                kept = kept_results()
                 assert len(kept) == 1, f"saving did not write one result to {RESULTS}: {kept}"
-                assert "#! result vleo-result/1" in kept[0].read_text(), "the saved file is not a result"
+                csv = kept[0] / "result.csv" if kept[0].is_dir() else kept[0]
+                assert "#! result vleo-result/1" in csv.read_text(), "the saved file is not a result"
                 untouched("saving a result")
                 tab(U("browser-results", 2))
                 page.wait_for_selector(".res-row")
@@ -763,6 +771,16 @@ def browser_walk():
                 said = page.locator(".res-cmp-box").inner_text()
                 assert "1 input differs" in said and "sw_storm_design_level" in said, \
                     f"two results do not compare by the input that differs: {said[:300]}"
+                # Pinned, it says so and is kept whole; unpinned, it says so again.
+                pin = U("browser-results", 9)
+                button(".res-do", pin).click()
+                page.wait_for_function(
+                    "() => [...document.querySelectorAll('.res-row.sel .res-kind')].some(e => e.innerText === 'pinned')",
+                    timeout=15000)
+                assert any((k / "pinned").is_file() for k in kept_results() if k.is_dir()), \
+                    "a pinned result has no pin in its folder"
+                button(".res-do", "unpin").click()
+                page.wait_for_selector(".res-do .res-pin:text-is('" + pin + "')")
                 button(".res-do", U("browser-results", 6)).click()
                 page.wait_for_function(
                     "() => /the case is now/.test(document.querySelector('.res-do-said').innerText)", timeout=15000)
@@ -770,11 +788,11 @@ def browser_walk():
                 page.once("dialog", lambda d: d.accept())
                 button(".res-do", "delete").click()
                 page.wait_for_function("() => document.querySelectorAll('.res-row').length === 1", timeout=15000)
-                assert len(list(RESULTS.glob("*.csv"))) == 1, "delete did not remove the file"
+                assert len(kept_results()) == 1, "delete did not remove the result"
                 urllib.request.urlopen(urllib.request.Request(base + "v1/inputs/reset", data=b""), timeout=10)
                 untouched("the results walk")
             ok("a result is saved from a run, shown, sent as a report, uploaded back, compared, "
-               "made the case and deleted — git sees none of it", results_round_trip)
+               "pinned and unpinned, made the case and deleted — git sees none of it", results_round_trip)
 
             # THE FORMS PAGE HANDS OUT EVERY FORM AND CHECKS ONE THAT COMES BACK.
             # It never applies one: that is the developer's, at a terminal.

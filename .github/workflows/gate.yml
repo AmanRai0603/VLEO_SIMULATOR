@@ -48,6 +48,7 @@ jobs:
   gate:
     name: build, generate, gate, test
     runs-on: ubuntu-latest
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
 
@@ -173,6 +174,7 @@ jobs:
   method-end-to-end:
     name: a node built from its method, end to end
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
       - uses: actions/cache@v4
@@ -232,6 +234,7 @@ jobs:
   tooling:
     name: the tools check themselves
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
         with:
@@ -356,6 +359,7 @@ jobs:
   review:
     name: advisory review (never blocks)
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     continue-on-error: true
     permissions:
       contents: read
@@ -386,6 +390,7 @@ jobs:
   mutants:
     name: the changed nodes' tests are load-bearing
     runs-on: ubuntu-latest
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
         with:
@@ -442,13 +447,79 @@ jobs:
             [ -z "$n" ] && continue
             echo "::group::$n"
             cargo run -p xtask -- mutate "$n" || rc=1
+            # Each decimal number in the node's own code, moved in turn: a
+            # report of the ones no test notices, not a gate (see the command).
+            cargo run -p xtask -- mutate --literals "$n" || true
             echo "::endgroup::"
           done < changed-nodes.txt
           exit $rc
 
+  # THE FRONTEND ON ITS OWN. A frontend developer works against the contract,
+  # not a build of the engine (contract/README.md), so this job has no Rust
+  # toolchain at all: the page, served by tools/mock_engine.py from the
+  # recorded answers in contract/examples, must load, draw the tree, run a row
+  # and list results in a real browser. That the engine keeps the contract is
+  # the contract tests' job, in `cargo test`.
+  frontend-mock:
+    name: the page on the mock engine, no Rust
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: the browser
+        run: |
+          pip install --quiet playwright
+          python3 -m playwright install --with-deps chromium
+      - name: the mock engine checks itself
+        run: python3 tools/mock_check.py --selftest
+      - name: the page, on recorded answers only
+        run: python3 tools/mock_check.py
+
+  # THE READERS' FOLDER, AS A READER OPENS IT. `xtask readers` builds the pages
+  # a team reads with no tool running, and the engine they carry; its own last
+  # step proves every link is in the folder. This proves the pages WORK: opened
+  # from file:// in Chromium, the engine compiled for the browser answers,
+  # refuses and sweeps, and a widget on a row page is answered by it. Then the
+  # same engine built natively is asked every question the page was asked, and
+  # each answer must be the same text — the page's numbers are the tool's.
+  readers:
+    name: the readers' folder, opened from a file
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+            crates/vleo-kernel-wasm/target
+          key: ${{ runner.os }}-readers-${{ hashFiles('**/Cargo.lock', 'rust-toolchain.toml') }}
+          restore-keys: ${{ runner.os }}-readers-
+      - run: rustup target add wasm32-unknown-unknown
+      - name: the browser
+        run: |
+          pip install --quiet playwright
+          python3 -m playwright install --with-deps chromium
+      # The generated pages first: each row's page in the folder is its
+      # generated fragment, and generated/index.json says which rows compute.
+      - name: the folder
+        run: |
+          cargo run -p xtask -- assemble
+          cargo run -p xtask -- readers
+      - name: the pages, the engine in the page, and a widget, from file://
+        run: |
+          python3 tools/readers_check.py --selftest
+          python3 tools/readers_check.py --answers "$RUNNER_TEMP/answers.tsv"
+      - name: the page's answers are the tool's
+        working-directory: crates/vleo-kernel-wasm
+        run: VLEO_BROWSER_ANSWERS="$RUNNER_TEMP/answers.tsv" cargo test --locked -- --include-ignored
+
   panels:
     name: the panels render, move and match
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
       - uses: actions/cache@v4
@@ -535,12 +606,13 @@ jobs:
   # HOLDS. The author tried a preview build of this branch and pressed Approve;
   # the file it saved is recorded in approvals/ by `xtask approve`, and names
   # the commit it was given for. Anything changed since — a fix, a merge from
-  # main — means a new preview and a new approval, because the author approved
-  # a build, not a branch name. Only form branches are asked this.
+  # maintainer — means a new preview and a new approval, because the author
+  # approved a build, not a branch name. Only form branches are asked this.
   approval:
     name: the author approved this exact change
     if: github.event_name == 'pull_request' && startsWith(github.head_ref, 'form/')
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
         with:
@@ -555,6 +627,7 @@ jobs:
   excluded-faces:
     name: the faces outside the workspace
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
       - uses: actions/cache@v4
@@ -564,6 +637,7 @@ jobs:
             ~/.cargo/git
             crates/vleo-wasm/target
             crates/vleo-method-wasm/target
+            crates/vleo-kernel-wasm/target
             crates/vleo-py/target
           key: ${{ runner.os }}-excluded-${{ hashFiles('**/Cargo.lock', 'rust-toolchain.toml') }}
           restore-keys: ${{ runner.os }}-excluded-
@@ -578,6 +652,11 @@ jobs:
       # to its sources by a test; this proves the sources still build at all.
       - name: the node form's method checker
         working-directory: crates/vleo-method-wasm
+        run: cargo build --locked --target wasm32-unknown-unknown --release
+      # The engine a readers' page carries (xtask readers): the whole kernel,
+      # built for the browser.
+      - name: the engine for the readers' pages
+        working-directory: crates/vleo-kernel-wasm
         run: cargo build --locked --target wasm32-unknown-unknown --release
       - name: the Python face
         working-directory: crates/vleo-py
@@ -602,6 +681,7 @@ jobs:
   shipping-profile:
     name: the profile that ships
     runs-on: ubuntu-latest
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
       # This job had NO cache and is the most expensive in the file: four
@@ -625,6 +705,7 @@ jobs:
   no-std:
     name: the kernel stays no_std
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - run: rustup target add thumbv7em-none-eabihf

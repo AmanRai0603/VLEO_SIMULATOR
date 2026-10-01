@@ -117,8 +117,9 @@ def check():
             # rules and it does not.
             bad.append((r, "is a stub — %d characters" % len(p.read_text().strip())))
 
-    # Stale references. The one failure these files will really have.
-    for p in files():
+    # Stale references. The one failure these files will really have. The
+    # guide to changing the code is a map of paths, so it is held to them too.
+    for p in files() + [p for p in (ROOT / "docs" / "CHANGING.md",) if p.is_file()]:
         rel = p.relative_to(ROOT).as_posix()
         for token in sorted(set(PATHISH.findall(p.read_text()))):
             if token.startswith(("http", "//")) or " " in token:
@@ -183,6 +184,32 @@ def check():
         for f in sorted(AUTHOR_FIELDS):
             if f not in text:
                 bad.append(("docs/NODE_AUTHORING.md", "does not explain the sheet field '%s'" % f))
+
+    # REQUIRED DOCS. Every hand-written Rust file says what it is in its first
+    # line: a file nobody can place is a file nobody reviews, and the two
+    # 3,200-line files were split into parts precisely so each could be placed.
+    # A row's generated files are the generator's to head, and they say so.
+    for d in ("crates", "xtask"):
+        for p in sorted((ROOT / d).rglob("*.rs")):
+            rel = p.relative_to(ROOT)
+            if "target" in rel.parts or (rel.parts[1].startswith("vleo-mod-") and "nodes" in rel.parts):
+                continue
+            if not p.read_text(errors="replace").startswith("//!"):
+                bad.append((rel.as_posix(), "does not open with a `//!` line saying what it is"))
+
+    # Every kind of figure the engine draws is in the guide to changing the
+    # code, so the table a developer adds a kind from is the table that exists.
+    fig = ROOT / "crates" / "vleo-modules" / "src" / "figure.rs"
+    changing = ROOT / "docs" / "CHANGING.md"
+    if fig.is_file():
+        m = re.search(r"pub fn name\(self\)[^{]*\{(.*?)\n    \}", fig.read_text(), re.S)
+        kinds = re.findall(r'Kind::\w+ => "([a-z0-9]+)"', m.group(1)) if m else []
+        if not kinds:
+            bad.append(("crates/vleo-modules/src/figure.rs", "Kind::name could not be read for its kinds"))
+        guide = changing.read_text() if changing.is_file() else ""
+        for k in kinds:
+            if "| `%s` |" % k not in guide:
+                bad.append(("docs/CHANGING.md", "does not name the figure kind `%s` in its table (§4)" % k))
 
     # The row count is a fact about the tree, written in prose in nine places.
     # It went stale the moment a subsystem was added, and nothing said so: the
@@ -302,6 +329,19 @@ def selftest():
          lambda d: (d / "web" / "js" / "solar.js").write_text(
              re.sub(r"\n    breaks: '[^\n]*", "", (d / "web" / "js" / "solar.js").read_text(), count=1)),
          "does not say where its picture stops being true"),
+        ("a Rust file that does not say what it is",
+         lambda d: (d / "crates" / "vleo-sheet" / "src" / "shell.rs").write_text(
+             (d / "crates" / "vleo-sheet" / "src" / "shell.rs").read_text().replace("//!", "//", 1)),
+         "crates/vleo-sheet/src/shell.rs does not open with a `//!`"),
+        ("a figure kind the guide does not name",
+         lambda d: (d / "crates" / "vleo-modules" / "src" / "figure.rs").write_text(
+             (d / "crates" / "vleo-modules" / "src" / "figure.rs").read_text()
+             .replace('Kind::Scene3d => "scene3d"', 'Kind::Scene3d => "volume"')),
+         "figure kind `volume`"),
+        ("a path in the guide to changing the code that is gone",
+         lambda d: (d / "docs" / "CHANGING.md").write_text(
+             (d / "docs" / "CHANGING.md").read_text() + "\nSee `web/js/gone.js`.\n"),
+         "docs/CHANGING.md points at web/js/gone.js"),
         ("an adopted row with no licence",
          lambda d: (d / "ADOPTION.lock").write_text(
              (d / "ADOPTION.lock").read_text().replace('licence = "MIT OR Apache-2.0"', 'licence = ""', 1)),

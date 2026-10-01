@@ -14,13 +14,46 @@ use vleo_sheet::form::{self, Saved};
 use vleo_sheet::load::load_all;
 use vleo_sheet::template::{self, Verdict};
 
+/// A copy of the tree in a temporary folder, made once for this test binary:
+/// applying a form writes sheets and regenerates folders, and that is done to
+/// the copy, never to the checkout a developer may be editing.
 fn root() -> PathBuf {
-    Path::new(env!("CARGO_MANIFEST_DIR"))
-        .parent()
-        .unwrap()
-        .parent()
-        .unwrap()
-        .to_path_buf()
+    static COPY: std::sync::OnceLock<PathBuf> = std::sync::OnceLock::new();
+    COPY.get_or_init(|| {
+        let real = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let to = std::env::temp_dir().join(format!("vleo-form-tree-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&to);
+        for e in std::fs::read_dir(real.join("crates")).unwrap().flatten() {
+            let name = e.file_name().to_string_lossy().to_string();
+            if name.starts_with("vleo-mod-") {
+                copy(
+                    &e.path().join("nodes"),
+                    &to.join("crates").join(&name).join("nodes"),
+                );
+            }
+        }
+        copy(
+            &real.join("crates/vleo-wasm/src"),
+            &to.join("crates/vleo-wasm/src"),
+        );
+        for d in ["layers", "cases", "sources", "web"] {
+            copy(&real.join(d), &to.join(d));
+        }
+        to
+    })
+    .clone()
+}
+
+fn copy(from: &Path, to: &Path) {
+    std::fs::create_dir_all(to).unwrap();
+    for e in std::fs::read_dir(from).unwrap().flatten() {
+        let p = e.path();
+        if p.is_dir() {
+            copy(&p, &to.join(e.file_name()));
+        } else {
+            std::fs::copy(&p, to.join(e.file_name())).unwrap();
+        }
+    }
 }
 
 /// A published computed row with a note, four assumptions and a relation.
@@ -245,6 +278,7 @@ fn what_is_not_a_form_for_a_node_here_is_refused_by_name() {
     let r = root();
     assert!(template::plan(&r, "<html>hello</html>")
         .unwrap_err()
+        .message()
         .contains("not a node form"));
     let html = form_for(ROW);
     let other_format = edit(&html, DATA, |t| {
@@ -255,12 +289,14 @@ fn what_is_not_a_form_for_a_node_here_is_refused_by_name() {
     });
     assert!(template::plan(&r, &other_format)
         .unwrap_err()
+        .message()
         .contains("vleo-node-form/0"));
     let retargeted = edit(&html, DATA, |t| {
         t.insert("node".into(), toml::Value::String("sw_f107_design".into()));
     });
     assert!(template::plan(&r, &retargeted)
         .unwrap_err()
+        .message()
         .contains("cannot be trusted"));
     let unknown = edit(
         &edit(&html, DATA, |t| {
@@ -273,6 +309,7 @@ fn what_is_not_a_form_for_a_node_here_is_refused_by_name() {
     );
     assert!(template::plan(&r, &unknown)
         .unwrap_err()
+        .message()
         .contains("never adds a node"));
     let bogus = edit(&html, DATA, |t| {
         t.get_mut("filled_by")
@@ -280,7 +317,10 @@ fn what_is_not_a_form_for_a_node_here_is_refused_by_name() {
             .unwrap()
             .insert("ai".into(), toml::Value::String("a little".into()));
     });
-    assert!(template::plan(&r, &bogus).unwrap_err().contains("a little"));
+    assert!(template::plan(&r, &bogus)
+        .unwrap_err()
+        .message()
+        .contains("a little"));
 }
 
 // ---------------------------------------------------------------------------

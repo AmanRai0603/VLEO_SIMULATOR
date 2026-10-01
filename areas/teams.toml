@@ -1,0 +1,43 @@
+# Who each team is on GitHub — the one place CODEOWNERS is decided.
+#
+# Two kinds of team. The MAINTAINERS own everything shared: the kernel, the
+# generators and the gate, the tools, the layers, cases, sources, the web face
+# and the pipeline — a defect there reaches every node at once. Each
+# subsystem's DEVELOPERS own that subsystem's nodes: the key is the `owner` a
+# sheet names, so a node is reviewed by the team that answers for it.
+#
+# Every team is one person today. When people join, or the repository moves to
+# a GitHub organization, change the handles here (an organization team is
+# written "@org/team") and run `cargo run -p xtask -- codeowners`. A sheet whose
+# owner has no team here is refused, so no node can fall outside review.
+
+[maintainers]
+members = ["@AmanRai0603"]
+
+# THE THREE PARTS (docs/ARCHITECTURE.html, section 2). The frontend owns what
+# a person sees — the page, the panels, their checks and the mock engine; the
+# backend owns the engine, the server and the tools that build them; the data
+# team owns how data is kept and the file formats. contract/ is where the
+# frontend and the backend meet, so it is owned by both — and its file
+# formats by all three. They override the maintainers on their own paths,
+# and each node folder is still owned by its subsystem's developers.
+[parts]
+frontend = ["@AmanRai0603"]
+backend = ["@AmanRai0603"]
+data = ["@AmanRai0603"]
+
+[developers]
+aero = ["@AmanRai0603"]
+avionics = ["@AmanRai0603"]
+comms = ["@AmanRai0603"]
+environment = ["@AmanRai0603"]
+gnc = ["@AmanRai0603"]
+mass = ["@AmanRai0603"]
+operations = ["@AmanRai0603"]
+payload = ["@AmanRai0603"]
+power = ["@AmanRai0603"]
+programme = ["@AmanRai0603"]
+propulsion = ["@AmanRai0603"]
+solar = ["@AmanRai0603"]
+systems = ["@AmanRai0603"]
+thermal = ["@AmanRai0603"]

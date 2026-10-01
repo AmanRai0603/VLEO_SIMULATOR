@@ -25,6 +25,7 @@
 //! else: a change pushed after it needs a new preview and a new approval. It
 //! does not prove who pressed the button — the maintainer who received it does.
 
+use crate::pipeline::{OnStop, Run};
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
@@ -109,14 +110,22 @@ fn clean(root: &Path) -> Result<(), String> {
     }
 }
 
-/// The base every form branch starts from: `origin/main` when it can be
+/// Where the maintainers' work gathers: every form branch starts from it and
+/// its pull request goes back into it. `main` takes only what has been
+/// gathered here or on `developer`, through a pull request, and a release is
+/// cut from `main` alone (CONTRIBUTING.md, "The three branches").
+pub const FORMS_BASE: &str = "maintainer";
+
+/// The base every form branch starts from: `origin/maintainer` when it can be
 /// fetched, so a branch never starts from a stale copy.
-fn fresh_main(root: &Path) -> String {
-    match git(root, &["fetch", "-q", "origin", "main"]) {
-        Ok(_) => "origin/main".to_string(),
+fn fresh_base(root: &Path) -> String {
+    match git(root, &["fetch", "-q", "origin", FORMS_BASE]) {
+        Ok(_) => format!("origin/{FORMS_BASE}"),
         Err(e) => {
-            eprintln!("  (could not fetch origin/main — {e}; starting from the local main)");
-            "main".to_string()
+            eprintln!(
+                "  (could not fetch origin/{FORMS_BASE} — {e}; starting from the local {FORMS_BASE})"
+            );
+            FORMS_BASE.to_string()
         }
     }
 }
@@ -128,11 +137,15 @@ fn after<'a>(args: &'a [&str], flag: &str) -> Option<&'a str> {
         .copied()
 }
 
-/// Run a step of this program's own, printing a header so the log reads as
-/// the sequence it is.
-fn step<F: FnOnce() -> Result<(), String>>(n: usize, what: &str, f: F) -> Result<(), String> {
-    println!("\n\x1b[1m── {n} · {what}\x1b[0m");
-    f().map_err(|e| format!("step {n} ({what}) stopped: {e}"))
+/// One of this program's steps, run as the pipeline runs every step: numbered,
+/// and on a stop saying what state the branch is in and how to get out.
+fn step<F: FnOnce() -> Result<(), String>>(
+    run: &mut Run,
+    what: &str,
+    stop: OnStop,
+    f: F,
+) -> Result<(), String> {
+    run.step(what, stop, || f().map(|()| ((), String::new())))
 }
 
 /// A commit message that passes tools/commit_message.py: `type(scope):
@@ -256,38 +269,57 @@ pub fn cmd_take(root: &Path, args: &[&str]) -> Result<(), String> {
     }
     clean(root)?;
 
-    // 2 — its own branch, from a fresh main.
+    // 2 — its own branch, from a fresh maintainer branch.
     let branch = form_branch(author, &node);
     let exists = git(root, &["rev-parse", "--verify", "--quiet", &branch]).is_ok();
-    step(1, &format!("branch {branch}"), || {
-        if exists {
-            if !args.contains(&"--again") {
-                return Err(format!(
-                    "{branch} already exists. To apply a corrected form onto it, run again \
+    let mut run = Run::start(root, "take", args, 7);
+    let again = format!("cargo run -p xtask -- take {file} --for {author} --again");
+    // From the branch on, a stop leaves the branch holding a half-done change:
+    // every stop says so, and how to put everything back.
+    let half = || {
+        OnStop::new(
+            format!("{branch} holds a half-done change, uncommitted"),
+            format!(
+                "fix it and `{again}`; or abandon it: git reset -q --hard && git switch main && \
+                 git branch -D {branch}"
+            ),
+        )
+    };
+    step(
+        &mut run,
+        "the branch",
+        OnStop::new("unchanged — nothing was written", &again),
+        || {
+            if exists {
+                if !args.contains(&"--again") {
+                    return Err(format!(
+                        "{branch} already exists. To apply a corrected form onto it, run again \
                      with --again; to start over, delete it first (git branch -D {branch})"
-                ));
+                    ));
+                }
+                git(root, &["switch", "-q", &branch]).map(|_| ())
+            } else {
+                let base = fresh_base(root);
+                git(root, &["switch", "-q", "-c", &branch, &base]).map(|_| ())
             }
-            git(root, &["switch", "-q", &branch]).map(|_| ())
-        } else {
-            let base = fresh_main(root);
-            git(root, &["switch", "-q", "-c", &branch, &base]).map(|_| ())
-        }
-    })?;
+        },
+    )?;
 
+    println!("      {branch}");
     // From here a failure leaves the branch holding a half-done change, so
     // every error says how to put everything back.
-    let rest = || -> Result<(), String> {
+    let rest = |run: &mut Run| -> Result<(), String> {
         // 3 — apply, and regenerate everything the pipeline regenerates, so the
         // branch never fails its regeneration diff for want of a command.
-        step(2, "apply the form", || {
+        step(run, "apply the form", half(), || {
             crate::cmd_intake(root, &[file, "--apply"])
         })?;
-        step(3, "regenerate", || {
+        step(run, "regenerate", half(), || {
             crate::cmd_codeowners(root)?;
             crate::cmd_variables(root)?;
             crate::cmd_derisk(root, &[])
         })?;
-        step(4, "gate", || crate::cmd_gate(root, &[]))?;
+        step(run, "gate", half(), || crate::cmd_gate(root, &[]))?;
         // A NODE WITH A METHOD IS BUILT FROM IT, stage by stage: translated,
         // tested against its author's cases, their code rerun, the tests shown
         // to test — and only then connected. Stops here if any stage fails.
@@ -299,13 +331,22 @@ pub fn cmd_take(root: &Path, args: &[&str]) -> Result<(), String> {
                     .map(|s| !s.method.text.trim().is_empty())
             })
             .unwrap_or(false);
-        if has_method && !args.contains(&"--no-test") {
-            step(5, "build the node from its method", || {
+        if args.contains(&"--no-test") {
+            run.skip("build the node from its method", "--no-test");
+        } else if !has_method {
+            run.skip(
+                "build the node from its method",
+                "the node has no method: its code is its holes",
+            );
+        } else {
+            step(run, "build the node from its method", half(), || {
                 crate::method::cmd_build_node(root, &[node.as_str()])
             })?;
         }
-        if !args.contains(&"--no-test") {
-            step(6, "tests (cargo test --workspace)", || {
+        if args.contains(&"--no-test") {
+            run.skip("tests (cargo test --workspace)", "--no-test");
+        } else {
+            step(run, "tests (cargo test --workspace)", half(), || {
                 let ok = Command::new("cargo")
                     .args(["test", "--workspace", "-q"])
                     .current_dir(root)
@@ -356,7 +397,7 @@ pub fn cmd_take(root: &Path, args: &[&str]) -> Result<(), String> {
             format!("{node} from a node form")
         };
         let message = commit_message("feat", &scope, &subject, &body);
-        step(7, "commit and push", || {
+        step(run, "commit and push", half(), || {
             // The form is the author's, attached to the pull request — never
             // committed. Received forms live in `forms/`, which git ignores; one
             // saved anywhere else is taken back out of the commit here.
@@ -380,12 +421,16 @@ pub fn cmd_take(root: &Path, args: &[&str]) -> Result<(), String> {
              https://github.com/{repo}/actions/workflows/preview.yml?query=branch%3A{}\n  \
              2 · send its package to {who}; they try it and send back the approval file\n  \
              3 · open the pull request:\n      \
-             https://github.com/{repo}/compare/main...{branch}?expand=1",
+             https://github.com/{repo}/compare/{FORMS_BASE}...{branch}?expand=1",
             branch.replace('/', "%2F")
         );
         Ok(())
     };
-    rest().map_err(|e| {
+    let r = rest(&mut run);
+    if r.is_ok() {
+        run.done(&format!("take: {node} is on {branch}"));
+    }
+    r.map_err(|e| {
         format!("{e}\n  to abandon it: git reset -q --hard && git switch main && git branch -D {branch}")
     })
 }
@@ -599,7 +644,7 @@ pub fn cmd_approve(root: &Path, args: &[&str]) -> Result<(), String> {
     println!(
         "\n\x1b[1mapproved.\x1b[0m {} approved build {} — recorded in {store}.\n\
          The pull request can now be reviewed and merged:\n  \
-         https://github.com/{repo}/compare/main...{}?expand=1",
+         https://github.com/{repo}/compare/{FORMS_BASE}...{}?expand=1",
         a.by, a.run, a.branch
     );
     Ok(())
@@ -677,7 +722,7 @@ pub fn cmd_queue(root: &Path, _args: &[&str]) -> Result<(), String> {
     println!("{:<44} {:<11} stage", "branch", "last change");
     for (branch, (r, remote, _local, date)) in &seen {
         let store = approval_path(branch).unwrap_or_default();
-        let on_main = git(root, &["show", &format!("origin/main:{store}")]).ok();
+        let on_main = git(root, &["show", &format!("origin/{FORMS_BASE}:{store}")]).ok();
         let on_branch = git(root, &["show", &format!("{r}:{store}")]).ok();
         let stage = if on_main.is_some() && on_main == on_branch {
             "merged — delete the branch: git push origin --delete ".to_string() + branch
@@ -714,6 +759,7 @@ fn refresh_locks(root: &Path) -> Result<(), String> {
         "Cargo.toml",
         "crates/vleo-py/Cargo.toml",
         "crates/vleo-wasm/Cargo.toml",
+        "crates/vleo-kernel-wasm/Cargo.toml",
     ] {
         let ok = Command::new("cargo")
             .args([
@@ -755,28 +801,47 @@ pub fn cmd_ship(root: &Path, args: &[&str]) -> Result<(), String> {
         }
     }
     let branch = format!("release/{version}");
-    step(1, &format!("branch {branch}"), || {
-        git(root, &["switch", "-q", "-c", &branch]).map(|_| ())
-    })?;
-    step(2, "the de-risking narrative", || {
+    let mut run = Run::start(root, "ship", args, 7);
+    let half = || {
+        OnStop::new(
+            format!("{branch} holds a half-done release, uncommitted"),
+            format!(
+                "abandon it: git reset -q --hard && git switch main && git branch -D {branch}; \
+                 then fix and `cargo run -p xtask -- ship {version}`"
+            ),
+        )
+    };
+    step(
+        &mut run,
+        "the branch",
+        OnStop::new(
+            "unchanged — nothing was written",
+            format!("if {branch} exists already: git branch -D {branch}, then ship again"),
+        ),
+        || git(root, &["switch", "-q", "-c", &branch]).map(|_| ()),
+    )?;
+    println!("      {branch}");
+    step(&mut run, "the de-risking narrative", half(), || {
         crate::cmd_derisk(root, &[])
     })?;
-    step(3, &format!("stamp {version}"), || {
+    step(&mut run, "stamp the release", half(), || {
         crate::cmd_release(root, &[version])
     })?;
     // The version is written into the role guides and into three lockfiles
     // (the workspace's and the two faces built outside it). A stamp that
     // leaves any of them behind fails the regeneration diff, or the release's
     // `--locked` build of the Python engine.
-    step(4, "regenerate", || {
+    step(&mut run, "regenerate", half(), || {
         crate::cmd_variables(root)?;
         crate::cmd_codeowners(root)?;
         crate::cmd_guides(root)?;
         refresh_locks(root)
     })?;
-    step(5, "gate", || crate::cmd_gate(root, &[]))?;
-    if !args.contains(&"--no-test") {
-        step(6, "tests (cargo test --workspace)", || {
+    step(&mut run, "gate", half(), || crate::cmd_gate(root, &[]))?;
+    if args.contains(&"--no-test") {
+        run.skip("tests (cargo test --workspace)", "--no-test");
+    } else {
+        step(&mut run, "tests (cargo test --workspace)", half(), || {
             let ok = Command::new("cargo")
                 .args(["test", "--workspace", "-q"])
                 .current_dir(root)
@@ -825,11 +890,12 @@ pub fn cmd_ship(root: &Path, args: &[&str]) -> Result<(), String> {
             },
         ],
     );
-    step(7, "commit and push", || {
+    step(&mut run, "commit and push", half(), || {
         git(root, &["add", "-A"])?;
         commit(root, &message)?;
         push(root, &branch, args)
     })?;
+    run.done(&format!("ship: {branch} is committed"));
     let repo = repo_slug(root).unwrap_or_else(|| "<owner>/<repo>".into());
     println!(
         "\n\x1b[1mready to release {version}.\x1b[0m\n\n\

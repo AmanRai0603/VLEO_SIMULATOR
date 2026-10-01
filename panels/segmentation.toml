@@ -73,3 +73,25 @@ why = """Ap and F10.7 have different boundaries and different ranges — the mar
 name = "scale"
 drive = "(() => { const s = document.querySelector('.sw-opt[data-k=scale]'); if (!s) throw new Error('no scale control'); s.value = 'lin'; s.dispatchEvent(new Event('change')); })()"
 why = """a log count axis and a linear one place every bar differently; identical pictures mean the scale is decorative"""
+
+# THE NUMBERS ARE THE ENGINE'S AND THE BANDS ARE THE ROWS' (phase 10e): the
+# histogram, the band shares and where the record crosses each cut are
+# vleo_modules::record::segments, which bands every day by calling sw_regime or
+# sw_activity_band; the storm and quiet shares by phase are record::regime_phase,
+# on sw_regime. Check 2c moves each in the engine's reply and demands the panel
+# say something different. F10.7's marks sit on the edge each band opens, so
+# only `above_cut` reaches its picture; `band_days` is in the reply and drawn
+# nowhere.
+[[figures]]
+id = "segments"
+reads = ["days", "bin_width", "counts", "max", "band_pct", "below_cut", "above_cut"]
+
+[[figures]]
+id = "segments"
+state = "(() => { const s = document.querySelector('.sw-opt[data-k=v]'); if (!s) throw new Error('no v control'); s.value = 'f107'; s.dispatchEvent(new Event('change')); })()"
+reads = ["above_cut"]
+
+[[figures]]
+id = "regime-phase"
+state = "(() => { const s = document.querySelector('.sw-opt[data-k=view]'); if (!s) throw new Error('no view control'); s.value = 'phase'; s.dispatchEvent(new Event('change')); })()"
+reads = ["phase", "storm_pct", "quiet_pct", "storm_peak", "quiet_low", "mirror"]

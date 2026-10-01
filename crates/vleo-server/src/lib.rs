@@ -24,9 +24,17 @@
 //! Loopback by default. Exposing it to a network is an explicit, separate act,
 //! which also avoids a firewall prompt on first run.
 
+mod http;
+mod inputs;
 mod json;
+mod pages;
+mod results;
 
+use http::*;
+use inputs::*;
 use json::Json;
+use pages::*;
+use results::*;
 use std::collections::BTreeMap;
 use std::io::{BufRead, BufReader, Read, Write};
 use std::net::{TcpListener, TcpStream};
@@ -74,6 +82,10 @@ pub fn serve(
     open: bool,
     background: bool,
 ) -> Result<u16, String> {
+    // First, so that a bug anywhere after this — in any request — leaves a file
+    // a person can send (vleo_data::crash). The daemon and `python -m vleo`
+    // both start here.
+    vleo_data::crash::install("vleo-server", env!("CARGO_PKG_VERSION"));
     let root = root.unwrap_or_else(repo_root);
     let (data, data_versions, bundles, data_refused) = resolve_data(&root);
 
@@ -121,6 +133,7 @@ pub fn serve(
         open_browser(&format!("http://127.0.0.1:{port}"));
     }
 
+    results::thin_at_start();
     let preview = read_preview(&root);
     if let Some(p) = &preview {
         println!(
@@ -144,6 +157,29 @@ pub fn serve(
     Ok(port)
 }
 
+/// One figure of the solar-weather record, without a server: the JSON
+/// `GET /v1/figures/solar/<id>?<params>` answers, byte for byte, because it is
+/// the same function. The command line (`vleo figure`) and Python
+/// (`vleo.figure`) ask here, so a number a panel draws is a number either can
+/// reproduce, from the same bundle and the same saved case.
+///
+/// `params` is a query string (`v=ap&by=cycle`). An unknown id, driver, split
+/// or view is refused by name, as the route refuses it: the answer carries
+/// `"ok":false` and a message, never a stand-in figure.
+pub fn figure(root: Option<PathBuf>, id: &str, params: &str) -> String {
+    let root = root.unwrap_or_else(repo_root);
+    let (data, data_versions, bundles, _) = resolve_data(&root);
+    let ctx = Ctx {
+        root,
+        data,
+        data_versions,
+        bundles,
+        port: 0,
+        preview: None,
+    };
+    results::record_figure(&ctx, id, params)
+}
+
 /// Open the page in the default browser.
 ///
 /// On Windows through `explorer.exe`, which hands a web address to the default
@@ -159,39 +195,6 @@ fn open_browser(url: &str) {
         "xdg-open"
     };
     let _ = std::process::Command::new(opener).arg(url).spawn();
-}
-
-fn accept(listener: TcpListener, ctx: std::sync::Arc<Ctx>) {
-    // ONE CONNECTION NEVER HOLDS UP ANOTHER, AND ONE REQUEST IS HANDLED AT A TIME.
-    //
-    // This loop used to read each connection itself, in turn. A browser opens
-    // connections it may never use — it keeps a spare one warm so the next
-    // request does not wait for a handshake — and the loop sat reading one of
-    // those, with no timeout, while every real request queued behind it. The
-    // page looked hung until the browser happened to close the spare. The more
-    // requests a page made at once, the more spares it opened, so a busier page
-    // made it worse; the manual's browser walk caught it as page loads that
-    // timed out at random.
-    //
-    // So each connection is READ on its own thread, with a timeout, and an idle
-    // one simply ends. HANDLING stays one at a time behind the lock: the form
-    // writes sheets and regenerates folders, and two saves interleaving would
-    // be a race this tool has never had to think about and should not start to.
-    let one_at_a_time = std::sync::Arc::new(std::sync::Mutex::new(()));
-    for stream in listener.incoming() {
-        match stream {
-            Ok(s) => {
-                let ctx = ctx.clone();
-                let gate = one_at_a_time.clone();
-                std::thread::spawn(move || {
-                    if let Err(e) = serve_one(s, &ctx, &gate) {
-                        eprintln!("vleo: {e}");
-                    }
-                });
-            }
-            Err(e) => eprintln!("vleo: accept: {e}"),
-        }
-    }
 }
 
 struct Ctx {
@@ -275,7 +278,10 @@ fn resolve_data(root: &Path) -> (Vec<String>, Vec<String>, BundleFiles, Option<S
     if store.load().is_err() || store.bundles.is_empty() {
         let shipped = root.join("bundles");
         if shipped.is_dir() {
-            refused = store.sync(&vleo_data::Source::Shipped(shipped)).err();
+            refused = store
+                .sync(&vleo_data::Source::Shipped(shipped))
+                .err()
+                .map(String::from);
         }
     }
     let files = store
@@ -292,126 +298,6 @@ fn resolve_data(root: &Path) -> (Vec<String>, Vec<String>, BundleFiles, Option<S
     (store.verified_names(), store.versions(), files, refused)
 }
 
-/// One file of one verified bundle, as it is on disk.
-///
-/// Serving the reference data rather than a shaped summary of it is deliberate.
-/// The bundle's own index says "open any of them in a spreadsheet; nothing here
-/// needs a library", and a face that reads the same CSV the engine reads cannot
-/// drift from it. A JSON projection here would be a second description of the
-/// data, and the first time it disagreed with the file the disagreement would be
-/// invisible.
-///
-/// Two refusals, and neither is about secrecy — this is public reference data.
-/// A name not in the store, or a file its manifest does not declare, is a
-/// request for something this repository cannot vouch for, and the answer is to
-/// say so rather than to read whatever is at that path.
-fn bundle_file(ctx: &Ctx, rest: &str) -> (&'static str, &'static str, Vec<u8>) {
-    let mut it = rest.splitn(2, '/');
-    let name = it.next().unwrap_or("");
-    let file = it.next().unwrap_or("");
-    let Some((dir, files)) = ctx.bundles.get(name) else {
-        return (
-            "404 Not Found",
-            "text/plain; charset=utf-8",
-            format!(
-                "no verified bundle called '{name}'. Verified bundles here: {}",
-                ctx.data.join(", ")
-            )
-            .into_bytes(),
-        );
-    };
-    if !files.iter().any(|f| f == file) {
-        return (
-            "404 Not Found",
-            "text/plain; charset=utf-8",
-            format!(
-                "'{file}' is not a file '{name}' declares. Its manifest lists: {}",
-                files.join(", ")
-            )
-            .into_bytes(),
-        );
-    }
-    match std::fs::read(dir.join(file)) {
-        Ok(b) => ("200 OK", "text/csv; charset=utf-8", b),
-        Err(e) => (
-            "500 Internal Server Error",
-            "text/plain; charset=utf-8",
-            format!("{file} is declared by {name} and could not be read: {e}").into_bytes(),
-        ),
-    }
-}
-
-// ---------------------------------------------------------------------------
-
-fn serve_one(mut stream: TcpStream, ctx: &Ctx, gate: &std::sync::Mutex<()>) -> std::io::Result<()> {
-    // Long enough for any real request to arrive; a connection that has sent
-    // nothing by then is a spare the browser kept warm, and it is let go.
-    stream.set_read_timeout(Some(std::time::Duration::from_secs(20)))?;
-    let mut reader = BufReader::new(stream.try_clone()?);
-    let mut request = String::new();
-    match reader.read_line(&mut request) {
-        Ok(0) => return Ok(()),
-        Ok(_) => {}
-        Err(e)
-            if matches!(
-                e.kind(),
-                std::io::ErrorKind::WouldBlock | std::io::ErrorKind::TimedOut
-            ) =>
-        {
-            return Ok(())
-        }
-        Err(e) => return Err(e),
-    }
-    let mut parts = request.split_whitespace();
-    let method = parts.next().unwrap_or("").to_string();
-    let target = parts.next().unwrap_or("/").to_string();
-
-    let mut length = 0usize;
-    loop {
-        let mut line = String::new();
-        if reader.read_line(&mut line)? == 0 {
-            break;
-        }
-        let l = line.trim_end();
-        if l.is_empty() {
-            break;
-        }
-        if let Some(v) = l.to_ascii_lowercase().strip_prefix("content-length:") {
-            length = v.trim().parse().unwrap_or(0);
-        }
-    }
-    let mut body = vec![0u8; length];
-    if length > 0 {
-        reader.read_exact(&mut body)?;
-    }
-    let body = String::from_utf8_lossy(&body).to_string();
-
-    let (path, query) = match target.split_once('?') {
-        Some((p, q)) => (p.to_string(), q.to_string()),
-        None => (target.clone(), String::new()),
-    };
-    let params = if method == "POST" && !body.is_empty() {
-        body
-    } else {
-        query
-    };
-
-    let (status, ctype, payload) = {
-        // A poisoned lock means a handler panicked on an earlier request; that
-        // request already failed, and refusing every later one would turn one
-        // bad request into a dead tool.
-        let _one = gate.lock().unwrap_or_else(|p| p.into_inner());
-        route(&method, &path, &params, ctx)
-    };
-    let head = format!(
-        "HTTP/1.1 {status}\r\nContent-Type: {ctype}\r\nContent-Length: {}\r\nCache-Control: no-store\r\nX-Content-Type-Options: nosniff\r\nConnection: close\r\n\r\n",
-        payload.len()
-    );
-    stream.write_all(head.as_bytes())?;
-    stream.write_all(&payload)?;
-    stream.flush()
-}
-
 fn route(
     method: &str,
     path: &str,
@@ -426,6 +312,8 @@ fn route(
         // the thing that runs, and the first time they disagree the disagreement
         // is invisible.
         ("GET", p) if p.starts_with("/js/") => module(ctx, p.trim_start_matches("/js/")),
+        // The face's type, bundled beside the stylesheet (web/fonts).
+        ("GET", p) if p.starts_with("/fonts/") => font(ctx, p.trim_start_matches("/fonts/")),
         ("GET", "/v1/version") => ok_json(version_json(ctx)),
         // The manual, with what is true of this running copy right now.
         ("GET", "/v1/manual") => manual_endpoint(ctx),
@@ -449,16 +337,36 @@ fn route(
         // outside the repository. Viewing one runs nothing.
         ("GET", "/v1/derisk") => ok_json(derisk_json(ctx)),
         ("GET", "/v1/results") => ok_json(results_list()),
+        // One well-formed figure of every kind, with illustrative numbers: what
+        // a face is built against before the engine sends that kind for a run.
+        ("GET", "/v1/figures/samples") => ok_json(figure_samples()),
+        // The numbers a figure of the record draws, worked out by the engine
+        // from the bundle the page draws the record from (phase 10).
+        ("GET", p) if p.starts_with("/v1/figures/solar/") => {
+            ok_json(record_figure(
+                ctx,
+                p.trim_start_matches("/v1/figures/solar/"),
+                params,
+            ))
+        }
         ("GET", "/v1/result") => ok_json(result_json(params)),
-        ("GET", "/v1/result.csv") => result_file(params, false),
-        ("GET", "/v1/result.html") => result_file(params, true),
+        ("GET", "/v1/result.csv") => result_file(params, "csv"),
+        ("GET", "/v1/result.sweep.csv") => result_file(params, "sweep"),
+        ("GET", "/v1/result.html") => result_file(params, "report"),
         ("POST", "/v1/results/save") => ok_json(result_save(params, ctx)),
         ("POST", "/v1/results/upload") => ok_json(result_upload(params)),
         ("POST", "/v1/results/delete") => ok_json(result_delete(params)),
+        ("POST", "/v1/results/pin") => ok_json(result_pin(params)),
         ("POST", "/v1/results/as-case") => ok_json(result_as_case(params)),
         ("GET", p) if p.starts_with("/v1/fragment/") => {
             let id = p.trim_start_matches("/v1/fragment/");
             fragment(ctx, id)
+        }
+        ("GET", p) if p.starts_with("/v1/lesson-form/") => {
+            lesson_form_file(ctx, p.trim_start_matches("/v1/lesson-form/"))
+        }
+        ("GET", p) if p.starts_with("/v1/lesson/") => {
+            ok_json(lesson_json(ctx, p.trim_start_matches("/v1/lesson/")))
         }
         ("GET", p) if p.starts_with("/v1/node/") => {
             let id = p.trim_start_matches("/v1/node/");
@@ -497,302 +405,16 @@ fn ok_json(s: String) -> (&'static str, &'static str, Vec<u8>) {
     ("200 OK", "application/json; charset=utf-8", s.into_bytes())
 }
 
-fn file(ctx: &Ctx, name: &str, ctype: &'static str) -> (&'static str, &'static str, Vec<u8>) {
-    match std::fs::read(ctx.root.join("web").join(name)) {
-        Ok(b) => ("200 OK", ctype, b),
-        Err(_) => (
-            "404 Not Found",
-            "text/plain; charset=utf-8",
-            format!("web/{name} is not on disk").into_bytes(),
-        ),
-    }
-}
-
-/// One parity file from `matlab/reference`, by name.
-///
-/// Same traversal guard as `module`: anything that is not a plain file name with
-/// a `.csv` suffix is refused before it reaches the filesystem. The directory is
-/// fixed here rather than taken from the request, so there is no path to
-/// construct and therefore no path to escape.
-fn parity_file(ctx: &Ctx, name: &str) -> (&'static str, &'static str, Vec<u8>) {
-    let stem = name.strip_suffix(".csv").unwrap_or("");
-    let ok = !stem.is_empty()
-        && stem
-            .chars()
-            .all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '-');
-    if !ok {
-        return (
-            "400 Bad Request",
-            "text/plain; charset=utf-8",
-            b"a parity file is a plain .csv name under matlab/reference".to_vec(),
-        );
-    }
-    match std::fs::read(ctx.root.join("matlab").join("reference").join(name)) {
-        Ok(b) => ("200 OK", "text/csv; charset=utf-8", b),
-        Err(_) => (
-            "404 Not Found",
-            "text/plain; charset=utf-8",
-            format!("matlab/reference/{name} is not on disk").into_bytes(),
-        ),
-    }
-}
-
-/// One shell module, by name. Anything that is not a plain file name under
-/// `web/js` is refused before it reaches the filesystem.
-fn module(ctx: &Ctx, name: &str) -> (&'static str, &'static str, Vec<u8>) {
-    let stem = name.strip_suffix(".js").unwrap_or("");
-    let ok = !stem.is_empty()
-        && stem
-            .chars()
-            .all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '-');
-    if !ok {
-        return (
-            "400 Bad Request",
-            "text/plain; charset=utf-8",
-            b"not a module name".to_vec(),
-        );
-    }
-    match std::fs::read(ctx.root.join("web").join("js").join(name)) {
-        Ok(b) => ("200 OK", "application/javascript; charset=utf-8", b),
-        Err(_) => (
-            "404 Not Found",
-            "text/plain; charset=utf-8",
-            format!("web/js/{name} is not on disk").into_bytes(),
-        ),
-    }
-}
-
-/// The manual the page shows about the tool, and what is true of THIS copy.
-///
-/// The file says how things work. Only the running copy knows where its saved
-/// case lives, how far that case is from the defaults, and how many rows there
-/// are — and a manual that wrote any of those down would be wrong the day
-/// after. So they are added here, from the same functions that decide them,
-/// with the node form's own tables for what a form asks and what it cannot
-/// change.
-fn manual_endpoint(ctx: &Ctx) -> (&'static str, &'static str, Vec<u8>) {
-    const JSON: &str = "application/json; charset=utf-8";
-    let m = match vleo_sheet::manual::load(&ctx.root) {
-        Ok(m) => m,
-        // A manual that does not load is reported, not replaced by an empty
-        // one: an empty manual reads as "there is nothing to know".
-        Err(e) => {
-            return (
-                "500 Internal Server Error",
-                JSON,
-                format!("{{\"ok\":false,\"message\":{}}}", json::string(&e)).into_bytes(),
-            )
-        }
-    };
-    use vleo_sheet::form;
-    let case = saved_case();
-    let (rows, published, seeded) = match vleo_sheet::load::load_all(&ctx.root) {
-        Ok(t) => {
-            let n = t.sheets.len();
-            let s = t.sheets.values().filter(|s| s.is_seeded()).count();
-            let p = t.sheets.values().filter(|s| s.state == "published").count();
-            (n, p, s)
-        }
-        Err(_) => (0, 0, 0),
-    };
-    let fields: Vec<String> = form::FIELDS
-        .iter()
-        .filter(|f| f.asked)
-        .map(|f| {
-            format!(
-                "{{\"field\":{},\"group\":{},\"ask\":{},\"why\":{},\"shape\":{},\"blocks\":{}}}",
-                json::string(f.field),
-                json::string(f.group),
-                json::string(f.ask),
-                json::string(f.why),
-                json::string(f.shape.name()),
-                f.blocks
-            )
-        })
-        .collect();
-    let arrays: Vec<String> = form::ARRAYS
-        .iter()
-        .map(|a| {
-            format!(
-                "{{\"name\":{},\"label\":{},\"why\":{},\"end_only\":{},\"keys\":[{}]}}",
-                json::string(a.name),
-                json::string(a.label),
-                json::string(a.why),
-                a.blocks == form::Blocks::EndOnly,
-                a.columns
-                    .iter()
-                    .filter(|c| !c.managed)
-                    .map(|c| json::string(c.key))
-                    .collect::<Vec<_>>()
-                    .join(",")
-            )
-        })
-        .collect();
-    let locked: Vec<String> = form::LOCKED
-        .iter()
-        .map(|k| {
-            format!(
-                "{{\"field\":{},\"why\":{}}}",
-                json::string(k),
-                json::string(form::structural(k).unwrap_or(""))
-            )
-        })
-        .collect();
-    let body = format!(
-        "{{\"ok\":true,\"manual\":{},\n\"live\":{{\"case_path\":{},\"case_stored\":{},\
-         \"case_changed\":{},\"port\":{},\"rows\":{},\"published\":{},\
-         \"seeded\":{},\"fields\":[{}],\"arrays\":[{}],\"locked\":[{}]}}}}",
-        vleo_sheet::manual::json(&m),
-        json::string(&case_path().display().to_string()),
-        case.stored,
-        case.reading.changed,
-        ctx.port,
-        rows,
-        published,
-        seeded,
-        fields.join(","),
-        arrays.join(","),
-        locked.join(",")
-    );
-    ("200 OK", JSON, body.into_bytes())
-}
-
-/// What one node's folder actually holds.
-///
-/// The architecture view claims a node is one folder with a fixed set of
-/// artefacts, seven of them generated. A claim about the layout that the page
-/// asserts from memory is a claim that goes stale the first time the layout
-/// changes, so it is read off the disk instead.
-fn node_endpoint(ctx: &Ctx, id: &str) -> (&'static str, &'static str, Vec<u8>) {
-    if !id.chars().all(|c| c.is_ascii_alphanumeric() || c == '_') {
-        return (
-            "400 Bad Request",
-            "text/plain; charset=utf-8",
-            b"not a node identifier".to_vec(),
-        );
-    }
-    let i = match Vleo::find(id) {
-        Some(i) => i,
-        None => {
-            return (
-                "404 Not Found",
-                "application/json; charset=utf-8",
-                b"{\"ok\":false,\"message\":\"no such node\"}".to_vec(),
-            )
-        }
-    };
-    let def = &NODES[i as usize];
-    let dir = ctx.root.join(def.folder);
-
-    // The eight files, and who writes each. This list is the template: it is
-    // the same eight for every one of the 1333 folders, which is what makes
-    // adding the next node a copy rather than a decision.
-    const ARTEFACTS: &[(&str, &str, &str)] = &[
-        (
-            "node.toml",
-            "by hand",
-            "the sheet — the only file here written by hand",
-        ),
-        (
-            "fixtures.toml",
-            "by hand",
-            "known-good values, and where each came from",
-        ),
-        (
-            "model.rs",
-            "generated",
-            "the whole file, with one numbered HOLE per algorithm step",
-        ),
-        (
-            "contract.rs",
-            "generated",
-            "the untyped adapter the bus calls",
-        ),
-        ("mod.rs", "generated", "the module wiring"),
-        ("evidence.rs", "generated", "the fixtures, as tests"),
-        ("page.html", "generated", "the tabs a reader opens"),
-        (
-            "meta.json",
-            "generated",
-            "state and hashes, written by the gate",
-        ),
-    ];
-
-    let mut j = Json::new();
-    j.raw("{");
-    j.bool_field("ok", true);
-    j.str_field("id", def.id);
-    j.str_field("folder", def.folder);
-    j.str_field("subsystem", def.subsystem);
-    j.str_field("state", def.state.name());
-    j.str_field("sheet_hash", &short(def.sheet_hash));
-    j.str_field("impl_hash", &short(def.impl_hash));
-    j.num_field("steps", def.steps.len() as f64);
-    j.num_field("inputs", def.inputs.len() as f64);
-    j.num_field("outputs", def.outputs.len() as f64);
-    j.num_field("fixtures", def.fixtures.len() as f64);
-    j.key("artefacts").open_arr();
-    for (n, (name, who, what)) in ARTEFACTS.iter().enumerate() {
-        if n > 0 {
-            j.raw(",");
-        }
-        let meta = std::fs::metadata(dir.join(name));
-        j.raw("{");
-        j.str_field("name", name);
-        j.str_field("written", who);
-        j.str_field("what", what);
-        j.bool_field("present", meta.is_ok());
-        j.num_field("bytes", meta.map(|m| m.len() as f64).unwrap_or(0.0));
-        j.close_obj();
-    }
-    j.close_arr();
-    j.raw("}");
-    ok_json(j.0)
-}
-
-/// One fragment per node, fetched when it is opened.
-///
-/// First paint is the shell and the index and does not get slower as the tree
-/// fills; opening a node costs one fragment. That is the whole loading
-/// strategy, and it is a consequence of the folder layout rather than a
-/// separate design.
-fn fragment(ctx: &Ctx, id: &str) -> (&'static str, &'static str, Vec<u8>) {
-    if !id.chars().all(|c| c.is_ascii_alphanumeric() || c == '_') {
-        return (
-            "400 Bad Request",
-            "text/plain; charset=utf-8",
-            b"not a node identifier".to_vec(),
-        );
-    }
-    let i = match Vleo::find(id) {
-        Some(i) => i,
-        None => {
-            return (
-                "404 Not Found",
-                "text/html; charset=utf-8",
-                b"<p>no such node</p>".to_vec(),
-            )
-        }
-    };
-    // The path is carried on the node, not rebuilt from the id. Rebuilding it
-    // is a second implementation of the layout rule, and it fails on the first
-    // row whose folder is not its id minus a prefix — as a 404 that nobody
-    // attributes to a layout change.
-    let def = &NODES[i as usize];
-    let p = ctx.root.join(def.folder).join("page.html");
-    match std::fs::read(&p) {
-        Ok(b) => ("200 OK", "text/html; charset=utf-8", b),
-        Err(_) => (
-            "404 Not Found",
-            "text/html; charset=utf-8",
-            format!("<p class=\"empty\">No fragment for <code>{id}</code>. Run <code>cargo xtask docs</code>.</p>").into_bytes(),
-        ),
-    }
-}
+/// The version of the contract between the page and the engine
+/// (contract/README.md). The page carries the one it was built for and says
+/// so when the engine speaks another; `contract/VERSION` and the page are
+/// held to this by the contract tests.
+pub const CONTRACT: &str = "1";
 
 fn version_json(ctx: &Ctx) -> String {
     let mut j = Json::new();
     j.raw("{");
+    j.str_field("contract", CONTRACT);
     j.str_field("kernel", &short(Vleo::kernel_hash()));
     j.str_field("graph", &short(Vleo::graph_hash()));
     j.str_field("version", env!("CARGO_PKG_VERSION"));
@@ -1050,340 +672,6 @@ fn index_json() -> String {
 
 // ---------------------------------------------------------------------------
 
-fn param<'a>(params: &'a str, key: &str) -> Option<&'a str> {
-    params.split('&').find_map(|kv| {
-        let (k, v) = kv.split_once('=')?;
-        if k == key {
-            Some(v)
-        } else {
-            None
-        }
-    })
-}
-
-fn decode(s: &str) -> String {
-    // BYTES FIRST, TEXT AFTER. Each %xx is one byte of UTF-8, and a character
-    // like ° or — is two or three of them; pushing each byte as a character
-    // turned "°" into two unrelated letters, which a unit check then refused.
-    let b = s.as_bytes();
-    let mut out: Vec<u8> = Vec::with_capacity(b.len());
-    let mut i = 0;
-    while i < b.len() {
-        match b[i] {
-            b'+' => {
-                out.push(b' ');
-                i += 1;
-            }
-            b'%' if i + 2 < b.len() => {
-                out.push(u8::from_str_radix(&s[i + 1..i + 3], 16).unwrap_or(b'?'));
-                i += 3;
-            }
-            c => {
-                out.push(c);
-                i += 1;
-            }
-        }
-    }
-    String::from_utf8_lossy(&out).into_owned()
-}
-
-// ---------------------------------------------------------------------------
-// the saved case
-//
-// The inputs a person saved, stored by the application and never in the
-// repository: beside the reference data, in ~/.vleo/case/inputs.csv, or
-// wherever VLEO_CASE points. Stored as the same CSV a person downloads, so the
-// file on disk is one they can open, read and keep.
-
-fn case_path() -> PathBuf {
-    vleo_data::case_path()
-}
-
-/// The saved case, read and checked against the tree as it is now.
-///
-/// Read on every request rather than held, because it is a small file and a
-/// person may replace it from another tab. CARRIED OVER on the first read after
-/// the tool changes under it: a case written for another set of inputs is
-/// copied aside and written again in this tree's template, with every value
-/// that could not be carried set aside by name — see `inputs::saved::load`. So
-/// a stored case always applies whole, and what an update did to it is shown
-/// on the Inputs page and counted on every run until the case is next saved.
-fn saved_case() -> vleo_modules::inputs::saved::Saved {
-    vleo_modules::inputs::saved::load(&case_path())
-}
-
-fn inputs_csv(params: &str) -> (&'static str, &'static str, Vec<u8>) {
-    const CSV: &str = "text/csv; charset=utf-8";
-    if param(params, "inputs") == Some("defaults") {
-        return ("200 OK", CSV, vleo_modules::inputs::csv(&[]).into_bytes());
-    }
-    let saved = saved_case();
-    if param(params, "backup") == Some("1") {
-        // Only the copy the upgrade itself recorded, and only beside the case:
-        // a path read out of a file is never a path this route will open
-        // anywhere else.
-        let dir = case_path().parent().map(|d| d.to_path_buf());
-        let kept = saved
-            .reading
-            .upgrade
-            .as_ref()
-            .and_then(|u| u.backup.as_ref())
-            .map(PathBuf::from)
-            .filter(|b| b.parent().map(|d| d.to_path_buf()) == dir);
-        return match kept.and_then(|b| std::fs::read(b).ok()) {
-            Some(bytes) => ("200 OK", CSV, bytes),
-            None => (
-                "404 Not Found",
-                "text/plain; charset=utf-8",
-                b"no copy of an earlier case is recorded".to_vec(),
-            ),
-        };
-    }
-    (
-        "200 OK",
-        CSV,
-        vleo_modules::inputs::csv_with(&saved.reading.set, saved.reading.upgrade.as_ref())
-            .into_bytes(),
-    )
-}
-
-fn reading_json(j: &mut Json, r: &vleo_modules::inputs::Reading) {
-    j.num_field("changed", r.changed as f64);
-    j.num_field("defaulted", r.defaulted as f64);
-    j.key("set").open_arr();
-    for (k, (id, si)) in r.set.iter().enumerate() {
-        if k > 0 {
-            j.raw(",");
-        }
-        j.raw("{");
-        j.str_field("id", id);
-        j.num_field("value", *si);
-        j.close_obj();
-    }
-    j.close_arr();
-    j.key("refused").open_arr();
-    for (k, (line, id, why)) in r.refused.iter().enumerate() {
-        if k > 0 {
-            j.raw(",");
-        }
-        j.raw("{");
-        j.num_field("line", *line as f64);
-        j.str_field("id", id);
-        j.str_field("why", why);
-        j.close_obj();
-    }
-    j.close_arr();
-    match &r.template {
-        Some(t) => j.str_field("template", t),
-        None => j.key("template").raw("null"),
-    };
-    j.bool_field("outdated", r.outdated);
-    j.key("upgrade");
-    match &r.upgrade {
-        None => {
-            j.raw("null");
-        }
-        Some(u) => {
-            j.raw("{");
-            j.str_field("from", &u.from);
-            match &u.backup {
-                Some(b) => j.str_field("backup", b),
-                None => j.key("backup").raw("null"),
-            };
-            j.key("new").open_arr();
-            for (k, n) in u.new.iter().enumerate() {
-                if k > 0 {
-                    j.raw(",");
-                }
-                j.push_string(n);
-            }
-            j.close_arr();
-            j.key("set_aside").open_arr();
-            for (k, a) in u.set_aside.iter().enumerate() {
-                if k > 0 {
-                    j.raw(",");
-                }
-                j.raw("{");
-                j.str_field("id", &a.id);
-                j.str_field("value", &a.value);
-                j.str_field("unit", &a.unit);
-                j.str_field("why", &a.why);
-                j.close_obj();
-            }
-            j.close_arr();
-            j.close_obj();
-        }
-    }
-}
-
-/// One node's form, as a file to download.
-fn form_file(ctx: &Ctx, id: &str) -> (&'static str, &'static str, Vec<u8>) {
-    let id = decode(id);
-    let tree = match vleo_sheet::load::load_all(&ctx.root) {
-        Ok(t) => t,
-        Err(e) => {
-            return (
-                "500 Internal Server Error",
-                "text/plain; charset=utf-8",
-                format!("the tree does not load: {e}").into_bytes(),
-            )
-        }
-    };
-    // `new` is the form for a node the design does not have yet. No row can
-    // be called that: an id names an answer, and `new` names none.
-    if id == "new" {
-        return (
-            "200 OK",
-            "text/html; charset=utf-8",
-            vleo_sheet::template::document_new(&tree).into_bytes(),
-        );
-    }
-    match tree.sheets.get(&id) {
-        Some(sh) => (
-            "200 OK",
-            "text/html; charset=utf-8",
-            vleo_sheet::template::document(sh, &tree).into_bytes(),
-        ),
-        None => (
-            "404 Not Found",
-            "text/plain; charset=utf-8",
-            format!("no node '{id}'").into_bytes(),
-        ),
-    }
-}
-
-// ---------------------------------------------------------------------------
-// saved results
-
-/// Now, as a result records it: UTC, to the second. Through `date` rather than a
-/// crate, as xtask stamps its dates.
-fn now_utc() -> String {
-    std::process::Command::new("date")
-        .args(["-u", "+%Y-%m-%dT%H:%M:%SZ"])
-        .output()
-        .ok()
-        .and_then(|o| String::from_utf8(o.stdout).ok())
-        .map(|s| s.trim().to_string())
-        .unwrap_or_default()
-}
-
-fn results_dir() -> PathBuf {
-    vleo_data::results_path()
-}
-
-fn rows_json(j: &mut Json, key: &str, rows: &[vleo_modules::results::Row]) {
-    j.key(key).open_arr();
-    for (k, r) in rows.iter().enumerate() {
-        if k > 0 {
-            j.raw(",");
-        }
-        j.raw("{");
-        j.str_field("id", &r.id);
-        j.str_field("name", &r.name);
-        j.str_field("value", &r.value);
-        j.str_field("unit", &r.unit);
-        match r.si {
-            Some(v) => j.num_field("si", v),
-            None => j.key("si").raw("null"),
-        };
-        j.str_field("credibility", &r.credibility);
-        j.str_field("governing", &r.governing);
-        j.str_field("note", &r.note);
-        j.close_obj();
-    }
-    j.close_arr();
-}
-
-fn result_head(j: &mut Json, s: &vleo_modules::results::Saved) {
-    j.str_field("target", &s.target);
-    j.str_field("name", &s.name);
-    j.str_field("saved", &s.saved);
-    j.str_field("mode", &s.mode);
-    j.str_field("chain", &s.chain);
-    j.str_field("kernel", &s.kernel);
-    j.str_field("graph", &s.graph);
-    j.str_field("template", &s.template);
-    j.bool_field(
-        "template_current",
-        s.template == vleo_modules::inputs::template(),
-    );
-    j.str_field("data", &s.data.join(" "));
-    j.num_field("ran", s.ran as f64);
-    j.num_field("blocked", s.blocked_count as f64);
-    j.num_field("changed", s.changed() as f64);
-    // The node versions it rests on, and those whose record has moved on
-    // since: each a belief the result rested on that has broken.
-    j.key("versions").open_arr();
-    for (i, (id, n, rel)) in s.versions.iter().enumerate() {
-        if i > 0 {
-            j.raw(",");
-        }
-        j.raw("{");
-        j.str_field("node", id);
-        j.num_field("n", *n as f64);
-        j.str_field("release", rel);
-        j.close_obj();
-    }
-    j.close_arr();
-    j.key("moved").open_arr();
-    for (i, (id, then, now)) in vleo_modules::results::moved_since(s).iter().enumerate() {
-        if i > 0 {
-            j.raw(",");
-        }
-        j.raw("{");
-        j.str_field("node", id);
-        j.num_field("then", *then as f64);
-        j.num_field("now", *now as f64);
-        j.close_obj();
-    }
-    j.close_arr();
-    match s.answer() {
-        Some(a) => {
-            j.key("answer").raw("{");
-            j.str_field("value", &a.value);
-            j.str_field("unit", &a.unit);
-            j.close_obj();
-        }
-        None => {
-            j.key("answer").raw("null");
-        }
-    }
-}
-
-/// Every saved result, newest first — and any file that no longer reads,
-/// named with why rather than left out of the list.
-fn results_list() -> String {
-    let (good, bad) = vleo_modules::results::store::list(&results_dir());
-    let mut j = Json::new();
-    j.raw("{");
-    j.bool_field("ok", true);
-    j.str_field("path", &results_dir().display().to_string());
-    j.key("results").open_arr();
-    for (k, (file, s)) in good.iter().enumerate() {
-        if k > 0 {
-            j.raw(",");
-        }
-        j.raw("{");
-        j.str_field("file", file);
-        result_head(&mut j, s);
-        j.close_obj();
-    }
-    j.close_arr();
-    j.key("unreadable").open_arr();
-    for (k, (file, why)) in bad.iter().enumerate() {
-        if k > 0 {
-            j.raw(",");
-        }
-        j.raw("{");
-        j.str_field("file", file);
-        j.str_field("why", why);
-        j.close_obj();
-    }
-    j.close_arr();
-    j.raw("}");
-    j.0
-}
-
 fn failed(message: &str) -> String {
     let mut j = Json::new();
     j.raw("{");
@@ -1391,524 +679,6 @@ fn failed(message: &str) -> String {
     j.str_field("message", message);
     j.raw("}");
     j.0
-}
-
-/// One saved result, whole.
-fn result_json(params: &str) -> String {
-    let name = param(params, "name").map(decode).unwrap_or_default();
-    let s = match vleo_modules::results::store::open(&results_dir(), &name) {
-        Ok(s) => s,
-        Err(e) => return failed(&e),
-    };
-    let mut j = Json::new();
-    j.raw("{");
-    j.bool_field("ok", true);
-    j.str_field("file", &name);
-    result_head(&mut j, &s);
-    rows_json(&mut j, "inputs", &s.inputs);
-    rows_json(&mut j, "outputs", &s.outputs);
-    rows_json(&mut j, "blocked_rows", &s.blocked);
-    j.raw("}");
-    j.0
-}
-
-fn result_file(params: &str, report: bool) -> (&'static str, &'static str, Vec<u8>) {
-    let name = param(params, "name").map(decode).unwrap_or_default();
-    match vleo_modules::results::store::open(&results_dir(), &name) {
-        Ok(s) if report => (
-            "200 OK",
-            "text/html; charset=utf-8",
-            vleo_modules::results::html(&s).into_bytes(),
-        ),
-        Ok(s) => (
-            "200 OK",
-            "text/csv; charset=utf-8",
-            vleo_modules::results::csv(&s).into_bytes(),
-        ),
-        Err(e) => ("404 Not Found", "text/plain; charset=utf-8", e.into_bytes()),
-    }
-}
-
-/// Run a row on the saved case — with whatever the request sets on top — and
-/// keep what it returned.
-fn result_save(params: &str, ctx: &Ctx) -> String {
-    if let Some(why) = case_refused(params, ctx) {
-        return failed(&why);
-    }
-    let case = build_case(params, ctx);
-    let mut scratch = Scratch::new();
-    let r = match vleo_modules::evaluate(&case, &mut scratch) {
-        Ok(r) => r,
-        Err(f) => return failed(&format!("{f}")),
-    };
-    let label = param(params, "label").map(decode).unwrap_or_default();
-    let s = vleo_modules::results::from_run(&r, &case.supply, &now_utc(), label.trim());
-    match vleo_modules::results::store::save(&results_dir(), &s) {
-        Ok(file) => {
-            let mut j = Json::new();
-            j.raw("{");
-            j.bool_field("ok", true);
-            j.str_field("file", &file);
-            result_head(&mut j, &s);
-            j.raw("}");
-            j.0
-        }
-        Err(e) => failed(&e),
-    }
-}
-
-/// Why the design is what it is: every registered risk, where it stands and
-/// every node version that moved it — the conclusion the risk-register rows
-/// draw — and the version each node is at.
-///
-/// Read from the sheets on each request rather than held: the daemon never
-/// writes a sheet, and a developer applying forms beside a running copy
-/// should see the register move without a restart.
-fn derisk_json(ctx: &Ctx) -> String {
-    let tree = match vleo_sheet::load::load_all(&ctx.root) {
-        Ok(t) => t,
-        Err(e) => return failed(&format!("the tree does not load: {e}")),
-    };
-    let reg = vleo_sheet::derisk::register(&tree);
-    let (changes, _) = vleo_sheet::derisk::narrative(&tree);
-    let mut j = Json::new();
-    j.raw("{");
-    j.bool_field("ok", true);
-    j.num_field("changes", changes.len() as f64);
-    j.num_field(
-        "published",
-        tree.sheets.values().filter(|s| !s.is_seeded()).count() as f64,
-    );
-    j.num_field(
-        "versioned",
-        tree.sheets
-            .values()
-            .filter(|s| !s.versions.is_empty())
-            .count() as f64,
-    );
-    j.key("register").open_arr();
-    for (i, r) in reg.iter().enumerate() {
-        if i > 0 {
-            j.raw(",");
-        }
-        j.raw("{");
-        for (k, v) in [
-            ("id", &r.id),
-            ("title", &r.title),
-            ("owner", &r.owner),
-            ("why", &r.why),
-            ("row", &r.row),
-            ("row_label", &r.row_label),
-            ("registered", &r.registered),
-            ("now", &r.now),
-        ] {
-            j.str_field(k, v);
-        }
-        j.key("moves").open_arr();
-        for (m_i, m) in r.moves.iter().enumerate() {
-            if m_i > 0 {
-                j.raw(",");
-            }
-            j.raw("{");
-            j.str_field("node", &m.node);
-            j.str_field("label", &m.label);
-            j.num_field("n", m.n as f64);
-            j.str_field("date", &m.date);
-            j.str_field("release", &m.release);
-            j.str_field("what", &m.what);
-            j.str_field("learned", &m.learned);
-            j.close_obj();
-        }
-        j.close_arr();
-        j.close_obj();
-    }
-    j.close_arr();
-    j.key("nodes").raw("{");
-    let mut first = true;
-    for sh in tree.ordered() {
-        let Some(v) = sh.versions.last() else {
-            continue;
-        };
-        if !first {
-            j.raw(",");
-        }
-        first = false;
-        j.push_string(&sh.id);
-        j.raw(":{");
-        j.num_field("n", v.n as f64);
-        j.str_field("release", &v.release);
-        j.str_field("rests_on", &v.rests_on);
-        j.str_field("learned", &v.learned);
-        j.close_obj();
-    }
-    j.raw("}");
-    j.raw("}");
-    j.0
-}
-
-/// Keep a result somebody sent — its CSV, or the report page it rides in.
-fn result_upload(params: &str) -> String {
-    let text = param(params, "csv").map(decode).unwrap_or_default();
-    let s = match vleo_modules::results::read(&vleo_modules::results::unwrap_report(&text)) {
-        Ok(s) => s,
-        Err(e) => return failed(&e),
-    };
-    match vleo_modules::results::store::save(&results_dir(), &s) {
-        Ok(file) => {
-            let mut j = Json::new();
-            j.raw("{");
-            j.bool_field("ok", true);
-            j.str_field("file", &file);
-            result_head(&mut j, &s);
-            j.raw("}");
-            j.0
-        }
-        Err(e) => failed(&e),
-    }
-}
-
-fn result_delete(params: &str) -> String {
-    let name = param(params, "name").map(decode).unwrap_or_default();
-    match vleo_modules::results::store::remove(&results_dir(), &name) {
-        Ok(()) => "{\"ok\":true}".to_string(),
-        Err(e) => failed(&e),
-    }
-}
-
-/// A result's inputs, made the saved case: checked like any other case, saved
-/// only when every value still applies, and carried over first when the result
-/// was saved against another set of inputs.
-fn result_as_case(params: &str) -> String {
-    let name = param(params, "name").map(decode).unwrap_or_default();
-    let s = match vleo_modules::results::store::open(&results_dir(), &name) {
-        Ok(s) => s,
-        Err(e) => return failed(&e),
-    };
-    let r = vleo_modules::inputs::check_values(&s.case_values());
-    let mut j = Json::new();
-    j.raw("{");
-    if !r.ok() {
-        j.bool_field("ok", false);
-        j.str_field(
-            "message",
-            &format!(
-                "the case was not changed: {} of the result's inputs no longer apply to this tree",
-                r.refused.len()
-            ),
-        );
-        reading_json(&mut j, &r);
-        j.raw("}");
-        return j.0;
-    }
-    let path = case_path();
-    let written = if r.set.is_empty() {
-        vleo_modules::inputs::saved::clear(&path)
-    } else {
-        vleo_modules::inputs::saved::store(&path, &vleo_modules::inputs::csv(&r.set))
-    };
-    match written {
-        Ok(()) => {
-            j.bool_field("ok", true);
-            reading_json(&mut j, &r);
-        }
-        Err(e) => {
-            j.bool_field("ok", false);
-            j.str_field("message", &format!("{}: {e}", path.display()));
-        }
-    }
-    j.raw("}");
-    j.0
-}
-
-/// What a filled form would change in its node. Writes nothing.
-fn form_check(ctx: &Ctx, params: &str) -> String {
-    use vleo_sheet::template::{self, Verdict};
-    let mut j = Json::new();
-    j.raw("{");
-    let Some(html) = param(params, "html").map(decode) else {
-        j.bool_field("ok", false);
-        j.str_field("message", "no form was sent");
-        j.raw("}");
-        return j.0;
-    };
-    let p = match template::plan(&ctx.root, &html) {
-        Ok(p) => p,
-        Err(e) => {
-            j.bool_field("ok", false);
-            j.str_field("message", &e);
-            j.raw("}");
-            return j.0;
-        }
-    };
-    let f = &p.form;
-    j.bool_field("ok", true);
-    j.str_field("node", &f.node);
-    match &p.new {
-        Some(n) => {
-            j.key("new").raw("{");
-            j.str_field("id", &n.id);
-            j.str_field("parent", &n.parent);
-            j.str_field("kind", &n.kind);
-            j.close_obj();
-        }
-        None => {
-            j.key("new").raw("null");
-        }
-    }
-    j.key("interfaces").open_arr();
-    for (k, i) in p.interfaces.iter().enumerate() {
-        if k > 0 {
-            j.raw(",");
-        }
-        j.raw("{");
-        j.str_field("binding", &i.binding);
-        j.str_field("var", &i.var);
-        j.str_field("have", &i.have);
-        j.str_field("unit", &i.unit);
-        j.str_field("label", &i.label);
-        j.str_field("why", &i.why);
-        j.close_obj();
-    }
-    j.close_arr();
-    j.key("open").open_arr();
-    for (k, o) in p.open.iter().enumerate() {
-        if k > 0 {
-            j.raw(",");
-        }
-        j.push_string(o);
-    }
-    j.close_arr();
-    j.key("filled_by").raw("{");
-    j.str_field("name", &f.name);
-    j.str_field("team", &f.team);
-    j.str_field("date", &f.date);
-    j.str_field("ai", &f.ai);
-    j.close_obj();
-    j.bool_field("base_current", p.base_current);
-    // Why it is changing: the decisions the form moves, whether it becomes a
-    // version, and the record it carries — so a filler sees, before sending,
-    // what the developers will see.
-    j.str_field("about", &p.about.join(", "));
-    j.num_field("version", p.version.map(f64::from).unwrap_or(0.0));
-    j.key("derisk").open_arr();
-    let mut first = true;
-    for (k, ask, _) in vleo_sheet::template::DERISK {
-        let v = f.derisk.get(k);
-        if v.trim().is_empty() {
-            continue;
-        }
-        if !first {
-            j.raw(",");
-        }
-        first = false;
-        j.raw("{");
-        j.str_field("ask", ask);
-        j.str_field("said", v);
-        j.close_obj();
-    }
-    j.close_arr();
-    j.num_field("applicable", p.applicable() as f64);
-    j.num_field("blocked", p.blocked() as f64);
-    j.key("items").open_arr();
-    for (k, i) in p.items.iter().enumerate() {
-        if k > 0 {
-            j.raw(",");
-        }
-        let (verdict, why) = match &i.verdict {
-            Verdict::Apply => ("apply", ""),
-            Verdict::Already => ("already", ""),
-            Verdict::Conflict(w) => ("conflict", w.as_str()),
-            Verdict::Refused(w) => ("refused", w.as_str()),
-        };
-        j.raw("{");
-        j.str_field("what", &i.what);
-        j.str_field("from", &i.from);
-        j.str_field("to", &i.to);
-        j.str_field("verdict", verdict);
-        j.str_field("why", why);
-        j.close_obj();
-    }
-    j.close_arr();
-    j.str_field("notes", &f.notes);
-    j.num_field("known", f.known.len() as f64);
-    j.str_field("fixture_request", &template::fixture_request(f));
-    j.raw("}");
-    j.0
-}
-
-/// Every input of the case, its group, default, range and saved value.
-fn inputs_json() -> String {
-    let loaded = saved_case();
-    let saved = &loaded.reading;
-    let mut j = Json::new();
-    j.raw("{");
-    j.bool_field("ok", true);
-    if let Some(c) = Vleo::default_case() {
-        j.str_field("case", c.id);
-        j.str_field("label", c.label);
-        j.str_field("note", c.note);
-    }
-    j.str_field("path", &case_path().display().to_string());
-    j.bool_field("stored", loaded.stored);
-    j.str_field("template_now", &vleo_modules::inputs::template());
-    if let Some(e) = &loaded.error {
-        j.str_field("error", e);
-    }
-    reading_json(&mut j, saved);
-    j.key("inputs").open_arr();
-    for (k, i) in vleo_modules::inputs::case_inputs().iter().enumerate() {
-        if k > 0 {
-            j.raw(",");
-        }
-        j.raw("{");
-        j.str_field("id", i.id);
-        j.str_field("label", i.label);
-        j.str_field("symbol", i.symbol);
-        j.str_field("group", i.group.name());
-        j.str_field("unit", i.unit);
-        j.num_field("factor", i.factor);
-        j.num_field("lo", i.lo);
-        j.num_field("hi", i.hi);
-        j.num_field("default", i.default);
-        match saved.set.iter().find(|(id, _)| id == i.id) {
-            Some((_, v)) => j.num_field("value", *v),
-            None => j.key("value").raw("null"),
-        };
-        j.close_obj();
-    }
-    j.close_arr();
-    j.raw("}");
-    j.0
-}
-
-/// What a CSV or a set of values would do, without saving it.
-fn inputs_reading(params: &str) -> vleo_modules::inputs::Reading {
-    match param(params, "csv") {
-        Some(csv) => vleo_modules::inputs::read_csv(&decode(csv)),
-        None => vleo_modules::inputs::check_values(&sets(params)),
-    }
-}
-
-fn inputs_check(params: &str) -> String {
-    let r = inputs_reading(params);
-    let mut j = Json::new();
-    j.raw("{");
-    j.bool_field("ok", r.ok());
-    reading_json(&mut j, &r);
-    j.raw("}");
-    j.0
-}
-
-/// Save a case — a whole one, replacing what was there.
-///
-/// ALL OR NOTHING. A file with one refused row is not saved at all, and the
-/// reply names every refusal: keeping the good rows of a bad file would leave
-/// the tool running on a case nobody wrote.
-fn inputs_save(params: &str) -> String {
-    let r = inputs_reading(params);
-    let mut j = Json::new();
-    j.raw("{");
-    if !r.ok() {
-        j.bool_field("ok", false);
-        j.str_field(
-            "message",
-            &format!(
-                "nothing was saved: {} row(s) cannot be applied. Correct them and upload again.",
-                r.refused.len()
-            ),
-        );
-        reading_json(&mut j, &r);
-        j.raw("}");
-        return j.0;
-    }
-    let path = case_path();
-    let written = vleo_modules::inputs::saved::store(&path, &vleo_modules::inputs::csv(&r.set));
-    match written {
-        Ok(()) => {
-            j.bool_field("ok", true);
-            j.str_field("path", &path.display().to_string());
-            reading_json(&mut j, &r);
-        }
-        Err(e) => {
-            j.bool_field("ok", false);
-            j.str_field(
-                "message",
-                &format!("the case could not be written to {}: {e}", path.display()),
-            );
-        }
-    }
-    j.raw("}");
-    j.0
-}
-
-/// Back to every default: the stored case is removed.
-fn inputs_reset() -> String {
-    let path = case_path();
-    let mut j = Json::new();
-    j.raw("{");
-    match vleo_modules::inputs::saved::clear(&path) {
-        Ok(()) => {
-            j.bool_field("ok", true);
-        }
-        Err(e) => {
-            j.bool_field("ok", false);
-            j.str_field(
-                "message",
-                &format!("could not remove {}: {e}", path.display()),
-            );
-        }
-    }
-    j.raw("}");
-    j.0
-}
-
-/// `set=id:value` repeated. Values are SI, always: a face converts for display
-/// and never for transport.
-fn sets(params: &str) -> Vec<(String, f64)> {
-    params
-        .split('&')
-        .filter_map(|kv| {
-            let (k, v) = kv.split_once('=')?;
-            if k != "set" {
-                return None;
-            }
-            let d = decode(v);
-            let (id, val) = d.split_once(':')?;
-            Some((id.to_string(), val.parse().ok()?))
-        })
-        .collect()
-}
-
-/// A supplied value only survives on a row that declares its own number.
-///
-/// Every other kind works its answer out during the run and overwrites what was
-/// supplied, so a `set=` on one was accepted, ignored, and reported as a
-/// successful run against a number nobody asked for. A sweep over one drew a
-/// flat line and said "0 refused", which reads as a real result — a reader
-/// turns the knob and nothing moves, and nothing anywhere says why.
-///
-/// The CLI has refused this since it was written (`suppliable`); this path
-/// never checked. It stayed invisible while every driver was declared, and
-/// became load-bearing the moment `env_f107` started reading the solar
-/// subsystem: the two faces then disagreed about the same request.
-fn unsuppliable(id: &str) -> Option<String> {
-    let k = Vleo::find(id)?;
-    let def = &NODES[k as usize];
-    if def.kind == Kind::Declared {
-        return None;
-    }
-    Some(format!(
-        "'{}' is {}, so a supplied value would be overwritten the moment it is \
-         evaluated. Set one of the declared numbers it reads instead.",
-        def.id,
-        match def.kind {
-            Kind::Computed => "computed from its inputs",
-            Kind::Required => "a target handed down from the layer above",
-            Kind::Achieved => "what a subsystem returned",
-            Kind::Kpi => "a key performance indicator",
-            Kind::Declared => unreachable!(),
-        }
-    ))
 }
 
 /// The refusal, as the wire form every endpoint here uses.
@@ -1929,6 +699,16 @@ fn refuse(node: &str, message: &str) -> String {
 /// unknown name or a condition that cannot be applied comes back as a sentence
 /// rather than as the declared design with a customer's name on it.
 fn case_refused(params: &str, ctx: &Ctx) -> Option<String> {
+    if let Some((node, why)) = set_refusal(params) {
+        let mut j = Json::new();
+        j.raw("{");
+        j.bool_field("ok", false);
+        j.str_field("fault", "bad-set");
+        j.str_field("node", &node);
+        j.str_field("message", &why);
+        j.raw("}");
+        return Some(j.0);
+    }
     let case = build_case(params, ctx);
     let why = vleo_modules::case_refusal(&case)?;
     let mut j = Json::new();
@@ -1968,6 +748,35 @@ fn build_case(params: &str, ctx: &Ctx) -> Case {
     }
 }
 
+/// Which inputs an answer was for, as the run response says it: whether it is
+/// the declared design, how many inputs the saved case changes, and what the
+/// last update did to the case. A saved answer shown again says it the same way.
+fn inputs_note(j: &mut Json, params: &str) {
+    // Which inputs this answer was for. A number with no case beside it
+    // is a number a reader will quote for the wrong inputs.
+    let saved = if param(params, "inputs").map(decode).as_deref() == Some("defaults") {
+        None
+    } else {
+        Some(saved_case().reading)
+    };
+    let note = saved.as_ref().and_then(|s| s.upgrade.as_ref());
+    j.key("inputs").raw("{");
+    j.bool_field("defaults", saved.is_none());
+    j.num_field(
+        "changed",
+        saved.as_ref().map(|s| s.changed).unwrap_or(0) as f64,
+    );
+    // What the last update did to the case, until it is next saved:
+    // values it could not carry, and inputs it added at their defaults.
+    j.bool_field("upgraded", note.is_some());
+    j.num_field(
+        "set_aside",
+        note.map(|u| u.set_aside.len()).unwrap_or(0) as f64,
+    );
+    j.num_field("new", note.map(|u| u.new.len()).unwrap_or(0) as f64);
+    j.close_obj();
+}
+
 fn run_json(params: &str, ctx: &Ctx) -> String {
     if let Some(refusal) = case_refused(params, ctx) {
         return refusal;
@@ -1978,6 +787,16 @@ fn run_json(params: &str, ctx: &Ctx) -> String {
     for (id, _) in &case.supply {
         if let Some(why) = unsuppliable(id) {
             return refuse(id, &why);
+        }
+    }
+    // A QUESTION ALREADY ANSWERED IS SHOWN, NOT ASKED AGAIN — when the face
+    // asks for that (`reuse=1`), and never silently: the answer says which
+    // saved result it is. The same engine on the same inputs gives the same
+    // answer, and everything that decides it is in the question's key.
+    if flag(params, "reuse") && !flag(params, "again") {
+        let q = question_of(&case, None);
+        if let Some((file, saved)) = vleo_modules::results::store::find(&results_dir(), &q) {
+            return saved_run_json(params, &file, &saved, &q);
         }
     }
     let mut scratch = Scratch::new();
@@ -1994,29 +813,7 @@ fn run_json(params: &str, ctx: &Ctx) -> String {
         }
         Ok(r) => {
             j.bool_field("ok", true);
-            // Which inputs this answer was for. A number with no case beside it
-            // is a number a reader will quote for the wrong inputs.
-            let saved = if param(params, "inputs").map(decode).as_deref() == Some("defaults") {
-                None
-            } else {
-                Some(saved_case().reading)
-            };
-            let note = saved.as_ref().and_then(|s| s.upgrade.as_ref());
-            j.key("inputs").raw("{");
-            j.bool_field("defaults", saved.is_none());
-            j.num_field(
-                "changed",
-                saved.as_ref().map(|s| s.changed).unwrap_or(0) as f64,
-            );
-            // What the last update did to the case, until it is next saved:
-            // values it could not carry, and inputs it added at their defaults.
-            j.bool_field("upgraded", note.is_some());
-            j.num_field(
-                "set_aside",
-                note.map(|u| u.set_aside.len()).unwrap_or(0) as f64,
-            );
-            j.num_field("new", note.map(|u| u.new.len()).unwrap_or(0) as f64);
-            j.close_obj();
+            inputs_note(&mut j, params);
             j.key("values").open_arr();
             for (i, v) in r.values.iter().enumerate() {
                 if i > 0 {
@@ -2217,7 +1014,9 @@ fn probe_json(params: &str) -> String {
     j.0
 }
 
-fn sweep_json(params: &str, ctx: &Ctx) -> String {
+/// What a sweep request asks: the row, the input moved, the range in SI, and
+/// how many points — clamped as the sweep will run it.
+fn sweep_spec(params: &str) -> (String, String, f64, f64, usize) {
     let node = param(params, "node").map(decode).unwrap_or_default();
     let over = param(params, "over").map(decode).unwrap_or_default();
     let from: f64 = param(params, "from")
@@ -2230,59 +1029,66 @@ fn sweep_json(params: &str, ctx: &Ctx) -> String {
         .and_then(|v| v.parse().ok())
         .unwrap_or(48)
         .clamp(2, 400);
+    (node, over, from, to, points)
+}
 
-    // The axis has to be a row a reader can actually move. Sweeping a computed
-    // one drew a flat line and reported no refusals, which is the same silent
-    // substitution as `set=` on one and reads as a real result.
+/// Run a sweep: the row's answer at each point across the range, every other
+/// input held at the case. Refused points are kept with why. A request the
+/// sweep cannot make at all comes back as the wire refusal.
+fn run_sweep(params: &str, ctx: &Ctx) -> Result<vleo_modules::results::Sweep, String> {
+    let (node, over, from, to, points) = sweep_spec(params);
     if let Some(why) = unsuppliable(&over) {
-        return refuse(&over, &why);
+        return Err(refuse(&over, &why));
     }
     if let Some(refusal) = case_refused(params, ctx) {
-        return refusal;
+        return Err(refusal);
     }
+    vleo_modules::results::sweep(&build_case(params, ctx), &node, &over, from, to, points)
+        .map_err(|e| failed(e.message()))
+}
 
-    let mut j = Json::new();
-    j.raw("{");
-    let (ni, oi) = match (Vleo::find(&node), Vleo::find(&over)) {
-        (Some(a), Some(b)) => (a, b),
-        _ => {
-            j.bool_field("ok", false);
-            j.str_field("message", "the sweep names a node that does not exist");
-            j.raw("}");
-            return j.0;
-        }
-    };
-    j.bool_field("ok", true);
-    j.str_field("x_id", &over);
-    j.str_field("y_id", &node);
-    j.str_field("x_unit", VARS[oi as usize].unit.symbol());
-    j.str_field("y_unit", VARS[ni as usize].unit.symbol());
-    j.num_field("x_factor", VARS[oi as usize].unit.si_factor());
-    j.num_field("y_factor", VARS[ni as usize].unit.si_factor());
-
-    let mut scratch = Scratch::new();
-    let mut xs = Vec::new();
-    let mut ys = Vec::new();
-    let mut refused: Vec<(f64, String)> = Vec::new();
-    for i in 0..points {
-        let t = i as f64 / (points - 1) as f64;
-        let x = from + t * (to - from);
+/// A behaviour sweep. Refused points are recorded with their reason, never
+/// dropped — a sweep in which some rows quietly used a substituted value is a
+/// sweep whose conclusion is unknown.
+///
+/// With `reuse=1`, a sweep already saved for exactly this question — same row,
+/// range, points, inputs, engine and data — is returned from its result and
+/// says so, rather than run again.
+fn sweep_json(params: &str, ctx: &Ctx) -> String {
+    let (node, over, from, to, points) = sweep_spec(params);
+    if flag(params, "reuse") && !flag(params, "again") && case_refused(params, ctx).is_none() {
         let mut case = build_case(params, ctx);
         case.target = node.clone();
-        case.supply.push((over.clone(), x));
-        match vleo_modules::evaluate(&case, &mut scratch) {
-            Ok(r) => match r.values.iter().find(|v| v.id == node) {
-                Some(v) => {
-                    xs.push(x);
-                    ys.push(v.value);
-                }
-                None => refused.push((x, "blocked".to_string())),
-            },
-            Err(f) => refused.push((x, format!("{f}"))),
+        let q = question_of(&case, Some((over.as_str(), from, to, points)));
+        if let Some((file, saved)) = vleo_modules::results::store::find(&results_dir(), &q) {
+            if let Some(w) = &saved.sweep {
+                return sweep_wire(&node, w, Some((&file, &saved, &q)));
+            }
         }
     }
+    match run_sweep(params, ctx) {
+        Ok(w) => sweep_wire(&node, &w, None),
+        Err(refusal) => refusal,
+    }
+}
+
+/// A sweep on the wire — run now, or read from the result it was saved in.
+fn sweep_wire(
+    node: &str,
+    w: &vleo_modules::results::Sweep,
+    from_saved: Option<(&str, &vleo_modules::results::Saved, &str)>,
+) -> String {
+    let mut j = Json::new();
+    j.raw("{");
+    j.bool_field("ok", true);
+    j.str_field("x_id", &w.over);
+    j.str_field("y_id", node);
+    j.str_field("x_unit", &w.x_unit);
+    j.str_field("y_unit", &w.y_unit);
+    j.num_field("x_factor", w.x_factor);
+    j.num_field("y_factor", w.y_factor);
     j.key("x").open_arr();
-    for (i, v) in xs.iter().enumerate() {
+    for (i, v) in w.x.iter().enumerate() {
         if i > 0 {
             j.raw(",");
         }
@@ -2290,7 +1096,7 @@ fn sweep_json(params: &str, ctx: &Ctx) -> String {
     }
     j.close_arr();
     j.key("y").open_arr();
-    for (i, v) in ys.iter().enumerate() {
+    for (i, v) in w.y.iter().enumerate() {
         if i > 0 {
             j.raw(",");
         }
@@ -2298,7 +1104,7 @@ fn sweep_json(params: &str, ctx: &Ctx) -> String {
     }
     j.close_arr();
     j.key("refused").open_arr();
-    for (i, (x, why)) in refused.iter().enumerate() {
+    for (i, (x, why)) in w.refused.iter().enumerate() {
         if i > 0 {
             j.raw(",");
         }
@@ -2308,6 +1114,14 @@ fn sweep_json(params: &str, ctx: &Ctx) -> String {
         j.close_obj();
     }
     j.close_arr();
+    // The same sweep as the engine describes it for drawing: a face draws this
+    // rather than its own picture of the points.
+    j.key("figure").raw(&vleo_modules::figure::json(
+        &vleo_modules::figure::from_sweep(node, w, None),
+    ));
+    if let Some((file, s, q)) = from_saved {
+        from_saved_json(&mut j, file, s, q);
+    }
     j.raw("}");
     j.0
 }
@@ -2480,6 +1294,64 @@ fn levers_json(params: &str, ctx: &Ctx) -> String {
     j.bool_field("ok", true);
     j.str_field("node", &node);
 
+    let (base, out) = levers_of(params, ctx, &node, ni);
+    match base {
+        Some(b) => j.num_field("base", b),
+        None => j.key("base").raw("null"),
+    };
+
+    j.key("levers").open_arr();
+    for (i, lev) in out.iter().enumerate() {
+        if i > 0 {
+            j.raw(",");
+        }
+        let d = &VARS[lev.var as usize];
+        j.raw("{");
+        j.str_field("id", d.id);
+        j.str_field("symbol", d.symbol);
+        j.str_field("label", d.label);
+        j.str_field("unit", d.unit.symbol());
+        j.num_field("factor", d.unit.si_factor());
+        j.num_field("lower", d.limit.lower);
+        j.num_field("upper", d.limit.upper);
+        match lev.at_lower {
+            Some(x) => j.num_field("at_lower", x),
+            None => j.key("at_lower").raw("null"),
+        };
+        match lev.at_upper {
+            Some(x) => j.num_field("at_upper", x),
+            None => j.key("at_upper").raw("null"),
+        };
+        if lev.span < 0.0 {
+            j.key("span").raw("null");
+        } else {
+            j.num_field("span", lev.span);
+        }
+        j.str_field("why", &lev.why);
+        j.close_obj();
+    }
+    j.close_arr();
+    j.raw("}");
+    j.0
+}
+
+/// One decision and what moving it across its own declared range does to
+/// the answer. `span` is negative where an end could not be evaluated at
+/// all, which is a different fact from a span of zero.
+pub(crate) struct Lever {
+    pub(crate) span: f64,
+    pub(crate) var: u16,
+    pub(crate) at_lower: Option<f64>,
+    pub(crate) at_upper: Option<f64>,
+    pub(crate) why: String,
+}
+
+/// Every declared decision upstream of `node` and how far moving it across its
+/// own range moves the answer, most first — and the answer on the case, which
+/// a span is relative to. What `/v1/levers` sends, and what a figure choosing
+/// its own axis reads.
+pub(crate) fn levers_of(params: &str, ctx: &Ctx, node: &str, ni: u16) -> (Option<f64>, Vec<Lever>) {
+    let node = node.to_string();
     // Every declared row upstream, however far: a decision three rows away is
     // still a decision, and the reason a reader opens this row may be a choice
     // taken well before it.
@@ -2518,21 +1390,6 @@ fn levers_json(params: &str, ctx: &Ctx) -> String {
             .ok()
             .and_then(|r| r.values.iter().find(|v| v.id == node).map(|v| v.value))
     };
-    match base {
-        Some(b) => j.num_field("base", b),
-        None => j.key("base").raw("null"),
-    };
-
-    /// One decision and what moving it across its own declared range does to
-    /// the answer. `span` is negative where an end could not be evaluated at
-    /// all, which is a different fact from a span of zero.
-    struct Lever {
-        span: f64,
-        var: u16,
-        at_lower: Option<f64>,
-        at_upper: Option<f64>,
-        why: String,
-    }
     let mut out: Vec<Lever> = Vec::new();
     for v in cands {
         let d = &VARS[v as usize];
@@ -2585,39 +1442,7 @@ fn levers_json(params: &str, ctx: &Ctx) -> String {
             .then_with(|| VARS[a.var as usize].id.cmp(VARS[b.var as usize].id))
     });
 
-    j.key("levers").open_arr();
-    for (i, lev) in out.iter().enumerate() {
-        if i > 0 {
-            j.raw(",");
-        }
-        let d = &VARS[lev.var as usize];
-        j.raw("{");
-        j.str_field("id", d.id);
-        j.str_field("symbol", d.symbol);
-        j.str_field("label", d.label);
-        j.str_field("unit", d.unit.symbol());
-        j.num_field("factor", d.unit.si_factor());
-        j.num_field("lower", d.limit.lower);
-        j.num_field("upper", d.limit.upper);
-        match lev.at_lower {
-            Some(x) => j.num_field("at_lower", x),
-            None => j.key("at_lower").raw("null"),
-        };
-        match lev.at_upper {
-            Some(x) => j.num_field("at_upper", x),
-            None => j.key("at_upper").raw("null"),
-        };
-        if lev.span < 0.0 {
-            j.key("span").raw("null");
-        } else {
-            j.num_field("span", lev.span);
-        }
-        j.str_field("why", &lev.why);
-        j.close_obj();
-    }
-    j.close_arr();
-    j.raw("}");
-    j.0
+    (base, out)
 }
 
 #[cfg(test)]
@@ -2631,5 +1456,137 @@ mod start_by_name {
         assert!(!opens_by_name("vleo-daemon"));
         assert!(!opens_by_name("vleo"));
         assert!(!opens_by_name("Start VLEO (1)"));
+    }
+}
+
+#[cfg(test)]
+mod requests {
+    use super::{decode, set_refusal, Head, MAX_BODY};
+
+    fn head(lines: &[&str]) -> Head {
+        let mut h = Head::default();
+        for l in lines {
+            h.take(l);
+        }
+        h
+    }
+
+    #[test]
+    fn decoding_never_panics_and_keeps_what_it_cannot_read() {
+        assert_eq!(decode("a+b%20c"), "a b c");
+        assert_eq!(decode("%C2%B0"), "°");
+        // A raw multi-byte character after `%` once sliced text mid-character
+        // and aborted the release build.
+        assert_eq!(decode("%€x"), "%€x");
+        assert_eq!(decode("%zz"), "%zz");
+        assert_eq!(decode("50%"), "50%");
+        assert_eq!(decode("%4"), "%4");
+    }
+
+    #[test]
+    fn only_this_server_s_own_address_is_answered() {
+        let ok = head(&["Host: 127.0.0.1:7777"]);
+        assert!(ok.refusal("GET", 7777).is_none());
+        assert!(head(&["Host: localhost:7777"])
+            .refusal("GET", 7777)
+            .is_none());
+        // DNS rebinding: another site's name, pointed at loopback.
+        let rebound = head(&["Host: evil.example:7777"]);
+        assert_eq!(
+            rebound.refusal("GET", 7777).unwrap().0,
+            "421 Misdirected Request"
+        );
+        assert!(head(&["Host: 127.0.0.1:7778"])
+            .refusal("GET", 7777)
+            .is_some());
+        assert!(head(&[]).refusal("GET", 7777).is_some());
+    }
+
+    #[test]
+    fn a_page_on_another_site_cannot_change_anything() {
+        let own = head(&["Host: 127.0.0.1:7777", "Origin: http://127.0.0.1:7777"]);
+        assert!(own.refusal("POST", 7777).is_none());
+        let other = head(&["Host: 127.0.0.1:7777", "Origin: https://evil.example"]);
+        assert_eq!(other.refusal("POST", 7777).unwrap().0, "403 Forbidden");
+        let null = head(&["Host: 127.0.0.1:7777", "Origin: null"]);
+        assert!(null.refusal("POST", 7777).is_some());
+        let told = head(&["Host: 127.0.0.1:7777", "Sec-Fetch-Site: cross-site"]);
+        assert!(told.refusal("POST", 7777).is_some());
+        // A program, not a page: the parity tools post with neither header.
+        let program = head(&["Host: localhost:7777"]);
+        assert!(program.refusal("POST", 7777).is_none());
+        // Reading is left to the browser's own same-origin rule.
+        assert!(other.refusal("GET", 7777).is_none());
+    }
+
+    #[test]
+    fn bodies_are_bounded_and_measured() {
+        let h = |l: &str| {
+            head(&["Host: 127.0.0.1:1", l])
+                .refusal("POST", 1)
+                .map(|r| r.0)
+        };
+        assert_eq!(h("Transfer-Encoding: chunked"), Some("411 Length Required"));
+        assert_eq!(h("Content-Length: lots"), Some("400 Bad Request"));
+        let big = format!("Content-Length: {}", MAX_BODY + 1);
+        assert_eq!(h(&big), Some("413 Content Too Large"));
+        assert_eq!(h("Content-Length: 10"), None);
+    }
+
+    #[test]
+    fn a_value_that_cannot_be_applied_is_named_not_dropped() {
+        let id = vleo_modules::NODES[0].id;
+        assert!(set_refusal(&format!("set={id}:1.5")).is_none());
+        assert!(set_refusal(&format!("set={id}%3A2")).is_none());
+        let named = |p: &str| set_refusal(p).map(|(n, _)| n);
+        assert_eq!(named("set=no_such_row:1").as_deref(), Some("no_such_row"));
+        assert_eq!(named(&format!("set={id}:fast")).as_deref(), Some(id));
+        assert_eq!(named(&format!("set={id}:NaN")).as_deref(), Some(id));
+        assert!(named(&format!("set={id}")).is_some());
+        assert!(set_refusal("node=x&mode=branch").is_none());
+    }
+
+    #[test]
+    fn a_bug_in_one_request_is_answered_and_the_next_request_still_served() {
+        use super::handled;
+        let (status, ctype, body) = handled("GET", "/v1/run", || panic!("a bug in the handler"));
+        assert_eq!(status, "500 Internal Server Error");
+        assert!(
+            ctype.starts_with("application/json"),
+            "the face reads /v1 as JSON"
+        );
+        let body = String::from_utf8(body).unwrap();
+        assert!(
+            body.contains("\"ok\":false") && body.contains("still running"),
+            "{body}"
+        );
+        // A page, not the API, is told in plain text.
+        assert!(handled("GET", "/", || panic!("again"))
+            .1
+            .starts_with("text/plain"));
+        // And the next request is served as if nothing had happened.
+        let fine = handled("GET", "/v1/version", || {
+            ("200 OK", "application/json", b"{}".to_vec())
+        });
+        assert_eq!(fine.0, "200 OK");
+    }
+
+    #[test]
+    fn a_connection_slot_is_given_back_when_its_thread_panics() {
+        use std::sync::atomic::{AtomicUsize, Ordering::SeqCst};
+        use std::sync::Arc;
+        let open = Arc::new(AtomicUsize::new(1));
+        let place = super::OpenPlace(open.clone());
+        let ended = std::thread::spawn(move || {
+            let _place = place;
+            panic!("a bug outside the guarded handler");
+        })
+        .join();
+        assert!(ended.is_err());
+        assert_eq!(
+            open.load(SeqCst),
+            0,
+            "the slot leaked; enough of these and every connection is refused"
+        );
     }
 }

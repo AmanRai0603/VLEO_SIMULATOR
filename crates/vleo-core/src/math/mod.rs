@@ -1,7 +1,8 @@
 //! Numerical methods.
 //!
-//! Only the things the physics actually needs: integrators, root finding and
-//! table interpolation. Linear algebra is not here — no node in this system has
+//! Only the things the physics actually needs: integrators, root finding,
+//! table interpolation, and the two statistics the figures of the record read
+//! (a percentile and a correlation). Linear algebra is not here — no node in this system has
 //! yet needed a decomposition, and a linear algebra module written before a
 //! node needs it is a module nobody reviews.
 //!
@@ -11,8 +12,10 @@
 
 pub mod integrate;
 pub mod rootfind;
+pub mod stats;
 pub mod table;
 
 pub use integrate::{rk4_scalar, simpson};
 pub use rootfind::{bisect, secant, RootError};
+pub use stats::{bartlett_halfwidth, centred_mean, lagged_corr, mean_sd, pearson, quantile};
 pub use table::Table1;

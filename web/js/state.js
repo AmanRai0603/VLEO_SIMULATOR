@@ -11,6 +11,14 @@
 */
 'use strict';
 
+/**
+ * The contract this page was built for (contract/README.md). The engine says
+ * which it speaks in /v1/version; when they differ the page says so rather
+ * than misreading an answer. Held equal to contract/VERSION by the contract
+ * tests.
+ */
+export const CONTRACT = '1';
+
 export const S = {
   version: null,
   index: null,

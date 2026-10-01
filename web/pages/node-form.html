@@ -1,0 +1,77 @@
+<!--
+  THE NODE FORM — the page `xtask form <node>` writes (and the new-node form,
+  `xtask form --new`, and the worked example the pipeline tests), filled by
+  vleo-sheet/src/template.rs. The whole page is web/page.html with the part
+  named body in its body; its style is web/pages/node-form.css and its
+  behaviour web/pages/node-form.js.
+
+  Its parts, by name — a part opens with a comment reading "part:" and its
+  name and runs to the next one; slots are double-braced names, filled once
+  each; text slots arrive escaped. The body's slots:
+    heading   the node's name, id and place — or "A new node"
+    schema    the questions, as JSON the page draws its fields from
+    original  the node as it was when the form was made (TOML)
+    data      the form's content (TOML) — what comes back
+    checker   the method checker, gzipped, as base64
+    script    web/pages/node-form.js
+
+  The three block ids are what reading a filled form looks for
+  (template::read): change one here and there together, or a form that comes
+  back cannot be read.
+-->
+<!-- part: head --><style>
+{{css}}</style><!-- part: title-node -->{{label}} — node form<!-- part: title-example -->{{label}} — node form (worked example)<!-- part: title-new -->A new node — node form<!-- part: heading-node --><h1>{{label}}</h1>
+<p class="nf-id"><code>{{id}}</code> · {{kind}} · {{subsystem}} · owner {{owner}} · {{state}}</p>
+<!-- part: heading-example --><h1>{{label}}</h1>
+<p class="nf-id"><code>{{id}}</code> · the worked example, for the pipeline's test</p>
+<!-- part: heading-new --><h1>A new node</h1>
+<p class="nf-id">a request for a node the design does not have yet — where it goes, what it asks, and what it reads</p>
+<!-- part: body --><header class="nf-head">
+<p class="nf-kicker">VLEO design tool · node form</p>
+{{heading}}<section class="nf-intro">
+<p class="nf-answer"><b>Answer first.</b> This file asks for one node of the design to change — or
+for a new one — and it is the whole of the request: it needs no connection and nothing installed.
+Fill in what you know, say why it is changing, save a copy and send it to the maintainer. They check
+it, build it in, and send you a preview of your change to try; when it gives what you expect, you
+approve it, and the next release carries it for everyone.</p>
+<ol>
+<li><b>What is asked.</b> Every question the node answers, in the order it is read: what it is
+called and asks, <i>said simply</i>, the relation and where it comes from, the answer and its
+bounds, what it reads, and <i>where the simple version breaks</i>. Each question says why it is
+asked, and <i>Show the example</i> beside it shows the same question answered for one worked
+node. Leave what you cannot answer as it is.</li>
+<li><b>The method, your code, your cases.</b> Write the relation once more as a <i>method</i> — a
+few lines in a small fixed language — paste the code you wrote and tested, and give at least three
+test cases your code answered and one it refuses. The page runs your method on your cases as you
+type, with the same checker the maintainer runs: a case that disagrees is shown before you send
+anything. Flight software that belongs to this node can be kept here with its test.</li>
+<li><b>Why it is changing.</b> A node changes because a belief broke. If your changes move what
+the node computes — an input, the output, the model, the maths, the algorithm, how it is drawn —
+the section <i>Why it is changing</i> must say what was believed, what was tested, what we now
+know and what changes. Without it only your wording is applied. A worked example is in that
+section.</li>
+<li><b>What is not yours to change here.</b> Where the node sits in the tree, its kind and its
+owner are the developers'. If an assistant helped with the <b>relation</b> itself — the equation,
+its steps, its derivation, the method, your code or your cases — say so: those are then never
+taken from the form. Known values go under <i>known values</i>, with their source.</li>
+</ol>
+<p class="nf-muted">Tags: <span class="nf-tag req">needed</span> blocks the node until answered ·
+<span class="nf-tag rel">the relation</span> never taken from an assistant ·
+<span class="nf-tag dr">decision</span> moving it needs <i>why it is changing</i>. To fill it with
+an assistant, give it this file and ask it to edit only the block marked
+<code>vleo-node-form</code> near the end: plain TOML, one line per answer.</p>
+</section>
+</header>
+<noscript><p class="nf-warn">This page fills itself in with JavaScript. Without it, open this file in a text editor and edit the block marked <code>vleo-node-form</code> near the end — it is plain TOML, and every question is asked in the comments above it.</p></noscript>
+<main id="nf"></main>
+<script type="application/json" id="vleo-node-schema">
+{{schema}}</script>
+<!-- The node as it was when this form was made. Do not edit: the developers compare it with the node as it is when the form comes back, so a change made meanwhile is not overwritten. -->
+<script type="application/toml" id="vleo-node-original">
+{{original}}</script>
+<!-- THE FORM'S CONTENT. This block is what the developers read. Fill it on the page above, or edit it here directly — by hand, or with an assistant: it is TOML, one key per question, and [[input]], [[algorithm]], [[theory]], [[assumption]] and [[known_value]] repeat. Say in [filled_by] ai = "none", "wording" or "relation" how an assistant helped, and in [derisk] why the node is changing: what we believed, what we tested, what we now know, what changes, and what it rests on now. On a new node's form, [new] says where it goes: its id, the group it hangs under, and its kind. -->
+<script type="application/toml" id="vleo-node-form">
+{{data}}</script>
+<script type="application/octet-stream" id="vleo-method-wasm">{{checker}}</script>
+<script>
+{{script}}</script><!-- end -->

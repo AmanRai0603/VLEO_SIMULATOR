@@ -73,6 +73,9 @@ fn quiet_when_the_reader_stops() {
 }
 
 fn main() -> ExitCode {
+    // The crash log first, so the quiet handling below wraps it: a reader
+    // closing the pipe is not a bug and writes no file; anything else does.
+    vleo_data::crash::install("vleo", env!("CARGO_PKG_VERSION"));
     quiet_when_the_reader_stops();
     let args: Vec<String> = std::env::args().skip(1).collect();
     let cmd = args.first().map(|s| s.as_str()).unwrap_or("help");
@@ -86,6 +89,7 @@ fn main() -> ExitCode {
         "cases" => cmd_cases(),
         "inputs" => cmd_inputs(&rest),
         "result" => cmd_result(&rest),
+        "figure" => cmd_figure(&rest),
         "selftest" => cmd_selftest(),
         "data" => cmd_data(&rest),
         "version" => {
@@ -118,7 +122,7 @@ fn help() {
         "\
 vleo <command>
 
-  run <node> [--inputs <file.csv> | --defaults] [--mode alone|branch|all] [--set id=value ...] [--save <file.csv>]
+  run <node> [--inputs <file.csv> | --defaults] [--mode alone|branch|all] [--set id=value ...] [--save <file.csv>] [--keep] [--again]
                        evaluate one node and everything it needs. Prints the
                        value, its provenance and every node that was blocked —
                        always n ran, m blocked, and the blocked ones named.
@@ -126,11 +130,16 @@ vleo <command>
                        saves — unless --inputs names a CSV or --defaults asks
                        for the design as declared; --set has the last word.
                        --save keeps the whole run and the inputs it ran on as
-                       a result file — see `result`.
-  sweep <node> --over <input> --from <a> --to <b> [--points n] [--inputs <file.csv> | --defaults]
+                       a result file — see `result`. --keep keeps it in the
+                       results folder the browser uses, once.
+                       A question already answered in the results folder —
+                       same row, inputs, engine and data — is shown from its
+                       saved result and nothing runs; --again runs it anyway.
+  sweep <node> --over <input> --from <a> --to <b> [--points n] [--inputs <file.csv> | --defaults] [--keep] [--again]
                        a behaviour sweep. Refused points are recorded, never
                        dropped: a sweep in which some rows quietly used a
                        substituted value is a sweep whose conclusion is unknown.
+                       --keep and --again as for run.
   campaign <node> [--inputs <file.csv> ...]
                        the defaults, the saved case and each file named,
                        side by side against one node.
@@ -141,10 +150,18 @@ vleo <command>
   inputs [--inputs <file.csv> | --defaults]
                        every input as a CSV — group, id, value, unit, default,
                        range. Fill in `value` and pass the file with --inputs.
-  result <file> [--html <out.html>]
-                       a saved result, shown as it was — nothing runs. Reads the
-                       CSV `run --save` writes, or the report page it rides in;
-                       --html writes that report, to send to someone.
+  result <file|folder> [--html <out.html>]
+                       a saved result, shown as it was — nothing runs. Reads a
+                       result's folder, the CSV `run --save` writes, or the
+                       report page it rides in; --html writes that report, to
+                       send to someone.
+  figure <id> [key=value ...]
+                       the numbers one figure of the solar-weather record
+                       draws, as the JSON the browser's panel reads — the same
+                       function, the same bundle, the same saved case. The ids
+                       and their keys are listed in the manual; an unknown one
+                       is refused by name and the exit status says so.
+                       e.g. `vleo figure growth v=ap by=cycle`
   selftest             every fixture declaration in the tree is sound —
                        provenance outside the code, a positive tolerance.
                        It does not execute them: `cargo test` does.
@@ -186,24 +203,11 @@ fn opt<'a>(args: &'a [&'a str], name: &str) -> Option<&'a str> {
 /// name is the only honest version: a refusal the user can see beats a silent
 /// substitution every time.
 fn suppliable(idx: u16) -> Result<(), String> {
-    let def = &NODES[idx as usize];
-    if def.kind == Kind::Declared {
-        return Ok(());
+    let id = NODES[idx as usize].id;
+    match vleo_modules::why_not_suppliable(id) {
+        None => Ok(()),
+        Some(why) => Err(format!("{why} `vleo show {id}` lists them.")),
     }
-    Err(format!(
-        "'{}' is {}, so a supplied value would be overwritten the moment it is \
-         evaluated. Set one of the declared numbers it reads instead — `vleo show {}` \
-         lists them.",
-        def.id,
-        match def.kind {
-            Kind::Computed => "computed from its inputs",
-            Kind::Required => "a target handed down from the layer above",
-            Kind::Achieved => "what a subsystem returned",
-            Kind::Kpi => "a key performance indicator",
-            Kind::Declared => unreachable!(),
-        },
-        def.id
-    ))
 }
 
 fn sets(args: &[&str]) -> Result<Vec<(String, f64)>, String> {
@@ -322,15 +326,39 @@ fn build_case(node: &str, args: &[&str]) -> Result<Case, String> {
 fn cmd_run(args: &[&str]) -> Result<(), String> {
     let node = *args.first().ok_or("usage: vleo run <node>")?;
     let case = build_case(node, args)?;
+
+    // A QUESTION ALREADY ANSWERED IS SHOWN, NOT ASKED AGAIN. The results
+    // folder — the one the browser saves into, and the team's when
+    // VLEO_RESULTS points at a shared one — is asked first. Said on the first
+    // line, so the saved answer is never taken for one run now.
+    if !args.contains(&"--again") {
+        let q = vleo_modules::results::question_for(&case, None);
+        if let Some((file, s)) = vleo_modules::results::store::find(&results_dir(), &q) {
+            already(&file, &s);
+            if let Some(path) = opt(args, "--save") {
+                vleo_data::write_whole(std::path::Path::new(path), vleo_modules::results::csv(&s))
+                    .map_err(|e| format!("{path}: {e}"))?;
+                eprintln!("saved the result to {path}");
+            }
+            return show_saved(&s);
+        }
+    }
+
     let mut scratch = Scratch::new();
     let results = vleo_modules::evaluate(&case, &mut scratch).map_err(|f| f.to_string())?;
 
     // KEPT, when asked: the whole run and the inputs it ran on, as a result
     // file the browser's Results page and `vleo result` read back unchanged.
-    if let Some(path) = opt(args, "--save") {
+    if opt(args, "--save").is_some() || args.contains(&"--keep") {
         let s = vleo_modules::results::from_run(&results, &case.supply, &now_utc(), "");
-        std::fs::write(path, vleo_modules::results::csv(&s)).map_err(|e| format!("{path}: {e}"))?;
-        eprintln!("saved the result to {path}");
+        if let Some(path) = opt(args, "--save") {
+            vleo_data::write_whole(std::path::Path::new(path), vleo_modules::results::csv(&s))
+                .map_err(|e| format!("{path}: {e}"))?;
+            eprintln!("saved the result to {path}");
+        }
+        if args.contains(&"--keep") {
+            keep(&s)?;
+        }
     }
 
     let idx = Vleo::find(node).unwrap();
@@ -431,16 +459,35 @@ fn cmd_sweep(args: &[&str]) -> Result<(), String> {
     suppliable(over_idx)?;
     let node_idx = Vleo::find(node).ok_or_else(|| format!("no node '{node}'"))?;
 
-    let mut scratch = Scratch::new();
     let (said, r) = inputs_for(args)?;
     println!("# inputs: {said}");
     say_set_aside(&r);
-    println!(
-        "# {} against {} — {} points\n# {:<18} {:<22} note",
-        node, over, points, VARS[over_idx as usize].symbol, NODES[node_idx as usize].id
-    );
-    let mut ran = 0usize;
-    let mut refused = 0usize;
+    let case = build_case(node, args)?;
+    let spec = Some((over, from, to, points));
+    if !args.contains(&"--again") {
+        let q = vleo_modules::results::question_for(&case, spec);
+        if let Some((file, s)) = vleo_modules::results::store::find(&results_dir(), &q) {
+            if let Some(w) = &s.sweep {
+                already(&file, &s);
+                print_sweep(w, node_idx);
+                return Ok(());
+            }
+        }
+    }
+
+    let mut w = vleo_modules::results::Sweep {
+        over: over.to_string(),
+        over_name: VARS[over_idx as usize].label.to_string(),
+        x_unit: VARS[over_idx as usize].unit.symbol().to_string(),
+        x_factor: VARS[over_idx as usize].unit.si_factor(),
+        y_unit: VARS[node_idx as usize].unit.symbol().to_string(),
+        y_factor: VARS[node_idx as usize].unit.si_factor(),
+        from,
+        to,
+        points,
+        ..Default::default()
+    };
+    let mut scratch = Scratch::new();
     for i in 0..points {
         let t = if points == 1 {
             0.0
@@ -448,28 +495,101 @@ fn cmd_sweep(args: &[&str]) -> Result<(), String> {
             i as f64 / (points - 1) as f64
         };
         let x = from + t * (to - from);
-        let mut case = build_case(node, args)?;
-        case.supply.push((over.to_string(), x));
-        match vleo_modules::evaluate(&case, &mut scratch) {
+        let mut c = case.clone();
+        c.supply.push((over.to_string(), x));
+        match vleo_modules::evaluate(&c, &mut scratch) {
             Ok(r) => match r.values.iter().find(|v| v.id == node) {
                 Some(v) => {
-                    ran += 1;
-                    let (sx, _) = vleo_bus::present(x, VARS[over_idx as usize].unit, 6);
-                    let (sy, _) = vleo_bus::present(v.value, VARS[node_idx as usize].unit, 9);
-                    println!("{:<20} {:<24} ok", sx, sy);
+                    w.x.push(x);
+                    w.y.push(v.value);
                 }
-                None => {
-                    refused += 1;
-                    println!("{:<20.6} {:<22} blocked", x, "-");
-                }
+                None => w.refused.push((x, "blocked".to_string())),
             },
-            Err(f) => {
-                refused += 1;
-                println!("{:<20.6} {:<22} refused: {}", x, "-", f);
-            }
+            Err(f) => w.refused.push((x, f.to_string())),
         }
     }
-    println!("# {ran} ran, {refused} refused. Refusals are recorded, never dropped.");
+    print_sweep(&w, node_idx);
+    if args.contains(&"--keep") {
+        let results = vleo_modules::evaluate(&case, &mut scratch).map_err(|f| f.to_string())?;
+        let mut s = vleo_modules::results::from_run(&results, &case.supply, &now_utc(), "");
+        s.sweep = Some(w);
+        keep(&s)?;
+    }
+    Ok(())
+}
+
+/// A sweep's points, as `vleo sweep` prints them — run now or read back.
+fn print_sweep(w: &vleo_modules::results::Sweep, node_idx: u16) {
+    let over_idx = Vleo::find(&w.over).unwrap_or(0);
+    println!(
+        "# {} against {} — {} points\n# {:<18} {:<22} note",
+        NODES[node_idx as usize].id,
+        w.over,
+        w.points,
+        VARS[over_idx as usize].symbol,
+        NODES[node_idx as usize].id
+    );
+    let mut pts: Vec<(f64, Option<f64>, &str)> =
+        w.x.iter()
+            .zip(&w.y)
+            .map(|(x, y)| (*x, Some(*y), ""))
+            .chain(w.refused.iter().map(|(x, why)| (*x, None, why.as_str())))
+            .collect();
+    pts.sort_by(|a, b| a.0.partial_cmp(&b.0).unwrap_or(std::cmp::Ordering::Equal));
+    for (x, y, why) in pts {
+        match y {
+            Some(y) => {
+                let (sx, _) = vleo_bus::present(x, VARS[over_idx as usize].unit, 6);
+                let (sy, _) = vleo_bus::present(y, VARS[node_idx as usize].unit, 9);
+                println!("{:<20} {:<24} ok", sx, sy);
+            }
+            None if why == "blocked" => println!("{:<20.6} {:<22} blocked", x, "-"),
+            None => println!("{:<20.6} {:<22} refused: {}", x, "-", why),
+        }
+    }
+    println!(
+        "# {} ran, {} refused. Refusals are recorded, never dropped.",
+        w.x.len(),
+        w.refused.len()
+    );
+}
+
+/// The results folder: the browser's, and the team's when VLEO_RESULTS names a
+/// shared one.
+fn results_dir() -> std::path::PathBuf {
+    vleo_data::results_path()
+}
+
+/// Said first when an answer is read from a saved result rather than run.
+fn already(file: &str, s: &vleo_modules::results::Saved) {
+    eprintln!(
+        "\x1b[36malready answered\x1b[0m — shown from the saved result {}{} (saved {}). The same \
+         row on the same inputs, engine and data gives the same answer, so nothing was run; \
+         --again runs it anyway.",
+        results_dir().join(file).display(),
+        if s.name.is_empty() {
+            String::new()
+        } else {
+            format!(" «{}»", s.name)
+        },
+        s.saved
+    );
+}
+
+/// Keep a result in the results folder, once.
+fn keep(s: &vleo_modules::results::Saved) -> Result<(), String> {
+    let (file, was) = vleo_modules::results::store::save(&results_dir(), s)?;
+    if was {
+        eprintln!(
+            "already kept as {} — the same question is kept once",
+            results_dir().join(&file).display()
+        );
+    } else {
+        eprintln!(
+            "kept in the results folder as {}",
+            results_dir().join(&file).display()
+        );
+    }
     Ok(())
 }
 
@@ -554,6 +674,35 @@ fn cmd_list(args: &[&str]) -> Result<(), String> {
     println!();
     for (s, n) in by_sub {
         println!("  {s:<10} {n}");
+    }
+    Ok(())
+}
+
+/// One figure of the record, as the engine works it out for the panel that
+/// draws it. Printed as the JSON the page reads, so what a person sees on the
+/// canvas can be checked, kept or plotted again from a script.
+fn cmd_figure(args: &[&str]) -> Result<(), String> {
+    let id = *args
+        .first()
+        .ok_or("usage: vleo figure <id> [key=value ...]  — e.g. vleo figure growth v=ap")?;
+    let mut query = Vec::new();
+    for a in &args[1..] {
+        let (k, v) = a
+            .split_once('=')
+            .ok_or_else(|| format!("'{a}' is not key=value"))?;
+        // The pair is carried as a query string; a character that would
+        // change what the query says is refused rather than quietly split.
+        if k.is_empty() || [k, v].iter().any(|s| s.contains(['&', '#', '?', ' '])) {
+            return Err(format!("'{a}' is not a plain key=value"));
+        }
+        query.push(format!("{k}={v}"));
+    }
+    let json = vleo_server::figure(None, id, &query.join("&"));
+    println!("{json}");
+    if json.starts_with("{\"ok\":false") {
+        return Err(format!(
+            "the engine refused the figure '{id}' — the message is above"
+        ));
     }
     Ok(())
 }
@@ -722,13 +871,13 @@ fn cmd_cases() -> Result<(), String> {
 
 /// Now, as a result records it: UTC, to the second.
 fn now_utc() -> String {
-    std::process::Command::new("date")
-        .args(["-u", "+%Y-%m-%dT%H:%M:%SZ"])
-        .output()
-        .ok()
-        .and_then(|o| String::from_utf8(o.stdout).ok())
-        .map(|s| s.trim().to_string())
-        .unwrap_or_default()
+    vleo_core::units::calendar::Civil::from_unix(
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|d| d.as_secs() as i64)
+            .unwrap_or(0),
+    )
+    .to_string()
 }
 
 /// A saved result, as it was when it was saved. Runs nothing: a result read
@@ -736,13 +885,33 @@ fn now_utc() -> String {
 fn cmd_result(args: &[&str]) -> Result<(), String> {
     let file = *args
         .first()
-        .ok_or("usage: vleo result <file> [--html <out.html>]")?;
-    let text = std::fs::read_to_string(file).map_err(|e| format!("{file}: {e}"))?;
-    let s = vleo_modules::results::read(&vleo_modules::results::unwrap_report(&text))?;
+        .ok_or("usage: vleo result <file|folder> [--html <out.html>]")?;
+    let path = std::path::Path::new(file);
+    let s = if path.is_dir() {
+        let dir = path.parent().unwrap_or(std::path::Path::new("."));
+        let name = path
+            .file_name()
+            .map(|n| n.to_string_lossy().into_owned())
+            .unwrap_or_default();
+        vleo_modules::results::store::open(dir, &name)?
+    } else {
+        let text = std::fs::read_to_string(file).map_err(|e| format!("{file}: {e}"))?;
+        let mut s = vleo_modules::results::read(&vleo_modules::results::unwrap_report(&text))?;
+        if let Some(t) = vleo_modules::results::unwrap_sweep(&text) {
+            s.sweep = Some(vleo_modules::results::read_sweep(&t)?);
+        }
+        s
+    };
     if let Some(out) = opt(args, "--html") {
-        std::fs::write(out, vleo_modules::results::html(&s)).map_err(|e| format!("{out}: {e}"))?;
+        vleo_data::write_whole(std::path::Path::new(out), vleo_modules::results::html(&s))
+            .map_err(|e| format!("{out}: {e}"))?;
         eprintln!("wrote the report to {out}");
     }
+    show_saved(&s)
+}
+
+/// A saved result, printed as it was saved.
+fn show_saved(s: &vleo_modules::results::Saved) -> Result<(), String> {
     let unit = |u: &str| {
         if u == "-" {
             String::new()
@@ -787,7 +956,7 @@ fn cmd_result(args: &[&str]) -> Result<(), String> {
                 .join(", ")
         );
     }
-    for (id, then, now) in vleo_modules::results::moved_since(&s) {
+    for (id, then, now) in vleo_modules::results::moved_since(s) {
         println!(
             "  \x1b[33m{id} {}\x1b[0m — a belief it rested on has broken since; run it again to \
              see what the new version says",
@@ -813,6 +982,10 @@ fn cmd_result(args: &[&str]) -> Result<(), String> {
         for r in &s.blocked {
             println!("    {:<36} {}", r.id, r.note);
         }
+    }
+    if let (Some(w), Some(k)) = (&s.sweep, Vleo::find(&s.target)) {
+        println!("\n  the sweep it carries:");
+        print_sweep(w, k);
     }
     Ok(())
 }

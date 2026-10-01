@@ -202,17 +202,20 @@ The **Forms** tab has all three in one place.
 | form | who fills it | what it changes | applied by |
 |---|---|---|---|
 | the case CSV — *Inputs* | anyone using the tool | the values a run is on | the tool itself, on upload; never git |
-| a result — a CSV, or its HTML report | saved from a run | nothing: it is a record of what a run returned and the inputs it ran on | the tool, on the *Results* tab — shown without running |
+| a result — its folder, its CSV, or its HTML report | saved from a run or a sweep | nothing: it is a record of what a run returned and the inputs it ran on | the tool, on the *Results* tab — shown without running |
 | a node's form — one HTML file per node, or per new node | whoever should say what that node is | the node's sheet: its question, relation, bounds, steps, assumptions — or a new node in its place in the tree | a developer, `xtask intake <file> --apply`, then git and a release |
 
 **A result is kept, sent and seen again without running.** Save one after a run
-(`vleo run … --save <file.csv>`, or *save this result* in the browser) and the
-tool writes every value returned, every row blocked and every input it ran on
-to one CSV, kept in `~/.vleo/results/` or wherever `VLEO_RESULTS` points. The
-*Results* tab lists them, shows any of them as it was, compares two, downloads
-one as a report page that reads without the tool and carries its CSV inside, and
-can make a result's inputs the case again. `vleo result <file>` does the same
-from a terminal.
+or a sweep (*save this result* or *save this sweep* in the browser, `vleo run …
+--keep` in a terminal) and the tool keeps a folder — every value returned, every
+row blocked, every input it ran on, the sweep's points, and a report page — in
+`~/.vleo/results/` or wherever `VLEO_RESULTS` points. **A question already kept
+is not run again:** the same row, inputs, engine and data is shown from its saved
+result, which the page names, and saved once. The *Results* tab lists them,
+shows any of them as it was — sweeps drawn again from their points — compares
+two, downloads the report page that reads without the tool and uploads back
+whole, and can make a result's inputs the case again. `vleo result <folder>` does
+the same from a terminal.
 
 A node's form is downloaded from the node's page or the Forms tab (or
 `xtask form <node>`; `xtask form --new` for a node the design does not have
@@ -637,19 +640,17 @@ showing an optimum near 300 km — recorded 15 September 2026](docs/img/sweep.pn
   targets of their own, so `cargo build --workspace` does not reach them. They
   have their own pipeline job; build them by hand from their own directories.
 
-## Two things a fresh clone needs from a person
+## What a fresh clone needs from a person
 
 1. `cargo xtask setup` — points git at `tools/githooks` so the commit-message
    hook runs. Git will not follow a committed hooks path on its own, because a
    hook that ran because it was cloned would be arbitrary code from a pull
    request. The authoring commands say so until it is done.
-2. A GitHub environment named `release` with required reviewers. Nothing in
-   this repository can create it — an environment named in a workflow but never
-   configured is created empty and approves instantly. The release job's first
-   step reads the environment's protection rules and stops if nobody is
-   required, so the absence fails the release rather than passing it quietly.
-   `docs/RELEASE_SETUP.md` is the whole procedure, including the plan
-   constraint that applies to a private repository on a personal account.
+2. Nothing for releases. A release is decided by merging a pull request into
+   `main`; the workflow refuses a commit that did not come through one before
+   it builds anything. Optionally, the repository variable `RELEASE_APPROVALS`
+   sets how many approvals that pull request needs. `docs/RELEASE_SETUP.md` is
+   the whole rule, and what branch protection adds on a paid plan.
 
 ---
 
@@ -658,16 +659,19 @@ showing an optimum near 300 km — recorded 15 September 2026](docs/img/sweep.pn
 | | |
 |---|---|
 | **? Manual**, in the tool | the place to start. Every task in the browser and in the terminal, for a user and for a developer, what cannot be done by hand, and every command, route, setting and folder. Source: [`docs/manual.toml`](docs/manual.toml) |
+| [`docs/GLOSSARY.md`](docs/GLOSSARY.md) | the words this repository uses in a sense of its own — row, closure, sense, fixture, form, take — each in a sentence, with where it is defined |
 | [`docs/USING_IT.md`](docs/USING_IT.md) | the worked walkthrough, with real outputs — running it, changing an input, keeping a result, a form from filling to release |
+| [`docs/ARCHITECTURE.html`](docs/ARCHITECTURE.html) | the whole tool end to end, with diagrams — frontend, backend and data, how pictures, pages and results are made and shared, and the roadmap. Open it in a browser |
 | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | why the rings are shaped the way they are |
 | [`docs/NODE_AUTHORING.md`](docs/NODE_AUTHORING.md) | the sheet, field by field |
+| [`docs/CHANGING.md`](docs/CHANGING.md) | changing the code — a node, a route, a component, an output kind — and what each brings with it; one field followed through the generators |
 | [`docs/PSEUDOCODE.md`](docs/PSEUDOCODE.md) | the method language — every statement, function, constant and unit, and the worked example in full — generated from the checker |
 | [`docs/EXPLAINING.md`](docs/EXPLAINING.md) | how the tool explains itself — the rules every page, form, result, figure and document follows, and what checks each |
 | [`docs/DERISKING.md`](docs/DERISKING.md) | why the design is what it is — beliefs, versions, the risk register, releases; the generated narrative is [`docs/DERISK_NARRATIVE.md`](docs/DERISK_NARRATIVE.md) |
 | [`docs/WORK_MODEL.md`](docs/WORK_MODEL.md) | who does what — the team and the developers, and what crosses between them |
 | [`docs/VARIABLES.md`](docs/VARIABLES.md) | every variable, unit, bound and the reason for it — generated |
 | [`docs/RUNBOOK.md`](docs/RUNBOOK.md) | a developer's first day, one form from arrival to release, and what to do when the tool is down |
-| [`docs/RELEASE_SETUP.md`](docs/RELEASE_SETUP.md) | tagging, proving and shipping a release |
+| [`docs/RELEASE_SETUP.md`](docs/RELEASE_SETUP.md) | how a release is decided, tagged, proved and shipped |
 | [`docs/MATLAB_PORT_PLAN.md`](docs/MATLAB_PORT_PLAN.md) | how the study was ported, row by row — the record of a finished job |
 | [`docs/DELIVERY_PLAN.md`](docs/DELIVERY_PLAN.md) | what was to be built, in what order |
 | [`docs/GITLAB_TRANSFER.md`](docs/GITLAB_TRANSFER.md) | what moving off GitHub would cost, measured rather than guessed |

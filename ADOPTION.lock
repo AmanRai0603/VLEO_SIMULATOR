@@ -73,6 +73,17 @@ why = "compiles the Windows version information — company, product, version �
 fallback = "call the Windows SDK's rc.exe from the build script directly, or ship without the version information"
 verified = "2026-09-28"
 
+[[adopted]]
+name = "IBM Plex Mono"
+upstream = "https://github.com/IBM/plex, as packaged by https://www.npmjs.com/package/@fontsource/ibm-plex-mono (5.3.0)"
+licence = "OFL-1.1 (web/fonts/OFL.txt, carried beside the files as the licence requires)"
+version = "5.3.0 — the Latin subset, weights 400, 500, 600, 700 and 400 italic, as woff2"
+used_by = "web/app.css — the tool's face and the readers' folder"
+load_bearing = false
+why = "the face's own type, so it reads the same on every laptop and fetches nothing to do it; before this the face named Plex and fell back to whatever monospace the reader had"
+fallback = "delete web/fonts and the @font-face rules in web/app.css: the stack falls back to the reader's own monospace, as it did before phase 9d"
+verified = "2026-09-30"
+
 # --- deliberately not adopted, with the reason -------------------------------
 #
 # hifitime, ANISE, nalgebra and hyperdual are the right answers to time, frames,

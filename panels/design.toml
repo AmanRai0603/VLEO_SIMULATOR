@@ -81,11 +81,6 @@ settle_ms = 8000
 # whose subtitle says four layers, and it showed solar weather in a second
 # place that disagreed with layer 3. panel_check re-runs this after every
 # input to restore the starting state.
-# The rows this panel takes VALUES from, as opposed to the rows it argues
-# about. Check 2b serves each of these a different answer and requires the
-# picture to move, which is the only way to tell reading a row from declaring
-# one — four of this panel's numbers were literals copied in when it was
-# written, and one of them was two revisions stale.
 ready = """(async () => {
   await window.openNode('sw_storm_return_level');
   await new Promise(r => setTimeout(r, 200));
@@ -95,10 +90,10 @@ ready = """(async () => {
 
 
 # Check 3, the pixel comparison, is declined for this panel. Checks 1, 2,
-# 2b and 4 still run: it renders, it moves, it reads the engine and it
-# undoes an interaction to the pixel.
+# 2c and 4 still run: it renders, it moves, it states what the engine worked
+# out and it undoes an interaction to the pixel.
 pixel_reference = false
-pixel_reference_why = """every number on it is a row the engine publishes, checked by that row's own fixtures, and check 2b proves the panel reads the engine rather than holding a copy"""
+pixel_reference_why = """every number on it is a row the engine publishes, checked by that row's own fixtures, and check 2c proves the panel draws the engine's figure rather than holding a copy"""
 
 [[input]]
 name = "v"
@@ -115,19 +110,30 @@ name = "req"
 drive = "(() => { const s = document.querySelector('.sw-opt[data-k=req]'); if (!s) throw new Error('no req control'); s.value = 'l3_solar_req_04'; s.dispatchEvent(new Event('change')); })()"
 why = """the requirement is a separate mark from the capability and must move on its own — and it is now a ROW rather than a number typed into the panel"""
 
-# Each row carries the view that reads it. sw_central_expectation and the F10.7
-# requirement are only touched on the F10.7 branch; the Ap requirement only on
-# the Ap branch, which is where the panel opens. Testing one on the other
-# branch would report a failure that belongs to the fixture.
-[[engine]]
-row = "l3_solar_req_01"
-state = "(() => { const s = document.querySelector('.sw-opt[data-k=v]'); if (!s) throw new Error('no v control'); s.value = 'f107'; s.dispatchEvent(new Event('change')); })()"
+# THE CURVES AND WHAT THE PANEL SAYS ABOUT THEM ARE THE ENGINE'S (phase 10l):
+# the `design` figure sweeps the rows on the reader's case, reads the
+# requirement's own answer, and works out where the return curve reaches the
+# bound and the requirement, the record's days above the bound and in how many
+# runs, the F10.7 window's width, the worst single day and where the analogue's
+# peak first climbs above it (vleo_modules::design). It replaces the three
+# [[engine]] rows this panel declared — l3_solar_req_01, l3_solar_req_03 and
+# sw_f107_design_short — because the page no longer runs or sweeps them itself:
+# the figure carries them, as `req`, `level` and `hot`, and check 2c moves each
+# number in it and demands the panel say something different.
+#
+# `req_at` is null on the opening view: the survival requirement, Ap 207, is
+# never reached inside the declared mission lengths, so there is no number to
+# move there. It is declared on the sustained requirement, which is reached.
+[[figures]]
+id = "design"
+reads = ["years", "level", "bound", "req", "hits_at", "record", "points_refused"]
 
-[[engine]]
-row = "l3_solar_req_03"
+[[figures]]
+id = "design"
+state = "(() => { const s = document.querySelector('.sw-opt[data-k=req]'); if (!s) throw new Error('no req control'); s.value = 'l3_solar_req_04'; s.dispatchEvent(new Event('change')); })()"
+reads = ["req_at"]
 
-# One of the four rows that now build the F10.7 window. It arrives over
-# /v1/sweep rather than /v1/run, which is why 2b bends both.
-[[engine]]
-row = "sw_f107_design_short"
+[[figures]]
+id = "design"
 state = "(() => { const s = document.querySelector('.sw-opt[data-k=v]'); if (!s) throw new Error('no v control'); s.value = 'f107'; s.dispatchEvent(new Event('change')); })()"
+reads = ["req", "years", "hot", "hot_long", "cold_long", "cold", "analogue", "peak", "margin", "narrowest", "widest", "over", "points_refused"]

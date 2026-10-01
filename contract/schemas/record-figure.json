@@ -1,0 +1,2890 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "record-figure",
+  "description": "The numbers one figure of the solar-weather record states, worked out by the engine (crates/vleo-modules/src/record.rs). A number the record cannot give is null, never a stand-in.",
+  "anyOf": [
+    {
+      "type": "object",
+      "description": "The density figure: how the two drivers a density model takes sit against each other.",
+      "properties": {
+        "ok": {
+          "type": "boolean"
+        },
+        "bundle": {
+          "type": "string",
+          "description": "The bundle and version the numbers were worked out from."
+        },
+        "figure": {
+          "type": "string",
+          "enum": [
+            "density"
+          ]
+        },
+        "days": {
+          "type": "number",
+          "description": "Days carrying both F10.7 and Ap."
+        },
+        "r": {
+          "type": [
+            "null",
+            "number"
+          ],
+          "description": "Pearson correlation of F10.7 with Ap; null under three days or with no spread."
+        },
+        "median_f107": {
+          "type": [
+            "null",
+            "number"
+          ]
+        },
+        "median_ap": {
+          "type": [
+            "null",
+            "number"
+          ]
+        },
+        "below_both_pct": {
+          "type": "number",
+          "description": "Per cent of those days below both medians."
+        },
+        "storm_ap": {
+          "type": "number",
+          "description": "The daily Ap at or above which a day is a storm day."
+        },
+        "storm_deciles": {
+          "type": "number",
+          "description": "How many of the ten F10.7 deciles hold at least one storm day."
+        }
+      },
+      "required": [
+        "ok",
+        "figure",
+        "bundle",
+        "days",
+        "r",
+        "median_f107",
+        "median_ap",
+        "below_both_pct",
+        "storm_ap",
+        "storm_deciles"
+      ]
+    },
+    {
+      "type": "object",
+      "description": "The storm-scale figure: how storms are shared out between the cycles the record holds.",
+      "properties": {
+        "ok": {
+          "type": "boolean"
+        },
+        "bundle": {
+          "type": "string",
+          "description": "The bundle and version the numbers were worked out from."
+        },
+        "figure": {
+          "type": "string",
+          "enum": [
+            "storm-scale"
+          ]
+        },
+        "levels": {
+          "type": "array",
+          "description": "G1 to G3, each with its daily-Ap threshold: the published table's ap at Kp 5, 6 and 7.",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "ap": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "name",
+              "ap"
+            ]
+          }
+        },
+        "cycles": {
+          "type": "array",
+          "description": "The cycles, in the record's table order.",
+          "items": {
+            "type": "number"
+          }
+        },
+        "days": {
+          "type": "array",
+          "description": "Days in each cycle carrying an Ap.",
+          "items": {
+            "type": "number"
+          }
+        },
+        "max_ap": {
+          "type": "array",
+          "description": "The largest daily Ap in each cycle; null for a cycle with no days.",
+          "items": {
+            "type": [
+              "null",
+              "number"
+            ]
+          }
+        },
+        "per_year": {
+          "type": "array",
+          "description": "Days a year at or above each level, per cycle: [level][cycle].",
+          "items": {
+            "type": "array",
+            "items": {
+              "type": [
+                "null",
+                "number"
+              ]
+            }
+          }
+        },
+        "evenness": {
+          "type": [
+            "null",
+            "number"
+          ],
+          "description": "The busiest cycle's G1 rate over the quietest's; null unless two cycles reach G1."
+        },
+        "busiest": {
+          "type": "array",
+          "description": "The cycle with the most days a year at each level; null where none has a rate.",
+          "items": {
+            "type": [
+              "null",
+              "number"
+            ]
+          }
+        }
+      },
+      "required": [
+        "ok",
+        "figure",
+        "bundle",
+        "levels",
+        "cycles",
+        "days",
+        "max_ap",
+        "per_year",
+        "evenness",
+        "busiest"
+      ]
+    },
+    {
+      "type": "object",
+      "description": "The Kp-against-Ap figure: the daily Ap at each worst three-hourly Kp, beside the published table.",
+      "properties": {
+        "ok": {
+          "type": "boolean"
+        },
+        "bundle": {
+          "type": "string",
+          "description": "The bundle and version the numbers were worked out from."
+        },
+        "figure": {
+          "type": "string",
+          "enum": [
+            "kp-ap"
+          ]
+        },
+        "kp": {
+          "type": "array",
+          "description": "Every worst-slot Kp the record holds, ascending.",
+          "items": {
+            "type": "number"
+          }
+        },
+        "median": {
+          "type": "array",
+          "items": {
+            "type": [
+              "null",
+              "number"
+            ]
+          }
+        },
+        "p10": {
+          "type": "array",
+          "items": {
+            "type": [
+              "null",
+              "number"
+            ]
+          }
+        },
+        "p90": {
+          "type": "array",
+          "items": {
+            "type": [
+              "null",
+              "number"
+            ]
+          }
+        },
+        "table": {
+          "type": "array",
+          "description": "The published three-hourly ap at each Kp; null off the scale.",
+          "items": {
+            "type": [
+              "null",
+              "number"
+            ]
+          }
+        },
+        "above_median": {
+          "type": "number",
+          "description": "At how many of those Kp the table is above the median day."
+        },
+        "above_p90": {
+          "type": "number",
+          "description": "...and above the 90th percentile."
+        },
+        "kp7_table": {
+          "type": [
+            "null",
+            "number"
+          ]
+        },
+        "kp7_median": {
+          "type": [
+            "null",
+            "number"
+          ],
+          "description": "The median day at Kp 7; null where the record has none."
+        }
+      },
+      "required": [
+        "ok",
+        "figure",
+        "bundle",
+        "kp",
+        "median",
+        "p10",
+        "p90",
+        "table",
+        "above_median",
+        "above_p90",
+        "kp7_table",
+        "kp7_median"
+      ]
+    },
+    {
+      "type": "object",
+      "description": "The recurrence figure: the autocorrelation of the detrended record against lag, over F10.7 or Ap.",
+      "properties": {
+        "ok": {
+          "type": "boolean"
+        },
+        "bundle": {
+          "type": "string",
+          "description": "The bundle and version the numbers were worked out from."
+        },
+        "figure": {
+          "type": "string",
+          "enum": [
+            "recurrence-f107",
+            "recurrence-ap"
+          ]
+        },
+        "max_lag": {
+          "type": "number",
+          "description": "The longest lag, in days; the curves run from lag 1 to it."
+        },
+        "windows": {
+          "type": "array",
+          "description": "The three detrend windows in days; the first is the one the rows were measured under, and the band and peaks are read off it.",
+          "items": {
+            "type": "number"
+          }
+        },
+        "r": {
+          "type": "array",
+          "description": "The autocorrelation at every lag, one curve per window: [window][lag − 1]; null below three pairs.",
+          "items": {
+            "type": "array",
+            "items": {
+              "type": [
+                "null",
+                "number"
+              ]
+            }
+          }
+        },
+        "n_lag1": {
+          "type": "number",
+          "description": "The pairs behind the first window's correlation at lag 1."
+        },
+        "naive_band": {
+          "type": [
+            "null",
+            "number"
+          ],
+          "description": "The naive white-noise band on that correlation, 2/sqrt(n); null with no pairs."
+        },
+        "band": {
+          "type": "array",
+          "description": "Bartlett's 95 per cent half-width on the first curve, at every lag.",
+          "items": {
+            "type": [
+              "null",
+              "number"
+            ]
+          }
+        },
+        "outside": {
+          "type": "number",
+          "description": "At how many lags the first curve is outside the band."
+        },
+        "peak_lag": {
+          "type": "array",
+          "description": "The first curve's peak lag in 18–36, 45–65 and 72–95; null where there is none.",
+          "items": {
+            "type": [
+              "null",
+              "number"
+            ]
+          }
+        },
+        "peak_r": {
+          "type": "array",
+          "description": "The correlation at each of those peaks.",
+          "items": {
+            "type": [
+              "null",
+              "number"
+            ]
+          }
+        },
+        "above_long": {
+          "type": "number",
+          "description": "At how many lags the longest window's curve sits above the first's."
+        },
+        "compared": {
+          "type": "number",
+          "description": "At how many lags both are drawn."
+        }
+      },
+      "required": [
+        "ok",
+        "figure",
+        "bundle",
+        "max_lag",
+        "windows",
+        "r",
+        "n_lag1",
+        "naive_band",
+        "band",
+        "outside",
+        "peak_lag",
+        "peak_r",
+        "above_long",
+        "compared"
+      ]
+    },
+    {
+      "type": "object",
+      "description": "The spike figure: the F10.7 days the smooth cycle does not explain, and where in the cycle they fall.",
+      "properties": {
+        "ok": {
+          "type": "boolean"
+        },
+        "bundle": {
+          "type": "string",
+          "description": "The bundle and version the numbers were worked out from."
+        },
+        "figure": {
+          "type": "string",
+          "enum": [
+            "spikes"
+          ]
+        },
+        "threshold": {
+          "type": [
+            "null",
+            "number"
+          ],
+          "description": "The ratio to the 81-day centred mean at which a day is a spike: the ratio's mean plus 2.5 standard deviations."
+        },
+        "days": {
+          "type": "number",
+          "description": "Spike days that have a cycle phase."
+        },
+        "bursts": {
+          "type": "number",
+          "description": "The separate runs of consecutive spike days they fall in."
+        },
+        "phase": {
+          "type": "array",
+          "description": "The centre of each phase bin.",
+          "items": {
+            "type": "number"
+          }
+        },
+        "rate": {
+          "type": "array",
+          "description": "Spike days per thousand days at each phase; null where the record never reaches it.",
+          "items": {
+            "type": [
+              "null",
+              "number"
+            ]
+          }
+        }
+      },
+      "required": [
+        "ok",
+        "figure",
+        "bundle",
+        "threshold",
+        "days",
+        "bursts",
+        "phase",
+        "rate"
+      ]
+    },
+    {
+      "type": "object",
+      "description": "The mean-cycle figure: every cycle stacked on phase, the mean of the complete ones, and how well the last two complete cycles repeat.",
+      "properties": {
+        "ok": {
+          "type": "boolean"
+        },
+        "bundle": {
+          "type": "string",
+          "description": "The bundle and version the numbers were worked out from."
+        },
+        "figure": {
+          "type": "string",
+          "enum": [
+            "mean-cycle"
+          ]
+        },
+        "variable": {
+          "type": "string",
+          "enum": [
+            "f107",
+            "ap",
+            "ssn"
+          ],
+          "description": "The driver stacked."
+        },
+        "bins": {
+          "type": "number",
+          "description": "How many phase bins."
+        },
+        "min_days": {
+          "type": "number",
+          "description": "The fewest days a bin must hold in both compared cycles to count toward the correlation."
+        },
+        "phase": {
+          "type": "array",
+          "description": "The centre of each phase bin.",
+          "items": {
+            "type": "number"
+          }
+        },
+        "cycles": {
+          "type": "array",
+          "description": "The cycles, in the record's table order.",
+          "items": {
+            "type": "number"
+          }
+        },
+        "complete": {
+          "type": "array",
+          "description": "Whether each cycle is complete; the one still running folds by the mean length of the others.",
+          "items": {
+            "type": "boolean"
+          }
+        },
+        "curves": {
+          "type": "array",
+          "description": "Each cycle's mean in each bin: [cycle][bin]; null for an empty bin.",
+          "items": {
+            "type": "array",
+            "items": {
+              "type": [
+                "null",
+                "number"
+              ]
+            }
+          }
+        },
+        "mean_cycle": {
+          "type": "array",
+          "description": "The mean over the complete cycles of their bin means.",
+          "items": {
+            "type": [
+              "null",
+              "number"
+            ]
+          }
+        },
+        "pair": {
+          "type": [
+            "null",
+            "array"
+          ],
+          "description": "The two cycles compared — the last two complete — earlier first.",
+          "items": {
+            "type": "number"
+          }
+        },
+        "r": {
+          "type": [
+            "null",
+            "number"
+          ],
+          "description": "Their correlation over the bins both fill; null under three."
+        },
+        "usable": {
+          "type": "number",
+          "description": "How many bins that is."
+        },
+        "above": {
+          "type": "number",
+          "description": "In how many the earlier cycle runs above the later."
+        },
+        "gap_rise": {
+          "type": [
+            "null",
+            "number"
+          ],
+          "description": "The mean of earlier minus later before phase 0.6."
+        },
+        "gap_fall": {
+          "type": [
+            "null",
+            "number"
+          ],
+          "description": "...and from phase 0.6."
+        },
+        "peak": {
+          "type": [
+            "null",
+            "array"
+          ],
+          "description": "The two cycles' largest bin means.",
+          "items": {
+            "type": "number"
+          }
+        }
+      },
+      "required": [
+        "ok",
+        "figure",
+        "bundle",
+        "variable",
+        "bins",
+        "min_days",
+        "phase",
+        "cycles",
+        "complete",
+        "curves",
+        "mean_cycle",
+        "pair",
+        "r",
+        "usable",
+        "above",
+        "gap_rise",
+        "gap_fall",
+        "peak"
+      ]
+    },
+    {
+      "type": "object",
+      "description": "The segmentation figure: where the record sits, and how much of it each band holds, banded by the rows themselves (sw_regime for Ap, sw_activity_band for F10.7).",
+      "properties": {
+        "ok": {
+          "type": "boolean"
+        },
+        "bundle": {
+          "type": "string",
+          "description": "The bundle and version the numbers were worked out from."
+        },
+        "figure": {
+          "type": "string",
+          "enum": [
+            "segments"
+          ]
+        },
+        "variable": {
+          "type": "string",
+          "enum": [
+            "ap",
+            "f107"
+          ]
+        },
+        "days": {
+          "type": "number",
+          "description": "Days with a value."
+        },
+        "refused": {
+          "type": "number",
+          "description": "Days the row refused to band; counted, never guessed."
+        },
+        "bin_width": {
+          "type": "number",
+          "description": "The histogram's bin width."
+        },
+        "counts": {
+          "type": "array",
+          "description": "Days in each bin from 0.",
+          "items": {
+            "type": "number"
+          }
+        },
+        "max": {
+          "type": [
+            "null",
+            "number"
+          ],
+          "description": "The largest value in the record."
+        },
+        "band_days": {
+          "type": "array",
+          "description": "Days in each band.",
+          "items": {
+            "type": "number"
+          }
+        },
+        "band_pct": {
+          "type": "array",
+          "description": "Each band's share of the days banded, in per cent.",
+          "items": {
+            "type": "number"
+          }
+        },
+        "below_cut": {
+          "type": "array",
+          "description": "At each cut, the largest value the record holds below it.",
+          "items": {
+            "type": [
+              "null",
+              "number"
+            ]
+          }
+        },
+        "above_cut": {
+          "type": "array",
+          "description": "At each cut, the smallest value the record holds above it.",
+          "items": {
+            "type": [
+              "null",
+              "number"
+            ]
+          }
+        }
+      },
+      "required": [
+        "ok",
+        "figure",
+        "bundle",
+        "variable",
+        "days",
+        "refused",
+        "bin_width",
+        "counts",
+        "max",
+        "band_days",
+        "band_pct",
+        "below_cut",
+        "above_cut"
+      ]
+    },
+    {
+      "type": "object",
+      "description": "The regime-by-phase figure: the share of days at each cycle phase sw_regime calls storm, and quiet.",
+      "properties": {
+        "ok": {
+          "type": "boolean"
+        },
+        "bundle": {
+          "type": "string",
+          "description": "The bundle and version the numbers were worked out from."
+        },
+        "figure": {
+          "type": "string",
+          "enum": [
+            "regime-phase"
+          ]
+        },
+        "phase": {
+          "type": "array",
+          "description": "The centre of each of 20 phase bins.",
+          "items": {
+            "type": "number"
+          }
+        },
+        "storm_pct": {
+          "type": "array",
+          "description": "Per cent of the days in each bin that are storm; null where the record never reaches the bin.",
+          "items": {
+            "type": [
+              "null",
+              "number"
+            ]
+          }
+        },
+        "quiet_pct": {
+          "type": "array",
+          "description": "...that are quiet.",
+          "items": {
+            "type": [
+              "null",
+              "number"
+            ]
+          }
+        },
+        "storm_peak": {
+          "type": [
+            "null",
+            "array"
+          ],
+          "description": "The highest storm share and the phase it is at.",
+          "items": {
+            "type": "number"
+          }
+        },
+        "quiet_low": {
+          "type": [
+            "null",
+            "array"
+          ],
+          "description": "The lowest quiet share and its phase.",
+          "items": {
+            "type": "number"
+          }
+        },
+        "mirror": {
+          "type": [
+            "null",
+            "number"
+          ],
+          "description": "The correlation of the two shares across the bins."
+        }
+      },
+      "required": [
+        "ok",
+        "figure",
+        "bundle",
+        "phase",
+        "storm_pct",
+        "quiet_pct",
+        "storm_peak",
+        "quiet_low",
+        "mirror"
+      ]
+    },
+    {
+      "type": "object",
+      "description": "The climate figure: the record's mean in each year, five-day bin of the year, or month, on its own calendar.",
+      "properties": {
+        "ok": {
+          "type": "boolean"
+        },
+        "bundle": {
+          "type": "string",
+          "description": "The bundle and version the numbers were worked out from."
+        },
+        "figure": {
+          "type": "string",
+          "enum": [
+            "climate"
+          ]
+        },
+        "variable": {
+          "type": "string",
+          "enum": [
+            "f107",
+            "ap",
+            "ssn"
+          ]
+        },
+        "by": {
+          "type": "string",
+          "enum": [
+            "year",
+            "doy",
+            "month"
+          ]
+        },
+        "key": {
+          "type": "array",
+          "description": "Each group's key: a year, the last day of a five-day bin, or 12·year + month.",
+          "items": {
+            "type": "number"
+          }
+        },
+        "x": {
+          "type": "array",
+          "description": "Where each group is drawn.",
+          "items": {
+            "type": "number"
+          }
+        },
+        "mean": {
+          "type": "array",
+          "description": "The mean of each group's days.",
+          "items": {
+            "type": "number"
+          }
+        },
+        "days_in": {
+          "type": "array",
+          "description": "The days each group rests on.",
+          "items": {
+            "type": "number"
+          }
+        },
+        "overall": {
+          "type": [
+            "null",
+            "number"
+          ],
+          "description": "The mean over the record's days, not over its groups."
+        },
+        "days": {
+          "type": "number",
+          "description": "Days carrying the driver."
+        },
+        "high": {
+          "type": [
+            "null",
+            "array"
+          ],
+          "description": "The highest group mean and where it is drawn.",
+          "items": {
+            "type": "number"
+          }
+        },
+        "low": {
+          "type": [
+            "null",
+            "array"
+          ],
+          "description": "The lowest, and where.",
+          "items": {
+            "type": "number"
+          }
+        },
+        "below": {
+          "type": "number",
+          "description": "How many groups sit below the record's mean."
+        }
+      },
+      "required": [
+        "ok",
+        "figure",
+        "bundle",
+        "variable",
+        "by",
+        "key",
+        "x",
+        "mean",
+        "days_in",
+        "overall",
+        "days",
+        "high",
+        "low",
+        "below"
+      ]
+    },
+    {
+      "type": "object",
+      "description": "The smoother figure: each month's mean beside the 13-month smoothed value, from monthly_means.csv, and what the smoothing removes.",
+      "properties": {
+        "ok": {
+          "type": "boolean"
+        },
+        "bundle": {
+          "type": "string",
+          "description": "The bundle and version the numbers were worked out from."
+        },
+        "figure": {
+          "type": "string",
+          "enum": [
+            "smoother"
+          ]
+        },
+        "variable": {
+          "type": "string",
+          "enum": [
+            "f107",
+            "ap",
+            "ssn"
+          ]
+        },
+        "x": {
+          "type": "array",
+          "description": "Where each month is drawn, in years.",
+          "items": {
+            "type": "number"
+          }
+        },
+        "raw": {
+          "type": "array",
+          "description": "Each month's mean.",
+          "items": {
+            "type": [
+              "null",
+              "number"
+            ]
+          }
+        },
+        "smooth": {
+          "type": "array",
+          "description": "The 13-month smoothed value; null where the smoother would need months the record does not hold.",
+          "items": {
+            "type": [
+              "null",
+              "number"
+            ]
+          }
+        },
+        "missing": {
+          "type": "number",
+          "description": "Months the smoother is undefined for."
+        },
+        "months": {
+          "type": "number",
+          "description": "All the months."
+        },
+        "raw_range": {
+          "type": "number",
+          "description": "The range of the monthly means over the months carrying both."
+        },
+        "smooth_range": {
+          "type": "number",
+          "description": "...of the smoothed values."
+        },
+        "rms": {
+          "type": "number",
+          "description": "The rms of monthly mean minus smoothed value."
+        },
+        "crossings": {
+          "type": "number",
+          "description": "How often the monthly line crosses the smoother."
+        },
+        "max_departure": {
+          "type": "number",
+          "description": "Its largest departure from it."
+        }
+      },
+      "required": [
+        "ok",
+        "figure",
+        "bundle",
+        "variable",
+        "x",
+        "raw",
+        "smooth",
+        "missing",
+        "months",
+        "raw_range",
+        "smooth_range",
+        "rms",
+        "crossings",
+        "max_departure"
+      ]
+    },
+    {
+      "type": "object",
+      "description": "The growth figure over the whole record: how far a driver moves over a lead, at four percentiles.",
+      "properties": {
+        "ok": {
+          "type": "boolean"
+        },
+        "bundle": {
+          "type": "string",
+          "description": "The bundle and version the numbers were worked out from."
+        },
+        "figure": {
+          "type": "string",
+          "enum": [
+            "growth"
+          ]
+        },
+        "variable": {
+          "type": "string",
+          "enum": [
+            "f107",
+            "ap",
+            "ssn"
+          ]
+        },
+        "lead_years": {
+          "type": "array",
+          "description": "Each lead, in years.",
+          "items": {
+            "type": "number"
+          }
+        },
+        "change": {
+          "type": "array",
+          "description": "The signed change over each lead: [percentile][lead] over the whole record, or [cycle][lead] at the 95th within each cycle; null where too few pairs.",
+          "items": {
+            "type": "array",
+            "items": {
+              "type": [
+                "null",
+                "number"
+              ]
+            }
+          }
+        },
+        "by": {
+          "type": "string",
+          "enum": [
+            "all"
+          ]
+        },
+        "percentiles": {
+          "type": "array",
+          "description": "The percentiles drawn, the published one (0.95) third.",
+          "items": {
+            "type": "number"
+          }
+        },
+        "pairs": {
+          "type": "array",
+          "description": "The pairs of days behind each lead.",
+          "items": {
+            "type": "number"
+          }
+        },
+        "at_year": {
+          "type": "number",
+          "description": "The index of the lead nearest a year."
+        },
+        "hump": {
+          "type": [
+            "null",
+            "array"
+          ],
+          "description": "The 95th's highest point between 3 and 6 years: [lead in years, change].",
+          "items": {
+            "type": "number"
+          }
+        },
+        "dip": {
+          "type": [
+            "null",
+            "array"
+          ],
+          "description": "Its lowest point between 9 and 12 years: [lead in years, change].",
+          "items": {
+            "type": "number"
+          }
+        },
+        "humped": {
+          "type": "boolean",
+          "description": "Whether the hump stands above everything between 9 and 12 years — the eleven-year cycle showing through."
+        }
+      },
+      "required": [
+        "ok",
+        "figure",
+        "bundle",
+        "variable",
+        "by",
+        "lead_years",
+        "change",
+        "percentiles",
+        "pairs",
+        "at_year",
+        "hump",
+        "dip",
+        "humped"
+      ]
+    },
+    {
+      "type": "object",
+      "description": "The growth figure by cycle: the 95th-percentile change over each lead, pairs taken only within a cycle.",
+      "properties": {
+        "ok": {
+          "type": "boolean"
+        },
+        "bundle": {
+          "type": "string",
+          "description": "The bundle and version the numbers were worked out from."
+        },
+        "figure": {
+          "type": "string",
+          "enum": [
+            "growth"
+          ]
+        },
+        "variable": {
+          "type": "string",
+          "enum": [
+            "f107",
+            "ap",
+            "ssn"
+          ]
+        },
+        "lead_years": {
+          "type": "array",
+          "description": "Each lead, in years.",
+          "items": {
+            "type": "number"
+          }
+        },
+        "change": {
+          "type": "array",
+          "description": "The signed change over each lead: [percentile][lead] over the whole record, or [cycle][lead] at the 95th within each cycle; null where too few pairs.",
+          "items": {
+            "type": "array",
+            "items": {
+              "type": [
+                "null",
+                "number"
+              ]
+            }
+          }
+        },
+        "by": {
+          "type": "string",
+          "enum": [
+            "cycle"
+          ]
+        },
+        "cycles": {
+          "type": "array",
+          "description": "The cycles, one curve each.",
+          "items": {
+            "type": "number"
+          }
+        },
+        "shared": {
+          "type": [
+            "null",
+            "number"
+          ],
+          "description": "The longest lead every cycle reaches, in years."
+        },
+        "spread": {
+          "type": [
+            "null",
+            "array"
+          ],
+          "description": "The lowest and highest cycle there.",
+          "items": {
+            "type": "number"
+          }
+        }
+      },
+      "required": [
+        "ok",
+        "figure",
+        "bundle",
+        "variable",
+        "by",
+        "lead_years",
+        "change",
+        "cycles",
+        "shared",
+        "spread"
+      ]
+    },
+    {
+      "type": "object",
+      "description": "The forecast figure by lead: the issued 27-day outlook scored against what arrived at each lead.",
+      "properties": {
+        "ok": {
+          "type": "boolean"
+        },
+        "bundle": {
+          "type": "string",
+          "description": "The bundle and version the numbers were worked out from."
+        },
+        "figure": {
+          "type": "string",
+          "enum": [
+            "forecast"
+          ]
+        },
+        "view": {
+          "type": "string",
+          "enum": [
+            "lead"
+          ]
+        },
+        "lead": {
+          "type": "array",
+          "description": "The leads with at least one scored pair, in days.",
+          "items": {
+            "type": "number"
+          }
+        },
+        "pairs": {
+          "type": "array",
+          "description": "The pairs with an observation at each lead, which bias and RMS error are over.",
+          "items": {
+            "type": "number"
+          }
+        },
+        "pairs_strict": {
+          "type": "array",
+          "description": "The pairs the strict persistence baseline reaches.",
+          "items": {
+            "type": "number"
+          }
+        },
+        "pairs_leaky": {
+          "type": "array",
+          "description": "The pairs the leaky persistence baseline reaches.",
+          "items": {
+            "type": "number"
+          }
+        },
+        "skill_strict": {
+          "type": "array",
+          "description": "Skill against the last observation before the issue; null where the baseline reached no pair.",
+          "items": {
+            "type": [
+              "null",
+              "number"
+            ]
+          }
+        },
+        "skill_leaky": {
+          "type": "array",
+          "description": "Skill against the observation on the issue date, which leaks.",
+          "items": {
+            "type": [
+              "null",
+              "number"
+            ]
+          }
+        },
+        "bias": {
+          "type": "array",
+          "description": "Mean forecast minus observed, in sfu.",
+          "items": {
+            "type": "number"
+          }
+        },
+        "rmse": {
+          "type": "array",
+          "description": "Root mean square of forecast minus observed, in sfu.",
+          "items": {
+            "type": "number"
+          }
+        },
+        "peak": {
+          "type": [
+            "null",
+            "array"
+          ],
+          "description": "Where the strict skill peaks: the lead and the skill there.",
+          "items": {
+            "type": "number"
+          }
+        },
+        "widest": {
+          "type": [
+            "null",
+            "number"
+          ],
+          "description": "The lead where the strict baseline misses the most pairs the forecast has."
+        }
+      },
+      "required": [
+        "ok",
+        "figure",
+        "bundle",
+        "view",
+        "lead",
+        "pairs",
+        "pairs_strict",
+        "pairs_leaky",
+        "skill_strict",
+        "skill_leaky",
+        "bias",
+        "rmse",
+        "peak",
+        "widest"
+      ]
+    },
+    {
+      "type": "object",
+      "description": "The forecast figure by year: the outlook scored on one lead band in the calendar year it was issued in.",
+      "properties": {
+        "ok": {
+          "type": "boolean"
+        },
+        "bundle": {
+          "type": "string",
+          "description": "The bundle and version the numbers were worked out from."
+        },
+        "figure": {
+          "type": "string",
+          "enum": [
+            "forecast"
+          ]
+        },
+        "view": {
+          "type": "string",
+          "enum": [
+            "year"
+          ]
+        },
+        "leads": {
+          "type": "array",
+          "description": "The lead band every year is scored on, first and last, in days.",
+          "items": {
+            "type": "number"
+          }
+        },
+        "min_pairs": {
+          "type": "number",
+          "description": "The fewest pairs a year needs to be scored."
+        },
+        "year": {
+          "type": "array",
+          "description": "Every year from the first issue to the last.",
+          "items": {
+            "type": "number"
+          }
+        },
+        "pairs": {
+          "type": "array",
+          "description": "The pairs with an observation in each year; null for a year too thin to score.",
+          "items": {
+            "type": [
+              "null",
+              "number"
+            ]
+          }
+        },
+        "pairs_strict": {
+          "type": "array",
+          "description": "The pairs the strict baseline reaches in each year.",
+          "items": {
+            "type": [
+              "null",
+              "number"
+            ]
+          }
+        },
+        "pairs_leaky": {
+          "type": "array",
+          "description": "The pairs the leaky baseline reaches in each year.",
+          "items": {
+            "type": [
+              "null",
+              "number"
+            ]
+          }
+        },
+        "skill_strict": {
+          "type": "array",
+          "description": "Skill against the strict baseline in each year.",
+          "items": {
+            "type": [
+              "null",
+              "number"
+            ]
+          }
+        },
+        "skill_leaky": {
+          "type": "array",
+          "description": "Skill against the leaky baseline in each year.",
+          "items": {
+            "type": [
+              "null",
+              "number"
+            ]
+          }
+        },
+        "bias": {
+          "type": "array",
+          "description": "Mean forecast minus observed in each year, in sfu.",
+          "items": {
+            "type": [
+              "null",
+              "number"
+            ]
+          }
+        },
+        "rmse": {
+          "type": "array",
+          "description": "Root mean square of forecast minus observed in each year, in sfu.",
+          "items": {
+            "type": [
+              "null",
+              "number"
+            ]
+          }
+        },
+        "thin": {
+          "type": "array",
+          "description": "The years that hold some pairs but too few to score.",
+          "items": {
+            "type": "number"
+          }
+        },
+        "worst": {
+          "type": [
+            "null",
+            "number"
+          ],
+          "description": "The scored year with the lowest strict skill."
+        },
+        "best": {
+          "type": [
+            "null",
+            "number"
+          ],
+          "description": "The scored year with the highest strict skill."
+        },
+        "lowest_bias": {
+          "type": [
+            "null",
+            "array"
+          ],
+          "description": "The year the bias is lowest, and the bias then.",
+          "items": {
+            "type": "number"
+          }
+        }
+      },
+      "required": [
+        "ok",
+        "figure",
+        "bundle",
+        "view",
+        "leads",
+        "min_pairs",
+        "year",
+        "pairs",
+        "pairs_strict",
+        "pairs_leaky",
+        "skill_strict",
+        "skill_leaky",
+        "bias",
+        "rmse",
+        "thin",
+        "worst",
+        "best",
+        "lowest_bias"
+      ]
+    },
+    {
+      "type": "object",
+      "description": "The forecast figure by issue age: the days between one issued outlook and the next.",
+      "properties": {
+        "ok": {
+          "type": "boolean"
+        },
+        "bundle": {
+          "type": "string",
+          "description": "The bundle and version the numbers were worked out from."
+        },
+        "figure": {
+          "type": "string",
+          "enum": [
+            "forecast"
+          ]
+        },
+        "view": {
+          "type": "string",
+          "enum": [
+            "age"
+          ]
+        },
+        "issues": {
+          "type": "number",
+          "description": "The issues the index lists."
+        },
+        "cap": {
+          "type": "number",
+          "description": "The gap, in days, that stands for itself or more."
+        },
+        "gap": {
+          "type": "array",
+          "description": "Each gap length in days.",
+          "items": {
+            "type": "number"
+          }
+        },
+        "count": {
+          "type": "array",
+          "description": "How many gaps have each length.",
+          "items": {
+            "type": "number"
+          }
+        },
+        "median": {
+          "type": [
+            "null",
+            "number"
+          ],
+          "description": "The median gap, in days."
+        },
+        "mean": {
+          "type": [
+            "null",
+            "number"
+          ],
+          "description": "The mean gap, in days."
+        },
+        "commonest": {
+          "type": [
+            "null",
+            "number"
+          ],
+          "description": "The commonest gap, the shortest on a tie."
+        },
+        "over_a_day_pct": {
+          "type": [
+            "null",
+            "number"
+          ],
+          "description": "The share of gaps longer than a day, in per cent."
+        }
+      },
+      "required": [
+        "ok",
+        "figure",
+        "bundle",
+        "view",
+        "issues",
+        "cap",
+        "gap",
+        "count",
+        "median",
+        "mean",
+        "commonest",
+        "over_a_day_pct"
+      ]
+    },
+    {
+      "type": "object",
+      "description": "The drivers figure: the solar crossing's twenty-five cells, run on the saved case, against the legacy tool's own run of the same cells.",
+      "properties": {
+        "ok": {
+          "type": "boolean"
+        },
+        "bundle": {
+          "type": "string",
+          "description": "The bundle and version the numbers were worked out from."
+        },
+        "figure": {
+          "type": "string",
+          "enum": [
+            "drivers"
+          ]
+        },
+        "node": {
+          "type": "string",
+          "description": "The crossing run for this tree's cells."
+        },
+        "legacy": {
+          "type": "string",
+          "description": "The file the legacy run's cells are read from."
+        },
+        "scenarios": {
+          "type": "array",
+          "description": "The five scenarios, cold to hot.",
+          "items": {
+            "type": "string"
+          }
+        },
+        "quantities": {
+          "type": "array",
+          "description": "The five quantities at each scenario.",
+          "items": {
+            "type": "string"
+          }
+        },
+        "ours": {
+          "type": "array",
+          "description": "This tree's cells: [quantity][scenario]; null where the run gave none.",
+          "items": {
+            "type": "array",
+            "items": {
+              "type": [
+                "null",
+                "number"
+              ]
+            }
+          }
+        },
+        "theirs": {
+          "type": "array",
+          "description": "The legacy run's cells: [quantity][scenario]; null where it has none.",
+          "items": {
+            "type": "array",
+            "items": {
+              "type": [
+                "null",
+                "number"
+              ]
+            }
+          }
+        },
+        "ratio": {
+          "type": "array",
+          "description": "This tree over the legacy run; null where either is missing or the legacy cell is zero.",
+          "items": {
+            "type": "array",
+            "items": {
+              "type": [
+                "null",
+                "number"
+              ]
+            }
+          }
+        },
+        "gap": {
+          "type": "array",
+          "description": "This tree minus the legacy run.",
+          "items": {
+            "type": "array",
+            "items": {
+              "type": [
+                "null",
+                "number"
+              ]
+            }
+          }
+        },
+        "widest": {
+          "type": "array",
+          "description": "For each quantity, the scenario where the gap is widest either way; null where there is no gap.",
+          "items": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        },
+        "agree": {
+          "type": "number",
+          "description": "How many ratios are within a tenth of a per cent of one."
+        },
+        "below": {
+          "type": "number",
+          "description": "How many sit below that."
+        },
+        "above": {
+          "type": "number",
+          "description": "How many sit above it."
+        },
+        "factor": {
+          "type": [
+            "null",
+            "number"
+          ],
+          "description": "How far the worst cell is out, as a factor of at least one either way."
+        }
+      },
+      "required": [
+        "ok",
+        "figure",
+        "bundle",
+        "node",
+        "legacy",
+        "scenarios",
+        "quantities",
+        "ours",
+        "theirs",
+        "ratio",
+        "gap",
+        "widest",
+        "agree",
+        "below",
+        "above",
+        "factor"
+      ]
+    },
+    {
+      "type": "object",
+      "description": "The thermosphere figure against the flux: three ways to raise it, and the slope of each.",
+      "properties": {
+        "ok": {
+          "type": "boolean"
+        },
+        "bundle": {
+          "type": "string",
+          "description": "The bundle and version the numbers were worked out from."
+        },
+        "figure": {
+          "type": "string",
+          "enum": [
+            "thermosphere"
+          ]
+        },
+        "env_f107": {
+          "type": [
+            "null",
+            "number"
+          ],
+          "description": "The design's F10.7, run on the saved case."
+        },
+        "env_f107a": {
+          "type": [
+            "null",
+            "number"
+          ],
+          "description": "Its 81-day mean."
+        },
+        "env_kp": {
+          "type": [
+            "null",
+            "number"
+          ],
+          "description": "Its Kp."
+        },
+        "now": {
+          "type": [
+            "null",
+            "number"
+          ],
+          "description": "env_exospheric_temperature, run on the saved case."
+        },
+        "crossing": {
+          "type": [
+            "null",
+            "number"
+          ],
+          "description": "What the solar crossing publishes for its hot sustained F10.7."
+        },
+        "view": {
+          "type": "string",
+          "enum": [
+            "solar"
+          ]
+        },
+        "sustained": {
+          "type": "object",
+          "description": "The day and its 81-day mean moved together.",
+          "properties": {
+            "x": {
+              "type": "array",
+              "description": "F10.7.",
+              "items": {
+                "type": "number"
+              }
+            },
+            "y": {
+              "type": "array",
+              "description": "The temperature.",
+              "items": {
+                "type": "number"
+              }
+            }
+          },
+          "required": [
+            "x",
+            "y"
+          ]
+        },
+        "day": {
+          "type": "object",
+          "description": "A probe sweep of env_exospheric_temperature over one driver, the others held; refused points are listed and not drawn.",
+          "properties": {
+            "x_id": {
+              "type": "string"
+            },
+            "y_id": {
+              "type": "string"
+            },
+            "x_unit": {
+              "type": "string"
+            },
+            "y_unit": {
+              "type": "string"
+            },
+            "x_factor": {
+              "type": "number"
+            },
+            "y_factor": {
+              "type": "number"
+            },
+            "x": {
+              "type": "array",
+              "description": "The driver at each drawn point, SI.",
+              "items": {
+                "type": "number"
+              }
+            },
+            "y": {
+              "type": "array",
+              "description": "The temperature there, SI.",
+              "items": {
+                "type": "number"
+              }
+            },
+            "refused": {
+              "type": "array",
+              "description": "Where the relation refused.",
+              "items": {
+                "type": "number"
+              }
+            }
+          },
+          "required": [
+            "x_id",
+            "y_id",
+            "x_unit",
+            "y_unit",
+            "x_factor",
+            "y_factor",
+            "x",
+            "y",
+            "refused"
+          ]
+        },
+        "mean": {
+          "type": "object",
+          "description": "A probe sweep of env_exospheric_temperature over one driver, the others held; refused points are listed and not drawn.",
+          "properties": {
+            "x_id": {
+              "type": "string"
+            },
+            "y_id": {
+              "type": "string"
+            },
+            "x_unit": {
+              "type": "string"
+            },
+            "y_unit": {
+              "type": "string"
+            },
+            "x_factor": {
+              "type": "number"
+            },
+            "y_factor": {
+              "type": "number"
+            },
+            "x": {
+              "type": "array",
+              "description": "The driver at each drawn point, SI.",
+              "items": {
+                "type": "number"
+              }
+            },
+            "y": {
+              "type": "array",
+              "description": "The temperature there, SI.",
+              "items": {
+                "type": "number"
+              }
+            },
+            "refused": {
+              "type": "array",
+              "description": "Where the relation refused.",
+              "items": {
+                "type": "number"
+              }
+            }
+          },
+          "required": [
+            "x_id",
+            "y_id",
+            "x_unit",
+            "y_unit",
+            "x_factor",
+            "y_factor",
+            "x",
+            "y",
+            "refused"
+          ]
+        },
+        "slope_sustained": {
+          "type": [
+            "null",
+            "number"
+          ],
+          "description": "K per sfu between the ends of the sustained curve."
+        },
+        "slope_day": {
+          "type": [
+            "null",
+            "number"
+          ],
+          "description": "The same for one day alone."
+        },
+        "slope_mean": {
+          "type": [
+            "null",
+            "number"
+          ],
+          "description": "The same for the mean alone."
+        },
+        "agrees": {
+          "type": [
+            "null",
+            "boolean"
+          ],
+          "description": "Whether the design's F10.7 is what the crossing publishes, to 0.05 sfu."
+        }
+      },
+      "required": [
+        "ok",
+        "figure",
+        "bundle",
+        "view",
+        "env_f107",
+        "env_f107a",
+        "env_kp",
+        "now",
+        "crossing",
+        "sustained",
+        "day",
+        "mean",
+        "slope_sustained",
+        "slope_day",
+        "slope_mean",
+        "agrees"
+      ]
+    },
+    {
+      "type": "object",
+      "description": "The thermosphere figure against Kp: one curve per scenario at its own flux, and its two Kp readings.",
+      "properties": {
+        "ok": {
+          "type": "boolean"
+        },
+        "bundle": {
+          "type": "string",
+          "description": "The bundle and version the numbers were worked out from."
+        },
+        "figure": {
+          "type": "string",
+          "enum": [
+            "thermosphere"
+          ]
+        },
+        "env_f107": {
+          "type": [
+            "null",
+            "number"
+          ],
+          "description": "The design's F10.7, run on the saved case."
+        },
+        "env_f107a": {
+          "type": [
+            "null",
+            "number"
+          ],
+          "description": "Its 81-day mean."
+        },
+        "env_kp": {
+          "type": [
+            "null",
+            "number"
+          ],
+          "description": "Its Kp."
+        },
+        "now": {
+          "type": [
+            "null",
+            "number"
+          ],
+          "description": "env_exospheric_temperature, run on the saved case."
+        },
+        "crossing": {
+          "type": [
+            "null",
+            "number"
+          ],
+          "description": "What the solar crossing publishes for its hot sustained F10.7."
+        },
+        "view": {
+          "type": "string",
+          "enum": [
+            "kp"
+          ]
+        },
+        "curves": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "scenario": {
+                "type": "string"
+              },
+              "kp_mean": {
+                "type": [
+                  "null",
+                  "number"
+                ]
+              },
+              "kp_peak": {
+                "type": [
+                  "null",
+                  "number"
+                ]
+              },
+              "sweep": {
+                "anyOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "type": "object",
+                    "description": "A probe sweep of env_exospheric_temperature over one driver, the others held; refused points are listed and not drawn.",
+                    "properties": {
+                      "x_id": {
+                        "type": "string"
+                      },
+                      "y_id": {
+                        "type": "string"
+                      },
+                      "x_unit": {
+                        "type": "string"
+                      },
+                      "y_unit": {
+                        "type": "string"
+                      },
+                      "x_factor": {
+                        "type": "number"
+                      },
+                      "y_factor": {
+                        "type": "number"
+                      },
+                      "x": {
+                        "type": "array",
+                        "description": "The driver at each drawn point, SI.",
+                        "items": {
+                          "type": "number"
+                        }
+                      },
+                      "y": {
+                        "type": "array",
+                        "description": "The temperature there, SI.",
+                        "items": {
+                          "type": "number"
+                        }
+                      },
+                      "refused": {
+                        "type": "array",
+                        "description": "Where the relation refused.",
+                        "items": {
+                          "type": "number"
+                        }
+                      }
+                    },
+                    "required": [
+                      "x_id",
+                      "y_id",
+                      "x_unit",
+                      "y_unit",
+                      "x_factor",
+                      "y_factor",
+                      "x",
+                      "y",
+                      "refused"
+                    ]
+                  }
+                ]
+              },
+              "t_mean": {
+                "type": [
+                  "null",
+                  "number"
+                ]
+              },
+              "t_peak": {
+                "type": [
+                  "null",
+                  "number"
+                ]
+              }
+            },
+            "required": [
+              "scenario",
+              "kp_mean",
+              "kp_peak",
+              "sweep",
+              "t_mean",
+              "t_peak"
+            ]
+          },
+          "description": "One per scenario, cold to hot."
+        },
+        "worst": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "object",
+              "properties": {
+                "scenario": {
+                  "type": "string"
+                },
+                "gap": {
+                  "type": "number"
+                },
+                "share_pct": {
+                  "type": "number"
+                },
+                "t_mean": {
+                  "type": "number"
+                },
+                "t_peak": {
+                  "type": "number"
+                },
+                "kp_mean": {
+                  "type": [
+                    "null",
+                    "number"
+                  ]
+                },
+                "kp_peak": {
+                  "type": [
+                    "null",
+                    "number"
+                  ]
+                }
+              },
+              "required": [
+                "scenario",
+                "gap",
+                "share_pct",
+                "t_mean",
+                "t_peak",
+                "kp_mean",
+                "kp_peak"
+              ]
+            }
+          ],
+          "description": "The scenario whose two Kp readings differ most."
+        },
+        "close": {
+          "type": [
+            "null",
+            "number"
+          ],
+          "description": "The most the first two curves differ by across the Kp range."
+        }
+      },
+      "required": [
+        "ok",
+        "figure",
+        "bundle",
+        "view",
+        "env_f107",
+        "env_f107a",
+        "env_kp",
+        "now",
+        "crossing",
+        "curves",
+        "worst",
+        "close"
+      ]
+    },
+    {
+      "type": "object",
+      "description": "The thermosphere figure's two Kp readings per scenario, and the gap between them.",
+      "properties": {
+        "ok": {
+          "type": "boolean"
+        },
+        "bundle": {
+          "type": "string",
+          "description": "The bundle and version the numbers were worked out from."
+        },
+        "figure": {
+          "type": "string",
+          "enum": [
+            "thermosphere"
+          ]
+        },
+        "env_f107": {
+          "type": [
+            "null",
+            "number"
+          ],
+          "description": "The design's F10.7, run on the saved case."
+        },
+        "env_f107a": {
+          "type": [
+            "null",
+            "number"
+          ],
+          "description": "Its 81-day mean."
+        },
+        "env_kp": {
+          "type": [
+            "null",
+            "number"
+          ],
+          "description": "Its Kp."
+        },
+        "now": {
+          "type": [
+            "null",
+            "number"
+          ],
+          "description": "env_exospheric_temperature, run on the saved case."
+        },
+        "crossing": {
+          "type": [
+            "null",
+            "number"
+          ],
+          "description": "What the solar crossing publishes for its hot sustained F10.7."
+        },
+        "view": {
+          "type": "string",
+          "enum": [
+            "slot"
+          ]
+        },
+        "points": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "scenario": {
+                "type": "string"
+              },
+              "t_mean": {
+                "type": [
+                  "null",
+                  "number"
+                ]
+              },
+              "t_peak": {
+                "type": [
+                  "null",
+                  "number"
+                ]
+              },
+              "gap": {
+                "type": [
+                  "null",
+                  "number"
+                ]
+              }
+            },
+            "required": [
+              "scenario",
+              "t_mean",
+              "t_peak",
+              "gap"
+            ]
+          },
+          "description": "One per scenario, cold to hot."
+        },
+        "widest": {
+          "type": [
+            "null",
+            "string"
+          ],
+          "description": "The scenario with the widest gap."
+        },
+        "narrowest_gap": {
+          "type": [
+            "null",
+            "number"
+          ]
+        },
+        "widest_gap": {
+          "type": [
+            "null",
+            "number"
+          ]
+        }
+      },
+      "required": [
+        "ok",
+        "figure",
+        "bundle",
+        "view",
+        "env_f107",
+        "env_f107a",
+        "env_kp",
+        "now",
+        "crossing",
+        "points",
+        "widest",
+        "narrowest_gap",
+        "widest_gap"
+      ]
+    },
+    {
+      "type": "object",
+      "description": "The thermosphere figure's Kp sweep at the design point, against the line its quiet end sets.",
+      "properties": {
+        "ok": {
+          "type": "boolean"
+        },
+        "bundle": {
+          "type": "string",
+          "description": "The bundle and version the numbers were worked out from."
+        },
+        "figure": {
+          "type": "string",
+          "enum": [
+            "thermosphere"
+          ]
+        },
+        "env_f107": {
+          "type": [
+            "null",
+            "number"
+          ],
+          "description": "The design's F10.7, run on the saved case."
+        },
+        "env_f107a": {
+          "type": [
+            "null",
+            "number"
+          ],
+          "description": "Its 81-day mean."
+        },
+        "env_kp": {
+          "type": [
+            "null",
+            "number"
+          ],
+          "description": "Its Kp."
+        },
+        "now": {
+          "type": [
+            "null",
+            "number"
+          ],
+          "description": "env_exospheric_temperature, run on the saved case."
+        },
+        "crossing": {
+          "type": [
+            "null",
+            "number"
+          ],
+          "description": "What the solar crossing publishes for its hot sustained F10.7."
+        },
+        "view": {
+          "type": "string",
+          "enum": [
+            "shape"
+          ]
+        },
+        "sweep": {
+          "type": "object",
+          "description": "A probe sweep of env_exospheric_temperature over one driver, the others held; refused points are listed and not drawn.",
+          "properties": {
+            "x_id": {
+              "type": "string"
+            },
+            "y_id": {
+              "type": "string"
+            },
+            "x_unit": {
+              "type": "string"
+            },
+            "y_unit": {
+              "type": "string"
+            },
+            "x_factor": {
+              "type": "number"
+            },
+            "y_factor": {
+              "type": "number"
+            },
+            "x": {
+              "type": "array",
+              "description": "The driver at each drawn point, SI.",
+              "items": {
+                "type": "number"
+              }
+            },
+            "y": {
+              "type": "array",
+              "description": "The temperature there, SI.",
+              "items": {
+                "type": "number"
+              }
+            },
+            "refused": {
+              "type": "array",
+              "description": "Where the relation refused.",
+              "items": {
+                "type": "number"
+              }
+            }
+          },
+          "required": [
+            "x_id",
+            "y_id",
+            "x_unit",
+            "y_unit",
+            "x_factor",
+            "y_factor",
+            "x",
+            "y",
+            "refused"
+          ]
+        },
+        "d": {
+          "type": "array",
+          "description": "The swept temperature minus its value at Kp 0.",
+          "items": {
+            "type": "number"
+          }
+        },
+        "line": {
+          "type": "array",
+          "description": "The straight line through Kp 0 and the point nearest Kp 2.",
+          "items": {
+            "type": "number"
+          }
+        },
+        "excess": {
+          "type": "number",
+          "description": "How far the curve stands above the line at the top."
+        },
+        "split_at": {
+          "type": [
+            "null",
+            "number"
+          ],
+          "description": "The Kp where the curve first stands clear of the line by a fiftieth of that."
+        }
+      },
+      "required": [
+        "ok",
+        "figure",
+        "bundle",
+        "view",
+        "env_f107",
+        "env_f107a",
+        "env_kp",
+        "now",
+        "crossing",
+        "sweep",
+        "d",
+        "line",
+        "excess",
+        "split_at"
+      ]
+    },
+    {
+      "type": "object",
+      "description": "The design figure's Ap half: sw_storm_return_level swept over the mission duration on the request's case, the G-level bound and the requirement, where the curve reaches each, and the record's days above the bound.",
+      "properties": {
+        "ok": {
+          "type": "boolean"
+        },
+        "bundle": {
+          "type": "string",
+          "description": "The bundle and version the numbers were worked out from."
+        },
+        "figure": {
+          "type": "string",
+          "enum": [
+            "design"
+          ]
+        },
+        "view": {
+          "type": "string",
+          "enum": [
+            "ap"
+          ]
+        },
+        "g": {
+          "type": "string",
+          "enum": [
+            "1",
+            "2",
+            "3"
+          ],
+          "description": "The G level the vehicle is designed for."
+        },
+        "req_id": {
+          "type": "string",
+          "enum": [
+            "l3_solar_req_03",
+            "l3_solar_req_04",
+            "l3_solar_req_05"
+          ]
+        },
+        "years": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "description": "Mission lengths swept, in Julian years."
+        },
+        "level": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "description": "sw_storm_return_level at each: the daily Ap the record expects once in that time."
+        },
+        "points_refused": {
+          "type": "number",
+          "description": "Swept points the engine refused; they are not in `years` or `level`."
+        },
+        "bound": {
+          "type": "number",
+          "description": "sw_ap_design at the G level — the Ap the vehicle is built for."
+        },
+        "req": {
+          "type": "number",
+          "description": "The requirement row's own answer on the saved case."
+        },
+        "hits_at": {
+          "type": [
+            "null",
+            "number"
+          ],
+          "description": "Mission length, in years, at which the curve first reaches the bound; null if never inside the range."
+        },
+        "req_at": {
+          "type": [
+            "null",
+            "number"
+          ],
+          "description": "The same for the requirement."
+        },
+        "record": {
+          "type": "object",
+          "description": "The record's own days at or above the bound.",
+          "properties": {
+            "days": {
+              "type": "number",
+              "description": "Days that carry an Ap."
+            },
+            "years": {
+              "type": "number",
+              "description": "Those days in years of 365.25."
+            },
+            "above": {
+              "type": "number",
+              "description": "Days at or above the bound."
+            },
+            "runs": {
+              "type": "number",
+              "description": "Separate runs of consecutive such days."
+            },
+            "rate": {
+              "type": "number",
+              "description": "Days above per year."
+            }
+          },
+          "required": [
+            "days",
+            "years",
+            "above",
+            "runs",
+            "rate"
+          ]
+        }
+      },
+      "required": [
+        "ok",
+        "figure",
+        "bundle",
+        "view",
+        "g",
+        "req_id",
+        "years",
+        "level",
+        "points_refused",
+        "bound",
+        "req",
+        "hits_at",
+        "req_at",
+        "record"
+      ]
+    },
+    {
+      "type": "object",
+      "description": "The design figure's F10.7 half: the four design-window rows and sw_window_peak_level swept over the mission duration on the request's case, against an F10.7 requirement.",
+      "properties": {
+        "ok": {
+          "type": "boolean"
+        },
+        "bundle": {
+          "type": "string",
+          "description": "The bundle and version the numbers were worked out from."
+        },
+        "figure": {
+          "type": "string",
+          "enum": [
+            "design"
+          ]
+        },
+        "view": {
+          "type": "string",
+          "enum": [
+            "f107"
+          ]
+        },
+        "reqf": {
+          "type": "string",
+          "enum": [
+            "l3_solar_req_01",
+            "l3_solar_req_02"
+          ]
+        },
+        "req": {
+          "type": "number",
+          "description": "The requirement row's own answer on the saved case."
+        },
+        "points_refused": {
+          "type": "number",
+          "description": "Swept points the engine refused, over the five sweeps."
+        },
+        "years": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "description": "Mission lengths swept, in Julian years."
+        },
+        "hot": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "description": "sw_f107_design_short — hot, single day."
+        },
+        "hot_long": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "description": "sw_f107_design_long — hot, sustained."
+        },
+        "cold_long": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "description": "sw_f107_cold_long — cold, sustained."
+        },
+        "cold": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "description": "sw_f107_cold_short — cold, single day."
+        },
+        "analogue": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "description": "sw_window_peak_level — the cycle analogue's own peak."
+        },
+        "peak": {
+          "type": [
+            "null",
+            "number"
+          ],
+          "description": "The worst single day any declared window reaches."
+        },
+        "margin": {
+          "type": [
+            "null",
+            "number"
+          ],
+          "description": "The requirement less that peak."
+        },
+        "narrowest": {
+          "type": [
+            "null",
+            "number"
+          ],
+          "description": "The window's narrowest width, hot single day less cold single day."
+        },
+        "widest": {
+          "type": [
+            "null",
+            "number"
+          ],
+          "description": "Its widest."
+        },
+        "over": {
+          "type": [
+            "null",
+            "number"
+          ],
+          "description": "The first mission length at which the analogue's peak stands above the hot single day; null if never."
+        }
+      },
+      "required": [
+        "ok",
+        "figure",
+        "bundle",
+        "view",
+        "reqf",
+        "req",
+        "points_refused",
+        "years",
+        "hot",
+        "hot_long",
+        "cold_long",
+        "cold",
+        "analogue",
+        "peak",
+        "margin",
+        "narrowest",
+        "widest",
+        "over"
+      ]
+    },
+    {
+      "type": "object",
+      "description": "The closure figure: one requirement and its achieved quantity swept over the decision that spends the margin fastest, on the request's case, and where each runs out.",
+      "properties": {
+        "ok": {
+          "type": "boolean"
+        },
+        "bundle": {
+          "type": "string",
+          "description": "The bundle and version the numbers were worked out from."
+        },
+        "figure": {
+          "type": "string",
+          "enum": [
+            "closure"
+          ]
+        },
+        "pair": {
+          "type": "string",
+          "enum": [
+            "01",
+            "02",
+            "03",
+            "04",
+            "05"
+          ]
+        },
+        "ach": {
+          "type": "string",
+          "description": "The achieved row, whose answer is the signed margin."
+        },
+        "req_id": {
+          "type": "string",
+          "description": "The requirement row."
+        },
+        "quantity": {
+          "type": "string",
+          "description": "The achieved quantity's row, which the margin is taken of."
+        },
+        "lever": {
+          "description": "The declared decision that moves the margin most, the requirement itself skipped; null when none moves it.",
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "label": {
+                  "type": "string"
+                },
+                "unit": {
+                  "type": "string"
+                },
+                "lower": {
+                  "type": "number",
+                  "description": "Its declared range, in SI."
+                },
+                "upper": {
+                  "type": "number"
+                },
+                "span": {
+                  "type": "number",
+                  "description": "How far it moves the margin across that range, relative to the answer on the case."
+                }
+              },
+              "required": [
+                "id",
+                "label",
+                "unit",
+                "lower",
+                "upper",
+                "span"
+              ]
+            }
+          ]
+        },
+        "x": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "description": "The decision swept, in its display unit."
+        },
+        "margin": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "description": "The signed fractional margin at each."
+        },
+        "value": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "description": "The achieved quantity at each, in its display unit."
+        },
+        "points_refused": {
+          "type": "number",
+          "description": "Swept points the engine refused, over both sweeps."
+        },
+        "req": {
+          "type": [
+            "null",
+            "number"
+          ],
+          "description": "The requirement's own answer, in the quantity's display unit."
+        },
+        "now": {
+          "type": [
+            "null",
+            "number"
+          ],
+          "description": "The achieved row's own answer — the margin as the tree stands."
+        },
+        "cross": {
+          "type": [
+            "null",
+            "number"
+          ],
+          "description": "Where the margin first goes through zero; null if it never does."
+        },
+        "cross_q": {
+          "type": [
+            "null",
+            "number"
+          ],
+          "description": "Where the achieved curve first meets the requirement — from a different array, and the same x when the two agree."
+        },
+        "agree": {
+          "type": "boolean",
+          "description": "Whether both were found and lie within a millionth of the axis's span."
+        }
+      },
+      "required": [
+        "ok",
+        "figure",
+        "bundle",
+        "pair",
+        "ach",
+        "req_id",
+        "quantity",
+        "lever"
+      ]
+    }
+  ]
+}

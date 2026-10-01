@@ -1,0 +1,116 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "inputs",
+  "type": "object",
+  "properties": {
+    "ok": {
+      "type": "boolean"
+    },
+    "case": {
+      "type": "string"
+    },
+    "label": {
+      "type": "string"
+    },
+    "note": {
+      "type": "string"
+    },
+    "path": {
+      "type": "string"
+    },
+    "stored": {
+      "type": "boolean"
+    },
+    "template_now": {
+      "type": "string"
+    },
+    "changed": {
+      "type": "number"
+    },
+    "defaulted": {
+      "type": "number"
+    },
+    "set": {
+      "type": "array"
+    },
+    "refused": {
+      "type": "array"
+    },
+    "template": {
+      "type": "string"
+    },
+    "outdated": {
+      "type": "boolean"
+    },
+    "upgrade": {
+      "type": "null"
+    },
+    "inputs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "symbol": {
+            "type": "string"
+          },
+          "group": {
+            "type": "string"
+          },
+          "unit": {
+            "type": "string"
+          },
+          "factor": {
+            "type": "number"
+          },
+          "lo": {
+            "type": "number"
+          },
+          "hi": {
+            "type": "number"
+          },
+          "default": {
+            "type": "number"
+          },
+          "value": {
+            "type": "null"
+          }
+        },
+        "required": [
+          "id",
+          "label",
+          "symbol",
+          "group",
+          "unit",
+          "factor",
+          "lo",
+          "hi",
+          "default",
+          "value"
+        ]
+      }
+    }
+  },
+  "required": [
+    "ok",
+    "case",
+    "label",
+    "note",
+    "path",
+    "stored",
+    "template_now",
+    "changed",
+    "defaulted",
+    "set",
+    "refused",
+    "template",
+    "outdated",
+    "upgrade",
+    "inputs"
+  ]
+}

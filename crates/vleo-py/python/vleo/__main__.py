@@ -3,7 +3,7 @@
     python -m vleo              start it; close the window or press Ctrl-C to stop
     python -m vleo --no-open    start it without opening the browser
     python -m vleo --port 8080  start from another port
-    python -m vleo --check      start it, ask it one question, stop: proves the
+    python -m vleo --check      start it, ask it two questions, stop: proves the
                                 install works on this computer
 """
 
@@ -32,6 +32,17 @@ def check(port):
         problems.append("no reference data loaded — the solar rows would refuse")
     if "VLEO" not in page:
         problems.append("the page did not come back")
+    # A figure asked of the package must be the figure the running tool's
+    # panel reads: one function answers both, and this proves the wheel wires
+    # it — the number a person sees is the number a script gets.
+    with opener.open("http://127.0.0.1:%d/v1/figures/solar/density" % port, timeout=60) as r:
+        served = json.loads(r.read().decode("utf-8"))
+    try:
+        asked = vleo.figure("density")
+    except ValueError as e:
+        asked = {"refused": str(e)}
+    if asked != served:
+        problems.append("vleo.figure('density') is not what the tool serves")
     if problems:
         print("vleo %s: NOT OK — %s" % (vleo.__version__, "; ".join(problems)))
         return 1

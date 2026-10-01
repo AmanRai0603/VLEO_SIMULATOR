@@ -8,7 +8,11 @@
 
 use vleo_bus::{Case, RunMode};
 use vleo_modules::inputs::case_inputs;
-use vleo_modules::results::{csv, from_run, html, read, unwrap_report, Saved};
+use vleo_modules::results::{csv, from_run, read, unwrap_report, Saved};
+// The page a result is written as needs the std feature: it reads its parts
+// from web/pages through vleo-sheet, which only a face that saves results has.
+#[cfg(feature = "std")]
+use vleo_modules::results::html;
 use vleo_modules::{evaluate, Scratch};
 
 /// A run of an input row as its own target, at a value off its default.
@@ -53,6 +57,7 @@ fn a_result_reads_back_exactly() {
     );
 }
 
+#[cfg(feature = "std")]
 #[test]
 fn the_report_carries_the_result_and_reads_back_as_it() {
     let (s, _, _) = a_result();
@@ -69,18 +74,36 @@ fn the_report_carries_the_result_and_reads_back_as_it() {
     assert_eq!(read(&unwrap_report(&page)).unwrap(), s);
 }
 
+/// The page is the one page template (`web/page.html`) with its slots filled:
+/// every part of the template's own text, in order, nothing before or after.
+/// The same test `vleo_sheet::shell::is_filled` holds every other page to.
+#[cfg(feature = "std")]
+#[test]
+fn the_report_is_the_one_page_template_filled() {
+    let (s, _, _) = a_result();
+    let page = html(&s);
+    vleo_sheet::shell::is_filled(vleo_sheet::shell::TEMPLATE, &page)
+        .unwrap_or_else(|e| panic!("the report is not the page template filled: {e}"));
+    assert_eq!(page.matches("<!doctype html>").count(), 1);
+}
+
 #[test]
 fn what_is_not_a_result_is_refused_by_name() {
-    assert!(read("id,value\nx,1\n")
-        .unwrap_err()
-        .contains("not a saved result"));
+    // Refused as malformed, and saying what about it.
+    let refused = |text: &str, says: &str| {
+        let e = read(text).unwrap_err();
+        assert_eq!(e.kind(), vleo_modules::ErrorKind::Malformed, "{e}");
+        assert!(e.message().contains(says), "{e}");
+    };
+    refused("id,value\nx,1\n", "not a saved result");
     let (s, _, _) = a_result();
     let text = csv(&s);
-    assert!(read(&text.replace("vleo-result/1", "vleo-result/0"))
-        .unwrap_err()
-        .contains("vleo-result/0"));
+    refused(
+        &text.replace("vleo-result/1", "vleo-result/0"),
+        "vleo-result/0",
+    );
     let sideways = text.replacen("\noutput,", "\nsideways,", 1);
-    assert!(read(&sideways).unwrap_err().contains("sideways"));
+    refused(&sideways, "sideways");
 }
 
 #[cfg(feature = "std")]
@@ -90,7 +113,8 @@ fn results_are_kept_listed_and_removed_and_a_path_is_never_followed() {
     let dir = std::env::temp_dir().join(format!("vleo-results-{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&dir);
     let (s, _, _) = a_result();
-    let name = store::save(&dir, &s).unwrap();
+    let (name, already) = store::save(&dir, &s).unwrap();
+    assert!(!already);
     std::fs::write(dir.join("broken.csv"), "not a result").unwrap();
     let (good, bad) = store::list(&dir);
     assert_eq!(good.len(), 1);
@@ -106,9 +130,20 @@ fn results_are_kept_listed_and_removed_and_a_path_is_never_followed() {
     }
     store::remove(&dir, &name).unwrap();
     assert!(store::list(&dir).0.is_empty());
+    // An uploaded file names its own target and chain. Saved under a name
+    // built from them, a `..` there once wrote outside the results folder.
+    let mut forged = s.clone();
+    forged.target = "..\\..\\..\\x".into();
+    forged.chain = "../../y".into();
+    let (name, _) = store::save(&dir, &forged).unwrap();
+    assert!(
+        dir.join(&name).is_dir() && !name.contains(".."),
+        "{name} left the folder"
+    );
     let _ = std::fs::remove_dir_all(&dir);
 }
 
+#[cfg(feature = "std")]
 #[test]
 fn a_result_keeps_the_beliefs_it_rests_on_and_says_when_one_breaks() {
     // The only rows with a recorded history read a reference-data bundle, and
@@ -167,6 +202,7 @@ fn a_result_keeps_the_beliefs_it_rests_on_and_says_when_one_breaks() {
     );
 }
 
+#[cfg(feature = "std")]
 #[test]
 fn a_row_whose_first_belief_came_after_the_result_is_a_belief_that_moved() {
     // A run through rows with no recorded version says so — `#! versions none`
@@ -181,9 +217,9 @@ fn a_row_whose_first_belief_came_after_the_result_is_a_belief_that_moved() {
     let text = csv(&s);
     assert!(text.contains("#! versions none\n"), "{text}");
     let with_row = text.replace(
-        "section,id,name,value,unit,si,credibility,governing,note\n",
+        "section,id,name,value,unit,si,credibility,governing,note,cred\n",
         &format!(
-            "section,id,name,value,unit,si,credibility,governing,note\noutput,{id},x,1,-,1,1,x,\n"
+            "section,id,name,value,unit,si,credibility,governing,note,cred\noutput,{id},x,1,-,1,1,x,,\n"
         ),
     );
     let then = read(&with_row).unwrap();

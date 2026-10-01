@@ -39,11 +39,13 @@ loop:
 
     0  TAKE      cargo run -p xtask -- take <form.html> --for <author>
                  steps 1–2 and 6 in one: the form on its own branch
-                 form/<author>/<node>, checked, applied, gated, tested,
+                 form/<author>/<node> from `maintainer`, checked, applied,
+                 gated, tested,
                  committed naming the author, pushed — or a note to send back.
                  Every push to a form branch builds a PREVIEW for the author;
                  their APPROVE file is recorded with `xtask approve`, and a
-                 form branch merges only with it (docs/roles/maintainer.html).
+                 form branch merges into `maintainer` only with it
+                 (docs/roles/maintainer.html).
     1  CHECK     cargo run -p xtask -- intake <form.html>
                  what it would change, field by field; every interface it
                  declares (each input a row that exists, of the quantity the
@@ -72,7 +74,9 @@ loop:
                  known values the form supplied (intake prints them; it never
                  writes them).
     6  GATE      cargo run -p xtask -- gate && cargo test
-    7  RELEASE   commit naming whoever filled the form, review, merge; then
+    7  RELEASE   commit naming whoever filled the form, review, merge into
+                 `maintainer`; a pull request takes `maintainer` (and
+                 `developer`) into `main`; then, on `main`,
                  cargo run -p xtask -- derisk      (the narrative, regenerated)
                  cargo run -p xtask -- release <version>
                  stamps every version still `next` with the release that ships
@@ -170,6 +174,10 @@ results, the manual, figures and these documents are all held to it by check.
     cargo run -p xtask -- form <node>|--new    a node's form, to send out
     cargo run -p xtask -- intake <form.html> [--apply [--partial]]
                                             the checker, then the apply
+    cargo run -p xtask -- lesson form <node> | check <file> | apply <file>
+                                            a row's lesson: its form to send,
+                                            the gate's check, then the apply
+                                            (docs/LESSONS.md)
     cargo run -p xtask -- publish <node>    seeded and filled → published
     cargo run -p xtask -- declare <node>    the completion questions, and which
                                             are still open
@@ -190,6 +198,8 @@ results, the manual, figures and these documents are all held to it by check.
     cargo run -p xtask -- release <version> [--check]
                                             stamp every `next` version; set the
                                             workspace version
+    cargo run -p xtask -- readers           every row's page and lesson, read
+                                            with no tool running (docs/LESSONS.md)
     cargo run -p xtask -- kit               the tool for the team, without the
                                             repository (docs/SHARING.md)
     cargo run -p xtask -- take <form.html> --for <author>
@@ -213,8 +223,20 @@ results, the manual, figures and these documents are all held to it by check.
                                             connected
     cargo run -p xtask -- migration         which rows still need a method, by
                                             owner, and their forms to send
-    cargo run -p vleo-cli --bin vleo -- run <node> [--save <file.csv>]
-    cargo run -p vleo-cli --bin vleo -- result <file>
+    cargo run -p xtask -- explain [<command>]
+                                            what a command reads, writes and
+                                            checks, how to undo it, where its
+                                            code is (docs/PIPELINE.md)
+    cargo run -p xtask -- why <node>        a node's history, and its gate now
+    cargo run -p xtask -- trace             the last writing run, step by step
+    cargo run -p xtask -- pipeline [--check]
+                                            docs/PIPELINE.md, from the table
+    cargo run -p vleo-cli --bin vleo -- run <node> [--save <file.csv>] [--keep]
+    cargo run -p vleo-cli --bin vleo -- result <file|folder>
+
+Every command that writes prints numbered steps, says on a stop why, what state
+the files are in and how to retry, leaves a trace in `target/xtask-trace/`, and
+takes `--dry-run`.
 
 One command must be green before anything is pushed:
 

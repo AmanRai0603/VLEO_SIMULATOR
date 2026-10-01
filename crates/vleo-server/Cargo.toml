@@ -20,5 +20,9 @@ vleo-data = { workspace = true }
 # and look complete while doing it.
 vleo-sheet = { workspace = true }
 
+[dev-dependencies]
+# Reads contract/routes.toml and the manual in the contract tests.
+toml = { workspace = true }
+
 [lints.rust]
 unsafe_code = "forbid"

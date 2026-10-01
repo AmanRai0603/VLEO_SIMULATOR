@@ -89,10 +89,10 @@ ready = """(async () => {
 
 
 # Check 3, the pixel comparison, is declined for this panel. Checks 1, 2,
-# 2b and 4 still run: it renders, it moves, it reads the engine and it
-# undoes an interaction to the pixel.
+# 2c and 4 still run: it renders, it moves, it draws the engine's comparison
+# and it undoes an interaction to the pixel.
 pixel_reference = false
-pixel_reference_why = """the twenty-five cells it draws are asserted numerically by tools/mat_parity.py against the MATLAB tool's own saved run, and check 2b proves it reads them from the engine rather than holding them"""
+pixel_reference_why = """the twenty-five cells it draws are asserted numerically by tools/mat_parity.py against the MATLAB tool's own saved run, and check 2c proves it draws the engine's comparison rather than holding one"""
 
 [[input]]
 name = "view"
@@ -104,6 +104,19 @@ name = "q"
 drive = "(() => { const s = document.querySelector('.sw-opt[data-k=q]'); if (!s) throw new Error('no q control'); s.value = 'ap'; s.dispatchEvent(new Event('change')); })()"
 why = """F10.7 runs 65 to 124 and Ap runs 5 to 91 — an identical picture for both is a chart drawing one quantity twice"""
 
-[[engine]]
-row = "l3_solar_interface"
-why = """the whole table is this crossing's published set, so a panel that draws the driver scenarios and does not move when the crossing's answer moves is drawing literals"""
+# THE COMPARISON IS THE ENGINE'S (phase 10i): the crossing's twenty-five cells
+# run on the saved case, the legacy run's, their ratio and gap, where each
+# quantity's gap is widest, how many agree and how far the worst is out are
+# vleo_modules::record::drivers_parity, served as the `drivers` figure. This
+# replaces the [[engine]] declaration on l3_solar_interface: the page no longer
+# runs the crossing itself, so check 2c moves each number in the figure and
+# demands the panel say something different. `widest` is scenario names, not
+# numbers, and is not moved.
+[[figures]]
+id = "drivers"
+reads = ["ours", "theirs", "gap"]
+
+[[figures]]
+id = "drivers"
+state = "(() => { const s = document.querySelector('.sw-opt[data-k=view]'); if (!s) throw new Error('no view control'); s.value = 'parity'; s.dispatchEvent(new Event('change')); })()"
+reads = ["ratio", "agree", "below", "above", "factor"]

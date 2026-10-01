@@ -70,3 +70,11 @@ ready = """(async () => {
 # two — "it moves" — has nothing to drive and passes vacuously. Checks one
 # and three still bite. If this tab ever gains a control, it gains an
 # [[input]] here on the same day.
+
+# THE NUMBERS ARE THE ENGINE'S (phase 10): the finding and the note state what
+# vleo_modules::record::density worked out, and check 2c moves each one in the
+# engine's reply and demands the panel say something different. `days` is not
+# here because it is not stated: it is checked against the dots, and a panel
+# given a different count refuses to draw rather than draw two claims. The
+# medians are in the reply and on no line of this panel.
+figures = [{ id = "density", reads = ["r", "below_both_pct", "storm_deciles"] }]

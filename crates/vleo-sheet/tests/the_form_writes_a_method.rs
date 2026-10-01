@@ -152,7 +152,10 @@ fn the_cases_run_against_the_method_as_written() {
 fn a_case_is_refused_as_it_is_written() {
     let bad = |vals: &[(&str, &str)]| {
         let vals: Vec<(&str, String)> = vals.iter().map(|(k, v)| (*k, v.to_string())).collect();
-        form::block_text(SHEET, "case", "add", 0, &vals).unwrap_err()
+        let e = form::block_text(SHEET, "case", "add", 0, &vals).unwrap_err();
+        // An answer the form will not write is refused, never taken as a broken sheet.
+        assert_eq!(e.kind(), vleo_sheet::ErrorKind::Refused, "{e}");
+        e.message().to_string()
     };
     assert!(
         bad(&[("label", "x"), ("refuse", "maybe"), ("inputs", "{ r = 1 }")]).contains("one of")

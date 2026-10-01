@@ -1,4 +1,5 @@
-//! The method checker, for a node form opened from a file.
+//! The method checker, for a node form opened from a file — and the lesson
+//! checker, for a lesson form.
 //!
 //! A form is a single HTML file that works with no server and no network, so
 //! the check it runs while the author types has to travel inside it. Writing
@@ -43,8 +44,27 @@ pub unsafe extern "C" fn vleo_report(ptr: *mut u8, len: usize) -> *const u8 {
     let text = String::from_utf8_lossy(&bytes);
     let json = match vleo_sheet::method::report_plain(&text) {
         Ok(r) => r.json(),
-        Err(e) => vleo_sheet::method::error_json(&e),
+        Err(e) => vleo_sheet::method::error_json(e.message()),
     };
+    OUT.with(|o| {
+        let mut o = o.borrow_mut();
+        *o = json.into_bytes();
+        o.as_ptr()
+    })
+}
+
+/// Check a lesson, in the plain text `vleo_sheet::lesson::report` reads, and
+/// return its JSON report — the check a lesson form runs while its author
+/// types, which is intake's and the gate's own. Same buffer protocol as
+/// `vleo_report`.
+///
+/// # Safety
+/// `ptr` must come from `vleo_alloc(len)` and hold `len` written bytes; it is
+/// freed here.
+#[no_mangle]
+pub unsafe extern "C" fn vleo_lesson_report(ptr: *mut u8, len: usize) -> *const u8 {
+    let bytes = Vec::from_raw_parts(ptr, len, len.max(1));
+    let json = vleo_sheet::lesson::report(&String::from_utf8_lossy(&bytes));
     OUT.with(|o| {
         let mut o = o.borrow_mut();
         *o = json.into_bytes();

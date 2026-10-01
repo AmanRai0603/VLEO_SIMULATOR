@@ -1,0 +1,20 @@
+{
+  "ok": true,
+  "node": "sw_ap_design",
+  "si": 80,
+  "unit": "-",
+  "factor": 1,
+  "inputs": [
+    {
+      "id": "sw_storm_design_level",
+      "unit": "-",
+      "factor": 1
+    }
+  ],
+  "outputs": [
+    {
+      "id": "sw_ap_design",
+      "si": 80
+    }
+  ]
+}

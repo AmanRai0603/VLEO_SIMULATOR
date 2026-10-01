@@ -1,8 +1,8 @@
-//! The facade — twelve crates behind one dependency, and the one `NodeTable`
+//! The facade — the subsystem crates behind one dependency, and the one `NodeTable`
 //! the resolver walks.
 //!
 //! Every face takes a single dependency on this crate. The compiler still sees
-//! twelve units, so they build in parallel, and no face can reach a module
+//! one unit per subsystem, so they build in parallel, and no face can reach a module
 //! directly — which is why adding a face cannot change a result.
 //!
 //! This crate holds **no formula**. It holds the tables generated from the
@@ -34,6 +34,8 @@ use vleo_units::Unit;
 pub mod tables {
     include!(concat!(env!("OUT_DIR"), "/tables.rs"));
 }
+
+include!(concat!(env!("OUT_DIR"), "/engine_source.rs"));
 
 pub use tables::{
     CaseDef, CycleDef, GroupDef, CASES, GROUPS, MAX_INPUTS, MAX_OUTPUTS, NODES, NODE_COUNT,
@@ -81,6 +83,10 @@ impl Vleo {
     pub fn kernel_hash() -> u64 {
         let mut h = vleo_core::hash::Hasher::new();
         h.write_str(env!("CARGO_PKG_VERSION"));
+        // The relations every node calls, not only each node's own code: a
+        // saved result is reused on this identity, so a corrected formula
+        // must be a different engine.
+        h.write_u64(ENGINE_SOURCE);
         for n in NODES.iter() {
             h.write_u64(n.impl_hash);
         }
@@ -135,6 +141,18 @@ impl Vleo {
 /// had never heard of, which is a number with somebody else's name on it — a
 /// test and two tools named cases that did not exist and passed for years.
 pub fn case_refusal(case: &vleo_bus::Case) -> Option<String> {
+    // A value for a row that does not exist was skipped, and the run went on
+    // without it — the same substitution, one level down.
+    for (id, v) in &case.supply {
+        if Vleo::find(id).is_none() {
+            return Some(alloc::format!(
+                "the case sets '{id}', and there is no such row"
+            ));
+        }
+        if !v.is_finite() {
+            return Some(alloc::format!("the value set for '{id}' is not a number"));
+        }
+    }
     if Vleo::case_of(case).is_some() {
         return None;
     }
@@ -146,8 +164,43 @@ pub fn case_refusal(case: &vleo_bus::Case) -> Option<String> {
     })
 }
 
+/// Why a value supplied to `id` cannot be applied, or `None` when it can.
+///
+/// A supplied value survives only on a row that declares its own number; every
+/// other kind works its answer out during the run and overwrites what was
+/// supplied, so the run would report a number nobody asked for. The command
+/// line and the server each had their own copy of this rule, and the two had
+/// already drifted once; this is the one both call.
+pub fn why_not_suppliable(id: &str) -> Option<String> {
+    let Some(k) = Vleo::find(id) else {
+        return Some(alloc::format!("there is no row called '{id}'"));
+    };
+    let def = &NODES[k as usize];
+    let what = match def.kind {
+        Kind::Declared => return None,
+        Kind::Computed => "computed from its inputs",
+        Kind::Required => "a target handed down from the layer above",
+        Kind::Achieved => "what a subsystem returned",
+        Kind::Kpi => "a key performance indicator",
+    };
+    Some(alloc::format!(
+        "'{}' is {what}, so a supplied value would be overwritten the moment it is \
+         evaluated. Set one of the declared numbers it reads instead.",
+        def.id
+    ))
+}
+
+pub mod design;
+mod error;
+pub use error::{Error, ErrorKind};
+pub mod figure;
 pub mod inputs;
+/// The numbers the record's figures draw (phase 10): read from the reference
+/// bundle, so only with the store that holds it.
+#[cfg(feature = "std")]
+pub mod record;
 pub mod results;
+pub mod thermo;
 
 impl NodeTable for Vleo {
     fn nodes(&self) -> &[NodeDef] {
@@ -363,12 +416,31 @@ impl Scratch {
             slots: alloc::vec![Slot::EMPTY; VAR_COUNT],
             order: alloc::vec![0; NODE_COUNT + 1],
             mark: alloc::vec![0; NODE_COUNT + 1],
-            stack: alloc::vec![0; NODE_COUNT + 2],
+            // Every expansion pushes the inputs of its node (or of its whole
+            // cycle), and a producer can be waiting more than once, so the
+            // bound is the inputs, times the widest cycle, not the node count.
+            stack: alloc::vec![0; NODE_COUNT + 2 + input_edges() * widest_cycle()],
             ran: alloc::vec![0; NODE_COUNT + 1],
             blocked: alloc::vec![0; NODE_COUNT + 1],
             blocked_fault: alloc::vec![Fault::NotRun { node: "" }; NODE_COUNT + 1],
         }
     }
+}
+
+/// Every input of every row: the edges of the dependency graph.
+fn input_edges() -> usize {
+    NODES.iter().map(|d| d.inputs.len()).sum()
+}
+
+/// The most rows any declared cycle holds, and at least one.
+fn widest_cycle() -> usize {
+    CASES
+        .iter()
+        .flat_map(|c| c.cycles.iter())
+        .map(|c| c.nodes.len())
+        .max()
+        .unwrap_or(1)
+        .max(1)
 }
 
 /// Evaluate a case.
@@ -420,8 +492,16 @@ pub fn evaluate(case: &vleo_bus::Case, scratch: &mut Scratch) -> Result<vleo_bus
         }
     }
     for (id, val) in &case.supply {
-        if let Some(v) = Vleo::find(id) {
-            supply_checked(&mut store, v, *val)?;
+        match Vleo::find(id) {
+            Some(v) => supply_checked(&mut store, v, *val)?,
+            // `case_refusal` names the row; a face that did not ask it still
+            // gets a refusal rather than a run without the value.
+            None => {
+                return Err(Fault::Refused {
+                    node: "the case",
+                    reason: "it sets a row that does not exist",
+                })
+            }
         }
     }
 
@@ -469,6 +549,13 @@ pub fn evaluate(case: &vleo_bus::Case, scratch: &mut Scratch) -> Result<vleo_bus
 fn supply_checked(store: &mut Store<'_>, v: NodeIdx, value: f64) -> Result<(), Fault> {
     let var = &VARS[v as usize];
     let def = &NODES[var.producer as usize];
+    // NaN passes both range comparisons below, so it is refused first.
+    if !value.is_finite() {
+        return Err(Fault::Refused {
+            node: def.id,
+            reason: "the value supplied is not a finite number",
+        });
+    }
     if value < var.limit.lower {
         return Err(Fault::OutOfDomain {
             node: def.id,
@@ -568,7 +655,7 @@ fn collect(
     }
 }
 
-fn hex(h: u64) -> String {
+pub(crate) fn hex(h: u64) -> String {
     let b = vleo_core::hash::short_hex(h);
     core::str::from_utf8(&b).unwrap_or("......").to_string()
 }

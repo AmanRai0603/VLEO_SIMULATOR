@@ -1,0 +1,13 @@
+{
+  "contract": "1",
+  "kernel": "7fec07",
+  "graph": "adb684",
+  "version": "0.3.0",
+  "endpoint": "local-daemon",
+  "port": 18731,
+  "nodes": 1396,
+  "data": [
+    "solar-drivers@2026.09.04#54784567db11b868",
+    "solar-weather@2026.09.14#f3557eb8443bfdaa"
+  ]
+}

@@ -363,23 +363,48 @@ id = "browser-results"
 title = "Keep a result, send it, and see it again without running"
 who = "user"
 kind = "how-to"
-answer = "Save a run as a result, and see it again later without running anything — or send it as a CSV or a report page. A result keeps the node versions it rested on, and says when one of those beliefs has broken since."
+answer = "Save a run or a sweep as a result, and see it again later without running anything — or send its report page. A question already answered is not run again: the tool shows the saved answer and says so. A result keeps the node versions it rested on, and says when one of those beliefs has broken since."
 body = """
 A run is worth keeping when somebody will ask about it later. **Save** it and \
-the tool writes one CSV: every value the run returned with its unit, its \
-credibility and what governs it, every row it blocked on and why, and **every \
-input it ran on**. The file is kept on this machine, in `~/.vleo/results/` or \
-wherever `VLEO_RESULTS` points — outside the repository, like the case.
+the tool keeps a **folder**: `result.csv` — every value the run returned with \
+its unit, its credibility and what governs it, every row it blocked on and why, \
+and **every input it ran on** — `sweep.csv` when it is a sweep, and \
+`report.html`, the page to send. It is kept in `~/.vleo/results/` or wherever \
+`VLEO_RESULTS` points — outside the repository, like the case.
+
+**A question already answered is not run again.** Everything that decides an \
+answer — the row, how much of the graph, every input, the engine, the tree and \
+the reference data, and for a sweep what it moved and how — is one key. Press \
+**run** or **sweep** on a question already kept and the saved answer is shown, \
+with a line saying which result it came from and when; **run again anyway** \
+runs it fresh. Saving the same question twice keeps it once. With \
+`VLEO_RESULTS` on a shared folder, that includes questions a colleague \
+answered. A change to the engine's code or to the tree is a different key, so \
+an answer from before a correction is never shown for the corrected tool.
 
 The **Results** tab lists every saved result and shows any of them as it was \
 — **nothing runs**, so a result saved before a release reads exactly the same \
 after it. Two results can be compared value by value, and the inputs that \
 differ between them are listed first, because that is usually the answer.
 
-To send one, download it as the **CSV** — it opens in any spreadsheet — or as \
-a **report**: one HTML page that reads without the tool, and carries the CSV \
-inside it, so uploading the report gives the result back whole. A result \
-somebody sent you is uploaded the same way.
+A saved **sweep** is drawn again on the Results page from its saved points, \
+with the same chart the run panel uses — hover, zoom and copy the numbers — \
+and nothing runs.
+
+To send one, download its **report**: one HTML page that reads without the \
+tool, draws the sweep, and carries the CSVs inside it, so uploading the report \
+gives the result back whole. The **CSV** opens in any spreadsheet. A result \
+somebody sent you is uploaded the same way: its report, or its `result.csv` \
+with its `sweep.csv`.
+
+**Results are kept in tiers.** Every value for 30 days — `VLEO_KEEP_DAYS` \
+sets how many — and the summary for good: when the tool starts, an older \
+result is thinned to the inputs it ran on, its answer and what could not run, \
+and says so on its page and in its report. The rest is one run away, because \
+the same engine on the same inputs gives the same answer; a thinned result is \
+not offered as a kept answer, so asking its question again runs it. **Pin** a \
+result to keep every value of it for good. A shared folder named by \
+`VLEO_RESULTS` is kept whole unless `VLEO_KEEP_DAYS` is set too.
 
 **A result's inputs can become the case.** That puts every input back to what \
 the result ran on — the way to reproduce it, or to carry on from it. It is \
@@ -409,6 +434,18 @@ ui = "upload a result…"
 [[layer.section.step]]
 say = "Run on exactly what it ran on."
 ui = "use its inputs as the case"
+
+[[layer.section.step]]
+say = "After a sweep, keep it the same way: the run at the case and the line across the range, together."
+ui = "save this sweep"
+
+[[layer.section.step]]
+say = "A question already kept is shown from its saved result, and the line above it says which. To run it fresh anyway:"
+ui = "run again anyway"
+
+[[layer.section.step]]
+say = "Keep every value of it for good; unpinned, an old result is thinned to its summary."
+ui = "pin"
 
 
 [[layer.section]]
@@ -471,6 +508,10 @@ ui = "download the form for a new node"
 say = "When it comes back, check it: what it would change, every interface, and what it cannot. Nothing is written."
 ui = "check a filled form…"
 
+
+[[layer.section.step]]
+say = "A lesson is written the same way: its form, filled anywhere, checked as you type, sent back."
+ui = "write a lesson — its form"
 
 [[layer.section]]
 id = "browser-method"
@@ -646,10 +687,10 @@ id = "maint-loop"
 title = "The loop, and where each change stands"
 who = "maintainer"
 kind = "explanation"
-answer = "Each form lives on its own branch, form/<author>/<node>, and passes through four stages: taken, previewed, approved, merged. main only ever receives changes whose author tried and approved them; a release takes everything merged since the last one."
+answer = "Each form lives on its own branch, form/<author>/<node>, and passes through four stages: taken, previewed, approved, merged into the maintainer branch. main only ever receives changes whose author tried and approved them, through a pull request from maintainer; a release takes everything merged into main since the last one."
 body = """
 **Taken.** `take` checks the form and, if it can be applied, puts it on its own \
-branch from a fresh main — applied, regenerated, gated, tested, committed with \
+branch from a fresh `maintainer` — applied, regenerated, gated, tested, committed with \
 the author's name, pushed. If it cannot, it writes a note to send back and \
 changes nothing.
 
@@ -661,9 +702,10 @@ author.
 the exact build. `approve` records it on the branch — refused if anything has \
 changed since that build — and the pull request's approval check turns green.
 
-**Merged, then released.** You merge the pull request when every check is \
-green. `ship` cuts a release from main when you choose; the release pipeline \
-builds the four files; you publish and share them.
+**Merged, then released.** You merge the pull request into `maintainer` when \
+every check is green. When a set of changes is ready, a pull request takes \
+`maintainer` into `main`; `ship` cuts a release from main when you choose; the \
+release pipeline builds the four files; you publish and share them.
 
 Many forms can be in flight at once, each on its own branch, none waiting for \
 another. `queue` says where each one stands."""
@@ -825,7 +867,7 @@ approval at all. Each refusal says which.
 **The pull request.** `take` and `approve` both print its link. Merge only when \
 every check is green — among them **the author approved this exact change**, \
 which reruns the same check the pipeline's way. Use *Squash and merge*: the \
-author's `Form-by:` line and the approval travel with it into main.
+author's `Form-by:` line and the approval travel with it into `maintainer`, and on into main.
 
 An approval is a record, not a password: it proves which build was approved, \
 and you, who received it, vouch for who sent it."""
@@ -847,18 +889,19 @@ id = "maint-ship"
 title = "Release a version"
 who = "maintainer"
 kind = "how-to"
-answer = "From an up-to-date main, run ship with the new version. Merge the pull request it opens the way to, tag the merged main, and publish the four files the release pipeline builds."
+answer = "Once maintainer and developer are merged into main, run ship on an up-to-date main. Merge the pull request it opens the way to and tag the merge commit; the release pipeline builds and publishes the four files itself."
 body = """
 `ship` cuts `release/<version>`: the de-risking narrative regenerated, every \
 node version still marked `next` stamped with this release, regeneration, the \
 gate, the tests, one commit, pushed. It lists whose forms the release carries.
 
-**After the merge:** tag it (the commands `ship` prints). The **release** \
-workflow then builds the three kits and the one-file package and installs the \
-package on Windows, macOS and Linux. Its last job, *one human says yes*, ends \
-red on this repository by design — the files are built. Download the four \
-artifacts, unzip each once, and publish them as the release on GitHub, then \
-share the `.whl` with everyone.
+**The merge is the decision.** The release workflow builds only a commit that \
+a merged pull request put on main, and refuses anything else before it builds \
+(docs/RELEASE_SETUP.md). After the merge, tag the merge commit (the commands \
+`ship` prints). The **release** workflow then builds the three kits and the \
+one-file package, installs the package on Windows, macOS and Linux, and \
+publishes the release with the four files attached; share the `.whl` with \
+everyone.
 
 Choosing the number: the middle number for new behaviour or a change in how \
 the team gets the tool, the last for fixes."""
@@ -899,12 +942,12 @@ id = "maint-two"
 title = "Two forms for the same node"
 who = "maintainer"
 kind = "how-to"
-answer = "Each still gets its own branch. Merge the first when it is approved; then bring main into the second, send its author a new preview, and record their new approval."
+answer = "Each still gets its own branch. Merge the first when it is approved; then bring maintainer into the second, send its author a new preview, and record their new approval."
 body = """
 Two authors can send forms for one node at once — each is taken onto its own \
-branch, and neither waits. After the first merges, the second is behind main. \
-Bring main into it (`git switch form/<author>/<node>` then `git merge \
-origin/main`); if the same field changed in both, git stops with a conflict — \
+branch, and neither waits. After the first merges, the second is behind \
+maintainer. Bring maintainer into it (`git switch form/<author>/<node>` then \
+`git merge origin/maintainer`); if the same field changed in both, git stops with a conflict — \
 that is a question for the two authors, never a coin toss, and a developer can \
 resolve it once they agree. Anything pushed after an approval needs a new \
 preview and a new approval, so the second author approves the combined \
@@ -936,8 +979,8 @@ pull request's checks are green, among them *the author approved this exact \
 change*; it is squash-merged.
 
 **5 · Released.** When a few forms are merged, `ship 0.3.0` cuts the release, \
-its pull request is merged, `v0.3.0` is tagged, and the four files are \
-published and shared. Ana installs 0.3.0 over the preview; her inputs and \
+its pull request is merged, `v0.3.0` is tagged on the merge commit, and the \
+release workflow publishes the four files. Ana installs 0.3.0 over the preview; her inputs and \
 results are still there.
 
 **What would have stopped it:** had Ana's form re-pointed an input to a row \
@@ -1116,8 +1159,11 @@ fixed: each row's declared value, then the case's, then `--set`.
 `--set` only changes a **declared** number — never a computed one, which would \
 be overwritten the moment it was evaluated — and it never writes the sheet.
 
-`--save` keeps the run as a **result**: the same CSV the browser's Results page \
-keeps, and `vleo result` shows it again without running anything.
+`--save` writes the run as a **result** file where you say; `--keep` keeps it \
+in the results folder the browser's Results page shows, once. A question \
+already kept there is shown from its saved result instead of run — the first \
+line says so — and `--again` runs it anyway. `vleo result` shows a result \
+again, from its folder, its CSV or its report, without running anything.
 
 Two of the steps use a **closure**, `l3_solar_ach_01`: the room the sustained \
 F10.7 requirement has left once the design flux is taken from it. The launch \
@@ -1385,6 +1431,161 @@ why = "stamps `release` on every unreleased node version, sets the version in Ca
 
 
 [[layer.section]]
+id = "term-pipeline"
+title = "What a command does, where it stopped, and why a node is what it is"
+who = "developer"
+kind = "how-to"
+answer = "Every xtask command is described in one table: explain prints a command's place in a node's journey, what it reads, writes and checks, how to undo it and where its code is. A command that writes prints numbered steps, says why it stopped and how to retry, leaves a trace, and takes --dry-run. why puts a node's history in one place."
+body = """
+**One table describes every command** — `xtask/src/pipeline.rs`. `explain` \
+prints it for one command, or the whole journey with none; \
+`docs/PIPELINE.md` is the same table as a page, regenerated by \
+`xtask pipeline`; and a test fails when the table, `help` and the code \
+disagree.
+
+**A command that writes runs as numbered steps** — `take`, `intake --apply`, \
+`publish`, `fill`, `build-node`, `release` and `ship`. Each step prints \
+`n/total · name` as it starts and what it found when it ends. A step that \
+stops prints **why**, the state the **files** are in, the exact command to \
+**retry**, and the **code**: the file, and the step's name — a string in that \
+file, so searching for the printed name finds the line.
+
+**Every such run leaves a trace** in `target/xtask-trace/` — the command line, \
+the commit, each step with its time and result. `xtask trace` shows the last \
+one, `trace <command>` the last of one command, `trace --list` every one kept \
+(the newest 50).
+
+**--dry-run, on any command that writes**, does nothing: it runs the \
+command's own check where it has one (`intake` without `--apply`, \
+`release --check`, `method-wasm --check`, `pipeline --check`), and otherwise \
+prints the plan — its steps, what it would write, how to undo it.
+
+**why <node>** answers "how did this node come to be this?": every recorded \
+version and who made it, the commits that changed it, its approvals, how its \
+code came to be, and its gate, run now."""
+
+[[layer.section.step]]
+say = "The whole journey, and the command at each step."
+run = "cargo run -p xtask -- explain"
+check = "exits"
+expect = "A node's journey"
+
+[[layer.section.step]]
+say = "One command: where it sits, what it reads, writes and checks, how to undo it, and where its code is."
+run = "cargo run -p xtask -- explain intake"
+check = "exits"
+expect = "undo"
+
+[[layer.section.step]]
+say = "What a command would do, doing nothing."
+run = "cargo run -p xtask -- publish sw_ap_design --dry-run"
+check = "exits"
+expect = "nothing was read or written"
+
+[[layer.section.step]]
+say = "A node's history in one place, and its gate now."
+run = "cargo run -p xtask -- why sw_ap_design"
+check = "exits"
+expect = "its gate, run now"
+
+[[layer.section]]
+id = "term-contract"
+title = "Work on the page without the engine, and change what they share"
+who = "developer"
+kind = "how-to"
+answer = "The page and the engine meet at one contract in contract/: every route, a schema for every answer, the file formats, and answers recorded from the real engine. A frontend developer runs the page on the mock engine with no Rust; a backend developer proves the engine keeps the contract with cargo test. Inside /v1 a change may only add."
+body = """
+**The contract is `contract/`** — `routes.toml` lists every route and the \
+requests the tests make; `schemas/` has one schema per kind of answer; \
+`formats/` the CSV files people keep and send; `examples/` answers recorded \
+from the real engine. `contract/README.md` is the whole of it.
+
+**The backend keeps it.** The contract tests start the real server and make \
+every request: every answer must validate against its schema, and a field \
+the schema does not declare is a failure — so the page may read only what \
+the contract lists. They run in `cargo test`.
+
+**The frontend builds against it.** `tools/mock_engine.py` serves the page \
+from `web/` and every answer from the recorded examples, with no Rust built; \
+the page says **MOCK ENGINE** at the top, because every number on it is an \
+example. `tools/mock_check.py` walks the page on it in a browser, and the \
+pipeline runs that with no Rust toolchain at all.
+
+**Changing it.** Within `/v1`, add only: a new route or field breaks nobody. \
+A field goes into the schema first, in a pull request both sides review; \
+then either side can use it. Removing or re-meaning one is `/v2`, beside \
+`/v1` for a release. When an answer's shape changes, re-record the examples. \
+The page carries the contract version it was built for and names an engine \
+that speaks another."""
+
+[[layer.section.step]]
+say = "The mock engine checks itself: every recorded example reads, and each request finds the answer it should."
+run = "python3 tools/mock_engine.py --selftest"
+check = "exits"
+expect = "selftest: ok"
+
+[[layer.section.step]]
+say = "The page on recorded answers, with no Rust — then open the address it prints."
+run = "python3 tools/mock_engine.py"
+check = "serves"
+expect = "http://127.0.0.1:"
+
+[[layer.section.step]]
+say = "Re-record the examples from the real engine after an answer's shape changes. A schema is never rewritten: that is the contract, changed by hand."
+run = "VLEO_CONTRACT_RECORD=1 cargo test -p vleo-server --test the_contract_holds"
+check = "writes"
+why = "rewrites contract/examples/ from the real engine, and drafts a schema for a route that has none"
+
+[[layer.section]]
+id = "term-lesson"
+title = "Take a lesson in, from its form"
+who = "developer"
+kind = "how-to"
+answer = "A lesson arrives the way a node change does: the expert who knows the row fills its lesson form anywhere, checked as they type by the gate's own check, and sends it back; lesson apply checks it again, writes lesson.toml beside the row's node.toml and gates the row — or puts it back."
+body = """
+The expert writes the lesson; nobody writes HTML for it and nobody writes a \
+formula for the page to compute. `docs/LESSONS.md` is the file, table by \
+table, and `docs/examples/orbit_velocity.lesson.toml` a complete example.
+
+**The form** is one HTML file — from `lesson form`, or *write a lesson — its \
+form* on the row's page. It carries the checker every node form carries, which \
+holds the lesson check the gate runs, and a table of the tree's rows, so a \
+widget naming a row that is not there is refused while the author types. \
+**lesson check** says what a filled one holds and every reason it would be \
+refused; **lesson apply** writes it and gates the row, and puts the row back if \
+the gate refuses. A lesson is outside the sheet hash, so it never changes an \
+answer."""
+
+[[layer.section.step]]
+say = "A row's lesson form, to send to whoever knows the row."
+run = "cargo run -p xtask -- lesson form orbit_velocity --out orbit_velocity.lesson-form.html"
+check = "writes"
+why = "writes the form beside you"
+
+[[layer.section.step]]
+say = "What a filled form — or a bare lesson.toml, with --for — holds, and every reason it would be refused. Writes nothing."
+run = "cargo run -p xtask -- lesson check docs/examples/orbit_velocity.lesson.toml --for orbit_velocity"
+check = "exits"
+expect = "passes the check the gate runs"
+
+[[layer.section.step]]
+say = "Write it beside the row and gate the row; a refusal puts it back."
+run = "cargo run -p xtask -- lesson apply <file>"
+check = "writes"
+why = "writes the row's lesson.toml"
+
+[[layer.section.step]]
+say = "Every row's page and every lesson as plain pages, for people who read without the tool — the engine runs in the page to answer the widgets."
+run = "cargo run -p xtask -- readers"
+check = "writes"
+why = "writes target/readers"
+
+[[layer.section.step]]
+say = "Open that folder as a reader does — from a file, in a browser: the pages load, the engine in the page answers, refuses and sweeps, and a widget moves. With --answers it writes every answer down, and cargo test in crates/vleo-kernel-wasm, given the file in VLEO_BROWSER_ANSWERS, holds each one to the engine built natively."
+run = "python3 tools/readers_check.py"
+check = "ci"
+
+[[layer.section]]
 id = "term-kit"
 title = "Share the tool with the team"
 who = "developer"
@@ -1463,8 +1664,9 @@ fixtures, the mutation check and the gate — and no assistant supplies the \
 relation, the method or a case.
 
 When the language grows a construct, it grows in \
-`crates/vleo-sheet/src/method.rs`: the grammar, the checker, the interpreter \
-and the translation together, one reviewed change, followed by \
+`crates/vleo-sheet/src/method.rs` and the files under `method/` beside it — \
+the grammar (`parse.rs`), the checker (`check.rs`), the interpreter (`run.rs`) \
+and the translation (`rust.rs`) together, one reviewed change, followed by \
 `method-wasm` so every form checks by the new rules."""
 
 [[layer.section.step]]
@@ -1924,7 +2126,7 @@ who = "developer"
 [[cannot]]
 place = "terminal"
 what = "Show a figure, or click from a number to where it came from"
-why = "The terminal prints the numbers, the chain behind each and every blocked row; pictures are the browser's."
+why = "The terminal prints the numbers — a row's, the chain behind each and every blocked row, and with `vleo figure` the numbers a panel draws; pictures are the browser's."
 instead = "The browser: the row's page, and the panels on layer 3."
 who = "user"
 
@@ -2045,6 +2247,15 @@ what = "The checker: what a filled node form would change, field by field, and e
 who = "developer"
 effect = "writes"
 
+
+[[command]]
+tool = "xtask"
+name = "lesson"
+usage = "lesson apply <file> [--for <node>] [--check]"
+what = "A row's lesson: `lesson form <node>` writes its form, one HTML file the expert fills anywhere, checked as they type by the gate's own lesson check; `lesson check <file>` says what a filled one holds and every reason it would be refused; `lesson apply` writes it as lesson.toml beside the row and gates the row, or puts it back."
+who = "developer"
+effect = "writes"
+
 [[command]]
 tool = "xtask"
 name = "publish"
@@ -2103,9 +2314,41 @@ effect = "reads"
 
 [[command]]
 tool = "xtask"
+name = "explain"
+usage = "explain [<command>]"
+what = "Where a command sits in a node's journey, what it reads, writes and checks, how to undo it, its steps and where its code is — from the one table docs/PIPELINE.md is written from. With no command, the whole journey."
+who = "developer"
+effect = "reads"
+
+[[command]]
+tool = "xtask"
+name = "why"
+usage = "why <node>"
+what = "A node's history in one place: every recorded version and who made it, the commits that changed it, its approvals, how its code came to be, and its gate, run now."
+who = "developer"
+effect = "reads"
+
+[[command]]
+tool = "xtask"
+name = "trace"
+usage = "trace [<command>] [--list]"
+what = "The last run's trace from target/xtask-trace/ — every command that writes leaves one, the newest 50 kept — or the last of one command, or --list every one kept."
+who = "developer"
+effect = "reads"
+
+[[command]]
+tool = "xtask"
+name = "pipeline"
+usage = "pipeline [--check]"
+what = "Write docs/PIPELINE.md from the pipeline table; --check only says whether it is current."
+who = "developer"
+effect = "writes"
+
+[[command]]
+tool = "xtask"
 name = "take"
 usage = "take <form.html> --for <author> [--again] [--no-push] [--no-test]"
-what = "Takes a filled node form in: checks it, and if it cannot be taken writes `<form>.returned.txt` to send back and changes nothing; otherwise puts it on its own branch `form/<author>/<node>` from a fresh main, applies it, regenerates, gates, tests, commits naming the author and pushes. The push builds the author's preview."
+what = "Takes a filled node form in: checks it, and if it cannot be taken writes `<form>.returned.txt` to send back and changes nothing; otherwise puts it on its own branch `form/<author>/<node>` from a fresh `maintainer`, applies it, regenerates, gates, tests, commits naming the author and pushes. The push builds the author's preview."
 who = "maintainer"
 effect = "writes"
 
@@ -2139,6 +2382,14 @@ name = "ship"
 usage = "ship <version> [--no-push] [--no-test]"
 what = "Cuts a release from main on its own branch `release/<version>`: the de-risking narrative, the version stamp, regeneration, the gate and the tests, one commit, pushed — and prints the tag commands for after the merge."
 who = "maintainer"
+effect = "writes"
+
+[[command]]
+tool = "xtask"
+name = "readers"
+usage = "readers [--out <dir>]"
+what = "The docs folder for readers: every row's page — the tool's own generated page — and every lesson, read with no tool running, from a shared drive or an internal web server. A lesson's widgets are answered by the engine compiled for the browser (crates/vleo-kernel-wasm), on the declared values; a row that reads reference data refuses there by name. Written to target/readers, or --out; nothing committed."
+who = "developer"
 effect = "writes"
 
 [[command]]
@@ -2200,8 +2451,8 @@ effect = "irreversible"
 [[command]]
 tool = "xtask"
 name = "mutate"
-usage = "mutate [<node>]"
-what = "Perturb a row's answer and require its own tests to notice. Puts the row back."
+usage = "mutate [--literals] [<node>]"
+what = "Perturb a row's answer and require its own tests to notice; with --literals, move each decimal number in its hole code in turn and report the ones no test notices. Puts the row back."
 who = "developer"
 effect = "reads"
 
@@ -2224,16 +2475,16 @@ effect = "writes"
 [[command]]
 tool = "vleo"
 name = "run"
-usage = "run <node> [--inputs <file.csv> | --defaults] [--mode alone|branch|all] [--set id=value ...] [--save <file.csv>]"
-what = "Evaluate a row and everything it needs. Always n ran, m blocked, with the blocked named. `--save` keeps the run and its inputs as a result file."
+usage = "run <node> [--inputs <file.csv> | --defaults] [--mode alone|branch|all] [--set id=value ...] [--save <file.csv>] [--keep] [--again]"
+what = "Evaluate a row and everything it needs. Always n ran, m blocked, with the blocked named. `--save` writes the run and its inputs as a result file; `--keep` keeps it in the results folder, once. A question already kept there is shown from its saved result; `--again` runs it anyway."
 who = "user"
 effect = "reads"
 
 [[command]]
 tool = "vleo"
 name = "sweep"
-usage = "sweep <node> --over <input> --from <a> --to <b> [--points n] [--inputs <file.csv> | --defaults]"
-what = "Sweep a declared input across a range. Refused points are recorded, never dropped."
+usage = "sweep <node> --over <input> --from <a> --to <b> [--points n] [--inputs <file.csv> | --defaults] [--keep] [--again]"
+what = "Sweep a declared input across a range. Refused points are recorded, never dropped. `--keep` and `--again` as for run."
 who = "user"
 effect = "reads"
 
@@ -2280,9 +2531,17 @@ effect = "reads"
 [[command]]
 tool = "vleo"
 name = "result"
-usage = "result <file> [--html <out.html>]"
-what = "A saved result shown as it was — nothing runs. Reads the CSV `run --save` writes, or the report page it rides in; `--html` writes that report, to send."
+usage = "result <file|folder> [--html <out.html>]"
+what = "A saved result shown as it was — nothing runs. Reads a result's folder, the CSV `run --save` writes, or the report page it rides in; `--html` writes that report, to send."
 who = "user"
+effect = "reads"
+
+[[command]]
+tool = "vleo"
+name = "figure"
+usage = "figure <id> [key=value ...]"
+what = "The numbers one figure of the solar-weather record draws, as the JSON its panel reads — the same function as `/v1/figures/solar/<id>`, on the same bundle and saved case. From Python, `vleo.figure(id, **params)` returns the same as a dict. An unknown id or key is refused by name, with a failing exit status."
+who = "everyone"
 effect = "reads"
 
 [[command]]
@@ -2330,8 +2589,13 @@ what = "The page's modules, one per concern, served as they are written — no b
 
 [[route]]
 method = "GET"
+path = "/fonts/<font>"
+what = "The page's type, bundled with the tool (web/fonts, IBM Plex Mono under the SIL Open Font License): the page looks the same everywhere and fetches nothing to do it."
+
+[[route]]
+method = "GET"
 path = "/v1/version"
-what = "The engine's identity: kernel, graph, row count and data versions."
+what = "The engine's identity: the contract version it speaks, kernel, graph, row count and data versions."
 
 [[route]]
 method = "GET"
@@ -2350,13 +2614,18 @@ what = "A row, as the engine holds it."
 
 [[route]]
 method = "GET"
+path = "/v1/lesson/<id>"
+what = "A row's lesson — its `lesson.toml`, checked as the gate checks it — or `lesson: null` for a row with none. A lesson that fails its check is refused with the reasons."
+
+[[route]]
+method = "GET"
 path = "/v1/manual"
 what = "This manual, with what is true of the running tool right now."
 
 [[route]]
 method = "GET"
 path = "/v1/run"
-what = "Evaluate a row on the saved case. `node`, and optionally `mode`, `set`, and `inputs=defaults` to run the declared defaults instead."
+what = "Evaluate a row on the saved case. `node`, and optionally `mode`, `set`, and `inputs=defaults` to run the declared defaults instead. With `reuse=1`, a question already kept in the results folder is answered from its saved result, named in `from_saved`; `again=1` runs it anyway."
 
 [[route]]
 method = "POST"
@@ -2394,6 +2663,11 @@ path = "/v1/form/<id>"
 what = "A node's form, as one self-contained HTML file to fill anywhere. `new` is the form for a node the design does not have yet."
 
 [[route]]
+method = "GET"
+path = "/v1/lesson-form/<id>"
+what = "A row's lesson form, as one self-contained HTML file to fill anywhere, checked as it is typed by the gate's own lesson check. Writes nothing — a filled one is applied by a developer with `xtask lesson apply`."
+
+[[route]]
 method = "POST"
 path = "/v1/form/check"
 what = "What a filled node form would change, and every interface it declares: `html=` the file's text. Writes nothing — a form is applied by a developer with `xtask intake --apply`."
@@ -2420,18 +2694,38 @@ what = "A saved result's CSV, to keep or send: `name`."
 
 [[route]]
 method = "GET"
+path = "/v1/result.sweep.csv"
+what = "A saved sweep's points as CSV, to keep or send: `name`."
+
+[[route]]
+method = "GET"
 path = "/v1/result.html"
-what = "A saved result as a report page that reads without the tool and carries its CSV: `name`."
+what = "A saved result as a report page that reads without the tool, draws its sweep, and carries its CSVs: `name`."
+
+[[route]]
+method = "GET"
+path = "/v1/figures/samples"
+what = "One figure of every kind — line, scatter, bar, heatmap, animation, 3D scene — with illustrative numbers, as a result's `figures` carries them. What a face is built and checked against; not a result."
+
+[[route]]
+method = "GET"
+path = "/v1/figures/solar/<id>"
+what = "The numbers one figure of the solar-weather record states, worked out by the engine from the bundle it holds (`crates/vleo-modules/src/record.rs`): `density` — the correlation of F10.7 with Ap, their medians, the share of days below both, and the F10.7 deciles that saw a storm day; `storm-scale` — days a year at G1 to G3 in each cycle, the busiest cycle and the largest Ap in each; `kp-ap` — the daily Ap at each worst three-hourly Kp and where the published table sits above it; `recurrence-f107` and `recurrence-ap` — the autocorrelation of the detrended record against lag under three windows, Bartlett's band and the rotation's peaks; `spikes` — the F10.7 spike threshold, the spike days and bursts, and their rate per thousand days of cycle phase. `mean-cycle` takes `v` (f107, ap or ssn) and `bins` (2 to 100): every cycle stacked on phase, the mean of the complete ones, and how well the last two complete cycles repeat each other. `segments` takes `v` (ap or f107): the histogram and each band's share, banded by the rows themselves (`sw_regime`, `sw_activity_band`), and where the record crosses each cut; `regime-phase` — the share of days at each cycle phase `sw_regime` calls storm, and quiet. `climate` takes `v` and `by` (year, doy or month): the record's mean in each group on its own calendar, and the mean over its days; `smoother` takes `v`: each month's mean beside the 13-month smoothed value from `monthly_means.csv`, and what the smoothing removes. `growth` takes `v` and `by` (all or cycle): the signed change over leads from 30 days to 15 years at the 50th, 90th, 95th and 99th percentiles with the pairs behind each, or the 95th within each cycle. `forecast` takes `view` (lead, year or age): the issued 27-day outlook's skill against persistence — from the day before the issue, and from the issue date itself, which leaks — its bias and RMS error at each lead from 1 to 27 or in each year of issue on leads 1 to 14, with the pairs behind each; or the gaps between one issue and the next. `drivers` — the solar crossing's twenty-five scenario cells run on the saved case against the legacy tool's own run of them (`matlab/reference/mission_drivers.csv`): each ratio and gap, where each quantity's gap is widest, how many cells agree to a tenth of a per cent, and how far the worst is out. `thermosphere` takes `view` (solar, kp, slot or shape): env_exospheric_temperature run and probed as the panel asks — the three ways to raise the flux and their slopes, one Kp curve per scenario at its own flux with its two Kp readings and the widest gap, each scenario's two readings side by side, or the Kp sweep against the straight line its quiet end sets. `design` takes `v` (ap or f107): for Ap, with `g` (1 to 3) and `req` (l3_solar_req_03, _04 or _05), sw_storm_return_level swept over the mission duration, the G-level bound and the requirement, where the curve first reaches each, and the record's days at or above the bound in how many runs; for F10.7, with `reqf` (l3_solar_req_01 or _02), the four design-window rows and the analogue's peak swept the same way, the worst single day and what is left of the requirement above it, the window's width and where the peak first climbs above the hot single day. `closure` takes `pair` (01 to 05): the decision that spends that closure's margin fastest, by the levers' own ranking with the requirement skipped, the margin and the achieved quantity swept over it, and where each runs out. In these two the sweeps and the ranking run on the case the request carries, `set=` overrides and all, and each row's own answer — the requirement, the achieved margin — on the saved case, as the page's engine values are. The page draws them and computes none; an id the engine does not work out is refused by name."
 
 [[route]]
 method = "POST"
 path = "/v1/results/save"
-what = "Run, and keep what it returned and the inputs it ran on as a result: the parameters of `/v1/run`, and `label`. Written outside the repository."
+what = "Run, and keep what it returned and the inputs it ran on as a result folder: the parameters of `/v1/run`, and `label`; with `over`, `from`, `to` and `points` the sweep is kept with it. Kept once: a question already kept answers `already` and names it. Written outside the repository."
 
 [[route]]
 method = "POST"
 path = "/v1/results/upload"
-what = "Keep a result somebody sent: `csv=` its CSV, or the text of its report."
+what = "Keep a result somebody sent: `csv=` its CSV or the text of its report, and `sweep=` its sweep CSV when it is one. Kept once, as a save is."
+
+[[route]]
+method = "POST"
+path = "/v1/results/pin"
+what = "Pin a saved result so every value is kept for good (`on=1`), or unpin it (`on=0`) so it is thinned to its summary once it is older than `VLEO_KEEP_DAYS`: `name`."
 
 [[route]]
 method = "POST"
@@ -2446,7 +2740,7 @@ what = "Make a saved result's inputs the case: `name`. Checked like any case, an
 [[route]]
 method = "GET"
 path = "/v1/sweep"
-what = "A behaviour sweep, as `vleo sweep`. Refused points are reported with their reason."
+what = "A behaviour sweep, as `vleo sweep`. Refused points are reported with their reason. `reuse=1` and `again=1` as for `/v1/run`."
 
 [[route]]
 method = "GET"
@@ -2483,14 +2777,34 @@ what = "Where the saved case is kept — the CSV the Inputs page and `vleo run` 
 default = "$HOME/.vleo/case/inputs.csv"
 
 [[env]]
+name = "VLEO_CONTRACT_RECORD"
+what = "Set to `1` when running the contract tests, to record contract/examples/ again from the real engine after an answer's shape changes, and draft a schema for a route that has none. It never rewrites a schema. Unset, the tests only check."
+default = "unset — check"
+
+[[env]]
+name = "VLEO_BROWSER_ANSWERS"
+what = "The file `tools/readers_check.py --answers` wrote: every answer the engine in a readers' page gave. Set when running `cargo test -- --include-ignored` in crates/vleo-kernel-wasm, it holds each of those answers to the same engine built natively, byte for byte. Unset, that one test refuses to run and says why; the pipeline's readers job sets it."
+default = "unset — the comparison is not run"
+
+[[env]]
 name = "VLEO_GOLDEN"
 what = "Set to `write` when running the translator's golden test, to write the golden files again after an intended change to how methods are translated. Unset, the test compares and fails on any difference."
 default = "unset — compare"
 
 [[env]]
+name = "VLEO_LOG"
+what = "Where a crash log is written when the tool hits a bug — one small text file per bug, naming the line of code; the newest 50 are kept. Send the file to whoever maintains the tool. Set but empty counts as unset."
+default = "$HOME/.vleo/log"
+
+[[env]]
 name = "VLEO_RESULTS"
-what = "Where saved results are kept — the Results page and `vleo run --save` without a path of its own. Outside the repository."
+what = "Where saved results are kept, one folder each — the Results page and `vleo run --keep`. Outside the repository. Point it at a shared or synced folder and the team keeps one archive: each question is kept once, a question a colleague answered is shown rather than run again, and every result is written whole. Set but empty counts as unset."
 default = "$HOME/.vleo/results"
+
+[[env]]
+name = "VLEO_KEEP_DAYS"
+what = "How many days a saved result keeps every value. When the daemon starts, an unpinned result older than this is thinned to its summary — the inputs it ran on, its answer, what could not run — and says so; a pinned one is kept whole for good. `0` never thins. A folder named by `VLEO_RESULTS` — usually the team's shared archive — is kept whole unless this is set too: thinning it is the team's decision, not whichever laptop starts first. A value that is not a whole number of days thins nothing and says why."
+default = "30; kept whole when VLEO_RESULTS names the folder"
 
 [[env]]
 name = "VLEO_ROOT"
@@ -2607,6 +2921,11 @@ what = "The pipeline, the dependency bot and the pull-request template."
 who = "developer"
 
 [[folder]]
+name = "contract"
+what = "Where the page and the engine meet: every /v1 route, a schema for every answer, the file formats, and answers recorded from the real engine that the mock engine serves. Checked by the contract tests; reviewed by both sides (contract/README.md)."
+who = "developer"
+
+[[folder]]
 name = "approvals"
 what = "Each form branch's author approval of the exact preview build they tried, recorded by `xtask approve`. A form branch merges only with one that matches."
 who = "maintainer"
@@ -2671,6 +2990,10 @@ who = "developer"
 # Every document under docs/. Checked against the folder, both ways.
 
 [[doc]]
+path = "docs/LESSONS.md"
+what = "Lessons: lesson.toml beside a row, what each table holds, how the page draws it from components, and how the gate checks it."
+
+[[doc]]
 path = "docs/roles/user.html"
 what = "The user's guide: using the tool, filling a node form, trying a preview and approving it. Generated from this manual."
 
@@ -2681,6 +3004,10 @@ what = "The maintainer's guide: taking forms in, previews, approvals, releases �
 [[doc]]
 path = "docs/roles/developer.html"
 what = "The developer's guide: the code and checks the routine cannot write, and the tool itself. Generated from this manual."
+
+[[doc]]
+path = "docs/GLOSSARY.md"
+what = "The words this repository uses in a sense of its own, each in a sentence, with where it is defined."
 
 [[doc]]
 path = "docs/PSEUDOCODE.md"
@@ -2699,8 +3026,20 @@ path = "docs/NODE_AUTHORING.md"
 what = "Every field of a sheet, and why it is there."
 
 [[doc]]
+path = "docs/CHANGING.md"
+what = "Changing the code — a node, a route, a component, an output kind — what each brings with it, and one field followed through the generators."
+
+[[doc]]
 path = "docs/ARCHITECTURE.md"
 what = "The rings, the layers and the reasoning behind them."
+
+[[doc]]
+path = "docs/ARCHITECTURE.html"
+what = "The whole tool end to end, with diagrams: frontend, backend and data and the contract between them, how pictures and pages are made, how data is kept without flooding, who reaches what, and the roadmap. Opens in any browser, offline."
+
+[[doc]]
+path = "docs/PIPELINE.md"
+what = "Every xtask command in a node's journey: what it reads, writes and checks, how to undo it, its steps and where its code is. Generated from the pipeline table; never edited."
 
 [[doc]]
 path = "docs/WORK_MODEL.md"
@@ -2748,7 +3087,7 @@ what = "The solar subsystem row by row. Generated by tools/solar_rows.py."
 
 [[doc]]
 path = "docs/RELEASE_SETUP.md"
-what = "Setting up the release approval — the one piece of the release pipeline that cannot live in this repository."
+what = "How a release is decided — a merged pull request into main — and how the release workflow refuses anything else before it builds."
 
 [[doc]]
 path = "docs/GITLAB_TRANSFER.md"

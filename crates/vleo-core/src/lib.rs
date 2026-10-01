@@ -21,7 +21,7 @@
 //! # What is *not* here
 //!
 //! No node identifiers, no edges, no per-node code. Those are generated from
-//! the sheets into `vleo-graph` and `vleo-mod-*`. This crate holds the types
+//! the sheets into `vleo-modules` and `vleo-mod-*`. This crate holds the types
 //! they are expressed in and the relations they compose, so it can be read,
 //! reviewed and tested without knowing which nodes exist.
 #![cfg_attr(not(feature = "std"), no_std)]

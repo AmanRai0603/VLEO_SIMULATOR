@@ -150,3 +150,69 @@ fn the_record_has_a_hole_and_says_so() {
         0
     );
 }
+
+#[test]
+fn a_date_read_in_and_written_back_is_the_date_it_was() {
+    // Every day from 1990 to 2040, through both directions of the one
+    // calendar: a figure that groups by month must put a day in the month
+    // its row says.
+    let from = vleo_data::days_since_2000("1990-01-01").unwrap();
+    let to = vleo_data::days_since_2000("2040-12-31").unwrap();
+    for day in from..=to {
+        let (y, m, d, _) = vleo_data::civil_from_days(day);
+        let back = vleo_data::days_since_2000(&format!("{y:04}-{m:02}-{d:02}"));
+        assert_eq!(back, Some(day), "{y}-{m}-{d}");
+    }
+    // And the day of the year, across a leap year and not.
+    assert_eq!(vleo_data::civil_from_days(0), (2000, 1, 1, 1));
+    let at = |s: &str| vleo_data::civil_from_days(vleo_data::days_since_2000(s).unwrap());
+    assert_eq!(at("2000-12-31"), (2000, 12, 31, 366));
+    assert_eq!(at("2017-03-01"), (2017, 3, 1, 60));
+    assert_eq!(at("1997-01-15"), (1997, 1, 15, 15));
+}
+
+#[test]
+fn the_monthly_means_are_the_file_as_written() {
+    let months = vleo_data::read_monthly_means(&bundle()).unwrap();
+    // 1997-01 to 2025-12: the file's 339 rows.
+    assert_eq!(months.len(), 339);
+    let first = months[0];
+    assert_eq!(first.day, vleo_data::days_since_2000("1997-01-15").unwrap());
+    assert_eq!(
+        (first.f107_mean, first.ssn_mean, first.ap_mean),
+        (Some(74.0), Some(8.7), Some(8.82))
+    );
+    assert_eq!(
+        (first.f107_smooth, first.ssn_smooth, first.ap_smooth),
+        (Some(73.4), Some(18.1), Some(8.64))
+    );
+    assert!(months.windows(2).all(|w| w[1].day > w[0].day));
+}
+
+#[test]
+fn the_issued_forecasts_are_the_file_as_written() {
+    let b = bundle();
+    let fc = vleo_data::read_forecast_issued(&b).unwrap();
+    // The file's 30047 rows, first and last read straight off it.
+    assert_eq!(fc.len(), 30_047);
+    let d = |s| vleo_data::days_since_2000(s).unwrap();
+    assert_eq!(
+        fc[0],
+        vleo_data::IssuedForecast {
+            issue: d("1997-08-12"),
+            target: d("1997-08-13"),
+            lead: Some(1.0),
+            f107: Some(82.0),
+        }
+    );
+    let last = fc[fc.len() - 1];
+    assert_eq!(
+        (last.issue, last.target, last.lead, last.f107),
+        (d("2025-12-29"), d("2026-01-24"), Some(26.0), Some(175.0))
+    );
+    // Its index: one date per issue, the quoted flags after it not in the way.
+    let issues = vleo_data::read_forecast_issues(&b).unwrap();
+    assert_eq!(issues.len(), 1437);
+    assert_eq!(issues[0], d("1997-06-10"));
+    assert_eq!(issues[issues.len() - 1], d("2025-12-29"));
+}

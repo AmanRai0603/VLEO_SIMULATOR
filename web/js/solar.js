@@ -20,11 +20,9 @@
 
 import { $, esc } from './dom.js';
 import { S } from './state.js';
-import { solarRecord, bundleFile, parityFile, engineValues, engineSweep, engineAt,
-  engineProbe, probeSweep,
-  engineLevers, centredMean, corr, quantile, num, daysSince2000 } from './record.js';
+import { solarRecord, engineValues, engineFigure, engineFigureOnCase } from './record.js';
 import { drawChart, attachHover, tableFor, tableTsv, viewSpec, viewIsOn,
-  watchScheme, sizeCanvas, cssSize, INK } from './chart.js';
+  watchScheme, sizeCanvas, cssSize, INK, exportFigure } from './chart.js';
 
 // ---------------------------------------------------------------------------
 // describing the picture that was actually drawn
@@ -106,61 +104,21 @@ function shape(xs, ys, unit, xunit, xname) {
 // the panels
 
 /**
- * The autocorrelation of a series at every lag to `maxLag`, and the pair count
- * behind each.
- *
- * Written out rather than calling corr() on two slices, and the reason is the
- * COUNT rather than the speed. Bartlett's band needs n at each lag, and corr()
- * returns a correlation and drops how many pairs it used — so the band would
- * have had to guess at the very number that sets its width.
- *
- * Pairing is res[i] against res[i+L], over the i where both are present, which
- * is what corr(res.slice(0, n-L), res.slice(L)) did. A null is skipped rather
- * than treated as zero: the record is missing 273 days, and counting them as no
- * departure from trend would pull every correlation toward the mean.
+ * What a figure's sweeps refused, said rather than drawn around. A point the
+ * engine would not answer is left out of the curve, and a curve joined across a
+ * gap looks like one that has none; empty when every point answered.
  */
-function laggedCorr(res, maxLag) {
-  const lags = [], r = [], n = [];
-  for (let L = 1; L <= maxLag; L++) {
-    let sa = 0, sb = 0, k = 0;
-    for (let i = 0; i + L < res.length; i++) {
-      const a = res[i], b = res[i + L];
-      if (a === null || b === null) continue;
-      sa += a; sb += b; k++;
-    }
-    lags.push(L);
-    if (k < 3) { r.push(null); n.push(k); continue; }
-    const ma = sa / k, mb = sb / k;
-    let sab = 0, saa = 0, sbb = 0;
-    for (let i = 0; i + L < res.length; i++) {
-      const a = res[i], b = res[i + L];
-      if (a === null || b === null) continue;
-      const da = a - ma, db = b - mb;
-      sab += da * db; saa += da * da; sbb += db * db;
-    }
-    r.push(saa && sbb ? sab / Math.sqrt(saa * sbb) : null);
-    n.push(k);
-  }
-  return { lags, r, n };
+function refusedPoints(n) {
+  return n ? '\n\n' + n + (n === 1 ? ' swept point was' : ' swept points were') +
+    ' refused by the engine and ' + (n === 1 ? 'is' : 'are') +
+    ' not drawn: the curve is joined across the gap, and the gap is not a value.' : '';
 }
 
 /**
- * The five closures, as the panel beneath needs to name them.
- *
- * `q` is the ACHIEVED QUANTITY's row, which is not the closure row: since §20 an
- * achieved row publishes the signed margin and reads the quantity as an input, so
- * a picture of "what the record gives" has to sweep the input rather than the row
- * that is named for it. Written out once here because getting that wrong would
- * draw a margin on an axis labelled sfu and look entirely plausible.
+ * The five closures, as the panel beneath needs to name them. Which quantity
+ * each compares is the engine's (vleo_modules::design::CLOSURE_PAIRS) and
+ * comes back on the figure; what a person calls it is the face's.
  */
-const QUANTITY_OF = {
-  '01': 'sw_f107_design_long',
-  '02': 'sw_f107_design_short',
-  '03': 'sw_storm_return_level',
-  '04': 'sw_ap_design_long',
-  '05': 'sw_ap_design_short',
-};
-
 const PAIR_LABEL = {
   '01': { q: 'sustained F10.7 to design to', u: 'sfu', text:
     'The F10.7 level the mission must sustain, against the level the record gives it. Both sides ' +
@@ -186,10 +144,6 @@ const PAIR_LABEL = {
     'survival pair disagree by a factor of 1.75 without either being wrong.' },
 };
 
-// One sweep per pair, kept for as long as the page is open. The five pairs do not
-// change while a reader clicks between them, and re-asking the engine for a sweep
-// it has already answered is four questions nobody is looking at.
-const CLOSURE_CACHE = {};
 
 
 /**
@@ -247,31 +201,25 @@ const PANELS = [
       { k: 'bins', label: 'phase bins', when: o => o.view === 'stack',
         opts: [['20', '20'], ['10', '10'], ['40', '40']] },
     ],
-    build(rec, o) {
-      if (o.view === 'storm') return stormScale(rec);
-      const nb = +o.bins, key = o.v;
-      const per = new Map();
-      for (const c of rec.cycles) per.set(c.n, Array.from({ length: nb }, () => []));
-      for (const d of rec.days) {
-        if (d.phase === null || d[key] === null) continue;
-        const b = Math.min(nb - 1, Math.floor(d.phase * nb));
-        per.get(d.cycle)[b].push(d[key]);
-      }
-      const xs = Array.from({ length: nb }, (_, i) => (i + 0.5) / nb);
-      const mean = a => (a.length ? a.reduce((p, c) => p + c, 0) / a.length : null);
+    // THE NUMBERS ARE THE ENGINE'S (phases 10b and 10d): the storm view's from
+    // vleo_modules::record::storm_scale, the mean cycle's from
+    // record::mean_cycle — every cycle stacked on the phase sw_cycle_phase
+    // folds by, the mean of the complete ones, and how well the last two
+    // complete cycles repeat each other. The page draws them.
+    data: o => (o.view === 'storm' ? engineFigure('storm-scale')
+      : engineFigure('mean-cycle', { v: o.v, bins: o.bins })),
+    build(rec, o, fig) {
+      if (o.view === 'storm') return stormScale(fig);
+      if (fig.refused) throw new Error('the engine did not work the figure out: ' + fig.refused);
+      const nb = fig.bins, key = fig.variable, xs = fig.phase;
       const series = [];
-      const complete = rec.cycles.filter(c => c.n !== 25);
-      const meanCycle = xs.map((_, i) => {
-        const v = complete.map(c => mean(per.get(c.n)[i])).filter(x => x !== null);
-        return v.length ? v.reduce((p, c) => p + c, 0) / v.length : null;
-      });
-      series.push({ name: 'mean of the complete cycles', kind: 'line', x: xs, y: meanCycle, colour: INK.text, width: 2.4 });
-      rec.cycles.forEach((c, i) => {
+      series.push({ name: 'mean of the complete cycles', kind: 'line', x: xs, y: fig.mean_cycle, colour: INK.text, width: 2.4 });
+      fig.cycles.forEach((n, i) => {
         series.push({
-          name: 'cycle ' + c.n + (c.n === 25 ? ' (incomplete)' : ''),
-          kind: 'line', x: xs, y: xs.map((_, k) => mean(per.get(c.n)[k])),
+          name: 'cycle ' + n + (fig.complete[i] ? '' : ' (incomplete)'),
+          kind: 'line', x: xs, y: fig.curves[i],
           colour: INK.series[i % INK.series.length], width: 1.4,
-          dash: c.n === 25 ? [4, 3] : null,
+          dash: fig.complete[i] ? null : [4, 3],
           // CONTEXT. §34.1 named this frame: the mean cycle and the individual
           // ones carried the same contrast, so five curves arrived at once and
           // a reader had to be told in prose which one the panel is about. The
@@ -282,29 +230,15 @@ const PANELS = [
           context: true,
         });
       });
-      // A bin thinned by the 2017 gap is dropped, not averaged. sw_cycle_repeatability
-      // is measured the same way: a bin holding 141 days against the usual 201 is a
-      // mean of a different thing, and including it moves the correlation by 0.006.
-      const MIN = 150;
-      const ok = i => per.get(23)[i].length >= MIN && per.get(24)[i].length >= MIN;
-      const a = xs.map((_, i) => (ok(i) ? mean(per.get(23)[i]) : null));
-      const b = xs.map((_, i) => (ok(i) ? mean(per.get(24)[i]) : null));
-      const r = corr(a, b);
-      const usable = a.filter((v, i) => v !== null && b[i] !== null).length;
-      // How far apart the two complete cycles run, on the rise and after it.
-      // Measured, because "they converge" is the kind of clause that is written
-      // once from one picture and then carried through every variable.
-      const gapIn = (lo, hi) => {
-        const d = [];
-        for (let i = 0; i < xs.length; i++) {
-          if (xs[i] >= lo && xs[i] < hi && a[i] !== null && b[i] !== null) d.push(a[i] - b[i]);
-        }
-        return d.length ? d.reduce((q, c) => q + c, 0) / d.length : null;
-      };
+      // A bin thinned by the 2017 gap is dropped, not averaged — the engine
+      // compares only the bins both cycles fill with MIN days, as
+      // sw_cycle_repeatability is measured: a bin holding 141 days against the
+      // usual 201 is a mean of a different thing.
+      const MIN = fig.min_days, r = fig.r, usable = fig.usable;
+      const [c1, c2] = fig.pair || ['\u2014', '\u2014'];
       // The peak disagreement is measured for the variable on screen. The figure
       // used to be 28 per cent under all three, which is F10.7's.
-      const pk = n => Math.max(...xs.map((_, i) => mean(per.get(n)[i])).filter(v => v !== null));
-      const p23 = pk(23), p24 = pk(24);
+      const [p23, p24] = fig.peak || [NaN, NaN];
       const vname = key === 'f107' ? 'F10.7' : key === 'ap' ? 'Ap' : 'the sunspot number';
       return {
         // THE CORRELATION IS THE ANSWER AND THE RATIO IS WHY IT IS NOT ENOUGH.
@@ -313,27 +247,27 @@ const PANELS = [
         answer: r === null
           ? { value: '\u2014', of: 'no phase bin both complete cycles populate' }
           : { value: r.toFixed(3),
-              of: 'how well cycle 24 repeats 23\u2019s ' + vname + ' SHAPE \u2014 while its peak is '
-                + (p24 / p23).toFixed(2) + ' of 23\u2019s' },
+              of: 'how well cycle ' + c2 + ' repeats ' + c1 + '\u2019s ' + vname + ' SHAPE \u2014 while its peak is '
+                + (p24 / p23).toFixed(2) + ' of ' + c1 + '\u2019s' },
         spec: {
           // THE FINDING IS NOT THE ANSWER. The answer above the chart is the
           // correlation, which is a number about the two cycles; this is a
           // relation between two curves a reader can check by looking at which
           // one is on top and over how much of the axis.
-          finding: 'cycle 23 runs above cycle 24 in ' +
-            a.filter((v, i) => v !== null && b[i] !== null && v > b[i]).length +
-            ' of the ' + usable + ' phase bins both fill, by ' + sig(gapIn(0, 0.6)) +
-            ' on the rise and ' + sig(gapIn(0.6, 1)) + ' after phase 0.6',
+          finding: 'cycle ' + c1 + ' runs above cycle ' + c2 + ' in ' + fig.above +
+            ' of the ' + usable + ' phase bins both fill, by ' + sig(fig.gap_rise) +
+            ' on the rise and ' + sig(fig.gap_fall) + ' after phase 0.6',
           x: { label: 'cycle phase  [0 = minimum, 1 = the next]', min: 0, max: 1 },
           y: { label: key === 'f107' ? 'F10.7  [sfu]' : key === 'ap' ? 'Ap  [-]' : 'sunspot number  [-]' },
           series,
         },
-        note: 'Cycles 23 and 24 are the only complete ones, and their ' + vname + ' shapes correlate at ' +
+        note: 'Cycles ' + c1 + ' and ' + c2 + ' are the only complete ones, and their ' + vname + ' shapes correlate at ' +
           (r === null ? '—' : r.toFixed(4)) + ' over the ' + usable + ' of ' + nb +
           ' bins both populate with at least ' + MIN + ' days. A correlation is scale-free, so it is ' +
           'blind to the thing a drag design cares about, and here that blindness costs: the stacked ' +
-          'peaks are ' + sig(p23) + ' for cycle 23 against ' + sig(p24) + ' for cycle 24, a ratio of ' +
-          (p24 / p23).toFixed(3) + '. The shape repeats and the size does not. Cycle 25 is dashed and ' +
+          'peaks are ' + sig(p23) + ' for cycle ' + c1 + ' against ' + sig(p24) + ' for cycle ' + c2 + ', a ratio of ' +
+          (p24 / p23).toFixed(3) + '. The shape repeats and the size does not. Cycle ' +
+          fig.cycles.filter((_, i) => !fig.complete[i]).join(' and ') + ' is dashed and ' +
           'stops part way because it is still running: its end in solar_cycles.csv is the record’s ' +
           'end rather than a minimum, so its phase is folded against the mean length of the ' +
           'complete cycles — the same fold sw_cycle_phase uses — and the record simply has no days ' +
@@ -360,77 +294,40 @@ const PANELS = [
     // become 3 views, and every one of them says more than the nine did.
     controls: [
       { k: 'view', label: 'view', opts: [['acf', 'recurrence and decay'], ['spikes', 'spikes: size and timing']] },
-      // The spike view is spikes(rec) and reads nothing below it.
+      // The spike view is the engine's spikes figure and reads nothing below it.
       { k: 'v', label: 'variable', when: o => o.view === 'acf',
         opts: [['f107', 'F10.7'], ['ap', 'Ap']] },
     ],
-    build(rec, o) {
-      if (o.view === 'spikes') return spikes(rec);
-      const key = o.v;
-      const MAXLAG = 200;
-      const v = rec.days.map(d => d[key]);
-      // 0.6, the same completeness rule sw_recurrence_lag and
-      // sw_recurrence_strength were measured under. A panel that illustrates a
-      // row and quotes a different number for it is worse than no panel.
-      const acfFor = (W) => {
-        const trend = centredMean(v, W, 0.6);
-        const res = v.map((x, i) => (x === null || trend[i] === null ? null : x - trend[i]));
-        return laggedCorr(res, MAXLAG);
-      };
+    // THE NUMBERS ARE THE ENGINE'S (phase 10c). The detrend over each window
+    // with 0.6 of it present (the rule sw_recurrence_lag and
+    // sw_recurrence_strength were measured under), the autocorrelation and its
+    // pairs at every lag, Bartlett's band, the three peaks and the counts are
+    // vleo_modules::record::recurrence and spikes, on vleo_core::math::stats.
+    // The page draws them and says what they show.
+    data: o => engineFigure(o.view === 'spikes' ? 'spikes' : 'recurrence-' + o.v),
+    build(rec, o, fig) {
+      if (fig.refused) throw new Error('the engine did not work the figure out: ' + fig.refused);
+      if (o.view === 'spikes') return spikes(fig);
+      const MAXLAG = fig.max_lag;
       // 365 FIRST, so it takes the first hue — the one that means "the record"
       // everywhere in this tool — and so the peaks below are read off the curve
       // the rows were measured on.
-      const A = acfFor(365), Ashort = acfFor(181), Along = acfFor(731);
-      const xs = A.lags;
-
-      // THE BAND, AND WHY IT IS BARTLETT'S AND NOT 2/sqrt(n).
-      //
-      // The naive band tests each correlation against the hypothesis that the
-      // whole series is white noise. This series is emphatically not white — it
-      // decays from 0.94 at lag 1 — so that test is passed by everything and
-      // says nothing. The question a reader actually has at lag 26 is whether
-      // that bump is more than the decay below it would already produce, and
-      // Bartlett's large-lag standard error is the one that asks it: the
-      // variance of r_k grows with the correlations at every shorter lag.
-      //
-      //   se(r_k) = sqrt( (1 + 2 * sum_{j<k} r_j^2) / n )
-      //
-      // So the band WIDENS with lag, which is the honest shape: a correlation
-      // far out has to be bigger to mean the same thing. Computed on the 365
-      // curve, because that is the one it is drawn against.
-      const band = [];
-      let acc = 0, outside = 0;
-      for (let k = 0; k < xs.length; k++) {
-        const n = A.n[k];
-        const b = n > 2 ? 1.96 * Math.sqrt((1 + 2 * acc) / n) : null;
-        band.push(b);
-        const r = A.r[k];
-        if (r !== null && b !== null && Math.abs(r) > b) outside++;
-        if (r !== null) acc += r * r;
-      }
-
+      const [r365, r181, r731] = fig.r, [w0, w1, w2] = fig.windows;
+      const xs = r365.map((_, i) => i + 1);
+      // THE BAND IS BARTLETT'S AND NOT 2/sqrt(n): it widens with lag, because
+      // a correlation far out has to be bigger to mean the same thing. On the
+      // 365 curve, because that is the one it is drawn against.
+      const band = fig.band, outside = fig.outside;
       // The first bump's peak and its harmonics, which are what say what the
-      // period is. Measured on the 365 curve for the same reason the band is.
-      const peakIn = (lo, hi) => {
-        let best = null, at = null;
-        for (let L = lo; L <= hi && L <= MAXLAG; L++) {
-          const r = A.r[L - 1];
-          if (r !== null && (best === null || r > best)) { best = r; at = L; }
-        }
-        return { at, r: best };
-      };
-      const p1 = peakIn(18, 36), p2 = peakIn(45, 65), p3 = peakIn(72, 95);
+      // period is — on the 365 curve for the same reason the band is.
+      const peak = i => ({ at: fig.peak_lag[i], r: fig.peak_r[i] });
+      const p1 = peak(0), p2 = peak(1), p3 = peak(2);
       // THREE NOTES WHERE THERE WERE THREE FULL-HEIGHT RULES, and each now says
       // what its peak IMPLIES rather than only where it is. The harmonics are
       // the whole argument — the first bump rides on the decay from lag 1, which
       // pulls its apparent peak toward zero, and the far harmonics are clear of
-      // it — and the division that shows it was a sentence underneath. Three
-      // dashed lines down a frame of oscillating curves also cost more ink than
-      // any of them was worth.
-      //
-      // THE THIRD PEAK WAS COMPUTED, QUOTED IN THE PROSE AND NEVER DRAWN until
-      // §26; it is the one that settles the period, so leaving it to the prose
-      // asked a reader to take the most important of the three on trust.
+      // it. THE THIRD PEAK WAS COMPUTED, QUOTED IN THE PROSE AND NEVER DRAWN
+      // until §26; it is the one that settles the period.
       const marks = [];
       const notes = [];
       if (p1.at) notes.push({ x: p1.at, y: p1.r, text: 'first peak, lag ' + p1.at });
@@ -444,33 +341,27 @@ const PANELS = [
           text: 'third, ' + p3.at + ' → ' + (p3.at / 3).toFixed(1) + ' d per cycle',
           colour: INK.series[2] });
       }
-
-      // The claim panels/pattern.toml makes about this picture, counted rather
-      // than asserted: a longer detrend window calls less of the record trend,
-      // so more low-frequency signal survives and every correlation is higher.
-      let over = 0, pairs = 0;
-      for (let k = 0; k < xs.length; k++) {
-        const lo = A.r[k], hi = Along.r[k];
-        if (lo === null || hi === null || !isFinite(lo) || !isFinite(hi)) continue;
-        pairs++; if (hi > lo) over++;
-      }
+      // The claim panels/pattern.toml makes about this picture, counted by the
+      // engine rather than asserted: a longer detrend window calls less of the
+      // record trend, so more low-frequency signal survives.
+      const over = fig.above_long, pairs = fig.compared;
       return {
         spec: {
-          finding: 'the 731-day curve sits above the 365-day one at ' + over + ' of the ' +
-            pairs + ' lags, and the 365 curve is outside the band at ' + outside + ' of them',
+          finding: 'the ' + w2 + '-day curve sits above the ' + w0 + '-day one at ' + over + ' of the ' +
+            pairs + ' lags, and the ' + w0 + ' curve is outside the band at ' + outside + ' of them',
           x: { label: 'lag  [days]', min: 1, max: MAXLAG },
           y: { label: 'autocorrelation of the detrended series  [-]' },
           series: [
             { kind: 'band', x: xs, y: band,
               y0: band.map(b => (b === null ? null : -b)), colour: INK.muted, alpha: 0.16 },
-            { name: 'detrended over 365 d', kind: 'line', x: xs, y: A.r, width: 2.2 },
+            { name: 'detrended over ' + w0 + ' d', kind: 'line', x: xs, y: r365, width: 2.2 },
             // CONTEXT. 365 is the window sw_recurrence_lag and sw_recurrence_
             // strength were measured under, and it is the curve the band and
             // the three peak marks are computed on. The other two are here to
             // show that the published number is a CHOICE and how much it moves
             // — which is a job that wants them legible and not equal.
-            { name: '181 d', kind: 'line', x: xs, y: Ashort.r, width: 1.3, context: true },
-            { name: '731 d', kind: 'line', x: xs, y: Along.r, width: 1.3, context: true },
+            { name: w1 + ' d', kind: 'line', x: xs, y: r181, width: 1.3, context: true },
+            { name: w2 + ' d', kind: 'line', x: xs, y: r731, width: 1.3, context: true },
             // INSIDE THE BAND IS "SHAPE, NOT FINDING", which is a region and was
             // drawn as its two edges. The edges stay — they are where the band
             // ends and a reader reads a value off them — and the wash between
@@ -508,7 +399,7 @@ const PANELS = [
             '\n\nThe dashed band is the 95 per cent interval under Bartlett\u2019s large-lag ' +
             'standard error, which widens with lag because the variance of a correlation grows ' +
             'with every correlation below it. The naive \u00b12/\u221an band — ' +
-            (A.n[0] ? '\u00b1' + (2 / Math.sqrt(A.n[0])).toFixed(4) : 'a flat line') +
+            (fig.naive_band !== null ? '\u00b1' + fig.naive_band.toFixed(4) : 'a flat line') +
             ' — tests whether the series is white noise, which it obviously is not, and would ' +
             'pass everything drawn here. Bartlett\u2019s asks the question a reader actually ' +
             'has: is this bump more than the decay beneath it already produces. The 365 curve ' +
@@ -535,35 +426,31 @@ const PANELS = [
       { k: 'scale', label: 'count axis', when: o => o.view === 'hist',
         opts: [['log', 'log'], ['lin', 'linear']] },
     ],
-    build(rec, o) {
-      if (o.view === 'phase') return regimeByPhase(rec);
-      const key = o.v;
-      // THE ROW'S OWN EDGES, AND ITS OWN COMPARISON. sw_activity_band cuts F10.7
-      // at 90, 130 and 170 with `>=`, so a flux sitting exactly on an edge
-      // belongs to the band the edge OPENS. This panel drew 90/120/180 with `>`
-      // and banded 1010 days — 9.8 per cent of the record — differently from the
-      // row it exists to illustrate, reporting the top band at 8.9 per cent where
-      // the row says 12.8. A panel that contradicts its own node is worse than no
-      // panel, so the edges are taken from the node rather than restated.
-      //
-      // Ap is an integer, so its marks sit BETWEEN the bands at 6.5 and 25.5;
-      // F10.7 is continuous and its marks sit on the edges themselves.
-      const cuts = key === 'ap' ? [6.5, 25.5] : [90, 130, 170];
+    // THE NUMBERS ARE THE ENGINE'S, AND THE BANDS ARE THE ROWS' (phase 10e).
+    // vleo_modules::record::segments puts every day in a band by calling
+    // sw_regime or sw_activity_band itself, so a flux on an edge belongs to the
+    // band the edge opens because the row says so, not because this page
+    // remembered to. This panel once drew 90/120/180 with `>` and banded 1010
+    // days differently from the row it illustrates; restating a row's edges is
+    // how that happens, and the page restates none now.
+    data: o => (o.view === 'phase' ? engineFigure('regime-phase')
+      : engineFigure('segments', { v: o.v })),
+    build(rec, o, fig) {
+      if (fig.refused) throw new Error('the engine did not work the figure out: ' + fig.refused);
+      if (o.view === 'phase') return regimeByPhase(fig);
+      const key = fig.variable;
+      // THE MARKS SIT WHERE THE RECORD CROSSES THE ROW'S CUTS. Ap is an integer,
+      // so its marks sit BETWEEN the bands — halfway from the largest quiet day
+      // to the smallest active one, 6.5 and 25.5; F10.7's sit on the edge each
+      // band opens, the smallest flux the row put in it.
+      const cuts = key === 'ap'
+        ? fig.below_cut.map((lo, i) => (lo + fig.above_cut[i]) / 2)
+        : fig.above_cut;
       const names = key === 'ap' ? ['quiet', 'active', 'storm'] : ['low', 'moderate', 'elevated', 'high'];
-      const vals = rec.days.map(d => d[key]).filter(x => x !== null);
-      const hi = Math.max(...vals);
-      const bw = key === 'ap' ? 2 : 5;
-      const nb = Math.ceil(hi / bw) + 1;
-      const counts = new Array(nb).fill(0);
-      for (const x of vals) counts[Math.floor(x / bw)]++;
-      const xs = counts.map((_, i) => (i + 0.5) * bw);
-      const ys = counts.map(c => (o.scale === 'log' ? (c ? Math.log10(c) : null) : c));
-      const share = new Array(cuts.length + 1).fill(0);
-      for (const x of vals) {
-        let k = 0; while (k < cuts.length && x >= cuts[k]) k++;
-        share[k]++;
-      }
-      const pc = i => (100 * share[i] / vals.length);
+      const hi = fig.max, bw = fig.bin_width;
+      const xs = fig.counts.map((_, i) => (i + 0.5) * bw);
+      const ys = fig.counts.map(c => (o.scale === 'log' ? (c ? Math.log10(c) : null) : c));
+      const pc = i => fig.band_pct[i];
       const TOP = names.length - 1;
       return {
         answer: { value: pc(TOP).toFixed(1) + '%',
@@ -588,8 +475,8 @@ const PANELS = [
           // answer line instead, where it is a number and not an area.
           marks: cuts.map((c, i) => ({ axis: 'x', at: c, label: names[i] + ' | ' + names[i + 1] })),
         },
-        note: 'Over ' + vals.length + ' days: ' +
-          share.map((n, i) => names[i] + ' ' + (100 * n / vals.length).toFixed(1) + '%').join(' · ') +
+        note: 'Over ' + fig.days + ' days: ' +
+          fig.band_pct.map((p, i) => names[i] + ' ' + p.toFixed(1) + '%').join(' · ') +
           (key === 'ap'
             ? '. These are the study’s own mixture boundaries, and they fell on integers: quiet ' +
               'holds Ap 0 to 6, active 7 to 25, storm 26 and above. sw_regime reproduces ' +
@@ -636,8 +523,13 @@ const PANELS = [
       { k: 'v', label: 'variable', opts: [['f107', 'F10.7'], ['ap', 'Ap']] },
       { k: 'by', label: 'split', opts: [['all', 'the whole record'], ['cycle', 'by cycle']] },
     ],
-    build(rec, o) {
-      const key = o.v, maxL = 5478;
+    // THE NUMBERS ARE THE ENGINE'S (phase 10g): the signed change over each
+    // lead at four percentiles, the pairs behind each, the lead a year out and
+    // where the eleven-year cycle shows through are vleo_modules::record::growth;
+    // the per-cycle curves are record::growth_by_cycle. The page draws them.
+    data: o => engineFigure('growth', { v: o.v, by: o.by }),
+    build(rec, o, fig) {
+      if (fig.refused) throw new Error('the engine did not work the figure out: ' + fig.refused);
       // The percentiles, lightest to darkest, and the one the row publishes.
       // Validated as an ordinal ramp: monotone lightness, every adjacent gap
       // clear, and the light end at 2.11:1 against the surface — re-run when
@@ -655,55 +547,28 @@ const PANELS = [
         { q: 0.95, name: '95th — the published one', colour: INK.ramp4[2], width: 2.4 },
         { q: 0.99, name: '99th', colour: INK.ramp4[3], width: 1.4 },
       ];
-      if (o.by === 'cycle') return growthByCycle(rec, key, 0.95, maxL);
-      const byDay = new Map();
-      for (const d of rec.days) if (d[key] !== null) byDay.set(d.t, d[key]);
-      const leads = [];
-      for (let L = 30; L <= maxL; L = Math.round(L * 1.35)) leads.push(L);
-      const xs = [], ns = [], ys = QS.map(() => []);
-      for (const L of leads) {
-        const ch = [];
-        for (const [t, v] of byDay) {
-          const w = byDay.get(t + L);
-          if (w !== undefined) ch.push(w - v);
-        }
-        // SORTED ONCE FOR ALL FOUR. The percentiles differ only in where they
-        // read the same sorted sample, and sorting it four times would be four
-        // chances for them to disagree about what the sample was.
-        ch.sort((a, b) => a - b);
-        xs.push(L / 365.25); ns.push(ch.length);
-        QS.forEach((Q, i) => ys[i].push(quantile(ch, Q.q)));
-      }
+      if (fig.by === 'cycle') return growthByCycle(fig, 0.95);
+      const key = fig.variable;
+      const xs = fig.lead_years, ns = fig.pairs, ys = fig.change;
       const name = key === 'f107' ? 'F10.7' : 'Ap';
       const unit = key === 'f107' ? 'sfu' : '';
       const P95 = 2;
       const y95 = ys[P95];
-      // Whether the eleven-year cycle is visible is a property of the curve
-      // rather than of a setting, now that the axis always runs the whole way.
-      const mid = y95.filter((y, i) => y !== null && xs[i] >= 3 && xs[i] <= 6);
-      const late = y95.filter((y, i) => y !== null && xs[i] >= 9 && xs[i] <= 12);
-      const humped = mid.length && late.length && Math.max(...mid) > Math.max(...late);
+      // Whether the eleven-year cycle is visible is a property of the curve —
+      // the 95th's highest point between 3 and 6 years standing above its
+      // highest between 9 and 12 — and the engine measures it.
+      const humped = fig.humped;
       // How much the answer depends on which percentile is taken, at the lead
-      // the row itself is read at. Measured rather than asserted.
-      const atYear = xs.reduce((b, x, i) => (Math.abs(x - 1) < Math.abs(xs[b] - 1) ? i : b), 0);
+      // the row itself is read at.
+      const atYear = fig.at_year;
       const spread = QS.map((Q, i) => ys[i][atYear]).filter(v => v !== null && isFinite(v));
       const at1 = y95[atYear];
       // THE TWO FEATURES THE PROSE POINTS AT, POINTED AT. The hump and the dip
       // are the eleven-year cycle showing through a statistic that was never
-      // told about it, and the sentence saying so sat four paragraphs below the
-      // place it is about. Found the same way the prose finds them — the
+      // told about it; the engine finds them the way the prose does — the
       // largest of the mid-lead points and the smallest of the late ones — so
       // the label cannot drift from the curve under it.
-      const pick = (lo, hi, want) => {
-        let bi = -1;
-        for (let i = 0; i < xs.length; i++) {
-          const v = y95[i];
-          if (v === null || !isFinite(v) || xs[i] < lo || xs[i] > hi) continue;
-          if (bi < 0 || (want === 'max' ? v > y95[bi] : v < y95[bi])) bi = i;
-        }
-        return bi;
-      };
-      const iHump = pick(3, 6, 'max'), iDip = pick(9, 12, 'min');
+      const hump = fig.hump, dip = fig.dip;
       // How wide the fan is at one lead, for the case where there is no hump to
       // name. Measured off the two edges the fill is drawn between.
       const fanAt = i => {
@@ -711,12 +576,12 @@ const PANELS = [
         return (a === null || b === null || !isFinite(a) || !isFinite(b)) ? null : a - b;
       };
       const notes = [];
-      if (humped && iHump >= 0) {
-        notes.push({ x: xs[iHump], y: y95[iHump],
+      if (humped && hump) {
+        notes.push({ x: hump[0], y: hump[1],
           text: 'half a cycle — the lead most likely to land on the opposite phase' });
       }
-      if (humped && iDip >= 0) {
-        notes.push({ x: xs[iDip], y: y95[iDip], text: 'about a full cycle, back to a similar one' });
+      if (humped && dip) {
+        notes.push({ x: dip[0], y: dip[1], text: 'about a full cycle, back to a similar one' });
       }
       return {
         answer: at1 === null || !isFinite(at1)
@@ -728,10 +593,10 @@ const PANELS = [
           // The shape of the published percentile, off the published percentile.
           // The answer above the chart is its value at a year; this is what the
           // curve DOES, which is the thing a monotone-looking fan hides.
-          finding: (iHump >= 0 && iDip >= 0 && humped)
-            ? 'the 95th rises to ' + sig(y95[iHump]) + (unit ? ' ' + unit : '') + ' at ' +
-              xs[iHump].toFixed(1) + ' yr, falls to ' + sig(y95[iDip]) + ' at ' +
-              xs[iDip].toFixed(1) + ', and rises again \u2014 that is the eleven-year cycle'
+          finding: (hump && dip && humped)
+            ? 'the 95th rises to ' + sig(hump[1]) + (unit ? ' ' + unit : '') + ' at ' +
+              hump[0].toFixed(1) + ' yr, falls to ' + sig(dip[1]) + ' at ' +
+              dip[0].toFixed(1) + ', and rises again \u2014 that is the eleven-year cycle'
             : 'the fan between the 50th and the 99th opens from ' + sig(fanAt(0)) +
               (unit ? ' ' + unit : '') + ' at the shortest lead to ' + sig(fanAt(xs.length - 1)) +
               ' at the longest',
@@ -818,88 +683,35 @@ const PANELS = [
       // rather than having to remember the other picture. 13 combinations
       // become 3 views.
     ],
-    async data() {
-      const [fc, idx] = await Promise.all([
-        bundleFile('solar-weather', 'forecast_issued.csv'),
-        bundleFile('solar-weather', 'forecast_issues.csv'),
-      ]);
-      return { fc, idx };
-    },
-    build(rec, o, extra) {
-      const fc = extra.fc.rows;
-      if (o.view === 'age') return issueAge(extra.idx.rows);
-      const byDay = new Map();
-      for (const d of rec.days) if (d.f107 !== null) byDay.set(d.t, d.f107);
-      const tOf = new Map();
-      for (const d of rec.days) tOf.set(d.date, d.t);
-      // BOTH BASELINES, BUILT ONCE. `leaky` is allowed to use the issue date
-      // itself; `strict` is what a forecaster actually had. Two lookups from one
-      // function rather than two functions, because two functions is two places
-      // for the one-day difference between them to stop being one day.
-      const persistFrom = (issue, first) => {
-        const t = tOf.get(issue);
-        if (t === undefined) return null;
-        for (let b = first; b <= 15; b++) {
-          const v = byDay.get(t - b);
-          if (v !== undefined) return v;
-        }
-        return null;
-      };
-      const pcS = new Map(), pcL = new Map();
-      const strict = i => { if (!pcS.has(i)) pcS.set(i, persistFrom(i, 1)); return pcS.get(i); };
-      const leaky = i => { if (!pcL.has(i)) pcL.set(i, persistFrom(i, 0)); return pcL.get(i); };
-
-      if (o.view === 'year') return byIssueYear(fc, byDay, tOf, strict, leaky);
-
-      // EACH METRIC OVER THE PAIRS ITS OWN DEFINITION COVERS, and that is a
-      // correction rather than a nicety. Bias and RMS error use no baseline —
-      // sw_forecast_bias is the mean of (forecast − observed) at a lead, full
-      // stop — but this panel used to drop every row whose persistence lookup
-      // came back empty before computing them, so it quoted the row's quantity
-      // over a subset the row does not take. The note carried the claim that the
-      // baseline "changes nothing on this metric", which was very nearly true
-      // and not exactly, which is the worst kind.
-      const xs = [], nObs = [], nStr = [], nLk = [];
-      const skS = [], skL = [], bias = [], rmse = [];
-      for (let L = 1; L <= 27; L++) {
-        let e2 = 0, se = 0, n = 0;
-        let e2s = 0, p2s = 0, ns = 0, e2l = 0, p2l = 0, nl = 0;
-        for (const r of fc) {
-          if (+r.lead_days !== L || r.f107 === null) continue;
-          const tt = tOf.get(r.target_date);
-          const obs = tt === undefined ? undefined : byDay.get(tt);
-          if (obs === undefined) continue;
-          const e = +r.f107 - obs;
-          e2 += e * e; se += e; n++;
-          const ps = strict(r.issue_date);
-          if (ps !== null) { e2s += e * e; p2s += (ps - obs) * (ps - obs); ns++; }
-          const pl = leaky(r.issue_date);
-          if (pl !== null) { e2l += e * e; p2l += (pl - obs) * (pl - obs); nl++; }
-        }
-        if (!n) continue;
-        xs.push(L); nObs.push(n); nStr.push(ns); nLk.push(nl);
-        bias.push(se / n); rmse.push(Math.sqrt(e2 / n));
-        skS.push(ns && p2s ? 1 - (e2s / ns) / (p2s / ns) : null);
-        skL.push(nl && p2l ? 1 - (e2l / nl) / (p2l / nl) : null);
-      }
+    // The scores are vleo_modules::record::forecast_by_lead, forecast_by_year
+    // and issue_age, worked out by the engine from the two forecast files: each
+    // metric over the pairs its own definition covers — bias and RMS error over
+    // every pair with an observation, each skill over the pairs its baseline
+    // reaches — and both baselines, the strict one a forecaster had and the
+    // leaky one handed the issue date. The page draws them.
+    data: o => engineFigure('forecast', { view: o.view }),
+    build(rec, o, fig) {
+      if (fig.refused) throw new Error('the engine did not work the figure out: ' + fig.refused);
+      if (fig.view === 'age') return issueAge(fig);
+      if (fig.view === 'year') return byIssueYear(fig);
+      const xs = fig.lead, nObs = fig.pairs, nStr = fig.pairs_strict, nLk = fig.pairs_leaky;
+      const skS = fig.skill_strict, skL = fig.skill_leaky, bias = fig.bias, rmse = fig.rmse;
       const last = xs[xs.length - 1];
       const at = (arr, L) => { const k = xs.indexOf(L); return k < 0 ? null : arr[k]; };
-      // WHERE THE TWO SAMPLES ACTUALLY DIFFER, named rather than assumed. The
-      // first example this note reached for was lead 27, where they happen to be
-      // equal — a sentence about a correction, illustrated with the one case the
-      // correction does not touch.
-      let gapAt = -1, gapBy = 0;
-      for (let k = 0; k < xs.length; k++) {
-        if (nObs[k] - nStr[k] > gapBy) { gapBy = nObs[k] - nStr[k]; gapAt = xs[k]; }
-      }
+      // WHERE THE TWO SAMPLES ACTUALLY DIFFER, named rather than assumed — the
+      // lead where the strict baseline misses the most pairs, which the engine
+      // finds. The first example this note reached for was lead 27, where they
+      // happen to be equal: a sentence about a correction, illustrated with the
+      // one case the correction does not touch.
+      const gapAt = fig.widest;
       const sig2 = v => (v === null ? '—' : v.toFixed(3));
       const runOf = arr => arr.filter(v => v !== null && isFinite(v) && v > 0).length;
-      const best = skS.reduce((b, v, i) => (v !== null && (b < 0 || v > skS[b]) ? i : b), -1);
+      const peak = fig.peak;
       return {
-        answer: best < 0
+        answer: peak === null
           ? { value: '—', of: 'no lead scored' }
-          : { value: (skS[best] >= 0 ? '+' : '') + skS[best].toFixed(3),
-              of: 'peak skill against persistence, at lead ' + xs[best] +
+          : { value: (peak[1] >= 0 ? '+' : '') + peak[1].toFixed(3),
+              of: 'peak skill against persistence, at lead ' + peak[0] +
                 ' — above zero the outlook beats assuming nothing changes' },
         spec: {
           // The sentence panels/forecast.toml asks a reader to check, counted:
@@ -998,9 +810,6 @@ const PANELS = [
       'sw_ap_design_long', 'sw_ap_design_short', 'sw_ap_mean_band_spread',
       'sw_daily_band_drop', 'sw_daily_band_spread', 'sw_kp_scenarios',
       'sw_mean_band_spread'],
-    // One run returns the crossing and all twenty-four of its members, so the
-    // whole table costs one question.
-    engine: ['l3_solar_interface'],
     label: 'Drivers',
     draws: 'The five design scenarios this subsystem publishes, against the legacy run’s own.',
     asks: 'What does this subsystem hand upward, and does it agree with the study it ports?',
@@ -1014,10 +823,14 @@ const PANELS = [
         ['kp_mean', 'Kp, mean slot'], ['kp_peak', 'Kp, peak slot'],
       ] },
     ],
-    async data() {
-      return { legacy: await parityFile('mission_drivers.csv') };
-    },
-    build(rec, o, extra, eng) {
+    // THE COMPARISON IS THE ENGINE'S: vleo_modules::record::drivers_parity, the
+    // crossing run on the saved case — one run returns it and all twenty-four of
+    // its members — against matlab/reference/mission_drivers.csv, cell by cell:
+    // the ratio, the gap, where each quantity's gap is widest, how many cells
+    // agree, and how far the worst is out. The page draws them.
+    data: () => engineFigure('drivers'),
+    build(rec, o, fig) {
+      if (fig.refused) throw new Error('the engine did not work the figure out: ' + fig.refused);
       // COLD TO HOT, which is an ordering and not an alphabet. The five
       // scenarios are a ladder — the quietest single day, the cold sustained
       // level, where the mission sits, the hot sustained level, the worst single
@@ -1033,25 +846,14 @@ const PANELS = [
         { k: 'kp_mean', label: 'Kp, mean slot', unit: '-' },
         { k: 'kp_peak', label: 'Kp, peak slot', unit: '-' },
       ];
-      // OURS, FROM THE ENGINE, THROUGH THE DOT. The crossing publishes a set and
-      // a member is `<node>.<member>`; the node's own answer is f107_hotmean,
-      // which is the one cell that is not a member, so it is reached by the node
-      // id. Written as a lookup rather than a table of literals for the reason
-      // §21 gives: three copied numbers in `design` went stale without anything
-      // noticing.
-      const ours = (q, sc) => {
-        const id = q === 'f107' && sc === 'hotmean'
-          ? 'l3_solar_interface'
-          : 'l3_solar_interface.' + q + '_' + sc;
-        const v = eng[id];
-        return v && v.si !== undefined && isFinite(v.si) ? v.si : null;
+      // A cell by quantity and scenario name, from the engine's tables — ours,
+      // the legacy run's, their ratio and their gap.
+      const cell = (table, q, sc) => {
+        const qi = fig.quantities.indexOf(q), si = fig.scenarios.indexOf(sc);
+        return qi < 0 || si < 0 ? null : table[qi][si];
       };
-      const legacyRows = new Map((extra.legacy.rows || []).map(r => [r.scenario, r]));
-      const theirs = (q, sc) => {
-        const r = legacyRows.get(sc);
-        const v = r ? num(r[q]) : null;
-        return v === null || !isFinite(v) ? null : v;
-      };
+      const ours = (q, sc) => cell(fig.ours, q, sc);
+      const theirs = (q, sc) => cell(fig.theirs, q, sc);
       const xs = ORDER.map((_, i) => i);
       const fmtX = v => SHOWN[Math.round(v)] || '';
       // A LITTLE ROOM AT BOTH ENDS. With the extent exactly 0 to 4 the first and
@@ -1075,18 +877,11 @@ const PANELS = [
         // line, which is what they are.
         const series = QS.map((Q, i) => ({
           name: Q.label, kind: 'line', x: xs,
-          y: ORDER.map(sc => {
-            const a = ours(Q.k, sc), b = theirs(Q.k, sc);
-            return a === null || b === null || b === 0 ? null : a / b;
-          }),
+          y: ORDER.map(sc => cell(fig.ratio, Q.k, sc)),
           colour: INK.series[i % INK.series.length],
         }));
         const all = series.flatMap(s => s.y).filter(v => v !== null);
-        const worst = all.length
-          ? all.reduce((m, v) => (Math.abs(Math.log(v)) > Math.abs(Math.log(m)) ? v : m), 1)
-          : null;
-        const near = all.filter(v => Math.abs(v - 1) < 0.001).length;
-        const off = worst === null ? null : (worst > 1 ? worst : 1 / worst);
+        const near = fig.agree, off = fig.factor;
         return {
           answer: { value: near + ' of ' + all.length,
             of: 'cells agree with the legacy run to a tenth of a per cent'
@@ -1094,12 +889,9 @@ const PANELS = [
               + ', and both families of disagreement are deliberate' },
           spec: {
             aspect: 1.5,
-            finding: (() => {
-              const lowTop = all.filter(v => v < 0.999).length;
-              return near + ' of the ' + all.length + ' points sit on the line, ' + lowTop +
-                ' below it and ' + (all.length - near - lowTop) + ' above \u2014 the ' +
-                'disagreement is not scattered, it is two families';
-            })(),
+            finding: near + ' of the ' + all.length + ' points sit on the line, ' + fig.below +
+              ' below it and ' + fig.above + ' above \u2014 the ' +
+              'disagreement is not scattered, it is two families',
             x: { label: 'scenario', ...XPAD },
             y: { label: 'this tree ÷ the legacy run  [-]', log: true },
             series,
@@ -1111,7 +903,7 @@ const PANELS = [
             '0.5 apart, which makes the two directions of error look like different sizes.\n\n' +
             near + ' of ' + all.length + ' cells agree to within a tenth of a per cent, and they are ' +
             'the SUSTAINED Ap and Kp scenarios. The rest disagree, the furthest by a factor of ' +
-            (worst === null ? '—' : (worst > 1 ? worst.toFixed(2) : (1 / worst).toFixed(2))) +
+            (off === null ? '—' : off.toFixed(2)) +
             ', and BOTH families of disagreement are deliberate.\n\n' +
             'F10.7 is low across every scenario because the two tools centre the window differently. ' +
             'The study holds its last 27-day rotation forecast flat and gets 158.33 sfu for its own ' +
@@ -1132,9 +924,9 @@ const PANELS = [
       const Q = QS.find(x => x.k === o.q) || QS[0];
       const mine = ORDER.map(sc => ours(Q.k, sc));
       const theirsY = ORDER.map(sc => theirs(Q.k, sc));
-      const gap = mine.map((v, i) => (v === null || theirsY[i] === null ? null : v - theirsY[i]));
-      const worstI = gap.reduce((b, v, i) =>
-        (v !== null && (b < 0 || Math.abs(v) > Math.abs(gap[b])) ? i : b), -1);
+      const gap = ORDER.map(sc => cell(fig.gap, Q.k, sc));
+      const widest = fig.widest[fig.quantities.indexOf(Q.k)];
+      const worstI = widest === null || widest === undefined ? -1 : ORDER.indexOf(widest);
       const u = Q.unit === '-' ? '' : ' ' + Q.unit;
       return {
         answer: worstI < 0
@@ -1218,12 +1010,6 @@ const PANELS = [
       'sw_f107_cold_short', 'l3_solar_req_01',
       // §26 D4's leftover: the one row in the subsystem that no figure cited.
       'sw_window_peak_level'],
-    // WHAT THIS PANEL ASKS THE ENGINE FOR, rather than carrying a copy of.
-    // `rows` says what the picture argues about; `engine` says what it reads,
-    // and panel_check holds it to the second. The literals these replace had
-    // gone stale by two revisions — §21.1 lists them.
-    engine: ['l3_solar_req_01', 'l3_solar_req_03',
-      'l3_solar_req_04', 'l3_solar_req_05', 'l3_solar_req_02'],
     label: 'Design',
     draws: 'The design window: what the record expects against what the vehicle is built for.',
     asks: 'Will the design be exceeded, and if so beyond what mission length?',
@@ -1252,109 +1038,62 @@ const PANELS = [
         ['l3_solar_req_02', 'single day — req_02'],
       ] },
     ],
-    // THE TWO RELATIONS THIS PANEL DRAWS, ASKED OF THE ENGINE RATHER THAN
-    // COPIED. `A = 92.515531, B = 40.926516` were sw_storm_return_level's fit
-    // constants written out here, and `{1: 48, 2: 80, 3: 132}` was sw_ap_design's
-    // G-to-Ap conversion written out here. A figure carrying a row's constants
-    // is a second copy of that row, and it goes stale silently: the centre this
-    // panel drew was two revisions old before anything noticed. Both are swept
-    // from the rows now, so the picture is the relation the engine computes.
+    // THE RELATIONS THIS PANEL DRAWS, AND WHAT IT SAYS ABOUT THEM, ARE THE
+    // ENGINE'S. `A = 92.515531, B = 40.926516` were sw_storm_return_level's fit
+    // constants written out here once, and `{1: 48, 2: 80, 3: 132}` was
+    // sw_ap_design's G-to-Ap conversion; a figure carrying a row's constants is a
+    // second copy of that row, and it goes stale silently — §21. Both were
+    // swept from the rows after that, and the crossings, the record's days above
+    // the bound and the F10.7 window's width were still worked out here. The
+    // `design` figure now does all of it (vleo_modules::design), on the case the
+    // reader is looking at, overrides and all, and the page draws:
     //
-    // Neither sweep depends on a control, so both are fetched once here rather
-    // than on every redraw.
-    async data() {
-      const dur = S.byId.get('sys_mission_requirements_mission_duration');
-      const glv = S.byId.get('sw_storm_design_level');
-      // The F10.7 half is the four rows §20 built for it — hot and cold, each
-      // sustained and single-day. That IS the design window, and it is built
-      // with the within-rotation spread conditioned on the level it applies at.
-      // The panel used to compute `centre + p95` here, which is the relation of
-      // sw_f107_design — the row §20 DEPRECATED, and the method the record puts
-      // 74 per cent high. Drawing a retired method beside live rows is how a
-      // figure tells a reader something the tree has stopped believing.
-      const [ret, gmap, fl, fs, cl, cs, pk] = await Promise.all([
-        engineSweep('sw_storm_return_level', 'sys_mission_requirements_mission_duration',
-          dur.lo, dur.hi, 120),
-        engineSweep('sw_ap_design', 'sw_storm_design_level', glv.lo, glv.hi, 3),
-        engineSweep('sw_f107_design_long', 'sys_mission_requirements_mission_duration',
-          dur.lo, dur.hi, 60),
-        engineSweep('sw_f107_design_short', 'sys_mission_requirements_mission_duration',
-          dur.lo, dur.hi, 60),
-        engineSweep('sw_f107_cold_long', 'sys_mission_requirements_mission_duration',
-          dur.lo, dur.hi, 60),
-        engineSweep('sw_f107_cold_short', 'sys_mission_requirements_mission_duration',
-          dur.lo, dur.hi, 60),
-        // THE LAST ROW IN THE SUBSYSTEM WITH NO FIGURE, and it belongs here.
-        //
-        // sw_window_peak_level is the maximum of the same cycle analogue the four
-        // design rows are built on a MEAN of, over the same window, against the
-        // same axis. It was the one row §26's D4 left over — nothing read it and
-        // no panel cited it — and the reason it was worth keeping rather than
-        // removing is visible only when it is drawn beside them: it rises
-        // monotonically with mission length, because a longer window can only
-        // contain more of the cycle, while every design curve follows the window
-        // MEAN and wanders with where the window ends. Past about eight years the
-        // analogue's own peak is above the hot single-day design value, which is
-        // a design sized on a mean sitting under the thing it averages.
-        engineSweep('sw_window_peak_level', 'sys_mission_requirements_mission_duration',
-          dur.lo, dur.hi, 60),
-      ]);
-      return { ret, gmap, win: { fl, fs, cl, cs, pk } };
+    //   Ap:    sw_storm_return_level swept over the mission duration, the bound
+    //          read off sw_ap_design swept over the G level, the requirement's
+    //          own answer, where the curve reaches each, and the days of the
+    //          record at or above the bound, in how many runs.
+    //   F10.7: the four rows §20 built for the window — hot and cold, each
+    //          sustained and single-day — and sw_window_peak_level, swept over
+    //          the mission duration; the worst single day, the window's width
+    //          and where the analogue's peak first climbs above the hot day.
+    //
+    // The F10.7 half used to draw `centre + p95`, which is sw_f107_design's
+    // relation — the row §20 DEPRECATED, and the method the record puts 74 per
+    // cent high. sw_window_peak_level was §26 D4's leftover, the one row in the
+    // subsystem no figure cited; it belongs here because it is the MAXIMUM of
+    // the analogue the four design rows are built on a MEAN of, and past about
+    // eight years it stands above the hot single-day design value.
+    data(o) {
+      const v = (o && o.v) || 'ap';
+      return engineFigureOnCase('design', v === 'f107'
+        ? { v, reqf: o.reqf || 'l3_solar_req_01' }
+        : { v, g: o.g || '3', req: o.req || 'l3_solar_req_03' });
     },
-    build(rec, o, extra, eng) {
-      if (o.v === 'f107') return f107Window(extra, o, eng);
-      // The relation as the ENGINE computes it, swept from sw_storm_return_level
-      // rather than re-stated from its constants. A figure that carries a row's
-      // coefficients is a second copy of that row.
-      const YR = 31557600;
-      const xs = extra.ret.x.map(v => v / YR);
-      const ys = extra.ret.y.slice();
-      // sw_ap_design's own G-to-Ap conversion, swept over the G level. The
-      // sweep returns the three points in the order of the level, so the bound
-      // is read off by index rather than from a table written out here.
-      const gi = extra.gmap.x.indexOf(+o.g);
-      if (gi < 0 || extra.gmap.y[gi] === undefined) {
-        throw new Error('sw_ap_design did not answer at G' + o.g);
-      }
-      const bound = extra.gmap.y[gi];
-      const rq = eng[o.req];
-      if (!rq || rq.si === undefined) {
-        throw new Error(o.req + ' did not answer: ' + ((rq && rq.refused) || 'not asked'));
-      }
-      const req = rq.si;
-      // Where the curve crosses a level, read off the swept points by
-      // interpolation. The closed form needed the fit constants; this needs
-      // only the curve, which is the thing actually drawn.
-      const cross = (ap) => {
-        for (let i = 1; i < ys.length; i++) {
-          if ((ys[i - 1] - ap) * (ys[i] - ap) <= 0 && ys[i] !== ys[i - 1]) {
-            const f = (ap - ys[i - 1]) / (ys[i] - ys[i - 1]);
-            return xs[i - 1] + f * (xs[i] - xs[i - 1]);
-          }
-        }
-        return ap <= ys[0] ? xs[0] : NaN;
-      };
-      // What the record actually did above the bound, counted here from the
-      // record rather than taken from the rows, because the panel must be able
-      // to answer for a level the rows are not set to.
-      const days = rec.days.filter(d => d.ap !== null);
-      const years = days.length / 365.25;
-      const above = days.filter(d => d.ap >= bound);
-      let runs = 0, prev = -99;
-      for (const d of above) { if (d.t !== prev + 1) runs++; prev = d.t; }
-      const rate = above.length / years;
-      const hitsAt = cross(bound);
+    build(rec, o, fig) {
+      if (fig.refused) throw new Error('the engine did not work the figure out: ' + fig.refused);
+      if (fig.view === 'f107') return f107Window(fig);
+      // Mission length in years, and the return level the engine swept across
+      // it — the relation as the engine computes it.
+      const xs = fig.years, ys = fig.level;
+      const bound = fig.bound, req = fig.req, g = fig.g, reqId = fig.req_id;
+      // Where the curve reaches the bound and the requirement, read off the
+      // swept points by the engine; null where it never does inside the range.
+      const hitsAt = fig.hits_at, reqAt = fig.req_at;
+      const yr2 = v => (v === null ? 'never inside the declared range' : v.toFixed(2));
+      // What the record did above the bound, counted by the engine from the
+      // record itself, so it answers for a level the rows are not set to.
+      const r = fig.record;
       return {
-        answer: !isFinite(hitsAt)
+        answer: hitsAt === null
           ? { value: 'never', of: 'the design level is not reached inside the declared range' }
           : { value: sig(hitsAt) + ' yr', of: 'before the record expects a storm above the ' +
-              'G' + o.g + ' design level of Ap ' + bound.toFixed(0) },
+              'G' + g + ' design level of Ap ' + bound.toFixed(0) },
         spec: {
-          finding: !isFinite(hitsAt)
+          finding: hitsAt === null
             ? 'the curve stays under the design level across the whole declared range'
             : 'the curve enters the shaded region at ' + hitsAt.toFixed(2) +
-              ' yr and never leaves it; ' + (isFinite(cross(req))
-                ? 'it reaches the requirement at ' + cross(req).toFixed(2) + ' yr'
+              ' yr and never leaves it; ' + (reqAt !== null
+                ? 'it reaches the requirement at ' + reqAt.toFixed(2) + ' yr'
                 : 'the requirement is not reached inside the declared range'),
           x: { label: 'mission length  [years]', min: xs[0], max: xs[xs.length - 1] },
           y: { label: 'daily Ap the record expects once in that time  [-]' },
@@ -1375,28 +1114,32 @@ const PANELS = [
             // Ap 207 — so the wash started at one line and was coloured like the
             // other. A region belongs to the edge it opens at.
             { axis: 'y', from: bound, label: '', colour: INK.mark, alpha: 0.05 },
-            { axis: 'y', at: bound, label: 'designed for G' + o.g + ' = Ap ' + bound.toFixed(0) +
+            { axis: 'y', at: bound, label: 'designed for G' + g + ' = Ap ' + bound.toFixed(0) +
               '  (sw_ap_design)', row: 'sw_ap_design' },
-            { axis: 'y', at: req, label: 'required ≤ ' + req.toFixed(0) + '  (' + o.req + ')',
-              colour: INK.bound, row: o.req },
+            { axis: 'y', at: req, label: 'required ≤ ' + req.toFixed(0) + '  (' + reqId + ')',
+              colour: INK.bound, row: reqId },
           ],
           // A NOTE, NOT A RULE. This was a dashed line the full height of the
           // frame carrying "exceeds the design at 2.62 yr" at the top, which is
           // a fact about a POINT ON THE CURVE told at the ceiling. It now points
           // where it happens, and the frame is one long dashed line lighter for
           // it.
-          notes: !isFinite(hitsAt) ? [] : [{
+          notes: hitsAt === null ? [] : [{
             x: hitsAt, y: bound,
             text: 'exceeded here — ' + hitsAt.toFixed(2) + ' yr',
           }],
         },
-        note: 'The design bound is exceeded beyond a ' + cross(bound).toFixed(2) + '-year mission and the ' +
-          o.req + '\u2019s ' + req.toFixed(0) + ' beyond ' + cross(req).toFixed(2) +
+        note: 'The design bound is exceeded beyond a ' + yr2(hitsAt) + '-year mission and the ' +
+          reqId + '\u2019s ' + req.toFixed(0) + (reqAt === null
+            ? ' is not reached inside the declared range'
+            : ' beyond ' + reqAt.toFixed(2)) +
           '. Over a 5-year mission the record holds ' +
-          (5 * rate).toFixed(2) + ' days above Ap ' + bound.toFixed(0) + ', in about ' + (5 * runs / years).toFixed(2) +
-          ' separate events — ' + above.length + ' days in ' + runs + ' events across ' +
-          years.toFixed(2) + ' years of record. That the exceedance is brief and rare is what makes ' +
-          'the bound acceptable rather than failed, and it is only knowable because it is counted.',
+          (5 * r.rate).toFixed(2) + ' days above Ap ' + bound.toFixed(0) + ', in about ' +
+          (5 * r.runs / r.years).toFixed(2) +
+          ' separate events — ' + r.above + ' days in ' + r.runs + ' events across ' +
+          r.years.toFixed(2) + ' years of record. That the exceedance is brief and rare is what makes ' +
+          'the bound acceptable rather than failed, and it is only knowable because it is counted.' +
+          refusedPoints(fig.points_refused),
       };
     },
   },
@@ -1427,12 +1170,6 @@ const PANELS = [
       'l3_solar_req_04', 'l3_solar_req_05',
       'l3_solar_ach_01', 'l3_solar_ach_02', 'l3_solar_ach_03',
       'l3_solar_ach_04', 'l3_solar_ach_05'],
-    // Both sides of all five, so the panel never computes a margin itself: the
-    // achieved rows ARE the margins and the requirement rows are the bounds.
-    engine: ['l3_solar_ach_01', 'l3_solar_ach_02', 'l3_solar_ach_03',
-      'l3_solar_ach_04', 'l3_solar_ach_05',
-      'l3_solar_req_01', 'l3_solar_req_02', 'l3_solar_req_03',
-      'l3_solar_req_04', 'l3_solar_req_05'],
     label: 'Closure',
     draws: 'Each requirement against what the record gives it, and the margin between them.',
     asks: 'Does the design close against the sky, and what spends the margin fastest?',
@@ -1454,84 +1191,43 @@ const PANELS = [
       const m = /^l3_solar_(?:ach|req)_(0[1-5])$/.exec(rowId);
       if (m) o.pair = m[1];
     },
-    async data(o) {
-      const n = (o && o.pair) || '01';
-      const ach = 'l3_solar_ach_' + n, req = 'l3_solar_req_' + n;
-      const key = ach;
-      CLOSURE_CACHE.want = CLOSURE_CACHE.want || new Map();
-      if (CLOSURE_CACHE.want.has(key)) return CLOSURE_CACHE.want.get(key);
-      const pr = (async () => {
-        // THE AXIS IS THE ENGINE'S ANSWER, NOT THE AUTHOR'S. Levers come back
-        // ordered by how much they move this row, and the requirement is always
-        // near the top of that list because a margin is a fraction OF it —
-        // moving the bound moves the margin by construction and says nothing
-        // about the sky. What a designer wants is the decision that spends the
-        // margin they have, so the bound is skipped and the next one taken.
-        const levers = await engineLevers(ach);
-        const lv = levers.find(l => l.id !== req && l.span > 0) || null;
-        if (!lv) return { lv: null };
-        const quantity = QUANTITY_OF[n];
-        const [mar, qty] = await Promise.all([
-          engineSweep(ach, lv.id, lv.lower, lv.upper, 90),
-          engineSweep(quantity, lv.id, lv.lower, lv.upper, 90),
-        ]);
-        return { lv, quantity, mar, qty };
-      })();
-      CLOSURE_CACHE.want.set(key, pr);
-      return pr;
+    // THE WHOLE PICTURE IS THE ENGINE'S, including what it says. The `closure`
+    // figure asks /v1/levers' own ranking which decision spends this margin
+    // fastest — skipping the requirement, which a margin is a fraction OF, so
+    // moving it moves the margin by construction and says nothing about the sky
+    // — sweeps the margin and the achieved quantity over it, on the case the
+    // reader is looking at, and finds where each runs out: the margin through
+    // zero, and, from a different array, the achieved curve through the
+    // requirement. panels/closure.toml says those are the same x, and the
+    // figure measures it (vleo_modules::design). The achieved rows ARE the
+    // margins and the requirement rows the bounds, so nothing here computes one.
+    data(o) {
+      return engineFigureOnCase('closure', { pair: (o && o.pair) || '01' });
     },
-    build(rec, o, extra, eng) {
-      const n = o.pair || '01';
-      const ach = 'l3_solar_ach_' + n, req = 'l3_solar_req_' + n;
+    build(rec, o, fig) {
+      if (fig.refused) throw new Error('the engine did not work the figure out: ' + fig.refused);
+      const n = fig.pair;
+      const ach = fig.ach, req = fig.req_id;
       const title = PAIR_LABEL[n];
-      if (!extra || !extra.lv) {
+      if (!fig.lever) {
         throw new Error('no decision upstream of ' + ach + ' moves its margin, so there is ' +
           'nothing to sweep it over — which is itself worth knowing and not worth drawing');
       }
-      const { lv, quantity, mar, qty } = extra;
-      // SI out of the engine, divided back by the factor the sweep reports, the
-      // same boundary rule every other panel here obeys.
-      const x = mar.x.map(v => v / mar.x_factor);
-      const margin = mar.y.map(v => v / mar.y_factor);
-      const value = qty.y.map(v => v / qty.y_factor);
+      const lv = fig.lever, quantity = fig.quantity;
+      // In the units a person reads, as the engine divided them back.
+      const x = fig.x, margin = fig.margin, value = fig.value;
       // The requirement is a declared number: it does not move when an
       // environmental decision does, and drawing it as a flat line is the whole
-      // point — it is what the achieved curve has to stay under. Divided by the
-      // sweep's own factor rather than read off `shown`, which is a formatted
-      // string for a person.
-      const rq = eng[req];
-      const reqV = rq && isFinite(rq.si) ? rq.si / (qty.y_factor || 1) : null;
-      // Where the two cross, which is where the margin goes through zero.
-      let cross = null;
-      for (let k = 1; k < margin.length; k++) {
-        const a = margin[k - 1], b = margin[k];
-        if (a === null || b === null || !isFinite(a) || !isFinite(b)) continue;
-        if ((a > 0) !== (b > 0)) { cross = x[k - 1] + (x[k] - x[k - 1]) * a / (a - b); break; }
-      }
-      // THE TOP FRAME'S CROSSING, COMPUTED FROM THE TOP FRAME. `cross` above is
-      // where the MARGIN goes through zero; this is where the achieved curve
-      // meets the requirement line. panels/closure.toml says the two must be the
-      // same x, and until now that was a check a person made by looking — which
-      // is exactly the kind of agreement worth measuring, because the two come
-      // from different arrays and a panel where they disagreed would still draw.
-      let crossQ = null;
-      if (reqV !== null) {
-        for (let k = 1; k < value.length; k++) {
-          const a2 = value[k - 1] - reqV, b2 = value[k] - reqV;
-          if (a2 === null || b2 === null || !isFinite(a2) || !isFinite(b2)) continue;
-          if ((a2 > 0) !== (b2 > 0)) {
-            crossQ = x[k - 1] + (x[k] - x[k - 1]) * a2 / (a2 - b2);
-            break;
-          }
-        }
-      }
-      const agree = cross !== null && crossQ !== null &&
-        Math.abs(cross - crossQ) <= Math.abs(x[x.length - 1] - x[0]) * 1e-6;
-      const now = eng[ach] && isFinite(eng[ach].si) ? eng[ach].si : null;
+      // point — it is what the achieved curve has to stay under.
+      const reqV = fig.req;
+      const cross = fig.cross, crossQ = fig.cross_q, agree = fig.agree;
+      const now = fig.now;
       const marks = cross === null ? [] : [{ axis: 'x', at: cross,
         label: 'the margin runs out here' }];
       // The achieved curve on one side of zero margin, cut exactly where the
-      // margin changes sign. `want` true is the side with margin left.
+      // margin changes sign. `want` true is the side with margin left. This is
+      // drawing — where one fill stops and the other starts — and it cuts at
+      // the same interpolation the engine's crossing is.
       const bandSide = want => {
         const xx = [], yy = [];
         const sgn = k => (margin[k] === null || !isFinite(margin[k]) ? null : margin[k] >= 0);
@@ -1656,7 +1352,8 @@ const PANELS = [
           '\n\nThe top frame and the bottom one are the same fact twice, and both are here ' +
           'because they answer different questions. The crossing says WHERE; the signed fraction ' +
           'says HOW MUCH, in a unit that compares across the five closures — the requirements are ' +
-          'in sfu and in Ap and cannot be set beside each other, and their margins can.',
+          'in sfu and in Ap and cannot be set beside each other, and their margins can.' +
+          refusedPoints(fig.points_refused),
       };
     },
   },
@@ -1679,8 +1376,6 @@ const PANELS = [
   {
     id: 'thermosphere',
     rows: ['env_exospheric_temperature', 'env_f107', 'env_f107a', 'env_kp'],
-    engine: ['l3_solar_interface', 'env_f107', 'env_f107a', 'env_kp',
-      'env_exospheric_temperature'],
     label: 'Thermosphere',
     draws: 'The exospheric temperature the drivers produce, and what moves it.',
     asks: 'How hot does the sky this subsystem publishes make the upper thermosphere?',
@@ -1694,117 +1389,27 @@ const PANELS = [
         ['shape', 'where the geomagnetic term stops being linear'],
       ] },
     ],
-    async data(o) {
+    // EVERY TEMPERATURE HERE IS THE ENGINE'S, AND NOW SO IS WHAT THE PANEL SAYS
+    // ABOUT THEM. The `thermosphere` figure runs the design's own drivers and
+    // probes env_exospheric_temperature as each view asks — the three ways to
+    // raise the flux, one Kp sweep per scenario at its own flux, each
+    // scenario's two Kp readings, the Kp sweep at the design point — and works
+    // out the slopes, the gaps and the departure from the quiet-end line
+    // (vleo_modules::thermo). PROBED, NOT RUN, where a driver is moved: those
+    // are facts about Jacchia 1971 at chosen inputs, and a run holding a
+    // computed driver is refused (§49). The page draws.
+    data(o) {
       const v = (o && o.view) || 'solar';
-      if (THERMO_CACHE[v]) return THERMO_CACHE[v];
-      const pr = (async () => {
-        if (v === 'solar') {
-          // THREE WAYS TO RAISE THE FLUX, and they are different quantities.
-          // Moving F10.7 alone is a single day departing from its own 81-day
-          // mean; moving F10.7A alone is the mean moving under a fixed day;
-          // moving both together is a sustained level. The relation treats the
-          // three differently and the three slopes are what says so — measured
-          // here, never stated.
-          //
-          // PROBED, NOT RUN, and the difference is the subject of §49. These
-          // three slopes are facts about Jacchia 1971 — true at any design
-          // point — and the flux stopped being a thing the design lets you move
-          // when env_f107 began reading the solar subsystem. A run holding a
-          // computed driver is now refused, correctly; a probe asks the
-          // relation directly, which is what this view was always asking.
-          //
-          // The others are held at the point the design currently sits at, so
-          // the curves pass through the marks drawn beside them.
-          const at = await engineValues(['env_f107', 'env_f107a', 'env_kp']);
-          const si = id => (at[id] && isFinite(at[id].si) ? at[id].si : null);
-          const [f0, fa0, kp0] = [si('env_f107'), si('env_f107a'), si('env_kp')];
-          if (f0 === null || fa0 === null || kp0 === null) return { refused: true };
-
-          const N = 24;
-          const both = [];
-          for (let i = 0; i < N; i++) {
-            const x = 60 + (400 - 60) * i / (N - 1);
-            both.push(engineProbe('env_exospheric_temperature',
-              { env_f107: x, env_f107a: x, env_kp: kp0 }).then(r => ({ x, y: r.si })));
-          }
-          const [fast, slow, sust] = await Promise.all([
-            probeSweep('env_exospheric_temperature', 'env_f107', 60, 400, 60,
-              { env_f107a: fa0, env_kp: kp0 }),
-            probeSweep('env_exospheric_temperature', 'env_f107a', 60, 400, 60,
-              { env_f107: f0, env_kp: kp0 }),
-            Promise.all(both),
-          ]);
-          return { fast, slow, sust };
-        }
-        // THE SCENARIO VIEWS ASK THE CROSSING THEMSELVES. `data` runs beside
-        // engineValues rather than after it, so it cannot see what the panel
-        // declared in `engine`; one more run of the crossing is cheaper than
-        // sequencing the two.
-        const set = await engineValues(['l3_solar_interface']);
-        if (v === 'kp') {
-          // One Kp sweep per scenario, each taken AT that scenario's own flux.
-          // A single sweep at the declared flux would draw one curve where the
-          // subsystem publishes five places to stand.
-          const curves = await Promise.all(SCEN.map(async sc => {
-            const d = driversOf(set, sc.k);
-            if (d.f107 === null || d.f107a === null) return { sc, d, sweep: null };
-            // THE TWO DOTS ARE RUNS, NOT SWEPT POINTS, and that is not fussiness.
-            // Reading them off the 46-point sweep put the worst-day gap at
-            // 141.1 K while the next view, which runs the engine at the exact Kp,
-            // put it at 140.6 — two views of one fact disagreeing in the first
-            // decimal because one of them had interpolated. Both now run.
-            const [sweep, m, k] = await Promise.all([
-              probeSweep('env_exospheric_temperature', 'env_kp', 0, 9, 46,
-                { env_f107: d.f107, env_f107a: d.f107a }),
-              engineProbe('env_exospheric_temperature',
-                { env_f107: d.f107, env_f107a: d.f107a, env_kp: d.kpMean }),
-              engineProbe('env_exospheric_temperature',
-                { env_f107: d.f107, env_f107a: d.f107a, env_kp: d.kpPeak }),
-            ]);
-            return { sc, d, sweep, tMean: m.si, tPeak: k.si };
-          }));
-          return { curves };
-        }
-        if (v === 'slot') {
-          // Ten runs: each scenario at the day's mean Kp and at its worst slot,
-          // with that scenario's own flux. The gap between them is the question.
-          const pts = await Promise.all(SCEN.map(async sc => {
-            const d = driversOf(set, sc.k);
-            if (d.f107 === null || d.kpMean === null || d.kpPeak === null) return { sc, d };
-            const [m, k] = await Promise.all([
-              engineProbe('env_exospheric_temperature',
-                { env_f107: d.f107, env_f107a: d.f107a, env_kp: d.kpMean }),
-              engineProbe('env_exospheric_temperature',
-                { env_f107: d.f107, env_f107a: d.f107a, env_kp: d.kpPeak }),
-            ]);
-            return { sc, d, tMean: m.si, tPeak: k.si };
-          }));
-          return { pts };
-        }
-        // shape: one sweep at the point the design sits at is enough — the
-        // geomagnetic term does not depend on the flux, and showing that it
-        // does not is part of what this view says.
-        const now = await engineValues(['env_f107', 'env_f107a']);
-        const pick = id => (now[id] && isFinite(now[id].si) ? now[id].si : null);
-        if (pick('env_f107') === null || pick('env_f107a') === null) return { refused: true };
-        return {
-          kp: await probeSweep('env_exospheric_temperature', 'env_kp', 0, 9, 46,
-            { env_f107: pick('env_f107'), env_f107a: pick('env_f107a') }),
-        };
-      })();
-      THERMO_CACHE[v] = pr;
-      return pr;
+      if (!THERMO_CACHE[v]) THERMO_CACHE[v] = engineFigure('thermosphere', { view: v });
+      return THERMO_CACHE[v];
     },
-    build(rec, o, extra, eng) {
-      const v = o.view || 'solar';
-      const dec = id => (eng[id] && isFinite(eng[id].si) ? eng[id].si : null);
-      const decF = dec('env_f107'), decFa = dec('env_f107a'), decKp = dec('env_kp');
-      const now = dec('env_exospheric_temperature');
-
-      if (v === 'solar') return thermoSolar(extra, eng, decF, decFa, decKp, now);
-      if (v === 'slot') return thermoSlot(extra, eng);
-      if (v === 'shape') return thermoShape(extra, eng, decF, decFa, decKp);
-      return thermoKp(extra, eng, decKp);
+    build(rec, o, fig) {
+      if (fig.refused) throw new Error('the engine did not work the figure out: ' + fig.refused);
+      const v = fig.view;
+      if (v === 'solar') return thermoSolar(fig);
+      if (v === 'slot') return thermoSlot(fig);
+      if (v === 'shape') return thermoShape(fig);
+      return thermoKp(fig);
     },
   },
 
@@ -1822,30 +1427,27 @@ const PANELS = [
         opts: [['f107', 'F10.7'], ['ap', 'Ap'], ['ssn', 'sunspot number']] },
       { k: 'by', label: 'aggregate', opts: [['year', 'by year'], ['doy', 'by day of year'], ['month', 'by month'], ['smooth', 'the 13-month smoother'], ['kpap', 'Kp against ap']] },
     ],
-    async data() { return bundleFile('solar-weather', 'monthly_means.csv'); },
-    build(rec, o, extra) {
-      if (o.by === 'smooth') return smoothed(extra.rows, o.v);
-      if (o.by === 'kpap') return kpAgainstAp(rec);
-      const key = o.v;
-      const grp = new Map();
-      for (const d of rec.days) {
-        if (d[key] === null) continue;
-        const g = o.by === 'year' ? d.year : o.by === 'doy' ? Math.ceil(d.doy / 5) * 5 : (d.year * 12 + +d.date.slice(5, 7));
-        if (!grp.has(g)) grp.set(g, []);
-        grp.get(g).push(d[key]);
-      }
-      const ks = [...grp.keys()].sort((a, b) => a - b);
-      const xs = o.by === 'month' ? ks.map(k => Math.floor(k / 12) + (k % 12) / 12) : ks;
-      const ys = ks.map(k => grp.get(k).reduce((p, c) => p + c, 0) / grp.get(k).length);
+    // THE NUMBERS ARE THE ENGINE'S (phases 10b and 10f): every view asks for
+    // its own figure — the record grouped by year, day of year or month
+    // (vleo_modules::record::climate, on the record's own calendar), the
+    // 13-month smoother (record::smoother, from monthly_means.csv), or Kp
+    // against ap — and draws it.
+    data: o => (o.by === 'smooth' ? engineFigure('smoother', { v: o.v })
+      : o.by === 'kpap' ? engineFigure('kp-ap')
+        : engineFigure('climate', { v: o.v, by: o.by })),
+    build(rec, o, fig) {
+      if (fig.refused) throw new Error('the engine did not work the figure out: ' + fig.refused);
+      if (o.by === 'smooth') return smoothed(fig, o.v);
+      if (o.by === 'kpap') return kpAgainstAp(fig);
+      const key = fig.variable, ks = fig.key, xs = fig.x, ys = fig.mean;
       // THE RECORD'S MEAN IS OVER DAYS, NOT OVER GROUPS. Averaging the yearly
       // means weights 1997 — which the record joins in January and holds 357
       // days of — the same as a full year, and the answer then disagrees with
       // sw_central_expectation's climatology, which is the day mean. For F10.7
-      // the two are 113.78 and 114.84.
-      const allDays = rec.days.map(d => d[key]).filter(v => v !== null);
-      const overall = allDays.reduce((p, c) => p + c, 0) / allDays.length;
+      // the two are 113.78 and 114.84. The engine takes it over the days.
+      const overall = fig.overall;
       const marks = [{ axis: 'y', at: overall,
-        label: 'mean over the record’s ' + allDays.length + ' days = ' + overall.toFixed(2) }];
+        label: 'mean over the record’s ' + fig.days + ' days = ' + overall.toFixed(2) }];
       if (o.by === 'doy') {
         marks.push({ axis: 'x', at: 80, label: 'March equinox', colour: INK.series[1] });
         marks.push({ axis: 'x', at: 266, label: 'September equinox', colour: INK.series[1] });
@@ -1855,8 +1457,8 @@ const PANELS = [
       // which is fine until a second reader needs them and copies them.
       const vname = key === 'f107' ? 'F10.7' : key === 'ap' ? 'Ap' : 'the sunspot number';
       const unit = key === 'f107' ? 'sfu' : '';
-      const hi = Math.max(...ys), lo = Math.min(...ys);
-      const atHi = xs[ys.indexOf(hi)], atLo = xs[ys.indexOf(lo)];
+      const [hi, atHi] = fig.high || [NaN, NaN];
+      const [lo, atLo] = fig.low || [NaN, NaN];
       const gname = o.by === 'doy' ? '5-day bin' : o.by === 'year' ? 'year' : 'month';
       // THE GAP, POINTED AT. "The 2017 gap is 273 consecutive days and shows
       // here as a year drawn from nine months" is the last sentence of a
@@ -1868,7 +1470,7 @@ const PANELS = [
       if (o.by === 'year') {
         const gi = ks.indexOf(2017);
         if (gi >= 0) {
-          const held = rec.days.filter(d => d.year === 2017 && d[key] !== null).length;
+          const held = fig.days_in[gi];
           if (held < 330) {
             notes.push({ x: xs[gi], y: ys[gi],
               text: 'a year drawn from ' + held + ' days, not 365' });
@@ -1882,7 +1484,7 @@ const PANELS = [
               of: 'between the quietest ' + gname + ' of the record and the busiest \u2014 a mission '
                 + 'is sized against wherever in that range it falls' },
         spec: {
-          finding: ys.filter(v => v < overall).length + ' of the ' + ys.length + ' ' + gname +
+          finding: fig.below + ' of the ' + ys.length + ' ' + gname +
             's sit below the record mean of ' + overall.toFixed(1) + ', and the highest is ' +
             (hi / lo).toFixed(1) + ' times the lowest',
           notes,
@@ -1895,7 +1497,7 @@ const PANELS = [
           const spread = 'The ' + (o.by === 'doy' ? '5-day bins' : o.by === 'year' ? 'yearly means' : 'monthly means') +
             ' run from ' + sig(lo) + (unit ? ' ' + unit : '') + ' at ' + sig(atLo) + ' to ' + sig(hi) +
             (unit ? ' ' + unit : '') + ' at ' + sig(atHi) + ', a ratio of ' + (hi / lo).toFixed(2) +
-            ' about a mean of ' + overall.toFixed(2) + ' over the record’s ' + allDays.length +
+            ' about a mean of ' + overall.toFixed(2) + ' over the record’s ' + fig.days +
             ' days. ';
           if (o.by === 'doy' && key === 'ap') {
             return spread + 'That swing is the equinoctial effect and its SIZE is the point: the ' +
@@ -1930,28 +1532,23 @@ const PANELS = [
     // Where the picture stops being true (docs/EXPLAINING.md E4).
     breaks: 'This is not a density: no atmosphere model is written in this tree yet, so the picture shows only the two drivers such a model would take.',
     controls: [],
-    build(rec) {
+    // THE NUMBERS ARE THE ENGINE'S (phase 10): the correlation, the medians,
+    // the share below both and the storm deciles are worked out by
+    // vleo_modules::record::density from the same bundle this page draws, and
+    // held by its tests. The page draws the record's own days and says what
+    // the engine found; it works out none of it.
+    data: () => engineFigure('density'),
+    build(rec, o, fig) {
+      if (fig.refused) throw new Error('the engine did not work the figure out: ' + fig.refused);
       const withBoth = rec.days.filter(d => d.f107 !== null && d.ap !== null);
-      // "Close to independent" was an assertion. It is now a measurement, because
-      // it is the claim this panel rests on: if the two drivers carried the same
-      // information a density model would not need both.
-      const r = corr(withBoth.map(d => d.f107), withBoth.map(d => d.ap));
-      // How much of the cloud sits below BOTH medians. Two independent drivers
-      // put a quarter of their days there; the distance from a quarter is the
-      // dependence, and it is the one thing a scatter of ten thousand dots does
-      // not tell a reader by looking.
-      const mf = quantile(withBoth.map(d => d.f107).sort((x, y) => x - y), 0.5);
-      const ma = quantile(withBoth.map(d => d.ap).sort((x, y) => x - y), 0.5);
-      const quad = 100 * withBoth.filter(d => d.f107 < mf && d.ap < ma).length / withBoth.length;
-      // And whether the tail really is everywhere along the flux axis, counted
-      // by decile rather than seen in a cloud of ten thousand dots.
-      const fSorted = withBoth.map(d => d.f107).sort((x, y) => x - y);
-      const edge = k => quantile(fSorted, k / 10);
-      let stormDecs = 0;
-      for (let k = 0; k < 10; k++) {
-        const lo = edge(k), hi2 = k === 9 ? Infinity : edge(k + 1);
-        if (withBoth.some(d => d.f107 >= lo && d.f107 < hi2 && d.ap >= 26)) stormDecs++;
+      // The dots are the record's days and the numbers the engine's, from one
+      // bundle. Were they ever two different sets of days, the picture and its
+      // numbers would be two claims — so it says so rather than drawing both.
+      if (withBoth.length !== fig.days) {
+        throw new Error('the page draws ' + withBoth.length + ' days and the engine worked out ' +
+          fig.days + ' (' + fig.bundle + ')');
       }
+      const r = fig.r, quad = fig.below_both_pct, stormDecs = fig.storm_deciles;
       return {
         // THE ANSWER IS A REFUSAL, AND IT SAYS SO. Rule 5: a refusal is never a
         // substitution. Putting the correlation in this slot would answer "what
@@ -1998,33 +1595,22 @@ const PANELS = [
 // the views the study's tabs name and the first pass did not draw
 
 /** Repeatability · storm scale. How unevenly the storms fall across cycles. */
-function stormScale(rec) {
-  const LV = [[48, 'G1'], [80, 'G2'], [132, 'G3']];
-  const per = rec.cycles.map(c => {
-    const d = rec.days.filter(x => x.cycle === c.n && x.ap !== null);
-    return { c, n: d.length, days: d };
-  });
-  const series = LV.map(([thr, name], i) => ({
-    name: name + ' (Ap \u2265 ' + thr + ')',
+function stormScale(fig) {
+  // THE NUMBERS ARE THE ENGINE'S: vleo_modules::record::storm_scale counts the
+  // days a year at each level, per cycle, and names the busiest; the levels are
+  // the published table's ap at Kp 5, 6 and 7. The page draws them.
+  if (fig.refused) throw new Error('the engine did not work the figure out: ' + fig.refused);
+  const series = fig.levels.map((lv, i) => ({
+    name: lv.name + ' (Ap \u2265 ' + lv.ap + ')',
     kind: 'bars',
-    x: per.map(p => p.c.n),
+    x: fig.cycles,
     // Per YEAR of the cycle, not per cycle: cycle 25 is six years long in this
-    // record and the other two are eleven, so raw counts would say more about
-    // how much of each cycle the record holds than about the Sun.
-    y: per.map(p => (p.n ? p.days.filter(d => d.ap >= thr).length / (p.n / 365.25) : null)),
+    // record and the other two are eleven.
+    y: fig.per_year[i],
     colour: INK.series[i],
   }));
-  const worst = per.map(p => ({ n: p.c.n, max: Math.max(...p.days.map(d => d.ap)) }));
-  // How uneven "unevenly" is, at the mildest level, measured off the bars drawn.
-  const g1 = (series[0].y || []).filter(v => v !== null && isFinite(v) && v > 0);
-  const evenness = g1.length > 1 ? Math.max(...g1) / Math.min(...g1) : null;
-  // Which cycle is busiest, at each level, off the bars themselves.
-  const topAt = series.map(sr => {
-    let bi = -1;
-    sr.y.forEach((v, i) => { if (v !== null && isFinite(v) && (bi < 0 || v > sr.y[bi])) bi = i; });
-    return bi;
-  });
-  const oneWinner = topAt.length && topAt.every(i => i >= 0 && i === topAt[0]);
+  const evenness = fig.evenness;
+  const oneWinner = fig.busiest.length && fig.busiest.every(n => n !== null && n === fig.busiest[0]);
   return {
     answer: evenness === null
       ? { value: '\u2014', of: 'not enough cycles reach G1 to compare' }
@@ -2032,16 +1618,16 @@ function stormScale(rec) {
           of: 'between the busiest cycle and the quietest, in days a year at G1 or above' },
     spec: {
       finding: oneWinner
-        ? 'cycle ' + per[topAt[0]].c.n + ' has the most days a year at all three levels'
+        ? 'cycle ' + fig.busiest[0] + ' has the most days a year at all three levels'
         : 'the busiest cycle is not the same at every level: ' +
-          LV.map(([, n], i) => n + ' \u2192 cycle ' +
-            (topAt[i] < 0 ? '\u2014' : per[topAt[i]].c.n)).join(', '),
+          fig.levels.map((lv, i) => lv.name + ' \u2192 cycle ' +
+            (fig.busiest[i] === null ? '\u2014' : fig.busiest[i])).join(', '),
       x: { label: 'solar cycle', ticks: 2 },
       y: { label: 'days a year at or above the level', min: 0 },
       series,
     },
     note: 'Storms are not shared out evenly between cycles. Largest daily Ap by cycle: ' +
-      worst.map(w => w.n + ' \u2192 ' + w.max).join(', ') +
+      fig.cycles.map((n, i) => n + ' \u2192 ' + (fig.max_ap[i] === null ? '\u2014' : fig.max_ap[i])).join(', ') +
       '. Counted per year of each cycle rather than per cycle, because this record holds all of 23 ' +
       'and 24 and only six years of 25. A design sized on the average cycle is sized for neither the ' +
       'cycle it will fly through nor the worst one here.',
@@ -2049,28 +1635,13 @@ function stormScale(rec) {
 }
 
 /** Pattern · spikes. What counts as one, how big, and when they fall. */
-function spikes(rec) {
-  const v = rec.days.map(d => d.f107);
-  const base = centredMean(v, 81, 0.7);
-  const ratio = rec.days.map((d, i) => (v[i] === null || base[i] === null ? null : v[i] / base[i]));
-  const ok = ratio.filter(x => x !== null);
-  const mu = ok.reduce((p, c) => p + c, 0) / ok.length;
-  const sd = Math.sqrt(ok.reduce((p, c) => p + (c - mu) * (c - mu), 0) / ok.length);
-  const thr = mu + 2.5 * sd;
-  const nb = 20, byPhase = new Array(nb).fill(0), allPhase = new Array(nb).fill(0);
-  let n = 0, runs = 0, prev = -99;
-  rec.days.forEach((d, i) => {
-    if (ratio[i] === null || d.phase === null) return;
-    const b = Math.min(nb - 1, Math.floor(d.phase * nb));
-    allPhase[b]++;
-    if (ratio[i] >= thr) {
-      byPhase[b]++; n++;
-      if (d.t !== prev + 1) runs++;
-      prev = d.t;
-    }
-  });
-  const xs = byPhase.map((_, i) => (i + 0.5) / nb);
-  const rate = byPhase.map((c, i) => (allPhase[i] ? 1000 * c / allPhase[i] : null));
+function spikes(fig) {
+  // THE NUMBERS ARE THE ENGINE'S: vleo_modules::record::spikes divides each
+  // day's F10.7 by its 81-day centred mean, sets the threshold at the ratio's
+  // mean plus 2.5 of its standard deviations, and counts the days above it per
+  // thousand days of each cycle phase — the phase sw_cycle_phase folds by.
+  const thr = fig.threshold, n = fig.days, runs = fig.bursts;
+  const xs = fig.phase, rate = fig.rate;
   const drawnRates = rate.filter(v => v !== null && isFinite(v));
   const rHi = drawnRates.length ? Math.max(...drawnRates) : null;
   const rLo = drawnRates.length ? Math.min(...drawnRates) : null;
@@ -2098,27 +1669,15 @@ function spikes(rec) {
 }
 
 /** Segmentation · regime against cycle phase. Where in a cycle a storm is likely. */
-function regimeByPhase(rec) {
-  const nb = 20;
-  const tot = new Array(nb).fill(0), st = new Array(nb).fill(0), qt = new Array(nb).fill(0);
-  for (const d of rec.days) {
-    if (d.phase === null || d.ap === null) continue;
-    const b = Math.min(nb - 1, Math.floor(d.phase * nb));
-    tot[b]++;
-    if (d.ap >= 26) st[b]++;
-    else if (d.ap <= 6) qt[b]++;
-  }
-  const xs = tot.map((_, i) => (i + 0.5) / nb);
-  const stPc = st.map((c, i) => (tot[i] ? 100 * c / tot[i] : null));
-  const qtPc = qt.map((c, i) => (tot[i] ? 100 * c / tot[i] : null));
-  // Where the storm share peaks, off the curve rather than from the prose.
-  const drawn = stPc.filter(v => v !== null && isFinite(v));
-  const pk = drawn.length ? Math.max(...drawn) : null;
-  const atPk = pk === null ? null : xs[stPc.indexOf(pk)];
-  const qDrawn = qtPc.filter(v => v !== null && isFinite(v));
-  const qMin = qDrawn.length ? Math.min(...qDrawn) : null;
-  const qMinAt = qMin === null ? null : xs[qtPc.indexOf(qMin)];
-  const mirror = corr(stPc, qtPc);
+function regimeByPhase(fig) {
+  // THE NUMBERS ARE THE ENGINE'S: vleo_modules::record::regime_phase counts, at
+  // each cycle phase, the days sw_regime calls storm and the days it calls
+  // quiet — the row's own bands, not a `>= 26` restated here — and measures how
+  // closely the two shares mirror each other.
+  const xs = fig.phase, stPc = fig.storm_pct, qtPc = fig.quiet_pct;
+  const [pk, atPk] = fig.storm_peak || [null, null];
+  const [qMin, qMinAt] = fig.quiet_low || [null, null];
+  const mirror = fig.mirror;
   return {
     answer: pk === null
       ? { value: '\u2014', of: 'no phase bin holds a day with an Ap' }
@@ -2153,33 +1712,16 @@ function regimeByPhase(rec) {
 }
 
 /** Predict · by cycle. The same growth curve, computed inside each cycle. */
-function growthByCycle(rec, key, q, maxL) {
-  const leads = [];
-  for (let L = 30; L <= Math.min(maxL, 1826); L = Math.round(L * 1.5)) leads.push(L);
-  const series = rec.cycles.map((c, i) => {
-    const by = new Map();
-    for (const d of rec.days) if (d.cycle === c.n && d[key] !== null) by.set(d.t, d[key]);
-    const ys = leads.map(L => {
-      const ch = [];
-      for (const [t, v] of by) { const w = by.get(t + L); if (w !== undefined) ch.push(w - v); }
-      ch.sort((a, b) => a - b);
-      return ch.length > 30 ? quantile(ch, q) : null;
-    });
-    return { name: 'cycle ' + c.n, kind: 'line', x: leads.map(L => L / 365.25), y: ys, colour: INK.series[i] };
-  });
-  // How far apart the cycles actually are, at the longest lead all of them reach.
-  // "They disagree" was the claim and it was never measured; this measures it.
-  const name = key === 'f107' ? 'F10.7' : 'Ap';
-  const unit = key === 'f107' ? ' sfu' : '';
-  let shared = -1, spread = null;
-  for (let i = leads.length - 1; i >= 0; i--) {
-    const vs = series.map(s => s.y[i]).filter(v => v !== null && isFinite(v));
-    if (vs.length === series.length) {
-      shared = leads[i] / 365.25;
-      spread = [Math.min(...vs), Math.max(...vs)];
-      break;
-    }
-  }
+function growthByCycle(fig, q) {
+  // THE NUMBERS ARE THE ENGINE'S: vleo_modules::record::growth_by_cycle takes
+  // the pairs only within a cycle, draws a lead only above thirty of them, and
+  // finds the longest lead every cycle reaches and how far apart they are there.
+  const series = fig.cycles.map((n, i) => ({
+    name: 'cycle ' + n, kind: 'line', x: fig.lead_years, y: fig.change[i], colour: INK.series[i],
+  }));
+  const name = fig.variable === 'f107' ? 'F10.7' : 'Ap';
+  const unit = fig.variable === 'f107' ? ' sfu' : '';
+  const shared = fig.shared, spread = fig.spread;
   return {
     answer: !spread
       ? { value: '\u2014', of: 'no lead is reached by all of the cycles \u2014 shorten it until they overlap' }
@@ -2234,66 +1776,33 @@ function growthByCycle(rec, key, q, maxL) {
  * at fourteen days that is about 4 per cent of a year's rows landing one year
  * late, which moves nothing and is stated rather than corrected for.
  */
-function byIssueYear(fc, byDay, tOf, strict, leaky) {
-  const LO = 1, HI = 14;
+function byIssueYear(fig) {
+  const LO = fig.leads[0], HI = fig.leads[1];
   //: A year with few pairs produces a skill that is arithmetic rather than
-  //: evidence — 2010 has 25 of them and scores -11.8. Dropped, and counted in
-  //: the note, on the same principle the Repeatability panel drops thin bins.
-  const MIN = 200;
-  const acc = new Map();
-  for (const r of fc) {
-    const L = +r.lead_days;
-    if (!(L >= LO && L <= HI) || r.f107 === null) continue;
-    const tt = tOf.get(r.target_date);
-    const obs = tt === undefined ? undefined : byDay.get(tt);
-    if (obs === undefined) continue;
-    const y = +String(r.issue_date).slice(0, 4);
-    if (!isFinite(y)) continue;
-    if (!acc.has(y)) acc.set(y, { e2: 0, se: 0, n: 0, e2s: 0, p2s: 0, ns: 0, e2l: 0, p2l: 0, nl: 0 });
-    const a = acc.get(y), e = +r.f107 - obs;
-    // Bias and RMS error over every pair; each skill over the pairs its own
-    // baseline reaches. Same rule as the by-lead view, for the same reason.
-    a.e2 += e * e; a.se += e; a.n++;
-    const ps = strict(r.issue_date);
-    if (ps !== null) { a.e2s += e * e; a.p2s += (ps - obs) * (ps - obs); a.ns++; }
-    const pl = leaky(r.issue_date);
-    if (pl !== null) { a.e2l += e * e; a.p2l += (pl - obs) * (pl - obs); a.nl++; }
-  }
-  const years = [...acc.keys()].sort((a, b) => a - b);
-  const thin = years.filter(y => acc.get(y).n < MIN);
-  //: A dropped year is a HOLE, not an absence. Filtering the thin years out of
-  //: the series entirely leaves the line joining 2008 straight to 2011, and
-  //: that segment reads as two years of evidence rather than as the gap it is.
-  //: A null breaks the line here the same way it does everywhere else.
-  const span = [];
-  for (let y = years[0]; y <= years[years.length - 1]; y++) span.push(y);
-  const ok = y => acc.has(y) && acc.get(y).n >= MIN;
-  const col = f => span.map(y => (ok(y) ? f(acc.get(y)) : null));
-  const skS = col(a => (a.ns && a.p2s ? 1 - (a.e2s / a.ns) / (a.p2s / a.ns) : null));
-  const skL = col(a => (a.nl && a.p2l ? 1 - (a.e2l / a.nl) / (a.p2l / a.nl) : null));
-  const bias = col(a => a.se / a.n);
-  const rmse = col(a => Math.sqrt(a.e2 / a.n));
-  const nObs = col(a => a.n), nStr = col(a => a.ns), nLk = col(a => a.nl);
-  const kept = span.filter((y, i) => skS[i] !== null);
-  const keptS = kept.map(y => {
-    const a = acc.get(y);
-    return a.ns && a.p2s ? 1 - (a.e2s / a.ns) / (a.p2s / a.ns) : null;
-  });
-  const worst = kept.length ? kept[keptS.indexOf(Math.min(...keptS))] : null;
-  const best = kept.length ? kept[keptS.indexOf(Math.max(...keptS))] : null;
+  //: evidence — 2010 has 25 of them and scores -11.8. The engine drops it, and
+  //: the note counts it, on the same principle the Repeatability panel drops
+  //: thin bins.
+  const MIN = fig.min_pairs;
+  //: A dropped year is a HOLE, not an absence: the engine gives every year from
+  //: the first issue to the last, and a null there breaks the line the same way
+  //: it does everywhere else, rather than joining 2008 straight to 2011.
+  const span = fig.year, thin = fig.thin;
+  const skS = fig.skill_strict, skL = fig.skill_leaky, bias = fig.bias, rmse = fig.rmse;
+  const nObs = fig.pairs, nStr = fig.pairs_strict, nLk = fig.pairs_leaky;
+  const keptS = skS.filter(v => v !== null);
+  const worst = fig.worst, best = fig.best;
   // The worst annual bias, measured off the middle frame. Not the skill: the
   // year-to-year skill swing is mostly the record's difficulty, and the bias is
   // the one line here a design is read off wrongly.
-  const low = bias.reduce((b, v, i) =>
-    (v !== null && isFinite(v) && (b < 0 || v < bias[b]) ? i : b), -1);
+  const low = fig.lowest_bias;
   return {
-    answer: low < 0
+    answer: low === null
       ? { value: '\u2014', of: 'no year holds enough usable pairs to score' }
-      : { value: (bias[low] > 0 ? '+' : '') + bias[low].toFixed(1) + ' sfu',
-          of: 'the worst annual bias, in ' + span[low] + ' \u2014 the outlook came in LOW, which is '
+      : { value: (low[1] > 0 ? '+' : '') + low[1].toFixed(1) + ' sfu',
+          of: 'the worst annual bias, in ' + low[0] + ' \u2014 the outlook came in LOW, which is '
             + 'the direction that costs propellant' },
     spec: {
-      finding: 'of the ' + kept.length + ' years with enough pairs to score, ' +
+      finding: 'of the ' + keptS.length + ' years with enough pairs to score, ' +
         keptS.filter(v => v !== null && v > 0).length + ' beat persistence and ' +
         bias.filter(v => v !== null && isFinite(v) && v < 0).length +
         ' came in low; the RMS frame tracks the level, not the skill',
@@ -2395,31 +1904,26 @@ function scoreBaseline(metric) {
   return [];
 }
 
-function issueAge(idx) {
-  const ds = idx.map(r => daysSince2000(r.issue_date)).filter(x => isFinite(x)).sort((a, b) => a - b);
-  const gaps = [];
-  for (let i = 1; i < ds.length; i++) { const g = ds[i] - ds[i - 1]; if (g > 0) gaps.push(g); }
-  const hist = new Map();
-  for (const g of gaps) hist.set(Math.min(g, 30), (hist.get(Math.min(g, 30)) || 0) + 1);
-  const xs = [...hist.keys()].sort((a, b) => a - b);
-  const mean = gaps.reduce((p, c) => p + c, 0) / gaps.length;
-  gaps.sort((a, b) => a - b);
+function issueAge(fig) {
+  // The gaps between issues, their median and mean, the commonest and how
+  // many run past a day are vleo_modules::record::issue_age; the page draws
+  // the bars.
+  const xs = fig.gap, ys = fig.count;
   return {
-    answer: { value: quantile(gaps, 0.5) + ' days',
+    answer: { value: fig.median + ' days',
       of: 'the median gap between one outlook and the next \u2014 how stale the newest one already '
         + 'is on a typical day, which no lead_days column says' },
     spec: {
-      finding: 'the tallest bar is at ' + xs[xs.map(k => hist.get(k))
-        .indexOf(Math.max(...xs.map(k => hist.get(k))))] + ' days, and ' +
-        (100 * gaps.filter(g => g > 1).length / gaps.length).toFixed(0) +
-        '% of the gaps are longer than one day',
-      x: { label: 'days between one issue and the next  [30 = 30 or more]', min: 0 },
+      finding: 'the tallest bar is at ' + fig.commonest + ' days, and ' +
+        fig.over_a_day_pct.toFixed(0) + '% of the gaps are longer than one day',
+      x: { label: 'days between one issue and the next  [' + fig.cap + ' = ' + fig.cap +
+        ' or more]', min: 0 },
       y: { label: 'number of gaps', min: 0 },
-      series: [{ name: '', kind: 'bars', x: xs, y: xs.map(k => hist.get(k)) }],
+      series: [{ name: '', kind: 'bars', x: xs, y: ys }],
     },
-    note: 'From forecast_issues.csv, the index of ' + idx.length + ' issues \u2014 the one table in ' +
+    note: 'From forecast_issues.csv, the index of ' + fig.issues + ' issues \u2014 the one table in ' +
       'this bundle nothing else reads. The outlook is not published daily: the gap between issues is ' +
-      'a median of ' + quantile(gaps, 0.5) + ' days and a mean of ' + mean.toFixed(2) +
+      'a median of ' + fig.median + ' days and a mean of ' + fig.mean.toFixed(2) +
       ', so on a typical day the newest outlook is already that old and its nominal lead understates ' +
       'the real one. A verification keyed on lead_days alone, as the rows here are, measures the ' +
       'forecast and not the staleness a user actually meets.',
@@ -2443,40 +1947,25 @@ function issueAge(idx) {
  * rather than one spread used at every level. Together they ARE the design
  * window, which is what this panel's own label has always claimed to draw.
  */
-function f107Window(extra, o, eng) {
-  const rq = eng && eng[o.reqf];
-  if (!rq || rq.si === undefined) {
-    throw new Error((o.reqf || 'the F10.7 requirement') + ' did not answer: ' +
-      ((rq && rq.refused) || 'the engine was not asked'));
-  }
-  const REQ = rq.si;
-  // sw_central_expectation is NOT read here any more, and the panel no longer
-  // declares it. The four design-window rows carry the centre inside
-  // themselves; guarding on a value this figure does not draw would be a
-  // declaration the panel cannot honour, and 2b says so — it caught exactly
-  // that within a minute of this rewrite.
-  const YR = 31557600;
-  const w = extra.win;
-  const xs = w.fl.x.map(v => v / YR);
-  const hot = w.fs.y, hotLong = w.fl.y, coldLong = w.cl.y, cold = w.cs.y;
-  const analogue = w.pk.y;
-  const peak = Math.max(...hot);
-  // How wide the filled window actually is, along its length — the fill's own
-  // two edges, so the sentence and the area are the same measurement.
-  const band = xs.map((_, k) => hot[k] - cold[k]).filter(v => v !== null && isFinite(v));
-  // Where the analogue's own maximum climbs above the hot single-day design
-  // value, which is the finding this fifth line is here for.
-  let over = null;
-  for (let k = 0; k < xs.length; k++) {
-    if (analogue[k] !== null && hot[k] !== null && analogue[k] > hot[k]) { over = xs[k]; break; }
-  }
+function f107Window(fig) {
+  // The requirement's own answer, the five curves swept over mission length,
+  // and what the engine says about them — the worst single day, the margin
+  // left above it, the window's width along its length (its own two edges, so
+  // the sentence and the area are one measurement) and where the analogue's
+  // peak first climbs above the hot single day (vleo_modules::design).
+  const REQ = fig.req, reqf = fig.reqf;
+  const xs = fig.years;
+  const hot = fig.hot, hotLong = fig.hot_long, coldLong = fig.cold_long, cold = fig.cold;
+  const analogue = fig.analogue;
+  if (fig.peak === null) throw new Error('sw_f107_design_short answered nowhere in the declared range');
+  const peak = fig.peak, margin = fig.margin, over = fig.over;
   return {
-    answer: { value: (REQ - peak >= 0 ? '+' : '') + (REQ - peak).toFixed(1) + ' sfu',
-      of: 'margin against ' + o.reqf + '\u2019s ' + REQ.toFixed(0)
+    answer: { value: (margin >= 0 ? '+' : '') + margin.toFixed(1) + ' sfu',
+      of: 'margin against ' + reqf + '\u2019s ' + REQ.toFixed(0)
         + ' \u2014 the worst single day any declared window reaches is ' + peak.toFixed(1) },
     spec: {
-      finding: 'the window is ' + sig(Math.max(...band)) + ' sfu wide at its widest and ' +
-        sig(Math.min(...band)) + ' at its narrowest, and the dashed peak ' +
+      finding: 'the window is ' + sig(fig.widest) + ' sfu wide at its widest and ' +
+        sig(fig.narrowest) + ' at its narrowest, and the dashed peak ' +
         (over === null ? 'stays under the hot single-day curve throughout'
           : 'crosses above it at ' + over.toFixed(1) + ' yr'),
       x: { label: 'mission length  [years]', min: xs[0], max: xs[xs.length - 1] },
@@ -2509,8 +1998,8 @@ function f107Window(extra, o, eng) {
         // Above the bound is the side that fails, and the bound binds one way:
         // the requirement's sense is `<=`, so the region is everything over it.
         { axis: 'y', from: REQ, label: '', colour: INK.bound, alpha: 0.06 },
-        { axis: 'y', at: REQ, label: 'required \u2264 ' + REQ.toFixed(0) + '  (' + o.reqf + ')',
-          colour: INK.bound, row: o.reqf },
+        { axis: 'y', at: REQ, label: 'required \u2264 ' + REQ.toFixed(0) + '  (' + reqf + ')',
+          colour: INK.bound, row: reqf },
       ],
     },
     note: 'The F10.7 half of what crosses to the system, as the four rows §20 built for it compute ' +
@@ -2523,7 +2012,7 @@ function f107Window(extra, o, eng) {
       'that 74 per cent high. That row is deprecated and this figure no longer draws it.\n\n' +
       'Every curve moves with mission length because the window mean rises and falls with where the ' +
       'window ends in the cycle \u2014 the cycle showing through a statistic that was never told ' +
-      'about it. ' + o.reqf + '\u2019s ' + REQ.toFixed(0) + ' sfu is ' +
+      'about it. ' + reqf + '\u2019s ' + REQ.toFixed(0) + ' sfu is ' +
       (peak <= REQ ? 'met across the whole declared range; the worst single day the window reaches is '
         + peak.toFixed(1) + '.' : 'exceeded inside the declared range, at ' + peak.toFixed(1) + '.') +
       '\n\nThe dashed line is not a design value. sw_window_peak_level is the MAXIMUM of the same ' +
@@ -2535,7 +2024,8 @@ function f107Window(extra, o, eng) {
         : 'They cross at about ' + over.toFixed(1) + ' years: past there the analogue\u2019s own ' +
           'peak is ABOVE the hot single-day design value, which is a design sized on a mean sitting ' +
           'under the thing it averages. That is worth a reviewer\u2019s attention and it is the ' +
-          'reason this row is kept rather than removed.'),
+          'reason this row is kept rather than removed.') +
+      refusedPoints(fig.points_refused),
   };
 }
 
@@ -2553,15 +2043,6 @@ const SCEN_X = {
   fmt: v => (SCEN[Math.round(v)] || {}).shown || '',
 };
 
-/** The slope of a swept curve, measured off its own ends. */
-function slopeOf(sw) {
-  const xs = sw.x.map(v => v / sw.x_factor), ys = sw.y.map(v => v / sw.y_factor);
-  const ok = xs.map((x, i) => [x, ys[i]]).filter(p => p[1] !== null && isFinite(p[1]));
-  if (ok.length < 2) return null;
-  const a = ok[0], b = ok[ok.length - 1];
-  return b[0] === a[0] ? null : (b[1] - a[1]) / (b[0] - a[0]);
-}
-
 /**
  * Thermosphere · against the flux, three ways, and the three slopes are the
  * finding.
@@ -2572,16 +2053,15 @@ function slopeOf(sw) {
  * differently is measured here off the three curves rather than read off the
  * sheet — this file contains no coefficient of it.
  */
-function thermoSolar(extra, eng, decF, decFa, decKp, now) {
+function thermoSolar(fig) {
   const fx = sw => sw.x.map(v => v / sw.x_factor);
   const fy = sw => sw.y.map(v => v / sw.y_factor);
-  const sust = extra.sust.filter(p => p.y !== null && isFinite(p.y));
-  const mSust = sust.length > 1
-    ? (sust[sust.length - 1].y - sust[0].y) / (sust[sust.length - 1].x - sust[0].x) : null;
-  const mFast = slopeOf(extra.fast), mSlow = slopeOf(extra.slow);
+  const decF = fig.env_f107, now = fig.now;
+  const sust = fig.sustained;
+  // The three slopes are measured off these curves by the engine.
+  const mSust = fig.slope_sustained, mFast = fig.slope_day, mSlow = fig.slope_mean;
   const k = n => (n === null ? '—' : n.toFixed(2));
-  const si = eng.l3_solar_interface && isFinite(eng.l3_solar_interface.si)
-    ? eng.l3_solar_interface.si : null;
+  const si = fig.crossing;
   return {
     answer: now === null
       ? { value: '\u2014', of: 'env_exospheric_temperature did not answer' }
@@ -2594,7 +2074,7 @@ function thermoSolar(extra, eng, decF, decFa, decKp, now) {
           of: 'the sky the subsystem computes, at env_f107 = '
             + (decF === null ? '—' : decF.toFixed(1)) + ' \u2014 every density below it is downstream'
             + (si === null || decF === null ? ''
-               : Math.abs(si - decF) < 0.05
+               : fig.agrees
                  ? ', which is what the crossing publishes'
                  : ', and the crossing publishes ' + si.toFixed(1) + ' sfu \u2014 they should agree') },
     spec: {
@@ -2605,13 +2085,13 @@ function thermoSolar(extra, eng, decF, decFa, decKp, now) {
       y: { label: 'exospheric temperature  [K]' },
       series: [
         { name: 'sustained — the day and its 81-day mean together', kind: 'line',
-          x: sust.map(p => p.x), y: sust.map(p => p.y), width: 2.4,
+          x: sust.x, y: sust.y, width: 2.4,
           row: 'env_exospheric_temperature' },
         { name: 'one day alone, its 81-day mean held', kind: 'line',
-          x: fx(extra.fast), y: fy(extra.fast), colour: INK.series[1],
+          x: fx(fig.day), y: fy(fig.day), colour: INK.series[1],
           row: 'env_exospheric_temperature' },
         { name: 'the 81-day mean alone, the day held', kind: 'line',
-          x: fx(extra.slow), y: fy(extra.slow), colour: INK.series[2],
+          x: fx(fig.mean), y: fy(fig.mean), colour: INK.series[2],
           row: 'env_exospheric_temperature' },
       ],
       // THE TWO SKIES, ON THE AXIS, BESIDE EACH OTHER. The declared constant the
@@ -2623,11 +2103,11 @@ function thermoSolar(extra, eng, decF, decFa, decKp, now) {
         // §28.2 IS THE DISTANCE BETWEEN THE TWO MARKS, so it is drawn as the
         // distance rather than left as two ticks a reader subtracts. Open on
         // neither side: this region has two measured ends and both are named.
-        (decF === null || !(eng.l3_solar_interface && isFinite(eng.l3_solar_interface.si)))
+        (decF === null || si === null)
           ? null
           : { axis: 'x',
-            from: Math.min(decF, eng.l3_solar_interface.si),
-            to: Math.max(decF, eng.l3_solar_interface.si),
+            from: Math.min(decF, si),
+            to: Math.max(decF, si),
             label: '', colour: INK.bound, alpha: 0.05 },
         decF === null ? null : { axis: 'x', at: decF,
           label: 'env_f107 = ' + decF.toFixed(1) + ', computed from the crossing',
@@ -2638,13 +2118,12 @@ function thermoSolar(extra, eng, decF, decFa, decKp, now) {
         // 104" reads as a disagreement to a reader who does not know they are
         // one number. It reappears the moment they part, which is the only
         // time it says anything.
-        (!(eng.l3_solar_interface && isFinite(eng.l3_solar_interface.si))
-         || decF === null || Math.abs(eng.l3_solar_interface.si - decF) < 0.05) ? null
+        (si === null || decF === null || fig.agrees) ? null
           // INK.mark, not a series slot. Slot 2 is the green the "81-day mean
           // alone" line is drawn in three inches to the right, and a mark
           // wearing a series' colour invites the reader to pair the two.
-          : { axis: 'x', at: eng.l3_solar_interface.si,
-            label: 'the solar subsystem says ' + eng.l3_solar_interface.si.toFixed(1),
+          : { axis: 'x', at: si,
+            label: 'the solar subsystem says ' + si.toFixed(1),
             colour: INK.mark, row: 'l3_solar_interface' },
       ].filter(Boolean),
     },
@@ -2661,8 +2140,7 @@ function thermoSolar(extra, eng, decF, decFa, decKp, now) {
       (decF === null ? '—' : decF.toFixed(1)) + ', so there is no departure there and all three ' +
       'agree. THAT NUMBER IS COMPUTED, not declared \u2014 it is what the solar subsystem ' +
       'publishes for its hot sustained scenario, ' +
-      (eng.l3_solar_interface && isFinite(eng.l3_solar_interface.si)
-        ? eng.l3_solar_interface.si.toFixed(2) : '—') +
+      (si !== null ? si.toFixed(2) : '—') +
       ' sfu, carried inward through layer 2. §28.2 was the gap where a declared 150 sat here ' +
       'instead and nothing compared the two; §49 is the wiring that closed it, and this is ' +
       'where it is felt, because every density in this tree is downstream of the temperature ' +
@@ -2679,16 +2157,18 @@ function thermoSolar(extra, eng, decF, decFa, decKp, now) {
  * dots on each are the day's mean Kp and the day's worst slot, and the vertical
  * distance between them is what choosing one over the other costs.
  */
-function thermoKp(extra, eng, decKp) {
+function thermoKp(fig) {
+  const decKp = fig.env_kp;
   const series = [];
-  let worst = null;
-  const lines = [];
-  for (const c of extra.curves) {
+  let lines = 0;
+  for (const c0 of fig.curves) {
+    const c = { sc: SCEN.find(sc => sc.k === c0.scenario), sweep: c0.sweep,
+      d: { kpMean: c0.kp_mean, kpPeak: c0.kp_peak }, tMean: c0.t_mean, tPeak: c0.t_peak };
     if (!c.sweep) continue;
     const xs = c.sweep.x.map(v => v / c.sweep.x_factor);
     const ys = c.sweep.y.map(v => v / c.sweep.y_factor);
     series.push({ name: c.sc.shown, kind: 'line', x: xs, y: ys, colour: c.sc.colour });
-    lines.push(ys);
+    lines++;
     const tm = (c.tMean === undefined || c.tMean === null) ? null : c.tMean;
     const tp = (c.tPeak === undefined || c.tPeak === null) ? null : c.tPeak;
     if (tm !== null && tp !== null) {
@@ -2700,29 +2180,22 @@ function thermoKp(extra, eng, decKp) {
       // falls back to, and the readout announced each value twice.
       series.push({ name: '', kind: 'dots', x: [c.d.kpMean, c.d.kpPeak], y: [tm, tp],
         colour: c.sc.colour, width: 5, alpha: 1, aside: true });
-      if (worst === null || tp - tm > worst.d) {
-        worst = { sc: c.sc, d: tp - tm, tm, tp, km: c.d.kpMean, kp: c.d.kpPeak };
-      }
     }
   }
-  // How far apart the two closest curves ever get, measured rather than eyeballed.
-  let close = null;
-  if (lines.length > 1) {
-    close = 0;
-    for (let i = 0; i < lines[0].length; i++) {
-      const a = lines[0][i], b = lines[1][i];
-      if (a !== null && b !== null) close = Math.max(close, Math.abs(b - a));
-    }
-  }
+  // The widest gap between a scenario's two Kp readings, and how far apart
+  // the two lightest curves ever get, are the engine's (vleo_modules::thermo).
+  const w = fig.worst, close = fig.close;
+  const worst = w === null ? null : { sc: SCEN.find(sc => sc.k === w.scenario), d: w.gap,
+    tm: w.t_mean, tp: w.t_peak, km: w.kp_mean, kp: w.kp_peak, pct: w.share_pct };
   return {
     answer: worst === null
       ? { value: '\u2014', of: 'no scenario answered at both of its Kp' }
       : { value: worst.d.toFixed(1) + ' K',
           of: 'the widest gap between a scenario\u2019s two Kp readings, at the ' + worst.sc.shown
-            + ' \u2014 ' + (100 * worst.d / worst.tm).toFixed(1) + ' per cent of the temperature, '
+            + ' \u2014 ' + worst.pct.toFixed(1) + ' per cent of the temperature, '
             + 'and nothing in this tree says which slot to take' },
     spec: {
-      finding: 'all ' + lines.length + ' curves bend upward, and the two lightest stay within ' +
+      finding: 'all ' + lines + ' curves bend upward, and the two lightest stay within ' +
         (close === null ? '\u2014' : close.toFixed(1) + ' K') +
         ' of each other across the whole Kp range',
       x: { label: 'Kp  [-]', min: 0, max: 9 },
@@ -2741,7 +2214,7 @@ function thermoKp(extra, eng, decKp) {
         'It costs most at the ' + worst.sc.shown + ' scenario: Kp ' + worst.km.toFixed(2) +
         ' gives ' + worst.tm.toFixed(1) + ' K and Kp ' + worst.kp.toFixed(2) + ' gives ' +
         worst.tp.toFixed(1) + ' K, a difference of ' + worst.d.toFixed(1) + ' K — ' +
-        (100 * worst.d / worst.tm).toFixed(1) + ' per cent of the temperature every density in ' +
+        worst.pct.toFixed(1) + ' per cent of the temperature every density in ' +
         'this tree is built from, and more than that in the density itself.') +
       '\n\nTHE TWO LIGHTEST CURVES VERY NEARLY COINCIDE, and that is the data rather than the ' +
       'drawing: the quietest day and the cold sustained level differ by ' +
@@ -2760,17 +2233,20 @@ function thermoKp(extra, eng, decKp) {
  * only thing left is the gap. Ten runs of the engine, each at a scenario's own
  * three drivers.
  */
-function thermoSlot(extra, eng) {
+function thermoSlot(fig) {
   const xs = SCEN.map((_, i) => i);
-  const tm = extra.pts.map(p => (p.tMean === undefined ? null : p.tMean));
-  const tp = extra.pts.map(p => (p.tPeak === undefined ? null : p.tPeak));
-  const gaps = tm.map((v, i) => (v === null || tp[i] === null ? null : tp[i] - v));
-  const ok = gaps.filter(g => g !== null);
-  const wi = gaps.reduce((b, g, i) => (g !== null && (b < 0 || g > gaps[b]) ? i : b), -1);
+  const at = sc => fig.points.find(p => p.scenario === sc.k) || {};
+  const tm = SCEN.map(sc => (at(sc).t_mean === undefined ? null : at(sc).t_mean));
+  const tp = SCEN.map(sc => (at(sc).t_peak === undefined ? null : at(sc).t_peak));
+  // Each scenario's gap, where it is widest and its narrowest and widest, are
+  // the engine's (vleo_modules::thermo).
+  const ok = fig.points.filter(p => p.gap !== null);
+  const wi = fig.widest === null ? -1 : SCEN.findIndex(sc => sc.k === fig.widest);
+  const lo = fig.narrowest_gap, hi = fig.widest_gap;
   return {
     answer: !ok.length
       ? { value: '—', of: 'no scenario answered' }
-      : { value: Math.max(...ok).toFixed(1) + ' K',
+      : { value: hi.toFixed(1) + ' K',
           of: 'the most the choice of Kp slot is worth — at the ' +
             (wi < 0 ? 'worst scenario' : SCEN[wi].shown) + ', and nothing says which slot to use' },
     spec: {
@@ -2778,8 +2254,8 @@ function thermoSlot(extra, eng) {
       finding: !ok.length
         ? 'no scenario answered at both of its Kp'
         : 'the worst-slot line is above the mean-slot one at all ' + ok.length +
-          ' scenarios, and the gap grows from ' + Math.min(...ok).toFixed(1) + ' K to ' +
-          Math.max(...ok).toFixed(1) + ' K across them',
+          ' scenarios, and the gap grows from ' + lo.toFixed(1) + ' K to ' +
+          hi.toFixed(1) + ' K across them',
       x: { label: 'scenario', ...SCEN_X },
       y: { label: 'exospheric temperature  [K]' },
       series: [
@@ -2800,8 +2276,8 @@ function thermoSlot(extra, eng) {
       'only thing left is the gap. Each point is a run of the engine at one scenario\u2019s own ' +
       'three drivers — its F10.7, its 81-day mean, and one of its two Kp — so nothing here is ' +
       'interpolated off a curve.\n\n' +
-      'The gap runs from ' + (ok.length ? Math.min(...ok).toFixed(1) : '—') + ' K at the quiet end ' +
-      'to ' + (ok.length ? Math.max(...ok).toFixed(1) : '—') + ' K' +
+      'The gap runs from ' + (ok.length ? lo.toFixed(1) : '—') + ' K at the quiet end ' +
+      'to ' + (ok.length ? hi.toFixed(1) : '—') + ' K' +
       (wi < 0 ? '' : ' at the ' + SCEN[wi].shown) + '. It widens toward the hot end because the ' +
       'two slots diverge there AND because the relation\u2019s geomagnetic term is exponential: ' +
       'the same difference in Kp buys more temperature the higher up the scale it sits.\n\n' +
@@ -2821,34 +2297,18 @@ function thermoSlot(extra, eng) {
  * points — so the departure is measured against the measurement rather than
  * against a coefficient copied out of the sheet.
  */
-function thermoShape(extra, eng, decF, decFa, decKp) {
-  const sw = extra.kp;
+function thermoShape(fig) {
+  const sw = fig.sweep;
   const xs = sw.x.map(v => v / sw.x_factor);
   const ys = sw.y.map(v => v / sw.y_factor);
-  const i0 = ys.findIndex(v => v !== null && isFinite(v));
-  if (i0 < 0) throw new Error('the Kp sweep returned nothing to draw');
-  const base = ys[i0];
-  const d = ys.map(v => (v === null || !isFinite(v) ? null : v - base));
-  // The straight line the low end sets, through the first usable point and the
-  // one nearest Kp 2 — low enough that the exponential is still negligible.
-  let iRef = i0;
-  for (let i = 0; i < xs.length; i++) {
-    if (d[i] !== null && Math.abs(xs[i] - 2) < Math.abs(xs[iRef] - 2)) iRef = i;
-  }
-  const m = xs[iRef] === xs[i0] ? 0 : (d[iRef] - d[i0]) / (xs[iRef] - xs[i0]);
-  const lin = xs.map(x => m * (x - xs[i0]));
+  // The swept answer measured from its value at Kp 0, the straight line its
+  // quiet end sets through the point nearest Kp 2, how far the curve stands
+  // above that line at the top and where it first stands clear of it by more
+  // than a fiftieth of that are the engine's (vleo_modules::thermo::departure)
+  // — "they separate above Kp 4" said as a measurement rather than as an
+  // impression of the drawing.
+  const d = fig.d, lin = fig.line, excess = fig.excess, splitAt = fig.split_at;
   const last = d.length - 1;
-  const excess = d[last] === null ? null : d[last] - lin[last];
-  // Where the measured curve first stands clear of the straight line by more
-  // than a fiftieth of its final departure — "they separate above Kp 4" said as
-  // a measurement rather than as an impression of the drawing.
-  let splitAt = null;
-  if (excess !== null && excess > 0) {
-    for (let i = 0; i <= last; i++) {
-      if (d[i] === null) continue;
-      if (d[i] - lin[i] > excess / 50) { splitAt = xs[i]; break; }
-    }
-  }
   return {
     answer: excess === null
       ? { value: '\u2014', of: 'the sweep returned nothing at the top of the Kp range' }
@@ -2890,37 +2350,16 @@ function thermoShape(extra, eng, decF, decFa, decKp) {
 }
 
 /** Climate · the 13-month smoother, the one view monthly_means.csv exists for. */
-function smoothed(rows, key) {
-  const col = key === 'f107' ? 'f107' : key === 'ap' ? 'ap' : 'ssn';
-  const xs = [], raw = [], sm = [];
-  for (const r of rows) {
-    const t = daysSince2000(r.month) / 365.25 + 2000;
-    xs.push(t);
-    raw.push(num(r[col + '_mean']));
-    sm.push(num(r[col + '_smooth']));
-  }
-  const missing = sm.filter(v => v === null).length;
-  // How much the smoother actually removes, for the variable on screen. The
-  // caption used to be the same sentence under all three.
-  const both = xs.map((_, i) => [raw[i], sm[i]]).filter(([a, b]) => a !== null && b !== null);
-  const amp = a => Math.max(...a) - Math.min(...a);
-  const rawAmp = both.length ? amp(both.map(b => b[0])) : 0;
-  const smAmp = both.length ? amp(both.map(b => b[1])) : 0;
-  const resid = both.length
-    ? Math.sqrt(both.reduce((p, [a, b]) => p + (a - b) * (a - b), 0) / both.length)
-    : 0;
+function smoothed(fig, key) {
+  // THE NUMBERS ARE THE ENGINE'S: vleo_modules::record::smoother reads each
+  // month's mean and 13-month smoothed value from monthly_means.csv and measures
+  // what the smoothing removes, how often the month crosses it and how far it
+  // strays, for the variable on screen.
+  const xs = fig.x, raw = fig.raw, sm = fig.smooth, missing = fig.missing;
+  const rawAmp = fig.raw_range, smAmp = fig.smooth_range, resid = fig.rms;
+  const crossings = fig.crossings, maxDev = fig.max_departure;
   const vname = key === 'f107' ? 'F10.7' : key === 'ap' ? 'Ap' : 'the sunspot number';
   const unit = key === 'f107' ? ' sfu' : '';
-  // How often the raw line actually cuts the smoother, and how far it ever
-  // strays — the two things a reader takes from this picture by eye.
-  let crossings = 0, maxDev = 0, prevSign = 0;
-  for (const [a2, b2] of both) {
-    const dv = a2 - b2;
-    if (Math.abs(dv) > maxDev) maxDev = Math.abs(dv);
-    const sgn = dv > 0 ? 1 : dv < 0 ? -1 : 0;
-    if (sgn && prevSign && sgn !== prevSign) crossings++;
-    if (sgn) prevSign = sgn;
-  }
   return {
     answer: { value: sig(resid) + unit,
       of: 'the rms a month keeps once the cycle is smoothed out of it \u2014 the part of '
@@ -2946,7 +2385,7 @@ function smoothed(rows, key) {
       ' down to ' + sig(smAmp) + unit + ', removing an rms of ' + sig(resid) + unit +
       ' \u2014 which is what is left of a month once the cycle is taken out, and is the part a ' +
       'design cannot plan around. ' +
-      'It is undefined for ' + missing + ' of ' + rows.length + ' months at the two ends of ' +
+      'It is undefined for ' + missing + ' of ' + fig.months + ' months at the two ends of ' +
       'the record, left empty rather than extrapolated: the line breaks there rather than being drawn ' +
       'across, because a smoother that runs to the edge of a record is claiming to know half a window ' +
       'it does not have.',
@@ -2954,43 +2393,17 @@ function smoothed(rows, key) {
 }
 
 /** Climate · Kp against ap, which is what the two conversion rows are about. */
-function kpAgainstAp(rec) {
-  const per = new Map();
-  for (const d of rec.days) {
-    if (d.ap === null || d.kp === null) continue;
-    if (!per.has(d.kp)) per.set(d.kp, []);
-    per.get(d.kp).push(d.ap);
-  }
-  const ks = [...per.keys()].sort((a, b) => a - b);
-  const med = ks.map(k => { const v = per.get(k).sort((a, b) => a - b); return quantile(v, 0.5); });
-  const p90 = ks.map(k => quantile(per.get(k).sort((a, b) => a - b), 0.9));
-  const p10 = ks.map(k => quantile(per.get(k).sort((a, b) => a - b), 0.1));
-  // The published three-hourly equivalent amplitude, all 28 points — the same
-  // pairs sw_kp_from_ap carries in its parity grid.
-  //
-  // THIRTY-EIGHT, NOT TEN. Kp is reported in thirds, and the record's kp_max
-  // takes values like 1.33 and 6.67. A lookup on whole Kp returns nothing for
-  // two values in three, and because a null breaks a line rather than being
-  // skipped, the series drew as no line at all — present in the legend and
-  // absent from the picture. That is the failure this view was built to expose
-  // in the DATA, arriving first in the code that draws it.
-  const AP_AT_KP = [
-    0, 2, 3, 4, 5, 6, 7, 9, 12, 15, 18, 22, 27, 32, 39, 48,
-    56, 67, 80, 94, 111, 132, 154, 179, 207, 236, 300, 400,
-  ];
-  const tableAt = kp => {
-    const i = Math.round(kp * 3);
-    return i >= 0 && i < AP_AT_KP.length ? AP_AT_KP[i] : null;
-  };
-  const i7 = ks.indexOf(7);
-  const t7 = tableAt(7), m7 = i7 < 0 ? null : med[i7];
-  let aboveMed = 0, above90 = 0;
-  ks.forEach((kp, i) => {
-    const t = tableAt(kp);
-    if (t === null) return;
-    if (med[i] !== null && t > med[i]) aboveMed++;
-    if (p90[i] !== null && t > p90[i]) above90++;
-  });
+function kpAgainstAp(fig) {
+  // THE NUMBERS ARE THE ENGINE'S: vleo_modules::record::kp_ap groups the days by
+  // the worst slot's Kp and takes their percentiles, and reads the published
+  // line off the kernel's own table (vleo_core::physics::env::ap_at_kp) — the
+  // one kp_from_ap interpolates. This page held a third copy of the 28 values;
+  // it holds none now. Kp is reported in thirds, and a lookup on whole Kp once
+  // drew the published line as no line at all: the engine takes a Kp to its
+  // nearest third, as this page did.
+  if (fig.refused) throw new Error('the engine did not work the figure out: ' + fig.refused);
+  const ks = fig.kp, med = fig.median, p10 = fig.p10, p90 = fig.p90;
+  const t7 = fig.kp7_table, m7 = fig.kp7_median;
   return {
     answer: m7 === null || !m7 || t7 === null
       ? { value: '\u2014', of: 'the record holds no day whose worst slot reached Kp 7' }
@@ -3000,8 +2413,8 @@ function kpAgainstAp(rec) {
     spec: {
       // The claim panels/climate.toml makes about this view, counted at every Kp
       // the record holds rather than read off the drawing at one of them.
-      finding: 'the published table is above the median day at ' + aboveMed + ' of the ' +
-        ks.length + ' Kp the record holds, and above the 90th percentile at ' + above90,
+      finding: 'the published table is above the median day at ' + fig.above_median + ' of the ' +
+        ks.length + ' Kp the record holds, and above the 90th percentile at ' + fig.above_p90,
       x: { label: 'Kp reached that day  [worst three-hourly slot]', min: 0, max: 9 },
       y: { label: 'daily Ap  [-], log scale', log: true },
       series: [
@@ -3016,13 +2429,13 @@ function kpAgainstAp(rec) {
         { name: '10th and 90th percentile', kind: 'line', x: ks, y: p10, colour: INK.muted,
           width: 1, context: true },
         { name: '', kind: 'line', x: ks, y: p90, colour: INK.muted, width: 1, context: true },
-        { name: 'published ap at that Kp', kind: 'line', x: ks, y: ks.map(tableAt), colour: INK.bound, dash: [5, 4] },
+        { name: 'published ap at that Kp', kind: 'line', x: ks, y: fig.table, colour: INK.bound, dash: [5, 4] },
       ],
     },
     note: 'The published table converts a THREE-HOURLY Kp to a three-hourly ap; the record\u2019s daily ' +
       'Ap is the mean of eight such slots, and a day is labelled by its worst. So the two curves must ' +
       'diverge and the gap between them is the whole reason sw_kp_slot_bias exists \u2014 at Kp 7 the ' +
-      'table says ' + tableAt(7) + ' and the median day says ' + med[ks.indexOf(7)] + '. Reading the dashed line as ' +
+      'table says ' + t7 + ' and the median day says ' + med[ks.indexOf(7)] + '. Reading the dashed line as ' +
       'what a disturbed day looks like is the mistake this view is drawn to prevent, and it is also ' +
       'why sw_ap_design takes the table value as a design CEILING rather than as a typical day.',
   };
@@ -3196,7 +2609,8 @@ function panelBody(p, o) {
     '<div class="sw-view"></div>' +
     '<details class="sw-table"><summary>the numbers behind this picture</summary>' +
     '<div class="sw-table-copy"><button class="ctl sw-copy" type="button">' +
-    'copy as TSV</button><span class="sw-copied"></span></div>' +
+    'copy as TSV</button><button class="ctl sw-png" type="button">PNG</button>' +
+    '<button class="ctl sw-csv" type="button">CSV</button><span class="sw-copied"></span></div>' +
     '<div class="sw-table-body"></div></details>' +
     '<div class="sw-panel-note muted">reading the record…</div>';
 }
@@ -3317,6 +2731,13 @@ function viewStrip(host, p, o, view, shown) {
     const cv = $('.sw-panel', host);
     view.pinned = cv && cv._built ? cv._built : null;
   });
+
+  // The figure as files: its picture as PNG and its numbers as CSV, both as
+  // shown — the view's zoom and hidden series applied.
+  const png = $('.sw-png', host), csvb = $('.sw-csv', host);
+  const stem = (p && p.id) || 'figure';
+  if (png) png.onclick = () => exportFigure($('.sw-panel', host), shown, stem, 'png');
+  if (csvb) csvb.onclick = () => exportFigure($('.sw-panel', host), shown, stem, 'csv');
 
   const cp = $('.sw-copy', host), said = $('.sw-copied', host);
   if (cp) {

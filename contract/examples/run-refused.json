@@ -1,0 +1,6 @@
+{
+  "ok": false,
+  "fault": "not-suppliable",
+  "node": "sw_ap_design",
+  "message": "'sw_ap_design' is computed from its inputs, so a supplied value would be overwritten the moment it is evaluated. Set one of the declared numbers it reads instead."
+}

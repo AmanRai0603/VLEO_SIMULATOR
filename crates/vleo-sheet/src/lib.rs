@@ -21,9 +21,13 @@
 
 pub mod derisk;
 pub mod emit;
+mod error;
+pub use error::{Error, ErrorKind};
 pub mod example;
 pub mod form;
 pub mod guide;
+pub mod lesson;
+pub mod lesson_form;
 pub mod manual;
 pub mod method;
 
@@ -50,7 +54,9 @@ pub mod gate;
 pub mod load;
 pub mod model;
 pub mod page;
+pub mod shell;
 pub mod template;
+pub mod text;
 
 pub use load::{load_all, Tree};
 pub use model::{Assumption, Fixture, Sheet, Step, View};

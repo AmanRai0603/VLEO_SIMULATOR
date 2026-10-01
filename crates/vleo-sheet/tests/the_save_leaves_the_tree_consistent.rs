@@ -8,14 +8,49 @@
 use std::path::{Path, PathBuf};
 use vleo_sheet::form::{self, Saved};
 
+/// A copy of the tree in a temporary folder, made once for this test binary.
+///
+/// These tests write sheets and regenerate folders. They once did it in the
+/// checkout itself, under a lock that only this binary respected, so a
+/// developer running the suite beside an edit in progress could have that edit
+/// overwritten and put back. Everything they touch is copied here instead.
 fn root() -> PathBuf {
-    // tests run with CWD at the crate root
-    Path::new(env!("CARGO_MANIFEST_DIR"))
-        .parent()
-        .unwrap()
-        .parent()
-        .unwrap()
-        .to_path_buf()
+    static COPY: std::sync::OnceLock<PathBuf> = std::sync::OnceLock::new();
+    COPY.get_or_init(|| {
+        let real = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let to = std::env::temp_dir().join(format!("vleo-save-tree-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&to);
+        for e in std::fs::read_dir(real.join("crates")).unwrap().flatten() {
+            let name = e.file_name().to_string_lossy().to_string();
+            if name.starts_with("vleo-mod-") {
+                copy(
+                    &e.path().join("nodes"),
+                    &to.join("crates").join(&name).join("nodes"),
+                );
+            }
+        }
+        copy(
+            &real.join("crates/vleo-wasm/src"),
+            &to.join("crates/vleo-wasm/src"),
+        );
+        for d in ["layers", "cases", "sources", "web"] {
+            copy(&real.join(d), &to.join(d));
+        }
+        to
+    })
+    .clone()
+}
+
+fn copy(from: &Path, to: &Path) {
+    std::fs::create_dir_all(to).unwrap();
+    for e in std::fs::read_dir(from).unwrap().flatten() {
+        let p = e.path();
+        if p.is_dir() {
+            copy(&p, &to.join(e.file_name()));
+        } else {
+            std::fs::copy(&p, to.join(e.file_name())).unwrap();
+        }
+    }
 }
 
 /// A published row with a plain single-line field to move.
@@ -27,7 +62,8 @@ fn sheet_path(root: &Path) -> PathBuf {
         .join("node.toml")
 }
 
-/// EVERY TEST IN THIS FILE EDITS THE REAL TREE, so they run one at a time.
+/// EVERY TEST IN THIS FILE EDITS THE SAME COPY OF THE TREE, so they run one at
+/// a time.
 ///
 /// Cargo runs the tests in one binary on several threads. Two of these reading a
 /// sheet while a third was mid-edit failed the suite about one run in three, on
@@ -35,9 +71,7 @@ fn sheet_path(root: &Path) -> PathBuf {
 /// of red, because it points at the wrong test.
 ///
 /// The lock is held for the whole of each test rather than around each write:
-/// what races is not the write but the read-edit-compare around it, and
-/// `a_proposal_with_nothing_edited_does_nothing` asks whether the WHOLE checkout
-/// is clean, which no other test may be inside.
+/// what races is not the write but the read-edit-compare around it.
 fn serially() -> std::sync::MutexGuard<'static, ()> {
     static LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
     // A panicking test poisons the mutex, and a poisoned lock would turn one
@@ -114,7 +148,7 @@ fn an_agent_is_refused_whatever_the_face() {
     for who in ["", "   "] {
         let e = form::refuse_agent_attribution(&root, who).unwrap_err();
         assert!(
-            e.contains("blank"),
+            e.message().contains("blank"),
             "a blank attribution is not a way round it: {e}"
         );
     }

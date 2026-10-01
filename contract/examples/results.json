@@ -1,0 +1,85 @@
+{
+  "ok": true,
+  "path": "/tmp/vleo-contract-21918/results",
+  "results": [
+    {
+      "file": "2026-09-30T14-45-16Z_sw_ap_design_625fc44a2c391e5c",
+      "target": "sw_ap_design",
+      "pinned": false,
+      "thinned": "",
+      "name": "the contract, swept",
+      "saved": "2026-09-30T14:45:16Z",
+      "mode": "branch",
+      "chain": "075c5d",
+      "kernel": "7fec07",
+      "graph": "adb684",
+      "template": "48afb0100e92",
+      "template_current": true,
+      "data": "solar-drivers@2026.09.04#54784567db11b868 solar-weather@2026.09.14#f3557eb8443bfdaa",
+      "ran": 2,
+      "blocked": 0,
+      "changed": 0,
+      "question": "625fc44a2c391e5c",
+      "sweep": {
+        "over": "sw_storm_design_level",
+        "points": 3,
+        "refused": 0
+      },
+      "versions": [
+        {
+          "node": "sw_storm_design_level",
+          "n": 1,
+          "release": "0.1.1"
+        },
+        {
+          "node": "sw_ap_design",
+          "n": 1,
+          "release": "0.1.1"
+        }
+      ],
+      "moved": [],
+      "answer": {
+        "value": "132",
+        "unit": "-"
+      }
+    },
+    {
+      "file": "2026-09-30T14-45-16Z_sw_ap_design_4b8bcdb829feccf7",
+      "target": "sw_ap_design",
+      "pinned": false,
+      "thinned": "",
+      "name": "the contract",
+      "saved": "2026-09-30T14:45:16Z",
+      "mode": "branch",
+      "chain": "075c5d",
+      "kernel": "7fec07",
+      "graph": "adb684",
+      "template": "48afb0100e92",
+      "template_current": true,
+      "data": "solar-drivers@2026.09.04#54784567db11b868 solar-weather@2026.09.14#f3557eb8443bfdaa",
+      "ran": 2,
+      "blocked": 0,
+      "changed": 0,
+      "question": "4b8bcdb829feccf7",
+      "sweep": null,
+      "versions": [
+        {
+          "node": "sw_storm_design_level",
+          "n": 1,
+          "release": "0.1.1"
+        },
+        {
+          "node": "sw_ap_design",
+          "n": 1,
+          "release": "0.1.1"
+        }
+      ],
+      "moved": [],
+      "answer": {
+        "value": "132",
+        "unit": "-"
+      }
+    }
+  ],
+  "unreadable": []
+}

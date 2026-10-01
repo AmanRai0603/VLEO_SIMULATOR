@@ -147,7 +147,8 @@ pub fn evaluate<T: NodeTable + ?Sized>(
     let mut iterations = 0u32;
     let mut first_fault: Option<Fault> = None;
     // A node inside a declared cycle is run by the cycle sweep, not on its own.
-    let mut cycle_done = [false; 32];
+    // Whether a cycle has been swept is read off what already ran or blocked,
+    // not off a fixed-size table: a table of 32 let a 33rd cycle sweep again.
 
     let mut idx = 0usize;
     while idx < order_len {
@@ -221,7 +222,11 @@ pub fn evaluate<T: NodeTable + ?Sized>(
         // report it as eight independent missing dependencies. The seed is what
         // breaks the deadlock, and it is applied by the sweep.
         if let Some((ci, spec)) = cycle_of(cycles, node) {
-            if ci < 32 && cycle_done[ci] {
+            let _ = ci;
+            let first = spec.nodes.first().copied();
+            if first
+                .is_some_and(|f| ws.ran[..ran].contains(&f) || ws.blocked[..blocked].contains(&f))
+            {
                 continue;
             }
             match sweep_cycle(table, store, spec, &mut iterations) {
@@ -237,9 +242,6 @@ pub fn evaluate<T: NodeTable + ?Sized>(
                         record_block(ws, &mut blocked, &mut first_fault, m, f);
                     }
                 }
-            }
-            if ci < 32 {
-                cycle_done[ci] = true;
             }
             continue;
         }
@@ -391,10 +393,18 @@ fn topo_from<T: NodeTable + ?Sized>(
                         });
                     }
                     _ => {
-                        if sp < ws.stack.len() {
-                            ws.stack[sp] = producer;
-                            sp += 1;
+                        // A producer can wait on the stack more than once, so
+                        // the stack is sized from the graph, not the node
+                        // count. Running out is said, never truncated: a
+                        // dropped entry once ordered a node before its input.
+                        if sp == ws.stack.len() {
+                            return Err(Fault::WorkspaceTooSmall {
+                                needed: sp + 1,
+                                given: ws.stack.len(),
+                            });
                         }
+                        ws.stack[sp] = producer;
+                        sp += 1;
                     }
                 }
             }

@@ -25,7 +25,7 @@ import { S, reachFrom, isSeeded, isUndefined, isDeprecated, theCase, caseKey } f
 import { withOverrides, isInput, fromSI, toSI, unitOf, outOfRange, setOverride,
          clearOverride, onOverrideChange } from './inputs.js';
 import { drawChart, attachHover, tableFor, tableTsv, viewSpec, viewIsOn,
-         watchScheme, INK } from './chart.js';
+         watchScheme, INK, exportFigure } from './chart.js';
 import { savedValues, caseInput, saveOverridesToCase, savableOverrides } from './case.js';
 
 const POST = { method: 'POST', headers: { 'content-type': 'application/x-www-form-urlencoded' } };
@@ -150,15 +150,22 @@ function paintModes(host, r) {
     : '1 node';
 }
 
-async function go(host, r) {
+async function go(host, r, again) {
   const btn = $('.run-go', host);
   btn.disabled = true;
-  $('.run-why', host).textContent = 'running…';
+  $('.run-why', host).textContent = again ? 'running again…' : 'running…';
   // The overrides travel with every run, and the daemon lays the saved case
   // under them. A face that showed a what-if number on one panel and the
   // declared design on another would be the three-correct-numbers-at-three-
   // different-times bug this tool already has a comment about.
-  const res = await runOnce(withOverrides(new URLSearchParams({ node: r.id, mode: S.mode })));
+  //
+  // A QUESTION ALREADY ANSWERED IS SHOWN, NOT ASKED AGAIN: `reuse` asks the
+  // daemon for the saved result that answers exactly this — same row, mode,
+  // inputs, engine and data — before running, and the answer says when it is
+  // one. `again` is the reader asking for a fresh run anyway.
+  const p = withOverrides(new URLSearchParams({ node: r.id, mode: S.mode, reuse: '1' }));
+  if (again) p.set('again', '1');
+  const res = await runOnce(p);
   if (!host.isConnected) return;
   S.lastRun = res.ok ? res : null;
   btn.disabled = false;
@@ -424,6 +431,17 @@ export function renderResult(host, r, res) {
   }
   const v = res.values.find(x => x.id === r.id);
   let h = '';
+  // FROM A SAVED RESULT, SAID FIRST. A number read back from a record must
+  // never be taken for one run just now — the reader is told which result,
+  // when it was saved, and how to run it fresh.
+  const fs = res.from_saved;
+  if (fs) {
+    h += '<div class="run-saved"><b>Already answered</b> — shown from the saved result ' +
+      (fs.name ? '<b>' + esc(fs.name) + '</b>, ' : '') + 'saved ' + esc(fs.saved) + '. The same row on the ' +
+      'same inputs, engine and data gives the same answer, so nothing was run. ' +
+      '<button class="ctl xref" data-results="' + esc(fs.file) + '">open it in Results</button> ' +
+      '<button class="ctl run-again">run again anyway</button></div>';
+  }
   if (v) {
     h += '<div class="answer">' + esc(v.symbol || r.symbol) + ' = ' + esc(v.shown) +
       ' <span class="unit">' + esc(unitOf(v.unit)) + '</span></div>';
@@ -469,6 +487,10 @@ export function renderResult(host, r, res) {
   // the reader ran for under a page of "got 86.8497, expected 86.8497". One
   // line says whether they held; a failure opens the list, because then the
   // detail is the news.
+  if (fs) {
+    h += '<p class="muted">The checks against known-good values ran when this result was made; ' +
+      'they are not repeated for an answer read back. <i>Run again anyway</i> runs them.</p>';
+  }
   if (res.verdicts.length) {
     const failed = res.verdicts.filter(x => !x.passed).length;
     h += '<details class="run-evidence"' + (failed ? ' open' : '') + '><summary>' +
@@ -492,13 +514,15 @@ export function renderResult(host, r, res) {
   // KEEP IT. The run as it stands — these inputs, this engine — saved as a
   // result the Results page shows again without running, and that can be sent
   // as a CSV or a report.
-  h += '<div class="runbar res-save-bar"><input class="ctl res-name" placeholder="a name for it (optional)" ' +
+  h += fs ? '' : '<div class="runbar res-save-bar"><input class="ctl res-name" placeholder="a name for it (optional)" ' +
     'aria-label="a name for the result"><button class="ctl res-save">save this result</button>' +
     '<span class="why res-saved"></span></div>';
   h += sweepControls(r);
   el.innerHTML = h;
+  const again = $('.run-again', el);
+  if (again) again.onclick = () => go(host, r, true);
   const save = $('.res-save', el);
-  save.onclick = async () => {
+  if (save) save.onclick = async () => {
     const said = $('.res-saved', el);
     save.disabled = true;
     said.textContent = 'saving…';
@@ -510,9 +534,11 @@ export function renderResult(host, r, res) {
       out = { ok: false, message: 'the engine did not answer: ' + e };
     }
     save.disabled = false;
-    said.innerHTML = out.ok
-      ? 'saved — <button class="ctl xref" data-results="' + esc(out.file) + '">open it in Results</button>'
-      : 'not saved: ' + esc(out.message || 'refused');
+    said.innerHTML = !out.ok ? 'not saved: ' + esc(out.message || 'refused')
+      : (out.already ? 'already kept — this exact question was saved ' + esc(out.saved) +
+          (out.name ? ' as <b>' + esc(out.name) + '</b>' : '') + ', and is kept once. '
+        : 'saved — ') +
+        '<button class="ctl xref" data-results="' + esc(out.file) + '">open it in Results</button>';
   };
   wireSweep(host, r);
 }
@@ -667,7 +693,7 @@ function wireSweep(host, r) {
   });
 
   let last = null;
-  go2.onclick = async () => {
+  const sweepNow = async again => {
     const d = S.byId.get(over.value);
     const all = $('.sw-all', host);
     // THE CASE, AND WITH IT THE DECLARED DESIGN. The case is the saved inputs
@@ -679,10 +705,11 @@ function wireSweep(host, r) {
     go2.disabled = true;
     const runs = [];
     for (const c of who) {
-      const p = new URLSearchParams({
-        node: r.id, over: d.id, from: toSI(d, parseFloat(from.value)),
-        to: toSI(d, parseFloat(to.value)), points: $('.sw-n', host).value, mode: 'branch',
-      });
+      const p = sweepParams(host, r, d);
+      // A sweep already saved for exactly this question is read back, and
+      // says so; `again` sweeps fresh.
+      p.set('reuse', '1');
+      if (again) p.set('again', '1');
       if (c.id === 'defaults') p.set('inputs', 'defaults'); else withOverrides(p);
       let res;
       try {
@@ -709,7 +736,9 @@ function wireSweep(host, r) {
     go2.disabled = false;
     viewOf(host).zoom = null;
     plot(host, r, last);
+    keepBar(host, r, last, sweepNow);
   };
+  go2.onclick = () => sweepNow(false);
   // Changing the level redraws from the sweep in hand. Re-running the engine to
   // move a horizontal line would be asking a question whose answer cannot have
   // changed.
@@ -718,6 +747,61 @@ function wireSweep(host, r) {
     if (!last) return;
     last.mark = mk.value ? await levelOf(mk.value) : null;
     plot(host, r, last);
+  };
+}
+
+/** The sweep as the controls ask it: the row, the input, the range in SI, the points. */
+function sweepParams(host, r, d) {
+  return new URLSearchParams({
+    node: r.id, over: d.id, from: toSI(d, parseFloat($('.sw-from', host).value)),
+    to: toSI(d, parseFloat($('.sw-to', host).value)), points: $('.sw-n', host).value, mode: 'branch',
+  });
+}
+
+/**
+ * Under a sweep: where it came from, and keeping it. A sweep read back from a
+ * saved result says which one, and offers a fresh sweep; one run now can be
+ * saved — the run at the case and the line across the range, kept together,
+ * and drawn again on the Results page without running.
+ */
+function keepBar(host, r, last, sweepNow) {
+  const note = $('.sw-note', host);
+  if (!note) return;
+  $$('.sw-keep', host).forEach(b => b.remove());
+  const theCaseLine = last.runs.find(x => x.c.id === 'case');
+  const fs = theCaseLine && theCaseLine.res.ok && theCaseLine.res.from_saved;
+  const bar = document.createElement('div');
+  bar.className = 'runbar sw-keep';
+  if (fs) {
+    bar.innerHTML = '<span class="run-saved"><b>Already answered</b> — this sweep is shown from the saved ' +
+      'result ' + (fs.name ? '<b>' + esc(fs.name) + '</b>, ' : '') + 'saved ' + esc(fs.saved) + '; nothing was ' +
+      'run. <button class="ctl xref" data-results="' + esc(fs.file) + '">open it in Results</button> ' +
+      '<button class="ctl sw-again">sweep again anyway</button></span>';
+    note.after(bar);
+    $('.sw-again', bar).onclick = () => sweepNow(true);
+    return;
+  }
+  if (!theCaseLine || !theCaseLine.res.ok) return;
+  bar.innerHTML = '<input class="ctl sw-name" placeholder="a name for it (optional)" aria-label="a name for ' +
+    'the sweep"><button class="ctl sw-save">save this sweep</button><span class="why sw-saved"></span>';
+  note.after(bar);
+  $('.sw-save', bar).onclick = async () => {
+    const said = $('.sw-saved', bar);
+    const btn = $('.sw-save', bar);
+    btn.disabled = true;
+    said.textContent = 'saving…';
+    const p = withOverrides(sweepParams(host, r, last.d));
+    p.set('label', $('.sw-name', bar).value);
+    let out;
+    try {
+      out = await (await fetch('/v1/results/save', { ...POST, body: p.toString() })).json();
+    } catch (e) {
+      out = { ok: false, message: 'the engine did not answer: ' + e };
+    }
+    btn.disabled = false;
+    said.innerHTML = !out.ok ? 'not saved: ' + esc(out.message || 'refused')
+      : (out.already ? 'already kept — this exact sweep was saved ' + esc(out.saved) + '. '
+        : 'saved — ') + '<button class="ctl xref" data-results="' + esc(out.file) + '">open it in Results</button>';
   };
 }
 
@@ -857,11 +941,18 @@ function strip(host, spec, shown, view, again) {
       '</span><button class="ctl sw-unzoom" type="button">the whole range</button>'
     : '') +
     '<button class="ctl sw-copy" type="button">copy as TSV</button>' +
+    '<button class="ctl sw-png" type="button">PNG</button>' +
+    '<button class="ctl sw-csv" type="button">CSV</button>' +
     '<span class="sw-copied"></span>' +
     '<span class="sw-hint muted">hover to read a point, drag across the plot to zoom, ' +
     'double-click or Escape to undo</span>';
   const un = $('.sw-unzoom', el);
   if (un) un.onclick = () => { view.zoom = null; again(); };
+  // The picture for slides and its numbers for a spreadsheet — the figure as
+  // it is on screen, zoom and all.
+  const stem = () => (spec.y.label.split(/\s/)[0] || 'sweep') + '_over_' + (spec.x.label.split(/\s/)[0] || 'x');
+  $('.sw-png', el).onclick = () => exportFigure($('.sw-plot', host), shown, stem(), 'png');
+  $('.sw-csv', el).onclick = () => exportFigure($('.sw-plot', host), shown, stem(), 'csv');
   $('.sw-copy', el).onclick = async () => {
     const said = $('.sw-copied', el);
     let okay = false;

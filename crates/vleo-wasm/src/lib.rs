@@ -142,7 +142,7 @@ pub fn evaluate(node: &str, base: &str, sets: &str) -> String {
     }
 }
 
-/// How many rows the tree holds, so the page can say `n of 250` honestly even
+/// How many rows the tree holds, so the page can say `n of N` honestly even
 /// when it can only run sixteen of them.
 #[wasm_bindgen]
 pub fn node_count() -> usize {

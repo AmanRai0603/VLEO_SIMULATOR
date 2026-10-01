@@ -92,10 +92,7 @@ const ALPHA_HE: f64 = -0.38;
 /// evidenced against the published table at the anchor points, and the anchors
 /// are where the two agree. That node now calls this function.
 pub fn kp_from_ap(ap: f64) -> f64 {
-    const AP: &[f64] = &[
-        0.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 9.0, 12.0, 15.0, 18.0, 22.0, 27.0, 32.0, 39.0, 48.0,
-        56.0, 67.0, 80.0, 94.0, 111.0, 132.0, 154.0, 179.0, 207.0, 236.0, 300.0, 400.0,
-    ];
+    const AP: &[f64] = &AP_AT_KP_THIRDS;
     // WRITTEN AS THIRDS, NOT AS DECIMALS. Kp is defined in thirds of a unit and
     // the scale is tabulated that way, so 0.33 and 0.67 are lossy
     // transcriptions of 1/3 and 2/3 rather than the published values. The
@@ -133,6 +130,32 @@ pub fn kp_from_ap(ap: f64) -> f64 {
         9.0,
     ];
     pmath::interp(ap, AP, KP)
+}
+
+/// The published three-hourly equivalent amplitude at each third of `Kp`, from
+/// 0 to 9: the 28 pairs [`kp_from_ap`] interpolates and [`ap_at_kp`] reads.
+const AP_AT_KP_THIRDS: [f64; 28] = [
+    0.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 9.0, 12.0, 15.0, 18.0, 22.0, 27.0, 32.0, 39.0, 48.0, 56.0,
+    67.0, 80.0, 94.0, 111.0, 132.0, 154.0, 179.0, 207.0, 236.0, 300.0, 400.0,
+];
+
+/// The published three-hourly `ap` at a `Kp`, read off the same table
+/// [`kp_from_ap`] interpolates — the other way round, and without
+/// interpolating: the table is defined at thirds of a unit, so a `Kp` is taken
+/// to its nearest third and a `Kp` off the scale has no `ap` at all.
+///
+/// THE FACE HELD A THIRD COPY. The Kp-against-Ap figure carried the 28 values
+/// as a literal in `web/js/solar.js` to draw the published line and to count
+/// where it sits above the record; the figure's numbers are the engine's now
+/// (`vleo_modules::record::kp_ap`) and read them here. The storm levels G1 to
+/// G3 the storm-scale figure counts are this table at `Kp` 5, 6 and 7.
+pub fn ap_at_kp(kp: f64) -> Option<f64> {
+    let i = pmath::round(kp * 3.0);
+    if i >= 0.0 && i < AP_AT_KP_THIRDS.len() as f64 {
+        Some(AP_AT_KP_THIRDS[i as usize])
+    } else {
+        None
+    }
 }
 
 /// The bin centres both slot-bias tables are measured on.
@@ -555,4 +578,31 @@ pub fn magnetic_field(r: Length, magnetic_latitude: Angle) -> MagneticFluxDensit
     let ratio = R_EARTH.get() / r.get();
     let s = magnetic_latitude.sin();
     MagneticFluxDensity::new(B0 * ratio * ratio * ratio * pmath::sqrt(1.0 + 3.0 * s * s))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn the_table_read_either_way_is_one_table() {
+        // Every third of Kp there is: ap_at_kp and kp_from_ap are one table
+        // read in opposite directions, and a second copy is what drifts.
+        for i in 0..28 {
+            let kp = i as f64 / 3.0;
+            let ap = ap_at_kp(kp).unwrap();
+            assert!((kp_from_ap(ap) - kp).abs() < 1e-12, "Kp {kp}: ap {ap}");
+        }
+        // As the record writes a third: 1.33 and 6.67 are thirds.
+        assert_eq!(ap_at_kp(1.33), Some(5.0));
+        assert_eq!(ap_at_kp(6.67), Some(111.0));
+        // The NOAA storm levels in ap, G1 to G3, are the table at Kp 5, 6, 7.
+        assert_eq!(
+            [ap_at_kp(5.0), ap_at_kp(6.0), ap_at_kp(7.0)],
+            [Some(48.0), Some(80.0), Some(132.0)]
+        );
+        // Off the scale is no ap, not the nearest one.
+        assert_eq!(ap_at_kp(9.4), None);
+        assert_eq!(ap_at_kp(-0.5), None);
+    }
 }

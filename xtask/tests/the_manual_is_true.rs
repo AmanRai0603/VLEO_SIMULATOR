@@ -49,9 +49,15 @@ fn the_manual() -> Manual {
 /// yielding an empty set, which would let every manual entry pass as "not a
 /// command, but nothing to compare against either".
 fn dispatched(src: &str) -> BTreeSet<String> {
+    // `vleo` matches in main; `xtask` in `fn dispatch`, which `--dry-run`
+    // also calls.
     let start = src
         .find("let r = match cmd {")
-        .expect("the dispatch `let r = match cmd {` is where the commands are; it has moved");
+        .or_else(|| {
+            let d = src.find("fn dispatch(")?;
+            src[d..].find("match cmd {").map(|k| d + k)
+        })
+        .expect("the dispatch `match cmd {` is where the commands are; it has moved");
     let mut out = BTreeSet::new();
     for line in src[start..].lines().skip(1) {
         let t = line.trim();
@@ -108,6 +114,8 @@ fn routed(src: &str) -> BTreeSet<String> {
             let prefix = &p[..p.find('"').unwrap()];
             let tail = if prefix == "/js/" {
                 "<module>"
+            } else if prefix == "/fonts/" {
+                "<font>"
             } else if prefix.contains("bundle") || prefix.contains("parity") {
                 "<name>"
             } else {
@@ -154,6 +162,13 @@ fn env_read() -> BTreeSet<String> {
             "env::var_os(\"",
             "environ.get(\"",
             "environ[\"",
+            // vleo-data reads its path settings through one function, so that
+            // "set but empty" means unset for every one of them.
+            "set_to_something(&var, \"",
+            // …and reads any other through the stand-in `var` those
+            // functions take, so each can be tested without the process's own
+            // environment.
+            " var(\"",
         ] {
             let mut rest = text.as_str();
             while let Some(i) = rest.find(pat) {
@@ -264,6 +279,21 @@ fn command_ok(line: &str, k: &Known) -> Result<(), String> {
             ["cargo", "test", "-p", krate] => {
                 if !k.crates.contains(*krate) {
                     return Err(format!("`{line}`: there is no crate '{krate}'"));
+                }
+            }
+            // One integration test of one crate: the crate, and the test file.
+            ["cargo", "test", "-p", krate, "--test", test] => {
+                if !k.crates.contains(*krate) {
+                    return Err(format!("`{line}`: there is no crate '{krate}'"));
+                }
+                if !root()
+                    .join("crates")
+                    .join(krate)
+                    .join("tests")
+                    .join(format!("{test}.rs"))
+                    .is_file()
+                {
+                    return Err(format!("`{line}`: {krate} has no test called '{test}'"));
                 }
             }
             // The Python package: installing a file of it, and the module it
@@ -521,7 +551,7 @@ fn every_document_is_listed_and_nothing_else() {
         .flatten()
         .filter(|e| e.path().is_file())
         .map(|e| format!("docs/{}", e.file_name().to_string_lossy()))
-        .filter(|p| p.ends_with(".md") || p.ends_with(".toml"))
+        .filter(|p| p.ends_with(".md") || p.ends_with(".toml") || p.ends_with(".html"))
         .chain(
             std::fs::read_dir(root().join("docs/roles"))
                 .into_iter()
@@ -686,7 +716,7 @@ fn a_malformed_manual_is_refused_by_name() {
             .err()
             .unwrap_or_else(|| panic!("accepted ({says})"));
         assert!(
-            e.contains(says),
+            e.message().contains(says),
             "refused, but not for the reason ({says}): {e}"
         );
     }
@@ -713,7 +743,7 @@ fn a_malformed_manual_is_refused_by_name() {
     ] {
         match manual::parse(&bad) {
             Ok(_) => panic!("accepted a manual that should refuse ({says})"),
-            Err(e) => assert!(e.contains(says), "refused, but not for the reason ({says}): {e}"),
+            Err(e) => assert!(e.message().contains(says), "refused, but not for the reason ({says}): {e}"),
         }
     }
 }

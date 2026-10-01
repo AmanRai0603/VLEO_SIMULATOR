@@ -22,6 +22,11 @@ So a panel gets a spec like a node does, and three checks that need no person:
   2b · it reads    for every row the panel declares in `engine`, serve that row
                    a different answer and the picture must change. A panel that
                    asks the engine and then ignores the reply fails here
+  2c · it states   for every number the panel declares it takes from a figure
+                   the engine works out (`figures`), serve that number moved and
+                   the panel — its picture or its note — must change. The pixel
+                   match cannot see this: a correlation in the fourth decimal is
+                   a few glyphs, far inside its tolerance
   3 · it matches   against a stored reference, within tolerance — IN BOTH COLOUR
                    SCHEMES. A dark rendering nobody has looked at is a rendering
                    nobody has checked, and a canvas gets none of CSS's help: its
@@ -59,6 +64,7 @@ import argparse
 import io
 import json
 import os
+import re
 import socket
 import subprocess
 import sys
@@ -249,6 +255,55 @@ def _intercept_run(page, row_id):
 
     page.route("**/v1/run**", handler)
     page.route("**/v1/sweep**", handler)
+    return state
+
+
+# The panel's picture and everything written about it: the canvas, and the
+# host's text — the answer, the finding and the note a figure's numbers go into.
+_SIG_HOST = """
+sel => { const e = document.querySelector(sel); if (!e) return null;
+         const h = e.closest('.row-figure') || e.parentElement;
+         return (e.tagName === 'CANVAS' ? e.toDataURL() : e.innerHTML)
+                + '\\u0000' + (h ? h.innerText : ''); }
+"""
+
+
+def _intercept_figure(page, fig_id, field):
+    """Serve one number of one engine figure moved, and report whether it was
+    ever asked for — 2b's interceptor, for `/v1/figures/solar/<id>`.
+    """
+    state = {"hit": False, "had": False}
+
+    # Every number under the field, however deep: a figure's numbers are as
+    # often a list per cycle, or a list of lists per level, as they are one.
+    def bend(v):
+        if isinstance(v, bool) or v is None:
+            return v
+        if isinstance(v, (int, float)):
+            state["had"] = True
+            return v * 1.75 + 13.0
+        if isinstance(v, list):
+            return [bend(x) for x in v]
+        if isinstance(v, dict):
+            return {k: bend(x) for k, x in v.items()}
+        return v
+
+    def handler(route):
+        state["hit"] = True
+        try:
+            body = route.fetch().json()
+        except Exception:
+            route.continue_()
+            return
+        if field in body:
+            body[field] = bend(body[field])
+        route.fulfill(status=200, content_type="application/json", body=json.dumps(body))
+
+    # The id and nothing after it but the figure's own settings: a glob on
+    # the bare id missed a figure asked for with a query, and a prefix would
+    # catch `recurrence-ap` when `recurrence` was meant.
+    state["pattern"] = re.compile(r".*/v1/figures/solar/%s(\?.*)?$" % re.escape(fig_id))
+    page.route(state["pattern"], handler)
     return state
 
 
@@ -457,11 +512,54 @@ def check_all(ids=None, record=False):
                                   "the answer changed — it is not using the value"
                                   % (mount, rid)))
 
+            # 2c · it states what the engine worked out
+            #
+            # A panel whose numbers come from an engine figure declares them:
+            # `figures = [{ id = "density", reads = ["r", ...] }]`. Each is moved
+            # on its own, and the panel must say something different. Not the
+            # pixel match's job and it cannot do it: a wrong number is a few
+            # glyphs, well inside a 2 per cent tolerance. A figure drawn only in
+            # one view names the `state` that reaches it, as 2b's rows do.
+            for fg in d.get("figures", []):
+                _state = fg.get("state")
+                for field in fg.get("reads", []):
+                    what = "%s.%s" % (fg["id"], field)
+                    clean = _open(settle, _state)
+                    clean = page.evaluate(_SIG_HOST, mount) if clean is not None else None
+                    if clean is None:
+                        found.append((d["id"], "2c states",
+                                      "the panel never drew, so %s could not be tested" % what))
+                        continue
+                    asked = _intercept_figure(page, fg["id"], field)
+                    moved = _open(settle, _state)
+                    moved = page.evaluate(_SIG_HOST, mount) if moved is not None else None
+                    fail = _failed(page, mount)
+                    page.unroute(asked["pattern"])
+                    if fail:
+                        found.append((d["id"], "2c states",
+                                      "the panel FAILED when %s was moved: %s" % (what, fail)))
+                    elif moved is None:
+                        found.append((d["id"], "2c states",
+                                      "the panel stopped drawing when %s was moved" % what))
+                    elif not asked["hit"]:
+                        found.append((d["id"], "2c states",
+                                      "the panel never asked the engine for the figure %s, "
+                                      "though it declares it" % fg["id"]))
+                    elif not asked["had"]:
+                        found.append((d["id"], "2c states",
+                                      "the engine's %s figure has no number %s — the "
+                                      "declaration names a field that does not exist"
+                                      % (fg["id"], field)))
+                    elif moved == clean:
+                        found.append((d["id"], "2c states",
+                                      "the panel said the same thing when the engine's %s "
+                                      "changed — it is not using it" % what))
+
             # 2b leaves the page wherever `engine_state` put it, and check 3
             # photographs whatever is on screen. Reload, so the reference is
             # taken from the panel's own opening state and not from the branch
             # 2b happened to need.
-            if d.get("engine"):
+            if d.get("engine") or d.get("figures"):
                 page.goto(url, wait_until="networkidle")
                 if d.get("ready"):
                     try:
@@ -877,6 +975,16 @@ def _tree_sig(root):
     return h
 
 
+def _asks_and_ignores(d):
+    """Selftest: `design` asks the engine for a row, declares it, ignores it."""
+    js = d / "web" / "js" / "solar.js"
+    js.write_text(js.read_text().replace(
+        "    label: 'Design',\n",
+        "    engine: ['l3_solar_req_03'],\n    label: 'Design',\n", 1))
+    spec = d / "panels" / "design.toml"
+    spec.write_text(spec.read_text() + '\n[[engine]]\nrow = "l3_solar_req_03"\n')
+
+
 def selftest():
     """A panel wired to nothing must fail check two, and a blank one check one.
 
@@ -935,12 +1043,22 @@ def selftest():
         # matches yesterday's reference — because it is drawing a perfectly
         # steady picture of a number nobody computed. Four of `design`'s numbers
         # were in exactly this state, one of them two revisions stale.
+        #
+        # No panel declares an `engine` row since phase 10 — every one reads an
+        # engine figure, which 2c holds — so the case builds the defect in the
+        # throwaway tree: `design` asks for the survival requirement's run, its
+        # spec says it reads it, and the picture takes nothing from the answer.
         ("a panel that asks the engine and ignores the answer",
+         lambda d: _asks_and_ignores(d),
+         "2b reads"),
+        # 2c's: a panel that asks the engine for a figure and states a number
+        # of its own. Renders, moves, matches — a correlation is four digits.
+        ("a panel that asks for a figure and states its own number",
          lambda d: (d / "web" / "js" / "solar.js").write_text(
              (d / "web" / "js" / "solar.js").read_text().replace(
-                 "      const req = rq.si;",
-                 "      const req = 150;")),
-         "2b reads"),
+                 "const r = fig.r, quad = fig.below_both_pct,",
+                 "const r = 0.2067, quad = fig.below_both_pct,")),
+         "2c states"),
         # CHECK FOUR'S OWN TWO. The first is the invariant that matters: an
         # interaction a reader cannot undo to the pixel leaves them in a view
         # they did not mean to reach with no way back but a reload.
@@ -959,11 +1077,13 @@ def selftest():
         # And the hole 2b's failed-state probe closes: before it, a panel whose
         # render THREW passed check 2, because a failed render blanks the canvas
         # and a blank canvas has a different signature from a drawn one.
+        # Only the F10.7 view asks for the row that is not there, so the panel
+        # opens and draws, and throws when check 2 moves its driver.
         ("a panel whose render throws",
          lambda d: (d / "web" / "js" / "solar.js").write_text(
              (d / "web" / "js" / "solar.js").read_text().replace(
-                 "engine: ['l3_solar_req_01',",
-                 "engine: ['sw_no_such_row',")),
+                 "{ v, reqf: o.reqf || 'l3_solar_req_01' }",
+                 "{ v, reqf: 'sw_no_such_row' }")),
          "2 moves"),
     ]
     for label, break_it, want in cases:
@@ -991,6 +1111,7 @@ def selftest():
             try:
                 which = ("sweep" if "canvas" in label
                          else "pattern" if "zoom" in label or "brush" in label
+                         else "density" if "figure" in label
                          else "design" if "engine" in label or "throws" in label
                          else "tree")
                 found = check_all(ids={which})

@@ -53,9 +53,18 @@ async def check(path):
 
 def selftest():
     # The two verdicts this reads are the page's own words; if they move, this
-    # must move with them. Read them from the generator rather than trusting
+    # must move with them. Read them from the page's own files rather than trusting
     # a copy here.
-    src = open(os.path.join(os.path.dirname(__file__), "..", "crates", "vleo-sheet", "src", "template.rs")).read()
+    root = os.path.join(os.path.dirname(__file__), "..")
+    src = "".join(
+        open(os.path.join(root, f)).read()
+        for f in (
+            "crates/vleo-sheet/src/template.rs",
+            "web/pages/node-form.html",
+            "web/pages/node-form.js",
+            "web/pages/node-form.css",
+        )
+    )
     for words in ("Sound: the method checks", "Not sound yet", "nf-sound", "nf-check"):
         assert words in src, "the form no longer says %r" % words
     print("selftest: ok")

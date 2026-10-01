@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "levers",
+  "type": "object",
+  "properties": {
+    "ok": {
+      "type": "boolean"
+    },
+    "node": {
+      "type": "string"
+    },
+    "base": {
+      "type": "number"
+    },
+    "levers": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "symbol": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "unit": {
+            "type": "string"
+          },
+          "factor": {
+            "type": "number"
+          },
+          "lower": {
+            "type": "number"
+          },
+          "upper": {
+            "type": "number"
+          },
+          "at_lower": {
+            "type": "number"
+          },
+          "at_upper": {
+            "type": "number"
+          },
+          "span": {
+            "type": "number"
+          },
+          "why": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "symbol",
+          "label",
+          "unit",
+          "factor",
+          "lower",
+          "upper",
+          "at_lower",
+          "at_upper",
+          "span",
+          "why"
+        ]
+      }
+    }
+  },
+  "required": [
+    "ok",
+    "node",
+    "base",
+    "levers"
+  ]
+}

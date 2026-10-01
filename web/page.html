@@ -1,0 +1,36 @@
+<!--
+  THE PAGE TEMPLATE. Every page the tool writes as a file is this one, filled:
+  a node form, a lesson form, a saved result, a role guide, and each page of
+  the readers' folder. The tool's own page, web/index.html, begins the same
+  way. So the markup every page shares lives here, with the frontend, and a
+  change to it is one change (docs/ARCHITECTURE.html, section 5). What each
+  page puts in its body — every word and tag, its style, its script — is in
+  web/pages/, a parts file per page (shell::Parts).
+
+  Four slots, each filled by the page's generator and by nothing else:
+
+    {{title}}       the page's name — text, escaped when it is filled
+    {{head}}        what the page adds to its head: its styles, a generator
+                    note, a stylesheet link
+    {{body_attrs}}  attributes on <body>, with their leading space, or nothing
+    {{body}}        the page
+
+  A filler copies this file from its doctype on, so this note stays here and
+  never reaches a page. It fills slots in one pass and never reads what it put
+  in, so a page whose content happens to hold a slot's name cannot be filled
+  twice. A slot here that no filler knows is refused by the tests
+  (xtask/tests/the_pages_share_one_template.rs), and so is a generator that
+  writes its own doctype.
+-->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{title}}</title>
+{{head}}
+</head>
+<body{{body_attrs}}>
+{{body}}
+</body>
+</html>
