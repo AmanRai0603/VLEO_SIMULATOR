@@ -1664,8 +1664,9 @@ fixtures, the mutation check and the gate — and no assistant supplies the \
 relation, the method or a case.
 
 When the language grows a construct, it grows in \
-`crates/vleo-sheet/src/method.rs`: the grammar, the checker, the interpreter \
-and the translation together, one reviewed change, followed by \
+`crates/vleo-sheet/src/method.rs` and the files under `method/` beside it — \
+the grammar (`parse.rs`), the checker (`check.rs`), the interpreter (`run.rs`) \
+and the translation (`rust.rs`) together, one reviewed change, followed by \
 `method-wasm` so every form checks by the new rules."""
 
 [[layer.section.step]]
