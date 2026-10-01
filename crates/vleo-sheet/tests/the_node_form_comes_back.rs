@@ -278,6 +278,7 @@ fn what_is_not_a_form_for_a_node_here_is_refused_by_name() {
     let r = root();
     assert!(template::plan(&r, "<html>hello</html>")
         .unwrap_err()
+        .message()
         .contains("not a node form"));
     let html = form_for(ROW);
     let other_format = edit(&html, DATA, |t| {
@@ -288,12 +289,14 @@ fn what_is_not_a_form_for_a_node_here_is_refused_by_name() {
     });
     assert!(template::plan(&r, &other_format)
         .unwrap_err()
+        .message()
         .contains("vleo-node-form/0"));
     let retargeted = edit(&html, DATA, |t| {
         t.insert("node".into(), toml::Value::String("sw_f107_design".into()));
     });
     assert!(template::plan(&r, &retargeted)
         .unwrap_err()
+        .message()
         .contains("cannot be trusted"));
     let unknown = edit(
         &edit(&html, DATA, |t| {
@@ -306,6 +309,7 @@ fn what_is_not_a_form_for_a_node_here_is_refused_by_name() {
     );
     assert!(template::plan(&r, &unknown)
         .unwrap_err()
+        .message()
         .contains("never adds a node"));
     let bogus = edit(&html, DATA, |t| {
         t.get_mut("filled_by")
@@ -313,7 +317,10 @@ fn what_is_not_a_form_for_a_node_here_is_refused_by_name() {
             .unwrap()
             .insert("ai".into(), toml::Value::String("a little".into()));
     });
-    assert!(template::plan(&r, &bogus).unwrap_err().contains("a little"));
+    assert!(template::plan(&r, &bogus)
+        .unwrap_err()
+        .message()
+        .contains("a little"));
 }
 
 // ---------------------------------------------------------------------------

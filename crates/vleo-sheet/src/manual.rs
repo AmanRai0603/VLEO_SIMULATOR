@@ -24,6 +24,7 @@
 //! a step that says to run something without saying what running it proves is a
 //! step neither check can hold to anything.
 
+use crate::{Error, ErrorKind};
 use std::path::Path;
 
 /// Who a section is for.
@@ -240,13 +241,16 @@ pub struct Manual {
 /// which two it combines.
 pub const KINDS: &[&str] = &["tutorial", "how-to", "reference", "explanation"];
 
-fn kind(v: &toml::Value, at: &str) -> Result<String, String> {
+fn kind(v: &toml::Value, at: &str) -> Result<String, Error> {
     let k = need(v, "kind", at)?;
     for part in k.split('+').map(str::trim) {
         if !KINDS.contains(&part) {
-            return Err(format!(
-                "{at}: kind = \"{k}\" — one of {}, or two joined by +",
-                KINDS.join(", ")
+            return Err(Error::new(
+                ErrorKind::Malformed,
+                format!(
+                    "{at}: kind = \"{k}\" — one of {}, or two joined by +",
+                    KINDS.join(", ")
+                ),
             ));
         }
     }
@@ -261,17 +265,23 @@ fn s(v: &toml::Value, key: &str) -> Option<String> {
     v.get(key).and_then(|x| x.as_str()).map(|x| x.to_string())
 }
 
-fn need(v: &toml::Value, key: &str, at: &str) -> Result<String, String> {
+fn need(v: &toml::Value, key: &str, at: &str) -> Result<String, Error> {
     match s(v, key) {
         Some(x) if !x.trim().is_empty() => Ok(x),
-        _ => Err(format!("{at}: `{key}` is missing or blank")),
+        _ => Err(Error::new(
+            ErrorKind::Malformed,
+            format!("{at}: `{key}` is missing or blank"),
+        )),
     }
 }
 
-fn who(v: &toml::Value, at: &str) -> Result<Who, String> {
+fn who(v: &toml::Value, at: &str) -> Result<Who, Error> {
     let w = need(v, "who", at)?;
     Who::parse(&w).ok_or_else(|| {
-        format!("{at}: who = \"{w}\" — one of user, maintainer, developer, everyone")
+        Error::new(
+            ErrorKind::Malformed,
+            format!("{at}: who = \"{w}\" — one of user, maintainer, developer, everyone"),
+        )
     })
 }
 
@@ -298,18 +308,21 @@ pub fn has_placeholder(cmd: &str) -> bool {
 }
 
 /// Load the manual, refusing a malformed one by name.
-pub fn load(root: &Path) -> Result<Manual, String> {
+pub fn load(root: &Path) -> Result<Manual, Error> {
     let p = path(root);
-    let text = std::fs::read_to_string(&p).map_err(|e| format!("{}: {e}", p.display()))?;
+    let text = std::fs::read_to_string(&p).map_err(|e| Error::io(p.display(), e))?;
     parse(&text)
 }
 
 /// Parse the manual's text. Separate from `load` so a check can hand it a
 /// deliberately broken one.
-pub fn parse(text: &str) -> Result<Manual, String> {
-    let v: toml::Value = text
-        .parse()
-        .map_err(|e| format!("docs/manual.toml is not TOML: {e}"))?;
+pub fn parse(text: &str) -> Result<Manual, Error> {
+    let v: toml::Value = text.parse().map_err(|e| {
+        Error::new(
+            ErrorKind::Malformed,
+            format!("docs/manual.toml is not TOML: {e}"),
+        )
+    })?;
     let mut ids = std::collections::BTreeSet::new();
 
     let mut layers = Vec::new();
@@ -320,8 +333,9 @@ pub fn parse(text: &str) -> Result<Manual, String> {
         for sec in table(l, "section") {
             let sid = need(sec, "id", &format!("a section of {at}"))?;
             if !ids.insert(sid.clone()) {
-                return Err(format!(
-                    "section id '{sid}' is used twice — a link to it would be ambiguous"
+                return Err(Error::new(
+                    ErrorKind::Malformed,
+                    format!("section id '{sid}' is used twice — a link to it would be ambiguous"),
                 ));
             }
             let at = format!("section '{sid}'");
@@ -332,7 +346,7 @@ pub fn parse(text: &str) -> Result<Manual, String> {
                 let check = match s(st, "check") {
                     Some(c) => Some(
                         Check::parse(&c)
-                            .ok_or_else(|| format!("{at}: check = \"{c}\" is not one of exits, fails, serves, writes, ci, probe"))?,
+                            .ok_or_else(|| Error::new(ErrorKind::Malformed, format!("{at}: check = \"{c}\" is not one of exits, fails, serves, writes, ci, probe")))?,
                     ),
                     None => None,
                 };
@@ -340,12 +354,20 @@ pub fn parse(text: &str) -> Result<Manual, String> {
                 // anything; a check with no command has nothing to check.
                 match (&run, check) {
                     (Some(_), None) => {
-                        return Err(format!(
-                            "{at}: a command with no `check` — say whether running it exits, \
+                        return Err(Error::new(
+                            ErrorKind::Malformed,
+                            format!(
+                                "{at}: a command with no `check` — say whether running it exits, \
                              fails, serves, writes, is run by the pipeline, or probes the daemon"
+                            ),
                         ))
                     }
-                    (None, Some(_)) => return Err(format!("{at}: a `check` with no `run`")),
+                    (None, Some(_)) => {
+                        return Err(Error::new(
+                            ErrorKind::Malformed,
+                            format!("{at}: a `check` with no `run`"),
+                        ))
+                    }
                     _ => {}
                 }
                 if let (Some(r), Some(c)) = (&run, check) {
@@ -355,18 +377,21 @@ pub fn parse(text: &str) -> Result<Manual, String> {
                             Check::Exits | Check::Fails | Check::Serves | Check::Probe
                         )
                     {
-                        return Err(format!(
+                        return Err(Error::new(
+                            ErrorKind::Malformed,
+                            format!(
                             "{at}: `{r}` has a placeholder a person must replace, so it cannot \
                              be run as written — it cannot be `{}`",
                             c.name()
+                        ),
                         ));
                     }
                     if c == Check::Writes
                         && s(st, "why").map(|w| w.trim().is_empty()).unwrap_or(true)
                     {
-                        return Err(format!(
+                        return Err(Error::new(ErrorKind::Malformed, format!(
                             "{at}: `{r}` is not run by the check because it writes — `why` must say what it changes"
-                        ));
+                        )));
                     }
                 }
                 let ui = s(st, "ui");
@@ -386,14 +411,22 @@ pub fn parse(text: &str) -> Result<Manual, String> {
                 who: who(sec, &at)?,
                 kind: kind(sec, &at)?,
                 answer: need(sec, "answer", &at).map_err(|e| {
-                    format!("{e} — every section opens with its answer (docs/EXPLAINING.md E1)")
+                    Error::new(
+                        e.kind(),
+                        format!(
+                            "{e} — every section opens with its answer (docs/EXPLAINING.md E1)"
+                        ),
+                    )
                 })?,
                 body: s(sec, "body").unwrap_or_default(),
                 steps,
             });
         }
         if sections.is_empty() {
-            return Err(format!("{at} has no sections"));
+            return Err(Error::new(
+                ErrorKind::Malformed,
+                format!("{at} has no sections"),
+            ));
         }
         layers.push(Layer {
             id: lid.clone(),
@@ -403,7 +436,10 @@ pub fn parse(text: &str) -> Result<Manual, String> {
         });
     }
     if layers.is_empty() {
-        return Err("docs/manual.toml has no [[layer]]".into());
+        return Err(Error::new(
+            ErrorKind::Malformed,
+            "docs/manual.toml has no [[layer]]",
+        ));
     }
 
     let mut commands = Vec::new();
@@ -412,18 +448,23 @@ pub fn parse(text: &str) -> Result<Manual, String> {
         let at = format!("command '{name}'");
         let tool = need(c, "tool", &at)?;
         if tool != "xtask" && tool != "vleo" {
-            return Err(format!("{at}: tool = \"{tool}\" — one of xtask, vleo"));
+            return Err(Error::new(
+                ErrorKind::Malformed,
+                format!("{at}: tool = \"{tool}\" — one of xtask, vleo"),
+            ));
         }
         let effect = need(c, "effect", &at)?;
         if !matches!(effect.as_str(), "reads" | "writes" | "irreversible") {
-            return Err(format!(
-                "{at}: effect = \"{effect}\" — one of reads, writes, irreversible"
+            return Err(Error::new(
+                ErrorKind::Malformed,
+                format!("{at}: effect = \"{effect}\" — one of reads, writes, irreversible"),
             ));
         }
         let usage = need(c, "usage", &at)?;
         if usage.split_whitespace().next() != Some(name.as_str()) {
-            return Err(format!(
-                "{at}: usage `{usage}` must begin with the command's own name"
+            return Err(Error::new(
+                ErrorKind::Malformed,
+                format!("{at}: usage `{usage}` must begin with the command's own name"),
             ));
         }
         commands.push(Command {
@@ -442,7 +483,10 @@ pub fn parse(text: &str) -> Result<Manual, String> {
         let at = format!("route '{path}'");
         let method = need(r, "method", &at)?;
         if method != "GET" && method != "POST" {
-            return Err(format!("{at}: method = \"{method}\" — GET or POST"));
+            return Err(Error::new(
+                ErrorKind::Malformed,
+                format!("{at}: method = \"{method}\" — GET or POST"),
+            ));
         }
         routes.push(Route {
             method,
@@ -490,7 +534,10 @@ pub fn parse(text: &str) -> Result<Manual, String> {
         let at = format!("cannot '{what}'");
         let place = need(c, "place", &at)?;
         if place != "browser" && place != "terminal" {
-            return Err(format!("{at}: place = \"{place}\" — browser or terminal"));
+            return Err(Error::new(
+                ErrorKind::Malformed,
+                format!("{at}: place = \"{place}\" — browser or terminal"),
+            ));
         }
         cannot.push(Cannot {
             place,
@@ -509,9 +556,12 @@ pub fn parse(text: &str) -> Result<Manual, String> {
         let id = need(r, "id", "a [[role]]")?;
         let at = format!("role '{id}'");
         if !ROLES.contains(&id.as_str()) {
-            return Err(format!("{at}: one of {}", ROLES.join(", ")));
+            return Err(Error::new(
+                ErrorKind::Malformed,
+                format!("{at}: one of {}", ROLES.join(", ")),
+            ));
         }
-        let list = |key: &str| -> Result<Vec<String>, String> {
+        let list = |key: &str| -> Result<Vec<String>, Error> {
             let items: Vec<String> = r
                 .get(key)
                 .and_then(|x| x.as_array())
@@ -522,7 +572,10 @@ pub fn parse(text: &str) -> Result<Manual, String> {
                 })
                 .unwrap_or_default();
             if items.iter().all(|i| i.trim().is_empty()) {
-                return Err(format!("{at}: `{key}` is missing or empty"));
+                return Err(Error::new(
+                    ErrorKind::Malformed,
+                    format!("{at}: `{key}` is missing or empty"),
+                ));
             }
             Ok(items)
         };
@@ -542,8 +595,11 @@ pub fn parse(text: &str) -> Result<Manual, String> {
     }
     for want in ROLES {
         if roles.iter().filter(|r| r.id == *want).count() != 1 {
-            return Err(format!(
+            return Err(Error::new(
+                ErrorKind::Malformed,
+                format!(
                 "the manual must describe the role '{want}' exactly once — its guide opens with it"
+            ),
             ));
         }
     }

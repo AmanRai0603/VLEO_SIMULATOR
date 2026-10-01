@@ -70,7 +70,8 @@ fn the_same_bundles_with_windows_line_endings_are_refused() {
     let err = store
         .sync(&vleo_data::Source::Shipped(from.clone()))
         .expect_err("a payload rewritten to CRLF must not verify");
-    assert!(err.contains("failed verification"), "{err}");
+    assert_eq!(err.kind(), vleo_data::ErrorKind::Unverified, "{err}");
+    assert!(err.message().contains("failed verification"), "{err}");
     let _ = fs::remove_dir_all(&from);
 }
 

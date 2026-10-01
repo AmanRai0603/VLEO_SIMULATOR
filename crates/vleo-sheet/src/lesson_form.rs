@@ -21,10 +21,11 @@
 use crate::lesson::{self, Lesson, CLAIMS, KINDS, STATIONS};
 use crate::load::Tree;
 use crate::model::Sheet;
+use crate::{Error, ErrorKind};
 
 /// The form for a row's lesson — its lesson as it stands, or an empty one to
 /// start from.
-pub fn document(sh: &Sheet, tree: &Tree) -> Result<String, String> {
+pub fn document(sh: &Sheet, tree: &Tree) -> Result<String, Error> {
     let l = match lesson::load(&sh.dir, &sh.id) {
         Some(r) => r?,
         None => Lesson {
@@ -39,11 +40,14 @@ pub fn document(sh: &Sheet, tree: &Tree) -> Result<String, String> {
 
 /// The lesson a filled form carries: the TOML block, and the row it is for.
 /// Accepts a bare `lesson.toml` too, with the row given.
-pub fn from_file(text: &str, node: Option<&str>) -> Result<(String, String), String> {
+pub fn from_file(text: &str, node: Option<&str>) -> Result<(String, String), Error> {
     if !text.contains("id=\"vleo-lesson\"") {
-        let node = node.ok_or(
-            "this is not a lesson form; for a bare lesson.toml, name its row with --for <node>",
-        )?;
+        let node = node.ok_or_else(|| {
+            Error::new(
+                ErrorKind::Malformed,
+                "this is not a lesson form; for a bare lesson.toml, name its row with --for <node>",
+            )
+        })?;
         return Ok((node.to_string(), text.to_string()));
     }
     let block = |id: &str| -> Option<String> {
@@ -52,15 +56,24 @@ pub fn from_file(text: &str, node: Option<&str>) -> Result<(String, String), Str
         let b = text[a..].find("</script>")? + a;
         Some(text[a..b].to_string())
     };
-    let rows = block("vleo-lesson-rows").ok_or("the form has lost its row table")?;
+    let rows = block("vleo-lesson-rows")
+        .ok_or_else(|| Error::new(ErrorKind::Malformed, "the form has lost its row table"))?;
     let from_form = rows
         .lines()
         .find_map(|l| l.strip_prefix("node "))
         .map(|s| s.trim().to_string())
-        .ok_or("the form does not say which row it is for")?;
+        .ok_or_else(|| {
+            Error::new(
+                ErrorKind::Malformed,
+                "the form does not say which row it is for",
+            )
+        })?;
     if let Some(n) = node {
         if n != from_form {
-            return Err(format!("the form is for '{from_form}', not '{n}'"));
+            return Err(Error::new(
+                ErrorKind::Malformed,
+                format!("the form is for '{from_form}', not '{n}'"),
+            ));
         }
     }
     // The lesson travels in a textarea, HTML-escaped: a textarea ends only at
@@ -69,12 +82,14 @@ pub fn from_file(text: &str, node: Option<&str>) -> Result<(String, String), Str
     let open = "id=\"vleo-lesson\">";
     let a = text
         .find(open)
-        .ok_or("the form has lost its lesson block")?
+        .ok_or_else(|| Error::new(ErrorKind::Malformed, "the form has lost its lesson block"))?
         + open.len();
-    let b = text[a..]
-        .find("</textarea>")
-        .ok_or("the form's lesson block is not closed")?
-        + a;
+    let b = text[a..].find("</textarea>").ok_or_else(|| {
+        Error::new(
+            ErrorKind::Malformed,
+            "the form's lesson block is not closed",
+        )
+    })? + a;
     Ok((from_form, unhe(&text[a..b])))
 }
 

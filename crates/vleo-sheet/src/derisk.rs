@@ -20,6 +20,7 @@
 //! Nothing here decides anything. It reads what the sheets record, checks that
 //! the record is complete and consistent, and lays it out.
 
+use crate::{Error, ErrorKind};
 use std::collections::BTreeMap;
 
 use crate::load::Tree;
@@ -76,14 +77,20 @@ pub enum Move {
 }
 
 /// Read `R-01 L5->L4`, `R-09 closed` or `R-12 opened`.
-pub fn parse_move(s: &str) -> Result<(String, Move), String> {
+pub fn parse_move(s: &str) -> Result<(String, Move), Error> {
     let s = s.trim();
     let (id, rest) = s.split_once(char::is_whitespace).ok_or_else(|| {
-        format!("«{s}» is not a risk move: write `R-01 L5->L4`, `R-09 closed` or `R-12 opened`")
+        Error::new(
+            ErrorKind::Malformed,
+            format!(
+                "«{s}» is not a risk move: write `R-01 L5->L4`, `R-09 closed` or `R-12 opened`"
+            ),
+        )
     })?;
     if !risk_id_ok(id) {
-        return Err(format!(
-            "«{id}» is not a risk id: R- and a number, like R-07"
+        return Err(Error::new(
+            ErrorKind::Malformed,
+            format!("«{id}» is not a risk id: R- and a number, like R-07"),
         ));
     }
     let rest = rest.trim();
@@ -91,15 +98,24 @@ pub fn parse_move(s: &str) -> Result<(String, Move), String> {
         "opened" => Move::Opened,
         "closed" => Move::Closed,
         _ => {
-            let (a, b) = rest
-                .split_once("->")
-                .ok_or_else(|| format!("«{s}»: a level move is written `L5->L4`"))?;
+            let (a, b) = rest.split_once("->").ok_or_else(|| {
+                Error::new(
+                    ErrorKind::Malformed,
+                    format!("«{s}»: a level move is written `L5->L4`"),
+                )
+            })?;
             let (a, b) = (a.trim(), b.trim());
             if !LEVELS.contains(&a) || !LEVELS.contains(&b) {
-                return Err(format!("«{s}»: a level is one of {}", LEVELS.join(", ")));
+                return Err(Error::new(
+                    ErrorKind::Malformed,
+                    format!("«{s}»: a level is one of {}", LEVELS.join(", ")),
+                ));
             }
             if a == b {
-                return Err(format!("«{s}» moves nothing"));
+                return Err(Error::new(
+                    ErrorKind::Malformed,
+                    format!("«{s}» moves nothing"),
+                ));
             }
             Move::Level {
                 from: a.into(),

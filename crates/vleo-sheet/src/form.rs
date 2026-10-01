@@ -12,6 +12,7 @@
 //! form and the generator cannot disagree about what a finished sheet is.
 
 use crate::model::Sheet;
+use crate::{Error, ErrorKind};
 
 // The parts, one file each, under src/form/.
 mod ask;

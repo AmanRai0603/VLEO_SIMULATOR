@@ -106,7 +106,7 @@ pub(crate) fn jq(v: &str) -> String {
 /// `sheet_hash` is what a later save sends back to prove which version it
 /// started from, so two people editing one row cannot overwrite each other
 /// silently.
-pub fn json(sh: &Sheet) -> Result<String, String> {
+pub fn json(sh: &Sheet) -> Result<String, Error> {
     let asks = asks(sh);
     let mut o = String::from("{\n");
     o.push_str(&format!("  \"id\": {},\n", jq(&sh.id)));
@@ -128,7 +128,7 @@ pub fn json(sh: &Sheet) -> Result<String, String> {
         Ok(w) => o.push_str(&format!("  \"identity\": {},\n", jq(&w))),
         Err(e) => o.push_str(&format!(
             "  \"identity\": null,\n  \"identity_why\": {},\n",
-            jq(&e)
+            jq(e.message())
         )),
     }
     o.push_str("  \"structural\": {\n");

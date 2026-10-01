@@ -716,7 +716,7 @@ fn a_malformed_manual_is_refused_by_name() {
             .err()
             .unwrap_or_else(|| panic!("accepted ({says})"));
         assert!(
-            e.contains(says),
+            e.message().contains(says),
             "refused, but not for the reason ({says}): {e}"
         );
     }
@@ -743,7 +743,7 @@ fn a_malformed_manual_is_refused_by_name() {
     ] {
         match manual::parse(&bad) {
             Ok(_) => panic!("accepted a manual that should refuse ({says})"),
-            Err(e) => assert!(e.contains(says), "refused, but not for the reason ({says}): {e}"),
+            Err(e) => assert!(e.message().contains(says), "refused, but not for the reason ({says}): {e}"),
         }
     }
 }

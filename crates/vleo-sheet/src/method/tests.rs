@@ -45,7 +45,9 @@ fn units_are_read_and_converted() {
         parse_unit("1/m^3").unwrap().1,
         Dim::new(-3, 0, 0, 0, 0, 0, 0)
     );
-    assert!(parse_unit("kN").unwrap_err().contains("kN"));
+    let e = parse_unit("kN").unwrap_err();
+    assert_eq!(e.kind(), ErrorKind::Malformed, "{e}");
+    assert!(e.message().contains("kN"), "{e}");
     assert!((parse_unit("deg").unwrap().0 - core::f64::consts::PI / 180.0).abs() < 1e-15);
     assert_eq!(dim_text(Dim::new(3, 0, -2, 0, 0, 0, 0)), "m^3/s^2");
     assert_eq!(dim_text(Dim::new(-3, 0, 0, 0, 0, 0, 0)), "1/m^3");

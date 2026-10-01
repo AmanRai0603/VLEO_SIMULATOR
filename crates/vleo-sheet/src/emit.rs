@@ -8,6 +8,7 @@
 
 use crate::model::*;
 use crate::{load::Tree, short_hex};
+use crate::{Error, ErrorKind};
 use std::collections::BTreeMap;
 use vleo_units::Unit;
 
@@ -905,9 +906,9 @@ pub fn rustfmt_standalone(text: &str) -> String {
 /// that node's sheet alone, and a `mod.rs` naming them. A module whose node no
 /// longer has a method is removed, so the kernel never carries code for a
 /// method nobody states. Returns how many files it wrote or removed.
-pub fn sync_methods(tree: &crate::load::Tree) -> Result<usize, String> {
+pub fn sync_methods(tree: &crate::load::Tree) -> Result<usize, Error> {
     let dir = tree.root.join("crates/vleo-core/src/physics/methods");
-    std::fs::create_dir_all(&dir).map_err(|e| format!("{}: {e}", dir.display()))?;
+    std::fs::create_dir_all(&dir).map_err(|e| Error::io(dir.display(), e))?;
     let mut changed = 0;
     let mut want: Vec<String> = Vec::new();
     for sh in tree.ordered() {
@@ -918,14 +919,16 @@ pub fn sync_methods(tree: &crate::load::Tree) -> Result<usize, String> {
         let text = rustfmt_standalone(&text);
         let p = dir.join(format!("{name}.rs"));
         if std::fs::read_to_string(&p).ok().as_deref() != Some(text.as_str()) {
-            std::fs::write(&p, &text).map_err(|e| format!("{}: {e}", p.display()))?;
+            std::fs::write(&p, &text).map_err(|e| Error::io(p.display(), e))?;
             changed += 1;
         }
         want.push(name);
     }
     want.sort();
-    for e in std::fs::read_dir(&dir).map_err(|e| format!("{}: {e}", dir.display()))? {
-        let p = e.map_err(|e| e.to_string())?.path();
+    for e in std::fs::read_dir(&dir).map_err(|e| Error::io(dir.display(), e))? {
+        let p = e
+            .map_err(|e| Error::new(ErrorKind::Malformed, e.to_string()))?
+            .path();
         let stem = p
             .file_stem()
             .and_then(|x| x.to_str())
@@ -935,7 +938,7 @@ pub fn sync_methods(tree: &crate::load::Tree) -> Result<usize, String> {
             && stem != "mod"
             && !want.contains(&stem)
         {
-            std::fs::remove_file(&p).map_err(|e| format!("{}: {e}", p.display()))?;
+            std::fs::remove_file(&p).map_err(|e| Error::io(p.display(), e))?;
             changed += 1;
         }
     }
@@ -954,7 +957,7 @@ pub fn sync_methods(tree: &crate::load::Tree) -> Result<usize, String> {
     // is what the formatter would make of it.
     let p = dir.join("mod.rs");
     if std::fs::read_to_string(&p).ok().as_deref() != Some(m.as_str()) {
-        std::fs::write(&p, &m).map_err(|e| format!("{}: {e}", p.display()))?;
+        std::fs::write(&p, &m).map_err(|e| Error::io(p.display(), e))?;
         changed += 1;
     }
     Ok(changed)

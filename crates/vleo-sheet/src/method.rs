@@ -32,6 +32,7 @@
 //! disagree about what a method means. `docs/PSEUDOCODE.md` is written from
 //! [`FUNCTIONS`], [`KERNEL_CONSTANTS`] and [`STATEMENTS`] by `xtask docs`.
 
+use crate::{Error, ErrorKind};
 use std::collections::{BTreeMap, BTreeSet};
 use std::fmt::Write as _;
 use vleo_units::method_rt as rt;

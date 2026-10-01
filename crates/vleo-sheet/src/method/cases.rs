@@ -252,10 +252,10 @@ pub const CHECKER_SOURCES: &[&str] = &[
 
 /// The fingerprint of [`CHECKER_SOURCES`] in a checkout: line endings made
 /// one kind first, so a Windows checkout agrees with Linux.
-pub fn checker_fingerprint(root: &std::path::Path) -> Result<String, String> {
+pub fn checker_fingerprint(root: &std::path::Path) -> Result<String, Error> {
     let mut all = String::new();
     for f in CHECKER_SOURCES {
-        let t = std::fs::read_to_string(root.join(f)).map_err(|e| format!("{f}: {e}"))?;
+        let t = std::fs::read_to_string(root.join(f)).map_err(|e| Error::io(f, e))?;
         all.push_str(f);
         all.push('\n');
         all.push_str(&t.replace("\r\n", "\n"));
@@ -317,8 +317,10 @@ pub fn report(src: &str, sig: &Signature, cases: &[Case]) -> Report {
 /// `[[input]]` and every `[[case]]`. This is what the node form sends from the
 /// browser, through WebAssembly, and what intake and the gate read from the
 /// file — one function, so the three cannot disagree.
-pub fn report_toml(text: &str) -> Result<Report, String> {
-    let v: toml::Value = text.parse().map_err(|e| format!("not TOML: {e}"))?;
+pub fn report_toml(text: &str) -> Result<Report, Error> {
+    let v: toml::Value = text
+        .parse()
+        .map_err(|e| Error::new(ErrorKind::Malformed, format!("not TOML: {e}")))?;
     let src = v
         .get("method")
         .and_then(|m| m.get("text"))
@@ -329,8 +331,12 @@ pub fn report_toml(text: &str) -> Result<Report, String> {
         .and_then(|o| o.get("type"))
         .and_then(|t| t.as_str())
         .unwrap_or("");
-    let output = quantity_dim(out)
-        .ok_or_else(|| format!("the answer's quantity «{out}» is not one this tool has"))?;
+    let output = quantity_dim(out).ok_or_else(|| {
+        Error::new(
+            ErrorKind::Malformed,
+            format!("the answer's quantity «{out}» is not one this tool has"),
+        )
+    })?;
     let mut inputs = Vec::new();
     for i in v
         .get("input")
@@ -340,8 +346,12 @@ pub fn report_toml(text: &str) -> Result<Report, String> {
     {
         let b = i.get("binding").and_then(|x| x.as_str()).unwrap_or("");
         let t = i.get("type").and_then(|x| x.as_str()).unwrap_or("");
-        let d = quantity_dim(t)
-            .ok_or_else(|| format!("the input «{b}» has no known quantity «{t}»"))?;
+        let d = quantity_dim(t).ok_or_else(|| {
+            Error::new(
+                ErrorKind::Malformed,
+                format!("the input «{b}» has no known quantity «{t}»"),
+            )
+        })?;
         inputs.push((b.to_string(), d));
     }
     let cases = cases_of(&v)?;
@@ -360,7 +370,7 @@ pub fn report_toml(text: &str) -> Result<Report, String> {
 /// ```
 ///
 /// `case 1` must be refused; its expect and tolerance are `-`.
-pub fn report_plain(text: &str) -> Result<Report, String> {
+pub fn report_plain(text: &str) -> Result<Report, Error> {
     let mut output = None;
     let mut inputs = Vec::new();
     let mut cases = Vec::new();
@@ -371,30 +381,41 @@ pub fn report_plain(text: &str) -> Result<Report, String> {
         match (w.next().unwrap_or(""), w.next().unwrap_or("").trim()) {
             ("output", q) => {
                 output = Some(quantity_dim(q).ok_or_else(|| {
-                    format!("the answer's quantity «{q}» is not one this tool has")
+                    Error::new(
+                        ErrorKind::Malformed,
+                        format!("the answer's quantity «{q}» is not one this tool has"),
+                    )
                 })?)
             }
             ("input", rest) => {
                 let (b, q) = rest.split_once(' ').unwrap_or((rest, ""));
-                let d = quantity_dim(q.trim())
-                    .ok_or_else(|| format!("the input «{b}» has no known quantity «{q}»"))?;
+                let d = quantity_dim(q.trim()).ok_or_else(|| {
+                    Error::new(
+                        ErrorKind::Malformed,
+                        format!("the input «{b}» has no known quantity «{q}»"),
+                    )
+                })?;
                 inputs.push((b.to_string(), d));
             }
             ("case", rest) => {
                 let f: Vec<&str> = rest.splitn(5, ' ').collect();
                 if f.len() < 4 {
-                    return Err(format!("a case line is short: «{l}»"));
+                    return Err(Error::new(
+                        ErrorKind::Malformed,
+                        format!("a case line is short: «{l}»"),
+                    ));
                 }
                 let num = |x: &str| {
-                    x.parse::<f64>()
-                        .map_err(|_| format!("«{x}» is not a number"))
+                    x.parse::<f64>().map_err(|_| {
+                        Error::new(ErrorKind::Malformed, format!("«{x}» is not a number"))
+                    })
                 };
                 let refuse = f[0] == "1";
                 let mut ins = Vec::new();
                 for kv in f[3].split(';').filter(|x| !x.is_empty()) {
-                    let (k, v) = kv
-                        .split_once('=')
-                        .ok_or_else(|| format!("«{kv}» is not name=value"))?;
+                    let (k, v) = kv.split_once('=').ok_or_else(|| {
+                        Error::new(ErrorKind::Malformed, format!("«{kv}» is not name=value"))
+                    })?;
                     ins.push((k.to_string(), num(v)?));
                 }
                 cases.push(Case {
@@ -409,15 +430,21 @@ pub fn report_plain(text: &str) -> Result<Report, String> {
                 break;
             }
             ("", _) => {}
-            (other, _) => return Err(format!("«{other}» is not a line the checker reads")),
+            (other, _) => {
+                return Err(Error::new(
+                    ErrorKind::Malformed,
+                    format!("«{other}» is not a line the checker reads"),
+                ))
+            }
         }
     }
-    let output = output.ok_or("the answer's quantity is not given")?;
+    let output = output
+        .ok_or_else(|| Error::new(ErrorKind::Malformed, "the answer's quantity is not given"))?;
     Ok(report(&src, &Signature { inputs, output }, &cases))
 }
 
 /// The `[[case]]` blocks of a parsed sheet.
-pub fn cases_of(v: &toml::Value) -> Result<Vec<Case>, String> {
+pub fn cases_of(v: &toml::Value) -> Result<Vec<Case>, Error> {
     let mut out = Vec::new();
     for (i, c) in v
         .get("case")
@@ -437,14 +464,21 @@ pub fn cases_of(v: &toml::Value) -> Result<Vec<Case>, String> {
             None
         } else {
             Some(c.get("expect").and_then(num).ok_or_else(|| {
-                format!("«{label}» has no expected value (or say refuse = \"yes\")")
+                Error::new(
+                    ErrorKind::Malformed,
+                    format!("«{label}» has no expected value (or say refuse = \"yes\")"),
+                )
             })?)
         };
         let mut inputs = Vec::new();
         if let Some(t) = c.get("inputs").and_then(|x| x.as_table()) {
             for (k, x) in t {
-                let n =
-                    num(x).ok_or_else(|| format!("«{label}»: the input «{k}» is not a number"))?;
+                let n = num(x).ok_or_else(|| {
+                    Error::new(
+                        ErrorKind::Malformed,
+                        format!("«{label}»: the input «{k}» is not a number"),
+                    )
+                })?;
                 inputs.push((k.clone(), n));
             }
         }

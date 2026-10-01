@@ -17,37 +17,51 @@ use super::*;
 /// the tree into an integer on the way past would be rewriting 1396 sheets for
 /// nothing. A number that does not parse is refused here rather than written and
 /// silently read back as zero.
-pub fn normalise(field: &str, value: &str) -> Result<String, String> {
+pub fn normalise(field: &str, value: &str) -> Result<String, Error> {
     let Some(f) = self::field(field) else {
-        return Err(format!("'{field}' is not a field this form writes"));
+        return Err(Error::new(
+            ErrorKind::Refused,
+            format!("'{field}' is not a field this form writes"),
+        ));
     };
     let v = value.trim();
     match f.shape {
         Shape::Number => {
             let n: f64 = v.parse().map_err(|_| {
-                format!(
+                Error::new(
+                    ErrorKind::Refused,
+                    format!(
                     "'{v}' is not a number. It is written into the sheet unquoted and into the \
                      generated guard as an f64; anything else would be read back as zero"
+                ),
                 )
             })?;
             if !n.is_finite() {
-                return Err(format!(
-                    "'{v}' is not finite. A bound that is not a number cannot guard anything"
+                return Err(Error::new(
+                    ErrorKind::Refused,
+                    format!(
+                        "'{v}' is not finite. A bound that is not a number cannot guard anything"
+                    ),
                 ));
             }
             Ok(format!("{n:?}"))
         }
-        Shape::Count => v
-            .parse::<u32>()
-            .map(|n| n.to_string())
-            .map_err(|_| format!("'{v}' is not a whole number of at least zero")),
+        Shape::Count => v.parse::<u32>().map(|n| n.to_string()).map_err(|_| {
+            Error::new(
+                ErrorKind::Refused,
+                format!("'{v}' is not a whole number of at least zero"),
+            )
+        }),
         Shape::Choice(options) => {
             if options.contains(&v) {
                 Ok(v.to_string())
             } else {
-                Err(format!(
-                    "'{v}' is not one of: {}. This is a closed set, not a label",
-                    options.join(", ")
+                Err(Error::new(
+                    ErrorKind::Refused,
+                    format!(
+                        "'{v}' is not one of: {}. This is a closed set, not a label",
+                        options.join(", ")
+                    ),
                 ))
             }
         }
@@ -55,11 +69,14 @@ pub fn normalise(field: &str, value: &str) -> Result<String, String> {
             if crate::is_quantity_name(v) {
                 Ok(v.to_string())
             } else {
-                Err(format!(
+                Err(Error::new(
+                    ErrorKind::Missing,
+                    format!(
                     "'{v}' is not a quantity this system has. The type is written straight into \
                      the generated signature, so one that does not exist stops the tree \
                      compiling. One of: {}",
                     vleo_units::QUANTITIES.join(", ")
+                ),
                 ))
             }
         }
@@ -67,9 +84,12 @@ pub fn normalise(field: &str, value: &str) -> Result<String, String> {
             if crate::unit_exists(v) {
                 Ok(v.to_string())
             } else {
-                Err(format!(
-                    "'{v}' is not a unit this system knows, so nothing could convert it at a \
+                Err(Error::new(
+                    ErrorKind::Refused,
+                    format!(
+                        "'{v}' is not a unit this system knows, so nothing could convert it at a \
                      face boundary. See vleo_units::Unit for the ones that exist."
+                    ),
                 ))
             }
         }
@@ -78,9 +98,12 @@ pub fn normalise(field: &str, value: &str) -> Result<String, String> {
         // here saves a write and a rollback for a typo with a space in it.
         Shape::RowId => {
             if v.is_empty() || v.contains(char::is_whitespace) {
-                Err(format!(
+                Err(Error::new(
+                    ErrorKind::Refused,
+                    format!(
                     "'{v}' is not a row id — an id is one word, and whether it resolves is the \
                      gate's question"
+                ),
                 ))
             } else {
                 Ok(v.to_string())
@@ -88,10 +111,13 @@ pub fn normalise(field: &str, value: &str) -> Result<String, String> {
         }
         Shape::Line => {
             if v.contains('\n') {
-                Err(format!(
+                Err(Error::new(
+                    ErrorKind::Refused,
+                    format!(
                     "'{field}' is one line. What was sent has {} of them; if the answer needs a \
                      paragraph it belongs in a field that holds one",
                     v.lines().count()
+                ),
                 ))
             } else {
                 Ok(v.to_string())
@@ -123,23 +149,34 @@ pub(super) fn code_text(value: &str) -> String {
 
 /// A case's inputs as the inline table the sheet holds: `{ h = 250000.0 }`,
 /// each value a number, the names in order.
-pub(super) fn inputs_text(value: &str) -> Result<String, String> {
+pub(super) fn inputs_text(value: &str) -> Result<String, Error> {
     let v = value.trim();
     let doc: toml::Value = format!("x = {v}").parse().map_err(|_| {
-        format!("'{v}' is not a set of inputs — write them as {{ name = number, … }}")
+        Error::new(
+            ErrorKind::Refused,
+            format!("'{v}' is not a set of inputs — write them as {{ name = number, … }}"),
+        )
     })?;
     let t = doc
         .get("x")
         .and_then(|x| x.as_table())
-        .ok_or_else(|| format!("'{v}' is not a set of inputs"))?;
+        .ok_or_else(|| Error::new(ErrorKind::Refused, format!("'{v}' is not a set of inputs")))?;
     let mut parts = Vec::new();
     for (k, x) in t {
         let n = x
             .as_float()
             .or_else(|| x.as_integer().map(|i| i as f64))
-            .ok_or_else(|| format!("the input «{k}» is not a number"))?;
+            .ok_or_else(|| {
+                Error::new(
+                    ErrorKind::Refused,
+                    format!("the input «{k}» is not a number"),
+                )
+            })?;
         if !n.is_finite() {
-            return Err(format!("the input «{k}» is not finite"));
+            return Err(Error::new(
+                ErrorKind::Refused,
+                format!("the input «{k}» is not finite"),
+            ));
         }
         parts.push(format!("{k} = {n:?}"));
     }
@@ -147,7 +184,7 @@ pub(super) fn inputs_text(value: &str) -> Result<String, String> {
 }
 
 /// Whether a value is one this field may hold. `normalise` without the value.
-pub fn value_allowed(field: &str, value: &str) -> Result<(), String> {
+pub fn value_allowed(field: &str, value: &str) -> Result<(), Error> {
     normalise(field, value).map(|_| ())
 }
 
@@ -197,7 +234,7 @@ pub fn save(root: &std::path::Path, id: &str, field: &str, value: &str, base: &s
         return Saved::Refused(format!("'{field}' is not a field this form writes"));
     }
     if let Err(e) = value_allowed(field, value) {
-        return Saved::Refused(e);
+        return Saved::Refused(e.into());
     }
     if let Some(why) = rustfmt_refusal() {
         return Saved::Refused(why);
@@ -225,16 +262,16 @@ pub fn save(root: &std::path::Path, id: &str, field: &str, value: &str, base: &s
     if field == "expression" || field == "confirmed_by" {
         let who = match git_identity(root) {
             Ok(w) => w,
-            Err(e) => return Saved::Refused(e),
+            Err(e) => return Saved::Refused(e.into()),
         };
         if let Err(e) = refuse_agent_attribution(root, &who) {
-            return Saved::Refused(e);
+            return Saved::Refused(e.into());
         }
     }
 
     let after = match set(&before, field, value) {
         Ok(t) => t,
-        Err(e) => return Saved::Refused(e),
+        Err(e) => return Saved::Refused(e.into()),
     };
     // AND THE NAME IS WRITTEN, NOT ONLY CHECKED. The identity was verified
     // above and then went nowhere, so a relation saved through the face came
@@ -244,11 +281,11 @@ pub fn save(root: &std::path::Path, id: &str, field: &str, value: &str, base: &s
     let after = if field == "expression" {
         let who = match git_identity(root) {
             Ok(w) => w,
-            Err(e) => return Saved::Refused(e),
+            Err(e) => return Saved::Refused(e.into()),
         };
         match stamp_relation(&after, &who) {
             Ok(t) => t,
-            Err(e) => return Saved::Refused(e),
+            Err(e) => return Saved::Refused(e.into()),
         }
     } else {
         after
@@ -308,7 +345,7 @@ pub(crate) fn commit_edit(
         .collect();
 
     if let Err(e) = write_atomic(path, &after) {
-        return Saved::Refused(e);
+        return Saved::Refused(e.into());
     }
 
     // Restoring the sheet is not enough on its own: once the artefacts have
@@ -358,7 +395,7 @@ pub(crate) fn commit_edit(
     // and fails for a reason that has nothing to do with the edit.
     let n = match regenerate(sh, &tree) {
         Ok(n) => n,
-        Err(e) => return restore(e),
+        Err(e) => return restore(e.into()),
     };
     let mut failed: Vec<String> = crate::gate::gate_node(sh, &tree)
         .iter()
@@ -402,22 +439,22 @@ const GENERATED: &[&str] = &[
 ];
 
 /// A temporary file then a rename, so a reader never sees half a sheet.
-fn write_atomic(path: &std::path::Path, text: &str) -> Result<(), String> {
+fn write_atomic(path: &std::path::Path, text: &str) -> Result<(), Error> {
     let tmp = path.with_extension("toml.writing");
-    std::fs::write(&tmp, text).map_err(|e| format!("{}: {e}", tmp.display()))?;
-    std::fs::rename(&tmp, path).map_err(|e| format!("{}: {e}", path.display()))
+    std::fs::write(&tmp, text).map_err(|e| Error::io(tmp.display(), e))?;
+    std::fs::rename(&tmp, path).map_err(|e| Error::io(path.display(), e))
 }
 
 /// `regenerate`, for a test that has to put a row back after editing it.
 pub fn regenerate_for_test(
     sh: &crate::model::Sheet,
     tree: &crate::load::Tree,
-) -> Result<usize, String> {
+) -> Result<usize, Error> {
     regenerate(sh, tree)
 }
 
 /// The six per-node generators, for one row. The same set `xtask docs` writes.
-fn regenerate(sh: &crate::model::Sheet, tree: &crate::load::Tree) -> Result<usize, String> {
+fn regenerate(sh: &crate::model::Sheet, tree: &crate::load::Tree) -> Result<usize, Error> {
     let holes = crate::load::read_holes(&sh.dir);
     let gaps = crate::emit::gap_pass(sh, &holes);
     let artefacts: Vec<(&str, String)> = if sh.is_seeded() {
@@ -447,7 +484,7 @@ fn regenerate(sh: &crate::model::Sheet, tree: &crate::load::Tree) -> Result<usiz
             .map(|o| o == text)
             .unwrap_or(false);
         if !same {
-            std::fs::write(&p, &text).map_err(|e| format!("{}: {e}", p.display()))?;
+            std::fs::write(&p, &text).map_err(|e| Error::io(p.display(), e))?;
             n += 1;
         }
     }

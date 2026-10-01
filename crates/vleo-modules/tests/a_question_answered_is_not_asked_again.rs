@@ -151,9 +151,9 @@ fn a_sweep_and_its_report_come_back_whole() {
     let mut back = read(&unwrap_report(&page)).unwrap();
     back.sweep = Some(read_sweep(&unwrap_sweep(&page).expect("no sweep in the page")).unwrap());
     assert_eq!(back, s, "the report did not carry the result and its sweep");
-    assert!(read_sweep("x,y\n1,2\n")
-        .unwrap_err()
-        .contains("not a saved sweep"));
+    let e = read_sweep("x,y\n1,2\n").unwrap_err();
+    assert_eq!(e.kind(), vleo_modules::ErrorKind::Malformed, "{e}");
+    assert!(e.message().contains("not a saved sweep"), "{e}");
 }
 
 #[test]

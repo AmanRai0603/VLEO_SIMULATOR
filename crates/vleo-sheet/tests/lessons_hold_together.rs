@@ -35,13 +35,15 @@ fn the_example_lesson_reads_and_passes() {
 fn a_misspelt_key_is_refused_not_ignored() {
     let t = example().replacen("source = \"vallado2013\"", "sourse = \"vallado2013\"", 1);
     let e = read(&t, "orbit_velocity").unwrap_err();
-    assert!(e.contains("`sourse`"), "{e}");
+    assert_eq!(e.kind(), vleo_sheet::ErrorKind::Malformed, "{e}");
+    assert!(e.message().contains("`sourse`"), "{e}");
     let e = read(
         &format!("{}\n[extra]\nx = 1\n", example()),
         "orbit_velocity",
     )
     .unwrap_err();
-    assert!(e.contains("`extra`"), "{e}");
+    assert_eq!(e.kind(), vleo_sheet::ErrorKind::Malformed, "{e}");
+    assert!(e.message().contains("`extra`"), "{e}");
 }
 
 #[test]

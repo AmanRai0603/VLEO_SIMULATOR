@@ -21,6 +21,8 @@
 
 pub mod derisk;
 pub mod emit;
+mod error;
+pub use error::{Error, ErrorKind};
 pub mod example;
 pub mod form;
 pub mod guide;

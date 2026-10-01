@@ -425,7 +425,7 @@ fn repo_root() -> PathBuf {
 }
 
 fn load(root: &Path) -> Result<Tree, String> {
-    load_all(root)
+    Ok(load_all(root)?)
 }
 
 fn write_if_changed(path: &Path, text: &str) -> Result<bool, String> {

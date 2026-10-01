@@ -148,7 +148,7 @@ fn an_agent_is_refused_whatever_the_face() {
     for who in ["", "   "] {
         let e = form::refuse_agent_attribution(&root, who).unwrap_err();
         assert!(
-            e.contains("blank"),
+            e.message().contains("blank"),
             "a blank attribution is not a way round it: {e}"
         );
     }

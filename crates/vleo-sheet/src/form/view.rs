@@ -23,54 +23,66 @@ use super::*;
 ///
 /// Whether the row being drawn against EXISTS is not asked here: that needs the
 /// tree, and `save_view` asks it.
-pub fn view_rewrite(text: &str, kind: &str, over: &str, points: &str) -> Result<String, String> {
+pub fn view_rewrite(text: &str, kind: &str, over: &str, points: &str) -> Result<String, Error> {
     if !VIEW_KINDS.contains(&kind) {
-        return Err(format!(
-            "'{kind}' is not a way this tool draws an answer. One of: {}",
-            VIEW_KINDS.join(", ")
+        return Err(Error::new(
+            ErrorKind::Refused,
+            format!(
+                "'{kind}' is not a way this tool draws an answer. One of: {}",
+                VIEW_KINDS.join(", ")
+            ),
         ));
     }
-    let (from, to) = window(text, "view").ok_or(
-        "this sheet has no [view] table, which every sheet should have. That is a malformed \
+    let (from, to) = window(text, "view").ok_or_else(|| {
+        Error::new(
+            ErrorKind::Malformed,
+            "this sheet has no [view] table, which every sheet should have. That is a malformed \
          sheet and not something a form should paper over — edit it directly",
-    )?;
+        )
+    })?;
     for line in text[from..to].lines() {
         let t = line.trim();
         if t.is_empty() {
             continue;
         }
         if t.starts_with('#') {
-            return Err(format!(
-                "this row's [view] carries a comment — `{t}` — and rewriting the table would \
+            return Err(Error::new(
+                ErrorKind::Refused,
+                format!(
+                    "this row's [view] carries a comment — `{t}` — and rewriting the table would \
                  drop it. Every comment in a sheet is somebody's reason, so this is refused \
                  rather than tidied. Edit it directly"
+                ),
             ));
         }
         let key = t.split('=').next().unwrap_or("").trim();
         if !matches!(key, "kind" | "over" | "points" | "y" | "over_x" | "over_y") {
-            return Err(format!(
-                "this row's [view] has a `{key}`, which this form does not know about. It \
+            return Err(Error::new(
+                ErrorKind::Refused,
+                format!(
+                    "this row's [view] has a `{key}`, which this form does not know about. It \
                  rewrites the whole table, so it refuses one it does not understand"
+                ),
             ));
         }
         if key == "kind" && t.contains("heatmap") {
-            return Err(
+            return Err(Error::new(
+                ErrorKind::Refused,
                 "this row draws a heatmap, which has two axes and a grid. This form offers a \
                  number, a line and a bar; turning a heatmap into one of them would throw away \
-                 an axis. Edit it directly"
-                    .into(),
-            );
+                 an axis. Edit it directly",
+            ));
         }
     }
     let over = over.trim();
     let body = match kind {
         "number" => {
             if !over.is_empty() {
-                return Err(
+                return Err(Error::new(
+                    ErrorKind::Refused,
                     "a number is drawn from the row's own answer and is not drawn against \
-                     anything. Nothing was written"
-                        .into(),
-                );
+                     anything. Nothing was written",
+                ));
             }
             "kind = \"number\"\n".to_string()
         }
@@ -81,14 +93,25 @@ pub fn view_rewrite(text: &str, kind: &str, over: &str, points: &str) -> Result<
             let n: u32 = match points.trim().parse() {
                 Ok(n) if n >= 2 => n,
                 Ok(_) => {
-                    return Err("a line needs at least two points; one point is a number".into())
+                    return Err(Error::new(
+                        ErrorKind::Refused,
+                        "a line needs at least two points; one point is a number",
+                    ))
                 }
-                Err(_) => return Err(format!("'{}' is not a number of points", points.trim())),
+                Err(_) => {
+                    return Err(Error::new(
+                        ErrorKind::Refused,
+                        format!("'{}' is not a number of points", points.trim()),
+                    ))
+                }
             };
             if n > 2000 {
-                return Err(format!(
+                return Err(Error::new(
+                    ErrorKind::Refused,
+                    format!(
                     "{n} points is a run of {n} evaluations of this branch for one picture. The \
                      sweeps in this tree use 60 to 80"
+                ),
                 ));
             }
             format!(
@@ -154,7 +177,7 @@ pub fn save_view(
     }
     let after = match view_rewrite(&before, kind, over, points) {
         Ok(t) => t,
-        Err(e) => return Saved::Refused(e),
+        Err(e) => return Saved::Refused(e.into()),
     };
     commit_edit(root, id, &path, &before, after, false)
 }

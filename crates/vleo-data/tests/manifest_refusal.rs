@@ -64,7 +64,8 @@ fn a_complete_manifest_loads() {
 fn no_provenance_is_refused() {
     let dir = bundle("prov", "provenance", None);
     let e = vleo_data::load_bundle(&dir).expect_err("a manifest with no provenance fails");
-    assert!(e.contains("provenance"), "{e}");
+    assert_eq!(e.kind(), vleo_data::ErrorKind::Malformed, "{e}");
+    assert!(e.message().contains("provenance"), "{e}");
 }
 
 #[test]
@@ -73,14 +74,16 @@ fn an_empty_provenance_is_refused_too() {
     // with a line of TOML in front of it.
     let dir = bundle("prov-blank", "provenance", Some(r#"provenance = "   ""#));
     let e = vleo_data::load_bundle(&dir).expect_err("a blank provenance fails");
-    assert!(e.contains("provenance"), "{e}");
+    assert_eq!(e.kind(), vleo_data::ErrorKind::Malformed, "{e}");
+    assert!(e.message().contains("provenance"), "{e}");
 }
 
 #[test]
 fn no_licence_is_refused() {
     let dir = bundle("lic", "licence_until", None);
     let e = vleo_data::load_bundle(&dir).expect_err("a manifest with no licence fails");
-    assert!(e.contains("licence_until"), "{e}");
+    assert_eq!(e.kind(), vleo_data::ErrorKind::Malformed, "{e}");
+    assert!(e.message().contains("licence_until"), "{e}");
 }
 
 #[test]
@@ -93,7 +96,8 @@ fn a_licence_that_is_not_a_date_is_refused() {
         Some(r#"licence_until = "soon""#),
     );
     let e = vleo_data::load_bundle(&dir).expect_err("a non-date licence fails");
-    assert!(e.contains("YYYY-MM-DD"), "{e}");
+    assert_eq!(e.kind(), vleo_data::ErrorKind::Malformed, "{e}");
+    assert!(e.message().contains("YYYY-MM-DD"), "{e}");
 }
 
 #[test]
@@ -102,14 +106,16 @@ fn a_missing_staleness_is_refused_rather_than_defaulted() {
     // fresh or always stale, decided by a number nobody chose.
     let dir = bundle("stale", "stale_after_days", None);
     let e = vleo_data::load_bundle(&dir).expect_err("a missing staleness fails");
-    assert!(e.contains("stale_after_days"), "{e}");
+    assert_eq!(e.kind(), vleo_data::ErrorKind::Malformed, "{e}");
+    assert!(e.message().contains("stale_after_days"), "{e}");
 }
 
 #[test]
 fn a_manifest_listing_no_files_is_refused() {
     let dir = bundle("nofiles", "files", Some("files = []"));
     let e = vleo_data::load_bundle(&dir).expect_err("a manifest with no files fails");
-    assert!(e.contains("nothing to hash"), "{e}");
+    assert_eq!(e.kind(), vleo_data::ErrorKind::Malformed, "{e}");
+    assert!(e.message().contains("nothing to hash"), "{e}");
 }
 
 #[test]
@@ -117,7 +123,8 @@ fn no_name_and_no_version_are_refused() {
     for (tag, field) in [("name", "name"), ("version", "version")] {
         let dir = bundle(tag, field, None);
         let e = vleo_data::load_bundle(&dir).unwrap_err();
-        assert!(e.contains(field), "{field}: {e}");
+        assert_eq!(e.kind(), vleo_data::ErrorKind::Malformed, "{field}: {e}");
+        assert!(e.message().contains(field), "{field}: {e}");
     }
 }
 

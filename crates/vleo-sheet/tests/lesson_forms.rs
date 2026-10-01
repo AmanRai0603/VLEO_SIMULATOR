@@ -60,8 +60,12 @@ fn what_a_filled_form_holds_is_read_back_as_the_gate_reads_it() {
     assert!(vleo_sheet::lesson::problems(&l, &tree).is_empty());
     assert!(from_file(&filled, Some("orbit_radius"))
         .unwrap_err()
+        .message()
         .contains("is for 'orbit_velocity'"));
-    assert!(from_file(&example, None).unwrap_err().contains("--for"));
+    assert!(from_file(&example, None)
+        .unwrap_err()
+        .message()
+        .contains("--for"));
     assert_eq!(
         from_file(&example, Some("orbit_velocity")).unwrap().1,
         example

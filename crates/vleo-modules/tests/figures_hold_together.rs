@@ -172,8 +172,9 @@ fn a_description_that_does_not_hold_together_is_refused() {
     ];
     for (f, says) in cases {
         let e = check(&f).expect_err(says);
+        assert_eq!(e.kind(), vleo_modules::ErrorKind::Malformed, "{e}");
         assert!(
-            e.contains(says) && e.starts_with(&f.id),
+            e.message().contains(says) && e.message().starts_with(&f.id),
             "refused as «{e}», expected «{says}»"
         );
     }

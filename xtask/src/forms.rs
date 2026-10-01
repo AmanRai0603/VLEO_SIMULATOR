@@ -179,7 +179,7 @@ pub(super) fn cmd_intake(root: &Path, args: &[&str]) -> Result<(), String> {
                     Ok(p2) => p2,
                     Err(e) => {
                         unbuild_new_node(root, &dir)?;
-                        return Err(e);
+                        return Err(e.into());
                     }
                 };
                 // WHAT THE FORM DOES NOT ASK, the model row decides — and says
