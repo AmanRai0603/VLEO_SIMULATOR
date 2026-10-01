@@ -34,21 +34,21 @@ pub fn agent_identities(_root: &std::path::Path) -> Vec<String> {
 /// edit a checkout can edit its git config. What it removes is the casual case —
 /// typing somebody else's name into a text box — and it makes the sheet's
 /// attribution and the commit's author the same claim rather than two.
-pub fn git_identity(root: &std::path::Path) -> Result<String, String> {
+pub fn git_identity(root: &std::path::Path) -> Result<String, Error> {
     let out = std::process::Command::new("git")
         .args(["-C"])
         .arg(root)
         .args(["config", "user.name"])
         .output()
-        .map_err(|e| format!("git could not be run: {e}"))?;
+        .map_err(|e| Error::new(ErrorKind::Io, format!("git could not be run: {e}")))?;
     let name = String::from_utf8_lossy(&out.stdout).trim().to_string();
     if name.is_empty() {
-        return Err(
+        return Err(Error::new(
+            ErrorKind::Missing,
             "this checkout has no `git config user.name`, so there is no name to put against \
              the relation. Set it — `git config user.name \"Your Name\"` — and the sheet will \
-             carry the same name your commits do. Nothing was written."
-                .into(),
-        );
+             carry the same name your commits do. Nothing was written.",
+        ));
     }
     Ok(name)
 }
@@ -58,26 +58,26 @@ pub fn git_identity(root: &std::path::Path) -> Result<String, String> {
 /// An assistant may never supply mathematics. Stated as a sentence that is a hope;
 /// here it is a fact about what can reach the file — and it has to hold at every
 /// face, or the browser becomes the way round a rule the terminal enforces.
-pub fn refuse_agent_attribution(root: &std::path::Path, who: &str) -> Result<(), String> {
+pub fn refuse_agent_attribution(root: &std::path::Path, who: &str) -> Result<(), Error> {
     let lower = who.trim().to_lowercase();
     if lower.is_empty() {
-        return Err(
+        return Err(Error::new(
+            ErrorKind::Refused,
             "an attribution cannot be blank — it takes the name of a person who has \
-                    read the relation against its source and is prepared to own it"
-                .into(),
-        );
+                    read the relation against its source and is prepared to own it",
+        ));
     }
     for bad in agent_identities(root) {
         if lower == bad
             || lower.starts_with(&format!("{bad} "))
             || lower.contains(&format!("{bad}/"))
         {
-            return Err(format!(
+            return Err(Error::new(ErrorKind::Refused, format!(
                 "refused: '{who}' is an assistant's name. An assistant may never supply mathematics, and this \
                  field is the only thing that can tell whether one did. It takes the name of a \
                  person who has read the relation against its source and is prepared to own it. \
                  Nothing was written."
-            ));
+            )));
         }
     }
     Ok(())
@@ -94,6 +94,6 @@ fn today() -> String {
 /// was against the old mathematics; leaving it on the new attributes work to
 /// somebody who never saw it, which is worse than either having no name or
 /// having the editor's.
-pub(crate) fn stamp_relation(text: &str, who: &str) -> Result<String, String> {
+pub(crate) fn stamp_relation(text: &str, who: &str) -> Result<String, Error> {
     set(text, "confirmed_by", &format!("{who} / {}", today()))
 }

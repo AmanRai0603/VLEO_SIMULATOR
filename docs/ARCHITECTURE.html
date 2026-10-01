@@ -646,7 +646,7 @@ td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
       <tr><td>Paths from the environment</td><td><code>vleo-data</code> — <code>case_path</code>, <code>results_path</code>, <code>log_path</code></td><td>A variable set but empty counts as unset, so a stray <code>VLEO_RESULTS=</code> never sends results into whatever folder the tool was started in.</td></tr>
     </tbody>
   </table></div>
-  <p class="col muted">Each guarantee has a test that was run against a deliberately broken version and went red. Errors outside the kernel are still passed as text in about 130 places; typed errors per crate follow in phase 11.</p>
+  <p class="col muted">Each guarantee has a test that was run against a deliberately broken version and went red. Errors out of the library crates are typed: <code>vleo_data</code>, <code>vleo_modules</code> and <code>vleo_sheet</code> each return an <code>Error</code> with a kind a caller decides by — the file system refused, it is missing, it does not read, it is not allowed — and the same sentence they always gave. The faces (the server, the command line, <code>xtask</code>) turn an error into words only where it reaches a person or the wire.</p>
 </section>
 
 <!-- ────────────────────────────────────────────────────────────── 10 ── -->

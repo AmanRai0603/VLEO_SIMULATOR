@@ -2,6 +2,7 @@
 
 use crate::fnv1a;
 use crate::model::*;
+use crate::{Error, ErrorKind};
 use std::collections::BTreeMap;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -312,28 +313,31 @@ pub fn unknown_keys(v: &toml::Value) -> Vec<String> {
     out
 }
 
-pub fn load_all(root: &Path) -> Result<Tree, String> {
+pub fn load_all(root: &Path) -> Result<Tree, Error> {
     WRONG.with(|w| w.borrow_mut().clear());
     let tree = load_everything(root)?;
     let wrong = WRONG.with(|w| std::mem::take(&mut *w.borrow_mut()));
     if !wrong.is_empty() {
-        return Err(format!(
-            "{} value(s) in the sheets are of the wrong kind:\n  {}",
-            wrong.len(),
-            wrong.join("\n  ")
+        return Err(Error::new(
+            ErrorKind::Malformed,
+            format!(
+                "{} value(s) in the sheets are of the wrong kind:\n  {}",
+                wrong.len(),
+                wrong.join("\n  ")
+            ),
         ));
     }
     Ok(tree)
 }
 
-fn load_everything(root: &Path) -> Result<Tree, String> {
+fn load_everything(root: &Path) -> Result<Tree, Error> {
     let mut tree = Tree {
         root: root.to_path_buf(),
         ..Default::default()
     };
     let crates_dir = root.join("crates");
     let mut crate_dirs: Vec<PathBuf> = fs::read_dir(&crates_dir)
-        .map_err(|e| format!("crates/: {e}"))?
+        .map_err(|e| Error::io("crates/", e))?
         .filter_map(|e| e.ok())
         .map(|e| e.path())
         .filter(|p| {
@@ -351,7 +355,7 @@ fn load_everything(root: &Path) -> Result<Tree, String> {
             continue;
         }
         let mut node_dirs: Vec<PathBuf> = fs::read_dir(&nodes_dir)
-            .map_err(|e| format!("{}: {e}", nodes_dir.display()))?
+            .map_err(|e| Error::io(nodes_dir.display(), e))?
             .filter_map(|e| e.ok())
             .map(|e| e.path())
             .filter(|p| p.is_dir())
@@ -360,10 +364,13 @@ fn load_everything(root: &Path) -> Result<Tree, String> {
         for nd in node_dirs {
             let sheet = load_sheet(&nd, &crate_name)?;
             if tree.sheets.contains_key(&sheet.id) {
-                return Err(format!(
-                    "two nodes claim the identifier '{}' — the second is {}",
-                    sheet.id,
-                    nd.display()
+                return Err(Error::new(
+                    ErrorKind::Malformed,
+                    format!(
+                        "two nodes claim the identifier '{}' — the second is {}",
+                        sheet.id,
+                        nd.display()
+                    ),
                 ));
             }
             tree.sheets.insert(sheet.id.clone(), sheet);
@@ -375,16 +382,22 @@ fn load_everything(root: &Path) -> Result<Tree, String> {
     Ok(tree)
 }
 
-fn load_sheet(dir: &Path, crate_name: &str) -> Result<Sheet, String> {
+fn load_sheet(dir: &Path, crate_name: &str) -> Result<Sheet, Error> {
     let path = dir.join("node.toml");
-    let text = fs::read_to_string(&path).map_err(|e| format!("{}: {e}", path.display()))?;
+    let text = fs::read_to_string(&path).map_err(|e| Error::io(path.display(), e))?;
     reading(&path);
-    let v: toml::Value = text
-        .parse()
-        .map_err(|e| format!("{}: malformed sheet: {e}", path.display()))?;
-    let t = v
-        .as_table()
-        .ok_or_else(|| format!("{}: not a table", path.display()))?;
+    let v: toml::Value = text.parse().map_err(|e| {
+        Error::new(
+            ErrorKind::Malformed,
+            format!("{}: malformed sheet: {e}", path.display()),
+        )
+    })?;
+    let t = v.as_table().ok_or_else(|| {
+        Error::new(
+            ErrorKind::Malformed,
+            format!("{}: not a table", path.display()),
+        )
+    })?;
     for k in unknown_keys(&v) {
         let file = path.display();
         WRONG.with(|w| w.borrow_mut().push(format!("{file}: {k}")));
@@ -476,7 +489,8 @@ fn load_sheet(dir: &Path, crate_name: &str) -> Result<Sheet, String> {
             how_run: reflow(&s(a.get("how_run"))),
         };
     }
-    sh.cases = crate::method::cases_of(&v).map_err(|e| format!("{}: {e}", path.display()))?;
+    sh.cases = crate::method::cases_of(&v)
+        .map_err(|e| Error::new(ErrorKind::Malformed, format!("{}: {e}", path.display())))?;
     for fl in t
         .get("flight")
         .and_then(|x| x.as_array())
@@ -643,11 +657,14 @@ fn load_sheet(dir: &Path, crate_name: &str) -> Result<Sheet, String> {
 
     let fx = dir.join("fixtures.toml");
     if fx.is_file() {
-        let ftext = fs::read_to_string(&fx).map_err(|e| format!("{}: {e}", fx.display()))?;
+        let ftext = fs::read_to_string(&fx).map_err(|e| Error::io(fx.display(), e))?;
         reading(&fx);
-        let fv: toml::Value = ftext
-            .parse()
-            .map_err(|e| format!("{}: malformed fixtures: {e}", fx.display()))?;
+        let fv: toml::Value = ftext.parse().map_err(|e| {
+            Error::new(
+                ErrorKind::Malformed,
+                format!("{}: malformed fixtures: {e}", fx.display()),
+            )
+        })?;
         for r in fv
             .get("fixture")
             .and_then(|r| r.as_array())
@@ -808,20 +825,22 @@ pub fn read_holes(dir: &Path) -> BTreeMap<u32, String> {
     map
 }
 
-fn load_layers(tree: &mut Tree) -> Result<(), String> {
+fn load_layers(tree: &mut Tree) -> Result<(), Error> {
     let dir = tree.root.join("layers");
     let mut files: Vec<PathBuf> = fs::read_dir(&dir)
-        .map_err(|e| format!("layers/: {e}"))?
+        .map_err(|e| Error::io("layers/", e))?
         .filter_map(|e| e.ok())
         .map(|e| e.path())
         .filter(|p| p.extension().map(|e| e == "toml").unwrap_or(false))
         .collect();
     files.sort();
     for p in files {
-        let text = fs::read_to_string(&p).map_err(|e| format!("{}: {e}", p.display()))?;
+        let text = fs::read_to_string(&p).map_err(|e| Error::io(p.display(), e))?;
         reading(&p);
         reading(&p);
-        let v: toml::Value = text.parse().map_err(|e| format!("{}: {e}", p.display()))?;
+        let v: toml::Value = text
+            .parse()
+            .map_err(|e| Error::new(ErrorKind::Malformed, format!("{}: {e}", p.display())))?;
         // A layer file may declare the architecture's own cycles. They belong
         // here rather than in a case because a loop is a property of the
         // design, not of who bought it.
@@ -902,20 +921,22 @@ fn parse_cycles(v: &toml::Value) -> Vec<CycleSpec> {
     out
 }
 
-fn load_cases(tree: &mut Tree) -> Result<(), String> {
+fn load_cases(tree: &mut Tree) -> Result<(), Error> {
     let dir = tree.root.join("cases");
     let mut files: Vec<PathBuf> = fs::read_dir(&dir)
-        .map_err(|e| format!("cases/: {e}"))?
+        .map_err(|e| Error::io("cases/", e))?
         .filter_map(|e| e.ok())
         .map(|e| e.path())
         .filter(|p| p.extension().map(|e| e == "toml").unwrap_or(false))
         .collect();
     files.sort();
     for p in files {
-        let text = fs::read_to_string(&p).map_err(|e| format!("{}: {e}", p.display()))?;
+        let text = fs::read_to_string(&p).map_err(|e| Error::io(p.display(), e))?;
         reading(&p);
         reading(&p);
-        let v: toml::Value = text.parse().map_err(|e| format!("{}: {e}", p.display()))?;
+        let v: toml::Value = text
+            .parse()
+            .map_err(|e| Error::new(ErrorKind::Malformed, format!("{}: {e}", p.display())))?;
         let mut c = Case {
             id: s(v.get("id")),
             label: s(v.get("label")),
@@ -947,11 +968,13 @@ fn load_cases(tree: &mut Tree) -> Result<(), String> {
     Ok(())
 }
 
-fn load_sources(tree: &mut Tree) -> Result<(), String> {
+fn load_sources(tree: &mut Tree) -> Result<(), Error> {
     let p = tree.root.join("sources").join("sources.toml");
-    let text = fs::read_to_string(&p).map_err(|e| format!("{}: {e}", p.display()))?;
+    let text = fs::read_to_string(&p).map_err(|e| Error::io(p.display(), e))?;
     reading(&p);
-    let v: toml::Value = text.parse().map_err(|e| format!("{}: {e}", p.display()))?;
+    let v: toml::Value = text
+        .parse()
+        .map_err(|e| Error::new(ErrorKind::Malformed, format!("{}: {e}", p.display())))?;
     for r in v
         .get("source")
         .and_then(|r| r.as_array())

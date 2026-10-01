@@ -20,6 +20,7 @@
 //! no network, no build step, opens from disk or from inside the kit.
 
 use crate::manual::{Check, Manual, Role, Section, Who};
+use crate::{Error, ErrorKind};
 
 use crate::text::html as esc;
 
@@ -237,12 +238,13 @@ fn role_intro(r: &Role) -> String {
 }
 
 /// Render the guide for one role. `version` is the release it describes.
-pub fn render(m: &Manual, role: &str, version: &str) -> Result<String, String> {
-    let r = m
-        .roles
-        .iter()
-        .find(|r| r.id == role)
-        .ok_or_else(|| format!("the manual describes no role '{role}'"))?;
+pub fn render(m: &Manual, role: &str, version: &str) -> Result<String, Error> {
+    let r = m.roles.iter().find(|r| r.id == role).ok_or_else(|| {
+        Error::new(
+            ErrorKind::Malformed,
+            format!("the manual describes no role '{role}'"),
+        )
+    })?;
 
     // The work: every section for this role or for everyone, layer by layer.
     let mut toc = String::new();

@@ -38,6 +38,7 @@
 //! written at all: a fixture is recorded by a person with its provenance, so
 //! the ones a form supplies come out as a request, ready for that person.
 
+use crate::{Error, ErrorKind};
 use std::collections::BTreeMap;
 use std::path::Path;
 
@@ -802,15 +803,18 @@ pub fn document(sh: &Sheet, tree: &Tree) -> String {
 /// intake, the translation, the author's cases, the author's code rerun, the
 /// mutation, the interface — on a throwaway checkout, on every pull request.
 /// Nothing it writes is ever committed: a method comes from a node's owner.
-pub fn document_example(sh: &Sheet, tree: &Tree) -> Result<String, String> {
+pub fn document_example(sh: &Sheet, tree: &Tree) -> Result<String, Error> {
     let fits = sh.ty == "Velocity"
         && sh.inputs.len() == 1
         && sh.inputs[0].binding == "r"
         && sh.inputs[0].ty == "Length";
     if !fits {
-        return Err(format!(
-            "the worked example is a Velocity from one Length input `r`; {} is not that node",
-            sh.id
+        return Err(Error::new(
+            ErrorKind::Malformed,
+            format!(
+                "the worked example is a Velocity from one Length input `r`; {} is not that node",
+                sh.id
+            ),
         ));
     }
     let base = std::fs::read_to_string(sh.dir.join("node.toml"))
@@ -987,26 +991,39 @@ fn content_of(v: &toml::Value) -> Content {
 }
 
 /// Read a filled form. Refuses a file that is not one, by what is missing.
-pub fn read(html: &str) -> Result<Form, String> {
-    let data = block(html, DATA_ID).ok_or(
-        "this is not a node form: it has no `vleo-node-form` block. Download the node's form \
+pub fn read(html: &str) -> Result<Form, Error> {
+    let data = block(html, DATA_ID).ok_or_else(|| {
+        Error::new(
+            ErrorKind::Malformed,
+            "this is not a node form: it has no `vleo-node-form` block. Download the node's form \
          from its page, or with `cargo run -p xtask -- form <node>`",
-    )?;
-    let original = block(html, ORIGINAL_ID).ok_or(
-        "the node as it was when the form was made is missing (`vleo-node-original`), so what \
+        )
+    })?;
+    let original = block(html, ORIGINAL_ID).ok_or_else(|| {
+        Error::new(
+            ErrorKind::Malformed,
+            "the node as it was when the form was made is missing (`vleo-node-original`), so what \
          the filler changed cannot be told from what the repository changed since. Download a \
          fresh form",
-    )?;
-    let d: toml::Value = data
-        .parse()
-        .map_err(|e| format!("the form's content is not valid TOML: {e}"))?;
-    let g: toml::Value = original
-        .parse()
-        .map_err(|e| format!("the form's original block is not valid TOML: {e}"))?;
+        )
+    })?;
+    let d: toml::Value = data.parse().map_err(|e| {
+        Error::new(
+            ErrorKind::Malformed,
+            format!("the form's content is not valid TOML: {e}"),
+        )
+    })?;
+    let g: toml::Value = original.parse().map_err(|e| {
+        Error::new(
+            ErrorKind::Malformed,
+            format!("the form's original block is not valid TOML: {e}"),
+        )
+    })?;
     let fmt = text_of(d.get("format"));
     if fmt != FORMAT {
-        return Err(format!(
-            "this form is `{fmt}`, and this tool reads `{FORMAT}`. Download a fresh form"
+        return Err(Error::new(
+            ErrorKind::Malformed,
+            format!("this form is `{fmt}`, and this tool reads `{FORMAT}`. Download a fresh form"),
         ));
     }
     let node = text_of(d.get("node"));
@@ -1016,10 +1033,13 @@ pub fn read(html: &str) -> Result<Form, String> {
         kind: text_of(n.get("kind")).trim().to_string(),
     });
     if (node.is_empty() && new.is_none()) || text_of(g.get("node")) != node {
-        return Err(format!(
+        return Err(Error::new(
+            ErrorKind::Malformed,
+            format!(
             "the form names node '{node}' in its content and '{}' in its original — one of them \
              has been edited, and which node this is for cannot be trusted",
             text_of(g.get("node"))
+        ),
         ));
     }
     let by = d.get("filled_by");
@@ -1030,10 +1050,13 @@ pub fn read(html: &str) -> Result<Form, String> {
         ai
     };
     if !AI_HELP.contains(&ai.as_str()) {
-        return Err(format!(
-            "[filled_by] ai = \"{ai}\" is not one of {}. Say how an assistant helped — the \
+        return Err(Error::new(
+            ErrorKind::Malformed,
+            format!(
+                "[filled_by] ai = \"{ai}\" is not one of {}. Say how an assistant helped — the \
              answer decides what may be applied",
-            AI_HELP.join(", ")
+                AI_HELP.join(", ")
+            ),
         ));
     }
     let known = d
@@ -1303,7 +1326,7 @@ fn plan_new(tree: &Tree, f: Form, n: NewNode) -> Plan {
         } else {
             match form::normalise(fld.field, &v) {
                 Ok(_) => Verdict::Apply,
-                Err(e) => Verdict::Refused(e),
+                Err(e) => Verdict::Refused(e.into()),
             }
         };
         p.items.push(Item {
@@ -1409,12 +1432,14 @@ fn plan_new(tree: &Tree, f: Form, n: NewNode) -> Plan {
 /// answer: where the form says nothing and the row holds its model's value — a
 /// quantity, a unit, a bound — the value is KEPT, and said, so the developer
 /// confirms it rather than finding it later.
-pub fn plan_onto(root: &Path, f: &Form, id: &str, like: &str) -> Result<Plan, String> {
-    let tree = crate::load::load_all(root).map_err(|e| format!("the tree does not load: {e}"))?;
-    let sh = tree
-        .sheets
-        .get(id)
-        .ok_or_else(|| format!("the new node '{id}' is not in the tree"))?;
+pub fn plan_onto(root: &Path, f: &Form, id: &str, like: &str) -> Result<Plan, Error> {
+    let tree = crate::load::load_all(root).map_err(|e| e.within("the tree does not load"))?;
+    let sh = tree.sheets.get(id).ok_or_else(|| {
+        Error::new(
+            ErrorKind::Malformed,
+            format!("the new node '{id}' is not in the tree"),
+        )
+    })?;
     let now = content(sh);
     let mut g = f.clone();
     g.node = id.to_string();
@@ -1478,12 +1503,12 @@ fn short(v: &str) -> String {
 }
 
 /// Work out what a filled form would do to its node. Writes nothing.
-pub fn plan(root: &Path, html: &str) -> Result<Plan, String> {
+pub fn plan(root: &Path, html: &str) -> Result<Plan, Error> {
     plan_form(root, read(html)?)
 }
 
 /// The same, for a form already read.
-pub fn plan_form(root: &Path, f: Form) -> Result<Plan, String> {
+pub fn plan_form(root: &Path, f: Form) -> Result<Plan, Error> {
     plan_form_as(root, f, false)
 }
 
@@ -1504,7 +1529,7 @@ fn risk_problems(tree: &Tree, d: &Derisk) -> Option<String> {
     let mut bad = Vec::new();
     for m in d.moves() {
         match crate::derisk::parse_move(&m) {
-            Err(e) => bad.push(e),
+            Err(e) => bad.push(e.into()),
             Ok((id, _)) if !known.contains(id.as_str()) => bad.push(format!(
                 "{id} is not registered — a risk is registered first, on a risk-register row's form"
             )),
@@ -1534,8 +1559,8 @@ pub fn today() -> String {
 /// has those changes WITHHELD, each named, and only its wording goes in. With a
 /// complete record, the changes go in and a `[[version]]` is appended to the
 /// sheet, numbered, dated, and `next` until a release stamps it.
-fn plan_form_as(root: &Path, f: Form, first: bool) -> Result<Plan, String> {
-    let tree = crate::load::load_all(root).map_err(|e| format!("the tree does not load: {e}"))?;
+fn plan_form_as(root: &Path, f: Form, first: bool) -> Result<Plan, Error> {
+    let tree = crate::load::load_all(root).map_err(|e| e.within("the tree does not load"))?;
     let unlisted = sources_unlisted(&tree, &f);
     let mut p = plan_form_on(&tree, f, first)?;
     p.open.extend(unlisted);
@@ -1564,7 +1589,7 @@ fn plan_form_as(root: &Path, f: Form, first: bool) -> Result<Plan, String> {
         .any(|i| i.verdict == Verdict::Apply && i.what == "method_text");
     if let (true, Some(text)) = (method, p.text.clone()) {
         let who = p.form.name.trim().to_string();
-        form::refuse_agent_attribution(root, &who).map_err(|e| format!("the method: {e}"))?;
+        form::refuse_agent_attribution(root, &who).map_err(|e| e.within("the method"))?;
         let when = if p.form.date.trim().is_empty() {
             String::new()
         } else {
@@ -1605,7 +1630,7 @@ fn sources_unlisted(tree: &Tree, f: &Form) -> Vec<String> {
         .collect()
 }
 
-fn plan_form_on(tree: &Tree, f: Form, first: bool) -> Result<Plan, String> {
+fn plan_form_on(tree: &Tree, f: Form, first: bool) -> Result<Plan, Error> {
     if let Some(n) = f.new.clone() {
         return Ok(plan_new(tree, f, n));
     }
@@ -1735,16 +1760,19 @@ fn plan_form_on(tree: &Tree, f: Form, first: bool) -> Result<Plan, String> {
 }
 
 /// The form's edits to an existing node, without the de-risking record.
-fn plan_edits(tree: &Tree, f: Form) -> Result<Plan, String> {
+fn plan_edits(tree: &Tree, f: Form) -> Result<Plan, Error> {
     let sh = tree.sheets.get(&f.node).ok_or_else(|| {
-        format!(
-            "there is no node '{}' in this tree. A form never adds a node: a new row is a \
+        Error::new(
+            ErrorKind::Malformed,
+            format!(
+                "there is no node '{}' in this tree. A form never adds a node: a new row is a \
              developer's act, with `xtask new`",
-            f.node
+                f.node
+            ),
         )
     })?;
     let before = std::fs::read_to_string(sh.dir.join("node.toml"))
-        .map_err(|e| format!("{}: {e}", sh.dir.display()))?;
+        .map_err(|e| Error::io(sh.dir.display(), e))?;
     let now = content(sh);
     let mut p = Plan {
         current_hash: form::file_hash(&before),
@@ -1788,7 +1816,7 @@ fn plan_edits(tree: &Tree, f: Form) -> Result<Plan, String> {
                     }
                     Verdict::Apply
                 }
-                Err(e) => Verdict::Refused(e),
+                Err(e) => Verdict::Refused(e.into()),
             }
         };
         p.items.push(Item {
@@ -1920,7 +1948,7 @@ fn plan_edits(tree: &Tree, f: Form) -> Result<Plan, String> {
                         }
                         Err(e) => {
                             refused_rest = true;
-                            Verdict::Refused(e)
+                            Verdict::Refused(e.into())
                         }
                     }
                 };
@@ -1955,7 +1983,7 @@ fn plan_edits(tree: &Tree, f: Form) -> Result<Plan, String> {
                     }
                     Err(e) => {
                         refused_rest = true;
-                        Verdict::Refused(e)
+                        Verdict::Refused(e.into())
                     }
                 }
             };
@@ -1988,7 +2016,7 @@ fn plan_edits(tree: &Tree, f: Form) -> Result<Plan, String> {
                     }
                     Err(e) => {
                         refused_rest = true;
-                        Verdict::Refused(e)
+                        Verdict::Refused(e.into())
                     }
                 }
             };
@@ -2027,7 +2055,7 @@ fn plan_edits(tree: &Tree, f: Form) -> Result<Plan, String> {
                         text = t;
                         Verdict::Apply
                     }
-                    Err(e) => Verdict::Refused(e),
+                    Err(e) => Verdict::Refused(e.into()),
                 }
             };
             p.items.push(Item {
@@ -2078,14 +2106,14 @@ pub fn apply(root: &Path, p: &Plan) -> Saved {
     let after = if p.relation {
         let who = match form::git_identity(root) {
             Ok(w) => w,
-            Err(e) => return Saved::Refused(e),
+            Err(e) => return Saved::Refused(e.into()),
         };
         if let Err(e) = form::refuse_agent_attribution(root, &who) {
-            return Saved::Refused(e);
+            return Saved::Refused(e.into());
         }
         match form::stamp_relation(after, &who) {
             Ok(t) => t,
-            Err(e) => return Saved::Refused(e),
+            Err(e) => return Saved::Refused(e.into()),
         }
     } else {
         after.clone()

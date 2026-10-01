@@ -115,7 +115,7 @@ impl Check {
 /// with no lesson, which is most of them and is not a gap.
 fn lesson_check(sh: &Sheet, tree: &Tree) -> Option<Check> {
     Some(match crate::lesson::load(&sh.dir, &sh.id)? {
-        Err(e) => Check::fail("lesson", e),
+        Err(e) => Check::fail("lesson", e.into()),
         Ok(l) => {
             let bad = crate::lesson::problems(&l, tree);
             if bad.is_empty() {
@@ -171,7 +171,7 @@ fn method_checks(sh: &Sheet) -> Vec<Check> {
         }
         let text = std::fs::read_to_string(sh.dir.join("node.toml")).unwrap_or_default();
         match method::report_toml(&text) {
-            Err(e) => bad.push(e),
+            Err(e) => bad.push(e.into()),
             Ok(r) => {
                 for d in r
                     .diags

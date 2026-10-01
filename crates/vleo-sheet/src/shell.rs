@@ -7,6 +7,8 @@
 //! a generator decides only which part, how often and with what. The markup
 //! lives with the frontend, and a test refuses a generator that writes any.
 
+use crate::{Error, ErrorKind};
+
 /// `web/page.html`, as it is on disk when the tool is built.
 pub const TEMPLATE: &str = include_str!("../../../web/page.html");
 
@@ -37,24 +39,29 @@ pub fn fill(p: &Page) -> String {
 }
 
 /// [`fill`] over any template text — the tests hand it a broken one.
-pub fn fill_from(template: &str, p: &Page) -> Result<String, String> {
+pub fn fill_from(template: &str, p: &Page) -> Result<String, Error> {
     let at = template
         .find("<!doctype html>")
-        .ok_or("the template has no doctype")?;
+        .ok_or_else(|| Error::new(ErrorKind::Malformed, "the template has no doctype"))?;
     let mut rest = &template[at..];
     let mut o = String::with_capacity(rest.len() + p.head.len() + p.body.len() + 256);
     while let Some(i) = rest.find("{{") {
         o.push_str(&rest[..i]);
         let j = rest[i..]
             .find("}}")
-            .ok_or("a slot is opened and never closed")?
+            .ok_or_else(|| Error::new(ErrorKind::Malformed, "a slot is opened and never closed"))?
             + i;
         match &rest[i + 2..j] {
             "title" => o.push_str(&crate::text::html(p.title)),
             "head" => o.push_str(p.head),
             "body_attrs" => o.push_str(p.body_attrs),
             "body" => o.push_str(p.body),
-            other => return Err(format!("a slot `{other}` that no page fills")),
+            other => {
+                return Err(Error::new(
+                    ErrorKind::Malformed,
+                    format!("a slot `{other}` that no page fills"),
+                ))
+            }
         }
         rest = &rest[j + 2..];
     }
@@ -64,7 +71,7 @@ pub fn fill_from(template: &str, p: &Page) -> Result<String, String> {
 
 /// Every `{{slot}}` in `text` filled once from `slots`, in one pass; a slot
 /// with nothing to fill it, or a filling with no slot, refused.
-fn fill_slots(text: &str, slots: &[(&str, &str)]) -> Result<String, String> {
+fn fill_slots(text: &str, slots: &[(&str, &str)]) -> Result<String, Error> {
     let mut rest = text;
     let mut used = vec![false; slots.len()];
     let mut o = String::with_capacity(rest.len() + slots.iter().map(|s| s.1.len()).sum::<usize>());
@@ -72,22 +79,27 @@ fn fill_slots(text: &str, slots: &[(&str, &str)]) -> Result<String, String> {
         o.push_str(&rest[..i]);
         let j = rest[i..]
             .find("}}")
-            .ok_or("a slot is opened and never closed")?
+            .ok_or_else(|| Error::new(ErrorKind::Malformed, "a slot is opened and never closed"))?
             + i;
         let name = &rest[i + 2..j];
-        let k = slots
-            .iter()
-            .position(|(n, _)| *n == name)
-            .ok_or_else(|| format!("the template has a slot `{name}` that nothing fills"))?;
+        let k = slots.iter().position(|(n, _)| *n == name).ok_or_else(|| {
+            Error::new(
+                ErrorKind::Malformed,
+                format!("the template has a slot `{name}` that nothing fills"),
+            )
+        })?;
         o.push_str(slots[k].1);
         used[k] = true;
         rest = &rest[j + 2..];
     }
     o.push_str(rest);
     if let Some(k) = used.iter().position(|u| !u) {
-        return Err(format!(
-            "`{}` is filled and the template has no slot for it",
-            slots[k].0
+        return Err(Error::new(
+            ErrorKind::Malformed,
+            format!(
+                "`{}` is filled and the template has no slot for it",
+                slots[k].0
+            ),
         ));
     }
     Ok(o)
@@ -109,27 +121,36 @@ pub struct Parts {
 
 impl Parts {
     /// Read a parts file; `file` is its path, for the messages.
-    pub fn parse(file: &'static str, text: &'static str) -> Result<Parts, String> {
+    pub fn parse(file: &'static str, text: &'static str) -> Result<Parts, Error> {
         const OPEN: &str = "<!-- part: ";
-        let end = text
-            .rfind("<!-- end -->")
-            .ok_or_else(|| format!("{file} does not end with <!-- end -->"))?;
+        let end = text.rfind("<!-- end -->").ok_or_else(|| {
+            Error::new(
+                ErrorKind::Malformed,
+                format!("{file} does not end with <!-- end -->"),
+            )
+        })?;
         let body = &text[..end];
         // The file's own note comes first, and may well quote a marker.
         let from = match body.strip_prefix("<!--") {
-            Some(_) if !body.starts_with(OPEN) => body
-                .find("-->")
-                .map(|k| k + 3)
-                .ok_or_else(|| format!("{file}: the opening note is never closed"))?,
+            Some(_) if !body.starts_with(OPEN) => {
+                body.find("-->").map(|k| k + 3).ok_or_else(|| {
+                    Error::new(
+                        ErrorKind::Malformed,
+                        format!("{file}: the opening note is never closed"),
+                    )
+                })?
+            }
             _ => 0,
         };
         let mut parts = std::collections::BTreeMap::new();
         let mut at = body[from..].find(OPEN).map(|k| k + from);
         while let Some(i) = at {
-            let close = body[i..]
-                .find("-->")
-                .ok_or_else(|| format!("{file}: a part marker is never closed"))?
-                + i;
+            let close = body[i..].find("-->").ok_or_else(|| {
+                Error::new(
+                    ErrorKind::Malformed,
+                    format!("{file}: a part marker is never closed"),
+                )
+            })? + i;
             let name = body[i + OPEN.len()..close].trim();
             let start = close + 3;
             let start = if body[start..].starts_with('\n') {
@@ -140,7 +161,10 @@ impl Parts {
             let next = body[start..].find(OPEN).map(|k| k + start);
             let stop = next.unwrap_or(body.len());
             if parts.insert(name, &body[start..stop]).is_some() {
-                return Err(format!("{file}: the part `{name}` is written twice"));
+                return Err(Error::new(
+                    ErrorKind::Malformed,
+                    format!("{file}: the part `{name}` is written twice"),
+                ));
             }
             at = next;
         }
@@ -169,17 +193,17 @@ impl Parts {
 /// Whether a page is the template, filled: the template's own text, every
 /// part of it between the slots, in order, with nothing before it or after.
 /// The test every generator is held to.
-pub fn is_filled(template: &str, page: &str) -> Result<(), String> {
+pub fn is_filled(template: &str, page: &str) -> Result<(), Error> {
     let at = template
         .find("<!doctype html>")
-        .ok_or("the template has no doctype")?;
+        .ok_or_else(|| Error::new(ErrorKind::Malformed, "the template has no doctype"))?;
     let mut parts: Vec<&str> = Vec::new();
     let mut rest = &template[at..];
     while let Some(i) = rest.find("{{") {
         parts.push(&rest[..i]);
         let j = rest[i..]
             .find("}}")
-            .ok_or("a slot is opened and never closed")?
+            .ok_or_else(|| Error::new(ErrorKind::Malformed, "a slot is opened and never closed"))?
             + i;
         rest = &rest[j + 2..];
     }
@@ -197,9 +221,9 @@ pub fn is_filled(template: &str, page: &str) -> Result<(), String> {
         match found {
             Some(i) => from = i + part.len(),
             None => {
-                return Err(format!(
-                    "the page does not carry the template's {:?}",
-                    part.trim()
+                return Err(Error::new(
+                    ErrorKind::Malformed,
+                    format!("the page does not carry the template's {:?}", part.trim()),
                 ))
             }
         }
@@ -238,9 +262,9 @@ mod tests {
     #[test]
     fn a_slot_nobody_fills_is_refused() {
         let t = "<!doctype html><title>{{title}}</title>{{footer}}";
-        assert!(fill_from(t, &Page::default())
-            .unwrap_err()
-            .contains("footer"));
+        let e = fill_from(t, &Page::default()).unwrap_err();
+        assert_eq!(e.kind(), ErrorKind::Malformed, "{e}");
+        assert!(e.message().contains("footer"), "{e}");
         assert!(fill_from("<!doctype html>{{title", &Page::default()).is_err());
     }
 

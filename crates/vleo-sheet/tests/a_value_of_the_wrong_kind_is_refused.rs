@@ -67,8 +67,9 @@ fn a_number_written_as_text_is_named_not_read_as_zero() {
     let Err(err) = load_all(&root) else {
         panic!("a bound written as text was accepted");
     };
+    assert_eq!(err.kind(), vleo_sheet::ErrorKind::Malformed, "{err}");
     assert!(
-        err.contains("\"1e-6\"") && err.contains("a number"),
+        err.message().contains("\"1e-6\"") && err.message().contains("a number"),
         "{err}"
     );
     let _ = std::fs::remove_dir_all(&root);
@@ -87,8 +88,9 @@ fn a_misspelt_key_is_named_with_the_one_it_meant() {
     let Err(err) = load_all(&root) else {
         panic!("a misspelt key was passed over");
     };
+    assert_eq!(err.kind(), vleo_sheet::ErrorKind::Malformed, "{err}");
     assert!(
-        err.contains("output.lowr") && err.contains("did you mean `lower`"),
+        err.message().contains("output.lowr") && err.message().contains("did you mean `lower`"),
         "{err}"
     );
     let _ = std::fs::remove_dir_all(&root);

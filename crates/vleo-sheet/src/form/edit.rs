@@ -255,7 +255,7 @@ pub(super) fn has_key(text: &str, table: &str, key: &str) -> Option<(usize, usiz
 /// `[output]` and `[view]` are on all 1396 rows — so this creates those two and
 /// refuses the rest. A missing `[output]` is a malformed sheet and inventing it
 /// here would hide that.
-pub(super) fn ensure_table(text: &str, table: &str) -> Result<String, String> {
+pub(super) fn ensure_table(text: &str, table: &str) -> Result<String, Error> {
     if window(text, table).is_some() {
         return Ok(text.to_string());
     }
@@ -265,7 +265,10 @@ pub(super) fn ensure_table(text: &str, table: &str) -> Result<String, String> {
     // plain-words answer — which is every row a form was ever sent for.
     if table == "explain" {
         let (_, end) = window(text, "question").ok_or_else(|| {
-            "this sheet has no [question] table to put [explain] after".to_string()
+            Error::new(
+                ErrorKind::Malformed,
+                "this sheet has no [question] table to put [explain] after",
+            )
         })?;
         let mut o = String::with_capacity(text.len() + 64);
         o.push_str(text[..end].trim_end_matches('\n'));
@@ -292,7 +295,12 @@ pub(super) fn ensure_table(text: &str, table: &str) -> Result<String, String> {
         } else {
             after_derivation
         }
-        .ok_or_else(|| format!("this sheet has no [maths] table to put [{table}] after"))?;
+        .ok_or_else(|| {
+            Error::new(
+                ErrorKind::Malformed,
+                format!("this sheet has no [maths] table to put [{table}] after"),
+            )
+        })?;
         let head = if table == "method" {
             "# THE METHOD — the relation in the method language (docs/PSEUDOCODE.md). In the\n\
              # sheet hash: the generated code is translated from it.\n[method]\n\n"
@@ -308,15 +316,22 @@ pub(super) fn ensure_table(text: &str, table: &str) -> Result<String, String> {
         return Ok(o);
     }
     if table != "theory" {
-        return Err(format!(
-            "this sheet has no [{table}] table, which every sheet should have. That is a \
+        return Err(Error::new(
+            ErrorKind::Malformed,
+            format!(
+                "this sheet has no [{table}] table, which every sheet should have. That is a \
              malformed sheet and not something a form should paper over — edit it directly"
+            ),
         ));
     }
     // Immediately after [maths], which is where every authored sheet has it and
     // which is before the [[theory.step]] blocks a later edit may add.
-    let (_, end) = window(text, "maths")
-        .ok_or_else(|| "this sheet has no [maths] table to put [theory] after".to_string())?;
+    let (_, end) = window(text, "maths").ok_or_else(|| {
+        Error::new(
+            ErrorKind::Malformed,
+            "this sheet has no [maths] table to put [theory] after",
+        )
+    })?;
     let mut o = String::with_capacity(text.len() + 64);
     o.push_str(text[..end].trim_end_matches('\n'));
     o.push_str(
@@ -340,9 +355,12 @@ pub(super) fn ensure_table(text: &str, table: &str) -> Result<String, String> {
 /// An ABSENT key is added where the field says it may be — most sheets have no
 /// `note` and no `[theory]`, so a form that could only replace could never write
 /// either — and refused where it may not.
-pub fn set(text: &str, field: &str, value: &str) -> Result<String, String> {
+pub fn set(text: &str, field: &str, value: &str) -> Result<String, Error> {
     let Some(f) = self::field(field) else {
-        return Err(format!("'{field}' is not a field this form writes"));
+        return Err(Error::new(
+            ErrorKind::Refused,
+            format!("'{field}' is not a field this form writes"),
+        ));
     };
     let value = normalise(field, value)?;
     let text = if has_key(text, f.table, f.key).is_none() && f.insert {
@@ -354,37 +372,43 @@ pub fn set(text: &str, field: &str, value: &str) -> Result<String, String> {
 
     let hits = assignments(text, f.table, f.key);
     if hits.len() > 1 {
-        return Err(format!(
-            "`{}` is assigned {} times in {} — refusing to guess which one is meant",
-            f.key,
-            hits.len(),
-            if f.table.is_empty() {
-                "the sheet's head".to_string()
-            } else {
-                format!("[{}]", f.table)
-            }
-        ));
-    }
-    let Some((s0, s1, comment)) = hits.into_iter().next() else {
-        if !f.insert {
-            return Err(format!(
-                "no `{} =` in {} — this row has not got that field, and this form does not \
-                 decide where a new one belongs. {}",
+        return Err(Error::new(
+            ErrorKind::Malformed,
+            format!(
+                "`{}` is assigned {} times in {} — refusing to guess which one is meant",
                 f.key,
+                hits.len(),
                 if f.table.is_empty() {
                     "the sheet's head".to_string()
                 } else {
                     format!("[{}]", f.table)
-                },
-                match field {
-                    "sense" =>
-                        "A sense belongs to a requirement; the gate puts one on every \
-                                row of that kind, so a row without one is not one.",
-                    "declared_value" =>
-                        "A declared number belongs to a row that declares one \
-                                         rather than computing it.",
-                    _ => "Edit the sheet directly.",
                 }
+            ),
+        ));
+    }
+    let Some((s0, s1, comment)) = hits.into_iter().next() else {
+        if !f.insert {
+            return Err(Error::new(
+                ErrorKind::Refused,
+                format!(
+                    "no `{} =` in {} — this row has not got that field, and this form does not \
+                 decide where a new one belongs. {}",
+                    f.key,
+                    if f.table.is_empty() {
+                        "the sheet's head".to_string()
+                    } else {
+                        format!("[{}]", f.table)
+                    },
+                    match field {
+                        "sense" =>
+                            "A sense belongs to a requirement; the gate puts one on every \
+                                row of that kind, so a row without one is not one.",
+                        "declared_value" =>
+                            "A declared number belongs to a row that declares one \
+                                         rather than computing it.",
+                        _ => "Edit the sheet directly.",
+                    }
+                ),
             ));
         }
         // Insertable and absent: directly under the table header, which is
@@ -393,9 +417,12 @@ pub fn set(text: &str, field: &str, value: &str) -> Result<String, String> {
         // the exception: the form writes their keys one after another into a
         // table it made, and under the header would write them backwards.
         let (from, to) = window(text, f.table).ok_or_else(|| {
-            format!(
-                "this sheet has no [{}] table to write {} into",
-                f.table, f.key
+            Error::new(
+                ErrorKind::Malformed,
+                format!(
+                    "this sheet has no [{}] table to write {} into",
+                    f.table, f.key
+                ),
             )
         })?;
         let from = if matches!(f.table, "method" | "author") {
@@ -425,11 +452,14 @@ pub fn set(text: &str, field: &str, value: &str) -> Result<String, String> {
     // something this form has misunderstood. Refused by name rather than
     // flattened into one line.
     if !f.shape.may_be_prose() && text[s0..s1].trim_end().lines().count() > 1 {
-        return Err(format!(
-            "`{}` is written as a multi-line block, which a {} cannot be. Nothing was \
+        return Err(Error::new(
+            ErrorKind::Refused,
+            format!(
+                "`{}` is written as a multi-line block, which a {} cannot be. Nothing was \
              written; edit the sheet directly",
-            f.key,
-            f.shape.name()
+                f.key,
+                f.shape.name()
+            ),
         ));
     }
     let mut o = String::with_capacity(text.len() + value.len());

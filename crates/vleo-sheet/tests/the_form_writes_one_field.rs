@@ -122,7 +122,10 @@ fn a_structural_field_is_refused_with_a_reason() {
 #[test]
 fn an_unknown_field_is_refused_rather_than_appended() {
     let e = form::set(SHEET, "not_a_field", "x").unwrap_err();
-    assert!(e.contains("not a field"), "unhelpful refusal: {e}");
+    assert!(
+        e.message().contains("not a field"),
+        "unhelpful refusal: {e}"
+    );
 }
 
 #[test]
@@ -132,9 +135,9 @@ fn a_key_that_is_not_there_is_refused_unless_the_field_says_it_may_be_added() {
     // without one is not one — and inventing it would make this row claim to be
     // a requirement it is not.
     let e = form::set(SHEET, "sense", ">=").unwrap_err();
-    assert!(e.contains("sense"), "should name the key: {e}");
+    assert!(e.message().contains("sense"), "should name the key: {e}");
     assert!(
-        e.contains("requirement"),
+        e.message().contains("requirement"),
         "and say why this row has not got one: {e}"
     );
 }
@@ -220,7 +223,7 @@ fn a_bound_is_written_bare_and_normalised() {
 
     let e = form::set(&s, "lower", "quite low").unwrap_err();
     assert!(
-        e.contains("not a number"),
+        e.message().contains("not a number"),
         "a bound that is not a number is refused, not written: {e}"
     );
 }
@@ -278,13 +281,13 @@ fn a_prose_block_is_replaced_whole_and_not_truncated() {
 #[test]
 fn a_one_line_field_refuses_a_paragraph_and_a_closed_set_refuses_a_label() {
     let e = form::set(SHEET, "expression", "y = 2*x\nand also y = 3*x").unwrap_err();
-    assert!(e.contains("one line"), "{e}");
+    assert!(e.message().contains("one line"), "{e}");
 
     let withsense = SHEET.replace("order = 42", "order = 42\nsense = \">=\"");
     assert!(form::set(&withsense, "sense", "<=").is_ok());
     let e = form::set(&withsense, "sense", "less than").unwrap_err();
     assert!(
-        e.contains("closed set"),
+        e.message().contains("closed set"),
         "a sense is one of two things, not a phrase: {e}"
     );
 }
@@ -330,7 +333,7 @@ fn a_multi_line_body_is_refused_rather_than_truncated() {
     let odd = SHEET.replace("unit = \"Metre\"", "unit = \"\"\"\nMetre\n\"\"\"");
     let e = form::set(&odd, "unit", "Kelvin").unwrap_err();
     assert!(
-        e.contains("multi-line"),
+        e.message().contains("multi-line"),
         "a multi-line value must be refused by name, not cut at the first newline: {e}"
     );
 }
@@ -339,7 +342,7 @@ fn a_multi_line_body_is_refused_rather_than_truncated() {
 fn a_duplicated_key_is_refused_rather_than_half_written() {
     let twice = SHEET.replace("unit = \"Metre\"", "unit = \"Metre\"\nunit = \"Metre\"");
     let e = form::set(&twice, "unit", "Kelvin").unwrap_err();
-    assert!(e.contains("2 times"), "should say how many: {e}");
+    assert!(e.message().contains("2 times"), "should say how many: {e}");
 }
 
 #[test]

@@ -44,7 +44,7 @@ pub unsafe extern "C" fn vleo_report(ptr: *mut u8, len: usize) -> *const u8 {
     let text = String::from_utf8_lossy(&bytes);
     let json = match vleo_sheet::method::report_plain(&text) {
         Ok(r) => r.json(),
-        Err(e) => vleo_sheet::method::error_json(&e),
+        Err(e) => vleo_sheet::method::error_json(e.message()),
     };
     OUT.with(|o| {
         let mut o = o.borrow_mut();

@@ -13,6 +13,7 @@
 //! row is taught, not what it computes. The gate reads it — every key known,
 //! every claim tagged, every row it names real — and refuses one that fails.
 
+use crate::{Error, ErrorKind};
 use std::path::Path;
 
 use crate::load::Tree;
@@ -86,23 +87,25 @@ pub struct Question {
 
 /// The lesson in a row's folder: `None` when it has none, and the reason when
 /// the file does not read.
-pub fn load(dir: &Path, node: &str) -> Option<Result<Lesson, String>> {
+pub fn load(dir: &Path, node: &str) -> Option<Result<Lesson, Error>> {
     let p = dir.join(FILE);
     if !p.is_file() {
         return None;
     }
     Some(
         std::fs::read_to_string(&p)
-            .map_err(|e| format!("{}: {e}", p.display()))
-            .and_then(|t| read(&t, node).map_err(|e| format!("{}: {e}", p.display()))),
+            .map_err(|e| Error::io(p.display(), e))
+            .and_then(|t| read(&t, node).map_err(|e| e.within(p.display()))),
     )
 }
 
 /// A lesson from its text. Every key is one this reader knows: a misspelt key
 /// is refused, not ignored, because an ignored `sourse` is a claim that looks
 /// sourced and is not.
-pub fn read(text: &str, node: &str) -> Result<Lesson, String> {
-    let doc: toml::Table = text.parse().map_err(|e| format!("not TOML: {e}"))?;
+pub fn read(text: &str, node: &str) -> Result<Lesson, Error> {
+    let doc: toml::Table = text
+        .parse()
+        .map_err(|e| Error::new(ErrorKind::Malformed, format!("not TOML: {e}")))?;
     known(
         &doc,
         "",
@@ -118,7 +121,7 @@ pub fn read(text: &str, node: &str) -> Result<Lesson, String> {
     let head = doc
         .get("lesson")
         .and_then(|v| v.as_table())
-        .ok_or("there is no [lesson] table")?;
+        .ok_or_else(|| Error::new(ErrorKind::Malformed, "there is no [lesson] table"))?;
     known(head, "[lesson]", &["title", "by", "answer", "kind"])?;
     let s = |t: &toml::Table, k: &str| t.get(k).and_then(|v| v.as_str()).unwrap_or("").to_string();
     let list = |t: &toml::Table, k: &str| -> Vec<String> {
@@ -131,17 +134,25 @@ pub fn read(text: &str, node: &str) -> Result<Lesson, String> {
             })
             .unwrap_or_default()
     };
-    let tables = |k: &str| -> Result<Vec<toml::Table>, String> {
+    let tables = |k: &str| -> Result<Vec<toml::Table>, Error> {
         match doc.get(k) {
             None => Ok(Vec::new()),
             Some(v) => v
                 .as_array()
-                .ok_or(format!("[[{k}]] must be a list of tables"))?
+                .ok_or_else(|| {
+                    Error::new(
+                        ErrorKind::Malformed,
+                        format!("[[{k}]] must be a list of tables"),
+                    )
+                })?
                 .iter()
                 .map(|t| {
-                    t.as_table()
-                        .cloned()
-                        .ok_or(format!("[[{k}]] must be a list of tables"))
+                    t.as_table().cloned().ok_or_else(|| {
+                        Error::new(
+                            ErrorKind::Malformed,
+                            format!("[[{k}]] must be a list of tables"),
+                        )
+                    })
                 })
                 .collect(),
         }
@@ -190,11 +201,12 @@ pub fn read(text: &str, node: &str) -> Result<Lesson, String> {
         known(&t, "[[check]]", &["question", "options", "answer", "why"])?;
         let answer = match t.get("answer") {
             None => 0,
-            Some(v) => v
-                .as_integer()
-                .filter(|n| *n >= 1)
-                .ok_or("[[check]] answer is the number of the right option, counted from 1")?
-                as usize,
+            Some(v) => v.as_integer().filter(|n| *n >= 1).ok_or_else(|| {
+                Error::new(
+                    ErrorKind::Malformed,
+                    "[[check]] answer is the number of the right option, counted from 1",
+                )
+            })? as usize,
         };
         l.checks.push(Question {
             question: s(&t, "question"),
@@ -210,7 +222,7 @@ pub fn read(text: &str, node: &str) -> Result<Lesson, String> {
     Ok(l)
 }
 
-fn known(t: &toml::Table, at: &str, keys: &[&str]) -> Result<(), String> {
+fn known(t: &toml::Table, at: &str, keys: &[&str]) -> Result<(), Error> {
     let bad: Vec<&str> = t
         .keys()
         .map(String::as_str)
@@ -219,22 +231,25 @@ fn known(t: &toml::Table, at: &str, keys: &[&str]) -> Result<(), String> {
     if bad.is_empty() {
         Ok(())
     } else {
-        Err(format!(
-            "{}{} not a key a lesson has — {}",
-            if at.is_empty() {
-                String::new()
-            } else {
-                format!("{at}: ")
-            },
-            bad.iter()
-                .map(|k| format!("`{k}`"))
-                .collect::<Vec<_>>()
-                .join(", "),
-            if at.is_empty() {
-                "a lesson has [lesson], [[station]], [[equation]], [[widget]], [[check]] and [[reference]]".to_string()
-            } else {
-                format!("it has {}", keys.join(", "))
-            }
+        Err(Error::new(
+            ErrorKind::Malformed,
+            format!(
+                "{}{} not a key a lesson has — {}",
+                if at.is_empty() {
+                    String::new()
+                } else {
+                    format!("{at}: ")
+                },
+                bad.iter()
+                    .map(|k| format!("`{k}`"))
+                    .collect::<Vec<_>>()
+                    .join(", "),
+                if at.is_empty() {
+                    "a lesson has [lesson], [[station]], [[equation]], [[widget]], [[check]] and [[reference]]".to_string()
+                } else {
+                    format!("it has {}", keys.join(", "))
+                }
+            ),
         ))
     }
 }
@@ -438,7 +453,10 @@ pub fn report(text: &str) -> String {
     }
     let q = |s: &str| json_text(s);
     match read(toml_text, node) {
-        Err(e) => format!("{{\"ok\":false,\"read\":{},\"problems\":[]}}", q(&e)),
+        Err(e) => format!(
+            "{{\"ok\":false,\"read\":{},\"problems\":[]}}",
+            q(e.message())
+        ),
         Ok(l) => {
             let p = problems_with(&l, &|id| rows.get(id).copied());
             format!(

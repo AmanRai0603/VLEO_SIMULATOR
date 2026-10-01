@@ -165,7 +165,7 @@ pub(super) fn manual_endpoint(ctx: &Ctx) -> (&'static str, &'static str, Vec<u8>
             return (
                 "500 Internal Server Error",
                 JSON,
-                format!("{{\"ok\":false,\"message\":{}}}", json::string(&e)).into_bytes(),
+                format!("{{\"ok\":false,\"message\":{}}}", json::string(e.message())).into_bytes(),
             )
         }
     };
@@ -429,7 +429,7 @@ pub(super) fn form_check(ctx: &Ctx, params: &str) -> String {
         Ok(p) => p,
         Err(e) => {
             j.bool_field("ok", false);
-            j.str_field("message", &e);
+            j.str_field("message", e.message());
             j.raw("}");
             return j.0;
         }
@@ -546,7 +546,7 @@ pub(super) fn lesson_json(ctx: &Ctx, id: &str) -> String {
     let dir = ctx.root.join(NODES[i as usize].folder);
     let l = match vleo_sheet::lesson::load(&dir, id) {
         None => return "{\"ok\":true,\"checked\":true,\"lesson\":null}".to_string(),
-        Some(Err(e)) => return failed(&e),
+        Some(Err(e)) => return failed(e.message()),
         Some(Ok(l)) => l,
     };
     let checked = match vleo_sheet::load::load_all(&ctx.root) {
@@ -587,7 +587,7 @@ pub(super) fn lesson_form_file(ctx: &Ctx, id: &str) -> (&'static str, &'static s
         None => text("404 Not Found", format!("no row '{id}'")),
         Some(sh) => match vleo_sheet::lesson_form::document(sh, &tree) {
             Ok(html) => ("200 OK", "text/html; charset=utf-8", html.into_bytes()),
-            Err(e) => text("500 Internal Server Error", e),
+            Err(e) => text("500 Internal Server Error", e.into()),
         },
     }
 }

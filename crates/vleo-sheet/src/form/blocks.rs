@@ -443,7 +443,7 @@ pub(super) fn array_blocks(text: &str, path: &str) -> Vec<(usize, usize)> {
 /// When there are none, after the table the array belongs under — which for a
 /// theory step means creating `[theory]` first, exactly as a scalar theory field
 /// does.
-fn insert_point(text: &str, a: &Array) -> Result<usize, String> {
+fn insert_point(text: &str, a: &Array) -> Result<usize, Error> {
     if let Some((_, end)) = array_blocks(text, a.path).last() {
         return Ok(*end);
     }
@@ -479,8 +479,12 @@ fn insert_point(text: &str, a: &Array) -> Result<usize, String> {
             return Ok(*end);
         }
     }
-    let (_, end) = window(text, a.after)
-        .ok_or_else(|| format!("this sheet has no [{}] table to put it after", a.after))?;
+    let (_, end) = window(text, a.after).ok_or_else(|| {
+        Error::new(
+            ErrorKind::Malformed,
+            format!("this sheet has no [{}] table to put it after", a.after),
+        )
+    })?;
     // `window` ends at the newline before the next header, so a block written at
     // that offset needs the newline back in front of it. `write_block` adds it.
     Ok(end)
@@ -635,7 +639,7 @@ pub fn save_block(
 
     let after = match block_text(&before, name, op, index, values) {
         Ok(t) => t,
-        Err(e) => return Saved::Refused(e),
+        Err(e) => return Saved::Refused(e.into()),
     };
     // AN EDGE IS THE ONE EDIT THAT CAN BREAK A ROW THAT IS NOT THIS ONE. The
     // per-node gate asks whether each input resolves and agrees on type; whether
@@ -664,9 +668,13 @@ pub fn block_text(
     op: &str,
     index: usize,
     values: &[(&str, String)],
-) -> Result<String, String> {
-    let a =
-        array(name).ok_or_else(|| format!("'{name}' is not a repeated block this form writes"))?;
+) -> Result<String, Error> {
+    let a = array(name).ok_or_else(|| {
+        Error::new(
+            ErrorKind::Refused,
+            format!("'{name}' is not a repeated block this form writes"),
+        )
+    })?;
     let blocks = array_blocks(text, a.path);
     match op {
         // ADDED AT THE END, ALWAYS, whatever the array. Inserting in the middle
@@ -691,7 +699,10 @@ pub fn block_text(
                 };
                 if v.trim().is_empty() {
                     if c.required {
-                        return Err(format!("a {} block needs `{}`: {}", a.name, c.key, c.ask));
+                        return Err(Error::new(
+                            ErrorKind::Refused,
+                            format!("a {} block needs `{}`: {}", a.name, c.key, c.ask),
+                        ));
                     }
                     continue;
                 }
@@ -716,43 +727,55 @@ pub fn block_text(
             Ok(o)
         }
         "set" => {
-            let &(s0, s1) = blocks
-                .get(index)
-                .ok_or_else(|| no_such_block(a, blocks.len(), index))?;
-            let (key, value) = values.first().ok_or("nothing to set")?;
-            let c = a
-                .columns
-                .iter()
-                .find(|c| c.key == *key)
-                .ok_or_else(|| format!("'{key}' is not a key of a {} block", a.name))?;
+            let &(s0, s1) = blocks.get(index).ok_or_else(|| {
+                Error::new(ErrorKind::Refused, no_such_block(a, blocks.len(), index))
+            })?;
+            let (key, value) = values
+                .first()
+                .ok_or_else(|| Error::new(ErrorKind::Refused, "nothing to set"))?;
+            let c = a.columns.iter().find(|c| c.key == *key).ok_or_else(|| {
+                Error::new(
+                    ErrorKind::Refused,
+                    format!("'{key}' is not a key of a {} block", a.name),
+                )
+            })?;
             if c.managed {
-                return Err(format!(
-                    "`{}` is written by the form and never typed: it is the identity of a \
+                return Err(Error::new(
+                    ErrorKind::Refused,
+                    format!(
+                        "`{}` is written by the form and never typed: it is the identity of a \
                      numbered hole in the generated model, and retyping it would reattach \
                      somebody's Rust to a different step",
-                    c.key
+                        c.key
+                    ),
                 ));
             }
             if c.required && value.trim().is_empty() {
-                return Err(format!(
-                    "a {} block needs `{}`: {}. Remove the whole block rather than emptying \
+                return Err(Error::new(
+                    ErrorKind::Refused,
+                    format!(
+                        "a {} block needs `{}`: {}. Remove the whole block rather than emptying \
                      one of its keys",
-                    a.name, c.key, c.ask
+                        a.name, c.key, c.ask
+                    ),
                 ));
             }
             let v = normalise_column(c, value)?;
             set_in_block(text, s0, s1, c, &v)
         }
         "remove" => {
-            let &(s0, s1) = blocks
-                .get(index)
-                .ok_or_else(|| no_such_block(a, blocks.len(), index))?;
+            let &(s0, s1) = blocks.get(index).ok_or_else(|| {
+                Error::new(ErrorKind::Refused, no_such_block(a, blocks.len(), index))
+            })?;
             if a.blocks == Blocks::EndOnly && index + 1 != blocks.len() {
-                return Err(format!(
-                    "only the last {} block can be removed. Removing one from the middle \
+                return Err(Error::new(
+                    ErrorKind::Refused,
+                    format!(
+                        "only the last {} block can be removed. Removing one from the middle \
                      renumbers every step after it, and each number is a hole holding \
                      somebody's Rust",
-                    a.name
+                        a.name
+                    ),
                 ));
             }
             let mut o = String::with_capacity(text.len());
@@ -765,7 +788,10 @@ pub fn block_text(
             }
             Ok(o)
         }
-        _ => Err(format!("'{op}' is not add, set or remove")),
+        _ => Err(Error::new(
+            ErrorKind::Refused,
+            format!("'{op}' is not add, set or remove"),
+        )),
     }
 }
 
@@ -787,7 +813,7 @@ fn set_in_block(
     s1: usize,
     c: &Column,
     value: &str,
-) -> Result<String, String> {
+) -> Result<String, Error> {
     let body = &text[s0..s1];
     // The block's own lines, minus its header, with prose bodies skipped.
     let mut hit: Option<(usize, usize, String)> = None;
@@ -809,10 +835,13 @@ fn set_in_block(
                         open = Some((r.start, name == c.key));
                     } else if name == c.key {
                         if hit.is_some() {
-                            return Err(format!(
+                            return Err(Error::new(
+                                ErrorKind::Malformed,
+                                format!(
                                 "`{}` is assigned twice in this block — refusing to guess which \
                                  one is meant",
                                 c.key
+                            ),
                             ));
                         }
                         hit = Some((r.start, r.end, trailing_comment(rhs)));
@@ -835,10 +864,9 @@ fn set_in_block(
             // Absent and optional — `math` on a theory step is the case. Added
             // directly under the block's header, which is the one place in a
             // block that is unambiguous.
-            let head = body
-                .find('\n')
-                .map(|i| s0 + i + 1)
-                .ok_or_else(|| "this block has no body to write into".to_string())?;
+            let head = body.find('\n').map(|i| s0 + i + 1).ok_or_else(|| {
+                Error::new(ErrorKind::Refused, "this block has no body to write into")
+            })?;
             o.push_str(&text[..head]);
             o.push_str(&written);
             o.push('\n');
@@ -849,42 +877,56 @@ fn set_in_block(
 }
 
 /// A column's value as it must be written, or why it cannot be.
-fn normalise_column(c: &Column, value: &str) -> Result<String, String> {
+fn normalise_column(c: &Column, value: &str) -> Result<String, Error> {
     let v = value.trim();
     match c.shape {
-        Shape::Count => v
-            .parse::<u32>()
-            .map(|n| n.to_string())
-            .map_err(|_| format!("`{}` is a whole number; '{v}' is not", c.key)),
-        Shape::Quantity if !crate::is_quantity_name(v) => Err(format!(
-            "'{v}' is not a quantity this system has. It is written straight into the \
+        Shape::Count => v.parse::<u32>().map(|n| n.to_string()).map_err(|_| {
+            Error::new(
+                ErrorKind::Refused,
+                format!("`{}` is a whole number; '{v}' is not", c.key),
+            )
+        }),
+        Shape::Quantity if !crate::is_quantity_name(v) => Err(Error::new(
+            ErrorKind::Missing,
+            format!(
+                "'{v}' is not a quantity this system has. It is written straight into the \
              generated signature, so one that does not exist stops the tree compiling. One \
              of: {}",
-            vleo_units::QUANTITIES.join(", ")
+                vleo_units::QUANTITIES.join(", ")
+            ),
         )),
-        Shape::RowId if v.is_empty() || v.contains(char::is_whitespace) => Err(format!(
-            "'{v}' is not a row id — an id is one word, and whether it resolves is the gate's \
+        Shape::RowId if v.is_empty() || v.contains(char::is_whitespace) => Err(Error::new(
+            ErrorKind::Refused,
+            format!(
+                "'{v}' is not a row id — an id is one word, and whether it resolves is the gate's \
              question"
+            ),
         )),
-        Shape::Line if v.contains('\n') => {
-            Err(format!("`{}` is one line; what was sent is not", c.key))
-        }
+        Shape::Line if v.contains('\n') => Err(Error::new(
+            ErrorKind::Refused,
+            format!("`{}` is one line; what was sent is not", c.key),
+        )),
         Shape::Prose => Ok(value.trim_end().trim_start_matches('\n').to_string()),
         Shape::Code => Ok(code_text(value)),
         Shape::Inputs => inputs_text(value),
         Shape::Number => {
-            let n: f64 = v
-                .parse()
-                .map_err(|_| format!("`{}` is a number; '{v}' is not", c.key))?;
+            let n: f64 = v.parse().map_err(|_| {
+                Error::new(
+                    ErrorKind::Refused,
+                    format!("`{}` is a number; '{v}' is not", c.key),
+                )
+            })?;
             if !n.is_finite() {
-                return Err(format!("`{}` must be finite", c.key));
+                return Err(Error::new(
+                    ErrorKind::Refused,
+                    format!("`{}` must be finite", c.key),
+                ));
             }
             Ok(format!("{n:?}"))
         }
-        Shape::Choice(options) if !options.contains(&v) => Err(format!(
-            "`{}` is one of: {} — not '{v}'",
-            c.key,
-            options.join(", ")
+        Shape::Choice(options) if !options.contains(&v) => Err(Error::new(
+            ErrorKind::Refused,
+            format!("`{}` is one of: {} — not '{v}'", c.key, options.join(", ")),
         )),
         _ => Ok(v.to_string()),
     }

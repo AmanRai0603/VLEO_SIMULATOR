@@ -78,10 +78,13 @@ pub fn quantity_dim(name: &str) -> Option<Dim> {
 /// Returns the factor to SI and the dimension. Any symbol a sheet may declare
 /// is accepted whole, and the simple ones combine with `*` or `.`, `/` and a
 /// whole-number `^`.
-pub fn parse_unit(text: &str) -> Result<(f64, Dim), String> {
+pub fn parse_unit(text: &str) -> Result<(f64, Dim), Error> {
     let t = text.trim();
     if t.is_empty() {
-        return Err("an empty unit — write [1] for a pure number".into());
+        return Err(Error::new(
+            ErrorKind::Malformed,
+            "an empty unit — write [1] for a pure number",
+        ));
     }
     if t == "1" {
         return Ok((1.0, Dim::NONE));
@@ -92,7 +95,7 @@ pub fn parse_unit(text: &str) -> Result<(f64, Dim), String> {
             return Ok((u.si_factor(), u.dim()));
         }
     }
-    let atom = |a: &str| -> Result<(f64, Dim), String> {
+    let atom = |a: &str| -> Result<(f64, Dim), Error> {
         if a == "1" {
             return Ok((1.0, Dim::NONE));
         }
@@ -106,7 +109,10 @@ pub fn parse_unit(text: &str) -> Result<(f64, Dim), String> {
                 return Ok((u.si_factor(), u.dim()));
             }
         }
-        Err(format!("«{a}» is not a unit this tool knows"))
+        Err(Error::new(
+            ErrorKind::Malformed,
+            format!("«{a}» is not a unit this tool knows"),
+        ))
     };
     let mut factor = 1.0;
     let mut dim = Dim::NONE;
@@ -118,13 +124,20 @@ pub fn parse_unit(text: &str) -> Result<(f64, Dim), String> {
         let (base, exp) = match term.split_once('^') {
             Some((b, e)) => (
                 b,
-                e.parse::<i32>()
-                    .map_err(|_| format!("«^{e}» in [{t}] is not a whole-number power"))?,
+                e.parse::<i32>().map_err(|_| {
+                    Error::new(
+                        ErrorKind::Malformed,
+                        format!("«^{e}» in [{t}] is not a whole-number power"),
+                    )
+                })?,
             ),
             None => (term, 1),
         };
-        let (f, d) = atom(base.trim()).map_err(|e| format!("{e} (in [{t}])"))?;
-        let d = dim_pow(d, exp, 1).ok_or_else(|| format!("[{t}] is too large a power"))?;
+        let (f, d) =
+            atom(base.trim()).map_err(|e| Error::new(e.kind(), format!("{e} (in [{t}])")))?;
+        let d = dim_pow(d, exp, 1).ok_or_else(|| {
+            Error::new(ErrorKind::Malformed, format!("[{t}] is too large a power"))
+        })?;
         let f = pmath::powi(f, exp);
         if divide {
             factor /= f;
