@@ -1044,7 +1044,7 @@ fn run_sweep(params: &str, ctx: &Ctx) -> Result<vleo_modules::results::Sweep, St
         return Err(refusal);
     }
     vleo_modules::results::sweep(&build_case(params, ctx), &node, &over, from, to, points)
-        .map_err(|e| failed(&e))
+        .map_err(|e| failed(e.message()))
 }
 
 /// A behaviour sweep. Refused points are recorded with their reason, never

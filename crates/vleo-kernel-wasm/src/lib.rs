@@ -206,7 +206,7 @@ fn sweep(q: &Request) -> String {
             "{{\"ok\":true,\"figure\":{}}}",
             vleo_modules::figure::json(&vleo_modules::figure::from_sweep(&q.node, &w, None))
         ),
-        Err(e) => failed(&e),
+        Err(e) => failed(e.message()),
     }
 }
 

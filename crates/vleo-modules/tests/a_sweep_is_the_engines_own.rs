@@ -58,7 +58,8 @@ fn the_axis_is_a_row_a_reader_can_move_and_a_sweep_has_two_points() {
         5,
     )
     .unwrap_err();
-    assert!(e.contains("overwritten"), "{e}");
+    assert_eq!(e.kind(), vleo_modules::ErrorKind::Invalid, "{e}");
+    assert!(e.message().contains("overwritten"), "{e}");
     assert!(sweep(
         &base(),
         "sw_ap_design_long",

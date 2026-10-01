@@ -1035,7 +1035,7 @@ pub(super) fn result_json(params: &str) -> String {
     let name = param(params, "name").map(decode).unwrap_or_default();
     let s = match vleo_modules::results::store::open(&results_dir(), &name) {
         Ok(s) => s,
-        Err(e) => return failed(&e),
+        Err(e) => return failed(e.message()),
     };
     let mut j = Json::new();
     j.raw("{");
@@ -1092,7 +1092,11 @@ pub(super) fn result_file(params: &str, kind: &str) -> (&'static str, &'static s
                 vleo_modules::results::csv(&s).into_bytes(),
             ),
         },
-        Err(e) => ("404 Not Found", "text/plain; charset=utf-8", e.into_bytes()),
+        Err(e) => (
+            "404 Not Found",
+            "text/plain; charset=utf-8",
+            String::from(e).into_bytes(),
+        ),
     }
 }
 
@@ -1151,7 +1155,7 @@ fn kept_json(s: &vleo_modules::results::Saved) -> String {
             j.raw("}");
             j.0
         }
-        Err(e) => failed(&e),
+        Err(e) => failed(e.message()),
     }
 }
 
@@ -1250,7 +1254,7 @@ pub(super) fn result_upload(params: &str) -> String {
     let text = param(params, "csv").map(decode).unwrap_or_default();
     let mut s = match vleo_modules::results::read(&vleo_modules::results::unwrap_report(&text)) {
         Ok(s) => s,
-        Err(e) => return failed(&e),
+        Err(e) => return failed(e.message()),
     };
     let sweep_text = vleo_modules::results::unwrap_sweep(&text).or_else(|| {
         param(params, "sweep")
@@ -1281,7 +1285,7 @@ pub(super) fn result_pin(params: &str) -> String {
             j.raw("}");
             j.0
         }
-        Err(e) => failed(&e),
+        Err(e) => failed(e.message()),
     }
 }
 
@@ -1319,7 +1323,7 @@ pub(super) fn result_delete(params: &str) -> String {
     let name = param(params, "name").map(decode).unwrap_or_default();
     match vleo_modules::results::store::remove(&results_dir(), &name) {
         Ok(()) => "{\"ok\":true}".to_string(),
-        Err(e) => failed(&e),
+        Err(e) => failed(e.message()),
     }
 }
 
@@ -1330,7 +1334,7 @@ pub(super) fn result_as_case(params: &str) -> String {
     let name = param(params, "name").map(decode).unwrap_or_default();
     let s = match vleo_modules::results::store::open(&results_dir(), &name) {
         Ok(s) => s,
-        Err(e) => return failed(&e),
+        Err(e) => return failed(e.message()),
     };
     let r = vleo_modules::inputs::check_values(&s.case_values());
     let mut j = Json::new();
@@ -1699,6 +1703,7 @@ fn case_sweep(
         d.limit.upper,
         points,
     )
+    .map_err(String::from)
 }
 
 /// What a row answers on its own run of the saved case, or why it did not —

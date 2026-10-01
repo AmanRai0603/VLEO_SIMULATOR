@@ -89,16 +89,21 @@ fn the_report_is_the_one_page_template_filled() {
 
 #[test]
 fn what_is_not_a_result_is_refused_by_name() {
-    assert!(read("id,value\nx,1\n")
-        .unwrap_err()
-        .contains("not a saved result"));
+    // Refused as malformed, and saying what about it.
+    let refused = |text: &str, says: &str| {
+        let e = read(text).unwrap_err();
+        assert_eq!(e.kind(), vleo_modules::ErrorKind::Malformed, "{e}");
+        assert!(e.message().contains(says), "{e}");
+    };
+    refused("id,value\nx,1\n", "not a saved result");
     let (s, _, _) = a_result();
     let text = csv(&s);
-    assert!(read(&text.replace("vleo-result/1", "vleo-result/0"))
-        .unwrap_err()
-        .contains("vleo-result/0"));
+    refused(
+        &text.replace("vleo-result/1", "vleo-result/0"),
+        "vleo-result/0",
+    );
     let sideways = text.replacen("\noutput,", "\nsideways,", 1);
-    assert!(read(&sideways).unwrap_err().contains("sideways"));
+    refused(&sideways, "sideways");
 }
 
 #[cfg(feature = "std")]

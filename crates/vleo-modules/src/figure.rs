@@ -16,6 +16,7 @@
 //!
 //! Every value is in the axis's display unit; `factor` turns it back into SI.
 
+use crate::{Error, ErrorKind};
 use alloc::format;
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;
@@ -163,22 +164,28 @@ impl Figure {
 
 /// Whether a description holds together — refused with why, so a face is never
 /// handed a shape it has to guess at.
-pub fn check(f: &Figure) -> Result<(), String> {
+pub fn check(f: &Figure) -> Result<(), Error> {
     let series_ok = |s: &Series, at: &str| {
         if s.x.len() != s.y.len() {
-            return Err(format!(
-                "{}: {at}series '{}' has {} x and {} y",
-                f.id,
-                s.name,
-                s.x.len(),
-                s.y.len()
+            return Err(Error::new(
+                ErrorKind::Malformed,
+                format!(
+                    "{}: {at}series '{}' has {} x and {} y",
+                    f.id,
+                    s.name,
+                    s.x.len(),
+                    s.y.len()
+                ),
             ));
         }
         if s.x.iter().any(|v| !v.is_finite()) || s.y.iter().flatten().any(|v| !v.is_finite()) {
-            return Err(format!(
-                "{}: {at}series '{}' has a value that is not a number; a point that could \
+            return Err(Error::new(
+                ErrorKind::Malformed,
+                format!(
+                    "{}: {at}series '{}' has a value that is not a number; a point that could \
                  not be computed is a gap",
-                f.id, s.name
+                    f.id, s.name
+                ),
             ));
         }
         Ok(())
@@ -193,9 +200,12 @@ pub fn check(f: &Figure) -> Result<(), String> {
     }
     for a in [Some(&f.x), Some(&f.y), f.z.as_ref()].into_iter().flatten() {
         if !(a.factor.is_finite() && a.factor != 0.0) {
-            return Err(format!(
-                "{}: axis '{}' has no factor to SI; 1 when it is SI already",
-                f.id, a.id
+            return Err(Error::new(
+                ErrorKind::Malformed,
+                format!(
+                    "{}: axis '{}' has no factor to SI; 1 when it is SI already",
+                    f.id, a.id
+                ),
             ));
         }
     }
@@ -203,17 +213,22 @@ pub fn check(f: &Figure) -> Result<(), String> {
         if ok {
             Ok(())
         } else {
-            Err(format!("{}: a {} figure needs {what}", f.id, f.kind.name()))
+            Err(Error::new(
+                ErrorKind::Malformed,
+                format!("{}: a {} figure needs {what}", f.id, f.kind.name()),
+            ))
         }
     };
     match f.kind {
         Kind::Line | Kind::Scatter | Kind::Bar => need("a series", !f.series.is_empty()),
         Kind::Heatmap => {
             need("a value axis, z", f.z.is_some())?;
-            let g = f
-                .grid
-                .as_ref()
-                .ok_or_else(|| format!("{}: a heatmap figure needs a grid", f.id))?;
+            let g = f.grid.as_ref().ok_or_else(|| {
+                Error::new(
+                    ErrorKind::Malformed,
+                    format!("{}: a heatmap figure needs a grid", f.id),
+                )
+            })?;
             need(
                 "one value per grid point",
                 g.z.len() == g.x.len() * g.y.len() && !g.z.is_empty(),

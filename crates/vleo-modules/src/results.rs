@@ -26,6 +26,7 @@ use alloc::vec::Vec;
 use crate::inputs::{case_inputs, num, template};
 use crate::tables::VARS;
 use crate::Vleo;
+use crate::{Error, ErrorKind};
 
 /// What a result file declares itself to be.
 pub const FORMAT: &str = "vleo-result/1";
@@ -363,19 +364,27 @@ pub fn sweep(
     from: f64,
     to: f64,
     points: usize,
-) -> Result<Sweep, String> {
+) -> Result<Sweep, Error> {
     // The axis has to be a row a reader can actually move. Sweeping a computed
     // one drew a flat line and reported no refusals, which is the same silent
     // substitution as `set=` on one and reads as a real result.
     if let Some(why) = crate::why_not_suppliable(over) {
-        return Err(why);
+        return Err(Error::new(ErrorKind::Invalid, why));
     }
     let (ni, oi) = match (Vleo::find(node), Vleo::find(over)) {
         (Some(a), Some(b)) => (a as usize, b as usize),
-        _ => return Err("the sweep names a node that does not exist".to_string()),
+        _ => {
+            return Err(Error::new(
+                ErrorKind::Invalid,
+                "the sweep names a node that does not exist",
+            ))
+        }
     };
     if points < 2 {
-        return Err("a sweep needs at least two points".to_string());
+        return Err(Error::new(
+            ErrorKind::Invalid,
+            "a sweep needs at least two points",
+        ));
     }
     let mut w = Sweep {
         over: over.to_string(),
@@ -577,7 +586,7 @@ pub fn csv(s: &Saved) -> String {
 }
 
 /// Read a result back. Refuses what is not one, by what is missing.
-pub fn read(text: &str) -> Result<Saved, String> {
+pub fn read(text: &str) -> Result<Saved, Error> {
     // Said first, before any row is looked at: a case CSV or a spreadsheet of
     // something else would otherwise be refused for its columns, which tells a
     // person nothing about what they uploaded.
@@ -586,11 +595,11 @@ pub fn read(text: &str) -> Result<Saved, String> {
             .trim_start_matches('\u{feff}')
             .starts_with("#! result")
     }) {
-        return Err(
+        return Err(Error::new(
+            ErrorKind::Malformed,
             "this is not a saved result: it has no `#! result` line. Save one from a run, or \
-             with `vleo run <node> --save <file.csv>`"
-                .into(),
-        );
+             with `vleo run <node> --save <file.csv>`",
+        ));
     }
     let mut s = Saved::default();
     let mut format_ok = false;
@@ -604,8 +613,9 @@ pub fn read(text: &str) -> Result<Saved, String> {
             match k {
                 "result" => {
                     if v != FORMAT {
-                        return Err(format!(
-                            "this is a `{v}` result, and this tool reads `{FORMAT}`"
+                        return Err(Error::new(
+                            ErrorKind::Malformed,
+                            format!("this is a `{v}` result, and this tool reads `{FORMAT}`"),
                         ));
                     }
                     format_ok = true;
@@ -648,10 +658,13 @@ pub fn read(text: &str) -> Result<Saved, String> {
                 .map(|c| c.trim().to_ascii_lowercase())
                 .collect();
             if !h.iter().any(|c| c == "section") || !h.iter().any(|c| c == "id") {
-                return Err(format!(
-                    "line {}: the first row that is not a comment must name the columns — \
+                return Err(Error::new(
+                    ErrorKind::Malformed,
+                    format!(
+                        "line {}: the first row that is not a comment must name the columns — \
                      section, id, name, value, unit, si",
-                    n + 1
+                        n + 1
+                    ),
                 ));
             }
             header = Some(h);
@@ -673,10 +686,12 @@ pub fn read(text: &str) -> Result<Saved, String> {
             si: if si.is_empty() {
                 None
             } else {
-                Some(
-                    si.parse::<f64>()
-                        .map_err(|_| format!("line {}: si '{si}' is not a number", n + 1))?,
-                )
+                Some(si.parse::<f64>().map_err(|_| {
+                    Error::new(
+                        ErrorKind::Malformed,
+                        format!("line {}: si '{si}' is not a number", n + 1),
+                    )
+                })?)
             },
             credibility: col("credibility"),
             governing: col("governing"),
@@ -688,22 +703,28 @@ pub fn read(text: &str) -> Result<Saved, String> {
             "output" => s.outputs.push(row),
             "blocked" => s.blocked.push(row),
             other => {
-                return Err(format!(
-                    "line {}: section '{other}' is not input, output or blocked",
-                    n + 1
+                return Err(Error::new(
+                    ErrorKind::Malformed,
+                    format!(
+                        "line {}: section '{other}' is not input, output or blocked",
+                        n + 1
+                    ),
                 ))
             }
         }
     }
     if !format_ok {
-        return Err(
+        return Err(Error::new(
+            ErrorKind::Malformed,
             "this is not a saved result: it has no `#! result` line. Save one from a run, or \
-             with `vleo run <node> --save <file.csv>`"
-                .into(),
-        );
+             with `vleo run <node> --save <file.csv>`",
+        ));
     }
     if s.target.is_empty() || header.is_none() {
-        return Err("this result names no target, or has no rows".into());
+        return Err(Error::new(
+            ErrorKind::Malformed,
+            "this result names no target, or has no rows",
+        ));
     }
     Ok(s)
 }
@@ -785,7 +806,7 @@ pub fn sweep_csv(w: &Sweep) -> String {
 }
 
 /// Read a sweep back. Refuses what is not one, by what is missing.
-pub fn read_sweep(text: &str) -> Result<Sweep, String> {
+pub fn read_sweep(text: &str) -> Result<Sweep, Error> {
     // Said first, before any row is read: a file of something else would
     // otherwise be refused for a column, which says nothing about what it is.
     if !text.lines().any(|l| {
@@ -793,14 +814,21 @@ pub fn read_sweep(text: &str) -> Result<Sweep, String> {
             .trim_start_matches('\u{feff}')
             .starts_with("#! sweep")
     }) {
-        return Err("this is not a saved sweep: it has no `#! sweep` line".into());
+        return Err(Error::new(
+            ErrorKind::Malformed,
+            "this is not a saved sweep: it has no `#! sweep` line",
+        ));
     }
     let mut w = Sweep::default();
     let mut format_ok = false;
     let mut header: Option<Vec<String>> = None;
     let number = |k: &str, v: &str| {
-        v.parse::<f64>()
-            .map_err(|_| format!("sweep: `{k}` is '{v}', which is not a number"))
+        v.parse::<f64>().map_err(|_| {
+            Error::new(
+                ErrorKind::Malformed,
+                format!("sweep: `{k}` is '{v}', which is not a number"),
+            )
+        })
     };
     for (n, raw) in text.lines().enumerate() {
         let t = raw.trim().trim_start_matches('\u{feff}');
@@ -811,8 +839,9 @@ pub fn read_sweep(text: &str) -> Result<Sweep, String> {
             match k {
                 "sweep" => {
                     if v != SWEEP_FORMAT {
-                        return Err(format!(
-                            "this is a `{v}` sweep, and this tool reads `{SWEEP_FORMAT}`"
+                        return Err(Error::new(
+                            ErrorKind::Malformed,
+                            format!("this is a `{v}` sweep, and this tool reads `{SWEEP_FORMAT}`"),
                         ));
                     }
                     format_ok = true;
@@ -826,9 +855,12 @@ pub fn read_sweep(text: &str) -> Result<Sweep, String> {
                 "from" => w.from = number(k, v)?,
                 "to" => w.to = number(k, v)?,
                 "points" => {
-                    w.points = v
-                        .parse()
-                        .map_err(|_| format!("sweep: `points` is '{v}', which is not a count"))?
+                    w.points = v.parse().map_err(|_| {
+                        Error::new(
+                            ErrorKind::Malformed,
+                            format!("sweep: `points` is '{v}', which is not a count"),
+                        )
+                    })?
                 }
                 _ => {}
             }
@@ -864,10 +896,16 @@ pub fn read_sweep(text: &str) -> Result<Sweep, String> {
         }
     }
     if !format_ok {
-        return Err("this is not a saved sweep: it has no `#! sweep` line".into());
+        return Err(Error::new(
+            ErrorKind::Malformed,
+            "this is not a saved sweep: it has no `#! sweep` line",
+        ));
     }
     if w.over.is_empty() || w.points == 0 {
-        return Err("this sweep names no input it moved, or no points".into());
+        return Err(Error::new(
+            ErrorKind::Malformed,
+            "this sweep names no input it moved, or no points",
+        ));
     }
     Ok(w)
 }
@@ -1407,7 +1445,7 @@ pub mod store {
             }
             match open_path(&e.path(), is_dir) {
                 Ok(s) => good.push((name, s)),
-                Err(why) => bad.push((name, why)),
+                Err(why) => bad.push((name, why.into())),
             }
         }
         good.sort_by(|a, b| b.0.cmp(&a.0));
@@ -1528,20 +1566,23 @@ pub mod store {
     }
 
     /// Pin a result, or unpin it: a pinned result is kept whole for good.
-    pub fn pin(dir: &Path, name: &str, on: bool) -> Result<(), String> {
+    pub fn pin(dir: &Path, name: &str, on: bool) -> Result<(), Error> {
         if !is_plain(name) || !dir.join(name).join(RESULT).is_file() {
-            return Err(format!(
-                "'{name}' is not a result's folder; a result kept as one .csv before \
+            return Err(Error::new(
+                ErrorKind::Invalid,
+                format!(
+                    "'{name}' is not a result's folder; a result kept as one .csv before \
                  results were folders cannot be pinned — upload it again to make it one"
+                ),
             ));
         }
         let p = dir.join(name).join(PINNED);
         let _ = std::fs::remove_file(dir.join(INDEX));
         if on {
             vleo_data::write_whole(&p, "kept whole: never thinned\n")
-                .map_err(|e| format!("{name}: {e}"))
+                .map_err(|e| Error::io(name, e))
         } else if p.exists() {
-            std::fs::remove_file(&p).map_err(|e| format!("{name}: {e}"))
+            std::fs::remove_file(&p).map_err(|e| Error::io(name, e))
         } else {
             Ok(())
         }
@@ -1556,7 +1597,7 @@ pub mod store {
     /// (Unix seconds) to its summary — see [`super::thin`]. Returns the names
     /// thinned. A pinned result, one already thinned, one kept as one .csv, and
     /// one whose date does not read are left as they are.
-    pub fn thin_old(dir: &Path, now: i64, keep_days: u32) -> Result<Vec<String>, String> {
+    pub fn thin_old(dir: &Path, now: i64, keep_days: u32) -> Result<Vec<String>, Error> {
         let today = vleo_units::calendar::Civil::from_unix(now)
             .date()
             .to_string();
@@ -1575,9 +1616,9 @@ pub mod store {
             let t = super::thin(&s, &today);
             let folder = dir.join(&e.name);
             vleo_data::write_whole(&folder.join(RESULT), csv(&t))
-                .map_err(|x| format!("{}: {x}", e.name))?;
+                .map_err(|x| Error::io(&e.name, x))?;
             vleo_data::write_whole(&folder.join(REPORT), html(&t))
-                .map_err(|x| format!("{}: {x}", e.name))?;
+                .map_err(|x| Error::io(&e.name, x))?;
             done.push(e.name);
         }
         if !done.is_empty() {
@@ -1589,14 +1630,17 @@ pub mod store {
     /// Keep a result, once. Returns the name it is kept under and whether it
     /// was already kept: the same question saved twice is one result, because
     /// the same engine on the same inputs gives the same answer.
-    pub fn save(dir: &Path, s: &Saved) -> Result<(String, bool), String> {
+    pub fn save(dir: &Path, s: &Saved) -> Result<(String, bool), Error> {
         if let Some((name, _)) = find(dir, &s.question()) {
             return Ok((name, true));
         }
-        std::fs::create_dir_all(dir).map_err(|e| format!("{}: {e}", dir.display()))?;
+        std::fs::create_dir_all(dir).map_err(|e| Error::io(dir.display(), e))?;
         let name = folder_name(s);
         if !is_plain(&name) {
-            return Err(format!("'{name}' is not a result's name"));
+            return Err(Error::new(
+                ErrorKind::Invalid,
+                format!("'{name}' is not a result's name"),
+            ));
         }
         let at = dir.join(&name);
         if at.exists() {
@@ -1606,17 +1650,17 @@ pub mod store {
         // one step. A results folder may be shared or synced.
         let aside = dir.join(format!(".{name}.part-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&aside);
-        let made = (|| -> Result<(), String> {
-            std::fs::create_dir_all(&aside).map_err(|e| format!("{}: {e}", aside.display()))?;
+        let made = (|| -> Result<(), Error> {
+            std::fs::create_dir_all(&aside).map_err(|e| Error::io(aside.display(), e))?;
             vleo_data::write_whole(&aside.join(RESULT), csv(s))
-                .map_err(|e| format!("{RESULT}: {e}"))?;
+                .map_err(|e| Error::io(RESULT, e))?;
             if let Some(w) = &s.sweep {
                 vleo_data::write_whole(&aside.join(SWEEP), sweep_csv(w))
-                    .map_err(|e| format!("{SWEEP}: {e}"))?;
+                    .map_err(|e| Error::io(SWEEP, e))?;
             }
             vleo_data::write_whole(&aside.join(REPORT), html(s))
-                .map_err(|e| format!("{REPORT}: {e}"))?;
-            std::fs::rename(&aside, &at).map_err(|e| format!("{name}: {e}"))
+                .map_err(|e| Error::io(REPORT, e))?;
+            std::fs::rename(&aside, &at).map_err(|e| Error::io(&name, e))
         })();
         if let Err(e) = made {
             let _ = std::fs::remove_dir_all(&aside);
@@ -1627,42 +1671,49 @@ pub mod store {
 
     /// One result by its name. The name must be a plain name in the directory:
     /// a path read from a request never reaches anywhere else.
-    pub fn open(dir: &Path, name: &str) -> Result<Saved, String> {
+    pub fn open(dir: &Path, name: &str) -> Result<Saved, Error> {
         if !is_plain(name) {
-            return Err(format!("'{name}' is not a result's name"));
+            return Err(Error::new(
+                ErrorKind::Invalid,
+                format!("'{name}' is not a result's name"),
+            ));
         }
         let p = dir.join(name);
-        open_path(&p, p.is_dir()).map_err(|e| format!("{name}: {e}"))
+        open_path(&p, p.is_dir()).map_err(|e| e.within(name))
     }
 
     /// Remove one result — its folder, or the one file an older result is.
-    pub fn remove(dir: &Path, name: &str) -> Result<(), String> {
+    pub fn remove(dir: &Path, name: &str) -> Result<(), Error> {
         if !is_plain(name) {
-            return Err(format!("'{name}' is not a result's name"));
+            return Err(Error::new(
+                ErrorKind::Invalid,
+                format!("'{name}' is not a result's name"),
+            ));
         }
         let p = dir.join(name);
         if p.is_dir() {
             // Only a folder that is a result: the name came from a request.
             if !p.join(RESULT).is_file() {
-                return Err(format!(
-                    "{name}: not a result's folder, so it was left alone"
+                return Err(Error::new(
+                    ErrorKind::Invalid,
+                    format!("{name}: not a result's folder, so it was left alone"),
                 ));
             }
-            std::fs::remove_dir_all(&p).map_err(|e| format!("{name}: {e}"))
+            std::fs::remove_dir_all(&p).map_err(|e| Error::io(name, e))
         } else {
-            std::fs::remove_file(&p).map_err(|e| format!("{name}: {e}"))
+            std::fs::remove_file(&p).map_err(|e| Error::io(name, e))
         }
     }
 
-    fn open_path(p: &Path, is_dir: bool) -> Result<Saved, String> {
+    fn open_path(p: &Path, is_dir: bool) -> Result<Saved, Error> {
         if !is_dir {
-            let text = std::fs::read_to_string(p).map_err(|e| e.to_string())?;
+            let text = std::fs::read_to_string(p).map_err(Error::from_io)?;
             return read(&text);
         }
-        let text = std::fs::read_to_string(p.join(RESULT)).map_err(|e| format!("{RESULT}: {e}"))?;
+        let text = std::fs::read_to_string(p.join(RESULT)).map_err(|e| Error::io(RESULT, e))?;
         let mut s = read(&text)?;
         if let Ok(t) = std::fs::read_to_string(p.join(SWEEP)) {
-            s.sweep = Some(read_sweep(&t).map_err(|e| format!("{SWEEP}: {e}"))?);
+            s.sweep = Some(read_sweep(&t).map_err(|e| e.within(SWEEP))?);
         }
         Ok(s)
     }
