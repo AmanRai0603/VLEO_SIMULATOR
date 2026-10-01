@@ -278,7 +278,10 @@ fn resolve_data(root: &Path) -> (Vec<String>, Vec<String>, BundleFiles, Option<S
     if store.load().is_err() || store.bundles.is_empty() {
         let shipped = root.join("bundles");
         if shipped.is_dir() {
-            refused = store.sync(&vleo_data::Source::Shipped(shipped)).err();
+            refused = store
+                .sync(&vleo_data::Source::Shipped(shipped))
+                .err()
+                .map(String::from);
         }
     }
     let files = store

@@ -45,7 +45,9 @@ use std::path::{Path, PathBuf};
 use vleo_core::hash::Hasher;
 
 pub mod crash;
+mod error;
 mod whole;
+pub use error::{Error, ErrorKind};
 pub use whole::write_whole;
 
 /// What a bundle says about itself.
@@ -116,16 +118,19 @@ impl Store {
     /// Idempotent by construction: syncing twice changes nothing the second
     /// time, because a published version is never modified and a correction is
     /// a new version.
-    pub fn sync(&mut self, source: &Source) -> Result<usize, String> {
+    pub fn sync(&mut self, source: &Source) -> Result<usize, Error> {
         let from = match source {
             Source::Shipped(p) | Source::File(p) => p.clone(),
         };
         if !from.is_dir() {
-            return Err(format!("{} is not a directory", from.display()));
+            return Err(Error::new(
+                ErrorKind::Missing,
+                format!("{} is not a directory", from.display()),
+            ));
         }
         let mut n = 0usize;
         let mut names: Vec<PathBuf> = fs::read_dir(&from)
-            .map_err(|e| format!("{}: {e}", from.display()))?
+            .map_err(|e| Error::io(&from, e))?
             .filter_map(|e| e.ok())
             .map(|e| e.path())
             .filter(|p| p.is_dir())
@@ -133,7 +138,7 @@ impl Store {
         names.sort();
         for bundle_dir in names {
             let mut versions: Vec<PathBuf> = fs::read_dir(&bundle_dir)
-                .map_err(|e| format!("{}: {e}", bundle_dir.display()))?
+                .map_err(|e| Error::io(&bundle_dir, e))?
                 .filter_map(|e| e.ok())
                 .map(|e| e.path())
                 .filter(|p| p.is_dir())
@@ -142,12 +147,12 @@ impl Store {
             for v in versions {
                 let b = load_bundle(&v)?;
                 if !b.verified {
-                    return Err(format!(
+                    return Err(Error::new(ErrorKind::Unverified, format!(
                         "{}@{} failed verification: {}. A result computed from unverifiable data is not a degraded result, it is not a result.",
                         b.manifest.name,
                         b.manifest.version,
                         b.refusal.clone().unwrap_or_default()
-                    ));
+                    )));
                 }
                 // Copy it into the store. Without this, sync verified the
                 // source, wrote a lockfile and reported success over a store
@@ -166,12 +171,15 @@ impl Store {
                 // would not catch it.
                 let installed = load_bundle(&dest)?;
                 if !installed.verified {
-                    return Err(format!(
-                        "{}@{} verified at the source and not after the copy: {}. \
+                    return Err(Error::new(
+                        ErrorKind::Unverified,
+                        format!(
+                            "{}@{} verified at the source and not after the copy: {}. \
                          Something changed the bytes in between.",
-                        b.manifest.name,
-                        b.manifest.version,
-                        installed.refusal.clone().unwrap_or_default()
+                            b.manifest.name,
+                            b.manifest.version,
+                            installed.refusal.clone().unwrap_or_default()
+                        ),
                     ));
                 }
 
@@ -192,13 +200,13 @@ impl Store {
     }
 
     /// Load whatever is already on disk, verifying every hash before use.
-    pub fn load(&mut self) -> Result<usize, String> {
+    pub fn load(&mut self) -> Result<usize, Error> {
         if !self.root.is_dir() {
             return Ok(0);
         }
         let mut n = 0;
         let mut dirs: Vec<PathBuf> = fs::read_dir(&self.root)
-            .map_err(|e| format!("{}: {e}", self.root.display()))?
+            .map_err(|e| Error::io(&self.root, e))?
             .filter_map(|e| e.ok())
             .map(|e| e.path())
             .filter(|p| p.is_dir())
@@ -206,7 +214,7 @@ impl Store {
         dirs.sort();
         for d in dirs {
             let mut versions: Vec<PathBuf> = fs::read_dir(&d)
-                .map_err(|e| format!("{}: {e}", d.display()))?
+                .map_err(|e| Error::io(&d, e))?
                 .filter_map(|e| e.ok())
                 .map(|e| e.path())
                 .filter(|p| p.is_dir())
@@ -246,7 +254,7 @@ impl Store {
             .collect()
     }
 
-    fn write_lock(&self) -> Result<(), String> {
+    fn write_lock(&self) -> Result<(), Error> {
         let mut o = String::from(
             "# vleo.lock — exactly which versions are installed, with their hashes.\n\
              # Committed alongside a study. Two machines with the same lockfile\n\
@@ -257,8 +265,9 @@ impl Store {
                 "[[bundle]]\nname = \"{name}\"\nversion = \"{version}\"\nhash = \"{hash}\"\n\n"
             ));
         }
-        fs::create_dir_all(&self.root).map_err(|e| e.to_string())?;
-        write_whole(&self.root.join("vleo.lock"), o).map_err(|e| e.to_string())
+        fs::create_dir_all(&self.root).map_err(|e| Error::new(ErrorKind::Io, e.to_string()))?;
+        write_whole(&self.root.join("vleo.lock"), o)
+            .map_err(|e| Error::new(ErrorKind::Io, e.to_string()))
     }
 }
 
@@ -300,14 +309,14 @@ pub fn results_path_from(var: impl Fn(&str) -> Option<std::ffi::OsString>) -> Pa
 /// A FOLDER NAMED BY `VLEO_RESULTS` IS KEPT WHOLE unless `VLEO_KEEP_DAYS` is
 /// set too. That folder is usually the team's shared archive, and thinning it
 /// is a decision for the team, not for whichever laptop happens to start first.
-pub fn keep_days() -> Result<Option<u32>, String> {
+pub fn keep_days() -> Result<Option<u32>, Error> {
     keep_days_from(|k| std::env::var_os(k))
 }
 
 /// [`keep_days`], reading the environment through `var`.
 pub fn keep_days_from(
     var: impl Fn(&str) -> Option<std::ffi::OsString>,
-) -> Result<Option<u32>, String> {
+) -> Result<Option<u32>, Error> {
     let Some(v) = var("VLEO_KEEP_DAYS").filter(|v| !v.is_empty()) else {
         let shared = set_to_something(&var, "VLEO_RESULTS").is_some();
         return Ok((!shared).then_some(30));
@@ -316,8 +325,11 @@ pub fn keep_days_from(
     match v.trim().parse::<u32>() {
         Ok(0) => Ok(None),
         Ok(n) => Ok(Some(n)),
-        Err(_) => Err(format!(
-            "VLEO_KEEP_DAYS={v} is not a whole number of days (0 keeps every result whole)"
+        Err(_) => Err(Error::new(
+            ErrorKind::Setting,
+            format!(
+                "VLEO_KEEP_DAYS={v} is not a whole number of days (0 keeps every result whole)"
+            ),
         )),
     }
 }
@@ -398,10 +410,12 @@ fn is_iso_date(s: &str) -> bool {
 }
 
 /// Read one bundle and verify it before it is usable.
-pub fn load_bundle(dir: &Path) -> Result<Bundle, String> {
+pub fn load_bundle(dir: &Path) -> Result<Bundle, Error> {
     let mp = dir.join("manifest.toml");
-    let text = fs::read_to_string(&mp).map_err(|e| format!("{}: {e}", mp.display()))?;
-    let v: toml::Value = text.parse().map_err(|e| format!("{}: {e}", mp.display()))?;
+    let text = fs::read_to_string(&mp).map_err(|e| Error::io(&mp, e))?;
+    let v: toml::Value = text
+        .parse()
+        .map_err(|e| Error::new(ErrorKind::Malformed, format!("{}: {e}", mp.display())))?;
     let g = |k: &str| v.get(k).and_then(|x| x.as_str()).unwrap_or("").to_string();
     let mut m = Manifest {
         name: g("name"),
@@ -430,36 +444,48 @@ pub fn load_bundle(dir: &Path) -> Result<Bundle, String> {
         ("licence_until", m.licence_until.as_str()),
     ] {
         if value.trim().is_empty() {
-            return Err(format!(
-                "{}: a manifest with no {field} fails publication",
-                mp.display()
+            return Err(Error::new(
+                ErrorKind::Malformed,
+                format!(
+                    "{}: a manifest with no {field} fails publication",
+                    mp.display()
+                ),
             ));
         }
     }
     if m.files.is_empty() {
-        return Err(format!(
-            "{}: a manifest that lists no files has nothing to hash, so its \
+        return Err(Error::new(
+            ErrorKind::Malformed,
+            format!(
+                "{}: a manifest that lists no files has nothing to hash, so its \
              content hash would mean nothing",
-            mp.display()
+                mp.display()
+            ),
         ));
     }
     // A date, so that expiry can be read locally with no network. Checked for
     // shape here rather than trusted: `licence_until = "soon"` parses as TOML
     // and would silently never expire.
     if !is_iso_date(&m.licence_until) {
-        return Err(format!(
-            "{}: licence_until is {:?}, which is not a YYYY-MM-DD date — an \
+        return Err(Error::new(
+            ErrorKind::Malformed,
+            format!(
+                "{}: licence_until is {:?}, which is not a YYYY-MM-DD date — an \
              unparseable expiry is an expiry that never arrives",
-            mp.display(),
-            m.licence_until
+                mp.display(),
+                m.licence_until
+            ),
         ));
     }
     if m.stale_after_days == 0 {
-        return Err(format!(
-            "{}: stale_after_days is missing or zero. It decides when the \
+        return Err(Error::new(
+            ErrorKind::Malformed,
+            format!(
+                "{}: stale_after_days is missing or zero. It decides when the \
              input-pedigree factor drops, and a missing one defaults to a \
              number nobody chose",
-            mp.display()
+                mp.display()
+            ),
         ));
     }
     let computed = hash_files(dir, &m.files)?;
@@ -485,28 +511,28 @@ pub fn load_bundle(dir: &Path) -> Result<Bundle, String> {
 /// Only what the manifest names. A file sitting in the source directory that no
 /// manifest lists is not part of the bundle — it is not hashed, so copying it
 /// would install something nothing verified.
-fn copy_bundle(from: &Path, to: &Path, m: &Manifest) -> Result<(), String> {
-    fs::create_dir_all(to).map_err(|e| format!("{}: {e}", to.display()))?;
+fn copy_bundle(from: &Path, to: &Path, m: &Manifest) -> Result<(), Error> {
+    fs::create_dir_all(to).map_err(|e| Error::io(to, e))?;
     fs::copy(from.join("manifest.toml"), to.join("manifest.toml"))
-        .map_err(|e| format!("{}: {e}", to.join("manifest.toml").display()))?;
+        .map_err(|e| Error::io(&to.join("manifest.toml"), e))?;
     for f in &m.files {
         let dst = to.join(f);
         if let Some(parent) = dst.parent() {
-            fs::create_dir_all(parent).map_err(|e| format!("{}: {e}", parent.display()))?;
+            fs::create_dir_all(parent).map_err(|e| Error::io(parent, e))?;
         }
-        fs::copy(from.join(f), &dst).map_err(|e| format!("{}: {e}", dst.display()))?;
+        fs::copy(from.join(f), &dst).map_err(|e| Error::io(&dst, e))?;
     }
     Ok(())
 }
 
 /// FNV-1a over every payload file, in the order the manifest lists them.
-pub fn hash_files(dir: &Path, files: &[String]) -> Result<String, String> {
+pub fn hash_files(dir: &Path, files: &[String]) -> Result<String, Error> {
     let mut h = Hasher::new();
     let mut sorted: Vec<&String> = files.iter().collect();
     sorted.sort();
     for f in sorted {
         let p = dir.join(f);
-        let bytes = fs::read(&p).map_err(|e| format!("{}: {e}", p.display()))?;
+        let bytes = fs::read(&p).map_err(|e| Error::io(&p, e))?;
         h.write_str(f);
         h.write_bytes(&bytes);
     }
@@ -525,15 +551,18 @@ pub struct DriverRow {
 }
 
 /// Read the solar driver table out of a bundle.
-pub fn read_drivers(b: &Bundle) -> Result<Vec<DriverRow>, String> {
+pub fn read_drivers(b: &Bundle) -> Result<Vec<DriverRow>, Error> {
     if !b.verified {
-        return Err(format!(
-            "{} is present but does not verify — refusing to read it",
-            b.manifest.name
+        return Err(Error::new(
+            ErrorKind::Unverified,
+            format!(
+                "{} is present but does not verify — refusing to read it",
+                b.manifest.name
+            ),
         ));
     }
     let p = b.dir.join("drivers.csv");
-    let text = fs::read_to_string(&p).map_err(|e| format!("{}: {e}", p.display()))?;
+    let text = fs::read_to_string(&p).map_err(|e| Error::io(&p, e))?;
     let mut out = Vec::new();
     for (n, line) in text.lines().enumerate() {
         let line = line.trim();
@@ -542,21 +571,36 @@ pub fn read_drivers(b: &Bundle) -> Result<Vec<DriverRow>, String> {
         }
         let f: Vec<&str> = line.split(',').map(|s| s.trim()).collect();
         if f.len() < 4 {
-            return Err(format!("{}:{}: expected four columns", p.display(), n + 1));
+            return Err(Error::new(
+                ErrorKind::Malformed,
+                format!("{}:{}: expected four columns", p.display(), n + 1),
+            ));
         }
         out.push(DriverRow {
-            day: f[0]
-                .parse()
-                .map_err(|_| format!("{}:{}: bad day", p.display(), n + 1))?,
-            f107: f[1]
-                .parse()
-                .map_err(|_| format!("{}:{}: bad F10.7", p.display(), n + 1))?,
-            f107a: f[2]
-                .parse()
-                .map_err(|_| format!("{}:{}: bad F10.7A", p.display(), n + 1))?,
-            ap: f[3]
-                .parse()
-                .map_err(|_| format!("{}:{}: bad Ap", p.display(), n + 1))?,
+            day: f[0].parse().map_err(|_| {
+                Error::new(
+                    ErrorKind::Malformed,
+                    format!("{}:{}: bad day", p.display(), n + 1),
+                )
+            })?,
+            f107: f[1].parse().map_err(|_| {
+                Error::new(
+                    ErrorKind::Malformed,
+                    format!("{}:{}: bad F10.7", p.display(), n + 1),
+                )
+            })?,
+            f107a: f[2].parse().map_err(|_| {
+                Error::new(
+                    ErrorKind::Malformed,
+                    format!("{}:{}: bad F10.7A", p.display(), n + 1),
+                )
+            })?,
+            ap: f[3].parse().map_err(|_| {
+                Error::new(
+                    ErrorKind::Malformed,
+                    format!("{}:{}: bad Ap", p.display(), n + 1),
+                )
+            })?,
         });
     }
     Ok(out)
@@ -670,15 +714,18 @@ pub struct MonthlyMean {
 
 /// The months `monthly_means.csv` holds, in its order, read by the column
 /// names in its header. A value written as `NaN` is no value.
-pub fn read_monthly_means(b: &Bundle) -> Result<Vec<MonthlyMean>, String> {
+pub fn read_monthly_means(b: &Bundle) -> Result<Vec<MonthlyMean>, Error> {
     if !b.verified {
-        return Err(format!(
-            "{} is present but does not verify — refusing to read it",
-            b.manifest.name
+        return Err(Error::new(
+            ErrorKind::Unverified,
+            format!(
+                "{} is present but does not verify — refusing to read it",
+                b.manifest.name
+            ),
         ));
     }
     let p = b.dir.join("monthly_means.csv");
-    let text = fs::read_to_string(&p).map_err(|e| format!("{}: {e}", p.display()))?;
+    let text = fs::read_to_string(&p).map_err(|e| Error::io(&p, e))?;
     let mut cols: Option<Vec<String>> = None;
     let mut out = Vec::new();
     for (n, line) in text.lines().enumerate() {
@@ -702,9 +749,18 @@ pub fn read_monthly_means(b: &Bundle) -> Result<Vec<MonthlyMean>, String> {
             .iter()
             .position(|c| c == "month")
             .and_then(|i| f.get(i).copied())
-            .ok_or_else(|| format!("{}: no 'month' column", p.display()))?;
-        let day = days_since_2000(month)
-            .ok_or_else(|| format!("{}:{}: '{month}' is not a date", p.display(), n + 1))?;
+            .ok_or_else(|| {
+                Error::new(
+                    ErrorKind::Malformed,
+                    format!("{}: no 'month' column", p.display()),
+                )
+            })?;
+        let day = days_since_2000(month).ok_or_else(|| {
+            Error::new(
+                ErrorKind::Malformed,
+                format!("{}:{}: '{month}' is not a date", p.display(), n + 1),
+            )
+        })?;
         out.push(MonthlyMean {
             day,
             f107_mean: at("f107_mean"),
@@ -716,7 +772,10 @@ pub fn read_monthly_means(b: &Bundle) -> Result<Vec<MonthlyMean>, String> {
         });
     }
     if out.is_empty() {
-        return Err(format!("{}: no months", p.display()));
+        return Err(Error::new(
+            ErrorKind::Malformed,
+            format!("{}: no months", p.display()),
+        ));
     }
     Ok(out)
 }
@@ -726,15 +785,18 @@ pub fn read_monthly_means(b: &Bundle) -> Result<Vec<MonthlyMean>, String> {
 /// Refuses an unverified bundle for the same reason `read_drivers` does: a
 /// number whose bytes were not checked is not evidence, and reading it anyway
 /// is how an unverified file ends up under a published result.
-pub fn read_solar_days(b: &Bundle) -> Result<Vec<SolarDay>, String> {
+pub fn read_solar_days(b: &Bundle) -> Result<Vec<SolarDay>, Error> {
     if !b.verified {
-        return Err(format!(
-            "{} is present but does not verify — refusing to read it",
-            b.manifest.name
+        return Err(Error::new(
+            ErrorKind::Unverified,
+            format!(
+                "{} is present but does not verify — refusing to read it",
+                b.manifest.name
+            ),
         ));
     }
     let p = b.dir.join("observed_daily.csv");
-    let text = fs::read_to_string(&p).map_err(|e| format!("{}: {e}", p.display()))?;
+    let text = fs::read_to_string(&p).map_err(|e| Error::io(&p, e))?;
 
     let mut cols: Option<Vec<String>> = None;
     let mut out = Vec::new();
@@ -757,9 +819,18 @@ pub fn read_solar_days(b: &Bundle) -> Result<Vec<SolarDay>, String> {
                 .position(|c| c == name)
                 .and_then(|i| f.get(i).copied())
         };
-        let date = at("date").ok_or_else(|| format!("{}: no 'date' column", p.display()))?;
-        let day = days_since_2000(date)
-            .ok_or_else(|| format!("{}:{}: '{date}' is not a date", p.display(), n + 1))?;
+        let date = at("date").ok_or_else(|| {
+            Error::new(
+                ErrorKind::Malformed,
+                format!("{}: no 'date' column", p.display()),
+            )
+        })?;
+        let day = days_since_2000(date).ok_or_else(|| {
+            Error::new(
+                ErrorKind::Malformed,
+                format!("{}:{}: '{date}' is not a date", p.display(), n + 1),
+            )
+        })?;
         let mut kp = [None; 8];
         for (i, slot) in kp.iter_mut().enumerate() {
             *slot = at(&format!("kp_{:02}z", i * 3)).and_then(cell);
@@ -774,15 +845,21 @@ pub fn read_solar_days(b: &Bundle) -> Result<Vec<SolarDay>, String> {
         });
     }
     if out.is_empty() {
-        return Err(format!("{}: no rows", p.display()));
+        return Err(Error::new(
+            ErrorKind::Malformed,
+            format!("{}: no rows", p.display()),
+        ));
     }
     // The record is a time series and everything downstream will bisect it. A
     // file that arrived out of order would make every lookup silently wrong, so
     // it is checked once here rather than assumed at every call site.
     if out.windows(2).any(|w| w[1].day <= w[0].day) {
-        return Err(format!(
-            "{}: rows are not in strictly increasing date order",
-            p.display()
+        return Err(Error::new(
+            ErrorKind::Malformed,
+            format!(
+                "{}: rows are not in strictly increasing date order",
+                p.display()
+            ),
         ));
     }
     Ok(out)
@@ -807,15 +884,18 @@ pub struct SolarCycle {
 /// whole on a row that does not say what a cycle is: a cycle guessed from a
 /// broken row would put days in the wrong one and nothing downstream could
 /// tell.
-pub fn read_solar_cycles(b: &Bundle) -> Result<Vec<SolarCycle>, String> {
+pub fn read_solar_cycles(b: &Bundle) -> Result<Vec<SolarCycle>, Error> {
     if !b.verified {
-        return Err(format!(
-            "{} is present but does not verify — refusing to read it",
-            b.manifest.name
+        return Err(Error::new(
+            ErrorKind::Unverified,
+            format!(
+                "{} is present but does not verify — refusing to read it",
+                b.manifest.name
+            ),
         ));
     }
     let p = b.dir.join("solar_cycles.csv");
-    let text = fs::read_to_string(&p).map_err(|e| format!("{}: {e}", p.display()))?;
+    let text = fs::read_to_string(&p).map_err(|e| Error::io(&p, e))?;
     let mut cols: Option<Vec<String>> = None;
     let mut out = Vec::new();
     for (n, line) in text.lines().enumerate() {
@@ -833,7 +913,12 @@ pub fn read_solar_cycles(b: &Bundle) -> Result<Vec<SolarCycle>, String> {
                 .position(|c| c == name)
                 .and_then(|i| f.get(i).copied())
         };
-        let bad = |what: &str| format!("{}:{}: {what}", p.display(), n + 1);
+        let bad = |what: &str| {
+            Error::new(
+                ErrorKind::Malformed,
+                format!("{}:{}: {what}", p.display(), n + 1),
+            )
+        };
         let cycle = at("cycle")
             .and_then(|v| v.parse().ok())
             .ok_or_else(|| bad("no cycle number"))?;
@@ -849,7 +934,10 @@ pub fn read_solar_cycles(b: &Bundle) -> Result<Vec<SolarCycle>, String> {
         });
     }
     if out.is_empty() {
-        return Err(format!("{}: no cycles", p.display()));
+        return Err(Error::new(
+            ErrorKind::Malformed,
+            format!("{}: no cycles", p.display()),
+        ));
     }
     Ok(out)
 }
@@ -872,15 +960,18 @@ pub struct IssuedForecast {
 /// column names in its header. A row whose dates do not parse is refused with
 /// the file: a forecast scored against the wrong day is a wrong score nothing
 /// downstream could tell from a right one.
-pub fn read_forecast_issued(b: &Bundle) -> Result<Vec<IssuedForecast>, String> {
+pub fn read_forecast_issued(b: &Bundle) -> Result<Vec<IssuedForecast>, Error> {
     if !b.verified {
-        return Err(format!(
-            "{} is present but does not verify — refusing to read it",
-            b.manifest.name
+        return Err(Error::new(
+            ErrorKind::Unverified,
+            format!(
+                "{} is present but does not verify — refusing to read it",
+                b.manifest.name
+            ),
         ));
     }
     let p = b.dir.join("forecast_issued.csv");
-    let text = fs::read_to_string(&p).map_err(|e| format!("{}: {e}", p.display()))?;
+    let text = fs::read_to_string(&p).map_err(|e| Error::io(&p, e))?;
     let mut cols: Option<Vec<String>> = None;
     let mut out = Vec::new();
     for (n, line) in text.lines().enumerate() {
@@ -898,7 +989,12 @@ pub fn read_forecast_issued(b: &Bundle) -> Result<Vec<IssuedForecast>, String> {
                 .position(|c| c == name)
                 .and_then(|i| f.get(i).copied())
         };
-        let bad = |what: &str| format!("{}:{}: {what}", p.display(), n + 1);
+        let bad = |what: &str| {
+            Error::new(
+                ErrorKind::Malformed,
+                format!("{}:{}: {what}", p.display(), n + 1),
+            )
+        };
         let date = |k: &str| {
             at(k)
                 .and_then(days_since_2000)
@@ -913,7 +1009,10 @@ pub fn read_forecast_issued(b: &Bundle) -> Result<Vec<IssuedForecast>, String> {
         });
     }
     if out.is_empty() {
-        return Err(format!("{}: no forecasts", p.display()));
+        return Err(Error::new(
+            ErrorKind::Malformed,
+            format!("{}: no forecasts", p.display()),
+        ));
     }
     Ok(out)
 }
@@ -923,15 +1022,18 @@ pub fn read_forecast_issued(b: &Bundle) -> Result<Vec<IssuedForecast>, String> {
 /// Only the issue date is read. The file's flags column is quoted and holds
 /// commas, and it comes after the date, so the date is found by the header
 /// without a quoting parser for a column nothing reads.
-pub fn read_forecast_issues(b: &Bundle) -> Result<Vec<i32>, String> {
+pub fn read_forecast_issues(b: &Bundle) -> Result<Vec<i32>, Error> {
     if !b.verified {
-        return Err(format!(
-            "{} is present but does not verify — refusing to read it",
-            b.manifest.name
+        return Err(Error::new(
+            ErrorKind::Unverified,
+            format!(
+                "{} is present but does not verify — refusing to read it",
+                b.manifest.name
+            ),
         ));
     }
     let p = b.dir.join("forecast_issues.csv");
-    let text = fs::read_to_string(&p).map_err(|e| format!("{}: {e}", p.display()))?;
+    let text = fs::read_to_string(&p).map_err(|e| Error::io(&p, e))?;
     let mut at: Option<usize> = None;
     let mut out = Vec::new();
     for (n, line) in text.lines().enumerate() {
@@ -941,21 +1043,27 @@ pub fn read_forecast_issues(b: &Bundle) -> Result<Vec<i32>, String> {
         }
         let f: Vec<&str> = line.split(',').map(str::trim).collect();
         let Some(i) = at else {
-            at = Some(
-                f.iter()
-                    .position(|c| *c == "issue_date")
-                    .ok_or_else(|| format!("{}: no 'issue_date' column", p.display()))?,
-            );
+            at = Some(f.iter().position(|c| *c == "issue_date").ok_or_else(|| {
+                Error::new(
+                    ErrorKind::Malformed,
+                    format!("{}: no 'issue_date' column", p.display()),
+                )
+            })?);
             continue;
         };
         let date = f.get(i).copied().unwrap_or("");
-        out.push(
-            days_since_2000(date)
-                .ok_or_else(|| format!("{}:{}: '{date}' is not a date", p.display(), n + 1))?,
-        );
+        out.push(days_since_2000(date).ok_or_else(|| {
+            Error::new(
+                ErrorKind::Malformed,
+                format!("{}:{}: '{date}' is not a date", p.display(), n + 1),
+            )
+        })?);
     }
     if out.is_empty() {
-        return Err(format!("{}: no issues", p.display()));
+        return Err(Error::new(
+            ErrorKind::Malformed,
+            format!("{}: no issues", p.display()),
+        ));
     }
     Ok(out)
 }

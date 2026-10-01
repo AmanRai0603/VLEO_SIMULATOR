@@ -299,11 +299,11 @@ pub(super) fn record_figure(ctx: &Ctx, id: &str, params: &str) -> String {
     };
     let bundle = match vleo_data::load_bundle(dir) {
         Ok(b) => b,
-        Err(e) => return failed(&e),
+        Err(e) => return failed(e.message()),
     };
     let days = match vleo_data::read_solar_days(&bundle) {
         Ok(d) => d,
-        Err(e) => return failed(&e),
+        Err(e) => return failed(e.message()),
     };
     // Only the figures that fold by cycle read the cycle table; one that is
     // missing refuses them and nothing else.
@@ -328,7 +328,7 @@ pub(super) fn record_figure(ctx: &Ctx, id: &str, params: &str) -> String {
     {
         match vleo_data::read_solar_cycles(&bundle) {
             Ok(c) => c,
-            Err(e) => return failed(&e),
+            Err(e) => return failed(e.message()),
         }
     } else {
         Vec::new()
@@ -702,7 +702,7 @@ pub(super) fn record_figure(ctx: &Ctx, id: &str, params: &str) -> String {
             if view == "age" {
                 let issues = match vleo_data::read_forecast_issues(&bundle) {
                     Ok(i) => i,
-                    Err(e) => return failed(&e),
+                    Err(e) => return failed(e.message()),
                 };
                 let a = issue_age(&issues);
                 j.num_field("issues", a.issues as f64);
@@ -718,7 +718,7 @@ pub(super) fn record_figure(ctx: &Ctx, id: &str, params: &str) -> String {
             } else {
                 let issued = match vleo_data::read_forecast_issued(&bundle) {
                     Ok(f) => f,
-                    Err(e) => return failed(&e),
+                    Err(e) => return failed(e.message()),
                 };
                 if view == "lead" {
                     let f = forecast_by_lead(&days, &issued);
@@ -926,7 +926,7 @@ pub(super) fn record_figure(ctx: &Ctx, id: &str, params: &str) -> String {
             };
             let months = match vleo_data::read_monthly_means(&bundle) {
                 Ok(m) => m,
-                Err(e) => return failed(&e),
+                Err(e) => return failed(e.message()),
             };
             let s = vleo_modules::record::smoother(&months, driver);
             j.str_field("variable", driver_name(driver));
