@@ -200,7 +200,7 @@ Feynman, "Cargo Cult Science".)*
 |---|---|---|---|---|---|---|---|---|---|
 | node form | intro | order of questions | illustrative example | asks *breaks* | asks *wrong* | — | — | worked de-risking example | — |
 | node page | Answer first box | first tab | on the claims | breaks + assumptions | if written | tab kinds | yes | evidence tab | Learn |
-| `docs/HOW_IT_WORKS.html` | Answer first box per station | every station | claim tags | where it breaks | common wrong idea | kind badges | yes | rebuild-it | predict first |
+| `docs/HOW_IT_WORKS.html` | "In short" box per chapter | plain words, how it works, limits | claim tags | "where this picture stops being true" | "a common misreading" | — | yes | "work it yourself" | "guess first" |
 | the views — the four layers, Architecture, Inputs, Forms, Results | Answer first box | — | — | — | — | kind on the box | — | — | — |
 | run panel and Results | answer, then points | — | — | blocked, weakest factor, broken beliefs | — | — | — | — | — |
 | result report (HTML) | first block | Said simply · Where it breaks | derived / declared | Where it breaks | — | section kinds | — | — | — |

@@ -14,8 +14,8 @@ change to the design goes through, so a change to it has the blast radius of a
 generator change.
 
 Before your first change, read [`docs/HOW_IT_WORKS.html`](docs/HOW_IT_WORKS.html)
-in a browser: the whole system end to end, station by station, and the plan to
-the next release. This file is the rules. That page is how they fit together.
+in a browser: the architecture of the codebase and how it works, end to end.
+This file is the rules. That page is how they fit together.
 
 ## What this repository is
 

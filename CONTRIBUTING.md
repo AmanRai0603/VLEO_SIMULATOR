@@ -7,7 +7,7 @@
 ## The shape of the work
 
 New to the repository? Read [`docs/HOW_IT_WORKS.html`](docs/HOW_IT_WORKS.html)
-first. It is the whole system, end to end, in one page.
+first. It is the codebase's architecture and how it works, in one page.
 
 
 Contributions to the design come from the team that uses the tool, as **node

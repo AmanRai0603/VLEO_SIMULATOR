@@ -3027,7 +3027,7 @@ what = "Every field of a sheet, and why it is there."
 
 [[doc]]
 path = "docs/HOW_IT_WORKS.html"
-what = "The whole system end to end, taught station by station, with the node-page upgrade and the plan to 0.5.0. Read it first."
+what = "The architecture of the codebase and how it works, end to end, with an explorable crate map, a row opened file by file and a run stepped through. Read it first."
 
 [[doc]]
 path = "docs/CHANGING.md"
