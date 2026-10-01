@@ -257,7 +257,7 @@ checksum = "e6e4313cd5fcd3dad5cafa179702e2b244f760991f45397d14d4ebf38247da75"
 
 [[package]]
 name = "vleo-bus"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "vleo-core",
  "vleo-units",
@@ -265,7 +265,7 @@ dependencies = [
 
 [[package]]
 name = "vleo-cli"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "embed-resource",
  "vleo-bus",
@@ -277,14 +277,14 @@ dependencies = [
 
 [[package]]
 name = "vleo-core"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "vleo-units",
 ]
 
 [[package]]
 name = "vleo-daemon"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "embed-resource",
  "vleo-server",
@@ -292,7 +292,7 @@ dependencies = [
 
 [[package]]
 name = "vleo-data"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "toml 0.8.23",
  "vleo-core",
@@ -300,7 +300,7 @@ dependencies = [
 
 [[package]]
 name = "vleo-ffi"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "vleo-bus",
  "vleo-modules",
@@ -308,147 +308,147 @@ dependencies = [
 
 [[package]]
 name = "vleo-mod-acs"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "vleo-core",
 ]
 
 [[package]]
 name = "vleo-mod-atthw"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "vleo-core",
 ]
 
 [[package]]
 name = "vleo-mod-closure"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "vleo-core",
 ]
 
 [[package]]
 name = "vleo-mod-envorbit"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "vleo-core",
 ]
 
 [[package]]
 name = "vleo-mod-fsw"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "vleo-core",
 ]
 
 [[package]]
 name = "vleo-mod-management"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "vleo-core",
 ]
 
 [[package]]
 name = "vleo-mod-massaero"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "vleo-core",
 ]
 
 [[package]]
 name = "vleo-mod-multipay"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "vleo-core",
 ]
 
 [[package]]
 name = "vleo-mod-navod"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "vleo-core",
 ]
 
 [[package]]
 name = "vleo-mod-navsense"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "vleo-core",
 ]
 
 [[package]]
 name = "vleo-mod-orbmaint"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "vleo-core",
 ]
 
 [[package]]
 name = "vleo-mod-payload"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "vleo-core",
 ]
 
 [[package]]
 name = "vleo-mod-pointing"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "vleo-core",
 ]
 
 [[package]]
 name = "vleo-mod-power"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "vleo-core",
 ]
 
 [[package]]
 name = "vleo-mod-prop"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "vleo-core",
 ]
 
 [[package]]
 name = "vleo-mod-solar"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "vleo-core",
 ]
 
 [[package]]
 name = "vleo-mod-struct"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "vleo-core",
 ]
 
 [[package]]
 name = "vleo-mod-system"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "vleo-core",
 ]
 
 [[package]]
 name = "vleo-mod-thermal"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "vleo-core",
 ]
 
 [[package]]
 name = "vleo-mod-ttc"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "vleo-core",
 ]
 
 [[package]]
 name = "vleo-modules"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "vleo-bus",
  "vleo-core",
@@ -479,7 +479,7 @@ dependencies = [
 
 [[package]]
 name = "vleo-server"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "toml 0.8.23",
  "vleo-bus",
@@ -492,7 +492,7 @@ dependencies = [
 
 [[package]]
 name = "vleo-sheet"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "toml 0.8.23",
  "toml_edit",
@@ -501,7 +501,7 @@ dependencies = [
 
 [[package]]
 name = "vleo-units"
-version = "0.3.0"
+version = "0.4.0"
 
 [[package]]
 name = "vswhom"
@@ -623,7 +623,7 @@ dependencies = [
 
 [[package]]
 name = "xtask"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "toml 0.8.23",
  "toml_edit",
