@@ -6,6 +6,10 @@
 
 ## The shape of the work
 
+New to the repository? Read [`docs/HOW_IT_WORKS.html`](docs/HOW_IT_WORKS.html)
+first. It is the whole system, end to end, in one page.
+
+
 Contributions to the design come from the team that uses the tool, as **node
 forms** — one HTML file per node, or per new node, filled by whoever knows the
 answer. The developers maintain the repository: check each form, apply it,
