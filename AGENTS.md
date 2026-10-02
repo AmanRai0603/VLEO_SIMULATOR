@@ -13,6 +13,10 @@ This file is reviewed like code, not like documentation. It decides what every
 change to the design goes through, so a change to it has the blast radius of a
 generator change.
 
+Before your first change, read [`docs/HOW_IT_WORKS.html`](docs/HOW_IT_WORKS.html)
+in a browser: the architecture of the codebase and how it works, end to end.
+This file is the rules. That page is how they fit together.
+
 ## What this repository is
 
 An integrated design tool for very-low-Earth-orbit spacecraft. One kernel
