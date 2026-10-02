@@ -380,7 +380,7 @@ pub fn report_plain(text: &str) -> Result<Report, Error> {
         let mut w = l.splitn(2, ' ');
         match (w.next().unwrap_or(""), w.next().unwrap_or("").trim()) {
             ("output", q) => {
-                output = Some(quantity_dim(q).ok_or_else(|| {
+                output = Some(dim_of(q).ok_or_else(|| {
                     Error::new(
                         ErrorKind::Malformed,
                         format!("the answer's quantity «{q}» is not one this tool has"),
@@ -389,7 +389,7 @@ pub fn report_plain(text: &str) -> Result<Report, Error> {
             }
             ("input", rest) => {
                 let (b, q) = rest.split_once(' ').unwrap_or((rest, ""));
-                let d = quantity_dim(q.trim()).ok_or_else(|| {
+                let d = dim_of(q.trim()).ok_or_else(|| {
                     Error::new(
                         ErrorKind::Malformed,
                         format!("the input «{b}» has no known quantity «{q}»"),
@@ -441,6 +441,16 @@ pub fn report_plain(text: &str) -> Result<Report, Error> {
     let output = output
         .ok_or_else(|| Error::new(ErrorKind::Malformed, "the answer's quantity is not given"))?;
     Ok(report(&src, &Signature { inputs, output }, &cases))
+}
+
+/// A quantity as the plain form names it: a quantity type (`Velocity`), as a
+/// sheet declares one, or a unit in brackets (`[m/s]`), as a group's contract
+/// does.
+fn dim_of(q: &str) -> Option<Dim> {
+    match q.strip_prefix('[').and_then(|r| r.strip_suffix(']')) {
+        Some(unit) => parse_unit(unit).ok().map(|(_, d)| d),
+        None => quantity_dim(q),
+    }
 }
 
 /// The `[[case]]` blocks of a parsed sheet.

@@ -21,6 +21,8 @@ import { esc } from './dom.js';
 import { logChange } from './gdb.js';
 import { wiringSvg, wireUp } from './gview.js';
 import { topoOrder } from './gmodel.js';
+import { mountTable } from './gtable.js';
+import { parseCsv, toCsv } from './csv.js';
 
 export const KINDS = ['computed', 'declared', 'required', 'achieved'];
 const CONTRACT = ['id', 'question', 'kind', 'output', 'unit', 'lower', 'upper', 'value'];
@@ -299,6 +301,8 @@ export function structurePage(ctx, sel) {
   html += '<h2 class="gh">The flow</h2><p class="muted small">The group\'s pseudocode: which node feeds which, in order. It is checked against the inputs.</p>' +
     '<textarea class="gnote gs-flow" data-op="flow" rows="' + Math.min(14, flow.split('\n').length + 1) + '" aria-label="the flow">' + esc(flow) + '</textarea>' +
     (steps(fresh) !== steps(flow) ? '<p><button class="ctl small" type="button" data-act="flow">write the flow from the inputs</button> <span class="muted small">— it differs from what the inputs say</span></p>' : '<p class="muted small">It agrees with the inputs.</p>');
+  html += '<h2 class="gh">The record of each version</h2><p class="muted small">What the group believed, what tested it, what it now knows and what changed — ' +
+    'and what this version rests on and what would break it. The developer takes a node\'s method only with this record complete.</p><div id="gs-versions"></div>';
   const log = db.all('SELECT * FROM change ORDER BY rowid DESC LIMIT 30');
   html += '<h2 class="gh">What changed</h2>' + (log.length ? '<ol class="gs-log">' + log.map(c => '<li><span class="muted small">' + esc(c.at.slice(0, 16).replace('T', ' ')) + ' · ' + esc(c.who || '—') + '</span> ' +
     '<b>' + esc(c.scope === 'group' ? 'group' : idOf.get(c.scope) || c.scope) + '</b> ' + esc(c.what) +
@@ -324,6 +328,23 @@ export function wireStructure(ctx, host, sel, done) {
     }
   };
   wireUp(ctx, host, id => { location.hash = '#/structure/' + id; });
+  const VCOLS = ['version', 'date', 'by', 'believed', 'tested', 'learned', 'changed', 'risks', 'cost', 'rests_on', 'breaks_if'];
+  const vrow = db.one("SELECT csv FROM tbl WHERE scope = 'group' AND path = 'versions.csv'");
+  const vt = vrow ? parseCsv(vrow.csv) : { head: VCOLS, rows: [] };
+  const vhost = host.querySelector('#gs-versions');
+  if (vhost) {
+    mountTable(vhost, {
+      head: VCOLS, fixedHead: true,
+      rows: vt.rows.map(r => VCOLS.map(c => { const k = vt.head.indexOf(c); return k < 0 ? '' : r[k]; })),
+      onChange: (head, rows) => run(() => {
+        const text = toCsv(head, rows.filter(r => r.some(c => String(c).trim())));
+        db.tx(() => {
+          db.exec("INSERT OR REPLACE INTO tbl (scope, path, csv) VALUES ('group', 'versions.csv', ?)", [text]);
+          logChange(db, who(), 'group', 'versions.csv', vrow ? vrow.csv : null, text);
+        });
+      }),
+    });
+  }
   host.addEventListener('change', e => {
     const t = e.target, op = t.dataset.op, key = t.dataset.key, v = t.value.trim();
     if (!op) return;

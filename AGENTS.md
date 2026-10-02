@@ -212,6 +212,11 @@ results, the manual, figures and these documents are all held to it by check.
                                             in (docs/GROUP_APPS.md), and the folder
                                             pattern's two documents, from
                                             groups/SPEC.toml
+    cargo run -p xtask -- group-intake <folder> [--apply]
+                                            a group's sealed release into the
+                                            design: the seal checked, each node's
+                                            pseudocode and results taken as its
+                                            form (docs/GROUP_APPS.md)
     cargo run -p xtask -- group-export <group>
                                             a group's folder, written from the tree,
                                             for the group to start from

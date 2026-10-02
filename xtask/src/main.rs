@@ -15,6 +15,7 @@ mod flow;
 mod forms;
 mod graph;
 mod group;
+mod group_intake;
 mod hooks;
 mod method;
 mod mutate;
@@ -131,6 +132,7 @@ pub(crate) fn dispatch(root: &Path, cmd: &str, rest: &[&str]) -> Result<(), Stri
         "method-wasm" => method::cmd_method_wasm(&root, &rest),
         "group-app" => group::cmd_group_app(&root, &rest),
         "group-export" => group::cmd_group_export(&root, &rest),
+        "group-intake" => group_intake::cmd_group_intake(&root, &rest),
         "rerun" => method::cmd_rerun(&root, &rest),
         "build-node" => method::cmd_build_node(&root, &rest),
         "migration" => method::cmd_migration(&root, &rest),
@@ -294,6 +296,14 @@ cargo xtask <command>
                      files in (docs/GROUP_APPS.md) — and docs/GROUP_FOLDER.md
                      and groups/skill/vleo-group-folder/SKILL.md, all from groups/SPEC.toml;
                      --check only says whether the committed four are current.
+  group-intake <folder> [--node <id>] [--apply [--partial]] [--draft]
+                     a group's sealed release, written out with `node
+                     tools/group_db.mjs --unpack`, taken into the design: the
+                     seal checked against every file, then each computed
+                     node's pseudocode and results planned as its node form —
+                     conflicts, an assistant's method or results refused —
+                     and with --apply written and gated. --draft looks at an
+                     unsealed release and never applies.
   group-export <group> [--out <dir>]
                      a group's folder in the pattern, written from every sheet
                      in the group, for the group to start from. It invents

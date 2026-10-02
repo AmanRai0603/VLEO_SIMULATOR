@@ -124,6 +124,12 @@ def check():
         broken = os.path.join(tmp, 'example')
         shutil.copytree(EXAMPLE, broken)
         os.remove(os.path.join(broken, 'nodes', 'orbit_speed', 'pseudocode.txt'))
+        # A unit mistake the method checker must name, by line and by unit.
+        pc = os.path.join(broken, 'nodes', 'orbit_period', 'pseudocode.txt')
+        with open(pc) as f:
+            body = f.read()
+        with open(pc, 'w') as f:
+            f.write(body.replace('return 2 * PI * sqrt(r ^ 3 / MU_EARTH)', 'return 2 * PI * sqrt(r ^ 3 / MU_EARTH) + r'))
         with open(os.path.join(broken, 'nodes', 'orbit_speed', 'inputs.csv'), 'a') as f:
             f.write('mass,nowhere,kg,,,,\n')
         q = opened(broken)
@@ -133,6 +139,7 @@ def check():
         step('a missing pseudocode is an error', 'nodes/orbit_speed/pseudocode.txt is missing' in t)
         step('an input from nowhere is an error', 'comes from "nowhere"' in t)
         step('an input with no default is an error', 'mass has no default value' in t)
+        step('the method checker names a unit mistake by line', 'orbit_period/pseudocode.txt:5 a sum of unlike quantities' in t)
         q.evaluate("location.hash='#/sign'")
         q.wait_for_timeout(600)
         step('a folder with errors cannot be sealed', q.locator('#gseal').count() == 0)

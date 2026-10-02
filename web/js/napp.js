@@ -29,6 +29,7 @@ import { folderFromDb, logChange } from './gdb.js';
 import { fromFile, pickForSaving, canSaveInPlace } from './gfile.js';
 import { sign, reviewState } from './gseal.js';
 import { mountTable } from './gtable.js';
+import { readMethod, checkerProblem } from './gmethod.js';
 
 const SPEC = window.VLEO_GROUP_SPEC || { file: [], text: [], embed: [], limits: {} };
 const ctx = { file: null, folder: null, model: null, findings: [], all: [], spec: SPEC, uid: '', id: '', me: '' };
@@ -370,7 +371,7 @@ async function pagePseudocode(host) {
   const ins = ctx.file.db.all('SELECT name, unit FROM input WHERE node_uid = ? ORDER BY ord', [ctx.uid]);
   const cur = node().text['pseudocode.txt'] || '';
   host.innerHTML = lead('Pseudocode', 'The algorithm, line by line, exactly as the developer will build it. Required for every computed node: the developer\'s code is generated from these lines, not from the theory.', [
-    'It is read and typeset here, never run. The developer\'s code is then tested against your Results.',
+    'It is read here by the same checker the developer uses — every line, every unit — and typeset, never run. The developer\'s code is then tested against your Results.',
     'Inputs it may use: ' + (ins.length ? ins.map(i => '<code>' + esc(i.name) + '</code>' + (i.unit ? ' [' + esc(i.unit) + ']' : '')).join(', ') : 'none') + '. It returns <b>' + esc(c.output || 'the answer') + '</b>' + (c.unit ? ' in ' + esc(c.unit) : '') + '.',
   ]) +
     '<div class="npc"><div><textarea class="gnote npc-box" id="npc" rows="' + Math.max(10, cur.split('\n').length + 3) + '" spellcheck="false" aria-label="the pseudocode">' + esc(cur) + '</textarea>' +
@@ -385,14 +386,21 @@ async function pagePseudocode(host) {
     'Constants by their names (MU_EARTH, R_EARTH). Units in [square brackets].</p></details></div>' +
     '<div><p class="gh3">The same lines, as equations</p><div id="npc-eq"></div><div id="npc-lint"></div></div></div>' + findingsFor(['pseudocode.txt']);
   const box = $('#npc');
-  const show = () => {
-    const text = box.value;
+  let seq = 0;
+  const show = async () => {
+    const text = box.value, my = ++seq;
     const eqs = pseudocodeEquations(text, c.output || 'answer');
     $('#npc-eq').innerHTML = eqs.length ? eqs.map(e => '<div class="galgo-row"><span class="pc-n">' + e.line + '</span>' + texToMathml(e.tex, true).html + '</div>').join('')
       : '<p class="muted small">Each let and return line appears here as an equation.</p>';
     const lint = lintPseudocode(text, ins.map(i => i.name), eqs);
-    $('#npc-lint').innerHTML = lint.length ? '<ul class="gfind">' + lint.map(l => '<li class="gf-' + l[0] + '">' + esc(l[1]) + '</li>').join('') + '</ul>'
-      : '<p class="gsave-ok small">It reads: every input is used, every if is closed, and it returns the answer.</p>';
+    // The language's own reading — the one the developer's tools make.
+    const r = await readMethod(text, ins, c.unit);
+    if (my !== seq) return;
+    const found = (r ? [r.error ? ['error', r.error] : null].concat(r.diags.map(d => [d.severity === 'note' ? 'note' : d.severity, (d.line ? 'line ' + d.line + ': ' : '') + d.msg])).filter(Boolean) : [])
+      .concat(lint.filter(l => !r || l[0] !== 'error'));
+    $('#npc-lint').innerHTML = (r ? '' : '<p class="gsave-dl small">The method checker could not start here (' + esc(checkerProblem()) + '); the reading below is a simpler one.</p>') +
+      (found.length ? '<ul class="gfind">' + found.map(l => '<li class="gf-' + l[0] + '">' + esc(l[1]) + '</li>').join('') + '</ul>'
+        : '<p class="gsave-ok small">The method checker reads it: every line parses, every unit agrees, and it answers in ' + esc(c.unit || 'a pure number') + '.</p>');
   };
   let t = null;
   box.addEventListener('input', () => { clearTimeout(t); t = setTimeout(async () => { show(); await put('pseudocode.txt', box.value.replace(/\s+$/, '') + '\n'); }, 350); });
@@ -593,6 +601,7 @@ async function pageSign(host) {
   const last = mine.slice(-1)[0];
   const c = contract();
   const errors = by('error').length;
+  const decl = (node().files['declaration.csv'] ? records(node().files['declaration.csv'])[0] : null) || {};
   host.innerHTML = lead('Check & sign', errors ? '<b>' + errors + ' thing(s) to fix</b> before your node is ready. Each one says where.' : 'Your node passes its checks. Sign it, save it, and put the file back on the drive.', [
     'Signing says: this is my node, as it is now. Change anything afterwards and the signature goes stale — sign again.',
     'Your lead assembles every node\'s file into the group\'s release, and the owner signs the whole.',
@@ -603,6 +612,11 @@ async function pageSign(host) {
     '<h2 class="gh">Sign</h2><p>Fingerprint now <code>' + esc(fp.slice(0, 16)) + '…</code> · ' + (!last ? 'not signed yet' : last.current
       ? (last.verdict === 'ok' ? '<b class="gsig-ok">signed</b> by ' + esc(last.name) + ' on ' + esc(last.date) : 'changes asked by ' + esc(last.name))
       : '<span class="gsig-stale">signed earlier, by ' + esc(last.name) + ', for different content — sign again</span>') + '</p>' +
+    '<fieldset class="nai"><legend>Did an assistant — an AI — help with this node?</legend>' +
+    [['none', 'No'], ['wording', 'With the words only'], ['relation', 'With the pseudocode, the equations, the results or the evidence']].map(([v, t]) =>
+      '<label><input type="radio" name="nai" value="' + v + '"' + (decl.ai === v ? ' checked' : '') + '> ' + esc(t) + '</label>').join('') +
+    '<p class="muted small">Said plainly, because an assistant may never supply mathematics: the developer takes a method or results an assistant supplied ' +
+    'only once a person has derived them. Kept in your node file as declaration.csv.</p></fieldset>' +
     '<p><label>I am <input id="nsig-me" class="gs-in" style="max-width:16rem" value="' + esc(ctx.me || c.author) + '" aria-label="your name"></label> ' +
     '<button class="ctl gbtn" type="button" id="nsig-go"' + (errors ? ' disabled title="fix the errors first"' : '') + '>Sign my node</button></p>' +
     '<p id="nsig-out" class="gout" aria-live="polite"></p>';
@@ -611,8 +625,13 @@ async function pageSign(host) {
     if (!name) throw new Error('say who you are');
     const authors = String(c.author || '').split(/,\s*/).filter(Boolean);
     if (authors.length && !authors.includes(name)) throw new Error(name + ' is not this node\'s author (' + authors.join(', ') + '). Only its author signs it.');
+    const ai = (host.querySelector('input[name=nai]:checked') || {}).value;
+    if (!ai) throw new Error('say whether an assistant helped with this node');
     ctx.me = name;
     try { localStorage.setItem(ME, name); } catch { /* */ }
+    // The declaration is part of what is signed, so it is written first.
+    await put('declaration.csv', toCsv(['author', 'ai', 'date'], [[name, ai, new Date().toISOString().slice(0, 10)]]));
+    await rebuild();
     await sign(ctx.folder, ctx.model, { name, scope: ctx.id, verdict: 'ok', note: '' });
     await rebuild();
     await route();

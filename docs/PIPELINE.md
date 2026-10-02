@@ -12,7 +12,7 @@ Generated from the one table in `xtask/src/pipeline.rs`; `cargo run -p xtask -- 
 
 1. **form** — an expert fills a node's form: `form`, `group-export`
 2. **take** — the maintainer puts it on its own branch: `take`
-3. **check** — what it would change, before anything is written: `intake`
+3. **check** — what it would change, before anything is written: `intake`, `group-intake`
 4. **apply** — the form written into the sheet — all of it or none: `lesson`, `new`
 5. **publish** — a filled row's code generated, and its holes written: `declare`, `publish`, `fill`, `confirm`
 6. **build** — a node built from its method, and its tests shown to test: `method`, `build-node`, `rerun`, `method-wasm`, `differential`, `mutate`
@@ -106,6 +106,21 @@ the checker: what a filled form would change, field by field, and every interfac
 | steps | 1 read the form · 2 check every change · 3 build the new node · 4 apply to the sheet |
 | dry run | --dry-run runs intake without --apply: the same check, nothing written |
 | code | `xtask/src/forms.rs` — `cmd_intake` |
+
+#### `group-intake`
+
+    cargo run -p xtask -- group-intake <folder> [--node <id>] [--apply [--partial]] [--draft]
+
+a group's sealed release, written out with `node tools/group_db.mjs --unpack`, taken into the design: the seal checked against every file, then each computed node's pseudocode and results planned as its node form — conflicts, an assistant's method or results refused — and with --apply written and gated. --draft looks at an unsealed release and never applies.
+
+| | |
+|---|---|
+| reads | a group's release written out by `node tools/group_db.mjs --unpack`, its RELEASE.toml, and each of its nodes' sheets |
+| writes | with --apply: each computed node's node.toml (its method and cases) and every generated file |
+| checks | every file against the seal's fingerprint; then each node as its form: a conflict with a change made since, a method or results an assistant supplied, the de-risking record, the whole tree's gate |
+| undo | a refused apply is put back by the transaction itself; an applied one: `git restore` the node's folder, or `git revert` |
+| dry run | --dry-run runs group-intake without --apply: the same check, nothing written |
+| code | `xtask/src/group_intake.rs` — `cmd_group_intake` |
 
 ### apply — the form written into the sheet — all of it or none
 
@@ -310,7 +325,7 @@ web/node.html — offline pages a group keeps its database files in (docs/GROUP_
 
 | | |
 |---|---|
-| reads | groups/SPEC.toml, groups/schema.sql, web/pages/group.html, node-app.html and group.css, web/app.css and its fonts, web/vendor/sqlite, web/js |
+| reads | groups/SPEC.toml, groups/schema.sql, web/pages/group.html, node-app.html and group.css, web/app.css and its fonts, web/vendor/sqlite, web/method.wasm.gz, web/js |
 | writes | web/group.html, web/node.html, docs/GROUP_FOLDER.md and groups/skill/vleo-group-folder/SKILL.md |
 | checks | the vendored SQLite against the hashes web/vendor/sqlite/SOURCE.toml records; with --check, whether the committed four are built from their sources as they are |
 | undo | `git restore web/group.html web/node.html docs/GROUP_FOLDER.md groups/skill/vleo-group-folder/SKILL.md` |

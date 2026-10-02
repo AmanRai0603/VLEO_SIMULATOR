@@ -135,7 +135,7 @@ step, and every step shows what it will look like as you type:
 | Your node | read the contract — what it answers, what feeds it, who reads it; ask the lead for a change here, never work around it |
 | Explanation | six short sections: in one line, said simply, picture it, guess first, where it breaks, the common misreading |
 | Theory & maths | the equations, the derivation, the assumptions, where it holds; each equation once, in LaTeX, with the equation helper beside it |
-| Pseudocode | the algorithm, line by line — required for every computed node; typeset as equations and read for mistakes as you type, never run |
+| Pseudocode | the algorithm, line by line — required for every computed node; typeset as equations and read by the method checker as you type — every line, every unit — never run |
 | Inputs | how each input is written, its default and the range the node holds for |
 | Results | your own answers, from your own code, a hand calculation, a spreadsheet or a paper — paste them from your spreadsheet |
 | Evidence & sources | values from outside any code, each citing a source; add your own sources here |
@@ -147,6 +147,33 @@ step, and every step shows what it will look like as you type:
 **Save** often; each save is a new revision. Then put the file back in
 `nodes/` on the drive.
 
+## The developer, taking a sealed release in
+
+A sealed release is the group's signed word. The developer takes it into the
+design in three steps:
+
+    node tools/group_db.mjs --unpack solar-0.2.vleo --out ~/intake/solar
+    cargo run -p xtask -- group-intake ~/intake/solar
+    cargo run -p xtask -- group-intake ~/intake/solar --apply
+
+| Step | What happens |
+| --- | --- |
+| Unpack | the release written out as the folder it was sealed from, with `RELEASE.toml` — the group, the version, who sealed it, the fingerprint, and each node's revision and author |
+| Seal check | every file's SHA-256 recomputed; a release whose files no longer give the sealed fingerprint is refused before anything is read. An unsealed release is looked at only with `--draft`, and never applied |
+| The plan | each computed node becomes the node form its author would have filled: the pseudocode as its method, its results — brought back to SI — as its test cases, its author, the declaration of any assistant's help, and the newest row of `versions.csv` as the de-risking record. Intake's own check prints what it would change, field by field |
+| Refusals | a conflict with a change the repository made since; a method or results an assistant supplied (`declaration.csv` says `relation`, or says nothing); an incomplete de-risking record. Each goes back to the group with the lines printed |
+| Apply | `--apply` writes each node, regenerates and gates it as one edit, or puts it back whole; `--partial` keeps the nodes that passed |
+| The engine | `cargo run -p xtask -- build-node <node>` translates the method into the kernel and tests it on the author's own cases (`docs/PSEUDOCODE.md`) |
+
+What the release holds beyond the method and its cases — its words, pictures
+and evidence — stays in the release, which is what the group signed. The
+command reports it; it does not move it into the sheets.
+
+The solar group's release is the worked example, and today it is refused: its
+32 methods were transcribed from the code by an assistant, and its
+`declaration.csv` files say so. That is the rule working — each method waits
+for a person who knows it to read it, put their name to it, and seal again.
+
 ## What the applications do not do
 
 - **They run nothing.** The pseudocode is read and typeset, never executed;
@@ -155,9 +182,10 @@ step, and every step shows what it will look like as you type:
 - **They do not merge two people's edits to one file.** Each file has one
   writer by design. If two copies of one node file come back, the lead keeps
   one and the assembly names the other.
-- **The pseudocode check here is a reading, not the language checker.** It
-  finds an unused input, an unclosed `if`, unpaired brackets, a missing
-  `return`. The full unit check runs when the developer takes the release.
+- **The pseudocode is read, never run.** Both pages carry the repository's
+  own method checker (`web/method.wasm.gz`), the one the developer's tools use:
+  every line must parse, every unit must agree, and the answer must be in the
+  unit the contract names. No case is handed to it, so nothing is computed.
 
 ## Where it breaks
 
