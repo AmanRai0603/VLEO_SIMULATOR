@@ -343,6 +343,16 @@ pub(crate) fn commit_edit(
         .map(|n| dir.join(n))
         .filter(|p| p.exists())
         .collect();
+    // AND WHAT THEY HELD, BYTE FOR BYTE. Regenerating from the restored sheet is
+    // not a restore: an edit that changes how a row is built — a method, which
+    // replaces the hole — regenerates model.rs without the hole's Rust, and a
+    // regeneration from the old sheet then writes the hole back EMPTY. A
+    // refused method edit once left a published row with its hole blanked under
+    // "nothing changed". So the files themselves are put back.
+    let held: Vec<(std::path::PathBuf, Vec<u8>)> = existed
+        .iter()
+        .filter_map(|p| std::fs::read(p).ok().map(|b| (p.clone(), b)))
+        .collect();
 
     if let Err(e) = write_atomic(path, &after) {
         return Saved::Refused(e.into());
@@ -351,8 +361,8 @@ pub(crate) fn commit_edit(
     // Restoring the sheet is not enough on its own: once the artefacts have
     // been regenerated from the rejected edit, putting only node.toml back
     // leaves the tree failing its own regeneration check — the exact state this
-    // whole path exists to avoid. So the artefacts are regenerated from the
-    // restored sheet too.
+    // whole path exists to avoid. So the artefacts are put back too, as they
+    // were held above.
     //
     // AND WHAT THE EDIT GENERATED THAT WAS NOT THERE BEFORE IS REMOVED. A
     // refused publish showed why: publishing a seeded row makes the generator
@@ -361,23 +371,24 @@ pub(crate) fn commit_edit(
     // four new files stayed behind under a message saying nothing had changed,
     // and the next "put these edits on a branch" would have committed them.
     // Only a generated file the row did not have before is removed; one that
-    // existed is regenerated, which keeps whatever Rust its holes hold.
+    // existed gets its own bytes back, holes and all.
     let restore = |e: String| -> Saved {
         let _ = write_atomic(path, before);
+        let mut lost = String::new();
         for n in GENERATED {
             let p = dir.join(n);
-            if p.exists() && !existed.contains(&p) {
-                let _ = std::fs::remove_file(&p);
+            match held.iter().find(|(q, _)| *q == p) {
+                Some((_, bytes)) => {
+                    if let Err(w) = std::fs::write(&p, bytes) {
+                        lost = format!(" — AND {} COULD NOT BE PUT BACK: {w}", p.display());
+                    }
+                }
+                None if p.exists() => {
+                    let _ = std::fs::remove_file(&p);
+                }
+                None => {}
             }
         }
-        let put_back = crate::load::load_all(root)
-            .ok()
-            .and_then(|t| t.sheets.get(id).map(|s| regenerate(s, &t)));
-        let lost = match put_back {
-            Some(Err(w)) => format!(" — AND THE ARTEFACTS COULD NOT BE PUT BACK: {w}"),
-            None => " — AND THE TREE WOULD NOT RELOAD TO PUT THE ARTEFACTS BACK".into(),
-            Some(Ok(_)) => String::new(),
-        };
         Saved::Refused(format!(
             "{e} — the sheet was restored, nothing changed{lost}"
         ))
