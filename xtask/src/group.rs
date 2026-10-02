@@ -356,42 +356,6 @@ range and one refusal.\n\
     )
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn toml_becomes_json_with_every_kind_of_value() {
-        let v: toml::Value = "a = \"x\\\"y\"\nb = 2\nc = [true, 1.5]\n[d]\ne = \"line\\nbreak\""
-            .parse()
-            .unwrap();
-        assert_eq!(
-            json(&v),
-            "{\"a\":\"x\\\"y\",\"b\":2,\"c\":[true,1.5],\"d\":{\"e\":\"line\\nbreak\"}}"
-        );
-    }
-
-    #[test]
-    fn the_committed_group_application_is_built_from_its_sources() {
-        let root = Path::new(env!("CARGO_MANIFEST_DIR")).parent().unwrap();
-        let spec = spec(root).unwrap();
-        let built = page(root, &spec).unwrap();
-        assert!(
-            !built.contains("{{CSS}}")
-                && !built.contains("{{SCRIPT}}")
-                && !built.contains("{{SPEC}}")
-        );
-        assert!(!built.contains("url(fonts/"), "every font is inlined");
-        // Compared without printing them: either side is the whole page.
-        for (path, want) in [(OUT, built), (DOC, doc(&spec)), (SKILL, skill(&spec))] {
-            assert!(
-                fs::read_to_string(root.join(path)).unwrap_or_default() == want,
-                "{path} is stale: run `cargo run -p xtask -- group-app` and commit it"
-            );
-        }
-    }
-}
-
 // ── a group's folder, written from the tree as it stands ───────────────────
 
 /// `group-export <group> [--out <dir>]`: the group's folder in the pattern,
@@ -909,5 +873,41 @@ fn from_of(tree: &Tree, mine: &BTreeSet<&str>, var: &str) -> String {
     match tree.sheets.get(base) {
         Some(s) => format!("{}.{}", s.parent, base),
         None => var.to_string(),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn toml_becomes_json_with_every_kind_of_value() {
+        let v: toml::Value = "a = \"x\\\"y\"\nb = 2\nc = [true, 1.5]\n[d]\ne = \"line\\nbreak\""
+            .parse()
+            .unwrap();
+        assert_eq!(
+            json(&v),
+            "{\"a\":\"x\\\"y\",\"b\":2,\"c\":[true,1.5],\"d\":{\"e\":\"line\\nbreak\"}}"
+        );
+    }
+
+    #[test]
+    fn the_committed_group_application_is_built_from_its_sources() {
+        let root = Path::new(env!("CARGO_MANIFEST_DIR")).parent().unwrap();
+        let spec = spec(root).unwrap();
+        let built = page(root, &spec).unwrap();
+        assert!(
+            !built.contains("{{CSS}}")
+                && !built.contains("{{SCRIPT}}")
+                && !built.contains("{{SPEC}}")
+        );
+        assert!(!built.contains("url(fonts/"), "every font is inlined");
+        // Compared without printing them: either side is the whole page.
+        for (path, want) in [(OUT, built), (DOC, doc(&spec)), (SKILL, skill(&spec))] {
+            assert!(
+                fs::read_to_string(root.join(path)).unwrap_or_default() == want,
+                "{path} is stale: run `cargo run -p xtask -- group-app` and commit it"
+            );
+        }
     }
 }

@@ -2872,6 +2872,11 @@ what = "The rows of the tree that are not calculations: headings, parents, group
 who = "developer"
 
 [[folder]]
+name = "groups"
+what = "The group folder pattern, groups/SPEC.toml, from which the group application (web/group.html), docs/GROUP_FOLDER.md and the assistant's skill in groups/skill/ are generated; and groups/example/, a complete illustrative group folder to read and copy. A group's own folder lives on its shared drive, not here."
+who = "developer"
+
+[[folder]]
 name = "cases"
 what = "The one case: which inputs are the condition the design flies in, and so which are the customer's. Its values are not kept here — they are saved by the tool outside the repository. `cases/examples/` holds case files to read and copy, one as an older version of the tool wrote it."
 who = "user"
