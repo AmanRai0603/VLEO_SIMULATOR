@@ -3055,6 +3055,10 @@ path = "docs/NODE_AUTHORING.md"
 what = "Every field of a sheet, and why it is there."
 
 [[doc]]
+path = "docs/HOW_IT_WORKS.html"
+what = "The architecture of the codebase and how it works, end to end, with an explorable crate map, a row opened file by file and a run stepped through. Read it first."
+
+[[doc]]
 path = "docs/CHANGING.md"
 what = "Changing the code — a node, a route, a component, an output kind — what each brings with it, and one field followed through the generators."
 
