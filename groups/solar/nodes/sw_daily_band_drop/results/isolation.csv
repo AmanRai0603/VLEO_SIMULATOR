@@ -1,0 +1,7 @@
+level [1],answer [1],tolerance,refuses,origin,says
+69.62809104,4.387,0.000000000001,no,hand,"at the declared window's own sustained cold level, 69.63 — just under the bottom knot, so this is the clamp and it is the case that unblocked the chain."
+70,4.387,0.000000000001,no,hand,"the 70 sfu knot, exactly — a transcription check, and the value the clamp holds."
+120,23.2593,0.000000000001,no,hand,"the 120 sfu knot, exactly — a transcription check on a middle pair."
+132.5,27.82225,0.000000001,no,hand,"halfway between the 120 and 145 knots — the interpolation, on round numbers."
+250,40.7778,0.000000000001,no,hand,far above the top of the table — the clamp.
+NaN,,,yes,hand,"outside what the node holds for: its code refuses it, and so must the developer's"

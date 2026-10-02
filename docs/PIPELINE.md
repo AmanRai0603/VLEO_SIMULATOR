@@ -304,16 +304,16 @@ perturb the answer by a tenth of a percent and require the node's own tests to n
 
 #### `group-app`
 
-    cargo run -p xtask -- group-app [--check] the group application, web/group.html — one offline page
+    cargo run -p xtask -- group-app [--check] the group and node applications, web/group.html and
 
-a group opens its folder in — and docs/GROUP_FOLDER.md and groups/skill/vleo-group-folder/SKILL.md, all from groups/SPEC.toml; --check only says whether the committed three are current.
+web/node.html — offline pages a group keeps its database files in (docs/GROUP_APPS.md) — and docs/GROUP_FOLDER.md and groups/skill/vleo-group-folder/SKILL.md, all from groups/SPEC.toml; --check only says whether the committed four are current.
 
 | | |
 |---|---|
-| reads | groups/SPEC.toml, web/pages/group.html and group.css, web/app.css and its fonts, web/js |
-| writes | web/group.html, docs/GROUP_FOLDER.md and groups/skill/vleo-group-folder/SKILL.md |
-| checks | with --check: whether the committed three are built from their sources as they are |
-| undo | `git restore web/group.html docs/GROUP_FOLDER.md groups/skill/vleo-group-folder/SKILL.md` |
+| reads | groups/SPEC.toml, groups/schema.sql, web/pages/group.html, node-app.html and group.css, web/app.css and its fonts, web/vendor/sqlite, web/js |
+| writes | web/group.html, web/node.html, docs/GROUP_FOLDER.md and groups/skill/vleo-group-folder/SKILL.md |
+| checks | the vendored SQLite against the hashes web/vendor/sqlite/SOURCE.toml records; with --check, whether the committed four are built from their sources as they are |
+| undo | `git restore web/group.html web/node.html docs/GROUP_FOLDER.md groups/skill/vleo-group-folder/SKILL.md` |
 | dry run | --dry-run runs group-app --check: whether they are current, nothing written |
 | code | `xtask/src/group.rs` — `cmd_group_app` |
 

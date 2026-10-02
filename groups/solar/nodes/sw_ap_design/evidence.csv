@@ -1,0 +1,4 @@
+inputs,value,unit,source,says
+g_level=2,80,1,iaga_kp_ap,G2 moderate — Kp 6 — daily Ap bounded at 80.
+g_level=1,48,1,iaga_kp_ap,G1 minor — Kp 5 — daily Ap bounded at 48.
+g_level=3,132,1,iaga_kp_ap,"G3 strong — Kp 7 — daily Ap bounded at 132, the declared default."

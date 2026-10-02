@@ -1,0 +1,13 @@
+# Transcribed from crates/vleo-mod-solar/nodes/sw_ap_design_short/model.rs (HOLE 1 and its guards) — the method the code already runs.
+# Numbers: none of its own; the sustained level and the within-rotation daily departure both come from the NOAA SWPC record (noaa_swpc) via their rows; migrated from prf_density.m:227 designWindow_ (hotday for ap).
+# The rotation error and the within-rotation departure are of different things, so they add.
+let single_day = sustained + daily
+
+# Generated guards: the declared domain of Ap_short.
+if single_day < 0 then
+  refuse "Ap floors at zero, so a single-day design level below it means a spread has been subtracted rather than added"
+end
+if single_day > 400 then
+  refuse "400 is the top of the Ap index itself; a value above it is not a geomagnetic index at all"
+end
+return single_day

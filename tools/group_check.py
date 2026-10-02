@@ -55,6 +55,8 @@ def check():
             p.on('pageerror', lambda e: errors.append(str(e)))
             p.goto(PAGE)
             p.set_input_files('#gpickdir', folder)
+            # The title changes once the folder is read; the welcome page has an answer-first too.
+            p.wait_for_selector('#gtitle:not(:text("nothing open"))', timeout=20000)
             p.wait_for_selector('.answer-first', timeout=20000)
             return p
 
@@ -113,6 +115,10 @@ def check():
         seal = list(csv.DictReader(io.StringIO(z.read('SEAL.csv').decode())))[0]
         step('the seal names the group, version and who signed', seal['group'] == 'example_orbit' and 'Ada Example:group' in seal['signed'])
 
+        # Each page is closed when done: several drawn pages left open have
+        # crashed headless Chromium's renderer.
+        p.close()
+
         # A folder with a mistake in it: the mistake is named, and the folder cannot be sealed.
         tmp = tempfile.mkdtemp()
         broken = os.path.join(tmp, 'example')
@@ -130,6 +136,7 @@ def check():
         q.evaluate("location.hash='#/sign'")
         q.wait_for_timeout(600)
         step('a folder with errors cannot be sealed', q.locator('#gseal').count() == 0)
+        q.close()
         shutil.rmtree(tmp)
 
         for w, scheme in [(400, 'light'), (1280, 'dark')]:
@@ -142,6 +149,7 @@ def check():
                 if r.evaluate('document.documentElement.scrollWidth - document.documentElement.clientWidth') > 0:
                     wide.append(h)
             step(f'no sideways scroll at {w} px, {scheme}', not wide, ', '.join(wide))
+            r.close()
         b.close()
     step('no page errors', not errors, '; '.join(errors[:3]))
     return fails

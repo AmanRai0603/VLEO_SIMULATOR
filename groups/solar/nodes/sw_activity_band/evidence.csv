@@ -1,0 +1,10 @@
+inputs,value,unit,source,says
+f107=64,1,1,noaa_swpc,"the record's quietest day, 64 sfu — band 1, low."
+f107=89.9,1,1,noaa_swpc,"89.9 sfu — still low, the edge is not yet reached."
+f107=90,2,1,noaa_swpc,"90 sfu exactly — moderate begins AT the edge, not after it."
+f107=129.9,2,1,noaa_swpc,129.9 sfu — still moderate.
+f107=130,3,1,noaa_swpc,130 sfu exactly — elevated begins.
+f107=169.9,3,1,noaa_swpc,169.9 sfu — still elevated.
+f107=170,4,1,noaa_swpc,170 sfu exactly — high begins.
+f107=343,4,1,noaa_swpc,"the record's largest day, 343 sfu — band 4, which is unbounded above."
+f107=228.1374378829,4,1,noaa_swpc,"the design value this subsystem publishes, 228 sfu — band 4, the top one."

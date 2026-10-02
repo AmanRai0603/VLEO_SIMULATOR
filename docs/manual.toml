@@ -2292,7 +2292,7 @@ effect = "writes"
 tool = "xtask"
 name = "group-app"
 usage = "group-app [--check]"
-what = "Builds the group application — web/group.html, one offline page a group opens its folder in to see it as the application will show it, check it, sign it and seal it — and the folder pattern's two documents, docs/GROUP_FOLDER.md and groups/skill/vleo-group-folder/SKILL.md, all from groups/SPEC.toml; --check only says whether the committed three are current."
+what = "Builds the two offline pages a group works in — web/group.html, where the lead sets out the nodes and their contracts, issues each author a node file, assembles the files into a release, has it signed and seals it, and web/node.html, where an author fills their node file — each carrying SQLite (web/vendor/sqlite, checked against its recorded hashes) and the database format of groups/schema.sql; and the folder pattern's two documents, docs/GROUP_FOLDER.md and groups/skill/vleo-group-folder/SKILL.md, all from groups/SPEC.toml. --check only says whether the committed four are current."
 who = "developer"
 effect = "writes"
 
@@ -2873,7 +2873,7 @@ who = "developer"
 
 [[folder]]
 name = "groups"
-what = "The group folder pattern, groups/SPEC.toml, from which the group application (web/group.html), docs/GROUP_FOLDER.md and the assistant's skill in groups/skill/ are generated; and groups/example/, a complete illustrative group folder to read and copy. A group's own folder lives on its shared drive, not here."
+what = "The group folder pattern, groups/SPEC.toml, from which the group and node applications (web/group.html, web/node.html), docs/GROUP_FOLDER.md and the assistant's skill in groups/skill/ are generated; groups/schema.sql, the database format of a group's structure, node and release files; groups/example/, a small illustrative group to read and copy; and groups/solar/, the solar group's whole design as a group would hold it — every node's pseudocode checked against its fixtures, its results, evidence and pictures — which tools/group_db.mjs makes into the group's database files. A group's own files live on its shared drive, not here."
 who = "developer"
 
 [[folder]]
@@ -3033,6 +3033,10 @@ what = "The words this repository uses in a sense of its own, each in a sentence
 [[doc]]
 path = "docs/PSEUDOCODE.md"
 what = "The method language: every statement, function, constant and unit a method may use, and the worked example in full. Generated from the checker's own tables."
+
+[[doc]]
+path = "docs/GROUP_APPS.md"
+what = "The group and node applications: the three database files a group keeps on its shared drive, how the lead sets out the structure, issues node files, assembles and seals a release, and how an author fills their node file, step by step."
 
 [[doc]]
 path = "docs/GROUP_FOLDER.md"

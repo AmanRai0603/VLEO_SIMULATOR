@@ -1,0 +1,6 @@
+name,from,unit,default,min,max,says
+ap_nominal,sw_ap_central_expectation,1,12.5,1,40,
+ap_hotmean,sw_ap_design_long,1,25,0,300,
+ap_coldmean,sw_ap_cold_long,1,7.5,0,300,
+ap_hotday,sw_ap_design_short,1,90,0,400,
+ap_coldday,sw_ap_cold_short,1,2.5,0,400,

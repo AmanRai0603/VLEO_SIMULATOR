@@ -1,0 +1,30 @@
+## Equations
+
+```
+D(L) = RMS[F107(t+L) - F107(t)], from the record
+```
+
+## Derivation
+
+Before asking whether a published forecast is any good, it is worth knowing how much predictability there is to be had. The cheapest possible forecast is persistence — assume today continues — and the error it accumulates as a function of lead is a measurement of the process rather than of any forecaster. In turbulence and in time series this object is called a structure function, and its shape carries the memory of the system: where it rises, the system is forgetting; where it flattens or dips, something is repeating.
+
+1. Define the error of persistence at a lead as the RMS difference between a day and the day L later, over every pair of observed days that far apart. `D(L) = RMS[ F107(t + L) - F107(t) ]`
+2. For a process with no memory at all, this has a known limit. The difference of two independent draws from the same distribution has twice the variance, so the structure function saturates at the square root of two times the standard deviation — which for this record is a number that can be checked against the climatology row. `D(inf) = sqrt(2) * sigma = 1.414 * 44.39 = 62.77 sfu`
+3. Measured, it does not saturate inside the record's usable range: 7.1 sfu at one day, 29.1 at fourteen, 49.63 at two years and still climbing toward, not sitting at, the 62.77 limit. F10.7 is cyclic rather than a random walk, so a longer lead keeps finding new ways to be different.
+4. And in the middle of that rise there is a dip, which is the feature the whole row exists to carry. The error falls from 29.1 sfu at fourteen days to 22.4 at twenty-seven days before rising again. `D(14 d) = 29.1 > D(27 d) = 22.4`
+5. Twenty-seven days is the synodic solar rotation. The same active region carries round to face the Earth again, so today's flux is a BETTER guide to the flux one rotation from now than to the flux a fortnight from now. It is the one feature of this curve a forecaster would actually use, and any monotone model of predictability erases it — which is why this is a table and not a fit.
+6. One methodological departure from the study, shared with sw_uncertainty_growth. prf_horizon builds a full daily grid and fills the record's 273 absent days by linear interpolation; interpolated days carry no variability, so every error statistic spanning them is understated. This row pairs only days that were both observed, which costs sample size and buys a number that is not partly invented — and is therefore expected to disagree slightly with the MATLAB.
+
+## Assumptions
+
+- The error DIPS at 27 days, and that is the Sun's rotation rather than noise. Fails when: persistence error rises from 7.1 sfu at one day to 29.1 at fourteen, then FALLS to 22.4 at twenty-seven before rising again. Twenty-seven days is the synodic solar rotation: the same active region comes back round, so today's flux is a better guide to the flux one rotation from now than to the flux a fortnight from now. Any monotone model of predictability erases that, and it is the one feature of this curve a forecaster would actually use. It is also why the row is a table and not a fit.
+- The declared input cannot reach the interesting part of the curve. Fails when: orbit_mission_duration is declared 0.5 to 15 years, so in a real run this row is only ever asked about leads of 183 days and up — past the rotation dip, past the rise, in the slow tail. The table carries the short-lead structure because the question is about predictability and the structure is the answer, but nothing in this tree currently asks for it. A 27-day outlook wants a lead this tree does not publish.
+- Persistence has not saturated even at two years, because F10.7 is cyclic and not a random walk. Fails when: for a process with no memory the structure function saturates at sqrt(2) times the standard deviation, which is 62.77 sfu here. The measured value at a two-year lead is 49.63 and still climbing. So the textbook saturation is not reached inside this record's measurable range, and reading the tail as if it had converged would understate how much worse a longer lead still gets.
+- Only pairs of REAL observations exactly L days apart, which is again not what the MATLAB does. Fails when: prf_design and prf_horizon both build a full daily grid and fill the record's 273 absent days by linear interpolation. Interpolated days have no variability, so every error statistic spanning them is understated. This row pairs only days that were both observed, as sw_uncertainty_growth does, and for the same reason: a number that is partly invented is not a measurement of the record. It is therefore expected to disagree slightly with prf_horizon, which is why it carries no parity grid.
+- Pinned to solar-weather@2026.09.14, and the [data] declaration can only pin the name. Fails when: crates/vleo-modules compares bundle NAMES, so a run with a later solar-weather satisfies the precondition and still uses this table. Every entry must be re-measured if the bundle version changes. The same obligation sits on every measured row in this group.
+
+## Validity
+
+From 0 to 65 One. Below: an RMS cannot be negative. Zero would mean persistence is exact, which is true only at a lead of zero and is not a lead this row is asked about. Above: for a memoryless process the structure function saturates at sqrt(2)*sigma, which is 62.77 sfu on this record, and the largest measured entry is 49.63 at a two-year lead. 65 is above both, so it is unreachable by this relation and exists to catch a broken table rather than an extreme sky.
+
+The declared input cannot reach the interesting part of this curve. orbit_mission_duration is declared 0.5 to 15 years, so in a real run the row is only ever asked about leads of 183 days and up — past the rotation dip, past the rise, in the slow tail. The short-lead structure is carried because the question is about predictability and the structure is the answer, but nothing in this tree currently asks for it. Note too that persistence has NOT saturated even at two years, so reading the tail as converged would understate how much worse a longer lead still gets.

@@ -1,0 +1,15 @@
+# Transcribed from crates/vleo-mod-solar/nodes/sw_regime/model.rs (HOLE 1 and its guards) — the method the code already runs.
+# The mixture's own decision boundaries read off its published labels in bundles/solar-weather daily_regime.csv (noaa_swpc): quiet Ap 0 to 6, active 7 to 25, storm 26 and above.
+let out = 3
+if ap <= 6 then
+  set out = 1
+else if ap <= 25 then
+  set out = 2
+end
+if out < 1 then
+  refuse "1 is quiet, the lowest regime the mixture defines; below it there is no label."
+end
+if out > 3 then
+  refuse "3 is storm, the highest; a fourth regime would be a different classifier."
+end
+return out

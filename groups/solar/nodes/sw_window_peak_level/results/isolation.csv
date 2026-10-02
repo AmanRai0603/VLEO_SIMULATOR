@@ -1,0 +1,10 @@
+lead [yr],epoch [d],answer [1],tolerance,refuses,origin,says
+5,9862,110.65627313580244,0.000000000001,no,hand,the declared case — the highest sustained level a 2027 five-year mission meets.
+0.999315537303217,10038,105.56045788424966,0.000000000001,no,hand,"MATLAB's own window, 2027-06-26 for a year."
+0.5,9862,110.65627313580244,0.000000000001,no,hand,half a Julian year from the declared epoch — short enough that the peak is at its own start.
+15,9862,193.85802469135803,0.000000000001,no,hand,"fifteen years — long enough to contain a whole cycle, so the peak is the next maximum at the mean amplitude."
+5,6575,174.09864172839502,0.000000000001,no,hand,"the earliest epoch, 2018-01-01 — the window contains cycle 25's own maximum."
+5,14610,147.97900299382718,0.000000000001,no,hand,"the latest epoch, 2040-01-01."
+5,12000,193.85802469135803,0.000000000001,no,hand,"an epoch near the next maximum, 2032-11-08."
+2,14560,82.38214311111112,0.000000000001,no,hand,"a 2039 window straddling the amplitude handover — the maximum is a limit, not a value at any knot."
+-inf,9862.0,,,yes,hand,"outside what the node holds for: its code refuses it, and so must the developer's"

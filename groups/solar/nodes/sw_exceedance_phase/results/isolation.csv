@@ -1,0 +1,5 @@
+ap_design [1],answer [1],tolerance,refuses,origin,says
+80,0.5763024435,0.000000000001,no,hand,"the G2 bound, Ap 80 — median phase 0.576."
+48,0.571692024,0.000000000001,no,hand,"the G1 bound, Ap 48 — the lowest level the G scale defines."
+132,0.6026970954,0.000000000001,no,hand,"the G3 bound, Ap 132 — the declared design level."
+NaN,,,yes,hand,"outside what the node holds for: its code refuses it, and so must the developer's"

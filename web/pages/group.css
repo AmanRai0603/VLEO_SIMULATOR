@@ -5,9 +5,12 @@ body.gapp { margin: 0; }
 .gtop { position: sticky; top: 0; z-index: 5; display: flex; align-items: center; gap: .8rem; flex-wrap: wrap;
   padding: .55rem 1rem; background: var(--card); border-bottom: 1px solid var(--rule); font: 12px var(--mono); }
 .gbrand { font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
-.gtitle { color: var(--ink-2); }
+.gtitle { color: var(--ink-2); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 0 1 auto; }
 .gspacer { flex: 1; }
-.gtop-note { color: var(--ink-3); font-size: 11px; }
+.gtop-note { color: var(--ink-3); font-size: 11px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 0 1 auto; }
+.gtop .tabrow { border-top: 0; padding: 0; flex-wrap: nowrap; }
+.gtop #depth { float: none; margin: 0; }
+@media (min-width: 701px) { .gtop { flex-wrap: nowrap; } .gtop > * { flex-shrink: 0; } .gtop > .gtitle, .gtop > .gtop-note { flex-shrink: 1; } }
 .gwrap { display: grid; grid-template-columns: 230px minmax(0, 1fr); min-height: calc(100vh - 44px); }
 .gnav { border-right: 1px solid var(--rule); padding: .8rem .6rem; font: 12px var(--mono); position: sticky; top: 44px;
   align-self: start; max-height: calc(100vh - 44px); overflow: auto; }
@@ -40,6 +43,38 @@ body.gapp { margin: 0; }
 .gopen { margin: 1.4rem 0; }
 .gdrop { border: 2px dashed var(--rule); border-radius: 10px; padding: 2rem 1rem; text-align: center; background: var(--card); }
 body.gdragging .gdrop, body.gdragging .gmain { outline: 3px dashed var(--teal); outline-offset: -6px; }
+.gcards { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem; }
+.gcard { border: 1px solid var(--rule); border-radius: 10px; padding: 1rem 1.1rem; background: var(--card); }
+.gcard .gh3 { margin-top: 0; }
+.gcards .gdrop { border-style: dashed; border-width: 2px; text-align: left; padding: 1rem 1.1rem; }
+.gsave { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.gdirty { color: var(--out); }
+.gflash { position: fixed; right: 1rem; bottom: 1rem; z-index: 9; max-width: min(92vw, 460px); margin: 0; padding: .7rem 1rem;
+  border-radius: 8px; background: var(--ink); color: var(--paper); font: 12px var(--mono); box-shadow: 0 4px 18px rgba(0,0,0,.2); }
+
+/* the structure editor */
+.gs-err { color: var(--out); background: var(--out-pale); border-radius: 6px; padding: .5rem .8rem; font: 12px var(--mono); }
+.gmain:has(.gs-root) { max-width: 1440px; }
+.gs-cols { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 0 1.6rem; }
+.gs-add { display: flex; gap: .4rem; flex-wrap: wrap; align-items: center; }
+.gs-add .gs-in { width: auto; flex: 1 1 7rem; max-width: 14rem; }
+.gs-x { padding: 0 .45rem; }
+.gs-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: .5rem .8rem; font-size: 12px; }
+.gs-grid label { display: flex; flex-direction: column; gap: .2rem; color: var(--ink-2); }
+.gs-span { grid-column: 1 / -1; }
+.gs-in { font: 12px var(--mono); padding: .25rem .4rem; border: 1px solid var(--rule); border-radius: 4px; background: var(--card);
+  color: var(--ink); min-width: 0; width: 100%; box-sizing: border-box; }
+.gs-in.gs-wide { width: 100%; }
+.gs-table td { vertical-align: middle; }
+.gs-table .gs-in { min-width: 5.5rem; }
+.gs-sel td { background: var(--in-pale); }
+.gs-acts { white-space: nowrap; }
+.gs-impact { margin: .4rem 0 .8rem; padding: .45rem .7rem; border-left: 3px solid var(--out); background: var(--out-pale); font-size: 12px; border-radius: 0 6px 6px 0; }
+.gs-flow { width: 100%; box-sizing: border-box; }
+.gs-log { font-size: 12px; padding-left: 1.2rem; }
+.gs-log li { margin: .2rem 0; }
+.gs-map .gbox { cursor: pointer; }
+@media (max-width: 900px) { .gs-cols { grid-template-columns: minmax(0, 1fr); } }
 
 /* stations and prose */
 .gst { margin: .8rem 0; }
@@ -110,6 +145,7 @@ svg.gflow { display: block; max-width: none; height: auto; font: 11.5px var(--mo
 .gk-declared { color: var(--slate); border-color: var(--slate); }
 .gk-required, .gk-achieved { color: var(--both); border-color: var(--both); }
 .galgo { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 1rem; align-items: start; }
+.gpc { overflow-x: auto; max-width: 100%; }
 .gpc .pc-line { display: block; min-height: 1.5em; white-space: pre; }
 .gpc .pc-line.on, .galgo-row.on { background: var(--teal-pale); }
 .pc-n { display: inline-block; width: 2.2em; color: var(--ink-3); user-select: none; }
@@ -154,3 +190,22 @@ svg.gflow { display: block; max-width: none; height: auto; font: 11.5px var(--mo
   .gwrap { display: block; }
   .gguess-a[hidden] { display: block; }
 }
+
+/* the node application: a box to type in beside how it will read */
+.gdot-none { background: transparent; border-color: var(--ink-3); }
+.ntext { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 1.2rem; margin: 1rem 0 1.6rem; align-items: start; }
+.ntext-box { width: 100%; box-sizing: border-box; min-height: 6rem; font: 13px/1.5 var(--mono); }
+.ntext-pv { border-left: 3px solid var(--rule); padding: .2rem 0 .2rem 1rem; min-height: 3rem; }
+.ntext-pv > :first-child { margin-top: 0; }
+.npc { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 1.2rem; align-items: start; }
+.npc-box { width: 100%; box-sizing: border-box; font: 13px/1.6 var(--mono); tab-size: 2; }
+.nfind { margin-top: 1.4rem; }
+.nnext { display: flex; justify-content: space-between; gap: 1rem; margin-top: 2.4rem; padding-top: 1rem; border-top: 1px solid var(--rule-2); }
+.nnext .ctl:only-child { margin-left: auto; }
+.nbanner { background: var(--in-pale); border-left: 3px solid var(--in); padding: .5rem .8rem; border-radius: 0 6px 6px 0; font-size: 12px; }
+.nhelp { border: 1px solid var(--rule); border-radius: 8px; padding: .6rem .9rem; background: var(--card); }
+.te .gs-in { min-width: 6rem; }
+.te th .gs-in { font-weight: 700; }
+.te-acts { display: flex; gap: .4rem; align-items: center; flex-wrap: wrap; }
+.te-paste textarea { width: 100%; box-sizing: border-box; }
+@media (max-width: 900px) { .ntext, .npc { grid-template-columns: minmax(0, 1fr); } }

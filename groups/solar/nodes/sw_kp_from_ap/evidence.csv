@@ -1,0 +1,12 @@
+inputs,value,unit,source,says
+ap=0,0,1,iaga_kp_ap,"Kp 0 — ap 0, the table's first point."
+ap=4,1,1,iaga_kp_ap,Kp 1 — ap 4.
+ap=7,2,1,iaga_kp_ap,Kp 2 — ap 7.
+ap=15,3,1,iaga_kp_ap,"Kp 3 — ap 15, the legacy study's own climatology constant, and what env_kp declares by hand."
+ap=27,4,1,iaga_kp_ap,Kp 4 — ap 27.
+ap=48,5,1,iaga_kp_ap,"Kp 5 — ap 48, the storm threshold."
+ap=80,6,1,iaga_kp_ap,Kp 6 — ap 80.
+ap=132,7,1,iaga_kp_ap,Kp 7 — ap 132.
+ap=207,8,1,iaga_kp_ap,Kp 8 — ap 207.
+ap=400,9,1,iaga_kp_ap,"Kp 9 — ap 400, the table's last point."
+ap=1000,9,1,iaga_kp_ap,above the table — ap 1000 holds at Kp 9 rather than extrapolating.

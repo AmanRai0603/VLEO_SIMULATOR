@@ -14,7 +14,7 @@ const CSV = ['group.csv', 'members.csv', 'nodes.csv', 'publishes.csv', 'requirem
   'constants.csv', 'sources.csv', 'versions.csv', 'equations.csv', 'symbols.csv', 'figures.csv', 'reviews.csv',
   'results/group.csv'];
 const TEXT = ['explanation.md', 'theory.md', 'flow.txt'];
-const NODE_CSV = ['inputs.csv', 'evidence.csv', 'equations.csv', 'symbols.csv', 'figures.csv', 'results/isolation.csv'];
+const NODE_CSV = ['inputs.csv', 'evidence.csv', 'equations.csv', 'symbols.csv', 'figures.csv', 'sources.csv', 'results/isolation.csv'];
 const NODE_TEXT = ['explanation.md', 'theory.md', 'pseudocode.txt', 'results/how-run.md'];
 
 /** Read a whole folder. Answers `{ folder, group, nodes: Map, order, edges, external, problems }`. */
@@ -138,7 +138,7 @@ export function resultColumns(t) {
   t.head.forEach((h, k) => {
     const { name, unit } = splitUnit(h);
     if (name === 'answer' || name.startsWith('answer.') || name.startsWith('answer ')) answers.push({ k, name, unit });
-    else if (['tolerance', 'refuses', 'origin', 'note', 'label'].includes(name)) other[name] = k;
+    else if (['tolerance', 'refuses', 'origin', 'note', 'label', 'says'].includes(name)) other[name] = k;
     else inputs.push({ k, name, unit });
   });
   return { inputs, answers, other };

@@ -1,0 +1,16 @@
+# Transcribed from crates/vleo-mod-solar/nodes/sw_exceedance_phase/model.rs (HOLE 1 and its guards) — the method the code already runs.
+# The median cycle phase of the days at or above each design Ap (48, 80, 132), counted outside this crate from bundles/solar-weather (noaa_swpc).
+# The generated finite check on the answer: the table is finite and held at its ends, so the only
+# non-finite answer comes from an Ap that is not a number, and it is refused here, before the lookup.
+if not (ap_design == ap_design) then
+  refuse "The computation produced a value that is not a number."
+end
+# Three anchors; linear between them and held at both ends (Table1::at), as the Rust does.
+let out = interp(ap_design, [48.0, 80.0, 132.0] [1], [0.5716920240, 0.5763024435, 0.6026970954] [1])
+if out < 0 then
+  refuse "Cycle phase runs from 0 at minimum, so below 0 is not a phase."
+end
+if out > 1 then
+  refuse "Cycle phase ends at 1 at the next minimum, so above 1 is not a phase."
+end
+return out

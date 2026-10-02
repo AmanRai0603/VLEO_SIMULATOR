@@ -1,0 +1,21 @@
+# Transcribed from crates/vleo-mod-solar/nodes/sw_activity_band/model.rs (HOLE 1 and its guards) — the method the code already runs.
+# Numbers: the standard NOAA SWPC (noaa_swpc) F10.7 activity levels, as prf_segment applies them — edges 90, 130, 170 sfu.
+# One plus the count of edges reached; >= so a flux exactly on an edge opens the higher band.
+# The runtime's own finiteness check stands in for the generated "not a number" guard.
+let n = 1
+if f107 >= 90 then
+  set n = n + 1
+end
+if f107 >= 130 then
+  set n = n + 1
+end
+if f107 >= 170 then
+  set n = n + 1
+end
+if n < 1 then
+  refuse "there are four bands and the lowest is 1: the counting started in the wrong place"
+end
+if n > 4 then
+  refuse "there are four bands and the highest is 4: an edge was added without the range being updated"
+end
+return n

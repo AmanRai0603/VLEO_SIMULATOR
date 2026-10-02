@@ -1,0 +1,13 @@
+ap [1],answer [1],tolerance,refuses,origin,says
+0,0,0.000000000001,no,paper,"Kp 0 — ap 0, the table's first point."
+4,1,0.000000000001,no,paper,Kp 1 — ap 4.
+7,2,0.000000000001,no,paper,Kp 2 — ap 7.
+15,3,0.000000000001,no,paper,"Kp 3 — ap 15, the legacy study's own climatology constant, and what env_kp declares by hand."
+27,4,0.000000000001,no,paper,Kp 4 — ap 27.
+48,5,0.000000000001,no,paper,"Kp 5 — ap 48, the storm threshold."
+80,6,0.000000000001,no,paper,Kp 6 — ap 80.
+132,7,0.000000000001,no,paper,Kp 7 — ap 132.
+207,8,0.000000000001,no,paper,Kp 8 — ap 207.
+400,9,0.000000000001,no,paper,"Kp 9 — ap 400, the table's last point."
+1000,9,0.000000000001,no,paper,above the table — ap 1000 holds at Kp 9 rather than extrapolating.
+NaN,,,yes,hand,"outside what the node holds for: its code refuses it, and so must the developer's"

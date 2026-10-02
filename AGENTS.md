@@ -207,9 +207,11 @@ results, the manual, figures and these documents are all held to it by check.
     cargo run -p xtask -- kit               the tool for the team, without the
                                             repository (docs/SHARING.md)
     cargo run -p xtask -- group-app [--check]
-                                            web/group.html, the page a group opens
-                                            its folder in, and the folder pattern's
-                                            two documents, from groups/SPEC.toml
+                                            web/group.html and web/node.html, the
+                                            pages a group keeps its database files
+                                            in (docs/GROUP_APPS.md), and the folder
+                                            pattern's two documents, from
+                                            groups/SPEC.toml
     cargo run -p xtask -- group-export <group>
                                             a group's folder, written from the tree,
                                             for the group to start from

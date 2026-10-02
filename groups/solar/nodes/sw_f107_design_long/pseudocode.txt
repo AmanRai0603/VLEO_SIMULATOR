@@ -1,0 +1,13 @@
+# Transcribed from crates/vleo-mod-solar/nodes/sw_f107_design_long/model.rs (HOLE 1 and its guards) — the method the code already runs.
+# Numbers: NOAA SWPC (noaa_swpc) record via prf_density.m:217 (designWindow_); 1.28 is the one-sided 90th percentile of a normal, declared in the sheet.
+# The hot edge of the sustained band: the central F10.7 plus 1.28 standard deviations of the rotation-forecast residual.
+# The runtime's own finiteness check stands in for the generated "not a number" guard.
+const z = 1.28 [1]   # one-sided 90th percentile of a normal
+let sustained = central + spread * z
+if sustained < 60 then
+  refuse "below 60 sfu has never been observed: the spread has been subtracted rather than added"
+end
+if sustained > 400 then
+  refuse "above 400 sfu the exospheric temperature relation is extrapolated past the largest recorded daily value"
+end
+return sustained

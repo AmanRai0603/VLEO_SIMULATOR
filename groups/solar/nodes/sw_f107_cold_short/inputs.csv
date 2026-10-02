@@ -1,0 +1,3 @@
+name,from,unit,default,min,max,says
+sustained,sw_f107_cold_long,1,141.1088022713,60,400,
+daily,sw_daily_band_drop,1,31.2722222222,0,120,

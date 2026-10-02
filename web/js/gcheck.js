@@ -199,7 +199,9 @@ export async function checkGroup(model, spec) {
     t.rows.forEach((r, i) => {
       const line = t.lines[i];
       const refuses = refK !== undefined && r[refK] === 'yes';
-      for (const c of cols.inputs) if (num(r[c.k]) === null) add('error', where, c.name + ' is not a number', line);
+      // A refusal may test a value that is not a finite number: the node must refuse that too.
+      const odd = v => refuses && /^[-+]?(nan|inf|infinity)$/i.test(String(v).trim());
+      for (const c of cols.inputs) if (num(r[c.k]) === null && !odd(r[c.k])) add('error', where, c.name + ' is not a number', line);
       if (refuses) {
         refusals++;
         if (cols.answers.some(a => r[a.k] !== '')) add('warning', where, 'a refusal should leave the answer blank', line);
@@ -265,6 +267,13 @@ export async function checkGroup(model, spec) {
   }
   const sourceIds = new Set(model.group.sources.map(s => s.id));
   for (const s of model.group.sources) if (s.file && !f.has(s.file) && !f.has('sources/' + s.file)) add('error', 'sources.csv', s.id + ': the file ' + s.file + ' is not in the folder', s._line);
+  // A node's own sources count for the whole group: a paper cited once is cited.
+  for (const n of model.nodes.values()) {
+    for (const s of n.files['sources.csv'] ? records(n.files['sources.csv']) : []) {
+      if (s.file && !f.has(n.dir + s.file) && !f.has(n.dir + 'sources/' + s.file)) add('error', n.dir + 'sources.csv', s.id + ': the file ' + s.file + ' is not in the folder', s._line);
+      if (s.id) sourceIds.add(s.id);
+    }
+  }
   const cite = (where, rows) => rows.forEach(r => { if (r.source && !sourceIds.has(r.source)) add('error', where, 'cites "' + r.source + '", which sources.csv does not list', r._line); });
   cite('equations.csv', model.group.equations);
   cite('constants.csv', model.group.constants);

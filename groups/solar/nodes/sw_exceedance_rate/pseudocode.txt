@@ -1,0 +1,14 @@
+# Transcribed from crates/vleo-mod-solar/nodes/sw_exceedance_rate/model.rs (HOLE 1 and its guards) — the method the code already runs.
+# Numbers: days at or above each G-scale Ap bound per year of the 28.197 years of record, counted from bundles/solar-weather (NOAA SWPC record, noaa_swpc).
+# Three anchors, Ap 48, 80 and 132 (G1, G2, G3) — the only values sw_ap_design can return. A Table1 lookup:
+# linear between anchors (the sheet declares that interpolation wrong for this quantity and unreached), held at both ends.
+let out = interp(ap_design, [48.0, 80.0, 132.0], [4.6458636761, 1.2412612875, 0.2837168657])
+
+# Generated guards: the declared domain of R_exc.
+if out < 0.1 then
+  refuse "below 0.1 is under the lowest rate the table holds (0.284 at Ap 132), so the table has been read at the wrong end"
+end
+if out > 6 then
+  refuse "above 6 days a year is over the highest rate the table holds (4.65 at Ap 48), below anything the G scale defines as a storm"
+end
+return out

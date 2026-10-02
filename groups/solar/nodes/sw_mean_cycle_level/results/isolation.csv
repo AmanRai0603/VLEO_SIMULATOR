@@ -1,0 +1,22 @@
+phase [1],answer [1],tolerance,refuses,origin,says
+0.025,71.7632,0.000000000001,no,hand,phase 0.025 — 418 days from two cycles — mean F10.7 71.76 sfu.
+0.075,83.8947,0.000000000001,no,hand,phase 0.075 — 418 days from two cycles — mean F10.7 83.89 sfu.
+0.125,99.2177,0.000000000001,no,hand,phase 0.125 — 418 days from two cycles — mean F10.7 99.22 sfu.
+0.175,111.0502,0.000000000001,no,hand,phase 0.175 — 418 days from two cycles — mean F10.7 111.05 sfu.
+0.225,135.6555,0.000000000001,no,hand,phase 0.225 — 418 days from two cycles — mean F10.7 135.66 sfu.
+0.275,159.6603,0.000000000001,no,hand,phase 0.275 — 418 days from two cycles — mean F10.7 159.66 sfu.
+0.325,145.3702,0.000000000001,no,hand,phase 0.325 — 416 days from two cycles — mean F10.7 145.37 sfu.
+0.375,146.7273,0.000000000001,no,hand,phase 0.375 — 418 days from two cycles — mean F10.7 146.73 sfu.
+0.425,165.2799,0.000000000001,no,hand,phase 0.425 — 418 days from two cycles — mean F10.7 165.28 sfu.
+0.475,160.3301,0.000000000001,no,hand,phase 0.475 — 415 days from two cycles — mean F10.7 160.33 sfu.
+0.525,135.3182,0.000000000001,no,hand,phase 0.525 — 418 days from two cycles — mean F10.7 135.32 sfu.
+0.575,126.2321,0.000000000001,no,hand,phase 0.575 — 418 days from two cycles — mean F10.7 126.23 sfu.
+0.625,105.8445,0.000000000001,no,hand,phase 0.625 — 418 days from two cycles — mean F10.7 105.84 sfu.
+0.675,95.5084,0.000000000001,no,hand,phase 0.675 — 417 days from two cycles — mean F10.7 95.51 sfu.
+0.725,86.9916,0.000000000001,no,hand,phase 0.725 — 358 days from two cycles — mean F10.7 86.99 sfu.
+0.775,80.9171,0.000000000001,no,hand,phase 0.775 — 217 days from two cycles — mean F10.7 80.92 sfu.
+0.825,76.2094,0.000000000001,no,hand,phase 0.825 — 406 days from two cycles — mean F10.7 76.21 sfu.
+0.875,71.0478,0.000000000001,no,hand,phase 0.875 — 418 days from two cycles — mean F10.7 71.05 sfu.
+0.925,71.5383,0.000000000001,no,hand,phase 0.925 — 418 days from two cycles — mean F10.7 71.54 sfu.
+0.975,67.6538,0.000000000001,no,hand,phase 0.975 — 416 days from two cycles — mean F10.7 67.65 sfu.
+NaN,,,yes,hand,"outside what the node holds for: its code refuses it, and so must the developer's"
