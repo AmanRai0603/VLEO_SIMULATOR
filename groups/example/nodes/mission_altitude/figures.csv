@@ -1,0 +1,2 @@
+id,kind,file,title,x,y,z,on
+altitude-band,bar,figures/band.csv,"The altitudes this group's nodes are built for, and the one the mission chose.",what,h,,

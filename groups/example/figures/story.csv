@@ -1,0 +1,10 @@
+from,to,label
+altitude,radius,+ Earth's radius
+radius,speed,v = sqrt(mu/r)
+radius,period,T = 2 pi sqrt(r^3/mu)
+period,limit_check,<= 95 min?
+altitude,,the mission's choice
+radius,,from the Earth's centre
+speed,,how fast it moves
+period,,how long one orbit takes
+limit_check,,does it meet the requirement

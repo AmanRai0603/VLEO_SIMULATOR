@@ -1,0 +1,2 @@
+version,date,by,believed,tested,learned,changed,risks
+1.0,2026-10-02,Ada Example,"A circular two-body orbit is enough to size speed and period at these altitudes.","The results from code/orbit.py against the two-body relations in Vallado (2013), eq. 1-18 and 1-27.","They agree to the last digit. Nothing outside the code has checked them yet: evidence.csv is still empty.","First version of the folder: four computed nodes, one declared, one requirement.",

@@ -1,0 +1,7 @@
+symbol,name,unit,means
+r,orbit radius,m,distance from the centre of the Earth to the spacecraft
+v,orbital speed,m/s,how fast the spacecraft moves along its orbit
+T,orbital period,s,the time one orbit takes
+\mu,gravitational parameter,m^3/s^2,"the Earth's mass times the gravitational constant, GM"
+h,altitude,km,height above the Earth's equatorial radius
+R_{\oplus},Earth radius,m,the Earth's equatorial radius

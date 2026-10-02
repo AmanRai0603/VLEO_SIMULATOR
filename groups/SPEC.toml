@@ -1,0 +1,415 @@
+# THE GROUP FOLDER — the one place a group keeps everything it knows.
+#
+# A group (solar, power, thermal…) keeps one folder in this fixed pattern, on
+# its Google shared drive. It is the ONLY source of the design: the developer
+# compiles it into the database the application reads, and generates the
+# engine from the pseudocode in it. Nothing else is ever edited by hand.
+#
+# This file is the pattern itself, once. Three things are generated from it
+# and checked against it by `cargo run -p xtask -- group-app --check`:
+#
+#   web/group.html                 the group application: reads a folder,
+#                                  shows everything, checks it, signs, seals
+#   groups/skill/vleo-group-folder/SKILL.md          the rules an assistant follows when it
+#                                  helps a member fill the folder
+#   docs/GROUP_FOLDER.md           the same rules, for a person to read
+#
+# Change the pattern here and nowhere else. A rule written in two places is
+# two rules, and the second copy is the one that drifts.
+#
+# Two formats carry almost everything: CSV for anything that is a table, and
+# Markdown text for anything that is words. Pictures that are data are never
+# images — they are a CSV and an entry in figures.csv, and the application
+# draws them. Images are only for pictures that are not data: a photograph, a
+# sketch, a drawing of hardware.
+
+version = 1
+
+# ── the conventions every file follows ─────────────────────────────────────
+
+[conventions]
+csv = """
+UTF-8, comma-separated, one header row, one table per file, no merged cells
+and no formulas. A column that carries a quantity says its unit in the
+header: `altitude [km]`. A cell that holds several ids separates them with
+spaces. Save a spreadsheet as CSV; never send the spreadsheet.
+"""
+markdown = """
+Markdown text with the headings this pattern requires, in order, each as
+`## Heading`. Maths inline as $...$ and on its own line as $$...$$, both in
+LaTeX. An equation used more than once lives in equations.csv and is placed
+with {{eq E1}}. A picture is placed with {{fig id}}, where id is a row of
+figures.csv.
+"""
+ids = """
+An id is lower case letters, digits and underscores, starting with a letter:
+`sw_f107_design`. A node's folder is named by its id and never renamed.
+"""
+equations = """
+Written in LaTeX, stored once in equations.csv. Nobody has to type LaTeX by
+hand: the group application's equation helper turns plain shorthand such as
+`v = sqrt(mu/r)` into it, and an assistant can write it from a photo of
+handwriting, a screenshot of a paper or a Word equation. Every `let` and
+`return` line of a pseudocode is shown as an equation automatically, so an
+equation the pseudocode already states is never written twice.
+"""
+
+# ── the things a Markdown file may contain ─────────────────────────────────
+
+[[embed]]
+name = "eq"
+form = "{{eq E1}}"
+says = "an equation from equations.csv (the node's own, then the group's), typeset, with its symbols explained on hover"
+
+[[embed]]
+name = "fig"
+form = "{{fig flow}}"
+says = "a picture from figures.csv: a chart, a flow diagram, a step-by-step animation, a heatmap, a 3D view, an image or a video"
+
+[[embed]]
+name = "guess"
+form = "{{guess Which is larger, the day or the slot? || The slot: a day averages eight of them.}}"
+says = "a question the reader answers in their head before the answer is shown — explanation only"
+
+[[embed]]
+name = "node"
+form = "{{node sw_ap_design}}"
+says = "a link to another node in this group"
+
+# ── the two kinds of text, and the line between them ───────────────────────
+
+[[text]]
+file = "explanation.md"
+role = "explanation"
+says = """
+How to UNDERSTAND it, for anyone. The answer first, then the simple version,
+then a picture, then a question to guess, then where the simple version
+breaks, then the idea people most often get wrong. Built to be understood,
+not to be derived: no derivations here. It may place an equation with
+{{eq}} to point at it, but it never restates the mathematics.
+"""
+headings = ["In one line", "Said simply", "Picture it", "Guess first", "Where it breaks", "Common misreading"]
+forbid = ["$$"]
+forbid_says = "display maths belongs in theory.md; place the equation here with {{eq id}} instead"
+
+[[text]]
+file = "theory.md"
+role = "theory"
+says = """
+Only the mathematics and its reasoning: the governing equations, the
+derivation step by step, the assumptions stated as conditions, and where the
+result is valid. No analogies and no intuition — those are the explanation's,
+and saying them twice is how the two drift apart.
+"""
+headings = ["Equations", "Derivation", "Assumptions", "Validity"]
+forbid = ["{{guess"]
+forbid_says = "a guess-first question belongs in explanation.md"
+
+# ── the group's own files ──────────────────────────────────────────────────
+
+[[file]]
+path = "group.csv"
+level = "group"
+required = true
+rows = "one"
+says = "who the group is and which version of its folder this is"
+columns = [
+  { name = "id", says = "the group's id, e.g. solar" },
+  { name = "name", says = "its name for people, e.g. Solar weather" },
+  { name = "owner", says = "the person who signs the whole group" },
+  { name = "version", says = "this folder's version, e.g. 1.3; raise it whenever anything changes" },
+  { name = "summary", says = "the group's answer in one sentence" },
+]
+
+[[file]]
+path = "members.csv"
+level = "group"
+required = true
+says = "everyone who signs, and what they sign"
+columns = [
+  { name = "name", says = "as they sign" },
+  { name = "role", says = "owner, author or reviewer", one_of = ["owner", "author", "reviewer"] },
+  { name = "nodes", says = "the node ids they are the author of, space-separated; * for every node", optional = true },
+]
+
+[[file]]
+path = "explanation.md"
+level = "group"
+required = true
+text = "explanation"
+says = "the whole group, understood: what it answers, how its nodes work together, with the flow as a picture"
+
+[[file]]
+path = "theory.md"
+level = "group"
+required = true
+text = "theory"
+says = "only the maths that spans nodes: coupled equations, the logic of a loop, shared assumptions. Write 'None beyond the nodes' own.' under each heading when there is none."
+
+[[file]]
+path = "flow.txt"
+level = "group"
+required = true
+says = "the group's pseudocode: which node feeds which, in order. One line per step: `node_id <- input_a, input_b`."
+
+[[file]]
+path = "nodes.csv"
+level = "group"
+required = true
+says = "every node in the group, one row each"
+columns = [
+  { name = "id", says = "the node's id; its folder is nodes/<id>/" },
+  { name = "question", says = "the one question the node answers, as a question" },
+  { name = "kind", says = "computed (has pseudocode), declared (a value someone states), required or achieved (the two sides of a requirement)", one_of = ["computed", "declared", "required", "achieved"] },
+  { name = "output", says = "the name of what it answers, e.g. f107_design" },
+  { name = "unit", says = "the output's unit, e.g. sfu, km, W, 1 for a pure number" },
+  { name = "lower", says = "the lowest value it can sensibly give", optional = true },
+  { name = "upper", says = "the highest value it can sensibly give", optional = true },
+  { name = "value", says = "a declared node's value", optional = true },
+]
+
+[[file]]
+path = "publishes.csv"
+level = "group"
+required = false
+says = "what the group sends upward to the rest of the design"
+columns = [
+  { name = "node", says = "the node whose output is sent" },
+  { name = "to", says = "the group or system row that reads it" },
+  { name = "says", says = "what the reader gets, in a sentence" },
+]
+
+[[file]]
+path = "requirements.csv"
+level = "group"
+required = false
+says = "every requirement, and which way it binds — never left to prose"
+columns = [
+  { name = "id", says = "the requirement's id" },
+  { name = "required", says = "the node holding the bound" },
+  { name = "achieved", says = "the node holding what the design achieves" },
+  { name = "sense", says = "<= when the achieved value must stay under the bound, >= when it must reach it", one_of = ["<=", ">="] },
+  { name = "says", says = "the requirement in a sentence" },
+]
+
+[[file]]
+path = "loops.csv"
+level = "group"
+required = false
+says = "every loop the group's nodes form on purpose, declared so it is iterated rather than refused"
+columns = [
+  { name = "nodes", says = "the node ids in the loop, space-separated" },
+  { name = "converge_on", says = "the node whose output must settle" },
+  { name = "tolerance", says = "how close two passes must be to stop" },
+  { name = "max_iter", says = "the most passes before it gives up and says so" },
+  { name = "seed_node", says = "the node given a starting value" },
+  { name = "seed_value", says = "that starting value, in the node's unit" },
+  { name = "source", says = "where the starting value comes from" },
+]
+
+[[file]]
+path = "constants.csv"
+level = "group"
+required = false
+says = "numbers several nodes share, stated once with their source"
+columns = [
+  { name = "id", says = "the constant's id" },
+  { name = "value", says = "its value" },
+  { name = "unit", says = "its unit" },
+  { name = "source", says = "a sources.csv id" },
+  { name = "says", says = "what it is" },
+]
+
+[[file]]
+path = "sources.csv"
+level = "group"
+required = true
+says = "every source the group rests on; a cited PDF sits in sources/"
+columns = [
+  { name = "id", says = "the source's id, used wherever it is cited" },
+  { name = "cite", says = "author, year, title, where" },
+  { name = "file", says = "the file under sources/, if there is one", optional = true },
+  { name = "url", says = "where it can be found", optional = true },
+  { name = "licence", says = "whether we may keep and share it", optional = true },
+]
+
+[[file]]
+path = "versions.csv"
+level = "group"
+required = true
+says = "the group's history: what each version believed, tested and learned, and what changed"
+columns = [
+  { name = "version", says = "the version, matching group.csv" },
+  { name = "date", says = "YYYY-MM-DD" },
+  { name = "by", says = "who made it" },
+  { name = "believed", says = "what we believed before" },
+  { name = "tested", says = "what tested it" },
+  { name = "learned", says = "what we now know" },
+  { name = "changed", says = "what changed in the folder because of it" },
+  { name = "risks", says = "the risks it opened or closed", optional = true },
+]
+
+[[file]]
+path = "equations.csv"
+level = "both"
+required = false
+says = "every equation, once, in LaTeX"
+columns = [
+  { name = "id", says = "E1, E2… — placed in text with {{eq E1}}" },
+  { name = "latex", says = "the equation in LaTeX; the equation helper writes it from shorthand" },
+  { name = "says", says = "the equation in words" },
+  { name = "source", says = "a sources.csv id", optional = true },
+]
+
+[[file]]
+path = "symbols.csv"
+level = "both"
+required = false
+says = "what each symbol means, shown when a reader points at it"
+columns = [
+  { name = "symbol", says = "as it appears in the LaTeX, e.g. \\mu or F_{10.7}" },
+  { name = "name", says = "its name" },
+  { name = "unit", says = "its unit" },
+  { name = "means", says = "what it means, in a sentence" },
+]
+
+[[file]]
+path = "figures.csv"
+level = "both"
+required = false
+says = "every picture, drawn from data; images only for pictures that are not data"
+columns = [
+  { name = "id", says = "placed in text with {{fig id}}" },
+  { name = "kind", says = "line, scatter, bar, heatmap, animation, scene3d, flow, steps, image or video", one_of = ["line", "scatter", "bar", "heatmap", "animation", "scene3d", "flow", "steps", "image", "video"] },
+  { name = "file", says = "the data file (figures/…csv) or the image or video (images/…)" },
+  { name = "title", says = "the caption: what the picture shows, in a sentence" },
+  { name = "x", says = "the column across (line, scatter, bar, heatmap, animation)", optional = true },
+  { name = "y", says = "the column(s) up, space-separated for several series", optional = true },
+  { name = "z", says = "heatmap: the value column; animation: the frame column", optional = true },
+  { name = "on", says = "steps: the flow figure the steps walk through", optional = true },
+]
+
+[[file]]
+path = "results/group.csv"
+level = "group"
+required = false
+says = "the group as a whole: group inputs in, group outputs out, at the defaults and at the edges — the developer's group test"
+
+[[file]]
+path = "reviews.csv"
+level = "group"
+required = false
+written_by_app = true
+says = "every sign-off, written by the group application: who signed what, at which content fingerprint"
+columns = [
+  { name = "name", says = "who signed" },
+  { name = "scope", says = "group, or a node id" },
+  { name = "version", says = "the folder version signed" },
+  { name = "fingerprint", says = "the content fingerprint signed; a change to the content makes it stale" },
+  { name = "date", says = "when" },
+  { name = "verdict", says = "ok, or changes", one_of = ["ok", "changes"] },
+  { name = "note", says = "what they want changed", optional = true },
+]
+
+# ── each node's files: nodes/<id>/ ─────────────────────────────────────────
+
+[[file]]
+path = "explanation.md"
+level = "node"
+required = true
+text = "explanation"
+says = "the node, understood"
+
+[[file]]
+path = "theory.md"
+level = "node"
+required = true
+text = "theory"
+says = "the node's mathematics and nothing else"
+
+[[file]]
+path = "pseudocode.txt"
+level = "node"
+required = true
+kinds = ["computed"]
+says = """
+The algorithm, in the method language (docs/PSEUDOCODE.md): `let`, `if`,
+`for`, `refuse`, `return`, every number with its unit. Required on every
+computed node. The developer's code is generated from it, so it must say
+exactly what the node does. Nothing in the group application runs it.
+"""
+
+[[file]]
+path = "inputs.csv"
+level = "node"
+required = true
+kinds = ["computed"]
+says = "every input: where it comes from and the value it takes by default"
+columns = [
+  { name = "name", says = "the name the pseudocode uses" },
+  { name = "from", says = "the node it comes from (id in this group, or group.node in another), or case when a user sets it" },
+  { name = "unit", says = "its unit" },
+  { name = "default", says = "the value used when nothing else is given", optional = true },
+  { name = "min", says = "the lowest valid value", optional = true },
+  { name = "max", says = "the highest valid value", optional = true },
+  { name = "says", says = "what it is", optional = true },
+]
+
+[[file]]
+path = "results/isolation.csv"
+level = "node"
+required = true
+kinds = ["computed"]
+says = """
+The node on its own: one row per test, the inputs in, the answer out. This
+is the reference the developer's code must match, so it comes from outside
+that code — your own code, a hand calculation, a spreadsheet or a paper.
+Columns: one per input, named as in inputs.csv with its unit
+(`r [m]`); then `answer [unit]`; then `tolerance` (relative, e.g. 1e-9);
+`refuses` (yes when the node must refuse, with answer left blank); and
+`origin` (code, hand, spreadsheet or paper). At least: the defaults, three
+ordinary cases, both ends of every input's range, and one refusal.
+"""
+columns = [
+  { name = "answer", says = "the expected answer, with its unit in the header; blank on a refusal", prefix = true },
+  { name = "tolerance", says = "relative tolerance" },
+  { name = "refuses", says = "yes or no", one_of = ["yes", "no"] },
+  { name = "origin", says = "code, hand, spreadsheet or paper", one_of = ["code", "hand", "spreadsheet", "paper"] },
+]
+
+[[file]]
+path = "results/how-run.md"
+level = "node"
+required = false
+required_when = "origin_code"
+says = "how the code that produced isolation.csv was run: language, tool and version, machine, date, the command"
+
+[[file]]
+path = "evidence.csv"
+level = "node"
+required = false
+says = "values from OUTSIDE any code — a paper, a handbook, another tool — that check the physics, not the code"
+columns = [
+  { name = "inputs", says = "the inputs it holds for, as name=value pairs separated by spaces" },
+  { name = "value", says = "the value" },
+  { name = "unit", says = "its unit" },
+  { name = "source", says = "a sources.csv id" },
+  { name = "says", says = "what it is", optional = true },
+]
+
+[[file]]
+path = "code/"
+level = "node"
+required = false
+says = "your own code, if you have it, kept for the record. Nothing runs it; its results are in results/isolation.csv"
+
+# ── what the group application will not accept ─────────────────────────────
+
+[limits]
+file_bytes = 5242880
+file_bytes_says = "5 MB per file. Larger data goes to the developer as a data bundle, not into the folder"
+image_types = ["png", "jpg", "jpeg", "svg", "gif", "webp"]
+video_types = ["mp4", "webm"]
+source_types = ["pdf"]
+refused_types = ["xlsx", "xls", "docx", "doc", "pptx"]
+refused_says = "save a spreadsheet as CSV and a document as Markdown; the application cannot read inside them"
