@@ -1,0 +1,7 @@
+level [1],answer [1],tolerance,refuses,origin,says
+26.69530964,63.8519,0.000000000001,no,hand,"at the declared window's own sustained level, Ap 26.70 — just above the top knot, so this is the clamp and the sheet argues about what it costs."
+11,14.6667,0.000000000001,no,hand,"the Ap 11 knot, exactly — a transcription check, and near where the study's own sample sat at Ap 11.64."
+20,28.6759,0.000000000001,no,hand,"the Ap 20 knot, exactly — a transcription check below the steep last segment."
+17.5,26.23055,0.000000001,no,hand,halfway between the Ap 15 and Ap 20 knots — the interpolation.
+2,6.0167,0.000000000001,no,hand,"below the bottom of the table — the clamp, not an extrapolation toward zero."
+NaN,,,yes,hand,"outside what the node holds for: its code refuses it, and so must the developer's"

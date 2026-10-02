@@ -1,0 +1,2 @@
+id,kind,file,title,x,y,z,on
+regime_phase,line,figures/regime_phase.csv,The share of days that were storm days and quiet days at each tenth of the solar cycle.,phase,storm_pct quiet_pct,,

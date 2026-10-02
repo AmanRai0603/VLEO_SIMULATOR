@@ -1,0 +1,6 @@
+epoch [d],answer [1],tolerance,refuses,origin,says
+9862,0.6193669438022621,0.000000000001,no,hand,"the declared mission epoch, 2027-01-01 — 2588 days into cycle 25."
+7274,0,0.000000000001,no,hand,the day cycle 25 begins — phase must be exactly zero.
+9363.23,0.4999999999999999,0.000000000001,no,hand,"half a mean cycle after the start — phase one half, to the last bit float allows."
+0.0,,,yes,hand,"outside what the node holds for: its code refuses it, and so must the developer's"
+11574.074074074075,,,yes,hand,"outside what the node holds for: its code refuses it, and so must the developer's"

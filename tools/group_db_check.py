@@ -17,16 +17,20 @@ people do, each page opened from a file with no network:
                 author's signature is still current; signs the rest and seals.
 
 Python's own sqlite3 reads every file the pages write, and the vendored engine
-is the one web/vendor/sqlite/SOURCE.toml records.
+is the one web/vendor/sqlite/SOURCE.toml records. tools/group_db.mjs, which
+runs the same modules in Node, makes the structure, every node file and the
+release from the example folder and from groups/solar, and each is read back.
 
     python3 tools/group_db_check.py
 
 Exit 0 when every step held; 1 with the steps that did not.
 """
+import csv
 import gzip
 import hashlib
 import os
 import sqlite3
+import subprocess
 import sys
 import tempfile
 import tomllib
@@ -68,6 +72,21 @@ def check():
     def db(path):
         return sqlite3.connect('file:' + path + '?mode=ro', uri=True)
 
+    # The folder tool: every database kind, from a folder, by the page's own code.
+    for name in ('example', 'solar'):
+        folder = os.path.join(ROOT, 'groups', name)
+        out = os.path.join(tmp, name + '-db')
+        r = subprocess.run(['node', os.path.join(ROOT, 'tools', 'group_db.mjs'), folder, '--out', out], capture_output=True, text=True)
+        nodes = [row['id'] for row in csv.DictReader(open(os.path.join(folder, 'nodes.csv')))]
+        made = sorted(f[:-6] for f in os.listdir(os.path.join(out, 'nodes'))) if r.returncode == 0 else []
+        rel = [f for f in os.listdir(os.path.join(out, 'releases'))] if r.returncode == 0 else []
+        ok = r.returncode == 0 and made == sorted(nodes) and len(rel) == 1
+        if ok:
+            c = db(os.path.join(out, 'releases', rel[0]))
+            ok = (c.execute('select count(*) from node').fetchone()[0] == len(nodes)
+                  and c.execute("select count(*) from doc where kind='pseudocode'").fetchone()[0] > 0)
+        step(f'groups/{name} becomes a structure, {len(nodes)} node files and a release', ok, (r.stderr or '').strip()[:200])
+
     with sync_playwright() as pw:
         exe = chromium_path()
         b = pw.chromium.launch(**({'executable_path': exe} if exe else {}))
@@ -89,6 +108,22 @@ def check():
         def go(p, h, wait=600):
             p.evaluate(f"location.hash='{h}'")
             p.wait_for_timeout(wait)
+
+        # ── the solar group, as the lead opens it ──
+        sdir = os.path.join(tmp, 'solar-db', 'releases')
+        if os.path.isdir(sdir):
+            g = page(GROUP)
+            g.set_input_files('#gpickdb', os.path.join(sdir, os.listdir(sdir)[0]))
+            g.wait_for_selector(OPEN, timeout=30000)
+            g.wait_for_timeout(1500)
+            go(g, '#/checks', 900)
+            t = g.inner_text('#gmain')
+            step('the solar release opens, and names what a person must still decide',
+                 'sw_band_confidence is declared, so it needs a value' in t and 'sw_kp_driving_slot is declared, so it needs a value' in t,
+                 t.split('\n')[4] if len(t.split('\n')) > 4 else '')
+            go(g, '#/node/sw_uncertainty_growth/algorithm', 900)
+            step('its pseudocode is shown as equations', g.locator('.galgo-row math').count() >= 2)
+            g.close()
 
         # ── the lead keeps the example folder as a database ──
         g = page(GROUP)

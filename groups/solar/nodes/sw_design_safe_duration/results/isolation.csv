@@ -1,0 +1,6 @@
+ap_design [1],answer [yr],tolerance,refuses,origin,says
+80,0.7365302688971995,0.000000001,no,hand,"the G2 bound, Ap 80 — exceeded beyond a 0.7365-year mission."
+48,0.33699266152480806,0.000000001,no,hand,"the G1 bound, Ap 48 — exceeded beyond a 0.3370-year mission."
+132,2.62417082634327,0.000000001,no,hand,"the G3 bound, Ap 132 — the declared design level — exceeded beyond 2.6242 years, against a declared mission of 5."
+40.0,,,yes,hand,"outside what the node holds for: its code refuses it, and so must the developer's"
+207.0,,,yes,hand,"outside what the node holds for: its code refuses it, and so must the developer's"

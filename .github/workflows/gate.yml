@@ -476,6 +476,9 @@ jobs:
         run: python3 tools/mock_check.py
       - name: the group application, on the example group folder
         run: python3 tools/group_check.py
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
       - name: the group and node applications, on database files
         run: python3 tools/group_db_check.py
 

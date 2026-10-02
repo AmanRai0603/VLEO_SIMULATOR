@@ -1,0 +1,21 @@
+lead [yr],answer [1],tolerance,refuses,origin,says
+0.5010266940451745,57,0.000000000001,no,hand,lead 183 days (0.50 yr) — 9947 observed pairs.
+0.999315537303217,68.3,0.000000000001,no,hand,lead 365 days (1.00 yr) — 9675 observed pairs.
+1.5003422313483916,77,0.000000000001,no,hand,lead 548 days (1.50 yr) — 9492 observed pairs.
+1.998631074606434,91,0.000000000001,no,hand,lead 730 days (2.00 yr) — 9310 observed pairs.
+3.0006844626967832,107,0.000000000001,no,hand,lead 1096 days (3.00 yr) — 8946 observed pairs.
+4,114,0.000000000001,no,hand,lead 1461 days (4.00 yr) — 8579 observed pairs.
+4.999315537303217,113.3,0.000000000001,no,hand,lead 1826 days (5.00 yr) — 8215 observed pairs.
+5.9986310746064335,104,0.000000000001,no,hand,lead 2191 days (6.00 yr) — 7849 observed pairs.
+7.000684462696783,92,0.000000000001,no,hand,lead 2557 days (7.00 yr) — 7483 observed pairs.
+8,88,0.000000000001,no,hand,lead 2922 days (8.00 yr) — 7118 observed pairs.
+8.999315537303216,78,0.000000000001,no,hand,lead 3287 days (9.00 yr) — 7026 observed pairs.
+10.001368925393566,66,0.000000000001,no,hand,lead 3653 days (10.00 yr) — 6660 observed pairs.
+11.000684462696784,66,0.000000000001,no,hand,lead 4018 days (11.00 yr) — 6295 observed pairs.
+12,76,0.000000000001,no,hand,lead 4383 days (12.00 yr) — 5932 observed pairs.
+12.999315537303216,91,0.000000000001,no,hand,lead 4748 days (13.00 yr) — 5567 observed pairs.
+13.998631074606434,106,0.000000000001,no,hand,lead 5113 days (14.00 yr) — 5203 observed pairs.
+14.99794661190965,115,0.000000000001,no,hand,lead 5478 days (15.00 yr) — 4838 observed pairs.
+0.2737850787132101,57,0.000000000001,no,hand,below the first measured lead — 100 days holds the 183-day value rather than extrapolating.
+20,115,0.000000000001,no,hand,above the last measured lead — 20 years holds the 15-year value.
+NaN,,,yes,hand,"outside what the node holds for: its code refuses it, and so must the developer's"

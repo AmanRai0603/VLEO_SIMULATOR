@@ -1,0 +1,7 @@
+inputs,value,unit,source,says
+ap=158.38,3,1,noaa_swpc,"Ap 158.38 — the five-year return level — storm, as the table labels every day near it."
+ap=20,2,1,noaa_swpc,Ap 20 — the bottom of the producer's range — active; the table labels all 20s active.
+ap=25,2,1,noaa_swpc,Ap 25 — the last active value in the published table; 26 is the first storm.
+ap=26,3,1,noaa_swpc,"Ap 26 — the first storm value in the published table, and the boundary that matters."
+ap=132,3,1,noaa_swpc,Ap 132 — the G3 design value — storm.
+ap=230,3,1,noaa_swpc,Ap 230 — the top of the producer's range — storm.

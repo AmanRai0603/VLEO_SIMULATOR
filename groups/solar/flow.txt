@@ -1,0 +1,39 @@
+# The group's flow, from every node's inputs as the tree holds them.
+l3_solar_ach_01 <- sw_f107_design_long, l3_solar_req_01
+l3_solar_ach_02 <- sw_f107_design_short, l3_solar_req_02
+l3_solar_ach_03 <- sw_storm_return_level, l3_solar_req_03
+l3_solar_ach_04 <- sw_ap_design_long, l3_solar_req_04
+l3_solar_ach_05 <- sw_ap_design_short, l3_solar_req_05
+l3_solar_interface <- sw_central_expectation, sw_f107_design_long, sw_f107_cold_long, sw_f107_design_short, sw_f107_cold_short, sw_ap_central_expectation, sw_ap_design_long, sw_ap_cold_long, sw_ap_design_short, sw_ap_cold_short, sw_kp_scenarios, sw_kp_scenarios, sw_kp_scenarios, sw_kp_scenarios, sw_kp_scenarios, sw_kp_scenarios, sw_kp_scenarios, sw_kp_scenarios, sw_kp_scenarios, sw_kp_scenarios
+sw_activity_band <- sw_f107_observed
+sw_ap_cold_long <- sw_ap_central_expectation, sw_ap_mean_band_spread
+sw_ap_cold_short <- sw_ap_cold_long, sw_ap_daily_band_drop
+sw_ap_daily_band_drop <- sw_ap_cold_long
+sw_ap_daily_band_spread <- sw_ap_design_long
+sw_ap_design <- sw_storm_design_level
+sw_ap_design_long <- sw_ap_central_expectation, sw_ap_mean_band_spread
+sw_ap_design_short <- sw_ap_design_long, sw_ap_daily_band_spread
+sw_central_expectation <- sw_f107_observed, l3_x_envorbit.orbit_mission_duration, sys_mission_requirements.sys_mission_requirements_mission_epoch
+sw_cycle_phase <- sys_mission_requirements.sys_mission_requirements_mission_epoch
+sw_daily_band_drop <- sw_f107_cold_long
+sw_daily_band_spread <- sw_f107_design_long
+sw_design_safe_duration <- sw_ap_design
+sw_exceedance_duration <- sw_ap_design
+sw_exceedance_phase <- sw_ap_design
+sw_exceedance_rate <- sw_ap_design
+sw_f107_cold_long <- sw_central_expectation, sw_mean_band_spread
+sw_f107_cold_short <- sw_f107_cold_long, sw_daily_band_drop
+sw_f107_design_long <- sw_central_expectation, sw_mean_band_spread
+sw_f107_design_short <- sw_f107_design_long, sw_daily_band_spread
+sw_forecast_bias <- sw_recurrence_lag
+sw_forecast_skill <- sw_recurrence_lag
+sw_horizon_climatology <- l3_x_envorbit.orbit_mission_duration
+sw_horizon_persistence <- l3_x_envorbit.orbit_mission_duration
+sw_kp_from_ap <- sw_storm_return_level
+sw_kp_scenarios <- sw_ap_central_expectation, sw_ap_design_long, sw_ap_cold_long, sw_ap_design_short, sw_ap_cold_short
+sw_kp_slot_bias <- sw_storm_return_level
+sw_mean_cycle_level <- sw_cycle_phase
+sw_regime <- sw_storm_return_level
+sw_storm_return_level <- l3_x_envorbit.orbit_mission_duration
+sw_uncertainty_growth <- l3_x_envorbit.orbit_mission_duration
+sw_window_peak_level <- l3_x_envorbit.orbit_mission_duration, sys_mission_requirements.sys_mission_requirements_mission_epoch

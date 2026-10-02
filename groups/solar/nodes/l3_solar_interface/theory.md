@@ -1,0 +1,39 @@
+## Equations
+
+```
+driver_set = {nominal, hotmean, coldmean, hotday, coldday} x {f107, f107bar, ap}, each member relayed from the row that computed it
+```
+
+## Derivation
+
+A four-layer tree is only worth having if each layer can be reasoned about without opening the ones below it. That requires a rule about seams, and the rule taken here is the strict one: a subsystem is reached through exactly one node, never by reaching into it. This row is that node for solar weather, and it computes nothing — it relays what the subsystem concluded so that the seam is a row somebody owns rather than an edge nobody looks at.
+
+What crosses is a SET, and the argument for that is the same argument as for the seam itself. The study's product is five driver scenarios; a design reads one or another of them depending on what it is sizing. Crossing one number chosen as governing would push the choice of scenario above the seam, where the subsystem's reasons for it are not visible. Crossing four separate times would break the rule that a subsystem has exactly one crossing. Assembling the set at layer 2 from fifteen separate reaches into l3_solar would break the rule that a layer is not reached into. So the set crosses whole, through one row.
+
+The f107bar column is the one place this row does anything other than copy. The three *mean scenarios have f107 == f107bar: they ARE the window mean, so the daily value and the 81-day mean beneath it are the same number. The two *day scenarios do not: a hot day rides on the hotmean level and a cold day on the coldmean level, so their f107bar is the corresponding mean rather than their own f107. That is selection and not arithmetic — no value is combined with another — and it is written out member by member in the hole body rather than inferred, so a reader can check the mapping against the study's own table.
+
+1. The property to be preserved is that a layer is independently reasonable. If any row at layer 2 could read any row at layer 3, the layers would be a drawing rather than a structure, and a change inside a subsystem could reach anywhere.
+2. The mechanism is to allow exactly one node per subsystem to be visible from above. Then the surface a subsystem presents is one row wide, and every consumer of it is reading the same thing.
+3. Which forces the crossing to relay rather than calculate. A crossing that computed anything would be doing subsystem work in a place no subsystem reviewer reads, and the number a system reader saw would not exist anywhere inside the subsystem. `each member = the row that computed it — identity, deliberately`
+4. And it forces the SET across rather than a number out of it. A design reads the sustained level or the single day depending on what it is sizing, and choosing between them is the reader's decision, not the seam's. `{nominal, hotmean, coldmean, hotday, coldday} x {f107, f107bar, ap}`
+5. The f107bar column is selection and not arithmetic. A *mean scenario's 81-day mean is its own value; a *day scenario's is the mean it rides on. `f107bar(*mean) = f107(*mean) · f107bar(hotday) = f107(hotmean) · f107bar(coldday) = f107(coldmean)`
+6. Every member's declared range is copied from the producer, for the same reason the relation is an identity. Narrowing one would refuse answers the subsystem considers valid and widening one would admit answers it would refuse — either way the crossing would be changing the answer while appearing to relay it.
+
+## Assumptions
+
+- The Kp columns do not cross, and the study's driver set has two of them. Fails when: a consumer needs Kp. The study publishes kp_mean and kp_peak per scenario, formed from that scenario's Ap by the published ap-to-Kp scale plus a measured slot bias. This tree has all three relations — sw_kp_from_ap, sw_kp_mean_bias, sw_kp_slot_bias — and cannot use them here, because the bus passes a node's VALUE and not its RELATION: each of those rows answers at one Ap, and a driver set needs them at five. Three ways out, none of them free: those three rows each publish a set of five, keyed to the scenarios; or the ap-to-Kp scale and both bias tables move into vleo-core as named functions this hole can call, at the cost of putting measured data in the kernel; or ten more rows exist, one per scenario per slot. Until one is chosen the Ap column crosses and the Kp columns do not, and a consumer that needs Kp must convert it itself — which is the duplication this row exists to prevent
+- It relays and does not compute, and the f107bar column is the edge of that claim. Fails when: somebody calls the f107bar mapping a calculation. No value is combined with another and no constant appears; what happens is that one input is published under two names, because the study's hotday scenario carries hotmean's 81-day mean beneath it. If that is computation then a crossing cannot carry a set at all, and §20.3's decision needs revisiting rather than this hole
+- Every member inherits every limitation of the row beneath it, and a system reader sees none of them. Fails when: this is the ordinary cost of a seam and it is worth stating where the seam is. The two *mean scenarios are 1.28-sigma bands, which is the 90th percentile and not the 95 per cent the run is labelled; the two *day scenarios stack a second one-sided percentile on top, which is nearer a 1-in-100 day than a 1-in-20; and the centre beneath all five is a cycle analogue that beyond one cycle past cycle 25's maximum is scaled by the mean amplitude of two completed cycles, whose peaks differ by 41 per cent. A reader at layer 2 sees fifteen numbers and a credibility vector, and would have to open five rows to learn any of that. The credibility travels; the assumptions do not
+- One refused member refuses the whole set. Fails when: this is read as a defect in the seam. It is the seam's job: a driver set with one member the record cannot support is not a driver set, and publishing four members and a hole would put the judgement about which was which above the seam. It does mean this row's availability is the AND of ten rows, so the seam is the least available thing in the subsystem by construction
+
+## Validity
+
+From 60 to 400 One. Below: the same floor as env_f107 and every design row beneath this one: below 60 sfu has never been observed and every relation reading F10.7 has no support there. A crossing that narrowed or widened the range it carries would be changing the answer, so it declares the producer's own bounds. Above: the same ceiling as env_f107 and every design row beneath this one: above 400 sfu the exospheric temperature relation is extrapolated past the largest recorded daily value. Restating it here means a system reader sees the limit without opening the subsystem.
+
+THIS ROW REFUSED UNTIL THE DAILY BANDS WERE CONDITIONED ON LEVEL, and how it came back is the best argument for the seam existing. One member, coldday f107, came from sw_f107_cold_short, which was blocked: a daily drop of 31.27 measured over rotations averaging 136.63 sfu, subtracted from a rotation at 69.63, gave 38.36 — below the floor of 60 and below anything ever observed. A crossing is the AND of its members by construction, so the whole set refused for one impossible scenario. That is the seam doing its job: the alternative is four honest members and one arithmetic one crossing into layer 2 where nothing knows which was which.
+
+What it publishes at the declared window:
+
+f107 nominal 158.33 hotmean 175.55 coldmean 141.11 hotday 124.14 coldday 65.24 f107bar nominal 158.33 hotmean 175.55 coldmean 141.11 hotday 175.55 coldday 141.11 ap nominal 22.10 hotmean 26.70 coldmean 17.50 hotday 90.55 coldday 4.93
+
+The two *day rows are the ones the level conditioning moved, and it moved them in opposite directions: the F10.7 hot day fell from 138.30 because the window's sustained level is below the old band's sample mean, and the Ap hot day more than doubled from 41.70 because it is far above it.

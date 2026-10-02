@@ -1,0 +1,6 @@
+central [1],spread [1],answer [1],tolerance,refuses,origin,says
+160,13.454382,177.22160896,0.000000000001,no,hand,a mid-cycle centre of 160 with this repository's own measured spread — 160 + 1.28 × 13.454382.
+100,20,125.6,0.000000000001,no,hand,"round numbers, so the arithmetic is checkable without a calculator — 100 + 1.28 × 20."
+240,13.454382,257.22160896,0.000000000001,no,hand,"a cycle-maximum centre of 240, which is where the upper guard starts to matter."
+50.0,0.0,,,yes,hand,"outside what the node holds for: its code refuses it, and so must the developer's"
+390.0,10.0,,,yes,hand,"outside what the node holds for: its code refuses it, and so must the developer's"

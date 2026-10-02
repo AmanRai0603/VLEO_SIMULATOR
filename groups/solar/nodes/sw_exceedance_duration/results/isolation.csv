@@ -1,0 +1,5 @@
+ap_design [1],answer [d],tolerance,refuses,origin,says
+80,1.206896551724138,0.000000000001,no,hand,"the G2 bound, Ap 80 — 29 runs, mean 1.21 days."
+48,1.2718446601941749,0.000000000001,no,hand,"the G1 bound, Ap 48 — the lowest level the G scale defines."
+132,1.1428571428571428,0.000000000001,no,hand,"the G3 bound, Ap 132 — the declared design level."
+NaN,,,yes,hand,"outside what the node holds for: its code refuses it, and so must the developer's"

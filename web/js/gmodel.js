@@ -138,7 +138,7 @@ export function resultColumns(t) {
   t.head.forEach((h, k) => {
     const { name, unit } = splitUnit(h);
     if (name === 'answer' || name.startsWith('answer.') || name.startsWith('answer ')) answers.push({ k, name, unit });
-    else if (['tolerance', 'refuses', 'origin', 'note', 'label'].includes(name)) other[name] = k;
+    else if (['tolerance', 'refuses', 'origin', 'note', 'label', 'says'].includes(name)) other[name] = k;
     else inputs.push({ k, name, unit });
   });
   return { inputs, answers, other };

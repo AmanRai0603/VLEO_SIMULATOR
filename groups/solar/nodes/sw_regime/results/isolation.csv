@@ -1,0 +1,7 @@
+ap [1],answer [1],tolerance,refuses,origin,says
+158.38,3,0.000000000001,no,paper,"Ap 158.38 — the five-year return level — storm, as the table labels every day near it."
+20,2,0.000000000001,no,paper,Ap 20 — the bottom of the producer's range — active; the table labels all 20s active.
+25,2,0.000000000001,no,paper,Ap 25 — the last active value in the published table; 26 is the first storm.
+26,3,0.000000000001,no,paper,"Ap 26 — the first storm value in the published table, and the boundary that matters."
+132,3,0.000000000001,no,paper,Ap 132 — the G3 design value — storm.
+230,3,0.000000000001,no,paper,Ap 230 — the top of the producer's range — storm.

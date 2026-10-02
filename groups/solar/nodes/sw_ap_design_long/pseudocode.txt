@@ -1,0 +1,13 @@
+# Transcribed from crates/vleo-mod-solar/nodes/sw_ap_design_long/model.rs (HOLE 1 and its guards) — the method the code already runs.
+# Numbers: 1.28 is declared in the sheet, the one-sided 90th percentile of a normal; the spread is the Ap rotation-forecast residual measured on the NOAA SWPC record (noaa_swpc); migrated from prf_density.m:217 designWindow_.
+const z = 1.28 [1]   # one-sided 90th percentile of a normal, declared in the sheet
+let sustained = central + spread * z
+
+# Generated guards: the declared domain of Ap_long.
+if sustained < 0 then
+  refuse "Ap floors at zero, so a design level below it means a spread has been subtracted rather than added"
+end
+if sustained > 300 then
+  refuse "above 300 the level exceeds the largest daily Ap in the record, 273, so a sustained level there is not a window this tool can model"
+end
+return sustained

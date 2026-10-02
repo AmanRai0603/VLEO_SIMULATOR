@@ -1,0 +1,8 @@
+level [1],answer [1],tolerance,refuses,origin,says
+104.07110896,20.0721663388,0.000000001,no,hand,"at the declared window's own sustained level, 104.07 — an interpolation between the 100 and 120 knots."
+100,18.2741,0.000000000001,no,hand,"the 100 sfu knot, exactly — a transcription check on one of the seven pairs."
+145,34.6148,0.000000000001,no,hand,"the 145 sfu knot, exactly — near where the study's own sample sat."
+112.5,23.7949125,0.000000001,no,hand,"halfway between the 100 and 120 knots — the interpolation, on round numbers."
+60,4.6259,0.000000000001,no,hand,"below the bottom of the table — the clamp, not an extrapolation toward zero."
+300,46.9259,0.000000000001,no,hand,"far above the top of the table — the clamp again, which is where a cycle-maximum window would land."
+NaN,,,yes,hand,"outside what the node holds for: its code refuses it, and so must the developer's"

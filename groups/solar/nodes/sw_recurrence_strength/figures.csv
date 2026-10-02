@@ -1,0 +1,2 @@
+id,kind,file,title,x,y,z,on
+recurrence,line,figures/recurrence.csv,"How well F10.7 on one day predicts F10.7 a given number of days later, for three lengths of record window.",lag,r_365d r_181d r_731d,,

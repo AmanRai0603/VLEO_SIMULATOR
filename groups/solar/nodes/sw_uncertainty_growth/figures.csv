@@ -1,0 +1,2 @@
+id,kind,file,title,x,y,z,on
+growth,line,figures/growth.csv,"How far F10.7 had moved from its starting value after each lead time, in the 1997–2025 record: the 50th, 90th, 95th and 99th percentiles of every such change.",lead_years,p50 p90 p95 p99,,

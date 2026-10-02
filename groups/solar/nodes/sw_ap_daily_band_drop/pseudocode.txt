@@ -1,0 +1,13 @@
+# Transcribed from crates/vleo-mod-solar/nodes/sw_ap_daily_band_drop/model.rs (HOLE 1 and its guards) — the method the code already runs.
+# Numbers: measured data, the 5th-percentile within-rotation Ap departure conditioned on rotation level, from the NOAA SWPC record (noaa_swpc); bins of 15 per cent, at least 200 days each.
+# A Table1 lookup: linear between knots, clamped at both ends (never extrapolated). The answer is a magnitude; sw_ap_cold_short subtracts it.
+let band = interp(level, [4.0, 6.0, 8.0, 11.0, 15.0, 20.0, 24.0, 26.0], [2.9704, 4.1685, 5.5926, 7.5556, 10.8370, 14.2963, 17.6926, 21.0185])
+
+# Generated guards: the declared domain of dAp_day_low.
+if band < 0 then
+  refuse "below zero is not a distance; a negative drop means the tail has been read from the wrong end"
+end
+if band > 150 then
+  refuse "above 150 the value exceeds anything the record supports, so it is an arithmetic error rather than a quiet sky"
+end
+return band

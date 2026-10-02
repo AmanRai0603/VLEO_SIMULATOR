@@ -1,0 +1,2 @@
+id,kind,file,title,x,y,z,on
+ap_days,bar,figures/ap_days.csv,"How many days of the record had each daily Ap, in bins of 2.",ap,days,,

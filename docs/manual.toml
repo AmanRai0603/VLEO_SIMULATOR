@@ -2873,7 +2873,7 @@ who = "developer"
 
 [[folder]]
 name = "groups"
-what = "The group folder pattern, groups/SPEC.toml, from which the group and node applications (web/group.html, web/node.html), docs/GROUP_FOLDER.md and the assistant's skill in groups/skill/ are generated; groups/schema.sql, the database format of a group's structure, node and release files; and groups/example/, a complete illustrative group folder to read and copy. A group's own files live on its shared drive, not here."
+what = "The group folder pattern, groups/SPEC.toml, from which the group and node applications (web/group.html, web/node.html), docs/GROUP_FOLDER.md and the assistant's skill in groups/skill/ are generated; groups/schema.sql, the database format of a group's structure, node and release files; groups/example/, a small illustrative group to read and copy; and groups/solar/, the solar group's whole design as a group would hold it — every node's pseudocode checked against its fixtures, its results, evidence and pictures — which tools/group_db.mjs makes into the group's database files. A group's own files live on its shared drive, not here."
 who = "developer"
 
 [[folder]]

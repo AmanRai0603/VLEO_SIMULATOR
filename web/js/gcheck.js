@@ -199,7 +199,9 @@ export async function checkGroup(model, spec) {
     t.rows.forEach((r, i) => {
       const line = t.lines[i];
       const refuses = refK !== undefined && r[refK] === 'yes';
-      for (const c of cols.inputs) if (num(r[c.k]) === null) add('error', where, c.name + ' is not a number', line);
+      // A refusal may test a value that is not a finite number: the node must refuse that too.
+      const odd = v => refuses && /^[-+]?(nan|inf|infinity)$/i.test(String(v).trim());
+      for (const c of cols.inputs) if (num(r[c.k]) === null && !odd(r[c.k])) add('error', where, c.name + ' is not a number', line);
       if (refuses) {
         refusals++;
         if (cols.answers.some(a => r[a.k] !== '')) add('warning', where, 'a refusal should leave the answer blank', line);

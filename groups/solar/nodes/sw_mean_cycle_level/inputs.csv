@@ -1,0 +1,2 @@
+name,from,unit,default,min,max,says
+phase,sw_cycle_phase,1,0.025,0,1,

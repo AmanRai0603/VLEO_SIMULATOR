@@ -375,6 +375,7 @@ columns = [
   { name = "tolerance", says = "relative tolerance" },
   { name = "refuses", says = "yes or no", one_of = ["yes", "no"] },
   { name = "origin", says = "code, hand, spreadsheet or paper", one_of = ["code", "hand", "spreadsheet", "paper"] },
+  { name = "says", says = "what the case is, in words", optional = true },
 ]
 
 [[file]]

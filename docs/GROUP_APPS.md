@@ -94,6 +94,37 @@ A **folder** of the pattern ([`docs/GROUP_FOLDER.md`](GROUP_FOLDER.md)) — the
 worked example, or one written from the design by `xtask group-export` — opens
 too, and *Keep as a database* turns it into a release file in one step.
 
+## The solar group, worked through
+
+[`groups/solar/`](../groups/solar/) is the solar group's whole design as a
+group would hold it: 58 nodes, every computed node's pseudocode transcribed from
+the code that runs it and checked by the method checker against all of its
+published fixtures, its results, evidence and sources, and pictures drawn from
+the 1997–2025 record. Its `versions.csv` says what is drafted and what is still
+open. To have it as the files a group keeps on its drive:
+
+```text
+node tools/group_db.mjs groups/solar          → target/groups/l3_solar-db/
+  l3_solar.vgroup                                 the structure
+  nodes/<node>.vnode                              58 node files
+  releases/l3_solar-0.2.vleo                      assembled, not sealed
+```
+
+How it was made, which is how any group's design can be brought in: `xtask
+group-export l3_solar` wrote the folder from the design — questions, words,
+theory, inputs, and each node's fixtures as its isolation results and evidence.
+Each computed node's pseudocode was then transcribed from the code that runs it
+and run by the method checker (web/method.wasm.gz) against every one of its
+fixtures, all of which agree. The pictures are the solar-weather record's own
+figures (`vleo figure …`). The few sections the design never had — mostly
+*Picture it* and *Guess first* — were drafted from each node's own text and are
+marked in `versions.csv` for the authors to confirm or replace.
+
+Open the release in the group application and *Sign & seal* names exactly what
+stands between it and a seal: two values the design says need a person
+(`sw_band_confidence`, `sw_kp_driving_slot`), and every sign-off, which only
+the people can give.
+
 ## The author, in the node application
 
 Open `web/node.html` and your node file. The page walks you through, step by

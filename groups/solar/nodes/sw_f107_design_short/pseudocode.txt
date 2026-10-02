@@ -1,0 +1,13 @@
+# Transcribed from crates/vleo-mod-solar/nodes/sw_f107_design_short/model.rs (HOLE 1 and its guards) — the method the code already runs.
+# Numbers: none of its own; the sustained level and the within-rotation daily departure come from the NOAA SWPC record (noaa_swpc) via their rows; migrated from prf_density.m:227 designWindow_.
+# A forecast error about the rotation's level and the sun's variability within it are different things, so they add rather than combine in quadrature.
+let single_day = sustained + daily
+
+# Generated guards: the declared domain of F107_short.
+if single_day < 60 then
+  refuse "below 60 sfu has never been observed; a single-day design level below it means a spread has been subtracted rather than added"
+end
+if single_day > 400 then
+  refuse "above 400 sfu the exospheric temperature relation is extrapolated past the largest recorded daily value"
+end
+return single_day

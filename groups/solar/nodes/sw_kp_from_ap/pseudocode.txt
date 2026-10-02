@@ -1,0 +1,16 @@
+# Transcribed from crates/vleo-mod-solar/nodes/sw_kp_from_ap/model.rs (HOLE 1 and its guards) — the method the code already runs.
+# Numbers: the IAGA published Kp-ap scale (iaga_kp_ap), 28 pairs, Kp in thirds 0..9 — vleo_core::physics::env::kp_from_ap (AP_AT_KP_THIRDS), via prf_ap2kp.m:100.
+# kp_from_ap is linear interpolation held at both ends (pmath::interp): below ap 0 and above ap 400 the scale does not continue.
+# Kp values are the thirds the kernel writes as k/3.0, given here as their exact double values.
+# The generated "not a number" guard, moved to the input: the table is finite and held at both ends, so the answer is NaN exactly when ap is.
+if not (ap == ap) then
+  refuse "the computation produced a value that is not a number"
+end
+let k = interp(ap, [0, 2, 3, 4, 5, 6, 7, 9, 12, 15, 18, 22, 27, 32, 39, 48, 56, 67, 80, 94, 111, 132, 154, 179, 207, 236, 300, 400] [1], [0.0, 0.3333333333333333, 0.6666666666666666, 1.0, 1.3333333333333333, 1.6666666666666667, 2.0, 2.3333333333333335, 2.6666666666666665, 3.0, 3.3333333333333335, 3.6666666666666665, 4.0, 4.333333333333333, 4.666666666666667, 5.0, 5.333333333333333, 5.666666666666667, 6.0, 6.333333333333333, 6.666666666666667, 7.0, 7.333333333333333, 7.666666666666667, 8.0, 8.333333333333334, 8.666666666666666, 9.0] [1])
+if k < 0 then
+  refuse "Kp is defined on 0..9: a negative index is a sign error, not a quiet day"
+end
+if k > 9 then
+  refuse "Kp is defined on 0..9: an ap value has reached a consumer that wanted Kp"
+end
+return k

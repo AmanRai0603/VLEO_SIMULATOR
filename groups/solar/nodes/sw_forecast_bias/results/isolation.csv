@@ -1,0 +1,8 @@
+lead [d],answer [1],tolerance,refuses,origin,says
+13,-1.8480194018,0.000000000001,no,hand,lead 13 — the interior recovery in the bias curve — -1.848 sfu from 1237 pairs.
+1,-0.5930701048,0.000000000001,no,hand,lead 1 — the shallowest bias in the window — -0.593 sfu from 1241 pairs.
+9,-2.7477840451,0.000000000001,no,hand,lead 9 — the interior minimum — -2.748 sfu from 1241 pairs.
+13.5,-1.88742433505,0.000000000001,no,hand,"lead 13.5 — between two measured leads, so this one tests the interpolation and not the table."
+23,-2.9447640967,0.000000000001,no,hand,lead 23 — the last lead where the outlook still beats persistence — -2.945 sfu.
+26,-3.9677419355,0.000000000001,no,hand,lead 26 — the declared lead and the deepest bias in the window — -3.968 sfu from 868 pairs.
+NaN,,,yes,hand,"outside what the node holds for: its code refuses it, and so must the developer's"

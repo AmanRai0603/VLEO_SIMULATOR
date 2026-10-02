@@ -229,6 +229,7 @@ export async function structureOf(db) {
     s.setMeta('file_kind', 'structure');
     for (const k of ['node_uid', 'sealed', 'fingerprint']) s.exec('DELETE FROM meta WHERE key = ?', [k]);
   });
+  s.exec('VACUUM');
   return s;
 }
 
@@ -254,6 +255,8 @@ export async function issueNode(db, uid) {
     n.setMeta('node_uid', uid);
     for (const k of ['sealed', 'fingerprint']) n.exec('DELETE FROM meta WHERE key = ?', [k]);
   });
+  // What was taken out leaves free pages behind; a file is sent without them.
+  n.exec('VACUUM');
   return n;
 }
 
@@ -304,6 +307,7 @@ export async function assemble(structure, nodeFiles) {
     r.setMeta('file_kind', 'release');
     r.exec('DELETE FROM meta WHERE key = ?', ['node_uid']);
   });
+  r.exec('VACUUM');
   return { db: r, notes };
 }
 

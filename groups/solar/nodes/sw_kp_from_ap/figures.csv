@@ -1,0 +1,2 @@
+id,kind,file,title,x,y,z,on
+kp_ap,line,figures/kp_ap.csv,"The daily Ap the published scale gives at each Kp, beside what the record measured: its median and its 10th and 90th percentiles.",kp,table median p10 p90,,

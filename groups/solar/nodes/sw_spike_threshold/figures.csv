@@ -1,0 +1,2 @@
+id,kind,file,title,x,y,z,on
+spikes,bar,figures/spikes.csv,"How often a sudden F10.7 spike happened at each tenth of the solar cycle, per year.",phase,rate,,

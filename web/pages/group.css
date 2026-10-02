@@ -145,6 +145,7 @@ svg.gflow { display: block; max-width: none; height: auto; font: 11.5px var(--mo
 .gk-declared { color: var(--slate); border-color: var(--slate); }
 .gk-required, .gk-achieved { color: var(--both); border-color: var(--both); }
 .galgo { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 1rem; align-items: start; }
+.gpc { overflow-x: auto; max-width: 100%; }
 .gpc .pc-line { display: block; min-height: 1.5em; white-space: pre; }
 .gpc .pc-line.on, .galgo-row.on { background: var(--teal-pale); }
 .pc-n { display: inline-block; width: 2.2em; color: var(--ink-3); user-select: none; }

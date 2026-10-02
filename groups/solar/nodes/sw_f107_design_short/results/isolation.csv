@@ -1,0 +1,6 @@
+sustained [1],daily [1],answer [1],tolerance,refuses,origin,says
+177.22160896,34.2314814815,211.4530904415,0.000000000001,no,hand,"the sustained level from sw_f107_design_long's first fixture plus the daily departure this row USED to be handed, before sw_daily_band_spread was conditioned on level. Kept as an arithmetic case: the pair no longer occurs in this tree, and what it still checks is that the relation is that addition."
+200,30,230,0.000000000001,no,hand,"round numbers, so the arithmetic is checkable without a calculator."
+150,40,190,0.000000000001,no,hand,a quieter sustained level with a wider daily departure — the two terms are independent and the row must not assume otherwise.
+40.0,10.0,,,yes,hand,"outside what the node holds for: its code refuses it, and so must the developer's"
+380.0,40.0,,,yes,hand,"outside what the node holds for: its code refuses it, and so must the developer's"

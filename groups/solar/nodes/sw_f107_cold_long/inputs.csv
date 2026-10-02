@@ -1,0 +1,3 @@
+name,from,unit,default,min,max,says
+central,sw_central_expectation,1,160,60,400,
+spread,sw_mean_band_spread,1,13.454382,0,45,

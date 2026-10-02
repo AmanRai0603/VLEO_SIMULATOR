@@ -159,6 +159,7 @@ Store each equation once, in LaTeX, in `equations.csv`. When the member gives yo
   - `tolerance` — relative tolerance.
   - `refuses` — yes or no. One of: yes, no.
   - `origin` — code, hand, spreadsheet or paper. One of: code, hand, spreadsheet, paper.
+  - `says` (optional) — what the case is, in words.
 - `nodes/<id>/results/how-run.md` — optional. how the code that produced isolation.csv was run: language, tool and version, machine, date, the command
 - `nodes/<id>/evidence.csv` — optional. values from OUTSIDE any code — a paper, a handbook, another tool — that check the physics, not the code
   - `inputs` — the inputs it holds for, as name=value pairs separated by spaces.

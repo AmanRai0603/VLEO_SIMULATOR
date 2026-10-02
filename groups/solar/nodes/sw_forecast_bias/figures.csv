@@ -1,0 +1,2 @@
+id,kind,file,title,x,y,z,on
+forecast_bias,line,figures/forecast_bias.csv,"How far NOAA's issued F10.7 forecasts missed, by lead in days: the mean miss (bias) and the root-mean-square miss.",lead,bias rmse,,

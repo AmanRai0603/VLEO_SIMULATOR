@@ -1,0 +1,15 @@
+# Transcribed from crates/vleo-mod-solar/nodes/sw_horizon_climatology/model.rs (HOLE 1 and its guards) — the method the code already runs.
+# Numbers: NOAA SWPC (noaa_swpc) F10.7 record, RMS departure of the target day from the record mean 114.8437 sfu, from solar-weather@2026.09.14.
+# The eighteen measured leads in days; linear between them, held at both ends (as Table1 does).
+# The generated "not a number" guard, moved to the input: the table is finite and held at both ends, so the answer is NaN exactly when the lead is.
+if not (lead == lead) then
+  refuse "the computation produced a value that is not a number"
+end
+let err = interp(lead, [1, 2, 3, 5, 7, 10, 14, 20, 27, 40, 60, 90, 135, 180, 270, 365, 547, 730] [d], [44.3929, 44.3953, 44.3968, 44.3993, 44.4012, 44.4036, 44.4069, 44.4071, 44.4147, 44.4242, 44.4344, 44.4458, 44.4635, 44.4714, 44.5344, 44.6734, 45.0333, 45.3201] [1])
+if err < 0 then
+  refuse "an RMS cannot be negative, and this one is the spread of the record about its own mean, 44 sfu"
+end
+if err > 50 then
+  refuse "the measured entries run 44.39 to 45.32 sfu and the table clamps: above 50 the table is broken"
+end
+return err
