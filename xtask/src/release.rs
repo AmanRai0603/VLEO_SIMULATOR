@@ -439,6 +439,20 @@ pub(super) fn cmd_kit(root: &Path, args: &[&str]) -> Result<(), String> {
     if root.join("docs/roles").is_dir() {
         files += copy_tree(&root.join("docs/roles"), &out.join("docs/roles"))?;
     }
+    // So does what a group needs to keep its folder without the repository:
+    // the pattern, the skill an assistant follows, the worked example and the
+    // pattern written out. The group application itself is web/group.html.
+    if root.join("groups").is_dir() {
+        files += copy_tree(&root.join("groups"), &out.join("groups"))?;
+    }
+    if root.join("docs/GROUP_FOLDER.md").is_file() {
+        fs::copy(
+            root.join("docs/GROUP_FOLDER.md"),
+            out.join("docs/GROUP_FOLDER.md"),
+        )
+        .map_err(|e| format!("docs/GROUP_FOLDER.md: {e}"))?;
+        files += 1;
+    }
     let tree = load(root)?;
     let mut crates: BTreeSet<&str> = BTreeSet::new();
     for sh in tree.ordered() {

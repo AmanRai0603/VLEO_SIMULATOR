@@ -1,0 +1,6 @@
+step,caption,highlight
+1,"The mission chooses an altitude: 400 km.",altitude
+2,"Add the Earth's radius: the spacecraft is 6,778 km from the centre of the Earth.",altitude radius altitude>radius
+3,"Gravity there is just strong enough to bend its path into a circle at 7.67 km/s.",radius speed radius>speed
+4,"Going round 42,600 km of circle at that speed takes 92.6 minutes.",radius period radius>period
+5,"92.6 minutes is under the 95-minute limit, so the requirement closes.",period limit_check period>limit_check

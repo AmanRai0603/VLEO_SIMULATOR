@@ -1,0 +1,3 @@
+node,to,says
+orbit_speed,sys_orbit_and_environment,the orbital speed every drag and power calculation starts from
+orbit_period,sys_orbit_and_environment,the time one orbit takes: eclipses and passes per day follow from it

@@ -10,13 +10,13 @@ Generated from the one table in `xtask/src/pipeline.rs`; `cargo run -p xtask -- 
 
 ## The journey
 
-1. **form** — an expert fills a node's form: `form`
+1. **form** — an expert fills a node's form: `form`, `group-export`
 2. **take** — the maintainer puts it on its own branch: `take`
 3. **check** — what it would change, before anything is written: `intake`
 4. **apply** — the form written into the sheet — all of it or none: `lesson`, `new`
 5. **publish** — a filled row's code generated, and its holes written: `declare`, `publish`, `fill`, `confirm`
 6. **build** — a node built from its method, and its tests shown to test: `method`, `build-node`, `rerun`, `method-wasm`, `differential`, `mutate`
-7. **gate** — the checks every change passes, and what they generate: `docs`, `assemble`, `gate`, `ready`, `codeowners`, `variables`, `guides`, `pipeline`
+7. **gate** — the checks every change passes, and what they generate: `group-app`, `docs`, `assemble`, `gate`, `ready`, `codeowners`, `variables`, `guides`, `pipeline`
 8. **preview** — the author tries the build and approves it: `preview`, `approve`, `queue`
 9. **release** — the stamped release everyone gets: `readers`, `ship`, `release`, `derisk`, `kit`, `bundle`
 10. **read** — reports: what exists, what is open, why a node is what it is: `status`, `active`, `reach`, `gap`, `graph`, `migration`, `explain`, `why`, `trace`
@@ -55,6 +55,21 @@ a node's form: one HTML file that explains itself, asks every question the sheet
 | undo | delete the file |
 | dry run | --dry-run prints this plan — the steps, what it would write, how to undo it — and touches nothing |
 | code | `xtask/src/forms.rs` — `cmd_form` |
+
+#### `group-export`
+
+    cargo run -p xtask -- group-export <group> [--out <dir>]
+
+a group's folder in the pattern, written from every sheet in the group, for the group to start from. It invents nothing: what the tree lacks is left for the group, and the group application lists it. Default target/groups/.
+
+| | |
+|---|---|
+| reads | every sheet, fixtures.toml and source of one group in the tree |
+| writes | the group's folder in the pattern of groups/SPEC.toml, under target/groups/<group> or --out |
+| checks | nothing: what the tree lacks is left empty, and the group application lists it |
+| undo | delete the folder it wrote; nothing in the repository changes |
+| dry run | it only reads, so it runs as it is |
+| code | `xtask/src/group.rs` — `cmd_group_export` |
 
 ### take — the maintainer puts it on its own branch
 
@@ -286,6 +301,21 @@ perturb the answer by a tenth of a percent and require the node's own tests to n
 | code | `xtask/src/mutate.rs` — `cmd_mutate` |
 
 ### gate — the checks every change passes, and what they generate
+
+#### `group-app`
+
+    cargo run -p xtask -- group-app [--check] the group application, web/group.html — one offline page
+
+a group opens its folder in — and docs/GROUP_FOLDER.md and groups/skill/vleo-group-folder/SKILL.md, all from groups/SPEC.toml; --check only says whether the committed three are current.
+
+| | |
+|---|---|
+| reads | groups/SPEC.toml, web/pages/group.html and group.css, web/app.css and its fonts, web/js |
+| writes | web/group.html, docs/GROUP_FOLDER.md and groups/skill/vleo-group-folder/SKILL.md |
+| checks | with --check: whether the committed three are built from their sources as they are |
+| undo | `git restore web/group.html docs/GROUP_FOLDER.md groups/skill/vleo-group-folder/SKILL.md` |
+| dry run | --dry-run runs group-app --check: whether they are current, nothing written |
+| code | `xtask/src/group.rs` — `cmd_group_app` |
 
 #### `docs`
 

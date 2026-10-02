@@ -2290,6 +2290,22 @@ effect = "writes"
 
 [[command]]
 tool = "xtask"
+name = "group-app"
+usage = "group-app [--check]"
+what = "Builds the group application — web/group.html, one offline page a group opens its folder in to see it as the application will show it, check it, sign it and seal it — and the folder pattern's two documents, docs/GROUP_FOLDER.md and groups/skill/vleo-group-folder/SKILL.md, all from groups/SPEC.toml; --check only says whether the committed three are current."
+who = "developer"
+effect = "writes"
+
+[[command]]
+tool = "xtask"
+name = "group-export"
+usage = "group-export <group> [--out <dir>]"
+what = "Writes one group's folder in the pattern of groups/SPEC.toml from every sheet in the group — its nodes, inputs, plain words, theory, assumptions, evidence and sources — for the group to start from. It invents nothing: a pseudocode, the group's own results and its pictures are left for the group, and the group application lists them."
+who = "maintainer"
+effect = "writes"
+
+[[command]]
+tool = "xtask"
 name = "rerun"
 usage = "rerun <node>|--all [--require]"
 what = "Runs each author's own code again on the cases recorded from it and says whether it still gives them: Python directly, MATLAB and Octave through Octave where it is installed. Code in any other language is kept and read, not rerun, and it says so; `--require` fails instead, for a pipeline that installed the runners."
@@ -3012,6 +3028,10 @@ what = "The words this repository uses in a sense of its own, each in a sentence
 [[doc]]
 path = "docs/PSEUDOCODE.md"
 what = "The method language: every statement, function, constant and unit a method may use, and the worked example in full. Generated from the checker's own tables."
+
+[[doc]]
+path = "docs/GROUP_FOLDER.md"
+what = "The group folder: the one place a group keeps its part of the design — the files, their columns, the two kinds of text and what they may hold. Generated from groups/SPEC.toml, as are the group application (web/group.html) and the skill an assistant follows to help fill a folder."
 
 [[doc]]
 path = "docs/USING_IT.md"

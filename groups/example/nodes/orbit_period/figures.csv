@@ -1,0 +1,3 @@
+id,kind,file,title,x,y,z,on
+period,line,figures/period.csv,"The orbital period at each altitude from 150 km to 1,000 km.",h,T,,
+coming-round,animation,figures/coming-round.csv,"The spacecraft's position along one axis over two hours, one frame per altitude.",t,x,h,

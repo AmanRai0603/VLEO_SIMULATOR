@@ -1,0 +1,5 @@
+# Vallado (2013), eq. 1-27: Kepler's third law for a circular orbit.
+if r <= R_EARTH then
+  refuse "the orbit is inside the Earth"
+end
+return 2 * PI * sqrt(r ^ 3 / MU_EARTH)

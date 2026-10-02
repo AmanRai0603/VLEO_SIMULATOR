@@ -14,6 +14,7 @@ mod fills;
 mod flow;
 mod forms;
 mod graph;
+mod group;
 mod hooks;
 mod method;
 mod mutate;
@@ -128,6 +129,8 @@ pub(crate) fn dispatch(root: &Path, cmd: &str, rest: &[&str]) -> Result<(), Stri
         "ship" => flow::cmd_ship(&root, &rest),
         "method" => method::cmd_method(&root, &rest),
         "method-wasm" => method::cmd_method_wasm(&root, &rest),
+        "group-app" => group::cmd_group_app(&root, &rest),
+        "group-export" => group::cmd_group_export(&root, &rest),
         "rerun" => method::cmd_rerun(&root, &rest),
         "build-node" => method::cmd_build_node(&root, &rest),
         "migration" => method::cmd_migration(&root, &rest),
@@ -286,6 +289,15 @@ cargo xtask <command>
                      rebuild web/method.wasm.gz, the checker every node form
                      carries, from vleo_sheet::method; --check only says
                      whether the committed one is current.
+  group-app [--check] the group application, web/group.html — one offline page
+                     a group opens its folder in — and docs/GROUP_FOLDER.md
+                     and groups/skill/vleo-group-folder/SKILL.md, all from groups/SPEC.toml;
+                     --check only says whether the committed three are current.
+  group-export <group> [--out <dir>]
+                     a group's folder in the pattern, written from every sheet
+                     in the group, for the group to start from. It invents
+                     nothing: what the tree lacks is left for the group, and
+                     the group application lists it. Default target/groups/.
   rerun <node>|--all [--require]
                      the author's own code run again on their cases: Python
                      directly, MATLAB and Octave through Octave; anything else
