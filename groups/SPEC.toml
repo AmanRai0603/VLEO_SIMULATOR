@@ -222,9 +222,9 @@ columns = [
 
 [[file]]
 path = "sources.csv"
-level = "group"
+level = "both"
 required = true
-says = "every source the group rests on; a cited PDF sits in sources/"
+says = "every source the group rests on; a cited PDF sits in sources/. A node may add its own in nodes/<id>/sources.csv, so its author never waits on the lead to cite a paper"
 columns = [
   { name = "id", says = "the source's id, used wherever it is cited" },
   { name = "cite", says = "author, year, title, where" },

@@ -665,6 +665,7 @@ showing an optimum near 300 km — recorded 15 September 2026](docs/img/sweep.pn
 | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | why the rings are shaped the way they are |
 | [`docs/NODE_AUTHORING.md`](docs/NODE_AUTHORING.md) | the sheet, field by field |
 | [`docs/CHANGING.md`](docs/CHANGING.md) | changing the code — a node, a route, a component, an output kind — and what each brings with it; one field followed through the generators |
+| [`docs/GROUP_APPS.md`](docs/GROUP_APPS.md) | the group and node applications — [`web/group.html`](web/group.html), where a group lead sets out the nodes and their contracts, issues node files and assembles and seals a release, and [`web/node.html`](web/node.html), where an author fills their node — and the three database files a group keeps on its shared drive ([`groups/schema.sql`](groups/schema.sql)) |
 | [`docs/GROUP_FOLDER.md`](docs/GROUP_FOLDER.md) | the group folder — the one place a group keeps its part of the design, as CSV, Markdown, pseudocode and its own results — and [`web/group.html`](web/group.html), the offline page a group opens it in; both generated from [`groups/SPEC.toml`](groups/SPEC.toml), with a worked example in [`groups/example/`](groups/example/) |
 | [`docs/PSEUDOCODE.md`](docs/PSEUDOCODE.md) | the method language — every statement, function, constant and unit, and the worked example in full — generated from the checker |
 | [`docs/EXPLAINING.md`](docs/EXPLAINING.md) | how the tool explains itself — the rules every page, form, result, figure and document follows, and what checks each |

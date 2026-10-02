@@ -150,7 +150,7 @@ export function groupPage(ctx) {
     '<h2 class="gh">Versions</h2>' + versions(model.group.versions);
 }
 
-function wiringSvg(model) {
+export function wiringSvg(model) {
   const flow = wiringFlow(model);
   return flowSvg(flow, {
     label: 'how the nodes of this group connect',
@@ -162,8 +162,8 @@ function wiringSvg(model) {
   });
 }
 
-/** Hover and click on a wiring drawing. */
-export function wireUp(ctx, host) {
+/** Hover and click on a wiring drawing; a click opens the node, or calls `onPick`. */
+export function wireUp(ctx, host, onPick) {
   host.querySelectorAll('.gwire').forEach(w => {
     w.querySelectorAll('.gbox').forEach(g => {
       const id = g.dataset.id;
@@ -181,7 +181,7 @@ export function wireUp(ctx, host) {
         w.classList.remove('lit');
         w.querySelectorAll('.gbox').forEach(b => b.classList.remove('up', 'down', 'on'));
       });
-      const go = () => { if (ctx.model.nodes.has(id)) location.hash = '#/node/' + id; };
+      const go = () => { if (ctx.model.nodes.has(id)) { if (onPick) onPick(id); else location.hash = '#/node/' + id; } };
       g.addEventListener('click', go);
       g.addEventListener('keydown', e => { if (e.key === 'Enter') go(); });
     });

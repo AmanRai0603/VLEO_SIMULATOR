@@ -97,7 +97,7 @@ Store each equation once, in LaTeX, in `equations.csv`. When the member gives yo
   - `unit` — its unit.
   - `source` — a sources.csv id.
   - `says` — what it is.
-- `sources.csv` — **required**. every source the group rests on; a cited PDF sits in sources/
+- `sources.csv` — **required**. every source the group rests on; a cited PDF sits in sources/. A node may add its own in nodes/<id>/sources.csv, so its author never waits on the lead to cite a paper
   - `id` — the source's id, used wherever it is cited.
   - `cite` — author, year, title, where.
   - `file` (optional) — the file under sources/, if there is one.
