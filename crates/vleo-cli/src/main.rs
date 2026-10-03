@@ -962,7 +962,7 @@ fn list_kept(file: &std::path::Path) -> Result<(), String> {
 
 /// `results export` and `results import`: saved results in and out of one file.
 fn cmd_results(args: &[&str]) -> Result<(), String> {
-    use vleo_modules::results::{self, store};
+    use vleo_modules::results::store;
     let usage =
         "usage: vleo results export <file.vleor> [<name> ...] | vleo results import <file.vleor>";
     let (Some(&what), Some(&file)) = (args.first(), args.get(1)) else {
@@ -985,7 +985,7 @@ fn cmd_results(args: &[&str]) -> Result<(), String> {
             let kept: Vec<vleo_design::results::Kept> = all
                 .iter()
                 .filter(|(n, _)| names.is_empty() || names.contains(&n.as_str()))
-                .map(|(n, s)| kept_from(n, s, store::is_pinned(&dir, n)))
+                .map(|(n, s)| vleo_server::results_file::kept_from(n, s, store::is_pinned(&dir, n)))
                 .collect();
             if kept.is_empty() {
                 return Err(format!("{} holds no saved result to export", dir.display()));
@@ -1001,79 +1001,16 @@ fn cmd_results(args: &[&str]) -> Result<(), String> {
             Ok(())
         }
         "import" => {
-            let kept = vleo_design::results::read(file).map_err(String::from)?;
-            let (mut new, mut had) = (0, 0);
-            for k in &kept {
-                let mut s = results::read(&k.csv).map_err(|e| format!("{}: {e}", k.name))?;
-                if !k.sweep_csv.is_empty() {
-                    s.sweep = Some(
-                        results::read_sweep(&k.sweep_csv)
-                            .map_err(|e| format!("{}: {e}", k.name))?,
-                    );
-                }
-                let (name, was) = store::save(&dir, &s)?;
-                if k.pinned {
-                    store::pin(&dir, &name, true)?;
-                }
-                if was {
-                    had += 1;
-                } else {
-                    new += 1;
-                }
-            }
+            let done = vleo_server::results_file::import(&dir, file)?;
             println!(
-                "{new} result(s) put in {}; {had} were already kept there",
-                dir.display()
+                "{} result(s) put in {}; {} were already kept there",
+                done.added(),
+                dir.display(),
+                done.already()
             );
             Ok(())
         }
         _ => Err(usage.into()),
-    }
-}
-
-/// A saved result as a results file holds it: whole, and as rows.
-fn kept_from(
-    name: &str,
-    s: &vleo_modules::results::Saved,
-    pinned: bool,
-) -> vleo_design::results::Kept {
-    use vleo_modules::results::{csv, sweep_csv, Row};
-    let rows = |section: &str, rows: &[Row]| -> Vec<vleo_design::results::Value> {
-        rows.iter()
-            .map(|r| vleo_design::results::Value {
-                section: section.into(),
-                id: r.id.clone(),
-                name: r.name.clone(),
-                value: r.value.clone(),
-                unit: r.unit.clone(),
-                si: r.si,
-                credibility: r.credibility.clone(),
-                governing: r.governing.clone(),
-                note: r.note.clone(),
-            })
-            .collect()
-    };
-    let mut values = rows("input", &s.inputs);
-    values.extend(rows("output", &s.outputs));
-    values.extend(rows("blocked", &s.blocked));
-    vleo_design::results::Kept {
-        name: name.to_string(),
-        question: s.question(),
-        target: s.target.clone(),
-        mode: s.mode.clone(),
-        saved: s.saved.clone(),
-        label: s.name.clone(),
-        chain: s.chain.clone(),
-        kernel: s.kernel.clone(),
-        graph: s.graph.clone(),
-        case: s.case.clone(),
-        ran: s.ran,
-        blocked: s.blocked_count,
-        thinned: s.thinned.clone(),
-        pinned,
-        csv: csv(s),
-        sweep_csv: s.sweep.as_ref().map(sweep_csv).unwrap_or_default(),
-        values,
     }
 }
 

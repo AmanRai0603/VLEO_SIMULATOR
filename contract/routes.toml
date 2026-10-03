@@ -20,7 +20,8 @@
 #   path     when the route has a part in its path (default: the route's)
 #   params   [key, value] pairs: the query for GET, the body for POST.
 #            "@saved" is the `file` of the last result saved or uploaded;
-#            "@get:<path>" is the text of that GET, made first.
+#            "@get:<path>" is the text of that GET, made first;
+#            "@vleor" is the last result saved, as a results file, base64.
 
 # --- the page ---------------------------------------------------------------
 
@@ -428,6 +429,15 @@ schema = "result-kept"
 [[route.example]]
 name = "results-upload"
 params = [["csv", "@get:/v1/result.html?name=@saved"]]
+
+[[route]]
+method = "POST"
+path = "/v1/results/upload-file"
+answer = "json"
+schema = "results-imported"
+[[route.example]]
+name = "results-upload-file"
+params = [["vleor", "@vleor"]]
 
 [[route]]
 method = "POST"

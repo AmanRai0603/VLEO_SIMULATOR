@@ -1270,6 +1270,40 @@ pub(super) fn result_upload(params: &str) -> String {
     kept_json(&s)
 }
 
+/// Keep every result a `results.vleor` holds — the file somebody sent, as the
+/// browser sends a file that is not text: base64, as `vleor=`. Each is kept once,
+/// as a save is; the first is the one the page opens.
+pub(super) fn result_upload_file(params: &str) -> String {
+    let text = param(params, "vleor").map(decode).unwrap_or_default();
+    let Some(bytes) = crate::results_file::unbase64(&text) else {
+        return failed("the upload did not arrive whole — send the results file again");
+    };
+    match crate::results_file::import_bytes(&results_dir(), &bytes) {
+        Ok(done) => {
+            let mut j = Json::new();
+            j.raw("{");
+            j.bool_field("ok", true);
+            j.str_field(
+                "file",
+                done.results.first().map(|(n, _)| n.as_str()).unwrap_or(""),
+            );
+            j.num_field("added", done.added() as f64);
+            j.num_field("already", done.already() as f64);
+            j.key("files").raw("[");
+            for (i, (n, _)) in done.results.iter().enumerate() {
+                if i > 0 {
+                    j.raw(",");
+                }
+                j.push_string(n);
+            }
+            j.raw("]");
+            j.raw("}");
+            j.0
+        }
+        Err(e) => failed(&e),
+    }
+}
+
 /// Pin a result (`on=1`) so it is kept whole for good, or unpin it (`on=0`)
 /// so it is thinned to its summary once it is older than the keep period.
 pub(super) fn result_pin(params: &str) -> String {
