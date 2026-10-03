@@ -311,7 +311,8 @@ fn command_ok(line: &str, k: &Known) -> Result<(), String> {
                     ));
                 }
             }
-            ["python3", tool, ..] => {
+            // A script of this repository's, run by Python or by Node: it must be one.
+            ["python3", tool, ..] | ["node", tool, ..] => {
                 if !root().join(tool).is_file() {
                     return Err(format!("`{line}`: {tool} does not exist"));
                 }
