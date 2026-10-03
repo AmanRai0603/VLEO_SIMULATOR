@@ -7,6 +7,7 @@
     clippy::float_cmp,
     clippy::cast_precision_loss,
     unreachable_code,
+    unused_assignments,
     unused_imports,
     unused_mut,
     unused_variables,
