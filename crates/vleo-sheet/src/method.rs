@@ -43,9 +43,10 @@ use vleo_units::{constants as k, pmath, Unit};
 /// raising this is a reviewed change to every node that has one.
 ///
 /// 2 added `while … at most N times` and the kernel functions; 3 added
-/// `publish`, for a node that publishes several values. Every method of an
-/// earlier version reads the same in a later one.
-pub const LANGUAGE_VERSION: u32 = 3;
+/// `publish`, for a node that publishes several values; 4 added lists — a
+/// `const` list written out, read by entry, by `for … in`, by `len` and by
+/// `interp`. Every method of an earlier version reads the same in a later one.
+pub const LANGUAGE_VERSION: u32 = 4;
 
 /// How many loop iterations a method may run in all. A method is a relation,
 /// not a simulation: a loop exists for a short series or a fixed-point

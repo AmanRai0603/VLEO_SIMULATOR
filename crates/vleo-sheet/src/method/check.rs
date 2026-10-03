@@ -41,6 +41,9 @@ enum Kind {
     Const,
     Let,
     Loop,
+    /// A list written out with const: read by entry, by `for … in`, by `len`
+    /// and by `interp` — never as one number.
+    List,
 }
 
 struct Checker<'a> {
@@ -49,6 +52,9 @@ struct Checker<'a> {
     read: BTreeSet<String>,
     sig: &'a Signature,
     iterations: u64,
+    /// Every list the method writes out, by name: its unit and its entries in
+    /// SI. A list is written at the top level, so one name is one list.
+    lists: BTreeMap<String, (Dim, Vec<f64>)>,
 }
 
 impl Checker<'_> {
@@ -127,6 +133,13 @@ impl Checker<'_> {
             Expr::Bool { .. } => Some(Ty::Bool),
             Expr::Var { name, line } => {
                 match self.lookup(name) {
+                    Some((Kind::List, _)) => {
+                        self.err(
+                            *line,
+                            format!("«{name}» is a list — read one entry as {name}[i], or its length as len({name})"),
+                        );
+                        None
+                    }
                     Some((kind, d)) => {
                         if kind == Kind::Input {
                             self.read.insert(name.clone());
@@ -163,12 +176,62 @@ impl Checker<'_> {
                 Some(Ty::Bool)
             }
             Expr::Table { line, .. } => {
-                self.err(*line, "a table stands only inside interp(…)");
+                self.err(
+                    *line,
+                    "a list written out stands in a const, or inside interp(…)",
+                );
                 None
             }
+            Expr::Index { list, index, line } => self.index(list, index, *line),
             Expr::Bin { op, l, r, line } => self.binary(*op, l, r, *line),
             Expr::Call { name, args, line } => self.call(name, args, *line),
         }
+    }
+
+    /// The list a name stands for, or a finding saying why it does not.
+    fn list(&mut self, name: &str, line: usize) -> Option<(Dim, Vec<f64>)> {
+        if let Some(l) = self.lists.get(name) {
+            return Some(l.clone());
+        }
+        let msg = if self.lookup(name).is_some() {
+            format!("«{name}» is one value, not a list")
+        } else {
+            format!("«{name}» is not a list written out with const")
+        };
+        self.err(line, msg);
+        None
+    }
+
+    /// `LIST[i]`: a pure-number index, counted from 1, that the checker holds
+    /// to the list's length when it is written as a number.
+    fn index(&mut self, name: &str, index: &Expr, line: usize) -> Option<Ty> {
+        let (d, xs) = self.list(name, line)?;
+        let t = self.expr(index)?;
+        if t.dim() != Some(Dim::NONE) {
+            self.err(
+                line,
+                format!("{name}[…] is read at a pure number, counted from 1 — not a condition or a quantity"),
+            );
+            return None;
+        }
+        let at = match t {
+            Ty::Zero => Some(0.0),
+            Ty::Pure(v) => Some(v),
+            _ => None,
+        };
+        if let Some(v) = at {
+            if v.fract() != 0.0 || v < 1.0 || v > xs.len() as f64 {
+                self.err(
+                    line,
+                    format!(
+                        "{name} has {} entries, counted from 1 — there is no entry {v}",
+                        xs.len()
+                    ),
+                );
+                return None;
+            }
+        }
+        Some(Ty::Num(d))
     }
 
     fn binary(&mut self, op: BinOp, l: &Expr, r: &Expr, line: usize) -> Option<Ty> {
@@ -340,6 +403,14 @@ impl Checker<'_> {
             let b = self.expr(&args[0])?;
             return self.power(b, &args[1], line);
         }
+        if f.rule == FnRule::Len {
+            let Expr::Var { name, .. } = &args[0] else {
+                self.err(line, "len takes the name of a list");
+                return None;
+            };
+            let (_, xs) = self.list(name, line)?;
+            return Some(Ty::Pure(xs.len() as f64));
+        }
         let mut tys = Vec::new();
         for a in args {
             tys.push(self.expr(a)?);
@@ -385,27 +456,29 @@ impl Checker<'_> {
                     }
                 }
             }
-            FnRule::Interp | FnRule::Pow => unreachable!("handled above"),
+            FnRule::Interp | FnRule::Pow | FnRule::Len => unreachable!("handled above"),
+        }
+    }
+
+    /// A row of `interp`'s table: written out in place, or a list by name.
+    fn row(&mut self, e: &Expr, line: usize) -> Option<(Dim, Vec<f64>)> {
+        match e {
+            Expr::Table { si, dim, .. } => Some((*dim, si.clone())),
+            Expr::Var { name, .. } => self.list(name, line),
+            _ => {
+                self.err(
+                    line,
+                    "interp(x, XS, YS) — each row a list by name, or written out as [x1, x2, …] [unit]",
+                );
+                None
+            }
         }
     }
 
     fn interp(&mut self, args: &[Expr], line: usize) -> Option<Ty> {
         let x = self.expr(&args[0])?;
-        let (
-            Expr::Table {
-                si: xs, dim: dx, ..
-            },
-            Expr::Table {
-                si: ys, dim: dy, ..
-            },
-        ) = (&args[1], &args[2])
-        else {
-            self.err(
-                line,
-                "interp(x, [x1, x2, …] [unit], [y1, y2, …] [unit]) — the table is written out",
-            );
-            return None;
-        };
+        let (dx, xs) = self.row(&args[1], line)?;
+        let (dy, ys) = self.row(&args[2], line)?;
         if xs.len() != ys.len() || xs.len() < 2 {
             self.err(
                 line,
@@ -421,8 +494,8 @@ impl Checker<'_> {
             self.err(line, "the table's x row must rise strictly");
             return None;
         }
-        self.like(x, Ty::Num(*dx), line, "interp's x and its table")?;
-        Some(Ty::Num(*dy))
+        self.like(x, Ty::Num(dx), line, "interp's x and its table")?;
+        Some(Ty::Num(dy))
     }
 
     /// Check a block, and say whether every path through it ends in return
@@ -476,6 +549,24 @@ impl Checker<'_> {
                 self.define(name, Kind::Let, d.unwrap_or(Dim::NONE), *line);
                 false
             }
+            Stmt::Const {
+                name,
+                expr: Expr::Table { si, dim, .. },
+                line,
+            } => {
+                if self.scopes.len() > 1 {
+                    self.err(
+                        *line,
+                        "a list is written at the method's top level, not inside if, for or while",
+                    );
+                }
+                let before = self.diags.len();
+                self.define(name, Kind::List, *dim, *line);
+                if self.diags.len() == before {
+                    self.lists.insert(name.clone(), (*dim, si.clone()));
+                }
+                false
+            }
             Stmt::Const { name, expr, line } => {
                 let d = self.expr(expr).and_then(|t| t.dim()).unwrap_or(Dim::NONE);
                 self.define(name, Kind::Const, d, *line);
@@ -495,7 +586,8 @@ impl Checker<'_> {
                     Some((k, _)) => {
                         let what = match k {
                             Kind::Input => "an input",
-                            Kind::Loop => "the loop's counter",
+                            Kind::Loop => "the loop's own variable",
+                            Kind::List => "a list",
                             _ => "a constant",
                         };
                         self.err(*line, format!("«{name}» is {what} and cannot be changed"));
@@ -552,6 +644,25 @@ impl Checker<'_> {
                 }
                 self.scopes.push(BTreeMap::new());
                 self.define(var, Kind::Loop, Dim::NONE, *line);
+                self.block(body);
+                self.scopes.pop();
+                false
+            }
+            Stmt::Each {
+                var,
+                list,
+                body,
+                line,
+            } => {
+                let d = match self.list(list, *line) {
+                    Some((d, xs)) => {
+                        self.iterations = self.iterations.saturating_add(xs.len() as u64);
+                        d
+                    }
+                    None => Dim::NONE,
+                };
+                self.scopes.push(BTreeMap::new());
+                self.define(var, Kind::Loop, d, *line);
                 self.block(body);
                 self.scopes.pop();
                 false
@@ -684,7 +795,9 @@ fn publishing(body: &[Stmt], sig: &Signature, diags: &mut Vec<Diag>) {
                 .map(|(_, b)| b.as_slice())
                 .chain(otherwise.iter().map(|b| b.as_slice()))
                 .collect(),
-            Stmt::For { body, .. } | Stmt::While { body, .. } => vec![body.as_slice()],
+            Stmt::For { body, .. } | Stmt::Each { body, .. } | Stmt::While { body, .. } => {
+                vec![body.as_slice()]
+            }
             _ => Vec::new(),
         }
     }
@@ -745,6 +858,7 @@ pub fn check(p: &Program, sig: &Signature) -> Vec<Diag> {
         read: BTreeSet::new(),
         sig,
         iterations: 0,
+        lists: BTreeMap::new(),
     };
     for (name, d) in &sig.inputs {
         if kernel_constant(name).is_some() {
