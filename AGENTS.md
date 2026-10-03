@@ -33,13 +33,16 @@ one answer, one folder, and one variable whose id is the row's id.
 **The team uses the tool; the developers maintain it.** A team never edits
 this repository. They set the inputs, run, keep and send results — all of it
 outside the repository, under `~/.vleo/` — and when the design itself is wrong,
-missing or unfinished, the person who knows the answer fills in **the node's
-form** (or the form for a new node) and sends it here. The browser cannot
-change a node, add one or remove one, by design: a change typed into one copy of
-the tool is a change nobody checked, implemented or released.
+missing or unfinished, the person who knows the answer sends it here in one
+of two shapes: **the node's form** (or the form for a new node), or, for a group
+that owns a part of the tree, **the group's sealed release** — the database
+file its group application assembled from every node file it keeps, signed by
+the people who wrote them (`docs/GROUP_APPS.md`). The browser cannot change a
+node, add one or remove one, by design: a change typed into one copy of the
+tool is a change nobody checked, implemented or released.
 
-So every change to the design arrives the same way, and goes through the same
-loop:
+So every change to the design arrives as a form or a sealed release, and a
+form goes through this loop:
 
     0  TAKE      cargo run -p xtask -- take <form.html> --for <author>
                  steps 1–2 and 6 in one: the form on its own branch
@@ -87,16 +90,55 @@ loop:
                  it. The team gets it in that release, and their saved case
                  carries over on its own.
 
+A sealed release goes through the same loop at the scale of a group, each
+of its computed nodes becoming the form its author would have filled. It is
+taken in on its own branch, `group/<group>-<version>` from `maintainer`, and
+the release is never edited there: a fix goes back to the group, and comes
+back as the next sealed version.
+
+    G1 TAKE IN  node tools/group_db.mjs --unpack <release.vleo> --out <folder>
+                cargo run -p xtask -- group-intake <folder> [--apply]
+                the seal checked first — every file's SHA-256 against the
+                fingerprint the group signed; then steps 1–2 for every node,
+                applied as one edit or put back whole.
+    G2 BUILD    cargo run -p xtask -- group-build <folder>
+                step 4 for every computed node, from the group's pseudocode.
+    G3 TEST     cargo run -p xtask -- group-test <folder>
+                the group's own results are the evidence of step 5: each
+                node's cases, the group as a whole through the engine, and
+                both ends of every declared range. A failure goes to the
+                group; their results and tolerances are never the thing to
+                change.
+    G4 DELIVER  cargo run -p xtask -- group-deliver <folder>
+                the test application, built from a commit on the group branch.
+    G5 ACCEPT   cargo run -p xtask -- group-accept <file> --delivery <toml>
+                the lead's answer from the group application, recorded only
+                for the exact build the group tried. A group branch merges
+                into `maintainer` only with it; then step 7.
+
 **An assistant may help at step 4, and anywhere a developer uses one for
 ordinary engineering** — the generators, the daemon, the faces, the tests. It
 is released on a change only after the form has passed the check at step 1,
 and it works to every rule in this file. There is no roster of specialised
 agents: the checks enforce the rules, not a prompt. What no assistant may do is
 **supply a relation** — intake refuses a form whose relation an assistant
-filled, and relation stamping refuses a checkout whose `git config user.name`
-is an assistant's. `fill --by --model` records who wrote each hole, so a
-significant one written twice by different model families can be compared
-with `xtask differential`.
+filled, group intake refuses a node whose declaration says an assistant
+supplied its method or results (or says nothing), and relation stamping
+refuses a checkout whose `git config user.name` is an assistant's. `fill --by
+--model` records who wrote each hole, so a significant one written twice by
+different model families can be compared with `xtask differential`.
+
+**Transcribing is not supplying.** An assistant may copy a relation a person
+already wrote — their code, their paper, the design as it stands — into
+pseudocode, when the node says so: its declaration reads `transcribed`, names
+the source it was copied from, and names the person who read the copy against
+that source and signs it as theirs. The relation was a person's before the
+assistant touched it, and is a person's again once they sign. Intake takes a
+`transcribed` node with no source or no signature as one an assistant
+supplied, and the method checker runs the copy on its author's own cases,
+which came from outside it (rule 2). A transcription is reviewed at H1b like
+any relation; the signature does not replace the review
+([`CONTRIBUTING.md`](CONTRIBUTING.md)).
 
 ## The five rules that do not bend
 
