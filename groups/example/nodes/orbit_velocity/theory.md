@@ -16,4 +16,4 @@
 
 ## Validity
 
-For radii from 6,528 km to 7,378 km (150 km to 1,000 km altitude), while drag changes the speed by much less than a percent per orbit.
+For radii from 6,528 km to 6,828 km (150 km to 450 km altitude), while drag changes the speed by much less than a percent per orbit.

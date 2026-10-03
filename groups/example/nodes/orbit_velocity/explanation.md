@@ -12,7 +12,7 @@ Further from the Earth, gravity is weaker, so it bends the path less and a slowe
 
 {{fig speed}}
 
-The curve falls as the altitude rises: a spacecraft at 1,000 km moves about 6% slower than one at 150 km.
+The curve falls as the altitude rises: a spacecraft at 450 km moves about 2% slower than one at 150 km.
 
 ## Guess first
 

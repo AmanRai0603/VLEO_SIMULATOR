@@ -185,6 +185,24 @@ fn node_form(
     if let Ok(rows) = cases(&nd.join("results/isolation.csv")) {
         filled.arrays.insert("case".into(), rows);
     }
+    // How the relation was arrived at: without it the row is stated and never
+    // derived, and the engine holds it unanswered.
+    if let Ok(md) = fs::read_to_string(nd.join("theory.md")) {
+        let (why, steps, reading) = theory(&md);
+        if !why.is_empty() || !steps.is_empty() || !reading.is_empty() {
+            filled.fields.insert("theory_why".into(), why);
+            filled.fields.insert("theory_reading".into(), reading);
+            filled.arrays.insert(
+                "theory".into(),
+                steps
+                    .into_iter()
+                    .map(|(text, math)| {
+                        BTreeMap::from([("text".into(), text), ("math".into(), math)])
+                    })
+                    .collect(),
+            );
+        }
+    }
     // Whose it is, and whether an assistant helped. Silence is not "none".
     let decl = read_csv(&nd.join("declaration.csv"))
         .ok()
@@ -301,6 +319,88 @@ fn cases(path: &Path) -> Result<Vec<BTreeMap<String, String>>, String> {
         out.push(row);
     }
     Ok(out)
+}
+
+/// A node's theory.md as the sheet's `[theory]`: the inverse of what
+/// `group-export` writes. Under *Derivation*, prose before the numbered steps
+/// is why; each step is its sentence, with a trailing `code span` as its line
+/// of maths. Under *Validity*, everything but the sentence the export writes
+/// from the output's bounds is the reading. Equations and assumptions stay in
+/// the release.
+fn theory(md: &str) -> (String, Vec<(String, String)>, String) {
+    let mut sections: BTreeMap<String, Vec<&str>> = BTreeMap::new();
+    let mut at = String::new();
+    for line in md.lines() {
+        match line.strip_prefix("## ") {
+            Some(h) => at = h.trim().to_lowercase(),
+            None => sections.entry(at.clone()).or_default().push(line),
+        }
+    }
+    let paragraphs = |name: &str| -> Vec<String> {
+        sections
+            .get(name)
+            .map(|l| l.join("\n"))
+            .unwrap_or_default()
+            .split("\n\n")
+            .map(|p| p.split_whitespace().collect::<Vec<_>>().join(" "))
+            .filter(|p| !p.is_empty())
+            .collect()
+    };
+    let numbered = |l: &str| {
+        let l = l.trim_start();
+        let digits = l.chars().take_while(char::is_ascii_digit).count();
+        (digits > 0 && l[digits..].starts_with(". ")).then(|| l[digits + 2..].to_string())
+    };
+    let (mut why, mut steps) = (Vec::new(), Vec::<String>::new());
+    for line in sections
+        .get("derivation")
+        .cloned()
+        .unwrap_or_default()
+        .join("\n")
+        .split("\n\n")
+    {
+        let mut prose = Vec::new();
+        for l in line.lines() {
+            match numbered(l) {
+                Some(s) => steps.push(s),
+                None if !steps.is_empty() && !l.trim().is_empty() && prose.is_empty() => {
+                    let last = steps.last_mut().unwrap();
+                    last.push(' ');
+                    last.push_str(l.trim());
+                }
+                None => prose.push(l.trim()),
+            }
+        }
+        let p = prose.join(" ");
+        if !p.trim().is_empty() {
+            why.push(p.split_whitespace().collect::<Vec<_>>().join(" "));
+        }
+    }
+    let steps = steps
+        .into_iter()
+        .map(|s| {
+            let s = s.split_whitespace().collect::<Vec<_>>().join(" ");
+            match s
+                .strip_suffix('`')
+                .and_then(|t| t.rfind(" `").map(|i| (t, i)))
+            {
+                Some((t, i)) => (t[..i].to_string(), t[i + 2..].to_string()),
+                None => (s, String::new()),
+            }
+        })
+        .collect();
+    // The export's own sentence from the bounds: "From <lo> to <hi> <unit>." —
+    // the bounds are the contract's, not the reading.
+    let bounds = |p: &str| {
+        let w: Vec<&str> = p.split_whitespace().collect();
+        let n = |s: &str| s.parse::<f64>().is_ok() || s.contains("inf") || s.contains('∞');
+        w.len() > 4 && w[0] == "From" && w[2] == "to" && n(w[1]) && n(w[3])
+    };
+    let reading: Vec<String> = paragraphs("validity")
+        .into_iter()
+        .filter(|p| !bounds(p))
+        .collect();
+    (why.join("\n\n"), steps, reading.join("\n\n"))
 }
 
 /// The group's latest version record, as the form's de-risking record.

@@ -22,6 +22,7 @@ runs the same modules in Node, makes the structure, every node file and the
 release from the example folder and from groups/solar, and each is read back.
 
     python3 tools/group_db_check.py
+    VLEO_SEALED_OUT=<file.vleo> python3 tools/group_db_check.py   # and keep the sealed release
 
 Exit 0 when every step held; 1 with the steps that did not.
 """
@@ -29,6 +30,7 @@ import csv
 import gzip
 import hashlib
 import os
+import shutil
 import sqlite3
 import subprocess
 import sys
@@ -150,13 +152,13 @@ def check():
 
         # ── the lead issues a node file; an author fills it ──
         go(g, '#/files')
-        nf = save(g, '[data-issue="orbit_speed"]')
+        nf = save(g, '[data-issue="orbit_velocity"]')
         c = db(nf)
         meta = dict(c.execute('select key, value from meta').fetchall())
         step('a node file carries every contract and only its own content',
-             meta.get('file_kind') == 'node' and meta.get('node_uid') == 'orbit_speed'
+             meta.get('file_kind') == 'node' and meta.get('node_uid') == 'orbit_velocity'
              and c.execute('select count(*) from node').fetchone()[0] == 6
-             and c.execute("select count(*) from doc where scope not in ('orbit_speed')").fetchone()[0] == 0)
+             and c.execute("select count(*) from doc where scope not in ('orbit_velocity')").fetchone()[0] == 0)
         n = page(NODE)
         n.set_input_files('#npick', rel)
         n.wait_for_timeout(1500)
@@ -214,10 +216,10 @@ def check():
         filled = save(n, '#gsave')
         c = db(filled)
         step('saved, the node file is a new revision with its sign-off',
-             c.execute("select revision from node where uid='orbit_speed'").fetchone()[0] == 1
-             and c.execute("select name from review where scope='orbit_speed'").fetchone()[0] == 'Ben Example'
-             and 'lower one' in c.execute("select body from doc where scope='orbit_speed' and kind='explanation'").fetchone()[0]
-             and 'Ben Example,none' in c.execute("select csv from tbl where scope='orbit_speed' and path='declaration.csv'").fetchone()[0])
+             c.execute("select revision from node where uid='orbit_velocity'").fetchone()[0] == 1
+             and c.execute("select name from review where scope='orbit_velocity'").fetchone()[0] == 'Ben Example'
+             and 'lower one' in c.execute("select body from doc where scope='orbit_velocity' and kind='explanation'").fetchone()[0]
+             and 'Ben Example,none' in c.execute("select csv from tbl where scope='orbit_velocity' and path='declaration.csv'").fetchone()[0])
         n.close()
 
         # ── the lead assembles it, signs the rest and seals ──
@@ -225,13 +227,13 @@ def check():
         g.set_input_files('#gf-nodes', [filled])
         g.wait_for_timeout(2000)
         step('the lead assembles the node file into the release', 'Assembled 1 node file' in g.inner_text('#gf-notes'))
-        go(g, '#/node/orbit_speed/explain', 900)
+        go(g, '#/node/orbit_velocity/explain', 900)
         step('the author\'s words are in the release', 'lower one' in g.inner_text('#gmain'))
         go(g, '#/sign', 1200)
         step('the author\'s signature is still current in the release', 'signed ok by Ben Example' in g.inner_text('#gmain'))
         g.select_option('#gme', 'Ada Example')
         g.wait_for_timeout(800)
-        for scope in ['group', 'mission_altitude', 'period_limit', 'orbit_radius', 'orbit_period', 'period_achieved']:
+        for scope in ['group', 'orbit_altitude', 'period_limit', 'orbit_radius', 'orbit_period', 'period_achieved']:
             g.locator(f'.gsig[data-scope="{scope}"][data-v="ok"]').click()
             g.wait_for_timeout(700)
         sealed = save(g, '#gseal')
@@ -241,6 +243,9 @@ def check():
              meta.get('sealed') and meta.get('sealed_by') == 'Ada Example' and len(meta.get('fingerprint', '')) == 64,
              os.path.basename(sealed))
         step('every change is recorded', c.execute("select count(*) from change where what like 'sealed version%'").fetchone()[0] == 1)
+        # The developer's end-to-end check starts from exactly this release.
+        if os.environ.get('VLEO_SEALED_OUT'):
+            shutil.copy(sealed, os.environ['VLEO_SEALED_OUT'])
         # The developer's way in: the release written out, and its seal recomputed
         # independently — what xtask group-intake checks before it reads a node.
         un = os.path.join(tmp, 'unpacked')

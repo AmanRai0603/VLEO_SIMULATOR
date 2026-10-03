@@ -51,24 +51,25 @@ def table(fn, inputs, unit_in, unit_out, refusal):
 
 # Each node on its own: the defaults, ordinary cases, both ends of the range, one refusal.
 write('nodes/orbit_radius/results/isolation.csv', ['h [km]', 'answer [m]', 'tolerance', 'refuses', 'origin'],
-      table(radius, [400.0, 150.0, 250.0, 550.0, 800.0, 1000.0], 'km', 'm', -10.0))
-radii = [radius(h) for h in (400.0, 150.0, 250.0, 550.0, 800.0, 1000.0)]
-write('nodes/orbit_speed/results/isolation.csv', ['r [m]', 'answer [m/s]', 'tolerance', 'refuses', 'origin'],
+      table(radius, [400.0, 150.0, 250.0, 300.0, 350.0, 450.0], 'km', 'm', -10.0))
+radii = [radius(h) for h in (400.0, 150.0, 250.0, 300.0, 350.0, 450.0)]
+write('nodes/orbit_velocity/results/isolation.csv', ['r [m]', 'answer [m/s]', 'tolerance', 'refuses', 'origin'],
       table(speed, radii, 'm', 'm/s', 6000000.0))
 write('nodes/orbit_period/results/isolation.csv', ['r [m]', 'answer [s]', 'tolerance', 'refuses', 'origin'],
       table(period, radii, 'm', 's', 6000000.0))
 write('nodes/period_achieved/results/isolation.csv', ['T [s]', 'answer [s]', 'tolerance', 'refuses', 'origin'],
       [[repr(period(radius(400.0))), repr(period(radius(400.0))), '1e-12', 'no', 'code'],
        ['5240.0', '5240.0', '1e-12', 'no', 'code'], ['5300.0', '5300.0', '1e-12', 'no', 'code'],
-       ['6310.0', '6310.0', '1e-12', 'no', 'code'], ['-1.0', '', '', 'yes', 'code']])
+       ['5620.0', '5620.0', '1e-12', 'no', 'code'], ['-1.0', '', '', 'yes', 'code']])
 
 # The group as a whole: altitude in, speed and period out.
-write('results/group.csv', ['h [km]', 'answer.speed [m/s]', 'answer.period [s]', 'tolerance', 'refuses', 'origin'],
-      [[repr(h), repr(speed(radius(h))), repr(period(radius(h))), '1e-12', 'no', 'code'] for h in (400.0, 150.0, 250.0, 550.0, 1000.0)])
+# Inputs are the group's declared nodes, by id; answers are answer.<node id>.
+write('results/group.csv', ['orbit_altitude [km]', 'answer.orbit_velocity [m/s]', 'answer.orbit_period [s]', 'tolerance', 'refuses', 'origin'],
+      [[repr(h), repr(speed(radius(h))), repr(period(radius(h))), '1e-12', 'no', 'code'] for h in (400.0, 150.0, 250.0, 300.0, 450.0)])
 
 # The data behind the pictures.
 hs = [150 + 25 * i for i in range(35)]
-write('nodes/orbit_speed/figures/speed.csv', ['h [km]', 'v [km/s]'], [[h, round(speed(radius(h)) / 1000, 6)] for h in hs])
+write('nodes/orbit_velocity/figures/speed.csv', ['h [km]', 'v [km/s]'], [[h, round(speed(radius(h)) / 1000, 6)] for h in hs])
 write('nodes/orbit_period/figures/period.csv', ['h [km]', 'T [min]'], [[h, round(period(radius(h)) / 60, 6)] for h in hs])
 rows = []
 for h in (200, 400, 600, 800, 1000):

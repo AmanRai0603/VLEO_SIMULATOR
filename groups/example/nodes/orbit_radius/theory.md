@@ -13,4 +13,4 @@ The radius is the sum of the Earth's equatorial radius and the altitude above it
 
 ## Validity
 
-For every altitude from 150 km to 1000 km.
+For every altitude from 150 km to 450 km.
