@@ -455,6 +455,7 @@ fn a_case_holds_every_member_to_the_authors_value() {
         expect: Some(3.0),
         tolerance: 1e-12,
         also: also.iter().map(|(k, v)| (k.to_string(), *v)).collect(),
+        origin: String::new(),
     };
     assert_eq!(
         judge(&p, &s, &case(&[("Twice", 6.0), ("Square", 9.0)])),

@@ -95,6 +95,9 @@ pub const LANGUAGES: &[&str] = &[
 /// Whether a case must be refused.
 pub const YES_NO: &[&str] = &["no", "yes"];
 
+/// Where a case's answer came from, as a group's results say it.
+pub const ORIGINS: &[&str] = &["code", "hand", "spreadsheet", "paper"];
+
 /// One question on the form: where its answer lives in the file, what shape it
 /// is, and what cannot be emitted without it.
 pub struct Field {

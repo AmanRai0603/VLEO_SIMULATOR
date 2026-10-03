@@ -306,6 +306,14 @@ pub const ARRAYS: &[Array] = &[
                 required: false,
                 managed: false,
             },
+            Column {
+                key: "origin",
+                shape: Shape::Choice(ORIGINS),
+                ask: "where the answer came from: your own code, a hand calculation, a \
+                      spreadsheet or a paper. Left out, it is your code",
+                required: false,
+                managed: false,
+            },
         ],
         blocks: Blocks::Free,
         after: "maths",

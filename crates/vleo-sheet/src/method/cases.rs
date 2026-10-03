@@ -17,6 +17,10 @@ pub struct Case {
     /// gave for each published member, by symbol, in SI. Held to the same
     /// tolerance as the answer. Empty for a node with one answer.
     pub also: Vec<(String, f64)>,
+    /// Where the answer came from: `code` (the author's own), `hand`,
+    /// `spreadsheet` or `paper`. Empty in a sheet written before cases said,
+    /// and read as `code`, which is what every case then was.
+    pub origin: String,
 }
 
 impl Case {
@@ -502,6 +506,7 @@ pub fn report_plain(text: &str) -> Result<Report, Error> {
                     expect: if refuse { None } else { Some(num(f[1])?) },
                     tolerance: if refuse { 0.0 } else { num(f[2])? },
                     also: Vec::new(),
+                    origin: String::new(),
                 });
             }
             ("method", _) => {
@@ -597,6 +602,11 @@ pub fn cases_of(v: &toml::Value) -> Result<Vec<Case>, Error> {
             expect,
             tolerance: c.get("tolerance").and_then(num).unwrap_or(0.0),
             also,
+            origin: c
+                .get("origin")
+                .and_then(|x| x.as_str())
+                .unwrap_or("")
+                .to_string(),
         });
     }
     Ok(out)

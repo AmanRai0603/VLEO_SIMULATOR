@@ -436,8 +436,18 @@ pub(super) fn cases(path: &Path) -> Result<Vec<BTreeMap<String, String>>, String
         let inputs: Vec<String> = cols
             .iter()
             .enumerate()
-            .filter(|(_, (c, _))| !other.contains(&c.as_str()))
+            .filter(|(_, (c, _))| !other.contains(&c.as_str()) && !c.starts_with("answer."))
             .filter_map(|(i, (c, f))| si(r.get(i)?, *f).map(|v| format!("{c} = {v}")))
+            .collect();
+        // A node that publishes several values gives each member's answer in
+        // its own `answer.<member> [unit]` column.
+        let also: Vec<String> = cols
+            .iter()
+            .enumerate()
+            .filter_map(|(i, (c, f))| {
+                let m = c.strip_prefix("answer.")?;
+                si(r.get(i)?, *f).map(|v| format!("{m} = {v}"))
+            })
             .collect();
         let answer = cols.iter().position(|(c, _)| c == "answer");
         let mut row = BTreeMap::new();
@@ -451,6 +461,12 @@ pub(super) fn cases(path: &Path) -> Result<Vec<BTreeMap<String, String>>, String
             },
         );
         row.insert("refuse".into(), if refuse { "yes" } else { "no" }.into());
+        // Where the answer came from, as the group's results say it; the gate
+        // asks for the author's code only for a case that came from it.
+        let origin = get("origin");
+        if !origin.is_empty() {
+            row.insert("origin".into(), origin);
+        }
         if !refuse {
             if let Some(i) = answer {
                 row.insert(
@@ -459,6 +475,9 @@ pub(super) fn cases(path: &Path) -> Result<Vec<BTreeMap<String, String>>, String
                 );
             }
             row.insert("tolerance".into(), get("tolerance"));
+            if !also.is_empty() {
+                row.insert("also".into(), format!("{{ {} }}", also.join(", ")));
+            }
         }
         row.insert("inputs".into(), format!("{{ {} }}", inputs.join(", ")));
         out.push(row);
@@ -871,6 +890,26 @@ mod tests {
         assert_eq!(c[1]["refuse"], "yes");
         assert_eq!(c[1]["inputs"], "{ lead = nan }");
         assert!(!c[1].contains_key("expect"));
+        // Where each answer came from goes with it.
+        assert_eq!(c[0]["origin"], "hand");
+        fs::remove_dir_all(&d).ok();
+    }
+
+    #[test]
+    fn each_published_member_is_answered_in_its_own_column() {
+        let d = std::env::temp_dir().join(format!("vleo-gi-also-{}", std::process::id()));
+        fs::create_dir_all(&d).unwrap();
+        let f = d.join("isolation.csv");
+        fs::write(
+            &f,
+            "lead [d],answer [d],answer.Half [d],tolerance,refuses,origin\n2,1,0.5,1e-9,no,code\n-1,,,,yes,hand\n",
+        )
+        .unwrap();
+        let c = cases(&f).unwrap();
+        // A member's column is an answer, never an input.
+        assert_eq!(c[0]["inputs"], "{ lead = 172800.0 }");
+        assert_eq!(c[0]["also"], "{ Half = 43200.0 }");
+        assert!(!c[1].contains_key("also"));
         fs::remove_dir_all(&d).ok();
     }
 }
