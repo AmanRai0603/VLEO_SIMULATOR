@@ -19,7 +19,7 @@ Generated from the one table in `xtask/src/pipeline.rs`; `cargo run -p xtask -- 
 7. **gate** — the checks every change passes, and what they generate: `group-app`, `docs`, `assemble`, `gate`, `ready`, `codeowners`, `variables`, `guides`, `pipeline`
 8. **preview** — the author tries the build and approves it: `preview`, `approve`, `queue`
 9. **release** — the stamped release everyone gets: `readers`, `group-accept`, `ship`, `release`, `derisk`, `kit`, `design`, `bundle`
-10. **read** — reports: what exists, what is open, why a node is what it is: `status`, `active`, `reach`, `gap`, `graph`, `migration`, `explain`, `why`, `trace`
+10. **read** — reports: what exists, what is open, why a node is what it is: `status`, `active`, `catalogue`, `impact`, `reach`, `gap`, `graph`, `migration`, `explain`, `why`, `trace`
 11. **setup** — once per person per clone: `setup`, `help`
 
 ## When a step stops
@@ -706,6 +706,36 @@ which rows answer and which do not, and for each one that does not, whether it i
 | undo | nothing to undo: it writes nothing |
 | dry run | it only reads, so it runs as it is |
 | code | `xtask/src/report.rs` — `cmd_active` |
+
+#### `catalogue`
+
+    cargo run -p xtask -- catalogue [<group>] [--csv <file>]
+
+what each group publishes to the others: every row another group reads, or that crosses a layer, with its version and every row that reads it. Taken from the inputs the sheets declare; --csv writes it as a table.
+
+| | |
+|---|---|
+| reads | every sheet |
+| writes | with --csv, the catalogue as a table where you say; otherwise nothing |
+| checks | — |
+| undo | nothing to undo: it writes nothing |
+| dry run | it only reads, so it runs as it is |
+| code | `xtask/src/catalogue.rs` — `cmd_catalogue` |
+
+#### `impact`
+
+    cargo run -p xtask -- impact <node|group> ...
+
+which other groups a change to these rows reaches: the rows that read them, theirs, and so on, by group, nearest first. A group named stands for all its rows.
+
+| | |
+|---|---|
+| reads | every sheet |
+| writes | nothing |
+| checks | — |
+| undo | nothing to undo: it writes nothing |
+| dry run | it only reads, so it runs as it is |
+| code | `xtask/src/catalogue.rs` — `cmd_impact` |
 
 #### `reach`
 

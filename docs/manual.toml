@@ -2178,6 +2178,22 @@ effect = "reads"
 
 [[command]]
 tool = "xtask"
+name = "catalogue"
+usage = "catalogue [<group>] [--csv <file>]"
+what = "What each group publishes to the others: every row another group reads, or that crosses a layer, with its version and every row that reads it — taken from the inputs the sheets declare. `--csv` writes it as a table. The design file carries it too, as its `published` table."
+who = "developer"
+effect = "reads"
+
+[[command]]
+tool = "xtask"
+name = "impact"
+usage = "impact <node|group> ..."
+what = "Which other groups a change to these rows reaches: the rows that read them, theirs, and so on, by group and nearest first. A group named stands for all its rows. `group-intake` prints the same for the nodes a release changes."
+who = "developer"
+effect = "reads"
+
+[[command]]
+tool = "xtask"
 name = "reach"
 usage = "reach [<subsystem>]"
 what = "Where each answer goes, and which reach no customer target."

@@ -63,6 +63,17 @@ class Design:
         names = [c[0] for c in cur.description]
         return [dict(zip(names, r)) for r in cur]
 
+    def published(self, group=None):
+        """What each group publishes to the others: one dict per row and
+        reader (``grp``, ``node``, ``unit``, ``version``, ``crosses_to``,
+        ``read_by_grp``, ``read_by``)."""
+        cur = self._db.execute(
+            "SELECT grp, node, unit, version, crosses_to, read_by_grp, read_by FROM published"
+            + (" WHERE grp = ?" if group else "") + " ORDER BY grp, node, read_by",
+            (group,) if group else ())
+        names = [c[0] for c in cur.description]
+        return [dict(zip(names, r)) for r in cur]
+
     def paths(self):
         return [p for (p,) in self._db.execute("SELECT path FROM file ORDER BY path")]
 

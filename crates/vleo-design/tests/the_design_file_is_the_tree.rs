@@ -83,6 +83,30 @@ fn it_holds_every_file_and_loads_as_the_same_tree() {
         "different sources"
     );
     assert_eq!(d.meta("rows"), folders.sheets.len().to_string());
+
+    // The catalogue it carries is the tree's: one line per published row and
+    // reader, a crossing row read by nobody once.
+    let db = rusqlite::Connection::open(&out).unwrap();
+    let mut held: Vec<(String, String, String)> = db
+        .prepare("SELECT node, read_by_grp, read_by FROM published")
+        .unwrap()
+        .query_map([], |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)))
+        .unwrap()
+        .map(Result::unwrap)
+        .collect();
+    held.sort();
+    let mut want: Vec<(String, String, String)> = Vec::new();
+    for p in vleo_sheet::catalogue::catalogue(&folders) {
+        if p.read_by.is_empty() {
+            want.push((p.node.clone(), String::new(), String::new()));
+        }
+        for (g, n) in &p.read_by {
+            want.push((p.node.clone(), g.clone(), n.clone()));
+        }
+    }
+    want.sort();
+    assert!(!want.is_empty());
+    assert_eq!(held, want, "the published table is not the catalogue");
     let _ = std::fs::remove_dir_all(&dir);
 }
 

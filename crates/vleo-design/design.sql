@@ -15,6 +15,7 @@
 --   db = sqlite3.connect("design.vleo")
 --   db.execute("SELECT id, question FROM row WHERE subsystem = 'solar'")
 --   db.execute("SELECT bytes FROM file WHERE path = ?", (path,))
+--   db.execute("SELECT DISTINCT read_by_grp FROM published WHERE grp = 'l3_solar'")
 
 PRAGMA application_id = 1447838031;
 PRAGMA user_version = 1;
@@ -47,4 +48,18 @@ CREATE TABLE row (
   owner      TEXT NOT NULL,
   label      TEXT NOT NULL,
   question   TEXT NOT NULL
+);
+
+-- What each group publishes to the others: every row another group reads, or
+-- that crosses a layer, one line per reader (vleo_sheet::catalogue). A row
+-- that crosses a layer and is read by nobody yet has one line, its reader
+-- empty. Derived, like `row`.
+CREATE TABLE published (
+  grp          TEXT NOT NULL,
+  node         TEXT NOT NULL,
+  unit         TEXT NOT NULL,
+  version      INTEGER NOT NULL,
+  crosses_to   TEXT NOT NULL,
+  read_by_grp  TEXT NOT NULL,
+  read_by      TEXT NOT NULL
 );
