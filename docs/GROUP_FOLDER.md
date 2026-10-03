@@ -156,7 +156,7 @@ Its sections, in this order: `## Equations`, `## Derivation`, `## Assumptions`, 
   - `refuses` — yes or no. One of: yes, no.
   - `origin` — code, hand, spreadsheet or paper. One of: code, hand, spreadsheet, paper.
   - `says` (optional) — what the case is, in words.
-- `nodes/<id>/results/how-run.md` — optional. how the code that produced isolation.csv was run: language, tool and version, machine, date, the command
+- `nodes/<id>/results/how-run.md` — optional. how the code that produced isolation.csv was run: language, tool and version, machine, date, the command — and, so the developer can run it again on each case, `**Entry:** name`, the function that takes this node's inputs by name, in SI, and returns its answer
 - `nodes/<id>/evidence.csv` — optional. values from OUTSIDE any code — a paper, a handbook, another tool — that check the physics, not the code
   - `inputs` — the inputs it holds for, as name=value pairs separated by spaces.
   - `value` — the value.

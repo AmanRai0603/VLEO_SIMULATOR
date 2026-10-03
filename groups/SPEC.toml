@@ -399,7 +399,7 @@ path = "results/how-run.md"
 level = "node"
 required = false
 required_when = "origin_code"
-says = "how the code that produced isolation.csv was run: language, tool and version, machine, date, the command"
+says = "how the code that produced isolation.csv was run: language, tool and version, machine, date, the command — and, so the developer can run it again on each case, `**Entry:** name`, the function that takes this node's inputs by name, in SI, and returns its answer"
 
 [[file]]
 path = "evidence.csv"

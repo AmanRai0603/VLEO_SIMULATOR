@@ -228,6 +228,77 @@ jobs:
       - name: the whole design, with that node built from its method
         run: cargo test --workspace
 
+  # A GROUP'S RELEASE, THROUGH THE DEVELOPER'S LOOP, on every pull request. The
+  # example group is sealed in the group application by a browser, exactly as
+  # its lead would, and that file is taken in, built from its methods, tested
+  # against the group's own results and delivered as a test application — on
+  # this throwaway checkout, under the pipeline's name. Then the engine is
+  # broken on purpose and the group test must say so. Nothing is committed.
+  group-end-to-end:
+    name: a group's release, sealed to delivered
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-group-e2e-${{ hashFiles('**/Cargo.lock', 'rust-toolchain.toml') }}
+          restore-keys: ${{ runner.os }}-group-e2e-
+      - name: a browser, for the group application
+        run: |
+          pip install --quiet playwright
+          python3 -m playwright install --with-deps chromium
+      - name: the example group, sealed in the group application
+        run: |
+          VLEO_SEALED_OUT="$RUNNER_TEMP/example.vleo" python3 tools/group_db_check.py
+          node tools/group_db.mjs --unpack "$RUNNER_TEMP/example.vleo" --out "$RUNNER_TEMP/release"
+      # Each step also says what it must have printed, so the job cannot pass
+      # by doing less than it claims.
+      - name: taken in
+        run: |
+          set -o pipefail
+          git config user.name "vleo pipeline"
+          cargo run -p xtask -- group-intake "$RUNNER_TEMP/release" --apply | tee "$RUNNER_TEMP/intake.log"
+          grep -q "3 computed node(s) read; 0 with something that cannot be taken; 3 applied" "$RUNNER_TEMP/intake.log"
+      - name: built from the group's methods
+        run: |
+          set -o pipefail
+          cargo run -p xtask -- group-build "$RUNNER_TEMP/release" 2>&1 | tee "$RUNNER_TEMP/build.log"
+          grep -q "3 built from its method, 0 not" "$RUNNER_TEMP/build.log"
+          for n in orbit_radius orbit_velocity orbit_period; do
+            test -f "crates/vleo-core/src/physics/methods/$n.rs"
+          done
+      - name: tested against the group's own results
+        run: |
+          set -o pipefail
+          cargo run -p xtask -- group-test "$RUNNER_TEMP/release" | tee "$RUNNER_TEMP/test.log"
+          grep -q "20 held, 0 did not" "$RUNNER_TEMP/test.log"
+      - name: a broken engine is caught by the group's results
+        run: |
+          f=crates/vleo-core/src/physics/methods/orbit_period.rs
+          cp "$f" "$RUNNER_TEMP/kept.rs"
+          sed -i 's/(2.0 \* core::f64::consts::PI)/(2.0002 * core::f64::consts::PI)/' "$f"
+          grep -q "2.0002" "$f"
+          if cargo run -p xtask -- group-test "$RUNNER_TEMP/release" > "$RUNNER_TEMP/broken.log" 2>&1; then
+            echo "the group test passed an engine one part in ten thousand out"; exit 1
+          fi
+          grep -q "orbit_period — 5554.17" "$RUNNER_TEMP/broken.log"
+          cp "$RUNNER_TEMP/kept.rs" "$f"
+          cargo run -p xtask -- group-test "$RUNNER_TEMP/release" | grep -q "20 held, 0 did not"
+      - name: the whole design, with the group built from its methods
+        run: cargo run -p xtask -- gate && cargo test --workspace
+      - name: delivered as a test application that answers from its own folder
+        run: |
+          set -o pipefail
+          cargo run -p xtask -- group-deliver "$RUNNER_TEMP/release" --uncommitted --out "$RUNNER_TEMP/deliver" | tee "$RUNNER_TEMP/deliver.log"
+          grep -q 'built = \["orbit_radius", "orbit_velocity", "orbit_period"\]' "$RUNNER_TEMP/deliver/DELIVERY.toml"
+          test -f "$RUNNER_TEMP/deliver/DELIVERY.md"
+          cd "$RUNNER_TEMP/deliver" && ./vleo run orbit_period --defaults --set orbit_altitude=400000 --again | grep -q "T_orb = 92.5604 min"
+
   # Every script in tools/ checks itself before it is trusted to check
   # anything else. A checker nobody has watched fail is a checker nobody knows
   # works, and these decide what is allowed to merge.

@@ -2306,6 +2306,30 @@ effect = "writes"
 
 [[command]]
 tool = "xtask"
+name = "group-build"
+usage = "group-build <folder> [--node <id>]"
+what = "Every computed node of a sealed release, once `group-intake --apply` has taken it in, built from its method: `build-node` on each — translated into the kernel, tested on its author's cases, the tests proved to test, the interface checked. A node whose method in the design is not the release's is refused: the release is taken in first."
+who = "developer"
+effect = "writes"
+
+[[command]]
+tool = "xtask"
+name = "group-test"
+usage = "group-test <folder> [--out <dir>]"
+what = "The group tested against its own results, never against the code under test: the design holds the release's isolation results case for case; each node's own tests pass; the group as a whole, run through the engine, gives `results/group.csv`; and both ends of every range the group declares answer or refuse by name — never NaN, never a crash. The report goes to `target/group/<group>-<version>/group-test.csv`."
+who = "developer"
+effect = "reads"
+
+[[command]]
+tool = "xtask"
+name = "group-deliver"
+usage = "group-deliver <folder> [--out <dir>] [--bin <dir>] [--uncommitted]"
+what = "The test application for the group: the kit, built from this commit with their release in it, beside `DELIVERY.toml` — which release, which seal, which commit, which nodes — `DELIVERY.md`, what to try, and the group-test report. Refused until `group-test` has passed, and from uncommitted changes unless `--uncommitted` says the checkout is a throwaway. The group answers accepted, or changes."
+who = "developer"
+effect = "writes"
+
+[[command]]
+tool = "xtask"
 name = "group-export"
 usage = "group-export <group> [--out <dir>]"
 what = "Writes one group's folder in the pattern of groups/SPEC.toml from every sheet in the group — its nodes, inputs, plain words, theory, assumptions, evidence and sources — for the group to start from. It invents nothing: a pseudocode, the group's own results and its pictures are left for the group, and the group application lists them."
@@ -2936,7 +2960,7 @@ who = "developer"
 
 [[folder]]
 name = ".claude"
-what = "The hooks that run on an edit in a checkout — the regeneration and gate an assistant's edit goes through, the same as anyone's."
+what = "The hooks that run on an edit in a checkout — the regeneration and gate an assistant's edit goes through, the same as anyone's — and the developer's skill for a group's sealed release, skills/vleo-group-release: the loop from intake to test application, and the refusals only a person may answer."
 who = "developer"
 
 [[folder]]
