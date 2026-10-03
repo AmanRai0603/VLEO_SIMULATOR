@@ -1,10 +1,10 @@
 //! Reading the tree off disk.
 
+use crate::files::{Disk, Files};
 use crate::fnv1a;
 use crate::model::*;
 use crate::{Error, ErrorKind};
 use std::collections::BTreeMap;
-use std::fs;
 use std::path::{Path, PathBuf};
 
 /// The whole repository, loaded. Nodes are held in a sorted map so that every
@@ -314,8 +314,14 @@ pub fn unknown_keys(v: &toml::Value) -> Vec<String> {
 }
 
 pub fn load_all(root: &Path) -> Result<Tree, Error> {
+    load_all_from(&Disk, root)
+}
+
+/// The tree as `files` holds it under `root` — the folders, or a design file
+/// (`crate::files`). Every check `load_all` makes, made the same way.
+pub fn load_all_from(files: &dyn Files, root: &Path) -> Result<Tree, Error> {
     WRONG.with(|w| w.borrow_mut().clear());
-    let tree = load_everything(root)?;
+    let tree = load_everything(files, root)?;
     let wrong = WRONG.with(|w| std::mem::take(&mut *w.borrow_mut()));
     if !wrong.is_empty() {
         return Err(Error::new(
@@ -330,16 +336,16 @@ pub fn load_all(root: &Path) -> Result<Tree, Error> {
     Ok(tree)
 }
 
-fn load_everything(root: &Path) -> Result<Tree, Error> {
+fn load_everything(files: &dyn Files, root: &Path) -> Result<Tree, Error> {
     let mut tree = Tree {
         root: root.to_path_buf(),
         ..Default::default()
     };
     let crates_dir = root.join("crates");
-    let mut crate_dirs: Vec<PathBuf> = fs::read_dir(&crates_dir)
+    let mut crate_dirs: Vec<PathBuf> = files
+        .entries(&crates_dir)
         .map_err(|e| Error::io("crates/", e))?
-        .filter_map(|e| e.ok())
-        .map(|e| e.path())
+        .into_iter()
         .filter(|p| {
             p.file_name()
                 .and_then(|n| n.to_str())
@@ -351,18 +357,18 @@ fn load_everything(root: &Path) -> Result<Tree, Error> {
     for cd in crate_dirs {
         let crate_name = cd.file_name().unwrap().to_str().unwrap().to_string();
         let nodes_dir = cd.join("nodes");
-        if !nodes_dir.is_dir() {
+        if !files.is_dir(&nodes_dir) {
             continue;
         }
-        let mut node_dirs: Vec<PathBuf> = fs::read_dir(&nodes_dir)
+        let mut node_dirs: Vec<PathBuf> = files
+            .entries(&nodes_dir)
             .map_err(|e| Error::io(nodes_dir.display(), e))?
-            .filter_map(|e| e.ok())
-            .map(|e| e.path())
-            .filter(|p| p.is_dir())
+            .into_iter()
+            .filter(|p| files.is_dir(p))
             .collect();
         node_dirs.sort();
         for nd in node_dirs {
-            let sheet = load_sheet(&nd, &crate_name)?;
+            let sheet = load_sheet(files, &nd, &crate_name)?;
             if tree.sheets.contains_key(&sheet.id) {
                 return Err(Error::new(
                     ErrorKind::Malformed,
@@ -376,15 +382,17 @@ fn load_everything(root: &Path) -> Result<Tree, Error> {
             tree.sheets.insert(sheet.id.clone(), sheet);
         }
     }
-    load_layers(&mut tree)?;
-    load_cases(&mut tree)?;
-    load_sources(&mut tree)?;
+    load_layers(files, &mut tree)?;
+    load_cases(files, &mut tree)?;
+    load_sources(files, &mut tree)?;
     Ok(tree)
 }
 
-fn load_sheet(dir: &Path, crate_name: &str) -> Result<Sheet, Error> {
+fn load_sheet(files: &dyn Files, dir: &Path, crate_name: &str) -> Result<Sheet, Error> {
     let path = dir.join("node.toml");
-    let text = fs::read_to_string(&path).map_err(|e| Error::io(path.display(), e))?;
+    let text = files
+        .read_to_string(&path)
+        .map_err(|e| Error::io(path.display(), e))?;
     reading(&path);
     let v: toml::Value = text.parse().map_err(|e| {
         Error::new(
@@ -656,8 +664,10 @@ fn load_sheet(dir: &Path, crate_name: &str) -> Result<Sheet, Error> {
     }
 
     let fx = dir.join("fixtures.toml");
-    if fx.is_file() {
-        let ftext = fs::read_to_string(&fx).map_err(|e| Error::io(fx.display(), e))?;
+    if files.is_file(&fx) {
+        let ftext = files
+            .read_to_string(&fx)
+            .map_err(|e| Error::io(fx.display(), e))?;
         reading(&fx);
         let fv: toml::Value = ftext.parse().map_err(|e| {
             Error::new(
@@ -736,7 +746,7 @@ fn load_sheet(dir: &Path, crate_name: &str) -> Result<Sheet, Error> {
         canon.push_str(&sh.method.text.replace("\r\n", "\n"));
     }
     sh.sheet_hash = fnv1a(&canon);
-    sh.impl_hash = fnv1a(&read_holes_raw(dir));
+    sh.impl_hash = fnv1a(&read_holes_raw(files, dir));
     Ok(sh)
 }
 
@@ -756,9 +766,9 @@ fn reflow(s: &str) -> String {
 }
 
 /// The hole bodies, as one string, for the implementation hash.
-fn read_holes_raw(dir: &Path) -> String {
+fn read_holes_raw(files: &dyn Files, dir: &Path) -> String {
     let p = dir.join("model.rs");
-    let text = match fs::read_to_string(&p) {
+    let text = match files.read_to_string(&p) {
         Ok(t) => t,
         Err(_) => return String::new(),
     };
@@ -793,7 +803,7 @@ fn read_holes_raw(dir: &Path) -> String {
 pub fn read_holes(dir: &Path) -> BTreeMap<u32, String> {
     let mut map = BTreeMap::new();
     let p = dir.join("model.rs");
-    let text = match fs::read_to_string(&p) {
+    let text = match std::fs::read_to_string(&p) {
         Ok(t) => t,
         Err(_) => return map,
     };
@@ -825,17 +835,19 @@ pub fn read_holes(dir: &Path) -> BTreeMap<u32, String> {
     map
 }
 
-fn load_layers(tree: &mut Tree) -> Result<(), Error> {
+fn load_layers(fs: &dyn Files, tree: &mut Tree) -> Result<(), Error> {
     let dir = tree.root.join("layers");
-    let mut files: Vec<PathBuf> = fs::read_dir(&dir)
+    let mut files: Vec<PathBuf> = fs
+        .entries(&dir)
         .map_err(|e| Error::io("layers/", e))?
-        .filter_map(|e| e.ok())
-        .map(|e| e.path())
+        .into_iter()
         .filter(|p| p.extension().map(|e| e == "toml").unwrap_or(false))
         .collect();
     files.sort();
     for p in files {
-        let text = fs::read_to_string(&p).map_err(|e| Error::io(p.display(), e))?;
+        let text = fs
+            .read_to_string(&p)
+            .map_err(|e| Error::io(p.display(), e))?;
         reading(&p);
         reading(&p);
         let v: toml::Value = text
@@ -921,17 +933,19 @@ fn parse_cycles(v: &toml::Value) -> Vec<CycleSpec> {
     out
 }
 
-fn load_cases(tree: &mut Tree) -> Result<(), Error> {
+fn load_cases(fs: &dyn Files, tree: &mut Tree) -> Result<(), Error> {
     let dir = tree.root.join("cases");
-    let mut files: Vec<PathBuf> = fs::read_dir(&dir)
+    let mut files: Vec<PathBuf> = fs
+        .entries(&dir)
         .map_err(|e| Error::io("cases/", e))?
-        .filter_map(|e| e.ok())
-        .map(|e| e.path())
+        .into_iter()
         .filter(|p| p.extension().map(|e| e == "toml").unwrap_or(false))
         .collect();
     files.sort();
     for p in files {
-        let text = fs::read_to_string(&p).map_err(|e| Error::io(p.display(), e))?;
+        let text = fs
+            .read_to_string(&p)
+            .map_err(|e| Error::io(p.display(), e))?;
         reading(&p);
         reading(&p);
         let v: toml::Value = text
@@ -968,9 +982,11 @@ fn load_cases(tree: &mut Tree) -> Result<(), Error> {
     Ok(())
 }
 
-fn load_sources(tree: &mut Tree) -> Result<(), Error> {
+fn load_sources(fs: &dyn Files, tree: &mut Tree) -> Result<(), Error> {
     let p = tree.root.join("sources").join("sources.toml");
-    let text = fs::read_to_string(&p).map_err(|e| Error::io(p.display(), e))?;
+    let text = fs
+        .read_to_string(&p)
+        .map_err(|e| Error::io(p.display(), e))?;
     reading(&p);
     let v: toml::Value = text
         .parse()

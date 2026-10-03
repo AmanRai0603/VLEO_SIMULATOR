@@ -1167,7 +1167,7 @@ fn kept_json(s: &vleo_modules::results::Saved) -> String {
 /// writes a sheet, and a developer applying forms beside a running copy
 /// should see the register move without a restart.
 pub(super) fn derisk_json(ctx: &Ctx) -> String {
-    let tree = match vleo_sheet::load::load_all(&ctx.root) {
+    let tree = match ctx.load() {
         Ok(t) => t,
         Err(e) => return failed(&format!("the tree does not load: {e}")),
     };

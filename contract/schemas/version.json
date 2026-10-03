@@ -24,6 +24,21 @@
     "nodes": {
       "type": "number"
     },
+    "design": {
+      "type": "object",
+      "properties": {
+        "from": {
+          "type": "string"
+        },
+        "fingerprint": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "from",
+        "fingerprint"
+      ]
+    },
     "data": {
       "type": "array",
       "items": {
@@ -39,6 +54,7 @@
     "endpoint",
     "port",
     "nodes",
-    "data"
+    "data",
+    "design"
   ]
 }

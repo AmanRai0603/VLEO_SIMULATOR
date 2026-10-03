@@ -1,5 +1,5 @@
 # The node form's method checker: web/method.wasm.gz, built by
 # `cargo run -p xtask -- method-wasm` from vleo_sheet::method::CHECKER_SOURCES.
 # A test refuses a checkout whose sources have moved on from it.
-fingerprint = "040b118ea5482c46"
+fingerprint = "8a53cb15b085137d"
 language = 2

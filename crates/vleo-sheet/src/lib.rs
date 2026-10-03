@@ -24,6 +24,7 @@ pub mod emit;
 mod error;
 pub use error::{Error, ErrorKind};
 pub mod example;
+pub mod files;
 pub mod form;
 pub mod guide;
 pub mod lesson;

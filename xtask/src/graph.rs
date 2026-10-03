@@ -23,6 +23,10 @@ pub(super) fn ring(crate_name: &str) -> Option<(u8, &'static str)> {
         "vleo-bus" => (2, "RING 2 — transport"),
         "vleo-data" => (2, "reference data"),
         "vleo-modules" => (4, "the facade over every node crate"),
+        "vleo-design" => (
+            4,
+            "the design as one file — the tree, read as the folders are",
+        ),
         "vleo-server" => (5, "the server both the daemon and the Python package start"),
         "vleo-cli" | "vleo-daemon" | "vleo-ffi" | "vleo-py" | "vleo-wasm" | "vleo-method-wasm"
         | "vleo-kernel-wasm" => (6, "a face"),
