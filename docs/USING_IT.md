@@ -255,7 +255,8 @@ vleo results import study.vleor                 # into this machine's folder
 ```
 
 Each result goes out whole and comes back exactly as it was; a question already
-kept is kept once. The file is SQLite, so Python reads it without the engine —
+kept is kept once. In the browser, **upload a result…** on the **Results** tab
+takes the same file and keeps every result in it, the same way. The file is SQLite, so Python reads it without the engine —
 `vleo.results("study.vleor")` gives every result with its values in SI, and
 `vleo.design()` the design file the tool reads.
 
