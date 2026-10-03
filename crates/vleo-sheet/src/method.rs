@@ -41,7 +41,10 @@ use vleo_units::{constants as k, pmath, Unit};
 
 /// The language version. A method is read by the version it was written for;
 /// raising this is a reviewed change to every node that has one.
-pub const LANGUAGE_VERSION: u32 = 1;
+///
+/// 2 added `while … at most N times` and the kernel functions; every method
+/// of version 1 reads the same in version 2.
+pub const LANGUAGE_VERSION: u32 = 2;
 
 /// How many loop iterations a method may run in all. A method is a relation,
 /// not a simulation: a loop exists for a short series or a fixed-point
@@ -106,6 +109,7 @@ impl std::fmt::Display for Diag {
 mod ast;
 mod cases;
 mod check;
+mod kernel;
 mod node;
 mod parse;
 mod reference;
@@ -119,6 +123,7 @@ mod units;
 pub use ast::*;
 pub use cases::*;
 pub use check::*;
+pub use kernel::*;
 pub use node::*;
 pub use parse::*;
 pub use reference::*;

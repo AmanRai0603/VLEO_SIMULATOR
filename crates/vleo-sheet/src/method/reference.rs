@@ -62,6 +62,25 @@ pub fn reference_md() -> String {
         };
         let _ = writeln!(o, "| `{}` | {} | {} |", f.name, rule, f.meaning);
     }
+    o.push_str(
+        "\n## Kernel functions\n\nRelations too long to write as a formula — an integral up the \
+         atmosphere, a decay over many orbits — already live in the kernel, reviewed once. A method \
+         calls them by name, each argument in the unit shown; the checker holds the units, and the \
+         engine runs the kernel itself, so the method and the built node cannot differ.\n\n\
+         | Call | Answer | Meaning | In the kernel |\n|---|---|---|---|\n",
+    );
+    for k in KERNEL_FUNCTIONS {
+        let args: Vec<String> = k.args.iter().map(|(n, u)| format!("{n} [{u}]")).collect();
+        let _ = writeln!(
+            o,
+            "| `{}({})` | `[{}]` | {} | `{}` |",
+            k.name,
+            args.join(", "),
+            k.out,
+            k.meaning,
+            k.kernel
+        );
+    }
     o.push_str("\n## Constants every method may use\n\n| Name | Value | Unit | Meaning |\n|---|---|---|---|\n");
     for c in KERNEL_CONSTANTS {
         let _ = writeln!(

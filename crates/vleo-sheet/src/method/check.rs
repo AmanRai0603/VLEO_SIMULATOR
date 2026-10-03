@@ -256,7 +256,56 @@ impl Checker<'_> {
         Some(Ty::Num(Dim::NONE))
     }
 
+    /// A kernel function: every argument in the unit its table names, the
+    /// answer in the unit it gives.
+    fn kernel_call(&mut self, k: &KernelFn, args: &[Expr], line: usize) -> Option<Ty> {
+        if args.len() != k.args.len() {
+            let names: Vec<&str> = k.args.iter().map(|a| a.0).collect();
+            self.err(
+                line,
+                format!(
+                    "{}({}) takes {} arguments, not {}",
+                    k.name,
+                    names.join(", "),
+                    k.args.len(),
+                    args.len()
+                ),
+            );
+            return None;
+        }
+        let mut ok = true;
+        for (a, (an, au)) in args.iter().zip(k.args) {
+            let want = parse_unit(au).map(|u| u.1).unwrap_or(Dim::NONE);
+            match self.expr(a)? {
+                Ty::Zero => {}
+                Ty::Num(d) if d == want => {}
+                Ty::Pure(_) if want == Dim::NONE => {}
+                t => {
+                    ok = false;
+                    self.err(
+                        line,
+                        format!(
+                            "{}: {an} is in [{}] here, and the kernel takes it in [{au}]",
+                            k.name,
+                            t.dim()
+                                .map(dim_text)
+                                .unwrap_or_else(|| "a condition".into())
+                        ),
+                    );
+                }
+            }
+        }
+        if !ok {
+            return None;
+        }
+        let out = parse_unit(k.out).map(|u| u.1).unwrap_or(Dim::NONE);
+        Some(Ty::Num(out))
+    }
+
     fn call(&mut self, name: &str, args: &[Expr], line: usize) -> Option<Ty> {
+        if let Some(k) = kernel_function(name) {
+            return self.kernel_call(k, args, line);
+        }
         let Some(f) = function(name) else {
             let hint = if self.lookup(name).is_some() {
                 format!(" — «{name}» is a value, not a function")
@@ -500,6 +549,38 @@ impl Checker<'_> {
                 }
                 self.scopes.push(BTreeMap::new());
                 self.define(var, Kind::Loop, Dim::NONE, *line);
+                self.block(body);
+                self.scopes.pop();
+                false
+            }
+            Stmt::While {
+                cond,
+                max,
+                body,
+                line,
+            } => {
+                if let Some(t) = self.expr(cond) {
+                    if t != Ty::Bool {
+                        self.err(
+                            cond.line(),
+                            "while needs a condition, such as change > 1e-9 [m]",
+                        );
+                    }
+                }
+                if *max < 1 {
+                    self.err(
+                        *line,
+                        format!("the loop may run at most {max} times, which is never"),
+                    );
+                }
+                self.iterations = self.iterations.saturating_add((*max).max(0) as u64);
+                if self.iterations > MAX_STEPS {
+                    self.err(
+                        *line,
+                        format!("more than {MAX_STEPS} loop steps — a method this long is a node to split"),
+                    );
+                }
+                self.scopes.push(BTreeMap::new());
                 self.block(body);
                 self.scopes.pop();
                 false

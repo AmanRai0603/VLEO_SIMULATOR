@@ -136,6 +136,15 @@ pub enum Stmt {
         body: Vec<Stmt>,
         line: usize,
     },
+    /// Repeat while the condition holds, at most `max` times. A condition
+    /// still true after the last pass is a refusal — the loop did not settle —
+    /// never an answer taken from wherever it had got to.
+    While {
+        cond: Expr,
+        max: i64,
+        body: Vec<Stmt>,
+        line: usize,
+    },
     Refuse {
         reason: String,
         line: usize,
@@ -154,6 +163,7 @@ impl Stmt {
             | Stmt::Set { line, .. }
             | Stmt::If { line, .. }
             | Stmt::For { line, .. }
+            | Stmt::While { line, .. }
             | Stmt::Refuse { line, .. }
             | Stmt::Return { line, .. } => *line,
         }

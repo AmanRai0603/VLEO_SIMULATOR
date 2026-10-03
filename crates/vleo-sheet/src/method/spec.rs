@@ -41,6 +41,11 @@ pub const STATEMENTS: &[StatementSpec] = &[
         example: "for n = 1 to 10\n  set total = total + x ^ n / n\nend",
     },
     StatementSpec {
+        form: "while COND at most N times … end",
+        meaning: "Repeat while COND holds — an iteration that settles, or a count the inputs decide. N is the most passes it may take, fixed when written; if COND still holds after N passes the node refuses, saying the loop did not settle, rather than answer with wherever it had got to.",
+        example: "while abs(r * r - a) > 1e-12 * a at most 40 times\n  set r = (r + a / r) / 2\nend",
+    },
+    StatementSpec {
         form: "refuse \"reason\"",
         meaning: "The node will not answer here, and says why. A refusal is never a substitute value.",
         example: "refuse \"the orbit is inside the Earth\"",
@@ -223,6 +228,6 @@ pub(super) fn function(name: &str) -> Option<&'static FnSpec> {
 }
 
 pub(super) const KEYWORDS: &[&str] = &[
-    "let", "set", "const", "if", "then", "else", "end", "for", "to", "refuse", "return", "and",
-    "or", "not", "true", "false",
+    "let", "set", "const", "if", "then", "else", "end", "for", "to", "while", "refuse", "return",
+    "and", "or", "not", "true", "false",
 ];
