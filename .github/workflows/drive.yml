@@ -1,0 +1,73 @@
+# The team's shared drive, written from the repository.
+#
+# Every file in the drive — each group's structure, node files and releases,
+# the two pages that open them, the role guides, design.vleo — is built from
+# the repository by `tools/drive.py pack` and mirrored into the drive's folder
+# by `tools/drive.py upload`. A drive filled by hand drifts from the release it
+# claims to be; this one is refreshed by the same tag that cuts the release.
+#
+# It signs in as the drive's owner (docs/DRIVE_SETUP.md): three secrets and one
+# variable. Until they exist the job says so and stops green — a drive that is
+# not set up yet is not a broken build.
+#
+# The upload never deletes. A file in the drive that the pack no longer writes
+# is named in the log and left where it is.
+name: drive
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: drive
+  cancel-in-progress: false
+
+jobs:
+  drive:
+    name: the shared drive, from this commit
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      GDRIVE_FOLDER_ID: ${{ vars.GDRIVE_FOLDER_ID }}
+      GDRIVE_CLIENT_ID: ${{ secrets.GDRIVE_CLIENT_ID }}
+      GDRIVE_CLIENT_SECRET: ${{ secrets.GDRIVE_CLIENT_SECRET }}
+      GDRIVE_REFRESH_TOKEN: ${{ secrets.GDRIVE_REFRESH_TOKEN }}
+    steps:
+      - name: is the drive set up
+        id: ready
+        run: |
+          missing=""
+          for v in GDRIVE_FOLDER_ID GDRIVE_CLIENT_ID GDRIVE_CLIENT_SECRET GDRIVE_REFRESH_TOKEN; do
+            [ -n "${!v}" ] || missing="$missing $v"
+          done
+          if [ -n "$missing" ]; then
+            echo "::notice::the drive is not set up yet —$missing missing; docs/DRIVE_SETUP.md"
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/checkout@v4
+        if: steps.ready.outputs.ready == 'true'
+      - uses: actions/cache@v4
+        if: steps.ready.outputs.ready == 'true'
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-drive-${{ hashFiles('**/Cargo.lock', 'rust-toolchain.toml') }}
+          restore-keys: ${{ runner.os }}-drive-
+      - uses: actions/setup-node@v4
+        if: steps.ready.outputs.ready == 'true'
+        with:
+          node-version: 22
+      - name: the drive's folder, built from this commit
+        if: steps.ready.outputs.ready == 'true'
+        run: python3 tools/drive.py pack --out "$RUNNER_TEMP/drive"
+      - name: mirrored into the drive
+        if: steps.ready.outputs.ready == 'true'
+        run: python3 tools/drive.py upload "$RUNNER_TEMP/drive" --folder "$GDRIVE_FOLDER_ID"
