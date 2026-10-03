@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `B_f107` (Issued-outlook F10.7 bias), in `-`.
 pub const NODE_ID: &str = "sw_forecast_bias";
-pub const SHEET_HASH: u64 = 0xc8d2f17093979bae;
+pub const SHEET_HASH: u64 = 0x43af7f8ea30dbe2f;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "sw_recurrence_lag",

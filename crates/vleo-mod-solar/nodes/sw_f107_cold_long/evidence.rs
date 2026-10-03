@@ -46,6 +46,85 @@ fn fixture_2() {
     assert!(err <= 1e-10, "the centre sw_central_expectation actually gives at the declared epoch, 86.8497 — the case that matters, nine and a half sfu above the guard: got {} want 69.62809104, relative error {} exceeds the declared tolerance 1e-10. This is a physics disagreement, not a build failure — take it to the node owner. Do not widen the tolerance.", got.get(), err);
 }
 
+/// the author's case «a mid-cycle centre of 160 with this repository's own measured spread — 160 - 1.28 × 13.454382.», from their own  code.
+#[test]
+fn case_1() {
+    let got = model::evaluate(Ratio::new(160.0), Ratio::new(13.454382)).expect("a mid-cycle centre of 160 with this repository's own measured spread — 160 - 1.28 × 13.454382.: the author's code answers this case and the node refused it");
+    let err = relative_error(got.get(), 142.77839104);
+    assert!(err <= 1e-12, "a mid-cycle centre of 160 with this repository's own measured spread — 160 - 1.28 × 13.454382.: got {} and the author's code gave 142.77839104; relative error {} is more than their tolerance 1e-12. Take it to the author; do not widen the tolerance.", got.get(), err);
+}
+
+/// the author's case «round numbers, so the arithmetic is checkable without a calculator — 100 - 1.28 × 20.», from their own  code.
+#[test]
+fn case_2() {
+    let got = model::evaluate(Ratio::new(100.0), Ratio::new(20.0)).expect("round numbers, so the arithmetic is checkable without a calculator — 100 - 1.28 × 20.: the author's code answers this case and the node refused it");
+    let err = relative_error(got.get(), 74.4);
+    assert!(err <= 1e-12, "round numbers, so the arithmetic is checkable without a calculator — 100 - 1.28 × 20.: got {} and the author's code gave 74.4; relative error {} is more than their tolerance 1e-12. Take it to the author; do not widen the tolerance.", got.get(), err);
+}
+
+/// the author's case «the centre sw_central_expectation actually gives at the declared epoch, 86.8497 — the case that matters, nine and a half sfu above the guard.», from their own  code.
+#[test]
+fn case_3() {
+    let got = model::evaluate(Ratio::new(86.8497), Ratio::new(13.454382)).expect("the centre sw_central_expectation actually gives at the declared epoch, 86.8497 — the case that matters, nine and a half sfu above the guard.: the author's code answers this case and the node refused it");
+    let err = relative_error(got.get(), 69.62809104);
+    assert!(err <= 1e-10, "the centre sw_central_expectation actually gives at the declared epoch, 86.8497 — the case that matters, nine and a half sfu above the guard.: got {} and the author's code gave 69.62809104; relative error {} is more than their tolerance 1e-10. Take it to the author; do not widen the tolerance.", got.get(), err);
+}
+
+/// the author's case «outside what the node holds for: its code refuses it, and so must the developer's», from their own  code.
+#[test]
+fn case_4() {
+    let got = model::evaluate(Ratio::new(100.0), Ratio::new(40.0));
+    assert!(matches!(got, Err(vleo_core::fault::Fault::Refused { .. })), "outside what the node holds for: its code refuses it, and so must the developer's: the author's code refuses this case and the node gave {:?}. Take it to the author.", got);
+}
+
+/// the author's case «outside what the node holds for: its code refuses it, and so must the developer's», from their own  code.
+#[test]
+fn case_5() {
+    let got = model::evaluate(Ratio::new(500.0), Ratio::new(10.0));
+    assert!(matches!(got, Err(vleo_core::fault::Fault::Refused { .. })), "outside what the node holds for: its code refuses it, and so must the developer's: the author's code refuses this case and the node gave {:?}. Take it to the author.", got);
+}
+
+/// the author's case «outside what the node holds for: its code refuses it, and so must the developer's», from their own  code.
+#[test]
+fn case_6() {
+    let got = model::evaluate(Ratio::new(f64::INFINITY), Ratio::new(10.0));
+    assert!(matches!(got, Err(vleo_core::fault::Fault::Refused { .. })), "outside what the node holds for: its code refuses it, and so must the developer's: the author's code refuses this case and the node gave {:?}. Take it to the author.", got);
+}
+
+/// The kernel translation of this node's method gives the method's own
+/// answer, to the bit, at 24 points around the author's cases. A translator
+/// check, not evidence: the numbers are the method's, run by the interpreter
+/// when this file was generated.
+#[test]
+fn the_translation_gives_the_methods_answers() {
+    use vleo_core::physics::method::MethodError;
+    use vleo_core::physics::methods::sw_f107_cold_long::evaluate;
+    assert_eq!(evaluate(80.0, 6.727191).map(f64::to_bits), Ok(0x4051d8e894538995), "at (80.0, 6.727191)");
+    assert_eq!(evaluate(144.0, 12.1089438).map(f64::to_bits), Ok(0x40601004857e6239), "at (144.0, 12.1089438)");
+    assert_eq!(evaluate(158.4, 13.319838180000001).map(f64::to_bits), Ok(0x4061ab382c716c0c), "at (158.4, 13.319838180000001)");
+    assert_eq!(evaluate(160.0, 13.454382).map(f64::to_bits), Ok(0x4061d8e894538995), "at (160.0, 13.454382)");
+    assert_eq!(evaluate(161.6, 13.58892582).map(f64::to_bits), Ok(0x40620698fc35a71e), "at (161.6, 13.58892582)");
+    assert_eq!(evaluate(176.0, 14.799820200000003).map(f64::to_bits), Ok(0x4063a1cca328b0f0), "at (176.0, 14.799820200000003)");
+    assert_eq!(evaluate(320.0, 26.908764).map(f64::to_bits), Ok(0x4071d8e894538995), "at (320.0, 26.908764)");
+    assert!(matches!(evaluate(50.0, 10.0), Err(MethodError::Refused(_))), "at (50.0, 10.0)");
+    assert_eq!(evaluate(90.0, 18.0).map(f64::to_bits), Ok(0x4050bd70a3d70a3e), "at (90.0, 18.0)");
+    assert_eq!(evaluate(99.0, 19.8).map(f64::to_bits), Ok(0x405269fbe76c8b44), "at (99.0, 19.8)");
+    assert_eq!(evaluate(100.0, 20.0).map(f64::to_bits), Ok(0x405299999999999a), "at (100.0, 20.0)");
+    assert_eq!(evaluate(101.0, 20.2).map(f64::to_bits), Ok(0x4052c9374bc6a7f0), "at (101.0, 20.2)");
+    assert_eq!(evaluate(110.00000000000001, 22.0).map(f64::to_bits), Ok(0x405475c28f5c28f7), "at (110.00000000000001, 22.0)");
+    assert_eq!(evaluate(200.0, 40.0).map(f64::to_bits), Ok(0x406299999999999a), "at (200.0, 40.0)");
+    assert!(matches!(evaluate(43.42485, 6.727191), Err(MethodError::Refused(_))), "at (43.42485, 6.727191)");
+    assert_eq!(evaluate(78.16473, 12.1089438).map(f64::to_bits), Ok(0x404f5527f55edeab), "at (78.16473, 12.1089438)");
+    assert_eq!(evaluate(85.981203, 13.319838180000001).map(f64::to_bits), Ok(0x40513ba2c6f42daa), "at (85.981203, 13.319838180000001)");
+    assert_eq!(evaluate(86.8497, 13.454382).map(f64::to_bits), Ok(0x40516832a4c2ed7b), "at (86.8497, 13.454382)");
+    assert_eq!(evaluate(87.718197, 13.58892582).map(f64::to_bits), Ok(0x405194c28291ad4c), "at (87.718197, 13.58892582)");
+    assert_eq!(evaluate(95.53467, 14.799820200000003).map(f64::to_bits), Ok(0x405325d14ed66ba1), "at (95.53467, 14.799820200000003)");
+    assert_eq!(evaluate(173.6994, 26.908764).map(f64::to_bits), Ok(0x40616832a4c2ed7b), "at (173.6994, 26.908764)");
+    assert!(matches!(evaluate(100.0, 40.0), Err(MethodError::Refused(_))), "at (100.0, 40.0)");
+    assert!(matches!(evaluate(500.0, 10.0), Err(MethodError::Refused(_))), "at (500.0, 10.0)");
+    assert!(matches!(evaluate(f64::INFINITY, 10.0), Err(MethodError::Refused(_))), "at (f64::INFINITY, 10.0)");
+}
+
 // ---- properties, generated from the declared domain ---------------------
 //
 // The fixture above checks one point. A wrong constant moves that point and

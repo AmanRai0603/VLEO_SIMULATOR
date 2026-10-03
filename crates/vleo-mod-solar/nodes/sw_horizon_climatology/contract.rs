@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `D_clim` (F10.7 error from climatology at a lead), in `-`.
 pub const NODE_ID: &str = "sw_horizon_climatology";
-pub const SHEET_HASH: u64 = 0xb1a9573a430c48a6;
+pub const SHEET_HASH: u64 = 0x2cf8cd3bd55d07a1;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "orbit_mission_duration",

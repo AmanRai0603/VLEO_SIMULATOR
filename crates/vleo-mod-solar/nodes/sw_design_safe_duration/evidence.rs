@@ -46,6 +46,77 @@ fn fixture_2() {
     assert!(err <= 1e-9, "the G3 bound, Ap 132 — the declared design level — exceeded beyond 2.6242 years, against a declared mission of 5: got {} want 82812533.26941039, relative error {} exceeds the declared tolerance 1e-9. This is a physics disagreement, not a build failure — take it to the node owner. Do not widen the tolerance.", got.get(), err);
 }
 
+/// the author's case «the G2 bound, Ap 80 — exceeded beyond a 0.7365-year mission.», from their own  code.
+#[test]
+fn case_1() {
+    let got = model::evaluate(Ratio::new(80.0)).expect("the G2 bound, Ap 80 — exceeded beyond a 0.7365-year mission.: the author's code answers this case and the node refused it");
+    let err = relative_error(got.get(), 23243127.613750264);
+    assert!(err <= 1e-9, "the G2 bound, Ap 80 — exceeded beyond a 0.7365-year mission.: got {} and the author's code gave 23243127.613750264; relative error {} is more than their tolerance 1e-9. Take it to the author; do not widen the tolerance.", got.get(), err);
+}
+
+/// the author's case «the G1 bound, Ap 48 — exceeded beyond a 0.3370-year mission.», from their own  code.
+#[test]
+fn case_2() {
+    let got = model::evaluate(Ratio::new(48.0)).expect("the G1 bound, Ap 48 — exceeded beyond a 0.3370-year mission.: the author's code answers this case and the node refused it");
+    let err = relative_error(got.get(), 10634679.615335282);
+    assert!(err <= 1e-9, "the G1 bound, Ap 48 — exceeded beyond a 0.3370-year mission.: got {} and the author's code gave 10634679.615335282; relative error {} is more than their tolerance 1e-9. Take it to the author; do not widen the tolerance.", got.get(), err);
+}
+
+/// the author's case «the G3 bound, Ap 132 — the declared design level — exceeded beyond 2.6242 years, against a declared mission of 5.», from their own  code.
+#[test]
+fn case_3() {
+    let got = model::evaluate(Ratio::new(132.0)).expect("the G3 bound, Ap 132 — the declared design level — exceeded beyond 2.6242 years, against a declared mission of 5.: the author's code answers this case and the node refused it");
+    let err = relative_error(got.get(), 82812533.26941039);
+    assert!(err <= 1e-9, "the G3 bound, Ap 132 — the declared design level — exceeded beyond 2.6242 years, against a declared mission of 5.: got {} and the author's code gave 82812533.26941039; relative error {} is more than their tolerance 1e-9. Take it to the author; do not widen the tolerance.", got.get(), err);
+}
+
+/// the author's case «outside what the node holds for: its code refuses it, and so must the developer's», from their own  code.
+#[test]
+fn case_4() {
+    let got = model::evaluate(Ratio::new(40.0));
+    assert!(matches!(got, Err(vleo_core::fault::Fault::Refused { .. })), "outside what the node holds for: its code refuses it, and so must the developer's: the author's code refuses this case and the node gave {:?}. Take it to the author.", got);
+}
+
+/// the author's case «outside what the node holds for: its code refuses it, and so must the developer's», from their own  code.
+#[test]
+fn case_5() {
+    let got = model::evaluate(Ratio::new(207.0));
+    assert!(matches!(got, Err(vleo_core::fault::Fault::Refused { .. })), "outside what the node holds for: its code refuses it, and so must the developer's: the author's code refuses this case and the node gave {:?}. Take it to the author.", got);
+}
+
+/// The kernel translation of this node's method gives the method's own
+/// answer, to the bit, at 23 points around the author's cases. A translator
+/// check, not evidence: the numbers are the method's, run by the interpreter
+/// when this file was generated.
+#[test]
+fn the_translation_gives_the_methods_answers() {
+    use vleo_core::physics::method::MethodError;
+    use vleo_core::physics::methods::sw_design_safe_duration::evaluate;
+    assert!(matches!(evaluate(40.0), Err(MethodError::Refused(_))), "at (40.0)");
+    assert_eq!(evaluate(72.0).map(f64::to_bits), Ok(0x41723b0bc56b3e48), "at (72.0)");
+    assert_eq!(evaluate(79.2).map(f64::to_bits), Ok(0x4175bcbf09a96b87), "at (79.2)");
+    assert_eq!(evaluate(80.0).map(f64::to_bits), Ok(0x41762a9779d1ebcc), "at (80.0)");
+    assert_eq!(evaluate(80.8).map(f64::to_bits), Ok(0x41769a9aff86035e), "at (80.8)");
+    assert_eq!(evaluate(88.0).map(f64::to_bits), Ok(0x417af3a6cb536c8b), "at (88.0)");
+    assert!(matches!(evaluate(160.0), Err(MethodError::Refused(_))), "at (160.0)");
+    assert!(matches!(evaluate(24.0), Err(MethodError::Refused(_))), "at (24.0)");
+    assert!(matches!(evaluate(43.2), Err(MethodError::Refused(_))), "at (43.2)");
+    assert_eq!(evaluate(47.519999999999996).map(f64::to_bits), Ok(0x41640c2b2248c343), "at (47.519999999999996)");
+    assert_eq!(evaluate(48.0).map(f64::to_bits), Ok(0x416448b6f3b0d39e), "at (48.0)");
+    assert_eq!(evaluate(48.480000000000004).map(f64::to_bits), Ok(0x416485f9a091885e), "at (48.480000000000004)");
+    assert_eq!(evaluate(52.800000000000004).map(f64::to_bits), Ok(0x4166cee2c455ba1b), "at (52.800000000000004)");
+    assert_eq!(evaluate(96.0).map(f64::to_bits), Ok(0x418062977e9ebf72), "at (96.0)");
+    assert_eq!(evaluate(66.0).map(f64::to_bits), Ok(0x416f7d41560bbb7b), "at (66.0)");
+    assert_eq!(evaluate(118.8).map(f64::to_bits), Ok(0x418c9a1006127bcd), "at (118.8)");
+    assert_eq!(evaluate(130.68).map(f64::to_bits), Ok(0x41931e0e206af077), "at (130.68)");
+    assert_eq!(evaluate(132.0).map(f64::to_bits), Ok(0x4193be79d513e051), "at (132.0)");
+    assert_eq!(evaluate(133.32).map(f64::to_bits), Ok(0x41946427af06bc45), "at (133.32)");
+    assert!(matches!(evaluate(145.20000000000002), Err(MethodError::Refused(_))), "at (145.20000000000002)");
+    assert!(matches!(evaluate(264.0), Err(MethodError::Refused(_))), "at (264.0)");
+    assert!(matches!(evaluate(40.0), Err(MethodError::Refused(_))), "at (40.0)");
+    assert!(matches!(evaluate(207.0), Err(MethodError::Refused(_))), "at (207.0)");
+}
+
 // ---- properties, generated from the declared domain ---------------------
 //
 // The fixture above checks one point. A wrong constant moves that point and

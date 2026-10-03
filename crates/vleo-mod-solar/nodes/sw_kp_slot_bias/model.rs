@@ -31,30 +31,21 @@ use vleo_core::units::*;
 pub const NODE_ID: &str = "sw_kp_slot_bias";
 /// Hash of the sheet this file was generated from. A face carrying a
 /// different one refuses to run rather than showing a stale page.
-pub const SHEET_HASH: u64 = 0xde65f5eeb49f7833;
+pub const SHEET_HASH: u64 = 0xbc9b00a0fc14bea1;
 
 pub fn evaluate(ap: Ratio) -> Result<Ratio, Fault> {
-    // ---- HOLE 1 : read the measured peak-slot offset off the nine binned medians at this Ap -> Ratio
-    // The nine bin medians, measured on solar-weather@2026.09.14. The x values are
-    // prf_ap2kp's own bin CENTRES — the midpoints of its edges 0 5 10 15 20 30 45
-    // 70 110 400 — and the y values are the medians in each bin. They belong to
-    // the record, not to this code, and the sheet names the bundle version.
-    //
-    // THE TABLE LIVES IN vleo-core AS `env::kp_peak_slot_bias` RATHER THAN HERE, and
-    // this hole calls it. Two callers read it now: this row, at one Ap, and
-    // sw_kp_scenarios, at the five the driver set carries. A table copied into
-    // both would drift from itself without anything noticing — which is not
-    // hypothetical, it is what happened to the ap-to-Kp scale.
-    //
-    // It holds the end values instead of extrapolating, which is the same choice
-    // prf_ap2kp makes explicitly ("hold the end bins, never extrapolate").
-    let off: Ratio = Ratio::new(vleo_core::physics::env::kp_peak_slot_bias(ap.get()));
-    // ---- end HOLE 1
+    // generated · from the node's method, translated by rule into
+    // vleo_core::physics::methods::sw_kp_slot_bias. No hole: the method is the
+    // implementation, and the author's cases in evidence.rs test it.
+    let method_answer: Ratio = match methods::sw_kp_slot_bias::evaluate(ap.get()) {
+        Ok(v) => Ratio::new(v),
+        Err(e) => return Err(method::fault(e, NODE_ID, "dKp_peak")),
+    };
 
     // generated · the declared domain of this node's own answer. The
     // reason travels with the guard, because a guard whose reason is not
     // written down gets deleted by the next person who finds it awkward.
-    let answer: Ratio = off;
+    let answer: Ratio = method_answer;
     if !answer.is_finite() {
         return Err(Fault::Degenerate { node: NODE_ID, field: "dKp_peak", reason: "the computation produced a value that is not a number" });
     }

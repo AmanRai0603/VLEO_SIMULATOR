@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `phase` (Solar cycle phase), in `-`.
 pub const NODE_ID: &str = "sw_cycle_phase";
-pub const SHEET_HASH: u64 = 0xf1f3a8abc6710595;
+pub const SHEET_HASH: u64 = 0x8a24d999e8437404;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "sys_mission_requirements_mission_epoch",

@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `T_safe` (How long the design Ap lasts), in `yr`.
 pub const NODE_ID: &str = "sw_design_safe_duration";
-pub const SHEET_HASH: u64 = 0xc1857582e6869082;
+pub const SHEET_HASH: u64 = 0x41c6d1f72a2da252;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "sw_ap_design",

@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `R_exc` (Days a year above the design level), in `-`.
 pub const NODE_ID: &str = "sw_exceedance_rate";
-pub const SHEET_HASH: u64 = 0x7251b4673e76443c;
+pub const SHEET_HASH: u64 = 0x18a42ac5049d0f3a;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "sw_ap_design",

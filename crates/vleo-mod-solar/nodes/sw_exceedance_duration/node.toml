@@ -110,6 +110,57 @@ matter to an attitude budget or a drag transient, not long enough to be a
 sustained environment.
 """
 
+# THE METHOD — the relation in the method language (docs/PSEUDOCODE.md). In the
+# sheet hash: the generated code is translated from it.
+[method]
+text = """
+# Transcribed from crates/vleo-mod-solar/nodes/sw_exceedance_duration/model.rs (HOLE 1 and its guards) — the method the code already runs.
+# Numbers: the mean length of a consecutive run at or above Ap 48, 80 and 132, counted outside this crate from bundles/solar-weather.
+# The table clamps at both ends, so the only input the code refuses is one that is not a number:
+# it makes the answer not a number, which the generated guard refuses.
+if not (ap_design == ap_design) then
+  refuse "the computation produced a value that is not a number"
+end
+let out = interp(ap_design, [48.0, 80.0, 132.0] [1], [1.2718446601941749, 1.206896551724138, 1.1428571428571428] [d])
+if out < 1 [d] then
+  refuse "a run is at least one day by construction, so the run-finding is broken"
+end
+if out > 5 [d] then
+  refuse "a mean run above 5 days would exceed every single event the record contains"
+end
+return out
+"""
+by = "Aman Rai / 2026-10-03"
+
+[[case]]
+label = "the G2 bound, Ap 80 — 29 runs, mean 1.21 days."
+refuse = "no"
+expect = 104275.86206896552
+tolerance = 1e-12
+inputs = { ap_design = 80.0 }
+origin = "hand"
+
+[[case]]
+label = "the G1 bound, Ap 48 — the lowest level the G scale defines."
+refuse = "no"
+expect = 109887.3786407767
+tolerance = 1e-12
+inputs = { ap_design = 48.0 }
+origin = "hand"
+
+[[case]]
+label = "the G3 bound, Ap 132 — the declared design level."
+refuse = "no"
+expect = 98742.85714285713
+tolerance = 1e-12
+inputs = { ap_design = 132.0 }
+origin = "hand"
+
+[[case]]
+label = "outside what the node holds for: its code refuses it, and so must the developer's"
+refuse = "yes"
+inputs = { ap_design = nan }
+origin = "hand"
 
 [[assumption]]
 text = "Just over one day at every level, and that is the finding"
@@ -171,5 +222,20 @@ about = ["node"]
 changed = "first version: the belief this row already rested on, written down"
 rests_on = "The measured mean run length at or above the design level: 1.271845 days at G1, 1.206897 at G2 and 1.142857 at G3, with longest runs of 5, 3 and 2 days, taking the first day below the bound as the end of a run."
 breaks_if = "A storm longer than two days above the G3 bound appears in the record, a one-day bridge rule is adopted, or three-hourly data show exceedances the daily averages miss."
+relation = "D_exc(Ap_design) = mean length of a run of consecutive days with Ap >= Ap_design"
+source = "noaa_swpc"
+
+[[version]]
+n = 2
+release = "next"
+date = "2026-10-03"
+by = "Aman Rai (l3_solar)"
+about = ["math"]
+believed = "1.0 was ready for the developer: sealed, every method sound by the group application and agreeing with all of its results."
+tested = "The developer took 1.0 in: the seal held and every method agreed with every one of its results, refusals included."
+learned = "Intake refused 1.0 whole for two things the group application did not ask: six nodes had no case the method must refuse, and sw_kp_scenarios publishes ten values while its method gave one. Run with a value that is not a number, the code of sw_activity_band, sw_ap_design and sw_regime answered (band 1, Ap 132, regime 3) where the other three refused."
+changed = "Each of the six has a refusal: a value that is not a number, which every method now refuses at its door, so those three refuse it where their code answered. sw_kp_scenarios publishes its nine members, and every answered row gives all ten values: the design's own fixtures at the defaults, its code at the two others. The method was transcribed by an assistant from crates/vleo-mod-solar/nodes/sw_exceedance_duration/model.rs; Aman Rai read the copy against it and signs it."
+rests_on = "the 32 model.rs files the pseudocode was copied from, and the fixtures published with them"
+breaks_if = "a result the built node does not reproduce, or a correction to the code a method was copied from"
 relation = "D_exc(Ap_design) = mean length of a run of consecutive days with Ap >= Ap_design"
 source = "noaa_swpc"

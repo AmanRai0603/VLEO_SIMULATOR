@@ -28,30 +28,21 @@ use vleo_core::units::*;
 pub const NODE_ID: &str = "sw_regime";
 /// Hash of the sheet this file was generated from. A face carrying a
 /// different one refuses to run rather than showing a stale page.
-pub const SHEET_HASH: u64 = 0x40f82069e2f0c2af;
+pub const SHEET_HASH: u64 = 0x0c01f6a4e32f2837;
 
 pub fn evaluate(ap: Ratio) -> Result<Ratio, Fault> {
-    // ---- HOLE 1 : place the daily Ap in the mixture's three bands: quiet to 6, active to 25, storm above -> Ratio
-    // The mixture's own decision boundaries, read off its published labels:
-    // quiet holds Ap 0 to 6, active 7 to 25, storm 26 and above. Those three
-    // bands reproduce daily_regime.csv with ZERO disagreements on 10128 of its
-    // 10299 days; the 171 that differ are the low-tail artefact the sheet
-    // declares, where the broad storm component took back the record's quietest
-    // days. Integers, because the published boundaries fell on integers.
-    let a: f64 = ap.get();
-    let out: Ratio = Ratio::new(if a <= 6.0 {
-        1.0
-    } else if a <= 25.0 {
-        2.0
-    } else {
-        3.0
-    });
-    // ---- end HOLE 1
+    // generated · from the node's method, translated by rule into
+    // vleo_core::physics::methods::sw_regime. No hole: the method is the
+    // implementation, and the author's cases in evidence.rs test it.
+    let method_answer: Ratio = match methods::sw_regime::evaluate(ap.get()) {
+        Ok(v) => Ratio::new(v),
+        Err(e) => return Err(method::fault(e, NODE_ID, "regime")),
+    };
 
     // generated · the declared domain of this node's own answer. The
     // reason travels with the guard, because a guard whose reason is not
     // written down gets deleted by the next person who finds it awkward.
-    let answer: Ratio = out;
+    let answer: Ratio = method_answer;
     if !answer.is_finite() {
         return Err(Fault::Degenerate { node: NODE_ID, field: "regime", reason: "the computation produced a value that is not a number" });
     }

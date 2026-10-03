@@ -29,36 +29,21 @@ use vleo_core::units::*;
 pub const NODE_ID: &str = "sw_ap_design";
 /// Hash of the sheet this file was generated from. A face carrying a
 /// different one refuses to run rather than showing a stale page.
-pub const SHEET_HASH: u64 = 0x004a983c165bb31a;
+pub const SHEET_HASH: u64 = 0xdd6525adf4372a65;
 
 pub fn evaluate(g_level: Ratio) -> Result<Ratio, Fault> {
-    // ---- HOLE 1 : convert the chosen G level to the daily Ap that level bounds, from the published ap table -> Ratio
-    // The published ap equivalent amplitude at the top Kp of each G band:
-    // G1 is Kp 5 is ap 48, G2 is Kp 6 is ap 80, G3 is Kp 7 is ap 132. Daily Ap
-    // is the mean of eight three-hourly slots, so a day whose worst slot is at
-    // that Kp cannot exceed the value every slot would need — which is why the
-    // ceiling is the right end of the band for a design bound.
-    //
-    // A lookup on three integer levels, not an interpolation: the ap scale is
-    // close to geometric (ratios 1.67 and 1.65) and a linear reading between
-    // levels would be wrong by tens of nanotesla. The producer's declared range
-    // is 1 to 3, so nothing outside reaches here.
-    const AP_AT_G: [f64; 3] = [48.0, 80.0, 132.0];
-    let g: f64 = g_level.get();
-    let idx: usize = if g < 1.5 {
-        0
-    } else if g < 2.5 {
-        1
-    } else {
-        2
+    // generated · from the node's method, translated by rule into
+    // vleo_core::physics::methods::sw_ap_design. No hole: the method is the
+    // implementation, and the author's cases in evidence.rs test it.
+    let method_answer: Ratio = match methods::sw_ap_design::evaluate(g_level.get()) {
+        Ok(v) => Ratio::new(v),
+        Err(e) => return Err(method::fault(e, NODE_ID, "Ap_design")),
     };
-    let out: Ratio = Ratio::new(AP_AT_G[idx]);
-    // ---- end HOLE 1
 
     // generated · the declared domain of this node's own answer. The
     // reason travels with the guard, because a guard whose reason is not
     // written down gets deleted by the next person who finds it awkward.
-    let answer: Ratio = out;
+    let answer: Ratio = method_answer;
     if !answer.is_finite() {
         return Err(Fault::Degenerate { node: NODE_ID, field: "Ap_design", reason: "the computation produced a value that is not a number" });
     }

@@ -86,6 +86,129 @@ fn fixture_6() {
     assert!(err <= 1e-12, "lead 26 — the declared lead — -0.022 from 868 pairs: got {} want -0.0220863078, relative error {} exceeds the declared tolerance 1e-12. This is a physics disagreement, not a build failure — take it to the node owner. Do not widen the tolerance.", got.get(), err);
 }
 
+/// the author's case «lead 13 — mid-window, still strongly skillful — +0.402 from 1237 pairs.», from their own  code.
+#[test]
+fn case_1() {
+    let got = model::evaluate(Time::new(1123200.0)).expect("lead 13 — mid-window, still strongly skillful — +0.402 from 1237 pairs.: the author's code answers this case and the node refused it");
+    let err = relative_error(got.get(), 0.4016285468);
+    assert!(err <= 1e-12, "lead 13 — mid-window, still strongly skillful — +0.402 from 1237 pairs.: got {} and the author's code gave 0.4016285468; relative error {} is more than their tolerance 1e-12. Take it to the author; do not widen the tolerance.", got.get(), err);
+}
+
+/// the author's case «lead 1 — the outlook's weakest positive skill, where persistence is hardest to beat.», from their own  code.
+#[test]
+fn case_2() {
+    let got = model::evaluate(Time::new(86400.0)).expect("lead 1 — the outlook's weakest positive skill, where persistence is hardest to beat.: the author's code answers this case and the node refused it");
+    let err = relative_error(got.get(), 0.068515911);
+    assert!(err <= 1e-12, "lead 1 — the outlook's weakest positive skill, where persistence is hardest to beat.: got {} and the author's code gave 0.068515911; relative error {} is more than their tolerance 1e-12. Take it to the author; do not widen the tolerance.", got.get(), err);
+}
+
+/// the author's case «lead 9 — peak skill over the whole window — +0.438 from 1241 pairs.», from their own  code.
+#[test]
+fn case_3() {
+    let got = model::evaluate(Time::new(777600.0)).expect("lead 9 — peak skill over the whole window — +0.438 from 1241 pairs.: the author's code answers this case and the node refused it");
+    let err = relative_error(got.get(), 0.4375371731);
+    assert!(err <= 1e-12, "lead 9 — peak skill over the whole window — +0.438 from 1241 pairs.: got {} and the author's code gave 0.4375371731; relative error {} is more than their tolerance 1e-12. Take it to the author; do not widen the tolerance.", got.get(), err);
+}
+
+/// the author's case «lead 13.5 — between two measured leads, so this one tests the interpolation and not the table.», from their own  code.
+#[test]
+fn case_4() {
+    let got = model::evaluate(Time::new(1166400.0)).expect("lead 13.5 — between two measured leads, so this one tests the interpolation and not the table.: the author's code answers this case and the node refused it");
+    let err = relative_error(got.get(), 0.41015283365);
+    assert!(err <= 1e-12, "lead 13.5 — between two measured leads, so this one tests the interpolation and not the table.: got {} and the author's code gave 0.41015283365; relative error {} is more than their tolerance 1e-12. Take it to the author; do not widen the tolerance.", got.get(), err);
+}
+
+/// the author's case «lead 23 — the last positive lead, +0.018, and the outlook is all but worthless here.», from their own  code.
+#[test]
+fn case_5() {
+    let got = model::evaluate(Time::new(1987200.0)).expect("lead 23 — the last positive lead, +0.018, and the outlook is all but worthless here.: the author's code answers this case and the node refused it");
+    let err = relative_error(got.get(), 0.0176508866);
+    assert!(err <= 1e-12, "lead 23 — the last positive lead, +0.018, and the outlook is all but worthless here.: got {} and the author's code gave 0.0176508866; relative error {} is more than their tolerance 1e-12. Take it to the author; do not widen the tolerance.", got.get(), err);
+}
+
+/// the author's case «lead 24 — the sign change: the outlook is now worse than assuming nothing changes.», from their own  code.
+#[test]
+fn case_6() {
+    let got = model::evaluate(Time::new(2073600.0)).expect("lead 24 — the sign change: the outlook is now worse than assuming nothing changes.: the author's code answers this case and the node refused it");
+    let err = relative_error(got.get(), -0.0355195984);
+    assert!(err <= 1e-12, "lead 24 — the sign change: the outlook is now worse than assuming nothing changes.: got {} and the author's code gave -0.0355195984; relative error {} is more than their tolerance 1e-12. Take it to the author; do not widen the tolerance.", got.get(), err);
+}
+
+/// the author's case «lead 26 — the declared lead — -0.022 from 868 pairs.», from their own  code.
+#[test]
+fn case_7() {
+    let got = model::evaluate(Time::new(2246400.0)).expect("lead 26 — the declared lead — -0.022 from 868 pairs.: the author's code answers this case and the node refused it");
+    let err = relative_error(got.get(), -0.0220863078);
+    assert!(err <= 1e-12, "lead 26 — the declared lead — -0.022 from 868 pairs.: got {} and the author's code gave -0.0220863078; relative error {} is more than their tolerance 1e-12. Take it to the author; do not widen the tolerance.", got.get(), err);
+}
+
+/// the author's case «outside what the node holds for: its code refuses it, and so must the developer's», from their own  code.
+#[test]
+fn case_8() {
+    let got = model::evaluate(Time::new(f64::NAN));
+    assert!(matches!(got, Err(vleo_core::fault::Fault::Refused { .. })), "outside what the node holds for: its code refuses it, and so must the developer's: the author's code refuses this case and the node gave {:?}. Take it to the author.", got);
+}
+
+/// The kernel translation of this node's method gives the method's own
+/// answer, to the bit, at 50 points around the author's cases. A translator
+/// check, not evidence: the numbers are the method's, run by the interpreter
+/// when this file was generated.
+#[test]
+fn the_translation_gives_the_methods_answers() {
+    use vleo_core::physics::method::MethodError;
+    use vleo_core::physics::methods::sw_forecast_skill::evaluate;
+    assert_eq!(evaluate(561600.0).map(f64::to_bits), Ok(0x3fd5c70edc989b0d), "at (561600.0)");
+    assert_eq!(evaluate(1010880.0).map(f64::to_bits), Ok(0x3fda942d7abfc046), "at (1010880.0)");
+    assert_eq!(evaluate(1111968.0).map(f64::to_bits), Ok(0x3fd9ce237b8b83fe), "at (1111968.0)");
+    assert_eq!(evaluate(1123200.0).map(f64::to_bits), Ok(0x3fd9b44838695827), "at (1123200.0)");
+    assert_eq!(evaluate(1134432.0).map(f64::to_bits), Ok(0x3fd9d8981e127fc5), "at (1134432.0)");
+    assert_eq!(evaluate(1235520.0).map(f64::to_bits), Ok(0x3fda47a440a0b3dc), "at (1235520.0)");
+    assert_eq!(evaluate(2246400.0).map(f64::to_bits), Ok(0xbf969dcb06c2f585), "at (2246400.0)");
+    assert_eq!(evaluate(43200.0).map(f64::to_bits), Ok(0x3fb18a423d002a61), "at (43200.0)");
+    assert_eq!(evaluate(77760.0).map(f64::to_bits), Ok(0x3fb18a423d002a61), "at (77760.0)");
+    assert_eq!(evaluate(85536.0).map(f64::to_bits), Ok(0x3fb18a423d002a61), "at (85536.0)");
+    assert_eq!(evaluate(86400.0).map(f64::to_bits), Ok(0x3fb18a423d002a61), "at (86400.0)");
+    assert_eq!(evaluate(87264.0).map(f64::to_bits), Ok(0x3fb1dfaaf8fc48bb), "at (87264.0)");
+    assert_eq!(evaluate(95040.00000000001).map(f64::to_bits), Ok(0x3fb4e05994d959e7), "at (95040.00000000001)");
+    assert_eq!(evaluate(172800.0).map(f64::to_bits), Ok(0x3fc97395d5be02c8), "at (172800.0)");
+    assert_eq!(evaluate(388800.0).map(f64::to_bits), Ok(0x3fcf67fad42148de), "at (388800.0)");
+    assert_eq!(evaluate(699840.0).map(f64::to_bits), Ok(0x3fd9f5ea50abeb06), "at (699840.0)");
+    assert_eq!(evaluate(769824.0).map(f64::to_bits), Ok(0x3fdbcc56f48c527a), "at (769824.0)");
+    assert_eq!(evaluate(777600.0).map(f64::to_bits), Ok(0x3fdc009bea4fec31), "at (777600.0)");
+    assert_eq!(evaluate(785376.0).map(f64::to_bits), Ok(0x3fdbf942034fde74), "at (785376.0)");
+    assert_eq!(evaluate(855360.0000000001).map(f64::to_bits), Ok(0x3fdbb718e44f62d0), "at (855360.0000000001)");
+    assert_eq!(evaluate(1555200.0).map(f64::to_bits), Ok(0x3fcfaef57fd72252), "at (1555200.0)");
+    assert_eq!(evaluate(583200.0).map(f64::to_bits), Ok(0x3fd67de6c9f7501c), "at (583200.0)");
+    assert_eq!(evaluate(1049760.0).map(f64::to_bits), Ok(0x3fda5d58030db1dd), "at (1049760.0)");
+    assert_eq!(evaluate(1154736.0).map(f64::to_bits), Ok(0x3fda1a3c3d3a6ec4), "at (1154736.0)");
+    assert_eq!(evaluate(1166400.0).map(f64::to_bits), Ok(0x3fda3ff1abb8dcd4), "at (1166400.0)");
+    assert_eq!(evaluate(1178064.0).map(f64::to_bits), Ok(0x3fda65a71a374ae4), "at (1178064.0)");
+    assert_eq!(evaluate(1283040.0).map(f64::to_bits), Ok(0x3fd955b4fe37f583), "at (1283040.0)");
+    assert_eq!(evaluate(2332800.0).map(f64::to_bits), Ok(0xbf969dcb06c2f585), "at (2332800.0)");
+    assert_eq!(evaluate(993600.0).map(f64::to_bits), Ok(0x3fdaa4d80d0f0a9e), "at (993600.0)");
+    assert_eq!(evaluate(1788480.0).map(f64::to_bits), Ok(0x3fc3193cfb6d230b), "at (1788480.0)");
+    assert_eq!(evaluate(1967328.0).map(f64::to_bits), Ok(0x3fa033cb0098bf60), "at (1967328.0)");
+    assert_eq!(evaluate(1987200.0).map(f64::to_bits), Ok(0x3f921312f2c505b8), "at (1987200.0)");
+    assert_eq!(evaluate(2007072.0).map(f64::to_bits), Ok(0x3f763509d077f7ea), "at (2007072.0)");
+    assert_eq!(evaluate(2185920.0).map(f64::to_bits), Ok(0xbf9e0ad10bc32424), "at (2185920.0)");
+    assert_eq!(evaluate(3974400.0).map(f64::to_bits), Ok(0xbf969dcb06c2f585), "at (3974400.0)");
+    assert_eq!(evaluate(1036800.0).map(f64::to_bits), Ok(0x3fda7b2d9f48d0c1), "at (1036800.0)");
+    assert_eq!(evaluate(1866240.0).map(f64::to_bits), Ok(0x3fba70b10003292c), "at (1866240.0)");
+    assert_eq!(evaluate(2052864.0).map(f64::to_bits), Ok(0xbf974e0d4b8f6ce8), "at (2052864.0)");
+    assert_eq!(evaluate(2073600.0).map(f64::to_bits), Ok(0xbfa22f9ff2fd77b5), "at (2073600.0)");
+    assert_eq!(evaluate(2094336.0).map(f64::to_bits), Ok(0xbfa1cef0944e8d99), "at (2094336.0)");
+    assert_eq!(evaluate(2280960.0).map(f64::to_bits), Ok(0xbf969dcb06c2f585), "at (2280960.0)");
+    assert_eq!(evaluate(4147200.0).map(f64::to_bits), Ok(0xbf969dcb06c2f585), "at (4147200.0)");
+    assert_eq!(evaluate(1123200.0).map(f64::to_bits), Ok(0x3fd9b44838695827), "at (1123200.0)");
+    assert_eq!(evaluate(2021760.0).map(f64::to_bits), Ok(0xbf6da20b1f714918), "at (2021760.0)");
+    assert_eq!(evaluate(2223936.0).map(f64::to_bits), Ok(0xbf995fe3348132b9), "at (2223936.0)");
+    assert_eq!(evaluate(2246400.0).map(f64::to_bits), Ok(0xbf969dcb06c2f585), "at (2246400.0)");
+    assert_eq!(evaluate(2268864.0).map(f64::to_bits), Ok(0xbf969dcb06c2f585), "at (2268864.0)");
+    assert_eq!(evaluate(2471040.0).map(f64::to_bits), Ok(0xbf969dcb06c2f585), "at (2471040.0)");
+    assert_eq!(evaluate(4492800.0).map(f64::to_bits), Ok(0xbf969dcb06c2f585), "at (4492800.0)");
+    assert!(matches!(evaluate(f64::NAN), Err(MethodError::Refused(_))), "at (f64::NAN)");
+}
+
 // ---- properties, generated from the declared domain ---------------------
 //
 // The fixture above checks one point. A wrong constant moves that point and

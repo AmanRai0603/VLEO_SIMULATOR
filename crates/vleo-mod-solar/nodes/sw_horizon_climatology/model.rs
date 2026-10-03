@@ -29,34 +29,21 @@ use vleo_core::units::*;
 pub const NODE_ID: &str = "sw_horizon_climatology";
 /// Hash of the sheet this file was generated from. A face carrying a
 /// different one refuses to run rather than showing a stale page.
-pub const SHEET_HASH: u64 = 0xb1a9573a430c48a6;
+pub const SHEET_HASH: u64 = 0x2cf8cd3bd55d07a1;
 
 pub fn evaluate(lead: Time) -> Result<Ratio, Fault> {
-    // ---- HOLE 1 : take the lead in days and read the measured climatology RMS at that lead -> Ratio
-    // The same eighteen leads, and the RMS departure of the target day from the
-    // record mean of 114.8437 sfu, from solar-weather@2026.09.14.
-    //
-    // These values barely move — 44.39 to 45.32 across three orders of magnitude in
-    // lead — because a climatology forecast ignores the lead. That flatness is the
-    // point of using it as a baseline, not a defect in the measurement.
-    use vleo_core::math::Table1;
-    const C: Table1 = Table1 {
-        x: &[
-            1.0, 2.0, 3.0, 5.0, 7.0, 10.0, 14.0, 20.0, 27.0, 40.0, 60.0, 90.0, 135.0, 180.0, 270.0,
-            365.0, 547.0, 730.0,
-        ],
-        y: &[
-            44.3929, 44.3953, 44.3968, 44.3993, 44.4012, 44.4036, 44.4069, 44.4071, 44.4147, 44.4242,
-            44.4344, 44.4458, 44.4635, 44.4714, 44.5344, 44.6734, 45.0333, 45.3201,
-        ],
+    // generated · from the node's method, translated by rule into
+    // vleo_core::physics::methods::sw_horizon_climatology. No hole: the method is the
+    // implementation, and the author's cases in evidence.rs test it.
+    let method_answer: Ratio = match methods::sw_horizon_climatology::evaluate(lead.get()) {
+        Ok(v) => Ratio::new(v),
+        Err(e) => return Err(method::fault(e, NODE_ID, "D_clim")),
     };
-    let err: Ratio = Ratio::new(C.at(lead.days()));
-    // ---- end HOLE 1
 
     // generated · the declared domain of this node's own answer. The
     // reason travels with the guard, because a guard whose reason is not
     // written down gets deleted by the next person who finds it awkward.
-    let answer: Ratio = err;
+    let answer: Ratio = method_answer;
     if !answer.is_finite() {
         return Err(Fault::Degenerate { node: NODE_ID, field: "D_clim", reason: "the computation produced a value that is not a number" });
     }

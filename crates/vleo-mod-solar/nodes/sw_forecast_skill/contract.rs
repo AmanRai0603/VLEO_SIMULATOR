@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `S_f107` (Issued-outlook skill against persistence), in `-`.
 pub const NODE_ID: &str = "sw_forecast_skill";
-pub const SHEET_HASH: u64 = 0x46cfbf45e52bb3cd;
+pub const SHEET_HASH: u64 = 0xc050bee28e39a8fc;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "sw_recurrence_lag",

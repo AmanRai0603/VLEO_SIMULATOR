@@ -122,6 +122,89 @@ assuming nothing changes, so a design keying off the end of the outlook is
 attending to a forecast that has stopped carrying information.
 """
 
+# THE METHOD — the relation in the method language (docs/PSEUDOCODE.md). In the
+# sheet hash: the generated code is translated from it.
+[method]
+text = """
+# Transcribed from crates/vleo-mod-solar/nodes/sw_forecast_skill/model.rs (HOLE 1 and its guards) — the method the code already runs.
+# Numbers: the measured skill of the issued 27-day F10.7 outlook against persistence, leads 1 to 26 days (noaa_swpc record).
+# The table clamps at both ends, so the only input the code refuses is one that is not a number:
+# it makes the answer not a number, which the generated guard refuses.
+if not (lead == lead) then
+  refuse "the computation produced a value that is not a number"
+end
+let out = interp(lead, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26] [d], [0.0685159110, 0.1988398832, 0.2248475213, 0.2138431310, 0.2768782923, 0.3179547804, 0.3625942984, 0.4020897345, 0.4375371731, 0.4325518344, 0.4188543510, 0.4137682014, 0.4016285468, 0.4186771205, 0.3918289086, 0.3698739969, 0.3041719673, 0.2475268244, 0.2117196579, 0.1696147673, 0.1404618270, 0.0784955060, 0.0176508866, -0.0355195984, -0.0324460638, -0.0220863078] [1])
+if out < -0.1 then
+  refuse "a skill below -0.1 says the outlook is substantially worse than persistence, which the record does not support"
+end
+if out > 0.5 then
+  refuse "a skill above 0.5 against persistence is beyond anything in the record, so the table was misread"
+end
+return out
+"""
+by = "Aman Rai / 2026-10-03"
+
+[[case]]
+label = "lead 13 — mid-window, still strongly skillful — +0.402 from 1237 pairs."
+refuse = "no"
+expect = 0.4016285468
+tolerance = 1e-12
+inputs = { lead = 1123200.0 }
+origin = "hand"
+
+[[case]]
+label = "lead 1 — the outlook's weakest positive skill, where persistence is hardest to beat."
+refuse = "no"
+expect = 0.068515911
+tolerance = 1e-12
+inputs = { lead = 86400.0 }
+origin = "hand"
+
+[[case]]
+label = "lead 9 — peak skill over the whole window — +0.438 from 1241 pairs."
+refuse = "no"
+expect = 0.4375371731
+tolerance = 1e-12
+inputs = { lead = 777600.0 }
+origin = "hand"
+
+[[case]]
+label = "lead 13.5 — between two measured leads, so this one tests the interpolation and not the table."
+refuse = "no"
+expect = 0.41015283365
+tolerance = 1e-12
+inputs = { lead = 1166400.0 }
+origin = "hand"
+
+[[case]]
+label = "lead 23 — the last positive lead, +0.018, and the outlook is all but worthless here."
+refuse = "no"
+expect = 0.0176508866
+tolerance = 1e-12
+inputs = { lead = 1987200.0 }
+origin = "hand"
+
+[[case]]
+label = "lead 24 — the sign change: the outlook is now worse than assuming nothing changes."
+refuse = "no"
+expect = -0.0355195984
+tolerance = 1e-12
+inputs = { lead = 2073600.0 }
+origin = "hand"
+
+[[case]]
+label = "lead 26 — the declared lead — -0.022 from 868 pairs."
+refuse = "no"
+expect = -0.0220863078
+tolerance = 1e-12
+inputs = { lead = 2246400.0 }
+origin = "hand"
+
+[[case]]
+label = "outside what the node holds for: its code refuses it, and so must the developer's"
+refuse = "yes"
+inputs = { lead = nan }
+origin = "hand"
 
 [[assumption]]
 text = "Persistence is the last observation STRICTLY BEFORE the issue date, and this choice decides the answer"
@@ -183,5 +266,20 @@ about = ["node"]
 changed = "first version: the belief this row already rested on, written down"
 rests_on = "That the right baseline is the last observation strictly before the issue date; with that rule the score is positive from lead 1 to 23, peaks at 0.4375 at lead 9 and is negative at leads 24 to 26."
 breaks_if = "The baseline is allowed the issue-date observation, which alone turns the short-lead result negative, or the score is shown to depend strongly on activity level."
+relation = "S_f107(L) = 1 - MSE_outlook(L) / MSE_persistence(L)"
+source = "noaa_swpc"
+
+[[version]]
+n = 2
+release = "next"
+date = "2026-10-03"
+by = "Aman Rai (l3_solar)"
+about = ["math"]
+believed = "1.0 was ready for the developer: sealed, every method sound by the group application and agreeing with all of its results."
+tested = "The developer took 1.0 in: the seal held and every method agreed with every one of its results, refusals included."
+learned = "Intake refused 1.0 whole for two things the group application did not ask: six nodes had no case the method must refuse, and sw_kp_scenarios publishes ten values while its method gave one. Run with a value that is not a number, the code of sw_activity_band, sw_ap_design and sw_regime answered (band 1, Ap 132, regime 3) where the other three refused."
+changed = "Each of the six has a refusal: a value that is not a number, which every method now refuses at its door, so those three refuse it where their code answered. sw_kp_scenarios publishes its nine members, and every answered row gives all ten values: the design's own fixtures at the defaults, its code at the two others. The method was transcribed by an assistant from crates/vleo-mod-solar/nodes/sw_forecast_skill/model.rs; Aman Rai read the copy against it and signs it."
+rests_on = "the 32 model.rs files the pseudocode was copied from, and the fixtures published with them"
+breaks_if = "a result the built node does not reproduce, or a correction to the code a method was copied from"
 relation = "S_f107(L) = 1 - MSE_outlook(L) / MSE_persistence(L)"
 source = "noaa_swpc"

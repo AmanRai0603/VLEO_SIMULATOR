@@ -111,6 +111,185 @@ exists; this row deliberately does not use it, because changing the baseline
 would change what the horizon means without changing its name.
 """
 
+# THE METHOD — the relation in the method language (docs/PSEUDOCODE.md). In the
+# sheet hash: the generated code is translated from it.
+[method]
+text = """
+# Transcribed from crates/vleo-mod-solar/nodes/sw_horizon_climatology/model.rs (HOLE 1 and its guards) — the method the code already runs.
+# Numbers: NOAA SWPC (noaa_swpc) F10.7 record, RMS departure of the target day from the record mean 114.8437 sfu, from solar-weather@2026.09.14.
+# The eighteen measured leads in days; linear between them, held at both ends (as Table1 does).
+# The generated "not a number" guard, moved to the input: the table is finite and held at both ends, so the answer is NaN exactly when the lead is.
+if not (lead == lead) then
+  refuse "the computation produced a value that is not a number"
+end
+let err = interp(lead, [1, 2, 3, 5, 7, 10, 14, 20, 27, 40, 60, 90, 135, 180, 270, 365, 547, 730] [d], [44.3929, 44.3953, 44.3968, 44.3993, 44.4012, 44.4036, 44.4069, 44.4071, 44.4147, 44.4242, 44.4344, 44.4458, 44.4635, 44.4714, 44.5344, 44.6734, 45.0333, 45.3201] [1])
+if err < 0 then
+  refuse "an RMS cannot be negative, and this one is the spread of the record about its own mean, 44 sfu"
+end
+if err > 50 then
+  refuse "the measured entries run 44.39 to 45.32 sfu and the table clamps: above 50 the table is broken"
+end
+return err
+"""
+by = "Aman Rai / 2026-10-03"
+
+[[case]]
+label = "lead 1 day — 10312 observed pairs."
+refuse = "no"
+expect = 44.3929
+tolerance = 1e-12
+inputs = { lead = 86400.0 }
+origin = "hand"
+
+[[case]]
+label = "lead 2 days — 10309 observed pairs."
+refuse = "no"
+expect = 44.3953
+tolerance = 1e-12
+inputs = { lead = 172800.0 }
+origin = "hand"
+
+[[case]]
+label = "lead 3 days — 10307 observed pairs."
+refuse = "no"
+expect = 44.3968
+tolerance = 1e-12
+inputs = { lead = 259200.0 }
+origin = "hand"
+
+[[case]]
+label = "lead 5 days — 10303 observed pairs."
+refuse = "no"
+expect = 44.3993
+tolerance = 1e-12
+inputs = { lead = 432000.0 }
+origin = "hand"
+
+[[case]]
+label = "lead 7 days — 10299 observed pairs."
+refuse = "no"
+expect = 44.4012
+tolerance = 1e-12
+inputs = { lead = 604800.0 }
+origin = "hand"
+
+[[case]]
+label = "lead 10 days — 10293 observed pairs."
+refuse = "no"
+expect = 44.4036
+tolerance = 1e-12
+inputs = { lead = 864000.0 }
+origin = "hand"
+
+[[case]]
+label = "lead 14 days — 10285 observed pairs."
+refuse = "no"
+expect = 44.4069
+tolerance = 1e-12
+inputs = { lead = 1209600.0 }
+origin = "hand"
+
+[[case]]
+label = "lead 20 days — 10273 observed pairs."
+refuse = "no"
+expect = 44.4071
+tolerance = 1e-12
+inputs = { lead = 1728000.0 }
+origin = "hand"
+
+[[case]]
+label = "lead 27 days — 10259 observed pairs."
+refuse = "no"
+expect = 44.4147
+tolerance = 1e-12
+inputs = { lead = 2332800.0 }
+origin = "hand"
+
+[[case]]
+label = "lead 40 days — 10233 observed pairs."
+refuse = "no"
+expect = 44.4242
+tolerance = 1e-12
+inputs = { lead = 3456000.0 }
+origin = "hand"
+
+[[case]]
+label = "lead 60 days — 10193 observed pairs."
+refuse = "no"
+expect = 44.4344
+tolerance = 1e-12
+inputs = { lead = 5184000.0 }
+origin = "hand"
+
+[[case]]
+label = "lead 90 days — 10133 observed pairs."
+refuse = "no"
+expect = 44.4458
+tolerance = 1e-12
+inputs = { lead = 7776000.0 }
+origin = "hand"
+
+[[case]]
+label = "lead 135 days — 10043 observed pairs."
+refuse = "no"
+expect = 44.4635
+tolerance = 1e-12
+inputs = { lead = 11664000.0 }
+origin = "hand"
+
+[[case]]
+label = "lead 180 days — 9953 observed pairs."
+refuse = "no"
+expect = 44.4714
+tolerance = 1e-12
+inputs = { lead = 15552000.0 }
+origin = "hand"
+
+[[case]]
+label = "lead 270 days — 9773 observed pairs."
+refuse = "no"
+expect = 44.5344
+tolerance = 1e-12
+inputs = { lead = 23328000.0 }
+origin = "hand"
+
+[[case]]
+label = "lead 365 days — 9675 observed pairs."
+refuse = "no"
+expect = 44.6734
+tolerance = 1e-12
+inputs = { lead = 31536000.0 }
+origin = "hand"
+
+[[case]]
+label = "lead 547 days — 9493 observed pairs."
+refuse = "no"
+expect = 45.0333
+tolerance = 1e-12
+inputs = { lead = 47260800.0 }
+origin = "hand"
+
+[[case]]
+label = "lead 730 days — 9310 observed pairs."
+refuse = "no"
+expect = 45.3201
+tolerance = 1e-12
+inputs = { lead = 63072000.0 }
+origin = "hand"
+
+[[case]]
+label = "beyond the last measured lead — five years holds the two-year value rather than extrapolating."
+refuse = "no"
+expect = 45.3201
+tolerance = 1e-12
+inputs = { lead = 157788000.0 }
+origin = "hand"
+
+[[case]]
+label = "outside what the node holds for: its code refuses it, and so must the developer's"
+refuse = "yes"
+inputs = { lead = nan }
+origin = "hand"
 
 [[assumption]]
 text = "It is nearly flat, and it is the record's own standard deviation"
@@ -174,5 +353,20 @@ about = ["node"]
 changed = "first version: the belief this row already rested on, written down"
 rests_on = "Error measured only on pairs of real observations the lead apart, with no filled-in days, against the record's mean of 114.8437, pinned to the 2026.09.14 solar weather bundle."
 breaks_if = "The data bundle version changes without re-measuring, or a cycle-aware baseline is substituted and the meaning of the horizon shifts."
+relation = "C(L) = RMS[F107(t+L) - 114.8437], from the record"
+source = "noaa_swpc"
+
+[[version]]
+n = 2
+release = "next"
+date = "2026-10-03"
+by = "Aman Rai (l3_solar)"
+about = ["math"]
+believed = "1.0 was ready for the developer: sealed, every method sound by the group application and agreeing with all of its results."
+tested = "The developer took 1.0 in: the seal held and every method agreed with every one of its results, refusals included."
+learned = "Intake refused 1.0 whole for two things the group application did not ask: six nodes had no case the method must refuse, and sw_kp_scenarios publishes ten values while its method gave one. Run with a value that is not a number, the code of sw_activity_band, sw_ap_design and sw_regime answered (band 1, Ap 132, regime 3) where the other three refused."
+changed = "Each of the six has a refusal: a value that is not a number, which every method now refuses at its door, so those three refuse it where their code answered. sw_kp_scenarios publishes its nine members, and every answered row gives all ten values: the design's own fixtures at the defaults, its code at the two others. The method was transcribed by an assistant from crates/vleo-mod-solar/nodes/sw_horizon_climatology/model.rs; Aman Rai read the copy against it and signs it."
+rests_on = "the 32 model.rs files the pseudocode was copied from, and the fixtures published with them"
+breaks_if = "a result the built node does not reproduce, or a correction to the code a method was copied from"
 relation = "C(L) = RMS[F107(t+L) - 114.8437], from the record"
 source = "noaa_swpc"

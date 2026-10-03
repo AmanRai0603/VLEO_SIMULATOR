@@ -46,6 +46,77 @@ fn fixture_2() {
     assert!(err <= 1e-12, "half a mean cycle after the start — phase one half, to the last bit float allows: got {} want 0.4999999999999999, relative error {} exceeds the declared tolerance 1e-12. This is a physics disagreement, not a build failure — take it to the node owner. Do not widen the tolerance.", got.get(), err);
 }
 
+/// the author's case «the declared mission epoch, 2027-01-01 — 2588 days into cycle 25.», from their own  code.
+#[test]
+fn case_1() {
+    let got = model::evaluate(Time::new(852076800.0)).expect("the declared mission epoch, 2027-01-01 — 2588 days into cycle 25.: the author's code answers this case and the node refused it");
+    let err = relative_error(got.get(), 0.6193669438022621);
+    assert!(err <= 1e-12, "the declared mission epoch, 2027-01-01 — 2588 days into cycle 25.: got {} and the author's code gave 0.6193669438022621; relative error {} is more than their tolerance 1e-12. Take it to the author; do not widen the tolerance.", got.get(), err);
+}
+
+/// the author's case «the day cycle 25 begins — phase must be exactly zero.», from their own  code.
+#[test]
+fn case_2() {
+    let got = model::evaluate(Time::new(628473600.0)).expect("the day cycle 25 begins — phase must be exactly zero.: the author's code answers this case and the node refused it");
+    let err = relative_error(got.get(), 0.0);
+    assert!(err <= 1e-12, "the day cycle 25 begins — phase must be exactly zero.: got {} and the author's code gave 0.0; relative error {} is more than their tolerance 1e-12. Take it to the author; do not widen the tolerance.", got.get(), err);
+}
+
+/// the author's case «half a mean cycle after the start — phase one half, to the last bit float allows.», from their own  code.
+#[test]
+fn case_3() {
+    let got = model::evaluate(Time::new(808983072.0)).expect("half a mean cycle after the start — phase one half, to the last bit float allows.: the author's code answers this case and the node refused it");
+    let err = relative_error(got.get(), 0.4999999999999999);
+    assert!(err <= 1e-12, "half a mean cycle after the start — phase one half, to the last bit float allows.: got {} and the author's code gave 0.4999999999999999; relative error {} is more than their tolerance 1e-12. Take it to the author; do not widen the tolerance.", got.get(), err);
+}
+
+/// the author's case «outside what the node holds for: its code refuses it, and so must the developer's», from their own  code.
+#[test]
+fn case_4() {
+    let got = model::evaluate(Time::new(0.0));
+    assert!(matches!(got, Err(vleo_core::fault::Fault::Refused { .. })), "outside what the node holds for: its code refuses it, and so must the developer's: the author's code refuses this case and the node gave {:?}. Take it to the author.", got);
+}
+
+/// the author's case «outside what the node holds for: its code refuses it, and so must the developer's», from their own  code.
+#[test]
+fn case_5() {
+    let got = model::evaluate(Time::new(1000000000.0000001));
+    assert!(matches!(got, Err(vleo_core::fault::Fault::Refused { .. })), "outside what the node holds for: its code refuses it, and so must the developer's: the author's code refuses this case and the node gave {:?}. Take it to the author.", got);
+}
+
+/// The kernel translation of this node's method gives the method's own
+/// answer, to the bit, at 23 points around the author's cases. A translator
+/// check, not evidence: the numbers are the method's, run by the interpreter
+/// when this file was generated.
+#[test]
+fn the_translation_gives_the_methods_answers() {
+    use vleo_core::physics::method::MethodError;
+    use vleo_core::physics::methods::sw_cycle_phase::evaluate;
+    assert!(matches!(evaluate(426038400.0), Err(MethodError::Refused(_))), "at (426038400.0)");
+    assert_eq!(evaluate(766869120.0).map(f64::to_bits), Ok(0x3fd888c1bfdd1a41), "at (766869120.0)");
+    assert_eq!(evaluate(843556032.0).map(f64::to_bits), Ok(0x3fe31081a66074a7), "at (843556032.0)");
+    assert_eq!(evaluate(852076800.0).map(f64::to_bits), Ok(0x3fe3d1da9ffb557d), "at (852076800.0)");
+    assert_eq!(evaluate(860597568.0).map(f64::to_bits), Ok(0x3fe4933399963653), "at (860597568.0)");
+    assert_eq!(evaluate(937284480.0000001).map(f64::to_bits), Ok(0x3feb5f5460081ddc), "at (937284480.0000001)");
+    assert!(matches!(evaluate(1704153600.0), Err(MethodError::Refused(_))), "at (1704153600.0)");
+    assert!(matches!(evaluate(314236800.0), Err(MethodError::Refused(_))), "at (314236800.0)");
+    assert!(matches!(evaluate(565626240.0), Err(MethodError::Refused(_))), "at (565626240.0)");
+    assert!(matches!(evaluate(622188864.0), Err(MethodError::Refused(_))), "at (622188864.0)");
+    assert_eq!(evaluate(628473600.0).map(f64::to_bits), Ok(0x0000000000000000), "at (628473600.0)");
+    assert_eq!(evaluate(634758336.0).map(f64::to_bits), Ok(0x3f91d37d14a54715), "at (634758336.0)");
+    assert_eq!(evaluate(691320960.0).map(f64::to_bits), Ok(0x3fc6485c59ce98da), "at (691320960.0)");
+    assert!(matches!(evaluate(1256947200.0), Err(MethodError::Refused(_))), "at (1256947200.0)");
+    assert!(matches!(evaluate(404491536.0), Err(MethodError::Refused(_))), "at (404491536.0)");
+    assert_eq!(evaluate(728084764.8000001).map(f64::to_bits), Ok(0x3fd1a89e9fe58064), "at (728084764.8000001)");
+    assert_eq!(evaluate(800893241.28).map(f64::to_bits), Ok(0x3fde90dca996f33b), "at (800893241.28)");
+    assert_eq!(evaluate(808983072.0).map(f64::to_bits), Ok(0x3fe0000000000000), "at (808983072.0)");
+    assert_eq!(evaluate(817072902.72).map(f64::to_bits), Ok(0x3fe0b791ab348662), "at (817072902.72)");
+    assert_eq!(evaluate(889881379.2).map(f64::to_bits), Ok(0x3fe72bb0b00d3fd1), "at (889881379.2)");
+    assert!(matches!(evaluate(1617966144.0), Err(MethodError::Refused(_))), "at (1617966144.0)");
+    assert!(matches!(evaluate(0.0), Err(MethodError::Refused(_))), "at (0.0)");
+    assert!(matches!(evaluate(1000000000.0000001), Err(MethodError::Refused(_))), "at (1000000000.0000001)");
+}
+
 // ---- properties, generated from the declared domain ---------------------
 //
 // The fixture above checks one point. A wrong constant moves that point and

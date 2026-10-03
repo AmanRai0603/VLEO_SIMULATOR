@@ -140,6 +140,60 @@ math = "dF107_day_low = sw_daily_band_drop(F107_cold_long) = 4.3870 sfu at a sus
 text = "Subtract it. The two are stacked rather than combined in quadrature, which is what the study does and is conservative — a stacked pair of one-sided percentiles is a rarer day than either confidence describes."
 math = "F107_cold_short = F107_cold_long - dF107_day_low"
 
+# THE METHOD — the relation in the method language (docs/PSEUDOCODE.md). In the
+# sheet hash: the generated code is translated from it.
+[method]
+text = """
+# Transcribed from crates/vleo-mod-solar/nodes/sw_f107_cold_short/model.rs (HOLE 1 and its guards) — the method the code already runs.
+# Both terms come from the daily F10.7 record (noaa_swpc) through sw_f107_cold_long and sw_daily_band_drop; no constant of its own.
+# The daily term is a magnitude, so the sign lives here in the relation.
+let single_day = sustained - daily
+if single_day < 60 then
+  refuse "Below 60 sfu has never been observed and every relation reading F10.7 has no support there."
+end
+if single_day > 400 then
+  refuse "Above 400 sfu on the coldest scenario means a sign is wrong somewhere in the chain above it."
+end
+return single_day
+"""
+by = "Aman Rai / 2026-10-03"
+
+[[case]]
+label = "141.1088 minus 31.2722 — the pair this row was handed before sw_daily_band_drop was conditioned on level. Kept as an arithmetic case; the pair no longer occurs in this tree."
+refuse = "no"
+expect = 109.8365800491
+tolerance = 1e-10
+inputs = { daily = 31.2722222222, sustained = 141.1088022713 }
+origin = "hand"
+
+[[case]]
+label = "round numbers, so the arithmetic is checkable without a calculator — 200 - 30."
+refuse = "no"
+expect = 170.0
+tolerance = 1e-12
+inputs = { daily = 30.0, sustained = 200.0 }
+origin = "hand"
+
+[[case]]
+label = "a sustained level of 120 with the old un-conditioned drop of 31.27, which used to be the lowest level that cleared the guard. The conditioned drop at 120 sfu is 23.26, so the crossing has moved and this row no longer refuses at the declared window."
+refuse = "no"
+expect = 88.7277777778
+tolerance = 1e-10
+inputs = { daily = 31.2722222222, sustained = 120.0 }
+origin = "hand"
+
+[[case]]
+label = "outside what the node holds for: its code refuses it, and so must the developer's"
+refuse = "yes"
+inputs = { daily = 31.0, sustained = 80.0 }
+origin = "hand"
+
+[[case]]
+label = "outside what the node holds for: its code refuses it, and so must the developer's"
+refuse = "yes"
+inputs = { daily = 10.0, sustained = 450.0 }
+origin = "hand"
+
 [[assumption]]
 text = "The two spreads stack rather than combine"
 fails_when = "a reader takes the result as a 95 per cent day. It is not: stacking a 10th-percentile rotation level with a 5th-percentile day inside it is nearer a 1-in-100 day than a 1-in-20 one, assuming the two are independent — and they are not independent either, because a quiet rotation is made of quiet days. The study does this and the port reproduces it; the number is conservative and its label is wrong"
@@ -181,5 +235,20 @@ about = ["node"]
 changed = "first version: the belief this row already rested on, written down"
 rests_on = "That the rotation-level error and a day's dip within its rotation stack, and that the dip measured at the cold sustained level, 4.3870 solar flux units at 69.63, applies inside the window."
 breaks_if = "The daily dip is shown to depend on cycle phase as well as level, or the sustained cold level falls so the answer nears 60 solar flux units and the row refuses."
+relation = "F107_cold_short = F107_cold_long - dF107_day_low"
+source = "noaa_swpc"
+
+[[version]]
+n = 2
+release = "next"
+date = "2026-10-03"
+by = "Aman Rai (l3_solar)"
+about = ["math"]
+believed = "1.0 was ready for the developer: sealed, every method sound by the group application and agreeing with all of its results."
+tested = "The developer took 1.0 in: the seal held and every method agreed with every one of its results, refusals included."
+learned = "Intake refused 1.0 whole for two things the group application did not ask: six nodes had no case the method must refuse, and sw_kp_scenarios publishes ten values while its method gave one. Run with a value that is not a number, the code of sw_activity_band, sw_ap_design and sw_regime answered (band 1, Ap 132, regime 3) where the other three refused."
+changed = "Each of the six has a refusal: a value that is not a number, which every method now refuses at its door, so those three refuse it where their code answered. sw_kp_scenarios publishes its nine members, and every answered row gives all ten values: the design's own fixtures at the defaults, its code at the two others. The method was transcribed by an assistant from crates/vleo-mod-solar/nodes/sw_f107_cold_short/model.rs; Aman Rai read the copy against it and signs it."
+rests_on = "the 32 model.rs files the pseudocode was copied from, and the fixtures published with them"
+breaks_if = "a result the built node does not reproduce, or a correction to the code a method was copied from"
 relation = "F107_cold_short = F107_cold_long - dF107_day_low"
 source = "noaa_swpc"

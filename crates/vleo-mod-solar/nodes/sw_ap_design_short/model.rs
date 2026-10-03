@@ -19,20 +19,21 @@ use vleo_core::units::*;
 pub const NODE_ID: &str = "sw_ap_design_short";
 /// Hash of the sheet this file was generated from. A face carrying a
 /// different one refuses to run rather than showing a stale page.
-pub const SHEET_HASH: u64 = 0xab449467ed97381b;
+pub const SHEET_HASH: u64 = 0x91f7b0e982cf2c4f;
 
 pub fn evaluate(sustained: Ratio, daily: Ratio) -> Result<Ratio, Fault> {
-    // ---- HOLE 1 : add the within-rotation daily departure to the sustained Ap level -> Ratio
-    // The rotation error and the within-rotation departure are of different
-    // things, so they add. For Ap the daily term is more than half the answer:
-    // the level is quiet and the day is not.
-    let single_day: Ratio = sustained + daily;
-    // ---- end HOLE 1
+    // generated · from the node's method, translated by rule into
+    // vleo_core::physics::methods::sw_ap_design_short. No hole: the method is the
+    // implementation, and the author's cases in evidence.rs test it.
+    let method_answer: Ratio = match methods::sw_ap_design_short::evaluate(sustained.get(), daily.get()) {
+        Ok(v) => Ratio::new(v),
+        Err(e) => return Err(method::fault(e, NODE_ID, "Ap_short")),
+    };
 
     // generated · the declared domain of this node's own answer. The
     // reason travels with the guard, because a guard whose reason is not
     // written down gets deleted by the next person who finds it awkward.
-    let answer: Ratio = single_day;
+    let answer: Ratio = method_answer;
     if !answer.is_finite() {
         return Err(Fault::Degenerate { node: NODE_ID, field: "Ap_short", reason: "the computation produced a value that is not a number" });
     }

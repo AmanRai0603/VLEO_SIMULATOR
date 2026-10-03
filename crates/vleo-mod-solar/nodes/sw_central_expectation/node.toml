@@ -162,6 +162,161 @@ construction takes.
 """
 math = "C = (1/L) * integral over [T_e, T_e + L] of A(t) dt"
 
+# THE METHOD — the relation in the method language (docs/PSEUDOCODE.md). In the
+# sheet hash: the generated code is translated from it.
+[method]
+text = """
+# Transcribed from crates/vleo-mod-solar/nodes/sw_central_expectation/model.rs (HOLE 1 and its guards) — the method the code already runs.
+# Numbers: the mean solar cycle (vleo_core::physics::env SOLAR_CYCLE_SHAPE, period 4178 d, cycle 25 peak 225.1358 sfu on day 9013, completed-cycle mean peak 193.858 sfu), measured from bundles solar-weather@2026.09.14 (NOAA SWPC record, noaa_swpc); tau = one synodic rotation, 27 d, prf_design's persistence timescale.
+# HOLE 1 is env::solar_cycle_analogue_mean(t0, t1): composite Simpson, 512 panels, of solar_cycle_analogue, divided by (t1 - t0).
+# HOLE 2 blends today's flux against that window mean with w = exp(-L / 27 d).
+
+const p = 4178 [1]                     # SOLAR_CYCLE_PERIOD_DAYS, one mean completed-cycle length, days
+const peak_day = 9013 [1]              # SOLAR_CYCLE_PEAK_DAY, cycle 25's 81-day peak, days since 2000-01-01 (2024-09-04)
+const amp25 = 225.1358024691358 [1]    # SOLAR_CYCLE_PEAK_SFU, cycle 25's own 81-day peak, sfu
+const amp_mean = 193.85802469135802 [1]   # SOLAR_CYCLE_MEAN_PEAK_SFU, mean of cycles 23 and 24's peaks, sfu
+const panels = 512 [1]                 # Simpson panels
+const tau_days = 27 [1]                # one synodic solar rotation, days
+
+# HOLE 1 — the window, in days since 2000-01-01, as epoch.days() and epoch.days() + lead.days().
+let t0 = epoch / 1 [d]
+let t1 = t0 + lead / 1 [d]
+let h = (t1 - t0) / panels
+let s = 0 [1]
+let x = t0
+let d = 0 [1]
+let amp = amp25
+let u = 0 [1]
+let i = 0 [1]
+let f = 0 [1]
+# Simpson, summed in the code's own order: f(a) + f(b) first, then the interior points 1..511.
+for j = 0 to 512
+  if j == 0 then
+    set x = t0
+  else if j == 1 then
+    set x = t1
+  else
+    set x = t0 + h * (j - 1)
+  end
+  # solar_cycle_analogue(x): fold onto one period from cycle 25's maximum, read the shape, scale by the cycle's amplitude.
+  set d = x - peak_day
+  if floor((d + 0.5 * p) / p) == 0 then
+    set amp = amp25
+  else
+    set amp = amp_mean
+  end
+  set u = fmod(fmod(d, p) + p, p)
+  set i = u / (p / 94)
+  # SOLAR_CYCLE_SHAPE[lo] + (SOLAR_CYCLE_SHAPE[hi] - SOLAR_CYCLE_SHAPE[lo]) * frac, hi = (lo + 1) mod 94: the shape wrapped by repeating knot 0 at 94.
+  set f = amp * interp(i, [0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0, 17.0, 18.0, 19.0, 20.0, 21.0, 22.0, 23.0, 24.0, 25.0, 26.0, 27.0, 28.0, 29.0, 30.0, 31.0, 32.0, 33.0, 34.0, 35.0, 36.0, 37.0, 38.0, 39.0, 40.0, 41.0, 42.0, 43.0, 44.0, 45.0, 46.0, 47.0, 48.0, 49.0, 50.0, 51.0, 52.0, 53.0, 54.0, 55.0, 56.0, 57.0, 58.0, 59.0, 60.0, 61.0, 62.0, 63.0, 64.0, 65.0, 66.0, 67.0, 68.0, 69.0, 70.0, 71.0, 72.0, 73.0, 74.0, 75.0, 76.0, 77.0, 78.0, 79.0, 80.0, 81.0, 82.0, 83.0, 84.0, 85.0, 86.0, 87.0, 88.0, 89.0, 90.0, 91.0, 92.0, 93.0, 94.0], [1.000000, 0.903695, 0.807593, 0.773599, 0.747277, 0.750621, 0.702665, 0.699680, 0.671394, 0.633116, 0.593519, 0.561394, 0.560421, 0.530158, 0.554559, 0.572413, 0.522981, 0.489549, 0.476323, 0.450250, 0.465763, 0.491509, 0.455476, 0.469410, 0.460672, 0.437930, 0.421984, 0.420851, 0.437148, 0.427348, 0.415508, 0.401208, 0.404088, 0.401337, 0.395792, 0.403236, 0.402821, 0.384875, 0.380210, 0.383322, 0.393501, 0.400451, 0.340028, 0.324026, 0.324897, 0.373319, 0.369609, 0.365922, 0.375961, 0.381349, 0.370032, 0.371935, 0.378041, 0.381774, 0.397795, 0.405428, 0.393973, 0.389129, 0.426488, 0.453456, 0.463151, 0.470999, 0.479126, 0.544836, 0.578380, 0.555890, 0.584878, 0.621035, 0.702772, 0.763337, 0.739668, 0.662755, 0.650724, 0.730621, 0.757925, 0.724262, 0.745062, 0.767270, 0.758000, 0.773305, 0.764422, 0.789755, 0.772538, 0.732759, 0.736271, 0.796305, 0.842015, 0.866375, 0.862554, 0.794588, 0.753098, 0.812943, 0.899607, 0.963136, 1.000000])
+  if j <= 1 then
+    set s = s + f
+  else if fmod(j - 1, 2) == 1 then
+    set s = s + 4 * f
+  else
+    set s = s + 2 * f
+  end
+end
+let climo = s * h / 3 / (t1 - t0)
+
+# HOLE 2 — weight today's flux against the window climatology by the lead.
+let w = exp(-(lead / 1 [d]) / tau_days)
+let central = w * today + (1 - w) * climo
+
+# Generated guards: the declared domain of F107_central.
+if central < 60 then
+  refuse "below 60 sfu has never been observed, and a blend of today's flux and the analogue cannot leave the interval between them"
+end
+if central > 400 then
+  refuse "above 400 the exospheric temperature relation is extrapolated past the largest recorded daily value; this catches a broken weight or table"
+end
+return central
+"""
+by = "Aman Rai / 2026-10-03"
+
+[[case]]
+label = "the declared case — epoch 2027-01-01, a five-year mission."
+refuse = "no"
+expect = 86.84972489094359
+tolerance = 1e-12
+inputs = { epoch = 852076800.0, lead = 157788000.0, today = 150.0 }
+origin = "hand"
+
+[[case]]
+label = "fifteen years — the window spans more than a cycle, so the mean settles near the record's own level."
+refuse = "no"
+expect = 105.72687096778448
+tolerance = 1e-12
+inputs = { epoch = 852076800.0, lead = 473364000.0, today = 150.0 }
+origin = "hand"
+
+[[case]]
+label = "half a Julian year, the shortest mission — the one lead where today's 150 sfu is still faintly visible."
+refuse = "no"
+expect = 105.5465798678905
+tolerance = 1e-12
+inputs = { epoch = 852076800.0, lead = 15778800.0, today = 150.0 }
+origin = "hand"
+
+[[case]]
+label = "a quiet day today changes nothing at five years."
+refuse = "no"
+expect = 86.84972489094359
+tolerance = 1e-12
+inputs = { epoch = 852076800.0, lead = 157788000.0, today = 70.0 }
+origin = "hand"
+
+[[case]]
+label = "nor does a very active one — at five years the answer is the window climatology alone."
+refuse = "no"
+expect = 86.84972489094359
+tolerance = 1e-12
+inputs = { epoch = 852076800.0, lead = 157788000.0, today = 340.0 }
+origin = "hand"
+
+[[case]]
+label = "the earliest epoch the range allows, 2018-01-01 — a mission rising into cycle 25's maximum."
+refuse = "no"
+expect = 115.03865410832137
+tolerance = 1e-12
+inputs = { epoch = 568080000.0, lead = 157788000.0, today = 150.0 }
+origin = "hand"
+
+[[case]]
+label = "an epoch near the next maximum, 2032-11-08 — the same mission, a different sky, and one cycle 25's size does not vouch for."
+refuse = "no"
+expect = 144.9367498101883
+tolerance = 1e-12
+inputs = { epoch = 1036800000.0, lead = 157788000.0, today = 150.0 }
+origin = "hand"
+
+[[case]]
+label = "the latest epoch the range allows, 2040-01-01."
+refuse = "no"
+expect = 88.67145559562236
+tolerance = 1e-12
+inputs = { epoch = 1262304000.0, lead = 157788000.0, today = 150.0 }
+origin = "hand"
+
+[[case]]
+label = "one whole cycle period later — epoch 14040 is 4178 days after 9862, so the SHAPE repeats; the answer does not, because the amplitude hands over."
+refuse = "no"
+expect = 78.21016904177215
+tolerance = 1e-12
+inputs = { epoch = 1213056000.0, lead = 157788000.0, today = 150.0 }
+origin = "hand"
+
+[[case]]
+label = "outside what the node holds for: its code refuses it, and so must the developer's"
+refuse = "yes"
+inputs = { epoch = 852076800.0, lead = 86400.0, today = 1000.0 }
+origin = "hand"
+
+[[case]]
+label = "outside what the node holds for: its code refuses it, and so must the developer's"
+refuse = "yes"
+inputs = { epoch = 852076800.0, lead = 86400.0, today = 0.0 }
+origin = "hand"
 
 [[assumption]]
 text = "Two completed cycles is the whole sample, and eleven of the ninety-three grid points rest on one of them"
@@ -302,5 +457,20 @@ changed = "Outside cycle 25 the amplitude is the mean of the completed cycles' p
 risks = ["R-01 L3->L2"]
 rests_on = "Cycle shape repeats between cycles, measured on two completed cycles; outside cycle 25 a cycle's size is the mean of the last two peaks."
 breaks_if = "Cycle 26's peak departs far from 193.9 sfu, or a third completed cycle's shape disagrees with the two-cycle analogue — the whole sample is two cycles, and eleven of ninety-three shape points rest on one of them."
+relation = "F107_central(T_e, L) = w*F107_today + (1-w)*mean_[T_e, T_e+L] A(t),  w = exp(-L / 27 d),  A(t) = amp(t) * R((t - T_max) mod P)"
+source = "noaa_swpc"
+
+[[version]]
+n = 4
+release = "next"
+date = "2026-10-03"
+by = "Aman Rai (l3_solar)"
+about = ["math"]
+believed = "1.0 was ready for the developer: sealed, every method sound by the group application and agreeing with all of its results."
+tested = "The developer took 1.0 in: the seal held and every method agreed with every one of its results, refusals included."
+learned = "Intake refused 1.0 whole for two things the group application did not ask: six nodes had no case the method must refuse, and sw_kp_scenarios publishes ten values while its method gave one. Run with a value that is not a number, the code of sw_activity_band, sw_ap_design and sw_regime answered (band 1, Ap 132, regime 3) where the other three refused."
+changed = "Each of the six has a refusal: a value that is not a number, which every method now refuses at its door, so those three refuse it where their code answered. sw_kp_scenarios publishes its nine members, and every answered row gives all ten values: the design's own fixtures at the defaults, its code at the two others. The method was transcribed by an assistant from crates/vleo-mod-solar/nodes/sw_central_expectation/model.rs; Aman Rai read the copy against it and signs it."
+rests_on = "the 32 model.rs files the pseudocode was copied from, and the fixtures published with them"
+breaks_if = "a result the built node does not reproduce, or a correction to the code a method was copied from"
 relation = "F107_central(T_e, L) = w*F107_today + (1-w)*mean_[T_e, T_e+L] A(t),  w = exp(-L / 27 d),  A(t) = amp(t) * R((t - T_max) mod P)"
 source = "noaa_swpc"

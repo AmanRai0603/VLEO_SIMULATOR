@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `F107_cyc` (Mean-cycle F10.7 at a phase), in `-`.
 pub const NODE_ID: &str = "sw_mean_cycle_level";
-pub const SHEET_HASH: u64 = 0x9c8ab20dbc4cf7b2;
+pub const SHEET_HASH: u64 = 0x71601b622baea6a3;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "sw_cycle_phase",

@@ -28,33 +28,21 @@ use vleo_core::units::*;
 pub const NODE_ID: &str = "sw_exceedance_duration";
 /// Hash of the sheet this file was generated from. A face carrying a
 /// different one refuses to run rather than showing a stale page.
-pub const SHEET_HASH: u64 = 0xcac9dfd4d47b900e;
+pub const SHEET_HASH: u64 = 0x0ace8a7186eb9595;
 
 pub fn evaluate(ap_design: Ratio) -> Result<Time, Fault> {
-    // ---- HOLE 1 : read the measured mean length of a consecutive run at or above this Ap -> Time
-    // The three design levels sw_ap_design can return, and the mean length of a consecutive run at or above the bound, in days,
-    // counted outside this crate from bundles/solar-weather.
-    //
-    // Three anchors and nothing between them: the G scale is defined on
-    // integers and the producer's range is 1 to 3, so Ap 48, 80 and 132 are the
-    // only values that reach here. Table1 interpolates because it must and
-    // clamps at both ends; the sheet declares that the interpolation is wrong
-    // for this quantity and that nothing in the tree can currently reach it.
-    use vleo_core::math::Table1;
-    const TABLE: Table1 = Table1 {
-        x: &[48.0, 80.0, 132.0],
-        y: &[1.2718446601941749, 1.206896551724138, 1.1428571428571428],
+    // generated · from the node's method, translated by rule into
+    // vleo_core::physics::methods::sw_exceedance_duration. No hole: the method is the
+    // implementation, and the author's cases in evidence.rs test it.
+    let method_answer: Time = match methods::sw_exceedance_duration::evaluate(ap_design.get()) {
+        Ok(v) => Time::new(v),
+        Err(e) => return Err(method::fault(e, NODE_ID, "D_exc")),
     };
-    let out: Time = match Time::from_unit(TABLE.at(ap_design.get()), Unit::Day) {
-        Some(q) => q,
-        None => return Err(Fault::Degenerate { node: NODE_ID, field: "D_exc", reason: "the declared unit does not match the declared type" }),
-    };
-    // ---- end HOLE 1
 
     // generated · the declared domain of this node's own answer. The
     // reason travels with the guard, because a guard whose reason is not
     // written down gets deleted by the next person who finds it awkward.
-    let answer: Time = out;
+    let answer: Time = method_answer;
     if !answer.is_finite() {
         return Err(Fault::Degenerate { node: NODE_ID, field: "D_exc", reason: "the computation produced a value that is not a number" });
     }

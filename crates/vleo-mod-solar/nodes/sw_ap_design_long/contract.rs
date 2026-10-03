@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `Ap_long` (Sustained Ap to design to), in `-`.
 pub const NODE_ID: &str = "sw_ap_design_long";
-pub const SHEET_HASH: u64 = 0x76432804deb53157;
+pub const SHEET_HASH: u64 = 0xc8eba9d10fc181e9;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "sw_ap_central_expectation",

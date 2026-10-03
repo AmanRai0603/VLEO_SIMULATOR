@@ -28,34 +28,21 @@ use vleo_core::units::*;
 pub const NODE_ID: &str = "sw_forecast_skill";
 /// Hash of the sheet this file was generated from. A face carrying a
 /// different one refuses to run rather than showing a stale page.
-pub const SHEET_HASH: u64 = 0x46cfbf45e52bb3cd;
+pub const SHEET_HASH: u64 = 0xc050bee28e39a8fc;
 
 pub fn evaluate(lead: Time) -> Result<Ratio, Fault> {
-    // ---- HOLE 1 : read the measured skill of the issued outlook against persistence at this lead -> Ratio
-    // The measured table, lead 1 to 26 in days. Not a fit: the curve has an
-    // interior extremum and a straight line through it would be a different
-    // claim than the record makes. Table1 interpolates between the measured
-    // leads and clamps at both ends, so a lead inside the declared domain
-    // always lands between two measurements.
-    use vleo_core::math::Table1;
-    const LEAD_DAYS: [f64; 26] = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0, 17.0, 18.0, 19.0, 20.0, 21.0, 22.0, 23.0, 24.0, 25.0, 26.0];
-    const SKILL: [f64; 26] = [
-        0.0685159110, 0.1988398832, 0.2248475213, 0.2138431310,
-        0.2768782923, 0.3179547804, 0.3625942984, 0.4020897345,
-        0.4375371731, 0.4325518344, 0.4188543510, 0.4137682014,
-        0.4016285468, 0.4186771205, 0.3918289086, 0.3698739969,
-        0.3041719673, 0.2475268244, 0.2117196579, 0.1696147673,
-        0.1404618270, 0.0784955060, 0.0176508866, -0.0355195984,
-        -0.0324460638, -0.0220863078,
-    ];
-    let table: Table1 = Table1 { x: &LEAD_DAYS, y: &SKILL };
-    let out: Ratio = Ratio::new(table.at(lead.days()));
-    // ---- end HOLE 1
+    // generated · from the node's method, translated by rule into
+    // vleo_core::physics::methods::sw_forecast_skill. No hole: the method is the
+    // implementation, and the author's cases in evidence.rs test it.
+    let method_answer: Ratio = match methods::sw_forecast_skill::evaluate(lead.get()) {
+        Ok(v) => Ratio::new(v),
+        Err(e) => return Err(method::fault(e, NODE_ID, "S_f107")),
+    };
 
     // generated · the declared domain of this node's own answer. The
     // reason travels with the guard, because a guard whose reason is not
     // written down gets deleted by the next person who finds it awkward.
-    let answer: Ratio = out;
+    let answer: Ratio = method_answer;
     if !answer.is_finite() {
         return Err(Fault::Degenerate { node: NODE_ID, field: "S_f107", reason: "the computation produced a value that is not a number" });
     }

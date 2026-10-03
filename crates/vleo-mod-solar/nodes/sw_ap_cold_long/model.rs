@@ -31,21 +31,21 @@ use vleo_core::units::*;
 pub const NODE_ID: &str = "sw_ap_cold_long";
 /// Hash of the sheet this file was generated from. A face carrying a
 /// different one refuses to run rather than showing a stale page.
-pub const SHEET_HASH: u64 = 0x46b9cc8ade2f2ef2;
+pub const SHEET_HASH: u64 = 0x482b940d2ed70b5f;
 
 pub fn evaluate(central: Ratio, spread: Ratio) -> Result<Ratio, Fault> {
-    // ---- HOLE 1 : subtract 1.28 standard deviations of the rotation-forecast residual from the central Ap expectation -> Ratio
-    // The same 1.28 the hot edge adds, declared in the sheet rather than chosen
-    // here: one band with two edges. The subtraction is symmetric although Ap is
-    // not — Ap floors at zero and a standard deviation has no sides — which the
-    // sheet argues about and the guard below catches.
-    let sustained: Ratio = central - spread * 1.28;
-    // ---- end HOLE 1
+    // generated · from the node's method, translated by rule into
+    // vleo_core::physics::methods::sw_ap_cold_long. No hole: the method is the
+    // implementation, and the author's cases in evidence.rs test it.
+    let method_answer: Ratio = match methods::sw_ap_cold_long::evaluate(central.get(), spread.get()) {
+        Ok(v) => Ratio::new(v),
+        Err(e) => return Err(method::fault(e, NODE_ID, "Ap_cold_long")),
+    };
 
     // generated · the declared domain of this node's own answer. The
     // reason travels with the guard, because a guard whose reason is not
     // written down gets deleted by the next person who finds it awkward.
-    let answer: Ratio = sustained;
+    let answer: Ratio = method_answer;
     if !answer.is_finite() {
         return Err(Fault::Degenerate { node: NODE_ID, field: "Ap_cold_long", reason: "the computation produced a value that is not a number" });
     }

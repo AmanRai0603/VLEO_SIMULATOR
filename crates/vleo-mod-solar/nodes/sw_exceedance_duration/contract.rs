@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `D_exc` (How long one exceedance lasts), in `d`.
 pub const NODE_ID: &str = "sw_exceedance_duration";
-pub const SHEET_HASH: u64 = 0xcac9dfd4d47b900e;
+pub const SHEET_HASH: u64 = 0x0ace8a7186eb9595;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "sw_ap_design",

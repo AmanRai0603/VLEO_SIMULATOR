@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `regime` (Geomagnetic regime), in `-`.
 pub const NODE_ID: &str = "sw_regime";
-pub const SHEET_HASH: u64 = 0x40f82069e2f0c2af;
+pub const SHEET_HASH: u64 = 0x0c01f6a4e32f2837;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "sw_storm_return_level",

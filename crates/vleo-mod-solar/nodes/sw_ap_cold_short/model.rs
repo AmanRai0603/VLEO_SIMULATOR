@@ -32,22 +32,21 @@ use vleo_core::units::*;
 pub const NODE_ID: &str = "sw_ap_cold_short";
 /// Hash of the sheet this file was generated from. A face carrying a
 /// different one refuses to run rather than showing a stale page.
-pub const SHEET_HASH: u64 = 0xf41e49bc70785339;
+pub const SHEET_HASH: u64 = 0x45763d2f102ff080;
 
 pub fn evaluate(sustained: Ratio, daily: Ratio) -> Result<Ratio, Fault> {
-    // ---- HOLE 1 : subtract the within-rotation daily Ap drop from the sustained cold level -> Ratio
-    // The daily term is a MAGNITUDE, so the sign lives here rather than in
-    // sw_ap_daily_band_drop's value. It is the low tail's own number, 10.59, not
-    // the high tail's 15.00 negated — forty-two per cent apart, because Ap is
-    // truncated at zero. The guard below is the one most likely in this
-    // subsystem to fire on an ordinary input.
-    let single_day: Ratio = sustained - daily;
-    // ---- end HOLE 1
+    // generated · from the node's method, translated by rule into
+    // vleo_core::physics::methods::sw_ap_cold_short. No hole: the method is the
+    // implementation, and the author's cases in evidence.rs test it.
+    let method_answer: Ratio = match methods::sw_ap_cold_short::evaluate(sustained.get(), daily.get()) {
+        Ok(v) => Ratio::new(v),
+        Err(e) => return Err(method::fault(e, NODE_ID, "Ap_cold_short")),
+    };
 
     // generated · the declared domain of this node's own answer. The
     // reason travels with the guard, because a guard whose reason is not
     // written down gets deleted by the next person who finds it awkward.
-    let answer: Ratio = single_day;
+    let answer: Ratio = method_answer;
     if !answer.is_finite() {
         return Err(Fault::Degenerate { node: NODE_ID, field: "Ap_cold_short", reason: "the computation produced a value that is not a number" });
     }

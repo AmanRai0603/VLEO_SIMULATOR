@@ -1,8 +1,8 @@
 {
   "id": "sw_ap_cold_long",
   "state": "published",
-  "sheet_hash": "2f2ef2",
-  "impl_hash": "4cfe8d",
+  "sheet_hash": "d70b5f",
+  "impl_hash": "222325",
   "owner": "environment",
   "tier": "A",
   "fixtures": 3,
@@ -13,5 +13,5 @@
   "holes": 1,
   "inputs": ["sw_ap_central_expectation", "sw_ap_mean_band_spread"],
   "contributes": [],
-  "gaps": ["the relation has nobody's name against it — an assistant may never supply mathematics, and without an attribution nothing can tell whether one did", "no method yet — the relation in the method language, with the author's own code and test cases, so the tool can check it three ways (docs/PSEUDOCODE.md)"]
+  "gaps": ["the relation has nobody's name against it — an assistant may never supply mathematics, and without an attribution nothing can tell whether one did"]
 }

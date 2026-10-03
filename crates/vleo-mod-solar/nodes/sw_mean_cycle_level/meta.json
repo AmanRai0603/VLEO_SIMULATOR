@@ -1,8 +1,8 @@
 {
   "id": "sw_mean_cycle_level",
   "state": "published",
-  "sheet_hash": "4cf7b2",
-  "impl_hash": "6b5c23",
+  "sheet_hash": "aea6a3",
+  "impl_hash": "222325",
   "owner": "environment",
   "tier": "A",
   "fixtures": 20,
@@ -13,5 +13,5 @@
   "holes": 1,
   "inputs": ["sw_cycle_phase"],
   "contributes": [],
-  "gaps": ["the relation has nobody's name against it — an assistant may never supply mathematics, and without an attribution nothing can tell whether one did", "no method yet — the relation in the method language, with the author's own code and test cases, so the tool can check it three ways (docs/PSEUDOCODE.md)"]
+  "gaps": ["the relation has nobody's name against it — an assistant may never supply mathematics, and without an attribution nothing can tell whether one did"]
 }
