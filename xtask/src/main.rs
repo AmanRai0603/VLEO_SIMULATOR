@@ -339,6 +339,10 @@ cargo xtask <command>
                      in the group, for the group to start from. It invents
                      nothing: what the tree lacks is left for the group, and
                      the group application lists it. Default target/groups/.
+  group-export --all [--out <dir>]
+                     every group that owns a node, each in its own folder, and
+                     GROUPS.csv: whose each is and how far the design carries
+                     it. Default target/groups/all/.
   rerun <node>|--all [--require]
                      the author's own code run again on their cases: Python
                      directly, MATLAB and Octave through Octave; anything else

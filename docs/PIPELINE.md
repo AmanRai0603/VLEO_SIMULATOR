@@ -59,8 +59,9 @@ a node's form: one HTML file that explains itself, asks every question the sheet
 #### `group-export`
 
     cargo run -p xtask -- group-export <group> [--out <dir>]
+    cargo run -p xtask -- group-export --all [--out <dir>]
 
-a group's folder in the pattern, written from every sheet in the group, for the group to start from. It invents nothing: what the tree lacks is left for the group, and the group application lists it. Default target/groups/.
+a group's folder in the pattern, written from every sheet in the group, for the group to start from. It invents nothing: what the tree lacks is left for the group, and the group application lists it. Default target/groups/. every group that owns a node, each in its own folder, and GROUPS.csv: whose each is and how far the design carries it. Default target/groups/all/.
 
 | | |
 |---|---|
