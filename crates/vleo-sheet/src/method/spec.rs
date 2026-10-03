@@ -26,6 +26,11 @@ pub const STATEMENTS: &[StatementSpec] = &[
         example: "const cd = 2.2 [1]   # drag coefficient, Sentman flat plate",
     },
     StatementSpec {
+        form: "const NAME = [A, B, …] [unit]",
+        meaning: "A list from your source, written out, with one unit for every entry. It is written once, at the method's top level, and never changes. Read one entry as NAME[i], counted from 1; its length as len(NAME); every entry with for … in; or use it as a row of interp's table.",
+        example: "const EDGES = [90, 130, 170] [1]   # the published band edges, sfu",
+    },
+    StatementSpec {
         form: "set NAME = EXPR",
         meaning: "Change a value made with let. Same dimension; inputs and constants cannot be changed.",
         example: "set total = total + term",
@@ -39,6 +44,11 @@ pub const STATEMENTS: &[StatementSpec] = &[
         form: "for NAME = FIRST to LAST … end",
         meaning: "Repeat for whole numbers FIRST..LAST. The count is fixed when written; the loop variable is a pure number.",
         example: "for n = 1 to 10\n  set total = total + x ^ n / n\nend",
+    },
+    StatementSpec {
+        form: "for NAME in LIST … end",
+        meaning: "Repeat once for each entry of a list, in order; NAME holds the entry, in the list's unit.",
+        example: "for edge in EDGES\n  if f107 >= edge then\n    set band = band + 1\n  end\nend",
     },
     StatementSpec {
         form: "while COND at most N times … end",
@@ -86,6 +96,8 @@ pub enum FnRule {
     Interp,
     /// `pow(x, p)`: the same as `x ^ p`.
     Pow,
+    /// `len(LIST)`: how many entries a list has, a pure number.
+    Len,
 }
 
 pub struct FnSpec {
@@ -126,7 +138,8 @@ pub const FUNCTIONS: &[FnSpec] = &[
     FnSpec { name: "round", arity: 1, rule: FnRule::Pure, meaning: "round to nearest, halves away from zero — pure numbers only" },
     FnSpec { name: "wrap_2pi", arity: 1, rule: FnRule::Pure, meaning: "an angle brought into 0..2π" },
     FnSpec { name: "wrap_pi", arity: 1, rule: FnRule::Pure, meaning: "an angle brought into -π..π" },
-    FnSpec { name: "interp", arity: 3, rule: FnRule::Interp, meaning: "straight-line lookup in a table: interp(x, [x1, x2, …] [unit], [y1, y2, …] [unit]); held at the ends" },
+    FnSpec { name: "interp", arity: 3, rule: FnRule::Interp, meaning: "straight-line lookup in a table: interp(x, XS, YS), each row a list by name or written out as [x1, x2, …] [unit]; held at the ends" },
+    FnSpec { name: "len", arity: 1, rule: FnRule::Len, meaning: "how many entries a list has: len(EDGES)" },
 ];
 
 /// How each function is computed — one table, read by the interpreter to run
@@ -233,6 +246,6 @@ pub(super) fn function(name: &str) -> Option<&'static FnSpec> {
 }
 
 pub(super) const KEYWORDS: &[&str] = &[
-    "let", "set", "const", "if", "then", "else", "end", "for", "to", "while", "refuse", "return",
-    "publish", "and", "or", "not", "true", "false",
+    "let", "set", "const", "if", "then", "else", "end", "for", "in", "to", "while", "refuse",
+    "return", "publish", "and", "or", "not", "true", "false",
 ];

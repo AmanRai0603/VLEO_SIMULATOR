@@ -67,6 +67,9 @@ impl Rust {
                 "&[{}]",
                 si.iter().map(|v| lit(*v)).collect::<Vec<_>>().join(", ")
             ),
+            Expr::Index { list, index, line } => {
+                format!("rt::at(&{}, {}, {line})?", ident(list), self.expr(index))
+            }
             Expr::Bin { op, l, r, line } => {
                 let (a, b) = (self.expr(l), self.expr(r));
                 match op {
@@ -78,10 +81,23 @@ impl Rust {
                 }
             }
             Expr::Call { name, args, line } => {
-                let a: Vec<String> = args.iter().map(|x| self.expr(x)).collect();
+                // A list by name is a fixed-size array here, read as a slice.
+                let row = |e: &Expr| match e {
+                    Expr::Var { name, .. } => format!("&{}", ident(name)),
+                    e => self.expr(e),
+                };
                 if name == "interp" {
-                    return format!("pmath::interp({}, {}, {})", a[0], a[1], a[2]);
+                    return format!(
+                        "pmath::interp({}, {}, {})",
+                        self.expr(&args[0]),
+                        row(&args[1]),
+                        row(&args[2])
+                    );
                 }
+                if let ("len", Some(Expr::Var { name: l, .. })) = (name.as_str(), args.first()) {
+                    return format!("({}.len() as f64)", ident(l));
+                }
+                let a: Vec<String> = args.iter().map(|x| self.expr(x)).collect();
                 if let Some(k) = kernel_function(name) {
                     return format!("({})", translate(k, &a));
                 }
@@ -104,6 +120,19 @@ impl Rust {
 
     fn stmt(&mut self, s: &Stmt, o: &mut String) {
         match s {
+            Stmt::Const {
+                name,
+                expr: Expr::Table { si, .. },
+                ..
+            } => {
+                let _ = writeln!(
+                    o,
+                    "let {}: [f64; {}] = [{}];",
+                    ident(name),
+                    si.len(),
+                    si.iter().map(|v| lit(*v)).collect::<Vec<_>>().join(", ")
+                );
+            }
             Stmt::Let {
                 name, expr, line, ..
             }
@@ -157,6 +186,17 @@ impl Rust {
                 let i = format!("step_{}", self.depth);
                 let _ = writeln!(o, "for {i} in ({first}_i64)..=({last}_i64) {{");
                 let _ = writeln!(o, "let {}: f64 = {i} as f64;", ident(var));
+                self.block(body, o);
+                o.push_str("}\n");
+                self.depth -= 1;
+            }
+            Stmt::Each {
+                var, list, body, ..
+            } => {
+                self.depth += 1;
+                let i = format!("entry_{}", self.depth);
+                let _ = writeln!(o, "for {i} in {}.iter() {{", ident(list));
+                let _ = writeln!(o, "let {}: f64 = *{i};", ident(var));
                 self.block(body, o);
                 o.push_str("}\n");
                 self.depth -= 1;
@@ -223,7 +263,9 @@ fn set_targets(body: &[Stmt], out: &mut BTreeSet<String>) {
                     set_targets(b, out);
                 }
             }
-            Stmt::For { body, .. } | Stmt::While { body, .. } => set_targets(body, out),
+            Stmt::For { body, .. } | Stmt::Each { body, .. } | Stmt::While { body, .. } => {
+                set_targets(body, out)
+            }
             _ => {}
         }
     }
