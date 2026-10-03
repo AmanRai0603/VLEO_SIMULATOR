@@ -244,6 +244,21 @@ or wherever `VLEO_RESULTS` points, never in the checkout — shown as it was,
 compared two at a time with the inputs that differ listed first, downloaded as
 CSV or report, or made the case again with **use its inputs as the case**.
 
+**Many results in one file.** To send a set of results, or keep a study's
+results together, put them in one file and back:
+
+```
+vleo results export study.vleor                 # every result in the folder
+vleo results export study.vleor <name> <name>   # or the ones named
+vleo result study.vleor                         # what it holds — nothing runs
+vleo results import study.vleor                 # into this machine's folder
+```
+
+Each result goes out whole and comes back exactly as it was; a question already
+kept is kept once. The file is SQLite, so Python reads it without the engine —
+`vleo.results("study.vleor")` gives every result with its values in SI, and
+`vleo.design()` the design file the tool reads.
+
 ---
 
 ## 2b · Changing an input and watching the answer move

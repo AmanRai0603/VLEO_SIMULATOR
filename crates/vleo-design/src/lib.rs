@@ -1,3 +1,6 @@
+//! The tool's database files: `design.vleo`, the design as one file, here;
+//! `results.vleor`, saved results many in one file, in [`results`].
+//!
 //! `design.vleo` — the design as one file.
 //!
 //! The tree the loader reads is some seven thousand files: a folder per node
@@ -16,6 +19,7 @@
 //! without reading sheets; `meta` says what the file is and what it was built
 //! from. Its schema is `design.sql`, beside this crate.
 
+pub mod results;
 mod sha;
 pub use sha::sha256_hex;
 
@@ -42,8 +46,9 @@ pub enum ErrorKind {
     Io,
     /// The tree does not load, so there is no design to write.
     Tree,
-    /// The file is not a design file: not SQLite, not ours, or another kind.
-    NotADesign,
+    /// Not the file asked for: not SQLite, not one the tools wrote, or another
+    /// kind (a group's release opened as a design file).
+    WrongFile,
     /// The file is a newer format than this code reads.
     Newer,
     /// SQLite refused.
@@ -219,6 +224,73 @@ pub fn write(root: &Path, out: &Path, stamp: &Stamp) -> Result<Written, Error> {
     })
 }
 
+/// Open one of the tools' databases read-only, as the kind `kind` and no newer
+/// than `newest`. Refuses a file that is not SQLite, one the tools did not
+/// write, one of another kind (a group's release opened as a design), and one
+/// from a newer tool — each by name, before anything is read from it.
+pub(crate) fn open_ours(path: &Path, kind: &str, newest: u32) -> Result<Connection, Error> {
+    let mut head = [0u8; 16];
+    {
+        use std::io::Read;
+        let mut f = std::fs::File::open(path)
+            .map_err(|e| Error::new(ErrorKind::Io, format!("{}: {e}", path.display())))?;
+        if f.read_exact(&mut head).is_err() || &head[..15] != b"SQLite format 3" {
+            return Err(Error::new(
+                ErrorKind::WrongFile,
+                format!("{}: not a database file", path.display()),
+            ));
+        }
+    }
+    let db = Connection::open_with_flags(
+        path,
+        OpenFlags::SQLITE_OPEN_READ_ONLY | OpenFlags::SQLITE_OPEN_NO_MUTEX,
+    )
+    .map_err(|e| Error::db(path, e))?;
+    let app: i64 = db
+        .query_row("PRAGMA application_id", [], |r| r.get(0))
+        .map_err(|e| Error::db(path, e))?;
+    if app != APP_ID {
+        return Err(Error::new(
+            ErrorKind::WrongFile,
+            format!("{}: not a database the VLEO tools wrote", path.display()),
+        ));
+    }
+    let format: u32 = db
+        .query_row("PRAGMA user_version", [], |r| r.get(0))
+        .map_err(|e| Error::db(path, e))?;
+    if format > newest {
+        return Err(Error::new(
+            ErrorKind::Newer,
+            format!(
+                "{}: format {format}, newer than this tool reads ({newest}): use the newer tool",
+                path.display()
+            ),
+        ));
+    }
+    let found: Option<String> = db
+        .query_row("SELECT value FROM meta WHERE key = 'file_kind'", [], |r| {
+            r.get(0)
+        })
+        .optional()
+        .map_err(|_| {
+            Error::new(
+                ErrorKind::WrongFile,
+                format!("{}: not a {kind} file", path.display()),
+            )
+        })?;
+    if found.as_deref() != Some(kind) {
+        return Err(Error::new(
+            ErrorKind::WrongFile,
+            format!(
+                "{}: a {} file, not a {kind} file",
+                path.display(),
+                found.as_deref().unwrap_or("VLEO")
+            ),
+        ));
+    }
+    Ok(db)
+}
+
 /// An open design file, read as the tree it was written from.
 ///
 /// Paths are answered as if the tree sat at `root`: the daemon keeps reading
@@ -237,65 +309,7 @@ impl Design {
     /// Open `path`, answering for the tree at `root`. Refuses a file that is
     /// not SQLite, not ours, not a design file, or newer than this code.
     pub fn open(path: &Path, root: &Path) -> Result<Design, Error> {
-        let mut head = [0u8; 16];
-        {
-            use std::io::Read;
-            let mut f = std::fs::File::open(path)
-                .map_err(|e| Error::new(ErrorKind::Io, format!("{}: {e}", path.display())))?;
-            if f.read_exact(&mut head).is_err() || &head[..15] != b"SQLite format 3" {
-                return Err(Error::new(
-                    ErrorKind::NotADesign,
-                    format!("{}: not a database file", path.display()),
-                ));
-            }
-        }
-        let db = Connection::open_with_flags(
-            path,
-            OpenFlags::SQLITE_OPEN_READ_ONLY | OpenFlags::SQLITE_OPEN_NO_MUTEX,
-        )
-        .map_err(|e| Error::db(path, e))?;
-        let app: i64 = db
-            .query_row("PRAGMA application_id", [], |r| r.get(0))
-            .map_err(|e| Error::db(path, e))?;
-        if app != APP_ID {
-            return Err(Error::new(
-                ErrorKind::NotADesign,
-                format!("{}: not a database the VLEO tools wrote", path.display()),
-            ));
-        }
-        let format: u32 = db
-            .query_row("PRAGMA user_version", [], |r| r.get(0))
-            .map_err(|e| Error::db(path, e))?;
-        if format > FORMAT {
-            return Err(Error::new(
-                ErrorKind::Newer,
-                format!(
-                    "{}: format {format}, newer than this tool reads ({FORMAT}): use the newer tool",
-                    path.display()
-                ),
-            ));
-        }
-        let kind: Option<String> = db
-            .query_row("SELECT value FROM meta WHERE key = 'file_kind'", [], |r| {
-                r.get(0)
-            })
-            .optional()
-            .map_err(|_| {
-                Error::new(
-                    ErrorKind::NotADesign,
-                    format!("{}: not a design file", path.display()),
-                )
-            })?;
-        if kind.as_deref() != Some("design") {
-            return Err(Error::new(
-                ErrorKind::NotADesign,
-                format!(
-                    "{}: a {} file, not a design file",
-                    path.display(),
-                    kind.as_deref().unwrap_or("VLEO")
-                ),
-            ));
-        }
+        let db = open_ours(path, "design", FORMAT)?;
         let mut meta = BTreeMap::new();
         let mut files = BTreeSet::new();
         let mut dirs = BTreeSet::new();
@@ -369,7 +383,7 @@ impl Design {
             let b: Vec<u8> = r.get(2).map_err(|e| Error::db(&self.path, e))?;
             if sha256_hex(&b) != s {
                 return Err(Error::new(
-                    ErrorKind::NotADesign,
+                    ErrorKind::WrongFile,
                     format!(
                         "{}: {p} is not the file it was written as",
                         self.path.display()
@@ -381,7 +395,7 @@ impl Design {
         let fp = fingerprint(hashes.iter().map(|(p, s)| (p.as_str(), s.as_str())));
         if fp != self.meta("fingerprint") {
             return Err(Error::new(
-                ErrorKind::NotADesign,
+                ErrorKind::WrongFile,
                 format!(
                     "{}: its files do not give the fingerprint it carries",
                     self.path.display()
