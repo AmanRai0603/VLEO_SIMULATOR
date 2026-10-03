@@ -198,8 +198,14 @@ mod tests {
     #[test]
     fn the_file_csv_names_is_never_taken_for_a_group() {
         assert_eq!(group_arg(&["--csv", "out.csv"]), None);
-        assert_eq!(group_arg(&["l3_solar", "--csv", "out.csv"]), Some("l3_solar"));
-        assert_eq!(group_arg(&["--csv", "out.csv", "l3_solar"]), Some("l3_solar"));
+        assert_eq!(
+            group_arg(&["l3_solar", "--csv", "out.csv"]),
+            Some("l3_solar")
+        );
+        assert_eq!(
+            group_arg(&["--csv", "out.csv", "l3_solar"]),
+            Some("l3_solar")
+        );
         assert_eq!(group_arg(&["l3_solar"]), Some("l3_solar"));
         assert_eq!(group_arg(&[]), None);
     }
