@@ -67,7 +67,18 @@ fn cycle_max(a: &[f64]) -> f64 {
     env::solar_cycle_analogue_max(a[0] / DAY, a[1] / DAY)
 }
 
+fn kp(a: &[f64]) -> f64 {
+    env::kp_from_ap(a[0])
+}
+fn kp_mean_bias(a: &[f64]) -> f64 {
+    env::kp_mean_slot_bias(a[0])
+}
+fn kp_peak_bias(a: &[f64]) -> f64 {
+    env::kp_peak_slot_bias(a[0])
+}
+
 const H_T: &[(&str, &str)] = &[("h", "m"), ("T_inf", "K")];
+const AP: &[(&str, &str)] = &[("ap", "1")];
 
 #[rustfmt::skip]
 pub const KERNEL_FUNCTIONS: &[KernelFn] = &[
@@ -103,6 +114,18 @@ pub const KERNEL_FUNCTIONS: &[KernelFn] = &[
         meaning: "the solar-cycle analogue's highest F10.7 from mission time t0 to t1",
         kernel: "env::solar_cycle_analogue_max(t0, t1), in days",
         rust: "vleo_core::physics::env::solar_cycle_analogue_max(({0}) / 86400.0, ({1}) / 86400.0)" },
+    KernelFn { name: "kp_from_ap", args: AP, out: "1", eval: kp,
+        meaning: "Kp on the published three-hour scale for the planetary index ap, between its tabulated thirds",
+        kernel: "env::kp_from_ap(ap)",
+        rust: "vleo_core::physics::env::kp_from_ap({0})" },
+    KernelFn { name: "kp_mean_slot_bias", args: AP, out: "1", eval: kp_mean_bias,
+        meaning: "the measured offset of a day's mean three-hour Kp from the Kp of its daily Ap",
+        kernel: "env::kp_mean_slot_bias(ap)",
+        rust: "vleo_core::physics::env::kp_mean_slot_bias({0})" },
+    KernelFn { name: "kp_peak_slot_bias", args: AP, out: "1", eval: kp_peak_bias,
+        meaning: "the measured offset of a day's highest three-hour Kp from the Kp of its daily Ap",
+        kernel: "env::kp_peak_slot_bias(ap)",
+        rust: "vleo_core::physics::env::kp_peak_slot_bias({0})" },
 ];
 
 pub fn kernel_function(name: &str) -> Option<&'static KernelFn> {

@@ -389,6 +389,21 @@ pub(crate) fn array_rows(sh: &Sheet, a: &Array) -> Vec<Vec<(&'static str, String
                     ),
                     ("tolerance", num(c.tolerance)),
                     ("inputs", format!("{{ {inputs} }}")),
+                    (
+                        "also",
+                        if c.also.is_empty() {
+                            String::new()
+                        } else {
+                            format!(
+                                "{{ {} }}",
+                                c.also
+                                    .iter()
+                                    .map(|(k, v)| format!("{k} = {v:?}"))
+                                    .collect::<Vec<_>>()
+                                    .join(", ")
+                            )
+                        },
+                    ),
                 ]
             })
             .collect(),

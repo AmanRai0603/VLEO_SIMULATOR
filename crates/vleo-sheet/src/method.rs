@@ -42,9 +42,10 @@ use vleo_units::{constants as k, pmath, Unit};
 /// The language version. A method is read by the version it was written for;
 /// raising this is a reviewed change to every node that has one.
 ///
-/// 2 added `while … at most N times` and the kernel functions; every method
-/// of version 1 reads the same in version 2.
-pub const LANGUAGE_VERSION: u32 = 2;
+/// 2 added `while … at most N times` and the kernel functions; 3 added
+/// `publish`, for a node that publishes several values. Every method of an
+/// earlier version reads the same in a later one.
+pub const LANGUAGE_VERSION: u32 = 3;
 
 /// How many loop iterations a method may run in all. A method is a relation,
 /// not a simulation: a loop exists for a short series or a fixed-point

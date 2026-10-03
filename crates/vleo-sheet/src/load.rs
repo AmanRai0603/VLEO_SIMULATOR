@@ -165,7 +165,7 @@ pub const SCHEMA: &[(&str, &[&str])] = &[
     ),
     (
         "case",
-        &["expect", "inputs", "label", "refuse", "tolerance"],
+        &["also", "expect", "inputs", "label", "refuse", "tolerance"],
     ),
     ("contributes", &["kpis"]),
     ("data", &["bundles"]),

@@ -148,14 +148,10 @@ fn method_checks(sh: &Sheet) -> Vec<Check> {
     let mut out = Vec::new();
     let has_method = !sh.method.text.trim().is_empty();
     if has_method {
+        // A row that publishes a set may have a method too: it publishes each
+        // member with `publish`, and the checker holds every member published
+        // before any answer (language version 3).
         let mut bad = Vec::new();
-        if !sh.publishes.is_empty() {
-            bad.push(format!(
-                "this row publishes a set of {} values, and a method answers one quantity — \
-                 the set keeps its hand-written holes",
-                sh.publishes.len() + 1
-            ));
-        }
         if sh.is_declared() {
             bad.push("a declared row states a number; it has no method".into());
         }

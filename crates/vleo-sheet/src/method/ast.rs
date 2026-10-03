@@ -153,6 +153,14 @@ pub enum Stmt {
         expr: Expr,
         line: usize,
     },
+    /// One more value the node publishes beside its answer, by the member's
+    /// symbol. Each member is published once, at the method's top level, before
+    /// it returns — so every answer carries every member.
+    Publish {
+        name: String,
+        expr: Expr,
+        line: usize,
+    },
 }
 
 impl Stmt {
@@ -165,7 +173,8 @@ impl Stmt {
             | Stmt::For { line, .. }
             | Stmt::While { line, .. }
             | Stmt::Refuse { line, .. }
-            | Stmt::Return { line, .. } => *line,
+            | Stmt::Return { line, .. }
+            | Stmt::Publish { line, .. } => *line,
         }
     }
 }

@@ -191,6 +191,8 @@ which of those their problem is.
     return F107_hotmean
 </code></pre>
 <p class="muted">Derived from the sheet, not from the generated Rust, so it says what the sheet declares rather than what one compiler made of it. The guards are postconditions: this node refuses rather than returning a number outside them.</p>
+<h4>The method</h4>
+<p class="muted">No method yet. When this node's owner sends one — the relation in the method language, with their own code and test cases — the tool checks all three against each other (docs/PSEUDOCODE.md).</p>
 <h4>Guards</h4>
 <ul class="guards">
 <li><code>F107_hotmean &ge; 60</code> — the same floor as env_f107 and every design row beneath this one: below 60 sfu has never been observed and every relation reading F10.7 has no support there. A crossing that narrowed or widened the range it carries would be changing the answer, so it declares the producer's own bounds</li>

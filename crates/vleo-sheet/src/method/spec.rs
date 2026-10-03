@@ -56,6 +56,11 @@ pub const STATEMENTS: &[StatementSpec] = &[
         example: "return v",
     },
     StatementSpec {
+        form: "publish SYMBOL = EXPR",
+        meaning: "For a node that publishes several values: one of them, by the member's symbol on the sheet, in that member's quantity. Each member is published once, at the method's top level, before the method returns — so every answer carries every member. A refusal may still come anywhere.",
+        example: "publish Kp_mean_nominal = kp_from_ap(ap_nominal) + kp_mean_slot_bias(ap_nominal)",
+    },
+    StatementSpec {
         form: "# comment",
         meaning: "Anything after # on a line is for the reader.",
         example: "# Vallado (2013), eq. 1-18",
@@ -229,5 +234,5 @@ pub(super) fn function(name: &str) -> Option<&'static FnSpec> {
 
 pub(super) const KEYWORDS: &[&str] = &[
     "let", "set", "const", "if", "then", "else", "end", "for", "to", "while", "refuse", "return",
-    "and", "or", "not", "true", "false",
+    "publish", "and", "or", "not", "true", "false",
 ];

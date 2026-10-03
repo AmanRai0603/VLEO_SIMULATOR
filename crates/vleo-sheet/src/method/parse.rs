@@ -260,7 +260,7 @@ impl Parser {
         let Some(Tok::Ident(word)) = self.peek().cloned() else {
             return Err(Diag::err(
                 line,
-                "a statement starts with let, const, set, if, for, while, refuse or return",
+                "a statement starts with let, const, set, if, for, while, refuse, return or publish",
             ));
         };
         match word.as_str() {
@@ -405,6 +405,14 @@ impl Parser {
                 let expr = self.expr()?;
                 self.end_of_line()?;
                 Ok(Stmt::Return { expr, line })
+            }
+            "publish" => {
+                self.pos += 1;
+                let name = self.name("the published member's symbol")?;
+                self.expect_sym("=")?;
+                let expr = self.expr()?;
+                self.end_of_line()?;
+                Ok(Stmt::Publish { name, expr, line })
             }
             "else" | "end" => Err(Diag::err(
                 line,

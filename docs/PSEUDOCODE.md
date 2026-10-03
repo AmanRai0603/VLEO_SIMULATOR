@@ -1,5 +1,5 @@
 <!-- GENERATED from crates/vleo-sheet/src/method.rs by `cargo run -p xtask -- docs`. Do not edit. -->
-# The method language, version 2
+# The method language, version 3
 
 > **Answer first.** Every node's relation is written once more as a *method*: a few lines in a
 > small fixed language that the tool can check, run and translate. The checker refuses a
@@ -35,6 +35,7 @@ reaches anyone.
 | `while COND at most N times … end` | Repeat while COND holds — an iteration that settles, or a count the inputs decide. N is the most passes it may take, fixed when written; if COND still holds after N passes the node refuses, saying the loop did not settle, rather than answer with wherever it had got to. | `while abs(r * r - a) > 1e-12 * a at most 40 times ⏎   set r = (r + a / r) / 2 ⏎ end` |
 | `refuse "reason"` | The node will not answer here, and says why. A refusal is never a substitute value. | `refuse "the orbit is inside the Earth"` |
 | `return EXPR` | The node's answer, in its declared quantity. Every path ends in return or refuse. | `return v` |
+| `publish SYMBOL = EXPR` | For a node that publishes several values: one of them, by the member's symbol on the sheet, in that member's quantity. Each member is published once, at the method's top level, before the method returns — so every answer carries every member. A refusal may still come anywhere. | `publish Kp_mean_nominal = kp_from_ap(ap_nominal) + kp_mean_slot_bias(ap_nominal)` |
 | `# comment` | Anything after # on a line is for the reader. | `# Vallado (2013), eq. 1-18` |
 
 Operators: `+ - * / ^`, comparisons `< <= > >= == !=`, and `and`, `or`, `not`. A power of a
@@ -90,6 +91,9 @@ Relations too long to write as a formula — an integral up the atmosphere, a de
 | `orbit_decay_time(h [m], h_end [m], bc [kg/m^2], T_inf [K])` | `[s]` | the time a circular orbit takes to decay from h to h_end, for ballistic coefficient bc, in the thermosphere of T_inf (64 steps) | `orbit::lifetime_estimate(h, h_end, bc, 64, |z| env::mass_density(z, T_inf))` |
 | `solar_cycle_mean(t0 [s], t1 [s])` | `[1]` | the solar-cycle analogue's mean F10.7 from mission time t0 to t1 | `env::solar_cycle_analogue_mean(t0, t1), in days` |
 | `solar_cycle_max(t0 [s], t1 [s])` | `[1]` | the solar-cycle analogue's highest F10.7 from mission time t0 to t1 | `env::solar_cycle_analogue_max(t0, t1), in days` |
+| `kp_from_ap(ap [1])` | `[1]` | Kp on the published three-hour scale for the planetary index ap, between its tabulated thirds | `env::kp_from_ap(ap)` |
+| `kp_mean_slot_bias(ap [1])` | `[1]` | the measured offset of a day's mean three-hour Kp from the Kp of its daily Ap | `env::kp_mean_slot_bias(ap)` |
+| `kp_peak_slot_bias(ap [1])` | `[1]` | the measured offset of a day's highest three-hour Kp from the Kp of its daily Ap | `env::kp_peak_slot_bias(ap)` |
 
 ## Constants every method may use
 
@@ -181,9 +185,11 @@ end
 
 ## Where the simple version breaks
 
-- **One answer per method.** A node that publishes a set of values (a few rows do) keeps its
-  hand-written hole for now; the method language answers one quantity.
-- **No iteration to convergence.** A loop runs a fixed count. A solver that stops when it
-  converges is marked for a developer, who writes it, and your cases still decide.
+- **A set is published at the top level.** A node that publishes several values gives each
+  with `publish`, once, before it returns — never inside an if or a loop. Work a member
+  out with `let` and `if` first, then publish the name.
+- **A loop says how often it may run.** `while … at most N times` stops when its condition
+  fails, and refuses — by name — if N passes were not enough. It never answers with
+  wherever it had got to.
 - **Tables are written out.** A lookup into a large data file is a reference-data bundle,
   not a method.
