@@ -183,11 +183,11 @@ def check():
         n.wait_for_timeout(900)
         step('rows pasted from a spreadsheet are added', n.locator('.te tbody tr').count() == rows_before + 1)
         go(n, '#/step/pseudocode', 700)
-        step('the pseudocode is typeset and read', n.locator('#npc-eq math').count() >= 1 and 'It reads' in n.inner_text('#npc-lint'))
+        step('the pseudocode is typeset and read', n.locator('#npc-eq math').count() >= 1 and 'The method checker reads it' in n.inner_text('#npc-lint'), n.inner_text('#npc-lint')[:200])
         n.locator('#npc').fill('let v = sqrt(MU_EARTH / r\nif r <= R_EARTH')
         n.wait_for_timeout(700)
         lint = n.inner_text('#npc-lint')
-        step('broken pseudocode is named, line by line', 'brackets do not pair' in lint and 'not closed' in lint and 'never returns' in lint)
+        step('broken pseudocode is named, line by line', n.locator('#npc-lint .gf-error').count() >= 1 and 'line ' in lint, lint[:300])
         n.locator('#npc').fill('# Vallado (2013), eq. 1-18.\nif r <= R_EARTH then\n  refuse "the orbit is inside the Earth"\nend\nreturn sqrt(MU_EARTH / r)')
         n.wait_for_timeout(700)
         for w in (400, 1280):
@@ -205,6 +205,10 @@ def check():
         step('only the node\'s author may sign it', 'not this node\'s author' in n.inner_text('#gmain'))
         n.fill('#nsig-me', 'Ben Example')
         n.click('#nsig-go')
+        n.wait_for_timeout(600)
+        step('signing asks whether an assistant helped', 'say whether an assistant helped' in n.inner_text('#gmain'))
+        n.check('input[name=nai][value=none]')
+        n.click('#nsig-go')
         n.wait_for_timeout(1200)
         step('its author signs it', 'signed by Ben Example' in n.inner_text('#gmain'))
         filled = save(n, '#gsave')
@@ -212,7 +216,8 @@ def check():
         step('saved, the node file is a new revision with its sign-off',
              c.execute("select revision from node where uid='orbit_speed'").fetchone()[0] == 1
              and c.execute("select name from review where scope='orbit_speed'").fetchone()[0] == 'Ben Example'
-             and 'lower one' in c.execute("select body from doc where scope='orbit_speed' and kind='explanation'").fetchone()[0])
+             and 'lower one' in c.execute("select body from doc where scope='orbit_speed' and kind='explanation'").fetchone()[0]
+             and 'Ben Example,none' in c.execute("select csv from tbl where scope='orbit_speed' and path='declaration.csv'").fetchone()[0])
         n.close()
 
         # ── the lead assembles it, signs the rest and seals ──
@@ -236,6 +241,16 @@ def check():
              meta.get('sealed') and meta.get('sealed_by') == 'Ada Example' and len(meta.get('fingerprint', '')) == 64,
              os.path.basename(sealed))
         step('every change is recorded', c.execute("select count(*) from change where what like 'sealed version%'").fetchone()[0] == 1)
+        # The developer's way in: the release written out, and its seal recomputed
+        # independently — what xtask group-intake checks before it reads a node.
+        un = os.path.join(tmp, 'unpacked')
+        r = subprocess.run(['node', os.path.join(ROOT, 'tools', 'group_db.mjs'), '--unpack', sealed, '--out', un], capture_output=True, text=True)
+        rel = tomllib.load(open(os.path.join(un, 'RELEASE.toml'), 'rb')) if r.returncode == 0 else {}
+        paths = sorted(os.path.relpath(os.path.join(dp, f), un).replace(os.sep, '/') for dp, _, fs in os.walk(un) for f in fs)
+        paths = [p for p in paths if p not in ('reviews.csv', 'RELEASE.toml') and not p.startswith(('packages/', 'issues/'))]
+        fp = hashlib.sha256('\n'.join(p + '\0' + hashlib.sha256(open(os.path.join(un, p), 'rb').read()).hexdigest() for p in paths).encode()).hexdigest()
+        step('the sealed release, written out, still gives the fingerprint it was sealed with', rel.get('fingerprint') == fp and rel.get('sealed_by') == 'Ada Example',
+             (r.stderr or '')[:200])
         go(g, '#/structure', 700)
         step('a sealed release cannot be edited', 'sealed release' in g.inner_text('#gmain') and g.locator('[data-op="node"]').count() == 0)
         g.close()

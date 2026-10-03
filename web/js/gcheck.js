@@ -18,6 +18,7 @@
 import { parseCsv, records, splitUnit, num, column } from './csv.js';
 import { sections, longSentences } from './md.js';
 import { texToMathml, pseudocodeEquations } from './texmath.js';
+import { readMethod } from './gmethod.js';
 import { findEquation, findFigure, resultColumns } from './gmodel.js';
 
 const ID = /^[a-z][a-z0-9_]*$/;
@@ -161,6 +162,10 @@ export async function checkGroup(model, spec) {
         if (inp.name && !new RegExp('\\b' + inp.name + '\\b').test(code)) add('warning', n.dir + 'pseudocode.txt', 'never uses the input ' + inp.name);
       }
       for (const e of pseudocodeEquations(code, n.row.output)) for (const p of e.problems) add('note', n.dir + 'pseudocode.txt', 'shown as an equation with a gap: ' + p, e.line);
+      // The language's own reading: every line parses and every unit agrees.
+      const r = await readMethod(code, n.inputs.map(i => ({ name: i.name, unit: i.unit })), n.row.unit);
+      if (r && r.error) add('error', n.dir + 'pseudocode.txt', r.error);
+      if (r) for (const d of r.diags) add(d.severity === 'error' ? 'error' : d.severity === 'warning' ? 'warning' : 'note', n.dir + 'pseudocode.txt', d.msg, d.line);
     }
     // Inputs: where each comes from, and its default in its range.
     for (const inp of n.inputs) {

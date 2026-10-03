@@ -224,6 +224,26 @@ fn the_plain_form_reads_as_the_sheet_does() {
 }
 
 #[test]
+fn the_plain_form_takes_units_as_a_group_contract_gives_them() {
+    // A group's contract names units, not quantity types: the same method,
+    // read with `[m]` and `[m/s]`, checks exactly as it does with the types.
+    let plain = format!(
+        "output [m/s]\ninput r [m]\ncase 0 7754.84549737 1e-6 r=6628137 250 km\nmethod\n{}",
+        crate::example::METHOD
+    );
+    let r = report_plain(&plain).unwrap();
+    assert!(r.diags.is_empty(), "{:?}", r.diags);
+    assert!(r.cases[0].1.agrees());
+    // The wrong unit for the answer is a unit error, said by line.
+    let wrong = format!(
+        "output [s]\ninput r [m]\nmethod\n{}",
+        crate::example::METHOD
+    );
+    assert!(!report_plain(&wrong).unwrap().diags.is_empty());
+    assert!(report_plain("output [furlong]\nmethod\nreturn 1").is_err());
+}
+
+#[test]
 fn the_reference_covers_every_function_and_constant() {
     let md = reference_md();
     for f in FUNCTIONS {

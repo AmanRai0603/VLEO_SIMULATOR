@@ -112,6 +112,9 @@ Store each equation once, in LaTeX, in `equations.csv`. When the member gives yo
   - `learned` — what we now know.
   - `changed` — what changed in the folder because of it.
   - `risks` (optional) — the risks it opened or closed.
+  - `cost` (optional) — what it cost — time, mass, margin — if anything.
+  - `rests_on` (optional) — what this version rests on: the belief that, if it fails, takes it down.
+  - `breaks_if` (optional) — what would break it: the observation that would send the group back.
 - `equations.csv` — optional. every equation, once, in LaTeX
   - `id` — E1, E2… — placed in text with {{eq E1}}.
   - `latex` — the equation in LaTeX; the equation helper writes it from shorthand.
@@ -167,6 +170,10 @@ Store each equation once, in LaTeX, in `equations.csv`. When the member gives yo
   - `unit` — its unit.
   - `source` — a sources.csv id.
   - `says` (optional) — what it is.
+- `nodes/<id>/declaration.csv` — optional. Who made this node's method and its numbers, and whether an assistant helped: `none`, `wording` (the words only) or `relation` (the pseudocode, the equations, the results or the evidence). Written by the node application when its author signs. An assistant may never supply mathematics: the developer's intake refuses a method or results an assistant supplied, and takes a node with no declaration as one an assistant helped with.
+  - `author` — the person who owns the method and its numbers.
+  - `ai` — none, wording or relation. One of: none, wording, relation.
+  - `date` — when it was declared.
 - `nodes/<id>/code/` — optional. your own code, if you have it, kept for the record. Nothing runs it; its results are in results/isolation.csv
 
 ## Adding a node, step by step

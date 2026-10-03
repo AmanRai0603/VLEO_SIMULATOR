@@ -90,11 +90,19 @@ fn fill(root: &Path, spec: &toml::Value, shell: &str, entry: &str) -> Result<Str
     let script = readers::bundle(root, entry)?.replace("</script", "<\\/script");
     let json = json(spec).replace("</", "<\\/");
     let (engine, wasm) = sqlite(root)?;
+    // The method checker every node form carries, so the pseudocode is read
+    // here exactly as the developer's tools read it.
+    let method = fs::read(root.join("web/method.wasm.gz"))
+        .map_err(|e| format!("web/method.wasm.gz: {e}"))?;
     let schema = fs::read_to_string(root.join(SCHEMA)).map_err(|e| format!("{SCHEMA}: {e}"))?;
     Ok(shell
         .replace("{{CSS}}", &css)
         .replace("{{SPEC}}", &json)
         .replace("{{SQLITE_WASM}}", &quote(&wasm))
+        .replace(
+            "{{METHOD_WASM}}",
+            &quote(&vleo_sheet::template::base64(&method)),
+        )
         .replace("{{SCHEMA}}", &quote(&schema).replace("</", "<\\/"))
         .replace("{{SQLITE}}", &engine)
         .replace("{{SCRIPT}}", &script))
@@ -142,7 +150,7 @@ fn sqlite(root: &Path) -> Result<(String, String), String> {
 
 /// SHA-256 (FIPS 180-4), for the vendored files' hashes. Small, and here so
 /// the build needs no crate for one check.
-fn sha256_hex(data: &[u8]) -> String {
+pub(super) fn sha256_hex(data: &[u8]) -> String {
     const K: [u32; 64] = [
         0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4,
         0xab1c5ed5, 0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe,
@@ -1214,6 +1222,7 @@ mod tests {
                 && !built.contains("{{SQLITE}}")
                 && !built.contains("{{SQLITE_WASM}}")
                 && !built.contains("{{SCHEMA}}")
+                && !built.contains("{{METHOD_WASM}}")
         );
         assert!(
             !built.contains("\nexport {"),

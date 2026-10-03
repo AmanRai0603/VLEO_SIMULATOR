@@ -154,6 +154,17 @@ pub(crate) const PIPELINE: &[Cmd] = &[
         dry: Dry::Check("intake without --apply: the same check, nothing written"),
     },
     Cmd {
+        name: "group-intake",
+        stage: "check",
+        reads: "a group's release written out by `node tools/group_db.mjs --unpack`, its RELEASE.toml, and each of its nodes' sheets",
+        writes: "with --apply: each computed node's node.toml (its method and cases) and every generated file",
+        checks: "every file against the seal's fingerprint; then each node as its form: a conflict with a change made since, a method or results an assistant supplied, the de-risking record, the whole tree's gate",
+        undo: "a refused apply is put back by the transaction itself; an applied one: `git restore` the node's folder, or `git revert`",
+        code: ("xtask/src/group_intake.rs", "cmd_group_intake"),
+        steps: &[],
+        dry: Dry::Check("group-intake without --apply: the same check, nothing written"),
+    },
+    Cmd {
         name: "new",
         stage: "apply",
         reads: "the sibling's sheet",
@@ -262,7 +273,7 @@ pub(crate) const PIPELINE: &[Cmd] = &[
     Cmd {
         name: "group-app",
         stage: "gate",
-        reads: "groups/SPEC.toml, groups/schema.sql, web/pages/group.html, node-app.html and group.css, web/app.css and its fonts, web/vendor/sqlite, web/js",
+        reads: "groups/SPEC.toml, groups/schema.sql, web/pages/group.html, node-app.html and group.css, web/app.css and its fonts, web/vendor/sqlite, web/method.wasm.gz, web/js",
         writes: "web/group.html, web/node.html, docs/GROUP_FOLDER.md and groups/skill/vleo-group-folder/SKILL.md",
         checks: "the vendored SQLite against the hashes web/vendor/sqlite/SOURCE.toml records; with --check, whether the committed four are built from their sources as they are",
         undo: "`git restore web/group.html web/node.html docs/GROUP_FOLDER.md groups/skill/vleo-group-folder/SKILL.md`",
@@ -772,7 +783,8 @@ pub(crate) fn dry_run(root: &Path, cmd: &str, rest: &[&str]) -> Result<(), Strin
                 .copied()
                 .filter(|x| !matches!(*x, "--apply" | "--partial"))
                 .collect();
-            if cmd != "intake" && !a.contains(&"--check") {
+            // intake and group-intake check by leaving out --apply
+            if !matches!(cmd, "intake" | "group-intake") && !a.contains(&"--check") {
                 a.push("--check");
             }
             println!(
@@ -1403,8 +1415,8 @@ mod the_table_is_true {
     fn a_check_mode_the_table_promises_is_a_flag_the_command_takes() {
         for c in PIPELINE {
             if let Dry::Check(_) = c.dry {
-                if c.name == "intake" {
-                    continue; // its check is intake without --apply
+                if matches!(c.name, "intake" | "group-intake") {
+                    continue; // their check is the command without --apply
                 }
                 assert!(
                     crate::flags_in_help(c.name).is_some_and(|f| f.contains(&"--check")),

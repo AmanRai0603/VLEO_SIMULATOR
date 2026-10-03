@@ -142,8 +142,10 @@ export function folderFromDb(db, name) {
   for (const n of live) {
     const ins = db.all('SELECT * FROM input WHERE node_uid = ? ORDER BY ord', [n.uid]);
     if (ins.length || n.kind === 'computed') {
-      put('nodes/' + n.id + '/inputs.csv', toCsv(['name', 'symbol', 'from', 'unit', 'default', 'min', 'max', 'says'],
-        ins.map(r => [r.name, r.symbol, idOf.get(r.source) || r.source, r.unit, r.dflt, r.min, r.max, r.says])), 'text/csv');
+      // `symbol` is optional in the pattern: written only when some input has one.
+      const sym = ins.some(r => r.symbol);
+      put('nodes/' + n.id + '/inputs.csv', toCsv(['name'].concat(sym ? ['symbol'] : [], ['from', 'unit', 'default', 'min', 'max', 'says']),
+        ins.map(r => [r.name].concat(sym ? [r.symbol] : [], [idOf.get(r.source) || r.source, r.unit, r.dflt, r.min, r.max, r.says]))), 'text/csv');
     }
   }
   const reviews = db.all('SELECT * FROM review');

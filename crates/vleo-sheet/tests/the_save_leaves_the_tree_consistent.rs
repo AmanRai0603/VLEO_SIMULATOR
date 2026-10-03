@@ -494,3 +494,97 @@ fn a_refused_publish_leaves_no_file_behind() {
         "and the row is still seeded"
     );
 }
+
+#[test]
+fn a_refused_method_leaves_the_rust_its_hole_held() {
+    // Found taking a group's release in: a method, with its author's cases but
+    // not their code, applied to a published row. The gate refused, as it
+    // should — and the restore regenerated model.rs from the restored sheet,
+    // which wrote the hole back EMPTY, because the regeneration from the
+    // edited sheet had already dropped the hole's Rust. Under "nothing changed".
+    use vleo_sheet::template::{self, Derisk, Form};
+    let _serial = serially();
+    let root = root();
+    let row = "sw_f107_design_long";
+    let tree = vleo_sheet::load::load_all(&root).unwrap();
+    let sh = tree
+        .sheets
+        .get(row)
+        .expect("the published row this test edits");
+    let dir = sh.dir.clone();
+    let _guard = RestoreFolder::take(&dir);
+    let model = std::fs::read(dir.join("model.rs")).unwrap();
+    assert!(
+        String::from_utf8_lossy(&model).contains("1.28"),
+        "this test needs {row}'s hole to hold its Rust"
+    );
+    let original = template::content(sh);
+    let mut filled = original.clone();
+    filled.fields.insert(
+        "method_text".into(),
+        "if central < 60 then\n  refuse \"below the floor\"\nend\nreturn central + 1.28 * spread"
+            .into(),
+    );
+    let case = |label: &str, refuse: bool, expect: &str, inputs: &str| {
+        let mut r = std::collections::BTreeMap::new();
+        r.insert("label".to_string(), label.to_string());
+        r.insert("refuse".into(), if refuse { "yes" } else { "no" }.into());
+        if !refuse {
+            r.insert("expect".into(), expect.into());
+            r.insert("tolerance".into(), "1e-9".into());
+        }
+        r.insert("inputs".into(), inputs.into());
+        r
+    };
+    filled.arrays.insert(
+        "case".into(),
+        vec![
+            case("one", false, "125.6", "{ central = 100.0, spread = 20.0 }"),
+            case(
+                "two",
+                false,
+                "177.22160896",
+                "{ central = 160.0, spread = 13.454382 }",
+            ),
+            case(
+                "three",
+                false,
+                "112.8",
+                "{ central = 100.0, spread = 10.0 }",
+            ),
+            case("floor", true, "", "{ central = 50.0, spread = 0.0 }"),
+        ],
+    );
+    let base = form::file_hash(&std::fs::read_to_string(dir.join("node.toml")).unwrap());
+    let f = Form {
+        node: row.into(),
+        base,
+        name: "A. Person".into(),
+        date: "2026-10-02".into(),
+        ai: "none".into(),
+        original,
+        filled,
+        derisk: Derisk {
+            believed: "the hole was the method".into(),
+            tested: "the cases below".into(),
+            learned: "they agree".into(),
+            cost: "none".into(),
+            changed: "the method is written down".into(),
+            risks: String::new(),
+            rests_on: "the cases".into(),
+            breaks_if: "a case disagrees".into(),
+        },
+        ..Form::default()
+    };
+    let p = template::plan_form(&root, f).unwrap();
+    assert!(p.applicable() > 0, "the plan has something to apply");
+    match template::apply(&root, &p) {
+        Saved::Refused(e) => assert!(e.contains("nothing changed"), "{e}"),
+        Saved::Ok { .. } => panic!("cases with no author code were applied"),
+        Saved::Stale { current } => panic!("unexpectedly stale, current {current}"),
+    }
+    assert!(
+        std::fs::read(dir.join("model.rs")).unwrap() == model,
+        "a refused method must leave model.rs byte for byte as it was — its hole's Rust included"
+    );
+}

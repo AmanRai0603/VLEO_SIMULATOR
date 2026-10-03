@@ -247,6 +247,9 @@ columns = [
   { name = "learned", says = "what we now know" },
   { name = "changed", says = "what changed in the folder because of it" },
   { name = "risks", says = "the risks it opened or closed", optional = true },
+  { name = "cost", says = "what it cost — time, mass, margin — if anything", optional = true },
+  { name = "rests_on", says = "what this version rests on: the belief that, if it fails, takes it down", optional = true },
+  { name = "breaks_if", says = "what would break it: the observation that would send the group back", optional = true },
 ]
 
 [[file]]
@@ -396,6 +399,25 @@ columns = [
   { name = "unit", says = "its unit" },
   { name = "source", says = "a sources.csv id" },
   { name = "says", says = "what it is", optional = true },
+]
+
+[[file]]
+path = "declaration.csv"
+level = "node"
+required = false
+rows = "one"
+says = """
+Who made this node's method and its numbers, and whether an assistant helped:
+`none`, `wording` (the words only) or `relation` (the pseudocode, the
+equations, the results or the evidence). Written by the node application when
+its author signs. An assistant may never supply mathematics: the developer's
+intake refuses a method or results an assistant supplied, and takes a node
+with no declaration as one an assistant helped with.
+"""
+columns = [
+  { name = "author", says = "the person who owns the method and its numbers" },
+  { name = "ai", says = "none, wording or relation", one_of = ["none", "wording", "relation"] },
+  { name = "date", says = "when it was declared" },
 ]
 
 [[file]]

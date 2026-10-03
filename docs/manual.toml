@@ -2298,6 +2298,14 @@ effect = "writes"
 
 [[command]]
 tool = "xtask"
+name = "group-intake"
+usage = "group-intake <folder> [--node <id>] [--apply [--partial]] [--draft]"
+what = "A group's sealed release taken into the design. The release, written out with `node tools/group_db.mjs --unpack <file.vleo>`, is refused unless every file still gives the fingerprint it was sealed with; then each computed node's pseudocode and results become its node form — its method and test cases, in SI — and go through intake's own check: a conflict with a change made since, a method or results an assistant supplied, an incomplete de-risking record. `--apply` writes, regenerates and gates each, or puts it back. `--draft` looks at an unsealed release and never applies."
+who = "developer"
+effect = "writes"
+
+[[command]]
+tool = "xtask"
 name = "group-export"
 usage = "group-export <group> [--out <dir>]"
 what = "Writes one group's folder in the pattern of groups/SPEC.toml from every sheet in the group — its nodes, inputs, plain words, theory, assumptions, evidence and sources — for the group to start from. It invents nothing: a pseudocode, the group's own results and its pictures are left for the group, and the group application lists them."
