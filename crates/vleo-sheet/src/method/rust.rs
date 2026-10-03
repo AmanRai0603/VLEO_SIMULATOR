@@ -46,6 +46,10 @@ fn rstr(s: &str) -> String {
 struct Rust {
     mutable: BTreeSet<String>,
     depth: usize,
+    /// The node's published members, by symbol, in declared order: each
+    /// `publish` writes its slot, and `return` hands the slots back beside the
+    /// answer. Empty for a node with one answer.
+    publishes: Vec<String>,
 }
 
 impl Rust {
@@ -181,7 +185,23 @@ impl Rust {
                 let _ = writeln!(o, "return Err(MethodError::Refused({}));", rstr(reason));
             }
             Stmt::Return { expr, line } => {
-                let _ = writeln!(o, "return Ok(rt::fin({}, {line})?);", self.expr(expr));
+                if self.publishes.is_empty() {
+                    let _ = writeln!(o, "return Ok(rt::fin({}, {line})?);", self.expr(expr));
+                } else {
+                    let _ = writeln!(
+                        o,
+                        "return Ok((rt::fin({}, {line})?, published));",
+                        self.expr(expr)
+                    );
+                }
+            }
+            Stmt::Publish { name, expr, line } => {
+                let slot = self.publishes.iter().position(|n| n == name).unwrap_or(0);
+                let _ = writeln!(
+                    o,
+                    "published[{slot}] = rt::fin({}, {line})?; // {name}",
+                    self.expr(expr)
+                );
             }
         }
     }
@@ -218,9 +238,28 @@ fn set_targets(body: &[Stmt], out: &mut BTreeSet<String>) {
 /// what the node's generated translation test asserts. `inputs` is the
 /// parameter order, the node's declared input order; every value is SI.
 pub fn to_rust(p: &Program, node: &str, source: &str, src: &str, inputs: &[String]) -> String {
+    to_rust_publishing(p, node, source, src, inputs, &[])
+}
+
+/// The same, for a node that publishes members beside its answer: `evaluate`
+/// returns the answer and an array of the members, in `publishes` order (the
+/// order the sheet declares them), each in SI. The checker has already held
+/// that every member is published, once, before any return.
+pub fn to_rust_publishing(
+    p: &Program,
+    node: &str,
+    source: &str,
+    src: &str,
+    inputs: &[String],
+    publishes: &[String],
+) -> String {
     let mut mutable = BTreeSet::new();
     set_targets(&p.body, &mut mutable);
-    let mut r = Rust { mutable, depth: 0 };
+    let mut r = Rust {
+        mutable,
+        depth: 0,
+        publishes: publishes.to_vec(),
+    };
     let mut o = String::new();
     let _ = writeln!(
         o,
@@ -245,11 +284,24 @@ pub fn to_rust(p: &Program, node: &str, source: &str, src: &str, inputs: &[Strin
         .iter()
         .map(|n| format!("{}: f64", ident(n)))
         .collect();
-    let _ = writeln!(
-        o,
-        "pub fn evaluate({}) -> Result<f64, MethodError> {{",
-        params.join(", ")
-    );
+    if publishes.is_empty() {
+        let _ = writeln!(
+            o,
+            "pub fn evaluate({}) -> Result<f64, MethodError> {{",
+            params.join(", ")
+        );
+    } else {
+        let _ = writeln!(
+            o,
+            "/// Returns the answer, and the published members in this order: {}.\n\
+             pub fn evaluate({}) -> Result<(f64, [f64; {}]), MethodError> {{\n\
+             let mut published = [0.0_f64; {}];",
+            publishes.join(", "),
+            params.join(", "),
+            publishes.len(),
+            publishes.len()
+        );
+    }
     r.block(&p.body, &mut o);
     o.push_str(
         "Err(MethodError::Degenerate { line: 0, what: \"the method ended without an answer\" })\n}\n",

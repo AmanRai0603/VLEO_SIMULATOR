@@ -143,6 +143,8 @@ than the record's, and on exactly the days a drag design is sized by.
     return Kp_peak_hotday
 </code></pre>
 <p class="muted">Derived from the sheet, not from the generated Rust, so it says what the sheet declares rather than what one compiler made of it. The guards are postconditions: this node refuses rather than returning a number outside them.</p>
+<h4>The method</h4>
+<p class="muted">No method yet. When this node's owner sends one — the relation in the method language, with their own code and test cases — the tool checks all three against each other (docs/PSEUDOCODE.md).</p>
 <h4>Guards</h4>
 <ul class="guards">
 <li><code>Kp_peak_hotday &ge; 0</code> — Kp is defined on 0 to 9 and the scale's first point is Kp 0 at ap 0; a negative index is a sign error, not a quiet sky</li>

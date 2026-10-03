@@ -8,6 +8,9 @@ use super::*;
 pub struct Signature {
     pub inputs: Vec<(String, Dim)>,
     pub output: Dim,
+    /// The members the node publishes beside its answer, by symbol, in the
+    /// order its sheet declares them. Empty for a node with one answer.
+    pub publishes: Vec<(String, Dim)>,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -591,6 +594,36 @@ impl Checker<'_> {
                 }
                 true
             }
+            Stmt::Publish { name, expr, line } => {
+                let want = self
+                    .sig
+                    .publishes
+                    .iter()
+                    .find(|(n, _)| n == name)
+                    .map(|(_, d)| *d);
+                match (self.expr(expr), want) {
+                    (_, None) => {}
+                    (Some(Ty::Bool), Some(_)) => {
+                        self.err(*line, format!("«{name}» is a number, not a condition"))
+                    }
+                    (Some(Ty::Zero), Some(_)) | (None, Some(_)) => {}
+                    (Some(Ty::Pure(_)), Some(w)) if is_none(w) => {}
+                    (Some(t), Some(w)) => {
+                        let d = t.dim().unwrap_or(Dim::NONE);
+                        if d != w {
+                            self.err(
+                                *line,
+                                format!(
+                                    "«{name}» must be {} and this is {}",
+                                    dim_text(w),
+                                    dim_text(d)
+                                ),
+                            );
+                        }
+                    }
+                }
+                false
+            }
             Stmt::Return { expr, line } => {
                 match self.expr(expr) {
                     Some(Ty::Bool) => self.err(*line, "the answer is a number, not a condition"),
@@ -622,6 +655,87 @@ impl Checker<'_> {
     }
 }
 
+/// The rules for a node that publishes several values: each member is
+/// published once, at the method's top level, by a symbol the node declares,
+/// and no path returns before every member is published — so an answer never
+/// leaves with a member missing. A method may still refuse anywhere.
+fn publishing(body: &[Stmt], sig: &Signature, diags: &mut Vec<Diag>) {
+    fn nested(body: &[Stmt], diags: &mut Vec<Diag>) {
+        for s in body {
+            for inner in children(s) {
+                for t in inner {
+                    if let Stmt::Publish { line, .. } = t {
+                        diags.push(Diag::err(
+                            *line,
+                            "publish stands at the method's top level, not inside if, for or while",
+                        ));
+                    }
+                }
+                nested(inner, diags);
+            }
+        }
+    }
+    fn children(s: &Stmt) -> Vec<&[Stmt]> {
+        match s {
+            Stmt::If {
+                arms, otherwise, ..
+            } => arms
+                .iter()
+                .map(|(_, b)| b.as_slice())
+                .chain(otherwise.iter().map(|b| b.as_slice()))
+                .collect(),
+            Stmt::For { body, .. } | Stmt::While { body, .. } => vec![body.as_slice()],
+            _ => Vec::new(),
+        }
+    }
+    fn returns(s: &Stmt) -> bool {
+        matches!(s, Stmt::Return { .. }) || children(s).into_iter().flatten().any(returns)
+    }
+    nested(body, diags);
+    let mut done: BTreeSet<&str> = BTreeSet::new();
+    for s in body {
+        if let Stmt::Publish { name, line, .. } = s {
+            if !sig.publishes.iter().any(|(n, _)| n == name) {
+                diags.push(Diag::err(
+                    *line,
+                    if sig.publishes.is_empty() {
+                        "this node publishes nothing beside its answer".to_string()
+                    } else {
+                        format!(
+                            "the node publishes no member «{name}» — it publishes {}",
+                            sig.publishes
+                                .iter()
+                                .map(|(n, _)| n.as_str())
+                                .collect::<Vec<_>>()
+                                .join(", ")
+                        )
+                    },
+                ));
+            } else if !done.insert(name.as_str()) {
+                diags.push(Diag::err(*line, format!("«{name}» is published twice")));
+            }
+        }
+        if returns(s) {
+            let missing: Vec<&str> = sig
+                .publishes
+                .iter()
+                .map(|(n, _)| n.as_str())
+                .filter(|n| !done.contains(n))
+                .collect();
+            if !missing.is_empty() {
+                diags.push(Diag::err(
+                    s.line(),
+                    format!(
+                        "this returns before publishing {} — every answer carries every member",
+                        missing.join(", ")
+                    ),
+                ));
+                return;
+            }
+        }
+    }
+}
+
 /// Check a parsed method against the node it belongs to. Errors and notes,
 /// in line order; the method is sound when none is an error.
 pub fn check(p: &Program, sig: &Signature) -> Vec<Diag> {
@@ -641,6 +755,7 @@ pub fn check(p: &Program, sig: &Signature) -> Vec<Diag> {
         }
         c.scopes[0].insert(name.clone(), (Kind::Input, *d));
     }
+    publishing(&p.body, sig, &mut c.diags);
     let ends = c.block(&p.body);
     if !ends {
         let line = p.body.last().map(|s| s.line()).unwrap_or(0);

@@ -176,7 +176,33 @@ pub fn model_rs(sh: &Sheet, holes: &BTreeMap<u32, String>) -> String {
         "pub fn evaluate({args}) -> Result<{ret}, Fault> {{\n"
     ));
 
-    let last = if method.is_some() {
+    let last = if method.is_some() && !sh.publishes.is_empty() {
+        // A node that publishes several values: the translated method returns
+        // the answer and the members in declared order, and each lands in its
+        // own field of `Answer` under its own quantity type.
+        let mut fields = format!("{}: {}::new(v)", sh.symbol, sh.ty);
+        for (i, m) in sh.publishes.iter().enumerate() {
+            fields.push_str(&format!(", {}: {}::new(p[{i}])", m.symbol, m.ty));
+        }
+        o.push_str(&format!(
+            "    // generated · from the node's method, translated by rule into\n\
+             \x20   // vleo_core::physics::methods::{m}. No hole: the method is the\n\
+             \x20   // implementation, and the author's cases in evidence.rs test it.\n\
+             \x20   let method_answer: Answer = match methods::{m}::evaluate({args}) {{\n\
+             \x20       Ok((v, p)) => Answer {{ {fields} }},\n\
+             \x20       Err(e) => return Err(method::fault(e, NODE_ID, \"{sym}\")),\n\
+             \x20   }};\n",
+            m = sh.rust_ident(),
+            args = sh
+                .inputs
+                .iter()
+                .map(|i| format!("{}.get()", i.binding))
+                .collect::<Vec<_>>()
+                .join(", "),
+            sym = esc(&sh.symbol)
+        ));
+        "method_answer".to_string()
+    } else if method.is_some() {
         o.push_str(&format!(
             "    // generated · from the node's method, translated by rule into\n\
              \x20   // vleo_core::physics::methods::{m}. No hole: the method is the\n\
@@ -769,6 +795,13 @@ fn author_cases(sh: &Sheet, o: &mut String) {
     };
     let lang = sh.author.language.trim();
     let has_method = crate::method::node_program(sh).is_some();
+    // A node that publishes several values answers an `Answer`; its own value
+    // is the field named by its symbol, and each member is a field too.
+    let primary = if sh.publishes.is_empty() {
+        "got".to_string()
+    } else {
+        format!("got.{}", sh.symbol)
+    };
     for (n, c) in sh.cases.iter().enumerate() {
         let n = n + 1;
         o.push_str(&format!(
@@ -783,6 +816,10 @@ fn author_cases(sh: &Sheet, o: &mut String) {
                  \"{l}: the author's code refuses this case and the node gave {{got:?}}. Take it to the author.\");\n",
                 l = esc_fmt(&c.label)
             )),
+            None if !sh.publishes.is_empty() => o.push_str(&format!(
+                "    let got = {call};\n    assert!(got.is_err(), \"{l}: the author's code refuses this case and the node answered. Take it to the author.\");\n",
+                l = esc_fmt(&c.label)
+            )),
             None => o.push_str(&format!(
                 "    let got = {call};\n    assert!(got.is_err(), \"{l}: the author's code refuses this case and the node answered {{:?}}. Take it to the author.\", got.map(|v| v.get()));\n",
                 l = esc_fmt(&c.label)
@@ -793,10 +830,17 @@ fn author_cases(sh: &Sheet, o: &mut String) {
                     l = esc(&c.label)
                 ));
                 o.push_str(&format!(
-                    "    let err = relative_error(got.get(), {want:?});\n    assert!(err <= {tol:?}, \"{l}: got {{}} and the author's code gave {want:?}; relative error {{}} is more than their tolerance {tol:?}. Take it to the author; do not widen the tolerance.\", got.get(), err);\n",
+                    "    let err = relative_error({primary}.get(), {want:?});\n    assert!(err <= {tol:?}, \"{l}: got {{}} and the author's code gave {want:?}; relative error {{}} is more than their tolerance {tol:?}. Take it to the author; do not widen the tolerance.\", {primary}.get(), err);\n",
                     tol = c.tolerance,
                     l = esc_fmt(&c.label)
                 ));
+                for (member, want) in &c.also {
+                    o.push_str(&format!(
+                        "    let err = relative_error(got.{member}.get(), {want:?});\n    assert!(err <= {tol:?}, \"{l}: {member} is {{}} and the author's code gave {want:?}; relative error {{}} is more than their tolerance {tol:?}. Take it to the author; do not widen the tolerance.\", got.{member}.get(), err);\n",
+                        tol = c.tolerance,
+                        l = esc_fmt(&c.label)
+                    ));
+                }
             }
         }
         o.push_str("}\n\n");
@@ -850,12 +894,35 @@ fn translation(sh: &Sheet, o: &mut String) {
             })
             .collect::<Vec<_>>()
             .join(", ");
-        match crate::method::run(&p, pt) {
-            Ok(crate::method::Outcome::Answer(v)) => o.push_str(&format!(
-                "    assert_eq!(evaluate({args}).map(f64::to_bits), Ok(0x{:016x}), \"at ({args})\");\n",
-                v.to_bits()
-            )),
-            Ok(crate::method::Outcome::Refused { .. }) => o.push_str(&format!(
+        match crate::method::run_all(&p, pt) {
+            Ok((crate::method::Outcome::Answer(v), _)) if sh.publishes.is_empty() => {
+                o.push_str(&format!(
+                    "    assert_eq!(evaluate({args}).map(f64::to_bits), Ok(0x{:016x}), \"at ({args})\");\n",
+                    v.to_bits()
+                ))
+            }
+            Ok((crate::method::Outcome::Answer(v), published)) => {
+                // In the order the sheet declares the members, which is the
+                // order the translation returns them in.
+                let members: Vec<String> = sh
+                    .publishes
+                    .iter()
+                    .map(|m| {
+                        let x = published
+                            .iter()
+                            .find(|(n, _)| *n == m.symbol)
+                            .map(|(_, x)| *x)
+                            .unwrap_or(f64::NAN);
+                        format!("0x{:016x}", x.to_bits())
+                    })
+                    .collect();
+                o.push_str(&format!(
+                    "    assert_eq!(evaluate({args}).map(|(v, p)| (v.to_bits(), p.map(f64::to_bits))), Ok((0x{:016x}, [{}])), \"at ({args})\");\n",
+                    v.to_bits(),
+                    members.join(", ")
+                ))
+            }
+            Ok((crate::method::Outcome::Refused { .. }, _)) => o.push_str(&format!(
                 "    assert!(matches!(evaluate({args}), Err(MethodError::Refused(_))), \"at ({args})\");\n"
             )),
             Err(_) => o.push_str(&format!(

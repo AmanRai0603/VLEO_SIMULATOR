@@ -27,6 +27,8 @@ struct Machine<'a> {
     scopes: Vec<BTreeMap<String, f64>>,
     inputs: &'a [(String, f64)],
     steps: u64,
+    /// The members published so far, by symbol.
+    published: Vec<(String, f64)>,
 }
 
 impl Machine<'_> {
@@ -233,6 +235,10 @@ impl Machine<'_> {
                 let v = rt::fin(self.num(expr)?, *line as u32).map_err(rt_diag)?;
                 return Ok(Flow::Done(Outcome::Answer(v)));
             }
+            Stmt::Publish { name, expr, line } => {
+                let v = rt::fin(self.num(expr)?, *line as u32).map_err(rt_diag)?;
+                self.published.push((name.clone(), v));
+            }
         }
         Ok(Flow::Next)
     }
@@ -248,13 +254,25 @@ pub(crate) fn unsettled(line: usize, max: i64) -> String {
 /// of a negative number, say — and never a refusal: only the method's own
 /// `refuse` refuses.
 pub fn run(p: &Program, inputs: &[(String, f64)]) -> Result<Outcome, Diag> {
+    run_all(p, inputs).map(|(o, _)| o)
+}
+
+/// The same, with the members the method published beside its answer, by
+/// symbol, in the order it published them. Empty for a refusal and for a node
+/// with one answer.
+pub fn run_all(
+    p: &Program,
+    inputs: &[(String, f64)],
+) -> Result<(Outcome, Vec<(String, f64)>), Diag> {
     let mut m = Machine {
         scopes: vec![BTreeMap::new()],
         inputs,
         steps: 0,
+        published: Vec::new(),
     };
     match m.block(&p.body)? {
-        Flow::Done(o) => Ok(o),
+        Flow::Done(o @ Outcome::Answer(_)) => Ok((o, m.published)),
+        Flow::Done(o) => Ok((o, Vec::new())),
         Flow::Next => Err(Diag::err(0, "the method ended without return or refuse")),
     }
 }

@@ -9,6 +9,7 @@ fn sig(inputs: &[(&str, &str)], out: &str) -> Signature {
             .map(|(n, q)| (n.to_string(), quantity_dim(q).unwrap()))
             .collect(),
         output: quantity_dim(out).unwrap(),
+        publishes: Vec::new(),
     }
 }
 
@@ -350,4 +351,124 @@ fn a_kernel_function_is_called_by_name_with_its_units_checked() {
         e.iter().any(|m| m.contains("takes 2 arguments, not 1")),
         "{e:?}"
     );
+}
+
+/// A node that publishes two members beside its answer.
+fn publishing() -> Signature {
+    let mut s = sig(&[("x", "Length")], "Length");
+    s.publishes = vec![
+        ("Twice".into(), quantity_dim("Length").unwrap()),
+        ("Square".into(), quantity_dim("Area").unwrap()),
+    ];
+    s
+}
+
+#[test]
+fn a_node_publishes_every_member_before_it_answers() {
+    let s = publishing();
+    let src = "if x < 0 [m] then\n  refuse \"negative\"\nend\n\
+               publish Twice = 2 * x\npublish Square = x * x\nreturn x";
+    let p = compile(src, &s).unwrap_or_else(|e| panic!("{e:?}"));
+    let (o, members) = run_all(&p, &[("x".into(), 3.0)]).unwrap();
+    assert_eq!(o, Outcome::Answer(3.0));
+    assert_eq!(
+        members,
+        vec![("Twice".to_string(), 6.0), ("Square".to_string(), 9.0)]
+    );
+    let (o, members) = run_all(&p, &[("x".into(), -1.0)]).unwrap();
+    assert!(matches!(o, Outcome::Refused { .. }));
+    assert!(members.is_empty(), "a refusal publishes nothing");
+
+    // The translation returns the members in the order the sheet declares
+    // them, whatever order the method publishes them in.
+    let swapped = "publish Square = x * x\npublish Twice = 2 * x\nreturn x";
+    let p = compile(swapped, &s).unwrap();
+    let rust = to_rust_publishing(
+        &p,
+        "n",
+        "src",
+        swapped,
+        &["x".into()],
+        &["Twice".into(), "Square".into()],
+    );
+    assert!(
+        rust.contains("-> Result<(f64, [f64; 2]), MethodError>"),
+        "{rust}"
+    );
+    assert!(rust.contains("published[1] = rt::fin("), "{rust}");
+    assert!(rust.contains("// Square"), "{rust}");
+    assert!(rust.contains("return Ok((rt::fin("), "{rust}");
+}
+
+#[test]
+fn a_member_missing_twice_nested_or_unknown_is_refused() {
+    let s = publishing();
+    let e = errors("publish Twice = 2 * x\nreturn x", &s);
+    assert!(
+        e.iter()
+            .any(|m| m.contains("returns before publishing Square")),
+        "{e:?}"
+    );
+    let e = errors(
+        "publish Twice = 2 * x\npublish Twice = x\npublish Square = x * x\nreturn x",
+        &s,
+    );
+    assert!(
+        e.iter().any(|m| m.contains("«Twice» is published twice")),
+        "{e:?}"
+    );
+    let e = errors(
+        "if x > 0 [m] then\n  publish Twice = 2 * x\nend\npublish Square = x * x\nreturn x",
+        &s,
+    );
+    assert!(e.iter().any(|m| m.contains("top level")), "{e:?}");
+    let e = errors(
+        "publish Thrice = 3 * x\npublish Twice = 2 * x\npublish Square = x * x\nreturn x",
+        &s,
+    );
+    assert!(e.iter().any(|m| m.contains("no member «Thrice»")), "{e:?}");
+    // Each member in its own quantity.
+    let e = errors(
+        "publish Twice = x * x\npublish Square = x * x\nreturn x",
+        &s,
+    );
+    assert!(e.iter().any(|m| m.contains("«Twice» must be")), "{e:?}");
+    // A node with one answer publishes nothing.
+    let e = errors(
+        "publish Twice = x\nreturn x",
+        &sig(&[("x", "Length")], "Length"),
+    );
+    assert!(e.iter().any(|m| m.contains("publishes nothing")), "{e:?}");
+}
+
+#[test]
+fn a_case_holds_every_member_to_the_authors_value() {
+    let s = publishing();
+    let p = compile(
+        "publish Twice = 2 * x\npublish Square = x * x\nreturn x",
+        &s,
+    )
+    .unwrap();
+    let case = |also: &[(&str, f64)]| Case {
+        label: "three".into(),
+        inputs: vec![("x".into(), 3.0)],
+        expect: Some(3.0),
+        tolerance: 1e-12,
+        also: also.iter().map(|(k, v)| (k.to_string(), *v)).collect(),
+    };
+    assert_eq!(
+        judge(&p, &s, &case(&[("Twice", 6.0), ("Square", 9.0)])),
+        Verdict::Agrees
+    );
+    match judge(&p, &s, &case(&[("Twice", 6.0), ("Square", 10.0)])) {
+        Verdict::MemberDiffers { member, got, .. } => {
+            assert_eq!(member, "Square");
+            assert_eq!(got, 9.0);
+        }
+        v => panic!("{v:?}"),
+    }
+    assert!(matches!(
+        judge(&p, &s, &case(&[("Twice", 6.0)])),
+        Verdict::Malformed(m) if m.contains("«Square»")
+    ));
 }
