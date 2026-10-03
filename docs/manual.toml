@@ -3222,6 +3222,10 @@ path = "docs/RELEASE_SETUP.md"
 what = "How a release is decided — a merged pull request into main — and how the release workflow refuses anything else before it builds."
 
 [[doc]]
+path = "docs/DRIVE_SETUP.md"
+what = "The team's shared drive, written by the `drive` workflow from the repository on every release: what it holds, and the one-time sign-in that lets the workflow write it."
+
+[[doc]]
 path = "docs/GITLAB_TRANSFER.md"
 what = "Moving this repository to GitLab, written while doing it."
 

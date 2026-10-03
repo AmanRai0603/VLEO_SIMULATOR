@@ -73,7 +73,9 @@ holds. Two commands make all of them at once:
 | `READY.csv` — what each group's own checks still ask of it: empty sections, pseudocode to write, results to supply, declared values to decide, defaults to give | `~/groups-db/` |
 
 Copy `~/groups-db/<group>/` onto that group's shared drive, beside `apps/`, as
-laid out above. The lead opens the structure in the group application and
+laid out above. The `drive` workflow does all of this for every group at once —
+`tools/drive.py pack`, then a mirror into one Drive folder, on every release tag
+(docs/DRIVE_SETUP.md). The lead opens the structure in the group application and
 starts from there; the authors open their node files. Nothing is invented for
 them: what the design lacks stays empty, and `READY.csv` counts it, so it is
 also the first plan of each group's work.
