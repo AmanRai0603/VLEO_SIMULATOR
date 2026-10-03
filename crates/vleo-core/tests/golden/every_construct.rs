@@ -57,6 +57,9 @@ use vleo_units::pmath;
 /// end
 /// ```
 pub fn evaluate(x: f64) -> Result<f64, MethodError> {
+    if !pmath::is_finite(x) || pmath::is_nan(x) {
+        return Err(MethodError::Refused("an input is not a finite number"));
+    }
     if (x < 0.0) {
         return Err(MethodError::Refused("x must not be negative"));
     }

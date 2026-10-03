@@ -29,6 +29,9 @@ use vleo_units::pmath;
 /// return v
 /// ```
 pub fn evaluate(r: f64) -> Result<f64, MethodError> {
+    if !pmath::is_finite(r) || pmath::is_nan(r) {
+        return Err(MethodError::Refused("an input is not a finite number"));
+    }
     if (r <= R_EARTH.get()) {
         return Err(MethodError::Refused("the orbit is inside the Earth"));
     }

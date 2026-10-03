@@ -344,6 +344,15 @@ pub fn to_rust_publishing(
             publishes.len()
         );
     }
+    // The door, as the interpreter keeps it: an input that is not a number is
+    // refused before the first line.
+    for n in inputs {
+        let _ = writeln!(
+            o,
+            "if !pmath::is_finite({0}) || pmath::is_nan({0}) {{ return Err(MethodError::Refused(\"an input is not a finite number\")); }}",
+            ident(n)
+        );
+    }
     r.block(&p.body, &mut o);
     o.push_str(
         "Err(MethodError::Degenerate { line: 0, what: \"the method ended without an answer\" })\n}\n",

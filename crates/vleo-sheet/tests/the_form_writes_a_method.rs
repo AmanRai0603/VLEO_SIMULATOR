@@ -178,3 +178,58 @@ fn a_case_is_refused_as_it_is_written() {
     ])
     .contains("is a number"));
 }
+
+#[test]
+fn only_a_refused_case_may_give_an_input_no_node_takes() {
+    // Every generated node refuses an input that is not a number at its door,
+    // and a case saying so is evidence of that refusal: it goes in as written,
+    // in TOML's own spelling, and the method is held to refusing it too.
+    let case = |refuse: &str, r: &str| -> Vec<(&str, String)> {
+        vec![
+            ("label", format!("r = {r}")),
+            ("refuse", refuse.into()),
+            ("expect", if refuse == "yes" { "" } else { "7000.0" }.into()),
+            (
+                "tolerance",
+                if refuse == "yes" { "" } else { "1e-6" }.into(),
+            ),
+            ("inputs", format!("{{ r = {r} }}")),
+        ]
+    };
+    let mut t = filled();
+    for r in ["nan", "inf", "-inf"] {
+        t = form::block_text(&t, "case", "add", 0, &case("yes", r))
+            .unwrap_or_else(|e| panic!("a refused case with r = {r}: {e}"));
+        assert!(
+            t.contains(&format!("inputs = {{ r = {r} }}")),
+            "written as TOML reads it: {r}"
+        );
+    }
+    let rep = method::report_toml(&t).unwrap();
+    for (c, v) in &rep.cases {
+        assert!(v.agrees(), "{}: {}", c.label, v.text(c));
+    }
+    assert!(rep.sound());
+
+    // A case with an answer may not: there is no answer to a value that is not one.
+    let e = form::block_text(&filled(), "case", "add", 0, &case("no", "nan")).unwrap_err();
+    assert_eq!(e.kind(), vleo_sheet::ErrorKind::Refused, "{e}");
+    assert!(
+        e.message().contains("Only a case the node must refuse"),
+        "{e}"
+    );
+
+    // Nor may a refused case become an answered one while it still gives one.
+    let n = method::report_toml(&t).unwrap().cases.len();
+    let e = form::block_text(&t, "case", "set", n - 1, &[("refuse", "no".into())]).unwrap_err();
+    assert!(e.message().contains("not finite"), "{e}");
+    // Its inputs may be changed, and stay a refusal's.
+    form::block_text(
+        &t,
+        "case",
+        "set",
+        n - 1,
+        &[("inputs", "{ r = nan }".into())],
+    )
+    .unwrap();
+}

@@ -774,7 +774,17 @@ fn typed_args(sh: &Sheet, inputs: &[(String, f64)]) -> String {
                 .find(|(k, _)| *k == i.binding)
                 .map(|(_, v)| *v)
                 .unwrap_or(0.0);
-            format!("{}::new({v:?})", i.ty)
+            // A case the node must refuse may give a value no node takes.
+            let v = if v.is_nan() {
+                "f64::NAN".to_string()
+            } else if v == f64::INFINITY {
+                "f64::INFINITY".to_string()
+            } else if v == f64::NEG_INFINITY {
+                "f64::NEG_INFINITY".to_string()
+            } else {
+                format!("{v:?}")
+            };
+            format!("{}::new({v})", i.ty)
         })
         .collect::<Vec<_>>()
         .join(", ")

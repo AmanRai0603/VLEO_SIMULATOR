@@ -32,6 +32,9 @@ use vleo_units::pmath;
 /// Returns the answer, and the published members in this order: Square, Root.
 pub fn evaluate(x: f64) -> Result<(f64, [f64; 2]), MethodError> {
     let mut published = [0.0_f64; 2];
+    if !pmath::is_finite(x) || pmath::is_nan(x) {
+        return Err(MethodError::Refused("an input is not a finite number"));
+    }
     if (x < 0.0) {
         return Err(MethodError::Refused("below zero"));
     }

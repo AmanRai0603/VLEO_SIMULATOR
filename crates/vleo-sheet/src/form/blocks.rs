@@ -691,6 +691,11 @@ pub fn block_text(
         // step, and for the others the order is a reading order somebody can
         // rearrange in a checkout where the diff is legible.
         "add" => {
+            // A case the node must refuse may give an input no node takes.
+            let refusal = a.name == "case"
+                && values
+                    .iter()
+                    .any(|(k, v)| *k == "refuse" && v.trim() == "yes");
             let mut vals: Vec<(&str, String)> = Vec::new();
             for c in a.columns {
                 let v = if c.managed {
@@ -714,7 +719,14 @@ pub fn block_text(
                     }
                     continue;
                 }
-                vals.push((c.key, normalise_column(c, &v)?));
+                vals.push((
+                    c.key,
+                    if refusal && matches!(c.shape, Shape::Inputs) {
+                        refused_inputs_text(&v)?
+                    } else {
+                        normalise_column(c, &v)?
+                    },
+                ));
             }
             // A theory step needs the table its path sits under, exactly as a
             // scalar theory field does.
@@ -768,7 +780,25 @@ pub fn block_text(
                     ),
                 ));
             }
-            let v = normalise_column(c, value)?;
+            let refusal =
+                a.name == "case" && block_value(text, s0, s1, "refuse").as_deref() == Some("yes");
+            let v = if refusal && matches!(c.shape, Shape::Inputs) {
+                refused_inputs_text(value)?
+            } else {
+                normalise_column(c, value)?
+            };
+            // A case stops being a refusal only with inputs a node can take.
+            if a.name == "case" && c.key == "refuse" && v != "yes" {
+                if let Some(k) = non_finite_input(text, s0, s1) {
+                    return Err(Error::new(
+                        ErrorKind::Refused,
+                        format!(
+                            "this case gives «{k}» a value that is not finite, which only a case \
+                             the node must refuse may do. Give it a number first"
+                        ),
+                    ));
+                }
+            }
             set_in_block(text, s0, s1, c, &v)
         }
         "remove" => {
@@ -812,6 +842,17 @@ fn block_value(text: &str, s0: usize, s1: usize, key: &str) -> Option<String> {
     let body = text[s0..s1].split_once('\n')?.1;
     let v: toml::Value = body.parse().ok()?;
     v.get(key).and_then(|x| x.as_str()).map(String::from)
+}
+
+/// The first of a block's inputs that is not a finite number, if one is.
+fn non_finite_input(text: &str, s0: usize, s1: usize) -> Option<String> {
+    let body = text[s0..s1].split_once('\n')?.1;
+    let v: toml::Value = body.parse().ok()?;
+    v.get("inputs")?
+        .as_table()?
+        .iter()
+        .find(|(_, x)| x.as_float().is_some_and(|f| !f.is_finite()))
+        .map(|(k, _)| k.clone())
 }
 
 /// Replace or add one key inside one block.
