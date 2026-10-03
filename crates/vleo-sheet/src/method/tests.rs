@@ -529,9 +529,15 @@ fn a_list_is_gone_through_read_by_entry_and_counted() {
     assert_eq!(at(1.0).unwrap(), Outcome::Answer(1003.0));
     assert_eq!(at(3.0).unwrap(), Outcome::Answer(3003.0));
     // Read outside the list, or between entries: a fault, never the nearest.
-    for i in [0.0, 4.0, 1.5, f64::NAN] {
+    for i in [0.0, 4.0, 1.5] {
         assert!(at(i).is_err(), "R[{i}] was read");
     }
+    // An index that is not a number never reaches the list: it is refused at
+    // the door, before the first line.
+    assert!(
+        matches!(at(f64::NAN), Ok(Outcome::Refused { line: 0, .. })),
+        "R[NaN] was read"
+    );
     // A list is a row of interp's table, by name.
     let s = sig(&[("x", "Length")], "Time");
     let src = "const XS = [0, 1, 2] [km]\nconst YS = [0, 10, 40] [s]\nreturn interp(x, XS, YS)";
