@@ -40,9 +40,9 @@ use std::io::{BufRead, BufReader, Read, Write};
 use std::net::{TcpListener, TcpStream};
 use std::path::{Path, PathBuf};
 use vleo_bus::{Case, RunMode};
-use vleo_sheet::files::Files;
 use vleo_core::graph::Kind;
 use vleo_modules::{tables, Scratch, Vleo, GROUPS, NODES, RELATIONS, VARS};
+use vleo_sheet::files::Files;
 
 /// Start the tool from the command line: `vleo-daemon [--open]`.
 ///
@@ -270,9 +270,7 @@ struct DesignFile {
 /// otherwise. A design file that is there and does not open stops the tool,
 /// naming why: falling back to whatever folders happen to sit beside it would
 /// show a different design under the same name.
-fn open_tree(
-    root: &Path,
-) -> Result<(std::sync::Arc<dyn Files>, Option<DesignFile>), String> {
+fn open_tree(root: &Path) -> Result<(std::sync::Arc<dyn Files>, Option<DesignFile>), String> {
     let named = std::env::var("VLEO_DESIGN")
         .ok()
         .filter(|v| !v.trim().is_empty())

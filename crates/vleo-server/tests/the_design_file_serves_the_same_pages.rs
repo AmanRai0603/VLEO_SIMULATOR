@@ -88,7 +88,12 @@ fn the_file_and_the_folders_serve_the_same_pages() {
         "{} of {} pages differ:\n{}",
         differ.len(),
         paths.len(),
-        differ.iter().take(20).cloned().collect::<Vec<_>>().join("\n")
+        differ
+            .iter()
+            .take(20)
+            .cloned()
+            .collect::<Vec<_>>()
+            .join("\n")
     );
     let _ = std::fs::remove_dir_all(&scratch);
 }

@@ -42,7 +42,11 @@ fn it_holds_every_file_and_loads_as_the_same_tree() {
     let d = Design::open(&out, &root()).expect("the design file does not open");
     d.verify().expect("the file is not what it says");
     let diff = d.compare(&root()).expect("the comparison did not run");
-    assert!(diff.is_empty(), "the file is not the tree:\n{}", diff.join("\n"));
+    assert!(
+        diff.is_empty(),
+        "the file is not the tree:\n{}",
+        diff.join("\n")
+    );
 
     let folders = vleo_sheet::load_all(&root()).expect("the folders do not load");
     let file = vleo_sheet::load::load_all_from(&d, &root()).expect("the file does not load");
@@ -55,7 +59,11 @@ fn it_holds_every_file_and_loads_as_the_same_tree() {
         let b = &file.sheets[id];
         assert_eq!(a.sheet_hash, b.sheet_hash, "{id}: a different sheet");
         assert_eq!(a.impl_hash, b.impl_hash, "{id}: different hole bodies");
-        assert_eq!(a.fixtures.len(), b.fixtures.len(), "{id}: different fixtures");
+        assert_eq!(
+            a.fixtures.len(),
+            b.fixtures.len(),
+            "{id}: different fixtures"
+        );
         let page = root().join(&a.folder).join("page.html");
         assert_eq!(
             std::fs::read(&page).ok(),
@@ -69,7 +77,11 @@ fn it_holds_every_file_and_loads_as_the_same_tree() {
         file.cases.keys().collect::<Vec<_>>(),
         "different cases"
     );
-    assert_eq!(folders.sources.len(), file.sources.len(), "different sources");
+    assert_eq!(
+        folders.sources.len(),
+        file.sources.len(),
+        "different sources"
+    );
     assert_eq!(d.meta("rows"), folders.sheets.len().to_string());
     let _ = std::fs::remove_dir_all(&dir);
 }
@@ -113,7 +125,11 @@ fn a_file_changed_after_it_was_written_is_caught() {
     }
     let d = Design::open(&out, &root()).unwrap();
     let e = d.verify().expect_err("a changed file passed");
-    assert!(e.message().contains("sources/sources.toml"), "{}", e.message());
+    assert!(
+        e.message().contains("sources/sources.toml"),
+        "{}",
+        e.message()
+    );
     let diff = d.compare(&root()).unwrap();
     assert_eq!(diff, vec!["sources/sources.toml: differs".to_string()]);
     let _ = std::fs::remove_dir_all(&dir);
@@ -138,7 +154,9 @@ fn what_is_not_a_design_file_is_refused_by_name() {
         )
         .unwrap();
     }
-    let e = Design::open(&release, &root()).err().expect("a release opened");
+    let e = Design::open(&release, &root())
+        .err()
+        .expect("a release opened");
     assert_eq!(e.kind(), ErrorKind::NotADesign);
     assert!(e.message().contains("release"), "{}", e.message());
 
@@ -149,7 +167,9 @@ fn what_is_not_a_design_file_is_refused_by_name() {
         db.execute_batch("PRAGMA application_id = 1447838031; PRAGMA user_version = 99;")
             .unwrap();
     }
-    let e = Design::open(&newer, &root()).err().expect("a newer file opened");
+    let e = Design::open(&newer, &root())
+        .err()
+        .expect("a newer file opened");
     assert_eq!(e.kind(), ErrorKind::Newer);
     let _ = std::fs::remove_dir_all(&dir);
 }
