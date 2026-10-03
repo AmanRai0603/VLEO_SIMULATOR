@@ -158,7 +158,7 @@ def selftest():
         wheel = build("9.9.9", kit, {"linux-x86_64": lib, "windows-x86_64": lib}, t / "out")
         with zipfile.ZipFile(wheel) as z:
             names = set(z.namelist())
-        for need in ("vleo/__init__.py", "vleo/__main__.py", "vleo/_build.py",
+        for need in ("vleo/__init__.py", "vleo/__main__.py", "vleo/_build.py", "vleo/files.py",
                      "vleo/_native/linux-x86_64/_vleo.abi3.so",
                      "vleo/_native/windows-x86_64/_vleo.pyd",
                      "vleo/_kit/web/index.html",

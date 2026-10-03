@@ -141,7 +141,7 @@ fn what_is_not_a_design_file_is_refused_by_name() {
     let text = dir.join("notes.vleo");
     std::fs::write(&text, "not a database").unwrap();
     let e = Design::open(&text, &root()).err().expect("text opened");
-    assert_eq!(e.kind(), ErrorKind::NotADesign);
+    assert_eq!(e.kind(), ErrorKind::WrongFile);
 
     // A group's release is a VLEO database, and not a design file.
     let release = dir.join("example-1.0.vleo");
@@ -157,7 +157,7 @@ fn what_is_not_a_design_file_is_refused_by_name() {
     let e = Design::open(&release, &root())
         .err()
         .expect("a release opened");
-    assert_eq!(e.kind(), ErrorKind::NotADesign);
+    assert_eq!(e.kind(), ErrorKind::WrongFile);
     assert!(e.message().contains("release"), "{}", e.message());
 
     // One from a newer tool is refused, not misread.

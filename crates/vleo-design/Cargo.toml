@@ -1,6 +1,6 @@
 [package]
 name = "vleo-design"
-description = "design.vleo — the design as one file. The tree the loader reads (every node folder, the layers, the cases and the source list) written into one SQLite database, and read back through the same interface the folders are read through, so the tool a team runs reads the file and a developer's checkout reads the folders, and the two give the same pages."
+description = "The tool's database files. design.vleo — the design as one file. The tree the loader reads (every node folder, the layers, the cases and the source list) written into one SQLite database, and read back through the same interface the folders are read through, so the tool a team runs reads the file and a developer's checkout reads the folders, and the two give the same pages. And results.vleor — saved results, many in one file."
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true

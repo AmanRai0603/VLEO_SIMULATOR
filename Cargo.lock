@@ -385,6 +385,7 @@ dependencies = [
  "vleo-bus",
  "vleo-core",
  "vleo-data",
+ "vleo-design",
  "vleo-modules",
  "vleo-server",
 ]

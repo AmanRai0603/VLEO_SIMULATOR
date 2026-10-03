@@ -2605,9 +2605,25 @@ effect = "reads"
 tool = "vleo"
 name = "result"
 usage = "result <file|folder> [--html <out.html>]"
-what = "A saved result shown as it was — nothing runs. Reads a result's folder, the CSV `run --save` writes, or the report page it rides in; `--html` writes that report, to send."
+what = "A saved result shown as it was — nothing runs. Reads a result's folder, the CSV `run --save` writes, or the report page it rides in; `--html` writes that report, to send. Given a results file (.vleor), lists the results it holds."
 who = "user"
 effect = "reads"
+
+[[command]]
+tool = "vleo"
+name = "results"
+usage = "results export <file.vleor> [<name> ...]"
+what = "Saved results, many in one file to send or keep: every result in the results folder, or the ones named. Each goes out whole, and every value again as a row that Python (`vleo.results`) or any SQL reader can ask for."
+who = "user"
+effect = "writes"
+
+[[command]]
+tool = "vleo"
+name = "results"
+usage = "results import <file.vleor>"
+what = "The results in a results file, put back in the results folder exactly as they were — nothing runs. A question already kept is kept once."
+who = "user"
+effect = "writes"
 
 [[command]]
 tool = "vleo"
