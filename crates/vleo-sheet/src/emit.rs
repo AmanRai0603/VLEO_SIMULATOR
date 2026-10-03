@@ -764,6 +764,21 @@ pub fn evidence_rs(sh: &Sheet) -> String {
     o
 }
 
+/// A number as Rust reads it. A case the node must refuse may give a value
+/// no node takes, and `{:?}` writes those as `NaN` and `inf`, which are not
+/// Rust.
+fn rust_f64(v: f64) -> String {
+    if v.is_nan() {
+        "f64::NAN".into()
+    } else if v == f64::INFINITY {
+        "f64::INFINITY".into()
+    } else if v == f64::NEG_INFINITY {
+        "f64::NEG_INFINITY".into()
+    } else {
+        format!("{v:?}")
+    }
+}
+
 /// The arguments `model::evaluate` takes for one set of SI inputs, by binding.
 fn typed_args(sh: &Sheet, inputs: &[(String, f64)]) -> String {
     sh.inputs
@@ -774,17 +789,7 @@ fn typed_args(sh: &Sheet, inputs: &[(String, f64)]) -> String {
                 .find(|(k, _)| *k == i.binding)
                 .map(|(_, v)| *v)
                 .unwrap_or(0.0);
-            // A case the node must refuse may give a value no node takes.
-            let v = if v.is_nan() {
-                "f64::NAN".to_string()
-            } else if v == f64::INFINITY {
-                "f64::INFINITY".to_string()
-            } else if v == f64::NEG_INFINITY {
-                "f64::NEG_INFINITY".to_string()
-            } else {
-                format!("{v:?}")
-            };
-            format!("{}::new({v})", i.ty)
+            format!("{}::new({})", i.ty, rust_f64(v))
         })
         .collect::<Vec<_>>()
         .join(", ")
@@ -900,7 +905,7 @@ fn translation(sh: &Sheet, o: &mut String) {
                     .find(|(k, _)| *k == i.binding)
                     .map(|(_, v)| *v)
                     .unwrap_or(0.0);
-                format!("{v:?}")
+                rust_f64(v)
             })
             .collect::<Vec<_>>()
             .join(", ");
