@@ -576,6 +576,24 @@ fn a_refused_method_leaves_the_rust_its_hole_held() {
         },
         ..Form::default()
     };
+    // The kernel's translated methods are written in the same step, and must be
+    // put back as well: the refused method once stayed there, named in mod.rs.
+    let methods = root.join("crates/vleo-core/src/physics/methods");
+    let kernel = |d: &std::path::Path| -> Vec<(std::path::PathBuf, Vec<u8>)> {
+        // No folder yet is no methods yet: the copy of the tree starts without one.
+        let mut v: Vec<_> = std::fs::read_dir(d)
+            .into_iter()
+            .flatten()
+            .map(|e| e.unwrap().path())
+            .map(|p| {
+                let b = std::fs::read(&p).unwrap();
+                (p, b)
+            })
+            .collect();
+        v.sort();
+        v
+    };
+    let kernel_before = kernel(&methods);
     let p = template::plan_form(&root, f).unwrap();
     assert!(p.applicable() > 0, "the plan has something to apply");
     match template::apply(&root, &p) {
@@ -586,5 +604,9 @@ fn a_refused_method_leaves_the_rust_its_hole_held() {
     assert!(
         std::fs::read(dir.join("model.rs")).unwrap() == model,
         "a refused method must leave model.rs byte for byte as it was — its hole's Rust included"
+    );
+    assert!(
+        kernel(&methods) == kernel_before,
+        "a refused method must leave the kernel's methods as they were — no translation left behind"
     );
 }

@@ -10,7 +10,8 @@
     unused_imports,
     unused_mut,
     unused_variables,
-    unused_parens
+    unused_parens,
+    non_snake_case
 )]
 
 use vleo_units::constants::*;

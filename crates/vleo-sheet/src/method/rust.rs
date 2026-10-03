@@ -207,7 +207,7 @@ pub fn to_rust(p: &Program, node: &str, source: &str, src: &str, inputs: &[Strin
     );
     o.push_str(
         "#![allow(clippy::all, clippy::float_cmp, clippy::cast_precision_loss, unreachable_code, \
-         unused_imports, unused_mut, unused_variables, unused_parens)]\n\n",
+         unused_imports, unused_mut, unused_variables, unused_parens, non_snake_case)]\n\n",
     );
     o.push_str("use vleo_units::constants::*;\nuse vleo_units::method_rt::{self as rt, MethodError};\nuse vleo_units::pmath;\n\n");
     let _ = writeln!(

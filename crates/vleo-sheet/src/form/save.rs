@@ -353,6 +353,17 @@ pub(crate) fn commit_edit(
         .iter()
         .filter_map(|p| std::fs::read(p).ok().map(|b| (p.clone(), b)))
         .collect();
+    // The kernel's translated methods are regenerated in the same step as the
+    // row's own files, so a restore puts them back too: a refused method once
+    // left its translation, and the module line naming it, in the kernel.
+    let methods = root.join("crates/vleo-core/src/physics/methods");
+    let kernel: Vec<(std::path::PathBuf, Vec<u8>)> = std::fs::read_dir(&methods)
+        .map(|d| {
+            d.filter_map(|e| e.ok().map(|e| e.path()))
+                .filter_map(|p| std::fs::read(&p).ok().map(|b| (p, b)))
+                .collect()
+        })
+        .unwrap_or_default();
 
     if let Err(e) = write_atomic(path, &after) {
         return Saved::Refused(e.into());
@@ -387,6 +398,20 @@ pub(crate) fn commit_edit(
                     let _ = std::fs::remove_file(&p);
                 }
                 None => {}
+            }
+        }
+        if let Ok(d) = std::fs::read_dir(&methods) {
+            for p in d.filter_map(|e| e.ok().map(|e| e.path())) {
+                if !kernel.iter().any(|(q, _)| *q == p) {
+                    let _ = std::fs::remove_file(&p);
+                }
+            }
+        }
+        for (p, bytes) in &kernel {
+            if std::fs::read(p).ok().as_deref() != Some(bytes.as_slice()) {
+                if let Err(w) = std::fs::write(p, bytes) {
+                    lost = format!(" — AND {} COULD NOT BE PUT BACK: {w}", p.display());
+                }
             }
         }
         Saved::Refused(format!(
