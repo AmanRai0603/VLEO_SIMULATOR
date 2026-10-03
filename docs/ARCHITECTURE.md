@@ -214,10 +214,10 @@ and a reader should not watch a blank panel while they run.
 
 |  | back end | front end |
 |---|---|---|
-| per node | `model.rs` | `page.html` |
+| per node | `model.rs` | the node's page, rendered from its sheet when it is opened |
 | assembled by | a generated module list | a generated index |
 | into | one crate | one document |
-| touched when a node is added | one new file | one new file |
+| touched when a node is added | one new file | none |
 
 An earlier draft had per-node Rust files assembled into a crate and a *single*
 document. That asymmetry is wrong for a measurable reason: five engineers adding

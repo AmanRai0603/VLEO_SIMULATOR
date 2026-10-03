@@ -4,6 +4,7 @@
 
       node tools/group_db.mjs <folder> [--out <dir>]
       node tools/group_db.mjs --unpack <file.vleo> [--out <dir>]
+      node tools/group_db.mjs --all <dir> [--out <dir>]
 
   The first writes, under <dir> (default target/groups/<group>-db):
 
@@ -74,43 +75,94 @@ if (unpack) {
   process.exit(0);
 }
 
-const dir = resolve(folderArg);
-const files = new Map();
-const walk = d => {
-  for (const f of readdirSync(d).sort()) {
-    const p = join(d, f);
-    if (statSync(p).isDirectory()) walk(p);
-    else files.set(relative(dir, p).split('\\').join('/'), new File([readFileSync(p)], f));
+/** One folder of the pattern, made into its structure, node files and release under `out`. */
+async function make(dir, out) {
+  const files = new Map();
+  const walk = d => {
+    for (const f of readdirSync(d).sort()) {
+      const p = join(d, f);
+      if (statSync(p).isDirectory()) walk(p);
+      else files.set(relative(dir, p).split('\\').join('/'), new File([readFileSync(p)], f));
+    }
+  };
+  walk(dir);
+  const folder = new Folder(dir.split(/[\\/]/).pop(), files);
+
+  const release = await gdb.dbFromFolder(folder, 'release');
+  const id = release.meta('group_id') || folder.name, version = release.meta('version') || '0';
+  out = out || join(ROOT, 'target/groups', id + '-db');
+  mkdirSync(join(out, 'nodes'), { recursive: true });
+  mkdirSync(join(out, 'releases'), { recursive: true });
+  const save = (path, db) => { writeFileSync(join(out, path), db.bytes()); return path; };
+
+  const structure = await gdb.structureOf(release);
+  const nodes = release.all('SELECT uid, id, contract_version FROM node WHERE archived = 0 ORDER BY ord, id');
+  const issued = [];
+  for (const n of nodes) {
+    const nf = await gdb.issueNode(release, n.uid);
+    nf.setMeta('issued_from', id + '-' + version + ' (from the folder ' + folder.name + ')');
+    save('nodes/' + n.id + '.vnode', nf);
+    issued.push(nf);
+    structure.setMeta('issued:' + n.uid, String(n.contract_version));
   }
-};
-walk(dir);
-const folder = new Folder(dir.split(/[\\/]/).pop(), files);
-
-const release = await gdb.dbFromFolder(folder, 'release');
-const id = release.meta('group_id') || folder.name, version = release.meta('version') || '0';
-const out = outAt >= 0 ? resolve(args[outAt + 1]) : join(ROOT, 'target/groups', id + '-db');
-mkdirSync(join(out, 'nodes'), { recursive: true });
-mkdirSync(join(out, 'releases'), { recursive: true });
-const save = (path, db) => { writeFileSync(join(out, path), db.bytes()); return path; };
-
-const structure = await gdb.structureOf(release);
-const nodes = release.all('SELECT uid, id, contract_version FROM node WHERE archived = 0 ORDER BY ord, id');
-const issued = [];
-for (const n of nodes) {
-  const nf = await gdb.issueNode(release, n.uid);
-  nf.setMeta('issued_from', id + '-' + version + ' (from the folder ' + folder.name + ')');
-  save('nodes/' + n.id + '.vnode', nf);
-  issued.push(nf);
-  structure.setMeta('issued:' + n.uid, String(n.contract_version));
+  gdb.logChange(structure, 'tools/group_db.mjs', 'group', 'made from the folder ' + folder.name, null, null);
+  save(id + '.vgroup', structure);
+  const { db: assembled, notes } = await gdb.assemble(structure, issued);
+  save('releases/' + id + '-' + version + '.vleo', assembled);
+  return { id, version, out, nodes: nodes.length, issued: issued.length, notes, folder };
 }
-gdb.logChange(structure, 'tools/group_db.mjs', 'group', 'made from the folder ' + folder.name, null, null);
-save(id + '.vgroup', structure);
-const { db: assembled, notes } = await gdb.assemble(structure, issued);
-save('releases/' + id + '-' + version + '.vleo', assembled);
+
+if (args.includes('--all')) {
+  // Every group folder under <dir> (as `xtask group-export --all` writes them),
+  // each made into its files under <out>/<group>/, and READY.csv: what each
+  // group's own checks still ask of it — the page's checks, run here.
+  // The pattern exactly as the page carries it: read from the built page.
+  const page = readFileSync(join(ROOT, 'web/group.html'), 'utf8');
+  const at = page.indexOf('window.VLEO_GROUP_SPEC = ');
+  const spec = page.slice(at + 'window.VLEO_GROUP_SPEC = '.length, page.indexOf(';\n', at));
+  globalThis.VLEO_GROUP_SPEC = window.VLEO_GROUP_SPEC = JSON.parse(spec);
+  const { loadGroup } = await import(pathToFileURL(join(tmp, 'gmodel.js')).href);
+  const { checkGroup } = await import(pathToFileURL(join(tmp, 'gcheck.js')).href);
+  const base = resolve(folderArg);
+  const outAll = outAt >= 0 ? resolve(args[outAt + 1]) : base + '-db';
+  // What each group must still give, by kind, from the page's own findings.
+  const KINDS = [
+    ['empty_sections', f => f.msg.startsWith('says nothing under')],
+    ['pseudocode_to_write', f => f.where.endsWith('pseudocode.txt') && f.msg.startsWith('is missing')],
+    ['results_to_supply', f => f.where.endsWith('results/isolation.csv') && f.msg.startsWith('is missing')],
+    ['values_to_decide', f => f.msg.endsWith('is declared, so it needs a value')],
+    ['defaults_to_give', f => f.msg.endsWith('has no default value')],
+  ];
+  const rows = [['group', 'nodes', 'node_files', 'errors', 'warnings', ...KINDS.map(k => k[0]), 'other']];
+  let failed = 0;
+  for (const g of readdirSync(base).sort()) {
+    const d = join(base, g);
+    if (!statSync(d).isDirectory() || !statSync(join(d, 'group.csv'), { throwIfNoEntry: false })) continue;
+    try {
+      const r = await make(d, join(outAll, g));
+      const findings = await checkGroup(await loadGroup(r.folder), window.VLEO_GROUP_SPEC);
+      const errors = findings.filter(f => f.level === 'error');
+      const by = KINDS.map(([, test]) => errors.filter(test).length);
+      const other = errors.filter(f => !KINDS.some(([, test]) => test(f))).length;
+      rows.push([r.id, r.nodes, r.issued, errors.length, findings.filter(f => f.level === 'warning').length, ...by, other]);
+    } catch (e) {
+      failed++;
+      rows.push([g, 'FAILED: ' + String(e.message || e).slice(0, 120)]);
+    }
+  }
+  const cell = v => /[",\n]/.test(String(v)) ? '"' + String(v).replace(/"/g, '""') + '"' : String(v);
+  mkdirSync(outAll, { recursive: true });
+  writeFileSync(join(outAll, 'READY.csv'), rows.map(r => r.map(cell).join(',')).join('\n') + '\n');
+  rmSync(tmp, { recursive: true, force: true });
+  console.log('wrote ' + (rows.length - 1 - failed) + ' groups\' database files under ' + outAll + ', and READY.csv' + (failed ? ' — ' + failed + ' FAILED' : ''));
+  process.exit(failed ? 1 : 0);
+}
+
+const r = await make(resolve(folderArg), outAt >= 0 ? resolve(args[outAt + 1]) : null);
 rmSync(tmp, { recursive: true, force: true });
 
-console.log('wrote ' + out);
-console.log('  ' + id + '.vgroup — the structure, ' + nodes.length + ' nodes');
-console.log('  nodes/ — ' + issued.length + ' node files');
-console.log('  releases/' + id + '-' + version + '.vleo — assembled, not sealed');
-for (const n of notes.filter(x => x.level !== 'note')) console.log('  ' + n.level + ': ' + n.msg);
+console.log('wrote ' + r.out);
+console.log('  ' + r.id + '.vgroup — the structure, ' + r.nodes + ' nodes');
+console.log('  nodes/ — ' + r.issued + ' node files');
+console.log('  releases/' + r.id + '-' + r.version + '.vleo — assembled, not sealed');
+for (const n of r.notes.filter(x => x.level !== 'note')) console.log('  ' + n.level + ': ' + n.msg);

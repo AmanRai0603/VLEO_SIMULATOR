@@ -20,6 +20,9 @@ vleo-data = { workspace = true }
 # The one place a figure of the record is worked out — the same function the
 # daemon's /v1/figures route answers with, so `vleo figure` cannot drift from it.
 vleo-server = { workspace = true }
+# Saved results, many in one file (results.vleor): written and read by the
+# same crate that writes the design file.
+vleo-design = { workspace = true }
 
 [lints.rust]
 unsafe_code = "forbid"

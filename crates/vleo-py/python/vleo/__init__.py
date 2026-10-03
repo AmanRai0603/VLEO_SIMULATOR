@@ -2,6 +2,8 @@
 
     python -m vleo            start the tool and open it in the browser
     import vleo               the engine, from Python or MATLAB
+    vleo.design()             the design file the tool reads (design.vleo)
+    vleo.results(file)        saved results, many in one file (.vleor)
 
 One package for every laptop. It carries the engine built for each system it
 supports and loads the one for the machine it is on, so the same file installs
@@ -114,9 +116,12 @@ def figure(id, **params):
     return answer
 
 
+from .files import design, results  # noqa: E402 — plain Python, no engine needed
+
 try:
     from ._build import VERSION as __version__
 except ImportError:  # a developer's build
     __version__ = "dev"
 
-__all__ = ["Result_", "nodes", "evaluate", "sweep", "version", "serve", "kit_root", "figure"]
+__all__ = ["Result_", "nodes", "evaluate", "sweep", "version", "serve", "kit_root", "figure",
+           "design", "results"]

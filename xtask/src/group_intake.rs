@@ -51,6 +51,7 @@ pub(super) fn cmd_group_intake(root: &Path, args: &[&str]) -> Result<(), String>
     let nodes = read_csv(&dir.join("nodes.csv"))?;
     let derisk = latest_version(&dir)?;
     let (mut planned, mut applied, mut refused, mut takeable) = (0, 0, 0, 0);
+    let mut changes: Vec<String> = Vec::new();
     for n in &nodes {
         let id = n.get("id").cloned().unwrap_or_default();
         if only.is_some_and(|o| o != id) {
@@ -78,6 +79,7 @@ pub(super) fn cmd_group_intake(root: &Path, args: &[&str]) -> Result<(), String>
         planned += 1;
         if p.applicable() > 0 {
             takeable += 1;
+            changes.push(id.clone());
         }
         if p.blocked() > 0 {
             refused += 1;
@@ -98,6 +100,16 @@ pub(super) fn cmd_group_intake(root: &Path, args: &[&str]) -> Result<(), String>
                 }
             }
         }
+    }
+    // 3 · whom it reaches: every row of another group downstream of a node
+    // this release changes, so the developer knows who to tell before merging.
+    if !changes.is_empty() {
+        println!(
+            "\n\x1b[1mwhom it reaches\x1b[0m — {} node(s) this release changes:",
+            changes.len()
+        );
+        let rows: Vec<&str> = changes.iter().map(String::as_str).collect();
+        crate::catalogue::print_impact(&vleo_sheet::catalogue::impact(&tree, &rows));
     }
     println!(
         "\n{planned} computed node(s) read; {refused} with something that cannot be taken{}",

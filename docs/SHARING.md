@@ -28,8 +28,9 @@ The loop, end to end:
 `dist/vleo-<version>/` holds:
 - the two programs: `vleo-daemon` and `vleo` — on Windows `Start VLEO.exe` (the daemon, which opens
   the browser itself because of its name) and `vleo.exe`;
-- the files they read: `web/`, `layers/`, `cases/`, `sources/`, `bundles/`, `docs/manual.toml`,
-  and every node folder;
+- the files they read: `web/`, `bundles/`, `docs/manual.toml`, and the design itself as one file,
+  `design.vleo` — every node folder, the layers, the cases and the source list, written into one
+  SQLite database by `cargo run -p xtask -- design` (below);
 - `START_HERE.md` (this repository's `docs/TEAM_GUIDE.md`), `VERSION`, and `start.sh` off Windows.
 
 No script starts the Windows program: a script launching an unknown program is one more thing an
@@ -38,6 +39,21 @@ design tool, the version) for the same reason — `tools/windows_identity.rs`.
 
 There is no git history in it, no generator, and no kernel source. Zip the folder and share the
 zip. `dist/` is ignored by git.
+
+**The design travels as one file.** A developer edits the tree as folders, because review and the
+gate work on them; the tool a team runs needs the design whole, as one thing that cannot be
+half-copied. So the kit carries `design.vleo`, and the daemon reads it through the same interface
+it reads the folders through, with every check the loader makes. A page served from it is the page
+served from the folders, byte for byte — `crates/vleo-server/tests/the_design_file_serves_the_same_pages.rs`
+asks every node's page of both. To write one or hold one to the tree:
+
+    cargo run -p xtask -- design                         # → target/design.vleo
+    cargo run -p xtask -- design --check dist/vleo-<version>/design.vleo
+
+It is ordinary SQLite (`crates/vleo-design/design.sql`): Python reads its `row` table, and any
+file in it by its repository path, with the standard library. `VLEO_DESIGN` points the daemon at
+another one; a design file that does not open stops the daemon rather than falling back to
+whatever folders sit beside it.
 
 **One kit per platform.** The programs are built for the machine that built them. For a teammate
 on another platform, use the release: `.github/workflows/release.yml` builds a kit on Linux,

@@ -525,6 +525,33 @@ fn enc(s: &str) -> String {
     o
 }
 
+/// `@vleor`: the last result saved, written as a results file the way
+/// `vleo results export` writes one, and sent as the browser sends a file that
+/// is not text — base64.
+fn vleor_of(scratch: &std::path::Path, saved: &str) -> String {
+    let dir = scratch.join("results");
+    let s = vleo_modules::results::store::open(&dir, saved).expect("the saved result reads");
+    let kept = vleo_server::results_file::kept_from(saved, &s, false);
+    let file = scratch.join("upload.vleor");
+    vleo_design::results::write(&file, &[kept], "contract", "2026-01-01 00:00:00").unwrap();
+    let b = std::fs::read(&file).unwrap();
+    const A: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+    let mut o = String::new();
+    for c in b.chunks(3) {
+        let n = (c[0] as u32) << 16
+            | (*c.get(1).unwrap_or(&0) as u32) << 8
+            | *c.get(2).unwrap_or(&0) as u32;
+        for i in 0..4 {
+            if i <= c.len() {
+                o.push(A[(n >> (18 - 6 * i) & 63) as usize] as char);
+            } else {
+                o.push('=');
+            }
+        }
+    }
+    o
+}
+
 fn request(port: u16, method: &str, path: &str, params: &[(String, String)]) -> Answer {
     let q: String = params
         .iter()
@@ -805,6 +832,11 @@ fn every_route_answers_as_the_contract_says() {
                 .iter()
                 .map(|(k, v)| {
                     let v = v.replace("@saved", &saved);
+                    let v = if v == "@vleor" {
+                        vleor_of(&scratch, &saved)
+                    } else {
+                        v
+                    };
                     let v = match v.strip_prefix("@get:") {
                         Some(p) => request(port, "GET", p, &[]).body,
                         None => v,
@@ -866,6 +898,21 @@ fn every_route_answers_as_the_contract_says() {
                         .into_iter()
                         .map(|e| format!("{label}: {e}")),
                 );
+            }
+            // A NODE'S PAGE IS RECORDED TOO. The engine renders it from the
+            // sheet; the mock engine has no sheet reader, so it serves the
+            // page the real engine rendered for the example node.
+            if r.path.starts_with("/v1/fragment/") && !ex.name.is_empty() {
+                let file = format!("{}.html", ex.name);
+                used_examples.push(file.clone());
+                let p = root().join("contract/examples").join(&file);
+                if record {
+                    std::fs::write(&p, &a.body).unwrap();
+                } else if !p.is_file() {
+                    errs.push(format!(
+                        "contract/examples/{file}: missing — record it with VLEO_CONTRACT_RECORD=1"
+                    ));
+                }
             }
             if r.answer != "json" {
                 continue;

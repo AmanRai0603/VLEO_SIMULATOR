@@ -533,17 +533,12 @@ pub fn cmd_migration(root: &Path, args: &[&str]) -> Result<(), String> {
     let (owner, subsystem, forms) = (flag("--owner"), flag("--subsystem"), flag("--forms"));
     let mut by_owner: std::collections::BTreeMap<String, Vec<&vleo_sheet::model::Sheet>> =
         Default::default();
-    let (mut asked, mut done, mut beyond) = (0usize, 0usize, 0usize);
+    let (mut asked, mut done) = (0usize, 0usize);
     for sh in tree.ordered() {
         if sh.is_seeded() || sh.is_declared() {
             continue;
         }
         if owner.is_some_and(|o| sh.owner != o) || subsystem.is_some_and(|s| sh.subsystem != s) {
-            continue;
-        }
-        if !sh.publishes.is_empty() {
-            // A set of answers is beyond the language; its holes stay.
-            beyond += 1;
             continue;
         }
         asked += 1;
@@ -554,13 +549,8 @@ pub fn cmd_migration(root: &Path, args: &[&str]) -> Result<(), String> {
         by_owner.entry(sh.owner.clone()).or_default().push(sh);
     }
     println!(
-        "migration: {done} of {asked} computed row(s) have a method; {} still to come{}.",
-        asked - done,
-        if beyond > 0 {
-            format!(" ({beyond} set row(s) keep their holes — the language answers one quantity)")
-        } else {
-            String::new()
-        }
+        "migration: {done} of {asked} computed row(s) have a method; {} still to come.",
+        asked - done
     );
     for (o, rows) in &by_owner {
         let names: Vec<&str> = rows.iter().take(6).map(|s| s.id.as_str()).collect();

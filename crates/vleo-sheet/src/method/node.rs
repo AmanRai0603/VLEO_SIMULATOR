@@ -9,9 +9,14 @@ pub fn node_signature(sh: &crate::model::Sheet) -> Option<Signature> {
     for i in &sh.inputs {
         inputs.push((i.binding.clone(), quantity_dim(&i.ty)?));
     }
+    let mut publishes = Vec::new();
+    for p in &sh.publishes {
+        publishes.push((p.symbol.clone(), quantity_dim(&p.ty)?));
+    }
     Some(Signature {
         inputs,
         output: quantity_dim(&sh.ty)?,
+        publishes,
     })
 }
 
@@ -19,7 +24,7 @@ pub fn node_signature(sh: &crate::model::Sheet) -> Option<Signature> {
 /// checking without error, on a row with one computed answer. Anything else
 /// keeps its hand-written holes — and the gate says why.
 pub fn node_program(sh: &crate::model::Sheet) -> Option<Program> {
-    if sh.method.text.trim().is_empty() || sh.is_declared() || !sh.publishes.is_empty() {
+    if sh.method.text.trim().is_empty() || sh.is_declared() {
         return None;
     }
     compile(&sh.method.text, &node_signature(sh)?).ok()
@@ -30,5 +35,13 @@ pub fn node_program(sh: &crate::model::Sheet) -> Option<Program> {
 pub fn node_rust(sh: &crate::model::Sheet) -> Option<String> {
     let p = node_program(sh)?;
     let inputs: Vec<String> = sh.inputs.iter().map(|i| i.binding.clone()).collect();
-    Some(to_rust(&p, &sh.id, &sh.source, &sh.method.text, &inputs))
+    let publishes: Vec<String> = sh.publishes.iter().map(|p| p.symbol.clone()).collect();
+    Some(to_rust_publishing(
+        &p,
+        &sh.id,
+        &sh.source,
+        &sh.method.text,
+        &inputs,
+        &publishes,
+    ))
 }

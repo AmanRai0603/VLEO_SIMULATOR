@@ -9,6 +9,7 @@ fn sig(inputs: &[(&str, &str)], out: &str) -> Signature {
             .map(|(n, q)| (n.to_string(), quantity_dim(q).unwrap()))
             .collect(),
         output: quantity_dim(out).unwrap(),
+        publishes: Vec::new(),
     }
 }
 
@@ -198,7 +199,7 @@ fn cases_are_judged_against_the_method() {
 #[test]
 fn every_function_has_one_implementation_for_both_runner_and_translator() {
     for f in FUNCTIONS {
-        if f.name == "interp" {
+        if f.name == "interp" || f.name == "len" {
             continue;
         }
         assert!(
@@ -255,6 +256,311 @@ fn the_reference_covers_every_function_and_constant() {
             parse_unit(c.unit).is_ok(),
             "{} has an unreadable unit",
             c.name
+        );
+    }
+}
+
+/// Newton's method for the square root: a loop that settles, and refuses
+/// rather than answer when it is not given the passes to settle in.
+const NEWTON: &str = "\
+let r = a
+while abs(r * r - a) > 1e-12 * a at most N times
+  set r = (r + a / r) / 2
+end
+return r
+";
+
+#[test]
+fn a_loop_settles_or_refuses() {
+    let s = sig(&[("a", "Ratio")], "Ratio");
+    let p = compile(&NEWTON.replace('N', "40"), &s).unwrap();
+    let Outcome::Answer(r) = run(&p, &[("a".into(), 2.0)]).unwrap() else {
+        panic!("Newton's method on 2 did not settle in 40 passes")
+    };
+    assert!((r - 2f64.sqrt()).abs() < 1e-12, "{r}");
+    // Two passes are not enough from a = 1e6: the loop refuses, by name,
+    // instead of answering with where it had got to.
+    let p = compile(&NEWTON.replace('N', "2"), &s).unwrap();
+    let o = run(&p, &[("a".into(), 1e6)]).unwrap();
+    match o {
+        Outcome::Refused { line: 2, reason } => assert!(
+            reason.contains("did not settle within 2 passes"),
+            "{reason}"
+        ),
+        o => panic!("{o:?}"),
+    }
+}
+
+#[test]
+fn a_loop_says_how_often_it_may_run() {
+    let s = sig(&[("a", "Ratio")], "Ratio");
+    let e = errors(
+        "let r = a\nwhile r > 1 times\n  set r = r / 2\nend\nreturn r",
+        &s,
+    );
+    assert!(e.iter().any(|m| m.contains("at most N times")), "{e:?}");
+    let e = errors(
+        "let r = a\nwhile r > 1 at most 0 times\n  set r = r / 2\nend\nreturn r",
+        &s,
+    );
+    assert!(
+        e.iter()
+            .any(|m| m.contains("at most 0 times, which is never")),
+        "{e:?}"
+    );
+    let e = errors(
+        "let r = a\nwhile r at most 5 times\n  set r = r / 2\nend\nreturn r",
+        &s,
+    );
+    assert!(
+        e.iter().any(|m| m.contains("while needs a condition")),
+        "{e:?}"
+    );
+}
+
+#[test]
+fn a_kernel_function_is_called_by_name_with_its_units_checked() {
+    let s = sig(&[("h", "Length"), ("t", "Temperature")], "MassDensity");
+    let p = compile("return thermosphere_density(h, t)", &s).unwrap();
+    let Outcome::Answer(rho) = run(&p, &[("h".into(), 250e3), ("t".into(), 1000.0)]).unwrap()
+    else {
+        panic!("no answer")
+    };
+    let kernel = vleo_core::physics::env::mass_density(
+        vleo_units::Length::new(250e3),
+        vleo_units::Temperature::new(1000.0),
+    )
+    .get();
+    assert_eq!(
+        rho.to_bits(),
+        kernel.to_bits(),
+        "the interpreter runs the kernel itself"
+    );
+    // An argument in the wrong unit, and the answer in the wrong quantity.
+    let e = errors("return thermosphere_density(t, h)", &s);
+    assert!(
+        e.iter()
+            .any(|m| m.contains("h is in [K] here, and the kernel takes it in [m]")),
+        "{e:?}"
+    );
+    let s2 = sig(&[("h", "Length"), ("t", "Temperature")], "Length");
+    let e = errors("return thermosphere_density(h, t)", &s2);
+    assert!(!e.is_empty(), "a density returned as a length is refused");
+    let e = errors("return thermosphere_density(h)", &s);
+    assert!(
+        e.iter().any(|m| m.contains("takes 2 arguments, not 1")),
+        "{e:?}"
+    );
+}
+
+/// A node that publishes two members beside its answer.
+fn publishing() -> Signature {
+    let mut s = sig(&[("x", "Length")], "Length");
+    s.publishes = vec![
+        ("Twice".into(), quantity_dim("Length").unwrap()),
+        ("Square".into(), quantity_dim("Area").unwrap()),
+    ];
+    s
+}
+
+#[test]
+fn a_node_publishes_every_member_before_it_answers() {
+    let s = publishing();
+    let src = "if x < 0 [m] then\n  refuse \"negative\"\nend\n\
+               publish Twice = 2 * x\npublish Square = x * x\nreturn x";
+    let p = compile(src, &s).unwrap_or_else(|e| panic!("{e:?}"));
+    let (o, members) = run_all(&p, &[("x".into(), 3.0)]).unwrap();
+    assert_eq!(o, Outcome::Answer(3.0));
+    assert_eq!(
+        members,
+        vec![("Twice".to_string(), 6.0), ("Square".to_string(), 9.0)]
+    );
+    let (o, members) = run_all(&p, &[("x".into(), -1.0)]).unwrap();
+    assert!(matches!(o, Outcome::Refused { .. }));
+    assert!(members.is_empty(), "a refusal publishes nothing");
+
+    // The translation returns the members in the order the sheet declares
+    // them, whatever order the method publishes them in.
+    let swapped = "publish Square = x * x\npublish Twice = 2 * x\nreturn x";
+    let p = compile(swapped, &s).unwrap();
+    let rust = to_rust_publishing(
+        &p,
+        "n",
+        "src",
+        swapped,
+        &["x".into()],
+        &["Twice".into(), "Square".into()],
+    );
+    assert!(
+        rust.contains("-> Result<(f64, [f64; 2]), MethodError>"),
+        "{rust}"
+    );
+    assert!(rust.contains("published[1] = rt::fin("), "{rust}");
+    assert!(rust.contains("// Square"), "{rust}");
+    assert!(rust.contains("return Ok((rt::fin("), "{rust}");
+}
+
+#[test]
+fn a_member_missing_twice_nested_or_unknown_is_refused() {
+    let s = publishing();
+    let e = errors("publish Twice = 2 * x\nreturn x", &s);
+    assert!(
+        e.iter()
+            .any(|m| m.contains("returns before publishing Square")),
+        "{e:?}"
+    );
+    let e = errors(
+        "publish Twice = 2 * x\npublish Twice = x\npublish Square = x * x\nreturn x",
+        &s,
+    );
+    assert!(
+        e.iter().any(|m| m.contains("«Twice» is published twice")),
+        "{e:?}"
+    );
+    let e = errors(
+        "if x > 0 [m] then\n  publish Twice = 2 * x\nend\npublish Square = x * x\nreturn x",
+        &s,
+    );
+    assert!(e.iter().any(|m| m.contains("top level")), "{e:?}");
+    let e = errors(
+        "publish Thrice = 3 * x\npublish Twice = 2 * x\npublish Square = x * x\nreturn x",
+        &s,
+    );
+    assert!(e.iter().any(|m| m.contains("no member «Thrice»")), "{e:?}");
+    // Each member in its own quantity.
+    let e = errors(
+        "publish Twice = x * x\npublish Square = x * x\nreturn x",
+        &s,
+    );
+    assert!(e.iter().any(|m| m.contains("«Twice» must be")), "{e:?}");
+    // A node with one answer publishes nothing.
+    let e = errors(
+        "publish Twice = x\nreturn x",
+        &sig(&[("x", "Length")], "Length"),
+    );
+    assert!(e.iter().any(|m| m.contains("publishes nothing")), "{e:?}");
+}
+
+#[test]
+fn a_case_holds_every_member_to_the_authors_value() {
+    let s = publishing();
+    let p = compile(
+        "publish Twice = 2 * x\npublish Square = x * x\nreturn x",
+        &s,
+    )
+    .unwrap();
+    let case = |also: &[(&str, f64)]| Case {
+        label: "three".into(),
+        inputs: vec![("x".into(), 3.0)],
+        expect: Some(3.0),
+        tolerance: 1e-12,
+        also: also.iter().map(|(k, v)| (k.to_string(), *v)).collect(),
+    };
+    assert_eq!(
+        judge(&p, &s, &case(&[("Twice", 6.0), ("Square", 9.0)])),
+        Verdict::Agrees
+    );
+    match judge(&p, &s, &case(&[("Twice", 6.0), ("Square", 10.0)])) {
+        Verdict::MemberDiffers { member, got, .. } => {
+            assert_eq!(member, "Square");
+            assert_eq!(got, 9.0);
+        }
+        v => panic!("{v:?}"),
+    }
+    assert!(matches!(
+        judge(&p, &s, &case(&[("Twice", 6.0)])),
+        Verdict::Malformed(m) if m.contains("«Square»")
+    ));
+}
+
+/// The band count of `sw_activity_band`, written as a method: a list, gone
+/// through entry by entry.
+const BANDS: &str = "\
+const EDGES = [90, 130, 170] [1]
+let band = 1
+for edge in EDGES
+  if f107 >= edge then
+    set band = band + 1
+  end
+end
+return band
+";
+
+#[test]
+fn a_list_is_gone_through_read_by_entry_and_counted() {
+    let s = sig(&[("f107", "Ratio")], "Ratio");
+    let p = compile(BANDS, &s).unwrap_or_else(|e| panic!("{e:?}"));
+    let band = |f: f64| match run(&p, &[("f107".into(), f)]).unwrap() {
+        Outcome::Answer(v) => v,
+        o => panic!("{o:?}"),
+    };
+    // An edge belongs to the band it opens.
+    assert_eq!(
+        [70.0, 90.0, 129.9, 130.0, 170.0, 343.0].map(band),
+        [1.0, 2.0, 2.0, 3.0, 4.0, 4.0]
+    );
+    // By entry, counted from 1, with the list's unit; and by length.
+    let s = sig(&[("i", "Ratio")], "Length");
+    let src = "const R = [1, 2, 3] [km]\nreturn R[i] + len(R) * 1 [m]";
+    let p = compile(src, &s).unwrap_or_else(|e| panic!("{e:?}"));
+    let at = |i: f64| run(&p, &[("i".into(), i)]);
+    assert_eq!(at(1.0).unwrap(), Outcome::Answer(1003.0));
+    assert_eq!(at(3.0).unwrap(), Outcome::Answer(3003.0));
+    // Read outside the list, or between entries: a fault, never the nearest.
+    for i in [0.0, 4.0, 1.5, f64::NAN] {
+        assert!(at(i).is_err(), "R[{i}] was read");
+    }
+    // A list is a row of interp's table, by name.
+    let s = sig(&[("x", "Length")], "Time");
+    let src = "const XS = [0, 1, 2] [km]\nconst YS = [0, 10, 40] [s]\nreturn interp(x, XS, YS)";
+    let p = compile(src, &s).unwrap_or_else(|e| panic!("{e:?}"));
+    assert_eq!(
+        run(&p, &[("x".into(), 1500.0)]).unwrap(),
+        Outcome::Answer(25.0)
+    );
+}
+
+#[test]
+fn a_list_misread_is_said_by_line() {
+    let s = sig(&[("x", "Ratio")], "Ratio");
+    let said = |src: &str| errors(src, &s).join("\n");
+    let cases: &[(&str, &str)] = &[
+        // As one number.
+        ("const L = [1, 2] [1]\nreturn L + x", "is a list"),
+        // At a written index it does not have, or at a quantity.
+        ("const L = [1, 2] [1]\nreturn L[3] + x", "no entry 3"),
+        ("const L = [1, 2] [1]\nreturn L[0] + x", "no entry 0"),
+        ("const L = [1, 2] [1]\nreturn L[1 [m]] + x", "pure number"),
+        // Changed, or written anywhere but the top level.
+        (
+            "const L = [1, 2] [1]\nset L = 3\nreturn x",
+            "is a list and cannot be changed",
+        ),
+        (
+            "if x > 0 then\n  const L = [1, 2] [1]\nend\nreturn x",
+            "top level",
+        ),
+        // A name that is not a list, read as one.
+        ("let y = x\nreturn y[1]", "one value, not a list"),
+        ("return len(x)", "one value, not a list"),
+        ("for e in Q\nend\nreturn x", "not a list"),
+        // A table whose x row does not rise, given by name.
+        (
+            "const XS = [0, 2, 1] [1]\nreturn interp(x, XS, XS)",
+            "must rise strictly",
+        ),
+        // A list's entry keeps the list's unit.
+        ("const L = [1, 2] [m]\nreturn L[1]", "the answer must be"),
+        (
+            "const L = [1, 2] [m]\nfor e in L\n  return e\nend\nreturn x",
+            "the answer must be",
+        ),
+    ];
+    for (src, want) in cases {
+        let got = said(src);
+        assert!(
+            got.contains(want),
+            "{src:?}\n  said: {got}\n  wanted: {want}"
         );
     }
 }

@@ -238,6 +238,11 @@ results, the manual, figures and these documents are all held to it by check.
                                             what is blocked by a named row
     cargo run -p xtask -- reach             where each answer goes, and which
                                             reach no KPI closure
+    cargo run -p xtask -- catalogue [<group>]
+                                            what each group publishes to the
+                                            others, and who reads each row
+    cargo run -p xtask -- impact <node|group>
+                                            which other groups a change reaches
     cargo run -p xtask -- gap               what the sheets promised and
                                             nothing covers
     cargo run -p xtask -- derisk            the de-risking narrative, regenerated
@@ -284,6 +289,9 @@ results, the manual, figures and these documents are all held to it by check.
     cargo run -p xtask -- queue             every form branch and its stage
     cargo run -p xtask -- ship <version>    the release branch, stamped and
                                             proved (docs/roles/maintainer.html)
+    cargo run -p xtask -- design [--check <file>]
+                                            design.vleo: the tree as the one file a
+                                            kit carries, or a file held to the tree
     cargo run -p xtask -- guides            the three role guides, from the manual
     cargo run -p xtask -- method <node>     the node's method, run on its author's
                                             cases (docs/PSEUDOCODE.md)

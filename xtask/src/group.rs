@@ -148,73 +148,8 @@ fn sqlite(root: &Path) -> Result<(String, String), String> {
     Ok((engine, vleo_sheet::template::base64(&wasm)))
 }
 
-/// SHA-256 (FIPS 180-4), for the vendored files' hashes. Small, and here so
-/// the build needs no crate for one check.
-pub(super) fn sha256_hex(data: &[u8]) -> String {
-    const K: [u32; 64] = [
-        0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4,
-        0xab1c5ed5, 0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe,
-        0x9bdc06a7, 0xc19bf174, 0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc, 0x2de92c6f,
-        0x4a7484aa, 0x5cb0a9dc, 0x76f988da, 0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7,
-        0xc6e00bf3, 0xd5a79147, 0x06ca6351, 0x14292967, 0x27b70a85, 0x2e1b2138, 0x4d2c6dfc,
-        0x53380d13, 0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85, 0xa2bfe8a1, 0xa81a664b,
-        0xc24b8b70, 0xc76c51a3, 0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070, 0x19a4c116,
-        0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3,
-        0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7,
-        0xc67178f2,
-    ];
-    let mut h: [u32; 8] = [
-        0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab,
-        0x5be0cd19,
-    ];
-    let mut msg = data.to_vec();
-    msg.push(0x80);
-    while msg.len() % 64 != 56 {
-        msg.push(0);
-    }
-    msg.extend_from_slice(&((data.len() as u64) * 8).to_be_bytes());
-    for block in msg.chunks(64) {
-        let mut w = [0u32; 64];
-        for (i, c) in block.chunks(4).enumerate() {
-            w[i] = u32::from_be_bytes([c[0], c[1], c[2], c[3]]);
-        }
-        for i in 16..64 {
-            let s0 = w[i - 15].rotate_right(7) ^ w[i - 15].rotate_right(18) ^ (w[i - 15] >> 3);
-            let s1 = w[i - 2].rotate_right(17) ^ w[i - 2].rotate_right(19) ^ (w[i - 2] >> 10);
-            w[i] = w[i - 16]
-                .wrapping_add(s0)
-                .wrapping_add(w[i - 7])
-                .wrapping_add(s1);
-        }
-        let mut v = h;
-        for i in 0..64 {
-            let s1 = v[4].rotate_right(6) ^ v[4].rotate_right(11) ^ v[4].rotate_right(25);
-            let ch = (v[4] & v[5]) ^ (!v[4] & v[6]);
-            let t1 = v[7]
-                .wrapping_add(s1)
-                .wrapping_add(ch)
-                .wrapping_add(K[i])
-                .wrapping_add(w[i]);
-            let s0 = v[0].rotate_right(2) ^ v[0].rotate_right(13) ^ v[0].rotate_right(22);
-            let maj = (v[0] & v[1]) ^ (v[0] & v[2]) ^ (v[1] & v[2]);
-            let t2 = s0.wrapping_add(maj);
-            v = [
-                t1.wrapping_add(t2),
-                v[0],
-                v[1],
-                v[2],
-                v[3].wrapping_add(t1),
-                v[4],
-                v[5],
-                v[6],
-            ];
-        }
-        for (a, b) in h.iter_mut().zip(v) {
-            *a = a.wrapping_add(b);
-        }
-    }
-    h.iter().map(|x| format!("{x:08x}")).collect()
-}
+/// SHA-256, written once (`vleo_design::sha256_hex`).
+pub(super) use vleo_design::sha256_hex;
 
 /// Every `url(fonts/…)` in the stylesheet, as the font itself.
 fn inline_fonts(root: &Path, css: &str) -> Result<String, String> {
@@ -507,10 +442,13 @@ range and one refusal.\n\
 /// words were transcribed by an assistant, and the folder's first version
 /// says so, for the owner to confirm or replace.
 pub(super) fn cmd_group_export(root: &Path, args: &[&str]) -> Result<(), String> {
+    if args.contains(&"--all") {
+        return export_all(root, args);
+    }
     let id = args
         .iter()
         .find(|a| !a.starts_with("--"))
-        .ok_or("usage: group-export <group> [--out <dir>]")?
+        .ok_or("usage: group-export <group> [--out <dir>] | group-export --all [--out <dir>]")?
         .to_string();
     let out = args
         .iter()
@@ -530,6 +468,82 @@ pub(super) fn cmd_group_export(root: &Path, args: &[&str]) -> Result<(), String>
     println!(
         "wrote {} files for {id} into {}\nopen web/group.html and choose that folder to see what it still needs",
         files.len(),
+        out.display()
+    );
+    Ok(())
+}
+
+/// `group-export --all [--out <dir>]` — every group that owns a node, each
+/// in its own folder, and GROUPS.csv: which they are, whose, and how far the
+/// design already carries each — the starting point for every lead.
+fn export_all(root: &Path, args: &[&str]) -> Result<(), String> {
+    let out = args
+        .iter()
+        .position(|a| *a == "--out")
+        .and_then(|i| args.get(i + 1))
+        .map(PathBuf::from)
+        .unwrap_or_else(|| root.join("target/groups/all"));
+    let tree = load_all(root).map_err(|e| e.to_string())?;
+    let mut index = vec![csv_row(&[
+        "group".into(),
+        "name".into(),
+        "layer".into(),
+        "owner".into(),
+        "nodes".into(),
+        "computed".into(),
+        "with_method".into(),
+        "files".into(),
+    ])];
+    let (mut groups, mut files_total) = (0usize, 0usize);
+    for (id, g) in &tree.groups {
+        let sheets: Vec<&vleo_sheet::model::Sheet> = tree
+            .sheets
+            .values()
+            .filter(|s| &s.parent == id && s.state != "deprecated")
+            .collect();
+        if sheets.is_empty() {
+            continue;
+        }
+        let files = export(root, &tree, id)?;
+        let dir = out.join(id);
+        if dir.exists() {
+            fs::remove_dir_all(&dir).map_err(|e| format!("{}: {e}", dir.display()))?;
+        }
+        for (path, body) in &files {
+            let p = dir.join(path);
+            if let Some(d) = p.parent() {
+                fs::create_dir_all(d).map_err(|e| format!("{}: {e}", d.display()))?;
+            }
+            fs::write(&p, body).map_err(|e| format!("{}: {e}", p.display()))?;
+        }
+        let computed = sheets
+            .iter()
+            .filter(|s| !matches!(s.kind.as_str(), "declared" | "required" | "achieved"))
+            .count();
+        let with_method = sheets
+            .iter()
+            .filter(|s| !s.method.text.trim().is_empty())
+            .count();
+        index.push(csv_row(&[
+            id.clone(),
+            g.label.clone(),
+            g.layer.to_string(),
+            g.owner.clone(),
+            sheets.len().to_string(),
+            computed.to_string(),
+            with_method.to_string(),
+            files.len().to_string(),
+        ]));
+        groups += 1;
+        files_total += files.len();
+    }
+    fs::create_dir_all(&out).map_err(|e| format!("{}: {e}", out.display()))?;
+    fs::write(out.join("GROUPS.csv"), index.concat())
+        .map_err(|e| format!("{}: {e}", out.display()))?;
+    println!(
+        "wrote {groups} group folders ({files_total} files) into {}, and GROUPS.csv beside them.\n\
+         Each becomes its database files with `node tools/group_db.mjs --all {}`.",
+        out.display(),
         out.display()
     );
     Ok(())

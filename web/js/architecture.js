@@ -79,8 +79,8 @@ function secNode() {
     'The variable id <b>is</b> the node id, so there is no second name to keep in step.') +
 
   '<div class="cards">' +
-    card(total, 'folders', 'one per row, all built from the same eight files') +
-    card(withCode, 'specified', 'the sheet is filled and the six generators have run') +
+    card(total, 'folders', 'one per row, all built from the same seven files') +
+    card(withCode, 'specified', 'the sheet is filled and the generators have run') +
     card(seeded, 'seeded', 'folder and sheet exist, nothing is specified in them') +
     card(withFixture, 'carry evidence', 'a known-good value from outside this code') +
   '</div>' +
@@ -93,13 +93,13 @@ function secNode() {
    ['contract.rs', 'generated', 'the untyped adapter the bus calls'],
    ['mod.rs', 'generated', 'the module wiring'],
    ['evidence.rs', 'generated', 'the fixtures, as tests'],
-   ['page.html', 'generated', 'the tabs you read on the node'],
    ['meta.json', 'generated', 'state and hashes, written by the gate']].map(([f, w, d]) =>
     '<tr><td><code>' + f + '</code></td><td><span class="by ' +
     (w === 'by hand' ? 'hand' : 'gen') + '">' + w + '</span></td><td>' + esc(d) + '</td></tr>').join('') +
   '</tbody></table>' +
 
-  note('Two files are written, six are printed. A hand edit outside a numbered <code>HOLE</code> ' +
+  note('Two files are written, five are printed, and the page you read is rendered from the sheet ' +
+    'when it is opened. A hand edit outside a numbered <code>HOLE</code> ' +
     'block is discarded by the next regeneration and fails the regeneration diff in the gate — which ' +
     'is what makes the generated region genuinely owned by the generator rather than merely labelled ' +
     'that way.') +
@@ -108,7 +108,7 @@ function secNode() {
   '<pre class="code">' +
   'cargo run -p xtask -- new prop_intake_throat --like prop_capture_efficiency\n' +
   '$EDITOR crates/vleo-mod-prop/nodes/intake_throat/node.toml   # the physics\n' +
-  'cargo run -p xtask -- docs prop_intake_throat                # six artefacts, none typed\n' +
+  'cargo run -p xtask -- docs prop_intake_throat                # five artefacts, none typed\n' +
   '# fill the numbered HOLE blocks in model.rs — a few typed lines each\n' +
   'cargo run -p xtask -- gate prop_intake_throat\n' +
   'cargo test -p vleo-mod-prop</pre>' +

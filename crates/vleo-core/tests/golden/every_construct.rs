@@ -29,18 +29,31 @@ use vleo_units::pmath;
 /// for n = 1 to 12
 ///   set total = total + x ^ n / n
 /// end
+/// const EDGES = [0.5, 1, 2, 4] [1]
+/// let band = 1
+/// for edge in EDGES
+///   if x >= edge then
+///     set band = band + 1
+///   end
+/// end
+/// let lists = band + EDGES[floor(x) + 1] + interp(x, EDGES, [3, 1, 4, 1] [1]) + len(EDGES)
+/// let h = x + 1
+/// while h > 0.001 at most 12 times
+///   set h = h / 2
+/// end
 /// let t : Ratio = interp(x, [0, 0.5, 1, 4] [1], [1, 2, 0.5, 3] [1])
 /// let a = sqrt(x + 1) + cbrt(x) + ln(x + 2) + exp(-x) + log10(x + 1) + log2(x + 1)
 /// let b = sin(x) * cos(x) + tan(x / 10) + atan(x) + atan2(x, 1) + sinh(x / 5) + cosh(x / 5) + tanh(x)
 /// let c = min(x, 2) + max(x, 0.5) + abs(0 - x) + hypot(x, 1) + fmod(x + 7, 3) + erf(x) + erfc(x)
 /// let d = floor(x * 3) + ceil(x) + round(x * 2) + wrap_2pi(x * 7) + wrap_pi(x * 7) + pow(x + 1, 2.5) + (x + 1) ^ (x / 4)
 /// let e = asin(min(x, 1)) + acos(min(x, 1)) + PI
+/// let k = thermosphere_scale_height((x + 200) * 1000 [m], 1000 [K]) / 1e5 [m] + solar_cycle_mean(x * 86400 [s], (x + 30) * 86400 [s]) / 100
 /// if x > 3 and not (x > 3.5) then
-///   return total + t
+///   return total + t + h + lists
 /// else if x > 2 or x == 1.25 then
-///   return a + b
+///   return a + b + h + lists
 /// else
-///   return (c + d + e) / (x + 1)
+///   return (c + d + e + k) / (x + 1) + lists
 /// end
 /// ```
 pub fn evaluate(x: f64) -> Result<f64, MethodError> {
@@ -52,53 +65,100 @@ pub fn evaluate(x: f64) -> Result<f64, MethodError> {
         let n: f64 = step_1 as f64;
         total = rt::fin((total + rt::div(rt::pow(x, n), n, 7)?), 7)?;
     }
+    let EDGES: [f64; 4] = [0.5, 1.0, 2.0, 4.0];
+    let mut band: f64 = rt::fin(1.0, 10)?;
+    for entry_1 in EDGES.iter() {
+        let edge: f64 = *entry_1;
+        if (x >= edge) {
+            band = rt::fin((band + 1.0), 13)?;
+        }
+    }
+    let lists: f64 = rt::fin(
+        (((band + rt::at(&EDGES, (pmath::floor(x) + 1.0), 16)?)
+            + pmath::interp(x, &EDGES, &[3.0, 1.0, 4.0, 1.0]))
+            + (EDGES.len() as f64)),
+        16,
+    )?;
+    let mut h: f64 = rt::fin((x + 1.0), 17)?;
+    let mut passes_1: i64 = 0;
+    while (h > 0.001) {
+        if passes_1 == 12_i64 {
+            return Err(MethodError::Refused(
+                "the loop on line 18 did not settle within 12 passes",
+            ));
+        }
+        passes_1 += 1;
+        h = rt::fin(rt::div(h, 2.0, 19)?, 19)?;
+    }
     let t: f64 = rt::fin(
         pmath::interp(x, &[0.0, 0.5, 1.0, 4.0], &[1.0, 2.0, 0.5, 3.0]),
-        9,
+        21,
     )?;
     let a: f64 = rt::fin(
-        (((((rt::sqrt((x + 1.0), 10)? + pmath::cbrt(x)) + rt::ln((x + 2.0), 10)?)
+        (((((rt::sqrt((x + 1.0), 22)? + pmath::cbrt(x)) + rt::ln((x + 2.0), 22)?)
             + pmath::exp((-x)))
-            + rt::log10((x + 1.0), 10)?)
-            + rt::log2((x + 1.0), 10)?),
-        10,
+            + rt::log10((x + 1.0), 22)?)
+            + rt::log2((x + 1.0), 22)?),
+        22,
     )?;
     let b: f64 = rt::fin(
-        (((((((pmath::sin(x) * pmath::cos(x)) + pmath::tan(rt::div(x, 10.0, 11)?))
+        (((((((pmath::sin(x) * pmath::cos(x)) + pmath::tan(rt::div(x, 10.0, 23)?))
             + pmath::atan(x))
             + pmath::atan2(x, 1.0))
-            + pmath::sinh(rt::div(x, 5.0, 11)?))
-            + pmath::cosh(rt::div(x, 5.0, 11)?))
+            + pmath::sinh(rt::div(x, 5.0, 23)?))
+            + pmath::cosh(rt::div(x, 5.0, 23)?))
             + pmath::tanh(x)),
-        11,
+        23,
     )?;
     let c: f64 = rt::fin(
         ((((((pmath::min(x, 2.0) + pmath::max(x, 0.5)) + pmath::abs((0.0 - x)))
             + pmath::hypot(x, 1.0))
-            + rt::fmod((x + 7.0), 3.0, 12)?)
+            + rt::fmod((x + 7.0), 3.0, 24)?)
             + pmath::erf(x))
             + pmath::erfc(x)),
-        12,
+        24,
     )?;
     let d: f64 = rt::fin(
         ((((((pmath::floor((x * 3.0)) + pmath::ceil(x)) + pmath::round((x * 2.0)))
             + pmath::wrap_2pi((x * 7.0)))
             + pmath::wrap_pi((x * 7.0)))
             + rt::pow((x + 1.0), 2.5))
-            + rt::pow((x + 1.0), rt::div(x, 4.0, 13)?)),
-        13,
+            + rt::pow((x + 1.0), rt::div(x, 4.0, 25)?)),
+        25,
     )?;
     let e: f64 = rt::fin(
-        ((rt::asin(pmath::min(x, 1.0), 14)? + rt::acos(pmath::min(x, 1.0), 14)?)
+        ((rt::asin(pmath::min(x, 1.0), 26)? + rt::acos(pmath::min(x, 1.0), 26)?)
             + core::f64::consts::PI),
-        14,
+        26,
+    )?;
+    let k: f64 = rt::fin(
+        (rt::div(
+            (vleo_core::physics::env::scale_height(
+                vleo_units::Length::new(((x + 200.0) * 1000.0)),
+                vleo_units::Temperature::new(1000.0),
+            )
+            .get()),
+            100000.0,
+            27,
+        )? + rt::div(
+            (vleo_core::physics::env::solar_cycle_analogue_mean(
+                (x * 86400.0) / 86400.0,
+                ((x + 30.0) * 86400.0) / 86400.0,
+            )),
+            100.0,
+            27,
+        )?),
+        27,
     )?;
     if ((x > 3.0) && (!(x > 3.5))) {
-        return Ok(rt::fin((total + t), 16)?);
+        return Ok(rt::fin((((total + t) + h) + lists), 29)?);
     } else if ((x > 2.0) || (x == 1.25)) {
-        return Ok(rt::fin((a + b), 18)?);
+        return Ok(rt::fin((((a + b) + h) + lists), 31)?);
     } else {
-        return Ok(rt::fin(rt::div(((c + d) + e), (x + 1.0), 20)?, 20)?);
+        return Ok(rt::fin(
+            (rt::div((((c + d) + e) + k), (x + 1.0), 33)? + lists),
+            33,
+        )?);
     }
     Err(MethodError::Degenerate {
         line: 0,

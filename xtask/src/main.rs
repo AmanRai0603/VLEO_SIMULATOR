@@ -10,6 +10,8 @@ use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 use vleo_sheet::{emit, gate, load_all, page, Tree};
 
+mod catalogue;
+mod design;
 mod fills;
 mod flow;
 mod forms;
@@ -102,6 +104,8 @@ pub(crate) fn dispatch(root: &Path, cmd: &str, rest: &[&str]) -> Result<(), Stri
         "status" => cmd_status(&root),
         "active" => cmd_active(&root, &rest),
         "reach" => cmd_reach(&root, &rest),
+        "catalogue" => catalogue::cmd_catalogue(&root, &rest),
+        "impact" => catalogue::cmd_impact(&root, &rest),
         "gap" => cmd_gap(&root),
         "graph" => cmd_graph(&root),
         "new" => cmd_new(&root, &rest),
@@ -123,6 +127,7 @@ pub(crate) fn dispatch(root: &Path, cmd: &str, rest: &[&str]) -> Result<(), Stri
         "derisk" => cmd_derisk(&root, &rest),
         "release" => cmd_release(&root, &rest),
         "kit" => cmd_kit(&root, &rest),
+        "design" => design::cmd_design(&root, &rest),
         "take" => flow::cmd_take(&root, &rest),
         "guides" => cmd_guides(&root),
         "preview" => flow::cmd_preview(&root, &rest),
@@ -162,10 +167,10 @@ pub(crate) fn dispatch(root: &Path, cmd: &str, rest: &[&str]) -> Result<(), Stri
 const HELP: &str = "\
 cargo xtask <command>
 
-  docs [<node>]      the six per-node generators — model, contract, module,
-                     evidence, page fragment and metadata, each from the
-                     node's own sheet (a page also names the rows it reads
-                     and the rows that read it).
+  docs [<node>]      the per-node generators that write files — model,
+                     contract, module, evidence and metadata, each from the
+                     node's own sheet. A node's page is rendered from its
+                     sheet when it is opened, and is never written here.
   assemble           the three assembly generators — the index, the document
                      and the graph tables. They combine and refuse; they never
                      decide, because a decision taken during assembly is a
@@ -182,6 +187,15 @@ cargo xtask <command>
                      where each answer GOES: how many reach a KPI closure, and
                      which answer and are read by nothing. A subsystem can
                      answer on every row it has and be wired to nothing.
+  catalogue [<group>] [--csv <file>]
+                     what each group publishes to the others: every row another
+                     group reads, or that crosses a layer, with its version and
+                     every row that reads it. Taken from the inputs the sheets
+                     declare; --csv writes it as a table.
+  impact <node|group> ...
+                     which other groups a change to these rows reaches: the
+                     rows that read them, theirs, and so on, by group, nearest
+                     first. A group named stands for all its rows.
   gap                what every sheet promised and nothing yet covers.
   graph              the three graphs, their sizes, and the crate direction check.
   new <id> --like <sibling>
@@ -272,14 +286,23 @@ cargo xtask <command>
                      sheets' [[version]] and [[risk]] records, never edited.
   kit [--bin <dir>] [--out <dir>] [--files-only]
                      the tool as a team member gets it: the two programs and
-                     the files they read (the web face, the tree, its pages,
-                     the reference data) in one folder, with START_HERE.md —
-                     on Windows the daemon is `Start VLEO.exe`, elsewhere
-                     start.sh starts it. No git, no Rust source beyond the node
-                     folders. Zip the folder and share it. --bin is where the
+                     the files they read (the web face, the design as one file,
+                     design.vleo, and the reference data) in one folder, with
+                     START_HERE.md — on Windows the daemon is `Start VLEO.exe`,
+                     elsewhere start.sh starts it. No git, no Rust source.
+                     Zip the folder and share it. --bin is where the
                      release-built programs are (default target/release);
                      --files-only leaves the programs out, for the Python
                      package (tools/build_wheel.py).
+  design [--out <file>]
+                     design.vleo: the tree the tool reads — every node folder,
+                     the layers, the cases and the source list — written into
+                     one SQLite file, which the kit carries in their place and
+                     the daemon reads as it reads the folders. Default
+                     target/design.vleo.
+  design --check <file>
+                     the file held to the tree: each file against its SHA-256,
+                     the fingerprint, and every file against the folders.
   readers [--out <dir>]
                      the docs folder for readers: every row's page and every
                      lesson, read with no tool running — from a shared drive or
@@ -339,6 +362,10 @@ cargo xtask <command>
                      in the group, for the group to start from. It invents
                      nothing: what the tree lacks is left for the group, and
                      the group application lists it. Default target/groups/.
+  group-export --all [--out <dir>]
+                     every group that owns a node, each in its own folder, and
+                     GROUPS.csv: whose each is and how far the design carries
+                     it. Default target/groups/all/.
   rerun <node>|--all [--require]
                      the author's own code run again on their cases: Python
                      directly, MATLAB and Octave through Octave; anything else
@@ -366,8 +393,9 @@ cargo xtask <command>
   approve --verify <branch>
                      the same check, as the pipeline runs it on a form branch's
                      pull request.
-  queue              every form branch and where it stands: waiting for the
-                     author's approval, approved, merged.
+  queue              every form branch and every group branch, and where each
+                     stands: waiting for the author's approval or the group's
+                     acceptance, approved or accepted, merged.
   ship <version> [--no-push] [--no-test]
                      the release branch release/<version> from main: the
                      de-risking narrative, the stamp, regenerate, gate, test,
@@ -574,20 +602,24 @@ fn cmd_docs(root: &Path, args: &[&str]) -> Result<(), String> {
         // generating a file full of `todo!()` would hide that behind something
         // that looks like work.
         let artefacts: Vec<(&str, String)> = if sh.is_seeded() {
-            vec![
-                ("page.html", page::fragment(sh, &holes, &tree)),
-                ("meta.json", emit::meta_json(sh, &gaps)),
-            ]
+            vec![("meta.json", emit::meta_json(sh, &gaps))]
         } else {
             vec![
                 ("model.rs", emit::model_rs(sh, &holes)),
                 ("contract.rs", emit::contract_rs(sh)),
                 ("mod.rs", emit::mod_rs(sh)),
                 ("evidence.rs", emit::evidence_rs(sh)),
-                ("page.html", page::fragment(sh, &holes, &tree)),
                 ("meta.json", emit::meta_json(sh, &gaps)),
             ]
         };
+        // A node's page is rendered from its sheet when it is opened; a copy
+        // left in the folder from before would be read by nothing and believed
+        // by whoever opened it.
+        let stale = sh.dir.join("page.html");
+        if stale.is_file() {
+            fs::remove_file(&stale).map_err(|e| format!("{}: {e}", stale.display()))?;
+            written += 1;
+        }
         for (name, text) in artefacts {
             // Format the candidate before comparing, so the generator is a
             // function of its input: writing unformatted text and formatting it
@@ -663,12 +695,10 @@ fn cmd_assemble(root: &Path, args: &[&str]) -> Result<(), String> {
     fs::create_dir_all(&frag_dir).map_err(|e| format!("{}: {e}", frag_dir.display()))?;
     let mut bytes = 0usize;
     for sh in tree.ordered() {
-        let src = sh.dir.join("page.html");
-        if let Ok(t) = fs::read_to_string(&src) {
-            bytes += t.len();
-            fs::write(frag_dir.join(format!("{}.html", sh.id)), t)
-                .map_err(|e| format!("fragment {}: {e}", sh.id))?;
-        }
+        let t = page::fragment(sh, &vleo_sheet::load::read_holes(&sh.dir), &tree);
+        bytes += t.len();
+        fs::write(frag_dir.join(format!("{}.html", sh.id)), t)
+            .map_err(|e| format!("fragment {}: {e}", sh.id))?;
     }
     println!(
         "assemble: index {} KB, {} fragments totalling {} KB — nothing here is committed",

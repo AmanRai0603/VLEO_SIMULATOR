@@ -13,6 +13,10 @@ pub struct Case {
     /// Relative, exactly as a fixture's: |got − expect| / |expect|, or |got|
     /// when the expected value is zero.
     pub tolerance: f64,
+    /// For a node that publishes several values: the value the author's code
+    /// gave for each published member, by symbol, in SI. Held to the same
+    /// tolerance as the answer. Empty for a node with one answer.
+    pub also: Vec<(String, f64)>,
 }
 
 impl Case {
@@ -34,6 +38,14 @@ pub enum Verdict {
     Agrees,
     /// Answered, and further from the author's value than the tolerance.
     Differs { got: f64, relative: f64 },
+    /// The answer agrees and a published member does not: which, what the
+    /// method gave, and how far apart.
+    MemberDiffers {
+        member: String,
+        got: f64,
+        want: f64,
+        relative: f64,
+    },
     /// Answered where the author's code refused.
     AnsweredRefusal { got: f64 },
     /// Refused where the author's code answered.
@@ -57,6 +69,18 @@ impl Verdict {
                 "the method gives {}, your code gave {} — {:.2e} apart (relative), more than your tolerance {:e}",
                 show(*got),
                 show(c.expect.unwrap_or(0.0)),
+                relative,
+                c.tolerance
+            ),
+            Verdict::MemberDiffers {
+                member,
+                got,
+                want,
+                relative,
+            } => format!(
+                "the method publishes {member} = {}, your code gave {} — {:.2e} apart (relative), more than your tolerance {:e}",
+                show(*got),
+                show(*want),
                 relative,
                 c.tolerance
             ),
@@ -112,18 +136,47 @@ pub fn judge(p: &Program, sig: &Signature, c: &Case) -> Verdict {
             return Verdict::Malformed(format!("«{name}» is not an input of this node"));
         }
     }
-    match (run(p, &c.inputs), c.expect) {
-        (Err(d), _) => Verdict::Faulted(d.to_string()),
-        (Ok(Outcome::Refused { .. }), None) => Verdict::Agrees,
-        (Ok(Outcome::Refused { reason, .. }), Some(_)) => Verdict::RefusedAnswer { reason },
-        (Ok(Outcome::Answer(got)), None) => Verdict::AnsweredRefusal { got },
-        (Ok(Outcome::Answer(got)), Some(want)) => {
-            let relative = relative_error(got, want);
-            if relative <= c.tolerance {
-                Verdict::Agrees
-            } else {
-                Verdict::Differs { got, relative }
+    for (name, _) in &c.also {
+        if !sig.publishes.iter().any(|(n, _)| n == name) {
+            return Verdict::Malformed(format!("«{name}» is not a member this node publishes"));
+        }
+    }
+    if c.expect.is_some() {
+        for (name, _) in &sig.publishes {
+            if !c.also.iter().any(|(n, _)| n == name) {
+                return Verdict::Malformed(format!(
+                    "this case gives no value for the published member «{name}»"
+                ));
             }
+        }
+    }
+    match (run_all(p, &c.inputs), c.expect) {
+        (Err(d), _) => Verdict::Faulted(d.to_string()),
+        (Ok((Outcome::Refused { .. }, _)), None) => Verdict::Agrees,
+        (Ok((Outcome::Refused { reason, .. }, _)), Some(_)) => Verdict::RefusedAnswer { reason },
+        (Ok((Outcome::Answer(got), _)), None) => Verdict::AnsweredRefusal { got },
+        (Ok((Outcome::Answer(got), published)), Some(want)) => {
+            let relative = relative_error(got, want);
+            if relative > c.tolerance {
+                return Verdict::Differs { got, relative };
+            }
+            for (member, want) in &c.also {
+                let got = published
+                    .iter()
+                    .find(|(n, _)| n == member)
+                    .map(|(_, v)| *v)
+                    .unwrap_or(f64::NAN);
+                let relative = relative_error(got, *want);
+                if relative.is_nan() || relative > c.tolerance {
+                    return Verdict::MemberDiffers {
+                        member: member.clone(),
+                        got,
+                        want: *want,
+                        relative,
+                    };
+                }
+            }
+            Verdict::Agrees
         }
     }
 }
@@ -354,8 +407,33 @@ pub fn report_toml(text: &str) -> Result<Report, Error> {
         })?;
         inputs.push((b.to_string(), d));
     }
+    let mut publishes = Vec::new();
+    for m in v
+        .get("publishes")
+        .and_then(|a| a.as_array())
+        .into_iter()
+        .flatten()
+    {
+        let s = m.get("symbol").and_then(|x| x.as_str()).unwrap_or("");
+        let t = m.get("type").and_then(|x| x.as_str()).unwrap_or("");
+        let d = quantity_dim(t).ok_or_else(|| {
+            Error::new(
+                ErrorKind::Malformed,
+                format!("the published member «{s}» has no known quantity «{t}»"),
+            )
+        })?;
+        publishes.push((s.to_string(), d));
+    }
     let cases = cases_of(&v)?;
-    Ok(report(src, &Signature { inputs, output }, &cases))
+    Ok(report(
+        src,
+        &Signature {
+            inputs,
+            output,
+            publishes,
+        },
+        &cases,
+    ))
 }
 
 /// The same report from the plain form the node form's checker is handed —
@@ -423,6 +501,7 @@ pub fn report_plain(text: &str) -> Result<Report, Error> {
                     inputs: ins,
                     expect: if refuse { None } else { Some(num(f[1])?) },
                     tolerance: if refuse { 0.0 } else { num(f[2])? },
+                    also: Vec::new(),
                 });
             }
             ("method", _) => {
@@ -440,7 +519,15 @@ pub fn report_plain(text: &str) -> Result<Report, Error> {
     }
     let output = output
         .ok_or_else(|| Error::new(ErrorKind::Malformed, "the answer's quantity is not given"))?;
-    Ok(report(&src, &Signature { inputs, output }, &cases))
+    Ok(report(
+        &src,
+        &Signature {
+            inputs,
+            output,
+            publishes: Vec::new(),
+        },
+        &cases,
+    ))
 }
 
 /// A quantity as the plain form names it: a quantity type (`Velocity`), as a
@@ -492,11 +579,24 @@ pub fn cases_of(v: &toml::Value) -> Result<Vec<Case>, Error> {
                 inputs.push((k.clone(), n));
             }
         }
+        let mut also = Vec::new();
+        if let Some(t) = c.get("also").and_then(|x| x.as_table()) {
+            for (k, x) in t {
+                let n = num(x).ok_or_else(|| {
+                    Error::new(
+                        ErrorKind::Malformed,
+                        format!("«{label}»: the published member «{k}» is not a number"),
+                    )
+                })?;
+                also.push((k.clone(), n));
+            }
+        }
         out.push(Case {
             label,
             inputs,
             expect,
             tolerance: c.get("tolerance").and_then(num).unwrap_or(0.0),
+            also,
         });
     }
     Ok(out)

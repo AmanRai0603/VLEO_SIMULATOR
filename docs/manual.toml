@@ -428,7 +428,7 @@ say = "Send it: the CSV for a spreadsheet, or the report for someone without the
 ui = "download report"
 
 [[layer.section.step]]
-say = "Keep a result somebody sent — its CSV or its report."
+say = "Keep a result somebody sent — its CSV, its report, or a results file (`.vleor`) that holds several, each kept once."
 ui = "upload a result…"
 
 [[layer.section.step]]
@@ -1594,7 +1594,8 @@ answer = "The team gets the tool, not the repository: one Python package for eve
 body = """
 The daemon reads the web face, the tree and every node's page at run time, so \
 the programs alone do not run. `xtask kit` puts them beside exactly those files \
-— no git history, no generators, no kernel source — in `dist/vleo-<version>/`, \
+— the tree and its pages as one file, `design.vleo`; no git history, no \
+generators, no kernel source — in `dist/vleo-<version>/`, \
 with `START_HERE.md` (from `docs/TEAM_GUIDE.md`) and `VERSION` — and `start.sh` \
 off Windows; on Windows the daemon ships as `Start VLEO.exe`, which opens the \
 browser itself. Zip it and share it. A kit runs on the platform that built it; \
@@ -1951,7 +1952,8 @@ come from* is answered by walking upward without ever leaving the tree.
 `node.toml` — the sheet. The only file written by hand — by a form's intake, or a developer.
 `fixtures.toml` — known-good values from outside this code.
 `model.rs` — generated, except the numbered slots where the Rust goes.
-`contract.rs`, `mod.rs`, `evidence.rs`, `page.html`, `meta.json` — generated.
+`contract.rs`, `mod.rs`, `evidence.rs`, `meta.json` — generated.
+The row's page is not in the folder: the tool renders it from the sheet when it is opened.
 
 The rules that do not bend, and the developer's loop, are in `AGENTS.md`; the \
 reasoning behind the architecture is in `docs/ARCHITECTURE.md`."""
@@ -2177,6 +2179,22 @@ effect = "reads"
 
 [[command]]
 tool = "xtask"
+name = "catalogue"
+usage = "catalogue [<group>] [--csv <file>]"
+what = "What each group publishes to the others: every row another group reads, or that crosses a layer, with its version and every row that reads it — taken from the inputs the sheets declare. `--csv` writes it as a table. The design file carries it too, as its `published` table."
+who = "developer"
+effect = "reads"
+
+[[command]]
+tool = "xtask"
+name = "impact"
+usage = "impact <node|group> ..."
+what = "Which other groups a change to these rows reaches: the rows that read them, theirs, and so on, by group and nearest first. A group named stands for all its rows. `group-intake` prints the same for the nodes a release changes."
+who = "developer"
+effect = "reads"
+
+[[command]]
+tool = "xtask"
 name = "reach"
 usage = "reach [<subsystem>]"
 what = "Where each answer goes, and which reach no customer target."
@@ -2340,7 +2358,7 @@ effect = "writes"
 tool = "xtask"
 name = "group-export"
 usage = "group-export <group> [--out <dir>]"
-what = "Writes one group's folder in the pattern of groups/SPEC.toml from every sheet in the group — its nodes, inputs, plain words, theory, assumptions, evidence and sources — for the group to start from. It invents nothing: a pseudocode, the group's own results and its pictures are left for the group, and the group application lists them."
+what = "Writes one group's folder in the pattern of groups/SPEC.toml from every sheet in the group — its nodes, inputs, plain words, theory, assumptions, evidence and sources — for the group to start from. It invents nothing: a pseudocode, the group's own results and its pictures are left for the group, and the group application lists them. `--all` writes every group that owns a node, each in its own folder, with GROUPS.csv beside them; `node tools/group_db.mjs --all <dir>` then makes each into its database files and READY.csv, what each group still needs."
 who = "maintainer"
 effect = "writes"
 
@@ -2428,7 +2446,7 @@ effect = "writes"
 tool = "xtask"
 name = "queue"
 usage = "queue"
-what = "Every form branch and where it stands: not pushed, waiting for the author's approval, approved and ready to merge, or merged."
+what = "Every form branch and every group branch, and where each stands: not pushed; waiting for the author's approval, or the group's acceptance of its test application; approved or accepted and ready to merge; or merged."
 who = "maintainer"
 effect = "reads"
 
@@ -2450,9 +2468,25 @@ effect = "writes"
 
 [[command]]
 tool = "xtask"
+name = "design"
+usage = "design [--out <file>]"
+what = "design.vleo: the tree the tool reads — every node folder with its sheet, fixtures and page, the layers, the cases and the source list — written into one SQLite file, each file whole with its SHA-256. The kit carries it in place of the folders and the daemon reads it as it reads them, so the pages are the same byte for byte. Default target/design.vleo; nothing committed."
+who = "developer"
+effect = "writes"
+
+[[command]]
+tool = "xtask"
+name = "design"
+usage = "design --check <file>"
+what = "A design file held to the tree: each file against its SHA-256, all of them against the fingerprint, and every file against the folders it was written from. Prints the differences and fails on any."
+who = "developer"
+effect = "reads"
+
+[[command]]
+tool = "xtask"
 name = "kit"
 usage = "kit [--bin <dir>] [--out <dir>] [--files-only]"
-what = "The tool as a team member gets it: the two release-built programs beside exactly the files they read, with START_HERE.md and VERSION (and start.sh off Windows, where the daemon ships as Start VLEO.exe), in dist/vleo-<version>/. Zip it and share it; see docs/SHARING.md. --files-only leaves the programs out: the files the Python package carries."
+what = "The tool as a team member gets it: the two release-built programs beside exactly the files they read — the design among them as one file, design.vleo — with START_HERE.md and VERSION (and start.sh off Windows, where the daemon ships as Start VLEO.exe), in dist/vleo-<version>/. Zip it and share it; see docs/SHARING.md. --files-only leaves the programs out: the files the Python package carries."
 who = "developer"
 effect = "writes"
 
@@ -2588,9 +2622,25 @@ effect = "reads"
 tool = "vleo"
 name = "result"
 usage = "result <file|folder> [--html <out.html>]"
-what = "A saved result shown as it was — nothing runs. Reads a result's folder, the CSV `run --save` writes, or the report page it rides in; `--html` writes that report, to send."
+what = "A saved result shown as it was — nothing runs. Reads a result's folder, the CSV `run --save` writes, or the report page it rides in; `--html` writes that report, to send. Given a results file (.vleor), lists the results it holds."
 who = "user"
 effect = "reads"
+
+[[command]]
+tool = "vleo"
+name = "results"
+usage = "results export <file.vleor> [<name> ...]"
+what = "Saved results, many in one file to send or keep: every result in the results folder, or the ones named. Each goes out whole, and every value again as a row that Python (`vleo.results`) or any SQL reader can ask for."
+who = "user"
+effect = "writes"
+
+[[command]]
+tool = "vleo"
+name = "results"
+usage = "results import <file.vleor>"
+what = "The results in a results file, put back in the results folder exactly as they were — nothing runs. A question already kept is kept once."
+who = "user"
+effect = "writes"
 
 [[command]]
 tool = "vleo"
@@ -2780,6 +2830,11 @@ what = "Keep a result somebody sent: `csv=` its CSV or the text of its report, a
 
 [[route]]
 method = "POST"
+path = "/v1/results/upload-file"
+what = "Keep every result a results file (`results.vleor`) holds: `vleor=` the file, base64. Each is kept once, as a save is, pinned where the file says so; the answer names each one, how many were new and how many already kept."
+
+[[route]]
+method = "POST"
 path = "/v1/results/pin"
 what = "Pin a saved result so every value is kept for good (`on=1`), or unpin it (`on=0`) so it is thinned to its summary once it is older than `VLEO_KEEP_DAYS`: `name`."
 
@@ -2866,6 +2921,11 @@ default = "30; kept whole when VLEO_RESULTS names the folder"
 name = "VLEO_ROOT"
 what = "Where the daemon finds the web face, the tree and its pages. Unset, it looks upward from where it was started, then from beside its own program — which is how a kit runs with no checkout."
 default = "found"
+
+[[env]]
+name = "VLEO_DESIGN"
+what = "A design file for the daemon to read the design from, in place of the one beside it or the folders of a checkout. A file that does not open stops the daemon, naming why: it never falls back to whatever folders sit beside it."
+default = "design.vleo beside the tool, else the folders"
 
 [[env]]
 name = "VLEO_PORT"
@@ -3161,6 +3221,10 @@ what = "The solar subsystem row by row. Generated by tools/solar_rows.py."
 [[doc]]
 path = "docs/RELEASE_SETUP.md"
 what = "How a release is decided — a merged pull request into main — and how the release workflow refuses anything else before it builds."
+
+[[doc]]
+path = "docs/DRIVE_SETUP.md"
+what = "The team's shared drive, written by the `drive` workflow from the repository on every release: what it holds, and the one-time sign-in that lets the workflow write it."
 
 [[doc]]
 path = "docs/GITLAB_TRANSFER.md"

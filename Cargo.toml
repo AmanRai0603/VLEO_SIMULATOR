@@ -6,6 +6,7 @@
 #   RING 2  vleo-bus      typed messages, ports, schedule, cache keys
 #   RING 3  vleo-mod-*    one crate per subsystem — a sibling it did not declare will not compile
 #           vleo-modules  facade + dispatch table; re-exports the twelve, holds no formula
+#           vleo-design   design.vleo: the tree as one file, read as the folders are
 #           vleo-server   the local server both the daemon and the Python package start
 #   FACES   vleo-cli · vleo-daemon · vleo-wasm · vleo-ffi · vleo-py
 [workspace]
@@ -38,6 +39,7 @@ members = [
     "crates/vleo-sheet",
     "crates/vleo-bus",
     "crates/vleo-data",
+    "crates/vleo-design",
     "crates/vleo-modules",
     "crates/vleo-cli",
     "crates/vleo-daemon",
@@ -61,6 +63,7 @@ vleo-sheet   = { path = "crates/vleo-sheet" }
 vleo-core    = { path = "crates/vleo-core" }
 vleo-bus     = { path = "crates/vleo-bus" }
 vleo-data    = { path = "crates/vleo-data" }
+vleo-design  = { path = "crates/vleo-design" }
 vleo-modules = { path = "crates/vleo-modules" }
 vleo-server = { path = "crates/vleo-server" }
 toml         = "0.8"
@@ -69,6 +72,9 @@ toml         = "0.8"
 toml_edit    = "0.22"
 serde        = { version = "1", features = ["derive"] }
 serde_json   = "1"
+# SQLite with its C source compiled in, so no machine needs it installed: the
+# design file (vleo-design), in the same format the group applications write.
+rusqlite     = { version = "0.32", features = ["bundled"] }
 
 # The kernel is the hot path.
 [profile.release]

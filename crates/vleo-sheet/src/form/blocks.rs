@@ -298,6 +298,14 @@ pub const ARRAYS: &[Array] = &[
                 required: true,
                 managed: false,
             },
+            Column {
+                key: "also",
+                shape: Shape::Inputs,
+                ask: "only for a node that publishes several values: each published member's \
+                      value your code gave, by its symbol, in SI",
+                required: false,
+                managed: false,
+            },
         ],
         blocks: Blocks::Free,
         after: "maths",

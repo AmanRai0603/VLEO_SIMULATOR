@@ -57,6 +57,29 @@ computer; open the pages and the files from there. A file opened in a browser
 that cannot write back (anything but Chrome or Edge) is saved by downloading:
 put the downloaded file back where it came from, replacing the old one.
 
+## Every group, set up for its lead
+
+Every group that owns a node in the design starts from what the design already
+holds. Two commands make all of them at once:
+
+    cargo run -p xtask -- group-export --all --out ~/groups
+    node tools/group_db.mjs --all ~/groups --out ~/groups-db
+
+| What | Where |
+| --- | --- |
+| A folder of the pattern for each group, written from its sheets | `~/groups/<group>/` |
+| `GROUPS.csv` — each group, its layer, its owner team, how many nodes, how many compute, how many already have a method | `~/groups/` |
+| Each group's structure, one node file per node, and an unsealed release | `~/groups-db/<group>/` |
+| `READY.csv` — what each group's own checks still ask of it: empty sections, pseudocode to write, results to supply, declared values to decide, defaults to give | `~/groups-db/` |
+
+Copy `~/groups-db/<group>/` onto that group's shared drive, beside `apps/`, as
+laid out above. The `drive` workflow does all of this for every group at once —
+`tools/drive.py pack`, then a mirror into one Drive folder, on every release tag
+(docs/DRIVE_SETUP.md). The lead opens the structure in the group application and
+starts from there; the authors open their node files. Nothing is invented for
+them: what the design lacks stays empty, and `READY.csv` counts it, so it is
+also the first plan of each group's work.
+
 ## The lead, in the group application
 
 1. **Start the group** — open `web/group.html`, *Start a new group*: an id
@@ -168,6 +191,7 @@ application, and records the group's answer — each step refusing until the one
 | Seal check | every command recomputes every file's SHA-256; a release whose files no longer give the sealed fingerprint is refused before anything is read. An unsealed release is looked at only with `group-intake --draft`, and never applied |
 | The plan | each computed node becomes the node form its author would have filled: the pseudocode as its method; its results, brought back to SI, as its test cases; its derivation (`theory.md`) as its theory, without which a row never answers; the code that produced the results, and how it was run; its author and the declaration of any assistant's help; and the newest row of `versions.csv` as the de-risking record |
 | Refusals | a conflict with a change the repository made since; a method or results an assistant supplied (`declaration.csv` says `relation`, or says nothing); an incomplete de-risking record (`rests_on` and `breaks_if` included); a derivation stamped by an assistant's `git config user.name`. Each goes back to the group with the lines printed |
+| Whom it reaches | after the plan, every row of another group downstream of a node the release would change — the rows that read it, theirs, and so on, by group and nearest first. The same list `xtask impact <node|group>` prints; `xtask catalogue` lists what each group publishes and who reads it, and the design file carries that catalogue as its `published` table. Those groups are told before the branch merges |
 | Apply | `--apply` writes each node, regenerates and gates it as one edit, or puts it back whole — its generated files and the kernel's translations byte for byte; `--partial` keeps the nodes that passed |
 | Build | `group-build` runs `build-node` on each computed node: the method translated into the kernel by fixed rules, tested on the author's cases, the tests proved to test by moving the answer, the interface checked (`docs/PSEUDOCODE.md`). The author's code is rerun when `how-run.md` names its entry function (`**Entry:** name`); otherwise the build says it was not |
 | Test | `group-test` asks four things and writes `target/group/<group>-<version>/group-test.csv`: the design holds the release's cases unchanged; each node's own tests pass; the group as a whole, through the engine, gives `results/group.csv` within its tolerances; and both ends of every declared range answer or refuse by name — never NaN, never a crash |

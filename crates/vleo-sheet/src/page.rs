@@ -763,7 +763,7 @@ fn tab<F: FnOnce(&mut String)>(o: &mut String, i: usize, sel: bool, body: F) {
 fn method_section(sh: &Sheet) -> String {
     let mut o = String::new();
     if sh.method.text.trim().is_empty() {
-        if !sh.is_seeded() && !sh.is_declared() && sh.publishes.is_empty() {
+        if !sh.is_seeded() && !sh.is_declared() {
             o.push_str(t("method-none"));
         }
     } else {
@@ -839,6 +839,7 @@ fn cases_section(sh: &Sheet) -> String {
     let sig = method::node_signature(sh).unwrap_or(method::Signature {
         inputs: Vec::new(),
         output: vleo_units::unit::Dim::NONE,
+        publishes: Vec::new(),
     });
     let r = (!sh.method.text.trim().is_empty())
         .then(|| method::report(&sh.method.text, &sig, &sh.cases));

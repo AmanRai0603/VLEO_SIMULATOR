@@ -246,7 +246,7 @@ impl Parser {
                     }
                     return Err(Diag::err(
                         self.line(),
-                        "a block is not closed — every if and for needs its «end»",
+                        "a block is not closed — every if, for and while needs its «end»",
                     ));
                 }
                 Some(Tok::Ident(k)) if stops.contains(&k.as_str()) => return Ok(body),
@@ -260,7 +260,7 @@ impl Parser {
         let Some(Tok::Ident(word)) = self.peek().cloned() else {
             return Err(Diag::err(
                 line,
-                "a statement starts with let, const, set, if, for, refuse or return",
+                "a statement starts with let, const, set, if, for, while, refuse, return or publish",
             ));
         };
         match word.as_str() {
@@ -288,10 +288,10 @@ impl Parser {
                 let name = self.name("a name")?;
                 self.expect_sym("=")?;
                 let expr = self.expr()?;
-                if expr.literal().is_none() {
+                if expr.literal().is_none() && !matches!(expr, Expr::Table { .. }) {
                     return Err(Diag::err(
                         line,
-                        "a const is one number with its unit — use let for anything computed",
+                        "a const is one number with its unit, or a list written out — use let for anything computed",
                     ));
                 }
                 self.end_of_line()?;
@@ -345,6 +345,20 @@ impl Parser {
             "for" => {
                 self.pos += 1;
                 let var = self.name("a loop name")?;
+                if self.is_kw("in") {
+                    self.pos += 1;
+                    let list = self.name("the list to go through")?;
+                    self.end_of_line()?;
+                    let body = self.block(&["end"])?;
+                    self.expect_kw("end")?;
+                    self.end_of_line()?;
+                    return Ok(Stmt::Each {
+                        var,
+                        list,
+                        body,
+                        line,
+                    });
+                }
                 self.expect_sym("=")?;
                 let first = self.whole()?;
                 self.expect_kw("to")?;
@@ -357,6 +371,31 @@ impl Parser {
                     var,
                     first,
                     last,
+                    body,
+                    line,
+                })
+            }
+            "while" => {
+                self.pos += 1;
+                let cond = self.expr()?;
+                for w in ["at", "most"] {
+                    if !self.is_kw(w) {
+                        return Err(Diag::err(
+                            line,
+                            "a while loop says how often it may run: while CONDITION at most N times",
+                        ));
+                    }
+                    self.pos += 1;
+                }
+                let max = self.whole()?;
+                self.expect_kw("times")?;
+                self.end_of_line()?;
+                let body = self.block(&["end"])?;
+                self.expect_kw("end")?;
+                self.end_of_line()?;
+                Ok(Stmt::While {
+                    cond,
+                    max,
                     body,
                     line,
                 })
@@ -381,14 +420,22 @@ impl Parser {
                 self.end_of_line()?;
                 Ok(Stmt::Return { expr, line })
             }
+            "publish" => {
+                self.pos += 1;
+                let name = self.name("the published member's symbol")?;
+                self.expect_sym("=")?;
+                let expr = self.expr()?;
+                self.end_of_line()?;
+                Ok(Stmt::Publish { name, expr, line })
+            }
             "else" | "end" => Err(Diag::err(
                 line,
-                format!("«{word}» with no if or for open"),
+                format!("«{word}» with no if, for or while open"),
             )),
             _ => Err(Diag::err(
                 line,
                 format!(
-                    "a statement starts with let, const, set, if, for, refuse or return — not «{word}»"
+                    "a statement starts with let, const, set, if, for, while, refuse or return — not «{word}»"
                 ),
             )),
         }
@@ -590,6 +637,15 @@ impl Parser {
                         args,
                         line,
                     })
+                } else if self.is_sym("[") {
+                    self.pos += 1;
+                    let index = self.expr()?;
+                    self.expect_sym("]")?;
+                    Ok(Expr::Index {
+                        list: n,
+                        index: Box::new(index),
+                        line,
+                    })
                 } else {
                     Ok(Expr::Var { name: n, line })
                 }
@@ -612,7 +668,7 @@ impl Parser {
                         Some(Tok::Num(v)) => vals.push(if neg { -v } else { v }),
                         _ => return Err(Diag::err(
                             line,
-                            "a table holds plain numbers, with its unit after the closing bracket",
+                            "a list holds plain numbers, with its unit after the closing bracket",
                         )),
                     }
                     if self.is_sym(",") {

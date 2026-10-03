@@ -875,6 +875,24 @@ pub fn cmd_group_accept(root: &Path, args: &[&str]) -> Result<(), String> {
 /// The pipeline's check on a group branch: it carries the group's acceptance
 /// of its own current content.
 fn verify_acceptance(root: &Path, branch: &str, at: &str) -> Result<(), String> {
+    let a = accepted(root, branch, at)?;
+    println!(
+        "{branch}: accepted by {} (commit {}) and unchanged since",
+        a.by,
+        a.commit.chars().take(10).collect::<String>()
+    );
+    Ok(())
+}
+
+/// Where a group branch keeps its acceptance, if it is a group branch.
+fn group_acceptance_path(branch: &str) -> Option<String> {
+    let (group, version) = branch.strip_prefix("group/")?.rsplit_once('-')?;
+    Some(acceptance_path(group, version))
+}
+
+/// The group's acceptance on `branch` at `at`, if it is one and the branch has
+/// not moved past the build it accepts. Prints nothing.
+fn accepted(root: &Path, branch: &str, at: &str) -> Result<Acceptance, String> {
     let Some((group, version)) = branch
         .strip_prefix("group/")
         .and_then(|r| r.rsplit_once('-'))
@@ -903,18 +921,13 @@ fn verify_acceptance(root: &Path, branch: &str, at: &str) -> Result<(), String> 
         at,
         "deliver it again (`xtask group-deliver`) and ask the group to answer that build",
     )?;
-    println!(
-        "{branch}: accepted by {} (commit {}) and unchanged since",
-        a.by,
-        a.commit.chars().take(10).collect::<String>()
-    );
-    Ok(())
+    Ok(a)
 }
 
 // ---------------------------------------------------------------------------
 // queue
 
-/// `queue` — every form branch and where it stands.
+/// `queue` — every form branch and every group branch, and where each stands.
 pub fn cmd_queue(root: &Path, _args: &[&str]) -> Result<(), String> {
     if let Err(e) = git(root, &["fetch", "-q", "--prune", "origin"]) {
         eprintln!("  (could not fetch — showing what this copy last saw: {e})");
@@ -926,6 +939,8 @@ pub fn cmd_queue(root: &Path, _args: &[&str]) -> Result<(), String> {
             "--format=%(refname:short)|%(committerdate:short)",
             "refs/remotes/origin/form/",
             "refs/heads/form/",
+            "refs/remotes/origin/group/",
+            "refs/heads/group/",
         ],
     )?;
     let mut seen = std::collections::BTreeMap::new();
@@ -949,19 +964,31 @@ pub fn cmd_queue(root: &Path, _args: &[&str]) -> Result<(), String> {
     }
     if seen.is_empty() {
         println!(
-            "no form branches — nothing is waiting. `xtask take <form> --for <author>` starts one."
+            "no form or group branches — nothing is waiting. `xtask take <form> --for <author>` \
+             starts one for a form; a group's release starts on group/<group>-<version>."
         );
         return Ok(());
     }
     println!("{:<44} {:<11} stage", "branch", "last change");
     for (branch, (r, remote, _local, date)) in &seen {
-        let store = approval_path(branch).unwrap_or_default();
+        let group = branch.starts_with("group/");
+        let store = if group {
+            group_acceptance_path(branch).unwrap_or_default()
+        } else {
+            approval_path(branch).unwrap_or_default()
+        };
         let on_main = git(root, &["show", &format!("origin/{FORMS_BASE}:{store}")]).ok();
         let on_branch = git(root, &["show", &format!("{r}:{store}")]).ok();
         let stage = if on_main.is_some() && on_main == on_branch {
             "merged — delete the branch: git push origin --delete ".to_string() + branch
         } else if !remote {
             "not pushed — git push -u origin ".to_string() + branch
+        } else if group {
+            match accepted(root, branch, r) {
+                Ok(a) => format!("accepted by {} — review and merge the pull request", a.by),
+                Err(e) if on_branch.is_some() => format!("acceptance out of date — {e}"),
+                Err(_) => "waiting for the group's acceptance of its test application".to_string(),
+            }
         } else {
             match verify_approval_quiet(root, branch, r) {
                 Ok(by) => format!("approved by {by} — review and merge the pull request"),

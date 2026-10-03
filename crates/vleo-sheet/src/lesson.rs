@@ -88,12 +88,22 @@ pub struct Question {
 /// The lesson in a row's folder: `None` when it has none, and the reason when
 /// the file does not read.
 pub fn load(dir: &Path, node: &str) -> Option<Result<Lesson, Error>> {
+    load_from(&crate::files::Disk, dir, node)
+}
+
+/// The same, from the folders or a design file (`crate::files`).
+pub fn load_from(
+    files: &dyn crate::files::Files,
+    dir: &Path,
+    node: &str,
+) -> Option<Result<Lesson, Error>> {
     let p = dir.join(FILE);
-    if !p.is_file() {
+    if !files.is_file(&p) {
         return None;
     }
     Some(
-        std::fs::read_to_string(&p)
+        files
+            .read_to_string(&p)
             .map_err(|e| Error::io(p.display(), e))
             .and_then(|t| read(&t, node).map_err(|e| e.within(p.display()))),
     )

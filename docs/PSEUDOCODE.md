@@ -1,5 +1,5 @@
 <!-- GENERATED from crates/vleo-sheet/src/method.rs by `cargo run -p xtask -- docs`. Do not edit. -->
-# The method language, version 1
+# The method language, version 4
 
 > **Answer first.** Every node's relation is written once more as a *method*: a few lines in a
 > small fixed language that the tool can check, run and translate. The checker refuses a
@@ -29,11 +29,15 @@ reaches anyone.
 | `let NAME = EXPR` | A new named value. Its dimension is whatever the expression's is. | `let r = R_EARTH + h` |
 | `let NAME : Quantity = EXPR` | The same, and the checker confirms the expression has that quantity's dimension. | `let v : Velocity = sqrt(MU_EARTH / r)` |
 | `const NAME = NUMBER [unit]` | A constant from your source, with its unit. Say where it comes from in a comment. | `const cd = 2.2 [1]   # drag coefficient, Sentman flat plate` |
+| `const NAME = [A, B, …] [unit]` | A list from your source, written out, with one unit for every entry. It is written once, at the method's top level, and never changes. Read one entry as NAME[i], counted from 1; its length as len(NAME); every entry with for … in; or use it as a row of interp's table. | `const EDGES = [90, 130, 170] [1]   # the published band edges, sfu` |
 | `set NAME = EXPR` | Change a value made with let. Same dimension; inputs and constants cannot be changed. | `set total = total + term` |
 | `if COND then … else if COND then … else … end` | Choose. Conditions compare like with like: h < 0 [m], not h < 0 [s]. | `if h < 150 [km] then ⏎   refuse "below the lowest altitude the model covers" ⏎ end` |
 | `for NAME = FIRST to LAST … end` | Repeat for whole numbers FIRST..LAST. The count is fixed when written; the loop variable is a pure number. | `for n = 1 to 10 ⏎   set total = total + x ^ n / n ⏎ end` |
+| `for NAME in LIST … end` | Repeat once for each entry of a list, in order; NAME holds the entry, in the list's unit. | `for edge in EDGES ⏎   if f107 >= edge then ⏎     set band = band + 1 ⏎   end ⏎ end` |
+| `while COND at most N times … end` | Repeat while COND holds — an iteration that settles, or a count the inputs decide. N is the most passes it may take, fixed when written; if COND still holds after N passes the node refuses, saying the loop did not settle, rather than answer with wherever it had got to. | `while abs(r * r - a) > 1e-12 * a at most 40 times ⏎   set r = (r + a / r) / 2 ⏎ end` |
 | `refuse "reason"` | The node will not answer here, and says why. A refusal is never a substitute value. | `refuse "the orbit is inside the Earth"` |
 | `return EXPR` | The node's answer, in its declared quantity. Every path ends in return or refuse. | `return v` |
+| `publish SYMBOL = EXPR` | For a node that publishes several values: one of them, by the member's symbol on the sheet, in that member's quantity. Each member is published once, at the method's top level, before the method returns — so every answer carries every member. A refusal may still come anywhere. | `publish Kp_mean_nominal = kp_from_ap(ap_nominal) + kp_mean_slot_bias(ap_nominal)` |
 | `# comment` | Anything after # on a line is for the reader. | `# Vallado (2013), eq. 1-18` |
 
 Operators: `+ - * / ^`, comparisons `< <= > >= == !=`, and `and`, `or`, `not`. A power of a
@@ -73,7 +77,26 @@ A bare `0` is zero of any unit; any other number that is not a pure ratio needs 
 | `round` | a pure number in, a pure number out | round to nearest, halves away from zero — pure numbers only |
 | `wrap_2pi` | a pure number in, a pure number out | an angle brought into 0..2π |
 | `wrap_pi` | a pure number in, a pure number out | an angle brought into -π..π |
-| `interp` | x like the table's x row; the y row's unit out | straight-line lookup in a table: interp(x, [x1, x2, …] [unit], [y1, y2, …] [unit]); held at the ends |
+| `interp` | x like the table's x row; the y row's unit out | straight-line lookup in a table: interp(x, XS, YS), each row a list by name or written out as [x1, x2, …] [unit]; held at the ends |
+| `len` | a list in, a pure number out | how many entries a list has: len(EDGES) |
+
+## Kernel functions
+
+Relations too long to write as a formula — an integral up the atmosphere, a decay over many orbits — already live in the kernel, reviewed once. A method calls them by name, each argument in the unit shown; the checker holds the units, and the engine runs the kernel itself, so the method and the built node cannot differ.
+
+| Call | Answer | Meaning | In the kernel |
+|---|---|---|---|
+| `thermosphere_o(h [m], T_inf [K])` | `[1/m^3]` | atomic oxygen number density at altitude h, for exospheric temperature T_inf | `env::composition(h, T_inf).o` |
+| `thermosphere_number_density(h [m], T_inf [K])` | `[1/m^3]` | every species' number density at altitude h, summed | `env::composition(h, T_inf).total()` |
+| `thermosphere_molar_mass(h [m], T_inf [K])` | `[kg/mol]` | the mean molar mass of the gas at altitude h | `env::composition(h, T_inf).mean_molar_mass()` |
+| `thermosphere_density(h [m], T_inf [K])` | `[kg/m^3]` | the mass density of the gas at altitude h | `env::mass_density(h, T_inf)` |
+| `thermosphere_scale_height(h [m], T_inf [K])` | `[m]` | the density scale height at altitude h | `env::scale_height(h, T_inf)` |
+| `orbit_decay_time(h [m], h_end [m], bc [kg/m^2], T_inf [K])` | `[s]` | the time a circular orbit takes to decay from h to h_end, for ballistic coefficient bc, in the thermosphere of T_inf (64 steps) | `orbit::lifetime_estimate(h, h_end, bc, 64, |z| env::mass_density(z, T_inf))` |
+| `solar_cycle_mean(t0 [s], t1 [s])` | `[1]` | the solar-cycle analogue's mean F10.7 from mission time t0 to t1 | `env::solar_cycle_analogue_mean(t0, t1), in days` |
+| `solar_cycle_max(t0 [s], t1 [s])` | `[1]` | the solar-cycle analogue's highest F10.7 from mission time t0 to t1 | `env::solar_cycle_analogue_max(t0, t1), in days` |
+| `kp_from_ap(ap [1])` | `[1]` | Kp on the published three-hour scale for the planetary index ap, between its tabulated thirds | `env::kp_from_ap(ap)` |
+| `kp_mean_slot_bias(ap [1])` | `[1]` | the measured offset of a day's mean three-hour Kp from the Kp of its daily Ap | `env::kp_mean_slot_bias(ap)` |
+| `kp_peak_slot_bias(ap [1])` | `[1]` | the measured offset of a day's highest three-hour Kp from the Kp of its daily Ap | `env::kp_peak_slot_bias(ap)` |
 
 ## Constants every method may use
 
@@ -165,9 +188,15 @@ end
 
 ## Where the simple version breaks
 
-- **One answer per method.** A node that publishes a set of values (a few rows do) keeps its
-  hand-written hole for now; the method language answers one quantity.
-- **No iteration to convergence.** A loop runs a fixed count. A solver that stops when it
-  converges is marked for a developer, who writes it, and your cases still decide.
-- **Tables are written out.** A lookup into a large data file is a reference-data bundle,
-  not a method.
+- **A set is published at the top level.** A node that publishes several values gives each
+  with `publish`, once, before it returns — never inside an if or a loop. Work a member
+  out with `let` and `if` first, then publish the name.
+- **A loop says how often it may run.** `while … at most N times` stops when its condition
+  fails, and refuses — by name — if N passes were not enough. It never answers with
+  wherever it had got to.
+- **A list is read inside its length.** `EDGES[i]` counts from 1; an index that is not a
+  whole number, or falls outside the list, stops the method with a fault — it never
+  reads the nearest entry instead. Guard it with `if`, or go through the list with
+  `for … in`.
+- **Tables are written out.** A list holds what your source tabulates, a few dozen entries;
+  a lookup into a large data file is a reference-data bundle, not a method.
