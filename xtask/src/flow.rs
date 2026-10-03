@@ -559,7 +559,7 @@ pub fn read_approval(text: &str) -> Result<Approval, String> {
 
 /// Whether `commit` is what `at` is, apart from approval records: the approval
 /// binds only while nothing else has changed since the build it was given for.
-fn binds(root: &Path, commit: &str, at: &str) -> Result<(), String> {
+fn binds(root: &Path, commit: &str, at: &str, again: &str) -> Result<(), String> {
     git(root, &["cat-file", "-e", &format!("{commit}^{{commit}}")]).map_err(|_| {
         format!("the approved commit {commit} is not in this repository — git fetch, or the branch was rewritten")
     })?;
@@ -574,8 +574,7 @@ fn binds(root: &Path, commit: &str, at: &str) -> Result<(), String> {
         Ok(())
     } else {
         Err(format!(
-            "the branch has changed since the build that was approved ({} file(s), e.g. {}) — \
-             send the author the new preview and ask them to approve that",
+            "the branch has changed since the build that was approved ({} file(s), e.g. {}) — {again}",
             other.len(),
             other[0]
         ))
@@ -602,7 +601,12 @@ pub fn cmd_approve(root: &Path, args: &[&str]) -> Result<(), String> {
             .map_err(|e| format!("the approval is for {}, which is not here: {e}", a.branch))?;
         println!("  switched to {}", a.branch);
     }
-    binds(root, &a.commit, "HEAD")?;
+    binds(
+        root,
+        &a.commit,
+        "HEAD",
+        "send the author the new preview and ask them to approve that",
+    )?;
     fs::create_dir_all(root.join("approvals")).map_err(|e| e.to_string())?;
     fs::write(root.join(&store), &text).map_err(|e| format!("{store}: {e}"))?;
     let message = commit_message(
@@ -672,7 +676,12 @@ fn verify_approval(root: &Path, branch: &str, at: &str) -> Result<(), String> {
     if a.branch != branch {
         return Err(format!("{store} approves {}, not {branch}", a.branch));
     }
-    binds(root, &a.commit, at)?;
+    binds(
+        root,
+        &a.commit,
+        at,
+        "send the author the new preview and ask them to approve that",
+    )?;
     println!(
         "{branch}: approved by {} (preview build {}, commit {}) and unchanged since",
         a.by,
@@ -813,7 +822,12 @@ pub fn cmd_group_accept(root: &Path, args: &[&str]) -> Result<(), String> {
             .map_err(|e| format!("the acceptance is for {branch}, which is not here: {e}"))?;
         println!("  switched to {branch}");
     }
-    binds(root, &a.commit, "HEAD")?;
+    binds(
+        root,
+        &a.commit,
+        "HEAD",
+        "deliver it again (`xtask group-deliver`) and ask the group to answer that build",
+    )?;
     fs::create_dir_all(root.join("acceptances")).map_err(|e| e.to_string())?;
     fs::write(root.join(&store), &text).map_err(|e| format!("{store}: {e}"))?;
     let message = commit_message(
@@ -883,7 +897,12 @@ fn verify_acceptance(root: &Path, branch: &str, at: &str) -> Result<(), String> 
             a.verdict, a.group, a.version
         ));
     }
-    binds(root, &a.commit, at)?;
+    binds(
+        root,
+        &a.commit,
+        at,
+        "deliver it again (`xtask group-deliver`) and ask the group to answer that build",
+    )?;
     println!(
         "{branch}: accepted by {} (commit {}) and unchanged since",
         a.by,
@@ -959,7 +978,12 @@ fn verify_approval_quiet(root: &Path, branch: &str, at: &str) -> Result<String, 
     let store = approval_path(branch).ok_or("not a form branch")?;
     let text = git(root, &["show", &format!("{at}:{store}")])?;
     let a = read_approval(&text)?;
-    binds(root, &a.commit, at)?;
+    binds(
+        root,
+        &a.commit,
+        at,
+        "send the author the new preview and ask them to approve that",
+    )?;
     Ok(a.by)
 }
 
