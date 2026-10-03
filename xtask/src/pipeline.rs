@@ -471,7 +471,7 @@ pub(crate) const PIPELINE: &[Cmd] = &[
     Cmd {
         name: "queue",
         stage: "preview",
-        reads: "every form branch",
+        reads: "every form branch and every group branch",
         writes: NOTHING,
         checks: "where each one stands",
         undo: READS_ONLY,

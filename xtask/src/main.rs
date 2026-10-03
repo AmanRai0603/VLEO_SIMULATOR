@@ -381,8 +381,9 @@ cargo xtask <command>
   approve --verify <branch>
                      the same check, as the pipeline runs it on a form branch's
                      pull request.
-  queue              every form branch and where it stands: waiting for the
-                     author's approval, approved, merged.
+  queue              every form branch and every group branch, and where each
+                     stands: waiting for the author's approval or the group's
+                     acceptance, approved or accepted, merged.
   ship <version> [--no-push] [--no-test]
                      the release branch release/<version> from main: the
                      de-risking narrative, the stamp, regenerate, gate, test,

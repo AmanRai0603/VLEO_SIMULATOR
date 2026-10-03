@@ -2429,7 +2429,7 @@ effect = "writes"
 tool = "xtask"
 name = "queue"
 usage = "queue"
-what = "Every form branch and where it stands: not pushed, waiting for the author's approval, approved and ready to merge, or merged."
+what = "Every form branch and every group branch, and where each stands: not pushed; waiting for the author's approval, or the group's acceptance of its test application; approved or accepted and ready to merge; or merged."
 who = "maintainer"
 effect = "reads"
 

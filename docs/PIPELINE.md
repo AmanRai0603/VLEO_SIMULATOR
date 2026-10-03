@@ -535,11 +535,11 @@ the author's approval of a preview, checked against this branch: it must be for 
 
     cargo run -p xtask -- queue
 
-every form branch and where it stands: waiting for the author's approval, approved, merged.
+every form branch and every group branch, and where each stands: waiting for the author's approval or the group's acceptance, approved or accepted, merged.
 
 | | |
 |---|---|
-| reads | every form branch |
+| reads | every form branch and every group branch |
 | writes | nothing |
 | checks | where each one stands |
 | undo | nothing to undo: it writes nothing |
