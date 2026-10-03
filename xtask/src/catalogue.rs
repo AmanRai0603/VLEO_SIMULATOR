@@ -48,9 +48,19 @@ pub(super) fn catalogue_csv(cat: &[Published]) -> String {
     out
 }
 
+/// The group a command names: the one word that is not a flag — and not the
+/// file `--csv` names, which is a path, not a group.
+fn group_arg<'a>(args: &[&'a str]) -> Option<&'a str> {
+    let csv_at = args.iter().position(|a| *a == "--csv");
+    args.iter()
+        .enumerate()
+        .find(|(i, a)| !a.starts_with("--") && csv_at.map(|c| c + 1) != Some(*i))
+        .map(|(_, a)| *a)
+}
+
 pub(super) fn cmd_catalogue(root: &Path, args: &[&str]) -> Result<(), String> {
     let tree = load(root)?;
-    let only = args.iter().find(|a| !a.starts_with("--")).copied();
+    let only = group_arg(args);
     if let Some(g) = only {
         if !tree.groups.contains_key(g) {
             return Err(format!("no group called '{g}'"));
@@ -179,4 +189,18 @@ pub(super) fn cmd_impact(root: &Path, args: &[&str]) -> Result<(), String> {
     println!("a change to {}:", names.join(", "));
     print_impact(&impact(&tree, &rows));
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::group_arg;
+
+    #[test]
+    fn the_file_csv_names_is_never_taken_for_a_group() {
+        assert_eq!(group_arg(&["--csv", "out.csv"]), None);
+        assert_eq!(group_arg(&["l3_solar", "--csv", "out.csv"]), Some("l3_solar"));
+        assert_eq!(group_arg(&["--csv", "out.csv", "l3_solar"]), Some("l3_solar"));
+        assert_eq!(group_arg(&["l3_solar"]), Some("l3_solar"));
+        assert_eq!(group_arg(&[]), None);
+    }
 }
