@@ -1594,7 +1594,8 @@ answer = "The team gets the tool, not the repository: one Python package for eve
 body = """
 The daemon reads the web face, the tree and every node's page at run time, so \
 the programs alone do not run. `xtask kit` puts them beside exactly those files \
-— no git history, no generators, no kernel source — in `dist/vleo-<version>/`, \
+— the tree and its pages as one file, `design.vleo`; no git history, no \
+generators, no kernel source — in `dist/vleo-<version>/`, \
 with `START_HERE.md` (from `docs/TEAM_GUIDE.md`) and `VERSION` — and `start.sh` \
 off Windows; on Windows the daemon ships as `Start VLEO.exe`, which opens the \
 browser itself. Zip it and share it. A kit runs on the platform that built it; \
@@ -2428,7 +2429,7 @@ effect = "writes"
 tool = "xtask"
 name = "queue"
 usage = "queue"
-what = "Every form branch and where it stands: not pushed, waiting for the author's approval, approved and ready to merge, or merged."
+what = "Every form branch and every group branch, and where each stands: not pushed; waiting for the author's approval, or the group's acceptance of its test application; approved or accepted and ready to merge; or merged."
 who = "maintainer"
 effect = "reads"
 
@@ -2450,9 +2451,25 @@ effect = "writes"
 
 [[command]]
 tool = "xtask"
+name = "design"
+usage = "design [--out <file>]"
+what = "design.vleo: the tree the tool reads — every node folder with its sheet, fixtures and page, the layers, the cases and the source list — written into one SQLite file, each file whole with its SHA-256. The kit carries it in place of the folders and the daemon reads it as it reads them, so the pages are the same byte for byte. Default target/design.vleo; nothing committed."
+who = "developer"
+effect = "writes"
+
+[[command]]
+tool = "xtask"
+name = "design"
+usage = "design --check <file>"
+what = "A design file held to the tree: each file against its SHA-256, all of them against the fingerprint, and every file against the folders it was written from. Prints the differences and fails on any."
+who = "developer"
+effect = "reads"
+
+[[command]]
+tool = "xtask"
 name = "kit"
 usage = "kit [--bin <dir>] [--out <dir>] [--files-only]"
-what = "The tool as a team member gets it: the two release-built programs beside exactly the files they read, with START_HERE.md and VERSION (and start.sh off Windows, where the daemon ships as Start VLEO.exe), in dist/vleo-<version>/. Zip it and share it; see docs/SHARING.md. --files-only leaves the programs out: the files the Python package carries."
+what = "The tool as a team member gets it: the two release-built programs beside exactly the files they read — the design among them as one file, design.vleo — with START_HERE.md and VERSION (and start.sh off Windows, where the daemon ships as Start VLEO.exe), in dist/vleo-<version>/. Zip it and share it; see docs/SHARING.md. --files-only leaves the programs out: the files the Python package carries."
 who = "developer"
 effect = "writes"
 
@@ -2866,6 +2883,11 @@ default = "30; kept whole when VLEO_RESULTS names the folder"
 name = "VLEO_ROOT"
 what = "Where the daemon finds the web face, the tree and its pages. Unset, it looks upward from where it was started, then from beside its own program — which is how a kit runs with no checkout."
 default = "found"
+
+[[env]]
+name = "VLEO_DESIGN"
+what = "A design file for the daemon to read the design from, in place of the one beside it or the folders of a checkout. A file that does not open stops the daemon, naming why: it never falls back to whatever folders sit beside it."
+default = "design.vleo beside the tool, else the folders"
 
 [[env]]
 name = "VLEO_PORT"

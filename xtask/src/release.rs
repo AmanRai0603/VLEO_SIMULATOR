@@ -415,16 +415,11 @@ pub(super) fn cmd_kit(root: &Path, args: &[&str]) -> Result<(), String> {
         }
         Ok(n)
     }
-    // What the daemon reads, and only that.
+    // What the daemon reads, and only that. The design itself — every node
+    // folder, the layers, the cases and the source list — travels as one file,
+    // design.vleo, which the daemon reads as it reads the folders.
     let mut files = 0;
-    for dir in [
-        "web",
-        "layers",
-        "cases",
-        "sources",
-        "bundles",
-        "matlab/reference",
-    ] {
+    for dir in ["web", "bundles", "matlab/reference"] {
         let from = root.join(dir);
         if from.is_dir() {
             files += copy_tree(&from, &out.join(dir))?;
@@ -454,14 +449,8 @@ pub(super) fn cmd_kit(root: &Path, args: &[&str]) -> Result<(), String> {
         files += 1;
     }
     let tree = load(root)?;
-    let mut crates: BTreeSet<&str> = BTreeSet::new();
-    for sh in tree.ordered() {
-        crates.insert(sh.crate_name.as_str());
-    }
-    for c in &crates {
-        let from = root.join("crates").join(c).join("nodes");
-        files += copy_tree(&from, &out.join("crates").join(c).join("nodes"))?;
-    }
+    let design = crate::design::write(root, &out.join(vleo_design::FILE))?;
+    files += 1;
     // On Windows the daemon ships as `Start VLEO.exe`: the program itself is
     // what a person double-clicks, and it opens the browser because of its
     // name. No script starts it — a script launching a program is one more
@@ -492,8 +481,9 @@ pub(super) fn cmd_kit(root: &Path, args: &[&str]) -> Result<(), String> {
     fs::write(
         out.join("VERSION"),
         format!(
-            "vleo {version}\ncommit {commit}\n{} rows\n",
-            tree.sheets.len()
+            "vleo {version}\ncommit {commit}\n{} rows\ndesign {}\n",
+            tree.sheets.len(),
+            design.fingerprint
         ),
     )
     .map_err(|e| e.to_string())?;

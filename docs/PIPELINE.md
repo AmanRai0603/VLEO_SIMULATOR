@@ -18,7 +18,7 @@ Generated from the one table in `xtask/src/pipeline.rs`; `cargo run -p xtask -- 
 6. **build** — a node built from its method, and its tests shown to test: `group-build`, `method`, `build-node`, `rerun`, `method-wasm`, `differential`, `mutate`
 7. **gate** — the checks every change passes, and what they generate: `group-app`, `docs`, `assemble`, `gate`, `ready`, `codeowners`, `variables`, `guides`, `pipeline`
 8. **preview** — the author tries the build and approves it: `preview`, `approve`, `queue`
-9. **release** — the stamped release everyone gets: `readers`, `group-accept`, `ship`, `release`, `derisk`, `kit`, `bundle`
+9. **release** — the stamped release everyone gets: `readers`, `group-accept`, `ship`, `release`, `derisk`, `kit`, `design`, `bundle`
 10. **read** — reports: what exists, what is open, why a node is what it is: `status`, `active`, `reach`, `gap`, `graph`, `migration`, `explain`, `why`, `trace`
 11. **setup** — once per person per clone: `setup`, `help`
 
@@ -535,11 +535,11 @@ the author's approval of a preview, checked against this branch: it must be for 
 
     cargo run -p xtask -- queue
 
-every form branch and where it stands: waiting for the author's approval, approved, merged.
+every form branch and every group branch, and where each stands: waiting for the author's approval or the group's acceptance, approved or accepted, merged.
 
 | | |
 |---|---|
-| reads | every form branch |
+| reads | every form branch and every group branch |
 | writes | nothing |
 | checks | where each one stands |
 | undo | nothing to undo: it writes nothing |
@@ -631,7 +631,7 @@ write docs/DERISK_NARRATIVE.md and docs/derisking.csv — every recorded change,
 
     cargo run -p xtask -- kit [--bin <dir>] [--out <dir>] [--files-only]
 
-the tool as a team member gets it: the two programs and the files they read (the web face, the tree, its pages, the reference data) in one folder, with START_HERE.md — on Windows the daemon is `Start VLEO.exe`, elsewhere start.sh starts it. No git, no Rust source beyond the node folders. Zip the folder and share it. --bin is where the release-built programs are (default target/release); --files-only leaves the programs out, for the Python package (tools/build_wheel.py).
+the tool as a team member gets it: the two programs and the files they read (the web face, the design as one file, design.vleo, and the reference data) in one folder, with START_HERE.md — on Windows the daemon is `Start VLEO.exe`, elsewhere start.sh starts it. No git, no Rust source. Zip the folder and share it. --bin is where the release-built programs are (default target/release); --files-only leaves the programs out, for the Python package (tools/build_wheel.py).
 
 | | |
 |---|---|
@@ -641,6 +641,23 @@ the tool as a team member gets it: the two programs and the files they read (the
 | undo | delete dist/vleo-<version>/ |
 | dry run | --dry-run prints this plan — the steps, what it would write, how to undo it — and touches nothing |
 | code | `xtask/src/release.rs` — `cmd_kit` |
+
+#### `design`
+
+    cargo run -p xtask -- design [--out <file>]
+    cargo run -p xtask -- design.vleo: the tree the tool reads — every node folder,
+    cargo run -p xtask -- design --check <file>
+
+the layers, the cases and the source list — written into one SQLite file, which the kit carries in their place and the daemon reads as it reads the folders. Default target/design.vleo. the file held to the tree: each file against its SHA-256, the fingerprint, and every file against the folders.
+
+| | |
+|---|---|
+| reads | every file of the tree the loader reads: the node folders, the layers, the cases and the source list |
+| writes | target/design.vleo, or --out; with --check, nothing |
+| checks | that the tree loads; with --check, each file against its SHA-256 and the folders |
+| undo | delete the file it wrote; nothing in the repository changes |
+| dry run | --dry-run prints this plan — the steps, what it would write, how to undo it — and touches nothing |
+| code | `xtask/src/design.rs` — `cmd_design` |
 
 #### `bundle`
 

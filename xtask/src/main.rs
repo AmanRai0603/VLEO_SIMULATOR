@@ -10,6 +10,7 @@ use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 use vleo_sheet::{emit, gate, load_all, page, Tree};
 
+mod design;
 mod fills;
 mod flow;
 mod forms;
@@ -123,6 +124,7 @@ pub(crate) fn dispatch(root: &Path, cmd: &str, rest: &[&str]) -> Result<(), Stri
         "derisk" => cmd_derisk(&root, &rest),
         "release" => cmd_release(&root, &rest),
         "kit" => cmd_kit(&root, &rest),
+        "design" => design::cmd_design(&root, &rest),
         "take" => flow::cmd_take(&root, &rest),
         "guides" => cmd_guides(&root),
         "preview" => flow::cmd_preview(&root, &rest),
@@ -272,14 +274,23 @@ cargo xtask <command>
                      sheets' [[version]] and [[risk]] records, never edited.
   kit [--bin <dir>] [--out <dir>] [--files-only]
                      the tool as a team member gets it: the two programs and
-                     the files they read (the web face, the tree, its pages,
-                     the reference data) in one folder, with START_HERE.md —
-                     on Windows the daemon is `Start VLEO.exe`, elsewhere
-                     start.sh starts it. No git, no Rust source beyond the node
-                     folders. Zip the folder and share it. --bin is where the
+                     the files they read (the web face, the design as one file,
+                     design.vleo, and the reference data) in one folder, with
+                     START_HERE.md — on Windows the daemon is `Start VLEO.exe`,
+                     elsewhere start.sh starts it. No git, no Rust source.
+                     Zip the folder and share it. --bin is where the
                      release-built programs are (default target/release);
                      --files-only leaves the programs out, for the Python
                      package (tools/build_wheel.py).
+  design [--out <file>]
+                     design.vleo: the tree the tool reads — every node folder,
+                     the layers, the cases and the source list — written into
+                     one SQLite file, which the kit carries in their place and
+                     the daemon reads as it reads the folders. Default
+                     target/design.vleo.
+  design --check <file>
+                     the file held to the tree: each file against its SHA-256,
+                     the fingerprint, and every file against the folders.
   readers [--out <dir>]
                      the docs folder for readers: every row's page and every
                      lesson, read with no tool running — from a shared drive or
@@ -370,8 +381,9 @@ cargo xtask <command>
   approve --verify <branch>
                      the same check, as the pipeline runs it on a form branch's
                      pull request.
-  queue              every form branch and where it stands: waiting for the
-                     author's approval, approved, merged.
+  queue              every form branch and every group branch, and where each
+                     stands: waiting for the author's approval or the group's
+                     acceptance, approved or accepted, merged.
   ship <version> [--no-push] [--no-test]
                      the release branch release/<version> from main: the
                      de-risking narrative, the stamp, regenerate, gate, test,

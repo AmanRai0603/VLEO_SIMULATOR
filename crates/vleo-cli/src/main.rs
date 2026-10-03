@@ -41,7 +41,10 @@ fn data_root() -> PathBuf {
 fn repo_bundles() -> PathBuf {
     let mut p = std::env::current_dir().unwrap_or_default();
     loop {
-        if p.join("bundles").is_dir() && p.join("layers").is_dir() {
+        // A checkout has the tree's folders; a kit has the design file in
+        // their place (design.vleo). Either marks where the tool's files are.
+        let tree = p.join("layers").is_dir() || p.join("design.vleo").is_file();
+        if p.join("bundles").is_dir() && tree {
             return p.join("bundles");
         }
         if !p.pop() {

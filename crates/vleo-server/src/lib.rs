@@ -42,6 +42,7 @@ use std::path::{Path, PathBuf};
 use vleo_bus::{Case, RunMode};
 use vleo_core::graph::Kind;
 use vleo_modules::{tables, Scratch, Vleo, GROUPS, NODES, RELATIONS, VARS};
+use vleo_sheet::files::Files;
 
 /// Start the tool from the command line: `vleo-daemon [--open]`.
 ///
@@ -87,6 +88,7 @@ pub fn serve(
     // both start here.
     vleo_data::crash::install("vleo-server", env!("CARGO_PKG_VERSION"));
     let root = root.unwrap_or_else(repo_root);
+    let (tree, design) = open_tree(&root)?;
     let (data, data_versions, bundles, data_refused) = resolve_data(&root);
 
     // Try a range and record the port that actually bound. A daemon that fails
@@ -124,6 +126,15 @@ pub fn serve(
     } else {
         println!("  data   {}", data_versions.join(" · "));
     }
+    match &design {
+        Some(d) => println!(
+            "  design {} — {} rows, fingerprint {}…",
+            d.file,
+            d.rows,
+            d.fingerprint.chars().take(16).collect::<String>()
+        ),
+        None => println!("  design read from the folders of this checkout"),
+    }
     println!("  serving the interface and the engine from one origin:");
     println!("  \x1b[1mhttp://127.0.0.1:{port}\x1b[0m");
     println!("  loopback only. Exposing this to a network is a separate, explicit act.");
@@ -143,6 +154,8 @@ pub fn serve(
     }
     let ctx = std::sync::Arc::new(Ctx {
         root,
+        tree,
+        design,
         data,
         data_versions,
         bundles,
@@ -168,9 +181,15 @@ pub fn serve(
 /// `"ok":false` and a message, never a stand-in figure.
 pub fn figure(root: Option<PathBuf>, id: &str, params: &str) -> String {
     let root = root.unwrap_or_else(repo_root);
+    let (tree, design) = match open_tree(&root) {
+        Ok(t) => t,
+        Err(e) => return format!("{{\"ok\":false,\"message\":{}}}", json::string(&e)),
+    };
     let (data, data_versions, bundles, _) = resolve_data(&root);
     let ctx = Ctx {
         root,
+        tree,
+        design,
         data,
         data_versions,
         bundles,
@@ -199,6 +218,12 @@ fn open_browser(url: &str) {
 
 struct Ctx {
     root: PathBuf,
+    /// Where the design is read from: the folders under `root`, or the design
+    /// file beside the tool (`open_tree`). Every read of a sheet, a page or a
+    /// lesson goes through it; the web face and the reference data do not.
+    tree: std::sync::Arc<dyn Files>,
+    /// The design file, when the design is read from one.
+    design: Option<DesignFile>,
     data: Vec<String>,
     data_versions: Vec<String>,
     /// The verified bundles, by name: where each lives and which files its own
@@ -230,6 +255,46 @@ fn read_preview(root: &Path) -> Option<String> {
     (t.starts_with('{') && t.ends_with('}') && !t.contains("</")).then(|| t.to_string())
 }
 
+/// What the tool says about the design file it reads.
+struct DesignFile {
+    file: String,
+    rows: String,
+    fingerprint: String,
+}
+
+/// Where the design is read from.
+///
+/// A kit carries the design as one file, `design.vleo`, beside the web face
+/// (`vleo-design`); a checkout has the folders a developer edits. The file is
+/// taken when `VLEO_DESIGN` names one or one sits at the root, and the folders
+/// otherwise. A design file that is there and does not open stops the tool,
+/// naming why: falling back to whatever folders happen to sit beside it would
+/// show a different design under the same name.
+fn open_tree(root: &Path) -> Result<(std::sync::Arc<dyn Files>, Option<DesignFile>), String> {
+    let named = std::env::var("VLEO_DESIGN")
+        .ok()
+        .filter(|v| !v.trim().is_empty())
+        .map(PathBuf::from);
+    let Some(path) = named.or_else(|| vleo_design::beside(root)) else {
+        return Ok((std::sync::Arc::new(vleo_sheet::files::Disk), None));
+    };
+    let d = vleo_design::Design::open(&path, root)
+        .map_err(|e| format!("the design file does not open: {e}"))?;
+    let info = DesignFile {
+        file: path.display().to_string(),
+        rows: d.meta("rows").to_string(),
+        fingerprint: d.meta("fingerprint").to_string(),
+    };
+    Ok((std::sync::Arc::new(d), Some(info)))
+}
+
+impl Ctx {
+    /// The tree, as this copy reads it — every check the loader makes, made.
+    fn load(&self) -> Result<vleo_sheet::Tree, vleo_sheet::Error> {
+        vleo_sheet::load::load_all_from(&*self.tree, &self.root)
+    }
+}
+
 fn short(h: u64) -> String {
     String::from_utf8(vleo_core::hash::short_hex(h).to_vec()).unwrap_or_default()
 }
@@ -242,7 +307,9 @@ fn short(h: u64) -> String {
 /// then upward from the binary itself — a kit keeps the binary beside them, and
 /// a double-clicked binary starts wherever the desktop chose.
 fn repo_root() -> PathBuf {
-    let holds = |p: &Path| p.join("web").is_dir() && p.join("layers").is_dir();
+    let holds = |p: &Path| {
+        p.join("web").is_dir() && (p.join("layers").is_dir() || vleo_design::beside(p).is_some())
+    };
     if let Ok(r) = std::env::var("VLEO_ROOT") {
         let r = PathBuf::from(r);
         if holds(&r) {
@@ -421,6 +488,19 @@ fn version_json(ctx: &Ctx) -> String {
     j.str_field("endpoint", "local-daemon");
     j.num_field("port", ctx.port as f64);
     j.num_field("nodes", NODES.len() as f64);
+    // Where this copy reads the design from, and which design that is.
+    j.key("design").raw("{");
+    match &ctx.design {
+        Some(d) => {
+            j.str_field("from", "file");
+            j.str_field("fingerprint", &d.fingerprint);
+        }
+        None => {
+            j.str_field("from", "folders");
+            j.str_field("fingerprint", "");
+        }
+    }
+    j.close_obj();
     if let Some(p) = &ctx.preview {
         j.key("preview").raw(p);
     }
