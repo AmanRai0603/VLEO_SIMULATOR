@@ -505,7 +505,9 @@ fn a_refused_method_leaves_the_rust_its_hole_held() {
     use vleo_sheet::template::{self, Derisk, Form};
     let _serial = serially();
     let root = root();
-    let row = "sw_f107_design_long";
+    // A published row whose hole holds hand-written Rust, and no method of its
+    // own; a solar row once was, until its group's release gave it one.
+    let row = "gnc_total_disturbance";
     let tree = vleo_sheet::load::load_all(&root).unwrap();
     let sh = tree
         .sheets
@@ -515,14 +517,14 @@ fn a_refused_method_leaves_the_rust_its_hole_held() {
     let _guard = RestoreFolder::take(&dir);
     let model = std::fs::read(dir.join("model.rs")).unwrap();
     assert!(
-        String::from_utf8_lossy(&model).contains("1.28"),
+        String::from_utf8_lossy(&model).contains("gnc::total_disturbance_torque"),
         "this test needs {row}'s hole to hold its Rust"
     );
     let original = template::content(sh);
     let mut filled = original.clone();
     filled.fields.insert(
         "method_text".into(),
-        "if central < 60 then\n  refuse \"below the floor\"\nend\nreturn central + 1.28 * spread"
+        "if ta < 0 [N*m] then\n  refuse \"a negative torque\"\nend\nreturn ta + tg + ts + tm"
             .into(),
     );
     let case = |label: &str, refuse: bool, expect: &str, inputs: &str| {
@@ -539,20 +541,30 @@ fn a_refused_method_leaves_the_rust_its_hole_held() {
     filled.arrays.insert(
         "case".into(),
         vec![
-            case("one", false, "125.6", "{ central = 100.0, spread = 20.0 }"),
+            case(
+                "one",
+                false,
+                "0.001",
+                "{ ta = 0.0004, tg = 0.0003, ts = 0.0002, tm = 0.0001 }",
+            ),
             case(
                 "two",
                 false,
-                "177.22160896",
-                "{ central = 160.0, spread = 13.454382 }",
+                "0.01",
+                "{ ta = 0.004, tg = 0.003, ts = 0.002, tm = 0.001 }",
             ),
             case(
                 "three",
                 false,
-                "112.8",
-                "{ central = 100.0, spread = 10.0 }",
+                "0.1",
+                "{ ta = 0.04, tg = 0.03, ts = 0.02, tm = 0.01 }",
             ),
-            case("floor", true, "", "{ central = 50.0, spread = 0.0 }"),
+            case(
+                "negative",
+                true,
+                "",
+                "{ ta = -1.0, tg = 0.0, ts = 0.0, tm = 0.0 }",
+            ),
         ],
     );
     let base = form::file_hash(&std::fs::read_to_string(dir.join("node.toml")).unwrap());
@@ -597,7 +609,11 @@ fn a_refused_method_leaves_the_rust_its_hole_held() {
     let p = template::plan_form(&root, f).unwrap();
     assert!(p.applicable() > 0, "the plan has something to apply");
     match template::apply(&root, &p) {
-        Saved::Refused(e) => assert!(e.contains("nothing changed"), "{e}"),
+        // Refused by the gate, for the reason this test is about.
+        Saved::Refused(e) => assert!(
+            e.contains("nothing changed") && e.contains("the code is not here"),
+            "{e}"
+        ),
         Saved::Ok { .. } => panic!("cases with no author code were applied"),
         Saved::Stale { current } => panic!("unexpectedly stale, current {current}"),
     }

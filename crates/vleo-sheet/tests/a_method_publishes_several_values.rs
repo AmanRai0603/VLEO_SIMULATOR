@@ -7,7 +7,9 @@
 //! node's own signature, and run on the node's own fixtures, which come from
 //! outside this code (an independent derivation from the two tables). This
 //! test does not give the node a method: whether it gets one is its owner's
-//! form to send. It shows the language can say what the node says.
+//! form to send — the solar group's release has since given it one, transcribed
+//! from its Rust, and this one, written with the kernel's relations, is held to
+//! the same fixtures. It shows the language can say what the node says.
 
 use std::path::Path;
 use vleo_sheet::method::{self, Outcome};
@@ -74,11 +76,6 @@ fn sw_kp_scenarios_written_as_a_method_meets_its_own_fixtures() {
 
     // And the translation is the shape the generated node reads: the answer
     // and the nine members, in the order the sheet declares them.
-    let rust = method::node_rust(sh);
-    assert!(
-        rust.is_none(),
-        "the node has no method of its own; nothing is generated for it"
-    );
     let order: Vec<String> = sh.publishes.iter().map(|m| m.symbol.clone()).collect();
     let inputs: Vec<String> = sh.inputs.iter().map(|i| i.binding.clone()).collect();
     let text = method::to_rust_publishing(&p, &sh.id, &sh.source, METHOD, &inputs, &order);

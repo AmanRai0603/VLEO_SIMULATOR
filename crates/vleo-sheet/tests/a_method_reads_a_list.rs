@@ -7,7 +7,9 @@
 //! is written as a method, checked against the node's own signature, and run
 //! on the node's own fixtures, which come from outside this code (published
 //! sources). This test does not give any node a method: whether it gets one is
-//! its owner's form to send. It shows the language can say what the nodes say.
+//! its owner's form to send — the solar group's release has since given two of
+//! them theirs, transcribed as comparisons, and these, written with a list, are
+//! held to the same fixtures. It shows the language can say what the nodes say.
 
 use std::path::Path;
 use vleo_sheet::method::{self, Outcome};
@@ -60,10 +62,6 @@ fn three_list_reading_rows_written_as_methods_meet_their_own_fixtures() {
         ("sw_ap_design", AP_DESIGN),
     ] {
         let sh = &tree.sheets[node];
-        assert!(
-            sh.method.text.trim().is_empty(),
-            "{node} has a method of its own now; this test needs reading again"
-        );
         let sig = method::node_signature(sh).expect("every quantity is known");
         let p = method::compile(src, &sig).unwrap_or_else(|e| panic!("{node}: {e:?}"));
         assert!(!sh.fixtures.is_empty(), "{node} has no fixtures");
