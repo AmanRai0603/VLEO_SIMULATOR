@@ -560,8 +560,10 @@ fn supply_checked(store: &mut Store<'_>, v: NodeIdx, value: f64) -> Result<(), F
         return Err(Fault::OutOfDomain {
             node: def.id,
             field: var.symbol,
-            value,
-            bound: var.limit.lower,
+            // Stated in the variable's own unit, which the fault names:
+            // 150000 m printed as "150000 km" once told a reader the wrong number.
+            value: value / var.unit.si_factor(),
+            bound: var.limit.lower / var.unit.si_factor(),
             edge: vleo_core::fault::Edge::Lower,
             unit: var.unit,
             reason: var.limit.reason_lower,
@@ -571,8 +573,10 @@ fn supply_checked(store: &mut Store<'_>, v: NodeIdx, value: f64) -> Result<(), F
         return Err(Fault::OutOfDomain {
             node: def.id,
             field: var.symbol,
-            value,
-            bound: var.limit.upper,
+            // Stated in the variable's own unit, which the fault names:
+            // 150000 m printed as "150000 km" once told a reader the wrong number.
+            value: value / var.unit.si_factor(),
+            bound: var.limit.upper / var.unit.si_factor(),
             edge: vleo_core::fault::Edge::Upper,
             unit: var.unit,
             reason: var.limit.reason_upper,
