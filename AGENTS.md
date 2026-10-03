@@ -196,6 +196,11 @@ results, the manual, figures and these documents are all held to it by check.
                                             what is blocked by a named row
     cargo run -p xtask -- reach             where each answer goes, and which
                                             reach no KPI closure
+    cargo run -p xtask -- catalogue [<group>]
+                                            what each group publishes to the
+                                            others, and who reads each row
+    cargo run -p xtask -- impact <node|group>
+                                            which other groups a change reaches
     cargo run -p xtask -- gap               what the sheets promised and
                                             nothing covers
     cargo run -p xtask -- derisk            the de-risking narrative, regenerated

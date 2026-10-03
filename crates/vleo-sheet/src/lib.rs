@@ -23,6 +23,7 @@ pub mod derisk;
 pub mod emit;
 mod error;
 pub use error::{Error, ErrorKind};
+pub mod catalogue;
 pub mod example;
 pub mod files;
 pub mod form;

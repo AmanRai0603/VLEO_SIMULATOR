@@ -192,6 +192,36 @@ pub fn write(root: &Path, out: &Path, stamp: &Stamp) -> Result<Written, Error> {
                 .map_err(|e| Error::db(&part, e))?;
             }
         }
+        {
+            let mut put = tx
+                .prepare(
+                    "INSERT INTO published (grp, node, unit, version, crosses_to, read_by_grp, \
+                     read_by) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
+                )
+                .map_err(|e| Error::db(&part, e))?;
+            for p in vleo_sheet::catalogue::catalogue(&tree) {
+                let readers: Vec<(&str, &str)> = if p.read_by.is_empty() {
+                    vec![("", "")]
+                } else {
+                    p.read_by
+                        .iter()
+                        .map(|(g, n)| (g.as_str(), n.as_str()))
+                        .collect()
+                };
+                for (g, n) in readers {
+                    put.execute(params![
+                        p.group,
+                        p.node,
+                        p.unit,
+                        p.version,
+                        p.crosses_to,
+                        g,
+                        n
+                    ])
+                    .map_err(|e| Error::db(&part, e))?;
+                }
+            }
+        }
         let fp = fingerprint(hashes.iter().map(|(p, s)| (p.as_str(), s.as_str())));
         for (k, v) in [
             ("file_kind", "design".to_string()),

@@ -10,6 +10,7 @@ use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 use vleo_sheet::{emit, gate, load_all, page, Tree};
 
+mod catalogue;
 mod design;
 mod fills;
 mod flow;
@@ -103,6 +104,8 @@ pub(crate) fn dispatch(root: &Path, cmd: &str, rest: &[&str]) -> Result<(), Stri
         "status" => cmd_status(&root),
         "active" => cmd_active(&root, &rest),
         "reach" => cmd_reach(&root, &rest),
+        "catalogue" => catalogue::cmd_catalogue(&root, &rest),
+        "impact" => catalogue::cmd_impact(&root, &rest),
         "gap" => cmd_gap(&root),
         "graph" => cmd_graph(&root),
         "new" => cmd_new(&root, &rest),
@@ -184,6 +187,15 @@ cargo xtask <command>
                      where each answer GOES: how many reach a KPI closure, and
                      which answer and are read by nothing. A subsystem can
                      answer on every row it has and be wired to nothing.
+  catalogue [<group>] [--csv <file>]
+                     what each group publishes to the others: every row another
+                     group reads, or that crosses a layer, with its version and
+                     every row that reads it. Taken from the inputs the sheets
+                     declare; --csv writes it as a table.
+  impact <node|group> ...
+                     which other groups a change to these rows reaches: the
+                     rows that read them, theirs, and so on, by group, nearest
+                     first. A group named stands for all its rows.
   gap                what every sheet promised and nothing yet covers.
   graph              the three graphs, their sizes, and the crate direction check.
   new <id> --like <sibling>
