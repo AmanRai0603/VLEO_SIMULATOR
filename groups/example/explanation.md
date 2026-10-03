@@ -4,7 +4,7 @@ The altitude a mission flies at fixes how fast its spacecraft moves and how long
 
 ## Said simply
 
-A spacecraft in orbit is falling all the time. It moves sideways so fast that, as it falls, the Earth curves away beneath it, and it never comes down. At each height there is exactly one sideways speed for which the fall matches the curve: that is the circular-orbit speed {{node orbit_speed}}.
+A spacecraft in orbit is falling all the time. It moves sideways so fast that, as it falls, the Earth curves away beneath it, and it never comes down. At each height there is exactly one sideways speed for which the fall matches the curve: that is the circular-orbit speed {{node orbit_velocity}}.
 
 Higher up, gravity is weaker, so less speed is needed to bend the path into a circle — and the circle is bigger. Less speed round a longer path means each orbit takes longer {{node orbit_period}}.
 

@@ -217,6 +217,16 @@ results, the manual, figures and these documents are all held to it by check.
                                             design: the seal checked, each node's
                                             pseudocode and results taken as its
                                             form (docs/GROUP_APPS.md)
+    cargo run -p xtask -- group-build <folder>
+                                            every computed node of a taken-in
+                                            release, built from its method
+    cargo run -p xtask -- group-test <folder>
+                                            the group against its own results:
+                                            its cases, its group results through
+                                            the engine, the ends of its ranges
+    cargo run -p xtask -- group-deliver <folder>
+                                            the test application for the group,
+                                            with what it holds and what to try
     cargo run -p xtask -- group-export <group>
                                             a group's folder, written from the tree,
                                             for the group to start from

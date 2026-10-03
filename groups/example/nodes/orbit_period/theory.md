@@ -14,4 +14,4 @@
 
 ## Validity
 
-For radii from 6,528 km to 7,378 km. Kepler's third law in this form holds for any circular orbit of the two-body problem.
+For radii from 6,528 km to 6,828 km (150 km to 450 km altitude). Kepler's third law in this form holds for any circular orbit of the two-body problem.

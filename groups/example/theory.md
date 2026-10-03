@@ -6,7 +6,7 @@ The group's nodes are chained by one relation between speed and period, {{eq G1}
 
 1. A circular orbit of radius $r$ has circumference $2\pi r$.
 2. Travelled at constant speed $v$, it takes $T = 2\pi r / v$.
-3. With the circular speed $v = \sqrt{\mu / r}$ from {{node orbit_speed}}, $T = 2\pi \sqrt{r^{3}/\mu}$.
+3. With the circular speed $v = \sqrt{\mu / r}$ from {{node orbit_velocity}}, $T = 2\pi \sqrt{r^{3}/\mu}$.
 
 ## Assumptions
 

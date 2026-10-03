@@ -37,62 +37,14 @@ pub(super) fn cmd_group_intake(root: &Path, args: &[&str]) -> Result<(), String>
         .copied();
 
     // 1 · what the release says of itself, and whether its files are the ones sealed
-    let rel: toml::Value = fs::read_to_string(dir.join("RELEASE.toml"))
-        .map_err(|_| {
-            format!(
-                "{} has no RELEASE.toml: it is not an unpacked release. Write the release out first: \
-                 node tools/group_db.mjs --unpack <file.vleo> --out {}",
-                dir.display(),
-                dir.display()
-            )
-        })?
-        .parse()
-        .map_err(|e| format!("RELEASE.toml: {e}"))?;
-    let meta = |k: &str| {
-        rel.get(k)
-            .and_then(|v| v.as_str())
-            .unwrap_or("")
-            .to_string()
-    };
-    let (group, version, sealed) = (meta("group_id"), meta("version"), meta("sealed"));
-    println!(
-        "\x1b[1m{group} {version}\x1b[0m — {}",
-        if sealed.is_empty() {
-            "NOT sealed".to_string()
-        } else {
-            format!(
-                "sealed {} by {}",
-                &sealed[..sealed.len().min(10)],
-                meta("sealed_by")
-            )
-        }
-    );
-    if sealed.is_empty() {
-        if apply {
-            return Err(
-                "an unsealed release is looked at, never applied: the group seals it first".into(),
-            );
-        }
-        if !draft {
-            return Err(
-                "this release is not sealed. Look at it with --draft; it is taken only once sealed"
-                    .into(),
-            );
-        }
-    } else {
-        let have = fingerprint(&dir)?;
-        if have != meta("fingerprint") {
-            return Err(format!(
-                "the files are not the ones that were sealed: they give the fingerprint {have}, the seal says {}. \
-                 Nothing is taken from a release changed after it was signed",
-                meta("fingerprint")
-            ));
-        }
-        println!(
-            "  every file is the one sealed — fingerprint {}…",
-            &have[..16]
-        );
+    if apply && draft {
+        return Err("an unsealed release is looked at, never applied: --draft and --apply do not go together".into());
     }
+    let Release {
+        group,
+        version,
+        sealed,
+    } = Release::open(&dir, draft)?;
 
     // 2 · each node, as the form its author would have filled
     let tree = load(root)?;
@@ -164,6 +116,78 @@ pub(super) fn cmd_group_intake(root: &Path, args: &[&str]) -> Result<(), String>
     Ok(())
 }
 
+/// What a written-out release says of itself, once its seal is checked.
+pub(super) struct Release {
+    pub group: String,
+    pub version: String,
+    /// When it was sealed; empty for a draft.
+    pub sealed: String,
+}
+
+impl Release {
+    /// Read RELEASE.toml and check every file against the sealed fingerprint.
+    /// An unsealed release opens only as a draft, which is looked at and never
+    /// taken; a sealed one whose files changed after signing does not open.
+    pub(super) fn open(dir: &Path, draft: bool) -> Result<Release, String> {
+        let rel: toml::Value = fs::read_to_string(dir.join("RELEASE.toml"))
+            .map_err(|_| {
+                format!(
+                    "{} has no RELEASE.toml: it is not an unpacked release. Write the release out first: \
+                     node tools/group_db.mjs --unpack <file.vleo> --out {}",
+                    dir.display(),
+                    dir.display()
+                )
+            })?
+            .parse()
+            .map_err(|e| format!("RELEASE.toml: {e}"))?;
+        let meta = |k: &str| {
+            rel.get(k)
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .to_string()
+        };
+        let (group, version, sealed) = (meta("group_id"), meta("version"), meta("sealed"));
+        println!(
+            "\x1b[1m{group} {version}\x1b[0m — {}",
+            if sealed.is_empty() {
+                "NOT sealed".to_string()
+            } else {
+                format!(
+                    "sealed {} by {}",
+                    &sealed[..sealed.len().min(10)],
+                    meta("sealed_by")
+                )
+            }
+        );
+        if sealed.is_empty() {
+            if !draft {
+                return Err(
+                    "this release is not sealed. Look at it with --draft; it is taken only once sealed"
+                        .into(),
+                );
+            }
+        } else {
+            let have = fingerprint(dir)?;
+            if have != meta("fingerprint") {
+                return Err(format!(
+                    "the files are not the ones that were sealed: they give the fingerprint {have}, the seal says {}. \
+                     Nothing is taken from a release changed after it was signed",
+                    meta("fingerprint")
+                ));
+            }
+            println!(
+                "  every file is the one sealed — fingerprint {}…",
+                &have[..16]
+            );
+        }
+        Ok(Release {
+            group,
+            version,
+            sealed,
+        })
+    }
+}
+
 /// One node of the release as a node form: its sheet as it is now on one side,
 /// what the release holds on the other.
 fn node_form(
@@ -184,6 +208,67 @@ fn node_form(
     }
     if let Ok(rows) = cases(&nd.join("results/isolation.csv")) {
         filled.arrays.insert("case".into(), rows);
+    }
+    // The author's code, which produced the isolation results: the gate holds
+    // cases that came from code until the code is beside them.
+    let how = fs::read_to_string(nd.join("results/how-run.md")).unwrap_or_default();
+    if let Some((file, code, owner)) = author_code(dir, &nd, &how) {
+        // Whose code it is: the author of the node whose folder holds it.
+        let who = read_csv(&owner.join("declaration.csv"))
+            .ok()
+            .and_then(|r| r.into_iter().next())
+            .and_then(|r| r.get("author").cloned())
+            .unwrap_or_default();
+        filled.fields.insert("author_name".into(), who);
+        let ext = file.rsplit('.').next().unwrap_or("").to_lowercase();
+        let language = match ext.as_str() {
+            "py" => "Python",
+            "m" => "MATLAB",
+            "jl" => "Julia",
+            "c" => "C",
+            "cpp" | "cc" | "cxx" => "C++",
+            "f" | "f90" | "f95" => "Fortran",
+            "rs" => "Rust",
+            "xlsx" | "xls" | "ods" => "Excel",
+            _ => "other",
+        };
+        filled
+            .fields
+            .insert("author_language".into(), language.into());
+        filled.fields.insert("author_code".into(), code.clone());
+        // The script that ran the cases is the one how-run.md names; in a group
+        // folder it is usually the same file that holds the code.
+        filled.fields.insert("author_test_code".into(), code);
+        filled
+            .fields
+            .insert("author_how_run".into(), how.trim().to_string());
+        // The function rerun calls is named only when the author names it.
+        let entry = how
+            .lines()
+            .find_map(|l| {
+                l.split_once("**Entry:**")
+                    .map(|(_, e)| e.trim().trim_matches('`').to_string())
+            })
+            .unwrap_or_default();
+        filled.fields.insert("author_entry".into(), entry);
+    }
+    // How the relation was arrived at: without it the row is stated and never
+    // derived, and the engine holds it unanswered.
+    if let Ok(md) = fs::read_to_string(nd.join("theory.md")) {
+        let (why, steps, reading) = theory(&md);
+        if !why.is_empty() || !steps.is_empty() || !reading.is_empty() {
+            filled.fields.insert("theory_why".into(), why);
+            filled.fields.insert("theory_reading".into(), reading);
+            filled.arrays.insert(
+                "theory".into(),
+                steps
+                    .into_iter()
+                    .map(|(text, math)| {
+                        BTreeMap::from([("text".into(), text), ("math".into(), math)])
+                    })
+                    .collect(),
+            );
+        }
     }
     // Whose it is, and whether an assistant helped. Silence is not "none".
     let decl = read_csv(&nd.join("declaration.csv"))
@@ -215,7 +300,7 @@ fn node_form(
 
 /// The isolation results as the form's test cases: every value back in SI,
 /// as the sheet holds it.
-fn cases(path: &Path) -> Result<Vec<BTreeMap<String, String>>, String> {
+pub(super) fn cases(path: &Path) -> Result<Vec<BTreeMap<String, String>>, String> {
     let text = fs::read_to_string(path).map_err(|e| format!("{}: {e}", path.display()))?;
     let (head, rows) = parse_csv(&text);
     let unit = |h: &str| -> Result<(String, f64), String> {
@@ -303,6 +388,131 @@ fn cases(path: &Path) -> Result<Vec<BTreeMap<String, String>>, String> {
     Ok(out)
 }
 
+/// The code that produced a node's results: the node's own `code/` folder, or
+/// the file its how-run.md names in another node's (`nodes/<id>/code/<file>`).
+/// Several files are kept as one, each under its name.
+fn author_code(dir: &Path, nd: &Path, how: &str) -> Option<(String, String, PathBuf)> {
+    let read_dir = |d: &Path| -> Vec<(String, String)> {
+        let mut v: Vec<(String, String)> = fs::read_dir(d)
+            .into_iter()
+            .flatten()
+            .filter_map(|e| e.ok().map(|e| e.path()))
+            .filter(|p| p.is_file())
+            .filter_map(|p| {
+                let name = p.file_name()?.to_string_lossy().to_string();
+                fs::read_to_string(&p).ok().map(|t| (name, t))
+            })
+            .collect();
+        v.sort();
+        v
+    };
+    let mut files = read_dir(&nd.join("code"));
+    let mut owner = nd.to_path_buf();
+    if files.is_empty() {
+        let named = how
+            .split('`')
+            .skip(1)
+            .step_by(2)
+            .flat_map(|span| span.split_whitespace())
+            .find(|w| w.starts_with("nodes/") && w.contains("/code/"))?;
+        let t = fs::read_to_string(dir.join(named)).ok()?;
+        owner = dir.join(named.split("/code/").next()?);
+        files.push((named.rsplit('/').next().unwrap_or(named).to_string(), t));
+    }
+    let first = files.first()?.0.clone();
+    if files.len() == 1 {
+        return Some((first, files.remove(0).1, owner));
+    }
+    let joined = files
+        .iter()
+        .map(|(n, t)| format!("# ── {n} ──\n{t}"))
+        .collect::<Vec<_>>()
+        .join("\n");
+    Some((first, joined, owner))
+}
+
+/// A node's theory.md as the sheet's `[theory]`: the inverse of what
+/// `group-export` writes. Under *Derivation*, prose before the numbered steps
+/// is why; each step is its sentence, with a trailing `code span` as its line
+/// of maths. Under *Validity*, everything but the sentence the export writes
+/// from the output's bounds is the reading. Equations and assumptions stay in
+/// the release.
+fn theory(md: &str) -> (String, Vec<(String, String)>, String) {
+    let mut sections: BTreeMap<String, Vec<&str>> = BTreeMap::new();
+    let mut at = String::new();
+    for line in md.lines() {
+        match line.strip_prefix("## ") {
+            Some(h) => at = h.trim().to_lowercase(),
+            None => sections.entry(at.clone()).or_default().push(line),
+        }
+    }
+    let paragraphs = |name: &str| -> Vec<String> {
+        sections
+            .get(name)
+            .map(|l| l.join("\n"))
+            .unwrap_or_default()
+            .split("\n\n")
+            .map(|p| p.split_whitespace().collect::<Vec<_>>().join(" "))
+            .filter(|p| !p.is_empty())
+            .collect()
+    };
+    let numbered = |l: &str| {
+        let l = l.trim_start();
+        let digits = l.chars().take_while(char::is_ascii_digit).count();
+        (digits > 0 && l[digits..].starts_with(". ")).then(|| l[digits + 2..].to_string())
+    };
+    let (mut why, mut steps) = (Vec::new(), Vec::<String>::new());
+    for line in sections
+        .get("derivation")
+        .cloned()
+        .unwrap_or_default()
+        .join("\n")
+        .split("\n\n")
+    {
+        let mut prose = Vec::new();
+        for l in line.lines() {
+            match numbered(l) {
+                Some(s) => steps.push(s),
+                None if !steps.is_empty() && !l.trim().is_empty() && prose.is_empty() => {
+                    let last = steps.last_mut().unwrap();
+                    last.push(' ');
+                    last.push_str(l.trim());
+                }
+                None => prose.push(l.trim()),
+            }
+        }
+        let p = prose.join(" ");
+        if !p.trim().is_empty() {
+            why.push(p.split_whitespace().collect::<Vec<_>>().join(" "));
+        }
+    }
+    let steps = steps
+        .into_iter()
+        .map(|s| {
+            let s = s.split_whitespace().collect::<Vec<_>>().join(" ");
+            match s
+                .strip_suffix('`')
+                .and_then(|t| t.rfind(" `").map(|i| (t, i)))
+            {
+                Some((t, i)) => (t[..i].to_string(), t[i + 2..].to_string()),
+                None => (s, String::new()),
+            }
+        })
+        .collect();
+    // The export's own sentence from the bounds: "From <lo> to <hi> <unit>." —
+    // the bounds are the contract's, not the reading.
+    let bounds = |p: &str| {
+        let w: Vec<&str> = p.split_whitespace().collect();
+        let n = |s: &str| s.parse::<f64>().is_ok() || s.contains("inf") || s.contains('∞');
+        w.len() > 4 && w[0] == "From" && w[2] == "to" && n(w[1]) && n(w[3])
+    };
+    let reading: Vec<String> = paragraphs("validity")
+        .into_iter()
+        .filter(|p| !bounds(p))
+        .collect();
+    (why.join("\n\n"), steps, reading.join("\n\n"))
+}
+
 /// The group's latest version record, as the form's de-risking record.
 fn latest_version(dir: &Path) -> Result<Derisk, String> {
     let rows = read_csv(&dir.join("versions.csv")).unwrap_or_default();
@@ -353,7 +563,7 @@ pub(super) fn fingerprint(dir: &Path) -> Result<String, String> {
 }
 
 /// A CSV file as records by header.
-fn read_csv(path: &Path) -> Result<Vec<BTreeMap<String, String>>, String> {
+pub(super) fn read_csv(path: &Path) -> Result<Vec<BTreeMap<String, String>>, String> {
     let text = fs::read_to_string(path).map_err(|e| format!("{}: {e}", path.display()))?;
     let (head, rows) = parse_csv(&text);
     Ok(rows
@@ -369,7 +579,7 @@ fn read_csv(path: &Path) -> Result<Vec<BTreeMap<String, String>>, String> {
 
 /// CSV as the group pattern writes it: a header row, then rows; a field in
 /// double quotes may hold commas, line breaks and doubled quotes.
-fn parse_csv(text: &str) -> (Vec<String>, Vec<Vec<String>>) {
+pub(super) fn parse_csv(text: &str) -> (Vec<String>, Vec<Vec<String>>) {
     let mut rows: Vec<Vec<String>> = Vec::new();
     let (mut row, mut cell, mut quoted) = (Vec::new(), String::new(), false);
     let mut chars = text.chars().peekable();

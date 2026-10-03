@@ -240,6 +240,36 @@ export async function checkGroup(model, spec) {
     }
   }
 
+  // ── the group's own results: the developer's group test ──
+  const gt = model.g.files['results/group.csv'];
+  if (gt) {
+    const where = 'results/group.csv';
+    const cols = resultColumns(gt);
+    const unitOf = id => (model.nodes.get(id) || { row: {} }).row.unit;
+    for (const c of cols.inputs) {
+      const node = model.nodes.get(c.name);
+      if (!node) add('error', where, 'the column ' + c.name + ' is no node of the group; an input column is named by its node id');
+      else if (node.row.kind !== 'declared') add('warning', where, c.name + ' is ' + node.row.kind + ', not declared: a group test sets what the group is given');
+      else if (unitOf(c.name) && c.unit !== unitOf(c.name)) add('error', where, c.name + ' is in [' + c.unit + '] here and [' + unitOf(c.name) + '] in nodes.csv');
+    }
+    if (!cols.answers.length) add('error', where, 'has no answer column — write answer.<node id> [unit] for each node the test reads');
+    for (const a of cols.answers) {
+      const id = a.name.replace(/^answer\.?\s*/, '');
+      if (!model.nodes.has(id)) add('error', where, a.name + ' names no node: an answer column is answer.<node id>');
+      else if (unitOf(id) && a.unit !== unitOf(id)) add('error', where, a.name + ' is in [' + a.unit + '] here and [' + unitOf(id) + '] in nodes.csv');
+    }
+    const refK = cols.other.refuses, tolK = cols.other.tolerance;
+    gt.rows.forEach((r, i) => {
+      const line = gt.lines[i];
+      const refuses = refK !== undefined && r[refK] === 'yes';
+      for (const c of cols.inputs) if (num(r[c.k]) === null) add('error', where, c.name + ' is not a number', line);
+      if (!refuses) {
+        for (const a of cols.answers) if (num(r[a.k]) === null) add('error', where, a.name + ' is not a number', line);
+        if (tolK === undefined || !(num(r[tolK]) > 0)) add('error', where, 'the tolerance must be a number above zero', line);
+      }
+    });
+  }
+
   // ── requirements, loops, publishes, flow, sources, figures ──
   for (const r of model.group.requirements) {
     for (const side of ['required', 'achieved']) {

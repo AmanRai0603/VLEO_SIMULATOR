@@ -296,7 +296,20 @@ columns = [
 path = "results/group.csv"
 level = "group"
 required = false
-says = "the group as a whole: group inputs in, group outputs out, at the defaults and at the edges — the developer's group test"
+says = """
+The group as a whole: group inputs in, group outputs out, at the defaults and
+at the edges — the developer's group test. Columns: one per declared node the
+test sets, named by its node id with its unit (`orbit_altitude [km]`); then
+one `answer.<node id> [unit]` per node the test reads; then `tolerance`,
+`refuses` and `origin`, as in a node's isolation results.
+"""
+columns = [
+  { name = "answer", says = "answer.<node id>, with its unit in the header; one column per node the test reads", prefix = true },
+  { name = "tolerance", says = "relative tolerance" },
+  { name = "refuses", says = "yes or no", one_of = ["yes", "no"] },
+  { name = "origin", says = "code, hand, spreadsheet or paper", one_of = ["code", "hand", "spreadsheet", "paper"] },
+  { name = "says", says = "what the case is, in words", optional = true },
+]
 
 [[file]]
 path = "reviews.csv"
@@ -386,7 +399,7 @@ path = "results/how-run.md"
 level = "node"
 required = false
 required_when = "origin_code"
-says = "how the code that produced isolation.csv was run: language, tool and version, machine, date, the command"
+says = "how the code that produced isolation.csv was run: language, tool and version, machine, date, the command — and, so the developer can run it again on each case, `**Entry:** name`, the function that takes this node's inputs by name, in SI, and returns its answer"
 
 [[file]]
 path = "evidence.csv"

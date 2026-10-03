@@ -27,7 +27,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 PAGE = 'file://' + os.path.join(ROOT, 'web', 'group.html')
 EXAMPLE = os.path.join(ROOT, 'groups', 'example')
-SCOPES = ['group', 'mission_altitude', 'period_limit', 'orbit_radius', 'orbit_speed', 'orbit_period', 'period_achieved']
+SCOPES = ['group', 'orbit_altitude', 'period_limit', 'orbit_radius', 'orbit_velocity', 'orbit_period', 'period_achieved']
 
 
 def chromium_path():
@@ -123,22 +123,29 @@ def check():
         tmp = tempfile.mkdtemp()
         broken = os.path.join(tmp, 'example')
         shutil.copytree(EXAMPLE, broken)
-        os.remove(os.path.join(broken, 'nodes', 'orbit_speed', 'pseudocode.txt'))
+        os.remove(os.path.join(broken, 'nodes', 'orbit_velocity', 'pseudocode.txt'))
         # A unit mistake the method checker must name, by line and by unit.
         pc = os.path.join(broken, 'nodes', 'orbit_period', 'pseudocode.txt')
         with open(pc) as f:
             body = f.read()
         with open(pc, 'w') as f:
             f.write(body.replace('return 2 * PI * sqrt(r ^ 3 / MU_EARTH)', 'return 2 * PI * sqrt(r ^ 3 / MU_EARTH) + r'))
-        with open(os.path.join(broken, 'nodes', 'orbit_speed', 'inputs.csv'), 'a') as f:
+        with open(os.path.join(broken, 'nodes', 'orbit_velocity', 'inputs.csv'), 'a') as f:
             f.write('mass,nowhere,kg,,,,\n')
+        # The group test names its columns by node id: one that names nothing is caught.
+        gp = os.path.join(broken, 'results', 'group.csv')
+        with open(gp) as f:
+            body = f.read()
+        with open(gp, 'w') as f:
+            f.write(body.replace('answer.orbit_period [s]', 'answer.period [s]', 1))
         q = opened(broken)
         q.evaluate("location.hash='#/checks'")
         q.wait_for_timeout(400)
         t = q.inner_text('#gmain')
-        step('a missing pseudocode is an error', 'nodes/orbit_speed/pseudocode.txt is missing' in t)
+        step('a missing pseudocode is an error', 'nodes/orbit_velocity/pseudocode.txt is missing' in t)
         step('an input from nowhere is an error', 'comes from "nowhere"' in t)
         step('an input with no default is an error', 'mass has no default value' in t)
+        step('a group-test column that names no node is an error', 'answer.period names no node' in t)
         step('the method checker names a unit mistake by line', 'orbit_period/pseudocode.txt:5 a sum of unlike quantities' in t)
         q.evaluate("location.hash='#/sign'")
         q.wait_for_timeout(600)
@@ -150,7 +157,7 @@ def check():
             r = opened(EXAMPLE, color_scheme=scheme)
             r.set_viewport_size({'width': w, 'height': 900})
             wide = []
-            for h in ['#/', '#/node/orbit_speed/explain', '#/node/orbit_speed/algorithm', '#/node/orbit_speed/results', '#/checks', '#/sign', '#/pattern', '#/helper']:
+            for h in ['#/', '#/node/orbit_velocity/explain', '#/node/orbit_velocity/algorithm', '#/node/orbit_velocity/results', '#/checks', '#/sign', '#/pattern', '#/helper']:
                 r.evaluate(f"location.hash='{h}'")
                 r.wait_for_timeout(400)
                 if r.evaluate('document.documentElement.scrollWidth - document.documentElement.clientWidth') > 0:

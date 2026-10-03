@@ -122,7 +122,12 @@ Its sections, in this order: `## Equations`, `## Derivation`, `## Assumptions`, 
   - `y` (optional) — the column(s) up, space-separated for several series.
   - `z` (optional) — heatmap: the value column; animation: the frame column.
   - `on` (optional) — steps: the flow figure the steps walk through.
-- `results/group.csv` — optional. the group as a whole: group inputs in, group outputs out, at the defaults and at the edges — the developer's group test
+- `results/group.csv` — optional. The group as a whole: group inputs in, group outputs out, at the defaults and at the edges — the developer's group test. Columns: one per declared node the test sets, named by its node id with its unit (`orbit_altitude [km]`); then one `answer.<node id> [unit]` per node the test reads; then `tolerance`, `refuses` and `origin`, as in a node's isolation results.
+  - `answer` — answer.<node id>, with its unit in the header; one column per node the test reads.
+  - `tolerance` — relative tolerance.
+  - `refuses` — yes or no. One of: yes, no.
+  - `origin` — code, hand, spreadsheet or paper. One of: code, hand, spreadsheet, paper.
+  - `says` (optional) — what the case is, in words.
 - `reviews.csv` — written by the group application. every sign-off, written by the group application: who signed what, at which content fingerprint
   - `name` — who signed.
   - `scope` — group, or a node id.
@@ -151,7 +156,7 @@ Its sections, in this order: `## Equations`, `## Derivation`, `## Assumptions`, 
   - `refuses` — yes or no. One of: yes, no.
   - `origin` — code, hand, spreadsheet or paper. One of: code, hand, spreadsheet, paper.
   - `says` (optional) — what the case is, in words.
-- `nodes/<id>/results/how-run.md` — optional. how the code that produced isolation.csv was run: language, tool and version, machine, date, the command
+- `nodes/<id>/results/how-run.md` — optional. how the code that produced isolation.csv was run: language, tool and version, machine, date, the command — and, so the developer can run it again on each case, `**Entry:** name`, the function that takes this node's inputs by name, in SI, and returns its answer
 - `nodes/<id>/evidence.csv` — optional. values from OUTSIDE any code — a paper, a handbook, another tool — that check the physics, not the code
   - `inputs` — the inputs it holds for, as name=value pairs separated by spaces.
   - `value` — the value.

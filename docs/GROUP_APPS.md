@@ -149,30 +149,43 @@ step, and every step shows what it will look like as you type:
 
 ## The developer, taking a sealed release in
 
-A sealed release is the group's signed word. The developer takes it into the
-design in three steps:
+A sealed release is the group's signed word. The developer takes it in, builds
+it, tests it against the group's own results and sends the group a test
+application — five commands, each refusing until the one before has held:
 
-    node tools/group_db.mjs --unpack solar-0.2.vleo --out ~/intake/solar
-    cargo run -p xtask -- group-intake ~/intake/solar
-    cargo run -p xtask -- group-intake ~/intake/solar --apply
+    node tools/group_db.mjs --unpack example_orbit-1.0.vleo --out ~/intake/example
+    cargo run -p xtask -- group-intake  ~/intake/example            # the plan
+    cargo run -p xtask -- group-intake  ~/intake/example --apply    # into the design
+    cargo run -p xtask -- group-build   ~/intake/example            # from the methods
+    cargo run -p xtask -- group-test    ~/intake/example            # against their results
+    cargo run -p xtask -- group-deliver ~/intake/example            # the test application
 
 | Step | What happens |
 | --- | --- |
 | Unpack | the release written out as the folder it was sealed from, with `RELEASE.toml` — the group, the version, who sealed it, the fingerprint, and each node's revision and author |
-| Seal check | every file's SHA-256 recomputed; a release whose files no longer give the sealed fingerprint is refused before anything is read. An unsealed release is looked at only with `--draft`, and never applied |
-| The plan | each computed node becomes the node form its author would have filled: the pseudocode as its method, its results — brought back to SI — as its test cases, its author, the declaration of any assistant's help, and the newest row of `versions.csv` as the de-risking record. Intake's own check prints what it would change, field by field |
-| Refusals | a conflict with a change the repository made since; a method or results an assistant supplied (`declaration.csv` says `relation`, or says nothing); an incomplete de-risking record. Each goes back to the group with the lines printed |
-| Apply | `--apply` writes each node, regenerates and gates it as one edit, or puts it back whole; `--partial` keeps the nodes that passed |
-| The engine | `cargo run -p xtask -- build-node <node>` translates the method into the kernel and tests it on the author's own cases (`docs/PSEUDOCODE.md`) |
+| Seal check | every command recomputes every file's SHA-256; a release whose files no longer give the sealed fingerprint is refused before anything is read. An unsealed release is looked at only with `group-intake --draft`, and never applied |
+| The plan | each computed node becomes the node form its author would have filled: the pseudocode as its method; its results, brought back to SI, as its test cases; its derivation (`theory.md`) as its theory, without which a row never answers; the code that produced the results, and how it was run; its author and the declaration of any assistant's help; and the newest row of `versions.csv` as the de-risking record |
+| Refusals | a conflict with a change the repository made since; a method or results an assistant supplied (`declaration.csv` says `relation`, or says nothing); an incomplete de-risking record (`rests_on` and `breaks_if` included); a derivation stamped by an assistant's `git config user.name`. Each goes back to the group with the lines printed |
+| Apply | `--apply` writes each node, regenerates and gates it as one edit, or puts it back whole — its generated files and the kernel's translations byte for byte; `--partial` keeps the nodes that passed |
+| Build | `group-build` runs `build-node` on each computed node: the method translated into the kernel by fixed rules, tested on the author's cases, the tests proved to test by moving the answer, the interface checked (`docs/PSEUDOCODE.md`). The author's code is rerun when `how-run.md` names its entry function (`**Entry:** name`); otherwise the build says it was not |
+| Test | `group-test` asks four things and writes `target/group/<group>-<version>/group-test.csv`: the design holds the release's cases unchanged; each node's own tests pass; the group as a whole, through the engine, gives `results/group.csv` within its tolerances; and both ends of every declared range answer or refuse by name — never NaN, never a crash |
+| Deliver | `group-deliver` builds the tool from this commit with the release in it: the kit, `DELIVERY.toml` (release, seal, commit, nodes built, checks held), `DELIVERY.md` (what to try) and the report. It refuses until `group-test` has passed, and from uncommitted changes unless `--uncommitted` marks a throwaway |
 
-What the release holds beyond the method and its cases — its words, pictures
-and evidence — stays in the release, which is what the group signed. The
-command reports it; it does not move it into the sheets.
+The group's answer is **accepted**, or **changes** with what they saw. A change
+goes back into the group folder and a new sealed release; the developer never
+edits the release, and never moves a group's results to make a test pass.
 
-The solar group's release is the worked example, and today it is refused: its
-32 methods were transcribed from the code by an assistant, and its
-`declaration.csv` files say so. That is the rule working — each method waits
-for a person who knows it to read it, put their name to it, and seal again.
+What the release holds beyond its methods, derivations, cases and code — its
+plain words, pictures and evidence — stays in the release, which is what the
+group signed.
+
+**The example group goes through all of it** on every pull request, in a
+throwaway checkout: sealed in the group application by a browser, then taken
+in, built, tested and delivered. **The solar group's release is refused** at
+the plan: its 32 methods were transcribed from the code by an assistant, and
+its `declaration.csv` files say so. That is the rule working — each method
+waits for a person who knows it to read it, put their name to it, and seal
+again.
 
 ## What the applications do not do
 
