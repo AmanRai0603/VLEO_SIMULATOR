@@ -57,6 +57,27 @@ computer; open the pages and the files from there. A file opened in a browser
 that cannot write back (anything but Chrome or Edge) is saved by downloading:
 put the downloaded file back where it came from, replacing the old one.
 
+## Every group, set up for its lead
+
+Every group that owns a node in the design starts from what the design already
+holds. Two commands make all of them at once:
+
+    cargo run -p xtask -- group-export --all --out ~/groups
+    node tools/group_db.mjs --all ~/groups --out ~/groups-db
+
+| What | Where |
+| --- | --- |
+| A folder of the pattern for each group, written from its sheets | `~/groups/<group>/` |
+| `GROUPS.csv` — each group, its layer, its owner team, how many nodes, how many compute, how many already have a method | `~/groups/` |
+| Each group's structure, one node file per node, and an unsealed release | `~/groups-db/<group>/` |
+| `READY.csv` — what each group's own checks still ask of it: empty sections, pseudocode to write, results to supply, declared values to decide, defaults to give | `~/groups-db/` |
+
+Copy `~/groups-db/<group>/` onto that group's shared drive, beside `apps/`, as
+laid out above. The lead opens the structure in the group application and
+starts from there; the authors open their node files. Nothing is invented for
+them: what the design lacks stays empty, and `READY.csv` counts it, so it is
+also the first plan of each group's work.
+
 ## The lead, in the group application
 
 1. **Start the group** — open `web/group.html`, *Start a new group*: an id

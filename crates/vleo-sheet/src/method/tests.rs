@@ -258,3 +258,96 @@ fn the_reference_covers_every_function_and_constant() {
         );
     }
 }
+
+/// Newton's method for the square root: a loop that settles, and refuses
+/// rather than answer when it is not given the passes to settle in.
+const NEWTON: &str = "\
+let r = a
+while abs(r * r - a) > 1e-12 * a at most N times
+  set r = (r + a / r) / 2
+end
+return r
+";
+
+#[test]
+fn a_loop_settles_or_refuses() {
+    let s = sig(&[("a", "Ratio")], "Ratio");
+    let p = compile(&NEWTON.replace('N', "40"), &s).unwrap();
+    let Outcome::Answer(r) = run(&p, &[("a".into(), 2.0)]).unwrap() else {
+        panic!("Newton's method on 2 did not settle in 40 passes")
+    };
+    assert!((r - 2f64.sqrt()).abs() < 1e-12, "{r}");
+    // Two passes are not enough from a = 1e6: the loop refuses, by name,
+    // instead of answering with where it had got to.
+    let p = compile(&NEWTON.replace('N', "2"), &s).unwrap();
+    let o = run(&p, &[("a".into(), 1e6)]).unwrap();
+    match o {
+        Outcome::Refused { line: 2, reason } => assert!(
+            reason.contains("did not settle within 2 passes"),
+            "{reason}"
+        ),
+        o => panic!("{o:?}"),
+    }
+}
+
+#[test]
+fn a_loop_says_how_often_it_may_run() {
+    let s = sig(&[("a", "Ratio")], "Ratio");
+    let e = errors(
+        "let r = a\nwhile r > 1 times\n  set r = r / 2\nend\nreturn r",
+        &s,
+    );
+    assert!(e.iter().any(|m| m.contains("at most N times")), "{e:?}");
+    let e = errors(
+        "let r = a\nwhile r > 1 at most 0 times\n  set r = r / 2\nend\nreturn r",
+        &s,
+    );
+    assert!(
+        e.iter()
+            .any(|m| m.contains("at most 0 times, which is never")),
+        "{e:?}"
+    );
+    let e = errors(
+        "let r = a\nwhile r at most 5 times\n  set r = r / 2\nend\nreturn r",
+        &s,
+    );
+    assert!(
+        e.iter().any(|m| m.contains("while needs a condition")),
+        "{e:?}"
+    );
+}
+
+#[test]
+fn a_kernel_function_is_called_by_name_with_its_units_checked() {
+    let s = sig(&[("h", "Length"), ("t", "Temperature")], "MassDensity");
+    let p = compile("return thermosphere_density(h, t)", &s).unwrap();
+    let Outcome::Answer(rho) = run(&p, &[("h".into(), 250e3), ("t".into(), 1000.0)]).unwrap()
+    else {
+        panic!("no answer")
+    };
+    let kernel = vleo_core::physics::env::mass_density(
+        vleo_units::Length::new(250e3),
+        vleo_units::Temperature::new(1000.0),
+    )
+    .get();
+    assert_eq!(
+        rho.to_bits(),
+        kernel.to_bits(),
+        "the interpreter runs the kernel itself"
+    );
+    // An argument in the wrong unit, and the answer in the wrong quantity.
+    let e = errors("return thermosphere_density(t, h)", &s);
+    assert!(
+        e.iter()
+            .any(|m| m.contains("h is in [K] here, and the kernel takes it in [m]")),
+        "{e:?}"
+    );
+    let s2 = sig(&[("h", "Length"), ("t", "Temperature")], "Length");
+    let e = errors("return thermosphere_density(h, t)", &s2);
+    assert!(!e.is_empty(), "a density returned as a length is refused");
+    let e = errors("return thermosphere_density(h)", &s);
+    assert!(
+        e.iter().any(|m| m.contains("takes 2 arguments, not 1")),
+        "{e:?}"
+    );
+}

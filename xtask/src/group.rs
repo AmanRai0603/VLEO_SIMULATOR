@@ -507,10 +507,13 @@ range and one refusal.\n\
 /// words were transcribed by an assistant, and the folder's first version
 /// says so, for the owner to confirm or replace.
 pub(super) fn cmd_group_export(root: &Path, args: &[&str]) -> Result<(), String> {
+    if args.contains(&"--all") {
+        return export_all(root, args);
+    }
     let id = args
         .iter()
         .find(|a| !a.starts_with("--"))
-        .ok_or("usage: group-export <group> [--out <dir>]")?
+        .ok_or("usage: group-export <group> [--out <dir>] | group-export --all [--out <dir>]")?
         .to_string();
     let out = args
         .iter()
@@ -530,6 +533,82 @@ pub(super) fn cmd_group_export(root: &Path, args: &[&str]) -> Result<(), String>
     println!(
         "wrote {} files for {id} into {}\nopen web/group.html and choose that folder to see what it still needs",
         files.len(),
+        out.display()
+    );
+    Ok(())
+}
+
+/// `group-export --all [--out <dir>]` — every group that owns a node, each
+/// in its own folder, and GROUPS.csv: which they are, whose, and how far the
+/// design already carries each — the starting point for every lead.
+fn export_all(root: &Path, args: &[&str]) -> Result<(), String> {
+    let out = args
+        .iter()
+        .position(|a| *a == "--out")
+        .and_then(|i| args.get(i + 1))
+        .map(PathBuf::from)
+        .unwrap_or_else(|| root.join("target/groups/all"));
+    let tree = load_all(root).map_err(|e| e.to_string())?;
+    let mut index = vec![csv_row(&[
+        "group".into(),
+        "name".into(),
+        "layer".into(),
+        "owner".into(),
+        "nodes".into(),
+        "computed".into(),
+        "with_method".into(),
+        "files".into(),
+    ])];
+    let (mut groups, mut files_total) = (0usize, 0usize);
+    for (id, g) in &tree.groups {
+        let sheets: Vec<&vleo_sheet::model::Sheet> = tree
+            .sheets
+            .values()
+            .filter(|s| &s.parent == id && s.state != "deprecated")
+            .collect();
+        if sheets.is_empty() {
+            continue;
+        }
+        let files = export(root, &tree, id)?;
+        let dir = out.join(id);
+        if dir.exists() {
+            fs::remove_dir_all(&dir).map_err(|e| format!("{}: {e}", dir.display()))?;
+        }
+        for (path, body) in &files {
+            let p = dir.join(path);
+            if let Some(d) = p.parent() {
+                fs::create_dir_all(d).map_err(|e| format!("{}: {e}", d.display()))?;
+            }
+            fs::write(&p, body).map_err(|e| format!("{}: {e}", p.display()))?;
+        }
+        let computed = sheets
+            .iter()
+            .filter(|s| !matches!(s.kind.as_str(), "declared" | "required" | "achieved"))
+            .count();
+        let with_method = sheets
+            .iter()
+            .filter(|s| !s.method.text.trim().is_empty())
+            .count();
+        index.push(csv_row(&[
+            id.clone(),
+            g.label.clone(),
+            g.layer.to_string(),
+            g.owner.clone(),
+            sheets.len().to_string(),
+            computed.to_string(),
+            with_method.to_string(),
+            files.len().to_string(),
+        ]));
+        groups += 1;
+        files_total += files.len();
+    }
+    fs::create_dir_all(&out).map_err(|e| format!("{}: {e}", out.display()))?;
+    fs::write(out.join("GROUPS.csv"), index.concat())
+        .map_err(|e| format!("{}: {e}", out.display()))?;
+    println!(
+        "wrote {groups} group folders ({files_total} files) into {}, and GROUPS.csv beside them.\n\
+         Each becomes its database files with `node tools/group_db.mjs --all {}`.",
+        out.display(),
         out.display()
     );
     Ok(())

@@ -41,7 +41,8 @@ fn the_example_translates_to_the_golden_file() {
     );
 }
 
-/// Every construct of the language at once — a loop that sets, a chain of
+/// Every construct of the language at once — a loop that sets, a loop that
+/// settles or refuses, a call into the kernel, a chain of
 /// branches, a table, powers written and computed, each family of function —
 /// translated, and the interpreter's answers at a spread of inputs written
 /// beside it for the kernel test to hold the translation to, bit for bit.
@@ -54,18 +55,23 @@ let total = 0
 for n = 1 to 12
   set total = total + x ^ n / n
 end
+let h = x + 1
+while h > 0.001 at most 12 times
+  set h = h / 2
+end
 let t : Ratio = interp(x, [0, 0.5, 1, 4] [1], [1, 2, 0.5, 3] [1])
 let a = sqrt(x + 1) + cbrt(x) + ln(x + 2) + exp(-x) + log10(x + 1) + log2(x + 1)
 let b = sin(x) * cos(x) + tan(x / 10) + atan(x) + atan2(x, 1) + sinh(x / 5) + cosh(x / 5) + tanh(x)
 let c = min(x, 2) + max(x, 0.5) + abs(0 - x) + hypot(x, 1) + fmod(x + 7, 3) + erf(x) + erfc(x)
 let d = floor(x * 3) + ceil(x) + round(x * 2) + wrap_2pi(x * 7) + wrap_pi(x * 7) + pow(x + 1, 2.5) + (x + 1) ^ (x / 4)
 let e = asin(min(x, 1)) + acos(min(x, 1)) + PI
+let k = thermosphere_scale_height((x + 200) * 1000 [m], 1000 [K]) / 1e5 [m] + solar_cycle_mean(x * 86400 [s], (x + 30) * 86400 [s]) / 100
 if x > 3 and not (x > 3.5) then
-  return total + t
+  return total + t + h
 else if x > 2 or x == 1.25 then
-  return a + b
+  return a + b + h
 else
-  return (c + d + e) / (x + 1)
+  return (c + d + e + k) / (x + 1)
 end";
 
 pub const EVERYTHING_POINTS: &[f64] = &[0.0, 0.1, 0.5, 1.0, 1.25, 1.7, 2.5, 3.2, 3.7, 4.5, -1.0];

@@ -343,6 +343,7 @@ version = "0.3.0"
 dependencies = [
  "toml",
  "toml_edit",
+ "vleo-core",
  "vleo-units",
 ]
 

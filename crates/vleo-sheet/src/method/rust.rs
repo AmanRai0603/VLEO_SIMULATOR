@@ -78,6 +78,9 @@ impl Rust {
                 if name == "interp" {
                     return format!("pmath::interp({}, {}, {})", a[0], a[1], a[2]);
                 }
+                if let Some(k) = kernel_function(name) {
+                    return format!("({})", translate(k, &a));
+                }
                 match implementation(name) {
                     Some(Impl::Plain1(_, p)) => format!("{p}({})", a[0]),
                     Some(Impl::Plain2(_, p)) => format!("{p}({}, {})", a[0], a[1]),
@@ -154,6 +157,26 @@ impl Rust {
                 o.push_str("}\n");
                 self.depth -= 1;
             }
+            Stmt::While {
+                cond,
+                max,
+                body,
+                line,
+            } => {
+                self.depth += 1;
+                let n = format!("passes_{}", self.depth);
+                let _ = writeln!(o, "let mut {n}: i64 = 0;");
+                let _ = writeln!(o, "while {} {{", self.expr(cond));
+                let _ = writeln!(
+                    o,
+                    "if {n} == {max}_i64 {{ return Err(MethodError::Refused({})); }}",
+                    rstr(&super::run::unsettled(*line, *max))
+                );
+                let _ = writeln!(o, "{n} += 1;");
+                self.block(body, o);
+                o.push_str("}\n");
+                self.depth -= 1;
+            }
             Stmt::Refuse { reason, .. } => {
                 let _ = writeln!(o, "return Err(MethodError::Refused({}));", rstr(reason));
             }
@@ -180,7 +203,7 @@ fn set_targets(body: &[Stmt], out: &mut BTreeSet<String>) {
                     set_targets(b, out);
                 }
             }
-            Stmt::For { body, .. } => set_targets(body, out),
+            Stmt::For { body, .. } | Stmt::While { body, .. } => set_targets(body, out),
             _ => {}
         }
     }

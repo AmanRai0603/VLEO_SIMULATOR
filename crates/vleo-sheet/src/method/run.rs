@@ -121,6 +121,9 @@ impl Machine<'_> {
             a.push(self.num(e)?);
         }
         let l = line as u32;
+        if let Some(k) = kernel_function(name) {
+            return Ok((k.eval)(&a));
+        }
         match implementation(name) {
             Some(Impl::Plain1(f, _)) => Ok(f(a[0])),
             Some(Impl::Plain2(f, _)) => Ok(f(a[0], a[1])),
@@ -193,6 +196,33 @@ impl Machine<'_> {
                     }
                 }
             }
+            Stmt::While {
+                cond,
+                max,
+                body,
+                line,
+            } => {
+                let mut passes = 0i64;
+                while self.cond(cond)? {
+                    if passes == *max {
+                        return Ok(Flow::Done(Outcome::Refused {
+                            line: *line,
+                            reason: unsettled(*line, *max),
+                        }));
+                    }
+                    passes += 1;
+                    self.steps += 1;
+                    if self.steps > MAX_STEPS {
+                        return Err(Diag::err(*line, "too many loop steps"));
+                    }
+                    self.scopes.push(BTreeMap::new());
+                    let f = self.block(body);
+                    self.scopes.pop();
+                    if let Flow::Done(o) = f? {
+                        return Ok(Flow::Done(o));
+                    }
+                }
+            }
             Stmt::Refuse { reason, line } => {
                 return Ok(Flow::Done(Outcome::Refused {
                     line: *line,
@@ -206,6 +236,11 @@ impl Machine<'_> {
         }
         Ok(Flow::Next)
     }
+}
+
+/// Why a loop that did not settle refuses — the same words in the translation.
+pub(crate) fn unsettled(line: usize, max: i64) -> String {
+    format!("the loop on line {line} did not settle within {max} passes")
 }
 
 /// Run a checked method on one set of inputs, each in the SI unit of its

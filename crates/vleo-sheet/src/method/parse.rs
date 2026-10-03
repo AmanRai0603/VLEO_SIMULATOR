@@ -246,7 +246,7 @@ impl Parser {
                     }
                     return Err(Diag::err(
                         self.line(),
-                        "a block is not closed — every if and for needs its «end»",
+                        "a block is not closed — every if, for and while needs its «end»",
                     ));
                 }
                 Some(Tok::Ident(k)) if stops.contains(&k.as_str()) => return Ok(body),
@@ -260,7 +260,7 @@ impl Parser {
         let Some(Tok::Ident(word)) = self.peek().cloned() else {
             return Err(Diag::err(
                 line,
-                "a statement starts with let, const, set, if, for, refuse or return",
+                "a statement starts with let, const, set, if, for, while, refuse or return",
             ));
         };
         match word.as_str() {
@@ -361,6 +361,31 @@ impl Parser {
                     line,
                 })
             }
+            "while" => {
+                self.pos += 1;
+                let cond = self.expr()?;
+                for w in ["at", "most"] {
+                    if !self.is_kw(w) {
+                        return Err(Diag::err(
+                            line,
+                            "a while loop says how often it may run: while CONDITION at most N times",
+                        ));
+                    }
+                    self.pos += 1;
+                }
+                let max = self.whole()?;
+                self.expect_kw("times")?;
+                self.end_of_line()?;
+                let body = self.block(&["end"])?;
+                self.expect_kw("end")?;
+                self.end_of_line()?;
+                Ok(Stmt::While {
+                    cond,
+                    max,
+                    body,
+                    line,
+                })
+            }
             "refuse" => {
                 self.pos += 1;
                 let reason = match self.next() {
@@ -383,12 +408,12 @@ impl Parser {
             }
             "else" | "end" => Err(Diag::err(
                 line,
-                format!("«{word}» with no if or for open"),
+                format!("«{word}» with no if, for or while open"),
             )),
             _ => Err(Diag::err(
                 line,
                 format!(
-                    "a statement starts with let, const, set, if, for, refuse or return — not «{word}»"
+                    "a statement starts with let, const, set, if, for, while, refuse or return — not «{word}»"
                 ),
             )),
         }

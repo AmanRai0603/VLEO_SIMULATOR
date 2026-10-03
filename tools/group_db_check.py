@@ -121,6 +121,19 @@ def check():
                   and c.execute("select count(*) from doc where kind='pseudocode'").fetchone()[0] > 0)
         step(f'groups/{name} becomes a structure, {len(nodes)} node files and a release', ok, (r.stderr or '').strip()[:200])
 
+    # Every group in the design, set up for its lead: a folder each, made into
+    # its database files, and what each still needs — none may fail.
+    every = os.path.join(tmp, 'every')
+    r1 = subprocess.run(['cargo', 'run', '-q', '-p', 'xtask', '--', 'group-export', '--all', '--out', every], cwd=ROOT, capture_output=True, text=True)
+    r2 = subprocess.run(['node', os.path.join(ROOT, 'tools', 'group_db.mjs'), '--all', every, '--out', every + '-db'], capture_output=True, text=True)
+    index = list(csv.DictReader(open(os.path.join(every, 'GROUPS.csv')))) if r1.returncode == 0 else []
+    ready = list(csv.DictReader(open(os.path.join(every + '-db', 'READY.csv')))) if r2.returncode == 0 else []
+    step('every group in the design is set up for its lead, and none fails',
+         len(index) > 50 and [g['group'] for g in index] == [g['group'] for g in ready]
+         and all(g['node_files'] == x['nodes'] for g, x in zip(ready, index)),
+         f'{len(index)} groups, {sum(int(g["nodes"]) for g in index)} nodes' if index else (r1.stderr + r2.stderr)[:300])
+    biggest = max(index, key=lambda g: int(g['nodes']))['group'] if index else None
+
     with sync_playwright() as pw:
         exe = chromium_path()
         b = pw.chromium.launch(**({'executable_path': exe} if exe else {}))
@@ -157,6 +170,17 @@ def check():
                  t.split('\n')[4] if len(t.split('\n')) > 4 else '')
             go(g, '#/node/sw_uncertainty_growth/algorithm', 900)
             step('its pseudocode is shown as equations', g.locator('.galgo-row math').count() >= 2)
+            g.close()
+
+        # ── the largest group in the design, opened by its lead ──
+        if biggest:
+            rel = os.path.join(every + '-db', biggest, 'releases')
+            g = page(GROUP)
+            g.set_input_files('#gpickdb', os.path.join(rel, os.listdir(rel)[0]))
+            g.wait_for_selector(OPEN, timeout=60000)
+            g.wait_for_timeout(1500)
+            go(g, '#/checks', 1200)
+            step(f'the largest group, {biggest}, opens and says what it still needs', 'Checks' in g.inner_text('#gmain') and g.locator('.gnv-node').count() > 50)
             g.close()
 
         # ── the lead keeps the example folder as a database ──

@@ -2340,7 +2340,7 @@ effect = "writes"
 tool = "xtask"
 name = "group-export"
 usage = "group-export <group> [--out <dir>]"
-what = "Writes one group's folder in the pattern of groups/SPEC.toml from every sheet in the group — its nodes, inputs, plain words, theory, assumptions, evidence and sources — for the group to start from. It invents nothing: a pseudocode, the group's own results and its pictures are left for the group, and the group application lists them."
+what = "Writes one group's folder in the pattern of groups/SPEC.toml from every sheet in the group — its nodes, inputs, plain words, theory, assumptions, evidence and sources — for the group to start from. It invents nothing: a pseudocode, the group's own results and its pictures are left for the group, and the group application lists them. `--all` writes every group that owns a node, each in its own folder, with GROUPS.csv beside them; `node tools/group_db.mjs --all <dir>` then makes each into its database files and READY.csv, what each group still needs."
 who = "maintainer"
 effect = "writes"
 
