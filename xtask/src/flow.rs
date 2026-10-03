@@ -608,7 +608,9 @@ pub fn cmd_approve(root: &Path, args: &[&str]) -> Result<(), String> {
     let message = commit_message(
         "chore",
         "tree",
-        &format!("{} approved preview build {}", a.by, a.run),
+        // The subject starts with the change, not the name: the commit rule
+        // refuses a capital, and most names start with one.
+        &format!("preview build {} approved by {}", a.run, a.by),
         &[
             format!(
                 "{} tried preview build {} of {} ({}) and approved it{}.",
@@ -817,7 +819,7 @@ pub fn cmd_group_accept(root: &Path, args: &[&str]) -> Result<(), String> {
     let message = commit_message(
         "chore",
         "tree",
-        &format!("{} accepted {} {}", a.by, a.group, a.version),
+        &format!("{} {} accepted by {}", a.group, a.version, a.by),
         &[
             format!(
                 "{} tried the test application of {} {} (commit {}, release fingerprint {}…, delivery record {}…) and accepted it{}.",
