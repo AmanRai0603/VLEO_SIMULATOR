@@ -826,10 +826,16 @@ fn author_cases(sh: &Sheet, o: &mut String) {
         ));
         let call = format!("model::evaluate({})", typed_args(sh, &c.inputs));
         match c.expect {
+            // A set has no printed form; its own value says what the node gave.
             None if has_method => o.push_str(&format!(
                 "    let got = {call};\n    assert!(matches!(got, Err(vleo_core::fault::Fault::Refused {{ .. }})), \
-                 \"{l}: the author's code refuses this case and the node gave {{got:?}}. Take it to the author.\");\n",
-                l = esc_fmt(&c.label)
+                 \"{l}: the author's code refuses this case and the node gave {{:?}}. Take it to the author.\", {shown});\n",
+                l = esc_fmt(&c.label),
+                shown = if sh.publishes.is_empty() {
+                    "got".to_string()
+                } else {
+                    format!("got.as_ref().map(|a| a.{}.get())", sh.symbol)
+                }
             )),
             None if !sh.publishes.is_empty() => o.push_str(&format!(
                 "    let got = {call};\n    assert!(got.is_err(), \"{l}: the author's code refuses this case and the node answered. Take it to the author.\");\n",
