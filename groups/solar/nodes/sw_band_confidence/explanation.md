@@ -1,10 +1,10 @@
 ## In one line
 
-The confidence the design band is set at — one number both halves of the band would read. It has no value yet: the sheet says the choice needs a person, and nobody has made it.
+The design band is at 0.90 confidence, one number both halves of it read. Decided by Aman Rai on 2026-10-03.
 
 ## Said simply
 
-The design band is the expected centre plus or minus a multiple of the forecast's spread, and this row would say which multiple. Today four rows write 1.28, a one-sided 90 per cent edge, while the run is labelled 95 per cent and the daily half of the band uses 0.95. This row exists so that the multiplier and the word for it become one fact; the value is a person's decision and is not filled.
+The design band is the expected centre plus or minus a multiple of the forecast's spread, and this row says what confidence that multiple stands for: 0.90, one-sided, which is the 1.28 the four sustained rows already write. The multiplier and the word for it are now one fact.
 
 ## Picture it
 
@@ -16,7 +16,7 @@ Picture a shop sign that says every item is checked to 95 per cent, while one sh
 
 ## Where it breaks
 
-Nothing here computes yet: the row is empty and the four design-level rows keep 1.28 as a literal, each saying it is declared in a sheet while no sheet declares it. Until a person fills it, the sustained half of the band sits at about 90 per cent and the daily half at 95, and neither matches the run's 95 per cent label.
+The four sustained rows still write 1.28 as a literal rather than reading this row, and the daily half of the band still uses 0.95. Wiring them to this row keeps the sustained numbers and moves the daily ones to 90 per cent; until that is done, the daily half sits above the declared confidence and the run's 95 per cent label matches neither.
 
 ## Common misreading
 

@@ -20,7 +20,7 @@ sw_ap_design,What daily Ap is this design built to survive?,computed,Ap_design,1
 sw_ap_design_long,What daily planetary Ap must the design survive as a sustained level over the mission window?,computed,Ap_long,1,0,300,
 sw_ap_design_short,What daily planetary Ap must the design survive on a single day inside the mission window?,computed,Ap_short,1,0,400,
 sw_ap_mean_band_spread,How much of the next rotation's Ap does the pattern fail to explain?,declared,sigma_ap,1,0,6,3.593688
-sw_band_confidence,What confidence is the design band at — one number both halves of it read?,declared,,,0,0,
+sw_band_confidence,What confidence is the design band at — one number both halves of it read?,declared,p_band,1,0.5,1,0.9
 sw_band_coverage,Does the stated 95 per cent band actually contain the truth 95 per cent of the time?,declared,C_band,1,0.9,1,0.9509267569
 sw_central_expectation,Where is F10.7 expected to be by the time the mission is there?,computed,F107_central,1,60,400,
 sw_cycle_phase,How far through its solar cycle is the mission epoch?,computed,phase,1,0,1,
@@ -42,7 +42,7 @@ sw_forecast_bias,By how much does the published outlook miss the F10.7 that arri
 sw_forecast_skill,Is the published outlook better than assuming today's F10.7 continues?,computed,S_f107,1,-0.1,0.5,
 sw_horizon_climatology,"If we forecast the record's mean F10.7 and nothing else, how wrong are we L days later?",computed,D_clim,1,0,50,
 sw_horizon_persistence,"If all we know is today's F10.7, how wrong are we L days later?",computed,D_pers,1,0,65,
-sw_kp_driving_slot,"Which Kp slot is the design driven by — the day's mean, or its worst three-hour interval?",declared,,,0,0,
+sw_kp_driving_slot,"Which Kp slot is the design driven by — the day's mean, or its worst three-hour interval?",declared,kp_slot,1,0,1,0
 sw_kp_from_ap,What Kp does this daily planetary Ap mean?,computed,Kp,1,0,9,
 sw_kp_scenarios,"What Kp does each of the five driver scenarios carry, in the mean slot and in the peak slot?",computed,Kp_peak_hotday,1,0,9,
 sw_kp_slot_bias,By how much does the published table under-read the daily PEAK Kp at this Ap?,computed,dKp_peak,1,0,2,

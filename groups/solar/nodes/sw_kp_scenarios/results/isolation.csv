@@ -1,4 +1,6 @@
 ap_nominal [1],ap_hotmean [1],ap_coldmean [1],ap_hotday [1],ap_coldday [1],answer [1],tolerance,refuses,origin,says
 12.5,25,7.5,90,2.5,7.9850088183,0.000000001,no,hand,"the primary: the worst slot of the worst day. ap 90 is a bin centre, so the peak offset 1.7469 is exact and only the scale is interpolated, between Kp 6 at ap 80 and Kp 19/3 at ap 94."
+12.5,25,7.5,57.5,2.5,6.924242424242424,0.000000001,no,code,"a quieter worst day, ap 57.5: the peak slot of the disturbed single day, run in this node's own code"
+20,40,5,154,1,8.913671102559992,0.000000001,no,code,"a stormier worst day, ap 154, with every other scenario moved too: run in this node's own code"
 12.5,25.0,7.5,90.0,500.0,,,yes,hand,"outside what the node holds for: its code refuses it, and so must the developer's"
 12.5,25.0,7.5,400.0,2.5,,,yes,hand,"outside what the node holds for: its code refuses it, and so must the developer's"
