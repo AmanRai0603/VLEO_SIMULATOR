@@ -227,6 +227,10 @@ results, the manual, figures and these documents are all held to it by check.
     cargo run -p xtask -- group-deliver <folder>
                                             the test application for the group,
                                             with what it holds and what to try
+    cargo run -p xtask -- group-accept <file.accept.toml>
+                                            the group's answer to its test
+                                            application, recorded on its branch;
+                                            only an accepted build merges
     cargo run -p xtask -- group-export <group>
                                             a group's folder, written from the tree,
                                             for the group to start from

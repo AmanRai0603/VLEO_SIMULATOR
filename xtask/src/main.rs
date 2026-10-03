@@ -137,6 +137,7 @@ pub(crate) fn dispatch(root: &Path, cmd: &str, rest: &[&str]) -> Result<(), Stri
         "group-build" => group_test::cmd_group_build(&root, &rest),
         "group-test" => group_test::cmd_group_test(&root, &rest),
         "group-deliver" => group_test::cmd_group_deliver(&root, &rest),
+        "group-accept" => flow::cmd_group_accept(&root, &rest),
         "rerun" => method::cmd_rerun(&root, &rest),
         "build-node" => method::cmd_build_node(&root, &rest),
         "migration" => method::cmd_migration(&root, &rest),
@@ -325,6 +326,14 @@ cargo xtask <command>
                      (which release, seal, commit, nodes) and DELIVERY.md (what
                      to try). Refused until group-test has passed, and from
                      uncommitted changes unless --uncommitted says throwaway.
+  group-accept <file.accept.toml> [--delivery <DELIVERY.toml>] [--no-push]
+                     the group's answer to its test application, written by the
+                     group application, recorded in acceptances/ on the branch
+                     group/<group>-<version> it was built on. An answer of
+                     changes is never recorded: its note is printed to take back.
+  group-accept --verify <branch>
+                     the pipeline's check on a group branch: it carries the
+                     group's acceptance of exactly what is on it.
   group-export <group> [--out <dir>]
                      a group's folder in the pattern, written from every sheet
                      in the group, for the group to start from. It invents

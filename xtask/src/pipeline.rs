@@ -198,6 +198,17 @@ pub(crate) const PIPELINE: &[Cmd] = &[
         dry: Dry::Plan,
     },
     Cmd {
+        name: "group-accept",
+        stage: "release",
+        reads: "the group's answer, written by the group application; the branch group/<group>-<version>",
+        writes: "acceptances/<group>-<version>.toml on that branch, committed and pushed",
+        checks: "the verdict is accepted and says what was tried; a person's name; the delivery record's hash, with --delivery; the accepted commit is this branch, unchanged since but for these records",
+        undo: "`git revert` the acceptance commit, or delete the file before pushing",
+        code: ("xtask/src/flow.rs", "cmd_group_accept"),
+        steps: &[],
+        dry: Dry::Plan,
+    },
+    Cmd {
         name: "new",
         stage: "apply",
         reads: "the sibling's sheet",

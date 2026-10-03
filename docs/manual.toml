@@ -2330,6 +2330,14 @@ effect = "writes"
 
 [[command]]
 tool = "xtask"
+name = "group-accept"
+usage = "group-accept <file.accept.toml> [--delivery <DELIVERY.toml>] [--no-push]"
+what = "The group's answer to its test application, recorded. The lead writes it on the group application's Delivery & acceptance page, beside their sealed release; it names the delivery by its SHA-256, the commit it was built from and the release's fingerprint. An answer of accepted, saying what was tried and given by a person, is committed to `acceptances/<group>-<version>.toml` on the branch `group/<group>-<version>` — refused if anything but these records changed since the delivered commit. An answer of changes is never recorded: its note is printed, to take back into the group's work. `--verify` is the pipeline's check on a group branch."
+who = "developer"
+effect = "writes"
+
+[[command]]
+tool = "xtask"
 name = "group-export"
 usage = "group-export <group> [--out <dir>]"
 what = "Writes one group's folder in the pattern of groups/SPEC.toml from every sheet in the group — its nodes, inputs, plain words, theory, assumptions, evidence and sources — for the group to start from. It invents nothing: a pseudocode, the group's own results and its pictures are left for the group, and the group application lists them."

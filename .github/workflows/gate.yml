@@ -232,10 +232,13 @@ jobs:
   # example group is sealed in the group application by a browser, exactly as
   # its lead would, and that file is taken in, built from its methods, tested
   # against the group's own results and delivered as a test application — on
-  # this throwaway checkout, under the pipeline's name. Then the engine is
-  # broken on purpose and the group test must say so. Nothing is committed.
+  # this throwaway checkout, under the pipeline's name; the engine is broken on
+  # purpose and the group test must say so. Then it is committed on its own
+  # branch, delivered from that commit, accepted by the lead in the group
+  # application, recorded, and a change after the acceptance must be refused.
+  # Nothing leaves the runner.
   group-end-to-end:
-    name: a group's release, sealed to delivered
+    name: a group's release, sealed to accepted
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
@@ -291,13 +294,33 @@ jobs:
           cargo run -p xtask -- group-test "$RUNNER_TEMP/release" | grep -q "20 held, 0 did not"
       - name: the whole design, with the group built from its methods
         run: cargo run -p xtask -- gate && cargo test --workspace
-      - name: delivered as a test application that answers from its own folder
+      - name: committed on the release's own branch, and delivered from it
         run: |
           set -o pipefail
-          cargo run -p xtask -- group-deliver "$RUNNER_TEMP/release" --uncommitted --out "$RUNNER_TEMP/deliver" | tee "$RUNNER_TEMP/deliver.log"
+          git config user.email "pipeline@vleo.invalid"
+          git switch -c group/example_orbit-1.0
+          git add -A
+          git commit -q -m "feat(tree): example_orbit 1.0 taken in, built and tested"
+          cargo run -p xtask -- group-deliver "$RUNNER_TEMP/release" --out "$RUNNER_TEMP/deliver" | tee "$RUNNER_TEMP/deliver.log"
           grep -q 'built = \["orbit_radius", "orbit_velocity", "orbit_period"\]' "$RUNNER_TEMP/deliver/DELIVERY.toml"
+          grep -q 'uncommitted = false' "$RUNNER_TEMP/deliver/DELIVERY.toml"
           test -f "$RUNNER_TEMP/deliver/DELIVERY.md"
-          cd "$RUNNER_TEMP/deliver" && ./vleo run orbit_period --defaults --set orbit_altitude=400000 --again | grep -q "T_orb = 92.5604 min"
+          (cd "$RUNNER_TEMP/deliver" && ./vleo run orbit_period --defaults --set orbit_altitude=400000 --again | grep -q "T_orb = 92.5604 min")
+      - name: accepted by the group in the group application, and recorded
+        run: |
+          set -o pipefail
+          python3 tools/group_db_check.py --accept "$RUNNER_TEMP/example.vleo" "$RUNNER_TEMP/deliver/DELIVERY.toml" "$RUNNER_TEMP/answer.toml"
+          cargo run -p xtask -- group-accept "$RUNNER_TEMP/answer.toml" --delivery "$RUNNER_TEMP/deliver/DELIVERY.toml" --no-push | tee "$RUNNER_TEMP/accept.log"
+          grep -q "accepted example_orbit 1.0" "$RUNNER_TEMP/accept.log"
+          test -f acceptances/example_orbit-1.0.toml
+          cargo run -p xtask -- approve --verify group/example_orbit-1.0
+      - name: a change after the acceptance is refused
+        run: |
+          echo "# after" >> groups/example/theory.md
+          git commit -q -am "docs(tree): a change after the acceptance"
+          if cargo run -p xtask -- approve --verify group/example_orbit-1.0; then
+            echo "an acceptance held for a build that changed after it"; exit 1
+          fi
 
   # Every script in tools/ checks itself before it is trusted to check
   # anything else. A checker nobody has watched fail is a checker nobody knows
@@ -685,10 +708,13 @@ jobs:
   # the file it saved is recorded in approvals/ by `xtask approve`, and names
   # the commit it was given for. Anything changed since — a fix, a merge from
   # maintainer — means a new preview and a new approval, because the author
-  # approved a build, not a branch name. Only form branches are asked this.
+  # approved a build, not a branch name. A group branch, group/<group>-<v>,
+  # is asked the same of its group: acceptances/ holds the lead's answer to the
+  # test application, recorded by `xtask group-accept`, binding its commit.
+  # Only form and group branches are asked this.
   approval:
     name: the author approved this exact change
-    if: github.event_name == 'pull_request' && startsWith(github.head_ref, 'form/')
+    if: github.event_name == 'pull_request' && (startsWith(github.head_ref, 'form/') || startsWith(github.head_ref, 'group/'))
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
