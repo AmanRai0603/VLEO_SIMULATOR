@@ -167,10 +167,10 @@ pub(crate) fn dispatch(root: &Path, cmd: &str, rest: &[&str]) -> Result<(), Stri
 const HELP: &str = "\
 cargo xtask <command>
 
-  docs [<node>]      the six per-node generators — model, contract, module,
-                     evidence, page fragment and metadata, each from the
-                     node's own sheet (a page also names the rows it reads
-                     and the rows that read it).
+  docs [<node>]      the per-node generators that write files — model,
+                     contract, module, evidence and metadata, each from the
+                     node's own sheet. A node's page is rendered from its
+                     sheet when it is opened, and is never written here.
   assemble           the three assembly generators — the index, the document
                      and the graph tables. They combine and refuse; they never
                      decide, because a decision taken during assembly is a
@@ -602,20 +602,24 @@ fn cmd_docs(root: &Path, args: &[&str]) -> Result<(), String> {
         // generating a file full of `todo!()` would hide that behind something
         // that looks like work.
         let artefacts: Vec<(&str, String)> = if sh.is_seeded() {
-            vec![
-                ("page.html", page::fragment(sh, &holes, &tree)),
-                ("meta.json", emit::meta_json(sh, &gaps)),
-            ]
+            vec![("meta.json", emit::meta_json(sh, &gaps))]
         } else {
             vec![
                 ("model.rs", emit::model_rs(sh, &holes)),
                 ("contract.rs", emit::contract_rs(sh)),
                 ("mod.rs", emit::mod_rs(sh)),
                 ("evidence.rs", emit::evidence_rs(sh)),
-                ("page.html", page::fragment(sh, &holes, &tree)),
                 ("meta.json", emit::meta_json(sh, &gaps)),
             ]
         };
+        // A node's page is rendered from its sheet when it is opened; a copy
+        // left in the folder from before would be read by nothing and believed
+        // by whoever opened it.
+        let stale = sh.dir.join("page.html");
+        if stale.is_file() {
+            fs::remove_file(&stale).map_err(|e| format!("{}: {e}", stale.display()))?;
+            written += 1;
+        }
         for (name, text) in artefacts {
             // Format the candidate before comparing, so the generator is a
             // function of its input: writing unformatted text and formatting it
@@ -691,12 +695,10 @@ fn cmd_assemble(root: &Path, args: &[&str]) -> Result<(), String> {
     fs::create_dir_all(&frag_dir).map_err(|e| format!("{}: {e}", frag_dir.display()))?;
     let mut bytes = 0usize;
     for sh in tree.ordered() {
-        let src = sh.dir.join("page.html");
-        if let Ok(t) = fs::read_to_string(&src) {
-            bytes += t.len();
-            fs::write(frag_dir.join(format!("{}.html", sh.id)), t)
-                .map_err(|e| format!("fragment {}: {e}", sh.id))?;
-        }
+        let t = page::fragment(sh, &vleo_sheet::load::read_holes(&sh.dir), &tree);
+        bytes += t.len();
+        fs::write(frag_dir.join(format!("{}.html", sh.id)), t)
+            .map_err(|e| format!("fragment {}: {e}", sh.id))?;
     }
     println!(
         "assemble: index {} KB, {} fragments totalling {} KB — nothing here is committed",

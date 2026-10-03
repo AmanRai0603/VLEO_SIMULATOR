@@ -84,8 +84,8 @@ Never report a step as passed that you did not see pass.
   by hand, and a defect in it is a translator defect, fixed in
   `crates/vleo-sheet/src/method/` with its golden files written again on
   purpose.
-- **Frontend** — the pages. Every node's page is generated from its sheet by
-  `cargo run -p xtask -- docs`; nothing in `page.html` is edited by hand.
+- **Frontend** — the pages. Every node's page is rendered from its sheet when
+  it is opened; there is no page file to edit, by hand or otherwise.
 
 If either looks wrong, the fix is in the generator or in the group's release —
 never in the generated file.
