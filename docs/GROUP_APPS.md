@@ -151,14 +151,16 @@ step, and every step shows what it will look like as you type:
 
 A sealed release is the group's signed word. The developer takes it in, builds
 it, tests it against the group's own results and sends the group a test
-application — five commands, each refusing until the one before has held:
+application, and records the group's answer — each step refusing until the one before has held:
 
     node tools/group_db.mjs --unpack example_orbit-1.0.vleo --out ~/intake/example
     cargo run -p xtask -- group-intake  ~/intake/example            # the plan
     cargo run -p xtask -- group-intake  ~/intake/example --apply    # into the design
     cargo run -p xtask -- group-build   ~/intake/example            # from the methods
     cargo run -p xtask -- group-test    ~/intake/example            # against their results
+    git switch -c group/example_orbit-1.0 && git commit -am "…"     # the release's own branch
     cargo run -p xtask -- group-deliver ~/intake/example            # the test application
+    cargo run -p xtask -- group-accept  example_orbit-1.0.accept.toml   # the group's answer
 
 | Step | What happens |
 | --- | --- |
@@ -169,11 +171,14 @@ application — five commands, each refusing until the one before has held:
 | Apply | `--apply` writes each node, regenerates and gates it as one edit, or puts it back whole — its generated files and the kernel's translations byte for byte; `--partial` keeps the nodes that passed |
 | Build | `group-build` runs `build-node` on each computed node: the method translated into the kernel by fixed rules, tested on the author's cases, the tests proved to test by moving the answer, the interface checked (`docs/PSEUDOCODE.md`). The author's code is rerun when `how-run.md` names its entry function (`**Entry:** name`); otherwise the build says it was not |
 | Test | `group-test` asks four things and writes `target/group/<group>-<version>/group-test.csv`: the design holds the release's cases unchanged; each node's own tests pass; the group as a whole, through the engine, gives `results/group.csv` within its tolerances; and both ends of every declared range answer or refuse by name — never NaN, never a crash |
-| Deliver | `group-deliver` builds the tool from this commit with the release in it: the kit, `DELIVERY.toml` (release, seal, commit, nodes built, checks held), `DELIVERY.md` (what to try) and the report. It refuses until `group-test` has passed, and from uncommitted changes unless `--uncommitted` marks a throwaway |
+| Deliver | `group-deliver` builds the tool from a commit on the release's own branch, `group/<group>-<version>`, with the release in it: the kit, `DELIVERY.toml` (release, seal, commit, nodes built, checks held), `DELIVERY.md` (what to try) and the report. It refuses until `group-test` has passed, and from another branch or uncommitted changes unless `--uncommitted` marks a throwaway |
+| Answer | the lead opens `DELIVERY.toml` on the group application's **Delivery & acceptance** page, beside the sealed release. The page checks it is a build of exactly that release — group, version, fingerprint, committed, no failed check — and only then offers **accepted**. The answer, `<group>-<version>.accept.toml`, names the delivery by its SHA-256 and its commit |
+| Record | `group-accept <file> --delivery <DELIVERY.toml>` commits an acceptance to `acceptances/` on the group branch; it refuses one given under an assistant's name, one that does not say what was tried, and one for a commit the branch has moved past. An answer of **changes** is never recorded: its note is printed to take back. The pull request from the group branch passes the pipeline's check, *the author approved this exact change*, only with it |
 
-The group's answer is **accepted**, or **changes** with what they saw. A change
-goes back into the group folder and a new sealed release; the developer never
-edits the release, and never moves a group's results to make a test pass.
+A change the group asks for goes back into the group folder and a new sealed
+release; the developer never edits the release, and never moves a group's
+results to make a test pass. Once accepted, the group branch is reviewed and
+merged like any other, and the release that ships it reaches everyone.
 
 What the release holds beyond its methods, derivations, cases and code — its
 plain words, pictures and evidence — stays in the release, which is what the
@@ -181,7 +186,8 @@ group signed.
 
 **The example group goes through all of it** on every pull request, in a
 throwaway checkout: sealed in the group application by a browser, then taken
-in, built, tested and delivered. **The solar group's release is refused** at
+in, built, tested, delivered from its own branch, accepted by its lead in the
+page and recorded. **The solar group's release is refused** at
 the plan: its 32 methods were transcribed from the code by an assistant, and
 its `declaration.csv` files say so. That is the rule working — each method
 waits for a person who knows it to read it, put their name to it, and seal

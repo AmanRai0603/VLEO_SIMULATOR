@@ -624,6 +624,16 @@ pub(super) fn cmd_group_deliver(root: &Path, args: &[&str]) -> Result<(), String
     };
     let commit = git(&["rev-parse", "HEAD"]);
     let dirty = !git(&["status", "--porcelain"]).is_empty();
+    // The group's answer is recorded on the release's own branch and binds the
+    // commit delivered, so a delivery is built there.
+    let branch = flow::group_branch(&rel.group, &rel.version);
+    let on = git(&["branch", "--show-current"]);
+    if on != branch && !args.contains(&"--uncommitted") {
+        return Err(format!(
+            "a delivery is built on the release's own branch, {branch} (this is «{on}»): \
+             `git switch -c {branch}`, commit the intake there, and deliver from it"
+        ));
+    }
     if dirty && !args.contains(&"--uncommitted") {
         return Err(
             "the checkout has uncommitted changes: commit the release's intake first, so the \
@@ -699,7 +709,7 @@ pub(super) fn cmd_group_deliver(root: &Path, args: &[&str]) -> Result<(), String
          # The group checks it, then tells the developer: accepted, or what to change.\n\
          group = {:?}\nversion = {:?}\nsealed = {:?}\nfingerprint = {:?}\n\
          tool = {version:?}\ncommit = {commit:?}\nuncommitted = {dirty}\n\
-         built = [{}]\nchecks_held = {held}\nchecks_failed = 0\n",
+         branch = {branch:?}\nbuilt = [{}]\nchecks_held = {held}\nchecks_failed = 0\n",
         rel.group,
         rel.version,
         rel.sealed,
@@ -734,8 +744,10 @@ pub(super) fn cmd_group_deliver(root: &Path, args: &[&str]) -> Result<(), String
          3. Read each node's page as someone who has never seen it: the words, the \
          derivation, the pictures.\n\n\
          ## Then\n\n\
-         Tell the developer **accepted**, or **changes** with what you saw. A change goes back \
-         into your group folder and a new sealed release; nothing in this folder is edited.\n\n\
+         Open `DELIVERY.toml` on the group application's **Delivery & acceptance** page, beside \
+         your sealed release, and answer **accepted** — saying what you tried — or **changes** with \
+         what you saw. Send the file it writes to the developer. A change goes back into your \
+         group folder and a new sealed release; nothing in this folder is edited.\n\n\
          Built {today} from commit `{short}`{dirty_note}.\n",
         group = rel.group,
         v = rel.version,

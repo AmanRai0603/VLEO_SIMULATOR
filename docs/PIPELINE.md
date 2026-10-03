@@ -18,7 +18,7 @@ Generated from the one table in `xtask/src/pipeline.rs`; `cargo run -p xtask -- 
 6. **build** — a node built from its method, and its tests shown to test: `group-build`, `method`, `build-node`, `rerun`, `method-wasm`, `differential`, `mutate`
 7. **gate** — the checks every change passes, and what they generate: `group-app`, `docs`, `assemble`, `gate`, `ready`, `codeowners`, `variables`, `guides`, `pipeline`
 8. **preview** — the author tries the build and approves it: `preview`, `approve`, `queue`
-9. **release** — the stamped release everyone gets: `readers`, `ship`, `release`, `derisk`, `kit`, `bundle`
+9. **release** — the stamped release everyone gets: `readers`, `group-accept`, `ship`, `release`, `derisk`, `kit`, `bundle`
 10. **read** — reports: what exists, what is open, why a node is what it is: `status`, `active`, `reach`, `gap`, `graph`, `migration`, `explain`, `why`, `trace`
 11. **setup** — once per person per clone: `setup`, `help`
 
@@ -562,6 +562,22 @@ the docs folder for readers: every row's page and every lesson, read with no too
 | steps | 1 build the engine for the browser · 2 bundle the page script · 3 write the pages · 4 check every page has what it links |
 | dry run | --dry-run prints this plan — the steps, what it would write, how to undo it — and touches nothing |
 | code | `xtask/src/readers.rs` — `cmd_readers` |
+
+#### `group-accept`
+
+    cargo run -p xtask -- group-accept <file.accept.toml> [--delivery <DELIVERY.toml>] [--no-push]
+    cargo run -p xtask -- group-accept --verify <branch>
+
+the group's answer to its test application, written by the group application, recorded in acceptances/ on the branch group/<group>-<version> it was built on. An answer of changes is never recorded: its note is printed to take back. the pipeline's check on a group branch: it carries the group's acceptance of exactly what is on it.
+
+| | |
+|---|---|
+| reads | the group's answer, written by the group application; the branch group/<group>-<version> |
+| writes | acceptances/<group>-<version>.toml on that branch, committed and pushed |
+| checks | the verdict is accepted and says what was tried; a person's name; the delivery record's hash, with --delivery; the accepted commit is this branch, unchanged since but for these records |
+| undo | `git revert` the acceptance commit, or delete the file before pushing |
+| dry run | --dry-run prints this plan — the steps, what it would write, how to undo it — and touches nothing |
+| code | `xtask/src/flow.rs` — `cmd_group_accept` |
 
 #### `ship`
 

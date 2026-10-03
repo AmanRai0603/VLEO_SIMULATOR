@@ -212,3 +212,6 @@ svg.gflow { display: block; max-width: none; height: auto; font: 11.5px var(--mo
 .nai { border: 1px solid var(--rule); border-radius: 8px; padding: .6rem .9rem; margin: .8rem 0; }
 .nai legend { font-weight: 600; padding: 0 .3rem; }
 .nai label { display: block; margin: .25rem 0; }
+/* A delivery that cannot be accepted, and why. */
+.gwarn { border-color: var(--out); background: var(--out-pale); }
+.gwarn ul { margin: 0.3rem 0 0.4rem 1.2rem; }

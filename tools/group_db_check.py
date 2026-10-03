@@ -23,6 +23,7 @@ release from the example folder and from groups/solar, and each is read back.
 
     python3 tools/group_db_check.py
     VLEO_SEALED_OUT=<file.vleo> python3 tools/group_db_check.py   # and keep the sealed release
+    python3 tools/group_db_check.py --accept <release.vleo> <DELIVERY.toml> <out.accept.toml>
 
 Exit 0 when every step held; 1 with the steps that did not.
 """
@@ -53,6 +54,37 @@ OPEN = '#gtitle:not(:text("nothing open"))'
 def chromium_path():
     from panel_check import chromium_path as p
     return p()
+
+
+def answer_delivery(b, tmp, step, errors, release, delivery, by='Ada Example', tried='every node at our own results'):
+    """The lead opens their sealed release and the test application's
+    DELIVERY.toml on the Delivery page, and accepts it. Returns the answer
+    file the page wrote, or None when the page would not let them accept."""
+    p = b.new_page(viewport={'width': 1280, 'height': 900}, accept_downloads=True)
+    p.on('pageerror', lambda e: errors.append('group.html: ' + str(e)))
+    p.add_init_script(NO_PICKERS)
+    p.goto(GROUP)
+    p.set_input_files('#gpickdb', release)
+    p.wait_for_selector(OPEN, timeout=30000)
+    p.wait_for_timeout(800)
+    p.evaluate("location.hash='#/delivery'")
+    p.wait_for_timeout(600)
+    p.set_input_files('#gd-file', delivery)
+    p.wait_for_timeout(600)
+    shown = p.inner_text('#gmain')
+    acc = p.locator('input[name="gd-v"][value="accepted"]')
+    if acc.is_disabled():
+        p.close()
+        return None, shown
+    p.select_option('#gd-by', by)
+    acc.check()
+    p.fill('#gd-tried', tried)
+    with p.expect_download() as d:
+        p.click('#gd-go')
+    out = os.path.join(tmp, d.value.suggested_filename)
+    d.value.save_as(out)
+    p.close()
+    return out, shown
 
 
 def check():
@@ -260,6 +292,27 @@ def check():
         step('a sealed release cannot be edited', 'sealed release' in g.inner_text('#gmain') and g.locator('[data-op="node"]').count() == 0)
         g.close()
 
+        # ── the group answers a test application of exactly that release ──
+        head = subprocess.run(['git', 'rev-parse', 'HEAD'], cwd=ROOT, capture_output=True, text=True).stdout.strip()
+        def delivery(name, fingerprint):
+            path = os.path.join(tmp, name)
+            with open(path, 'w') as f:
+                f.write(f'group = "example_orbit"\nversion = "1.0"\nsealed = "{meta.get("sealed")}"\nfingerprint = "{fingerprint}"\n'
+                        f'tool = "0.0.0"\ncommit = "{head}"\nuncommitted = false\nbuilt = ["orbit_radius", "orbit_velocity", "orbit_period"]\n'
+                        f'checks_held = 20\nchecks_failed = 0\n')
+            return path
+        good = delivery('DELIVERY.toml', meta.get('fingerprint', ''))
+        ans, shown = answer_delivery(b, tmp, step, errors, sealed, good)
+        step('a delivery of exactly the sealed release is recognised as one', 'It is a build of exactly the release you sealed' in shown)
+        a_ = tomllib.load(open(ans, 'rb')) if ans else {}
+        step('the lead\'s answer names the delivery by its hash, its commit and the release',
+             a_.get('verdict') == 'accepted' and a_.get('by') == 'Ada Example' and a_.get('commit') == head
+             and a_.get('fingerprint') == meta.get('fingerprint')
+             and a_.get('delivery') == hashlib.sha256(open(good, 'rb').read()).hexdigest()
+             and os.path.basename(ans or '') == 'example_orbit-1.0.accept.toml', str(a_)[:200])
+        ans, shown = answer_delivery(b, tmp, step, errors, sealed, delivery('other.toml', '0' * 64))
+        step('a delivery built from other files cannot be accepted', ans is None and 'built from other files than the ones you signed' in shown)
+
         # ── a new group, from nothing ──
         g = page(GROUP)
         g.fill('#gn-id', 'demo')
@@ -318,6 +371,24 @@ def check():
     step('no page errors', not errors, '; '.join(errors[:3]))
     return fails
 
+
+if __name__ == '__main__' and sys.argv[1:2] == ['--accept']:
+    # python3 tools/group_db_check.py --accept <release.vleo> <DELIVERY.toml> <out.accept.toml>
+    # The lead's answer to a real test application, given in the page.
+    from playwright.sync_api import sync_playwright
+    release, delivery, out = sys.argv[2:5]
+    errors, tmp = [], tempfile.mkdtemp()
+    with sync_playwright() as pw:
+        exe = chromium_path()
+        b = pw.chromium.launch(**({'executable_path': exe} if exe else {}))
+        ans, shown = answer_delivery(b, tmp, None, errors, release, delivery)
+        b.close()
+    if not ans or errors:
+        print('group_db_check --accept: the page would not accept it —', ' '.join(shown.split())[:400], '; '.join(errors))
+        sys.exit(1)
+    shutil.copy(ans, out)
+    print(f'group_db_check --accept: the lead accepted it in the page — {out}')
+    sys.exit(0)
 
 if __name__ == '__main__':
     failed = check()

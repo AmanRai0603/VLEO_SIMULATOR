@@ -40,7 +40,11 @@ Run from the repository root. `<file>` is the `.vleo` the group sealed;
     cargo run -p xtask -- group-build   <dir>            # 3 · from the methods
     cargo run -p xtask -- group-test    <dir>            # 4 · against their results
     cargo run -p xtask -- gate && cargo test             # 5 · the whole design
-    cargo run -p xtask -- group-deliver <dir>            # 6 · after a commit
+    git switch -c group/<group>-<version>                # 6 · the release's branch,
+    git commit …                                         #     the developer commits
+    cargo run -p xtask -- group-deliver <dir>            # 7 · the test application
+    cargo run -p xtask -- group-accept <answer> --delivery <DELIVERY.toml>
+                                                         # 8 · the group's answer
 
 | Step | Read it for | Stop when |
 | --- | --- | --- |
@@ -49,12 +53,14 @@ Run from the repository root. `<file>` is the `.vleo` the group sealed;
 | 3 · build | `build-node: <id> is built from its method` per node; `not rerun — the entry function is not named` is a note for the group, not a failure | any node fails a stage |
 | 4 · test | the four sections; every `FAIL` line names the node, the inputs, the expected and the found value | any `FAIL` |
 | 5 · gate | `0 node check failure(s)` and every test passing | anything fails |
-| 6 · deliver | the folder it wrote; `DELIVERY.md` is what the group reads | it refuses: commit first |
+| 7 · deliver | the folder it wrote; `DELIVERY.md` is what the group reads | it refuses: commit on the group branch first |
+| 8 · answer | `accepted … recorded in acceptances/`; an answer of **changes** prints the group's note | always: an acceptance is the group's to give. Record only the file the lead's page wrote — never write or edit one |
 
-Between 5 and 6 the developer commits the change on a branch named for the
-group and version (`group/<group>-<version>`), with a message naming the
-group and its signer: a delivery is built from a commit, so it can be built
-again.
+At 6 the developer commits the change on the branch named for the group and
+version (`group/<group>-<version>`), with a message naming the group and its
+signer: a delivery is built from a commit, so it can be built again, and the
+group's acceptance binds that commit. A pull request from that branch passes
+the pipeline only with the acceptance recorded on it.
 
 ## What to report
 
