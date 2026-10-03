@@ -1,6 +1,6 @@
-ap_nominal [1],ap_hotmean [1],ap_coldmean [1],ap_hotday [1],ap_coldday [1],answer [1],tolerance,refuses,origin,says
-12.5,25,7.5,90,2.5,7.9850088183,0.000000001,no,hand,"the primary: the worst slot of the worst day. ap 90 is a bin centre, so the peak offset 1.7469 is exact and only the scale is interpolated, between Kp 6 at ap 80 and Kp 19/3 at ap 94."
-12.5,25,7.5,57.5,2.5,6.924242424242424,0.000000001,no,code,"a quieter worst day, ap 57.5: the peak slot of the disturbed single day, run in this node's own code"
-20,40,5,154,1,8.913671102559992,0.000000001,no,code,"a stormier worst day, ap 154, with every other scenario moved too: run in this node's own code"
-12.5,25.0,7.5,90.0,500.0,,,yes,hand,"outside what the node holds for: its code refuses it, and so must the developer's"
-12.5,25.0,7.5,400.0,2.5,,,yes,hand,"outside what the node holds for: its code refuses it, and so must the developer's"
+ap_nominal [1],ap_hotmean [1],ap_coldmean [1],ap_hotday [1],ap_coldday [1],answer [1],answer.Kp_mean_nominal [1],answer.Kp_mean_hotmean [1],answer.Kp_mean_coldmean [1],answer.Kp_mean_hotday [1],answer.Kp_mean_coldday [1],answer.Kp_peak_nominal [1],answer.Kp_peak_hotmean [1],answer.Kp_peak_coldmean [1],answer.Kp_peak_coldday [1],tolerance,refuses,origin,says
+12.5,25,7.5,90,2.5,7.9850088183,2.6245833333,3.7333333333,1.9583333333,5.7893772894,0.5416666667,3.8366290019,5.0666666667,2.9166666667,1.5,0.000000001,no,hand,"the primary: the worst slot of the worst day. ap 90 is a bin centre, so the peak offset 1.7469 is exact and only the scale is interpolated, between Kp 6 at ap 80 and Kp 19/3 at ap 94."
+12.5,25,7.5,57.5,2.5,6.924242424242424,2.6245833333333333,3.733333333333334,1.9583333333333335,5.045454545454546,0.5416666666666667,3.836629001883239,5.066666666666666,2.916666666666667,1.5,0.000000001,no,code,"a quieter worst day, ap 57.5: the peak slot of the disturbed single day, run in this node's own code"
+20,40,5,154,1,8.913671102559992,3.3814814814814818,4.451166087962963,1.2916666666666665,6.869807377807377,0.20833333333333334,4.566666666666666,6.063552188552189,2.25,1.1666666666666667,0.000000001,no,code,"a stormier worst day, ap 154, with every other scenario moved too: run in this node's own code"
+12.5,25.0,7.5,90.0,500.0,,,,,,,,,,,,yes,hand,"outside what the node holds for: its code refuses it, and so must the developer's"
+12.5,25.0,7.5,400.0,2.5,,,,,,,,,,,,yes,hand,"outside what the node holds for: its code refuses it, and so must the developer's"
