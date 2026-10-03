@@ -101,21 +101,13 @@ def pick(routes, method, path, params):
 
 
 def node_page(node_id):
-    """A node's page.html, from its folder — which the engine reads too."""
+    """A node's page, as the real engine rendered it for the contract's example
+    node. The engine renders a page from its sheet when it is opened; the mock
+    reads no sheets, so it has the recorded one and no other."""
     if not node_id.replace("_", "").isalnum():
         return None
-    direct = glob.glob(os.path.join(ROOT, "crates", "*", "nodes", node_id, "page.html"))
-    if direct:
-        return direct[0]
-    for meta in glob.glob(os.path.join(ROOT, "crates", "*", "nodes", "*", "meta.json")):
-        try:
-            with open(meta, encoding="utf-8") as f:
-                if json.load(f).get("id") == node_id:
-                    return os.path.join(os.path.dirname(meta), "page.html")
-        except (OSError, ValueError):
-            continue
-    return None
-
+    p = os.path.join(ROOT, "contract", "examples", "fragment-%s.html" % node_id)
+    return p if os.path.isfile(p) else None
 
 def plain(name):
     return bool(name) and all(c.isalnum() or c in "_-." for c in name) and ".." not in name

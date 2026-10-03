@@ -269,8 +269,8 @@ pub(super) fn node_endpoint(ctx: &Ctx, id: &str) -> (&'static str, &'static str,
     let def = &NODES[i as usize];
     let dir = ctx.root.join(def.folder);
 
-    // The eight files, and who writes each. This list is the template: it is
-    // the same eight for every folder in the tree, which is what makes
+    // The seven files, and who writes each. This list is the template: it is
+    // the same seven for every folder in the tree, which is what makes
     // adding the next node a copy rather than a decision.
     const ARTEFACTS: &[(&str, &str, &str)] = &[
         (
@@ -295,7 +295,6 @@ pub(super) fn node_endpoint(ctx: &Ctx, id: &str) -> (&'static str, &'static str,
         ),
         ("mod.rs", "generated", "the module wiring"),
         ("evidence.rs", "generated", "the fixtures, as tests"),
-        ("page.html", "generated", "the tabs a reader opens"),
         (
             "meta.json",
             "generated",
@@ -363,14 +362,33 @@ pub(super) fn fragment(ctx: &Ctx, id: &str) -> (&'static str, &'static str, Vec<
     // is a second implementation of the layout rule, and it fails on the first
     // row whose folder is not its id minus a prefix — as a 404 that nobody
     // attributes to a layout change.
+    // RENDERED, NOT READ. A node's page is written from its sheet when it is
+    // opened — from the folders or from a design file alike — so there is no
+    // committed copy to fall behind the sheet it describes.
     let def = &NODES[i as usize];
-    let p = ctx.root.join(def.folder).join("page.html");
-    match ctx.tree.read(&p) {
-        Ok(b) => ("200 OK", "text/html; charset=utf-8", b),
-        Err(_) => (
+    let tree = match ctx.load() {
+        Ok(t) => t,
+        Err(e) => {
+            return (
+                "500 Internal Server Error",
+                "text/html; charset=utf-8",
+                format!("<p class=\"empty\">The tree does not load: {e}</p>").into_bytes(),
+            )
+        }
+    };
+    match tree.sheets.get(def.id) {
+        Some(sh) => {
+            let holes = vleo_sheet::load::read_holes_in(&*ctx.tree, &sh.dir);
+            (
+                "200 OK",
+                "text/html; charset=utf-8",
+                vleo_sheet::page::fragment(sh, &holes, &tree).into_bytes(),
+            )
+        }
+        None => (
             "404 Not Found",
             "text/html; charset=utf-8",
-            format!("<p class=\"empty\">No fragment for <code>{id}</code>. Run <code>cargo xtask docs</code>.</p>").into_bytes(),
+            format!("<p class=\"empty\">No sheet for <code>{id}</code>.</p>").into_bytes(),
         ),
     }
 }

@@ -1952,7 +1952,8 @@ come from* is answered by walking upward without ever leaving the tree.
 `node.toml` — the sheet. The only file written by hand — by a form's intake, or a developer.
 `fixtures.toml` — known-good values from outside this code.
 `model.rs` — generated, except the numbered slots where the Rust goes.
-`contract.rs`, `mod.rs`, `evidence.rs`, `page.html`, `meta.json` — generated.
+`contract.rs`, `mod.rs`, `evidence.rs`, `meta.json` — generated.
+The row's page is not in the folder: the tool renders it from the sheet when it is opened.
 
 The rules that do not bend, and the developer's loop, are in `AGENTS.md`; the \
 reasoning behind the architecture is in `docs/ARCHITECTURE.md`."""

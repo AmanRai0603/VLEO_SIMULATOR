@@ -529,7 +529,6 @@ crates/vleo-mod-prop/nodes/prop_throat_area/
   fixtures.toml  the known-good values
   meta.json      generated
   mod.rs         generated
-  page.html      generated
 ```
 
 A developer's own structural row, with no form behind it, still starts from a

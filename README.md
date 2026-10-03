@@ -311,8 +311,10 @@ crates/vleo-mod-prop/nodes/prop_capture_efficiency/
   evidence.rs    generated — the fixture tests and three properties
   mod.rs         generated
   meta.json      generated
-  page.html      generated — this node's fragment of the document
 ```
+
+The node's page is not a file in the folder: the engine renders it from the
+sheet when it is opened.
 
 Nine generators: six per node, which read nothing but that node's sheet, and
 three at assembly, which combine and refuse but never decide. A hand edit
@@ -369,7 +371,7 @@ makes 1396 rows 1396 independent pieces of work rather than one large one.
 | contract | `contract.rs` | outputs, units, guarantees, domain, faults — what other nodes may rely on |
 | module | `mod.rs` | wires the node into its crate |
 | evidence | `evidence.rs` | the fixture tests, plus three properties derived from the declared domain |
-| page | `page.html` | this node's fragment of the document |
+| page | — | this node's fragment of the document, rendered from the sheet when it is opened; never written to the folder |
 | metadata | `meta.json` | criticality, reviewer count, open gaps |
 
 Three run at assembly, where the whole tree is visible:
@@ -423,7 +425,7 @@ What that run showed, in order:
 | `declare` | six questions open |
 | `docs` | refused, named the six fields, wrote nothing |
 | `declare` | `0 gaps open · ready to generate` |
-| `docs` | six artefacts written |
+| `docs` | five artefacts written |
 | `fill` | one line spliced; a second body carrying a guard was refused by name |
 | `gate` | twelve checks, then `0 node check failure(s)` |
 | `ready` | held — no fixture yet |

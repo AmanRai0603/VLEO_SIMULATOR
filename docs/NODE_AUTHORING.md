@@ -275,8 +275,8 @@ ones that name a choice — a functional form, a threshold, a convention, a
 baseline — and say what the alternative was and why it was not taken.
 
 The page renders the derivation COMPLETE and then offers to walk it one line at
-a time, so a `page.html` opened straight off the disk, with no engine and no
-script, still carries the whole argument.
+a time, so a node's page opened straight off the disk (the readers' folder), with
+no engine and no script, still carries the whole argument.
 
 ## Said simply, and where it breaks — `[explain]`
 

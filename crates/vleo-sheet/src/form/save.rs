@@ -464,13 +464,12 @@ pub(crate) fn commit_edit(
 }
 
 /// Every file the per-row generators write. `regenerate` writes the first four
-/// only for a published row; the last two for every row.
+/// only for a published row; the last for every row.
 const GENERATED: &[&str] = &[
     "model.rs",
     "contract.rs",
     "mod.rs",
     "evidence.rs",
-    "page.html",
     "meta.json",
 ];
 
@@ -489,22 +488,19 @@ pub fn regenerate_for_test(
     regenerate(sh, tree)
 }
 
-/// The six per-node generators, for one row. The same set `xtask docs` writes.
+/// The per-node generators, for one row. The same set `xtask docs` writes;
+/// the row's page is rendered when it is opened, not written here.
 fn regenerate(sh: &crate::model::Sheet, tree: &crate::load::Tree) -> Result<usize, Error> {
     let holes = crate::load::read_holes(&sh.dir);
     let gaps = crate::emit::gap_pass(sh, &holes);
     let artefacts: Vec<(&str, String)> = if sh.is_seeded() {
-        vec![
-            ("page.html", crate::page::fragment(sh, &holes, tree)),
-            ("meta.json", crate::emit::meta_json(sh, &gaps)),
-        ]
+        vec![("meta.json", crate::emit::meta_json(sh, &gaps))]
     } else {
         vec![
             ("model.rs", crate::emit::model_rs(sh, &holes)),
             ("contract.rs", crate::emit::contract_rs(sh)),
             ("mod.rs", crate::emit::mod_rs(sh)),
             ("evidence.rs", crate::emit::evidence_rs(sh)),
-            ("page.html", crate::page::fragment(sh, &holes, tree)),
             ("meta.json", crate::emit::meta_json(sh, &gaps)),
         ]
     };

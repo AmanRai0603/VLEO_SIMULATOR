@@ -64,10 +64,11 @@ fn it_holds_every_file_and_loads_as_the_same_tree() {
             b.fixtures.len(),
             "{id}: different fixtures"
         );
-        let page = root().join(&a.folder).join("page.html");
+        // The page a reader opens is rendered from the sheet; from the file
+        // it must be the page the folders render, byte for byte.
         assert_eq!(
-            std::fs::read(&page).ok(),
-            d.read(&page).ok(),
+            vleo_sheet::page::fragment(a, &vleo_sheet::load::read_holes(&a.dir), &folders),
+            vleo_sheet::page::fragment(b, &vleo_sheet::load::read_holes_in(&d, &b.dir), &file),
             "{id}: a different page"
         );
     }

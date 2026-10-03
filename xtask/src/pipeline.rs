@@ -362,7 +362,7 @@ pub(crate) const PIPELINE: &[Cmd] = &[
         name: "docs",
         stage: "gate",
         reads: "every sheet",
-        writes: "each node's generated files — model, contract, module, evidence, page, metadata — and docs/PSEUDOCODE.md",
+        writes: "each node's generated files — model, contract, module, evidence, metadata — and docs/PSEUDOCODE.md; a page.html left in a node folder from before is removed",
         checks: "that each sheet generates",
         undo: GIT_UNDO,
         code: ("xtask/src/main.rs", "cmd_docs"),

@@ -382,12 +382,12 @@ web/node.html — offline pages a group keeps its database files in (docs/GROUP_
 
     cargo run -p xtask -- docs [<node>]
 
-the six per-node generators — model, contract, module, evidence, page fragment and metadata, each from the node's own sheet (a page also names the rows it reads and the rows that read it).
+the per-node generators that write files — model, contract, module, evidence and metadata, each from the node's own sheet. A node's page is rendered from its sheet when it is opened, and is never written here.
 
 | | |
 |---|---|
 | reads | every sheet |
-| writes | each node's generated files — model, contract, module, evidence, page, metadata — and docs/PSEUDOCODE.md |
+| writes | each node's generated files — model, contract, module, evidence, metadata — and docs/PSEUDOCODE.md; a page.html left in a node folder from before is removed |
 | checks | that each sheet generates |
 | undo | `git restore <files>` (or `git checkout -- .`) before committing; `git revert` after |
 | dry run | --dry-run prints this plan — the steps, what it would write, how to undo it — and touches nothing |

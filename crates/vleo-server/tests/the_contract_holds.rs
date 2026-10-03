@@ -899,6 +899,21 @@ fn every_route_answers_as_the_contract_says() {
                         .map(|e| format!("{label}: {e}")),
                 );
             }
+            // A NODE'S PAGE IS RECORDED TOO. The engine renders it from the
+            // sheet; the mock engine has no sheet reader, so it serves the
+            // page the real engine rendered for the example node.
+            if r.path.starts_with("/v1/fragment/") && !ex.name.is_empty() {
+                let file = format!("{}.html", ex.name);
+                used_examples.push(file.clone());
+                let p = root().join("contract/examples").join(&file);
+                if record {
+                    std::fs::write(&p, &a.body).unwrap();
+                } else if !p.is_file() {
+                    errs.push(format!(
+                        "contract/examples/{file}: missing — record it with VLEO_CONTRACT_RECORD=1"
+                    ));
+                }
+            }
             if r.answer != "json" {
                 continue;
             }

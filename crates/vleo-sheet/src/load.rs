@@ -801,9 +801,14 @@ fn read_holes_raw(files: &dyn Files, dir: &Path) -> String {
 /// makes the generated region genuinely owned by the generator rather than
 /// merely labelled that way.
 pub fn read_holes(dir: &Path) -> BTreeMap<u32, String> {
+    read_holes_in(&crate::files::Disk, dir)
+}
+
+/// The same, from whatever holds the tree — the folders, or a design file.
+pub fn read_holes_in(files: &dyn Files, dir: &Path) -> BTreeMap<u32, String> {
     let mut map = BTreeMap::new();
     let p = dir.join("model.rs");
-    let text = match std::fs::read_to_string(&p) {
+    let text = match files.read_to_string(&p) {
         Ok(t) => t,
         Err(_) => return map,
     };
