@@ -118,7 +118,7 @@ a group's sealed release, written out with `node tools/group_db.mjs --unpack`, t
 |---|---|
 | reads | a group's release written out by `node tools/group_db.mjs --unpack`, its RELEASE.toml, and each of its nodes' sheets |
 | writes | with --apply: each computed node's node.toml (its method and cases) and every generated file |
-| checks | every file against the seal's fingerprint; then each node as its form: a conflict with a change made since, a method or results an assistant supplied, the de-risking record, the whole tree's gate |
+| checks | every file against the seal's fingerprint; then each node as its form: a conflict with a change made since, a method or results an assistant supplied (a transcription without its source and a person who checked it counts as one), the de-risking record, the whole tree's gate |
 | undo | a refused apply is put back by the transaction itself; an applied one: `git restore` the node's folder, or `git revert` |
 | dry run | --dry-run runs group-intake without --apply: the same check, nothing written |
 | code | `xtask/src/group_intake.rs` — `cmd_group_intake` |

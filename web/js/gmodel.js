@@ -14,7 +14,7 @@ const CSV = ['group.csv', 'members.csv', 'nodes.csv', 'publishes.csv', 'requirem
   'constants.csv', 'sources.csv', 'versions.csv', 'equations.csv', 'symbols.csv', 'figures.csv', 'reviews.csv',
   'results/group.csv'];
 const TEXT = ['explanation.md', 'theory.md', 'flow.txt'];
-const NODE_CSV = ['inputs.csv', 'evidence.csv', 'equations.csv', 'symbols.csv', 'figures.csv', 'sources.csv', 'results/isolation.csv'];
+const NODE_CSV = ['inputs.csv', 'evidence.csv', 'equations.csv', 'symbols.csv', 'figures.csv', 'sources.csv', 'results/isolation.csv', 'declaration.csv'];
 const NODE_TEXT = ['explanation.md', 'theory.md', 'pseudocode.txt', 'results/how-run.md'];
 
 /** Read a whole folder. Answers `{ folder, group, nodes: Map, order, edges, external, problems }`. */

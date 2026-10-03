@@ -163,10 +163,12 @@ Its sections, in this order: `## Equations`, `## Derivation`, `## Assumptions`, 
   - `unit` — its unit.
   - `source` — a sources.csv id.
   - `says` (optional) — what it is.
-- `nodes/<id>/declaration.csv` — optional. Who made this node's method and its numbers, and whether an assistant helped: `none`, `wording` (the words only) or `relation` (the pseudocode, the equations, the results or the evidence). Written by the node application when its author signs. An assistant may never supply mathematics: the developer's intake refuses a method or results an assistant supplied, and takes a node with no declaration as one an assistant helped with.
+- `nodes/<id>/declaration.csv` — optional. Who made this node's method and its numbers, and whether an assistant helped: `none`, `wording` (the words only), `relation` (the pseudocode, the equations, the results or the evidence), or `transcribed` (an assistant copied into pseudocode a relation a person had already written: their code, their paper, the design as it stands). Written by the node application when its author signs. An assistant may never supply mathematics: the developer's intake refuses a method or results an assistant supplied, and takes a node with no declaration as one an assistant helped with. A `transcribed` node names the `source` it was copied from and the person who read the copy against that source (`checked_by`). Without both, or with an assistant's name as the checker, intake takes it as one an assistant supplied.
   - `author` — the person who owns the method and its numbers.
-  - `ai` — none, wording or relation. One of: none, wording, relation.
+  - `ai` — none, wording, relation or transcribed. One of: none, wording, relation, transcribed.
   - `date` — when it was declared.
+  - `source` (optional) — transcribed only: what the relation was copied from — a file and line, a paper and equation, a node.
+  - `checked_by` (optional) — transcribed only: the person who read the copy against that source and signs it as theirs.
 - `nodes/<id>/code/` — optional. your own code, if you have it, kept for the record. Nothing runs it; its results are in results/isolation.csv
 
 ## Where the simple version breaks

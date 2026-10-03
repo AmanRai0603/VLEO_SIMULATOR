@@ -613,13 +613,24 @@ async function pageSign(host) {
       ? (last.verdict === 'ok' ? '<b class="gsig-ok">signed</b> by ' + esc(last.name) + ' on ' + esc(last.date) : 'changes asked by ' + esc(last.name))
       : '<span class="gsig-stale">signed earlier, by ' + esc(last.name) + ', for different content — sign again</span>') + '</p>' +
     '<fieldset class="nai"><legend>Did an assistant — an AI — help with this node?</legend>' +
-    [['none', 'No'], ['wording', 'With the words only'], ['relation', 'With the pseudocode, the equations, the results or the evidence']].map(([v, t]) =>
-      '<label><input type="radio" name="nai" value="' + v + '"' + (decl.ai === v ? ' checked' : '') + '> ' + esc(t) + '</label>').join('') +
+    [['none', 'No'], ['wording', 'With the words only'], ['relation', 'With the pseudocode, the equations, the results or the evidence'],
+      ['transcribed', 'It copied into pseudocode a relation a person had already written, and a person checked the copy against it']].map(([v, t]) =>
+      '<label><input type="radio" name="nai" value="' + v + '"> ' + esc(t) + '</label>').join('') +
+    // Asked afresh at every signing: the node may have changed since, and so
+    // may the answer. The last one is shown, never chosen for the author.
+    (decl.ai ? '<p class="muted small">Last time this node was signed, the answer was <b>' + esc(decl.ai) + '</b>.</p>' : '') +
+    '<div id="nai-tr" hidden>' +
+    '<p><label>Copied from <input id="nai-src" class="gs-in" value="' + esc(decl.source || '') + '" placeholder="a file and line, a paper and equation, a node" aria-label="what the relation was copied from"></label></p>' +
+    '<p><label>Checked against it by <input id="nai-chk" class="gs-in" style="max-width:16rem" value="' + esc(decl.checked_by || '') + '" aria-label="the person who checked the copy"></label></p></div>' +
     '<p class="muted small">Said plainly, because an assistant may never supply mathematics: the developer takes a method or results an assistant supplied ' +
-    'only once a person has derived them. Kept in your node file as declaration.csv.</p></fieldset>' +
+    'only once a person has derived them. A copy of a person\'s own relation is taken when it names what it was copied from and the person who read it against that. ' +
+    'Kept in your node file as declaration.csv.</p></fieldset>' +
     '<p><label>I am <input id="nsig-me" class="gs-in" style="max-width:16rem" value="' + esc(ctx.me || c.author) + '" aria-label="your name"></label> ' +
     '<button class="ctl gbtn" type="button" id="nsig-go"' + (errors ? ' disabled title="fix the errors first"' : '') + '>Sign my node</button></p>' +
     '<p id="nsig-out" class="gout" aria-live="polite"></p>';
+  host.querySelectorAll('input[name=nai]').forEach(r => r.addEventListener('change', () => {
+    $('#nai-tr').hidden = r.value !== 'transcribed' || !r.checked;
+  }));
   $('#nsig-go').addEventListener('click', () => trying(async () => {
     const name = $('#nsig-me').value.trim();
     if (!name) throw new Error('say who you are');
@@ -627,10 +638,14 @@ async function pageSign(host) {
     if (authors.length && !authors.includes(name)) throw new Error(name + ' is not this node\'s author (' + authors.join(', ') + '). Only its author signs it.');
     const ai = (host.querySelector('input[name=nai]:checked') || {}).value;
     if (!ai) throw new Error('say whether an assistant helped with this node');
+    const src = ai === 'transcribed' ? $('#nai-src').value.trim() : '';
+    const chk = ai === 'transcribed' ? $('#nai-chk').value.trim() : '';
+    if (ai === 'transcribed' && !src) throw new Error('say what the relation was copied from');
+    if (ai === 'transcribed' && !chk) throw new Error('say who checked the copy against it');
     ctx.me = name;
     try { localStorage.setItem(ME, name); } catch { /* */ }
     // The declaration is part of what is signed, so it is written first.
-    await put('declaration.csv', toCsv(['author', 'ai', 'date'], [[name, ai, new Date().toISOString().slice(0, 10)]]));
+    await put('declaration.csv', toCsv(['author', 'ai', 'date', 'source', 'checked_by'], [[name, ai, new Date().toISOString().slice(0, 10), src, chk]]));
     await rebuild();
     await sign(ctx.folder, ctx.model, { name, scope: ctx.id, verdict: 'ok', note: '' });
     await rebuild();
