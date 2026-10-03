@@ -421,17 +421,27 @@ required = false
 rows = "one"
 says = """
 Who made this node's method and its numbers, and whether an assistant helped:
-`none`, `wording` (the words only) or `relation` (the pseudocode, the
-equations, the results or the evidence). Written by the node application when
-its author signs. An assistant may never supply mathematics: the developer's
+`none`, `wording` (the words only), `relation` (the pseudocode, the
+equations, the results or the evidence), or `transcribed` (an assistant copied
+into pseudocode a relation a person had already written: their code, their
+paper, the design as it stands). Written by the node application when its
+author signs. An assistant may never supply mathematics: the developer's
 intake refuses a method or results an assistant supplied, and takes a node
-with no declaration as one an assistant helped with.
+with no declaration as one an assistant helped with. A `transcribed` node
+names the `source` it was copied from and the person who read the copy against
+that source (`checked_by`). Without both, or with an assistant's name as the
+checker, intake takes it as one an assistant supplied.
 """
 columns = [
   { name = "author", says = "the person who owns the method and its numbers" },
-  { name = "ai", says = "none, wording or relation", one_of = ["none", "wording", "relation"] },
+  { name = "ai", says = "none, wording, relation or transcribed", one_of = ["none", "wording", "relation", "transcribed"] },
   { name = "date", says = "when it was declared" },
+  { name = "source", says = "transcribed only: what the relation was copied from — a file and line, a paper and equation, a node", optional = true },
+  { name = "checked_by", says = "transcribed only: the person who read the copy against that source and signs it as theirs", optional = true },
 ]
+# The names an assistant arrives under, never accepted as `checked_by`. The
+# same list as vleo_sheet::form::agent_identities; a test holds them equal.
+assistants = ["claude", "agent", "assistant", "copilot", "chatgpt", "gpt", "gemini"]
 
 [[file]]
 path = "code/"

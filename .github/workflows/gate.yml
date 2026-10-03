@@ -255,6 +255,10 @@ jobs:
         run: |
           pip install --quiet playwright
           python3 -m playwright install --with-deps chromium
+      # A transcription is taken only with its source and the person who
+      # checked the copy; the group application says so before the group seals.
+      - name: a node's declaration, judged as the rule says
+        run: node tools/declaration_check.mjs
       - name: the example group, sealed in the group application
         run: |
           VLEO_SEALED_OUT="$RUNNER_TEMP/example.vleo" python3 tools/group_db_check.py

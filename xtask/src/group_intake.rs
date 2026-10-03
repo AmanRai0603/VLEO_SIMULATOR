@@ -64,7 +64,7 @@ pub(super) fn cmd_group_intake(root: &Path, args: &[&str]) -> Result<(), String>
         if n.get("kind").map(String::as_str) != Some("computed") {
             continue;
         }
-        let form = node_form(&dir, sh, &group, &version, &sealed, &derisk)?;
+        let form = node_form(root, &dir, sh, &group, &version, &sealed, &derisk)?;
         println!(
             "\n\x1b[1m{id}\x1b[0m — by {}; assistant: {}",
             if form.name.is_empty() {
@@ -203,6 +203,7 @@ impl Release {
 /// One node of the release as a node form: its sheet as it is now on one side,
 /// what the release holds on the other.
 fn node_form(
+    root: &Path,
     dir: &Path,
     sh: &vleo_sheet::model::Sheet,
     group: &str,
@@ -287,10 +288,20 @@ fn node_form(
         .ok()
         .and_then(|r| r.into_iter().next())
         .unwrap_or_default();
-    let ai = match decl.get("ai").map(String::as_str) {
-        Some(a @ ("none" | "wording" | "relation")) => a.to_string(),
-        _ => "relation".to_string(),
-    };
+    let help = declared_help(root, &decl);
+    if let Some(why) = &help.not_taken {
+        println!("  transcribed, but {why}: taken as a relation an assistant supplied");
+    }
+    // A transcription is recorded on the node's version, so the sheet says
+    // what the method was copied from and who read the copy against it.
+    let mut derisk = derisk.clone();
+    if let Some(t) = &help.transcribed {
+        derisk.changed = if derisk.changed.trim().is_empty() {
+            t.clone()
+        } else {
+            format!("{} {t}", derisk.changed.trim())
+        };
+    }
     let base = fs::read_to_string(sh.dir.join("node.toml"))
         .map(|t| vleo_sheet::form::file_hash(&t))
         .unwrap_or_default();
@@ -301,13 +312,68 @@ fn node_form(
         name: decl.get("author").cloned().unwrap_or_default(),
         team: group.to_string(),
         date: sealed.chars().take(10).collect(),
-        ai,
+        ai: help.ai,
         notes: format!("from the group release {group} {version}"),
         original,
         filled,
         known: Vec::new(),
-        derisk: derisk.clone(),
+        derisk,
     })
+}
+
+/// How an assistant helped, as a node's declaration says.
+pub(super) struct Help {
+    /// `none`, `wording`, `relation` or `transcribed`, as the plan reads it.
+    pub ai: String,
+    /// For a transcription taken: what the version records of it.
+    pub transcribed: Option<String>,
+    /// For a transcription not taken: why.
+    pub not_taken: Option<String>,
+}
+
+/// Read a declaration. Silence is not "none". A transcription is a person's
+/// relation copied by an assistant, and is taken only when it names what it was
+/// copied from and the person who read the copy against that — a person, not an
+/// assistant. Without either it is one an assistant supplied.
+pub(super) fn declared_help(root: &Path, decl: &BTreeMap<String, String>) -> Help {
+    let plain = |ai: &str| Help {
+        ai: ai.to_string(),
+        transcribed: None,
+        not_taken: None,
+    };
+    match decl.get("ai").map(String::as_str) {
+        Some(a @ ("none" | "wording" | "relation")) => plain(a),
+        Some("transcribed") => {
+            let source = decl.get("source").map(|s| s.trim()).unwrap_or("");
+            let checker = decl.get("checked_by").map(|s| s.trim()).unwrap_or("");
+            let not_taken = if source.is_empty() {
+                Some("it names no source it was copied from".to_string())
+            } else if checker.is_empty() {
+                Some("it names nobody who checked the copy against its source".to_string())
+            } else if vleo_sheet::form::refuse_agent_attribution(root, checker).is_err() {
+                Some(format!(
+                    "'{checker}', who it says checked the copy, is an assistant"
+                ))
+            } else {
+                None
+            };
+            match not_taken {
+                Some(why) => Help {
+                    not_taken: Some(why),
+                    ..plain("relation")
+                },
+                None => Help {
+                    ai: "transcribed".into(),
+                    transcribed: Some(format!(
+                        "The method was transcribed by an assistant from {source}; \
+                         {checker} read the copy against it and signs it."
+                    )),
+                    not_taken: None,
+                },
+            }
+        }
+        _ => plain("relation"),
+    }
 }
 
 /// The isolation results as the form's test cases: every value back in SI,
@@ -632,6 +698,130 @@ pub(super) fn parse_csv(text: &str) -> (Vec<String>, Vec<Vec<String>>) {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn declaration(pairs: &[(&str, &str)]) -> BTreeMap<String, String> {
+        pairs
+            .iter()
+            .map(|(k, v)| (k.to_string(), v.to_string()))
+            .collect()
+    }
+
+    fn repo() -> PathBuf {
+        Path::new(env!("CARGO_MANIFEST_DIR"))
+            .parent()
+            .unwrap()
+            .to_path_buf()
+    }
+
+    #[test]
+    fn a_transcription_is_taken_only_with_its_source_and_a_person_who_checked_it() {
+        let root = repo();
+        for a in ["none", "wording", "relation"] {
+            assert_eq!(declared_help(&root, &declaration(&[("ai", a)])).ai, a);
+        }
+        // Silence, and a value nobody defined, are an assistant's relation.
+        assert_eq!(declared_help(&root, &declaration(&[])).ai, "relation");
+        assert_eq!(
+            declared_help(&root, &declaration(&[("ai", "copied")])).ai,
+            "relation"
+        );
+        let taken = declared_help(
+            &root,
+            &declaration(&[
+                ("ai", "transcribed"),
+                ("source", "crates/vleo-core/src/physics/solar.rs:120"),
+                ("checked_by", "A. Person"),
+            ]),
+        );
+        assert_eq!(taken.ai, "transcribed");
+        let record = taken.transcribed.unwrap();
+        assert!(
+            record.contains("solar.rs:120") && record.contains("A. Person"),
+            "{record}"
+        );
+        for (source, checker) in [
+            ("", "A. Person"),
+            ("x.rs:1", ""),
+            ("x.rs:1", "  "),
+            ("x.rs:1", "Claude"),
+            ("x.rs:1", "claude/opus"),
+            ("x.rs:1", "Copilot bot"),
+        ] {
+            let h = declared_help(
+                &root,
+                &declaration(&[
+                    ("ai", "transcribed"),
+                    ("source", source),
+                    ("checked_by", checker),
+                ]),
+            );
+            assert_eq!(h.ai, "relation", "{source:?} / {checker:?}");
+            assert!(h.not_taken.is_some() && h.transcribed.is_none());
+        }
+    }
+
+    #[test]
+    fn the_spec_refuses_the_same_assistants_the_engine_does() {
+        let root = repo();
+        let spec: toml::Value = fs::read_to_string(root.join("groups/SPEC.toml"))
+            .unwrap()
+            .parse()
+            .unwrap();
+        let listed: Vec<String> = spec["file"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|f| f["path"].as_str() == Some("declaration.csv"))
+            .and_then(|f| f.get("assistants"))
+            .and_then(|a| a.as_array())
+            .expect("declaration.csv lists the assistants' names")
+            .iter()
+            .map(|v| v.as_str().unwrap().to_string())
+            .collect();
+        assert_eq!(listed, vleo_sheet::form::agent_identities(&root));
+    }
+
+    #[test]
+    fn a_transcribed_method_is_planned_where_an_assistants_relation_is_refused() {
+        let root = repo();
+        let tree = load(&root).unwrap();
+        let sh = tree.sheets.get("sw_activity_band").unwrap();
+        let original = template::content(sh);
+        let mut filled = original.clone();
+        let method = original
+            .fields
+            .get("method_text")
+            .cloned()
+            .unwrap_or_default();
+        filled.fields.insert(
+            "method_text".into(),
+            format!("# copied from the running code\n{method}"),
+        );
+        let base = fs::read_to_string(sh.dir.join("node.toml"))
+            .map(|t| vleo_sheet::form::file_hash(&t))
+            .unwrap();
+        let plan = |ai: &str| {
+            let f = Form {
+                node: sh.id.clone(),
+                base: base.clone(),
+                name: "A. Person".into(),
+                date: "2026-10-03".into(),
+                ai: ai.into(),
+                original: original.clone(),
+                filled: filled.clone(),
+                ..Form::default()
+            };
+            let p = template::plan_form(&root, f).unwrap();
+            p.items
+                .into_iter()
+                .find(|i| i.what == "method_text")
+                .expect("the method is an item of the plan")
+                .verdict
+        };
+        let refused_as_assistants = |v: &vleo_sheet::template::Verdict| matches!(v, vleo_sheet::template::Verdict::Refused(why) if why.contains("assistant"));
+        assert!(refused_as_assistants(&plan("relation")));
+        assert!(!refused_as_assistants(&plan("transcribed")));
+    }
 
     #[test]
     fn csv_reads_quotes_commas_and_line_breaks() {

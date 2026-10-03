@@ -97,6 +97,25 @@ export async function checkGroup(model, spec) {
     if (lo !== null && hi !== null && lo > hi) add('error', 'nodes.csv', r.id + ': lower is above upper', r._line);
   }
 
+  // ── a transcription names its source and the person who checked it ──
+  const declRule = files.find(r => r.path === 'declaration.csv') || {};
+  const assistants = declRule.assistants || [];
+  for (const n of model.nodes.values()) {
+    const t = n.files['declaration.csv'];
+    if (!t) continue;
+    for (const r of records(t)) {
+      if (r.ai !== 'transcribed') continue;
+      const where = n.dir + 'declaration.csv';
+      if (!String(r.source || '').trim()) add('error', where, 'says transcribed but names no source — say what the relation was copied from', r._line);
+      const who = String(r.checked_by || '').trim();
+      const lower = who.toLowerCase();
+      if (!who) add('error', where, 'says transcribed but names nobody who checked the copy against its source', r._line);
+      else if (assistants.some(a => lower === a || lower.startsWith(a + ' ') || lower.includes(a + '/'))) {
+        add('error', where, '"' + who + '" is an assistant\'s name; the copy is checked by a person', r._line);
+      }
+    }
+  }
+
   // ── the texts: headings, what each may contain, embeds, maths ──
   const textRules = spec.text || [];
   const checkText = (path, text, role, node) => {

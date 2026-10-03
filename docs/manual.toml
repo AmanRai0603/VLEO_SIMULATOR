@@ -754,6 +754,47 @@ check = "writes"
 why = "applies the corrected form onto the branch that already holds the first one"
 
 [[layer.section]]
+id = "maint-group"
+title = "Take a group's sealed release in"
+who = "maintainer"
+kind = "how-to"
+answer = "A group sends a sealed release instead of forms. Unpack it, read what group-intake says, then apply, build, test and deliver it on the branch group/<group>-<version>. It merges only with the group's acceptance of the test application."
+body = """
+The release is checked against its seal before anything is read: one byte \
+changed and it is refused, and the fix goes back to the group as a note. Each \
+computed node then becomes the form its author would have filled, and goes \
+through intake's own check.
+
+**Not taken** means a conflict with a change made since, an incomplete \
+de-risking record, or a method or results an assistant supplied. A node whose \
+declaration says `transcribed` is taken only when it names the source the \
+method was copied from and the person who read the copy against it; without \
+either, or with an assistant as the checker, it counts as one an assistant \
+supplied. A transcription is still reviewed at H1b against its source, by \
+someone other than the person who signed it.
+
+`group-test` holds the build to the group's own results. A disagreement is \
+physics, for the group — never a result or tolerance moved to pass."""
+
+[[layer.section.step]]
+say = "Write the sealed release out as the folder it holds."
+run = "node tools/group_db.mjs --unpack <file.vleo> --out target/groups/<group>-<version>"
+check = "writes"
+why = "writes the release's files and RELEASE.toml, which says who sealed it and the fingerprint every signature was given for"
+
+[[layer.section.step]]
+say = "Read what it would change, node by node, and what cannot be taken."
+run = "cargo run -p xtask -- group-intake target/groups/<group>-<version>"
+check = "writes"
+why = "checks the seal, then prints each computed node's plan and what it reaches in other groups; nothing is written without --apply"
+
+[[layer.section.step]]
+say = "Apply, build from the methods, test against the group's results, and deliver the test application."
+run = "cargo run -p xtask -- group-intake target/groups/<group>-<version> --apply"
+check = "writes"
+why = "then group-build, group-test and group-deliver on the same folder; the group answers with group-accept"
+
+[[layer.section]]
 id = "maint-method"
 title = "Check a node's method against its author's cases"
 who = "maintainer"
@@ -2318,7 +2359,7 @@ effect = "writes"
 tool = "xtask"
 name = "group-intake"
 usage = "group-intake <folder> [--node <id>] [--apply [--partial]] [--draft]"
-what = "A group's sealed release taken into the design. The release, written out with `node tools/group_db.mjs --unpack <file.vleo>`, is refused unless every file still gives the fingerprint it was sealed with; then each computed node's pseudocode and results become its node form — its method and test cases, in SI — and go through intake's own check: a conflict with a change made since, a method or results an assistant supplied, an incomplete de-risking record. `--apply` writes, regenerates and gates each, or puts it back. `--draft` looks at an unsealed release and never applies."
+what = "A group's sealed release taken into the design. The release, written out with `node tools/group_db.mjs --unpack <file.vleo>`, is refused unless every file still gives the fingerprint it was sealed with; then each computed node's pseudocode and results become its node form — its method and test cases, in SI — and go through intake's own check: a conflict with a change made since, a method or results an assistant supplied (a `transcribed` method counts as one unless it names its source and a person who checked the copy), an incomplete de-risking record. `--apply` writes, regenerates and gates each, or puts it back. `--draft` looks at an unsealed release and never applies."
 who = "developer"
 effect = "writes"
 
