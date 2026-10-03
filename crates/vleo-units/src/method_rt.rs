@@ -120,3 +120,20 @@ pub fn pow(a: f64, b: f64) -> f64 {
         pmath::powf(a, b)
     }
 }
+
+/// `LIST[i]`: entry `i` of a list, counted from 1 as the method writes it. An
+/// index that is not a whole number, or falls outside 1..=len, is a fault in
+/// the method — never the nearest entry, which would answer for a row the list
+/// does not hold.
+pub fn at(list: &[f64], i: f64, line: u32) -> Result<f64, MethodError> {
+    if pmath::trunc(i) != i {
+        return Err(bad(line, "a list is read at a whole-number index"));
+    }
+    if i < 1.0 || i > list.len() as f64 {
+        return Err(bad(
+            line,
+            "the index is outside the list, which counts from 1",
+        ));
+    }
+    Ok(list[i as usize - 1])
+}

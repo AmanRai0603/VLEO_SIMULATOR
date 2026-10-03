@@ -59,6 +59,7 @@ pub fn reference_md() -> String {
             FnRule::Cbrt => "thirds every exponent",
             FnRule::Interp => "x like the table's x row; the y row's unit out",
             FnRule::Pow => "as ^",
+            FnRule::Len => "a list in, a pure number out",
         };
         let _ = writeln!(o, "| `{}` | {} | {} |", f.name, rule, f.meaning);
     }
@@ -151,8 +152,12 @@ pub fn reference_md() -> String {
          - **A loop says how often it may run.** `while … at most N times` stops when its condition\n\
            \x20 fails, and refuses — by name — if N passes were not enough. It never answers with\n\
            \x20 wherever it had got to.\n\
-         - **Tables are written out.** A lookup into a large data file is a reference-data bundle,\n\
-           \x20 not a method.\n",
+         - **A list is read inside its length.** `EDGES[i]` counts from 1; an index that is not a\n\
+           \x20 whole number, or falls outside the list, stops the method with a fault — it never\n\
+           \x20 reads the nearest entry instead. Guard it with `if`, or go through the list with\n\
+           \x20 `for … in`.\n\
+         - **Tables are written out.** A list holds what your source tabulates, a few dozen entries;\n\
+           \x20 a lookup into a large data file is a reference-data bundle, not a method.\n",
     );
     o
 }

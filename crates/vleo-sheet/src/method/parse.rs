@@ -288,10 +288,10 @@ impl Parser {
                 let name = self.name("a name")?;
                 self.expect_sym("=")?;
                 let expr = self.expr()?;
-                if expr.literal().is_none() {
+                if expr.literal().is_none() && !matches!(expr, Expr::Table { .. }) {
                     return Err(Diag::err(
                         line,
-                        "a const is one number with its unit — use let for anything computed",
+                        "a const is one number with its unit, or a list written out — use let for anything computed",
                     ));
                 }
                 self.end_of_line()?;
@@ -345,6 +345,20 @@ impl Parser {
             "for" => {
                 self.pos += 1;
                 let var = self.name("a loop name")?;
+                if self.is_kw("in") {
+                    self.pos += 1;
+                    let list = self.name("the list to go through")?;
+                    self.end_of_line()?;
+                    let body = self.block(&["end"])?;
+                    self.expect_kw("end")?;
+                    self.end_of_line()?;
+                    return Ok(Stmt::Each {
+                        var,
+                        list,
+                        body,
+                        line,
+                    });
+                }
                 self.expect_sym("=")?;
                 let first = self.whole()?;
                 self.expect_kw("to")?;
@@ -623,6 +637,15 @@ impl Parser {
                         args,
                         line,
                     })
+                } else if self.is_sym("[") {
+                    self.pos += 1;
+                    let index = self.expr()?;
+                    self.expect_sym("]")?;
+                    Ok(Expr::Index {
+                        list: n,
+                        index: Box::new(index),
+                        line,
+                    })
                 } else {
                     Ok(Expr::Var { name: n, line })
                 }
@@ -645,7 +668,7 @@ impl Parser {
                         Some(Tok::Num(v)) => vals.push(if neg { -v } else { v }),
                         _ => return Err(Diag::err(
                             line,
-                            "a table holds plain numbers, with its unit after the closing bracket",
+                            "a list holds plain numbers, with its unit after the closing bracket",
                         )),
                     }
                     if self.is_sym(",") {

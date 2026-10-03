@@ -29,6 +29,8 @@ struct Machine<'a> {
     steps: u64,
     /// The members published so far, by symbol.
     published: Vec<(String, f64)>,
+    /// The lists the method has written out, by name, in SI.
+    lists: BTreeMap<String, Vec<f64>>,
 }
 
 impl Machine<'_> {
@@ -54,6 +56,20 @@ impl Machine<'_> {
             }
         }
     }
+    fn list(&self, name: &str, line: usize) -> Result<&[f64], Diag> {
+        self.lists
+            .get(name)
+            .map(Vec::as_slice)
+            .ok_or_else(|| Diag::err(line, format!("«{name}» is not a list")))
+    }
+    /// A row of `interp`'s table: written out in place, or a list by name.
+    fn row(&self, e: &Expr, line: usize) -> Result<Vec<f64>, Diag> {
+        match e {
+            Expr::Table { si, .. } => Ok(si.clone()),
+            Expr::Var { name, .. } => self.list(name, line).map(<[f64]>::to_vec),
+            _ => Err(Diag::err(line, "interp needs its table")),
+        }
+    }
     fn num(&mut self, e: &Expr) -> Result<f64, Diag> {
         match self.eval(e)? {
             Val::Num(v) => Ok(v),
@@ -74,7 +90,14 @@ impl Machine<'_> {
             Expr::Neg(x) => -self.num(x)?,
             Expr::Not(x) => return Ok(Val::Bool(!self.cond(x)?)),
             Expr::Table { line, .. } => {
-                return Err(Diag::err(*line, "a table stands only inside interp(…)"))
+                return Err(Diag::err(
+                    *line,
+                    "a list written out stands in a const, or inside interp(…)",
+                ))
+            }
+            Expr::Index { list, index, line } => {
+                let i = self.num(index)?;
+                rt::at(self.list(list, *line)?, i, *line as u32).map_err(rt_diag)?
             }
             Expr::Bin { op, l, r, line } => {
                 let line = *line;
@@ -112,11 +135,14 @@ impl Machine<'_> {
     fn call(&mut self, name: &str, args: &[Expr], line: usize) -> Result<f64, Diag> {
         if name == "interp" {
             let x = self.num(&args[0])?;
-            let (Expr::Table { si: xs, .. }, Expr::Table { si: ys, .. }) = (&args[1], &args[2])
-            else {
-                return Err(Diag::err(line, "interp needs its table written out"));
+            let (xs, ys) = (self.row(&args[1], line)?, self.row(&args[2], line)?);
+            return Ok(pmath::interp(x, &xs, &ys));
+        }
+        if name == "len" {
+            let Some(Expr::Var { name: l, .. }) = args.first() else {
+                return Err(Diag::err(line, "len takes the name of a list"));
             };
-            return Ok(pmath::interp(x, xs, ys));
+            return Ok(self.list(l, line)?.len() as f64);
         }
         let mut a = Vec::with_capacity(args.len());
         for e in args {
@@ -144,6 +170,13 @@ impl Machine<'_> {
     }
     fn stmt(&mut self, s: &Stmt) -> Result<Flow, Diag> {
         match s {
+            Stmt::Const {
+                name,
+                expr: Expr::Table { si, .. },
+                ..
+            } => {
+                self.lists.insert(name.clone(), si.clone());
+            }
             Stmt::Let {
                 name, expr, line, ..
             }
@@ -190,6 +223,28 @@ impl Machine<'_> {
                     }
                     let mut scope = BTreeMap::new();
                     scope.insert(var.clone(), i as f64);
+                    self.scopes.push(scope);
+                    let f = self.block(body);
+                    self.scopes.pop();
+                    if let Flow::Done(o) = f? {
+                        return Ok(Flow::Done(o));
+                    }
+                }
+            }
+            Stmt::Each {
+                var,
+                list,
+                body,
+                line,
+            } => {
+                let entries = self.list(list, *line)?.to_vec();
+                for v in entries {
+                    self.steps += 1;
+                    if self.steps > MAX_STEPS {
+                        return Err(Diag::err(*line, "too many loop steps"));
+                    }
+                    let mut scope = BTreeMap::new();
+                    scope.insert(var.clone(), v);
                     self.scopes.push(scope);
                     let f = self.block(body);
                     self.scopes.pop();
@@ -269,6 +324,7 @@ pub fn run_all(
         inputs,
         steps: 0,
         published: Vec::new(),
+        lists: BTreeMap::new(),
     };
     match m.block(&p.body)? {
         Flow::Done(o @ Outcome::Answer(_)) => Ok((o, m.published)),

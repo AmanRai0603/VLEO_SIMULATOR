@@ -1,5 +1,5 @@
 <!-- GENERATED from crates/vleo-sheet/src/method.rs by `cargo run -p xtask -- docs`. Do not edit. -->
-# The method language, version 3
+# The method language, version 4
 
 > **Answer first.** Every node's relation is written once more as a *method*: a few lines in a
 > small fixed language that the tool can check, run and translate. The checker refuses a
@@ -29,9 +29,11 @@ reaches anyone.
 | `let NAME = EXPR` | A new named value. Its dimension is whatever the expression's is. | `let r = R_EARTH + h` |
 | `let NAME : Quantity = EXPR` | The same, and the checker confirms the expression has that quantity's dimension. | `let v : Velocity = sqrt(MU_EARTH / r)` |
 | `const NAME = NUMBER [unit]` | A constant from your source, with its unit. Say where it comes from in a comment. | `const cd = 2.2 [1]   # drag coefficient, Sentman flat plate` |
+| `const NAME = [A, B, …] [unit]` | A list from your source, written out, with one unit for every entry. It is written once, at the method's top level, and never changes. Read one entry as NAME[i], counted from 1; its length as len(NAME); every entry with for … in; or use it as a row of interp's table. | `const EDGES = [90, 130, 170] [1]   # the published band edges, sfu` |
 | `set NAME = EXPR` | Change a value made with let. Same dimension; inputs and constants cannot be changed. | `set total = total + term` |
 | `if COND then … else if COND then … else … end` | Choose. Conditions compare like with like: h < 0 [m], not h < 0 [s]. | `if h < 150 [km] then ⏎   refuse "below the lowest altitude the model covers" ⏎ end` |
 | `for NAME = FIRST to LAST … end` | Repeat for whole numbers FIRST..LAST. The count is fixed when written; the loop variable is a pure number. | `for n = 1 to 10 ⏎   set total = total + x ^ n / n ⏎ end` |
+| `for NAME in LIST … end` | Repeat once for each entry of a list, in order; NAME holds the entry, in the list's unit. | `for edge in EDGES ⏎   if f107 >= edge then ⏎     set band = band + 1 ⏎   end ⏎ end` |
 | `while COND at most N times … end` | Repeat while COND holds — an iteration that settles, or a count the inputs decide. N is the most passes it may take, fixed when written; if COND still holds after N passes the node refuses, saying the loop did not settle, rather than answer with wherever it had got to. | `while abs(r * r - a) > 1e-12 * a at most 40 times ⏎   set r = (r + a / r) / 2 ⏎ end` |
 | `refuse "reason"` | The node will not answer here, and says why. A refusal is never a substitute value. | `refuse "the orbit is inside the Earth"` |
 | `return EXPR` | The node's answer, in its declared quantity. Every path ends in return or refuse. | `return v` |
@@ -75,7 +77,8 @@ A bare `0` is zero of any unit; any other number that is not a pure ratio needs 
 | `round` | a pure number in, a pure number out | round to nearest, halves away from zero — pure numbers only |
 | `wrap_2pi` | a pure number in, a pure number out | an angle brought into 0..2π |
 | `wrap_pi` | a pure number in, a pure number out | an angle brought into -π..π |
-| `interp` | x like the table's x row; the y row's unit out | straight-line lookup in a table: interp(x, [x1, x2, …] [unit], [y1, y2, …] [unit]); held at the ends |
+| `interp` | x like the table's x row; the y row's unit out | straight-line lookup in a table: interp(x, XS, YS), each row a list by name or written out as [x1, x2, …] [unit]; held at the ends |
+| `len` | a list in, a pure number out | how many entries a list has: len(EDGES) |
 
 ## Kernel functions
 
@@ -191,5 +194,9 @@ end
 - **A loop says how often it may run.** `while … at most N times` stops when its condition
   fails, and refuses — by name — if N passes were not enough. It never answers with
   wherever it had got to.
-- **Tables are written out.** A lookup into a large data file is a reference-data bundle,
-  not a method.
+- **A list is read inside its length.** `EDGES[i]` counts from 1; an index that is not a
+  whole number, or falls outside the list, stops the method with a fault — it never
+  reads the nearest entry instead. Guard it with `if`, or go through the list with
+  `for … in`.
+- **Tables are written out.** A list holds what your source tabulates, a few dozen entries;
+  a lookup into a large data file is a reference-data bundle, not a method.

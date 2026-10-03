@@ -29,6 +29,7 @@ mod inputs;
 mod json;
 mod pages;
 mod results;
+pub mod results_file;
 
 use http::*;
 use inputs::*;
@@ -422,6 +423,7 @@ fn route(
         ("GET", "/v1/result.html") => result_file(params, "report"),
         ("POST", "/v1/results/save") => ok_json(result_save(params, ctx)),
         ("POST", "/v1/results/upload") => ok_json(result_upload(params)),
+        ("POST", "/v1/results/upload-file") => ok_json(result_upload_file(params)),
         ("POST", "/v1/results/delete") => ok_json(result_delete(params)),
         ("POST", "/v1/results/pin") => ok_json(result_pin(params)),
         ("POST", "/v1/results/as-case") => ok_json(result_as_case(params)),

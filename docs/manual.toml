@@ -428,7 +428,7 @@ say = "Send it: the CSV for a spreadsheet, or the report for someone without the
 ui = "download report"
 
 [[layer.section.step]]
-say = "Keep a result somebody sent — its CSV or its report."
+say = "Keep a result somebody sent — its CSV, its report, or a results file (`.vleor`) that holds several, each kept once."
 ui = "upload a result…"
 
 [[layer.section.step]]
@@ -2826,6 +2826,11 @@ what = "Run, and keep what it returned and the inputs it ran on as a result fold
 method = "POST"
 path = "/v1/results/upload"
 what = "Keep a result somebody sent: `csv=` its CSV or the text of its report, and `sweep=` its sweep CSV when it is one. Kept once, as a save is."
+
+[[route]]
+method = "POST"
+path = "/v1/results/upload-file"
+what = "Keep every result a results file (`results.vleor`) holds: `vleor=` the file, base64. Each is kept once, as a save is, pinned where the file says so; the answer names each one, how many were new and how many already kept."
 
 [[route]]
 method = "POST"
