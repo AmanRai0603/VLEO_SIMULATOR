@@ -245,6 +245,27 @@ fn the_plain_form_takes_units_as_a_group_contract_gives_them() {
 }
 
 #[test]
+fn the_plain_form_names_what_a_node_publishes() {
+    // A group's node that publishes several values names each member, as it
+    // names an input; the checker then holds the method to publishing them.
+    let method = "publish Half = x / 2\nreturn x";
+    let named = format!("output [m]\ninput x [m]\npublish Half [m]\nmethod\n{method}");
+    let r = report_plain(&named).unwrap();
+    assert!(r.diags.is_empty(), "{:?}", r.diags);
+    // Not named, the same publish is one the node does not make.
+    let unnamed = format!("output [m]\ninput x [m]\nmethod\n{method}");
+    assert!(report_plain(&unnamed)
+        .unwrap()
+        .diags
+        .iter()
+        .any(|d| d.msg.contains("publishes nothing")));
+    // Named and never published is refused too: every answer carries every member.
+    let missing = "output [m]\ninput x [m]\npublish Half [m]\nmethod\nreturn x";
+    assert!(!report_plain(missing).unwrap().diags.is_empty());
+    assert!(report_plain("output [m]\npublish Half [furlong]\nmethod\nreturn 1").is_err());
+}
+
+#[test]
 fn the_reference_covers_every_function_and_constant() {
     let md = reference_md();
     for f in FUNCTIONS {

@@ -446,6 +446,7 @@ pub fn report_toml(text: &str) -> Result<Report, Error> {
 /// ```text
 /// output Velocity
 /// input r Length
+/// publish v_half Velocity        (a node that publishes several values)
 /// case 0|1 <expect> <tolerance> <name=value;name=value> <label …>
 /// method
 /// <the method, to the end>
@@ -455,6 +456,7 @@ pub fn report_toml(text: &str) -> Result<Report, Error> {
 pub fn report_plain(text: &str) -> Result<Report, Error> {
     let mut output = None;
     let mut inputs = Vec::new();
+    let mut publishes = Vec::new();
     let mut cases = Vec::new();
     let mut lines = text.lines();
     let mut src = String::new();
@@ -478,6 +480,17 @@ pub fn report_plain(text: &str) -> Result<Report, Error> {
                     )
                 })?;
                 inputs.push((b.to_string(), d));
+            }
+            // A member the node publishes beside its answer, as `input`.
+            ("publish", rest) => {
+                let (b, q) = rest.split_once(' ').unwrap_or((rest, ""));
+                let d = dim_of(q.trim()).ok_or_else(|| {
+                    Error::new(
+                        ErrorKind::Malformed,
+                        format!("the member «{b}» has no known quantity «{q}»"),
+                    )
+                })?;
+                publishes.push((b.to_string(), d));
             }
             ("case", rest) => {
                 let f: Vec<&str> = rest.splitn(5, ' ').collect();
@@ -529,7 +542,7 @@ pub fn report_plain(text: &str) -> Result<Report, Error> {
         &Signature {
             inputs,
             output,
-            publishes: Vec::new(),
+            publishes,
         },
         &cases,
     ))
