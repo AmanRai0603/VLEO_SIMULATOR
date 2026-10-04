@@ -190,24 +190,30 @@ fn method_checks(sh: &Sheet) -> Vec<Check> {
             Check::fail("method", bad.join("; "))
         });
     }
-    // Cases say where they came from: the author's own code, which must be
-    // here to be read and run again.
+    // Cases say where they came from. One from the author's own code — or
+    // that does not say, as every case once came from it — needs that code
+    // here, to be read and run again; one worked by hand, in a spreadsheet or
+    // from a paper does not.
     if !sh.cases.is_empty() {
         let mut bad = Vec::new();
-        if sh.author.code.trim().is_empty() {
+        let from_code = sh
+            .cases
+            .iter()
+            .any(|c| c.origin.is_empty() || c.origin == "code");
+        if from_code && sh.author.code.trim().is_empty() {
             bad.push(
                 "the cases came from your code, and the code is not here — paste it under \
                       [author] code"
                     .to_string(),
             );
         }
-        if sh.author.language.trim().is_empty() {
+        if from_code && sh.author.language.trim().is_empty() {
             bad.push("say what language the code is in".into());
         }
-        if sh.author.name.trim().is_empty() {
+        if from_code && sh.author.name.trim().is_empty() {
             bad.push("say who wrote the code".into());
         }
-        if sh.author.test_code.trim().is_empty() {
+        if from_code && sh.author.test_code.trim().is_empty() {
             bad.push("the test code that ran the cases is not here".into());
         }
         for c in &sh.cases {

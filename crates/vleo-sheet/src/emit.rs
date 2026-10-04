@@ -764,6 +764,21 @@ pub fn evidence_rs(sh: &Sheet) -> String {
     o
 }
 
+/// A number as Rust reads it. A case the node must refuse may give a value
+/// no node takes, and `{:?}` writes those as `NaN` and `inf`, which are not
+/// Rust.
+fn rust_f64(v: f64) -> String {
+    if v.is_nan() {
+        "f64::NAN".into()
+    } else if v == f64::INFINITY {
+        "f64::INFINITY".into()
+    } else if v == f64::NEG_INFINITY {
+        "f64::NEG_INFINITY".into()
+    } else {
+        format!("{v:?}")
+    }
+}
+
 /// The arguments `model::evaluate` takes for one set of SI inputs, by binding.
 fn typed_args(sh: &Sheet, inputs: &[(String, f64)]) -> String {
     sh.inputs
@@ -774,7 +789,7 @@ fn typed_args(sh: &Sheet, inputs: &[(String, f64)]) -> String {
                 .find(|(k, _)| *k == i.binding)
                 .map(|(_, v)| *v)
                 .unwrap_or(0.0);
-            format!("{}::new({v:?})", i.ty)
+            format!("{}::new({})", i.ty, rust_f64(v))
         })
         .collect::<Vec<_>>()
         .join(", ")
@@ -811,10 +826,16 @@ fn author_cases(sh: &Sheet, o: &mut String) {
         ));
         let call = format!("model::evaluate({})", typed_args(sh, &c.inputs));
         match c.expect {
+            // A set has no printed form; its own value says what the node gave.
             None if has_method => o.push_str(&format!(
                 "    let got = {call};\n    assert!(matches!(got, Err(vleo_core::fault::Fault::Refused {{ .. }})), \
-                 \"{l}: the author's code refuses this case and the node gave {{got:?}}. Take it to the author.\");\n",
-                l = esc_fmt(&c.label)
+                 \"{l}: the author's code refuses this case and the node gave {{:?}}. Take it to the author.\", {shown});\n",
+                l = esc_fmt(&c.label),
+                shown = if sh.publishes.is_empty() {
+                    "got".to_string()
+                } else {
+                    format!("got.as_ref().map(|a| a.{}.get())", sh.symbol)
+                }
             )),
             None if !sh.publishes.is_empty() => o.push_str(&format!(
                 "    let got = {call};\n    assert!(got.is_err(), \"{l}: the author's code refuses this case and the node answered. Take it to the author.\");\n",
@@ -890,7 +911,7 @@ fn translation(sh: &Sheet, o: &mut String) {
                     .find(|(k, _)| *k == i.binding)
                     .map(|(_, v)| *v)
                     .unwrap_or(0.0);
-                format!("{v:?}")
+                rust_f64(v)
             })
             .collect::<Vec<_>>()
             .join(", ");

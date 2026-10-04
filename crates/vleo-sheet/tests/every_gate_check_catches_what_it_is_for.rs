@@ -507,3 +507,42 @@ fn v16_a_case_setting_a_row_a_run_overwrites() {
             .push((computed, 1.0));
     });
 }
+
+#[test]
+fn cases_ask_for_the_authors_code_only_when_they_came_from_it() {
+    // A case worked by hand, in a spreadsheet or from a paper is evidence
+    // without code beside it; one from the author's code, or that does not
+    // say where it came from, is not until that code is here.
+    let t = tree();
+    let original = row(&t, |s| {
+        s.cases.is_empty() && s.author.code.trim().is_empty() && !s.is_declared()
+    });
+    let case = |origin: &str| vleo_sheet::method::Case {
+        label: format!("from {origin}"),
+        inputs: Vec::new(),
+        expect: Some(1.0),
+        tolerance: 1e-6,
+        also: Vec::new(),
+        origin: origin.into(),
+    };
+    let with = |origins: &[&str]| {
+        let mut s = original.clone();
+        s.cases = origins.iter().map(|o| case(o)).collect();
+        failed(&gate_node(&s, &t)).contains(&"cases")
+    };
+    assert!(
+        !with(&["hand", "paper", "spreadsheet"]),
+        "{}: no case came from code",
+        original.id
+    );
+    assert!(
+        with(&["hand", "code"]),
+        "{}: a case from code, and no code",
+        original.id
+    );
+    assert!(
+        with(&["paper", ""]),
+        "{}: a case that does not say is the author's code's",
+        original.id
+    );
+}

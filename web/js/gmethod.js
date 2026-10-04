@@ -33,14 +33,16 @@ const unit = u => '[' + (String(u || '').trim() || '1') + ']';
 
 /**
  * Read `text` as the method of a node whose inputs are `[{name, unit}]` and
- * whose answer is in `answerUnit`. Answers `{ error, diags: [{line, severity, msg}] }`,
+ * whose answer is in `answerUnit`; a node that publishes several values names
+ * each member as `[{name, unit}]` too. Answers `{ error, diags: [{line, severity, msg}] }`,
  * or null when the checker could not be started.
  */
-export async function readMethod(text, inputs, answerUnit) {
+export async function readMethod(text, inputs, answerUnit, members = []) {
   const v = await checker();
   if (!v) return null;
   let plain = 'output ' + unit(answerUnit) + '\n';
   for (const i of inputs) plain += 'input ' + String(i.name).trim() + ' ' + unit(i.unit) + '\n';
+  for (const m of members) plain += 'publish ' + String(m.name).trim() + ' ' + unit(m.unit) + '\n';
   plain += 'method\n' + String(text || '');
   const enc = new TextEncoder().encode(plain);
   const p = v.vleo_alloc(enc.length);

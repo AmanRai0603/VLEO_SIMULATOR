@@ -245,6 +245,27 @@ fn the_plain_form_takes_units_as_a_group_contract_gives_them() {
 }
 
 #[test]
+fn the_plain_form_names_what_a_node_publishes() {
+    // A group's node that publishes several values names each member, as it
+    // names an input; the checker then holds the method to publishing them.
+    let method = "publish Half = x / 2\nreturn x";
+    let named = format!("output [m]\ninput x [m]\npublish Half [m]\nmethod\n{method}");
+    let r = report_plain(&named).unwrap();
+    assert!(r.diags.is_empty(), "{:?}", r.diags);
+    // Not named, the same publish is one the node does not make.
+    let unnamed = format!("output [m]\ninput x [m]\nmethod\n{method}");
+    assert!(report_plain(&unnamed)
+        .unwrap()
+        .diags
+        .iter()
+        .any(|d| d.msg.contains("publishes nothing")));
+    // Named and never published is refused too: every answer carries every member.
+    let missing = "output [m]\ninput x [m]\npublish Half [m]\nmethod\nreturn x";
+    assert!(!report_plain(missing).unwrap().diags.is_empty());
+    assert!(report_plain("output [m]\npublish Half [furlong]\nmethod\nreturn 1").is_err());
+}
+
+#[test]
 fn the_reference_covers_every_function_and_constant() {
     let md = reference_md();
     for f in FUNCTIONS {
@@ -455,6 +476,7 @@ fn a_case_holds_every_member_to_the_authors_value() {
         expect: Some(3.0),
         tolerance: 1e-12,
         also: also.iter().map(|(k, v)| (k.to_string(), *v)).collect(),
+        origin: String::new(),
     };
     assert_eq!(
         judge(&p, &s, &case(&[("Twice", 6.0), ("Square", 9.0)])),
@@ -507,9 +529,15 @@ fn a_list_is_gone_through_read_by_entry_and_counted() {
     assert_eq!(at(1.0).unwrap(), Outcome::Answer(1003.0));
     assert_eq!(at(3.0).unwrap(), Outcome::Answer(3003.0));
     // Read outside the list, or between entries: a fault, never the nearest.
-    for i in [0.0, 4.0, 1.5, f64::NAN] {
+    for i in [0.0, 4.0, 1.5] {
         assert!(at(i).is_err(), "R[{i}] was read");
     }
+    // An index that is not a number never reaches the list: it is refused at
+    // the door, before the first line.
+    assert!(
+        matches!(at(f64::NAN), Ok(Outcome::Refused { line: 0, .. })),
+        "R[NaN] was read"
+    );
     // A list is a row of interp's table, by name.
     let s = sig(&[("x", "Length")], "Time");
     let src = "const XS = [0, 1, 2] [km]\nconst YS = [0, 10, 40] [s]\nreturn interp(x, XS, YS)";

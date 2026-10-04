@@ -5,3 +5,4 @@ ap [1],answer [1],tolerance,refuses,origin,says
 26,3,0.000000000001,no,paper,"Ap 26 — the first storm value in the published table, and the boundary that matters."
 132,3,0.000000000001,no,paper,Ap 132 — the G3 design value — storm.
 230,3,0.000000000001,no,paper,Ap 230 — the top of the producer's range — storm.
+NaN,,,yes,hand,"a value that is not a number: the node must refuse it, as every method does at its door. The code before 1.1 answered regime 3 here, which no value is"

@@ -319,6 +319,18 @@ pub fn run_all(
     p: &Program,
     inputs: &[(String, f64)],
 ) -> Result<(Outcome, Vec<(String, f64)>), Diag> {
+    // The door: an input that is not a number is refused before the first
+    // line, as the translated method refuses it, never carried into the
+    // arithmetic to fault there.
+    if let Some((k, _)) = inputs.iter().find(|(_, v)| !v.is_finite()) {
+        return Ok((
+            Outcome::Refused {
+                line: 0,
+                reason: format!("the input «{k}» is not a finite number"),
+            },
+            Vec::new(),
+        ));
+    }
     let mut m = Machine {
         scopes: vec![BTreeMap::new()],
         inputs,

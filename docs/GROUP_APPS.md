@@ -130,7 +130,7 @@ open. To have it as the files a group keeps on its drive:
 node tools/group_db.mjs groups/solar          → target/groups/l3_solar-db/
   l3_solar.vgroup                                 the structure
   nodes/<node>.vnode                              58 node files
-  releases/l3_solar-0.2.vleo                      assembled, not sealed
+  releases/l3_solar-1.1.vleo                      assembled, not sealed
 ```
 
 How it was made, which is how any group's design can be brought in: `xtask
@@ -143,10 +143,15 @@ figures (`vleo figure …`). The few sections the design never had — mostly
 *Picture it* and *Guess first* — were drafted from each node's own text and are
 marked in `versions.csv` for the authors to confirm or replace.
 
-Open the release in the group application and *Sign & seal* names exactly what
-stands between it and a seal: two values the design says need a person
-(`sw_band_confidence`, `sw_kp_driving_slot`), and every sign-off, which only
-the people can give.
+Its owner, Aman Rai, signed each computed method as transcribed from its node's
+own `model.rs`, judged by its results, and declared the two values the design
+had left for a person: `sw_band_confidence` 0.90, and `sw_kp_driving_slot` the
+day's mean. Open the release in the group application and *Sign & seal* names
+nothing left in the checks, only the sign-offs. Solar 1.0 was sealed and taken
+in, and intake refused it whole for two things the application did not then
+ask — a refusal on six nodes, and every value of a node that publishes a set —
+so 1.1 answers both, and that one was built from its methods and held its own
+results: `versions.csv` says what each version learned.
 
 ## The author, in the node application
 

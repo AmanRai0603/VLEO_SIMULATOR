@@ -150,6 +150,18 @@ pub(super) fn code_text(value: &str) -> String {
 /// A case's inputs as the inline table the sheet holds: `{ h = 250000.0 }`,
 /// each value a number, the names in order.
 pub(super) fn inputs_text(value: &str) -> Result<String, Error> {
+    inputs_text_of(value, false)
+}
+
+/// The same, for a case the node must refuse, where an input may be what no
+/// node takes: not a number, or infinite. Every generated node refuses one at
+/// its door, and a case saying so is evidence of that refusal, so it goes in
+/// as written: `nan`, `inf` and `-inf`, TOML's own spellings.
+pub(super) fn refused_inputs_text(value: &str) -> Result<String, Error> {
+    inputs_text_of(value, true)
+}
+
+fn inputs_text_of(value: &str, refused: bool) -> Result<String, Error> {
     let v = value.trim();
     let doc: toml::Value = format!("x = {v}").parse().map_err(|_| {
         Error::new(
@@ -172,15 +184,32 @@ pub(super) fn inputs_text(value: &str) -> Result<String, Error> {
                     format!("the input «{k}» is not a number"),
                 )
             })?;
-        if !n.is_finite() {
+        if !n.is_finite() && !refused {
             return Err(Error::new(
                 ErrorKind::Refused,
-                format!("the input «{k}» is not finite"),
+                format!(
+                    "the input «{k}» is not finite. Only a case the node must refuse may give \
+                     one, to show the node refuses it"
+                ),
             ));
         }
-        parts.push(format!("{k} = {n:?}"));
+        parts.push(format!("{k} = {}", toml_number(n)));
     }
     Ok(format!("{{ {} }}", parts.join(", ")))
+}
+
+/// A number as TOML writes it. Rust's `{:?}` says `NaN` and `inf`, which TOML
+/// does not read; these are the spellings it does.
+pub(crate) fn toml_number(n: f64) -> String {
+    if n.is_nan() {
+        "nan".into()
+    } else if n == f64::INFINITY {
+        "inf".into()
+    } else if n == f64::NEG_INFINITY {
+        "-inf".into()
+    } else {
+        format!("{n:?}")
+    }
 }
 
 /// Whether a value is one this field may hold. `normalise` without the value.

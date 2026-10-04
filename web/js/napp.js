@@ -19,7 +19,7 @@
 
 import { $, esc } from './dom.js';
 import { initDepth } from './depth.js';
-import { loadGroup } from './gmodel.js';
+import { loadGroup, resultColumns } from './gmodel.js';
 import { checkGroup } from './gcheck.js';
 import { nodePage, mountFigures, mountResults, wireUp, wireAlgorithm, wireCode, findingsList, NODE_TABS, md, wiringSvg } from './gview.js';
 import { sections } from './md.js';
@@ -394,7 +394,10 @@ async function pagePseudocode(host) {
       : '<p class="muted small">Each let and return line appears here as an equation.</p>';
     const lint = lintPseudocode(text, ins.map(i => i.name), eqs);
     // The language's own reading — the one the developer's tools make.
-    const r = await readMethod(text, ins, c.unit);
+    // A node that publishes several values names each member in its results' answer.<member> columns.
+    const members = resultColumns((node().files || {})['results/isolation.csv']).answers
+      .filter(a => a.name.startsWith('answer.')).map(a => ({ name: a.name.slice(7), unit: a.unit }));
+    const r = await readMethod(text, ins, c.unit, members);
     if (my !== seq) return;
     const found = (r ? [r.error ? ['error', r.error] : null].concat(r.diags.map(d => [d.severity === 'note' ? 'note' : d.severity, (d.line ? 'line ' + d.line + ': ' : '') + d.msg])).filter(Boolean) : [])
       .concat(lint.filter(l => !r || l[0] !== 'error'));

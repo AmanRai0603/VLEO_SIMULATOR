@@ -165,8 +165,8 @@ def check():
             g.wait_for_timeout(1500)
             go(g, '#/checks', 900)
             t = g.inner_text('#gmain')
-            step('the solar release opens, and names what a person must still decide',
-                 'sw_band_confidence is declared, so it needs a value' in t and 'sw_kp_driving_slot is declared, so it needs a value' in t,
+            step('the solar release opens, and its checks find nothing that stops a seal',
+                 'No errors.' in t,
                  t.split('\n')[4] if len(t.split('\n')) > 4 else '')
             go(g, '#/node/sw_uncertainty_growth/algorithm', 900)
             step('its pseudocode is shown as equations', g.locator('.galgo-row math').count() >= 2)

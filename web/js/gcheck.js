@@ -182,7 +182,10 @@ export async function checkGroup(model, spec) {
       }
       for (const e of pseudocodeEquations(code, n.row.output)) for (const p of e.problems) add('note', n.dir + 'pseudocode.txt', 'shown as an equation with a gap: ' + p, e.line);
       // The language's own reading: every line parses and every unit agrees.
-      const r = await readMethod(code, n.inputs.map(i => ({ name: i.name, unit: i.unit })), n.row.unit);
+      // The members a node publishes beside its answer are its results' answer.<member> columns.
+      const members = resultColumns(n.files['results/isolation.csv']).answers
+        .filter(a => a.name.startsWith('answer.')).map(a => ({ name: a.name.slice(7), unit: a.unit }));
+      const r = await readMethod(code, n.inputs.map(i => ({ name: i.name, unit: i.unit })), n.row.unit, members);
       if (r && r.error) add('error', n.dir + 'pseudocode.txt', r.error);
       if (r) for (const d of r.diags) add(d.severity === 'error' ? 'error' : d.severity === 'warning' ? 'warning' : 'note', n.dir + 'pseudocode.txt', d.msg, d.line);
     }

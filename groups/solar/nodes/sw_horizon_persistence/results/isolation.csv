@@ -18,3 +18,4 @@ lead [yr],answer [1],tolerance,refuses,origin,says
 1.4976043805612593,43.7693,0.000000000001,no,hand,lead 547 days — 9493 observed pairs.
 1.998631074606434,49.6285,0.000000000001,no,hand,lead 730 days — 9310 observed pairs.
 5,49.6285,0.000000000001,no,hand,beyond the last measured lead — five years holds the two-year value rather than extrapolating.
+NaN,,,yes,hand,"a value that is not a number: the node must refuse it, as its code does"
