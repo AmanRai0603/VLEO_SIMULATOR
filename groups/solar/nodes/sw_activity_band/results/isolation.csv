@@ -1,0 +1,11 @@
+f107 [1],answer [1],tolerance,refuses,origin,says
+64,1,0.000000000001,no,paper,"the record's quietest day, 64 sfu — band 1, low."
+89.9,1,0.000000000001,no,paper,"89.9 sfu — still low, the edge is not yet reached."
+90,2,0.000000000001,no,paper,"90 sfu exactly — moderate begins AT the edge, not after it."
+129.9,2,0.000000000001,no,paper,129.9 sfu — still moderate.
+130,3,0.000000000001,no,paper,130 sfu exactly — elevated begins.
+169.9,3,0.000000000001,no,paper,169.9 sfu — still elevated.
+170,4,0.000000000001,no,paper,170 sfu exactly — high begins.
+343,4,0.000000000001,no,paper,"the record's largest day, 343 sfu — band 4, which is unbounded above."
+228.1374378829,4,0.000000000001,no,paper,"the design value this subsystem publishes, 228 sfu — band 4, the top one."
+NaN,,,yes,hand,"a value that is not a number: the node must refuse it, as every method does at its door. The code before 1.1 answered band 1 here, which no value is"

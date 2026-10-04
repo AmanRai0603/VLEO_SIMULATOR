@@ -374,10 +374,11 @@ pub(crate) fn array_rows(sh: &Sheet, a: &Array) -> Vec<Vec<(&'static str, String
                         format!("{v:?}")
                     }
                 };
+                // As TOML writes a number: a refusal may give one that is not.
                 let inputs = c
                     .inputs
                     .iter()
-                    .map(|(k, v)| format!("{k} = {v:?}"))
+                    .map(|(k, v)| format!("{k} = {}", super::save::toml_number(*v)))
                     .collect::<Vec<_>>()
                     .join(", ");
                 vec![
@@ -389,6 +390,22 @@ pub(crate) fn array_rows(sh: &Sheet, a: &Array) -> Vec<Vec<(&'static str, String
                     ),
                     ("tolerance", num(c.tolerance)),
                     ("inputs", format!("{{ {inputs} }}")),
+                    (
+                        "also",
+                        if c.also.is_empty() {
+                            String::new()
+                        } else {
+                            format!(
+                                "{{ {} }}",
+                                c.also
+                                    .iter()
+                                    .map(|(k, v)| format!("{k} = {v:?}"))
+                                    .collect::<Vec<_>>()
+                                    .join(", ")
+                            )
+                        },
+                    ),
+                    ("origin", c.origin.clone()),
                 ]
             })
             .collect(),

@@ -1,0 +1,14 @@
+# Transcribed from crates/vleo-mod-solar/nodes/sw_design_safe_duration/model.rs (HOLE 1 and its guards) — the method the code already runs.
+# sw_storm_return_level's own fit read backwards (bundles/solar-weather@2026.09.14, noaa_swpc): Ap(T) = A + B ln(T) inverts to T = exp((Ap - A) / B).
+const a = 92.515531 [1]    # intercept of the storm return fit
+const b = 40.926516 [1]    # slope per ln(year)
+let years = exp((ap_design - a) / b)
+# The answer is declared in years; a year is 365.25 days (Unit::Year).
+let out : Time = years * 365.25 [d]
+if out < 0.3 * 365.25 [d] then
+  refuse "Below 0.3 years means a design level under Ap 46, beneath anything the G scale calls a storm."
+end
+if out > 3 * 365.25 [d] then
+  refuse "Above 3 years is past G3's Ap 132, the top of the declared G range."
+end
+return out

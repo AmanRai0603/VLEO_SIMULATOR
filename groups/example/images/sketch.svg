@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 200" width="320" height="200">
+  <rect width="320" height="200" fill="#fbfaf7"/>
+  <circle cx="160" cy="100" r="46" fill="#dcefee" stroke="#14807f" stroke-width="2"/>
+  <text x="160" y="104" font-family="monospace" font-size="12" text-anchor="middle" fill="#1a1a1a">Earth</text>
+  <circle cx="160" cy="100" r="80" fill="none" stroke="#61399c" stroke-width="1.5" stroke-dasharray="5 4"/>
+  <rect x="234" y="92" width="16" height="16" fill="#b5731a"/>
+  <line x1="242" y1="100" x2="206" y2="100" stroke="#1a1a1a" stroke-width="1.5" marker-end="url(#a)"/>
+  <line x1="242" y1="100" x2="242" y2="56" stroke="#22704a" stroke-width="1.5" marker-end="url(#a)"/>
+  <text x="200" y="92" font-family="monospace" font-size="10" fill="#1a1a1a">gravity</text>
+  <text x="248" y="62" font-family="monospace" font-size="10" fill="#22704a">velocity</text>
+  <defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L10,5 L0,10z" fill="#1a1a1a"/></marker></defs>
+</svg>

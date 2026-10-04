@@ -13,6 +13,10 @@ This file is reviewed like code, not like documentation. It decides what every
 change to the design goes through, so a change to it has the blast radius of a
 generator change.
 
+Before your first change, read [`docs/HOW_IT_WORKS.html`](docs/HOW_IT_WORKS.html)
+in a browser: the architecture of the codebase and how it works, end to end.
+This file is the rules. That page is how they fit together.
+
 ## What this repository is
 
 An integrated design tool for very-low-Earth-orbit spacecraft. One kernel
@@ -29,13 +33,16 @@ one answer, one folder, and one variable whose id is the row's id.
 **The team uses the tool; the developers maintain it.** A team never edits
 this repository. They set the inputs, run, keep and send results — all of it
 outside the repository, under `~/.vleo/` — and when the design itself is wrong,
-missing or unfinished, the person who knows the answer fills in **the node's
-form** (or the form for a new node) and sends it here. The browser cannot
-change a node, add one or remove one, by design: a change typed into one copy of
-the tool is a change nobody checked, implemented or released.
+missing or unfinished, the person who knows the answer sends it here in one
+of two shapes: **the node's form** (or the form for a new node), or, for a group
+that owns a part of the tree, **the group's sealed release** — the database
+file its group application assembled from every node file it keeps, signed by
+the people who wrote them (`docs/GROUP_APPS.md`). The browser cannot change a
+node, add one or remove one, by design: a change typed into one copy of the
+tool is a change nobody checked, implemented or released.
 
-So every change to the design arrives the same way, and goes through the same
-loop:
+So every change to the design arrives as a form or a sealed release, and a
+form goes through this loop:
 
     0  TAKE      cargo run -p xtask -- take <form.html> --for <author>
                  steps 1–2 and 6 in one: the form on its own branch
@@ -83,16 +90,55 @@ loop:
                  it. The team gets it in that release, and their saved case
                  carries over on its own.
 
+A sealed release goes through the same loop at the scale of a group, each
+of its computed nodes becoming the form its author would have filled. It is
+taken in on its own branch, `group/<group>-<version>` from `maintainer`, and
+the release is never edited there: a fix goes back to the group, and comes
+back as the next sealed version.
+
+    G1 TAKE IN  node tools/group_db.mjs --unpack <release.vleo> --out <folder>
+                cargo run -p xtask -- group-intake <folder> [--apply]
+                the seal checked first — every file's SHA-256 against the
+                fingerprint the group signed; then steps 1–2 for every node,
+                applied as one edit or put back whole.
+    G2 BUILD    cargo run -p xtask -- group-build <folder>
+                step 4 for every computed node, from the group's pseudocode.
+    G3 TEST     cargo run -p xtask -- group-test <folder>
+                the group's own results are the evidence of step 5: each
+                node's cases, the group as a whole through the engine, and
+                both ends of every declared range. A failure goes to the
+                group; their results and tolerances are never the thing to
+                change.
+    G4 DELIVER  cargo run -p xtask -- group-deliver <folder>
+                the test application, built from a commit on the group branch.
+    G5 ACCEPT   cargo run -p xtask -- group-accept <file> --delivery <toml>
+                the lead's answer from the group application, recorded only
+                for the exact build the group tried. A group branch merges
+                into `maintainer` only with it; then step 7.
+
 **An assistant may help at step 4, and anywhere a developer uses one for
 ordinary engineering** — the generators, the daemon, the faces, the tests. It
 is released on a change only after the form has passed the check at step 1,
 and it works to every rule in this file. There is no roster of specialised
 agents: the checks enforce the rules, not a prompt. What no assistant may do is
 **supply a relation** — intake refuses a form whose relation an assistant
-filled, and relation stamping refuses a checkout whose `git config user.name`
-is an assistant's. `fill --by --model` records who wrote each hole, so a
-significant one written twice by different model families can be compared
-with `xtask differential`.
+filled, group intake refuses a node whose declaration says an assistant
+supplied its method or results (or says nothing), and relation stamping
+refuses a checkout whose `git config user.name` is an assistant's. `fill --by
+--model` records who wrote each hole, so a significant one written twice by
+different model families can be compared with `xtask differential`.
+
+**Transcribing is not supplying.** An assistant may copy a relation a person
+already wrote — their code, their paper, the design as it stands — into
+pseudocode, when the node says so: its declaration reads `transcribed`, names
+the source it was copied from, and names the person who read the copy against
+that source and signs it as theirs. The relation was a person's before the
+assistant touched it, and is a person's again once they sign. Intake takes a
+`transcribed` node with no source or no signature as one an assistant
+supplied, and the method checker runs the copy on its author's own cases,
+which came from outside it (rule 2). A transcription is reviewed at H1b like
+any relation; the signature does not replace the review
+([`CONTRIBUTING.md`](CONTRIBUTING.md)).
 
 ## The five rules that do not bend
 
@@ -192,6 +238,11 @@ results, the manual, figures and these documents are all held to it by check.
                                             what is blocked by a named row
     cargo run -p xtask -- reach             where each answer goes, and which
                                             reach no KPI closure
+    cargo run -p xtask -- catalogue [<group>]
+                                            what each group publishes to the
+                                            others, and who reads each row
+    cargo run -p xtask -- impact <node|group>
+                                            which other groups a change reaches
     cargo run -p xtask -- gap               what the sheets promised and
                                             nothing covers
     cargo run -p xtask -- derisk            the de-risking narrative, regenerated
@@ -202,6 +253,34 @@ results, the manual, figures and these documents are all held to it by check.
                                             with no tool running (docs/LESSONS.md)
     cargo run -p xtask -- kit               the tool for the team, without the
                                             repository (docs/SHARING.md)
+    cargo run -p xtask -- group-app [--check]
+                                            web/group.html and web/node.html, the
+                                            pages a group keeps its database files
+                                            in (docs/GROUP_APPS.md), and the folder
+                                            pattern's two documents, from
+                                            groups/SPEC.toml
+    cargo run -p xtask -- group-intake <folder> [--apply]
+                                            a group's sealed release into the
+                                            design: the seal checked, each node's
+                                            pseudocode and results taken as its
+                                            form (docs/GROUP_APPS.md)
+    cargo run -p xtask -- group-build <folder>
+                                            every computed node of a taken-in
+                                            release, built from its method
+    cargo run -p xtask -- group-test <folder>
+                                            the group against its own results:
+                                            its cases, its group results through
+                                            the engine, the ends of its ranges
+    cargo run -p xtask -- group-deliver <folder>
+                                            the test application for the group,
+                                            with what it holds and what to try
+    cargo run -p xtask -- group-accept <file.accept.toml>
+                                            the group's answer to its test
+                                            application, recorded on its branch;
+                                            only an accepted build merges
+    cargo run -p xtask -- group-export <group>
+                                            a group's folder, written from the tree,
+                                            for the group to start from
     cargo run -p xtask -- take <form.html> --for <author>
                                             a form onto its own branch, applied,
                                             tested, committed, pushed
@@ -210,6 +289,9 @@ results, the manual, figures and these documents are all held to it by check.
     cargo run -p xtask -- queue             every form branch and its stage
     cargo run -p xtask -- ship <version>    the release branch, stamped and
                                             proved (docs/roles/maintainer.html)
+    cargo run -p xtask -- design [--check <file>]
+                                            design.vleo: the tree as the one file a
+                                            kit carries, or a file held to the tree
     cargo run -p xtask -- guides            the three role guides, from the manual
     cargo run -p xtask -- method <node>     the node's method, run on its author's
                                             cases (docs/PSEUDOCODE.md)

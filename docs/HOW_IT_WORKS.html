@@ -1,0 +1,1158 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>How VLEO Works</title>
+<!--
+  docs/HOW_IT_WORKS.html — the architecture of this codebase and how it works,
+  end to end, for anyone who will develop, maintain or use it. One file, no
+  build step; open it from the repository in any browser, offline included
+  (the fonts fall back to the system's own).
+
+  The crate map, the command list and the route list are data measured from
+  the repository (Cargo.toml files, docs/PIPELINE.md, contract/routes.toml) on
+  1 October 2026, at release 0.4.0. The last chapter says how to measure every
+  number on this page again.
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;800&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap">
+<style>
+/* Layout: a field manual — a sticky bar with the depth switch, a chapter rail
+   on wide screens, one reading column near 68 characters, wide figures where
+   the subject needs room. The palette is the tool's own (web/app.css): amber =
+   what a thing feeds, violet = what feeds it, green = holds / both, teal = the
+   engine. */
+:root {
+  --paper: #fbfaf7; --card: #ffffff; --ink: #1a1a1a; --ink-2: #4b4b4b; --ink-3: #7c7a73;
+  --rule: #ddd8cd; --rule-2: #ece8de;
+  --out: #b5731a; --out-pale: #f6e9d8;
+  --in: #61399c; --in-pale: #ece5f7;
+  --both: #22704a; --both-pale: #dfeee6;
+  --teal: #14807f; --teal-pale: #dcefee;
+  --bad: #a83a2c; --bad-pale: #f6e1dd;
+  --on-accent: #ffffff;
+  --display: "Archivo", "Helvetica Neue", Arial, sans-serif;
+  --body: "IBM Plex Sans", -apple-system, "Segoe UI", Roboto, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --measure: 68ch;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --paper: #141310; --card: #1e1d19; --ink: #ecebe6; --ink-2: #b8b5ad; --ink-3: #8f8c84;
+  --rule: #3a382f; --rule-2: #2e2c27;
+  --out: #d18a2b; --out-pale: #3a2c14; --in: #a98ae0; --in-pale: #2a2340;
+  --both: #4fa87a; --both-pale: #17301f; --teal: #3cb3b1; --teal-pale: #123230;
+  --bad: #e07a6a; --bad-pale: #3a1d18; --on-accent: #141310; color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --paper: #141310; --card: #1e1d19; --ink: #ecebe6; --ink-2: #b8b5ad; --ink-3: #8f8c84;
+  --rule: #3a382f; --rule-2: #2e2c27;
+  --out: #d18a2b; --out-pale: #3a2c14; --in: #a98ae0; --in-pale: #2a2340;
+  --both: #4fa87a; --both-pale: #17301f; --teal: #3cb3b1; --teal-pale: #123230;
+  --bad: #e07a6a; --bad-pale: #3a1d18; --on-accent: #141310; color-scheme: dark; }
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; background: var(--paper); color: var(--ink); font: 16px/1.62 var(--body); }
+a { color: var(--in); text-underline-offset: 3px; }
+a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, [tabindex]:focus-visible {
+  outline: 2px solid var(--out); outline-offset: 2px; }
+code, kbd { font-family: var(--mono); font-size: .88em; }
+code { background: var(--rule-2); padding: 1px 5px; border-radius: 3px; overflow-wrap: anywhere; }
+pre { font-family: var(--mono); font-size: 13px; line-height: 1.55; background: var(--card); border: 1px solid var(--rule);
+  border-radius: 4px; padding: 12px 14px; overflow-x: auto; margin: 0; white-space: pre; }
+pre code { background: none; padding: 0; overflow-wrap: normal; }
+h1, h2, h3 { font-family: var(--display); text-wrap: balance; letter-spacing: -.01em; margin: 0; }
+h1 { font-weight: 800; font-size: clamp(2.1rem, 5.4vw, 3.6rem); line-height: 1.04; }
+h2 { font-weight: 800; font-size: clamp(1.45rem, 3vw, 2rem); line-height: 1.15; }
+h3 { font-weight: 600; font-size: 1.08rem; line-height: 1.3; }
+p { margin: 0; }
+ul, ol { margin: 0; }
+.eyebrow { font-family: var(--mono); font-size: 12.5px; letter-spacing: .14em; text-transform: uppercase; color: var(--out); }
+.muted { color: var(--ink-2); }
+.small { font-size: 14px; }
+
+/* ---- the bar ---- */
+.bar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; background: var(--paper); border-bottom: 1px solid var(--rule); }
+.bar-in { max-width: 1260px; margin: 0 auto; padding: 10px 20px; display: flex; flex-wrap: wrap; gap: 8px 18px; align-items: center; justify-content: space-between; }
+.brand { font-family: var(--mono); font-size: 12.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-2); }
+.brand b { color: var(--ink); font-weight: 600; }
+.depthbox { display: flex; gap: 10px; align-items: center; }
+.depth-label { font: 12px var(--mono); color: var(--ink-3); }
+.depth { display: inline-flex; border: 1px solid var(--rule); border-radius: 20px; overflow: hidden; }
+.depth button { font: 500 13px var(--mono); background: none; border: 0; padding: 5px 11px; color: var(--ink-2); cursor: pointer; }
+.depth button[aria-pressed="true"] { background: var(--teal); color: var(--on-accent); }
+
+/* depth: d-l = Learn only, d-lr = Learn and Read; everything else for all three */
+:root[data-depth="read"] .d-l, :root[data-depth="expert"] .d-l, :root[data-depth="expert"] .d-lr { display: none !important; }
+
+/* ---- page ---- */
+.wrap { max-width: 1260px; margin: 0 auto; padding-inline: 20px; padding-block: 28px 90px; }
+.layout { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 40px; align-items: start; }
+.rail { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 64px); display: grid; gap: 1px; font-size: 13.5px; max-height: calc(100vh - 90px); overflow-y: auto; padding-bottom: 20px; }
+.rail .part { font: 500 10.5px var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--ink-3); padding: 12px 8px 4px; }
+.rail a { color: var(--ink-2); text-decoration: none; padding: 3px 8px; border-radius: 3px; display: flex; gap: 8px; }
+.rail a span { font-family: var(--mono); color: var(--ink-3); min-width: 2ch; }
+.rail a:hover { background: var(--rule-2); color: var(--ink); }
+.rail a.here { background: var(--ink); color: var(--paper); }
+.rail a.here span { color: var(--paper); }
+.chapters { display: grid; gap: 44px; min-width: 0; }
+.chapter { display: grid; gap: 18px; padding-bottom: 44px; border-bottom: 1px solid var(--rule); scroll-margin-top: 76px; }
+.chapter:last-child { border-bottom: 0; }
+.chapter > * { min-width: 0; }
+.chapter > header { display: grid; gap: 6px; }
+.hero { display: grid; gap: 16px; }
+.lede { font-size: 1.2rem; line-height: 1.55; color: var(--ink-2); max-width: 62ch; }
+.col { max-width: var(--measure); display: grid; gap: 12px; }
+.legend { display: flex; flex-wrap: wrap; gap: 8px 16px; font-size: 13px; color: var(--ink-2); }
+
+.tag { font: 500 11px var(--mono); letter-spacing: .04em; padding: 1px 6px; border-radius: 3px; overflow-wrap: anywhere; vertical-align: 1px; }
+.t-src { background: var(--both-pale); color: var(--both); }
+.t-der { background: var(--teal-pale); color: var(--teal); }
+.t-dec { background: var(--out-pale); color: var(--out); }
+.t-ill { background: var(--rule-2); color: var(--ink-2); }
+
+.short { background: var(--both-pale); border-left: 4px solid var(--both); padding: 14px 18px; border-radius: 3px; max-width: var(--measure); }
+.short > b:first-child { font-weight: 600; }
+.short ul { margin-top: 8px; padding-left: 20px; }
+.block { display: grid; gap: 8px; max-width: var(--measure); }
+.block > * { min-width: 0; }
+.block > h3 { display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
+.lbl { font: 500 11px var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); }
+
+.you { border: 1px dashed var(--in); border-radius: 4px; padding: 12px 14px; display: grid; gap: 8px; background: var(--card); max-width: var(--measure); }
+.you label, .fieldlabel { font: 600 12.5px var(--mono); color: var(--in); letter-spacing: .03em; }
+textarea, input[type="text"], input[type="number"], input[type="search"], select {
+  font: 15px var(--body); color: var(--ink); background: var(--paper); border: 1px solid var(--rule); border-radius: 3px; padding: 7px 9px; width: 100%; }
+textarea { min-height: 84px; resize: vertical; }
+.btn { font: 500 13.5px var(--body); background: var(--ink); color: var(--paper); border: 0; border-radius: 3px; padding: 7px 13px; cursor: pointer; }
+.btn.ghost { background: none; color: var(--ink); border: 1px solid var(--rule); }
+.btn.small { font-size: 12.5px; padding: 4px 9px; }
+.row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.choices { display: grid; gap: 6px; }
+.choices label { display: flex; gap: 8px; align-items: flex-start; font-size: 15px; cursor: pointer; }
+.reveal { border-left: 3px solid var(--teal); background: var(--teal-pale); padding: 10px 14px; border-radius: 3px; }
+
+.strip { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; max-width: 1000px; }
+.strip > div { background: var(--card); border: 1px solid var(--rule); border-radius: 4px; padding: 12px; min-width: 0; }
+.strip i { display: block; margin-bottom: 6px; font: 500 11px var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); font-style: normal; }
+.contrast { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; max-width: var(--measure); }
+.contrast > div { border: 1px solid var(--rule); border-radius: 4px; padding: 12px; background: var(--card); min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.contrast .diff { grid-column: 1 / -1; background: var(--out-pale); border-color: transparent; display: block; }
+.myth { background: var(--bad-pale); border-radius: 4px; padding: 12px 14px; max-width: var(--measure); display: grid; gap: 6px; }
+.myth b { color: var(--bad); }
+.limits { border-top: 2px solid var(--out); padding-top: 10px; max-width: var(--measure); display: grid; gap: 6px; }
+.limits > b { color: var(--out); font: 600 12px var(--mono); letter-spacing: .08em; text-transform: uppercase; }
+.why { display: grid; max-width: var(--measure); border-left: 2px solid var(--in); margin-left: 40px; }
+.why div { padding: 6px 0 6px 14px; position: relative; }
+.why div::before { content: "why?"; font: 500 10.5px var(--mono); color: var(--in); position: absolute; left: -40px; top: 9px; }
+.why .floor { font-weight: 600; }
+.why .floor::before { content: "rule"; color: var(--both); }
+.analogy { display: grid; gap: 8px; max-width: var(--measure); background: var(--card); border: 1px solid var(--rule); border-radius: 4px; padding: 12px 14px; }
+.keeps { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px 14px; font-size: 14px; }
+.keeps span::before { margin-right: 6px; font-weight: 700; }
+.keeps .k::before { content: "✓"; color: var(--both); }
+.keeps .x::before { content: "✗"; color: var(--bad); }
+.tryit { background: var(--card); border: 1px solid var(--rule); border-radius: 6px; padding: 16px; display: grid; gap: 12px; max-width: 1040px; }
+.tryit > * { min-width: 0; }
+.tryit > h3 { color: var(--teal); }
+.out { font-family: var(--mono); font-size: 13.5px; padding: 10px 12px; border-radius: 4px; background: var(--paper); border: 1px solid var(--rule); white-space: pre-wrap; overflow-wrap: anywhere; }
+.verdict { font: 600 13.5px var(--mono); padding: 2px 10px; border-radius: 20px; display: inline-block; }
+.v-ok { background: var(--both-pale); color: var(--both); }
+.v-no { background: var(--bad-pale); color: var(--bad); }
+.v-wait { background: var(--rule-2); color: var(--ink-2); }
+.grid2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.grid3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.card { background: var(--card); border: 1px solid var(--rule); border-radius: 4px; padding: 14px; display: grid; gap: 6px; align-content: start; min-width: 0; }
+.card h3 { font-size: 1rem; }
+.chip { font: 500 12px var(--mono); border: 1px solid var(--rule); border-radius: 20px; padding: 2px 9px; color: var(--ink-2); background: var(--card); cursor: pointer; white-space: nowrap; }
+.chip.on { background: var(--teal); border-color: var(--teal); color: var(--on-accent); }
+.scroll { overflow-x: auto; max-width: 100%; }
+table { border-collapse: collapse; font-size: 14px; width: 100%; }
+th, td { text-align: left; vertical-align: top; padding: 7px 10px; border-bottom: 1px solid var(--rule-2); }
+th { font: 600 11.5px var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); border-bottom-color: var(--rule); }
+td.n, th.n { text-align: right; font-variant-numeric: tabular-nums; font-family: var(--mono); }
+svg text { font-family: var(--mono); }
+.diagram { background: var(--card); border: 1px solid var(--rule); border-radius: 6px; padding: 10px; overflow-x: auto; }
+.diagram svg { display: block; width: 100%; height: auto; }
+.diagram.w640 svg { min-width: 640px; }
+.diagram.w760 svg { min-width: 760px; }
+.split { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 14px; align-items: start; }
+.panelbox { background: var(--paper); border: 1px solid var(--rule); border-radius: 4px; padding: 12px 14px; display: grid; gap: 8px; min-height: 120px; align-content: start; }
+.panelbox h3 { font-size: 1.02rem; }
+.files { display: grid; gap: 2px; font-size: 13px; }
+.files div { display: grid; grid-template-columns: minmax(0, 13em) 4em minmax(0, 1fr); gap: 8px; padding: 3px 0; border-bottom: 1px solid var(--rule-2); }
+.files code { background: none; padding: 0; }
+.files .n { font-family: var(--mono); color: var(--ink-3); text-align: right; }
+.ftree { display: grid; gap: 4px; font-family: var(--mono); font-size: 13.5px; }
+.ftree button { text-align: left; background: none; border: 1px solid transparent; border-radius: 3px; padding: 4px 8px; font: inherit; color: var(--ink); cursor: pointer; display: flex; gap: 8px; align-items: baseline; }
+.ftree button:hover { border-color: var(--rule); }
+.ftree button.on { background: var(--ink); color: var(--paper); }
+.who { font: 500 10.5px var(--mono); padding: 0 6px; border-radius: 3px; }
+.who.p { background: var(--out-pale); color: var(--out); }
+.who.g { background: var(--teal-pale); color: var(--teal); }
+.who.x { background: var(--both-pale); color: var(--both); }
+.steps { display: grid; gap: 6px; counter-reset: s; margin: 0; padding: 0; list-style: none; }
+.steps li { display: grid; grid-template-columns: 28px minmax(0, 1fr); gap: 8px; align-items: start; }
+.steps li::before { counter-increment: s; content: counter(s); font: 600 12px var(--mono); background: var(--rule-2); border-radius: 50%; width: 24px; height: 24px; display: grid; place-items: center; }
+.stepper { display: grid; grid-template-columns: minmax(0, 15em) minmax(0, 1fr); gap: 14px; }
+.stepper ol { list-style: none; padding: 0; display: grid; gap: 2px; }
+.stepper li button { width: 100%; text-align: left; background: none; border: 1px solid transparent; border-radius: 3px; padding: 5px 8px; font: 14px var(--body); color: var(--ink-2); cursor: pointer; display: flex; gap: 8px; }
+.stepper li button span { font-family: var(--mono); color: var(--ink-3); }
+.stepper li button.on { background: var(--teal-pale); color: var(--ink); border-color: var(--teal); }
+.stepcard { display: grid; gap: 8px; align-content: start; }
+.stepcard .where { font: 500 12px var(--mono); color: var(--teal); }
+
+.player { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.player input[type="range"] { flex: 1 1 160px; accent-color: var(--teal); }
+.caption { font-size: 15px; min-height: 3.2em; }
+@media (prefers-reduced-motion: no-preference) {
+  .flow { stroke-dasharray: 5 6; animation: flow 1.1s linear infinite; }
+  @keyframes flow { to { stroke-dashoffset: -11; } }
+  .pulse { animation: pulse .7s ease-out; transform-box: fill-box; transform-origin: center; }
+  @keyframes pulse { 0% { transform: scale(1); } 40% { transform: scale(1.06); } 100% { transform: scale(1); } }
+}
+.nb-btn { position: fixed; right: 16px; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); z-index: 30; border-radius: 22px; box-shadow: 0 2px 10px rgba(0,0,0,.18); }
+.nb { position: fixed; right: 16px; bottom: calc(64px + env(safe-area-inset-bottom, 0px)); z-index: 30; width: min(380px, calc(100vw - 32px)); max-height: 70vh; overflow: auto;
+  background: var(--card); border: 1px solid var(--rule); border-radius: 6px; padding: 14px; display: grid; gap: 10px; box-shadow: 0 6px 24px rgba(0,0,0,.18); }
+.nb ul { padding: 0; list-style: none; display: grid; gap: 6px; }
+.nb li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px; font-size: 14px; border-bottom: 1px solid var(--rule-2); padding-bottom: 6px; }
+.nb li.done span { text-decoration: line-through; color: var(--ink-3); }
+
+@media (max-width: 960px) {
+  .layout { grid-template-columns: minmax(0, 1fr); }
+  .rail { position: static; max-height: none; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); }
+  .rail .part { grid-column: 1 / -1; }
+  .split, .stepper { grid-template-columns: minmax(0, 1fr); }
+  .grid3 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 620px) {
+  body { font-size: 15.5px; }
+  .strip, .contrast, .grid2, .grid3, .keeps { grid-template-columns: minmax(0, 1fr); }
+  .files div { grid-template-columns: minmax(0, 1fr) 3.5em; }
+  .files div span:last-child { grid-column: 1 / -1; color: var(--ink-2); }
+  .bar-in, .wrap { padding-inline: 16px; }
+  .why { margin-left: 36px; }
+}
+</style>
+</head>
+<body>
+
+<header class="bar">
+  <div class="bar-in">
+    <span class="brand"><b>VLEO design tool</b> · how the code works · 0.4.0</span>
+    <div class="depthbox">
+      <span class="depth-label" id="depth-label">depth</span>
+      <div class="depth" role="group" aria-labelledby="depth-label">
+        <button type="button" data-depth="learn" id="dp-learn" title="Questions to try before each explanation">Learn</button>
+        <button type="button" data-depth="read" id="dp-read" title="Every explanation, no exercises">Read</button>
+        <button type="button" data-depth="expert" id="dp-expert" title="The mechanism, limits and sources only">Expert</button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+<div class="layout">
+<nav class="rail" id="rail" aria-label="Chapters"></nav>
+<div class="chapters">
+
+<!-- 00 ================================================================= -->
+<section class="chapter" id="c00" data-part="The idea" data-title="At a glance">
+  <div class="hero">
+    <p class="eyebrow">VLEO integrated design tool · how the code works</p>
+    <h1>One question, one answer,<br>one place it comes from.</h1>
+    <p class="lede">This codebase answers 1,396 design questions about a very-low-Earth-orbit spacecraft. Every answer can be run, checked and traced back to the person who wrote it. This page explains how the code is built to make that true, from the sheet a person writes to the release everyone installs.</p>
+    <div class="legend">
+      <span><span class="tag t-src">sourced</span> stated in a named file of this repository</span>
+      <span><span class="tag t-der">derived</span> worked out here from sourced facts</span>
+      <span><span class="tag t-dec">declared</span> a decision this project made</span>
+      <span><span class="tag t-ill">illustrative</span> example numbers for a widget</span>
+    </div>
+  </div>
+  <div class="short"><b>In short.</b> The code is one engine with several faces. Every number is answered by one <i>row</i>, and each row is a folder. A person writes one file in it, the sheet <code>node.toml</code>. Generators write everything else from it: the Rust, the tests and the page. The engine's kernel holds every formula, with no files, no clock and no drawing, so the browser, the command line, Python and C all get the same answer. A row that cannot answer refuses by name instead of guessing. A change to the design arrives as a form, passes the gate, and is released to everyone at once.</div>
+  <div class="block">
+    <h3>The whole system, one screen</h3>
+    <p class="small muted">Click a box to go to its chapter. Arrows show what feeds what.</p>
+    <div class="diagram w760" id="overview"></div>
+  </div>
+  <div class="you d-l">
+    <label for="km">Before you read on, write what you think this tool does and how. One line per idea is enough. Saved in this browser only, and shown again in the last chapter.</label>
+    <textarea id="km" placeholder="Where does a number come from? Who can change it? What happens when it can't be computed?"></textarea>
+  </div>
+</section>
+
+<!-- 01 ================================================================= -->
+<section class="chapter" id="c01" data-part="The idea" data-title="The problem it solves">
+  <header><p class="eyebrow">01 · purpose</p><h2>The problem it solves</h2></header>
+  <div class="short"><b>In short.</b> A spacecraft design is thousands of numbers that read each other. Kept in spreadsheets and scripts, copies drift apart, and nobody can say which number is current, where it came from, or what changes if it does. This codebase gives every number one home, one owner, one source and one release, and it shows its working.</div>
+  <div class="block d-lr"><h3><span class="lbl">In plain words</span></h3>
+    <p>Think of a team writing one recipe book, where every page uses numbers from other pages. If everyone keeps a private copy, the copies drift. Someone changes the oven temperature, and the cake page never hears about it. This tool is the single shared book. Each page answers one question and lists the pages it reads. Nobody changes a page by scribbling on their own copy. A change goes through an editor, who checks every page that reads it, and then everyone gets the new edition together.</p></div>
+  <div class="strip"><div><i>A real case</i>The drag on the satellite depends on air density, which depends on the Sun's activity, which comes from decades of solar records.</div><div><i>As a chain</i>solar record → Ap, F10.7 → density → drag → propellant → mass → cost. Each link is a row that reads the one before.</div><div><i>As code</i>answer<sub>row</sub> = f<sub>row</sub>(answers of the rows it reads). There is one function per row, and the resolver evaluates the graph.</div></div>
+  <div class="tryit"><h3>Where the answers exist today</h3>
+    <p class="small muted">Rows per subsystem, split into published (they answer) and empty (they refuse by name). <span class="tag t-src">state = … in every node.toml, 1 Oct 2026</span></p>
+    <div class="diagram w640" id="chart-modules"></div></div>
+  <div class="limits"><b>Where this picture stops being true</b><p>A recipe book is complete on day one. This one is not. 1,076 of the 1,396 rows are still empty, 313 are published and 7 are deprecated. An empty row does not answer, and neither does any row that needs it. The tool tells you exactly how much of the design it can answer today, rather than looking complete.</p></div>
+</section>
+
+<!-- 02 ================================================================= -->
+<section class="chapter" id="c02" data-part="The idea" data-title="The words you need">
+  <header><p class="eyebrow">02 · vocabulary</p><h2>The ten words the rest of this page uses</h2></header>
+  <div class="short"><b>In short.</b> Learn these ten names first. Every later chapter uses them without stopping to explain.</div>
+  <div class="scroll"><table>
+    <thead><tr><th>Word</th><th>What it is</th><th>Where it lives</th></tr></thead>
+    <tbody>
+      <tr><td><b>row</b> (node)</td><td>One question with one answer, one folder, and one variable whose id is the row's id.</td><td><code>crates/vleo-mod-*/nodes/&lt;id&gt;/</code></td></tr>
+      <tr><td><b>sheet</b></td><td>The only hand-written file in a row's folder. It says what the row asks, what it reads, its bounds and why, and its explanation.</td><td><code>node.toml</code></td></tr>
+      <tr><td><b>layer</b></td><td>1 management · 2 the system · 3 subsystems · 4 the run. A layer reads the one below it only through a closure.</td><td><code>layers/*.toml</code></td></tr>
+      <tr><td><b>closure</b></td><td>A requirement, an achieved value and the margin between them, with a declared direction (≤ or ≥).</td><td><code>kind = "required"</code> / <code>"achieved"</code></td></tr>
+      <tr><td><b>case</b></td><td>The inputs one run is evaluated at, one value for each declared input.</td><td><code>vleo-bus</code>; saved under <code>~/.vleo/</code></td></tr>
+      <tr><td><b>kernel</b></td><td>Every formula in the system, with no files, no clock and no drawing.</td><td><code>crates/vleo-core</code></td></tr>
+      <tr><td><b>resolver</b></td><td>The one piece of code that reads the graph. It orders the rows, runs them, reuses unchanged answers, and names what is blocked.</td><td><code>vleo-core/src/resolver.rs</code></td></tr>
+      <tr><td><b>face</b></td><td>Anything that shows the engine's answers: the browser, the command line, Python, C, a saved report, the readers' folder.</td><td><code>vleo-server</code>, <code>vleo-cli</code>, <code>vleo-py</code>, …</td></tr>
+      <tr><td><b>form</b></td><td>How a change to the design arrives: one HTML file that someone fills in and sends, then <code>xtask take</code> applies it.</td><td><code>xtask form &lt;node&gt;</code></td></tr>
+      <tr><td><b>gate</b></td><td>The checks every change must pass before it is pushed.</td><td><code>cargo run -p xtask -- gate &amp;&amp; cargo test</code></td></tr>
+    </tbody></table></div>
+</section>
+
+<!-- 03 ================================================================= -->
+<section class="chapter" id="c03" data-part="The code" data-title="The map of the code">
+  <header><p class="eyebrow">03 · the crates</p><h2>The map of the code</h2></header>
+  <div class="short"><b>In short.</b> The code is 34 crates in <code>crates/</code> (30 in the Rust workspace, four built outside it: the Python wheel and three WebAssembly engines), plus the <code>xtask</code> program. They sit in rings that depend inward only:
+    <code>vleo-units</code> → <code>vleo-core</code> → <code>vleo-bus</code> → 20 subsystem crates behind the <code>vleo-modules</code> facade → the faces.
+    Two crates sit beside the rings: <code>vleo-sheet</code> (everything about sheets, never linked into a run) and <code>vleo-data</code> (reference data). <code>xtask</code> is the tool that generates, checks and releases.
+    <ul><li>Ring 0 depends on nothing. Ring 1 holds every formula.</li><li>A face depends on the bus and the facade, never on a subsystem.</li><li><code>xtask graph</code> checks that every dependency points inward, and CI runs it on every pull request.</li></ul></div>
+  <div class="you d-l"><label for="p03">Guess first: the browser's server needs a drag number. Should <code>vleo-server</code> depend on <code>vleo-mod-massaero</code> directly?</label>
+    <div class="choices" data-predict="p03" data-right="b">
+      <label><input type="radio" name="p03" value="a"> Yes. It is the crate that knows about drag.</label>
+      <label><input type="radio" name="p03" value="b"> No. It asks through the facade and the bus, like every face.</label>
+    </div><button class="btn small" type="button" data-check="p03">Check</button>
+    <div class="reveal" data-answer="p03" hidden>Through the facade. If a face reached into a subsystem, it could call it with its own defaults and show an answer no other face shows. With one dependency on <code>vleo-modules</code>, adding a face cannot change a result.</div></div>
+  <div class="tryit"><h3>Explore the crates</h3>
+    <p class="small muted">Click a crate. Its <span style="color:var(--in);font-weight:600">dependencies</span> light up violet and its <span style="color:var(--out);font-weight:600">dependents</span> amber, the same colours the tool's own tree view uses. The panel lists every source file, its length, and the line the file opens with. <span class="tag t-src">every Cargo.toml and every src/*.rs, 1 Oct 2026</span></p>
+    <div class="diagram w760" id="cratemap"></div>
+    <div class="row"><button class="btn small" type="button" id="cm-play">▶ Follow a request through the crates</button><span class="small muted" id="cm-cap"></span></div>
+    <div class="panelbox" id="cratepanel"></div></div>
+  <div class="why"><div>Why must dependencies point inward?</div><div>So an outer piece can be replaced or added without changing an inner one. A new face cannot alter a formula.</div><div>Why does that matter here? Two people looking at "the" drag must be looking at the same number, however they asked for it.</div><div class="floor">One kernel, one answer: a formula exists in exactly one place, <code>vleo-core::physics</code>. <span class="tag t-src">AGENTS.md rule 3</span></div></div>
+  <div class="analogy d-lr"><b>Like an onion?</b><p>Each layer touches only the one inside it, and peeling an outer layer leaves the inside unchanged.</p><div class="keeps"><span class="k">dependency points inward</span><span class="k">outer layers can be swapped</span><span class="x">an onion has no contracts between layers</span><span class="x">here the compiler refuses a wrong edge</span></div></div>
+  <div class="limits"><b>Where this picture stops being true</b><p>The facade and the server are bigger than "thin outer rings" suggests. <code>vleo-modules</code> also works out the statistics the solar figures draw (<code>record.rs</code>, 2,133 lines), and the server holds saved results (<code>results.rs</code>, 1,926 lines). They hold no formula of their own, but they are where most of the non-physics logic lives.</p></div>
+</section>
+
+<!-- 04 ================================================================= -->
+<section class="chapter" id="c04" data-part="The code" data-title="One row, opened">
+  <header><p class="eyebrow">04 · a row's folder</p><h2>One row, opened</h2></header>
+  <div class="short"><b>In short.</b> Every row is a folder of eight files. A person writes <code>node.toml</code>. Someone outside the code supplies <code>fixtures.toml</code>, the expected answers. The generators write the other six. Inside <code>model.rs</code>, only the numbered <code>HOLE</code> blocks are hand-written code, and they call formulas in the kernel.</div>
+  <div class="tryit"><h3>Open <code>sw_ap_design</code>, file by file</h3>
+    <p class="small muted">A real row from the solar subsystem: "What daily Ap is this design built to survive?" The excerpts are from the repository, shortened with "…". <span class="tag t-src">crates/vleo-mod-solar/nodes/sw_ap_design/</span></p>
+    <div class="split"><div class="ftree" id="ftree"></div><div class="panelbox" id="fpanel"></div></div></div>
+  <div class="contrast"><div><b><code>contract.rs</code></b><span>The untyped door: <code>call(&amp;[f64], &amp;mut [f64])</code>. Values cross in SI as plain numbers, then get their types back.</span></div><div><b><code>model.rs</code></b><span>The typed inside: <code>evaluate(g_level: Ratio) -&gt; Result&lt;Ratio, Fault&gt;</code>. The hole works with quantities, never bare numbers.</span></div><div class="diff"><b>The one difference</b> is whether values carry their unit. The resolver only moves numbers; a row only does arithmetic on quantities. So a unit mistake fails to compile instead of producing a wrong answer.</div></div>
+  <div class="myth"><b>A common misreading: "I'll fix the typo in page.html."</b><p>The fix lasts until the next regeneration, and the gate's regeneration diff fails it first. Fix it in <code>node.toml</code>, or for layout in <code>web/pages/row.html</code>, the parts file every row page is printed from.</p></div>
+</section>
+
+<!-- 05 ================================================================= -->
+<section class="chapter" id="c05" data-part="The code" data-title="From sheet to code">
+  <header><p class="eyebrow">05 · generation</p><h2>From sheet to code</h2></header>
+  <div class="short"><b>In short.</b> <code>xtask docs</code> reads each sheet and writes its row's six files. <code>xtask assemble</code> writes the graph tables the engine loads. A build script in each subsystem crate wires the row folders in. The gate regenerates everything and fails if any committed file differs. A number and its reason are written once, by a person. Everything that repeats them is printed from that.</div>
+  <div class="tryit"><h3>Follow one field through the generators</h3>
+    <p class="small muted">Change the bound or its reason and watch both generated places change together. The output imitates what <code>xtask docs</code> writes for this row. <span class="tag t-src">docs/CHANGING.md §5</span> <span class="tag t-ill">re-created by this page's script</span></p>
+    <div class="grid2"><div><label class="fieldlabel" for="gen-lower">node.toml · [output] lower</label><input type="number" id="gen-lower" value="40"></div><div><label class="fieldlabel" for="gen-reason">node.toml · reason_lower</label><input type="text" id="gen-reason" value="the lowest value this relation can return is 48, at G1"></div></div>
+    <div class="diagram w640" id="genscene"></div>
+    <div class="grid2"><div><p class="fieldlabel">model.rs · written by xtask docs</p><div class="out" id="gen-rs"></div></div><div><p class="fieldlabel">page.html · written by xtask docs</p><div class="out" id="gen-page"></div></div></div></div>
+  <div class="block"><h3><span class="lbl">How it actually works</span></h3>
+    <div class="scroll"><table><thead><tr><th>Command</th><th>Reads</th><th>Writes</th><th>Code</th></tr></thead><tbody>
+      <tr><td><code>xtask docs</code></td><td>each <code>node.toml</code></td><td><code>contract.rs</code>, <code>model.rs</code> outside its holes, <code>mod.rs</code>, <code>evidence.rs</code>, <code>meta.json</code>, <code>page.html</code></td><td><code>vleo-sheet/src/emit.rs</code></td></tr>
+      <tr><td><code>xtask assemble</code></td><td>every sheet</td><td>the index, the document, and the graph tables <code>vleo-modules</code> compiles in</td><td><code>emit.rs</code>, <code>page.rs</code></td></tr>
+      <tr><td><code>build.rs</code> in each <code>vleo-mod-*</code></td><td>the <code>nodes/</code> folder</td><td>a module list in <code>OUT_DIR</code>, never committed</td><td>one script, shared</td></tr>
+      <tr><td><code>xtask variables</code> · <code>codeowners</code></td><td>every sheet</td><td><code>docs/VARIABLES.md</code> · <code>CODEOWNERS</code></td><td><code>xtask/src/release.rs</code></td></tr>
+      <tr><td><code>xtask guides</code> · <code>pipeline</code></td><td><code>docs/manual.toml</code> · the command table</td><td><code>docs/roles/*.html</code> · <code>docs/PIPELINE.md</code></td><td><code>guide.rs</code> · <code>pipeline.rs</code></td></tr>
+      <tr><td><code>xtask method-wasm</code></td><td>the method checker's sources</td><td><code>web/method.wasm.gz</code>, the checker every form carries</td><td><code>xtask/src/method.rs</code></td></tr>
+    </tbody></table></div></div>
+  <div class="why"><div>Why does each generated file carry <code>SHEET_HASH</code>?</div><div>So a face can tell whether the page and the code came from the same sheet.</div><div>What happens if they differ? The face refuses to run rather than show a page that describes a different relation.</div><div class="floor">A stale answer shown as current is worse than no answer. <span class="tag t-src">model.rs: "A face carrying a different one refuses to run"</span></div></div>
+  <div class="limits"><b>Where this picture stops being true</b><p>The holes are hand-written. A computed row's hole holds a few typed lines composing kernel formulas, written with <code>xtask fill</code> or translated from the author's method by <code>xtask build-node</code>. Because they are hand-written, they are numbered, attributed (<code>--by</code>, <code>--model</code>), and checked: the splice and the gate refuse the standard library's maths inside one, and review holds the rule that a formula belongs in the kernel.</p></div>
+</section>
+
+<!-- 06 ================================================================= -->
+<section class="chapter" id="c06" data-part="The code" data-title="Inside a run">
+  <header><p class="eyebrow">06 · the engine at work</p><h2>Inside a run</h2></header>
+  <div class="short"><b>In short.</b> A run takes a case and returns an answer for every row it reaches. The resolver computes the order from the graph; nobody writes it down. It hands each row its inputs as plain SI numbers through the row's <code>call</code> adapter, keeps every answer in a fixed store, and reuses a row's answer only when nothing it depends on has changed. A row that faults stops its readers, and the run prints "<i>n</i> ran, <i>m</i> blocked" with every blocked row named.</div>
+  <div class="tryit"><h3>Watch one run, from a click to a number</h3>
+    <p class="small muted">Press play, or step through. Each step names the files that do the work. <span class="tag t-src">resolver.rs · value.rs · credibility.rs · vleo-server</span> <span class="tag t-ill">three example rows</span></p>
+    <div class="diagram w760" id="runscene"></div>
+    <div class="player"><button class="btn small" type="button" id="run-play">▶ Play</button><button class="btn small ghost" type="button" id="run-prev">← step</button><button class="btn small ghost" type="button" id="run-next">step →</button><input type="range" id="run-scrub" min="0" max="9" value="0" aria-label="Step of the run"><span class="chip" id="run-n"></span></div>
+    <div class="stepcard" id="runcard"></div></div>
+  <div class="tryit"><h3>A refusal is never a substitution</h3>
+    <p class="small muted">A toy graph of six rows. Untick a row to make it empty, and watch every row that reads it refuse by name. <span class="tag t-ill">toy graph</span> <span class="tag t-src">AGENTS.md rule 5</span></p>
+    <div class="row" id="rs-toggles"></div>
+    <div class="row"><button class="btn small" type="button" id="rs-play">▶ Run it, one row at a time</button></div>
+    <div class="diagram w640" id="rs-graph"></div><div class="out" id="rs-out"></div></div>
+  <div class="contrast"><div><b>Reuse keyed on the case</b><span>Same inputs give the same answer, so cache by the inputs.</span><span class="small muted">But rewrite a row's arithmetic without changing its interface, and the cache hands back yesterday's number as if it were current.</span></div><div><b>Reuse keyed on the chain hash</b><span>Every row the run reached, each one's implementation content and outputs, and the case.</span><span class="small muted">Change a hole's code and every answer downstream is recomputed.</span></div><div class="diff"><b>The one difference</b> is whether the code itself is part of the key. Leaving it out is exactly the defect this system exists to prevent. <span class="tag t-src">vleo-core/src/resolver.rs</span></div></div>
+  <div class="why"><div>Why can't the kernel call <code>f64::cos</code>?</div><div>Because the kernel crates are <code>no_std</code>, where it does not exist. The compiler refuses.</div><div>Why <code>no_std</code>? So no file, clock or platform maths library can leak into a formula. The same kernel runs in the browser as WebAssembly, on a laptop, and on a target with no allocator.</div><div class="floor">The same inputs give the same bits on every face, using <code>vleo_units::pmath</code>, the one implementation of every transcendental function. <span class="tag t-src">AGENTS.md rule 4 · vleo-units/src/pmath.rs</span></div></div>
+  <div class="limits"><b>Where this picture stops being true</b><p>A run is not always a straight line. Some subsystems close a loop: thrust needs available power, and power needs the thrust demand. A loop is declared as data in the case and iterated by the resolver. No row ever calls another, which is why such a loop never forces two subsystems into one crate.</p></div>
+</section>
+
+<!-- 07 ================================================================= -->
+<section class="chapter" id="c07" data-part="The code" data-title="Closures">
+  <header><p class="eyebrow">07 · the contract between layers</p><h2>Closures, and which way a requirement binds</h2></header>
+  <div class="short"><b>In short.</b> Between two layers, only a closure crosses: a requirement, an achieved value and the margin between them. Every requirement declares its <b>sense</b>. With <code>&lt;=</code> the achieved value must stay under the bound; with <code>&gt;=</code> it must reach it. The sense is never defaulted, because the same number read the wrong way gives a comfortable margin to a spacecraft that is about to fail.</div>
+  <div class="contrast"><div><b>"The design sustains Ap 200"</b><span>The worst sky the design can survive. It closes when the achieved storm level stays <b>under</b> 200.</span><code>sense = "&lt;="</code></div><div><b>"The design needs Ap 200"</b><span>Something the design must reach. It closes when the achieved value is <b>at least</b> 200.</span><code>sense = "&gt;="</code></div><div class="diff"><b>The one difference</b> is the direction: same number, same unit, opposite verdicts. <span class="tag t-src">AGENTS.md</span></div></div>
+  <div class="tryit"><h3>A closure, read both ways</h3>
+    <p class="small muted">The achieved value 158.4 is the record's five-year return level of daily Ap, from <code>sw_ap_design</code>'s sheet <span class="tag t-src">node.toml</span>. The requirement of 200 is <span class="tag t-ill">illustrative</span>.</p>
+    <div class="grid3">
+      <div><label class="fieldlabel" for="cl-req">required</label><input type="number" id="cl-req" value="200" step="1"></div>
+      <div><label class="fieldlabel" for="cl-ach">achieved</label><input type="number" id="cl-ach" value="158.4" step="0.1"></div>
+      <div><label class="fieldlabel" for="cl-sense">sense</label><select id="cl-sense"><option value="le">&lt;= stay under</option><option value="ge">&gt;= reach at least</option></select></div>
+    </div>
+    <div class="out" id="cl-out"></div></div>
+  <div class="you d-l"><label for="rb07">Work it yourself: required 120, sense ≤, achieved 131. What is the margin, and does it close?</label><div class="row"><input type="number" id="rb07" step="0.1" style="max-width:160px" placeholder="margin"><button class="btn small" type="button" id="rb07-go">Check</button></div><div class="out" id="rb07-out" hidden></div></div>
+  <div class="block"><h3><span class="lbl">How it actually works</span></h3>
+    <p>A requirement is any row of <code>kind = "required"</code>, <b>or</b> any row a closure reads as its <code>req</code> binding. The second part comes from the graph, not from a naming convention, because a folder rename can dodge a convention but not a contract edge. Gate check <b>7d</b> refuses a requirement with no sense. Check <b>7e</b> refuses a closure whose hole applies <code>Sense::AtLeast</code> when the sheet says <code>&lt;=</code>, or the other way round, because two statements of one fact drift. <span class="tag t-src">AGENTS.md · crates/vleo-sheet/src/gate.rs</span></p></div>
+  <div class="myth"><b>A common misreading: "a positive margin is safe."</b><p>A margin means nothing without its sense. Most closures are a promise: a subsystem must reach what it was asked for (≥). The environment is not promised, because nobody builds the Sun. So a solar requirement is the worst sky the design can sustain, and it closes when the achieved sky stays under it (≤).</p></div>
+</section>
+
+<!-- 08 ================================================================= -->
+<section class="chapter" id="c08" data-part="The code" data-title="Reference data">
+  <header><p class="eyebrow">08 · data</p><h2>Reference data: never fetched during a run</h2></header>
+  <div class="short"><b>In short.</b> Solar records, coefficients and validated cases arrive as named, versioned, immutable <b>bundles</b>, each with a manifest and a content hash, plus a lockfile of what is installed. One explicit sync puts them on disk. A run either has verified data on disk or refuses to start. It never fetches, waits, retries or silently falls back. A campaign of a million cases makes zero network calls. <span class="tag t-src">crates/vleo-data/src/lib.rs</span></div>
+  <div class="tryit"><h3>Will this run start?</h3>
+    <div class="grid2"><div><label class="fieldlabel" for="bd-state">the solar-weather bundle on disk</label><select id="bd-state"><option value="ok">installed, hash verified</option><option value="bad">installed, hash does not match</option><option value="none">not installed</option><option value="stale">verified, but older than its stale-after date</option></select></div><div><label class="fieldlabel" for="bd-net">the network</label><select id="bd-net"><option value="up">up</option><option value="down">down (air-gapped)</option></select></div></div>
+    <div class="out" id="bd-out"></div></div>
+  <div class="scroll"><table><thead><tr><th></th><th>Reference data</th><th>Your inputs and results</th></tr></thead><tbody>
+    <tr><td>is</td><td>solar drivers, coefficients, fitted biases, validated cases</td><td>the case you set, the runs you keep</td></tr>
+    <tr><td>changes</td><td>slowly, by publishing a new bundle version</td><td>every time you work</td></tr>
+    <tr><td>lives in</td><td>versioned bundles, synced to a local store</td><td><code>~/.vleo/</code>, written whole or not at all</td></tr>
+    <tr><td>if the network is down</td><td>everything works on what is already local</td><td>nothing changes</td></tr>
+  </tbody></table></div>
+  <div class="limits"><b>Where this picture stops being true</b><p>Bundles are CSV for now, so anyone can read them in a text editor. The intended format is columnar (Parquet, read in process). It is not built yet, deliberately: it waits for the first bundle that does not fit comfortably in memory as text.</p></div>
+</section>
+
+<!-- 09 ================================================================= -->
+<section class="chapter" id="c09" data-part="The faces" data-title="Faces and the contract">
+  <header><p class="eyebrow">09 · faces</p><h2>One engine, several faces</h2></header>
+  <div class="short"><b>In short.</b> All of these reach the same engine through the bus and the facade:
+    <ul><li>the browser, served by <code>vleo-server</code> on 127.0.0.1, so the page and the engine share one origin with no internet needed;</li><li>the command line;</li><li>the Python wheel;</li><li>the C ABI;</li><li>the readers' folder, which runs the kernel as WebAssembly;</li><li>the node form's own checker, also WebAssembly.</li></ul>
+    The browser talks to the engine only through the routes written down in <code>contract/</code>, each with a schema and a recorded example.</div>
+  <div class="tryit"><h3>Pick a face and follow it to the engine</h3>
+    <div class="row" id="face-buttons"></div><div class="out" id="face-out"></div></div>
+  <div class="tryit"><h3>The routes the browser can call</h3>
+    <p class="small muted">Every route in <code>contract/routes.toml</code>. Type to filter. A route the manual lists but the contract does not, or a field the engine sends but the schema does not declare, fails <code>the_contract_holds</code>. Within <code>/v1</code>, a change may only add. <span class="tag t-src">contract/routes.toml · contract/README.md</span></p>
+    <input type="search" id="route-q" placeholder="filter, e.g. results, run, form" aria-label="Filter routes">
+    <div class="scroll"><table id="routes"></table></div></div>
+  <div class="block"><h3><span class="lbl">How it actually works</span></h3>
+    <p>A mock engine (<code>tools/mock_engine.py</code>) serves the recorded examples, so a check proves the page works with no Rust running. The Python wheel starts the same <code>vleo-server</code> inside <code>python.exe</code>, so the browser and Python cannot disagree. The C header is generated from the same declarations as every other binding.</p></div>
+</section>
+
+<!-- 10 ================================================================= -->
+<section class="chapter" id="c10" data-part="The faces" data-title="The browser">
+  <header><p class="eyebrow">10 · the web face</p><h2>The browser: modules that only draw</h2></header>
+  <div class="short"><b>In short.</b> The page is plain ES modules in <code>web/js/</code>, styled by <code>web/app.css</code> and set in the bundled IBM Plex Mono. It has no framework and no build step. Every page the tool writes as a file is <code>web/page.html</code> with its slots filled, from named parts in <code>web/pages/</code>. The page computes nothing: it asks the engine and draws the answer.</div>
+  <div class="tryit"><h3>The modules</h3>
+    <p class="small muted">Click one to see what it is for. <span class="tag t-src">the opening comment of each web/js/*.js</span></p>
+    <div class="row" id="webmods"></div><div class="out" id="webmod-out"></div></div>
+  <div class="block"><h3><span class="lbl">How it actually works</span></h3>
+    <p><code>app.js</code> boots the page, routes and attaches every event listener. <code>state.js</code> holds the one state and the graphs derived from it. Views read that state: the tree, paths and matrix columns, a node, the results, the manual. <code>run.js</code> calls <code>/v1/run</code> and <code>/v1/sweep</code>. <code>figures.js</code> plays any figure the engine describes. <code>depth.js</code> switches the Learn · Read · Expert depth on every page that has it.</p></div>
+  <div class="myth"><b>A common misreading: "the chart works out the percentile."</b><p>Since release 0.4.0, no panel computes a statistic of its own. The engine works out every number a figure draws (<code>vleo-modules/src/record.rs</code>), and the page only draws it. <code>vleo figure &lt;id&gt;</code> and Python's <code>vleo.figure</code> return the same numbers.</p></div>
+</section>
+
+<!-- 11 ================================================================= -->
+<section class="chapter" id="c11" data-part="The faces" data-title="Pictures">
+  <header><p class="eyebrow">11 · figures</p><h2>Pictures are data first</h2></header>
+  <div class="short"><b>In short.</b> A figure is a description the engine produces: a <code>figure::Kind</code> (line, scatter, bar, heatmap, animation or scene3d) with its series, axes and words. <code>web/js/figures.js</code> plays it. 14 panels are declared in <code>panels/*.toml</code>. A browser check proves each one renders, moves, reads what it declares, and matches its approved picture to the pixel.</div>
+  <div class="strip"><div><i>A real case</i>"Days above the G-level bound, in how many runs" is a count someone could argue with.</div><div><i>As a chain</i>engine → figure description (JSON) → player → pixels. Any argument is about the engine's numbers.</div><div><i>As code</i>pixels = draw(describe(engine(case))). Only <code>engine</code> holds statistics.</div></div>
+  <div class="myth"><b>A common misreading: "recording a reference picture approves it."</b><p>Recording only stores what the page drew. A person must look and confirm. <code>panels/REVIEW.md</code> lists which pictures are confirmed. <span class="tag t-src">docs/CHANGING.md §3</span></p></div>
+</section>
+
+<!-- 12 ================================================================= -->
+<section class="chapter" id="c12" data-part="Keeping it right" data-title="Evidence and the gate">
+  <header><p class="eyebrow">12 · checks</p><h2>Evidence from outside, and the gate</h2></header>
+  <div class="short"><b>In short.</b> Nearly every check compares the code with itself. Fixtures are the exception: expected values from <i>outside</i> this code, each naming where it came from. The gate refuses a fixture whose provenance is <code>self-snapshot</code> or <code>agent-generated</code>. A fixture disagreement is a physics disagreement. It goes to the row's owner, and the tolerance is never what changes.</div>
+  <div class="tryit"><h3>Would the gate accept this fixture?</h3>
+    <div class="row"><label class="fieldlabel" for="pv">provenance</label><select id="pv" style="max-width:260px"><option>published-source</option><option>independent-derivation</option><option>independent-tool</option><option>physical-bound</option><option>self-snapshot</option><option>agent-generated</option></select></div>
+    <div class="out" id="pv-out"></div></div>
+  <div class="tryit"><h3>The best evidence each computing row has</h3>
+    <p class="small muted">Of the 190 specified rows that compute. <span class="tag t-src">cargo run -p xtask -- status, 1 Oct 2026</span></p>
+    <div class="diagram w640" id="chart-evidence"></div></div>
+  <div class="block"><h3><span class="lbl">What CI runs on every pull request</span></h3>
+    <div class="scroll"><table><thead><tr><th>Check</th><th>What it proves</th></tr></thead><tbody>
+      <tr><td>build, generate, gate, test</td><td>formatting, lints, the build, regeneration byte for byte, CODEOWNERS, the gate, assembly, reference data, evidence, the authors' code rerun, the gap pass, the tests</td></tr>
+      <tr><td>a node built from its method</td><td>a form filled with the worked example, applied and built, end to end in a browser</td></tr>
+      <tr><td>the kernel stays no_std</td><td>no file, clock or platform maths crept into the kernel</td></tr>
+      <tr><td>the page on the mock engine</td><td>the browser works against the recorded contract, with no Rust running</td></tr>
+      <tr><td>the panels render, move and match</td><td>every panel, both colour schemes, against its approved picture</td></tr>
+      <tr><td>the readers' folder</td><td>every row page and lesson opens from a file, with the kernel answering</td></tr>
+      <tr><td>the faces outside the workspace</td><td>Python, WebAssembly and C still build</td></tr>
+      <tr><td>the profile that ships</td><td>the release build</td></tr>
+      <tr><td>the tools check themselves</td><td>every checker goes red on a deliberately broken copy</td></tr>
+      <tr><td>the changed nodes' tests are load-bearing</td><td>perturb an answer slightly, and its own tests must notice</td></tr>
+    </tbody></table></div><p class="small muted"><span class="tag t-src">.github/workflows/gate.yml</span></p></div>
+  <div class="myth"><b>A common misreading: "916 tests pass, so the numbers are right."</b><p>Most tests show the code does what the code says. Only a fixture from outside can show the code says the right thing. Today 124 of the 190 computing rows have no fixture at all.</p></div>
+</section>
+
+<!-- 13 ================================================================= -->
+<section class="chapter" id="c13" data-part="Keeping it right" data-title="How a change lands">
+  <header><p class="eyebrow">13 · change</p><h2>How a change lands</h2></header>
+  <div class="short"><b>In short.</b> <b>The team uses the tool; the developers maintain it.</b> A team member never edits the repository, and the browser cannot change a row. When the design is wrong, the person who knows fills in that row's form and sends it. <code>xtask take</code> puts it on its own branch, checks it, applies it, tests it and commits it under the author's name. The author tries a preview build and approves that exact build. Then it merges and ships. An assistant may help write code, but it never supplies a relation.</div>
+  <div class="tryit"><h3>Walk one form from arrival to release</h3>
+    <div class="row"><button class="btn small ghost" type="button" id="loop-prev">← back</button><button class="btn small" type="button" id="loop-next">next step →</button><span class="chip" id="loop-count"></span></div>
+    <div class="out" id="loop-out"></div></div>
+  <div class="block"><h3><span class="lbl">The branches</span></h3>
+    <div class="diagram w760" id="branches"></div>
+    <div class="player"><button class="btn small" type="button" id="br-play">▶ Play one change, from take to tag</button><span class="caption small" id="br-cap"></span></div>
+    <p class="small muted">Form branches are squash-merged into <code>maintainer</code>, and developer branches into <code>developer</code>. A pull request takes each into <code>main</code>. <code>developer</code> goes in with a merge commit, so the next pull request carries only new work. A release is cut from <code>main</code>. <span class="tag t-src">CONTRIBUTING.md · docs/roles/maintainer.html</span></p></div>
+  <div class="contrast"><div><b>Typed into one copy</b><span>Nobody else checked it, nobody implemented it, and the next release does not have it.</span></div><div><b>Sent as a form</b><span>Checked against every row that reads it, applied, tested, previewed, approved, then released to everyone.</span></div><div class="diff"><b>The one difference</b> is whether the change passes through the loop. That is why the browser has no edit button.</div></div>
+  <div class="why"><div>Why can't an assistant supply a relation?</div><div>A relation is confirmed by a person who has read it against its source and will own it.</div><div>Why enforce that in code and not just in a guide? A sentence in a guide is a hope. <code>intake</code> refuses a form whose relation an assistant filled, and relation stamping refuses a checkout whose git name is an assistant's.</div><div class="floor">Accountability needs a person's name on the mathematics. <span class="tag t-src">crates/vleo-sheet/src/form/who.rs</span></div></div>
+</section>
+
+<!-- 14 ================================================================= -->
+<section class="chapter" id="c14" data-part="Keeping it right" data-title="Shipping and sharing">
+  <header><p class="eyebrow">14 · releases and results</p><h2>How releases and results travel</h2></header>
+  <div class="short"><b>In short.</b> A team member's inputs and results live in <code>~/.vleo/</code>, outside the repository. A result is saved under the question it answers, so asking again finds it rather than re-running. Results can be pinned, thinned, sent as a <code>.vleo</code> file, or opened as CSV or a self-contained HTML report. A release is four files, built by CI from a commit that a merged pull request put on <code>main</code>: three kits and one Python wheel for any laptop.</div>
+  <div class="grid3">
+    <div class="card"><h3>The wheel</h3><p class="small"><code>python -m pip install vleo-0.4.0-py3-none-any.whl</code>, then <code>python -m vleo</code>. Installed and started on Windows, macOS and Linux before it is published.</p></div>
+    <div class="card"><h3>The kit</h3><p class="small">Extract it, then double-click <code>Start VLEO.exe</code> on Windows or run <code>./start.sh</code> elsewhere. The daemon finds its files beside the binary.</p></div>
+    <div class="card"><h3>The readers' folder</h3><p class="small">Every row's page and lesson, readable from a shared drive with no tool running. The kernel, compiled to WebAssembly, answers the try-it widgets.</p></div>
+  </div>
+  <div class="block"><h3><span class="lbl">How it actually works</span></h3>
+    <ol class="steps">
+      <li><span><code>xtask ship &lt;v&gt;</code> on <code>main</code> cuts <code>release/&lt;v&gt;</code>. It stamps every row version still marked <code>next</code>, sets the workspace version, regenerates, runs the gate and the tests, then commits and pushes.</span></li>
+      <li><span>Merging its pull request is the decision to release.</span></li>
+      <li><span>The <code>v&lt;v&gt;</code> tag on that merge commit starts <code>release.yml</code>. It refuses anything not on <code>main</code> or not put there by a merged pull request, checks the tag against <code>Cargo.toml</code>, builds the four files, smoke-tests the wheel, and publishes.</span></li>
+    </ol></div>
+  <div class="limits"><b>Where this picture stops being true</b><p>The kits are not signed or notarised. That needs a certificate a release engineer holds, and the workflow does not pretend to sign. Windows and macOS warn on first open. <span class="tag t-src">.github/workflows/release.yml</span></p></div>
+</section>
+
+<!-- 15 ================================================================= -->
+<section class="chapter" id="c15" data-part="Keeping it right" data-title="When something breaks">
+  <header><p class="eyebrow">15 · failure</p><h2>When something breaks</h2></header>
+  <div class="short"><b>In short.</b> The code fails loudly and stays up:
+    <ul><li>a row that cannot answer refuses by name;</li><li>a bug in one request ends that request, is logged to a crash file a person can send, and the tool keeps running;</li><li>every write of a case or result is whole or not at all.</li></ul>
+    Every command that writes prints numbered steps, leaves a trace, takes <code>--dry-run</code>, and when it stops says why, what state the files are in, and how to retry.</div>
+  <div class="scroll"><table><thead><tr><th>Something went wrong with…</th><th>Ask</th><th>It answers</th></tr></thead><tbody>
+    <tr><td>a command</td><td><code>xtask explain &lt;cmd&gt;</code></td><td>what it reads, writes and checks, how to undo it, and where its code is</td></tr>
+    <tr><td>the last writing run</td><td><code>xtask trace</code></td><td>that run, step by step, from <code>target/xtask-trace/</code></td></tr>
+    <tr><td>a row</td><td><code>xtask why &lt;node&gt;</code></td><td>every recorded version and who made it, the commits, and its gate now</td></tr>
+    <tr><td>what is blocked</td><td><code>xtask active</code> · <code>gap</code></td><td>what answers, which named row blocks the rest, and what sheets promised that nothing covers</td></tr>
+    <tr><td>a library call</td><td>the error's <code>kind()</code></td><td>Io · Missing · Malformed · Refused · Invalid · Unverified · Setting, plus the same sentence a person sees</td></tr>
+    <tr><td>the tool crashed</td><td>the crash log</td><td>one file with what happened, written whole (<code>vleo-data/src/crash.rs</code>)</td></tr>
+  </tbody></table></div>
+  <div class="myth"><b>A common misreading: "it's flaky, just re-run it."</b><p>"Flaky" is not a root cause. A failure that reproduces is real. A test is never skipped to get green, and a tolerance is never loosened to make a fixture agree. <span class="tag t-src">AGENTS.md "Testing"</span></p></div>
+</section>
+
+<!-- 16 ================================================================= -->
+<section class="chapter" id="c16" data-part="Keeping it right" data-title="The tooling">
+  <header><p class="eyebrow">16 · xtask</p><h2>The tooling: one command per step</h2></header>
+  <div class="short"><b>In short.</b> <code>cargo run -p xtask -- &lt;command&gt;</code> is the single program that generates, checks, applies forms and releases. Its commands follow a row's journey in eleven stages, from <i>form</i> to <i>release</i>, plus reports. <code>docs/PIPELINE.md</code> is generated from the same table, so it cannot disagree with the program.</div>
+  <div class="tryit"><h3>Every command</h3>
+    <p class="small muted">Pick a stage or search. <span class="tag t-src">docs/PIPELINE.md, generated from xtask/src/pipeline.rs</span></p>
+    <div class="row" id="cmd-stages"></div>
+    <input type="search" id="cmd-q" placeholder="search, e.g. hole, release, branch" aria-label="Search commands">
+    <div class="scroll"><table id="cmds"></table></div></div>
+</section>
+
+<!-- 17 ================================================================= -->
+<section class="chapter" id="c17" data-part="Check yourself" data-title="Explain it back">
+  <header><p class="eyebrow">17 · check yourself</p><h2>Explain it back</h2></header>
+  <div class="short"><b>In short.</b> If you can explain the whole codebase in five sentences to someone new, without notes, you understand it. The sentence where you stall is the chapter to read again.</div>
+  <div class="you"><label for="tb">Explain the whole codebase in five sentences, without looking back.</label><textarea id="tb" data-save="tb" style="min-height:140px"></textarea>
+    <div class="row"><button class="btn small" type="button" id="tb-check">Compare with the key points</button></div>
+    <div id="tb-out" class="reveal" hidden></div></div>
+  <div class="block d-lr"><h3><span class="lbl">One five-sentence version</span></h3><ol class="steps">
+    <li><span>Every design number is one row, written once by a person in a sheet, and its code, page and tests are generated from that sheet.</span></li>
+    <li><span>Rows sit in four layers. Only closures cross between layers: a requirement, an achieved value and a margin, each with a declared direction.</span></li>
+    <li><span>One no_std kernel holds every formula, the resolver runs the graph, and every face reaches it through the same bus. A row that cannot answer refuses by name.</span></li>
+    <li><span>A change arrives as a form, goes onto its own branch, is checked, previewed, approved by its author, merged, and shipped in one release to everyone.</span></li>
+    <li><span>Expected values come from outside the code. Reference data is synced before a run, never fetched during one. Every command says what it did and how to undo it.</span></li></ol></div>
+  <div class="block"><h3><span class="lbl">Measure this page's numbers again</span></h3>
+    <pre><code>ls -d crates/vleo-mod-*/nodes/*/ | wc -l                            # 1396 rows
+grep -h '^state' crates/vleo-mod-*/nodes/*/node.toml | sort | uniq -c   # published / empty / deprecated
+grep -c '^\[\[route\]\]' contract/routes.toml                        # routes
+ls panels/*.toml | wc -l                                             # 14 panels
+cargo run -p xtask -- status                                         # the evidence lines
+cargo run -p xtask -- graph                                          # the crate direction check</code></pre></div>
+  <div class="block"><h3><span class="lbl">Where to read next</span></h3>
+    <div class="scroll"><table><tbody>
+      <tr><td><code>AGENTS.md</code></td><td>the five rules that do not bend, the loop, every command</td></tr>
+      <tr><td><code>docs/CHANGING.md</code></td><td>how to change a row, a route, a component or an output kind</td></tr>
+      <tr><td><code>docs/NODE_AUTHORING.md</code></td><td>the sheet, field by field</td></tr>
+      <tr><td><code>docs/PSEUDOCODE.md</code></td><td>the method language a row's author writes</td></tr>
+      <tr><td><code>docs/DERISKING.md</code></td><td>beliefs, versions and the risk register</td></tr>
+      <tr><td><code>docs/EXPLAINING.md</code></td><td>how every page in the tool explains itself</td></tr>
+      <tr><td><code>docs/roles/*.html</code></td><td>the user, maintainer and developer guides</td></tr>
+    </tbody></table></div></div>
+</section>
+
+</div>
+</div>
+</main>
+
+<button class="btn nb-btn" type="button" id="nb-toggle" aria-expanded="false" aria-controls="nb">My notes <span id="nb-count"></span></button>
+<aside class="nb" id="nb" hidden aria-label="My notes">
+  <h3>What I'm not sure about yet</h3>
+  <p class="small muted">Write down anything you could not explain. Saved in this browser only. Tick it off once you can. It comes back for review two days later.</p>
+  <div class="row"><input type="text" id="nb-new" placeholder="e.g. what does the resolver do with a refused input?" aria-label="New note"><button class="btn small" type="button" id="nb-add">Add</button></div>
+  <ul id="nb-list"></ul>
+  <div class="row"><button class="btn small ghost" type="button" id="nb-quiz">Test me on one</button></div>
+  <div class="reveal" id="nb-quiz-out" hidden></div>
+</aside>
+
+<script>
+'use strict';
+const CRATES = {"vleo-bus": {"desc": "RING 2 — the wire contract. Typed messages, the case, the results and the run manifest that every face posts. A face depends on the bus and never on a module, so adding a face cannot change a result.", "deps": ["vleo-core", "vleo-units"], "files": [["src/lib.rs", 247, "RING 2 — the bus."]]}, "vleo-cli": {"desc": "FACE — the command line. Batch work, sweeps, campaigns, the self test and the diagnostic bundle. It depends on the bus and never on a module, so it cannot change a result.", "deps": ["vleo-bus", "vleo-core", "vleo-data", "vleo-modules", "vleo-server"], "files": [["src/main.rs", 1121, "`vleo` — the command-line face."]]}, "vleo-core": {"desc": "RING 1 — the kernel. Every formula in the system, the fault taxonomy, the credibility vector, the graph types and the resolver. no_std, no alloc, no I/O, no clock, no drawing.", "deps": ["vleo-units"], "files": [["src/credibility.rs", 348, "Credibility — eight factors, and the lowest one governs."], ["src/evidence.rs", 154, "Evidence — where an expected value came from, and whether it was met."], ["src/fault.rs", 204, "The fault taxonomy."], ["src/graph.rs", 367, "The graph types."], ["src/hash.rs", 81, "Deterministic hashing."], ["src/lib.rs", 49, "RING 1 — the kernel."], ["src/math/integrate.rs", 48, "Integration."], ["src/math/mod.rs", 21, "Numerical methods."], ["src/math/rootfind.rs", 87, "Root finding."], ["src/math/stats.rs", 233, "Statistics over a sample: the estimators the figures of the record read — a percentile, a correlation, a centred moving mean, a lagged correlation with the pairs behind it, Bartlett's band, and a mean"], ["src/math/table.rs", 53, "Interpolation over a fixed table."], ["src/physics/aero.rs", 192, "Free-molecular aerodynamics and gas-surface interaction."], ["src/physics/comms.rs", 136, "Communications and the link budget."], ["src/physics/cost.rs", 120, "Cost."], ["src/physics/env.rs", 608, "The space environment — and the part of it this programme lives or dies on."], ["src/physics/gnc.rs", 146, "Guidance, navigation and control."], ["src/physics/mass.rs", 216, "Mass budgets and multi-payload allocation."], ["src/physics/method.rs", 22, "Where a node's method meets the fault taxonomy."], ["src/physics/methods/mod.rs", 3, "GENERATED by `cargo xtask docs`: every node's method, translated by rule into the kernel (crates/vleo-sheet/src/method.rs). One module per node that has a method; a node without one keeps its hand-wri"], ["src/physics/mission.rs", 149, "Mission performance — coverage, revisit, latency, availability."], ["src/physics/mod.rs", 25, "The physics."], ["src/physics/orbit.rs", 271, "Orbital mechanics."], ["src/physics/payload.rs", 249, "Service payloads — optical, radar, radio-frequency geolocation, and positioning."], ["src/physics/power.rs", 141, "Electrical power."], ["src/physics/prop.rs", 222, "Propulsion — and the part of it nobody else has: air-breathing electric propulsion."], ["src/physics/thermal.rs", 90, "Thermal balance."], ["src/resolver.rs", 549, "The resolver — the only thing that reads the derivation graph."], ["src/value.rs", 103, "The value store — where a run keeps what it has computed so far."]]}, "vleo-daemon": {"desc": "FACE — the local daemon. It serves the interface assets itself at 127.0.0.1, so the page and the engine share one origin: no cross-origin negotiation, no private-network preflight, and no internet required.", "deps": ["vleo-server"], "files": [["src/main.rs", 7, "`vleo-daemon` — the local engine, serving its own interface. The whole of it is `vleo-server`, which the Python package starts too; this is the command line's door onto it."]]}, "vleo-data": {"desc": "The reference-data store: versioned immutable bundles, a lockfile, one sync mechanism and verification before use. The engine makes no network calls — data arrives by an explicit sync, before the run.", "deps": ["vleo-core"], "files": [["src/crash.rs", 230, "The crash log: when the tool hits a bug, a file a person can send."], ["src/error.rs", 68, "Why reference data could not be read, installed or used — by kind."], ["src/lib.rs", 1114, "Reference data — a package manager, not a query interface."], ["src/whole.rs", 119, "Writing a file whole: the one way the tool writes a person's data."]]}, "vleo-design": {"desc": "design.vleo — the design as one file. Every file of the tree the loader reads, written into one SQLite database by `xtask design`, and read back through the interface the folders are read through, so a kit carries one file and its pages are the folders' pages byte for byte.", "deps": ["vleo-sheet"], "files": [["src/lib.rs", 470, "`design.vleo` — the design as one file."], ["src/sha.rs", 75, "SHA-256 (FIPS 180-4), as hexadecimal."]]}, "vleo-ffi": {"desc": "FACE — the C ABI. One header, generated from the same declarations as every other binding, so MATLAB, Simulink and anything else that speaks C get the same numbers as the browser.", "deps": ["vleo-bus", "vleo-modules"], "files": [["src/lib.rs", 314, "The C application binary interface."]]}, "vleo-kernel-wasm": {"desc": "FACE — the engine for a page read without the engine. The whole kernel, compiled to WebAssembly for the readers' docs folder, so a lesson's try-it widgets are answered by the same relations the tool runs. No bindings crate: raw exports and a buffer, like the form checker.", "deps": ["vleo-bus", "vleo-modules"], "files": [["src/lib.rs", 323, "The engine, for a page read without the engine."]]}, "vleo-method-wasm": {"desc": "FACE — the method checker inside a node form. The same function intake and the gate call (vleo_sheet::method::report_toml), compiled to WebAssembly so a form opened from a file can check an author's method against their own cases before it is sent. No bindings crate: two exported functions and a buffer.", "deps": ["vleo-sheet"], "files": [["src/lib.rs", 85, "The method checker, for a node form opened from a file — and the lesson checker, for a lesson form."]]}, "vleo-mod-* (20)": {"desc": "RING 3. Twenty crates, one per layer: management, the system, and eighteen subsystems (acs, atthw, closure, envorbit, fsw, management, massaero, multipay, navod, navsense, orbmaint, payload, pointing, power, prop, solar, struct, system, thermal, ttc). Each holds its rows’ folders under nodes/, wired in by one shared build script. A subsystem crate depends only on vleo-core, so a sibling it did not declare will not build.", "deps": ["vleo-core"], "files": []}, "vleo-modules": {"desc": "The facade. Re-exports the subsystem crates, holds the graph tables generated from the sheets at build time, and implements the one NodeTable the resolver walks. It has no formula of its own.", "deps": ["vleo-bus", "vleo-core", "vleo-data", "vleo-mod-* (20)", "vleo-sheet", "vleo-units"], "files": [["src/design.rs", 207, "What the design and closure figures say about the curves they draw."], ["src/error.rs", 92, "Why a sweep, a figure or a saved result could not be made, read or kept — by kind."], ["src/figure.rs", 582, "What a result draws, described once, by the engine."], ["src/inputs.rs", 779, "The inputs a person sets, and the CSV they travel in."], ["src/lib.rs", 687, "The facade — the subsystem crates behind one dependency, and the one `NodeTable` the resolver walks."], ["src/record.rs", 2133, "The numbers the record's figures draw, worked out by the engine."], ["src/results.rs", 1729, "A saved result: what one run returned, and the inputs it ran on."], ["src/thermo.rs", 161, "What the thermosphere figure says about the temperatures it draws."]]}, "vleo-py": {"desc": "FACE — the Python wheel. It binds the same shared library the interface uses, so an analyst and a reviewer are looking at the same numbers. MATLAB reaches the engine through this wheel, out of process.", "deps": ["vleo-bus", "vleo-core", "vleo-modules", "vleo-server"], "files": [["src/lib.rs", 229, "The Python face."]]}, "vleo-server": {"desc": "The local server: the interface assets and the engine from one origin on loopback. The daemon starts it as a program; the Python package starts it inside python.exe. One server, so the two cannot disagree.", "deps": ["vleo-bus", "vleo-core", "vleo-data", "vleo-design", "vleo-modules", "vleo-sheet", "vleo-units"], "files": [["src/http.rs", 385, "HTTP on loopback: connections, the request guard, its limits, and decoding what a request carries."], ["src/inputs.rs", 315, "The saved case: its inputs read, checked, saved and reset, and the values a request sets."], ["src/json.rs", 123, "A very small JSON writer."], ["src/lib.rs", 1592, "`vleo-server` — the local engine, serving its own interface. The daemon (`vleo-daemon`) starts it as a program; the Python package (`python -m vleo`) starts it inside python.exe."], ["src/pages.rs", 593, "The files the page is made of: the shell, node pages and fragments, the manual, node forms and their check."], ["src/results.rs", 1926, "Saved results: listed, read, saved, uploaded, removed, and turned back into a case."]]}, "vleo-sheet": {"desc": "What a sheet means — read, checked, generated from and edited. One implementation, used by the generators in xtask, by the build scripts, and by the daemon for the declaration form and the manual, so no face carries a second copy that could disagree. Not linked into the engine: a run never reads a sheet. It reads the kernel, because a method may call a kernel function by name and the method checker runs that same function.", "deps": ["vleo-core", "vleo-units"], "files": [["src/derisk.rs", 801, "De-risking: why a node is what it is, and why it changed."], ["src/emit.rs", 2192, "The generators."], ["src/error.rs", 87, "Why a sheet, a form, a page or the manual could not be read, written or changed — by kind."], ["src/example.rs", 189, "THE WORKED EXAMPLE every node form can show, station by station."], ["src/form/ask.rs", 411, "The declaration form: the questions, and a sheet's answers as the faces read them."], ["src/form/blocks.rs", 933, "The declaration form: the repeated blocks: inputs, steps and assumptions, added and removed."], ["src/form/edit.rs", 535, "The declaration form: writing one field into the sheet's own text."], ["src/form/fields.rs", 568, "The declaration form: the fields: what each answer is, where it is written, and which are still empty."], ["src/form/publish.rs", 103, "The declaration form: publishing a row."], ["src/form/save.rs", 495, "The declaration form: checking an answer, saving it, and regenerating the row."], ["src/form/view.rs", 183, "The declaration form: the row's view."], ["src/form/who.rs", 99, "The declaration form: who is answering: a person, never an assistant."], ["src/form.rs", 34, "The declaration form — what a sheet still needs, and why each answer matters."], ["src/gate.rs", 1528, "The gate, and the assembly validations."], ["src/guide.rs", 370, "The three role guides — `docs/roles/{user,maintainer,developer}.html`."], ["src/lesson.rs", 563, "A lesson: `lesson.toml` beside a row's `node.toml`, written by the expert who knows the row, and drawn by the page from the component library."], ["src/lesson_form.rs", 164, "A lesson's form: one HTML file the expert who knows a row opens anywhere, fills, checks as they type, and sends back — the lesson's counterpart of a node form (see [`crate::template`])."], ["src/lib.rs", 77, "The sheet, and everything derived from it."], ["src/load.rs", 1007, "Reading the tree off disk."], ["src/manual.rs", 716, "The manual the tool shows about itself."], ["src/method/ast.rs", 167, "The method language: the syntax tree."], ["src/method/cases.rs", 493, "The method language: the author's cases, against the method."], ["src/method/check.rs", 591, "The method language: checking: names, dimensions, and that every path ends."], ["src/method/node.rs", 34, "The method language: a node's method."], ["src/method/parse.rs", 650, "The method language: reading the text: the lexer and the parser."], ["src/method/reference.rs", 137, "The method language: the reference page."], ["src/method/run.rs", 225, "The method language: running: the interpreter."], ["src/method/rust.rs", 235, "The method language: the translation into Rust."], ["src/method/spec.rs", 228, "The method language: the reference: what the language offers, as data."], ["src/method/tests.rs", 240, "The method language, tested."], ["src/method/units.rs", 156, "The method language: dimensions: a unit's seven exponents, and reading a unit from text."], ["src/method.rs", 128, "THE METHOD LANGUAGE — the pseudocode a node's author writes."], ["src/model.rs", 550, "What a sheet is, as data."], ["src/page.rs", 1155, "The document fragment, and the index the shell loads."], ["src/shell.rs", 299, "The one page template, `web/page.html`, and the one way to fill it."], ["src/template.rs", 2276, "The node form — one self-contained document per node, filled anywhere and applied by a developer."], ["src/text.rs", 35, "Small text rules every generator shares, written once."]]}, "vleo-units": {"desc": "RING 0 — units and frames as types, physical constants, and the portable maths library. A leaf: it depends on nothing and compiles once.", "deps": [], "files": [["src/calendar.rs", 200, "UTC calendar dates from Unix seconds, by arithmetic alone."], ["src/constants.rs", 101, "Physical and astrodynamic constants."], ["src/frames.rs", 127, "Reference frames as types."], ["src/lib.rs", 30, "RING 0 — the leaf crate. Units, frames, constants and portable maths."], ["src/method_rt.rs", 122, "What a node's method needs at run time, written once."], ["src/pmath.rs", 692, "Portable maths — the one implementation of every transcendental function in the system."], ["src/quantity.rs", 522, "Newtype quantities."], ["src/unit.rs", 204, "The runtime unit tag."]]}, "vleo-wasm": {"desc": "FACE — the browser. The demonstration kernel the public URL carries, compiled to WebAssembly. It holds the demonstration node subset only, so decompiling it recovers nothing that was not on the page beside it.", "deps": ["vleo-bus", "vleo-core", "vleo-modules"], "files": [["src/lib.rs", 158, "The browser face."]]}, "xtask": {"desc": "The generators, the gate and the assembly. One binary, called by the authoring hook, by the pipeline and by hand — because where the hook runs one script and the pipeline runs another they drift within a month and the hook becomes theatre.", "deps": ["vleo-data", "vleo-design", "vleo-sheet", "vleo-units"], "files": [["src/fills.rs", 596, "Hole fills: splicing a body in, recording who wrote it, and comparing two fills."], ["src/flow.rs", 982, "The change loop: a node form in, a preview out, an approval back, a release."], ["src/forms.rs", 820, "Node forms: made, checked, applied, and new nodes built from them."], ["src/graph.rs", 208, "The crate graph, and the rings it must respect."], ["src/hooks.rs", 116, "The git hooks this repository runs, and whether this clone runs them."], ["src/main.rs", 1091, "`cargo xtask` — the one gate binary."], ["src/method.rs", 597, "The method language, from the terminal: a node's method checked against its author's cases, and the checker every node form carries rebuilt."], ["src/mutate.rs", 355, "Mutation testing: whether a node's tests would notice it being wrong."], ["src/pipeline.rs", 1468, "The pipeline: every command this program has, in one table, and one way every command that writes reports what it is doing."], ["src/readers.rs", 676, "The readers' docs folder: every row's page and every lesson, read with no tool running — from a shared drive or any internal web server."], ["src/release.rs", 760, "Releases and what ships: stamping, the team kit, guides, CODEOWNERS, bundles."], ["src/report.rs", 1167, "Reports over the tree: status, gaps, readiness, what answers and where it goes."]]}};
+const MODS = [["system", 7, 321], ["management", 0, 174], ["prop", 28, 95], ["payload", 26, 68], ["power", 24, 68], ["massaero", 26, 65], ["solar", 56, 65], ["fsw", 0, 52], ["envorbit", 47, 48], ["struct", 0, 48], ["thermal", 13, 47], ["atthw", 0, 42], ["ttc", 25, 42], ["closure", 40, 41], ["acs", 21, 40], ["orbmaint", 0, 40], ["multipay", 0, 38], ["navod", 0, 38], ["navsense", 0, 32], ["pointing", 0, 32]];
+const CMDS = [["form", "form", "cargo run -p xtask -- form <node>|--new [--example] [--out <file.html>]", "a node's form: one HTML file that explains itself, asks every question the sheet answers, lists every row it could read, and saves a filled copy.", "xtask/src/forms.rs"], ["take", "take", "cargo run -p xtask -- take <form.html> --for <author> [--again] [--no-push] [--no-test]", "the maintainer's first step: check a filled node form;", "xtask/src/flow.rs"], ["check", "intake", "cargo run -p xtask -- intake <file.html> [--apply [--partial]]", "the checker: what a filled form would change, field by field, and every interface it declares — each input a row that exists, of the quantity expected.", "xtask/src/forms.rs"], ["apply", "lesson", "cargo run -p xtask -- lesson form <node> [--out <file.html>]\n    cargo run -p xtask -- lesson check <file> [--for <node>]\n    cargo run -p xtask -- lesson apply <file> [--for <node>] [--check]", "a row's lesson form: one HTML file the expert who knows the row fills anywhere, checked as they type by the gate's own lesson check, saved as a filled copy.", "xtask/src/forms.rs"], ["apply", "new", "cargo run -p xtask -- new <id> --like <sibling>", "clone the shape of a sibling and blank what must be re-decided.", "xtask/src/forms.rs"], ["publish", "declare", "cargo run -p xtask -- declare <node>", "the completion questions, in order, with what each one is for.", "xtask/src/report.rs"], ["publish", "publish", "cargo run -p xtask -- publish <node>", "move a filled, seeded row to published, so its model, contract and evidence are generated and its holes can be written.", "xtask/src/main.rs"], ["publish", "fill", "cargo run -p xtask -- fill <node> --hole <n> --body <file|-> [--by <who> --model <model>]", "splice one hole body into a generated model.rs.", "xtask/src/fills.rs"], ["publish", "confirm", "cargo run -p xtask -- confirm --list [<subsystem>]\n    cargo run -p xtask -- confirm <node> --by \"<name>\"", "the relations with nobody's name against them, grouped by the owner who has to supply one.", "xtask/src/fills.rs"], ["build", "method", "cargo run -p xtask -- method <node>", "the node's method, checked, and each of its author's test cases run through it — the check the form runs as the author types, and the one the gate refuses on.", "xtask/src/method.rs"], ["build", "build-node", "cargo run -p xtask -- build-node <node>  from a node's method to a connected node, in order: the", "method on its cases, the translation into the kernel, the node's tests, the author's code rerun, a mutation the tests must catch — and only then the interface.", "xtask/src/method.rs"], ["build", "rerun", "cargo run -p xtask -- rerun <node>|--all [--require]", "the author's own code run again on their cases: Python directly, MATLAB and Octave through Octave;", "xtask/src/method.rs"], ["build", "method-wasm", "cargo run -p xtask -- method-wasm [--check]", "rebuild web/method.wasm.gz, the checker every node form carries, from vleo_sheet::method;", "xtask/src/method.rs"], ["build", "differential", "cargo run -p xtask -- differential <node>", "re-run the node against every other recorded body for the same hole.", "xtask/src/fills.rs"], ["build", "mutate", "cargo run -p xtask -- mutate [--literals] [<node>]", "perturb the answer by a tenth of a percent and require the node's own tests to notice.", "xtask/src/mutate.rs"], ["gate", "docs", "cargo run -p xtask -- docs [<node>]", "the six per-node generators — model, contract, module, evidence, page fragment and metadata, each from the node's own sheet (a page also names the rows it reads and the rows that read it).", "xtask/src/main.rs"], ["gate", "assemble", "cargo run -p xtask -- assemble", "the three assembly generators — the index, the document and the graph tables.", "xtask/src/main.rs"], ["gate", "gate", "cargo run -p xtask -- gate [<node>]", "the checks, in order, stopping at the first failure.", "xtask/src/main.rs"], ["gate", "ready", "cargo run -p xtask -- ready [<node>]", "whether a person should be asked to look yet: the gate, then the gap pass, then what criticality demands.", "xtask/src/report.rs"], ["gate", "codeowners", "cargo run -p xtask -- codeowners", "regenerate CODEOWNERS from areas/teams.toml and the owner each sheet names.", "xtask/src/release.rs"], ["gate", "variables", "cargo run -p xtask -- variables", "write docs/VARIABLES.md — every variable in the tree, its unit, its range, the reason for each bound, and what reads it.", "xtask/src/report.rs"], ["gate", "guides", "cargo run -p xtask -- guides", "the three role guides, docs/roles/user.html, maintainer.html and developer.html, rendered from docs/manual.toml.", "xtask/src/release.rs"], ["gate", "pipeline", "cargo run -p xtask -- pipeline [--check] write docs/PIPELINE.md from the pipeline table; --check", "only says whether it is current.", "xtask/src/pipeline.rs"], ["preview", "preview", "cargo run -p xtask -- preview", "where the current form branch's preview build is — every push to a form branch builds one — and what to do with it.", "xtask/src/flow.rs"], ["preview", "approve", "cargo run -p xtask -- approve <approval.toml> [--no-push]\n    cargo run -p xtask -- approve --verify <branch>", "the author's approval of a preview, checked against this branch: it must be for the build of what is here now.", "xtask/src/flow.rs"], ["preview", "queue", "cargo run -p xtask -- queue", "every form branch and where it stands: waiting for the author's approval, approved, merged.", "xtask/src/flow.rs"], ["release", "readers", "cargo run -p xtask -- readers [--out <dir>]", "the docs folder for readers: every row's page and every lesson, read with no tool running — from a shared drive or an internal web server.", "xtask/src/readers.rs"], ["release", "ship", "cargo run -p xtask -- ship <version> [--no-push] [--no-test]", "the release branch release/<version> from main: the de-risking narrative, the stamp, regenerate, gate, test, commit, push — and the tag commands for after the merge.", "xtask/src/flow.rs"], ["release", "release", "cargo run -p xtask -- release <version> [--check]", "stamp every node version still marked `next` with this release, set the workspace version, and regenerate.", "xtask/src/release.rs"], ["release", "derisk", "cargo run -p xtask -- derisk", "write docs/DERISK_NARRATIVE.md and docs/derisking.csv — every recorded change, in the columns of the de-risking narrative, and every registered risk as it stands.", "xtask/src/release.rs"], ["release", "kit", "cargo run -p xtask -- kit [--bin <dir>] [--out <dir>] [--files-only]", "the tool as a team member gets it: the two programs and the files they read (the web face, the tree, its pages, the reference data) in one folder, with START_HERE.md — on Windows the daemon is `Start VLEO.exe`, elsewhere start.sh ", "xtask/src/release.rs"], ["release", "bundle", "cargo run -p xtask -- bundle publish <dir>\n    cargo run -p xtask -- bundle verify", "hash every payload file and write the result into the manifest.", "xtask/src/release.rs"], ["read", "status", "cargo run -p xtask -- status", "counts by state and by subsystem, and what is blocking.", "xtask/src/report.rs"], ["read", "active", "cargo run -p xtask -- active [<subsystem>] [--names] [--defined]", "which rows answer and which do not, and for each one that does not, whether it is its own derivation that is missing or a row it reads.", "xtask/src/report.rs"], ["read", "reach", "cargo run -p xtask -- reach [<subsystem>]", "where each answer GOES: how many reach a KPI closure, and which answer and are read by nothing.", "xtask/src/report.rs"], ["read", "gap", "cargo run -p xtask -- gap", "what every sheet promised and nothing yet covers.", "xtask/src/report.rs"], ["read", "graph", "cargo run -p xtask -- graph", "the three graphs, their sizes, and the crate direction check.", "xtask/src/graph.rs"], ["read", "migration", "cargo run -p xtask -- migration [--owner <o>] [--subsystem <s>] [--forms <dir>]", "which computed rows still need a method, by owner, and with --forms their node forms written ready to send.", "xtask/src/method.rs"], ["read", "explain", "cargo run -p xtask -- explain [<command>]", "where a command sits in a node's journey, what it reads, writes and checks, how to undo it, its steps and where its code is — from the one table docs/PIPELINE.md is written from.", "xtask/src/pipeline.rs"], ["read", "why", "cargo run -p xtask -- why <node>", "a node's history in one place: every recorded version and who made it, the commits that changed it, its approvals, how its code came to be, and its gate, run now.", "xtask/src/pipeline.rs"], ["read", "trace", "cargo run -p xtask -- trace [<command>] [--list]", "the last run's trace — every command that writes leaves one in target/xtask-trace/, the newest 50 kept — or the last of one command, or --list every one kept.", "xtask/src/pipeline.rs"], ["setup", "setup", "cargo run -p xtask -- setup", "point git at tools/githooks, so the commit-message hook runs on this clone.", "xtask/src/hooks.rs"]];
+const ROUTES = [["GET", "/"], ["GET", "/app.css"], ["GET", "/js/<module>"], ["GET", "/fonts/<font>"], ["GET", "/v1/version"], ["GET", "/v1/index"], ["GET", "/v1/manual"], ["GET", "/v1/fragment/<id>"], ["GET", "/v1/node/<id>"], ["GET", "/v1/lesson/<id>"], ["GET", "/v1/derisk"], ["GET", "/v1/run"], ["POST", "/v1/run"], ["GET", "/v1/sweep"], ["GET", "/v1/probe"], ["GET", "/v1/levers"], ["GET", "/v1/branches"], ["GET", "/v1/inputs"], ["GET", "/v1/inputs.csv"], ["POST", "/v1/inputs/check"], ["POST", "/v1/inputs"], ["POST", "/v1/inputs/reset"], ["GET", "/v1/form/<id>"], ["GET", "/v1/lesson-form/<id>"], ["POST", "/v1/form/check"], ["POST", "/v1/results/save"], ["GET", "/v1/results"], ["GET", "/v1/figures/samples"], ["GET", "/v1/figures/solar/<id>"], ["GET", "/v1/result"], ["GET", "/v1/result.csv"], ["GET", "/v1/result.sweep.csv"], ["GET", "/v1/result.html"], ["POST", "/v1/results/upload"], ["POST", "/v1/results/as-case"], ["POST", "/v1/results/pin"], ["POST", "/v1/results/delete"], ["GET", "/v1/bundle/<name>"], ["GET", "/v1/parity/<name>"]];
+const WEBJS = [["app.js", "The shell: boot, routing, and every event listener in the tool."], ["architecture.js", "The architecture, as a page of the tool rather than a document beside it."], ["case.js", "The case: every input of the one design, and the values it runs at."], ["chart.js", "The chart: axes, series and a legend, on a canvas."], ["components.js", "The component library: every part a page is built from, by name."], ["depth.js", "How deep the page goes: Learn · Read · Expert."], ["display.js", "The one walk."], ["dom.js", "The four helpers every other module uses, and nothing else."], ["figure.js", "The figure: the layer view."], ["figures.js", "The figure player: any figure the engine describes, drawn."], ["forms.js", "The forms: every way something reaches this tool from outside it."], ["inputs.js", "The inputs a reader may move, and what moving one does to everything else."], ["manual.js", "The manual — how to use this tool, from the browser and from a terminal, as somebody using the design and as somebody maintaining it."], ["matrix.js", "The matrix."], ["node.js", "One node, opened."], ["nodeform.js", "The node's form: download it, and check one that has come back."], ["paths.js", "The paths column."], ["preview.js", "A PREVIEW BUILD, AND ITS AUTHOR'S APPROVAL."], ["readers.js", "A page of the readers' docs folder: one row's page, and its lesson, read with no tool running — from a shared drive or any internal web server."], ["record.js", "The reference record, as the bundle publishes it."], ["relation.js", "The relation, walked."], ["results.js", "Saved results: what runs returned, kept, and shown again without running."], ["run.js", "The run, the result and the behaviour sweep."], ["solar.js", "The solar weather tabs."], ["state.js", "The one state, and the graphs derived from it."], ["theory.js", "The derivation, walked one line at a time."], ["tree.js", "The tree column."]];
+(function () {
+  const $ = id => document.getElementById(id);
+  const store = {
+    get(k, d) { try { const v = localStorage.getItem('vleo.how.' + k); return v === null ? d : JSON.parse(v); } catch { return d; } },
+    set(k, v) { try { localStorage.setItem('vleo.how.' + k, JSON.stringify(v)); } catch { /* storage off */ } }
+  };
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const fmt = n => n.toLocaleString('en-GB');
+
+  /* ---------- rail, with the chapter in view highlighted ---------- */
+  const chapters = [...document.querySelectorAll('.chapter')];
+  let lastPart = '';
+  $('rail').innerHTML = chapters.map(c => {
+    const part = c.dataset.part, head = part !== lastPart ? `<div class="part">${esc(part)}</div>` : '';
+    lastPart = part;
+    return head + `<a href="#${c.id}" data-id="${c.id}"><span>${c.id.slice(1)}</span>${esc(c.dataset.title)}</a>`;
+  }).join('');
+  const links = [...$('rail').querySelectorAll('a')];
+  links.forEach(a => a.addEventListener('click', e => { e.preventDefault(); go(a.dataset.id); }));
+  function go(id) { const el = $(id); if (el) { el.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' }); try { history.replaceState(null, '', '#' + id); } catch { /* sandbox */ } } }
+  try {
+    const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) links.forEach(a => a.classList.toggle('here', a.dataset.id === e.target.id)); }), { rootMargin: '-30% 0px -60% 0px' });
+    chapters.forEach(c => io.observe(c));
+  } catch { /* old browsers: no highlight */ }
+  const h = (location.hash || '').slice(1);
+  if (/^c\d\d$/.test(h)) setTimeout(() => { const el = $(h); if (el) el.scrollIntoView(); }, 0);
+
+  /* ---------- depth ---------- */
+  function setDepth(d) {
+    document.documentElement.dataset.depth = d;
+    document.querySelectorAll('.depth button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.depth === d)));
+    store.set('depth', d);
+  }
+  document.querySelectorAll('.depth button').forEach(b => b.addEventListener('click', () => setDepth(b.dataset.depth)));
+  setDepth(store.get('depth', 'read'));
+
+  /* ---------- saved boxes ---------- */
+  const km = $('km'); km.value = store.get('km', ''); km.addEventListener('input', () => store.set('km', km.value));
+  document.querySelectorAll('textarea[data-save]').forEach(t => { t.value = store.get(t.dataset.save, ''); t.addEventListener('input', () => store.set(t.dataset.save, t.value)); });
+
+  /* ---------- notes ---------- */
+  let notes = store.get('notes', []);
+  const DAY = 864e5;
+  function renderNotes() {
+    const open = notes.filter(g => !g.done).length;
+    $('nb-count').textContent = open ? '· ' + open : '';
+    $('nb-list').innerHTML = notes.map((g, i) => `<li class="${g.done ? 'done' : ''}"><span>${esc(g.text)}${g.done && Date.now() - g.closed > 2 * DAY ? ' <span class="chip">review</span>' : ''}</span><button class="btn small ghost" type="button" data-i="${i}">${g.done ? 'reopen' : 'got it'}</button></li>`).join('') || '<li class="small muted">Nothing yet.</li>';
+    $('nb-list').querySelectorAll('button[data-i]').forEach(b => b.addEventListener('click', () => { const g = notes[+b.dataset.i]; g.done = !g.done; g.closed = Date.now(); store.set('notes', notes); renderNotes(); }));
+  }
+  function addNote(text) { if (!text.trim()) return; notes.push({ text: text.trim(), done: false }); store.set('notes', notes); renderNotes(); }
+  $('nb-add').addEventListener('click', () => { addNote($('nb-new').value); $('nb-new').value = ''; });
+  $('nb-new').addEventListener('keydown', e => { if (e.key === 'Enter') { addNote($('nb-new').value); $('nb-new').value = ''; } });
+  $('nb-toggle').addEventListener('click', () => { const nb = $('nb'); nb.hidden = !nb.hidden; $('nb-toggle').setAttribute('aria-expanded', String(!nb.hidden)); });
+  $('nb-quiz').addEventListener('click', () => {
+    const due = notes.filter(g => g.done && Date.now() - g.closed > 2 * DAY), pool = due.length ? due : notes.filter(g => g.done);
+    const o = $('nb-quiz-out'); o.hidden = false;
+    o.textContent = pool.length ? 'Without looking, explain: ' + pool[Math.floor(Math.random() * pool.length)].text : 'Tick off a note first. Then come back and explain it from memory.';
+  });
+  renderNotes();
+
+  /* ---------- guess-first questions ---------- */
+  document.querySelectorAll('[data-check]').forEach(b => b.addEventListener('click', () => {
+    const id = b.dataset.check, box = document.querySelector(`[data-predict="${id}"]`), ans = document.querySelector(`[data-answer="${id}"]`);
+    if (!ans.dataset.text) ans.dataset.text = ans.textContent;
+    const pick = box.querySelector('input:checked'); ans.hidden = false;
+    if (!pick) { ans.textContent = 'Pick an answer first.'; return; }
+    const right = pick.value === box.dataset.right;
+    ans.textContent = (right ? 'Yes. ' : 'Not quite, so it is now in your notes. ') + ans.dataset.text;
+    if (!right) addNote('Why a face never depends on a subsystem crate');
+  }));
+
+  /* ---------- small SVG helpers ---------- */
+  /* ---------- motion helpers: a dot that travels, and nothing moves if the reader asked for less motion ---------- */
+  const NS = 'http://www.w3.org/2000/svg';
+  const RM = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const sleep = ms => new Promise(r => setTimeout(r, RM ? 0 : ms));
+  function travel(svg, pts, color, ms) {
+    return new Promise(res => {
+      if (RM || !svg || pts.length < 2) return res();
+      const c = document.createElementNS(NS, 'circle');
+      c.setAttribute('r', '6'); c.setAttribute('fill', color); c.setAttribute('stroke', 'var(--card)'); c.setAttribute('stroke-width', '2');
+      svg.appendChild(c);
+      const seg = []; let total = 0;
+      for (let i = 1; i < pts.length; i++) { const d = Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]); seg.push(d); total += d; }
+      const t0 = performance.now();
+      (function f(t) {
+        let d = Math.min(1, (t - t0) / ms) * total, i = 0;
+        while (i < seg.length - 1 && d > seg[i]) { d -= seg[i]; i++; }
+        const k = seg[i] ? d / seg[i] : 1, x = pts[i][0] + (pts[i + 1][0] - pts[i][0]) * k, y = pts[i][1] + (pts[i + 1][1] - pts[i][1]) * k;
+        c.setAttribute('cx', x); c.setAttribute('cy', y);
+        if (t - t0 < ms) requestAnimationFrame(f); else { c.remove(); res(); }
+      })(t0);
+    });
+  }
+  const marker = id => `<defs><marker id="${id}" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="var(--ink-3)"/></marker></defs>`;
+
+  /* ---------- overview ---------- */
+  (function () {
+    const box = (x, y, w, hh, title, sub, col, link) => `<g data-go="${link}" style="cursor:pointer" tabindex="0" role="link" aria-label="${esc(title)}">
+      <rect x="${x}" y="${y}" width="${w}" height="${hh}" rx="5" fill="var(--card)" stroke="${col}" stroke-width="1.6"/>
+      <text x="${x + 10}" y="${y + 21}" font-size="13" font-weight="600" fill="${col}">${esc(title)}</text>
+      ${sub.map((s, i) => `<text x="${x + 10}" y="${y + 40 + i * 16}" font-size="11" fill="var(--ink-2)">${esc(s)}</text>`).join('')}</g>`;
+    const ar = (x1, y1, x2, y2) => `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="var(--ink-3)" stroke-width="1.3" class="flow" marker-end="url(#ah)"/>`;
+    $('overview').innerHTML = `<svg viewBox="0 0 980 330" role="img" aria-label="The whole system: sheets and forms feed the generators; the engine computes; faces show; data and releases travel">${marker('ah')}
+      ${box(10, 20, 210, 92, 'Sheets · node.toml', ['1,396 rows, written by people', 'changed only through forms'], 'var(--out)', 'c04')}
+      ${box(10, 140, 210, 92, 'Forms · the loop', ['form → take → preview →', 'approve → merge → ship'], 'var(--out)', 'c13')}
+      ${box(265, 20, 210, 92, 'Generators · xtask', ['six generated files per row', 'byte-stable, diffed by the gate'], 'var(--in)', 'c05')}
+      ${box(265, 140, 210, 92, 'Evidence · fixtures', ['values from outside the code', 'self-snapshots refused'], 'var(--in)', 'c12')}
+      ${box(520, 20, 220, 212, 'The engine', ['ring 0  vleo-units', 'ring 1  vleo-core (formulas)', 'ring 2  vleo-bus (the case)', 'ring 3  20 subsystem crates', '', 'the resolver runs the graph', 'and refuses by name:', '"n ran, m blocked"'], 'var(--teal)', 'c06')}
+      ${box(785, 20, 185, 212, 'Faces', ['browser · /v1 contract', 'command line · vleo', 'Python wheel', 'C ABI', 'readers’ folder (wasm)', 'form checker (wasm)', 'saved reports'], 'var(--both)', 'c09')}
+      ${box(10, 255, 465, 60, 'Data', ['reference bundles (synced) · ~/.vleo inputs and results'], 'var(--ink-2)', 'c08')}
+      ${box(520, 255, 450, 60, 'Releases', ['xtask ship → release PR → tag → 3 kits + 1 wheel'], 'var(--ink-2)', 'c14')}
+      ${ar(220, 66, 263, 66)} ${ar(115, 140, 115, 114)} ${ar(475, 66, 518, 66)} ${ar(475, 186, 518, 186)} ${ar(740, 126, 783, 126)} ${ar(475, 285, 518, 285)}
+    </svg>`;
+    $('overview').querySelectorAll('[data-go]').forEach(g => { const f = () => go(g.dataset.go); g.addEventListener('click', f); g.addEventListener('keydown', e => { if (e.key === 'Enter') f(); }); });
+  })();
+
+  /* ---------- horizontal bars, to scale ---------- */
+  function hbars(el, rows, o) {
+    const W = 760, lab = 120, right = 60, bh = 18, gap = 7, top = 28, H = top + rows.length * (bh + gap) + 24;
+    const sx = v => lab + (W - lab - right) * v / o.max;
+    let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(o.label)}">`;
+    o.ticks.forEach(t => { s += `<line x1="${sx(t)}" y1="${top - 6}" x2="${sx(t)}" y2="${H - 22}" stroke="var(--rule-2)"/><text x="${sx(t)}" y="${H - 6}" font-size="10.5" fill="var(--ink-3)" text-anchor="middle">${t}</text>`; });
+    rows.forEach((r, i) => {
+      const y = top + i * (bh + gap); let x = lab;
+      s += `<text x="${lab - 8}" y="${y + bh - 5}" font-size="11.5" fill="var(--ink)" text-anchor="end">${esc(r.name)}</text>`;
+      r.parts.forEach((p, k) => { const w = sx(p) - sx(0); if (w > 0) s += `<rect x="${x}" y="${y}" width="${w}" height="${bh}" fill="${o.colors[k]}"/>`; x += w; });
+      s += `<text x="${x + 6}" y="${y + bh - 5}" font-size="11" fill="var(--ink-2)">${r.label}</text>`;
+    });
+    s += o.legend.map((l, k) => `<rect x="${lab + k * 170}" y="6" width="11" height="11" fill="${o.colors[k]}"/><text x="${lab + k * 170 + 16}" y="16" font-size="11" fill="var(--ink-2)">${esc(l)}</text>`).join('');
+    el.innerHTML = s + '</svg>';
+  }
+  hbars($('chart-modules'), MODS.map(m => ({ name: m[0], parts: [m[1], m[2] - m[1]], label: `${m[1]}/${m[2]}` })),
+    { max: 330, ticks: [0, 50, 100, 150, 200, 250, 300], colors: ['var(--both)', 'var(--rule)'], legend: ['published', 'empty or deprecated'], label: 'Rows per subsystem, published against empty' });
+  hbars($('chart-evidence'), [
+    { name: 'no fixture', parts: [124], label: '124' }, { name: 'derivation', parts: [59], label: '59' },
+    { name: 'published', parts: [5], label: '5' }, { name: 'other tool', parts: [2], label: '2' }, { name: 'physical bound', parts: [0], label: '0' }],
+    { max: 190, ticks: [0, 50, 100, 150, 190], colors: ['var(--teal)'], legend: ['rows, by their best evidence (of 190)'], label: 'The best evidence each computing row has' });
+
+  /* ---------- the crate map ---------- */
+  const POS = {
+    'vleo-units': [0, 2], 'vleo-core': [1, 1], 'vleo-data': [1, 3], 'vleo-bus': [2, 1], 'vleo-sheet': [2, 4],
+    'vleo-mod-* (20)': [3, 0], 'vleo-modules': [3, 2], 'vleo-design': [3, 4], 'vleo-server': [4, 1], 'vleo-ffi': [4, 2], 'vleo-wasm': [4, 3],
+    'vleo-kernel-wasm': [4, 4], 'vleo-method-wasm': [4, 5], 'vleo-daemon': [5, 0], 'vleo-cli': [5, 1], 'vleo-py': [5, 2], 'xtask': [5, 4]
+  };
+  const COLS = ['ring 0', 'ring 1', 'ring 2', 'ring 3', 'faces', 'programs'];
+  const CW = 150, CX = 18, RY = 52, RH = 56, BW = 132, BH = 34;
+  const xy = n => [CX + POS[n][0] * CW, RY + POS[n][1] * RH];
+  const edges = [];
+  Object.entries(CRATES).forEach(([n, c]) => c.deps.forEach(d => { if (POS[d] && POS[n]) edges.push([d, n]); }));
+  function drawMap(sel) {
+    const deps = sel ? new Set(CRATES[sel].deps) : new Set(), users = sel ? new Set(edges.filter(e => e[0] === sel).map(e => e[1])) : new Set();
+    let s = `<svg viewBox="0 0 ${CX * 2 + CW * 5 + BW} ${RY + 6 * RH + 10}" role="img" aria-label="Crate dependency map">${marker('am')}`;
+    COLS.forEach((c, i) => { s += `<text x="${CX + i * CW + BW / 2}" y="24" font-size="11" fill="var(--ink-3)" text-anchor="middle">${c}</text>`; });
+    edges.forEach(([a, b]) => {
+      const [x1, y1] = xy(a), [x2, y2] = xy(b), hot = sel && (a === sel || b === sel);
+      const col = !hot ? 'var(--rule)' : b === sel ? 'var(--in)' : 'var(--out)';
+      const sx1 = x1 + BW, sy1 = y1 + BH / 2, sx2 = x2, sy2 = y2 + BH / 2, mx = (sx1 + sx2) / 2;
+      const path = x2 > x1 ? `M${sx1},${sy1} C${mx},${sy1} ${mx},${sy2} ${sx2},${sy2}` : `M${x1 + BW / 2},${y1 + (y2 > y1 ? BH : 0)} L${x2 + BW / 2},${y2 + (y2 > y1 ? 0 : BH)}`;
+      s += `<path d="${path}" fill="none" stroke="${col}" stroke-width="${hot ? 1.8 : 1}" opacity="${sel && !hot ? .35 : 1}"/>`;
+    });
+    Object.keys(POS).forEach(n => {
+      const [x, y] = xy(n), on = n === sel, isDep = deps.has(n), isUser = users.has(n);
+      const stroke = on ? 'var(--ink)' : isDep ? 'var(--in)' : isUser ? 'var(--out)' : 'var(--rule)';
+      const fill = on ? 'var(--ink)' : isDep ? 'var(--in-pale)' : isUser ? 'var(--out-pale)' : 'var(--card)';
+      s += `<g data-crate="${esc(n)}" tabindex="0" role="button" aria-label="${esc(n)}" style="cursor:pointer"><rect x="${x}" y="${y}" width="${BW}" height="${BH}" rx="4" fill="${fill}" stroke="${stroke}" stroke-width="1.5"/>
+        <text x="${x + BW / 2}" y="${y + 21}" font-size="11.5" text-anchor="middle" fill="${on ? 'var(--paper)' : 'var(--ink)'}">${esc(n)}</text></g>`;
+    });
+    $('cratemap').innerHTML = s + '</svg>';
+    $('cratemap').querySelectorAll('[data-crate]').forEach(g => { const f = () => pick(g.dataset.crate); g.addEventListener('click', f); g.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); f(); } }); });
+  }
+  function pick(n) {
+    drawMap(n);
+    const c = CRATES[n], users = edges.filter(e => e[0] === n).map(e => e[1]);
+    const lines = c.files.reduce((a, f) => a + f[1], 0);
+    $('cratepanel').innerHTML = `<h3>${esc(n)}</h3><p class="small">${esc(c.desc)}</p>
+      <p class="small"><span style="color:var(--in);font-weight:600">depends on</span> ${c.deps.length ? c.deps.map(d => `<code>${esc(d)}</code>`).join(' ') : 'nothing'}<br>
+      <span style="color:var(--out);font-weight:600">used by</span> ${users.length ? users.map(d => `<code>${esc(d)}</code>`).join(' ') : 'nothing in the workspace'}</p>
+      ${c.files.length ? `<p class="lbl">${c.files.length} source file${c.files.length > 1 ? 's' : ''} · ${fmt(lines)} lines</p><div class="files">${c.files.map(f => `<div><code>${esc(f[0])}</code><span class="n">${fmt(f[1])}</span><span>${esc(f[2])}</span></div>`).join('')}</div>` : ''}`;
+  }
+  drawMap(null); pick('vleo-core');
+
+  /* ---------- one row, opened ---------- */
+  const ROWFILES = [
+    ['node.toml', 'p', 'written by a person', 'The sheet: the question, what the row reads, its output with bounds and the reason for each, its explanation, theory, assumptions and versions. The only file a person writes.',
+`id = "sw_ap_design"
+label = "Ap design value"
+subsystem = "solar"
+kind = "computed"
+owner = "environment"
+criticality = "significant"   # two reviewers and a differential fill
+layer = 3
+state = "published"
+
+[question]
+text = "What daily Ap is this design built to survive?"
+
+[[input]]                     # reads sw_storm_design_level (the G level)
+[output]                      # Ap_design, a ratio, bounded 40 … 140
+lower = 40.0
+reason_lower = "the lowest value this relation can return is 48, at G1. …"
+[explain] · [theory] · [[assumption]] ×4 · [view] · [[version]]`],
+    ['fixtures.toml', 'x', 'supplied from outside the code', 'Known-good answers, each naming where it came from. The gate refuses a self-snapshot or a value an assistant produced.',
+`[[fixture]]
+label = "G2 moderate — Kp 6 — daily Ap bounded at 80"
+expect = 80.0
+tolerance = 1e-12
+provenance = "published-source"
+source = "iaga_kp_ap"
+inputs = { g_level = 2.0 }`],
+    ['contract.rs', 'g', 'generated', 'The door the resolver uses: ids, the input and output variables, SI units, and the untyped call adapter that gives values back their types.',
+`pub const NODE_ID: &str = "sw_ap_design";
+pub const SHEET_HASH: u64 = 0x004a983c165bb31a;
+pub const INPUT_VARS: &[&str] = &["sw_storm_design_level"];
+pub const OUTPUT_VARS: &[&str] = &["sw_ap_design"];
+pub const OUTPUT_UNIT: Unit = Ratio::UNIT;
+
+pub fn call(inputs: &[f64], outputs: &mut [f64]) -> Result<(), Fault> {
+    let g_level: Ratio = Ratio::new(inputs[0]);
+    …`],
+    ['model.rs', 'g', 'generated, except HOLE 1', 'The typed function. The doc comment and the bound guards are printed from the sheet. Only the numbered HOLE is hand-written, and it calls the kernel.',
+`/// What daily Ap is this design built to survive?
+pub fn evaluate(g_level: Ratio) -> Result<Ratio, Fault> {
+    // ---- HOLE 1 : convert the chosen G level to the daily Ap
+    //      that level bounds, from the published ap table -> Ratio
+    …   (a few typed lines, calling vleo_core::physics)
+    // ---- end HOLE 1
+    if answer.get() < 40.0 { return Err(Fault::OutOfDomain { … }) }
+    if answer.get() > 140.0 { return Err(Fault::OutOfDomain { … }) }
+    Ok(answer)
+}`],
+    ['evidence.rs', 'g', 'generated', 'The tests: every fixture checked within its tolerance, plus a robustness test that perturbs the first fixture by ±1 %.',
+`//! Every expected value below names a source outside this code.
+fn relative_error(got: f64, expected: f64) -> f64 { … }
+#[test] fn g2_moderate_kp_6_daily_ap_bounded_at_80() { … }`],
+    ['mod.rs', 'g', 'generated', 'Ties the row’s files into its subsystem crate. The crate’s build script finds every row folder and includes this.',
+`//! \`sw_ap_design\` — Ap design value
+#[path = "model.rs"]    pub mod model;
+#[path = "contract.rs"] pub mod contract;
+#[cfg(test)] … evidence`],
+    ['meta.json', 'g', 'generated', 'Facts the faces read without compiling anything: hashes, owner, tier, fixture count, reviewers, holes, inputs, and the row’s open gaps.',
+`{ "id": "sw_ap_design", "state": "published",
+  "sheet_hash": "5bb31a", "impl_hash": "e5fc60",
+  "owner": "environment", "fixtures": 3, "reviewers": 2,
+  "differential_fill": true, "holes": 1,
+  "inputs": ["sw_storm_design_level"], "gaps": [ … ] }`],
+    ['page.html', 'g', 'generated', 'The row’s page: question and answer first, plain words, the relation and its source, where it breaks, assumptions, evidence and de-risking. Printed from the named parts in web/pages/row.html.',
+`Outside 40 … 140 the row refuses rather than answers:
+the lowest value this relation can return is 48, at G1. …`]
+  ];
+  const WHO = { p: ['p', 'person'], g: ['g', 'generated'], x: ['x', 'outside'] };
+  $('ftree').innerHTML = '<p class="lbl">crates/vleo-mod-solar/nodes/sw_ap_design/</p>' + ROWFILES.map((f, i) => `<button type="button" data-f="${i}"><span>${esc(f[0])}</span><span class="who ${WHO[f[1]][0]}">${WHO[f[1]][1]}</span></button>`).join('');
+  function openFile(i) {
+    const f = ROWFILES[i];
+    $('ftree').querySelectorAll('button').forEach((b, k) => b.classList.toggle('on', k === i));
+    $('fpanel').innerHTML = `<h3><code>${esc(f[0])}</code> · ${esc(f[2])}</h3><p class="small">${esc(f[3])}</p><pre><code>${esc(f[4])}</code></pre>`;
+  }
+  $('ftree').querySelectorAll('button').forEach(b => b.addEventListener('click', () => openFile(+b.dataset.f)));
+  openFile(0);
+
+  /* ---------- the generator scene: one field, two places ---------- */
+  const GB = { sheet: [10, 38, 210, 52, 'node.toml', 'written by a person'], docs: [300, 38, 170, 52, 'xtask docs', 'vleo-sheet/src/emit.rs'],
+    model: [560, 6, 190, 44, 'model.rs', 'the guard'], page: [560, 74, 190, 44, 'page.html', 'the sentence'] };
+  const gc = k => [GB[k][0] + GB[k][2] / 2, GB[k][1] + GB[k][3] / 2];
+  let genFirst = true, genEpoch = 0;
+  function genScene(lo) {
+    let s = `<svg viewBox="0 0 760 126" role="img" aria-label="One field of the sheet, written into two generated files">`;
+    [['sheet', 'docs'], ['docs', 'model'], ['docs', 'page']].forEach(([a, b]) => { const [x1, y1] = gc(a), [x2, y2] = gc(b); s += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="var(--rule)" stroke-width="1.3"/>`; });
+    Object.entries(GB).forEach(([k, b]) => { s += `<rect x="${b[0]}" y="${b[1]}" width="${b[2]}" height="${b[3]}" rx="5" fill="var(--card)" stroke="${k === 'sheet' ? 'var(--out)' : 'var(--in)'}" stroke-width="1.5"/>
+      <text x="${b[0] + 10}" y="${b[1] + 19}" font-size="12.5" font-weight="600" fill="var(--ink)">${esc(b[4])}</text><text x="${b[0] + 10}" y="${b[1] + 35}" font-size="10.5" fill="var(--ink-2)">${esc(k === 'sheet' ? 'lower = ' + lo : b[5])}</text>`; });
+    $('genscene').innerHTML = s + '</svg>';
+  }
+  async function genFlow() {
+    const my = ++genEpoch, svg = $('genscene').querySelector('svg');
+    await travel(svg, [gc('sheet'), gc('docs')], 'var(--out)', 450);
+    if (my !== genEpoch) return;
+    travel(svg, [gc('docs'), gc('model')], 'var(--in)', 450); await travel(svg, [gc('docs'), gc('page')], 'var(--in)', 450);
+  }
+  /* ---------- generator widget ---------- */
+  function gen() {
+    const lo = $('gen-lower').value.trim() || '0', n = Number(lo), lit = Number.isInteger(n) ? n.toFixed(1) : String(n);
+    const reason = $('gen-reason').value;
+    $('gen-rs').textContent = `if answer.get() < ${lit} {\n    return Err(Fault::OutOfDomain {\n        node: NODE_ID, field: "Ap_design",\n        value: answer.get(), bound: ${lit},\n        edge: Edge::Lower, unit: Ratio::UNIT,\n        reason: "${reason.replace(/"/g, '\\"')}" });\n}`;
+    $('gen-page').textContent = `Outside ${lo} … 140 the row refuses rather than answers: ${reason}`;
+    genScene(lo); if (!genFirst) genFlow(); genFirst = false;
+  }
+  ['gen-lower', 'gen-reason'].forEach(id => $(id).addEventListener('input', gen)); gen();
+
+  /* ---------- the run, animated ---------- */
+  const RB = {
+    page: [20, 30, 160, 58, 'the page', 'web/js · run.js'], server: [230, 30, 170, 58, 'vleo-server', 'http.rs · inputs.rs'],
+    bus: [450, 30, 140, 58, 'vleo-bus', 'the case, typed'], resolver: [640, 30, 170, 58, 'the resolver', 'vleo-core'],
+    rA: [600, 150, 96, 44, 'row A', ''], rB: [712, 150, 96, 44, 'row B', ''], rC: [824, 150, 96, 44, 'row C', ''],
+    kernel: [690, 250, 230, 50, 'vleo-core::physics', 'every formula · pmath'], store: [440, 160, 140, 50, 'value store', 'value.rs'],
+    cred: [230, 160, 170, 50, 'credibility', 'credibility.rs']
+  };
+  const cen = k => [RB[k][0] + RB[k][2] / 2, RB[k][1] + RB[k][3] / 2];
+  const RUN = [
+    { t: 'A person moves an input', w: 'web/js/inputs.js · state.js', d: 'In the browser, a person changes the G level. The one state updates, and every view that depends on it is marked stale.', hi: ['page'] },
+    { t: 'The page asks the engine', w: 'web/js/run.js → POST /v1/run', d: 'The page sends the case: every input the person set. Everything else comes from the saved case. The route is in contract/routes.toml, with its schema.', hi: ['server'], mv: [['page', 'server']] },
+    { t: 'The server reads the case', w: 'vleo-server: http.rs · inputs.rs · lib.rs', d: 'On 127.0.0.1, the request guard checks the origin, size and cost. A malformed or non-finite value refuses the request, by name.', hi: ['server'] },
+    { t: 'The case crosses the bus', w: 'vleo-bus', d: 'The case becomes one typed message. A face depends on this crate and the facade only, so no face can call a subsystem with its own defaults.', hi: ['bus'], mv: [['server', 'bus']] },
+    { t: 'The resolver orders the rows', w: 'vleo-core/src/resolver.rs · graph.rs', d: 'From the graph tables vleo-modules compiled in, the resolver works out the order. Nobody writes it down. Declared loops, such as thrust and power, are iterated.', hi: ['resolver'], mv: [['bus', 'resolver']], tag: { rA: '1', rB: '2', rC: '3' } },
+    { t: 'Unchanged answers are reused', w: 'resolver.rs · hash.rs', d: 'Row A’s chain hash is unchanged (every row it reached, each one’s implementation, and the case), so its answer is reused without running it. Change one hole, and everything downstream recomputes.', hi: ['rA'], tag: { rA: 'reused' } },
+    { t: 'Each row is called', w: 'NodeTable → contract.rs call → model.rs evaluate', d: 'The resolver hands each row its inputs as SI numbers. call re-types them, and evaluate runs the hole, which calls formulas in vleo-core::physics through pmath. Bounds are checked on the way out.', hi: ['rB', 'rC', 'kernel'], mv: [['resolver', 'rB'], ['rB', 'kernel'], ['kernel', 'rB'], ['resolver', 'rC'], ['rC', 'kernel'], ['kernel', 'rC']], tag: { rB: 'ran', rC: 'ran' } },
+    { t: 'Answers land in the store', w: 'vleo-core/src/value.rs · fault.rs', d: 'Each answer fills its slot in a fixed store, with no allocation. A row that faults (out of domain, blocked, not run) stops every row that reads it, and each one is named.', hi: ['store'], mv: [['rB', 'store'], ['rC', 'store']] },
+    { t: 'Credibility, computed on the run', w: 'credibility.rs · evidence.rs', d: 'Eight factors per row, scored from the evidence that actually ran. The lowest one governs. It is never stored, because a stored badge is a claim about last March.', hi: ['cred'], mv: [['store', 'cred']] },
+    { t: 'The answer comes back', w: 'vleo-server results.rs → web/js/run.js', d: '"3 ran, 0 blocked", every value, every refusal with its reason, and figures as data. The page draws them. A person can keep the result under ~/.vleo/, keyed by the question asked.', hi: ['page'], mv: [['cred', 'server'], ['server', 'page']], tag: { page: '3 ran, 0 blocked' } }
+  ];
+  let runAt = 0, runEpoch = 0, runPlaying = false;
+  function runState(i) {
+    const tags = {}, seen = new Set();
+    for (let k = 0; k <= i; k++) { Object.assign(tags, RUN[k].tag || {}); (RUN[k].hi || []).forEach(h => seen.add(h)); }
+    const cur = new Set(RUN[i].hi || []);
+    let s = `<svg viewBox="0 0 940 320" role="img" aria-label="One run: page, server, bus, resolver, rows, kernel, store, credibility">${marker('arun')}`;
+    const ln = (a, b) => { const [x1, y1] = cen(a), [x2, y2] = cen(b); return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="var(--rule)" stroke-width="1.2"/>`; };
+    [['page', 'server'], ['server', 'bus'], ['bus', 'resolver'], ['resolver', 'rA'], ['resolver', 'rB'], ['resolver', 'rC'], ['rB', 'kernel'], ['rC', 'kernel'], ['rB', 'store'], ['rC', 'store'], ['store', 'cred'], ['cred', 'server']].forEach(e => { s += ln(e[0], e[1]); });
+    Object.entries(RB).forEach(([k, b]) => {
+      const on = cur.has(k), was = seen.has(k);
+      const stroke = on ? 'var(--teal)' : was ? 'var(--ink-3)' : 'var(--rule)';
+      s += `<g class="${on ? 'pulse' : ''}"><rect x="${b[0]}" y="${b[1]}" width="${b[2]}" height="${b[3]}" rx="5" fill="${on ? 'var(--teal-pale)' : 'var(--card)'}" stroke="${stroke}" stroke-width="${on ? 2.2 : 1.4}"/>
+        <text x="${b[0] + 10}" y="${b[1] + 20}" font-size="12.5" font-weight="600" fill="var(--ink)">${esc(b[4])}</text>
+        ${b[5] ? `<text x="${b[0] + 10}" y="${b[1] + 37}" font-size="10.5" fill="var(--ink-2)">${esc(b[5])}</text>` : ''}
+        ${tags[k] ? `<text x="${b[0] + b[2] - 8}" y="${b[1] + (b[5] ? 52 : 34)}" font-size="10.5" text-anchor="end" fill="${tags[k] === 'reused' ? 'var(--ink-3)' : 'var(--both)'}">${esc(tags[k])}</text>` : ''}</g>`;
+    });
+    $('runscene').innerHTML = s + '</svg>';
+    const r = RUN[i];
+    $('runcard').innerHTML = `<p class="lbl">step ${i + 1} of ${RUN.length}</p><h3>${esc(r.t)}</h3><p class="where">${esc(r.w)}</p><p>${esc(r.d)}</p>`;
+    $('run-scrub').value = i; $('run-n').textContent = `${i + 1} / ${RUN.length}`;
+  }
+  async function runGo(i, animate) {
+    const my = ++runEpoch; runAt = i;
+    if (animate && RUN[i].mv && i > 0) {
+      runState(i - 1);
+      for (const [a, b] of RUN[i].mv) { if (my !== runEpoch) return; await travel($('runscene').querySelector('svg'), [cen(a), cen(b)], 'var(--teal)', 650); }
+    }
+    if (my === runEpoch) runState(i);
+  }
+  async function runPlay() {
+    if (runPlaying) { runPlaying = false; runEpoch++; $('run-play').textContent = '▶ Play'; return; }
+    runPlaying = true; $('run-play').textContent = '❚❚ Pause';
+    let i = runAt >= RUN.length - 1 ? 0 : runAt;
+    if (i === 0) runState(0);
+    while (runPlaying && i < RUN.length - 1) { await sleep(1700); if (!runPlaying) break; i++; await runGo(i, true); }
+    runPlaying = false; $('run-play').textContent = '▶ Play';
+  }
+  $('run-play').addEventListener('click', runPlay);
+  $('run-next').addEventListener('click', () => { runPlaying = false; $('run-play').textContent = '▶ Play'; if (runAt < RUN.length - 1) runGo(runAt + 1, true); });
+  $('run-prev').addEventListener('click', () => { runPlaying = false; $('run-play').textContent = '▶ Play'; if (runAt > 0) runGo(runAt - 1, false); });
+  $('run-scrub').addEventListener('input', e => { runPlaying = false; $('run-play').textContent = '▶ Play'; runGo(+e.target.value, false); });
+  runState(0);
+
+  /* ---------- the refusal toy ---------- */
+  const RG = { nodes: { solar_record: [], g_level: [], ap_design: ['g_level', 'solar_record'], density: ['ap_design'], drag: ['density', 'area'], area: [] },
+    pos: { solar_record: [80, 40], g_level: [80, 130], area: [80, 220], ap_design: [300, 85], density: [520, 85], drag: [720, 150] } };
+  const filled = Object.fromEntries(Object.keys(RG.nodes).map(k => [k, true]));
+  $('rs-toggles').innerHTML = Object.keys(RG.nodes).map(k => `<label class="chip" style="display:inline-flex;gap:6px;align-items:center"><input type="checkbox" data-node="${k}" checked aria-label="${k} has content"> ${k}</label>`).join('');
+  /* ---------- the refusal toy, runnable one row at a time ---------- */
+  let rsEpoch = 0;
+  function rsSolve() {
+    const st = {}, why = {}, order = [];
+    const visit = k => {
+      if (st[k]) return st[k];
+      if (!filled[k]) { st[k] = 'empty'; order.push(k); return st[k]; }
+      const bad = RG.nodes[k].filter(d => visit(d) !== 'ran');
+      if (bad.length) why[k] = bad;
+      st[k] = bad.length ? 'blocked' : 'ran'; order.push(k); return st[k];
+    };
+    Object.keys(RG.nodes).forEach(visit);
+    return { st, why, order };
+  }
+  function rsDraw(shown) {
+    const { st, why, order } = rsSolve(), vis = new Set(order.slice(0, shown));
+    const col = k => !vis.has(k) ? 'var(--rule)' : st[k] === 'ran' ? 'var(--both)' : st[k] === 'blocked' ? 'var(--bad)' : 'var(--ink-3)';
+    let s = `<svg viewBox="0 0 860 260" role="img" aria-label="Toy graph: which rows ran and which were blocked">${marker('ah2')}`;
+    Object.entries(RG.nodes).forEach(([k, ds]) => ds.forEach(d => { const [x1, y1] = RG.pos[d], [x2, y2] = RG.pos[k]; s += `<line x1="${x1 + 62}" y1="${y1}" x2="${x2 - 64}" y2="${y2}" stroke="${vis.has(d) && st[d] !== 'ran' ? 'var(--bad)' : 'var(--ink-3)'}" stroke-width="1.2" marker-end="url(#ah2)"/>`; }));
+    Object.entries(RG.pos).forEach(([k, [x, y]]) => {
+      const label = vis.has(k) ? st[k] : 'waiting', last = order[shown - 1] === k;
+      s += `<g class="${last ? 'pulse' : ''}"><rect x="${x - 62}" y="${y - 17}" width="124" height="34" rx="5" fill="var(--card)" stroke="${col(k)}" stroke-width="2"/><text x="${x}" y="${y - 1}" font-size="11.5" text-anchor="middle" fill="var(--ink)">${k}</text><text x="${x}" y="${y + 12}" font-size="10" text-anchor="middle" fill="${col(k)}">${label}</text></g>`;
+    });
+    $('rs-graph').innerHTML = s + '</svg>';
+    const done = order.slice(0, shown), ran = done.filter(k => st[k] === 'ran').length, blocked = done.filter(k => st[k] !== 'ran');
+    $('rs-out').textContent = (shown < order.length ? `evaluated ${shown} of ${order.length} so far\n` : '') + `${ran} ran, ${blocked.length} blocked` + (blocked.length ? '\n' + blocked.map(k => st[k] === 'empty' ? `  ${k}: NotRun — no content` : `  ${k}: blocked by ${why[k].join(', ')}`).join('\n') : '');
+  }
+  function resolve() { rsEpoch++; rsDraw(Object.keys(RG.nodes).length); }
+  $('rs-toggles').querySelectorAll('input').forEach(i => i.addEventListener('change', () => { filled[i.dataset.node] = i.checked; resolve(); }));
+  $('rs-play').addEventListener('click', async () => {
+    const my = ++rsEpoch, n = Object.keys(RG.nodes).length;
+    for (let k = 0; k <= n; k++) { if (my !== rsEpoch) return; rsDraw(k); await sleep(650); }
+  });
+  resolve();
+
+  /* ---------- closure ---------- */
+  function closure() {
+    const r = parseFloat($('cl-req').value), a = parseFloat($('cl-ach').value), s = $('cl-sense').value;
+    if (!isFinite(r) || !isFinite(a)) { $('cl-out').innerHTML = '<span class="verdict v-wait">refused</span>  A closure with a missing number does not compute. It refuses by name.'; return; }
+    const m = s === 'le' ? r - a : a - r, flip = s === 'le' ? a - r : r - a;
+    $('cl-out').innerHTML = `<span class="verdict ${m >= 0 ? 'v-ok' : 'v-no'}">${m >= 0 ? 'closes' : 'does not close'}</span>  margin = ${s === 'le' ? 'required − achieved' : 'achieved − required'} = ${m.toFixed(1)}\n` +
+      `Read with the opposite sense, the same numbers give ${flip.toFixed(1)}, which <b>${flip >= 0 ? 'closes' : 'does not close'}</b>. That is why the sense is never defaulted.`;
+  }
+  ['cl-req', 'cl-ach', 'cl-sense'].forEach(id => $(id).addEventListener('input', closure)); closure();
+  $('rb07-go').addEventListener('click', () => {
+    const v = parseFloat($('rb07').value), o = $('rb07-out'); o.hidden = false;
+    if (!isFinite(v)) { o.textContent = 'Write a number first.'; return; }
+    const ok = Math.abs(v + 11) < 0.05;
+    o.innerHTML = ok ? '<span class="verdict v-ok">right</span>  margin = 120 − 131 = −11. It does not close: the achieved value went over a bound it had to stay under.'
+      : '<span class="verdict v-no">not yet</span>  With sense ≤, margin = required − achieved. Try again, or set the widget above to these numbers.';
+    if (!ok) addNote('Which way the margin is computed when the sense is ≤');
+  });
+
+  /* ---------- bundle ---------- */
+  function bundle() {
+    const b = $('bd-state').value, n = $('bd-net').value;
+    const R = {
+      ok: ['v-ok', 'runs', 'The bundle is on disk and its hash matches the manifest. The run reads it in process' + (n === 'down' ? ' and never notices the network is down.' : '. The network is never touched either way.')],
+      bad: ['v-no', 'refuses to start', 'The content hash does not match. The run will not guess which bytes are right, and the error says which bundle failed verification (kind: Unverified).'],
+      none: ['v-no', 'refuses to start', 'The bundle is not installed. A run never fetches. Sync first' + (n === 'down' ? ', which needs the network, or a bundle copied in by hand.' : ' with the one reconcile command, then run.')],
+      stale: ['v-ok', 'runs, and says so', 'The data verifies, so the run uses it. The status report flags it as stale against the date its manifest declares, so nobody mistakes it for current.']
+    }[b];
+    $('bd-out').innerHTML = `<span class="verdict ${R[0]}">${R[1]}</span>  ${esc(R[2])}`;
+  }
+  ['bd-state', 'bd-net'].forEach(id => $(id).addEventListener('change', bundle)); bundle();
+
+  /* ---------- faces ---------- */
+  const FACES = {
+    browser: 'page (web/js) → /v1 route → vleo-server on 127.0.0.1 → vleo-bus case → vleo-modules → resolver → vleo-core',
+    'command line': 'vleo run <node> (vleo-cli) → vleo-bus case → vleo-modules → resolver → vleo-core',
+    Python: 'python -m vleo → the same vleo-server inside python.exe → the same engine; import vleo for scripts',
+    C: 'vleo.h, generated from the same declarations → vleo-ffi → vleo-bus → the engine. MATLAB and Simulink come in this way.',
+    "readers' folder": 'row page opened from a file → vleo-kernel-wasm, the whole kernel compiled to WebAssembly → the same relations',
+    'form checker': 'node form opened from a file → vleo-method-wasm → vleo_sheet::method::report_toml, the function intake and the gate also call',
+    'public demo': 'the public page → vleo-wasm, a demonstration subset of rows only, so decompiling it recovers nothing that is not already on the page'
+  };
+  $('face-buttons').innerHTML = Object.keys(FACES).map(f => `<button class="chip" type="button" data-face="${esc(f)}">${esc(f)}</button>`).join('');
+  function face(f) { $('face-out').textContent = FACES[f]; $('face-buttons').querySelectorAll('.chip').forEach(b => b.classList.toggle('on', b.dataset.face === f)); }
+  $('face-buttons').querySelectorAll('.chip').forEach(b => b.addEventListener('click', () => face(b.dataset.face))); face('browser');
+
+  /* ---------- routes ---------- */
+  function routes() {
+    const q = $('route-q').value.toLowerCase().trim();
+    const rows = ROUTES.filter(r => !q || (r[0] + ' ' + r[1]).toLowerCase().includes(q));
+    $('routes').innerHTML = `<thead><tr><th>Method</th><th>Path</th></tr></thead><tbody>${rows.map(r => `<tr><td><code>${r[0]}</code></td><td><code>${esc(r[1])}</code></td></tr>`).join('') || '<tr><td colspan="2" class="muted">No route matches.</td></tr>'}</tbody>`;
+  }
+  $('route-q').addEventListener('input', routes); routes();
+
+  /* ---------- web modules ---------- */
+  $('webmods').innerHTML = WEBJS.map(m => `<button class="chip" type="button" data-m="${esc(m[0])}">${esc(m[0])}</button>`).join('');
+  function webmod(n) { const m = WEBJS.find(x => x[0] === n); $('webmod-out').textContent = `web/js/${m[0]} — ${m[1]}`; $('webmods').querySelectorAll('.chip').forEach(b => b.classList.toggle('on', b.dataset.m === n)); }
+  $('webmods').querySelectorAll('.chip').forEach(b => b.addEventListener('click', () => webmod(b.dataset.m))); webmod('app.js');
+
+  /* ---------- provenance ---------- */
+  function prov() {
+    const v = $('pv').value, bad = v === 'self-snapshot' || v === 'agent-generated';
+    const note = { 'independent-derivation': 'worked out by a person from sourced equations, outside this code. 300 fixture entries today.',
+      'published-source': 'a value printed in a cited source, such as the ap table above. 38 entries.', 'independent-tool': 'another tool’s output, such as the MATLAB study. 4 entries.',
+      'physical-bound': 'a limit physics sets, such as energy conservation. None yet.',
+      'self-snapshot': 'what this code printed last time. It could only prove the code agrees with itself.',
+      'agent-generated': 'a value an assistant produced. An assistant may write code, but it never supplies the expected answer.' }[v];
+    $('pv-out').innerHTML = `<span class="verdict ${bad ? 'v-no' : 'v-ok'}">${bad ? 'refused by the gate' : 'accepted'}</span>  ${esc(v)}: ${esc(note)}`;
+  }
+  $('pv').addEventListener('change', prov); prov();
+
+  /* ---------- the change loop ---------- */
+  const LOOP = [
+    ['the form goes out', 'cargo run -p xtask -- form <node>', 'A maintainer sends the row’s form, one HTML file, to whoever knows the answer.'],
+    ['it comes back filled', '<node>.node-form.html', 'The author fills it in any browser, offline. The form’s own checker (WebAssembly) tests their method against their cases before they send it.'],
+    ['take', 'cargo run -p xtask -- take <form.html> --for "<author>"', 'It goes onto its own branch, form/<author>/<node>, from a fresh maintainer. There it is checked, applied, regenerated, gated, tested, committed under the author’s name, and pushed. If it cannot be applied, take writes a note to send back and changes nothing.'],
+    ['preview', 'automatic on every push to form/**', 'CI builds the tool with this one change, marked PREVIEW on every view. The maintainer sends it to the author.'],
+    ['approve', 'cargo run -p xtask -- approve <file>.toml', 'The author presses Approve and sends back a file naming the exact build. It is refused if anything has changed since that build.'],
+    ['merge', 'squash into maintainer', 'Merged when every check is green, including "the author approved this exact change".'],
+    ['into main', 'a pull request from maintainer (or developer) into main', 'A pull request takes the ready changes into main.'],
+    ['ship', 'cargo run -p xtask -- ship <version>', 'release/<version>: versions stamped, narrative regenerated, gated, tested, pushed. Merging its pull request is the decision.'],
+    ['release', 'tag v<version> on that merge commit', 'The release workflow builds three kits and one wheel, installs the wheel on three systems, and publishes. Everyone’s saved case carries over on its own.']
+  ];
+  let li = 0;
+  function loop() { const s = LOOP[li]; $('loop-out').textContent = `${li + 1} · ${s[0]}\n$ ${s[1]}\n\n${s[2]}`; $('loop-count').textContent = `${li + 1} / ${LOOP.length}`; }
+  $('loop-next').addEventListener('click', () => { li = (li + 1) % LOOP.length; loop(); });
+  $('loop-prev').addEventListener('click', () => { li = (li + LOOP.length - 1) % LOOP.length; loop(); });
+  loop();
+
+  /* ---------- branches ---------- */
+  (function () {
+    const lane = (y, name, col) => `<text x="12" y="${y + 4}" font-size="12" fill="${col}" font-weight="600">${name}</text><line x1="150" y1="${y}" x2="940" y2="${y}" stroke="${col}" stroke-width="2"/>`;
+    const dot = (x, y, col, label) => `<circle cx="${x}" cy="${y}" r="5" fill="${col}"/>${label ? `<text x="${x}" y="${y - 10}" font-size="10.5" text-anchor="middle" fill="var(--ink-2)">${label}</text>` : ''}`;
+    const link = (x1, y1, x2, y2, col) => `<path d="M${x1},${y1} C${(x1 + x2) / 2},${y1} ${(x1 + x2) / 2},${y2} ${x2},${y2}" fill="none" stroke="${col}" stroke-width="1.5" marker-end="url(#ab)"/>`;
+    const Y = { form: 40, maint: 95, dev: 160, feat: 215, main: 275, rel: 330 };
+    $('branches').innerHTML = `<svg viewBox="0 0 960 360" role="img" aria-label="Branches: form branches into maintainer, feature branches into developer, both into main, release branch from main">${marker('ab')}
+      ${lane(Y.form, 'form/<author>/<node>', 'var(--out)')}${lane(Y.maint, 'maintainer', 'var(--out)')}${lane(Y.dev, 'developer', 'var(--in)')}${lane(Y.feat, 'feature branches', 'var(--in)')}${lane(Y.main, 'main', 'var(--ink)')}${lane(Y.rel, 'release/<v>', 'var(--teal)')}
+      ${dot(220, Y.form, 'var(--out)', 'take')}${dot(300, Y.form, 'var(--out)', 'approve')}${link(300, Y.form, 380, Y.maint, 'var(--out)')}${dot(380, Y.maint, 'var(--out)', 'squash')}
+      ${dot(240, Y.feat, 'var(--in)', 'PR')}${link(260, Y.feat, 360, Y.dev, 'var(--in)')}${dot(360, Y.dev, 'var(--in)', 'squash')}
+      ${link(400, Y.maint, 560, Y.main, 'var(--ink-3)')}${link(380, Y.dev, 560, Y.main, 'var(--ink-3)')}${dot(560, Y.main, 'var(--ink)', 'merge commit')}
+      ${link(580, Y.main, 680, Y.rel, 'var(--teal)')}${dot(680, Y.rel, 'var(--teal)', 'xtask ship')}${link(700, Y.rel, 800, Y.main, 'var(--teal)')}${dot(800, Y.main, 'var(--ink)', 'tag v<v>')}
+    </svg>`;
+  })();
+
+  /* ---------- commands ---------- */
+  const STAGES = [...new Set(CMDS.map(c => c[0]))];
+  let stage = '';
+  $('cmd-stages').innerHTML = ['all', ...STAGES].map(s => `<button class="chip" type="button" data-st="${s === 'all' ? '' : s}">${s}</button>`).join('');
+  function cmds() {
+    const q = $('cmd-q').value.toLowerCase().trim();
+    $('cmd-stages').querySelectorAll('.chip').forEach(b => b.classList.toggle('on', b.dataset.st === stage));
+    const rows = CMDS.filter(c => (!stage || c[0] === stage) && (!q || c.join(' ').toLowerCase().includes(q)));
+    $('cmds').innerHTML = `<thead><tr><th>Stage</th><th>Command</th><th>What it does</th><th>Code</th></tr></thead><tbody>${rows.map(c => `<tr><td class="small muted">${esc(c[0])}</td><td><code>${esc(c[1])}</code></td><td class="small">${esc(c[3])}</td><td><code class="small">${esc(c[4])}</code></td></tr>`).join('') || '<tr><td colspan="4" class="muted">No command matches.</td></tr>'}</tbody>`;
+  }
+  $('cmd-stages').querySelectorAll('.chip').forEach(b => b.addEventListener('click', () => { stage = b.dataset.st; cmds(); }));
+  $('cmd-q').addEventListener('input', cmds); cmds();
+
+  /* ---------- one change, played across the branches ---------- */
+  const LEGS = [[[150, 40], [220, 40], 2], [[220, 40], [260, 40], 3], [[260, 40], [300, 40], 4], [[300, 40], [380, 95], 5], [[380, 95], [560, 275], 6], [[560, 275], [680, 330], 7], [[680, 330], [800, 275], 8]];
+  let brEpoch = 0;
+  $('br-play').addEventListener('click', async () => {
+    const my = ++brEpoch, svg = $('branches').querySelector('svg');
+    for (const [a, b, n] of LEGS) {
+      if (my !== brEpoch) return;
+      await travel(svg, [a, b], 'var(--out)', 800);
+      li = n; loop(); $('br-cap').textContent = `${LOOP[n][0]}: ${LOOP[n][2]}`;
+      await sleep(1300);
+    }
+  });
+  /* ---------- a request, followed through the crates ---------- */
+  const CPATH = [['vleo-daemon', 'The daemon is seven lines: it starts the server as a program.'], ['vleo-server', 'The server answers /v1/run on 127.0.0.1 and builds the case.'],
+    ['vleo-bus', 'The case is one typed message on the bus.'], ['vleo-modules', 'The facade holds the graph tables and the one NodeTable the resolver walks.'],
+    ['vleo-mod-* (20)', 'Each row’s contract.rs and model.rs live in its subsystem crate.'], ['vleo-core', 'The resolver orders the rows; every formula is in vleo-core::physics.'],
+    ['vleo-units', 'Quantities, frames, constants and pmath, the portable maths every formula uses.']];
+  let cmEpoch = 0;
+  $('cm-play').addEventListener('click', async () => {
+    const my = ++cmEpoch;
+    for (let i = 0; i < CPATH.length; i++) {
+      if (my !== cmEpoch) return;
+      pick(CPATH[i][0]); $('cm-cap').textContent = `${i + 1}/${CPATH.length} · ${CPATH[i][1]}`;
+      if (i < CPATH.length - 1) {
+        const [x1, y1] = xy(CPATH[i][0]), [x2, y2] = xy(CPATH[i + 1][0]);
+        await sleep(700);
+        await travel($('cratemap').querySelector('svg'), [[x1 + BW / 2, y1 + BH / 2], [x2 + BW / 2, y2 + BH / 2]], 'var(--teal)', 650);
+      }
+    }
+  });
+  /* ---------- explain it back ---------- */
+  $('tb-check').addEventListener('click', () => {
+    const t = $('tb').value.toLowerCase(), o = $('tb-out'); o.hidden = false;
+    const KEY = [['one row per question, from one hand-written sheet', /row|node|sheet/], ['generated code, pages and tests', /generat|xtask|emit/],
+      ['layers joined only by closures with a direction', /closure|sense|margin|layer/], ['one kernel, every face the same', /kernel|engine|face|core/],
+      ['a refusal by name, never a guess', /refus|block|not ?run/], ['changes arrive as forms and ship as releases', /form|release|take|approve/],
+      ['evidence from outside the code', /fixture|evidence|outside|provenance/]];
+    const miss = KEY.filter(k => !k[1].test(t)), before = store.get('km', '');
+    o.innerHTML = `<b>Your explanation covers ${KEY.length - miss.length} of ${KEY.length} key points.</b>` + (miss.length ? `<br>Not yet: ${miss.map(m => esc(m[0])).join(' · ')}. Each one is now in your notes.` : ' All of them.') +
+      (before ? `<br><br><span class="small muted">What you wrote at the start, for comparison:</span><br>${esc(before)}` : '');
+    miss.forEach(m => addNote(m[0]));
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,5 @@
+id,kind,file,title,x,y,z,on
+story,flow,figures/story.csv,"From the altitude a mission chooses to the two things it decides: speed and period.",,,,
+story-steps,steps,figures/story-steps.csv,"Walk through the group one step at a time.",,,,story
+orbit3d,scene3d,figures/orbit3d.csv,"The orbit at 400 km, inclined like the ISS, around the Earth — drag to turn it.",,,,
+sketch,image,images/sketch.svg,"A sketch, not data: the spacecraft on its circle, with gravity pulling it inward.",,,,

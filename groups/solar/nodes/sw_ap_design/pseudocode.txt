@@ -1,0 +1,16 @@
+# Transcribed from crates/vleo-mod-solar/nodes/sw_ap_design/model.rs (HOLE 1 and its guards) — the method the code already runs.
+# The published ap equivalent amplitude at the top Kp of each G band (iaga_kp_ap): G1 is Kp 5 is ap 48, G2 is Kp 6 is ap 80, G3 is Kp 7 is ap 132.
+# A lookup on three integer levels, not an interpolation: the ap scale is close to geometric.
+let out = 132
+if g_level < 1.5 then
+  set out = 48
+else if g_level < 2.5 then
+  set out = 80
+end
+if out < 40 then
+  refuse "Designing to less than a minor storm (G1, Ap 48) is not a design case."
+end
+if out > 140 then
+  refuse "Above G3's Ap 132 means a G level outside the range or a misread table."
+end
+return out

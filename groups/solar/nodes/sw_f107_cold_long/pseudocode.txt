@@ -1,0 +1,14 @@
+# Transcribed from crates/vleo-mod-solar/nodes/sw_f107_cold_long/model.rs (HOLE 1 and its guards) — the method the code already runs.
+# Numbers: 1.28 spreads, declared in the sheet (source noaa_swpc) and not chosen in the hole — the same 1.28 the hot edge adds.
+# The generated guard refuses an answer that is not a finite number; x - x is zero only for a finite x.
+if (central - spread * 1.28) - (central - spread * 1.28) != 0 then
+  refuse "the computation produced a value that is not a number"
+end
+let sustained = central - spread * 1.28
+if sustained < 60 then
+  refuse "below 60 sfu has never been observed: the band is wider than the sky"
+end
+if sustained > 400 then
+  refuse "a cold level above 400 sfu is arithmetic, not sky: the spread was added rather than subtracted"
+end
+return sustained

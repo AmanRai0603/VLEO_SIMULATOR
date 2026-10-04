@@ -1,0 +1,13 @@
+ap [1],answer [1],tolerance,refuses,origin,says
+2.5,1,0.000000000001,no,hand,"Ap bin 0-5, centre 2.5 — 2529 days."
+7.5,0.8333333333333333,0.000000000001,no,hand,"Ap bin 5-10, centre 7.5 — 3938 days."
+12.5,1.114406779661017,0.000000000001,no,hand,"Ap bin 10-15, centre 12.5 — 1836 days."
+17.5,1,0.000000000001,no,hand,"Ap bin 15-20, centre 17.5 — 839 days."
+25,1.2,0.000000000001,no,hand,"Ap bin 20-30, centre 25 — 707 days."
+37.5,1.333333333333333,0.000000000001,no,hand,"Ap bin 30-45, centre 37.5 — 288 days."
+57.5,1.545454545454545,0.000000000001,no,hand,"Ap bin 45-70, centre 57.5 — 115 days."
+90,1.746913580246914,0.000000000001,no,hand,"Ap bin 70-110, centre 90 — 25 days."
+255,1.317460317460317,0.000000000001,no,hand,"Ap bin 110-400, centre 255 — 20 days."
+0,1,0.000000000001,no,hand,below the first bin centre — Ap 0 holds the 0-to-5 bin rather than extrapolating.
+1000,1.3174603174603174,0.000000000001,no,hand,above the last bin centre — Ap 1000 holds the 110-to-400 bin.
+NaN,,,yes,hand,"outside what the node holds for: its code refuses it, and so must the developer's"

@@ -1,0 +1,5 @@
+g_level [1],answer [1],tolerance,refuses,origin,says
+2,80,0.000000000001,no,paper,G2 moderate — Kp 6 — daily Ap bounded at 80.
+1,48,0.000000000001,no,paper,G1 minor — Kp 5 — daily Ap bounded at 48.
+3,132,0.000000000001,no,paper,"G3 strong — Kp 7 — daily Ap bounded at 132, the declared default."
+NaN,,,yes,hand,"a value that is not a number: the node must refuse it, as every method does at its door. The code before 1.1 answered 132 here, which no value is"

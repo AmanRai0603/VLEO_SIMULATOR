@@ -65,9 +65,10 @@ export async function renderResults(host) {
        'Send the report page: it opens in any browser, and uploaded here it brings back everything, sweep included.',
        'If a belief it rested on has changed since, it says which.'], 'how-to');
   h += '<div class="runbar res-actions"><label class="ctl res-up-l">upload a result…' +
-    '<input type="file" class="res-up" accept=".csv,.html,text/csv,text/html" multiple hidden></label>' +
-    '<span class="muted">its report page, or its <code>result.csv</code> (with its <code>sweep.csv</code> for a ' +
-    'sweep). Kept at <code>' + esc(list.path) + '</code> — outside the repository.</span>' +
+    '<input type="file" class="res-up" accept=".csv,.html,.vleor,text/csv,text/html" multiple hidden></label>' +
+    '<span class="muted">its report page, its <code>result.csv</code> (with its <code>sweep.csv</code> for a ' +
+    'sweep), or a <code>results.vleor</code> that holds several. Kept at <code>' + esc(list.path) +
+    '</code> — outside the repository.</span>' +
     '<span class="why res-said"></span></div>';
   if (!list.results.length) {
     h += '<p class="empty">No result is saved yet. Run a row — on its page, or on <b>4 The run</b> — and ' +
@@ -101,6 +102,25 @@ export async function renderResults(host) {
     if (!files.length) return;
     const said = $('.res-said', host);
     said.textContent = 'reading ' + files.map(f => f.name).join(', ') + '…';
+    // A results file is a database, not text: it is told by its first bytes,
+    // and sent whole, as base64, for the engine to read every result in it.
+    const heads = await Promise.all(files.map(f => f.slice(0, 16).arrayBuffer()));
+    const isFile = h => new TextDecoder().decode(h) === 'SQLite format 3\u0000';
+    const bundles = files.filter((f, i) => isFile(heads[i]));
+    if (bundles.length) {
+      let added = 0, already = 0, first = '';
+      for (const f of bundles) {
+        const r = await post('/v1/results/upload-file', { vleor: base64(await f.arrayBuffer()) });
+        if (!r.ok) { said.textContent = f.name + ' not kept: ' + (r.message || 'refused'); return; }
+        added += r.added; already += r.already; first = first || r.file;
+      }
+      if (first) openResult(first);
+      await renderResults(host);
+      const s2 = $('.res-said', host);
+      if (s2) s2.textContent = plural(added, 'result') + ' kept' +
+        (already ? '; ' + already + ' already kept here, and kept once' : '');
+      return;
+    }
     // Which file is which is read from the files, not their names: a result
     // says `#! result`, a sweep says `#! sweep`, and a report page carries both.
     const texts = await Promise.all(files.map(f => f.text()));
@@ -119,6 +139,14 @@ export async function renderResults(host) {
   if (PAGE.open && list.results.some(r => r.file === PAGE.open)) {
     await view($('.res-view', host), host, list.results);
   }
+}
+
+/** The bytes of a file as base64, in pieces small enough for the call stack. */
+function base64(buf) {
+  const b = new Uint8Array(buf);
+  let s = '';
+  for (let i = 0; i < b.length; i += 0x8000) s += String.fromCharCode(...b.subarray(i, i + 0x8000));
+  return btoa(s);
 }
 
 async function view(el, host, all) {

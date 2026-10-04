@@ -1,0 +1,4 @@
+name,from,unit,default,min,max,says
+today,sw_f107_observed,1,150,60,400,
+lead,l3_x_envorbit.orbit_mission_duration,yr,5,0.5,15,
+epoch,sys_mission_requirements.sys_mission_requirements_mission_epoch,d,9862,6575,14610,

@@ -171,7 +171,7 @@ pub(super) fn manual_endpoint(ctx: &Ctx) -> (&'static str, &'static str, Vec<u8>
     };
     use vleo_sheet::form;
     let case = saved_case();
-    let (rows, published, seeded) = match vleo_sheet::load::load_all(&ctx.root) {
+    let (rows, published, seeded) = match ctx.load() {
         Ok(t) => {
             let n = t.sheets.len();
             let s = t.sheets.values().filter(|s| s.is_seeded()).count();
@@ -269,8 +269,8 @@ pub(super) fn node_endpoint(ctx: &Ctx, id: &str) -> (&'static str, &'static str,
     let def = &NODES[i as usize];
     let dir = ctx.root.join(def.folder);
 
-    // The eight files, and who writes each. This list is the template: it is
-    // the same eight for every folder in the tree, which is what makes
+    // The seven files, and who writes each. This list is the template: it is
+    // the same seven for every folder in the tree, which is what makes
     // adding the next node a copy rather than a decision.
     const ARTEFACTS: &[(&str, &str, &str)] = &[
         (
@@ -295,7 +295,6 @@ pub(super) fn node_endpoint(ctx: &Ctx, id: &str) -> (&'static str, &'static str,
         ),
         ("mod.rs", "generated", "the module wiring"),
         ("evidence.rs", "generated", "the fixtures, as tests"),
-        ("page.html", "generated", "the tabs a reader opens"),
         (
             "meta.json",
             "generated",
@@ -321,13 +320,13 @@ pub(super) fn node_endpoint(ctx: &Ctx, id: &str) -> (&'static str, &'static str,
         if n > 0 {
             j.raw(",");
         }
-        let meta = std::fs::metadata(dir.join(name));
+        let len = ctx.tree.len(&dir.join(name));
         j.raw("{");
         j.str_field("name", name);
         j.str_field("written", who);
         j.str_field("what", what);
-        j.bool_field("present", meta.is_ok());
-        j.num_field("bytes", meta.map(|m| m.len() as f64).unwrap_or(0.0));
+        j.bool_field("present", len.is_some());
+        j.num_field("bytes", len.unwrap_or(0) as f64);
         j.close_obj();
     }
     j.close_arr();
@@ -363,14 +362,33 @@ pub(super) fn fragment(ctx: &Ctx, id: &str) -> (&'static str, &'static str, Vec<
     // is a second implementation of the layout rule, and it fails on the first
     // row whose folder is not its id minus a prefix — as a 404 that nobody
     // attributes to a layout change.
+    // RENDERED, NOT READ. A node's page is written from its sheet when it is
+    // opened — from the folders or from a design file alike — so there is no
+    // committed copy to fall behind the sheet it describes.
     let def = &NODES[i as usize];
-    let p = ctx.root.join(def.folder).join("page.html");
-    match std::fs::read(&p) {
-        Ok(b) => ("200 OK", "text/html; charset=utf-8", b),
-        Err(_) => (
+    let tree = match ctx.load() {
+        Ok(t) => t,
+        Err(e) => {
+            return (
+                "500 Internal Server Error",
+                "text/html; charset=utf-8",
+                format!("<p class=\"empty\">The tree does not load: {e}</p>").into_bytes(),
+            )
+        }
+    };
+    match tree.sheets.get(def.id) {
+        Some(sh) => {
+            let holes = vleo_sheet::load::read_holes_in(&*ctx.tree, &sh.dir);
+            (
+                "200 OK",
+                "text/html; charset=utf-8",
+                vleo_sheet::page::fragment(sh, &holes, &tree).into_bytes(),
+            )
+        }
+        None => (
             "404 Not Found",
             "text/html; charset=utf-8",
-            format!("<p class=\"empty\">No fragment for <code>{id}</code>. Run <code>cargo xtask docs</code>.</p>").into_bytes(),
+            format!("<p class=\"empty\">No sheet for <code>{id}</code>.</p>").into_bytes(),
         ),
     }
 }
@@ -378,7 +396,7 @@ pub(super) fn fragment(ctx: &Ctx, id: &str) -> (&'static str, &'static str, Vec<
 /// One node's form, as a file to download.
 pub(super) fn form_file(ctx: &Ctx, id: &str) -> (&'static str, &'static str, Vec<u8>) {
     let id = decode(id);
-    let tree = match vleo_sheet::load::load_all(&ctx.root) {
+    let tree = match ctx.load() {
         Ok(t) => t,
         Err(e) => {
             return (
@@ -425,7 +443,11 @@ pub(super) fn form_check(ctx: &Ctx, params: &str) -> String {
         j.raw("}");
         return j.0;
     };
-    let p = match template::plan(&ctx.root, &html) {
+    let p = match ctx
+        .load()
+        .map_err(|e| e.within("the tree does not load"))
+        .and_then(|tree| template::plan_in(&tree, &html))
+    {
         Ok(p) => p,
         Err(e) => {
             j.bool_field("ok", false);
@@ -544,12 +566,12 @@ pub(super) fn lesson_json(ctx: &Ctx, id: &str) -> String {
         return failed("no such node");
     };
     let dir = ctx.root.join(NODES[i as usize].folder);
-    let l = match vleo_sheet::lesson::load(&dir, id) {
+    let l = match vleo_sheet::lesson::load_from(&*ctx.tree, &dir, id) {
         None => return "{\"ok\":true,\"checked\":true,\"lesson\":null}".to_string(),
         Some(Err(e)) => return failed(e.message()),
         Some(Ok(l)) => l,
     };
-    let checked = match vleo_sheet::load::load_all(&ctx.root) {
+    let checked = match ctx.load() {
         Ok(tree) => {
             let bad = vleo_sheet::lesson::problems(&l, &tree);
             if !bad.is_empty() {
@@ -574,7 +596,7 @@ pub(super) fn lesson_json(ctx: &Ctx, id: &str) -> String {
 pub(super) fn lesson_form_file(ctx: &Ctx, id: &str) -> (&'static str, &'static str, Vec<u8>) {
     let id = decode(id);
     let text = |status, body: String| (status, "text/plain; charset=utf-8", body.into_bytes());
-    let tree = match vleo_sheet::load::load_all(&ctx.root) {
+    let tree = match ctx.load() {
         Ok(t) => t,
         Err(e) => {
             return text(

@@ -12,6 +12,9 @@ repository.workspace = true
 toml = { workspace = true }
 toml_edit = { workspace = true }
 vleo-units = { workspace = true }
+# The kernel functions a method may call by name (method/kernel.rs): the
+# interpreter runs the kernel itself, so it and the translation cannot differ.
+vleo-core = { workspace = true }
 
 [lints.rust]
 unsafe_code = "forbid"

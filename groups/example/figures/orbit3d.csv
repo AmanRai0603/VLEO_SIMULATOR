@@ -1,0 +1,148 @@
+body,shape,x [km],y [km],z [km]
+Earth,path,6378.137,0.0,0
+Earth,path,6353.866,555.891,0
+Earth,path,6281.239,1107.552,0
+Earth,path,6160.807,1650.783,0
+Earth,path,5993.488,2181.451,0
+Earth,path,5780.555,2695.517,0
+Earth,path,5523.629,3189.068,0
+Earth,path,5224.664,3658.349,0
+Earth,path,4885.936,4099.787,0
+Earth,path,4510.024,4510.024,0
+Earth,path,4099.787,4885.936,0
+Earth,path,3658.349,5224.664,0
+Earth,path,3189.069,5523.629,0
+Earth,path,2695.517,5780.555,0
+Earth,path,2181.451,5993.488,0
+Earth,path,1650.783,6160.807,0
+Earth,path,1107.552,6281.239,0
+Earth,path,555.891,6353.866,0
+Earth,path,0.0,6378.137,0
+Earth,path,-555.891,6353.866,0
+Earth,path,-1107.552,6281.239,0
+Earth,path,-1650.783,6160.807,0
+Earth,path,-2181.451,5993.488,0
+Earth,path,-2695.517,5780.555,0
+Earth,path,-3189.068,5523.629,0
+Earth,path,-3658.349,5224.664,0
+Earth,path,-4099.787,4885.936,0
+Earth,path,-4510.024,4510.024,0
+Earth,path,-4885.936,4099.787,0
+Earth,path,-5224.664,3658.349,0
+Earth,path,-5523.629,3189.069,0
+Earth,path,-5780.555,2695.517,0
+Earth,path,-5993.488,2181.451,0
+Earth,path,-6160.807,1650.783,0
+Earth,path,-6281.239,1107.552,0
+Earth,path,-6353.866,555.891,0
+Earth,path,-6378.137,0.0,0
+Earth,path,-6353.866,-555.891,0
+Earth,path,-6281.239,-1107.552,0
+Earth,path,-6160.807,-1650.783,0
+Earth,path,-5993.488,-2181.451,0
+Earth,path,-5780.555,-2695.517,0
+Earth,path,-5523.629,-3189.069,0
+Earth,path,-5224.664,-3658.349,0
+Earth,path,-4885.936,-4099.787,0
+Earth,path,-4510.024,-4510.024,0
+Earth,path,-4099.787,-4885.936,0
+Earth,path,-3658.349,-5224.664,0
+Earth,path,-3189.069,-5523.629,0
+Earth,path,-2695.517,-5780.555,0
+Earth,path,-2181.451,-5993.488,0
+Earth,path,-1650.783,-6160.807,0
+Earth,path,-1107.552,-6281.239,0
+Earth,path,-555.891,-6353.866,0
+Earth,path,-0.0,-6378.137,0
+Earth,path,555.891,-6353.866,0
+Earth,path,1107.552,-6281.239,0
+Earth,path,1650.783,-6160.807,0
+Earth,path,2181.451,-5993.488,0
+Earth,path,2695.517,-5780.555,0
+Earth,path,3189.068,-5523.629,0
+Earth,path,3658.349,-5224.664,0
+Earth,path,4099.787,-4885.936,0
+Earth,path,4510.024,-4510.024,0
+Earth,path,4885.936,-4099.787,0
+Earth,path,5224.664,-3658.349,0
+Earth,path,5523.629,-3189.068,0
+Earth,path,5780.555,-2695.517,0
+Earth,path,5993.488,-2181.451,0
+Earth,path,6160.807,-1650.783,0
+Earth,path,6281.239,-1107.552,0
+Earth,path,6353.866,-555.891,0
+Earth,path,6378.137,-0.0,0
+"orbit at 400 km, inclined 51.6 deg",path,6778.137,0.0,0.0
+"orbit at 400 km, inclined 51.6 deg",path,6752.344,366.945,462.97
+"orbit at 400 km, inclined 51.6 deg",path,6675.162,731.098,922.416
+"orbit at 400 km, inclined 51.6 deg",path,6547.178,1089.686,1374.842
+"orbit at 400 km, inclined 51.6 deg",path,6369.365,1439.982,1816.805
+"orbit at 400 km, inclined 51.6 deg",path,6143.078,1779.318,2244.94
+"orbit at 400 km, inclined 51.6 deg",path,5870.039,2105.112,2655.991
+"orbit at 400 km, inclined 51.6 deg",path,5552.325,2414.886,3046.827
+"orbit at 400 km, inclined 51.6 deg",path,5192.354,2706.28,3414.476
+"orbit at 400 km, inclined 51.6 deg",path,4792.867,2977.078,3756.138
+"orbit at 400 km, inclined 51.6 deg",path,4356.902,3225.219,4069.214
+"orbit at 400 km, inclined 51.6 deg",path,3887.78,3448.814,4351.321
+"orbit at 400 km, inclined 51.6 deg",path,3389.069,3646.162,4600.311
+"orbit at 400 km, inclined 51.6 deg",path,2864.564,3815.759,4814.29
+"orbit at 400 km, inclined 51.6 deg",path,2318.259,3956.317,4991.63
+"orbit at 400 km, inclined 51.6 deg",path,1754.311,4066.765,5130.98
+"orbit at 400 km, inclined 51.6 deg",path,1177.011,4146.262,5231.281
+"orbit at 400 km, inclined 51.6 deg",path,590.754,4194.204,5291.768
+"orbit at 400 km, inclined 51.6 deg",path,0.0,4210.225,5311.982
+"orbit at 400 km, inclined 51.6 deg",path,-590.754,4194.204,5291.768
+"orbit at 400 km, inclined 51.6 deg",path,-1177.011,4146.262,5231.281
+"orbit at 400 km, inclined 51.6 deg",path,-1754.311,4066.765,5130.98
+"orbit at 400 km, inclined 51.6 deg",path,-2318.259,3956.317,4991.63
+"orbit at 400 km, inclined 51.6 deg",path,-2864.564,3815.759,4814.29
+"orbit at 400 km, inclined 51.6 deg",path,-3389.068,3646.162,4600.311
+"orbit at 400 km, inclined 51.6 deg",path,-3887.78,3448.814,4351.321
+"orbit at 400 km, inclined 51.6 deg",path,-4356.902,3225.219,4069.214
+"orbit at 400 km, inclined 51.6 deg",path,-4792.867,2977.078,3756.138
+"orbit at 400 km, inclined 51.6 deg",path,-5192.354,2706.28,3414.476
+"orbit at 400 km, inclined 51.6 deg",path,-5552.325,2414.886,3046.827
+"orbit at 400 km, inclined 51.6 deg",path,-5870.039,2105.112,2655.991
+"orbit at 400 km, inclined 51.6 deg",path,-6143.078,1779.318,2244.94
+"orbit at 400 km, inclined 51.6 deg",path,-6369.365,1439.982,1816.805
+"orbit at 400 km, inclined 51.6 deg",path,-6547.178,1089.686,1374.842
+"orbit at 400 km, inclined 51.6 deg",path,-6675.162,731.098,922.416
+"orbit at 400 km, inclined 51.6 deg",path,-6752.344,366.945,462.97
+"orbit at 400 km, inclined 51.6 deg",path,-6778.137,0.0,0.0
+"orbit at 400 km, inclined 51.6 deg",path,-6752.344,-366.945,-462.97
+"orbit at 400 km, inclined 51.6 deg",path,-6675.162,-731.098,-922.416
+"orbit at 400 km, inclined 51.6 deg",path,-6547.178,-1089.686,-1374.842
+"orbit at 400 km, inclined 51.6 deg",path,-6369.365,-1439.982,-1816.805
+"orbit at 400 km, inclined 51.6 deg",path,-6143.078,-1779.318,-2244.94
+"orbit at 400 km, inclined 51.6 deg",path,-5870.039,-2105.112,-2655.991
+"orbit at 400 km, inclined 51.6 deg",path,-5552.325,-2414.886,-3046.827
+"orbit at 400 km, inclined 51.6 deg",path,-5192.354,-2706.28,-3414.476
+"orbit at 400 km, inclined 51.6 deg",path,-4792.867,-2977.078,-3756.138
+"orbit at 400 km, inclined 51.6 deg",path,-4356.902,-3225.219,-4069.214
+"orbit at 400 km, inclined 51.6 deg",path,-3887.78,-3448.814,-4351.321
+"orbit at 400 km, inclined 51.6 deg",path,-3389.069,-3646.162,-4600.311
+"orbit at 400 km, inclined 51.6 deg",path,-2864.564,-3815.759,-4814.29
+"orbit at 400 km, inclined 51.6 deg",path,-2318.259,-3956.317,-4991.63
+"orbit at 400 km, inclined 51.6 deg",path,-1754.311,-4066.765,-5130.98
+"orbit at 400 km, inclined 51.6 deg",path,-1177.011,-4146.262,-5231.281
+"orbit at 400 km, inclined 51.6 deg",path,-590.754,-4194.204,-5291.768
+"orbit at 400 km, inclined 51.6 deg",path,-0.0,-4210.225,-5311.982
+"orbit at 400 km, inclined 51.6 deg",path,590.754,-4194.204,-5291.768
+"orbit at 400 km, inclined 51.6 deg",path,1177.011,-4146.262,-5231.281
+"orbit at 400 km, inclined 51.6 deg",path,1754.311,-4066.765,-5130.98
+"orbit at 400 km, inclined 51.6 deg",path,2318.259,-3956.317,-4991.63
+"orbit at 400 km, inclined 51.6 deg",path,2864.564,-3815.759,-4814.29
+"orbit at 400 km, inclined 51.6 deg",path,3389.068,-3646.162,-4600.311
+"orbit at 400 km, inclined 51.6 deg",path,3887.78,-3448.814,-4351.321
+"orbit at 400 km, inclined 51.6 deg",path,4356.902,-3225.219,-4069.214
+"orbit at 400 km, inclined 51.6 deg",path,4792.867,-2977.078,-3756.138
+"orbit at 400 km, inclined 51.6 deg",path,5192.354,-2706.28,-3414.476
+"orbit at 400 km, inclined 51.6 deg",path,5552.325,-2414.886,-3046.827
+"orbit at 400 km, inclined 51.6 deg",path,5870.039,-2105.112,-2655.991
+"orbit at 400 km, inclined 51.6 deg",path,6143.078,-1779.318,-2244.94
+"orbit at 400 km, inclined 51.6 deg",path,6369.365,-1439.982,-1816.805
+"orbit at 400 km, inclined 51.6 deg",path,6547.178,-1089.686,-1374.842
+"orbit at 400 km, inclined 51.6 deg",path,6675.162,-731.098,-922.416
+"orbit at 400 km, inclined 51.6 deg",path,6752.344,-366.945,-462.97
+"orbit at 400 km, inclined 51.6 deg",path,6778.137,-0.0,-0.0
+spacecraft,point,-5192.354,2706.28,3414.476

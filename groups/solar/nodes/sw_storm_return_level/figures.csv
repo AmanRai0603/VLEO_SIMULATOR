@@ -1,0 +1,3 @@
+id,kind,file,title,x,y,z,on
+return_level,line,figures/return_level.csv,"The daily Ap a mission should expect to meet at least once, by mission length in years, against the G3 storm level (Ap 132).",years,level g3,,
+storms,bar,figures/storms.csv,"Storm days per year in each solar cycle at the NOAA G1, G2 and G3 levels.",cycle,G1 G2 G3,,

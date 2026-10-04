@@ -1,0 +1,14 @@
+# Transcribed from crates/vleo-mod-solar/nodes/sw_horizon_persistence/model.rs (HOLE 1 and its guards) — the method the code already runs.
+# Numbers: eighteen measured RMS values of F107(t+L) - F107(t) over observed pairs, from bundles solar-weather@2026.09.14 (NOAA SWPC record, noaa_swpc).
+# A Table1 lookup on the lead in days: linear between leads, held at both ends. The dip at 27 d is the
+# synodic solar rotation and is deliberate, not a transcription error.
+let err = interp(lead, [1.0, 2.0, 3.0, 5.0, 7.0, 10.0, 14.0, 20.0, 27.0, 40.0, 60.0, 90.0, 135.0, 180.0, 270.0, 365.0, 547.0, 730.0] [d], [7.0784, 10.3796, 13.6671, 19.3021, 23.6294, 27.6511, 29.1328, 25.4695, 22.4321, 29.602, 27.9575, 30.1549, 31.0394, 32.9634, 35.7538, 38.8277, 43.7693, 49.6285])
+
+# Generated guards: the declared domain of D_pers.
+if err < 0 then
+  refuse "an RMS cannot be negative"
+end
+if err > 65 then
+  refuse "above 65 is unreachable by this relation (saturation is 62.77 sfu, the largest entry 49.63), so it is a broken table rather than an extreme sky"
+end
+return err

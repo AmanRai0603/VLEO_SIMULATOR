@@ -7,8 +7,8 @@
 
   PROGRESSIVE, NOT REQUIRED. The generated page already contains every line,
   visible, in order. This takes a page that is complete and makes it steppable;
-  it never makes a complete page incomplete. So `page.html` opened straight off
-  the disk with no engine and no script still carries the whole argument, and if
+  it never makes a complete page incomplete. So a node's page opened straight
+  off the disk with no engine and no script still carries the whole argument, and if
   this module fails to load nothing is hidden.
 
   It adds no content. Every line it reveals was authored on the sheet, and there

@@ -1561,8 +1561,19 @@ pub fn today() -> String {
 /// sheet, numbered, dated, and `next` until a release stamps it.
 fn plan_form_as(root: &Path, f: Form, first: bool) -> Result<Plan, Error> {
     let tree = crate::load::load_all(root).map_err(|e| e.within("the tree does not load"))?;
-    let unlisted = sources_unlisted(&tree, &f);
-    let mut p = plan_form_on(&tree, f, first)?;
+    plan_form_in(&tree, f, first)
+}
+
+/// What a filled form would change, against a tree already loaded — from the
+/// folders or from a design file. Writes nothing.
+pub fn plan_in(tree: &Tree, html: &str) -> Result<Plan, Error> {
+    plan_form_in(tree, read(html)?, false)
+}
+
+fn plan_form_in(tree: &Tree, f: Form, first: bool) -> Result<Plan, Error> {
+    let root = tree.root.as_path();
+    let unlisted = sources_unlisted(tree, &f);
+    let mut p = plan_form_on(tree, f, first)?;
     p.open.extend(unlisted);
     // WHOSE PLAIN WORDS THESE ARE. A form that changes them names its filler
     // beside them, so the page never presents one person's wording — or an

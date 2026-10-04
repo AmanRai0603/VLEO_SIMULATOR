@@ -311,8 +311,10 @@ crates/vleo-mod-prop/nodes/prop_capture_efficiency/
   evidence.rs    generated — the fixture tests and three properties
   mod.rs         generated
   meta.json      generated
-  page.html      generated — this node's fragment of the document
 ```
+
+The node's page is not a file in the folder: the engine renders it from the
+sheet when it is opened.
 
 Nine generators: six per node, which read nothing but that node's sheet, and
 three at assembly, which combine and refuse but never decide. A hand edit
@@ -369,7 +371,7 @@ makes 1396 rows 1396 independent pieces of work rather than one large one.
 | contract | `contract.rs` | outputs, units, guarantees, domain, faults — what other nodes may rely on |
 | module | `mod.rs` | wires the node into its crate |
 | evidence | `evidence.rs` | the fixture tests, plus three properties derived from the declared domain |
-| page | `page.html` | this node's fragment of the document |
+| page | — | this node's fragment of the document, rendered from the sheet when it is opened; never written to the folder |
 | metadata | `meta.json` | criticality, reviewer count, open gaps |
 
 Three run at assembly, where the whole tree is visible:
@@ -423,7 +425,7 @@ What that run showed, in order:
 | `declare` | six questions open |
 | `docs` | refused, named the six fields, wrote nothing |
 | `declare` | `0 gaps open · ready to generate` |
-| `docs` | six artefacts written |
+| `docs` | five artefacts written |
 | `fill` | one line spliced; a second body carrying a guard was refused by name |
 | `gate` | twelve checks, then `0 node check failure(s)` |
 | `ready` | held — no fixture yet |
@@ -659,12 +661,15 @@ showing an optimum near 300 km — recorded 15 September 2026](docs/img/sweep.pn
 | | |
 |---|---|
 | **? Manual**, in the tool | the place to start. Every task in the browser and in the terminal, for a user and for a developer, what cannot be done by hand, and every command, route, setting and folder. Source: [`docs/manual.toml`](docs/manual.toml) |
+| [`docs/HOW_IT_WORKS.html`](docs/HOW_IT_WORKS.html) | **read this first if you will develop or maintain the tool.** The architecture of the codebase and how it works, end to end: an explorable map of every crate and file, one row opened file by file, a run stepped through from a click to a number, how a change lands, how releases travel and what happens when something breaks. Open it in a browser |
 | [`docs/GLOSSARY.md`](docs/GLOSSARY.md) | the words this repository uses in a sense of its own — row, closure, sense, fixture, form, take — each in a sentence, with where it is defined |
 | [`docs/USING_IT.md`](docs/USING_IT.md) | the worked walkthrough, with real outputs — running it, changing an input, keeping a result, a form from filling to release |
 | [`docs/ARCHITECTURE.html`](docs/ARCHITECTURE.html) | the whole tool end to end, with diagrams — frontend, backend and data, how pictures, pages and results are made and shared, and the roadmap. Open it in a browser |
 | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | why the rings are shaped the way they are |
 | [`docs/NODE_AUTHORING.md`](docs/NODE_AUTHORING.md) | the sheet, field by field |
 | [`docs/CHANGING.md`](docs/CHANGING.md) | changing the code — a node, a route, a component, an output kind — and what each brings with it; one field followed through the generators |
+| [`docs/GROUP_APPS.md`](docs/GROUP_APPS.md) | the group and node applications — [`web/group.html`](web/group.html), where a group lead sets out the nodes and their contracts, issues node files and assembles and seals a release, and [`web/node.html`](web/node.html), where an author fills their node — and the three database files a group keeps on its shared drive ([`groups/schema.sql`](groups/schema.sql)); the solar group worked through in full is [`groups/solar/`](groups/solar/) |
+| [`docs/GROUP_FOLDER.md`](docs/GROUP_FOLDER.md) | the group folder — the one place a group keeps its part of the design, as CSV, Markdown, pseudocode and its own results — and [`web/group.html`](web/group.html), the offline page a group opens it in; both generated from [`groups/SPEC.toml`](groups/SPEC.toml), with a worked example in [`groups/example/`](groups/example/) |
 | [`docs/PSEUDOCODE.md`](docs/PSEUDOCODE.md) | the method language — every statement, function, constant and unit, and the worked example in full — generated from the checker |
 | [`docs/EXPLAINING.md`](docs/EXPLAINING.md) | how the tool explains itself — the rules every page, form, result, figure and document follows, and what checks each |
 | [`docs/DERISKING.md`](docs/DERISKING.md) | why the design is what it is — beliefs, versions, the risk register, releases; the generated narrative is [`docs/DERISK_NARRATIVE.md`](docs/DERISK_NARRATIVE.md) |

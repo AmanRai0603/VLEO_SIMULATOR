@@ -76,10 +76,17 @@ pub enum Expr {
         args: Vec<Expr>,
         line: usize,
     },
-    /// A table for `interp`, already in SI.
+    /// A list written out, already in SI: a `const` list's value, or a table
+    /// written straight into `interp`.
     Table {
         si: Vec<f64>,
         dim: Dim,
+        line: usize,
+    },
+    /// One entry of a named list, `LIST[i]`, counted from 1.
+    Index {
+        list: String,
+        index: Box<Expr>,
         line: usize,
     },
 }
@@ -92,7 +99,8 @@ impl Expr {
             | Expr::Var { line, .. }
             | Expr::Bin { line, .. }
             | Expr::Call { line, .. }
-            | Expr::Table { line, .. } => *line,
+            | Expr::Table { line, .. }
+            | Expr::Index { line, .. } => *line,
             Expr::Neg(e) | Expr::Not(e) => e.line(),
         }
     }
@@ -136,11 +144,36 @@ pub enum Stmt {
         body: Vec<Stmt>,
         line: usize,
     },
+    /// Repeat once for each entry of a named list, in order, with `var`
+    /// holding the entry.
+    Each {
+        var: String,
+        list: String,
+        body: Vec<Stmt>,
+        line: usize,
+    },
+    /// Repeat while the condition holds, at most `max` times. A condition
+    /// still true after the last pass is a refusal — the loop did not settle —
+    /// never an answer taken from wherever it had got to.
+    While {
+        cond: Expr,
+        max: i64,
+        body: Vec<Stmt>,
+        line: usize,
+    },
     Refuse {
         reason: String,
         line: usize,
     },
     Return {
+        expr: Expr,
+        line: usize,
+    },
+    /// One more value the node publishes beside its answer, by the member's
+    /// symbol. Each member is published once, at the method's top level, before
+    /// it returns — so every answer carries every member.
+    Publish {
+        name: String,
         expr: Expr,
         line: usize,
     },
@@ -154,8 +187,11 @@ impl Stmt {
             | Stmt::Set { line, .. }
             | Stmt::If { line, .. }
             | Stmt::For { line, .. }
+            | Stmt::Each { line, .. }
+            | Stmt::While { line, .. }
             | Stmt::Refuse { line, .. }
-            | Stmt::Return { line, .. } => *line,
+            | Stmt::Return { line, .. }
+            | Stmt::Publish { line, .. } => *line,
         }
     }
 }

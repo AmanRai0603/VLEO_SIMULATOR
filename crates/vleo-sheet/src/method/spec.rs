@@ -26,6 +26,11 @@ pub const STATEMENTS: &[StatementSpec] = &[
         example: "const cd = 2.2 [1]   # drag coefficient, Sentman flat plate",
     },
     StatementSpec {
+        form: "const NAME = [A, B, …] [unit]",
+        meaning: "A list from your source, written out, with one unit for every entry. It is written once, at the method's top level, and never changes. Read one entry as NAME[i], counted from 1; its length as len(NAME); every entry with for … in; or use it as a row of interp's table.",
+        example: "const EDGES = [90, 130, 170] [1]   # the published band edges, sfu",
+    },
+    StatementSpec {
         form: "set NAME = EXPR",
         meaning: "Change a value made with let. Same dimension; inputs and constants cannot be changed.",
         example: "set total = total + term",
@@ -41,6 +46,16 @@ pub const STATEMENTS: &[StatementSpec] = &[
         example: "for n = 1 to 10\n  set total = total + x ^ n / n\nend",
     },
     StatementSpec {
+        form: "for NAME in LIST … end",
+        meaning: "Repeat once for each entry of a list, in order; NAME holds the entry, in the list's unit.",
+        example: "for edge in EDGES\n  if f107 >= edge then\n    set band = band + 1\n  end\nend",
+    },
+    StatementSpec {
+        form: "while COND at most N times … end",
+        meaning: "Repeat while COND holds — an iteration that settles, or a count the inputs decide. N is the most passes it may take, fixed when written; if COND still holds after N passes the node refuses, saying the loop did not settle, rather than answer with wherever it had got to.",
+        example: "while abs(r * r - a) > 1e-12 * a at most 40 times\n  set r = (r + a / r) / 2\nend",
+    },
+    StatementSpec {
         form: "refuse \"reason\"",
         meaning: "The node will not answer here, and says why. A refusal is never a substitute value.",
         example: "refuse \"the orbit is inside the Earth\"",
@@ -49,6 +64,11 @@ pub const STATEMENTS: &[StatementSpec] = &[
         form: "return EXPR",
         meaning: "The node's answer, in its declared quantity. Every path ends in return or refuse.",
         example: "return v",
+    },
+    StatementSpec {
+        form: "publish SYMBOL = EXPR",
+        meaning: "For a node that publishes several values: one of them, by the member's symbol on the sheet, in that member's quantity. Each member is published once, at the method's top level, before the method returns — so every answer carries every member. A refusal may still come anywhere.",
+        example: "publish Kp_mean_nominal = kp_from_ap(ap_nominal) + kp_mean_slot_bias(ap_nominal)",
     },
     StatementSpec {
         form: "# comment",
@@ -76,6 +96,8 @@ pub enum FnRule {
     Interp,
     /// `pow(x, p)`: the same as `x ^ p`.
     Pow,
+    /// `len(LIST)`: how many entries a list has, a pure number.
+    Len,
 }
 
 pub struct FnSpec {
@@ -116,7 +138,8 @@ pub const FUNCTIONS: &[FnSpec] = &[
     FnSpec { name: "round", arity: 1, rule: FnRule::Pure, meaning: "round to nearest, halves away from zero — pure numbers only" },
     FnSpec { name: "wrap_2pi", arity: 1, rule: FnRule::Pure, meaning: "an angle brought into 0..2π" },
     FnSpec { name: "wrap_pi", arity: 1, rule: FnRule::Pure, meaning: "an angle brought into -π..π" },
-    FnSpec { name: "interp", arity: 3, rule: FnRule::Interp, meaning: "straight-line lookup in a table: interp(x, [x1, x2, …] [unit], [y1, y2, …] [unit]); held at the ends" },
+    FnSpec { name: "interp", arity: 3, rule: FnRule::Interp, meaning: "straight-line lookup in a table: interp(x, XS, YS), each row a list by name or written out as [x1, x2, …] [unit]; held at the ends" },
+    FnSpec { name: "len", arity: 1, rule: FnRule::Len, meaning: "how many entries a list has: len(EDGES)" },
 ];
 
 /// How each function is computed — one table, read by the interpreter to run
@@ -223,6 +246,6 @@ pub(super) fn function(name: &str) -> Option<&'static FnSpec> {
 }
 
 pub(super) const KEYWORDS: &[&str] = &[
-    "let", "set", "const", "if", "then", "else", "end", "for", "to", "refuse", "return", "and",
-    "or", "not", "true", "false",
+    "let", "set", "const", "if", "then", "else", "end", "for", "in", "to", "while", "refuse",
+    "return", "publish", "and", "or", "not", "true", "false",
 ];

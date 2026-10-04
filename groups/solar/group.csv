@@ -1,0 +1,2 @@
+id,name,owner,version,summary
+l3_solar,Solar weather — addition,Aman Rai,1.1,"Everything the solar-weather subsystem concludes, carried up to the system level as one set: five design scenarios (expected, sustained hot, sustained quiet, hottest day, quietest day), each with a daily solar-flux level, its 81-day mean, and a geomagnetic disturbance level."

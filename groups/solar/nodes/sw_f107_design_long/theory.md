@@ -1,0 +1,27 @@
+## Equations
+
+```
+F107_long = F107_central + 1.28 * sigma_total
+```
+
+## Derivation
+
+A central expectation is a line. A design cannot be built on a line: it needs the width, and the width has to be the width of the thing actually being predicted. sw_mean_band_spread measures exactly that — how far the pattern has historically been from the rotation level it predicted — so adding a multiple of it to the centre gives a level the window is unlikely to exceed on a sustained basis.
+
+The multiplier is 1.28, which is where a reader should stop and look. 1.28 is the one-sided 90th percentile of a normal distribution, not the 95th. The study this is ported from forms its mean band as centre +/- 1.28*sigma while labelling the run 95 per cent confidence, and in the same function it forms the DAILY band at the true p.Conf/100 = 0.95. So the two halves of one published band sit at different confidences. That is reproduced here rather than corrected, because a port that quietly changes a number stops being a port, but it is declared so that changing it is one edit in one place rather than an archaeology exercise.
+
+1. Take the centre the cycle analogue gives for the window. `F107_central = sw_central_expectation`
+2. Take the spread the pattern has historically missed a rotation level by. `sigma_total = sw_mean_band_spread = 13.4544 sfu`
+3. Add 1.28 of them. One-sided, because a design is sized against the high side; the cold case is its own scenario and not this row. `F107_long = F107_central + 1.28 * sigma_total`
+
+## Assumptions
+
+- 1.28 is the confidence, and it is the 90th percentile while the run is called 95 per cent. Fails when: a reader takes the published band as a 95 per cent bound. Phi(1.28) = 0.8997. A one-sided 95 per cent bound is 1.645 sigma, which at this sigma is a further 4.9 sfu. The daily half of the same band DOES use 0.95, so the two halves are not at one confidence, and this row reproduces that rather than silently repairing it Which number that is, is now a row of its own — sw_band_confidence, seeded by §30 B2 and unanswered, because the value needs a person. Until it carries one the multiplier is a literal in this hole and three others, each saying it is declared in the sheet while no sheet declares it. §44 measures what each answer costs: moving to 1.645 moves 47 rows and no KPI closure, leaves all five solar closures closing with 3.1 to 6.2 per cent less margin, and breaks no parity check in this repository
+- The residual spread is normal enough for a z multiplier to mean a percentile. Fails when: it is not. The residuals of a forecast that misses hardest when activity is highest are skewed, and a normal multiplier under-covers the high tail — which is the tail a design is sized against. The empirical percentile of the residuals would be the honest statistic, and sw_mean_band_spread publishes only their standard deviation. MEASURED, and the direction is not what this sentence says at the multiplier this row uses. tools/rotation_residuals.py --shape divides sigma out and reports what the band actually holds: at 1.28 sigma it holds 0.9149 to 0.9339 of the exceedances against a normal's 0.8997, so the multiplier OVER-covers by 1.5 to 3.4 points in every variant. At 1.645 sigma the measurement straddles the normal. The heavy tail is real and bites further out — the 99th percentile of exceedance runs 2.93 to 3.49 sigma where a normal says 2.33 — so the honest statement is that this band is conservative and a 99 per cent one would not be. Those fractions are shape rather than scale, which is why they survive §31.4: sigma is not reproduced and spans 32 per cent across the free parameters, while the coverage spans under two points. They are this file's walk and not the study's, which no measurement here can fix. §45
+- One sigma covers the whole window. Fails when: sigma is not flat across the cycle — the source says so about its own number — so a window spanning a rise or a fall is given one width where it needs two
+
+## Validity
+
+From 60 to 400 One. Below: below 60 sfu has never been observed and every relation reading F10.7 has no support there; a design level below it means the spread has been subtracted rather than added. Above: above 400 sfu the exospheric temperature relation is extrapolated past the largest recorded daily value, and a sustained level there is not a window this tool can model.
+
+At the study's own window the arithmetic is exact: its nominal 158.3304112313 plus 1.28 * 13.4968815767 is 175.6064196495, which is the hotmean scenario it published to the last digit. That is what makes this relation checkable rather than plausible.

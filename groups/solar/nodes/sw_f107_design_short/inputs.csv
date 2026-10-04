@@ -1,0 +1,3 @@
+name,from,unit,default,min,max,says
+sustained,sw_f107_design_long,1,177.22160896,60,400,
+daily,sw_daily_band_spread,1,34.2314814815,0,120,

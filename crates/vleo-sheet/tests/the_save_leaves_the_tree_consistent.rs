@@ -494,3 +494,135 @@ fn a_refused_publish_leaves_no_file_behind() {
         "and the row is still seeded"
     );
 }
+
+#[test]
+fn a_refused_method_leaves_the_rust_its_hole_held() {
+    // Found taking a group's release in: a method, with its author's cases but
+    // not their code, applied to a published row. The gate refused, as it
+    // should — and the restore regenerated model.rs from the restored sheet,
+    // which wrote the hole back EMPTY, because the regeneration from the
+    // edited sheet had already dropped the hole's Rust. Under "nothing changed".
+    use vleo_sheet::template::{self, Derisk, Form};
+    let _serial = serially();
+    let root = root();
+    // A published row whose hole holds hand-written Rust, and no method of its
+    // own; a solar row once was, until its group's release gave it one.
+    let row = "gnc_total_disturbance";
+    let tree = vleo_sheet::load::load_all(&root).unwrap();
+    let sh = tree
+        .sheets
+        .get(row)
+        .expect("the published row this test edits");
+    let dir = sh.dir.clone();
+    let _guard = RestoreFolder::take(&dir);
+    let model = std::fs::read(dir.join("model.rs")).unwrap();
+    assert!(
+        String::from_utf8_lossy(&model).contains("gnc::total_disturbance_torque"),
+        "this test needs {row}'s hole to hold its Rust"
+    );
+    let original = template::content(sh);
+    let mut filled = original.clone();
+    filled.fields.insert(
+        "method_text".into(),
+        "if ta < 0 [N*m] then\n  refuse \"a negative torque\"\nend\nreturn ta + tg + ts + tm"
+            .into(),
+    );
+    let case = |label: &str, refuse: bool, expect: &str, inputs: &str| {
+        let mut r = std::collections::BTreeMap::new();
+        r.insert("label".to_string(), label.to_string());
+        r.insert("refuse".into(), if refuse { "yes" } else { "no" }.into());
+        if !refuse {
+            r.insert("expect".into(), expect.into());
+            r.insert("tolerance".into(), "1e-9".into());
+        }
+        r.insert("inputs".into(), inputs.into());
+        r
+    };
+    filled.arrays.insert(
+        "case".into(),
+        vec![
+            case(
+                "one",
+                false,
+                "0.001",
+                "{ ta = 0.0004, tg = 0.0003, ts = 0.0002, tm = 0.0001 }",
+            ),
+            case(
+                "two",
+                false,
+                "0.01",
+                "{ ta = 0.004, tg = 0.003, ts = 0.002, tm = 0.001 }",
+            ),
+            case(
+                "three",
+                false,
+                "0.1",
+                "{ ta = 0.04, tg = 0.03, ts = 0.02, tm = 0.01 }",
+            ),
+            case(
+                "negative",
+                true,
+                "",
+                "{ ta = -1.0, tg = 0.0, ts = 0.0, tm = 0.0 }",
+            ),
+        ],
+    );
+    let base = form::file_hash(&std::fs::read_to_string(dir.join("node.toml")).unwrap());
+    let f = Form {
+        node: row.into(),
+        base,
+        name: "A. Person".into(),
+        date: "2026-10-02".into(),
+        ai: "none".into(),
+        original,
+        filled,
+        derisk: Derisk {
+            believed: "the hole was the method".into(),
+            tested: "the cases below".into(),
+            learned: "they agree".into(),
+            cost: "none".into(),
+            changed: "the method is written down".into(),
+            risks: String::new(),
+            rests_on: "the cases".into(),
+            breaks_if: "a case disagrees".into(),
+        },
+        ..Form::default()
+    };
+    // The kernel's translated methods are written in the same step, and must be
+    // put back as well: the refused method once stayed there, named in mod.rs.
+    let methods = root.join("crates/vleo-core/src/physics/methods");
+    let kernel = |d: &std::path::Path| -> Vec<(std::path::PathBuf, Vec<u8>)> {
+        // No folder yet is no methods yet: the copy of the tree starts without one.
+        let mut v: Vec<_> = std::fs::read_dir(d)
+            .into_iter()
+            .flatten()
+            .map(|e| e.unwrap().path())
+            .map(|p| {
+                let b = std::fs::read(&p).unwrap();
+                (p, b)
+            })
+            .collect();
+        v.sort();
+        v
+    };
+    let kernel_before = kernel(&methods);
+    let p = template::plan_form(&root, f).unwrap();
+    assert!(p.applicable() > 0, "the plan has something to apply");
+    match template::apply(&root, &p) {
+        // Refused by the gate, for the reason this test is about.
+        Saved::Refused(e) => assert!(
+            e.contains("nothing changed") && e.contains("the code is not here"),
+            "{e}"
+        ),
+        Saved::Ok { .. } => panic!("cases with no author code were applied"),
+        Saved::Stale { current } => panic!("unexpectedly stale, current {current}"),
+    }
+    assert!(
+        std::fs::read(dir.join("model.rs")).unwrap() == model,
+        "a refused method must leave model.rs byte for byte as it was — its hole's Rust included"
+    );
+    assert!(
+        kernel(&methods) == kernel_before,
+        "a refused method must leave the kernel's methods as they were — no translation left behind"
+    );
+}

@@ -1,0 +1,2 @@
+id,kind,file,title,x,y,z,on
+speed,line,figures/speed.csv,"The circular-orbit speed at each altitude from 150 km to 1,000 km.",h,v,,

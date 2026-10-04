@@ -150,6 +150,18 @@ pub(super) fn code_text(value: &str) -> String {
 /// A case's inputs as the inline table the sheet holds: `{ h = 250000.0 }`,
 /// each value a number, the names in order.
 pub(super) fn inputs_text(value: &str) -> Result<String, Error> {
+    inputs_text_of(value, false)
+}
+
+/// The same, for a case the node must refuse, where an input may be what no
+/// node takes: not a number, or infinite. Every generated node refuses one at
+/// its door, and a case saying so is evidence of that refusal, so it goes in
+/// as written: `nan`, `inf` and `-inf`, TOML's own spellings.
+pub(super) fn refused_inputs_text(value: &str) -> Result<String, Error> {
+    inputs_text_of(value, true)
+}
+
+fn inputs_text_of(value: &str, refused: bool) -> Result<String, Error> {
     let v = value.trim();
     let doc: toml::Value = format!("x = {v}").parse().map_err(|_| {
         Error::new(
@@ -172,15 +184,32 @@ pub(super) fn inputs_text(value: &str) -> Result<String, Error> {
                     format!("the input «{k}» is not a number"),
                 )
             })?;
-        if !n.is_finite() {
+        if !n.is_finite() && !refused {
             return Err(Error::new(
                 ErrorKind::Refused,
-                format!("the input «{k}» is not finite"),
+                format!(
+                    "the input «{k}» is not finite. Only a case the node must refuse may give \
+                     one, to show the node refuses it"
+                ),
             ));
         }
-        parts.push(format!("{k} = {n:?}"));
+        parts.push(format!("{k} = {}", toml_number(n)));
     }
     Ok(format!("{{ {} }}", parts.join(", ")))
+}
+
+/// A number as TOML writes it. Rust's `{:?}` says `NaN` and `inf`, which TOML
+/// does not read; these are the spellings it does.
+pub(crate) fn toml_number(n: f64) -> String {
+    if n.is_nan() {
+        "nan".into()
+    } else if n == f64::INFINITY {
+        "inf".into()
+    } else if n == f64::NEG_INFINITY {
+        "-inf".into()
+    } else {
+        format!("{n:?}")
+    }
 }
 
 /// Whether a value is one this field may hold. `normalise` without the value.
@@ -343,6 +372,27 @@ pub(crate) fn commit_edit(
         .map(|n| dir.join(n))
         .filter(|p| p.exists())
         .collect();
+    // AND WHAT THEY HELD, BYTE FOR BYTE. Regenerating from the restored sheet is
+    // not a restore: an edit that changes how a row is built — a method, which
+    // replaces the hole — regenerates model.rs without the hole's Rust, and a
+    // regeneration from the old sheet then writes the hole back EMPTY. A
+    // refused method edit once left a published row with its hole blanked under
+    // "nothing changed". So the files themselves are put back.
+    let held: Vec<(std::path::PathBuf, Vec<u8>)> = existed
+        .iter()
+        .filter_map(|p| std::fs::read(p).ok().map(|b| (p.clone(), b)))
+        .collect();
+    // The kernel's translated methods are regenerated in the same step as the
+    // row's own files, so a restore puts them back too: a refused method once
+    // left its translation, and the module line naming it, in the kernel.
+    let methods = root.join("crates/vleo-core/src/physics/methods");
+    let kernel: Vec<(std::path::PathBuf, Vec<u8>)> = std::fs::read_dir(&methods)
+        .map(|d| {
+            d.filter_map(|e| e.ok().map(|e| e.path()))
+                .filter_map(|p| std::fs::read(&p).ok().map(|b| (p, b)))
+                .collect()
+        })
+        .unwrap_or_default();
 
     if let Err(e) = write_atomic(path, &after) {
         return Saved::Refused(e.into());
@@ -351,8 +401,8 @@ pub(crate) fn commit_edit(
     // Restoring the sheet is not enough on its own: once the artefacts have
     // been regenerated from the rejected edit, putting only node.toml back
     // leaves the tree failing its own regeneration check — the exact state this
-    // whole path exists to avoid. So the artefacts are regenerated from the
-    // restored sheet too.
+    // whole path exists to avoid. So the artefacts are put back too, as they
+    // were held above.
     //
     // AND WHAT THE EDIT GENERATED THAT WAS NOT THERE BEFORE IS REMOVED. A
     // refused publish showed why: publishing a seeded row makes the generator
@@ -361,23 +411,38 @@ pub(crate) fn commit_edit(
     // four new files stayed behind under a message saying nothing had changed,
     // and the next "put these edits on a branch" would have committed them.
     // Only a generated file the row did not have before is removed; one that
-    // existed is regenerated, which keeps whatever Rust its holes hold.
+    // existed gets its own bytes back, holes and all.
     let restore = |e: String| -> Saved {
         let _ = write_atomic(path, before);
+        let mut lost = String::new();
         for n in GENERATED {
             let p = dir.join(n);
-            if p.exists() && !existed.contains(&p) {
-                let _ = std::fs::remove_file(&p);
+            match held.iter().find(|(q, _)| *q == p) {
+                Some((_, bytes)) => {
+                    if let Err(w) = std::fs::write(&p, bytes) {
+                        lost = format!(" — AND {} COULD NOT BE PUT BACK: {w}", p.display());
+                    }
+                }
+                None if p.exists() => {
+                    let _ = std::fs::remove_file(&p);
+                }
+                None => {}
             }
         }
-        let put_back = crate::load::load_all(root)
-            .ok()
-            .and_then(|t| t.sheets.get(id).map(|s| regenerate(s, &t)));
-        let lost = match put_back {
-            Some(Err(w)) => format!(" — AND THE ARTEFACTS COULD NOT BE PUT BACK: {w}"),
-            None => " — AND THE TREE WOULD NOT RELOAD TO PUT THE ARTEFACTS BACK".into(),
-            Some(Ok(_)) => String::new(),
-        };
+        if let Ok(d) = std::fs::read_dir(&methods) {
+            for p in d.filter_map(|e| e.ok().map(|e| e.path())) {
+                if !kernel.iter().any(|(q, _)| *q == p) {
+                    let _ = std::fs::remove_file(&p);
+                }
+            }
+        }
+        for (p, bytes) in &kernel {
+            if std::fs::read(p).ok().as_deref() != Some(bytes.as_slice()) {
+                if let Err(w) = std::fs::write(p, bytes) {
+                    lost = format!(" — AND {} COULD NOT BE PUT BACK: {w}", p.display());
+                }
+            }
+        }
         Saved::Refused(format!(
             "{e} — the sheet was restored, nothing changed{lost}"
         ))
@@ -428,13 +493,12 @@ pub(crate) fn commit_edit(
 }
 
 /// Every file the per-row generators write. `regenerate` writes the first four
-/// only for a published row; the last two for every row.
+/// only for a published row; the last for every row.
 const GENERATED: &[&str] = &[
     "model.rs",
     "contract.rs",
     "mod.rs",
     "evidence.rs",
-    "page.html",
     "meta.json",
 ];
 
@@ -453,22 +517,19 @@ pub fn regenerate_for_test(
     regenerate(sh, tree)
 }
 
-/// The six per-node generators, for one row. The same set `xtask docs` writes.
+/// The per-node generators, for one row. The same set `xtask docs` writes;
+/// the row's page is rendered when it is opened, not written here.
 fn regenerate(sh: &crate::model::Sheet, tree: &crate::load::Tree) -> Result<usize, Error> {
     let holes = crate::load::read_holes(&sh.dir);
     let gaps = crate::emit::gap_pass(sh, &holes);
     let artefacts: Vec<(&str, String)> = if sh.is_seeded() {
-        vec![
-            ("page.html", crate::page::fragment(sh, &holes, tree)),
-            ("meta.json", crate::emit::meta_json(sh, &gaps)),
-        ]
+        vec![("meta.json", crate::emit::meta_json(sh, &gaps))]
     } else {
         vec![
             ("model.rs", crate::emit::model_rs(sh, &holes)),
             ("contract.rs", crate::emit::contract_rs(sh)),
             ("mod.rs", crate::emit::mod_rs(sh)),
             ("evidence.rs", crate::emit::evidence_rs(sh)),
-            ("page.html", crate::page::fragment(sh, &holes, tree)),
             ("meta.json", crate::emit::meta_json(sh, &gaps)),
         ]
     };

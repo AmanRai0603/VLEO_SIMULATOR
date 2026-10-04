@@ -559,7 +559,7 @@ pub fn read_approval(text: &str) -> Result<Approval, String> {
 
 /// Whether `commit` is what `at` is, apart from approval records: the approval
 /// binds only while nothing else has changed since the build it was given for.
-fn binds(root: &Path, commit: &str, at: &str) -> Result<(), String> {
+fn binds(root: &Path, commit: &str, at: &str, again: &str) -> Result<(), String> {
     git(root, &["cat-file", "-e", &format!("{commit}^{{commit}}")]).map_err(|_| {
         format!("the approved commit {commit} is not in this repository — git fetch, or the branch was rewritten")
     })?;
@@ -568,14 +568,13 @@ fn binds(root: &Path, commit: &str, at: &str) -> Result<(), String> {
     let changed = git(root, &["diff", "--name-only", commit, at])?;
     let other: Vec<&str> = changed
         .lines()
-        .filter(|l| !l.is_empty() && !l.starts_with("approvals/"))
+        .filter(|l| !l.is_empty() && !l.starts_with("approvals/") && !l.starts_with("acceptances/"))
         .collect();
     if other.is_empty() {
         Ok(())
     } else {
         Err(format!(
-            "the branch has changed since the build that was approved ({} file(s), e.g. {}) — \
-             send the author the new preview and ask them to approve that",
+            "the branch has changed since the build that was approved ({} file(s), e.g. {}) — {again}",
             other.len(),
             other[0]
         ))
@@ -602,13 +601,20 @@ pub fn cmd_approve(root: &Path, args: &[&str]) -> Result<(), String> {
             .map_err(|e| format!("the approval is for {}, which is not here: {e}", a.branch))?;
         println!("  switched to {}", a.branch);
     }
-    binds(root, &a.commit, "HEAD")?;
+    binds(
+        root,
+        &a.commit,
+        "HEAD",
+        "send the author the new preview and ask them to approve that",
+    )?;
     fs::create_dir_all(root.join("approvals")).map_err(|e| e.to_string())?;
     fs::write(root.join(&store), &text).map_err(|e| format!("{store}: {e}"))?;
     let message = commit_message(
         "chore",
         "tree",
-        &format!("{} approved preview build {}", a.by, a.run),
+        // The subject starts with the change, not the name: the commit rule
+        // refuses a capital, and most names start with one.
+        &format!("preview build {} approved by {}", a.run, a.by),
         &[
             format!(
                 "{} tried preview build {} of {} ({}) and approved it{}.",
@@ -653,6 +659,9 @@ pub fn cmd_approve(root: &Path, args: &[&str]) -> Result<(), String> {
 /// The pipeline's check: a form branch carries an approval of its own current
 /// content. Everything after the approved commit may be approval records only.
 fn verify_approval(root: &Path, branch: &str, at: &str) -> Result<(), String> {
+    if branch.starts_with("group/") {
+        return verify_acceptance(root, branch, at);
+    }
     let Some(store) = approval_path(branch) else {
         println!("{branch} is not a form branch — no approval is asked of it");
         return Ok(());
@@ -667,7 +676,12 @@ fn verify_approval(root: &Path, branch: &str, at: &str) -> Result<(), String> {
     if a.branch != branch {
         return Err(format!("{store} approves {}, not {branch}", a.branch));
     }
-    binds(root, &a.commit, at)?;
+    binds(
+        root,
+        &a.commit,
+        at,
+        "send the author the new preview and ask them to approve that",
+    )?;
     println!(
         "{branch}: approved by {} (preview build {}, commit {}) and unchanged since",
         a.by,
@@ -678,9 +692,242 @@ fn verify_approval(root: &Path, branch: &str, at: &str) -> Result<(), String> {
 }
 
 // ---------------------------------------------------------------------------
+// group-accept
+
+/// The branch a group's release is taken in, built and delivered on.
+pub fn group_branch(group: &str, version: &str) -> String {
+    format!("group/{group}-{version}")
+}
+
+/// Where the group's acceptance of a release is kept on its branch.
+pub fn acceptance_path(group: &str, version: &str) -> String {
+    format!("acceptances/{group}-{version}.toml")
+}
+
+/// What the group application writes when the lead answers a test application.
+pub struct Acceptance {
+    pub group: String,
+    pub version: String,
+    pub fingerprint: String,
+    pub commit: String,
+    pub delivery: String,
+    pub verdict: String,
+    pub by: String,
+    pub at: String,
+    pub tried: String,
+    pub note: String,
+}
+
+pub fn read_acceptance(text: &str) -> Result<Acceptance, String> {
+    let v: toml::Value = text
+        .parse()
+        .map_err(|e| format!("it is not an acceptance file: {e}"))?;
+    let s = |k: &str| {
+        v.get(k)
+            .and_then(|x| x.as_str())
+            .unwrap_or("")
+            .trim()
+            .to_string()
+    };
+    let a = Acceptance {
+        group: s("group"),
+        version: s("version"),
+        fingerprint: s("fingerprint"),
+        commit: s("commit"),
+        delivery: s("delivery"),
+        verdict: s("verdict"),
+        by: s("by"),
+        at: s("at"),
+        tried: s("tried"),
+        note: s("note"),
+    };
+    for (k, val) in [
+        ("group", &a.group),
+        ("version", &a.version),
+        ("fingerprint", &a.fingerprint),
+        ("commit", &a.commit),
+        ("verdict", &a.verdict),
+        ("by", &a.by),
+    ] {
+        if val.is_empty() {
+            return Err(format!("the acceptance file has no {k}"));
+        }
+    }
+    Ok(a)
+}
+
+/// `group-accept <file.accept.toml> [--delivery <DELIVERY.toml>] [--no-push]` ·
+/// `group-accept --verify <branch>`.
+///
+/// The group's answer to a test application, recorded on the branch the
+/// release was built on. An answer of `changes` is never recorded: its note
+/// goes back into the group's work, and their next release comes back as a new
+/// test application. An acceptance binds the build it was given for — the
+/// commit the delivery names — and nothing changed since but these records.
+pub fn cmd_group_accept(root: &Path, args: &[&str]) -> Result<(), String> {
+    if let Some(branch) = after(args, "--verify") {
+        return verify_acceptance(root, branch, "HEAD");
+    }
+    let file = args
+        .iter()
+        .enumerate()
+        .find(|(i, a)| !a.starts_with("--") && (*i == 0 || args[i - 1] != "--delivery"))
+        .map(|(_, a)| *a)
+        .ok_or("usage: cargo run -p xtask -- group-accept <file.accept.toml> [--delivery <DELIVERY.toml>] [--no-push] | group-accept --verify <branch>")?;
+    let text = fs::read_to_string(file).map_err(|e| format!("{file}: {e}"))?;
+    let a = read_acceptance(&text)?;
+    match a.verdict.as_str() {
+        "accepted" => {}
+        "changes" => {
+            return Err(format!(
+                "{} answered CHANGES for {} {}, so nothing is recorded. Their note:\n\n  {}\n{}\n\
+                 It goes back into the group's work; their next sealed release comes back through the loop.",
+                a.by,
+                a.group,
+                a.version,
+                if a.note.is_empty() { "(none)" } else { &a.note },
+                if a.tried.is_empty() {
+                    String::new()
+                } else {
+                    format!("  What they tried: {}\n", a.tried)
+                }
+            ))
+        }
+        other => return Err(format!("the verdict is «{other}»; it is accepted or changes")),
+    }
+    if a.tried.is_empty() {
+        return Err(format!(
+            "{} accepted without saying what they tried. An acceptance says what it rests on: ask them to answer again",
+            a.by
+        ));
+    }
+    vleo_sheet::form::refuse_agent_attribution(root, &a.by).map_err(|e| e.to_string())?;
+    // With the delivery record beside it, the answer must be to that record.
+    if let Some(d) = after(args, "--delivery") {
+        let bytes = fs::read(d).map_err(|e| format!("{d}: {e}"))?;
+        let have = crate::group::sha256_hex(&bytes);
+        if have != a.delivery {
+            return Err(format!(
+                "the answer is to another delivery record: {d} hashes to {}…, the answer names {}…",
+                &have[..16],
+                a.delivery.chars().take(16).collect::<String>()
+            ));
+        }
+    }
+    let branch = group_branch(&a.group, &a.version);
+    let store = acceptance_path(&a.group, &a.version);
+    clean(root)?;
+    if current_branch(root)? != branch {
+        git(root, &["switch", "-q", &branch])
+            .map_err(|e| format!("the acceptance is for {branch}, which is not here: {e}"))?;
+        println!("  switched to {branch}");
+    }
+    binds(
+        root,
+        &a.commit,
+        "HEAD",
+        "deliver it again (`xtask group-deliver`) and ask the group to answer that build",
+    )?;
+    fs::create_dir_all(root.join("acceptances")).map_err(|e| e.to_string())?;
+    fs::write(root.join(&store), &text).map_err(|e| format!("{store}: {e}"))?;
+    let message = commit_message(
+        "chore",
+        "tree",
+        &format!("{} {} accepted by {}", a.group, a.version, a.by),
+        &[
+            format!(
+                "{} tried the test application of {} {} (commit {}, release fingerprint {}…, delivery record {}…) and accepted it{}.",
+                a.by,
+                a.group,
+                a.version,
+                a.commit.chars().take(10).collect::<String>(),
+                a.fingerprint.chars().take(16).collect::<String>(),
+                a.delivery.chars().take(16).collect::<String>(),
+                if a.at.is_empty() {
+                    String::new()
+                } else {
+                    format!(" on {}", a.at)
+                }
+            ),
+            format!("What they tried: {}", a.tried),
+            if a.note.is_empty() {
+                String::new()
+            } else {
+                format!("Their note: {}", a.note)
+            },
+            format!("Tested-by: {}", a.by),
+        ]
+        .into_iter()
+        .filter(|p| !p.is_empty())
+        .collect::<Vec<_>>(),
+    );
+    git(root, &["add", &store])?;
+    commit(root, &message)?;
+    push(root, &branch, args)?;
+    println!(
+        "\n\x1b[1maccepted.\x1b[0m {} accepted {} {} — recorded in {store}.\n\
+         The pull request from {branch} can now be reviewed and merged.",
+        a.by, a.group, a.version
+    );
+    Ok(())
+}
+
+/// The pipeline's check on a group branch: it carries the group's acceptance
+/// of its own current content.
+fn verify_acceptance(root: &Path, branch: &str, at: &str) -> Result<(), String> {
+    let a = accepted(root, branch, at)?;
+    println!(
+        "{branch}: accepted by {} (commit {}) and unchanged since",
+        a.by,
+        a.commit.chars().take(10).collect::<String>()
+    );
+    Ok(())
+}
+
+/// Where a group branch keeps its acceptance, if it is a group branch.
+fn group_acceptance_path(branch: &str) -> Option<String> {
+    let (group, version) = branch.strip_prefix("group/")?.rsplit_once('-')?;
+    Some(acceptance_path(group, version))
+}
+
+/// The group's acceptance on `branch` at `at`, if it is one and the branch has
+/// not moved past the build it accepts. Prints nothing.
+fn accepted(root: &Path, branch: &str, at: &str) -> Result<Acceptance, String> {
+    let Some((group, version)) = branch
+        .strip_prefix("group/")
+        .and_then(|r| r.rsplit_once('-'))
+    else {
+        return Err(format!(
+            "{branch} is not a group branch (group/<group>-<version>)"
+        ));
+    };
+    let store = acceptance_path(group, version);
+    let text = git(root, &["show", &format!("{at}:{store}")]).map_err(|_| {
+        format!(
+            "{branch} has no acceptance yet ({store}). Send the group its test application \
+             (`xtask group-deliver`); when they accept, run `cargo run -p xtask -- group-accept <their file>`"
+        )
+    })?;
+    let a = read_acceptance(&text)?;
+    if a.group != group || a.version != version || a.verdict != "accepted" {
+        return Err(format!(
+            "{store} is {} of {} {}, not an acceptance of {group} {version}",
+            a.verdict, a.group, a.version
+        ));
+    }
+    binds(
+        root,
+        &a.commit,
+        at,
+        "deliver it again (`xtask group-deliver`) and ask the group to answer that build",
+    )?;
+    Ok(a)
+}
+
+// ---------------------------------------------------------------------------
 // queue
 
-/// `queue` — every form branch and where it stands.
+/// `queue` — every form branch and every group branch, and where each stands.
 pub fn cmd_queue(root: &Path, _args: &[&str]) -> Result<(), String> {
     if let Err(e) = git(root, &["fetch", "-q", "--prune", "origin"]) {
         eprintln!("  (could not fetch — showing what this copy last saw: {e})");
@@ -692,6 +939,8 @@ pub fn cmd_queue(root: &Path, _args: &[&str]) -> Result<(), String> {
             "--format=%(refname:short)|%(committerdate:short)",
             "refs/remotes/origin/form/",
             "refs/heads/form/",
+            "refs/remotes/origin/group/",
+            "refs/heads/group/",
         ],
     )?;
     let mut seen = std::collections::BTreeMap::new();
@@ -715,19 +964,31 @@ pub fn cmd_queue(root: &Path, _args: &[&str]) -> Result<(), String> {
     }
     if seen.is_empty() {
         println!(
-            "no form branches — nothing is waiting. `xtask take <form> --for <author>` starts one."
+            "no form or group branches — nothing is waiting. `xtask take <form> --for <author>` \
+             starts one for a form; a group's release starts on group/<group>-<version>."
         );
         return Ok(());
     }
     println!("{:<44} {:<11} stage", "branch", "last change");
     for (branch, (r, remote, _local, date)) in &seen {
-        let store = approval_path(branch).unwrap_or_default();
+        let group = branch.starts_with("group/");
+        let store = if group {
+            group_acceptance_path(branch).unwrap_or_default()
+        } else {
+            approval_path(branch).unwrap_or_default()
+        };
         let on_main = git(root, &["show", &format!("origin/{FORMS_BASE}:{store}")]).ok();
         let on_branch = git(root, &["show", &format!("{r}:{store}")]).ok();
         let stage = if on_main.is_some() && on_main == on_branch {
             "merged — delete the branch: git push origin --delete ".to_string() + branch
         } else if !remote {
             "not pushed — git push -u origin ".to_string() + branch
+        } else if group {
+            match accepted(root, branch, r) {
+                Ok(a) => format!("accepted by {} — review and merge the pull request", a.by),
+                Err(e) if on_branch.is_some() => format!("acceptance out of date — {e}"),
+                Err(_) => "waiting for the group's acceptance of its test application".to_string(),
+            }
         } else {
             match verify_approval_quiet(root, branch, r) {
                 Ok(by) => format!("approved by {by} — review and merge the pull request"),
@@ -744,7 +1005,12 @@ fn verify_approval_quiet(root: &Path, branch: &str, at: &str) -> Result<String, 
     let store = approval_path(branch).ok_or("not a form branch")?;
     let text = git(root, &["show", &format!("{at}:{store}")])?;
     let a = read_approval(&text)?;
-    binds(root, &a.commit, at)?;
+    binds(
+        root,
+        &a.commit,
+        at,
+        "send the author the new preview and ask them to approve that",
+    )?;
     Ok(a.by)
 }
 

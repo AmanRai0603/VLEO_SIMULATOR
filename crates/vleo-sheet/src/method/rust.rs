@@ -46,6 +46,10 @@ fn rstr(s: &str) -> String {
 struct Rust {
     mutable: BTreeSet<String>,
     depth: usize,
+    /// The node's published members, by symbol, in declared order: each
+    /// `publish` writes its slot, and `return` hands the slots back beside the
+    /// answer. Empty for a node with one answer.
+    publishes: Vec<String>,
 }
 
 impl Rust {
@@ -63,6 +67,9 @@ impl Rust {
                 "&[{}]",
                 si.iter().map(|v| lit(*v)).collect::<Vec<_>>().join(", ")
             ),
+            Expr::Index { list, index, line } => {
+                format!("rt::at(&{}, {}, {line})?", ident(list), self.expr(index))
+            }
             Expr::Bin { op, l, r, line } => {
                 let (a, b) = (self.expr(l), self.expr(r));
                 match op {
@@ -74,9 +81,25 @@ impl Rust {
                 }
             }
             Expr::Call { name, args, line } => {
-                let a: Vec<String> = args.iter().map(|x| self.expr(x)).collect();
+                // A list by name is a fixed-size array here, read as a slice.
+                let row = |e: &Expr| match e {
+                    Expr::Var { name, .. } => format!("&{}", ident(name)),
+                    e => self.expr(e),
+                };
                 if name == "interp" {
-                    return format!("pmath::interp({}, {}, {})", a[0], a[1], a[2]);
+                    return format!(
+                        "pmath::interp({}, {}, {})",
+                        self.expr(&args[0]),
+                        row(&args[1]),
+                        row(&args[2])
+                    );
+                }
+                if let ("len", Some(Expr::Var { name: l, .. })) = (name.as_str(), args.first()) {
+                    return format!("({}.len() as f64)", ident(l));
+                }
+                let a: Vec<String> = args.iter().map(|x| self.expr(x)).collect();
+                if let Some(k) = kernel_function(name) {
+                    return format!("({})", translate(k, &a));
                 }
                 match implementation(name) {
                     Some(Impl::Plain1(_, p)) => format!("{p}({})", a[0]),
@@ -97,6 +120,19 @@ impl Rust {
 
     fn stmt(&mut self, s: &Stmt, o: &mut String) {
         match s {
+            Stmt::Const {
+                name,
+                expr: Expr::Table { si, .. },
+                ..
+            } => {
+                let _ = writeln!(
+                    o,
+                    "let {}: [f64; {}] = [{}];",
+                    ident(name),
+                    si.len(),
+                    si.iter().map(|v| lit(*v)).collect::<Vec<_>>().join(", ")
+                );
+            }
             Stmt::Let {
                 name, expr, line, ..
             }
@@ -154,11 +190,58 @@ impl Rust {
                 o.push_str("}\n");
                 self.depth -= 1;
             }
+            Stmt::Each {
+                var, list, body, ..
+            } => {
+                self.depth += 1;
+                let i = format!("entry_{}", self.depth);
+                let _ = writeln!(o, "for {i} in {}.iter() {{", ident(list));
+                let _ = writeln!(o, "let {}: f64 = *{i};", ident(var));
+                self.block(body, o);
+                o.push_str("}\n");
+                self.depth -= 1;
+            }
+            Stmt::While {
+                cond,
+                max,
+                body,
+                line,
+            } => {
+                self.depth += 1;
+                let n = format!("passes_{}", self.depth);
+                let _ = writeln!(o, "let mut {n}: i64 = 0;");
+                let _ = writeln!(o, "while {} {{", self.expr(cond));
+                let _ = writeln!(
+                    o,
+                    "if {n} == {max}_i64 {{ return Err(MethodError::Refused({})); }}",
+                    rstr(&super::run::unsettled(*line, *max))
+                );
+                let _ = writeln!(o, "{n} += 1;");
+                self.block(body, o);
+                o.push_str("}\n");
+                self.depth -= 1;
+            }
             Stmt::Refuse { reason, .. } => {
                 let _ = writeln!(o, "return Err(MethodError::Refused({}));", rstr(reason));
             }
             Stmt::Return { expr, line } => {
-                let _ = writeln!(o, "return Ok(rt::fin({}, {line})?);", self.expr(expr));
+                if self.publishes.is_empty() {
+                    let _ = writeln!(o, "return Ok(rt::fin({}, {line})?);", self.expr(expr));
+                } else {
+                    let _ = writeln!(
+                        o,
+                        "return Ok((rt::fin({}, {line})?, published));",
+                        self.expr(expr)
+                    );
+                }
+            }
+            Stmt::Publish { name, expr, line } => {
+                let slot = self.publishes.iter().position(|n| n == name).unwrap_or(0);
+                let _ = writeln!(
+                    o,
+                    "published[{slot}] = rt::fin({}, {line})?; // {name}",
+                    self.expr(expr)
+                );
             }
         }
     }
@@ -180,7 +263,9 @@ fn set_targets(body: &[Stmt], out: &mut BTreeSet<String>) {
                     set_targets(b, out);
                 }
             }
-            Stmt::For { body, .. } => set_targets(body, out),
+            Stmt::For { body, .. } | Stmt::Each { body, .. } | Stmt::While { body, .. } => {
+                set_targets(body, out)
+            }
             _ => {}
         }
     }
@@ -195,9 +280,28 @@ fn set_targets(body: &[Stmt], out: &mut BTreeSet<String>) {
 /// what the node's generated translation test asserts. `inputs` is the
 /// parameter order, the node's declared input order; every value is SI.
 pub fn to_rust(p: &Program, node: &str, source: &str, src: &str, inputs: &[String]) -> String {
+    to_rust_publishing(p, node, source, src, inputs, &[])
+}
+
+/// The same, for a node that publishes members beside its answer: `evaluate`
+/// returns the answer and an array of the members, in `publishes` order (the
+/// order the sheet declares them), each in SI. The checker has already held
+/// that every member is published, once, before any return.
+pub fn to_rust_publishing(
+    p: &Program,
+    node: &str,
+    source: &str,
+    src: &str,
+    inputs: &[String],
+    publishes: &[String],
+) -> String {
     let mut mutable = BTreeSet::new();
     set_targets(&p.body, &mut mutable);
-    let mut r = Rust { mutable, depth: 0 };
+    let mut r = Rust {
+        mutable,
+        depth: 0,
+        publishes: publishes.to_vec(),
+    };
     let mut o = String::new();
     let _ = writeln!(
         o,
@@ -207,7 +311,7 @@ pub fn to_rust(p: &Program, node: &str, source: &str, src: &str, inputs: &[Strin
     );
     o.push_str(
         "#![allow(clippy::all, clippy::float_cmp, clippy::cast_precision_loss, unreachable_code, \
-         unused_imports, unused_mut, unused_variables, unused_parens)]\n\n",
+         unused_assignments, unused_imports, unused_mut, unused_variables, unused_parens, non_snake_case)]\n\n",
     );
     o.push_str("use vleo_units::constants::*;\nuse vleo_units::method_rt::{self as rt, MethodError};\nuse vleo_units::pmath;\n\n");
     let _ = writeln!(
@@ -222,11 +326,33 @@ pub fn to_rust(p: &Program, node: &str, source: &str, src: &str, inputs: &[Strin
         .iter()
         .map(|n| format!("{}: f64", ident(n)))
         .collect();
-    let _ = writeln!(
-        o,
-        "pub fn evaluate({}) -> Result<f64, MethodError> {{",
-        params.join(", ")
-    );
+    if publishes.is_empty() {
+        let _ = writeln!(
+            o,
+            "pub fn evaluate({}) -> Result<f64, MethodError> {{",
+            params.join(", ")
+        );
+    } else {
+        let _ = writeln!(
+            o,
+            "/// Returns the answer, and the published members in this order: {}.\n\
+             pub fn evaluate({}) -> Result<(f64, [f64; {}]), MethodError> {{\n\
+             let mut published = [0.0_f64; {}];",
+            publishes.join(", "),
+            params.join(", "),
+            publishes.len(),
+            publishes.len()
+        );
+    }
+    // The door, as the interpreter keeps it: an input that is not a number is
+    // refused before the first line.
+    for n in inputs {
+        let _ = writeln!(
+            o,
+            "if !pmath::is_finite({0}) || pmath::is_nan({0}) {{ return Err(MethodError::Refused(\"an input is not a finite number\")); }}",
+            ident(n)
+        );
+    }
     r.block(&p.body, &mut o);
     o.push_str(
         "Err(MethodError::Degenerate { line: 0, what: \"the method ended without an answer\" })\n}\n",

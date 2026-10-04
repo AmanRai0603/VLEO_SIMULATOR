@@ -1,0 +1,12 @@
+today [1],lead [yr],epoch [d],answer [1],tolerance,refuses,origin,says
+150,5,9862,86.84972489094359,0.000000000001,no,hand,"the declared case — epoch 2027-01-01, a five-year mission."
+150,15,9862,105.72687096778448,0.000000000001,no,hand,"fifteen years — the window spans more than a cycle, so the mean settles near the record's own level."
+150,0.5,9862,105.5465798678905,0.000000000001,no,hand,"half a Julian year, the shortest mission — the one lead where today's 150 sfu is still faintly visible."
+70,5,9862,86.84972489094359,0.000000000001,no,hand,a quiet day today changes nothing at five years.
+340,5,9862,86.84972489094359,0.000000000001,no,hand,nor does a very active one — at five years the answer is the window climatology alone.
+150,5,6575,115.03865410832137,0.000000000001,no,hand,"the earliest epoch the range allows, 2018-01-01 — a mission rising into cycle 25's maximum."
+150,5,12000,144.9367498101883,0.000000000001,no,hand,"an epoch near the next maximum, 2032-11-08 — the same mission, a different sky, and one cycle 25's size does not vouch for."
+150,5,14610,88.67145559562236,0.000000000001,no,hand,"the latest epoch the range allows, 2040-01-01."
+150,5,14040,78.21016904177215,0.000000000001,no,hand,"one whole cycle period later — epoch 14040 is 4178 days after 9862, so the SHAPE repeats; the answer does not, because the amplitude hands over."
+1000.0,0.0027378507871321013,9862.0,,,yes,hand,"outside what the node holds for: its code refuses it, and so must the developer's"
+0.0,0.0027378507871321013,9862.0,,,yes,hand,"outside what the node holds for: its code refuses it, and so must the developer's"

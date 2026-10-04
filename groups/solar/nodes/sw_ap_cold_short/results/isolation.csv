@@ -1,0 +1,6 @@
+sustained [1],daily [1],answer [1],tolerance,refuses,origin,says
+17.49546836,10.5888888889,6.9065794711,0.0000000001,no,hand,"17.4955 minus 10.5889 — the pair this row was handed before sw_ap_daily_band_drop was conditioned on level. The conditioned drop at Ap 17.50 is 12.56, so the published answer is 4.93 rather than 6.91."
+50,10,40,0.000000000001,no,hand,"round numbers, checkable without a calculator — 50 - 10."
+11,10.5888888889,0.4111111111,0.0000000001,no,hand,"a sustained level of 11, four tenths above the floor — the narrowest case this row can publish, and the reason the guard at zero is load-bearing here rather than decorative."
+5.0,10.0,,,yes,hand,"outside what the node holds for: its code refuses it, and so must the developer's"
+450.0,10.0,,,yes,hand,"outside what the node holds for: its code refuses it, and so must the developer's"

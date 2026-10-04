@@ -1,0 +1,13 @@
+# Transcribed from crates/vleo-mod-solar/nodes/sw_cycle_phase/model.rs (HOLE 1 and its guards) — the method the code already runs.
+# Numbers: NOAA SWPC (noaa_swpc) solar_cycles.csv in solar-weather — cycle 25 began day 7274 (2019-12-01); mean of complete cycles 23 (11.88 yr) and 24 (11.00 yr) is 11.44 yr.
+# The runtime's own finiteness check stands in for the generated "not a number" guard.
+const start_25 = 7274 [d]   # cycle 25 start, days on the mission epoch scale
+const mean_length = 11.44 [1]   # mean length of cycles 23 and 24, in Julian years
+let out = (epoch - start_25) / (mean_length * 365.25 [d])
+if out < 0 then
+  refuse "a phase cannot be negative: the epoch precedes the cycle it was assigned to"
+end
+if out > 1 then
+  refuse "past the end of the cycle the epoch belongs to the next one, whose start the record does not contain"
+end
+return out

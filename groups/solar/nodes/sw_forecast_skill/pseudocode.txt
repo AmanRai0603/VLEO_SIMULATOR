@@ -1,0 +1,15 @@
+# Transcribed from crates/vleo-mod-solar/nodes/sw_forecast_skill/model.rs (HOLE 1 and its guards) — the method the code already runs.
+# Numbers: the measured skill of the issued 27-day F10.7 outlook against persistence, leads 1 to 26 days (noaa_swpc record).
+# The table clamps at both ends, so the only input the code refuses is one that is not a number:
+# it makes the answer not a number, which the generated guard refuses.
+if not (lead == lead) then
+  refuse "the computation produced a value that is not a number"
+end
+let out = interp(lead, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26] [d], [0.0685159110, 0.1988398832, 0.2248475213, 0.2138431310, 0.2768782923, 0.3179547804, 0.3625942984, 0.4020897345, 0.4375371731, 0.4325518344, 0.4188543510, 0.4137682014, 0.4016285468, 0.4186771205, 0.3918289086, 0.3698739969, 0.3041719673, 0.2475268244, 0.2117196579, 0.1696147673, 0.1404618270, 0.0784955060, 0.0176508866, -0.0355195984, -0.0324460638, -0.0220863078] [1])
+if out < -0.1 then
+  refuse "a skill below -0.1 says the outlook is substantially worse than persistence, which the record does not support"
+end
+if out > 0.5 then
+  refuse "a skill above 0.5 against persistence is beyond anything in the record, so the table was misread"
+end
+return out

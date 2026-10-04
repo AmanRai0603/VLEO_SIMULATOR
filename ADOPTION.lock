@@ -84,6 +84,28 @@ why = "the face's own type, so it reads the same on every laptop and fetches not
 fallback = "delete web/fonts and the @font-face rules in web/app.css: the stack falls back to the reader's own monospace, as it did before phase 9d"
 verified = "2026-09-30"
 
+[[adopted]]
+name = "SQLite (WebAssembly build)"
+upstream = "https://sqlite.org/wasm, as packaged by https://www.npmjs.com/package/@sqlite.org/sqlite-wasm (3.53.4-build2)"
+licence = "SQLite is in the public domain; the npm wrapper around it is Apache-2.0"
+version = "3.53.4-build2 — dist/index.mjs and dist/sqlite3.wasm, unchanged, hashes in web/vendor/sqlite/SOURCE.toml"
+used_by = "web/group.html and the node application — the group and node database files"
+load_bearing = true
+why = "groups keep their part of the design in database files on a shared drive and edit them in a browser with no network; the database engine has to travel inside the page, and the files it writes must be ordinary SQLite that Python, the developer's tools and the main application read as they are"
+fallback = "the group folder pattern (groups/SPEC.toml) is the same information as files: the applications import and export it, so a database can always be turned into CSV and Markdown and back"
+verified = "2026-10-02"
+
+[[adopted]]
+name = "rusqlite (with SQLite compiled in, the `bundled` feature)"
+upstream = "https://github.com/rusqlite/rusqlite — SQLite itself from https://sqlite.org, built from its amalgamation by libsqlite3-sys"
+licence = "MIT (rusqlite and libsqlite3-sys); SQLite is in the public domain"
+version = "0.32 (libsqlite3-sys 0.30)"
+used_by = "vleo-design, and through it vleo-server, the daemon, the command line (results.vleor), xtask and the Python package"
+load_bearing = true
+why = "the tool a team runs reads the design from one file, design.vleo, rather than seven thousand files in folders; the file is ordinary SQLite so that the same format the group applications write is the one the daemon, the developer's tools and Python read as it is. Compiled in, so no laptop needs SQLite installed"
+fallback = "the folders: design.vleo is written from them and read through the same interface (vleo_sheet::files), so a kit can carry the node folders again — as every kit before 0.5.0 did — with nothing else changed"
+verified = "2026-10-03"
+
 # --- deliberately not adopted, with the reason -------------------------------
 #
 # hifitime, ANISE, nalgebra and hyperdual are the right answers to time, frames,

@@ -1,0 +1,6 @@
+sustained [1],daily [1],answer [1],tolerance,refuses,origin,says
+141.1088022713,31.2722222222,109.8365800491,0.0000000001,no,hand,141.1088 minus 31.2722 — the pair this row was handed before sw_daily_band_drop was conditioned on level. Kept as an arithmetic case; the pair no longer occurs in this tree.
+200,30,170,0.000000000001,no,hand,"round numbers, so the arithmetic is checkable without a calculator — 200 - 30."
+120,31.2722222222,88.7277777778,0.0000000001,no,hand,"a sustained level of 120 with the old un-conditioned drop of 31.27, which used to be the lowest level that cleared the guard. The conditioned drop at 120 sfu is 23.26, so the crossing has moved and this row no longer refuses at the declared window."
+80.0,31.0,,,yes,hand,"outside what the node holds for: its code refuses it, and so must the developer's"
+450.0,10.0,,,yes,hand,"outside what the node holds for: its code refuses it, and so must the developer's"

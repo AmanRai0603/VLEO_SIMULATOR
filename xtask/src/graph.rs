@@ -10,17 +10,23 @@ use super::*;
 /// gaining a dependency on `vleo-bus` would compile, and would quietly make the
 /// kernel depend on transport.
 ///
-/// `vleo-sheet` sits beside the kernel rather than in the chain: it is what a
-/// sheet MEANS, it reads only units, and both the generators and the daemon
-/// read it. `vleo-data` is reference data and sits at the bus's level.
+/// `vleo-sheet` sits beside the bus rather than in the chain: it is what a
+/// sheet MEANS, and both the generators and the daemon read it. It reads the
+/// kernel because a method may call a kernel function by name, and the method
+/// checker runs that same function — so it sits above the kernel, never in
+/// it. `vleo-data` is reference data and sits at the bus's level.
 pub(super) fn ring(crate_name: &str) -> Option<(u8, &'static str)> {
     Some(match crate_name {
         "vleo-units" => (0, "RING 0 — quantities and portable maths"),
         "vleo-core" => (1, "RING 1 — the kernel: physics and the relations"),
-        "vleo-sheet" => (1, "beside the kernel — what a sheet means"),
+        "vleo-sheet" => (2, "beside the bus — what a sheet means"),
         "vleo-bus" => (2, "RING 2 — transport"),
         "vleo-data" => (2, "reference data"),
         "vleo-modules" => (4, "the facade over every node crate"),
+        "vleo-design" => (
+            4,
+            "the design as one file — the tree, read as the folders are",
+        ),
         "vleo-server" => (5, "the server both the daemon and the Python package start"),
         "vleo-cli" | "vleo-daemon" | "vleo-ffi" | "vleo-py" | "vleo-wasm" | "vleo-method-wasm"
         | "vleo-kernel-wasm" => (6, "a face"),

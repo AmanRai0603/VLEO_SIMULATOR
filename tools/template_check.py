@@ -32,13 +32,15 @@ ROOT = Path(__file__).resolve().parent.parent
 
 #: The template, and it is STATE-DEPENDENT. A seeded row generates no Rust —
 #: "the folder exists, the row is on the tree, every tab opens and each one says
-#: what goes in it" — so its folder is the sheet, its fixtures, the page and the
-#: metadata. A published row generates the four Rust files as well. Checking the
+#: what goes in it" — so its folder is the sheet, its fixtures and the metadata.
+#: No folder holds its page: the engine renders it from the sheet when it is
+#: opened, and one tab set across every rendered page is held in cargo test
+#: (crates/vleo-sheet/tests/every_page_has_one_tab_set.rs). A published row generates the four Rust files as well. Checking the
 #: Rust against a seeded folder is checking for something the template does not
 #: promise, and a checker that reports 1078 nodes as broken is a checker nobody
 #: will run twice.
 BY_HAND = {"node.toml", "fixtures.toml"}
-ALWAYS_GENERATED = {"page.html", "meta.json"}
+ALWAYS_GENERATED = {"meta.json"}
 WHEN_PUBLISHED = {"model.rs", "contract.rs", "mod.rs", "evidence.rs"}
 GENERATED = ALWAYS_GENERATED | WHEN_PUBLISHED
 #: Beside those, exactly one other file is allowed, and only with a reason.
@@ -121,25 +123,8 @@ def check_generated_banner(d, findings):
             findings.append(f"{d.name}/{g}: no generated banner — a reader cannot tell not to edit it")
 
 
-def check_page_tabs(d, findings, tabs_seen):
-    """The page carries the same tab set for every node, in the same order."""
-    p = d / "page.html"
-    if not p.is_file():
-        return
-    html = p.read_text(errors="replace")
-    tabs = re.findall(r'<button role="tab" class="tab[^"]*" data-tab="\d+">([^<]*)</button>', html)
-    panels = re.findall(r'data-panel="(\d+)"', html)
-    if not tabs:
-        findings.append(f"{d.name}/page.html: no tabs at all")
-        return
-    tabs_seen.setdefault(tuple(tabs), []).append(d.name)
-    if len(panels) != len(tabs):
-        findings.append(f"{d.name}/page.html: {len(tabs)} tabs but {len(panels)} panels")
-
-
 def run():
     findings = []
-    tabs_seen = {}
     dirs = node_dirs()
     if not dirs:
         findings.append("no node folders found at all")
@@ -153,17 +138,9 @@ def run():
         states["published" if published else "seeded"] += 1
         check_folder(d, names, published, findings)
         check_generated_banner(d, findings)
-        check_page_tabs(d, findings, tabs_seen)
     findings.insert(0, None)   # placeholder, replaced by the caller's summary
     findings.pop(0)
-
-    # One tab set for the whole tree. More than one means the pages were
-    # generated at different times and the template moved in between.
-    if len(tabs_seen) > 1:
-        findings.append(f"{len(tabs_seen)} different tab sets across the tree, not one:")
-        for tabs, who in sorted(tabs_seen.items(), key=lambda kv: -len(kv[1])):
-            findings.append(f"    {len(who):5d} nodes: {' · '.join(tabs)}  (e.g. {who[0]})")
-    return dirs, findings, tabs_seen, states
+    return dirs, findings, states
 
 
 def selftest():
@@ -247,12 +224,6 @@ def selftest():
                lambda: banner.write_text(bk.replace("GENERATED from node.toml", "written by hand", 1)),
                lambda: banner.write_text(bk))
 
-        page = work / "page.html"
-        pk = page.read_text()
-        expect("two different tab sets in one tree", "different tab sets",
-               lambda: page.write_text(pk.replace(">theory<", ">THEORY<", 1)),
-               lambda: page.write_text(pk))
-
         after = under(tmp)
         cases.append(("everything restored", not after))
         print(f"  {'clean' if not after else 'NOT CLEAN'}: after restoring every mutation")
@@ -271,12 +242,9 @@ def main():
     if args.selftest:
         return selftest()
 
-    dirs, findings, tabs_seen, states = run()
+    dirs, findings, states = run()
     print(f"{len(dirs)} node folder(s) — {states['published']} published, {states['seeded']} seeded "
           f"— {len(findings)} finding(s)")
-    if tabs_seen and len(tabs_seen) == 1:
-        tabs = next(iter(tabs_seen))
-        print(f"one tab set across every node, {len(tabs)} tabs: {' · '.join(tabs)}")
     for f in findings:
         print(f"  {f}")
     return 1 if findings else 0

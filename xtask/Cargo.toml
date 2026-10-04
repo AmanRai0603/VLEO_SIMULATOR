@@ -13,6 +13,7 @@ publish = false
 vleo-sheet = { workspace = true }
 vleo-units = { workspace = true }
 vleo-data = { workspace = true }
+vleo-design = { workspace = true }
 toml = { workspace = true }
 toml_edit = { workspace = true }
 

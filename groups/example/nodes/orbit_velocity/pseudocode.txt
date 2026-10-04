@@ -1,0 +1,5 @@
+# Vallado (2013), eq. 1-18: the speed of a circular two-body orbit.
+if r <= R_EARTH then
+  refuse "the orbit is inside the Earth"
+end
+return sqrt(MU_EARTH / r)

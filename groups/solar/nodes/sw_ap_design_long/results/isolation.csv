@@ -1,0 +1,6 @@
+central [1],spread [1],answer [1],tolerance,refuses,origin,says
+22.095389,3.593688,26.69530964,0.000000000001,no,hand,this repository's own chain — the Ap centre with its measured spread.
+20,4,25.12,0.000000000001,no,hand,"round numbers, checkable without a calculator."
+30,2,32.56,0.000000000001,no,hand,"a quiet centre with a narrow spread, where the lower guard starts to matter."
+-10.0,1.0,,,yes,hand,"outside what the node holds for: its code refuses it, and so must the developer's"
+290.0,10.0,,,yes,hand,"outside what the node holds for: its code refuses it, and so must the developer's"

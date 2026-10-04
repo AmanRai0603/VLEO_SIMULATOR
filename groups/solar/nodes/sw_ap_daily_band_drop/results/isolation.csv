@@ -1,0 +1,7 @@
+level [1],answer [1],tolerance,refuses,origin,says
+17.49546836,12.5635147395,0.000000001,no,hand,"at the declared window's own sustained quiet level, Ap 17.50 — a genuine interpolation between the 15 and 20 knots, unlike its high-tail twin's clamp."
+15,10.837,0.000000000001,no,hand,"the Ap 15 knot, exactly — a transcription check on the lower bracket of that interpolation."
+11,7.5556,0.000000000001,no,hand,"the Ap 11 knot, exactly — a transcription check where the high tail is twice this value."
+22,15.99445,0.000000001,no,hand,between the Ap 20 and Ap 24 knots — the interpolation on the upper half of the ladder.
+1,2.9704,0.000000000001,no,hand,below the bottom of the table — the clamp.
+NaN,,,yes,hand,"a value that is not a number: the node must refuse it, as its code does"

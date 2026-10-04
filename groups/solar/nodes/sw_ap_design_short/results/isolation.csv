@@ -1,0 +1,6 @@
+sustained [1],daily [1],answer [1],tolerance,refuses,origin,says
+26.69530964,15.0018518519,41.6971614919,0.000000000001,no,hand,"the sustained Ap level with the daily departure this row USED to be handed, before sw_ap_daily_band_spread was conditioned on level. Kept as an arithmetic case: the conditioned departure at Ap 26.70 is 63.85, not 15.00."
+25,15,40,0.000000000001,no,hand,"round numbers, checkable without a calculator."
+30,12,42,0.000000000001,no,hand,a higher sustained level with a narrower daily departure — the terms are independent and the row must not assume otherwise.
+-20.0,5.0,,,yes,hand,"outside what the node holds for: its code refuses it, and so must the developer's"
+300.0,150.0,,,yes,hand,"outside what the node holds for: its code refuses it, and so must the developer's"

@@ -1,0 +1,7 @@
+central [1],spread [1],answer [1],tolerance,refuses,origin,says
+160,13.454382,142.77839104,0.000000000001,no,hand,a mid-cycle centre of 160 with this repository's own measured spread — 160 - 1.28 × 13.454382.
+100,20,74.4,0.000000000001,no,hand,"round numbers, so the arithmetic is checkable without a calculator — 100 - 1.28 × 20."
+86.8497,13.454382,69.62809104,0.0000000001,no,hand,"the centre sw_central_expectation actually gives at the declared epoch, 86.8497 — the case that matters, nine and a half sfu above the guard."
+100.0,40.0,,,yes,hand,"outside what the node holds for: its code refuses it, and so must the developer's"
+500.0,10.0,,,yes,hand,"outside what the node holds for: its code refuses it, and so must the developer's"
+inf,10.0,,,yes,hand,"outside what the node holds for: its code refuses it, and so must the developer's"

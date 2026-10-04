@@ -1,0 +1,9 @@
+lead [d],answer [1],tolerance,refuses,origin,says
+13,0.4016285468,0.000000000001,no,hand,"lead 13 — mid-window, still strongly skillful — +0.402 from 1237 pairs."
+1,0.068515911,0.000000000001,no,hand,"lead 1 — the outlook's weakest positive skill, where persistence is hardest to beat."
+9,0.4375371731,0.000000000001,no,hand,lead 9 — peak skill over the whole window — +0.438 from 1241 pairs.
+13.5,0.41015283365,0.000000000001,no,hand,"lead 13.5 — between two measured leads, so this one tests the interpolation and not the table."
+23,0.0176508866,0.000000000001,no,hand,"lead 23 — the last positive lead, +0.018, and the outlook is all but worthless here."
+24,-0.0355195984,0.000000000001,no,hand,lead 24 — the sign change: the outlook is now worse than assuming nothing changes.
+26,-0.0220863078,0.000000000001,no,hand,lead 26 — the declared lead — -0.022 from 868 pairs.
+NaN,,,yes,hand,"outside what the node holds for: its code refuses it, and so must the developer's"

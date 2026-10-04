@@ -1,0 +1,8 @@
+h [km],answer [m],tolerance,refuses,origin
+400.0,6778137.0,1e-12,no,code
+150.0,6528137.0,1e-12,no,code
+250.0,6628137.0,1e-12,no,code
+300.0,6678137.0,1e-12,no,code
+350.0,6728137.0,1e-12,no,code
+450.0,6828137.0,1e-12,no,code
+-10.0,,,yes,code

@@ -1,10 +1,14 @@
 # Contributing
 
-> **Answer first.** Changes to the design come in as node forms and go out as reviewed pull requests, one form per pull request, with the number of reviewers set by what changed. The table below is the only statement of that rule.
+> **Answer first.** Changes to the design come in as node forms or as a group's sealed release, and go out as reviewed pull requests, one form or one release per pull request, with the number of reviewers set by what changed. The table below is the only statement of that rule.
 >
 > **Kind:** reference + how-to · **For:** developers
 
 ## The shape of the work
+
+New to the repository? Read [`docs/HOW_IT_WORKS.html`](docs/HOW_IT_WORKS.html)
+first. It is the codebase's architecture and how it works, in one page.
+
 
 Contributions to the design come from the team that uses the tool, as **node
 forms** — one HTML file per node, or per new node, filled by whoever knows the
@@ -32,12 +36,29 @@ the pipeline's *the author approved this exact change*. Anything pushed after
 an approval needs a new preview and a new approval. The whole loop, step by
 step, is `docs/roles/maintainer.html`.
 
+A group that owns a part of the tree sends its work as **a sealed release**
+instead: one database file, assembled by the group application from every node
+file the group keeps and signed by the people who wrote them
+([`docs/GROUP_APPS.md`](docs/GROUP_APPS.md)). Its branch is
+`group/<group>-<version>`, from a fresh `maintainer`, and holds that one release
+and nothing else. One release per pull request, however many nodes it holds:
+the group has already reviewed its own nodes against one another, which is the
+review a set of thirty unrelated forms never had.
+
+**A group branch merges only with the group's acceptance of the exact build
+they tried** — the lead's answer from the group application's *Delivery &
+acceptance* page, recorded by `xtask group-accept` in `acceptances/` and
+checked by the same pipeline check. Anything pushed after it needs a new test
+application and a new acceptance. The release itself is never edited on the
+branch: what the group must change goes back to them, and comes back as the
+next sealed version.
+
 ## The three branches
 
 | branch | who works into it | how | what it is for |
 |---|---|---|---|
 | `developer` | the developers: the kernel, the generators, the gate, the faces, the tools | a pull request from a working branch | changes to the software itself |
-| `maintainer` | the maintainers: node forms | `xtask take` puts each form on `form/<author>/<node>` from `maintainer`; its pull request goes back into `maintainer` | changes to the design |
+| `maintainer` | the maintainers: node forms and groups' sealed releases | `xtask take` puts each form on `form/<author>/<node>`, and each release goes on `group/<group>-<version>`, both from `maintainer`; their pull requests go back into `maintainer` | changes to the design |
 | `main` | nobody directly | a pull request from `developer` or `maintainer` | what is released |
 
 **A release is cut only from `main`, and only from a commit that reached `main`
@@ -89,6 +110,8 @@ policies within a month, and they had already begun to differ.
 | moving a branch in `layers/` | two | the tree is the decomposition, and moving a branch moves everyone's work |
 | `contract/` — a route, a schema, a file format | two: one frontend, one backend (and the data team for `formats/`) | it is where the two sides meet; CODEOWNERS asks any one owner, so both is this rule (`contract/README.md`) |
 | a node sheet — a form applied, or a new node | H1a completeness, then H1b physics | above |
+| a group's sealed release | H1b physics for every computed node whose method is new or changed since the group's last release, then H2 | the group application has already refused an incomplete node and the group has signed every section, which is H1a; the physics is the review nobody inside the group can give themselves |
+| a method an assistant transcribed (`transcribed`) | H1b physics, read against the source it names, by someone other than the person who signed it | a copy is checked against what it copied, not against itself |
 | fixtures and filled holes | H2, after the machine stages pass | above |
 | anything else | one | ordinary blast radius |
 
@@ -114,16 +137,25 @@ policies within a month, and they had already begun to differ.
   `[[version]]` saying which belief broke (`docs/DERISKING.md`).
 - **Edit a recorded version.** A version is a record; a correction is the next
   version.
-- **Let an assistant supply a relation.** It may write a hole's body; the
-  relation comes from the form and carries a person's name.
+- **Let an assistant supply a relation.** It may write a hole's body, and it
+  may transcribe a relation a person already wrote when the node declares it
+  `transcribed`, names the source and carries the signature of the person who
+  read the copy against it. The relation itself comes from a person, in a form
+  or a sealed release, and carries their name.
+- **Edit a sealed release.** Its files are what the group signed; one changed
+  byte and the seal no longer holds. A fix goes back to the group as a note.
+- **Move a group's results or tolerances to make `group-test` pass.** A
+  disagreement with the group's own results is a physics disagreement, and it
+  goes to the group.
 - **Skip, disable or quarantine a test to get green.**
 
 ## Before asking for review
 
-    cargo run -p xtask -- intake <form>   # the form passes the checker
-    cargo run -p xtask -- gate <node>     # the checks, in order
-    cargo run -p xtask -- docs            # must leave no diff
-    cargo test                            # the evidence
+    cargo run -p xtask -- intake <form>         # the form passes the checker
+    cargo run -p xtask -- group-test <folder>   # or: the group's results hold
+    cargo run -p xtask -- gate <node>           # the checks, in order
+    cargo run -p xtask -- docs                  # must leave no diff
+    cargo test                                  # the evidence
     cargo clippy --workspace --all-targets -- -D warnings
 
 ## When the gate refuses

@@ -1,0 +1,7 @@
+id,question,kind,output,unit,lower,upper,value
+orbit_altitude,What altitude does the mission fly at?,declared,h,km,150,450,400
+orbit_radius,How far is the spacecraft from the centre of the Earth?,computed,r,m,6528137,6828137,
+orbit_velocity,How fast does the spacecraft move in its circular orbit?,computed,v,m/s,7640,7815,
+orbit_period,How long does one orbit take?,computed,T,s,5240,5620,
+period_limit,What is the longest orbital period the mission accepts?,required,T_max,s,,,5700
+period_achieved,What orbital period does the design achieve?,achieved,T_achieved,s,5240,5620,

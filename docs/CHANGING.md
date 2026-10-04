@@ -121,7 +121,7 @@ its generator would write now.
 
 | Command | Reads | Writes |
 |---|---|---|
-| `xtask docs [<node>]` | each `node.toml` | the node's `contract.rs`, `model.rs` outside its holes, `mod.rs`, `evidence.rs`, `meta.json`, `page.html` |
+| `xtask docs [<node>]` | each `node.toml` | the node's `contract.rs`, `model.rs` outside its holes, `mod.rs`, `evidence.rs`, `meta.json` — a node's page is rendered when it is opened, never written |
 | `xtask assemble` | every sheet | the graph tables the kernel loads, the module wiring, the bindings |
 | `xtask variables` | every sheet | `docs/VARIABLES.md` |
 | `xtask codeowners` | every sheet's owner | `CODEOWNERS` |
@@ -147,7 +147,7 @@ smaller answer by name, with the reason as the refusal's text —
             bound: 40.0, edge: Edge::Lower, unit: Ratio::UNIT, reason: "the lowest value …" });
     }
 
-— and into the row's `page.html`, where a reader sees "Outside `40 … 140` the
+— and into the row's page, where a reader sees "Outside `40 … 140` the
 row refuses rather than answers" followed by the same reason. Change the bound
 in the sheet and both move together; change it in `model.rs` and the next
 `xtask docs` puts it back, and the gate says so. That is the whole design in one

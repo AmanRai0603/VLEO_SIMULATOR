@@ -57,7 +57,14 @@ ROOT = Path(__file__).resolve().parent.parent
 #: sees them, and they are published history nobody can edit without rewriting
 #: `developer`. Every one of those branches passed this check commit by commit;
 #: only the forge's titles fail. A squash title is `type(scope): …` from here on.
-ADOPTED_AFTER = "c297ca1e"
+#:
+#: It moved again to 58a441a4, #92's squash title, "docs(docs): the codebase's
+#: architecture, in one interactive page (phase 12a) (#92)": the author's
+#: "(phase 12a)" makes it 76 characters, written at merge time where no hook
+#: sees it, and published on `developer`. It failed only the first pull
+#: request from `developer` into `main`, which reads every commit since `main`.
+#: Every commit after it is checked, and all of them pass.
+ADOPTED_AFTER = "58a441a4"
 
 #: What a change can be. Short on purpose: a type nobody can choose between is
 #: a type that gets chosen at random, and then the release notes are noise.

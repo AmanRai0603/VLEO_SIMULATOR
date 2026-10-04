@@ -1,0 +1,7 @@
+# WGS-84 equatorial radius (wgs84)
+const R_E = 6378137 [m]
+if h < 0 [km] then
+  refuse "below the surface"
+end
+let r = R_E + h
+return r

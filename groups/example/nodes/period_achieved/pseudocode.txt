@@ -1,0 +1,5 @@
+# The achieved side of requirement R1: the period, unchanged.
+if T <= 0 [s] then
+  refuse "a period must be positive"
+end
+return T

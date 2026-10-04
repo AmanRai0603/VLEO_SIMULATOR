@@ -19,6 +19,9 @@ vleo-data = { workspace = true }
 # alternative was a second copy of the form in JavaScript, which would drift
 # and look complete while doing it.
 vleo-sheet = { workspace = true }
+# The design file a kit carries in place of the node folders (design.vleo),
+# read through the same interface as the folders.
+vleo-design = { workspace = true }
 
 [dev-dependencies]
 # Reads contract/routes.toml and the manual in the contract tests.

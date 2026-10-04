@@ -428,7 +428,7 @@ say = "Send it: the CSV for a spreadsheet, or the report for someone without the
 ui = "download report"
 
 [[layer.section.step]]
-say = "Keep a result somebody sent — its CSV or its report."
+say = "Keep a result somebody sent — its CSV, its report, or a results file (`.vleor`) that holds several, each kept once."
 ui = "upload a result…"
 
 [[layer.section.step]]
@@ -752,6 +752,47 @@ say = "A corrected form for the same node goes onto the same branch."
 run = "cargo run -p xtask -- take forms/<file>.node-form.html --for \"<author>\" --again"
 check = "writes"
 why = "applies the corrected form onto the branch that already holds the first one"
+
+[[layer.section]]
+id = "maint-group"
+title = "Take a group's sealed release in"
+who = "maintainer"
+kind = "how-to"
+answer = "A group sends a sealed release instead of forms. Unpack it, read what group-intake says, then apply, build, test and deliver it on the branch group/<group>-<version>. It merges only with the group's acceptance of the test application."
+body = """
+The release is checked against its seal before anything is read: one byte \
+changed and it is refused, and the fix goes back to the group as a note. Each \
+computed node then becomes the form its author would have filled, and goes \
+through intake's own check.
+
+**Not taken** means a conflict with a change made since, an incomplete \
+de-risking record, or a method or results an assistant supplied. A node whose \
+declaration says `transcribed` is taken only when it names the source the \
+method was copied from and the person who read the copy against it; without \
+either, or with an assistant as the checker, it counts as one an assistant \
+supplied. A transcription is still reviewed at H1b against its source, by \
+someone other than the person who signed it.
+
+`group-test` holds the build to the group's own results. A disagreement is \
+physics, for the group — never a result or tolerance moved to pass."""
+
+[[layer.section.step]]
+say = "Write the sealed release out as the folder it holds."
+run = "node tools/group_db.mjs --unpack <file.vleo> --out target/groups/<group>-<version>"
+check = "writes"
+why = "writes the release's files and RELEASE.toml, which says who sealed it and the fingerprint every signature was given for"
+
+[[layer.section.step]]
+say = "Read what it would change, node by node, and what cannot be taken."
+run = "cargo run -p xtask -- group-intake target/groups/<group>-<version>"
+check = "writes"
+why = "checks the seal, then prints each computed node's plan and what it reaches in other groups; nothing is written without --apply"
+
+[[layer.section.step]]
+say = "Apply, build from the methods, test against the group's results, and deliver the test application."
+run = "cargo run -p xtask -- group-intake target/groups/<group>-<version> --apply"
+check = "writes"
+why = "then group-build, group-test and group-deliver on the same folder; the group answers with group-accept"
 
 [[layer.section]]
 id = "maint-method"
@@ -1594,7 +1635,8 @@ answer = "The team gets the tool, not the repository: one Python package for eve
 body = """
 The daemon reads the web face, the tree and every node's page at run time, so \
 the programs alone do not run. `xtask kit` puts them beside exactly those files \
-— no git history, no generators, no kernel source — in `dist/vleo-<version>/`, \
+— the tree and its pages as one file, `design.vleo`; no git history, no \
+generators, no kernel source — in `dist/vleo-<version>/`, \
 with `START_HERE.md` (from `docs/TEAM_GUIDE.md`) and `VERSION` — and `start.sh` \
 off Windows; on Windows the daemon ships as `Start VLEO.exe`, which opens the \
 browser itself. Zip it and share it. A kit runs on the platform that built it; \
@@ -1951,7 +1993,8 @@ come from* is answered by walking upward without ever leaving the tree.
 `node.toml` — the sheet. The only file written by hand — by a form's intake, or a developer.
 `fixtures.toml` — known-good values from outside this code.
 `model.rs` — generated, except the numbered slots where the Rust goes.
-`contract.rs`, `mod.rs`, `evidence.rs`, `page.html`, `meta.json` — generated.
+`contract.rs`, `mod.rs`, `evidence.rs`, `meta.json` — generated.
+The row's page is not in the folder: the tool renders it from the sheet when it is opened.
 
 The rules that do not bend, and the developer's loop, are in `AGENTS.md`; the \
 reasoning behind the architecture is in `docs/ARCHITECTURE.md`."""
@@ -2177,6 +2220,22 @@ effect = "reads"
 
 [[command]]
 tool = "xtask"
+name = "catalogue"
+usage = "catalogue [<group>] [--csv <file>]"
+what = "What each group publishes to the others: every row another group reads, or that crosses a layer, with its version and every row that reads it — taken from the inputs the sheets declare. `--csv` writes it as a table. The design file carries it too, as its `published` table."
+who = "developer"
+effect = "reads"
+
+[[command]]
+tool = "xtask"
+name = "impact"
+usage = "impact <node|group> ..."
+what = "Which other groups a change to these rows reaches: the rows that read them, theirs, and so on, by group and nearest first. A group named stands for all its rows. `group-intake` prints the same for the nodes a release changes."
+who = "developer"
+effect = "reads"
+
+[[command]]
+tool = "xtask"
 name = "reach"
 usage = "reach [<subsystem>]"
 what = "Where each answer goes, and which reach no customer target."
@@ -2290,6 +2349,62 @@ effect = "writes"
 
 [[command]]
 tool = "xtask"
+name = "group-app"
+usage = "group-app [--check]"
+what = "Builds the two offline pages a group works in — web/group.html, where the lead sets out the nodes and their contracts, issues each author a node file, assembles the files into a release, has it signed and seals it, and web/node.html, where an author fills their node file — each carrying SQLite (web/vendor/sqlite, checked against its recorded hashes) and the database format of groups/schema.sql; and the folder pattern's two documents, docs/GROUP_FOLDER.md and groups/skill/vleo-group-folder/SKILL.md, all from groups/SPEC.toml. --check only says whether the committed four are current."
+who = "developer"
+effect = "writes"
+
+[[command]]
+tool = "xtask"
+name = "group-intake"
+usage = "group-intake <folder> [--node <id>] [--apply [--partial]] [--draft]"
+what = "A group's sealed release taken into the design. The release, written out with `node tools/group_db.mjs --unpack <file.vleo>`, is refused unless every file still gives the fingerprint it was sealed with; then each computed node's pseudocode and results become its node form — its method and test cases, in SI — and go through intake's own check: a conflict with a change made since, a method or results an assistant supplied (a `transcribed` method counts as one unless it names its source and a person who checked the copy), an incomplete de-risking record. `--apply` writes, regenerates and gates each, or puts it back. `--draft` looks at an unsealed release and never applies."
+who = "developer"
+effect = "writes"
+
+[[command]]
+tool = "xtask"
+name = "group-build"
+usage = "group-build <folder> [--node <id>]"
+what = "Every computed node of a sealed release, once `group-intake --apply` has taken it in, built from its method: `build-node` on each — translated into the kernel, tested on its author's cases, the tests proved to test, the interface checked. A node whose method in the design is not the release's is refused: the release is taken in first."
+who = "developer"
+effect = "writes"
+
+[[command]]
+tool = "xtask"
+name = "group-test"
+usage = "group-test <folder> [--out <dir>]"
+what = "The group tested against its own results, never against the code under test: the design holds the release's isolation results case for case; each node's own tests pass; the group as a whole, run through the engine, gives `results/group.csv`; and both ends of every range the group declares answer or refuse by name — never NaN, never a crash. The report goes to `target/group/<group>-<version>/group-test.csv`."
+who = "developer"
+effect = "reads"
+
+[[command]]
+tool = "xtask"
+name = "group-deliver"
+usage = "group-deliver <folder> [--out <dir>] [--bin <dir>] [--uncommitted]"
+what = "The test application for the group: the kit, built from this commit with their release in it, beside `DELIVERY.toml` — which release, which seal, which commit, which nodes — `DELIVERY.md`, what to try, and the group-test report. Refused until `group-test` has passed, and from uncommitted changes unless `--uncommitted` says the checkout is a throwaway. The group answers accepted, or changes."
+who = "developer"
+effect = "writes"
+
+[[command]]
+tool = "xtask"
+name = "group-accept"
+usage = "group-accept <file.accept.toml> [--delivery <DELIVERY.toml>] [--no-push]"
+what = "The group's answer to its test application, recorded. The lead writes it on the group application's Delivery & acceptance page, beside their sealed release; it names the delivery by its SHA-256, the commit it was built from and the release's fingerprint. An answer of accepted, saying what was tried and given by a person, is committed to `acceptances/<group>-<version>.toml` on the branch `group/<group>-<version>` — refused if anything but these records changed since the delivered commit. An answer of changes is never recorded: its note is printed, to take back into the group's work. `--verify` is the pipeline's check on a group branch."
+who = "developer"
+effect = "writes"
+
+[[command]]
+tool = "xtask"
+name = "group-export"
+usage = "group-export <group> [--out <dir>]"
+what = "Writes one group's folder in the pattern of groups/SPEC.toml from every sheet in the group — its nodes, inputs, plain words, theory, assumptions, evidence and sources — for the group to start from. It invents nothing: a pseudocode, the group's own results and its pictures are left for the group, and the group application lists them. `--all` writes every group that owns a node, each in its own folder, with GROUPS.csv beside them; `node tools/group_db.mjs --all <dir>` then makes each into its database files and READY.csv, what each group still needs."
+who = "maintainer"
+effect = "writes"
+
+[[command]]
+tool = "xtask"
 name = "rerun"
 usage = "rerun <node>|--all [--require]"
 what = "Runs each author's own code again on the cases recorded from it and says whether it still gives them: Python directly, MATLAB and Octave through Octave where it is installed. Code in any other language is kept and read, not rerun, and it says so; `--require` fails instead, for a pipeline that installed the runners."
@@ -2372,7 +2487,7 @@ effect = "writes"
 tool = "xtask"
 name = "queue"
 usage = "queue"
-what = "Every form branch and where it stands: not pushed, waiting for the author's approval, approved and ready to merge, or merged."
+what = "Every form branch and every group branch, and where each stands: not pushed; waiting for the author's approval, or the group's acceptance of its test application; approved or accepted and ready to merge; or merged."
 who = "maintainer"
 effect = "reads"
 
@@ -2394,9 +2509,25 @@ effect = "writes"
 
 [[command]]
 tool = "xtask"
+name = "design"
+usage = "design [--out <file>]"
+what = "design.vleo: the tree the tool reads — every node folder with its sheet, fixtures and page, the layers, the cases and the source list — written into one SQLite file, each file whole with its SHA-256. The kit carries it in place of the folders and the daemon reads it as it reads them, so the pages are the same byte for byte. Default target/design.vleo; nothing committed."
+who = "developer"
+effect = "writes"
+
+[[command]]
+tool = "xtask"
+name = "design"
+usage = "design --check <file>"
+what = "A design file held to the tree: each file against its SHA-256, all of them against the fingerprint, and every file against the folders it was written from. Prints the differences and fails on any."
+who = "developer"
+effect = "reads"
+
+[[command]]
+tool = "xtask"
 name = "kit"
 usage = "kit [--bin <dir>] [--out <dir>] [--files-only]"
-what = "The tool as a team member gets it: the two release-built programs beside exactly the files they read, with START_HERE.md and VERSION (and start.sh off Windows, where the daemon ships as Start VLEO.exe), in dist/vleo-<version>/. Zip it and share it; see docs/SHARING.md. --files-only leaves the programs out: the files the Python package carries."
+what = "The tool as a team member gets it: the two release-built programs beside exactly the files they read — the design among them as one file, design.vleo — with START_HERE.md and VERSION (and start.sh off Windows, where the daemon ships as Start VLEO.exe), in dist/vleo-<version>/. Zip it and share it; see docs/SHARING.md. --files-only leaves the programs out: the files the Python package carries."
 who = "developer"
 effect = "writes"
 
@@ -2532,9 +2663,25 @@ effect = "reads"
 tool = "vleo"
 name = "result"
 usage = "result <file|folder> [--html <out.html>]"
-what = "A saved result shown as it was — nothing runs. Reads a result's folder, the CSV `run --save` writes, or the report page it rides in; `--html` writes that report, to send."
+what = "A saved result shown as it was — nothing runs. Reads a result's folder, the CSV `run --save` writes, or the report page it rides in; `--html` writes that report, to send. Given a results file (.vleor), lists the results it holds."
 who = "user"
 effect = "reads"
+
+[[command]]
+tool = "vleo"
+name = "results"
+usage = "results export <file.vleor> [<name> ...]"
+what = "Saved results, many in one file to send or keep: every result in the results folder, or the ones named. Each goes out whole, and every value again as a row that Python (`vleo.results`) or any SQL reader can ask for."
+who = "user"
+effect = "writes"
+
+[[command]]
+tool = "vleo"
+name = "results"
+usage = "results import <file.vleor>"
+what = "The results in a results file, put back in the results folder exactly as they were — nothing runs. A question already kept is kept once."
+who = "user"
+effect = "writes"
 
 [[command]]
 tool = "vleo"
@@ -2724,6 +2871,11 @@ what = "Keep a result somebody sent: `csv=` its CSV or the text of its report, a
 
 [[route]]
 method = "POST"
+path = "/v1/results/upload-file"
+what = "Keep every result a results file (`results.vleor`) holds: `vleor=` the file, base64. Each is kept once, as a save is, pinned where the file says so; the answer names each one, how many were new and how many already kept."
+
+[[route]]
+method = "POST"
 path = "/v1/results/pin"
 what = "Pin a saved result so every value is kept for good (`on=1`), or unpin it (`on=0`) so it is thinned to its summary once it is older than `VLEO_KEEP_DAYS`: `name`."
 
@@ -2812,6 +2964,11 @@ what = "Where the daemon finds the web face, the tree and its pages. Unset, it l
 default = "found"
 
 [[env]]
+name = "VLEO_DESIGN"
+what = "A design file for the daemon to read the design from, in place of the one beside it or the folders of a checkout. A file that does not open stops the daemon, naming why: it never falls back to whatever folders sit beside it."
+default = "design.vleo beside the tool, else the folders"
+
+[[env]]
 name = "VLEO_PORT"
 what = "The first port the daemon tries. It takes the first free one of sixteen from there."
 default = "7777"
@@ -2853,6 +3010,11 @@ who = "developer"
 [[folder]]
 name = "layers"
 what = "The rows of the tree that are not calculations: headings, parents, groups and who owns each subsystem. CODEOWNERS is generated from it."
+who = "developer"
+
+[[folder]]
+name = "groups"
+what = "The group folder pattern, groups/SPEC.toml, from which the group and node applications (web/group.html, web/node.html), docs/GROUP_FOLDER.md and the assistant's skill in groups/skill/ are generated; groups/schema.sql, the database format of a group's structure, node and release files; groups/example/, a small illustrative group to read and copy; and groups/solar/, the solar group's whole design as a group would hold it — every node's pseudocode checked against its fixtures, its results, evidence and pictures — which tools/group_db.mjs makes into the group's database files. A group's own files live on its shared drive, not here."
 who = "developer"
 
 [[folder]]
@@ -2907,7 +3069,7 @@ who = "developer"
 
 [[folder]]
 name = ".claude"
-what = "The hooks that run on an edit in a checkout — the regeneration and gate an assistant's edit goes through, the same as anyone's."
+what = "The hooks that run on an edit in a checkout — the regeneration and gate an assistant's edit goes through, the same as anyone's — and the developer's skill for a group's sealed release, skills/vleo-group-release: the loop from intake to test application, and the refusals only a person may answer."
 who = "developer"
 
 [[folder]]
@@ -3014,6 +3176,14 @@ path = "docs/PSEUDOCODE.md"
 what = "The method language: every statement, function, constant and unit a method may use, and the worked example in full. Generated from the checker's own tables."
 
 [[doc]]
+path = "docs/GROUP_APPS.md"
+what = "The group and node applications: the three database files a group keeps on its shared drive, how the lead sets out the structure, issues node files, assembles and seals a release, and how an author fills their node file, step by step."
+
+[[doc]]
+path = "docs/GROUP_FOLDER.md"
+what = "The group folder: the one place a group keeps its part of the design — the files, their columns, the two kinds of text and what they may hold. Generated from groups/SPEC.toml, as are the group application (web/group.html) and the skill an assistant follows to help fill a folder."
+
+[[doc]]
 path = "docs/USING_IT.md"
 what = "The long walk through doing the work, with real output."
 
@@ -3024,6 +3194,10 @@ what = "A developer's first day, and one form from arrival to release."
 [[doc]]
 path = "docs/NODE_AUTHORING.md"
 what = "Every field of a sheet, and why it is there."
+
+[[doc]]
+path = "docs/HOW_IT_WORKS.html"
+what = "The architecture of the codebase and how it works, end to end, with an explorable crate map, a row opened file by file and a run stepped through. Read it first."
 
 [[doc]]
 path = "docs/CHANGING.md"
@@ -3088,6 +3262,10 @@ what = "The solar subsystem row by row. Generated by tools/solar_rows.py."
 [[doc]]
 path = "docs/RELEASE_SETUP.md"
 what = "How a release is decided — a merged pull request into main — and how the release workflow refuses anything else before it builds."
+
+[[doc]]
+path = "docs/DRIVE_SETUP.md"
+what = "The team's shared drive, written by the `drive` workflow from the repository on every release: what it holds, and the one-time sign-in that lets the workflow write it."
 
 [[doc]]
 path = "docs/GITLAB_TRANSFER.md"

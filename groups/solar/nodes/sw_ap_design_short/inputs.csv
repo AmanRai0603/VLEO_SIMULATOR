@@ -1,0 +1,3 @@
+name,from,unit,default,min,max,says
+sustained,sw_ap_design_long,1,26.69530964,0,300,
+daily,sw_ap_daily_band_spread,1,15.0018518519,0,150,

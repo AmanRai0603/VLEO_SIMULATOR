@@ -1,0 +1,2 @@
+name,from,unit,default,min,max,says
+h,orbit_altitude,km,400,150,450,the altitude the mission flies at

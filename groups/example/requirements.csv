@@ -1,0 +1,2 @@
+id,required,achieved,sense,says
+R1,period_limit,period_achieved,<=,"One orbit must take no longer than 95 minutes, so the ground station sees the spacecraft often enough."

@@ -1,0 +1,13 @@
+# Transcribed from crates/vleo-mod-solar/nodes/sw_ap_cold_long/model.rs (HOLE 1 and its guards) — the method the code already runs.
+# Numbers: NOAA SWPC (noaa_swpc) record via prf_density.m:217 (designWindow_); 1.28 is the one-sided 90th percentile of a normal, declared in the sheet.
+# The cold edge of the sustained band: the central Ap less 1.28 standard deviations of the rotation-forecast residual.
+# The runtime's own finiteness check stands in for the generated "not a number" guard.
+const z = 1.28 [1]   # one-sided 90th percentile of a normal, the same 1.28 the hot edge adds
+let sustained = central - spread * z
+if sustained < 0 then
+  refuse "Ap floors at zero: a symmetric band subtracted from a small centre has reached below it"
+end
+if sustained > 300 then
+  refuse "above 300 exceeds the largest daily Ap in the record, 273: the spread has been added rather than subtracted"
+end
+return sustained

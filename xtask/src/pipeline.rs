@@ -154,6 +154,61 @@ pub(crate) const PIPELINE: &[Cmd] = &[
         dry: Dry::Check("intake without --apply: the same check, nothing written"),
     },
     Cmd {
+        name: "group-intake",
+        stage: "check",
+        reads: "a group's release written out by `node tools/group_db.mjs --unpack`, its RELEASE.toml, and each of its nodes' sheets",
+        writes: "with --apply: each computed node's node.toml (its method and cases) and every generated file",
+        checks: "every file against the seal's fingerprint; then each node as its form: a conflict with a change made since, a method or results an assistant supplied (a transcription without its source and a person who checked it counts as one), the de-risking record, the whole tree's gate",
+        undo: "a refused apply is put back by the transaction itself; an applied one: `git restore` the node's folder, or `git revert`",
+        code: ("xtask/src/group_intake.rs", "cmd_group_intake"),
+        steps: &[],
+        dry: Dry::Check("group-intake without --apply: the same check, nothing written"),
+    },
+    Cmd {
+        name: "group-build",
+        stage: "build",
+        reads: "an unpacked sealed release and the design it was taken into",
+        writes: "what build-node writes for each computed node: its kernel translation and generated files",
+        checks: "the seal; that the design's method is the release's; then build-node on each — the author's cases, the tests proved to test, the interface",
+        undo: GIT_UNDO,
+        code: ("xtask/src/group_test.rs", "cmd_group_build"),
+        steps: &[],
+        dry: Dry::Plan,
+    },
+    Cmd {
+        name: "group-test",
+        stage: "check",
+        reads: "an unpacked sealed release, the design, and the engine built from it",
+        writes: "target/group/<group>-<version>/group-test.csv, the report, and the runs it rests on",
+        checks: "the design holds the release's cases; each node's tests pass; the group gives results/group.csv through the engine; both ends of every declared range answer or refuse by name",
+        undo: READS_ONLY,
+        code: ("xtask/src/group_test.rs", "cmd_group_test"),
+        steps: &[],
+        dry: Dry::Reads,
+    },
+    Cmd {
+        name: "group-deliver",
+        stage: "publish",
+        reads: "an unpacked sealed release, its passing group-test report, the release-built programs",
+        writes: "dist/vleo-<version>-<group>-<v>-test/: the kit, DELIVERY.toml, DELIVERY.md and the report",
+        checks: "the seal; that group-test passed; that the checkout is committed, unless --uncommitted",
+        undo: "delete the folder",
+        code: ("xtask/src/group_test.rs", "cmd_group_deliver"),
+        steps: &[],
+        dry: Dry::Plan,
+    },
+    Cmd {
+        name: "group-accept",
+        stage: "release",
+        reads: "the group's answer, written by the group application; the branch group/<group>-<version>",
+        writes: "acceptances/<group>-<version>.toml on that branch, committed and pushed",
+        checks: "the verdict is accepted and says what was tried; a person's name; the delivery record's hash, with --delivery; the accepted commit is this branch, unchanged since but for these records",
+        undo: "`git revert` the acceptance commit, or delete the file before pushing",
+        code: ("xtask/src/flow.rs", "cmd_group_accept"),
+        steps: &[],
+        dry: Dry::Plan,
+    },
+    Cmd {
         name: "new",
         stage: "apply",
         reads: "the sibling's sheet",
@@ -260,6 +315,28 @@ pub(crate) const PIPELINE: &[Cmd] = &[
         dry: Dry::Check("method-wasm --check: whether it is current, nothing built"),
     },
     Cmd {
+        name: "group-app",
+        stage: "gate",
+        reads: "groups/SPEC.toml, groups/schema.sql, web/pages/group.html, node-app.html and group.css, web/app.css and its fonts, web/vendor/sqlite, web/method.wasm.gz, web/js",
+        writes: "web/group.html, web/node.html, docs/GROUP_FOLDER.md and groups/skill/vleo-group-folder/SKILL.md",
+        checks: "the vendored SQLite against the hashes web/vendor/sqlite/SOURCE.toml records; with --check, whether the committed four are built from their sources as they are",
+        undo: "`git restore web/group.html web/node.html docs/GROUP_FOLDER.md groups/skill/vleo-group-folder/SKILL.md`",
+        code: ("xtask/src/group.rs", "cmd_group_app"),
+        steps: &[],
+        dry: Dry::Check("group-app --check: whether they are current, nothing written"),
+    },
+    Cmd {
+        name: "group-export",
+        stage: "form",
+        reads: "every sheet, fixtures.toml and source of one group in the tree",
+        writes: "the group's folder in the pattern of groups/SPEC.toml, under target/groups/<group> or --out",
+        checks: "nothing: what the tree lacks is left empty, and the group application lists it",
+        undo: "delete the folder it wrote; nothing in the repository changes",
+        code: ("xtask/src/group.rs", "cmd_group_export"),
+        steps: &[],
+        dry: Dry::Reads,
+    },
+    Cmd {
         name: "differential",
         stage: "build",
         reads: "every recorded body for the node's holes",
@@ -285,7 +362,7 @@ pub(crate) const PIPELINE: &[Cmd] = &[
         name: "docs",
         stage: "gate",
         reads: "every sheet",
-        writes: "each node's generated files — model, contract, module, evidence, page, metadata — and docs/PSEUDOCODE.md",
+        writes: "each node's generated files — model, contract, module, evidence, metadata — and docs/PSEUDOCODE.md; a page.html left in a node folder from before is removed",
         checks: "that each sheet generates",
         undo: GIT_UNDO,
         code: ("xtask/src/main.rs", "cmd_docs"),
@@ -394,7 +471,7 @@ pub(crate) const PIPELINE: &[Cmd] = &[
     Cmd {
         name: "queue",
         stage: "preview",
-        reads: "every form branch",
+        reads: "every form branch and every group branch",
         writes: NOTHING,
         checks: "where each one stands",
         undo: READS_ONLY,
@@ -460,6 +537,17 @@ pub(crate) const PIPELINE: &[Cmd] = &[
         dry: Dry::Plan,
     },
     Cmd {
+        name: "design",
+        stage: "release",
+        reads: "every file of the tree the loader reads: the node folders, the layers, the cases and the source list",
+        writes: "target/design.vleo, or --out; with --check, nothing",
+        checks: "that the tree loads; with --check, each file against its SHA-256 and the folders",
+        undo: "delete the file it wrote; nothing in the repository changes",
+        code: ("xtask/src/design.rs", "cmd_design"),
+        steps: &[],
+        dry: Dry::Plan,
+    },
+    Cmd {
         name: "bundle",
         stage: "release",
         reads: "a bundle's payload files",
@@ -489,6 +577,28 @@ pub(crate) const PIPELINE: &[Cmd] = &[
         checks: NOTHING,
         undo: READS_ONLY,
         code: ("xtask/src/report.rs", "cmd_active"),
+        steps: &[],
+        dry: Dry::Reads,
+    },
+    Cmd {
+        name: "catalogue",
+        stage: "read",
+        reads: "every sheet",
+        writes: "with --csv, the catalogue as a table where you say; otherwise nothing",
+        checks: NOTHING,
+        undo: READS_ONLY,
+        code: ("xtask/src/catalogue.rs", "cmd_catalogue"),
+        steps: &[],
+        dry: Dry::Reads,
+    },
+    Cmd {
+        name: "impact",
+        stage: "read",
+        reads: "every sheet",
+        writes: NOTHING,
+        checks: NOTHING,
+        undo: READS_ONLY,
+        code: ("xtask/src/catalogue.rs", "cmd_impact"),
         steps: &[],
         dry: Dry::Reads,
     },
@@ -750,7 +860,8 @@ pub(crate) fn dry_run(root: &Path, cmd: &str, rest: &[&str]) -> Result<(), Strin
                 .copied()
                 .filter(|x| !matches!(*x, "--apply" | "--partial"))
                 .collect();
-            if cmd != "intake" && !a.contains(&"--check") {
+            // intake and group-intake check by leaving out --apply
+            if !matches!(cmd, "intake" | "group-intake") && !a.contains(&"--check") {
                 a.push("--check");
             }
             println!(
@@ -1381,8 +1492,8 @@ mod the_table_is_true {
     fn a_check_mode_the_table_promises_is_a_flag_the_command_takes() {
         for c in PIPELINE {
             if let Dry::Check(_) = c.dry {
-                if c.name == "intake" {
-                    continue; // its check is intake without --apply
+                if matches!(c.name, "intake" | "group-intake") {
+                    continue; // their check is the command without --apply
                 }
                 assert!(
                     crate::flags_in_help(c.name).is_some_and(|f| f.contains(&"--check")),

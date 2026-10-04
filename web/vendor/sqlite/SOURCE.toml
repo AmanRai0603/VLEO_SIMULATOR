@@ -1,0 +1,19 @@
+# SQLite, compiled to WebAssembly by the SQLite project, vendored unchanged.
+#
+# The group and node applications keep their data in SQLite database files and
+# run in a browser with no network, so the database engine travels inside the
+# page. `xtask group-app` inlines these two files; it checks both hashes first,
+# so a file that is not exactly the one recorded here is refused.
+#
+# To update: download the package named below (`npm pack`), copy dist/index.mjs
+# to sqlite3.mjs and gzip -9 -n dist/sqlite3.wasm to sqlite3.wasm.gz, put the new
+# hashes here, and record the change in ADOPTION.lock. `xtask group-app` checks
+# the two files as committed (mjs_sha256, wasm_gz_sha256); tools/group_check.py
+# also checks the wasm as decompressed (wasm_sha256).
+package = "@sqlite.org/sqlite-wasm"
+version = "3.53.4-build2"
+upstream = "https://sqlite.org/wasm"
+licence = "SQLite itself is public domain; the npm wrapper is Apache-2.0"
+mjs_sha256 = "a6d3fe46aa3f924e7686329f97b0564549ef1f787e0c19924179aef7f72bcc01"
+wasm_sha256 = "2ee8f3dab694532afc8840e07703127287662d08b74e6ff50491ce63f00d5752"
+wasm_gz_sha256 = "3896585c6c5d5fe6a5000bd82965ab30ed91558847a8da632bbd69e22bf48a2a"

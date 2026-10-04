@@ -30,7 +30,7 @@ Six run per node and read nothing but that node's sheet, which is what makes
 | contract | `contract.rs` — outputs, units, guarantees, domain, faults |
 | module | `mod.rs` |
 | evidence | `evidence.rs` — the fixture table, executable |
-| page | `page.html` — the node's fragment of the document |
+| page | the node's fragment of the document — rendered from the sheet when it is opened, never written to the folder |
 | metadata | `meta.json` |
 
 Three run at assembly and may combine and refuse, never decide — a decision

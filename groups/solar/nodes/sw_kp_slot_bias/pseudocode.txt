@@ -1,0 +1,15 @@
+# Transcribed from crates/vleo-mod-solar/nodes/sw_kp_slot_bias/model.rs (HOLE 1 and its guards) — the method the code already runs.
+# Numbers: vleo_core::physics::env::kp_peak_slot_bias — median of max_8(Kp) - kp_from_ap(Ap) in each of prf_ap2kp's bins (centres of edges 0 5 10 15 20 30 45 70 110 400), measured on bundles/solar-weather@2026.09.14; held at the end bins, never extrapolated.
+# The table clamps at both ends, so the only input the code refuses is one that is not a number:
+# it makes the answer not a number, which the generated guard refuses.
+if not (ap == ap) then
+  refuse "the computation produced a value that is not a number"
+end
+let off = interp(ap, [2.5, 7.5, 12.5, 17.5, 25.0, 37.5, 57.5, 90.0, 255.0] [1], [1.0, 0.8333333333333333, 1.1144067796610169, 1.0, 1.2, 1.3333333333333333, 1.5454545454545454, 1.7469135802469136, 1.3174603174603174] [1])
+if off < 0 then
+  refuse "a negative correction contradicts Jensen's inequality: the sign or the slot has been swapped"
+end
+if off > 2 then
+  refuse "above 2.0 is unreachable by this clamped table, so the table is broken"
+end
+return off

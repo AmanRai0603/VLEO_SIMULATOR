@@ -1,0 +1,59 @@
+id,question,kind,output,unit,lower,upper,value
+l3_solar_ach_01,How much room does the sustained F10.7 requirement have left?,achieved,M_f107_long,1,-10,1,
+l3_solar_ach_02,How much room does the single-day F10.7 requirement have left?,achieved,M_f107_short,1,-10,1,
+l3_solar_ach_03,How much room does the Ap survival requirement have left?,achieved,M_ap_survive,1,-10,1,
+l3_solar_ach_04,How much room does the sustained Ap requirement have left?,achieved,M_ap_long,1,-10,1,
+l3_solar_ach_05,How much room does the single-day Ap requirement have left?,achieved,M_ap_short,1,-10,1,
+l3_solar_interface,"What does the solar-weather subsystem conclude, for a system reader who will not open it?",required,F107_hotmean,1,60,400,
+l3_solar_req_01,"What sustained F10.7 must this design operate in, for as long as the mission lasts?",declared,F107_req_long,1,60,400,260
+l3_solar_req_02,What F10.7 must this design survive on a single day inside the mission window?,declared,F107_req_short,1,60,400,350
+l3_solar_req_03,What daily planetary Ap must this design survive?,declared,Ap_req_survive,1,20,400,207
+l3_solar_req_04,"What sustained Ap must this design operate in, for as long as the mission lasts?",declared,Ap_req_long,1,0,400,48
+l3_solar_req_05,What Ap must this design keep operating through on a single day?,declared,Ap_req_short,1,0,400,132
+sw_activity_band,Which activity band does this F10.7 fall in?,computed,band,1,1,4,
+sw_ap_central_expectation,What daily planetary Ap should the mission window be expected to sit at?,declared,Ap_central,1,1,40,22.095389
+sw_ap_cold_long,"What Ap must the design still work at as a sustained level over the mission window, on the low side?",computed,Ap_cold_long,1,0,300,
+sw_ap_cold_short,How quiet can a single day of Ap be inside the mission window?,computed,Ap_cold_short,1,0,400,
+sw_ap_daily_band_drop,"How far below its own rotation does a single day of Ap fall, at the declared confidence, at the level that rotation sits at?",computed,dAp_day_low,1,0,150,
+sw_ap_daily_band_spread,"How far above its own rotation does a single day of Ap reach, at the declared confidence, at the level that rotation sits at?",computed,dAp_day,1,0,150,
+sw_ap_design,What daily Ap is this design built to survive?,computed,Ap_design,1,40,140,
+sw_ap_design_long,What daily planetary Ap must the design survive as a sustained level over the mission window?,computed,Ap_long,1,0,300,
+sw_ap_design_short,What daily planetary Ap must the design survive on a single day inside the mission window?,computed,Ap_short,1,0,400,
+sw_ap_mean_band_spread,How much of the next rotation's Ap does the pattern fail to explain?,declared,sigma_ap,1,0,6,3.593688
+sw_band_confidence,What confidence is the design band at — one number both halves of it read?,declared,p_band,1,0.5,1,0.9
+sw_band_coverage,Does the stated 95 per cent band actually contain the truth 95 per cent of the time?,declared,C_band,1,0.9,1,0.9509267569
+sw_central_expectation,Where is F10.7 expected to be by the time the mission is there?,computed,F107_central,1,60,400,
+sw_cycle_phase,How far through its solar cycle is the mission epoch?,computed,phase,1,0,1,
+sw_cycle_repeatability,How much does one solar cycle repeat the shape of the last one?,declared,r_cyc,1,0.4,0.95,0.7701397224
+sw_daily_band_drop,"How far below its own rotation does a single day of F10.7 fall, at the declared confidence, at the level that rotation sits at?",computed,dF107_day_low,1,0,120,
+sw_daily_band_spread,"How far above its own rotation does a single day of F10.7 reach, at the declared confidence, at the level that rotation sits at?",computed,dF107_day,1,0,120,
+sw_design_safe_duration,How long can the mission be before the record expects to exceed the design Ap?,computed,T_safe,yr,0.3,3,
+sw_event_duration,"Once F10.7 goes above the spike threshold, how long does it stay there?",declared,D_burst,d,1,10,3.3114754098
+sw_exceedance_duration,"Once the record goes above the design Ap, how long does it stay there?",computed,D_exc,d,1,5,
+sw_exceedance_phase,Where in the solar cycle do the exceedances of the design Ap fall?,computed,P_exc,1,0,1,
+sw_exceedance_rate,How many days a year does the record go above the design Ap?,computed,R_exc,1,0.1,6,
+sw_f107_cold_long,"What F10.7 must the design still work at as a sustained level over the mission window, on the low side?",computed,F107_cold_long,1,60,400,
+sw_f107_cold_short,How cold can a single day of F10.7 be inside the mission window?,computed,F107_cold_short,1,60,400,
+sw_f107_design_long,What F10.7 must the design survive as a sustained level over the mission window?,computed,F107_long,1,60,400,
+sw_f107_design_short,What F10.7 must the design survive on a single day inside the mission window?,computed,F107_short,1,60,400,
+sw_f107_observed,"What is the 10.7 cm radio flux doing now, for the forecast to start from?",declared,F107_obs,1,60,400,150
+sw_f107a_ratio,How far does a single day's F10.7 stray from its own 81-day centred mean?,declared,sd_ratio,1,0.05,0.25,0.1222100376
+sw_forecast_bias,By how much does the published outlook miss the F10.7 that arrived?,computed,B_f107,1,-4,-0.5,
+sw_forecast_skill,Is the published outlook better than assuming today's F10.7 continues?,computed,S_f107,1,-0.1,0.5,
+sw_horizon_climatology,"If we forecast the record's mean F10.7 and nothing else, how wrong are we L days later?",computed,D_clim,1,0,50,
+sw_horizon_persistence,"If all we know is today's F10.7, how wrong are we L days later?",computed,D_pers,1,0,65,
+sw_kp_driving_slot,"Which Kp slot is the design driven by — the day's mean, or its worst three-hour interval?",declared,kp_slot,1,0,1,0
+sw_kp_from_ap,What Kp does this daily planetary Ap mean?,computed,Kp,1,0,9,
+sw_kp_scenarios,"What Kp does each of the five driver scenarios carry, in the mean slot and in the peak slot?",computed,Kp_peak_hotday,1,0,9,
+sw_kp_slot_bias,By how much does the published table under-read the daily PEAK Kp at this Ap?,computed,dKp_peak,1,0,2,
+sw_mean_band_spread,How much of the next rotation's level does the pattern fail to explain?,declared,sigma_total,1,0,45,13.454382
+sw_mean_cycle_level,What F10.7 does the average solar cycle show at this phase?,computed,F107_cyc,1,60,400,
+sw_recurrence_lag,At what lag does the solar-rotation signal in F10.7 peak?,declared,L_rot,d,20,35,26
+sw_recurrence_strength,How strong is the solar-rotation recurrence in F10.7?,declared,r_rot,1,0.1,0.7,0.375988
+sw_regime,"Quiet, active or storm — which regime is this daily Ap in?",computed,regime,1,1,3,
+sw_semiannual_amplitude,How large is the semiannual variation in geomagnetic activity?,declared,A_sa,1,0.5,3,1.278112
+sw_spike_threshold,How far above its own 81-day mean must F10.7 rise to count as a spike?,declared,S_thr,1,1.1,1.6,1.3048655732
+sw_storm_design_level,Which NOAA G level is this design built to survive?,declared,G_design,1,1,3,3
+sw_storm_return_level,What daily planetary Ap recurs once per mission lifetime?,computed,Ap_T,1,20,230,
+sw_uncertainty_growth,"By how much can F10.7 rise over a lead this long, at 95% confidence?",computed,dF107_p95,1,0,120,
+sw_window_peak_level,What is the highest level the cycle analogue reaches during the mission?,computed,F107_window_peak,1,60,400,

@@ -59,8 +59,28 @@ pub fn reference_md() -> String {
             FnRule::Cbrt => "thirds every exponent",
             FnRule::Interp => "x like the table's x row; the y row's unit out",
             FnRule::Pow => "as ^",
+            FnRule::Len => "a list in, a pure number out",
         };
         let _ = writeln!(o, "| `{}` | {} | {} |", f.name, rule, f.meaning);
+    }
+    o.push_str(
+        "\n## Kernel functions\n\nRelations too long to write as a formula — an integral up the \
+         atmosphere, a decay over many orbits — already live in the kernel, reviewed once. A method \
+         calls them by name, each argument in the unit shown; the checker holds the units, and the \
+         engine runs the kernel itself, so the method and the built node cannot differ.\n\n\
+         | Call | Answer | Meaning | In the kernel |\n|---|---|---|---|\n",
+    );
+    for k in KERNEL_FUNCTIONS {
+        let args: Vec<String> = k.args.iter().map(|(n, u)| format!("{n} [{u}]")).collect();
+        let _ = writeln!(
+            o,
+            "| `{}({})` | `[{}]` | {} | `{}` |",
+            k.name,
+            args.join(", "),
+            k.out,
+            k.meaning,
+            k.kernel
+        );
     }
     o.push_str("\n## Constants every method may use\n\n| Name | Value | Unit | Meaning |\n|---|---|---|---|\n");
     for c in KERNEL_CONSTANTS {
@@ -126,12 +146,18 @@ pub fn reference_md() -> String {
     o.push('\n');
     o.push_str("## Where the simple version breaks\n\n");
     o.push_str(
-        "- **One answer per method.** A node that publishes a set of values (a few rows do) keeps its\n\
-           \x20 hand-written hole for now; the method language answers one quantity.\n\
-         - **No iteration to convergence.** A loop runs a fixed count. A solver that stops when it\n\
-           \x20 converges is marked for a developer, who writes it, and your cases still decide.\n\
-         - **Tables are written out.** A lookup into a large data file is a reference-data bundle,\n\
-           \x20 not a method.\n",
+        "- **A set is published at the top level.** A node that publishes several values gives each\n\
+           \x20 with `publish`, once, before it returns — never inside an if or a loop. Work a member\n\
+           \x20 out with `let` and `if` first, then publish the name.\n\
+         - **A loop says how often it may run.** `while … at most N times` stops when its condition\n\
+           \x20 fails, and refuses — by name — if N passes were not enough. It never answers with\n\
+           \x20 wherever it had got to.\n\
+         - **A list is read inside its length.** `EDGES[i]` counts from 1; an index that is not a\n\
+           \x20 whole number, or falls outside the list, stops the method with a fault — it never\n\
+           \x20 reads the nearest entry instead. Guard it with `if`, or go through the list with\n\
+           \x20 `for … in`.\n\
+         - **Tables are written out.** A list holds what your source tabulates, a few dozen entries;\n\
+           \x20 a lookup into a large data file is a reference-data bundle, not a method.\n",
     );
     o
 }

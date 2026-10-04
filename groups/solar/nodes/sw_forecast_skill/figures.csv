@@ -1,0 +1,2 @@
+id,kind,file,title,x,y,z,on
+forecast_skill,line,figures/forecast_skill.csv,"The skill of NOAA's issued forecasts against simply keeping today's value, by lead in days, counted two ways.",lead,skill_strict skill_leaky,,

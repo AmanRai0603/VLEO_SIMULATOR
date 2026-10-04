@@ -1,0 +1,6 @@
+# The group's flow: which node feeds which, in order. Written by the group; the
+# application checks it against every node's inputs.csv.
+orbit_radius <- orbit_altitude
+orbit_velocity <- orbit_radius
+orbit_period <- orbit_radius
+period_achieved <- orbit_period

@@ -1,0 +1,12 @@
+# Transcribed from crates/vleo-mod-solar/nodes/sw_ap_cold_short/model.rs (HOLE 1 and its guards) — the method the code already runs.
+# Numbers: NOAA SWPC (noaa_swpc) record via prf_density.m:227 (designWindow_); the daily drop is the low tail's own magnitude, from sw_ap_daily_band_drop.
+# The single-day cold level: the sustained cold level less the within-rotation daily Ap drop (a magnitude, so the sign lives here).
+# The runtime's own finiteness check stands in for the generated "not a number" guard.
+let single_day = sustained - daily
+if single_day < 0 then
+  refuse "Ap floors at zero: a perfectly quiet day is Ap 0 and there is nothing below it"
+end
+if single_day > 400 then
+  refuse "400 is the top of the Ap index itself: a value above it means a sign is wrong in the chain above"
+end
+return single_day
