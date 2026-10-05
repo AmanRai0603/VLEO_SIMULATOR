@@ -93,6 +93,9 @@ pub struct Saved {
     pub chain: String,
     pub kernel: String,
     pub graph: String,
+    /// The fingerprint of the design file the run read, or empty when it read
+    /// the folders of a checkout. Says which design the answer belongs to.
+    pub design: String,
     pub case: String,
     pub data: Vec<String>,
     /// The inputs template it ran against — see `inputs::template`.
@@ -268,6 +271,15 @@ pub fn ran_inputs(supply: &[(String, f64)]) -> Vec<Row> {
         });
     }
     rows
+}
+
+/// Whether a result was made by the engine that answers here. A result from
+/// another engine is shown as it was, and says so: its numbers came from
+/// relations this tool may no longer hold, and running its inputs again gives
+/// this engine's answer.
+pub fn engine_current(s: &Saved) -> bool {
+    let (kernel, graph) = engine();
+    s.kernel == kernel && s.graph == graph
 }
 
 /// The engine that answers here, as a run's manifest and so a result records
@@ -530,6 +542,7 @@ pub fn csv(s: &Saved) -> String {
         ("chain", s.chain.as_str()),
         ("kernel", s.kernel.as_str()),
         ("graph", s.graph.as_str()),
+        ("design", s.design.as_str()),
         ("case", s.case.as_str()),
         ("template", s.template.as_str()),
     ] {
@@ -627,6 +640,7 @@ pub fn read(text: &str) -> Result<Saved, Error> {
                 "chain" => s.chain = v,
                 "kernel" => s.kernel = v,
                 "graph" => s.graph = v,
+                "design" => s.design = v,
                 "case" => s.case = v,
                 "template" => s.template = v,
                 "data" => s.data = v.split_whitespace().map(str::to_string).collect(),

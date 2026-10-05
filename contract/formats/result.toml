@@ -7,5 +7,5 @@
 # (readers go by name); removing or re-meaning one is a new `format`.
 format = "vleo-result/1"
 marker = "result"
-meta = ["result", "target", "mode", "saved", "name", "chain", "kernel", "graph", "case", "template", "data", "ran", "blocked"]
+meta = ["result", "target", "mode", "saved", "name", "chain", "kernel", "graph", "design", "case", "template", "data", "ran", "blocked"]
 columns = ["section", "id", "name", "value", "unit", "si", "credibility", "governing", "note"]

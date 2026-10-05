@@ -231,3 +231,31 @@ fn a_row_whose_first_belief_came_after_the_result_is_a_belief_that_moved() {
     let before_beliefs = read(&with_row.replace("#! versions none\n", "")).unwrap();
     assert!(vleo_modules::results::moved_since(&before_beliefs).is_empty());
 }
+
+/// A result names the design and the engine that made it, and reads back with
+/// both. One made by this engine is current; one made by any other is not, so
+/// it is shown as it was and never mistaken for this engine's answer.
+#[test]
+fn a_result_names_its_design_and_says_when_its_engine_has_gone() {
+    let (mut s, _, _) = a_result();
+    assert!(
+        vleo_modules::results::engine_current(&s),
+        "a result this engine just made is not current"
+    );
+    s.design = "3f9c0d5e8a1b".into();
+    let back = read(&csv(&s)).expect("a result did not read back");
+    assert_eq!(back.design, "3f9c0d5e8a1b", "the design it ran is lost");
+
+    let mut other = back.clone();
+    other.kernel = "000000000000".into();
+    assert!(
+        !vleo_modules::results::engine_current(&other),
+        "a result from another engine reads as current"
+    );
+    let mut other = back;
+    other.graph = "000000000000".into();
+    assert!(
+        !vleo_modules::results::engine_current(&other),
+        "a result from another graph reads as current"
+    );
+}

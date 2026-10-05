@@ -168,6 +168,8 @@ async function view(el, host, all) {
       ': ' + plural(+r.thinned.split(' ')[1] || 0, 'other value') + ' of the run ' +
       (r.thinned.split(' ')[1] === '1' ? 'was' : 'were') + ' let go. The inputs it ran on, its answer and ' +
       'what could not run are kept — use its inputs as the case and run it to see every value again.</p>' : '') +
+    (r.engine_current === false ? '<p class="run-stale">Made by another engine than this tool has now. ' +
+      'It is shown as it was; run its inputs again to see this engine\'s answer.</p>' : '') +
     (r.template_current ? '' : '<p class="run-stale">Saved against another set of inputs than this tool ' +
       'has now. It is shown as it was; loading its inputs as the case carries them over.</p>') +
     // WHAT IT RESTS ON. A result keeps the version of every row it ran
