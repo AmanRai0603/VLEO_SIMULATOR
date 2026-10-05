@@ -83,10 +83,10 @@ the maintainer's first step: check a filled node form; if it cannot be taken, wr
 | | |
 |---|---|
 | reads | the filled form, the `maintainer` branch, the tree |
-| writes | a branch form/<author>/<node>: the applied sheet, regenerated files, a commit, a push — or <form>.returned.txt |
+| writes | a branch form/<author>/<node>: the applied sheet, regenerated files, today's answers recorded again, a commit, a push — or <form>.returned.txt |
 | checks | the form, as intake does; the gate; cargo test; a node with a method built from it |
 | undo | delete the branch (`git branch -D form/<author>/<node>`, and on the remote); nothing on `maintainer` changes |
-| steps | 1 the branch · 2 apply the form · 3 regenerate · 4 gate · 5 build the node from its method · 6 tests (cargo test --workspace) · 7 commit and push |
+| steps | 1 the branch · 2 apply the form · 3 regenerate · 4 gate · 5 build the node from its method · 6 today's answers, recorded again · 7 tests (cargo test --workspace) · 8 commit and push |
 | dry run | --dry-run prints this plan — the steps, what it would write, how to undo it — and touches nothing |
 | code | `xtask/src/flow.rs` — `cmd_take` |
 
@@ -264,7 +264,7 @@ every computed node of a sealed release, taken in with group-intake --apply, bui
 | | |
 |---|---|
 | reads | an unpacked sealed release and the design it was taken into |
-| writes | what build-node writes for each computed node: its kernel translation and generated files |
+| writes | what build-node writes for each computed node: its kernel translation and generated files; baseline/today.csv, today's answers recorded again |
 | checks | the seal; that the design's method is the release's; then build-node on each — the author's cases, the tests proved to test, the interface |
 | undo | `git restore <files>` (or `git checkout -- .`) before committing; `git revert` after |
 | dry run | --dry-run prints this plan — the steps, what it would write, how to undo it — and touches nothing |
