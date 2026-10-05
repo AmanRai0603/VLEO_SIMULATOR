@@ -3093,6 +3093,11 @@ what = "Each form branch's author approval of the exact preview build they tried
 who = "maintainer"
 
 [[folder]]
+name = "acceptances"
+what = "Each group release's acceptance by its lead of the exact test application they tried, recorded by `xtask group-accept`. A group branch merges only with one that matches."
+who = "maintainer"
+
+[[folder]]
 name = ".gitattributes"
 what = "How git carries each file: every text file LF on every machine, and the reference data in bundles/ never rewritten, so its hash verifies on Windows too."
 who = "developer"
