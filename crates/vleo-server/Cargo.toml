@@ -26,6 +26,9 @@ vleo-design = { workspace = true }
 [dev-dependencies]
 # Reads contract/routes.toml and the manual in the contract tests.
 toml = { workspace = true }
+# Changes one row inside a design file, to prove a file for another engine is
+# refused.
+rusqlite = { workspace = true }
 
 [lints.rust]
 unsafe_code = "forbid"
