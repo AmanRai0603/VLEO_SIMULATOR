@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `band` (F10.7 activity band), in `-`.
 pub const NODE_ID: &str = "sw_activity_band";
-pub const SHEET_HASH: u64 = 0xdf9258212406f61f;
+pub const SHEET_HASH: u64 = 0xc41889bfb904165c;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "sw_f107_observed",

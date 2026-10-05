@@ -28,29 +28,21 @@ use vleo_core::units::*;
 pub const NODE_ID: &str = "sw_design_safe_duration";
 /// Hash of the sheet this file was generated from. A face carrying a
 /// different one refuses to run rather than showing a stale page.
-pub const SHEET_HASH: u64 = 0xc1857582e6869082;
+pub const SHEET_HASH: u64 = 0x41c6d1f72a2da252;
 
 pub fn evaluate(ap_design: Ratio) -> Result<Time, Fault> {
-    // ---- HOLE 1 : invert the storm return fit: the mission length at which this Ap recurs once -> Time
-    // sw_storm_return_level's own fit, read backwards. Its constants, not a
-    // second fit: Ap(T) = A + B ln(T) inverts to T = exp((Ap - A) / B), so the
-    // two rows cannot disagree about any point.
-    //
-    // Closed form rather than a table, so this is exact at every Ap the
-    // producer can supply and not only at the three G anchors.
-    const A: f64 = 92.515531;
-    const B: f64 = 40.926516;
-    let years: f64 = pmath::exp((ap_design.get() - A) / B);
-    let out: Time = match Time::from_unit(years, Unit::Year) {
-        Some(q) => q,
-        None => return Err(Fault::Degenerate { node: NODE_ID, field: "T_safe", reason: "the declared unit does not match the declared type" }),
+    // generated · from the node's method, translated by rule into
+    // vleo_core::physics::methods::sw_design_safe_duration. No hole: the method is the
+    // implementation, and the author's cases in evidence.rs test it.
+    let method_answer: Time = match methods::sw_design_safe_duration::evaluate(ap_design.get()) {
+        Ok(v) => Time::new(v),
+        Err(e) => return Err(method::fault(e, NODE_ID, "T_safe")),
     };
-    // ---- end HOLE 1
 
     // generated · the declared domain of this node's own answer. The
     // reason travels with the guard, because a guard whose reason is not
     // written down gets deleted by the next person who finds it awkward.
-    let answer: Time = out;
+    let answer: Time = method_answer;
     if !answer.is_finite() {
         return Err(Fault::Degenerate { node: NODE_ID, field: "T_safe", reason: "the computation produced a value that is not a number" });
     }

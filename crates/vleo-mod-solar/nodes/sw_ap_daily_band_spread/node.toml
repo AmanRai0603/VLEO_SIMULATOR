@@ -132,6 +132,74 @@ math = "hi(L) = pctl(bin(L), 0.95) — 6.02 at Ap 4, 14.67 at 11, 28.68 at 20, 6
 text = "Interpolate between knots and clamp beyond the ends. The declared window sits above the top knot, so its answer is the clamp."
 math = "dAp_day(L) = interp(L; knots) = 63.85 at L = 26.70, which is the clamp"
 
+# THE METHOD — the relation in the method language (docs/PSEUDOCODE.md). In the
+# sheet hash: the generated code is translated from it.
+[method]
+text = """
+# Transcribed from crates/vleo-mod-solar/nodes/sw_ap_daily_band_spread/model.rs (HOLE 1 and its guards) — the method the code already runs.
+# Numbers: measured 95th-percentile within-rotation Ap departures by rotation level (noaa_swpc record; bins of 15 per cent, at least 200 days each).
+# The table clamps at both ends, so the only input the code refuses is one that is not a number:
+# it makes the answer not a number, which the generated guard refuses.
+if not (level == level) then
+  refuse "the computation produced a value that is not a number"
+end
+let band = interp(level, [4.0, 6.0, 8.0, 11.0, 15.0, 20.0, 24.0, 26.0] [1], [6.0167, 8.1481, 11.2222, 14.6667, 23.7852, 28.6759, 40.6148, 63.8519] [1])
+if band < 0 then
+  refuse "a value below zero is not a spread, and Ap itself floors at zero"
+end
+if band > 150 then
+  refuse "above 150 the value exceeds anything the record supports, so it is an arithmetic error"
+end
+return band
+"""
+by = "Aman Rai / 2026-10-03"
+
+[[case]]
+label = "at the declared window's own sustained level, Ap 26.70 — just above the top knot, so this is the clamp and the sheet argues about what it costs."
+refuse = "no"
+expect = 63.8519
+tolerance = 1e-12
+inputs = { level = 26.69530964 }
+origin = "hand"
+
+[[case]]
+label = "the Ap 11 knot, exactly — a transcription check, and near where the study's own sample sat at Ap 11.64."
+refuse = "no"
+expect = 14.6667
+tolerance = 1e-12
+inputs = { level = 11.0 }
+origin = "hand"
+
+[[case]]
+label = "the Ap 20 knot, exactly — a transcription check below the steep last segment."
+refuse = "no"
+expect = 28.6759
+tolerance = 1e-12
+inputs = { level = 20.0 }
+origin = "hand"
+
+[[case]]
+label = "halfway between the Ap 15 and Ap 20 knots — the interpolation."
+refuse = "no"
+expect = 26.23055
+tolerance = 1e-9
+inputs = { level = 17.5 }
+origin = "hand"
+
+[[case]]
+label = "below the bottom of the table — the clamp, not an extrapolation toward zero."
+refuse = "no"
+expect = 6.0167
+tolerance = 1e-12
+inputs = { level = 2.0 }
+origin = "hand"
+
+[[case]]
+label = "outside what the node holds for: its code refuses it, and so must the developer's"
+refuse = "yes"
+inputs = { level = nan }
+origin = "hand"
+
 [[assumption]]
 text = "THE DECLARED WINDOW IS ABOVE THE TOP KNOT, so its answer is the clamp and not an interpolation"
 fails_when = "the sustained Ap exceeds 26, as it does here at 26.70. The table holds its top value rather than extrapolating, and the segment below that top knot is the steepest in the table — 40.61 at Ap 24 to 63.85 at 26. Extrapolating that slope to 26.70 would give about 72 rather than 63.85, so the clamp is the CONSERVATIVE-DOWNWARD choice here and the published single-day Ap may be low. The record cannot settle it: Ap 28 holds 170 days and Ap 30 holds 105"
@@ -181,5 +249,20 @@ about = ["node"]
 changed = "first version: the belief this row already rested on, written down"
 rests_on = "That the 95th-percentile rise above the centred 27-day mean, binned within 15 per cent of the rotation level on eight levels from 4 to 26, describes the window, with the answer held at the top level beyond 26."
 breaks_if = "More record at higher levels shows the rise above 26 is larger than 63.85, one storm period added or removed moves the top of the table, or someone fits a smooth law through the table."
+relation = "dAp_day(L) = pctl(Ap - movmean(Ap, 27 d), 0.95) over days whose rotation sits within 15% of L"
+source = "noaa_swpc"
+
+[[version]]
+n = 2
+release = "next"
+date = "2026-10-03"
+by = "Aman Rai (l3_solar)"
+about = ["math"]
+believed = "1.0 was ready for the developer: sealed, every method sound by the group application and agreeing with all of its results."
+tested = "The developer took 1.0 in: the seal held and every method agreed with every one of its results, refusals included."
+learned = "Intake refused 1.0 whole for two things the group application did not ask: six nodes had no case the method must refuse, and sw_kp_scenarios publishes ten values while its method gave one. Run with a value that is not a number, the code of sw_activity_band, sw_ap_design and sw_regime answered (band 1, Ap 132, regime 3) where the other three refused."
+changed = "Each of the six has a refusal: a value that is not a number, which every method now refuses at its door, so those three refuse it where their code answered. sw_kp_scenarios publishes its nine members, and every answered row gives all ten values: the design's own fixtures at the defaults, its code at the two others. The method was transcribed by an assistant from crates/vleo-mod-solar/nodes/sw_ap_daily_band_spread/model.rs; Aman Rai read the copy against it and signs it."
+rests_on = "the 32 model.rs files the pseudocode was copied from, and the fixtures published with them"
+breaks_if = "a result the built node does not reproduce, or a correction to the code a method was copied from"
 relation = "dAp_day(L) = pctl(Ap - movmean(Ap, 27 d), 0.95) over days whose rotation sits within 15% of L"
 source = "noaa_swpc"

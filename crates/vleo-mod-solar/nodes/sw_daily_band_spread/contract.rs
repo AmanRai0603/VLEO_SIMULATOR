@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `dF107_day` (Within-rotation daily spread), in `-`.
 pub const NODE_ID: &str = "sw_daily_band_spread";
-pub const SHEET_HASH: u64 = 0x00ef56c98f2601bb;
+pub const SHEET_HASH: u64 = 0xd70a3fff1375d700;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "sw_f107_design_long",

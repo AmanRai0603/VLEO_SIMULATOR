@@ -48,6 +48,26 @@ REF = os.path.join(ROOT, "matlab/reference/mission_drivers.csv")
 #: The multiplier as the four holes carry it, and the one-sided 95 per cent
 #: alternative §30 B2 names. Neither is a recommendation.
 Z_NOW = 1.28
+
+
+def method_multiplies(row):
+    """Whether the row's method multiplies the spread by Z_NOW: `spread * 1.28`,
+    or `const z = 1.28` and `spread * z`. Comments are not the method."""
+    import re
+    import tomllib
+    sheet = os.path.join(ROOT, "crates/vleo-mod-solar/nodes", row, "node.toml")
+    try:
+        text = tomllib.load(open(sheet, "rb")).get("method", {}).get("text", "")
+    except OSError:
+        return False
+    code = "\n".join(l.split("#", 1)[0] for l in text.splitlines())
+    z = re.escape(repr(Z_NOW))
+    if re.search(r"\bspread\s*\*\s*%s\b" % z, code):
+        return True
+    for name in re.findall(r"\bconst\s+(\w+)\s*=\s*%s\s*\[1\]" % z, code):
+        if re.search(r"\bspread\s*\*\s*%s\b" % re.escape(name), code):
+            return True
+    return False
 Z_95 = 1.645
 
 #: The four rows the multiplier is written into, as (row, centre, sigma, sign).
@@ -218,14 +238,17 @@ def selftest():
         bad += 1
         print("  FAIL %s has no sheet; §30 B2 asks for it" % DECISION)
 
-    # 4 · THE FOUR HOLES STILL CARRY THE MULTIPLIER, and still say it is declared
+    # 4 · THE FOUR ROWS STILL CARRY THE MULTIPLIER, and still say it is declared
     #     in the sheet. Both halves matter: the first is what this row would
-    #     replace, and the second is the claim that is not yet true.
+    #     replace, and the second is the claim that is not yet true. A row built
+    #     from its method carries it there — inline, or as a const the spread is
+    #     multiplied by — and the hole is generated from it; a row whose hole
+    #     is written by hand carries it in the hole.
     for row, _, _, _ in BAND:
         p = os.path.join(ROOT, "crates/vleo-mod-solar/nodes", row, "model.rs")
         try:
             src = open(p, encoding="utf-8").read()
-            if "spread * %s;" % Z_NOW not in src:
+            if "spread * %s;" % Z_NOW not in src and not method_multiplies(row):
                 bad += 1
                 print("  FAIL %s no longer multiplies the spread by %s — this file's "
                       "whole subject has moved" % (row, Z_NOW))

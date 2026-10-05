@@ -30,33 +30,21 @@ use vleo_core::units::*;
 pub const NODE_ID: &str = "sw_kp_from_ap";
 /// Hash of the sheet this file was generated from. A face carrying a
 /// different one refuses to run rather than showing a stale page.
-pub const SHEET_HASH: u64 = 0x938c0600d69f62b5;
+pub const SHEET_HASH: u64 = 0x9a0cce1ae586eb1c;
 
 pub fn evaluate(ap: Ratio) -> Result<Ratio, Fault> {
-    // ---- HOLE 1 : clamp the daily Ap to the table's domain, then read Kp off the published 28-point scale -> Ratio
-    // The published scale, as IAGA prints it: 28 pairs, ap against Kp, with Kp in
-    // thirds from 0 to 9. It lives in vleo-core as `env::kp_from_ap` and this
-    // hole calls it rather than restating it.
-    //
-    // THIS HOLE USED TO HOLD ITS OWN COPY OF THE 28 PAIRS, and that is why the
-    // call is here. The kernel's copy tabulated Kp as decimals — 0.33, 0.67 —
-    // where this one used exact thirds, so the two disagreed by up to 0.0033 Kp
-    // everywhere between the anchors. Nothing caught it for as long as both
-    // existed: the fixtures below are the published table's anchor points, and
-    // the anchors are precisely where two transcriptions of one table agree.
-    // The kernel's copy is now in thirds and is the only one.
-    //
-    // kp_from_ap clamps at both ends instead of extrapolating, which is the
-    // clamp the sheet declares rather than a convenience: below ap 0 and above
-    // ap 400 the scale simply does not continue, and a straight line drawn past
-    // either end would be this node inventing sky the source never described.
-    let k: Ratio = Ratio::new(vleo_core::physics::env::kp_from_ap(ap.get()));
-    // ---- end HOLE 1
+    // generated · from the node's method, translated by rule into
+    // vleo_core::physics::methods::sw_kp_from_ap. No hole: the method is the
+    // implementation, and the author's cases in evidence.rs test it.
+    let method_answer: Ratio = match methods::sw_kp_from_ap::evaluate(ap.get()) {
+        Ok(v) => Ratio::new(v),
+        Err(e) => return Err(method::fault(e, NODE_ID, "Kp")),
+    };
 
     // generated · the declared domain of this node's own answer. The
     // reason travels with the guard, because a guard whose reason is not
     // written down gets deleted by the next person who finds it awkward.
-    let answer: Ratio = k;
+    let answer: Ratio = method_answer;
     if !answer.is_finite() {
         return Err(Fault::Degenerate { node: NODE_ID, field: "Kp", reason: "the computation produced a value that is not a number" });
     }

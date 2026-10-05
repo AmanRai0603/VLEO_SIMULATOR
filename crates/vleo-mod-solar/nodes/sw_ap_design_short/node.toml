@@ -99,6 +99,62 @@ sw_storm_return_level puts the one storm expected in the whole mission at Ap 158
 and a disturbed rotation throwing G3 days is what the record shows.
 """
 
+# THE METHOD — the relation in the method language (docs/PSEUDOCODE.md). In the
+# sheet hash: the generated code is translated from it.
+[method]
+text = """
+# Transcribed from crates/vleo-mod-solar/nodes/sw_ap_design_short/model.rs (HOLE 1 and its guards) — the method the code already runs.
+# Numbers: none of its own; the sustained level and the within-rotation daily departure both come from the NOAA SWPC record (noaa_swpc) via their rows; migrated from prf_density.m:227 designWindow_ (hotday for ap).
+# The rotation error and the within-rotation departure are of different things, so they add.
+let single_day = sustained + daily
+
+# Generated guards: the declared domain of Ap_short.
+if single_day < 0 then
+  refuse "Ap floors at zero, so a single-day design level below it means a spread has been subtracted rather than added"
+end
+if single_day > 400 then
+  refuse "400 is the top of the Ap index itself; a value above it is not a geomagnetic index at all"
+end
+return single_day
+"""
+by = "Aman Rai / 2026-10-03"
+
+[[case]]
+label = "the sustained Ap level with the daily departure this row USED to be handed, before sw_ap_daily_band_spread was conditioned on level. Kept as an arithmetic case: the conditioned departure at Ap 26.70 is 63.85, not 15.00."
+refuse = "no"
+expect = 41.6971614919
+tolerance = 1e-12
+inputs = { daily = 15.0018518519, sustained = 26.69530964 }
+origin = "hand"
+
+[[case]]
+label = "round numbers, checkable without a calculator."
+refuse = "no"
+expect = 40.0
+tolerance = 1e-12
+inputs = { daily = 15.0, sustained = 25.0 }
+origin = "hand"
+
+[[case]]
+label = "a higher sustained level with a narrower daily departure — the terms are independent and the row must not assume otherwise."
+refuse = "no"
+expect = 42.0
+tolerance = 1e-12
+inputs = { daily = 12.0, sustained = 30.0 }
+origin = "hand"
+
+[[case]]
+label = "outside what the node holds for: its code refuses it, and so must the developer's"
+refuse = "yes"
+inputs = { daily = 5.0, sustained = -20.0 }
+origin = "hand"
+
+[[case]]
+label = "outside what the node holds for: its code refuses it, and so must the developer's"
+refuse = "yes"
+inputs = { daily = 150.0, sustained = 300.0 }
+origin = "hand"
+
 [output]
 symbol = "Ap_short"
 type = "Ratio"
@@ -120,5 +176,20 @@ about = ["node"]
 changed = "first version: the belief this row already rested on, written down"
 rests_on = "That the rotation-level error and a day's rise within its rotation stack, because a bad day is both a bad stretch and a bad day within it."
 breaks_if = "More record at high levels shows a larger daily rise, or the single-day survival commitment is moved, or the window is judged outside what the design was built for."
+relation = "Ap_short = Ap_long + dAp_day"
+source = "noaa_swpc"
+
+[[version]]
+n = 2
+release = "next"
+date = "2026-10-03"
+by = "Aman Rai (l3_solar)"
+about = ["math"]
+believed = "1.0 was ready for the developer: sealed, every method sound by the group application and agreeing with all of its results."
+tested = "The developer took 1.0 in: the seal held and every method agreed with every one of its results, refusals included."
+learned = "Intake refused 1.0 whole for two things the group application did not ask: six nodes had no case the method must refuse, and sw_kp_scenarios publishes ten values while its method gave one. Run with a value that is not a number, the code of sw_activity_band, sw_ap_design and sw_regime answered (band 1, Ap 132, regime 3) where the other three refused."
+changed = "Each of the six has a refusal: a value that is not a number, which every method now refuses at its door, so those three refuse it where their code answered. sw_kp_scenarios publishes its nine members, and every answered row gives all ten values: the design's own fixtures at the defaults, its code at the two others. The method was transcribed by an assistant from crates/vleo-mod-solar/nodes/sw_ap_design_short/model.rs; Aman Rai read the copy against it and signs it."
+rests_on = "the 32 model.rs files the pseudocode was copied from, and the fixtures published with them"
+breaks_if = "a result the built node does not reproduce, or a correction to the code a method was copied from"
 relation = "Ap_short = Ap_long + dAp_day"
 source = "noaa_swpc"

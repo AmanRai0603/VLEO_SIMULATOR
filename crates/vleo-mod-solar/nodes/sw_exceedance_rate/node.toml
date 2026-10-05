@@ -137,6 +137,56 @@ missing from the numerator, and the true rate is more likely above this
 figure than below it.
 """
 
+# THE METHOD — the relation in the method language (docs/PSEUDOCODE.md). In the
+# sheet hash: the generated code is translated from it.
+[method]
+text = """
+# Transcribed from crates/vleo-mod-solar/nodes/sw_exceedance_rate/model.rs (HOLE 1 and its guards) — the method the code already runs.
+# Numbers: days at or above each G-scale Ap bound per year of the 28.197 years of record, counted from bundles/solar-weather (NOAA SWPC record, noaa_swpc).
+# Three anchors, Ap 48, 80 and 132 (G1, G2, G3) — the only values sw_ap_design can return. A Table1 lookup:
+# linear between anchors (the sheet declares that interpolation wrong for this quantity and unreached), held at both ends.
+let out = interp(ap_design, [48.0, 80.0, 132.0], [4.6458636761, 1.2412612875, 0.2837168657])
+
+# Generated guards: the declared domain of R_exc.
+if out < 0.1 then
+  refuse "below 0.1 is under the lowest rate the table holds (0.284 at Ap 132), so the table has been read at the wrong end"
+end
+if out > 6 then
+  refuse "above 6 days a year is over the highest rate the table holds (4.65 at Ap 48), below anything the G scale defines as a storm"
+end
+return out
+"""
+by = "Aman Rai / 2026-10-03"
+
+[[case]]
+label = "the G2 bound, Ap 80 — 35 days above in the record, 1.24 a year."
+refuse = "no"
+expect = 1.2412612875
+tolerance = 1e-12
+inputs = { ap_design = 80.0 }
+origin = "hand"
+
+[[case]]
+label = "the G1 bound, Ap 48 — the lowest level the G scale defines."
+refuse = "no"
+expect = 4.6458636761
+tolerance = 1e-12
+inputs = { ap_design = 48.0 }
+origin = "hand"
+
+[[case]]
+label = "the G3 bound, Ap 132 — the declared design level."
+refuse = "no"
+expect = 0.2837168657
+tolerance = 1e-12
+inputs = { ap_design = 132.0 }
+origin = "hand"
+
+[[case]]
+label = "a value that is not a number: the node must refuse it, as its code does"
+refuse = "yes"
+inputs = { ap_design = nan }
+origin = "hand"
 
 [[assumption]]
 text = "The design bound IS exceeded, and the rate is the whole argument for accepting it"
@@ -198,5 +248,20 @@ about = ["node"]
 changed = "first version: the belief this row already rested on, written down"
 rests_on = "A plain count of days at or above the design level over the days actually present: 131 above 48, 35 above 80 and 8 above 132, over 28.197 years."
 breaks_if = "A value between the three grade levels is read, the missing 2017 stretch turns out to hold exceedances, or a longer record changes the eight-day G3 count."
+relation = "R_exc(Ap_design) = days with Ap >= Ap_design, per year of record"
+source = "noaa_swpc"
+
+[[version]]
+n = 2
+release = "next"
+date = "2026-10-03"
+by = "Aman Rai (l3_solar)"
+about = ["math"]
+believed = "1.0 was ready for the developer: sealed, every method sound by the group application and agreeing with all of its results."
+tested = "The developer took 1.0 in: the seal held and every method agreed with every one of its results, refusals included."
+learned = "Intake refused 1.0 whole for two things the group application did not ask: six nodes had no case the method must refuse, and sw_kp_scenarios publishes ten values while its method gave one. Run with a value that is not a number, the code of sw_activity_band, sw_ap_design and sw_regime answered (band 1, Ap 132, regime 3) where the other three refused."
+changed = "Each of the six has a refusal: a value that is not a number, which every method now refuses at its door, so those three refuse it where their code answered. sw_kp_scenarios publishes its nine members, and every answered row gives all ten values: the design's own fixtures at the defaults, its code at the two others. The method was transcribed by an assistant from crates/vleo-mod-solar/nodes/sw_exceedance_rate/model.rs; Aman Rai read the copy against it and signs it."
+rests_on = "the 32 model.rs files the pseudocode was copied from, and the fixtures published with them"
+breaks_if = "a result the built node does not reproduce, or a correction to the code a method was copied from"
 relation = "R_exc(Ap_design) = days with Ap >= Ap_design, per year of record"
 source = "noaa_swpc"

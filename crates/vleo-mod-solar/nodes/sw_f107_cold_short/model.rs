@@ -37,21 +37,21 @@ use vleo_core::units::*;
 pub const NODE_ID: &str = "sw_f107_cold_short";
 /// Hash of the sheet this file was generated from. A face carrying a
 /// different one refuses to run rather than showing a stale page.
-pub const SHEET_HASH: u64 = 0x0158aca5b8a86e32;
+pub const SHEET_HASH: u64 = 0x5901b27cdea44845;
 
 pub fn evaluate(sustained: Ratio, daily: Ratio) -> Result<Ratio, Fault> {
-    // ---- HOLE 1 : subtract the within-rotation daily drop from the sustained cold level -> Ratio
-    // The daily term is a MAGNITUDE, so the sign lives here in the relation
-    // rather than in sw_daily_band_drop's value. And it is the low tail's own
-    // number, 31.27, not the high tail's 34.23 negated: the two differ by nine
-    // per cent because the departures are skewed.
-    let single_day: Ratio = sustained - daily;
-    // ---- end HOLE 1
+    // generated · from the node's method, translated by rule into
+    // vleo_core::physics::methods::sw_f107_cold_short. No hole: the method is the
+    // implementation, and the author's cases in evidence.rs test it.
+    let method_answer: Ratio = match methods::sw_f107_cold_short::evaluate(sustained.get(), daily.get()) {
+        Ok(v) => Ratio::new(v),
+        Err(e) => return Err(method::fault(e, NODE_ID, "F107_cold_short")),
+    };
 
     // generated · the declared domain of this node's own answer. The
     // reason travels with the guard, because a guard whose reason is not
     // written down gets deleted by the next person who finds it awkward.
-    let answer: Ratio = single_day;
+    let answer: Ratio = method_answer;
     if !answer.is_finite() {
         return Err(Fault::Degenerate { node: NODE_ID, field: "F107_cold_short", reason: "the computation produced a value that is not a number" });
     }

@@ -117,6 +117,121 @@ rather than extrapolated, which is prf_ap2kp's own rule stated explicitly:
 hold the end bins, never extrapolate.
 """
 
+# THE METHOD — the relation in the method language (docs/PSEUDOCODE.md). In the
+# sheet hash: the generated code is translated from it.
+[method]
+text = """
+# Transcribed from crates/vleo-mod-solar/nodes/sw_kp_slot_bias/model.rs (HOLE 1 and its guards) — the method the code already runs.
+# Numbers: vleo_core::physics::env::kp_peak_slot_bias — median of max_8(Kp) - kp_from_ap(Ap) in each of prf_ap2kp's bins (centres of edges 0 5 10 15 20 30 45 70 110 400), measured on bundles/solar-weather@2026.09.14; held at the end bins, never extrapolated.
+# The table clamps at both ends, so the only input the code refuses is one that is not a number:
+# it makes the answer not a number, which the generated guard refuses.
+if not (ap == ap) then
+  refuse "the computation produced a value that is not a number"
+end
+let off = interp(ap, [2.5, 7.5, 12.5, 17.5, 25.0, 37.5, 57.5, 90.0, 255.0] [1], [1.0, 0.8333333333333333, 1.1144067796610169, 1.0, 1.2, 1.3333333333333333, 1.5454545454545454, 1.7469135802469136, 1.3174603174603174] [1])
+if off < 0 then
+  refuse "a negative correction contradicts Jensen's inequality: the sign or the slot has been swapped"
+end
+if off > 2 then
+  refuse "above 2.0 is unreachable by this clamped table, so the table is broken"
+end
+return off
+"""
+by = "Aman Rai / 2026-10-03"
+
+[[case]]
+label = "Ap bin 0-5, centre 2.5 — 2529 days."
+refuse = "no"
+expect = 1.0
+tolerance = 1e-12
+inputs = { ap = 2.5 }
+origin = "hand"
+
+[[case]]
+label = "Ap bin 5-10, centre 7.5 — 3938 days."
+refuse = "no"
+expect = 0.8333333333333333
+tolerance = 1e-12
+inputs = { ap = 7.5 }
+origin = "hand"
+
+[[case]]
+label = "Ap bin 10-15, centre 12.5 — 1836 days."
+refuse = "no"
+expect = 1.114406779661017
+tolerance = 1e-12
+inputs = { ap = 12.5 }
+origin = "hand"
+
+[[case]]
+label = "Ap bin 15-20, centre 17.5 — 839 days."
+refuse = "no"
+expect = 1.0
+tolerance = 1e-12
+inputs = { ap = 17.5 }
+origin = "hand"
+
+[[case]]
+label = "Ap bin 20-30, centre 25 — 707 days."
+refuse = "no"
+expect = 1.2
+tolerance = 1e-12
+inputs = { ap = 25.0 }
+origin = "hand"
+
+[[case]]
+label = "Ap bin 30-45, centre 37.5 — 288 days."
+refuse = "no"
+expect = 1.333333333333333
+tolerance = 1e-12
+inputs = { ap = 37.5 }
+origin = "hand"
+
+[[case]]
+label = "Ap bin 45-70, centre 57.5 — 115 days."
+refuse = "no"
+expect = 1.545454545454545
+tolerance = 1e-12
+inputs = { ap = 57.5 }
+origin = "hand"
+
+[[case]]
+label = "Ap bin 70-110, centre 90 — 25 days."
+refuse = "no"
+expect = 1.746913580246914
+tolerance = 1e-12
+inputs = { ap = 90.0 }
+origin = "hand"
+
+[[case]]
+label = "Ap bin 110-400, centre 255 — 20 days."
+refuse = "no"
+expect = 1.317460317460317
+tolerance = 1e-12
+inputs = { ap = 255.0 }
+origin = "hand"
+
+[[case]]
+label = "below the first bin centre — Ap 0 holds the 0-to-5 bin rather than extrapolating."
+refuse = "no"
+expect = 1.0
+tolerance = 1e-12
+inputs = { ap = 0.0 }
+origin = "hand"
+
+[[case]]
+label = "above the last bin centre — Ap 1000 holds the 110-to-400 bin."
+refuse = "no"
+expect = 1.3174603174603174
+tolerance = 1e-12
+inputs = { ap = 1000.0 }
+origin = "hand"
+
+[[case]]
+label = "outside what the node holds for: its code refuses it, and so must the developer's"
+refuse = "yes"
+inputs = { ap = nan }
+origin = "hand"
 
 [[assumption]]
 text = "The correction is a median per bin, so it describes the typical day at that Ap and not the day in hand"
@@ -179,5 +294,20 @@ about = ["node"]
 changed = "first version: the belief this row already rested on, written down"
 rests_on = "Nine bin medians measured on the solar-weather bundle of 2026.09.14, interpolated between bin centres and held at the ends, describe the typical day's peak-slot offset, which the concavity of the scale says cannot be negative."
 breaks_if = "The bundle version changes without the medians being re-measured, a negative correction appears, or more days in the 110-to-400 bin show the fall to +1.317 was a small-sample artefact."
+relation = "dKp_peak(Ap) = piecewise_linear(ap_bin_centres -> measured_medians, Ap)"
+source = "noaa_swpc"
+
+[[version]]
+n = 2
+release = "next"
+date = "2026-10-03"
+by = "Aman Rai (l3_solar)"
+about = ["math"]
+believed = "1.0 was ready for the developer: sealed, every method sound by the group application and agreeing with all of its results."
+tested = "The developer took 1.0 in: the seal held and every method agreed with every one of its results, refusals included."
+learned = "Intake refused 1.0 whole for two things the group application did not ask: six nodes had no case the method must refuse, and sw_kp_scenarios publishes ten values while its method gave one. Run with a value that is not a number, the code of sw_activity_band, sw_ap_design and sw_regime answered (band 1, Ap 132, regime 3) where the other three refused."
+changed = "Each of the six has a refusal: a value that is not a number, which every method now refuses at its door, so those three refuse it where their code answered. sw_kp_scenarios publishes its nine members, and every answered row gives all ten values: the design's own fixtures at the defaults, its code at the two others. The method was transcribed by an assistant from crates/vleo-mod-solar/nodes/sw_kp_slot_bias/model.rs; Aman Rai read the copy against it and signs it."
+rests_on = "the 32 model.rs files the pseudocode was copied from, and the fixtures published with them"
+breaks_if = "a result the built node does not reproduce, or a correction to the code a method was copied from"
 relation = "dKp_peak(Ap) = piecewise_linear(ap_bin_centres -> measured_medians, Ap)"
 source = "noaa_swpc"

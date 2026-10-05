@@ -33,22 +33,21 @@ use vleo_core::units::*;
 pub const NODE_ID: &str = "sw_f107_cold_long";
 /// Hash of the sheet this file was generated from. A face carrying a
 /// different one refuses to run rather than showing a stale page.
-pub const SHEET_HASH: u64 = 0xc6685d30fb5cc2f5;
+pub const SHEET_HASH: u64 = 0xdc6eea5558a9bccb;
 
 pub fn evaluate(central: Ratio, spread: Ratio) -> Result<Ratio, Fault> {
-    // ---- HOLE 1 : subtract 1.28 standard deviations of the rotation-forecast residual from the central expectation -> Ratio
-    // 1.28 is declared in the sheet, not chosen here, and it is the SAME 1.28 the
-    // hot edge adds: one band with two edges, not two bands. A coefficient that
-    // appears only in a hole body is exactly what the gate's portable-maths
-    // check exists to refuse, and a band whose two edges could drift apart is
-    // what having it in one place prevents.
-    let sustained: Ratio = central - spread * 1.28;
-    // ---- end HOLE 1
+    // generated · from the node's method, translated by rule into
+    // vleo_core::physics::methods::sw_f107_cold_long. No hole: the method is the
+    // implementation, and the author's cases in evidence.rs test it.
+    let method_answer: Ratio = match methods::sw_f107_cold_long::evaluate(central.get(), spread.get()) {
+        Ok(v) => Ratio::new(v),
+        Err(e) => return Err(method::fault(e, NODE_ID, "F107_cold_long")),
+    };
 
     // generated · the declared domain of this node's own answer. The
     // reason travels with the guard, because a guard whose reason is not
     // written down gets deleted by the next person who finds it awkward.
-    let answer: Ratio = sustained;
+    let answer: Ratio = method_answer;
     if !answer.is_finite() {
         return Err(Fault::Degenerate { node: NODE_ID, field: "F107_cold_long", reason: "the computation produced a value that is not a number" });
     }

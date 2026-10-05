@@ -125,6 +125,185 @@ cares about. So the seventeen measured leads are tabulated and the
 interpolation between them is this row's only choice.
 """
 
+# THE METHOD — the relation in the method language (docs/PSEUDOCODE.md). In the
+# sheet hash: the generated code is translated from it.
+[method]
+text = """
+# Transcribed from crates/vleo-mod-solar/nodes/sw_uncertainty_growth/model.rs (HOLE 1 and its guards) — the method the code already runs.
+# Numbers: seventeen leads and their measured 95th-percentile F10.7 growth, from solar-weather@2026.09.14 (noaa_swpc), pairs of observed days only.
+# The table clamps at both ends, so the only input the code refuses is one that is not a number:
+# it makes the answer not a number, which the generated guard refuses.
+if not (lead == lead) then
+  refuse "the computation produced a value that is not a number"
+end
+let growth = interp(lead, [183, 365, 548, 730, 1096, 1461, 1826, 2191, 2557, 2922, 3287, 3653, 4018, 4383, 4748, 5113, 5478] [d], [57.0, 68.3, 77.0, 91.0, 107.0, 114.0, 113.3, 104.0, 92.0, 88.0, 78.0, 66.0, 66.0, 76.0, 91.0, 106.0, 115.0] [1])
+if growth < 0 then
+  refuse "a negative 95th-percentile growth means the difference was taken the wrong way round"
+end
+if growth > 120 then
+  refuse "above 120 sfu is unreachable by this clamped table, so the table is broken"
+end
+return growth
+"""
+by = "Aman Rai / 2026-10-03"
+
+[[case]]
+label = "lead 183 days (0.50 yr) — 9947 observed pairs."
+refuse = "no"
+expect = 57.0
+tolerance = 1e-12
+inputs = { lead = 15811200.0 }
+origin = "hand"
+
+[[case]]
+label = "lead 365 days (1.00 yr) — 9675 observed pairs."
+refuse = "no"
+expect = 68.3
+tolerance = 1e-12
+inputs = { lead = 31536000.0 }
+origin = "hand"
+
+[[case]]
+label = "lead 548 days (1.50 yr) — 9492 observed pairs."
+refuse = "no"
+expect = 77.0
+tolerance = 1e-12
+inputs = { lead = 47347200.0 }
+origin = "hand"
+
+[[case]]
+label = "lead 730 days (2.00 yr) — 9310 observed pairs."
+refuse = "no"
+expect = 91.0
+tolerance = 1e-12
+inputs = { lead = 63072000.0 }
+origin = "hand"
+
+[[case]]
+label = "lead 1096 days (3.00 yr) — 8946 observed pairs."
+refuse = "no"
+expect = 107.0
+tolerance = 1e-12
+inputs = { lead = 94694400.0 }
+origin = "hand"
+
+[[case]]
+label = "lead 1461 days (4.00 yr) — 8579 observed pairs."
+refuse = "no"
+expect = 114.0
+tolerance = 1e-12
+inputs = { lead = 126230400.0 }
+origin = "hand"
+
+[[case]]
+label = "lead 1826 days (5.00 yr) — 8215 observed pairs."
+refuse = "no"
+expect = 113.3
+tolerance = 1e-12
+inputs = { lead = 157766400.0 }
+origin = "hand"
+
+[[case]]
+label = "lead 2191 days (6.00 yr) — 7849 observed pairs."
+refuse = "no"
+expect = 104.0
+tolerance = 1e-12
+inputs = { lead = 189302400.0 }
+origin = "hand"
+
+[[case]]
+label = "lead 2557 days (7.00 yr) — 7483 observed pairs."
+refuse = "no"
+expect = 92.0
+tolerance = 1e-12
+inputs = { lead = 220924800.0 }
+origin = "hand"
+
+[[case]]
+label = "lead 2922 days (8.00 yr) — 7118 observed pairs."
+refuse = "no"
+expect = 88.0
+tolerance = 1e-12
+inputs = { lead = 252460800.0 }
+origin = "hand"
+
+[[case]]
+label = "lead 3287 days (9.00 yr) — 7026 observed pairs."
+refuse = "no"
+expect = 78.0
+tolerance = 1e-12
+inputs = { lead = 283996800.0 }
+origin = "hand"
+
+[[case]]
+label = "lead 3653 days (10.00 yr) — 6660 observed pairs."
+refuse = "no"
+expect = 66.0
+tolerance = 1e-12
+inputs = { lead = 315619200.0 }
+origin = "hand"
+
+[[case]]
+label = "lead 4018 days (11.00 yr) — 6295 observed pairs."
+refuse = "no"
+expect = 66.0
+tolerance = 1e-12
+inputs = { lead = 347155200.0 }
+origin = "hand"
+
+[[case]]
+label = "lead 4383 days (12.00 yr) — 5932 observed pairs."
+refuse = "no"
+expect = 76.0
+tolerance = 1e-12
+inputs = { lead = 378691200.0 }
+origin = "hand"
+
+[[case]]
+label = "lead 4748 days (13.00 yr) — 5567 observed pairs."
+refuse = "no"
+expect = 91.0
+tolerance = 1e-12
+inputs = { lead = 410227200.0 }
+origin = "hand"
+
+[[case]]
+label = "lead 5113 days (14.00 yr) — 5203 observed pairs."
+refuse = "no"
+expect = 106.0
+tolerance = 1e-12
+inputs = { lead = 441763200.0 }
+origin = "hand"
+
+[[case]]
+label = "lead 5478 days (15.00 yr) — 4838 observed pairs."
+refuse = "no"
+expect = 115.0
+tolerance = 1e-12
+inputs = { lead = 473299200.0 }
+origin = "hand"
+
+[[case]]
+label = "below the first measured lead — 100 days holds the 183-day value rather than extrapolating."
+refuse = "no"
+expect = 57.0
+tolerance = 1e-12
+inputs = { lead = 8640000.0 }
+origin = "hand"
+
+[[case]]
+label = "above the last measured lead — 20 years holds the 15-year value."
+refuse = "no"
+expect = 115.0
+tolerance = 1e-12
+inputs = { lead = 631152000.0 }
+origin = "hand"
+
+[[case]]
+label = "outside what the node holds for: its code refuses it, and so must the developer's"
+refuse = "yes"
+inputs = { lead = nan }
+origin = "hand"
 
 [[assumption]]
 text = "A table over measured leads, not a fitted curve, because the shape is the solar cycle and a smooth fit would erase it"
@@ -182,5 +361,20 @@ about = ["node"]
 changed = "first version: the belief this row already rested on, written down"
 rests_on = "Seventeen measured 95th percentiles of the change in flux, from pairs of days both actually observed in the solar-weather bundle of 2026.09.14, interpolated between leads and held at the ends."
 breaks_if = "The bundle version changes without the percentiles being re-measured, or a negative value appears, which would mean the difference was taken the wrong way round."
+relation = "dF107_p95(L) = piecewise_linear(measured_leads -> measured_p95, L)"
+source = "noaa_swpc"
+
+[[version]]
+n = 2
+release = "next"
+date = "2026-10-03"
+by = "Aman Rai (l3_solar)"
+about = ["math"]
+believed = "1.0 was ready for the developer: sealed, every method sound by the group application and agreeing with all of its results."
+tested = "The developer took 1.0 in: the seal held and every method agreed with every one of its results, refusals included."
+learned = "Intake refused 1.0 whole for two things the group application did not ask: six nodes had no case the method must refuse, and sw_kp_scenarios publishes ten values while its method gave one. Run with a value that is not a number, the code of sw_activity_band, sw_ap_design and sw_regime answered (band 1, Ap 132, regime 3) where the other three refused."
+changed = "Each of the six has a refusal: a value that is not a number, which every method now refuses at its door, so those three refuse it where their code answered. sw_kp_scenarios publishes its nine members, and every answered row gives all ten values: the design's own fixtures at the defaults, its code at the two others. The method was transcribed by an assistant from crates/vleo-mod-solar/nodes/sw_uncertainty_growth/model.rs; Aman Rai read the copy against it and signs it."
+rests_on = "the 32 model.rs files the pseudocode was copied from, and the fixtures published with them"
+breaks_if = "a result the built node does not reproduce, or a correction to the code a method was copied from"
 relation = "dF107_p95(L) = piecewise_linear(measured_leads -> measured_p95, L)"
 source = "noaa_swpc"

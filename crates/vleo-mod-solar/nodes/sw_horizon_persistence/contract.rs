@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `D_pers` (F10.7 error from persistence at a lead), in `-`.
 pub const NODE_ID: &str = "sw_horizon_persistence";
-pub const SHEET_HASH: u64 = 0x340e2b7af3e268da;
+pub const SHEET_HASH: u64 = 0xc7a61afd3e6c1378;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "orbit_mission_duration",

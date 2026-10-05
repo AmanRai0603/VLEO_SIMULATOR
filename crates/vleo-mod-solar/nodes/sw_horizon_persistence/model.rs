@@ -29,36 +29,21 @@ use vleo_core::units::*;
 pub const NODE_ID: &str = "sw_horizon_persistence";
 /// Hash of the sheet this file was generated from. A face carrying a
 /// different one refuses to run rather than showing a stale page.
-pub const SHEET_HASH: u64 = 0x340e2b7af3e268da;
+pub const SHEET_HASH: u64 = 0xc7a61afd3e6c1378;
 
 pub fn evaluate(lead: Time) -> Result<Ratio, Fault> {
-    // ---- HOLE 1 : take the lead in days and read the measured persistence RMS at that lead -> Ratio
-    // Eighteen leads, eighteen measured RMS values, from
-    // solar-weather@2026.09.14. x is the lead in DAYS, y the RMS of
-    // F107(t+L) - F107(t) over pairs where both days were observed.
-    //
-    // The dip at x = 27.0 is deliberate and is not a transcription error: the
-    // synodic solar rotation brings the same active region back round, so
-    // persistence is BETTER at one rotation than at a fortnight. Any smoothing of
-    // this table removes the one feature of it a forecaster would use.
-    use vleo_core::math::Table1;
-    const D: Table1 = Table1 {
-        x: &[
-            1.0, 2.0, 3.0, 5.0, 7.0, 10.0, 14.0, 20.0, 27.0, 40.0, 60.0, 90.0, 135.0, 180.0, 270.0,
-            365.0, 547.0, 730.0,
-        ],
-        y: &[
-            7.0784, 10.3796, 13.6671, 19.3021, 23.6294, 27.6511, 29.1328, 25.4695, 22.4321, 29.602,
-            27.9575, 30.1549, 31.0394, 32.9634, 35.7538, 38.8277, 43.7693, 49.6285,
-        ],
+    // generated · from the node's method, translated by rule into
+    // vleo_core::physics::methods::sw_horizon_persistence. No hole: the method is the
+    // implementation, and the author's cases in evidence.rs test it.
+    let method_answer: Ratio = match methods::sw_horizon_persistence::evaluate(lead.get()) {
+        Ok(v) => Ratio::new(v),
+        Err(e) => return Err(method::fault(e, NODE_ID, "D_pers")),
     };
-    let err: Ratio = Ratio::new(D.at(lead.days()));
-    // ---- end HOLE 1
 
     // generated · the declared domain of this node's own answer. The
     // reason travels with the guard, because a guard whose reason is not
     // written down gets deleted by the next person who finds it awkward.
-    let answer: Ratio = err;
+    let answer: Ratio = method_answer;
     if !answer.is_finite() {
         return Err(Fault::Degenerate { node: NODE_ID, field: "D_pers", reason: "the computation produced a value that is not a number" });
     }

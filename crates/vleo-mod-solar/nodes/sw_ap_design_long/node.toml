@@ -96,6 +96,62 @@ per cent, and the construction is exact on the study's own inputs:
 22.0925383902 + 1.28 * 3.5865545525 = 26.6833282174.
 """
 
+# THE METHOD — the relation in the method language (docs/PSEUDOCODE.md). In the
+# sheet hash: the generated code is translated from it.
+[method]
+text = """
+# Transcribed from crates/vleo-mod-solar/nodes/sw_ap_design_long/model.rs (HOLE 1 and its guards) — the method the code already runs.
+# Numbers: 1.28 is declared in the sheet, the one-sided 90th percentile of a normal; the spread is the Ap rotation-forecast residual measured on the NOAA SWPC record (noaa_swpc); migrated from prf_density.m:217 designWindow_.
+const z = 1.28 [1]   # one-sided 90th percentile of a normal, declared in the sheet
+let sustained = central + spread * z
+
+# Generated guards: the declared domain of Ap_long.
+if sustained < 0 then
+  refuse "Ap floors at zero, so a design level below it means a spread has been subtracted rather than added"
+end
+if sustained > 300 then
+  refuse "above 300 the level exceeds the largest daily Ap in the record, 273, so a sustained level there is not a window this tool can model"
+end
+return sustained
+"""
+by = "Aman Rai / 2026-10-03"
+
+[[case]]
+label = "this repository's own chain — the Ap centre with its measured spread."
+refuse = "no"
+expect = 26.69530964
+tolerance = 1e-12
+inputs = { central = 22.095389, spread = 3.593688 }
+origin = "hand"
+
+[[case]]
+label = "round numbers, checkable without a calculator."
+refuse = "no"
+expect = 25.12
+tolerance = 1e-12
+inputs = { central = 20.0, spread = 4.0 }
+origin = "hand"
+
+[[case]]
+label = "a quiet centre with a narrow spread, where the lower guard starts to matter."
+refuse = "no"
+expect = 32.56
+tolerance = 1e-12
+inputs = { central = 30.0, spread = 2.0 }
+origin = "hand"
+
+[[case]]
+label = "outside what the node holds for: its code refuses it, and so must the developer's"
+refuse = "yes"
+inputs = { central = -10.0, spread = 1.0 }
+origin = "hand"
+
+[[case]]
+label = "outside what the node holds for: its code refuses it, and so must the developer's"
+refuse = "yes"
+inputs = { central = 290.0, spread = 10.0 }
+origin = "hand"
+
 [output]
 symbol = "Ap_long"
 type = "Ratio"
@@ -117,5 +173,20 @@ about = ["node"]
 changed = "first version: the belief this row already rested on, written down"
 rests_on = "That the expected centre plus 1.28 spreads of the rotation-forecast error is the right sustained upper edge; at that margin the band held 0.9148 to 0.9239 of past exceedances."
 breaks_if = "The confidence is set to a true one-sided 95 per cent, which would use 1.645, or a design is sized on the far tail, where the record runs 2.53 to 2.87 spreads against a normal's 2.33."
+relation = "Ap_long = Ap_central + 1.28 * sigma_ap"
+source = "noaa_swpc"
+
+[[version]]
+n = 2
+release = "next"
+date = "2026-10-03"
+by = "Aman Rai (l3_solar)"
+about = ["math"]
+believed = "1.0 was ready for the developer: sealed, every method sound by the group application and agreeing with all of its results."
+tested = "The developer took 1.0 in: the seal held and every method agreed with every one of its results, refusals included."
+learned = "Intake refused 1.0 whole for two things the group application did not ask: six nodes had no case the method must refuse, and sw_kp_scenarios publishes ten values while its method gave one. Run with a value that is not a number, the code of sw_activity_band, sw_ap_design and sw_regime answered (band 1, Ap 132, regime 3) where the other three refused."
+changed = "Each of the six has a refusal: a value that is not a number, which every method now refuses at its door, so those three refuse it where their code answered. sw_kp_scenarios publishes its nine members, and every answered row gives all ten values: the design's own fixtures at the defaults, its code at the two others. The method was transcribed by an assistant from crates/vleo-mod-solar/nodes/sw_ap_design_long/model.rs; Aman Rai read the copy against it and signs it."
+rests_on = "the 32 model.rs files the pseudocode was copied from, and the fixtures published with them"
+breaks_if = "a result the built node does not reproduce, or a correction to the code a method was copied from"
 relation = "Ap_long = Ap_central + 1.28 * sigma_ap"
 source = "noaa_swpc"

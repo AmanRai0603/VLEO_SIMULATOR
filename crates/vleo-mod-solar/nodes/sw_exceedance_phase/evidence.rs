@@ -46,6 +46,69 @@ fn fixture_2() {
     assert!(err <= 1e-12, "the G3 bound, Ap 132 — the declared design level: got {} want 0.6026970954, relative error {} exceeds the declared tolerance 1e-12. This is a physics disagreement, not a build failure — take it to the node owner. Do not widen the tolerance.", got.get(), err);
 }
 
+/// the author's case «the G2 bound, Ap 80 — median phase 0.576.», from their own  code.
+#[test]
+fn case_1() {
+    let got = model::evaluate(Ratio::new(80.0)).expect("the G2 bound, Ap 80 — median phase 0.576.: the author's code answers this case and the node refused it");
+    let err = relative_error(got.get(), 0.5763024435);
+    assert!(err <= 1e-12, "the G2 bound, Ap 80 — median phase 0.576.: got {} and the author's code gave 0.5763024435; relative error {} is more than their tolerance 1e-12. Take it to the author; do not widen the tolerance.", got.get(), err);
+}
+
+/// the author's case «the G1 bound, Ap 48 — the lowest level the G scale defines.», from their own  code.
+#[test]
+fn case_2() {
+    let got = model::evaluate(Ratio::new(48.0)).expect("the G1 bound, Ap 48 — the lowest level the G scale defines.: the author's code answers this case and the node refused it");
+    let err = relative_error(got.get(), 0.571692024);
+    assert!(err <= 1e-12, "the G1 bound, Ap 48 — the lowest level the G scale defines.: got {} and the author's code gave 0.571692024; relative error {} is more than their tolerance 1e-12. Take it to the author; do not widen the tolerance.", got.get(), err);
+}
+
+/// the author's case «the G3 bound, Ap 132 — the declared design level.», from their own  code.
+#[test]
+fn case_3() {
+    let got = model::evaluate(Ratio::new(132.0)).expect("the G3 bound, Ap 132 — the declared design level.: the author's code answers this case and the node refused it");
+    let err = relative_error(got.get(), 0.6026970954);
+    assert!(err <= 1e-12, "the G3 bound, Ap 132 — the declared design level.: got {} and the author's code gave 0.6026970954; relative error {} is more than their tolerance 1e-12. Take it to the author; do not widen the tolerance.", got.get(), err);
+}
+
+/// the author's case «outside what the node holds for: its code refuses it, and so must the developer's», from their own  code.
+#[test]
+fn case_4() {
+    let got = model::evaluate(Ratio::new(f64::NAN));
+    assert!(matches!(got, Err(vleo_core::fault::Fault::Refused { .. })), "outside what the node holds for: its code refuses it, and so must the developer's: the author's code refuses this case and the node gave {:?}. Take it to the author.", got);
+}
+
+/// The kernel translation of this node's method gives the method's own
+/// answer, to the bit, at 22 points around the author's cases. A translator
+/// check, not evidence: the numbers are the method's, run by the interpreter
+/// when this file was generated.
+#[test]
+fn the_translation_gives_the_methods_answers() {
+    use vleo_core::physics::method::MethodError;
+    use vleo_core::physics::methods::sw_exceedance_phase::evaluate;
+    assert_eq!(evaluate(40.0).map(f64::to_bits), Ok(0x3fe24b4d124ed979), "at (40.0)");
+    assert_eq!(evaluate(72.0).map(f64::to_bits), Ok(0x3fe267a0a26635ae), "at (72.0)");
+    assert_eq!(evaluate(79.2).map(f64::to_bits), Ok(0x3fe270201a6d37be), "at (79.2)");
+    assert_eq!(evaluate(80.0).map(f64::to_bits), Ok(0x3fe27111d26dff15), "at (80.0)");
+    assert_eq!(evaluate(80.8).map(f64::to_bits), Ok(0x3fe274656a714b77), "at (80.8)");
+    assert_eq!(evaluate(88.0).map(f64::to_bits), Ok(0x3fe29255c28efae6), "at (88.0)");
+    assert_eq!(evaluate(160.0).map(f64::to_bits), Ok(0x3fe3494b6b4463e1), "at (160.0)");
+    assert_eq!(evaluate(24.0).map(f64::to_bits), Ok(0x3fe24b4d124ed979), "at (24.0)");
+    assert_eq!(evaluate(43.2).map(f64::to_bits), Ok(0x3fe24b4d124ed979), "at (43.2)");
+    assert_eq!(evaluate(47.519999999999996).map(f64::to_bits), Ok(0x3fe24b4d124ed979), "at (47.519999999999996)");
+    assert_eq!(evaluate(48.0).map(f64::to_bits), Ok(0x3fe24b4d124ed979), "at (48.0)");
+    assert_eq!(evaluate(48.480000000000004).map(f64::to_bits), Ok(0x3fe24bde1a4f5114), "at (48.480000000000004)");
+    assert_eq!(evaluate(52.800000000000004).map(f64::to_bits), Ok(0x3fe250f762538584), "at (52.800000000000004)");
+    assert_eq!(evaluate(96.0).map(f64::to_bits), Ok(0x3fe2b399b2aff6b6), "at (96.0)");
+    assert_eq!(evaluate(66.0).map(f64::to_bits), Ok(0x3fe2608bbe605ea1), "at (66.0)");
+    assert_eq!(evaluate(118.8).map(f64::to_bits), Ok(0x3fe312681f0df796), "at (118.8)");
+    assert_eq!(evaluate(130.68).map(f64::to_bits), Ok(0x3fe343ce4a0bbf73), "at (130.68)");
+    assert_eq!(evaluate(132.0).map(f64::to_bits), Ok(0x3fe3494b6b4463e1), "at (132.0)");
+    assert_eq!(evaluate(133.32).map(f64::to_bits), Ok(0x3fe3494b6b4463e1), "at (133.32)");
+    assert_eq!(evaluate(145.20000000000002).map(f64::to_bits), Ok(0x3fe3494b6b4463e1), "at (145.20000000000002)");
+    assert_eq!(evaluate(264.0).map(f64::to_bits), Ok(0x3fe3494b6b4463e1), "at (264.0)");
+    assert!(matches!(evaluate(f64::NAN), Err(MethodError::Refused(_))), "at (f64::NAN)");
+}
+
 // ---- properties, generated from the declared domain ---------------------
 //
 // The fixture above checks one point. A wrong constant moves that point and

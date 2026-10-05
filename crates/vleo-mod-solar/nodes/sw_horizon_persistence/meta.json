@@ -1,8 +1,8 @@
 {
   "id": "sw_horizon_persistence",
   "state": "published",
-  "sheet_hash": "e268da",
-  "impl_hash": "6d764e",
+  "sheet_hash": "6c1378",
+  "impl_hash": "222325",
   "owner": "environment",
   "tier": "A",
   "fixtures": 19,
@@ -13,5 +13,5 @@
   "holes": 1,
   "inputs": ["orbit_mission_duration"],
   "contributes": [],
-  "gaps": ["the relation has nobody's name against it — an assistant may never supply mathematics, and without an attribution nothing can tell whether one did", "no method yet — the relation in the method language, with the author's own code and test cases, so the tool can check it three ways (docs/PSEUDOCODE.md)"]
+  "gaps": ["the relation has nobody's name against it — an assistant may never supply mathematics, and without an attribution nothing can tell whether one did"]
 }

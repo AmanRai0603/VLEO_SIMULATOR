@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `P_exc` (When in the cycle exceedances fall), in `-`.
 pub const NODE_ID: &str = "sw_exceedance_phase";
-pub const SHEET_HASH: u64 = 0xa56c3f4fda6dcb1d;
+pub const SHEET_HASH: u64 = 0x293957a43390f2f3;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "sw_ap_design",

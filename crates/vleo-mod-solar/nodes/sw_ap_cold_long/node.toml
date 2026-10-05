@@ -118,6 +118,62 @@ math = "sigma_ap = sw_ap_mean_band_spread = 3.5937"
 text = "Subtract 1.28 of them. Symmetric with the hot edge, unlike the daily band two rows down, where the two tails are forty-two per cent apart because Ap floors at zero."
 math = "Ap_cold_long = Ap_central - 1.28 * sigma_ap"
 
+# THE METHOD — the relation in the method language (docs/PSEUDOCODE.md). In the
+# sheet hash: the generated code is translated from it.
+[method]
+text = """
+# Transcribed from crates/vleo-mod-solar/nodes/sw_ap_cold_long/model.rs (HOLE 1 and its guards) — the method the code already runs.
+# Numbers: NOAA SWPC (noaa_swpc) record via prf_density.m:217 (designWindow_); 1.28 is the one-sided 90th percentile of a normal, declared in the sheet.
+# The cold edge of the sustained band: the central Ap less 1.28 standard deviations of the rotation-forecast residual.
+# The runtime's own finiteness check stands in for the generated "not a number" guard.
+const z = 1.28 [1]   # one-sided 90th percentile of a normal, the same 1.28 the hot edge adds
+let sustained = central - spread * z
+if sustained < 0 then
+  refuse "Ap floors at zero: a symmetric band subtracted from a small centre has reached below it"
+end
+if sustained > 300 then
+  refuse "above 300 exceeds the largest daily Ap in the record, 273: the spread has been added rather than subtracted"
+end
+return sustained
+"""
+by = "Aman Rai / 2026-10-03"
+
+[[case]]
+label = "this repository's own chain — the Ap centre with its measured spread."
+refuse = "no"
+expect = 17.49546836
+tolerance = 1e-12
+inputs = { central = 22.095389, spread = 3.593688 }
+origin = "hand"
+
+[[case]]
+label = "round numbers, checkable without a calculator — 20 - 1.28 × 4."
+refuse = "no"
+expect = 14.88
+tolerance = 1e-12
+inputs = { central = 20.0, spread = 4.0 }
+origin = "hand"
+
+[[case]]
+label = "a quiet centre of 16, closer to the floor the sheet argues about — the guard fires below a centre of 4.6."
+refuse = "no"
+expect = 11.40007936
+tolerance = 1e-12
+inputs = { central = 16.0, spread = 3.593688 }
+origin = "hand"
+
+[[case]]
+label = "outside what the node holds for: its code refuses it, and so must the developer's"
+refuse = "yes"
+inputs = { central = 1.0, spread = 1.0 }
+origin = "hand"
+
+[[case]]
+label = "outside what the node holds for: its code refuses it, and so must the developer's"
+refuse = "yes"
+inputs = { central = 400.0, spread = 0.0 }
+origin = "hand"
+
 [[assumption]]
 text = "1.28 is the confidence, and it is the 90th percentile while the run is called 95 per cent"
 fails_when = "a reader takes the published band as a 95 per cent bound. Phi(1.28) = 0.8997, so this edge is the 10th percentile and not the 5th. A one-sided 95 per cent bound is 1.645 sigma, a further 1.3 down at this sigma. The daily half of the same band DOES use 0.95, so the two halves are not at one confidence, and this row reproduces that rather than silently repairing it Which number that is, is now a row of its own — sw_band_confidence, seeded by §30 B2 and unanswered, because the value needs a person. Until it carries one the multiplier is a literal in this hole and three others, each saying it is declared in the sheet while no sheet declares it. §44 measures what each answer costs: moving to 1.645 moves 47 rows and no KPI closure, leaves all five solar closures closing with 3.1 to 6.2 per cent less margin, and breaks no parity check in this repository"
@@ -155,5 +211,20 @@ about = ["node"]
 changed = "first version: the belief this row already rested on, written down"
 rests_on = "That 1.28 spreads of the rotation-forecast error below the centre is the right quiet edge, that one spread covers the whole window, and that the centre stays well above the point where a symmetric band would cross zero."
 breaks_if = "The window sits at deep solar minimum with a centre near 4.6 or below, the window spans the declining phase where the spread changes, or a reader needs a true 95 per cent edge, which would sit further down."
+relation = "Ap_cold_long = Ap_central - 1.28 * sigma_ap"
+source = "noaa_swpc"
+
+[[version]]
+n = 2
+release = "next"
+date = "2026-10-03"
+by = "Aman Rai (l3_solar)"
+about = ["math"]
+believed = "1.0 was ready for the developer: sealed, every method sound by the group application and agreeing with all of its results."
+tested = "The developer took 1.0 in: the seal held and every method agreed with every one of its results, refusals included."
+learned = "Intake refused 1.0 whole for two things the group application did not ask: six nodes had no case the method must refuse, and sw_kp_scenarios publishes ten values while its method gave one. Run with a value that is not a number, the code of sw_activity_band, sw_ap_design and sw_regime answered (band 1, Ap 132, regime 3) where the other three refused."
+changed = "Each of the six has a refusal: a value that is not a number, which every method now refuses at its door, so those three refuse it where their code answered. sw_kp_scenarios publishes its nine members, and every answered row gives all ten values: the design's own fixtures at the defaults, its code at the two others. The method was transcribed by an assistant from crates/vleo-mod-solar/nodes/sw_ap_cold_long/model.rs; Aman Rai read the copy against it and signs it."
+rests_on = "the 32 model.rs files the pseudocode was copied from, and the fixtures published with them"
+breaks_if = "a result the built node does not reproduce, or a correction to the code a method was copied from"
 relation = "Ap_cold_long = Ap_central - 1.28 * sigma_ap"
 source = "noaa_swpc"

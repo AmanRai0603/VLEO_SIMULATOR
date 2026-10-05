@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `Kp` (Kp from daily Ap), in `-`.
 pub const NODE_ID: &str = "sw_kp_from_ap";
-pub const SHEET_HASH: u64 = 0x938c0600d69f62b5;
+pub const SHEET_HASH: u64 = 0x9a0cce1ae586eb1c;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "sw_storm_return_level",

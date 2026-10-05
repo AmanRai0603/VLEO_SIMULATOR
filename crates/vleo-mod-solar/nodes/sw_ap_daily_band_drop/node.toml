@@ -113,6 +113,72 @@ math = "lo(L) = pctl(bin(L), 0.05)"
 text = "Publish its magnitude, interpolated between knots and clamped beyond the ends. The declared window sits between two knots, so this is an interpolation."
 math = "dAp_day_low(L) = -interp(L; knots) = 12.56 at L = 17.50"
 
+# THE METHOD — the relation in the method language (docs/PSEUDOCODE.md). In the
+# sheet hash: the generated code is translated from it.
+[method]
+text = """
+# Transcribed from crates/vleo-mod-solar/nodes/sw_ap_daily_band_drop/model.rs (HOLE 1 and its guards) — the method the code already runs.
+# Numbers: measured data, the 5th-percentile within-rotation Ap departure conditioned on rotation level, from the NOAA SWPC record (noaa_swpc); bins of 15 per cent, at least 200 days each.
+# A Table1 lookup: linear between knots, clamped at both ends (never extrapolated). The answer is a magnitude; sw_ap_cold_short subtracts it.
+let band = interp(level, [4.0, 6.0, 8.0, 11.0, 15.0, 20.0, 24.0, 26.0], [2.9704, 4.1685, 5.5926, 7.5556, 10.8370, 14.2963, 17.6926, 21.0185])
+
+# Generated guards: the declared domain of dAp_day_low.
+if band < 0 then
+  refuse "below zero is not a distance; a negative drop means the tail has been read from the wrong end"
+end
+if band > 150 then
+  refuse "above 150 the value exceeds anything the record supports, so it is an arithmetic error rather than a quiet sky"
+end
+return band
+"""
+by = "Aman Rai / 2026-10-03"
+
+[[case]]
+label = "at the declared window's own sustained quiet level, Ap 17.50 — a genuine interpolation between the 15 and 20 knots, unlike its high-tail twin's clamp."
+refuse = "no"
+expect = 12.5635147395
+tolerance = 1e-9
+inputs = { level = 17.49546836 }
+origin = "hand"
+
+[[case]]
+label = "the Ap 15 knot, exactly — a transcription check on the lower bracket of that interpolation."
+refuse = "no"
+expect = 10.837
+tolerance = 1e-12
+inputs = { level = 15.0 }
+origin = "hand"
+
+[[case]]
+label = "the Ap 11 knot, exactly — a transcription check where the high tail is twice this value."
+refuse = "no"
+expect = 7.5556
+tolerance = 1e-12
+inputs = { level = 11.0 }
+origin = "hand"
+
+[[case]]
+label = "between the Ap 20 and Ap 24 knots — the interpolation on the upper half of the ladder."
+refuse = "no"
+expect = 15.99445
+tolerance = 1e-9
+inputs = { level = 22.0 }
+origin = "hand"
+
+[[case]]
+label = "below the bottom of the table — the clamp."
+refuse = "no"
+expect = 2.9704
+tolerance = 1e-12
+inputs = { level = 1.0 }
+origin = "hand"
+
+[[case]]
+label = "a value that is not a number: the node must refuse it, as its code does"
+refuse = "yes"
+inputs = { level = nan }
+origin = "hand"
+
 [[assumption]]
 text = "The result stays above zero, and nothing in the arithmetic ensures it"
 fails_when = "the sustained quiet level is small. With this table the crossing is at a sustained Ap near 15.6, and the declared window's 17.50 clears it by under two units of level — where before, with a single 10.59, the crossing was at 15.2. Conditioning on level did not move that crossing much because the drop falls with the level too, but the margin on the ANSWER narrowed from seven to five. sw_ap_cold_short's guard refuses rather than publishing a negative index, and it is the row most likely in this subsystem to fire"
@@ -162,5 +228,20 @@ about = ["node"]
 changed = "first version: the belief this row already rested on, written down"
 rests_on = "That the fifth-percentile dip below the centred 27-day mean, binned within 15 per cent of the rotation level, describes the window; at 17.50 it sits between two well-filled bins holding 1558 and 803 days."
 breaks_if = "The window falls in a part of the cycle whose daily scatter differs, the chosen bin width or 27-day window proves the wrong trade, or the quiet level drops below about 15.6 so the single-day answer crosses zero."
+relation = "dAp_day_low(L) = -pctl(Ap - movmean(Ap, 27 d), 0.05) over days whose rotation sits within 15% of L"
+source = "noaa_swpc"
+
+[[version]]
+n = 2
+release = "next"
+date = "2026-10-03"
+by = "Aman Rai (l3_solar)"
+about = ["math"]
+believed = "1.0 was ready for the developer: sealed, every method sound by the group application and agreeing with all of its results."
+tested = "The developer took 1.0 in: the seal held and every method agreed with every one of its results, refusals included."
+learned = "Intake refused 1.0 whole for two things the group application did not ask: six nodes had no case the method must refuse, and sw_kp_scenarios publishes ten values while its method gave one. Run with a value that is not a number, the code of sw_activity_band, sw_ap_design and sw_regime answered (band 1, Ap 132, regime 3) where the other three refused."
+changed = "Each of the six has a refusal: a value that is not a number, which every method now refuses at its door, so those three refuse it where their code answered. sw_kp_scenarios publishes its nine members, and every answered row gives all ten values: the design's own fixtures at the defaults, its code at the two others. The method was transcribed by an assistant from crates/vleo-mod-solar/nodes/sw_ap_daily_band_drop/model.rs; Aman Rai read the copy against it and signs it."
+rests_on = "the 32 model.rs files the pseudocode was copied from, and the fixtures published with them"
+breaks_if = "a result the built node does not reproduce, or a correction to the code a method was copied from"
 relation = "dAp_day_low(L) = -pctl(Ap - movmean(Ap, 27 d), 0.05) over days whose rotation sits within 15% of L"
 source = "noaa_swpc"

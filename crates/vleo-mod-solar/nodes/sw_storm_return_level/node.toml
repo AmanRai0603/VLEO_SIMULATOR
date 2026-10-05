@@ -155,6 +155,88 @@ does mean the effective sample behind the tail is smaller than the day count
 and the true uncertainty is wider than the residual above suggests.
 """
 
+# THE METHOD — the relation in the method language (docs/PSEUDOCODE.md). In the
+# sheet hash: the generated code is translated from it.
+[method]
+text = """
+# Transcribed from crates/vleo-mod-solar/nodes/sw_storm_return_level/model.rs (HOLE 1 and its guards) — the method the code already runs.
+# The fit: bundles/solar-weather@2026.09.14 (noaa_swpc), ranks 2 to 56 of the daily Ap record, return periods 0.5035 to 14.0986 years.
+const a = 92.515531 [1]    # intercept of the log-linear tail fit
+const b = 40.926516 [1]    # slope per ln(year)
+# 365.25 days, the Julian year prf_design divides by.
+let years = life / 365.25 [d]
+# ln needs a positive argument; a zero or negative mission length lands far below the lower bound.
+let safe = max(years, 1.0e-9)
+let level = a + b * ln(safe)
+if level < 20 then
+  refuse "Below Ap 20 the answer is not a storm at all, so the input or the fit reached somewhere neither was meant to go."
+end
+if level > 230 then
+  refuse "A return period beyond the 28.2-year record is past the fit's own reach."
+end
+return level
+"""
+by = "Aman Rai / 2026-10-03"
+
+[[case]]
+label = "half a year — rank 56 of the record, the shortest mission the tree allows."
+refuse = "no"
+expect = 66.0
+tolerance = 0.0281
+inputs = { life = 15778800.0 }
+origin = "hand"
+
+[[case]]
+label = "one year — rank 28, one storm season."
+refuse = "no"
+expect = 96.0
+tolerance = 0.0363
+inputs = { life = 31557600.0 }
+origin = "hand"
+
+[[case]]
+label = "two years — rank 14."
+refuse = "no"
+expect = 118.0
+tolerance = 0.0245
+inputs = { life = 63115200.0 }
+origin = "hand"
+
+[[case]]
+label = "three years — rank 9, and the fit's worst point: ties at ranks 9 and 10 that the curve smooths through."
+refuse = "no"
+expect = 127.0
+tolerance = 0.0826
+inputs = { life = 94672800.0 }
+origin = "hand"
+
+[[case]]
+label = "five years — rank 6, the mission orbit_mission_duration currently declares."
+refuse = "no"
+expect = 162.0
+tolerance = 0.0224
+inputs = { life = 157788000.0 }
+origin = "hand"
+
+[[case]]
+label = "ten years — rank 3, near the top of what 28.2 years of record can say anything about."
+refuse = "no"
+expect = 189.0
+tolerance = 0.0119
+inputs = { life = 315576000.0 }
+origin = "hand"
+
+[[case]]
+label = "outside what the node holds for: its code refuses it, and so must the developer's"
+refuse = "yes"
+inputs = { life = 0.0 }
+origin = "hand"
+
+[[case]]
+label = "outside what the node holds for: its code refuses it, and so must the developer's"
+refuse = "yes"
+inputs = { life = 1576800000.0 }
+origin = "hand"
 
 [[assumption]]
 text = "The tail is log-linear in the return period, with the two coefficients fitted on this record"
@@ -229,5 +311,20 @@ about = ["node"]
 changed = "first version: the belief this row already rested on, written down"
 rests_on = "The daily record's tail, from the solar-weather bundle of 2026.09.14, grows with the logarithm of the return period, fitted over 0.5035 to 14.0986 years with a residual of 4.95, and every day is an independent draw."
 breaks_if = "The bundle version changes without the two coefficients being refitted, a longer record departs from the fitted tail, or a gap in the record is found to hold a top-ten storm."
+relation = "Ap(T) = 92.5155 + 40.9265*ln(T / 1 yr)"
+source = "noaa_swpc"
+
+[[version]]
+n = 2
+release = "next"
+date = "2026-10-03"
+by = "Aman Rai (l3_solar)"
+about = ["math"]
+believed = "1.0 was ready for the developer: sealed, every method sound by the group application and agreeing with all of its results."
+tested = "The developer took 1.0 in: the seal held and every method agreed with every one of its results, refusals included."
+learned = "Intake refused 1.0 whole for two things the group application did not ask: six nodes had no case the method must refuse, and sw_kp_scenarios publishes ten values while its method gave one. Run with a value that is not a number, the code of sw_activity_band, sw_ap_design and sw_regime answered (band 1, Ap 132, regime 3) where the other three refused."
+changed = "Each of the six has a refusal: a value that is not a number, which every method now refuses at its door, so those three refuse it where their code answered. sw_kp_scenarios publishes its nine members, and every answered row gives all ten values: the design's own fixtures at the defaults, its code at the two others. The method was transcribed by an assistant from crates/vleo-mod-solar/nodes/sw_storm_return_level/model.rs; Aman Rai read the copy against it and signs it."
+rests_on = "the 32 model.rs files the pseudocode was copied from, and the fixtures published with them"
+breaks_if = "a result the built node does not reproduce, or a correction to the code a method was copied from"
 relation = "Ap(T) = 92.5155 + 40.9265*ln(T / 1 yr)"
 source = "noaa_swpc"

@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `Ap_design` (Ap design value), in `-`.
 pub const NODE_ID: &str = "sw_ap_design";
-pub const SHEET_HASH: u64 = 0x004a983c165bb31a;
+pub const SHEET_HASH: u64 = 0xdd6525adf4372a65;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "sw_storm_design_level",

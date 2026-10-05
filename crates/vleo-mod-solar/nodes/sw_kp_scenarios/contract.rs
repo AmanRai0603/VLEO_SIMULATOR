@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `Kp_peak_hotday` (Kp in both slots, for all five scenarios), in `-`.
 pub const NODE_ID: &str = "sw_kp_scenarios";
-pub const SHEET_HASH: u64 = 0x50102f9afbc92977;
+pub const SHEET_HASH: u64 = 0x5d2a7433d5a97f2a;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "sw_ap_central_expectation",

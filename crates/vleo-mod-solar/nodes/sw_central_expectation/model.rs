@@ -32,30 +32,21 @@ use vleo_core::units::*;
 pub const NODE_ID: &str = "sw_central_expectation";
 /// Hash of the sheet this file was generated from. A face carrying a
 /// different one refuses to run rather than showing a stale page.
-pub const SHEET_HASH: u64 = 0xdfed80b967f888cd;
+pub const SHEET_HASH: u64 = 0xd7276e43e3778261;
 
 pub fn evaluate(today: Ratio, lead: Time, epoch: Time) -> Result<Ratio, Fault> {
-    // ---- HOLE 1 : average the amplitude-scaled cycle analogue over the mission window -> Ratio
-    // The shape, the period, both amplitudes and the handover between them are
-    // env::solar_cycle_analogue's; this row composes the window mean of it.
-    let climo: Ratio = Ratio::new(env::solar_cycle_analogue_mean(
-        epoch.days(),
-        epoch.days() + lead.days(),
-    ));
-    // ---- end HOLE 1
-    // ---- HOLE 2 : weight today's flux against that window climatology by the lead, one solar rotation as the timescale -> Ratio
-    // One synodic solar rotation, prf_design's own timescale for persistence. At
-    // every lead the declared input range allows this weight is below 0.0012, so
-    // the term is inert and kept only because the relation is the study's.
-    const TAU_DAYS: f64 = 27.0;
-    let w: f64 = pmath::exp(-lead.days() / TAU_DAYS);
-    let central: Ratio = Ratio::new(w * today.get() + (1.0 - w) * climo.get());
-    // ---- end HOLE 2
+    // generated · from the node's method, translated by rule into
+    // vleo_core::physics::methods::sw_central_expectation. No hole: the method is the
+    // implementation, and the author's cases in evidence.rs test it.
+    let method_answer: Ratio = match methods::sw_central_expectation::evaluate(today.get(), lead.get(), epoch.get()) {
+        Ok(v) => Ratio::new(v),
+        Err(e) => return Err(method::fault(e, NODE_ID, "F107_central")),
+    };
 
     // generated · the declared domain of this node's own answer. The
     // reason travels with the guard, because a guard whose reason is not
     // written down gets deleted by the next person who finds it awkward.
-    let answer: Ratio = central;
+    let answer: Ratio = method_answer;
     if !answer.is_finite() {
         return Err(Fault::Degenerate { node: NODE_ID, field: "F107_central", reason: "the computation produced a value that is not a number" });
     }

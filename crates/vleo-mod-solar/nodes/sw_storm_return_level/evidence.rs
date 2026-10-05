@@ -76,6 +76,122 @@ fn fixture_5() {
     assert!(err <= 0.0119, "ten years — rank 3, near the top of what 28.2 years of record can say anything about: got {} want 189.0, relative error {} exceeds the declared tolerance 0.0119. This is a physics disagreement, not a build failure — take it to the node owner. Do not widen the tolerance.", got.get(), err);
 }
 
+/// the author's case «half a year — rank 56 of the record, the shortest mission the tree allows.», from their own  code.
+#[test]
+fn case_1() {
+    let got = model::evaluate(Time::new(15778800.0)).expect("half a year — rank 56 of the record, the shortest mission the tree allows.: the author's code answers this case and the node refused it");
+    let err = relative_error(got.get(), 66.0);
+    assert!(err <= 0.0281, "half a year — rank 56 of the record, the shortest mission the tree allows.: got {} and the author's code gave 66.0; relative error {} is more than their tolerance 0.0281. Take it to the author; do not widen the tolerance.", got.get(), err);
+}
+
+/// the author's case «one year — rank 28, one storm season.», from their own  code.
+#[test]
+fn case_2() {
+    let got = model::evaluate(Time::new(31557600.0)).expect("one year — rank 28, one storm season.: the author's code answers this case and the node refused it");
+    let err = relative_error(got.get(), 96.0);
+    assert!(err <= 0.0363, "one year — rank 28, one storm season.: got {} and the author's code gave 96.0; relative error {} is more than their tolerance 0.0363. Take it to the author; do not widen the tolerance.", got.get(), err);
+}
+
+/// the author's case «two years — rank 14.», from their own  code.
+#[test]
+fn case_3() {
+    let got = model::evaluate(Time::new(63115200.0)).expect("two years — rank 14.: the author's code answers this case and the node refused it");
+    let err = relative_error(got.get(), 118.0);
+    assert!(err <= 0.0245, "two years — rank 14.: got {} and the author's code gave 118.0; relative error {} is more than their tolerance 0.0245. Take it to the author; do not widen the tolerance.", got.get(), err);
+}
+
+/// the author's case «three years — rank 9, and the fit's worst point: ties at ranks 9 and 10 that the curve smooths through.», from their own  code.
+#[test]
+fn case_4() {
+    let got = model::evaluate(Time::new(94672800.0)).expect("three years — rank 9, and the fit's worst point: ties at ranks 9 and 10 that the curve smooths through.: the author's code answers this case and the node refused it");
+    let err = relative_error(got.get(), 127.0);
+    assert!(err <= 0.0826, "three years — rank 9, and the fit's worst point: ties at ranks 9 and 10 that the curve smooths through.: got {} and the author's code gave 127.0; relative error {} is more than their tolerance 0.0826. Take it to the author; do not widen the tolerance.", got.get(), err);
+}
+
+/// the author's case «five years — rank 6, the mission orbit_mission_duration currently declares.», from their own  code.
+#[test]
+fn case_5() {
+    let got = model::evaluate(Time::new(157788000.0)).expect("five years — rank 6, the mission orbit_mission_duration currently declares.: the author's code answers this case and the node refused it");
+    let err = relative_error(got.get(), 162.0);
+    assert!(err <= 0.0224, "five years — rank 6, the mission orbit_mission_duration currently declares.: got {} and the author's code gave 162.0; relative error {} is more than their tolerance 0.0224. Take it to the author; do not widen the tolerance.", got.get(), err);
+}
+
+/// the author's case «ten years — rank 3, near the top of what 28.2 years of record can say anything about.», from their own  code.
+#[test]
+fn case_6() {
+    let got = model::evaluate(Time::new(315576000.0)).expect("ten years — rank 3, near the top of what 28.2 years of record can say anything about.: the author's code answers this case and the node refused it");
+    let err = relative_error(got.get(), 189.0);
+    assert!(err <= 0.0119, "ten years — rank 3, near the top of what 28.2 years of record can say anything about.: got {} and the author's code gave 189.0; relative error {} is more than their tolerance 0.0119. Take it to the author; do not widen the tolerance.", got.get(), err);
+}
+
+/// the author's case «outside what the node holds for: its code refuses it, and so must the developer's», from their own  code.
+#[test]
+fn case_7() {
+    let got = model::evaluate(Time::new(0.0));
+    assert!(matches!(got, Err(vleo_core::fault::Fault::Refused { .. })), "outside what the node holds for: its code refuses it, and so must the developer's: the author's code refuses this case and the node gave {:?}. Take it to the author.", got);
+}
+
+/// the author's case «outside what the node holds for: its code refuses it, and so must the developer's», from their own  code.
+#[test]
+fn case_8() {
+    let got = model::evaluate(Time::new(1576800000.0));
+    assert!(matches!(got, Err(vleo_core::fault::Fault::Refused { .. })), "outside what the node holds for: its code refuses it, and so must the developer's: the author's code refuses this case and the node gave {:?}. Take it to the author.", got);
+}
+
+/// The kernel translation of this node's method gives the method's own
+/// answer, to the bit, at 44 points around the author's cases. A translator
+/// check, not evidence: the numbers are the method's, run by the interpreter
+/// when this file was generated.
+#[test]
+fn the_translation_gives_the_methods_answers() {
+    use vleo_core::physics::method::MethodError;
+    use vleo_core::physics::methods::sw_storm_return_level::evaluate;
+    assert_eq!(evaluate(7889400.0).map(f64::to_bits), Ok(0x4041e3c12c17e6de), "at (7889400.0)");
+    assert_eq!(evaluate(14200920.0).map(f64::to_bits), Ok(0x404deaee285b99c7), "at (14200920.0)");
+    assert_eq!(evaluate(15621012.0).map(f64::to_bits), Ok(0x404fde38bda86498), "at (15621012.0)");
+    assert_eq!(evaluate(15778800.0).map(f64::to_bits), Ok(0x4050096f85e41c17), "at (15778800.0)");
+    assert_eq!(evaluate(15936588.0).map(f64::to_bits), Ok(0x4050237f9e45177f), "at (15936588.0)");
+    assert_eq!(evaluate(17356680.0).map(f64::to_bits), Ok(0x40510314d08a8180), "at (17356680.0)");
+    assert_eq!(evaluate(31557600.0).map(f64::to_bits), Ok(0x405720fe75bc44bf), "at (31557600.0)");
+    assert_eq!(evaluate(15778800.0).map(f64::to_bits), Ok(0x4050096f85e41c17), "at (15778800.0)");
+    assert_eq!(evaluate(28401840.0).map(f64::to_bits), Ok(0x40560d060405f58c), "at (28401840.0)");
+    assert_eq!(evaluate(31242024.0).map(f64::to_bits), Ok(0x405706ab4eac5af4), "at (31242024.0)");
+    assert_eq!(evaluate(31557600.0).map(f64::to_bits), Ok(0x405720fe75bc44bf), "at (31557600.0)");
+    assert_eq!(evaluate(31873176.0).map(f64::to_bits), Ok(0x40573b0e8e1d4027), "at (31873176.0)");
+    assert_eq!(evaluate(34713360.0).map(f64::to_bits), Ok(0x40581aa3c062aa28), "at (34713360.0)");
+    assert_eq!(evaluate(63115200.0).map(f64::to_bits), Ok(0x405e388d65946d67), "at (63115200.0)");
+    assert_eq!(evaluate(31557600.0).map(f64::to_bits), Ok(0x405720fe75bc44bf), "at (31557600.0)");
+    assert_eq!(evaluate(56803680.0).map(f64::to_bits), Ok(0x405d2494f3de1e34), "at (56803680.0)");
+    assert_eq!(evaluate(62484048.0).map(f64::to_bits), Ok(0x405e1e3a3e84839c), "at (62484048.0)");
+    assert_eq!(evaluate(63115200.0).map(f64::to_bits), Ok(0x405e388d65946d67), "at (63115200.0)");
+    assert_eq!(evaluate(63746352.0).map(f64::to_bits), Ok(0x405e529d7df568cf), "at (63746352.0)");
+    assert_eq!(evaluate(69426720.0).map(f64::to_bits), Ok(0x405f3232b03ad2d0), "at (69426720.0)");
+    assert_eq!(evaluate(126230400.0).map(f64::to_bits), Ok(0x4062a80e2ab64b08), "at (126230400.0)");
+    assert_eq!(evaluate(47336400.0).map(f64::to_bits), Ok(0x405b47070c88b3c1), "at (47336400.0)");
+    assert_eq!(evaluate(85205520.0).map(f64::to_bits), Ok(0x4060a54ec555469b), "at (85205520.0)");
+    assert_eq!(evaluate(93726072.0).map(f64::to_bits), Ok(0x406122216aa87950), "at (93726072.0)");
+    assert_eq!(evaluate(94672800.0).map(f64::to_bits), Ok(0x40612f4afe306e34), "at (94672800.0)");
+    assert_eq!(evaluate(95619528.0).map(f64::to_bits), Ok(0x40613c530a60ebe8), "at (95619528.0)");
+    assert_eq!(evaluate(104140080.00000001).map(f64::to_bits), Ok(0x4061ac1da383a0e9), "at (104140080.00000001)");
+    assert_eq!(evaluate(189345600.0).map(f64::to_bits), Ok(0x4064bb12761c8289), "at (189345600.0)");
+    assert_eq!(evaluate(78894000.0).map(f64::to_bits), Ok(0x406040840a85b8fc), "at (78894000.0)");
+    assert_eq!(evaluate(142009200.0).map(f64::to_bits), Ok(0x4063424f4996a5b6), "at (142009200.0)");
+    assert_eq!(evaluate(156210120.0).map(f64::to_bits), Ok(0x4063bf21eee9d86a), "at (156210120.0)");
+    assert_eq!(evaluate(157788000.0).map(f64::to_bits), Ok(0x4063cc4b8271cd50), "at (157788000.0)");
+    assert_eq!(evaluate(159365880.0).map(f64::to_bits), Ok(0x4063d9538ea24b04), "at (159365880.0)");
+    assert_eq!(evaluate(173566800.0).map(f64::to_bits), Ok(0x4064491e27c50004), "at (173566800.0)");
+    assert_eq!(evaluate(315576000.0).map(f64::to_bits), Ok(0x40675812fa5de1a4), "at (315576000.0)");
+    assert_eq!(evaluate(157788000.0).map(f64::to_bits), Ok(0x4063cc4b8271cd50), "at (157788000.0)");
+    assert_eq!(evaluate(284018400.0).map(f64::to_bits), Ok(0x4066ce16c182ba0a), "at (284018400.0)");
+    assert_eq!(evaluate(312420240.0).map(f64::to_bits), Ok(0x40674ae966d5ecbe), "at (312420240.0)");
+    assert_eq!(evaluate(315576000.0).map(f64::to_bits), Ok(0x40675812fa5de1a4), "at (315576000.0)");
+    assert_eq!(evaluate(318731760.0).map(f64::to_bits), Ok(0x4067651b068e5f57), "at (318731760.0)");
+    assert_eq!(evaluate(347133600.0).map(f64::to_bits), Ok(0x4067d4e59fb11458), "at (347133600.0)");
+    assert_eq!(evaluate(631152000.0).map(f64::to_bits), Ok(0x406ae3da7249f5f8), "at (631152000.0)");
+    assert!(matches!(evaluate(0.0), Err(MethodError::Refused(_))), "at (0.0)");
+    assert!(matches!(evaluate(1576800000.0), Err(MethodError::Refused(_))), "at (1576800000.0)");
+}
+
 // ---- properties, generated from the declared domain ---------------------
 //
 // The fixture above checks one point. A wrong constant moves that point and

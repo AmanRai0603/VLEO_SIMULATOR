@@ -35,35 +35,21 @@ use vleo_core::units::*;
 pub const NODE_ID: &str = "sw_daily_band_spread";
 /// Hash of the sheet this file was generated from. A face carrying a
 /// different one refuses to run rather than showing a stale page.
-pub const SHEET_HASH: u64 = 0x00ef56c98f2601bb;
+pub const SHEET_HASH: u64 = 0xd70a3fff1375d700;
 
 pub fn evaluate(level: Ratio) -> Result<Ratio, Fault> {
-    // ---- HOLE 1 : read the 95th-percentile within-rotation departure off the measured table at this rotation level -> Ratio
-    // The table is MEASURED DATA, not a published relation, and it is declared
-    // here rather than in the sheet because a sheet holds one number and this is
-    // a curve. Every knot is a percentile of the record conditioned on rotation
-    // level, derived by the method the theory tab sets out — bins of 15 per
-    // cent, at least 200 days each, monotone in both tails, the ladder stopping
-    // at the last knot that passes both rules.
-    //
-    // Table1::at CLAMPS at both ends rather than extrapolating, which is the
-    // clamp the sheet declares rather than a convenience: past the ends the
-    // record does not continue, and a straight line drawn onward would be this
-    // node inventing sky the record never showed.
-    use vleo_core::math::Table1;
-    const HI: Table1 = Table1 {
-        // rotation level, sfu
-        x: &[70.0, 85.0, 100.0, 120.0, 145.0, 175.0, 210.0],
-        // 95th-percentile departure above that rotation, sfu
-        y: &[4.6259, 11.4741, 18.2741, 27.1074, 34.6148, 40.6926, 46.9259],
+    // generated · from the node's method, translated by rule into
+    // vleo_core::physics::methods::sw_daily_band_spread. No hole: the method is the
+    // implementation, and the author's cases in evidence.rs test it.
+    let method_answer: Ratio = match methods::sw_daily_band_spread::evaluate(level.get()) {
+        Ok(v) => Ratio::new(v),
+        Err(e) => return Err(method::fault(e, NODE_ID, "dF107_day")),
     };
-    let band: Ratio = Ratio::new(HI.at(level.get()));
-    // ---- end HOLE 1
 
     // generated · the declared domain of this node's own answer. The
     // reason travels with the guard, because a guard whose reason is not
     // written down gets deleted by the next person who finds it awkward.
-    let answer: Ratio = band;
+    let answer: Ratio = method_answer;
     if !answer.is_finite() {
         return Err(Fault::Degenerate { node: NODE_ID, field: "dF107_day", reason: "the computation produced a value that is not a number" });
     }

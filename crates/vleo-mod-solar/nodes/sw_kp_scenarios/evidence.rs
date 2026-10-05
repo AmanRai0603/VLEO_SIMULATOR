@@ -116,6 +116,131 @@ fn fixture_9() {
     assert!(err <= 1e-9, "ap 2.5, the first bin centre, where the peak offset is exactly 1.0 and the scale is exactly 0.5 — the one case in this set a reader can check without a calculator: got {} want 1.5, relative error {} exceeds the declared tolerance 1e-9. This is a physics disagreement, not a build failure — take it to the node owner. Do not widen the tolerance.", got.Kp_peak_coldday.get(), err);
 }
 
+/// Aman Rai's case «the primary: the worst slot of the worst day. ap 90 is a bin centre, so the peak offset 1.7469 is exact and only the scale is interpolated, between Kp 6 at ap 80 and Kp 19/3 at ap 94.», from their own Rust code.
+#[test]
+fn case_1() {
+    let got = model::evaluate(Ratio::new(12.5), Ratio::new(25.0), Ratio::new(7.5), Ratio::new(90.0), Ratio::new(2.5)).expect("the primary: the worst slot of the worst day. ap 90 is a bin centre, so the peak offset 1.7469 is exact and only the scale is interpolated, between Kp 6 at ap 80 and Kp 19/3 at ap 94.: the author's code answers this case and the node refused it");
+    let err = relative_error(got.Kp_peak_hotday.get(), 7.9850088183);
+    assert!(err <= 1e-9, "the primary: the worst slot of the worst day. ap 90 is a bin centre, so the peak offset 1.7469 is exact and only the scale is interpolated, between Kp 6 at ap 80 and Kp 19/3 at ap 94.: got {} and the author's code gave 7.9850088183; relative error {} is more than their tolerance 1e-9. Take it to the author; do not widen the tolerance.", got.Kp_peak_hotday.get(), err);
+    let err = relative_error(got.Kp_mean_coldday.get(), 0.5416666667);
+    assert!(err <= 1e-9, "the primary: the worst slot of the worst day. ap 90 is a bin centre, so the peak offset 1.7469 is exact and only the scale is interpolated, between Kp 6 at ap 80 and Kp 19/3 at ap 94.: Kp_mean_coldday is {} and the author's code gave 0.5416666667; relative error {} is more than their tolerance 1e-9. Take it to the author; do not widen the tolerance.", got.Kp_mean_coldday.get(), err);
+    let err = relative_error(got.Kp_mean_coldmean.get(), 1.9583333333);
+    assert!(err <= 1e-9, "the primary: the worst slot of the worst day. ap 90 is a bin centre, so the peak offset 1.7469 is exact and only the scale is interpolated, between Kp 6 at ap 80 and Kp 19/3 at ap 94.: Kp_mean_coldmean is {} and the author's code gave 1.9583333333; relative error {} is more than their tolerance 1e-9. Take it to the author; do not widen the tolerance.", got.Kp_mean_coldmean.get(), err);
+    let err = relative_error(got.Kp_mean_hotday.get(), 5.7893772894);
+    assert!(err <= 1e-9, "the primary: the worst slot of the worst day. ap 90 is a bin centre, so the peak offset 1.7469 is exact and only the scale is interpolated, between Kp 6 at ap 80 and Kp 19/3 at ap 94.: Kp_mean_hotday is {} and the author's code gave 5.7893772894; relative error {} is more than their tolerance 1e-9. Take it to the author; do not widen the tolerance.", got.Kp_mean_hotday.get(), err);
+    let err = relative_error(got.Kp_mean_hotmean.get(), 3.7333333333);
+    assert!(err <= 1e-9, "the primary: the worst slot of the worst day. ap 90 is a bin centre, so the peak offset 1.7469 is exact and only the scale is interpolated, between Kp 6 at ap 80 and Kp 19/3 at ap 94.: Kp_mean_hotmean is {} and the author's code gave 3.7333333333; relative error {} is more than their tolerance 1e-9. Take it to the author; do not widen the tolerance.", got.Kp_mean_hotmean.get(), err);
+    let err = relative_error(got.Kp_mean_nominal.get(), 2.6245833333);
+    assert!(err <= 1e-9, "the primary: the worst slot of the worst day. ap 90 is a bin centre, so the peak offset 1.7469 is exact and only the scale is interpolated, between Kp 6 at ap 80 and Kp 19/3 at ap 94.: Kp_mean_nominal is {} and the author's code gave 2.6245833333; relative error {} is more than their tolerance 1e-9. Take it to the author; do not widen the tolerance.", got.Kp_mean_nominal.get(), err);
+    let err = relative_error(got.Kp_peak_coldday.get(), 1.5);
+    assert!(err <= 1e-9, "the primary: the worst slot of the worst day. ap 90 is a bin centre, so the peak offset 1.7469 is exact and only the scale is interpolated, between Kp 6 at ap 80 and Kp 19/3 at ap 94.: Kp_peak_coldday is {} and the author's code gave 1.5; relative error {} is more than their tolerance 1e-9. Take it to the author; do not widen the tolerance.", got.Kp_peak_coldday.get(), err);
+    let err = relative_error(got.Kp_peak_coldmean.get(), 2.9166666667);
+    assert!(err <= 1e-9, "the primary: the worst slot of the worst day. ap 90 is a bin centre, so the peak offset 1.7469 is exact and only the scale is interpolated, between Kp 6 at ap 80 and Kp 19/3 at ap 94.: Kp_peak_coldmean is {} and the author's code gave 2.9166666667; relative error {} is more than their tolerance 1e-9. Take it to the author; do not widen the tolerance.", got.Kp_peak_coldmean.get(), err);
+    let err = relative_error(got.Kp_peak_hotmean.get(), 5.0666666667);
+    assert!(err <= 1e-9, "the primary: the worst slot of the worst day. ap 90 is a bin centre, so the peak offset 1.7469 is exact and only the scale is interpolated, between Kp 6 at ap 80 and Kp 19/3 at ap 94.: Kp_peak_hotmean is {} and the author's code gave 5.0666666667; relative error {} is more than their tolerance 1e-9. Take it to the author; do not widen the tolerance.", got.Kp_peak_hotmean.get(), err);
+    let err = relative_error(got.Kp_peak_nominal.get(), 3.8366290019);
+    assert!(err <= 1e-9, "the primary: the worst slot of the worst day. ap 90 is a bin centre, so the peak offset 1.7469 is exact and only the scale is interpolated, between Kp 6 at ap 80 and Kp 19/3 at ap 94.: Kp_peak_nominal is {} and the author's code gave 3.8366290019; relative error {} is more than their tolerance 1e-9. Take it to the author; do not widen the tolerance.", got.Kp_peak_nominal.get(), err);
+}
+
+/// Aman Rai's case «a quieter worst day, ap 57.5: the peak slot of the disturbed single day, run in this node's own code», from their own Rust code.
+#[test]
+fn case_2() {
+    let got = model::evaluate(Ratio::new(12.5), Ratio::new(25.0), Ratio::new(7.5), Ratio::new(57.5), Ratio::new(2.5)).expect("a quieter worst day, ap 57.5: the peak slot of the disturbed single day, run in this node's own code: the author's code answers this case and the node refused it");
+    let err = relative_error(got.Kp_peak_hotday.get(), 6.924242424242424);
+    assert!(err <= 1e-9, "a quieter worst day, ap 57.5: the peak slot of the disturbed single day, run in this node's own code: got {} and the author's code gave 6.924242424242424; relative error {} is more than their tolerance 1e-9. Take it to the author; do not widen the tolerance.", got.Kp_peak_hotday.get(), err);
+    let err = relative_error(got.Kp_mean_coldday.get(), 0.5416666666666667);
+    assert!(err <= 1e-9, "a quieter worst day, ap 57.5: the peak slot of the disturbed single day, run in this node's own code: Kp_mean_coldday is {} and the author's code gave 0.5416666666666667; relative error {} is more than their tolerance 1e-9. Take it to the author; do not widen the tolerance.", got.Kp_mean_coldday.get(), err);
+    let err = relative_error(got.Kp_mean_coldmean.get(), 1.9583333333333335);
+    assert!(err <= 1e-9, "a quieter worst day, ap 57.5: the peak slot of the disturbed single day, run in this node's own code: Kp_mean_coldmean is {} and the author's code gave 1.9583333333333335; relative error {} is more than their tolerance 1e-9. Take it to the author; do not widen the tolerance.", got.Kp_mean_coldmean.get(), err);
+    let err = relative_error(got.Kp_mean_hotday.get(), 5.045454545454546);
+    assert!(err <= 1e-9, "a quieter worst day, ap 57.5: the peak slot of the disturbed single day, run in this node's own code: Kp_mean_hotday is {} and the author's code gave 5.045454545454546; relative error {} is more than their tolerance 1e-9. Take it to the author; do not widen the tolerance.", got.Kp_mean_hotday.get(), err);
+    let err = relative_error(got.Kp_mean_hotmean.get(), 3.733333333333334);
+    assert!(err <= 1e-9, "a quieter worst day, ap 57.5: the peak slot of the disturbed single day, run in this node's own code: Kp_mean_hotmean is {} and the author's code gave 3.733333333333334; relative error {} is more than their tolerance 1e-9. Take it to the author; do not widen the tolerance.", got.Kp_mean_hotmean.get(), err);
+    let err = relative_error(got.Kp_mean_nominal.get(), 2.6245833333333333);
+    assert!(err <= 1e-9, "a quieter worst day, ap 57.5: the peak slot of the disturbed single day, run in this node's own code: Kp_mean_nominal is {} and the author's code gave 2.6245833333333333; relative error {} is more than their tolerance 1e-9. Take it to the author; do not widen the tolerance.", got.Kp_mean_nominal.get(), err);
+    let err = relative_error(got.Kp_peak_coldday.get(), 1.5);
+    assert!(err <= 1e-9, "a quieter worst day, ap 57.5: the peak slot of the disturbed single day, run in this node's own code: Kp_peak_coldday is {} and the author's code gave 1.5; relative error {} is more than their tolerance 1e-9. Take it to the author; do not widen the tolerance.", got.Kp_peak_coldday.get(), err);
+    let err = relative_error(got.Kp_peak_coldmean.get(), 2.916666666666667);
+    assert!(err <= 1e-9, "a quieter worst day, ap 57.5: the peak slot of the disturbed single day, run in this node's own code: Kp_peak_coldmean is {} and the author's code gave 2.916666666666667; relative error {} is more than their tolerance 1e-9. Take it to the author; do not widen the tolerance.", got.Kp_peak_coldmean.get(), err);
+    let err = relative_error(got.Kp_peak_hotmean.get(), 5.066666666666666);
+    assert!(err <= 1e-9, "a quieter worst day, ap 57.5: the peak slot of the disturbed single day, run in this node's own code: Kp_peak_hotmean is {} and the author's code gave 5.066666666666666; relative error {} is more than their tolerance 1e-9. Take it to the author; do not widen the tolerance.", got.Kp_peak_hotmean.get(), err);
+    let err = relative_error(got.Kp_peak_nominal.get(), 3.836629001883239);
+    assert!(err <= 1e-9, "a quieter worst day, ap 57.5: the peak slot of the disturbed single day, run in this node's own code: Kp_peak_nominal is {} and the author's code gave 3.836629001883239; relative error {} is more than their tolerance 1e-9. Take it to the author; do not widen the tolerance.", got.Kp_peak_nominal.get(), err);
+}
+
+/// Aman Rai's case «a stormier worst day, ap 154, with every other scenario moved too: run in this node's own code», from their own Rust code.
+#[test]
+fn case_3() {
+    let got = model::evaluate(Ratio::new(20.0), Ratio::new(40.0), Ratio::new(5.0), Ratio::new(154.0), Ratio::new(1.0)).expect("a stormier worst day, ap 154, with every other scenario moved too: run in this node's own code: the author's code answers this case and the node refused it");
+    let err = relative_error(got.Kp_peak_hotday.get(), 8.913671102559992);
+    assert!(err <= 1e-9, "a stormier worst day, ap 154, with every other scenario moved too: run in this node's own code: got {} and the author's code gave 8.913671102559992; relative error {} is more than their tolerance 1e-9. Take it to the author; do not widen the tolerance.", got.Kp_peak_hotday.get(), err);
+    let err = relative_error(got.Kp_mean_coldday.get(), 0.20833333333333334);
+    assert!(err <= 1e-9, "a stormier worst day, ap 154, with every other scenario moved too: run in this node's own code: Kp_mean_coldday is {} and the author's code gave 0.20833333333333334; relative error {} is more than their tolerance 1e-9. Take it to the author; do not widen the tolerance.", got.Kp_mean_coldday.get(), err);
+    let err = relative_error(got.Kp_mean_coldmean.get(), 1.2916666666666665);
+    assert!(err <= 1e-9, "a stormier worst day, ap 154, with every other scenario moved too: run in this node's own code: Kp_mean_coldmean is {} and the author's code gave 1.2916666666666665; relative error {} is more than their tolerance 1e-9. Take it to the author; do not widen the tolerance.", got.Kp_mean_coldmean.get(), err);
+    let err = relative_error(got.Kp_mean_hotday.get(), 6.869807377807377);
+    assert!(err <= 1e-9, "a stormier worst day, ap 154, with every other scenario moved too: run in this node's own code: Kp_mean_hotday is {} and the author's code gave 6.869807377807377; relative error {} is more than their tolerance 1e-9. Take it to the author; do not widen the tolerance.", got.Kp_mean_hotday.get(), err);
+    let err = relative_error(got.Kp_mean_hotmean.get(), 4.451166087962963);
+    assert!(err <= 1e-9, "a stormier worst day, ap 154, with every other scenario moved too: run in this node's own code: Kp_mean_hotmean is {} and the author's code gave 4.451166087962963; relative error {} is more than their tolerance 1e-9. Take it to the author; do not widen the tolerance.", got.Kp_mean_hotmean.get(), err);
+    let err = relative_error(got.Kp_mean_nominal.get(), 3.3814814814814818);
+    assert!(err <= 1e-9, "a stormier worst day, ap 154, with every other scenario moved too: run in this node's own code: Kp_mean_nominal is {} and the author's code gave 3.3814814814814818; relative error {} is more than their tolerance 1e-9. Take it to the author; do not widen the tolerance.", got.Kp_mean_nominal.get(), err);
+    let err = relative_error(got.Kp_peak_coldday.get(), 1.1666666666666667);
+    assert!(err <= 1e-9, "a stormier worst day, ap 154, with every other scenario moved too: run in this node's own code: Kp_peak_coldday is {} and the author's code gave 1.1666666666666667; relative error {} is more than their tolerance 1e-9. Take it to the author; do not widen the tolerance.", got.Kp_peak_coldday.get(), err);
+    let err = relative_error(got.Kp_peak_coldmean.get(), 2.25);
+    assert!(err <= 1e-9, "a stormier worst day, ap 154, with every other scenario moved too: run in this node's own code: Kp_peak_coldmean is {} and the author's code gave 2.25; relative error {} is more than their tolerance 1e-9. Take it to the author; do not widen the tolerance.", got.Kp_peak_coldmean.get(), err);
+    let err = relative_error(got.Kp_peak_hotmean.get(), 6.063552188552189);
+    assert!(err <= 1e-9, "a stormier worst day, ap 154, with every other scenario moved too: run in this node's own code: Kp_peak_hotmean is {} and the author's code gave 6.063552188552189; relative error {} is more than their tolerance 1e-9. Take it to the author; do not widen the tolerance.", got.Kp_peak_hotmean.get(), err);
+    let err = relative_error(got.Kp_peak_nominal.get(), 4.566666666666666);
+    assert!(err <= 1e-9, "a stormier worst day, ap 154, with every other scenario moved too: run in this node's own code: Kp_peak_nominal is {} and the author's code gave 4.566666666666666; relative error {} is more than their tolerance 1e-9. Take it to the author; do not widen the tolerance.", got.Kp_peak_nominal.get(), err);
+}
+
+/// Aman Rai's case «outside what the node holds for: its code refuses it, and so must the developer's», from their own Rust code.
+#[test]
+fn case_4() {
+    let got = model::evaluate(Ratio::new(12.5), Ratio::new(25.0), Ratio::new(7.5), Ratio::new(90.0), Ratio::new(500.0));
+    assert!(matches!(got, Err(vleo_core::fault::Fault::Refused { .. })), "outside what the node holds for: its code refuses it, and so must the developer's: the author's code refuses this case and the node gave {:?}. Take it to the author.", got.as_ref().map(|a| a.Kp_peak_hotday.get()));
+}
+
+/// Aman Rai's case «outside what the node holds for: its code refuses it, and so must the developer's», from their own Rust code.
+#[test]
+fn case_5() {
+    let got = model::evaluate(Ratio::new(12.5), Ratio::new(25.0), Ratio::new(7.5), Ratio::new(400.0), Ratio::new(2.5));
+    assert!(matches!(got, Err(vleo_core::fault::Fault::Refused { .. })), "outside what the node holds for: its code refuses it, and so must the developer's: the author's code refuses this case and the node gave {:?}. Take it to the author.", got.as_ref().map(|a| a.Kp_peak_hotday.get()));
+}
+
+/// The kernel translation of this node's method gives the method's own
+/// answer, to the bit, at 23 points around the author's cases. A translator
+/// check, not evidence: the numbers are the method's, run by the interpreter
+/// when this file was generated.
+#[test]
+fn the_translation_gives_the_methods_answers() {
+    use vleo_core::physics::method::MethodError;
+    use vleo_core::physics::methods::sw_kp_scenarios::evaluate;
+    assert_eq!(evaluate(6.25, 12.5, 3.75, 45.0, 1.25).map(|(v, p)| (v.to_bits(), p.map(f64::to_bits))), Ok((0x4019350295fad40b, [0x3ffaaaaaaaaaaaab, 0x4004ff258bf258bf, 0x3fed555555555555, 0x401273fc3518a6e0, 0x3fd0000000000000, 0x4005000000000000, 0x400eb16a8bcfca01, 0x3ffe000000000000, 0x3ff3555555555555])), "at (6.25, 12.5, 3.75, 45.0, 1.25)");
+    assert_eq!(evaluate(11.25, 22.5, 6.75, 81.0, 2.25).map(|(v, p)| (v.to_bits(), p.map(f64::to_bits))), Ok((0x401edc17c6a8602e, [0x4003d4b17e4b17e4, 0x400c97b425ed097b, 0x3ffd111111111111, 0x40166d9d01328950, 0x3fdd555555555555, 0x400d050fe8dbd780, 0x4013555555555555, 0x4006333333333333, 0x3ff6aaaaaaaaaaaa])), "at (11.25, 22.5, 6.75, 81.0, 2.25)");
+    assert_eq!(evaluate(12.375, 24.75, 7.425, 89.1, 2.475).map(|(v, p)| (v.to_bits(), p.map(f64::to_bits))), Ok((0x401fd4fe50696bf4, [0x4004e14d242e6bdb, 0x400dbd401845c8a2, 0x3fff2c5f92c5f92c, 0x401715a6c4c2f199, 0x3fe1111111111112, 0x400e8694aeb764f3, 0x40142c5f92c5f92c, 0x400740da740da740, 0x3ff7ddddddddddde])), "at (12.375, 24.75, 7.425, 89.1, 2.475)");
+    assert_eq!(evaluate(12.5, 25.0, 7.5, 90.0, 2.5).map(|(v, p)| (v.to_bits(), p.map(f64::to_bits))), Ok((0x401ff0a626d43460, [0x4004ff258bf258bf, 0x400ddddddddddddf, 0x3fff555555555556, 0x4017285285285285, 0x3fe1555555555556, 0x400eb16a8bcfca01, 0x4014444444444444, 0x4007555555555556, 0x3ff8000000000000])), "at (12.5, 25.0, 7.5, 90.0, 2.5)");
+    assert_eq!(evaluate(12.625, 25.25, 7.575, 90.9, 2.525).map(|(v, p)| (v.to_bits(), p.map(f64::to_bits))), Ok((0x40200218baa0de4a, [0x40051ae6bdc80576, 0x400dfb9714eb813e, 0x3fff8a36e2eb1c43, 0x40173e0d4da79c7a, 0x3fe192c5f92c5f93, 0x400ec800c578d10b, 0x40145810624dd2f2, 0x4007779162861a7f, 0x3ff81eb851eb851e])), "at (12.625, 25.25, 7.575, 90.9, 2.525)");
+    assert_eq!(evaluate(13.750000000000002, 27.500000000000004, 8.25, 99.00000000000001, 2.75).map(|(v, p)| (v.to_bits(), p.map(f64::to_bits))), Ok((0x40204f49fe830197, [0x400614b17e4b17e4, 0x400f071a04663f91, 0x4000b3126e978d50, 0x4017ec1b200bb2dd, 0x3fe3bbbbbbbbbbbb, 0x400f9348cc6a1064, 0x40150a3d70a3d70a, 0x4008abadd93d08f8, 0x3ff9333333333333])), "at (13.750000000000002, 27.500000000000004, 8.25, 99.00000000000001, 2.75)");
+    assert!(matches!(evaluate(25.0, 50.0, 15.0, 180.0, 5.0), Err(MethodError::Refused(_))), "at (25.0, 50.0, 15.0, 180.0, 5.0)");
+    assert_eq!(evaluate(6.25, 12.5, 3.75, 28.75, 1.25).map(|(v, p)| (v.to_bits(), p.map(f64::to_bits))), Ok((0x40156d3a06d3a06d, [0x3ffaaaaaaaaaaaab, 0x4004ff258bf258bf, 0x3fed555555555555, 0x400f9bb817aa7069, 0x3fd0000000000000, 0x4005000000000000, 0x400eb16a8bcfca01, 0x3ffe000000000000, 0x3ff3555555555555])), "at (6.25, 12.5, 3.75, 28.75, 1.25)");
+    assert_eq!(evaluate(11.25, 22.5, 6.75, 51.75, 2.25).map(|(v, p)| (v.to_bits(), p.map(f64::to_bits))), Ok((0x401a9018d3018d30, [0x4003d4b17e4b17e4, 0x400c97b425ed097b, 0x3ffd111111111111, 0x401365d9d8b57009, 0x3fdd555555555555, 0x400d050fe8dbd780, 0x4013555555555555, 0x4006333333333333, 0x3ff6aaaaaaaaaaaa])), "at (11.25, 22.5, 6.75, 51.75, 2.25)");
+    assert_eq!(evaluate(12.375, 24.75, 7.425, 56.925, 2.475).map(|(v, p)| (v.to_bits(), p.map(f64::to_bits))), Ok((0x401b9a5643a5643a, [0x4004e14d242e6bdb, 0x400dbd401845c8a2, 0x3fff2c5f92c5f92c, 0x40141f6be4cc535a, 0x3fe1111111111112, 0x400e8694aeb764f3, 0x40142c5f92c5f92c, 0x400740da740da740, 0x3ff7ddddddddddde])), "at (12.375, 24.75, 7.425, 56.925, 2.475)");
+    assert_eq!(evaluate(12.5, 25.0, 7.5, 57.5, 2.5).map(|(v, p)| (v.to_bits(), p.map(f64::to_bits))), Ok((0x401bb26c9b26c9b2, [0x4004ff258bf258bf, 0x400ddddddddddddf, 0x3fff555555555556, 0x40142e8ba2e8ba2f, 0x3fe1555555555556, 0x400eb16a8bcfca01, 0x4014444444444444, 0x4007555555555556, 0x3ff8000000000000])), "at (12.5, 25.0, 7.5, 57.5, 2.5)");
+    assert_eq!(evaluate(12.625, 25.25, 7.575, 58.075, 2.525).map(|(v, p)| (v.to_bits(), p.map(f64::to_bits))), Ok((0x401bc7ea9eba7854, [0x40051ae6bdc80576, 0x400dfb9714eb813e, 0x3fff8a36e2eb1c43, 0x40143e4c26a39f94, 0x3fe192c5f92c5f93, 0x400ec800c578d10b, 0x40145810624dd2f2, 0x4007779162861a7f, 0x3ff81eb851eb851e])), "at (12.625, 25.25, 7.575, 58.075, 2.525)");
+    assert_eq!(evaluate(13.750000000000002, 27.500000000000004, 8.25, 63.25000000000001, 2.75).map(|(v, p)| (v.to_bits(), p.map(f64::to_bits))), Ok((0x401c8958beeb9bfb, [0x400614b17e4b17e4, 0x400f071a04663f91, 0x4000b3126e978d50, 0x4014cc10c835b01d, 0x3fe3bbbbbbbbbbbb, 0x400f9348cc6a1064, 0x40150a3d70a3d70a, 0x4008abadd93d08f8, 0x3ff9333333333333])), "at (13.750000000000002, 27.500000000000004, 8.25, 63.25000000000001, 2.75)");
+    assert_eq!(evaluate(25.0, 50.0, 15.0, 115.0, 5.0).map(|(v, p)| (v.to_bits(), p.map(f64::to_bits))), Ok((0x4020d2f223edaa99, [0x400ddddddddddddf, 0x4013237530eca864, 0x40072a3d70a3d70a, 0x40191a45ac1cb247, 0x3ff4aaaaaaaaaaaa, 0x4014444444444444, 0x401a326c9b26c9b2, 0x40103a9386822b64, 0x4002000000000000])), "at (25.0, 50.0, 15.0, 115.0, 5.0)");
+    assert_eq!(evaluate(10.0, 20.0, 2.5, 77.0, 0.5).map(|(v, p)| (v.to_bits(), p.map(f64::to_bits))), Ok((0x401e5b8d7ac828a2, [0x4002aa3d70a3d70a, 0x400b0d4629b7f0d5, 0x3fe1555555555556, 0x4016150150150150, 0x3fc0000000000000, 0x400b58b545e7e501, 0x4012444444444444, 0x3ff8000000000000, 0x3ff1555555555555])), "at (10.0, 20.0, 2.5, 77.0, 0.5)");
+    assert_eq!(evaluate(18.0, 36.0, 4.5, 138.6, 0.9).map(|(v, p)| (v.to_bits(), p.map(f64::to_bits))), Ok((0x402170dae6604e3a, [0x4009c413b8b302a8, 0x40112ed4c9ccf431, 0x3ff2444444444444, 0x401a8f65ead3994d, 0x3fc8888888888889, 0x401162fc962fc963, 0x40175d548d9ac531, 0x4000cccccccccccc, 0x3ff2666666666666])), "at (18.0, 36.0, 4.5, 138.6, 0.9)");
+    assert_eq!(evaluate(19.8, 39.6, 4.95, 152.46, 0.99).map(|(v, p)| (v.to_bits(), p.map(f64::to_bits))), Ok((0x4021c9e7b807dcc1, [0x400aec5ab8043f6a, 0x4011c0b6fc297209, 0x3ff46d3a06d3a06d, 0x401b63277f9a915c, 0x3fca740da740da74, 0x40122dbd194237fa, 0x40182d901583ac03, 0x4001e147ae147ae1, 0x3ff2a3d70a3d70a4])), "at (19.8, 39.6, 4.95, 152.46, 0.99)");
+    assert_eq!(evaluate(20.0, 40.0, 5.0, 154.0, 1.0).map(|(v, p)| (v.to_bits(), p.map(f64::to_bits))), Ok((0x4021d3ccb2e19742, [0x400b0d4629b7f0d5, 0x4011cdfe7ba375f3, 0x3ff4aaaaaaaaaaaa, 0x401b7aaec9060241, 0x3fcaaaaaaaaaaaab, 0x4012444444444444, 0x40184113d32daefa, 0x4002000000000000, 0x3ff2aaaaaaaaaaab])), "at (20.0, 40.0, 5.0, 154.0, 1.0)");
+    assert_eq!(evaluate(20.2, 40.4, 5.05, 155.54, 1.01).map(|(v, p)| (v.to_bits(), p.map(f64::to_bits))), Ok((0x4021dc42ad527637, [0x400b2e319b6ba23f, 0x4011db45fb1d79dd, 0x3ff4e81b4e81b4e8, 0x401b8f58119fbc0f, 0x3fcae147ae147ae2, 0x40125acb6f46508e, 0x4018549790d7b1f1, 0x40021eb851eb851e, 0x3ff2b17e4b17e4b2])), "at (20.2, 40.4, 5.05, 155.54, 1.01)");
+    assert!(matches!(evaluate(22.0, 44.0, 5.5, 169.4, 1.1), Err(MethodError::Refused(_))), "at (22.0, 44.0, 5.5, 169.4, 1.1)");
+    assert!(matches!(evaluate(40.0, 80.0, 10.0, 308.0, 2.0), Err(MethodError::Refused(_))), "at (40.0, 80.0, 10.0, 308.0, 2.0)");
+    assert!(matches!(evaluate(12.5, 25.0, 7.5, 90.0, 500.0), Err(MethodError::Refused(_))), "at (12.5, 25.0, 7.5, 90.0, 500.0)");
+    assert!(matches!(evaluate(12.5, 25.0, 7.5, 400.0, 2.5), Err(MethodError::Refused(_))), "at (12.5, 25.0, 7.5, 400.0, 2.5)");
+}
+
 // ---- properties, generated from the declared domain ---------------------
 //
 // The fixture above checks one point. A wrong constant moves that point and

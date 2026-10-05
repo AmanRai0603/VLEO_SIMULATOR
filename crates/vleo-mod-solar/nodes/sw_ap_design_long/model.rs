@@ -21,21 +21,21 @@ use vleo_core::units::*;
 pub const NODE_ID: &str = "sw_ap_design_long";
 /// Hash of the sheet this file was generated from. A face carrying a
 /// different one refuses to run rather than showing a stale page.
-pub const SHEET_HASH: u64 = 0x76432804deb53157;
+pub const SHEET_HASH: u64 = 0xc8eba9d10fc181e9;
 
 pub fn evaluate(central: Ratio, spread: Ratio) -> Result<Ratio, Fault> {
-    // ---- HOLE 1 : add 1.28 standard deviations of the Ap rotation-forecast residual to the central expectation -> Ratio
-    // 1.28 is declared in the sheet, not chosen here: the one-sided 90th
-    // percentile of a normal, and the sheet argues about why a run labelled 95
-    // per cent uses it — and about why the normal assumption is worse for Ap,
-    // which floors at zero and whose residuals are strongly right-skewed.
-    let sustained: Ratio = central + spread * 1.28;
-    // ---- end HOLE 1
+    // generated · from the node's method, translated by rule into
+    // vleo_core::physics::methods::sw_ap_design_long. No hole: the method is the
+    // implementation, and the author's cases in evidence.rs test it.
+    let method_answer: Ratio = match methods::sw_ap_design_long::evaluate(central.get(), spread.get()) {
+        Ok(v) => Ratio::new(v),
+        Err(e) => return Err(method::fault(e, NODE_ID, "Ap_long")),
+    };
 
     // generated · the declared domain of this node's own answer. The
     // reason travels with the guard, because a guard whose reason is not
     // written down gets deleted by the next person who finds it awkward.
-    let answer: Ratio = sustained;
+    let answer: Ratio = method_answer;
     if !answer.is_finite() {
         return Err(Fault::Degenerate { node: NODE_ID, field: "Ap_long", reason: "the computation produced a value that is not a number" });
     }

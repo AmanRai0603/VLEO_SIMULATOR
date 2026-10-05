@@ -95,6 +95,111 @@ the record and these do not; a published convention is comparable between
 studies and a tercile is comparable only within one.
 """
 
+# THE METHOD — the relation in the method language (docs/PSEUDOCODE.md). In the
+# sheet hash: the generated code is translated from it.
+[method]
+text = """
+# Transcribed from crates/vleo-mod-solar/nodes/sw_activity_band/model.rs (HOLE 1 and its guards) — the method the code already runs.
+# Numbers: the standard NOAA SWPC (noaa_swpc) F10.7 activity levels, as prf_segment applies them — edges 90, 130, 170 sfu.
+# One plus the count of edges reached; >= so a flux exactly on an edge opens the higher band.
+# The runtime's own finiteness check stands in for the generated "not a number" guard.
+let n = 1
+if f107 >= 90 then
+  set n = n + 1
+end
+if f107 >= 130 then
+  set n = n + 1
+end
+if f107 >= 170 then
+  set n = n + 1
+end
+if n < 1 then
+  refuse "there are four bands and the lowest is 1: the counting started in the wrong place"
+end
+if n > 4 then
+  refuse "there are four bands and the highest is 4: an edge was added without the range being updated"
+end
+return n
+"""
+by = "Aman Rai / 2026-10-03"
+
+[[case]]
+label = "the record's quietest day, 64 sfu — band 1, low."
+refuse = "no"
+expect = 1.0
+tolerance = 1e-12
+inputs = { f107 = 64.0 }
+origin = "paper"
+
+[[case]]
+label = "89.9 sfu — still low, the edge is not yet reached."
+refuse = "no"
+expect = 1.0
+tolerance = 1e-12
+inputs = { f107 = 89.9 }
+origin = "paper"
+
+[[case]]
+label = "90 sfu exactly — moderate begins AT the edge, not after it."
+refuse = "no"
+expect = 2.0
+tolerance = 1e-12
+inputs = { f107 = 90.0 }
+origin = "paper"
+
+[[case]]
+label = "129.9 sfu — still moderate."
+refuse = "no"
+expect = 2.0
+tolerance = 1e-12
+inputs = { f107 = 129.9 }
+origin = "paper"
+
+[[case]]
+label = "130 sfu exactly — elevated begins."
+refuse = "no"
+expect = 3.0
+tolerance = 1e-12
+inputs = { f107 = 130.0 }
+origin = "paper"
+
+[[case]]
+label = "169.9 sfu — still elevated."
+refuse = "no"
+expect = 3.0
+tolerance = 1e-12
+inputs = { f107 = 169.9 }
+origin = "paper"
+
+[[case]]
+label = "170 sfu exactly — high begins."
+refuse = "no"
+expect = 4.0
+tolerance = 1e-12
+inputs = { f107 = 170.0 }
+origin = "paper"
+
+[[case]]
+label = "the record's largest day, 343 sfu — band 4, which is unbounded above."
+refuse = "no"
+expect = 4.0
+tolerance = 1e-12
+inputs = { f107 = 343.0 }
+origin = "paper"
+
+[[case]]
+label = "the design value this subsystem publishes, 228 sfu — band 4, the top one."
+refuse = "no"
+expect = 4.0
+tolerance = 1e-12
+inputs = { f107 = 228.1374378829 }
+origin = "paper"
+
+[[case]]
+label = "a value that is not a number: the node must refuse it, as every method does at its door. The code before 1.1 answered band 1 here, which no value is"
+refuse = "yes"
+inputs = { f107 = nan }
+origin = "hand"
 
 [[assumption]]
 text = "The bands are a published convention and this row is a lookup, not a measurement"
@@ -147,5 +252,20 @@ about = ["node"]
 changed = "first version: the belief this row already rested on, written down"
 rests_on = "The four levels are the standard published NOAA activity levels, applied as a lookup with nothing fitted: low below 90, moderate 90 to 129, elevated 130 to 169, high 170 and above."
 breaks_if = "A consumer averages or interpolates the levels, reads the design point's level as a mission forecast, or the published edges change or are swapped for data-driven thirds of the record."
+relation = "band(F107) = 1 + count(edges <= F107),  edges = 90, 130, 170 sfu"
+source = "noaa_swpc"
+
+[[version]]
+n = 2
+release = "next"
+date = "2026-10-03"
+by = "Aman Rai (l3_solar)"
+about = ["math"]
+believed = "1.0 was ready for the developer: sealed, every method sound by the group application and agreeing with all of its results."
+tested = "The developer took 1.0 in: the seal held and every method agreed with every one of its results, refusals included."
+learned = "Intake refused 1.0 whole for two things the group application did not ask: six nodes had no case the method must refuse, and sw_kp_scenarios publishes ten values while its method gave one. Run with a value that is not a number, the code of sw_activity_band, sw_ap_design and sw_regime answered (band 1, Ap 132, regime 3) where the other three refused."
+changed = "Each of the six has a refusal: a value that is not a number, which every method now refuses at its door, so those three refuse it where their code answered. sw_kp_scenarios publishes its nine members, and every answered row gives all ten values: the design's own fixtures at the defaults, its code at the two others. The method was transcribed by an assistant from crates/vleo-mod-solar/nodes/sw_activity_band/model.rs; Aman Rai read the copy against it and signs it."
+rests_on = "the 32 model.rs files the pseudocode was copied from, and the fixtures published with them"
+breaks_if = "a result the built node does not reproduce, or a correction to the code a method was copied from"
 relation = "band(F107) = 1 + count(edges <= F107),  edges = 90, 130, 170 sfu"
 source = "noaa_swpc"

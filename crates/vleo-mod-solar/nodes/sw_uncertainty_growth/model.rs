@@ -27,40 +27,21 @@ use vleo_core::units::*;
 pub const NODE_ID: &str = "sw_uncertainty_growth";
 /// Hash of the sheet this file was generated from. A face carrying a
 /// different one refuses to run rather than showing a stale page.
-pub const SHEET_HASH: u64 = 0x4b1bd73cba36bfab;
+pub const SHEET_HASH: u64 = 0xa291ce636cc21752;
 
 pub fn evaluate(lead: Time) -> Result<Ratio, Fault> {
-    // ---- HOLE 1 : take the lead in days and read the measured 95th-percentile F10.7 growth at that lead -> Ratio
-    // Seventeen leads, seventeen measured percentiles, from
-    // solar-weather@2026.09.14. x is the lead in DAYS, y the 95th percentile of
-    // F107(t+L) - F107(t) over pairs where both days were observed.
-    //
-    // The y values fall and rise again — +114 at four years, +66 at ten, +115 at
-    // fifteen — and that is the eleven-year cycle, not noise. The sheet says why a
-    // table and not a fitted curve, and why these numbers are expected to sit
-    // 1 to 2.3 sfu ABOVE prf_design's, which interpolates the record's absent days.
-    //
-    // Table1::at clamps at both ends rather than extrapolating: past fifteen years
-    // the record has too few pairs to say anything new, and below half a year the
-    // declared input range does not reach.
-    use vleo_core::math::Table1;
-    const GROWTH: Table1 = Table1 {
-        x: &[
-            183.0, 365.0, 548.0, 730.0, 1096.0, 1461.0, 1826.0, 2191.0, 2557.0, 2922.0, 3287.0,
-            3653.0, 4018.0, 4383.0, 4748.0, 5113.0, 5478.0,
-        ],
-        y: &[
-            57.0, 68.3, 77.0, 91.0, 107.0, 114.0, 113.3, 104.0, 92.0, 88.0, 78.0, 66.0, 66.0, 76.0,
-            91.0, 106.0, 115.0,
-        ],
+    // generated · from the node's method, translated by rule into
+    // vleo_core::physics::methods::sw_uncertainty_growth. No hole: the method is the
+    // implementation, and the author's cases in evidence.rs test it.
+    let method_answer: Ratio = match methods::sw_uncertainty_growth::evaluate(lead.get()) {
+        Ok(v) => Ratio::new(v),
+        Err(e) => return Err(method::fault(e, NODE_ID, "dF107_p95")),
     };
-    let growth: Ratio = Ratio::new(GROWTH.at(lead.days()));
-    // ---- end HOLE 1
 
     // generated · the declared domain of this node's own answer. The
     // reason travels with the guard, because a guard whose reason is not
     // written down gets deleted by the next person who finds it awkward.
-    let answer: Ratio = growth;
+    let answer: Ratio = method_answer;
     if !answer.is_finite() {
         return Err(Fault::Degenerate { node: NODE_ID, field: "dF107_p95", reason: "the computation produced a value that is not a number" });
     }

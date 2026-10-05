@@ -46,6 +46,77 @@ fn fixture_2() {
     assert!(err <= 1e-10, "a sustained level of 120 with the old un-conditioned drop of 31.27, which used to be the lowest level that cleared the guard. The conditioned drop at 120 sfu is 23.26, so the crossing has moved and this row no longer refuses at the declared window: got {} want 88.7277777778, relative error {} exceeds the declared tolerance 1e-10. This is a physics disagreement, not a build failure — take it to the node owner. Do not widen the tolerance.", got.get(), err);
 }
 
+/// the author's case «141.1088 minus 31.2722 — the pair this row was handed before sw_daily_band_drop was conditioned on level. Kept as an arithmetic case; the pair no longer occurs in this tree.», from their own  code.
+#[test]
+fn case_1() {
+    let got = model::evaluate(Ratio::new(141.1088022713), Ratio::new(31.2722222222)).expect("141.1088 minus 31.2722 — the pair this row was handed before sw_daily_band_drop was conditioned on level. Kept as an arithmetic case; the pair no longer occurs in this tree.: the author's code answers this case and the node refused it");
+    let err = relative_error(got.get(), 109.8365800491);
+    assert!(err <= 1e-10, "141.1088 minus 31.2722 — the pair this row was handed before sw_daily_band_drop was conditioned on level. Kept as an arithmetic case; the pair no longer occurs in this tree.: got {} and the author's code gave 109.8365800491; relative error {} is more than their tolerance 1e-10. Take it to the author; do not widen the tolerance.", got.get(), err);
+}
+
+/// the author's case «round numbers, so the arithmetic is checkable without a calculator — 200 - 30.», from their own  code.
+#[test]
+fn case_2() {
+    let got = model::evaluate(Ratio::new(200.0), Ratio::new(30.0)).expect("round numbers, so the arithmetic is checkable without a calculator — 200 - 30.: the author's code answers this case and the node refused it");
+    let err = relative_error(got.get(), 170.0);
+    assert!(err <= 1e-12, "round numbers, so the arithmetic is checkable without a calculator — 200 - 30.: got {} and the author's code gave 170.0; relative error {} is more than their tolerance 1e-12. Take it to the author; do not widen the tolerance.", got.get(), err);
+}
+
+/// the author's case «a sustained level of 120 with the old un-conditioned drop of 31.27, which used to be the lowest level that cleared the guard. The conditioned drop at 120 sfu is 23.26, so the crossing has moved and this row no longer refuses at the declared window.», from their own  code.
+#[test]
+fn case_3() {
+    let got = model::evaluate(Ratio::new(120.0), Ratio::new(31.2722222222)).expect("a sustained level of 120 with the old un-conditioned drop of 31.27, which used to be the lowest level that cleared the guard. The conditioned drop at 120 sfu is 23.26, so the crossing has moved and this row no longer refuses at the declared window.: the author's code answers this case and the node refused it");
+    let err = relative_error(got.get(), 88.7277777778);
+    assert!(err <= 1e-10, "a sustained level of 120 with the old un-conditioned drop of 31.27, which used to be the lowest level that cleared the guard. The conditioned drop at 120 sfu is 23.26, so the crossing has moved and this row no longer refuses at the declared window.: got {} and the author's code gave 88.7277777778; relative error {} is more than their tolerance 1e-10. Take it to the author; do not widen the tolerance.", got.get(), err);
+}
+
+/// the author's case «outside what the node holds for: its code refuses it, and so must the developer's», from their own  code.
+#[test]
+fn case_4() {
+    let got = model::evaluate(Ratio::new(80.0), Ratio::new(31.0));
+    assert!(matches!(got, Err(vleo_core::fault::Fault::Refused { .. })), "outside what the node holds for: its code refuses it, and so must the developer's: the author's code refuses this case and the node gave {:?}. Take it to the author.", got);
+}
+
+/// the author's case «outside what the node holds for: its code refuses it, and so must the developer's», from their own  code.
+#[test]
+fn case_5() {
+    let got = model::evaluate(Ratio::new(450.0), Ratio::new(10.0));
+    assert!(matches!(got, Err(vleo_core::fault::Fault::Refused { .. })), "outside what the node holds for: its code refuses it, and so must the developer's: the author's code refuses this case and the node gave {:?}. Take it to the author.", got);
+}
+
+/// The kernel translation of this node's method gives the method's own
+/// answer, to the bit, at 23 points around the author's cases. A translator
+/// check, not evidence: the numbers are the method's, run by the interpreter
+/// when this file was generated.
+#[test]
+fn the_translation_gives_the_methods_answers() {
+    use vleo_core::physics::method::MethodError;
+    use vleo_core::physics::methods::sw_f107_cold_short::evaluate;
+    assert!(matches!(evaluate(70.55440113565, 15.6361111111), Err(MethodError::Refused(_))), "at (70.55440113565, 15.6361111111)");
+    assert_eq!(evaluate(126.99792204417, 28.14499999998).map(f64::to_bits), Ok(0x4058b69646577558), "at (126.99792204417, 28.14499999998)");
+    assert_eq!(evaluate(139.697714248587, 30.959499999978).map(f64::to_bits), Ok(0x405b2f3ee6f9cde2), "at (139.697714248587, 30.959499999978)");
+    assert_eq!(evaluate(141.1088022713, 31.2722222222).map(f64::to_bits), Ok(0x405b758a870bd7b7), "at (141.1088022713, 31.2722222222)");
+    assert_eq!(evaluate(142.51989029401298, 31.584944444422).map(f64::to_bits), Ok(0x405bbbd6271de18c), "at (142.51989029401298, 31.584944444422)");
+    assert_eq!(evaluate(155.21968249843002, 34.399444444420006).map(f64::to_bits), Ok(0x405e347ec7c03a18), "at (155.21968249843002, 34.399444444420006)");
+    assert_eq!(evaluate(282.2176045426, 62.5444444444).map(f64::to_bits), Ok(0x406b758a870bd7b7), "at (282.2176045426, 62.5444444444)");
+    assert_eq!(evaluate(100.0, 15.0).map(f64::to_bits), Ok(0x4055400000000000), "at (100.0, 15.0)");
+    assert_eq!(evaluate(180.0, 27.0).map(f64::to_bits), Ok(0x4063200000000000), "at (180.0, 27.0)");
+    assert_eq!(evaluate(198.0, 29.7).map(f64::to_bits), Ok(0x406509999999999a), "at (198.0, 29.7)");
+    assert_eq!(evaluate(200.0, 30.0).map(f64::to_bits), Ok(0x4065400000000000), "at (200.0, 30.0)");
+    assert_eq!(evaluate(202.0, 30.3).map(f64::to_bits), Ok(0x4065766666666666), "at (202.0, 30.3)");
+    assert_eq!(evaluate(220.00000000000003, 33.0).map(f64::to_bits), Ok(0x4067600000000001), "at (220.00000000000003, 33.0)");
+    assert_eq!(evaluate(400.0, 60.0).map(f64::to_bits), Ok(0x4075400000000000), "at (400.0, 60.0)");
+    assert!(matches!(evaluate(60.0, 15.6361111111), Err(MethodError::Refused(_))), "at (60.0, 15.6361111111)");
+    assert_eq!(evaluate(108.0, 28.14499999998).map(f64::to_bits), Ok(0x4053f6b851eb8a9e), "at (108.0, 28.14499999998)");
+    assert_eq!(evaluate(118.8, 30.959499999978).map(f64::to_bits), Ok(0x4055f5cac083187a), "at (118.8, 30.959499999978)");
+    assert_eq!(evaluate(120.0, 31.2722222222).map(f64::to_bits), Ok(0x40562e93e93e9a05), "at (120.0, 31.2722222222)");
+    assert_eq!(evaluate(121.2, 31.584944444422).map(f64::to_bits), Ok(0x4056675d11fa1b90), "at (121.2, 31.584944444422)");
+    assert_eq!(evaluate(132.0, 34.399444444420006).map(f64::to_bits), Ok(0x4058666f8091a96c), "at (132.0, 34.399444444420006)");
+    assert_eq!(evaluate(240.0, 62.5444444444).map(f64::to_bits), Ok(0x40662e93e93e9a05), "at (240.0, 62.5444444444)");
+    assert!(matches!(evaluate(80.0, 31.0), Err(MethodError::Refused(_))), "at (80.0, 31.0)");
+    assert!(matches!(evaluate(450.0, 10.0), Err(MethodError::Refused(_))), "at (450.0, 10.0)");
+}
+
 // ---- properties, generated from the declared domain ---------------------
 //
 // The fixture above checks one point. A wrong constant moves that point and
