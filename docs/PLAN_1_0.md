@@ -196,10 +196,12 @@ answer within the row's own tolerance, and refuses where today refuses. There is
 no switch without it.
 
 **From the audit:**
-- **Today's answers are recorded first.** No baseline exists: tolerances today
-  are per fixture, and only one case is shared. Before anything changes, today's
-  engine records every row, every case, every sweep point and every refusal with
-  its reason. This is recorded during phase B's review, so it waits on nothing.
+- **Today's answers are recorded first, and are.** No baseline existed:
+  tolerances were per fixture, and only one case is shared. `baseline/today.csv`
+  now holds what today's engine answers for every row in every shared case, with
+  the reference data and without it, at both ends of every input's range, and on
+  every fixture, with every refusal and its reason. `cargo test` holds the engine
+  to it exactly (`baseline/README.md`).
 - **Built-in relations keep their compiled code, so their parity is exact.**
   Methods run in the interpreter share the same portable maths, so they are
   held exact too, and any difference is a defect.
@@ -373,7 +375,7 @@ real days of use in H.
 |---|---|---|---|
 | A · Safe ground | done | now, pull request 117 | |
 | B · Rules and roles | 6 Oct 2026 | 6 Oct | the second reviewer |
-| today's answers recorded (D) | 6 Oct | 6 Oct, with B | nothing |
+| today's answers recorded (D) | done | now, pull request 117 | |
 | C · Files, versions and keys | 7–9 Oct | 9 Oct | the cryptography crates' adoption |
 | D · The engine runs the design | 12–15 Oct | 15 Oct | parity: up to five more days if it does not hold first time |
 | E · The design leaves the repository | 16–19 Oct | 19 Oct | |

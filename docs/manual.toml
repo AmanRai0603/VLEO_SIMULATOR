@@ -2934,6 +2934,11 @@ what = "Set to `1` when running the contract tests, to record contract/examples/
 default = "unset — check"
 
 [[env]]
+name = "VLEO_BASELINE"
+what = "Set to `write` when running the test of today's answers, to record baseline/today.csv again after a deliberate change to the design, in the same commit as the change. Unset, the test compares and fails on any difference."
+default = "unset — compare"
+
+[[env]]
 name = "VLEO_BROWSER_ANSWERS"
 what = "The file `tools/readers_check.py --answers` wrote: every answer the engine in a readers' page gave. Set when running `cargo test -- --include-ignored` in crates/vleo-kernel-wasm, it holds each of those answers to the same engine built natively, byte for byte. Unset, that one test refuses to run and says why; the pipeline's readers job sets it."
 default = "unset — the comparison is not run"
@@ -3030,6 +3035,11 @@ who = "developer"
 [[folder]]
 name = "bundles"
 what = "Reference data as published, hashed sets, each with a manifest and a licence term."
+who = "developer"
+
+[[folder]]
+name = "baseline"
+what = "Today's answers: what this engine answers for every row in every shared case, recorded before the engine changes for 1.0 so the new one can be held to it. cargo test fails the moment an answer moves."
 who = "developer"
 
 [[folder]]
