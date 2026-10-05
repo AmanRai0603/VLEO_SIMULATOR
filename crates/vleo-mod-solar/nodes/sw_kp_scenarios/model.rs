@@ -34,7 +34,7 @@ use vleo_core::units::*;
 pub const NODE_ID: &str = "sw_kp_scenarios";
 /// Hash of the sheet this file was generated from. A face carrying a
 /// different one refuses to run rather than showing a stale page.
-pub const SHEET_HASH: u64 = 0x50102f9afbc92977;
+pub const SHEET_HASH: u64 = 0x5d2a7433d5a97f2a;
 
 /// The set this node publishes. One field per published variable, named
 /// by the sheet's own symbol, in the order `OUTPUT_VARS` declares: this
@@ -66,43 +66,18 @@ pub struct Answer {
 }
 
 pub fn evaluate(ap_nominal: Ratio, ap_hotmean: Ratio, ap_coldmean: Ratio, ap_hotday: Ratio, ap_coldday: Ratio) -> Result<Answer, Fault> {
-    // ---- HOLE 1 : convert each scenario's Ap to Kp on the published scale and add the measured slot offset, for both slots -> Answer
-    // Three relations from vleo-core, composed at five points. None of the three
-    // is written here: the scale is env::kp_from_ap, the two offsets are
-    // env::kp_mean_slot_bias and env::kp_peak_slot_bias, and each is read by
-    // this row and by the row that owns it. A table copied into both would
-    // drift from itself without anything noticing, which is what happened to
-    // the ap-to-Kp scale for as long as it had two copies.
-    use vleo_core::physics::env::{kp_from_ap, kp_mean_slot_bias, kp_peak_slot_bias};
-
-    // One closure per slot, so the composition is written once rather than ten
-    // times. Ten hand-written lines of `kp_from_ap(x) + bias(x)` is ten chances
-    // to pair the wrong scenario with the wrong table.
-    let mean = |ap: Ratio| -> Ratio { Ratio::new(kp_from_ap(ap.get()) + kp_mean_slot_bias(ap.get())) };
-    let peak = |ap: Ratio| -> Ratio { Ratio::new(kp_from_ap(ap.get()) + kp_peak_slot_bias(ap.get())) };
-
-    let set: Answer = Answer {
-        // The primary: the worst slot of the worst day, which is what a design
-        // sized against geomagnetic activity reads.
-        Kp_peak_hotday: peak(ap_hotday),
-
-        Kp_mean_nominal: mean(ap_nominal),
-        Kp_mean_hotmean: mean(ap_hotmean),
-        Kp_mean_coldmean: mean(ap_coldmean),
-        Kp_mean_hotday: mean(ap_hotday),
-        Kp_mean_coldday: mean(ap_coldday),
-
-        Kp_peak_nominal: peak(ap_nominal),
-        Kp_peak_hotmean: peak(ap_hotmean),
-        Kp_peak_coldmean: peak(ap_coldmean),
-        Kp_peak_coldday: peak(ap_coldday),
+    // generated · from the node's method, translated by rule into
+    // vleo_core::physics::methods::sw_kp_scenarios. No hole: the method is the
+    // implementation, and the author's cases in evidence.rs test it.
+    let method_answer: Answer = match methods::sw_kp_scenarios::evaluate(ap_nominal.get(), ap_hotmean.get(), ap_coldmean.get(), ap_hotday.get(), ap_coldday.get()) {
+        Ok((v, p)) => Answer { Kp_peak_hotday: Ratio::new(v), Kp_mean_nominal: Ratio::new(p[0]), Kp_mean_hotmean: Ratio::new(p[1]), Kp_mean_coldmean: Ratio::new(p[2]), Kp_mean_hotday: Ratio::new(p[3]), Kp_mean_coldday: Ratio::new(p[4]), Kp_peak_nominal: Ratio::new(p[5]), Kp_peak_hotmean: Ratio::new(p[6]), Kp_peak_coldmean: Ratio::new(p[7]), Kp_peak_coldday: Ratio::new(p[8]) },
+        Err(e) => return Err(method::fault(e, NODE_ID, "Kp_peak_hotday")),
     };
-    // ---- end HOLE 1
 
     // generated · the declared domain of this node's own answer. The
     // reason travels with the guard, because a guard whose reason is not
     // written down gets deleted by the next person who finds it awkward.
-    let answer: Answer = set;
+    let answer: Answer = method_answer;
 
     // generated · every published member carries its own declared domain.
     // A set whose primary is in range and whose fifth member is not is not a

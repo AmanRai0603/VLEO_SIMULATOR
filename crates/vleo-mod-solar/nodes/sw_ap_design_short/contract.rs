@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `Ap_short` (Single-day Ap to design to), in `-`.
 pub const NODE_ID: &str = "sw_ap_design_short";
-pub const SHEET_HASH: u64 = 0xab449467ed97381b;
+pub const SHEET_HASH: u64 = 0x91f7b0e982cf2c4f;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "sw_ap_design_long",

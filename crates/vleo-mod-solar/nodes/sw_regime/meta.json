@@ -1,8 +1,8 @@
 {
   "id": "sw_regime",
   "state": "published",
-  "sheet_hash": "f0c2af",
-  "impl_hash": "c34c86",
+  "sheet_hash": "2f2837",
+  "impl_hash": "222325",
   "owner": "environment",
   "tier": "A",
   "fixtures": 6,
@@ -13,5 +13,5 @@
   "holes": 1,
   "inputs": ["sw_storm_return_level"],
   "contributes": [],
-  "gaps": ["no method yet — the relation in the method language, with the author's own code and test cases, so the tool can check it three ways (docs/PSEUDOCODE.md)"]
+  "gaps": []
 }

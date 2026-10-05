@@ -31,37 +31,21 @@ use vleo_core::units::*;
 pub const NODE_ID: &str = "sw_mean_cycle_level";
 /// Hash of the sheet this file was generated from. A face carrying a
 /// different one refuses to run rather than showing a stale page.
-pub const SHEET_HASH: u64 = 0x9c8ab20dbc4cf7b2;
+pub const SHEET_HASH: u64 = 0x71601b622baea6a3;
 
 pub fn evaluate(phase: Ratio) -> Result<Ratio, Fault> {
-    // ---- HOLE 1 : read the phase-binned mean F10.7 of the complete cycles at this phase -> Ratio
-    // The mean F10.7 of cycles 23 and 24 stacked on phase, twenty bins, counted on
-    // solar-weather@2026.09.14. x is the bin centre.
-    //
-    // The curve is asymmetric — 71.8 sfu at phase 0.025 rising to 165.3 at 0.425 and
-    // falling to 67.7 by 0.975 — and that is the known shape of a solar cycle, a
-    // fast rise and a slow decline. It is not smoothed. Two cycles is all the record
-    // has, and the sheet says what that costs: cycle 23 peaked at 196 sfu and 24 at
-    // 146, so this curve matches neither.
-    use vleo_core::math::Table1;
-    const LEVEL: Table1 = Table1 {
-        x: &[
-            0.025, 0.075, 0.125, 0.175, 0.225, 0.275, 0.325, 0.375, 0.425, 0.475, 0.525, 0.575,
-            0.625, 0.675, 0.725, 0.775, 0.825, 0.875, 0.925, 0.975,
-        ],
-        y: &[
-            71.7632, 83.8947, 99.2177, 111.0502, 135.6555, 159.6603, 145.3702, 146.7273, 165.2799,
-            160.3301, 135.3182, 126.2321, 105.8445, 95.5084, 86.9916, 80.9171, 76.2094, 71.0478,
-            71.5383, 67.6538,
-        ],
+    // generated · from the node's method, translated by rule into
+    // vleo_core::physics::methods::sw_mean_cycle_level. No hole: the method is the
+    // implementation, and the author's cases in evidence.rs test it.
+    let method_answer: Ratio = match methods::sw_mean_cycle_level::evaluate(phase.get()) {
+        Ok(v) => Ratio::new(v),
+        Err(e) => return Err(method::fault(e, NODE_ID, "F107_cyc")),
     };
-    let out: Ratio = Ratio::new(LEVEL.at(phase.get()));
-    // ---- end HOLE 1
 
     // generated · the declared domain of this node's own answer. The
     // reason travels with the guard, because a guard whose reason is not
     // written down gets deleted by the next person who finds it awkward.
-    let answer: Ratio = out;
+    let answer: Ratio = method_answer;
     if !answer.is_finite() {
         return Err(Fault::Degenerate { node: NODE_ID, field: "F107_cyc", reason: "the computation produced a value that is not a number" });
     }

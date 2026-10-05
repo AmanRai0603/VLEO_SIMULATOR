@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `F107_window_peak` (F10.7 peak level inside the mission window), in `-`.
 pub const NODE_ID: &str = "sw_window_peak_level";
-pub const SHEET_HASH: u64 = 0xbfee2dafc8999dae;
+pub const SHEET_HASH: u64 = 0x359328eb38938754;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "orbit_mission_duration",

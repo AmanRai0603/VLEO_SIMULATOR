@@ -112,6 +112,81 @@ bound is -0.5 rather than 0, because an answer of -0.1 sfu would be as wrong
 as +0.1 and a guard placed at zero would let it through.
 """
 
+# THE METHOD — the relation in the method language (docs/PSEUDOCODE.md). In the
+# sheet hash: the generated code is translated from it.
+[method]
+text = """
+# Transcribed from crates/vleo-mod-solar/nodes/sw_forecast_bias/model.rs (HOLE 1 and its guards) — the method the code already runs.
+# Numbers: NOAA SWPC (noaa_swpc) issued 27-day outlook verified against observed F10.7, 1997-2025, mean signed error per lead (bundle solar-weather).
+# The measured table, lead 1 to 26 days; linear between leads, held at both ends (as Table1 does).
+# The generated "not a number" guard, moved to the input: the table is finite and held at both ends, so the answer is NaN exactly when the lead is.
+if not (lead == lead) then
+  refuse "the computation produced a value that is not a number"
+end
+let out = interp(lead, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26] [d], [-0.5930701048, -0.7977346278, -1.2774613507, -1.7390243902, -1.9780309194, -2.4073190135, -2.6042173560, -2.5690072639, -2.7477840451, -2.4782258065, -2.1673403395, -1.9443099274, -1.8480194018, -1.9268292683, -2.3772522523, -2.3595890411, -2.2710706150, -2.2514285714, -2.0547320410, -2.1760000000, -2.2803203661, -2.5414746544, -2.9447640967, -3.3091118800, -3.7575057737, -3.9677419355] [1])
+if out < -4 then
+  refuse "below the deepest measured bias of -3.968 sfu at lead 26: the table was misread or the bundle changed"
+end
+if out > -0.5 then
+  refuse "above the shallowest measured bias of -0.593 sfu at lead 1: the record shows no over-forecast at any lead"
+end
+return out
+"""
+by = "Aman Rai / 2026-10-03"
+
+[[case]]
+label = "lead 13 — the interior recovery in the bias curve — -1.848 sfu from 1237 pairs."
+refuse = "no"
+expect = -1.8480194018
+tolerance = 1e-12
+inputs = { lead = 1123200.0 }
+origin = "hand"
+
+[[case]]
+label = "lead 1 — the shallowest bias in the window — -0.593 sfu from 1241 pairs."
+refuse = "no"
+expect = -0.5930701048
+tolerance = 1e-12
+inputs = { lead = 86400.0 }
+origin = "hand"
+
+[[case]]
+label = "lead 9 — the interior minimum — -2.748 sfu from 1241 pairs."
+refuse = "no"
+expect = -2.7477840451
+tolerance = 1e-12
+inputs = { lead = 777600.0 }
+origin = "hand"
+
+[[case]]
+label = "lead 13.5 — between two measured leads, so this one tests the interpolation and not the table."
+refuse = "no"
+expect = -1.88742433505
+tolerance = 1e-12
+inputs = { lead = 1166400.0 }
+origin = "hand"
+
+[[case]]
+label = "lead 23 — the last lead where the outlook still beats persistence — -2.945 sfu."
+refuse = "no"
+expect = -2.9447640967
+tolerance = 1e-12
+inputs = { lead = 1987200.0 }
+origin = "hand"
+
+[[case]]
+label = "lead 26 — the declared lead and the deepest bias in the window — -3.968 sfu from 868 pairs."
+refuse = "no"
+expect = -3.9677419355
+tolerance = 1e-12
+inputs = { lead = 2246400.0 }
+origin = "hand"
+
+[[case]]
+label = "outside what the node holds for: its code refuses it, and so must the developer's"
+refuse = "yes"
+inputs = { lead = nan }
+origin = "hand"
 
 [[assumption]]
 text = "The outlook is low at every lead in the window, and that is the unsafe direction"
@@ -173,5 +248,20 @@ about = ["node"]
 changed = "first version: the belief this row already rested on, written down"
 rests_on = "The mean signed miss measured over 1997 to 2025 at 26 leads, from minus 0.593 to minus 3.968 solar flux units, never crossing zero, on 866 to 1257 pairs per lead."
 breaks_if = "The outlook is found to over-forecast at any lead, the bias proves strongly dependent on activity level, or the data bundle changes underneath the table."
+relation = "B_f107(L) = mean over issues of (F107_forecast - F107_observed) at lead L"
+source = "noaa_swpc"
+
+[[version]]
+n = 2
+release = "next"
+date = "2026-10-03"
+by = "Aman Rai (l3_solar)"
+about = ["math"]
+believed = "1.0 was ready for the developer: sealed, every method sound by the group application and agreeing with all of its results."
+tested = "The developer took 1.0 in: the seal held and every method agreed with every one of its results, refusals included."
+learned = "Intake refused 1.0 whole for two things the group application did not ask: six nodes had no case the method must refuse, and sw_kp_scenarios publishes ten values while its method gave one. Run with a value that is not a number, the code of sw_activity_band, sw_ap_design and sw_regime answered (band 1, Ap 132, regime 3) where the other three refused."
+changed = "Each of the six has a refusal: a value that is not a number, which every method now refuses at its door, so those three refuse it where their code answered. sw_kp_scenarios publishes its nine members, and every answered row gives all ten values: the design's own fixtures at the defaults, its code at the two others. The method was transcribed by an assistant from crates/vleo-mod-solar/nodes/sw_forecast_bias/model.rs; Aman Rai read the copy against it and signs it."
+rests_on = "the 32 model.rs files the pseudocode was copied from, and the fixtures published with them"
+breaks_if = "a result the built node does not reproduce, or a correction to the code a method was copied from"
 relation = "B_f107(L) = mean over issues of (F107_forecast - F107_observed) at lead L"
 source = "noaa_swpc"

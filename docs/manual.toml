@@ -3093,6 +3093,11 @@ what = "Each form branch's author approval of the exact preview build they tried
 who = "maintainer"
 
 [[folder]]
+name = "acceptances"
+what = "Each group release's acceptance by its lead of the exact test application they tried, recorded by `xtask group-accept`. A group branch merges only with one that matches."
+who = "maintainer"
+
+[[folder]]
 name = ".gitattributes"
 what = "How git carries each file: every text file LF on every machine, and the reference data in bundles/ never rewritten, so its hash verifies on Windows too."
 who = "developer"
@@ -3265,7 +3270,11 @@ what = "How a release is decided — a merged pull request into main — and how
 
 [[doc]]
 path = "docs/DRIVE_SETUP.md"
-what = "The team's shared drive, written by the `drive` workflow from the repository on every release: what it holds, and the one-time sign-in that lets the workflow write it."
+what = "The team's shared drive, written from the repository: by hand as one zip, or by the `drive` workflow on every release — what it holds, who owns which folder, and the one-time sign-in the workflow needs."
+
+[[doc]]
+path = "docs/DRIVE_START_HERE.md"
+what = "The shared drive's START HERE page, kept there as a Google Doc: what each folder holds, whose it is, and who does each step of a group's loop."
 
 [[doc]]
 path = "docs/GITLAB_TRANSFER.md"

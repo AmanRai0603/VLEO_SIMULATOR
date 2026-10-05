@@ -128,6 +128,58 @@ sustained storm heats it far more than one disturbed day. A drag design
 taking this number alone gets the peak and not the integral.
 """
 
+# THE METHOD — the relation in the method language (docs/PSEUDOCODE.md). In the
+# sheet hash: the generated code is translated from it.
+[method]
+text = """
+# Transcribed from crates/vleo-mod-solar/nodes/sw_ap_design/model.rs (HOLE 1 and its guards) — the method the code already runs.
+# The published ap equivalent amplitude at the top Kp of each G band (iaga_kp_ap): G1 is Kp 5 is ap 48, G2 is Kp 6 is ap 80, G3 is Kp 7 is ap 132.
+# A lookup on three integer levels, not an interpolation: the ap scale is close to geometric.
+let out = 132
+if g_level < 1.5 then
+  set out = 48
+else if g_level < 2.5 then
+  set out = 80
+end
+if out < 40 then
+  refuse "Designing to less than a minor storm (G1, Ap 48) is not a design case."
+end
+if out > 140 then
+  refuse "Above G3's Ap 132 means a G level outside the range or a misread table."
+end
+return out
+"""
+by = "Aman Rai / 2026-10-03"
+
+[[case]]
+label = "G2 moderate — Kp 6 — daily Ap bounded at 80."
+refuse = "no"
+expect = 80.0
+tolerance = 1e-12
+inputs = { g_level = 2.0 }
+origin = "paper"
+
+[[case]]
+label = "G1 minor — Kp 5 — daily Ap bounded at 48."
+refuse = "no"
+expect = 48.0
+tolerance = 1e-12
+inputs = { g_level = 1.0 }
+origin = "paper"
+
+[[case]]
+label = "G3 strong — Kp 7 — daily Ap bounded at 132, the declared default."
+refuse = "no"
+expect = 132.0
+tolerance = 1e-12
+inputs = { g_level = 3.0 }
+origin = "paper"
+
+[[case]]
+label = "a value that is not a number: the node must refuse it, as every method does at its door. The code before 1.1 answered 132 here, which no value is"
+refuse = "yes"
+inputs = { g_level = nan }
+origin = "hand"
 
 [[assumption]]
 text = "The design value is BELOW what the record expects over the mission, and that is not a defect in either row"
@@ -187,5 +239,20 @@ about = ["node"]
 changed = "first version: the belief this row already rested on, written down"
 rests_on = "That the ceiling of a storm grade, the value a day would reach if all eight three-hour readings sat at that grade, is the right design bound, taken from the published table: 48, 80 and 132 for grades one to three."
 breaks_if = "A typical storm day is wanted instead of a bound, the grade is read between the three whole-number levels, or storm duration turns out to matter to the drag design."
+relation = "Ap_design(G) = ap at the top Kp of that G band: G1 -> 48, G2 -> 80, G3 -> 132"
+source = "iaga_kp_ap"
+
+[[version]]
+n = 2
+release = "next"
+date = "2026-10-03"
+by = "Aman Rai (l3_solar)"
+about = ["math"]
+believed = "1.0 was ready for the developer: sealed, every method sound by the group application and agreeing with all of its results."
+tested = "The developer took 1.0 in: the seal held and every method agreed with every one of its results, refusals included."
+learned = "Intake refused 1.0 whole for two things the group application did not ask: six nodes had no case the method must refuse, and sw_kp_scenarios publishes ten values while its method gave one. Run with a value that is not a number, the code of sw_activity_band, sw_ap_design and sw_regime answered (band 1, Ap 132, regime 3) where the other three refused."
+changed = "Each of the six has a refusal: a value that is not a number, which every method now refuses at its door, so those three refuse it where their code answered. sw_kp_scenarios publishes its nine members, and every answered row gives all ten values: the design's own fixtures at the defaults, its code at the two others. The method was transcribed by an assistant from crates/vleo-mod-solar/nodes/sw_ap_design/model.rs; Aman Rai read the copy against it and signs it."
+rests_on = "the 32 model.rs files the pseudocode was copied from, and the fixtures published with them"
+breaks_if = "a result the built node does not reproduce, or a correction to the code a method was copied from"
 relation = "Ap_design(G) = ap at the top Kp of that G band: G1 -> 48, G2 -> 80, G3 -> 132"
 source = "iaga_kp_ap"

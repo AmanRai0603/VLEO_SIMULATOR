@@ -1,0 +1,12 @@
+# The group's answer to a test application — written by the group application.
+# Send it to the developer: `cargo run -p xtask -- group-accept <this file>` records it.
+group = "l3_solar"
+version = "1.1"
+fingerprint = "0a9e8b038e926892dd30bf61e04aed61db76d09dddc01821cb5cc575f5acd9e1"
+commit = "1aea48cd4aade2128e876139cc386130c00f6492"
+delivery = "7a627503f532387babc66553944dc135285e03a84beb08a6bf1790a57a9fc98a"
+verdict = "accepted"
+by = "Aman Rai"
+at = "2026-10-05T07:22:50.102Z"
+tried = "Reviewed group-test.csv: 1241 checks ok, 0 failed. All 32 computed nodes reproduce our cases; the 103 edge notes are refusals at the range ends (e.g. Ap below zero) and are correct. No group-level results were supplied in 1.1."
+note = ""

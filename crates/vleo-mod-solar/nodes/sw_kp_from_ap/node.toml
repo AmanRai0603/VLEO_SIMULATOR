@@ -135,6 +135,122 @@ sw_kp_slot_bias measures the offsets and publishes the peak-slot one for a
 consumer to add.
 """
 
+# THE METHOD — the relation in the method language (docs/PSEUDOCODE.md). In the
+# sheet hash: the generated code is translated from it.
+[method]
+text = """
+# Transcribed from crates/vleo-mod-solar/nodes/sw_kp_from_ap/model.rs (HOLE 1 and its guards) — the method the code already runs.
+# Numbers: the IAGA published Kp-ap scale (iaga_kp_ap), 28 pairs, Kp in thirds 0..9 — vleo_core::physics::env::kp_from_ap (AP_AT_KP_THIRDS), via prf_ap2kp.m:100.
+# kp_from_ap is linear interpolation held at both ends (pmath::interp): below ap 0 and above ap 400 the scale does not continue.
+# Kp values are the thirds the kernel writes as k/3.0, given here as their exact double values.
+# The generated "not a number" guard, moved to the input: the table is finite and held at both ends, so the answer is NaN exactly when ap is.
+if not (ap == ap) then
+  refuse "the computation produced a value that is not a number"
+end
+let k = interp(ap, [0, 2, 3, 4, 5, 6, 7, 9, 12, 15, 18, 22, 27, 32, 39, 48, 56, 67, 80, 94, 111, 132, 154, 179, 207, 236, 300, 400] [1], [0.0, 0.3333333333333333, 0.6666666666666666, 1.0, 1.3333333333333333, 1.6666666666666667, 2.0, 2.3333333333333335, 2.6666666666666665, 3.0, 3.3333333333333335, 3.6666666666666665, 4.0, 4.333333333333333, 4.666666666666667, 5.0, 5.333333333333333, 5.666666666666667, 6.0, 6.333333333333333, 6.666666666666667, 7.0, 7.333333333333333, 7.666666666666667, 8.0, 8.333333333333334, 8.666666666666666, 9.0] [1])
+if k < 0 then
+  refuse "Kp is defined on 0..9: a negative index is a sign error, not a quiet day"
+end
+if k > 9 then
+  refuse "Kp is defined on 0..9: an ap value has reached a consumer that wanted Kp"
+end
+return k
+"""
+by = "Aman Rai / 2026-10-03"
+
+[[case]]
+label = "Kp 0 — ap 0, the table's first point."
+refuse = "no"
+expect = 0.0
+tolerance = 1e-12
+inputs = { ap = 0.0 }
+origin = "paper"
+
+[[case]]
+label = "Kp 1 — ap 4."
+refuse = "no"
+expect = 1.0
+tolerance = 1e-12
+inputs = { ap = 4.0 }
+origin = "paper"
+
+[[case]]
+label = "Kp 2 — ap 7."
+refuse = "no"
+expect = 2.0
+tolerance = 1e-12
+inputs = { ap = 7.0 }
+origin = "paper"
+
+[[case]]
+label = "Kp 3 — ap 15, the legacy study's own climatology constant, and what env_kp declares by hand."
+refuse = "no"
+expect = 3.0
+tolerance = 1e-12
+inputs = { ap = 15.0 }
+origin = "paper"
+
+[[case]]
+label = "Kp 4 — ap 27."
+refuse = "no"
+expect = 4.0
+tolerance = 1e-12
+inputs = { ap = 27.0 }
+origin = "paper"
+
+[[case]]
+label = "Kp 5 — ap 48, the storm threshold."
+refuse = "no"
+expect = 5.0
+tolerance = 1e-12
+inputs = { ap = 48.0 }
+origin = "paper"
+
+[[case]]
+label = "Kp 6 — ap 80."
+refuse = "no"
+expect = 6.0
+tolerance = 1e-12
+inputs = { ap = 80.0 }
+origin = "paper"
+
+[[case]]
+label = "Kp 7 — ap 132."
+refuse = "no"
+expect = 7.0
+tolerance = 1e-12
+inputs = { ap = 132.0 }
+origin = "paper"
+
+[[case]]
+label = "Kp 8 — ap 207."
+refuse = "no"
+expect = 8.0
+tolerance = 1e-12
+inputs = { ap = 207.0 }
+origin = "paper"
+
+[[case]]
+label = "Kp 9 — ap 400, the table's last point."
+refuse = "no"
+expect = 9.0
+tolerance = 1e-12
+inputs = { ap = 400.0 }
+origin = "paper"
+
+[[case]]
+label = "above the table — ap 1000 holds at Kp 9 rather than extrapolating."
+refuse = "no"
+expect = 9.0
+tolerance = 1e-12
+inputs = { ap = 1000.0 }
+origin = "paper"
+
+[[case]]
+label = "outside what the node holds for: its code refuses it, and so must the developer's"
+refuse = "yes"
+inputs = { ap = nan }
+origin = "hand"
 
 [[assumption]]
 text = "The table is defined for the three-hourly ap and is being fed a daily mean Ap"
@@ -191,5 +307,20 @@ about = ["node"]
 changed = "first version: the belief this row already rested on, written down"
 rests_on = "The published 28-pair table, applied as published with straight lines between points, the choice of line costing at most 0.017 of a grade; confirmed by A. Rai on 2026-09-14."
 breaks_if = "A consumer needs the peak three-hour grade and does not add the separately measured offset, or an input above 400 or below 0 reaches the table without a guard upstream."
+relation = "Kp = piecewise_linear(ap_28 -> kp_28, clamp(Ap, 0, 400))"
+source = "iaga_kp_ap"
+
+[[version]]
+n = 2
+release = "next"
+date = "2026-10-03"
+by = "Aman Rai (l3_solar)"
+about = ["math"]
+believed = "1.0 was ready for the developer: sealed, every method sound by the group application and agreeing with all of its results."
+tested = "The developer took 1.0 in: the seal held and every method agreed with every one of its results, refusals included."
+learned = "Intake refused 1.0 whole for two things the group application did not ask: six nodes had no case the method must refuse, and sw_kp_scenarios publishes ten values while its method gave one. Run with a value that is not a number, the code of sw_activity_band, sw_ap_design and sw_regime answered (band 1, Ap 132, regime 3) where the other three refused."
+changed = "Each of the six has a refusal: a value that is not a number, which every method now refuses at its door, so those three refuse it where their code answered. sw_kp_scenarios publishes its nine members, and every answered row gives all ten values: the design's own fixtures at the defaults, its code at the two others. The method was transcribed by an assistant from crates/vleo-mod-solar/nodes/sw_kp_from_ap/model.rs; Aman Rai read the copy against it and signs it."
+rests_on = "the 32 model.rs files the pseudocode was copied from, and the fixtures published with them"
+breaks_if = "a result the built node does not reproduce, or a correction to the code a method was copied from"
 relation = "Kp = piecewise_linear(ap_28 -> kp_28, clamp(Ap, 0, 400))"
 source = "iaga_kp_ap"

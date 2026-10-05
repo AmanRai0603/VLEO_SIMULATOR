@@ -1,8 +1,8 @@
 {
   "id": "sw_central_expectation",
   "state": "published",
-  "sheet_hash": "f888cd",
-  "impl_hash": "595672",
+  "sheet_hash": "778261",
+  "impl_hash": "222325",
   "owner": "environment",
   "tier": "A",
   "fixtures": 9,
@@ -13,5 +13,5 @@
   "holes": 2,
   "inputs": ["sw_f107_observed", "orbit_mission_duration", "sys_mission_requirements_mission_epoch"],
   "contributes": [],
-  "gaps": ["the relation has nobody's name against it — an assistant may never supply mathematics, and without an attribution nothing can tell whether one did", "no method yet — the relation in the method language, with the author's own code and test cases, so the tool can check it three ways (docs/PSEUDOCODE.md)"]
+  "gaps": ["the relation has nobody's name against it — an assistant may never supply mathematics, and without an attribution nothing can tell whether one did"]
 }

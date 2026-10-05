@@ -128,6 +128,61 @@ math = "dAp_day_low = sw_ap_daily_band_drop(Ap_cold_long) = 12.5635 at a sustain
 text = "Subtract it. On Ap this term is seventy-two per cent of the level it is taken from, against six per cent on F10.7: for the quiet Ap case it is most of the answer rather than a correction to it."
 math = "Ap_cold_short = Ap_cold_long - dAp_day_low"
 
+# THE METHOD — the relation in the method language (docs/PSEUDOCODE.md). In the
+# sheet hash: the generated code is translated from it.
+[method]
+text = """
+# Transcribed from crates/vleo-mod-solar/nodes/sw_ap_cold_short/model.rs (HOLE 1 and its guards) — the method the code already runs.
+# Numbers: NOAA SWPC (noaa_swpc) record via prf_density.m:227 (designWindow_); the daily drop is the low tail's own magnitude, from sw_ap_daily_band_drop.
+# The single-day cold level: the sustained cold level less the within-rotation daily Ap drop (a magnitude, so the sign lives here).
+# The runtime's own finiteness check stands in for the generated "not a number" guard.
+let single_day = sustained - daily
+if single_day < 0 then
+  refuse "Ap floors at zero: a perfectly quiet day is Ap 0 and there is nothing below it"
+end
+if single_day > 400 then
+  refuse "400 is the top of the Ap index itself: a value above it means a sign is wrong in the chain above"
+end
+return single_day
+"""
+by = "Aman Rai / 2026-10-03"
+
+[[case]]
+label = "17.4955 minus 10.5889 — the pair this row was handed before sw_ap_daily_band_drop was conditioned on level. The conditioned drop at Ap 17.50 is 12.56, so the published answer is 4.93 rather than 6.91."
+refuse = "no"
+expect = 6.9065794711
+tolerance = 1e-10
+inputs = { daily = 10.5888888889, sustained = 17.49546836 }
+origin = "hand"
+
+[[case]]
+label = "round numbers, checkable without a calculator — 50 - 10."
+refuse = "no"
+expect = 40.0
+tolerance = 1e-12
+inputs = { daily = 10.0, sustained = 50.0 }
+origin = "hand"
+
+[[case]]
+label = "a sustained level of 11, four tenths above the floor — the narrowest case this row can publish, and the reason the guard at zero is load-bearing here rather than decorative."
+refuse = "no"
+expect = 0.4111111111
+tolerance = 1e-10
+inputs = { daily = 10.5888888889, sustained = 11.0 }
+origin = "hand"
+
+[[case]]
+label = "outside what the node holds for: its code refuses it, and so must the developer's"
+refuse = "yes"
+inputs = { daily = 10.0, sustained = 5.0 }
+origin = "hand"
+
+[[case]]
+label = "outside what the node holds for: its code refuses it, and so must the developer's"
+refuse = "yes"
+inputs = { daily = 10.0, sustained = 450.0 }
+origin = "hand"
+
 [[assumption]]
 text = "The result stays above zero, and nothing in the arithmetic ensures it"
 fails_when = "the sustained quiet level is small. With this subsystem's level-conditioned drop the crossing is at a sustained Ap near 15.6, and the declared window's 17.50 clears it by under two units of level. The guard refuses rather than publishing a negative index, which is right, but it means this row is the one most likely in the subsystem to fire on an ordinary input rather than on a mistake"
@@ -165,5 +220,20 @@ about = ["node"]
 changed = "first version: the belief this row already rested on, written down"
 rests_on = "That the two spreads stack, that the daily drop measured before the window applies inside it, and that the sustained quiet level stays clear of the crossing near 15.6."
 breaks_if = "A window with a sustained quiet level below about 15.6, a window in a different part of the cycle where daily variability differs, or a reader who takes the result as a one-in-twenty day."
+relation = "Ap_cold_short = Ap_cold_long - dAp_day_low"
+source = "noaa_swpc"
+
+[[version]]
+n = 2
+release = "next"
+date = "2026-10-03"
+by = "Aman Rai (l3_solar)"
+about = ["math"]
+believed = "1.0 was ready for the developer: sealed, every method sound by the group application and agreeing with all of its results."
+tested = "The developer took 1.0 in: the seal held and every method agreed with every one of its results, refusals included."
+learned = "Intake refused 1.0 whole for two things the group application did not ask: six nodes had no case the method must refuse, and sw_kp_scenarios publishes ten values while its method gave one. Run with a value that is not a number, the code of sw_activity_band, sw_ap_design and sw_regime answered (band 1, Ap 132, regime 3) where the other three refused."
+changed = "Each of the six has a refusal: a value that is not a number, which every method now refuses at its door, so those three refuse it where their code answered. sw_kp_scenarios publishes its nine members, and every answered row gives all ten values: the design's own fixtures at the defaults, its code at the two others. The method was transcribed by an assistant from crates/vleo-mod-solar/nodes/sw_ap_cold_short/model.rs; Aman Rai read the copy against it and signs it."
+rests_on = "the 32 model.rs files the pseudocode was copied from, and the fixtures published with them"
+breaks_if = "a result the built node does not reproduce, or a correction to the code a method was copied from"
 relation = "Ap_cold_short = Ap_cold_long - dAp_day_low"
 source = "noaa_swpc"

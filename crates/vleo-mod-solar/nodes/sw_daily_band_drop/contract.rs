@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `dF107_day_low` (Within-rotation daily drop), in `-`.
 pub const NODE_ID: &str = "sw_daily_band_drop";
-pub const SHEET_HASH: u64 = 0x63c3c88e7870aebe;
+pub const SHEET_HASH: u64 = 0x2c68c4526ada033f;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "sw_f107_cold_long",

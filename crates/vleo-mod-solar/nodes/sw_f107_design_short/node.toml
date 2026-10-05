@@ -114,6 +114,62 @@ math = "dF107_day = sw_daily_band_spread(F107_long) = 20.0723 sfu at a sustained
 text = "Add them. A high day on a high rotation is both, and the design must survive the pair."
 math = "F107_short = F107_long + dF107_day"
 
+# THE METHOD — the relation in the method language (docs/PSEUDOCODE.md). In the
+# sheet hash: the generated code is translated from it.
+[method]
+text = """
+# Transcribed from crates/vleo-mod-solar/nodes/sw_f107_design_short/model.rs (HOLE 1 and its guards) — the method the code already runs.
+# Numbers: none of its own; the sustained level and the within-rotation daily departure come from the NOAA SWPC record (noaa_swpc) via their rows; migrated from prf_density.m:227 designWindow_.
+# A forecast error about the rotation's level and the sun's variability within it are different things, so they add rather than combine in quadrature.
+let single_day = sustained + daily
+
+# Generated guards: the declared domain of F107_short.
+if single_day < 60 then
+  refuse "below 60 sfu has never been observed; a single-day design level below it means a spread has been subtracted rather than added"
+end
+if single_day > 400 then
+  refuse "above 400 sfu the exospheric temperature relation is extrapolated past the largest recorded daily value"
+end
+return single_day
+"""
+by = "Aman Rai / 2026-10-03"
+
+[[case]]
+label = "the sustained level from sw_f107_design_long's first fixture plus the daily departure this row USED to be handed, before sw_daily_band_spread was conditioned on level. Kept as an arithmetic case: the pair no longer occurs in this tree, and what it still checks is that the relation is that addition."
+refuse = "no"
+expect = 211.4530904415
+tolerance = 1e-12
+inputs = { daily = 34.2314814815, sustained = 177.22160896 }
+origin = "hand"
+
+[[case]]
+label = "round numbers, so the arithmetic is checkable without a calculator."
+refuse = "no"
+expect = 230.0
+tolerance = 1e-12
+inputs = { daily = 30.0, sustained = 200.0 }
+origin = "hand"
+
+[[case]]
+label = "a quieter sustained level with a wider daily departure — the two terms are independent and the row must not assume otherwise."
+refuse = "no"
+expect = 190.0
+tolerance = 1e-12
+inputs = { daily = 40.0, sustained = 150.0 }
+origin = "hand"
+
+[[case]]
+label = "outside what the node holds for: its code refuses it, and so must the developer's"
+refuse = "yes"
+inputs = { daily = 10.0, sustained = 40.0 }
+origin = "hand"
+
+[[case]]
+label = "outside what the node holds for: its code refuses it, and so must the developer's"
+refuse = "yes"
+inputs = { daily = 40.0, sustained = 380.0 }
+origin = "hand"
+
 [[assumption]]
 text = "The two spreads stack, and stacking two percentiles is not a percentile"
 fails_when = "the published number is read as the 95th percentile of a day. It is not: it is the 90th percentile of the rotation level plus the 95th percentile of the daily departure, which for independent normals lands near the 99th. The bound is conservative, the label is not, and the honest statistic would be the percentile of the daily value itself rather than a sum of two"
@@ -147,5 +203,20 @@ about = ["node"]
 changed = "first version: the belief this row already rested on, written down"
 rests_on = "That the rotation-level error and a day's rise within its rotation stack, and that the rise measured at the sustained level, 20.0723 solar flux units at 104.07, applies inside the window."
 breaks_if = "The design needs the rarer day beyond one in twenty, or the rotation error and the daily rise are shown to be dependent in a way that fattens or thins the joint tail."
+relation = "F107_short = F107_long + dF107_day"
+source = "noaa_swpc"
+
+[[version]]
+n = 2
+release = "next"
+date = "2026-10-03"
+by = "Aman Rai (l3_solar)"
+about = ["math"]
+believed = "1.0 was ready for the developer: sealed, every method sound by the group application and agreeing with all of its results."
+tested = "The developer took 1.0 in: the seal held and every method agreed with every one of its results, refusals included."
+learned = "Intake refused 1.0 whole for two things the group application did not ask: six nodes had no case the method must refuse, and sw_kp_scenarios publishes ten values while its method gave one. Run with a value that is not a number, the code of sw_activity_band, sw_ap_design and sw_regime answered (band 1, Ap 132, regime 3) where the other three refused."
+changed = "Each of the six has a refusal: a value that is not a number, which every method now refuses at its door, so those three refuse it where their code answered. sw_kp_scenarios publishes its nine members, and every answered row gives all ten values: the design's own fixtures at the defaults, its code at the two others. The method was transcribed by an assistant from crates/vleo-mod-solar/nodes/sw_f107_design_short/model.rs; Aman Rai read the copy against it and signs it."
+rests_on = "the 32 model.rs files the pseudocode was copied from, and the fixtures published with them"
+breaks_if = "a result the built node does not reproduce, or a correction to the code a method was copied from"
 relation = "F107_short = F107_long + dF107_day"
 source = "noaa_swpc"

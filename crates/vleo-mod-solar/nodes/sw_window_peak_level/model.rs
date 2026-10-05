@@ -29,24 +29,21 @@ use vleo_core::units::*;
 pub const NODE_ID: &str = "sw_window_peak_level";
 /// Hash of the sheet this file was generated from. A face carrying a
 /// different one refuses to run rather than showing a stale page.
-pub const SHEET_HASH: u64 = 0xbfee2dafc8999dae;
+pub const SHEET_HASH: u64 = 0x359328eb38938754;
 
 pub fn evaluate(lead: Time, epoch: Time) -> Result<Ratio, Fault> {
-    // ---- HOLE 1 : take the largest value the cycle analogue reaches anywhere inside the mission window -> Ratio
-    // The shape, the period, both amplitudes, the handover between them and the
-    // exhaustive candidate list are env::solar_cycle_analogue_max's. This row
-    // composes it over the window; the sibling composes the mean of the same
-    // analogue, which is why the two cannot disagree about the cycle.
-    let peak: Ratio = Ratio::new(env::solar_cycle_analogue_max(
-        epoch.days(),
-        epoch.days() + lead.days(),
-    ));
-    // ---- end HOLE 1
+    // generated · from the node's method, translated by rule into
+    // vleo_core::physics::methods::sw_window_peak_level. No hole: the method is the
+    // implementation, and the author's cases in evidence.rs test it.
+    let method_answer: Ratio = match methods::sw_window_peak_level::evaluate(lead.get(), epoch.get()) {
+        Ok(v) => Ratio::new(v),
+        Err(e) => return Err(method::fault(e, NODE_ID, "F107_window_peak")),
+    };
 
     // generated · the declared domain of this node's own answer. The
     // reason travels with the guard, because a guard whose reason is not
     // written down gets deleted by the next person who finds it awkward.
-    let answer: Ratio = peak;
+    let answer: Ratio = method_answer;
     if !answer.is_finite() {
         return Err(Fault::Degenerate { node: NODE_ID, field: "F107_window_peak", reason: "the computation produced a value that is not a number" });
     }

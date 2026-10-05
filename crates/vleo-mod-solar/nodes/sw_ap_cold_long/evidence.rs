@@ -46,6 +46,77 @@ fn fixture_2() {
     assert!(err <= 1e-12, "a quiet centre of 16, closer to the floor the sheet argues about — the guard fires below a centre of 4.6: got {} want 11.40007936, relative error {} exceeds the declared tolerance 1e-12. This is a physics disagreement, not a build failure — take it to the node owner. Do not widen the tolerance.", got.get(), err);
 }
 
+/// the author's case «this repository's own chain — the Ap centre with its measured spread.», from their own  code.
+#[test]
+fn case_1() {
+    let got = model::evaluate(Ratio::new(22.095389), Ratio::new(3.593688)).expect("this repository's own chain — the Ap centre with its measured spread.: the author's code answers this case and the node refused it");
+    let err = relative_error(got.get(), 17.49546836);
+    assert!(err <= 1e-12, "this repository's own chain — the Ap centre with its measured spread.: got {} and the author's code gave 17.49546836; relative error {} is more than their tolerance 1e-12. Take it to the author; do not widen the tolerance.", got.get(), err);
+}
+
+/// the author's case «round numbers, checkable without a calculator — 20 - 1.28 × 4.», from their own  code.
+#[test]
+fn case_2() {
+    let got = model::evaluate(Ratio::new(20.0), Ratio::new(4.0)).expect("round numbers, checkable without a calculator — 20 - 1.28 × 4.: the author's code answers this case and the node refused it");
+    let err = relative_error(got.get(), 14.88);
+    assert!(err <= 1e-12, "round numbers, checkable without a calculator — 20 - 1.28 × 4.: got {} and the author's code gave 14.88; relative error {} is more than their tolerance 1e-12. Take it to the author; do not widen the tolerance.", got.get(), err);
+}
+
+/// the author's case «a quiet centre of 16, closer to the floor the sheet argues about — the guard fires below a centre of 4.6.», from their own  code.
+#[test]
+fn case_3() {
+    let got = model::evaluate(Ratio::new(16.0), Ratio::new(3.593688)).expect("a quiet centre of 16, closer to the floor the sheet argues about — the guard fires below a centre of 4.6.: the author's code answers this case and the node refused it");
+    let err = relative_error(got.get(), 11.40007936);
+    assert!(err <= 1e-12, "a quiet centre of 16, closer to the floor the sheet argues about — the guard fires below a centre of 4.6.: got {} and the author's code gave 11.40007936; relative error {} is more than their tolerance 1e-12. Take it to the author; do not widen the tolerance.", got.get(), err);
+}
+
+/// the author's case «outside what the node holds for: its code refuses it, and so must the developer's», from their own  code.
+#[test]
+fn case_4() {
+    let got = model::evaluate(Ratio::new(1.0), Ratio::new(1.0));
+    assert!(matches!(got, Err(vleo_core::fault::Fault::Refused { .. })), "outside what the node holds for: its code refuses it, and so must the developer's: the author's code refuses this case and the node gave {:?}. Take it to the author.", got);
+}
+
+/// the author's case «outside what the node holds for: its code refuses it, and so must the developer's», from their own  code.
+#[test]
+fn case_5() {
+    let got = model::evaluate(Ratio::new(400.0), Ratio::new(0.0));
+    assert!(matches!(got, Err(vleo_core::fault::Fault::Refused { .. })), "outside what the node holds for: its code refuses it, and so must the developer's: the author's code refuses this case and the node gave {:?}. Take it to the author.", got);
+}
+
+/// The kernel translation of this node's method gives the method's own
+/// answer, to the bit, at 23 points around the author's cases. A translator
+/// check, not evidence: the numbers are the method's, run by the interpreter
+/// when this file was generated.
+#[test]
+fn the_translation_gives_the_methods_answers() {
+    use vleo_core::physics::method::MethodError;
+    use vleo_core::physics::methods::sw_ap_cold_long::evaluate;
+    assert_eq!(evaluate(11.0476945, 1.796844).map(f64::to_bits), Ok(0x40217ed703b2671b), "at (11.0476945, 1.796844)");
+    assert_eq!(evaluate(19.885850100000003, 3.2343192000000003).map(f64::to_bits), Ok(0x402f7de96d0deccb), "at (19.885850100000003, 3.2343192000000003)");
+    assert_eq!(evaluate(21.87443511, 3.5577511200000003).map(f64::to_bits), Ok(0x4031520d2f2e0f09), "at (21.87443511, 3.5577511200000003)");
+    assert_eq!(evaluate(22.095389, 3.593688).map(f64::to_bits), Ok(0x40317ed703b2671b), "at (22.095389, 3.593688)");
+    assert_eq!(evaluate(22.31634289, 3.62962488).map(f64::to_bits), Ok(0x4031aba0d836bf2e), "at (22.31634289, 3.62962488)");
+    assert_eq!(evaluate(24.304927900000003, 3.9530568000000006).map(f64::to_bits), Ok(0x40333eb950ddd7d1), "at (24.304927900000003, 3.9530568000000006)");
+    assert_eq!(evaluate(44.190778, 7.187376).map(f64::to_bits), Ok(0x40417ed703b2671b), "at (44.190778, 7.187376)");
+    assert_eq!(evaluate(10.0, 2.0).map(f64::to_bits), Ok(0x401dc28f5c28f5c2), "at (10.0, 2.0)");
+    assert_eq!(evaluate(18.0, 3.6).map(f64::to_bits), Ok(0x402ac8b439581062), "at (18.0, 3.6)");
+    assert_eq!(evaluate(19.8, 3.96).map(f64::to_bits), Ok(0x402d765fd8adaba0), "at (19.8, 3.96)");
+    assert_eq!(evaluate(20.0, 4.0).map(f64::to_bits), Ok(0x402dc28f5c28f5c2), "at (20.0, 4.0)");
+    assert_eq!(evaluate(20.2, 4.04).map(f64::to_bits), Ok(0x402e0ebedfa43fe6), "at (20.2, 4.04)");
+    assert_eq!(evaluate(22.0, 4.4).map(f64::to_bits), Ok(0x40305e353f7ced91), "at (22.0, 4.4)");
+    assert_eq!(evaluate(40.0, 8.0).map(f64::to_bits), Ok(0x403dc28f5c28f5c2), "at (40.0, 8.0)");
+    assert_eq!(evaluate(8.0, 1.796844).map(f64::to_bits), Ok(0x4016ccd733ae025c), "at (8.0, 1.796844)");
+    assert_eq!(evaluate(14.4, 3.2343192000000003).map(f64::to_bits), Ok(0x4024852814e96886), "at (14.4, 3.2343192000000003)");
+    assert_eq!(evaluate(15.84, 3.5577511200000003).map(f64::to_bits), Ok(0x40269278e3cd8c94), "at (15.84, 3.5577511200000003)");
+    assert_eq!(evaluate(16.0, 3.593688).map(f64::to_bits), Ok(0x4026ccd733ae025c), "at (16.0, 3.593688)");
+    assert_eq!(evaluate(16.16, 3.62962488).map(f64::to_bits), Ok(0x40270735838e7825), "at (16.16, 3.62962488)");
+    assert_eq!(evaluate(17.6, 3.9530568000000006).map(f64::to_bits), Ok(0x4029148652729c32), "at (17.6, 3.9530568000000006)");
+    assert_eq!(evaluate(32.0, 7.187376).map(f64::to_bits), Ok(0x4036ccd733ae025c), "at (32.0, 7.187376)");
+    assert!(matches!(evaluate(1.0, 1.0), Err(MethodError::Refused(_))), "at (1.0, 1.0)");
+    assert!(matches!(evaluate(400.0, 0.0), Err(MethodError::Refused(_))), "at (400.0, 0.0)");
+}
+
 // ---- properties, generated from the declared domain ---------------------
 //
 // The fixture above checks one point. A wrong constant moves that point and

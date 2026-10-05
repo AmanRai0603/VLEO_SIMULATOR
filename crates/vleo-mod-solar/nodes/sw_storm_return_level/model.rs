@@ -30,39 +30,21 @@ use vleo_core::units::*;
 pub const NODE_ID: &str = "sw_storm_return_level";
 /// Hash of the sheet this file was generated from. A face carrying a
 /// different one refuses to run rather than showing a stale page.
-pub const SHEET_HASH: u64 = 0x5c0748e8da3c2868;
+pub const SHEET_HASH: u64 = 0x9c83bdeb531ff0fa;
 
 pub fn evaluate(life: Time) -> Result<Ratio, Fault> {
-    // ---- HOLE 1 : take the mission length in years and read the fitted exceedance curve at that return period -> Ratio
-    // The fit, stated where it can be read rather than buried. Both numbers are
-    // the sheet's, fitted on bundles/solar-weather@2026.09.14 over ranks 2 to 56
-    // — return periods 0.5035 to 14.0986 years — and they belong to the record,
-    // not to this code. They are pinned to that bundle version; the [data]
-    // declaration can only pin the name, and the sheet says so.
-    const A: f64 = 92.515531;
-    const B: f64 = 40.926516;
-    // 365.25 days, the same Julian year prf_design divides by, so the two
-    // definitions of "a year" cannot drift apart between the record and the fit.
-    let years: f64 = life.days() / 365.25;
-    // ln needs a positive argument, and a zero or negative mission length is a
-    // caller's error rather than a mission — the declared lower bound on the
-    // answer catches those, because ln of something tiny lands far below it.
-    //
-    // NaN is NOT one of those cases and must not be smuggled into them.
-    // `f64::max` returns the OTHER operand when one side is NaN, so the obvious
-    // `years.max(1.0e-9)` turns a NaN mission length into 1e-9, and the node then
-    // refuses with "the fit reached somewhere it wasn't meant to go" and a
-    // concrete-looking Ap of -755.6. That sends whoever is debugging it after the
-    // fit instead of after their NaN. Let a NaN stay a NaN and the generated
-    // finite check below names it for what it is.
-    let safe: f64 = if years.is_nan() { f64::NAN } else { years.max(1.0e-9) };
-    let level: Ratio = Ratio::new(A + B * pmath::ln(safe));
-    // ---- end HOLE 1
+    // generated · from the node's method, translated by rule into
+    // vleo_core::physics::methods::sw_storm_return_level. No hole: the method is the
+    // implementation, and the author's cases in evidence.rs test it.
+    let method_answer: Ratio = match methods::sw_storm_return_level::evaluate(life.get()) {
+        Ok(v) => Ratio::new(v),
+        Err(e) => return Err(method::fault(e, NODE_ID, "Ap_T")),
+    };
 
     // generated · the declared domain of this node's own answer. The
     // reason travels with the guard, because a guard whose reason is not
     // written down gets deleted by the next person who finds it awkward.
-    let answer: Ratio = level;
+    let answer: Ratio = method_answer;
     if !answer.is_finite() {
         return Err(Fault::Degenerate { node: NODE_ID, field: "Ap_T", reason: "the computation produced a value that is not a number" });
     }

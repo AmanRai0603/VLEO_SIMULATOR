@@ -29,46 +29,21 @@ use vleo_core::units::*;
 pub const NODE_ID: &str = "sw_forecast_bias";
 /// Hash of the sheet this file was generated from. A face carrying a
 /// different one refuses to run rather than showing a stale page.
-pub const SHEET_HASH: u64 = 0xc8d2f17093979bae;
+pub const SHEET_HASH: u64 = 0x43af7f8ea30dbe2f;
 
 pub fn evaluate(lead: Time) -> Result<Ratio, Fault> {
-    // ---- HOLE 1 : read the measured mean signed F10.7 error of the issued outlook at this lead -> Ratio
-    // The measured table, lead 1 to 26 in days. Not a fit: the curve has an
-    // interior extremum and a straight line through it would be a different
-    // claim than the record makes. Table1 interpolates between the measured
-    // leads and CLAMPS at both ends.
-    //
-    // THE CLAMP IS REACHABLE AND THIS COMMENT USED TO DENY IT. It said a lead
-    // inside the declared domain always lands between two measurements, which
-    // is false over a third of that domain: sw_recurrence_lag is declared over
-    // 20 to 35 days — correctly, its bounds describe where the rotation peak of
-    // the autocorrelation can sit — while this table stops at 26, the last lead
-    // the record can verify. A lead of 30 returns the lead-26 bias of -3.9677
-    // and says nothing about having run out of measurements.
-    //
-    // It does not bite at the declared value, which is 26 exactly. It bites
-    // under a what-if. Whether this should REFUSE above 26 rather than clamp is
-    // a question about the relation and not about this comment, so it is left
-    // as it was and raised in §42.3 of docs/MATLAB_PORT_PLAN.md.
-    use vleo_core::math::Table1;
-    const LEAD_DAYS: [f64; 26] = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0, 17.0, 18.0, 19.0, 20.0, 21.0, 22.0, 23.0, 24.0, 25.0, 26.0];
-    const BIAS_SFU: [f64; 26] = [
-        -0.5930701048, -0.7977346278, -1.2774613507, -1.7390243902,
-        -1.9780309194, -2.4073190135, -2.6042173560, -2.5690072639,
-        -2.7477840451, -2.4782258065, -2.1673403395, -1.9443099274,
-        -1.8480194018, -1.9268292683, -2.3772522523, -2.3595890411,
-        -2.2710706150, -2.2514285714, -2.0547320410, -2.1760000000,
-        -2.2803203661, -2.5414746544, -2.9447640967, -3.3091118800,
-        -3.7575057737, -3.9677419355,
-    ];
-    let table: Table1 = Table1 { x: &LEAD_DAYS, y: &BIAS_SFU };
-    let out: Ratio = Ratio::new(table.at(lead.days()));
-    // ---- end HOLE 1
+    // generated · from the node's method, translated by rule into
+    // vleo_core::physics::methods::sw_forecast_bias. No hole: the method is the
+    // implementation, and the author's cases in evidence.rs test it.
+    let method_answer: Ratio = match methods::sw_forecast_bias::evaluate(lead.get()) {
+        Ok(v) => Ratio::new(v),
+        Err(e) => return Err(method::fault(e, NODE_ID, "B_f107")),
+    };
 
     // generated · the declared domain of this node's own answer. The
     // reason travels with the guard, because a guard whose reason is not
     // written down gets deleted by the next person who finds it awkward.
-    let answer: Ratio = out;
+    let answer: Ratio = method_answer;
     if !answer.is_finite() {
         return Err(Fault::Degenerate { node: NODE_ID, field: "B_f107", reason: "the computation produced a value that is not a number" });
     }

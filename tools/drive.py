@@ -2,6 +2,11 @@
 """The team's shared drive, kept by the pipeline rather than by hand.
 
     tools/drive.py pack --out target/drive          # the folder, built here
+    tools/drive.py pack --sealed R.vleo --delivery DIR --zip   # ...with a group's
+                                                    # sealed release and its delivery,
+                                                    # as one zip to put in Drive by hand
+    tools/drive.py pack --update --zip              # ...only what the repository
+                                                    # owns, to replace on a release
     tools/drive.py upload target/drive --folder ID  # mirrored into Drive
     tools/drive.py auth --client-id ID --client-secret S   # once, on your computer
     tools/drive.py --selftest
@@ -17,11 +22,40 @@ drive filled by hand drifts from the release it claims to be within a week.
     apps/group.html, apps/node.html      the group and node applications
     guides/<role>.html                   the three role guides
     design/design.vleo                   the tree, as the one file a kit carries
+    readable/Groups.csv, Nodes.csv,      the released design, to read in any
+      Interfaces.csv                     spreadsheet: each group, every live
+                                         node, every value one group reads
+                                         from another
     groups/<group>/                      every group, as group-export writes it
-      <group>.vgroup, nodes/*.vnode, releases/*.vleo
+      <group>.vgroup, nodes/*.vnode
+      releases/<group>-<version>.vleo    only a SEALED release, given by --sealed
     groups/READY.csv                     what each group's own checks still ask
     groups/l3_solar/                     the solar worked example (groups/solar),
                                          in place of solar's plain export
+    deliveries/<group>-<version>/        a test application's record, given by
+                                         --delivery: DELIVERY.toml, DELIVERY.md,
+                                         group-test.csv — what the lead accepts
+
+`releases/` holds sealed releases and nothing else. The export assembles an
+unsealed release for every group; it is left out, because a file of that name
+in the drive reads as the group's release, and an upload by hand beside the
+lead's sealed one makes two files of one name. A lead assembles and seals
+their own (docs/GROUP_APPS.md); the developer adds a sealed one with --sealed.
+
+# By hand, without the sign-in
+
+`pack --zip` writes the same folder as one zip, its six folders at the top.
+The drive's owner unzips it and drags the six folders into the drive's folder:
+that is the whole upload, and it needs no secrets.
+
+Who owns what decides what a later zip replaces. apps/, guides/, design/ and
+readable/ are the repository's: a release replaces them whole. groups/ is the
+groups' once it is in the drive — the lead's structure, the authors' node
+files, the sealed releases — so a later zip leaves it out (`--update`), and
+only a new group's folder is added by hand. deliveries/ only grows: each test
+application adds its own folder, and the lead adds their answer to it.
+docs/DRIVE_START_HERE.md is the drive's START HERE page, kept as a Google Doc
+beside the six folders.
 
 # What `upload` does, and what it refuses to do
 
@@ -75,7 +109,7 @@ def run(cmd, cwd=ROOT):
     subprocess.run([str(c) for c in cmd], cwd=cwd, check=True)
 
 
-def pack(out):
+def pack(out, sealed=(), deliveries=(), zip_it=False, update=False):
     """Build the drive's folder at `out` from the repository as it stands."""
     out = Path(out).resolve()
     if out.exists():
@@ -101,10 +135,145 @@ def pack(out):
         if solar.exists():
             shutil.rmtree(solar)
         shutil.copytree(tmp / "solar", solar)
+        print("4b. the released design, to read in a spreadsheet")
+        write_readable(out, tmp / "groups")
+    print("5. releases: sealed ones only")
+    dropped = place_releases(out, sealed)
+    print("  %d unsealed assembl%s left out; %d sealed release(s) in" % (dropped, "y" if dropped == 1 else "ies", len(sealed)))
+    if deliveries:
+        print("6. the test applications' records")
+        for d in place_deliveries(out, deliveries):
+            print("  deliveries/" + d)
+    if update:
+        print("7. --update: groups/ left out, as the groups' own once it is in the drive")
+        shutil.rmtree(out / "groups")
     files = [p for p in out.rglob("*") if p.is_file()]
     size = sum(p.stat().st_size for p in files)
     print("packed %d files, %.0f MB, at %s" % (len(files), size / 1e6, out))
+    if zip_it:
+        z = shutil.make_archive(str(out), "zip", root_dir=out, base_dir=".")
+        tops = sorted(p.name for p in out.iterdir())
+        print("zipped: %s (%.0f MB) — unzip it and drag its folders (%s) into the drive" % (z, Path(z).stat().st_size / 1e6, ", ".join(tops)))
     return out
+
+
+def write_readable(out, export):
+    """readable/: the released design as three CSV files, written from the
+    same export as the groups' files, so the two never disagree about what the
+    tree held. UTF-8 with a byte-order mark, which Excel needs to read the
+    dashes and the symbols."""
+    import csv
+    import sqlite3
+
+    home = Path(out) / "readable"
+    home.mkdir(exist_ok=True)
+    ready = {}
+    rp = Path(out) / "groups" / "READY.csv"
+    if rp.is_file():
+        with open(rp, newline="", encoding="utf-8") as f:
+            ready = {r["group"]: r for r in csv.DictReader(f)}
+    with open(Path(export) / "GROUPS.csv", newline="", encoding="utf-8") as f:
+        groups = list(csv.DictReader(f))
+    asks = ["errors", "warnings", "empty_sections", "pseudocode_to_write", "results_to_supply", "values_to_decide", "defaults_to_give", "other"]
+    with open(home / "Groups.csv", "w", newline="", encoding="utf-8-sig") as f:
+        w = csv.writer(f)
+        w.writerow(["group", "name", "layer", "owner", "nodes", "computed", "with_method"] + asks)
+        for g in groups:
+            r = ready.get(g["group"], {})
+            w.writerow([g[k] for k in ["group", "name", "layer", "owner", "nodes", "computed", "with_method"]] + [r.get(a, "") for a in asks])
+    with open(home / "Nodes.csv", "w", newline="", encoding="utf-8-sig") as f:
+        w = csv.writer(f)
+        cols = ["id", "question", "kind", "output", "unit", "lower", "upper", "value"]
+        w.writerow(["group"] + cols)
+        for g in groups:
+            with open(Path(export) / g["group"] / "nodes.csv", newline="", encoding="utf-8") as n:
+                for r in csv.DictReader(n):
+                    w.writerow([g["group"]] + [r.get(c, "") for c in cols])
+    c = sqlite3.connect("file:%s?mode=ro" % (Path(out) / "design" / "design.vleo"), uri=True)
+    try:
+        rows = c.execute(
+            "select p.grp, p.node, r.label, r.kind, r.state, p.unit, p.version, p.crosses_to, p.read_by_grp, p.read_by "
+            "from published p left join row r on r.id = p.node order by p.grp, p.node, p.read_by"
+        ).fetchall()
+    finally:
+        c.close()
+    with open(home / "Interfaces.csv", "w", newline="", encoding="utf-8-sig") as f:
+        w = csv.writer(f)
+        w.writerow(["group", "node", "label", "kind", "state", "unit", "version", "crosses_to", "read_by_group", "read_by_node"])
+        w.writerows(rows)
+
+
+def release_meta(path):
+    """What a database file says of itself: its meta table, as a dict."""
+    import sqlite3
+
+    try:
+        c = sqlite3.connect("file:%s?mode=ro" % Path(path).resolve(), uri=True)
+        try:
+            return dict(c.execute("select key, value from meta"))
+        finally:
+            c.close()
+    except sqlite3.Error as e:
+        raise SystemExit("%s is not a group database file: %s" % (path, e))
+
+
+def place_releases(out, sealed):
+    """Leave out every unsealed release the export assembled, and put each
+    sealed one given in its group's releases/. Returns how many were left out."""
+    dropped = 0
+    for f in sorted((Path(out) / "groups").glob("*/releases/*.vleo")):
+        if not release_meta(f).get("sealed"):
+            f.unlink()
+            dropped += 1
+    for d in sorted((Path(out) / "groups").glob("*/releases")):
+        if not any(d.iterdir()):
+            d.rmdir()
+    for r in sealed:
+        m = release_meta(r)
+        g, v = m.get("group_id", ""), m.get("version", "")
+        if not m.get("sealed") or not m.get("fingerprint"):
+            raise SystemExit("%s is not sealed: only a sealed release goes in releases/" % r)
+        home = Path(out) / "groups" / g
+        if not g or not home.is_dir():
+            raise SystemExit("%s is a release of %r, which is not a group in this design" % (r, g))
+        (home / "releases").mkdir(exist_ok=True)
+        shutil.copy2(r, home / "releases" / ("%s-%s.vleo" % (g, v)))
+    return dropped
+
+
+#: What a delivery's folder in the drive holds, from the test application.
+DELIVERY_FILES = ["DELIVERY.toml", "DELIVERY.md", "group-test.csv"]
+
+
+def place_deliveries(out, dirs):
+    """Copy each test application's record into deliveries/<group>-<version>/.
+    Refused when the drive does not also hold the sealed release it was built
+    from: the lead accepts a delivery against that release, and nothing else."""
+    placed = []
+    for d in dirs:
+        d = Path(d)
+        toml = d / "DELIVERY.toml"
+        if not toml.is_file():
+            raise SystemExit("%s has no DELIVERY.toml: give the folder `xtask group-deliver` wrote" % d)
+        rec = {}
+        for line in toml.read_text().splitlines():
+            k, sep, v = line.partition("=")
+            if sep and not line.lstrip().startswith("#"):
+                rec[k.strip()] = v.strip().strip('"')
+        g, v, fp = rec.get("group", ""), rec.get("version", ""), rec.get("fingerprint", "")
+        rel = Path(out) / "groups" / g / "releases" / ("%s-%s.vleo" % (g, v))
+        if not rel.is_file() or release_meta(rel).get("fingerprint") != fp:
+            raise SystemExit(
+                "the delivery of %s %s was built from the sealed release with fingerprint %s…, "
+                "and the drive does not hold it: give that release with --sealed" % (g, v, fp[:12])
+            )
+        home = Path(out) / "deliveries" / ("%s-%s" % (g, v))
+        home.mkdir(parents=True, exist_ok=True)
+        for name in DELIVERY_FILES:
+            if (d / name).is_file():
+                shutil.copy2(d / name, home / name)
+        placed.append("%s-%s" % (g, v))
+    return placed
 
 
 # ---------------------------------------------------------------------------
@@ -387,6 +556,81 @@ def selftest():
             check("an upload with no sign-in stops and names what is missing", False)
         except SystemExit as e:
             check("an upload with no sign-in stops and names what is missing", "GDRIVE_REFRESH_TOKEN" in str(e))
+    with tempfile.TemporaryDirectory() as t:
+        import sqlite3
+
+        t = Path(t)
+
+        def db(path, **meta):
+            path.parent.mkdir(parents=True, exist_ok=True)
+            c = sqlite3.connect(path)
+            c.execute("create table meta (key text primary key, value text not null)")
+            c.executemany("insert into meta values (?, ?)", meta.items())
+            c.commit()
+            c.close()
+            return path
+
+        out = t / "drive"
+        db(out / "groups" / "solar" / "releases" / "solar-1.0.vleo", group_id="solar", version="1.0", sealed="")
+        db(out / "groups" / "orbit" / "releases" / "orbit-0.1.vleo", group_id="orbit", version="0.1", sealed="")
+        good = db(t / "in" / "solar-1.1.vleo", group_id="solar", version="1.1", sealed="2026-10-03", fingerprint="ab" * 32)
+        dropped = place_releases(out, [good])
+        check(
+            "releases/ keeps sealed releases only: the export's unsealed assemblies are left out",
+            dropped == 2 and sorted(p.name for p in out.rglob("*.vleo")) == ["solar-1.1.vleo"] and not (out / "groups" / "orbit" / "releases").exists(),
+        )
+        for bad_release, why in [
+            (db(t / "in" / "u.vleo", group_id="solar", version="1.2", sealed=""), "not sealed"),
+            (db(t / "in" / "x.vleo", group_id="nobody", version="1", sealed="x", fingerprint="f"), "not a group"),
+        ]:
+            try:
+                place_releases(out, [bad_release])
+                check("a release that is %s is refused" % why, False)
+            except SystemExit as e:
+                check("a release that is %s is refused" % why, why in str(e))
+        dl = t / "dl"
+        dl.mkdir()
+        (dl / "DELIVERY.toml").write_text('group = "solar"\nversion = "1.1"\nfingerprint = "%s"\n' % ("ab" * 32))
+        (dl / "group-test.csv").write_text("node,held\n")
+        placed = place_deliveries(out, [dl])
+        home = out / "deliveries" / "solar-1.1"
+        check("a delivery goes beside the sealed release it was built from", placed == ["solar-1.1"] and (home / "DELIVERY.toml").is_file() and (home / "group-test.csv").is_file())
+        (dl / "DELIVERY.toml").write_text('group = "solar"\nversion = "1.1"\nfingerprint = "%s"\n' % ("cd" * 32))
+        try:
+            place_deliveries(out, [dl])
+            check("a delivery whose sealed release the drive does not hold is refused", False)
+        except SystemExit as e:
+            check("a delivery whose sealed release the drive does not hold is refused", "--sealed" in str(e))
+    with tempfile.TemporaryDirectory() as t:
+        import csv
+        import sqlite3
+
+        t = Path(t)
+        ex, out = t / "export", t / "drive"
+        for g, rows in {"solar": [("sw_a", "How hot?"), ("sw_b", "How long?")], "orbit": [("orb_h", "How high?")]}.items():
+            (ex / g).mkdir(parents=True)
+            (ex / g / "nodes.csv").write_text("id,question,kind,output,unit,lower,upper,value\n" + "".join("%s,%s,computed,x,1,0,1,\n" % r for r in rows))
+        (ex / "GROUPS.csv").write_text("group,name,layer,owner,nodes,computed,with_method,files\nsolar,Solar,3,env,2,2,2,9\norbit,Orbit,3,env,1,1,0,4\n")
+        (out / "groups").mkdir(parents=True)
+        (out / "groups" / "READY.csv").write_text("group,nodes,errors\nsolar,2,3\n")
+        (out / "design").mkdir()
+        c = sqlite3.connect(out / "design" / "design.vleo")
+        c.execute("create table row (id text, label text, kind text, state text)")
+        c.execute("create table published (grp text, node text, unit text, version int, crosses_to text, read_by_grp text, read_by text)")
+        c.execute("insert into row values ('sw_a', 'Hot level', 'computed', 'published')")
+        c.execute("insert into published values ('solar', 'sw_a', '1', 1, '', 'orbit', 'orb_h')")
+        c.commit()
+        c.close()
+        write_readable(out, ex)
+
+        def rows(name):
+            with open(out / "readable" / name, newline="", encoding="utf-8-sig") as f:
+                return list(csv.DictReader(f))
+
+        n, g, i = rows("Nodes.csv"), rows("Groups.csv"), rows("Interfaces.csv")
+        check("readable/Nodes.csv holds every group's nodes, each named with its group", [(r["group"], r["id"]) for r in n] == [("solar", "sw_a"), ("solar", "sw_b"), ("orbit", "orb_h")])
+        check("readable/Groups.csv joins each group to what its own checks still ask", [(r["group"], r["errors"]) for r in g] == [("solar", "3"), ("orbit", "")])
+        check("readable/Interfaces.csv names who reads each published value", [(r["node"], r["label"], r["read_by_node"]) for r in i] == [("sw_a", "Hot level", "orb_h")])
     print("selftest: %s" % ("all as expected" if not bad else "%d FAILED" % bad))
     return 1 if bad else 0
 
@@ -398,6 +642,10 @@ def main():
     sub = ap.add_subparsers(dest="what", required=True)
     p = sub.add_parser("pack", help="build the drive's folder from the repository")
     p.add_argument("--out", default=str(ROOT / "target" / "drive"))
+    p.add_argument("--sealed", nargs="*", default=[], help="sealed releases (.vleo) to put in their groups' releases/")
+    p.add_argument("--delivery", nargs="*", default=[], help="folders `xtask group-deliver` wrote, for deliveries/")
+    p.add_argument("--zip", action="store_true", help="also write the folder as one zip, to put in the drive by hand")
+    p.add_argument("--update", action="store_true", help="leave groups/ out: the groups' own once it is in the drive")
     u = sub.add_parser("upload", help="mirror a packed folder into a Drive folder")
     u.add_argument("local")
     u.add_argument("--folder", required=True, help="the Drive folder's id, from its link")
@@ -406,7 +654,7 @@ def main():
     a.add_argument("--client-secret", required=True)
     args = ap.parse_args()
     if args.what == "pack":
-        pack(args.out)
+        pack(args.out, args.sealed, args.delivery, args.zip, args.update)
     elif args.what == "upload":
         upload(args.local, args.folder)
     else:

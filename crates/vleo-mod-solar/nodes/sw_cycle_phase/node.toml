@@ -124,6 +124,61 @@ Refusing is the only honest answer available: folding round would report an
 early-cycle phase for a date whose cycle number nothing in the data fixes.
 """
 
+# THE METHOD — the relation in the method language (docs/PSEUDOCODE.md). In the
+# sheet hash: the generated code is translated from it.
+[method]
+text = """
+# Transcribed from crates/vleo-mod-solar/nodes/sw_cycle_phase/model.rs (HOLE 1 and its guards) — the method the code already runs.
+# Numbers: NOAA SWPC (noaa_swpc) solar_cycles.csv in solar-weather — cycle 25 began day 7274 (2019-12-01); mean of complete cycles 23 (11.88 yr) and 24 (11.00 yr) is 11.44 yr.
+# The runtime's own finiteness check stands in for the generated "not a number" guard.
+const start_25 = 7274 [d]   # cycle 25 start, days on the mission epoch scale
+const mean_length = 11.44 [1]   # mean length of cycles 23 and 24, in Julian years
+let out = (epoch - start_25) / (mean_length * 365.25 [d])
+if out < 0 then
+  refuse "a phase cannot be negative: the epoch precedes the cycle it was assigned to"
+end
+if out > 1 then
+  refuse "past the end of the cycle the epoch belongs to the next one, whose start the record does not contain"
+end
+return out
+"""
+by = "Aman Rai / 2026-10-03"
+
+[[case]]
+label = "the declared mission epoch, 2027-01-01 — 2588 days into cycle 25."
+refuse = "no"
+expect = 0.6193669438022621
+tolerance = 1e-12
+inputs = { epoch = 852076800.0 }
+origin = "hand"
+
+[[case]]
+label = "the day cycle 25 begins — phase must be exactly zero."
+refuse = "no"
+expect = 0.0
+tolerance = 1e-12
+inputs = { epoch = 628473600.0 }
+origin = "hand"
+
+[[case]]
+label = "half a mean cycle after the start — phase one half, to the last bit float allows."
+refuse = "no"
+expect = 0.4999999999999999
+tolerance = 1e-12
+inputs = { epoch = 808983072.0 }
+origin = "hand"
+
+[[case]]
+label = "outside what the node holds for: its code refuses it, and so must the developer's"
+refuse = "yes"
+inputs = { epoch = 0.0 }
+origin = "hand"
+
+[[case]]
+label = "outside what the node holds for: its code refuses it, and so must the developer's"
+refuse = "yes"
+inputs = { epoch = 1000000000.0000001 }
+origin = "hand"
 
 [[assumption]]
 text = "The epoch is past the record, so the phase is FOLDED with a mean cycle length rather than measured"
@@ -181,5 +236,20 @@ about = ["node"]
 changed = "first version: the belief this row already rested on, written down"
 rests_on = "That the current cycle, which began on 2019-12-01, will last about the mean of the last two complete cycles, 11.88 and 11.00 years."
 breaks_if = "The current cycle turns out markedly shorter or longer than 11.44 years, or the mission starts more than 11.44 years after the cycle began, where the row refuses."
+relation = "phase(T) = (T - start_of_cycle) / mean_cycle_length"
+source = "noaa_swpc"
+
+[[version]]
+n = 2
+release = "next"
+date = "2026-10-03"
+by = "Aman Rai (l3_solar)"
+about = ["math"]
+believed = "1.0 was ready for the developer: sealed, every method sound by the group application and agreeing with all of its results."
+tested = "The developer took 1.0 in: the seal held and every method agreed with every one of its results, refusals included."
+learned = "Intake refused 1.0 whole for two things the group application did not ask: six nodes had no case the method must refuse, and sw_kp_scenarios publishes ten values while its method gave one. Run with a value that is not a number, the code of sw_activity_band, sw_ap_design and sw_regime answered (band 1, Ap 132, regime 3) where the other three refused."
+changed = "Each of the six has a refusal: a value that is not a number, which every method now refuses at its door, so those three refuse it where their code answered. sw_kp_scenarios publishes its nine members, and every answered row gives all ten values: the design's own fixtures at the defaults, its code at the two others. The method was transcribed by an assistant from crates/vleo-mod-solar/nodes/sw_cycle_phase/model.rs; Aman Rai read the copy against it and signs it."
+rests_on = "the 32 model.rs files the pseudocode was copied from, and the fixtures published with them"
+breaks_if = "a result the built node does not reproduce, or a correction to the code a method was copied from"
 relation = "phase(T) = (T - start_of_cycle) / mean_cycle_length"
 source = "noaa_swpc"

@@ -121,6 +121,74 @@ math = "lo(L) = pctl(bin(L), 0.05)"
 text = "Publish its magnitude, interpolated between knots and clamped beyond the ends, so the row is a distance with a floor of zero and the sign travels with the relation that uses it."
 math = "dF107_day_low(L) = -interp(L; knots) = 4.39 at L = 69.63, which is the clamp"
 
+# THE METHOD — the relation in the method language (docs/PSEUDOCODE.md). In the
+# sheet hash: the generated code is translated from it.
+[method]
+text = """
+# Transcribed from crates/vleo-mod-solar/nodes/sw_daily_band_drop/model.rs (HOLE 1 and its guards) — the method the code already runs.
+# Numbers: measured 5th-percentile within-rotation F10.7 departures, as magnitudes, by rotation level (noaa_swpc record; bins of 15 per cent, at least 200 days each).
+# The table clamps at both ends, so the only input the code refuses is one that is not a number:
+# it makes the answer not a number, which the generated guard refuses.
+if not (level == level) then
+  refuse "the computation produced a value that is not a number"
+end
+let band = interp(level, [70.0, 85.0, 100.0, 120.0, 145.0, 175.0, 210.0] [1], [4.3870, 10.2000, 16.7407, 23.2593, 32.3852, 37.2556, 40.7778] [1])
+if band < 0 then
+  refuse "below zero is not a distance; the tail has been read from the wrong end"
+end
+if band > 120 then
+  refuse "above 120 sfu exceeds the largest single-day excursion in the record, so it is an arithmetic error"
+end
+return band
+"""
+by = "Aman Rai / 2026-10-03"
+
+[[case]]
+label = "at the declared window's own sustained cold level, 69.63 — just under the bottom knot, so this is the clamp and it is the case that unblocked the chain."
+refuse = "no"
+expect = 4.387
+tolerance = 1e-12
+inputs = { level = 69.62809104 }
+origin = "hand"
+
+[[case]]
+label = "the 70 sfu knot, exactly — a transcription check, and the value the clamp holds."
+refuse = "no"
+expect = 4.387
+tolerance = 1e-12
+inputs = { level = 70.0 }
+origin = "hand"
+
+[[case]]
+label = "the 120 sfu knot, exactly — a transcription check on a middle pair."
+refuse = "no"
+expect = 23.2593
+tolerance = 1e-12
+inputs = { level = 120.0 }
+origin = "hand"
+
+[[case]]
+label = "halfway between the 120 and 145 knots — the interpolation, on round numbers."
+refuse = "no"
+expect = 27.82225
+tolerance = 1e-9
+inputs = { level = 132.5 }
+origin = "hand"
+
+[[case]]
+label = "far above the top of the table — the clamp."
+refuse = "no"
+expect = 40.7778
+tolerance = 1e-12
+inputs = { level = 250.0 }
+origin = "hand"
+
+[[case]]
+label = "outside what the node holds for: its code refuses it, and so must the developer's"
+refuse = "yes"
+inputs = { level = nan }
+origin = "hand"
+
 [[assumption]]
 text = "The departure scales with the level, and the old single number was seven times too large at this window"
 fails_when = "this is read as a refinement. 31.27 subtracted from 69.63 is 38.36 sfu, which has never been observed and which sw_f107_cold_short's guard refused. Conditioned on the level the drop is 4.39. A factor of seven is not a correction to a margin, it is a different answer"
@@ -170,5 +238,20 @@ about = ["node"]
 changed = "first version: the belief this row already rested on, written down"
 rests_on = "That the fifth-percentile dip below the centred 27-day mean, binned within 15 per cent of the rotation level, describes the window, with the answer held at the lowest level for anything below 70 solar flux units."
 breaks_if = "Evidence that quiet stretches below 70 solar flux units have larger daily dips, or that a different bin width or averaging window changes the table."
+relation = "dF107_day_low(L) = -pctl(F107 - movmean(F107, 27 d), 0.05) over days whose rotation sits within 15% of L"
+source = "noaa_swpc"
+
+[[version]]
+n = 2
+release = "next"
+date = "2026-10-03"
+by = "Aman Rai (l3_solar)"
+about = ["math"]
+believed = "1.0 was ready for the developer: sealed, every method sound by the group application and agreeing with all of its results."
+tested = "The developer took 1.0 in: the seal held and every method agreed with every one of its results, refusals included."
+learned = "Intake refused 1.0 whole for two things the group application did not ask: six nodes had no case the method must refuse, and sw_kp_scenarios publishes ten values while its method gave one. Run with a value that is not a number, the code of sw_activity_band, sw_ap_design and sw_regime answered (band 1, Ap 132, regime 3) where the other three refused."
+changed = "Each of the six has a refusal: a value that is not a number, which every method now refuses at its door, so those three refuse it where their code answered. sw_kp_scenarios publishes its nine members, and every answered row gives all ten values: the design's own fixtures at the defaults, its code at the two others. The method was transcribed by an assistant from crates/vleo-mod-solar/nodes/sw_daily_band_drop/model.rs; Aman Rai read the copy against it and signs it."
+rests_on = "the 32 model.rs files the pseudocode was copied from, and the fixtures published with them"
+breaks_if = "a result the built node does not reproduce, or a correction to the code a method was copied from"
 relation = "dF107_day_low(L) = -pctl(F107 - movmean(F107, 27 d), 0.05) over days whose rotation sits within 15% of L"
 source = "noaa_swpc"

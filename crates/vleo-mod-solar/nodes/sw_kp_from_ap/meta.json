@@ -1,8 +1,8 @@
 {
   "id": "sw_kp_from_ap",
   "state": "published",
-  "sheet_hash": "9f62b5",
-  "impl_hash": "0654ac",
+  "sheet_hash": "86eb1c",
+  "impl_hash": "222325",
   "owner": "environment",
   "tier": "A",
   "fixtures": 11,
@@ -13,5 +13,5 @@
   "holes": 1,
   "inputs": ["sw_storm_return_level"],
   "contributes": [],
-  "gaps": ["no method yet — the relation in the method language, with the author's own code and test cases, so the tool can check it three ways (docs/PSEUDOCODE.md)"]
+  "gaps": []
 }

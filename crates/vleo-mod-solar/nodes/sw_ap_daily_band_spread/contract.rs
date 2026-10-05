@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `dAp_day` (Within-rotation daily Ap spread), in `-`.
 pub const NODE_ID: &str = "sw_ap_daily_band_spread";
-pub const SHEET_HASH: u64 = 0x8a5d9ce151df35d4;
+pub const SHEET_HASH: u64 = 0xe79e428390910cee;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "sw_ap_design_long",

@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `F107_long` (Sustained F10.7 to design to), in `-`.
 pub const NODE_ID: &str = "sw_f107_design_long";
-pub const SHEET_HASH: u64 = 0x472055909976420f;
+pub const SHEET_HASH: u64 = 0x624277f21c287288;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "sw_central_expectation",

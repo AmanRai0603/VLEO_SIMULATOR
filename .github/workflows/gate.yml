@@ -440,12 +440,22 @@ jobs:
       # line, so `main` itself was red and every pull request after it would
       # have been. The rule still holds everywhere it can be acted on — the
       # hook at author time, this step on what a branch adds.
+      # On a pull request, the commits its own branch adds: everything its head
+      # reaches that the base branch, as it stands now, does not. Not
+      # base.sha..HEAD — GitHub keeps base.sha from when the request was opened,
+      # and HEAD is the test merge, so that range also swept in every commit
+      # merged into the base since, and failed a request for commits not its own.
       - name: every commit this branch adds
         run: |
-          base="${{ github.event.pull_request.base.sha }}"
-          if [ -z "$base" ]; then base=$(git rev-parse HEAD~1 2>/dev/null || git rev-parse HEAD); fi
-          echo "checking $base..HEAD"
-          python3 tools/commit_message.py --range "$base..HEAD"
+          head="${{ github.event.pull_request.head.sha }}"
+          base_ref="${{ github.event.pull_request.base.ref }}"
+          if [ -n "$head" ] && [ -n "$base_ref" ]; then
+            range="origin/$base_ref..$head"
+          else
+            range="$(git rev-parse HEAD~1 2>/dev/null || git rev-parse HEAD)..HEAD"
+          fi
+          echo "checking $range"
+          python3 tools/commit_message.py --range "$range"
 
   # The advisory review. It cannot fail the build, and that is the design
   # rather than an oversight: a review that can fail a build is a review people

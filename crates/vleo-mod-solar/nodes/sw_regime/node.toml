@@ -171,6 +171,81 @@ three-band relation reproduces the published label exactly — the
 disagreement count is zero, not small.
 """
 
+# THE METHOD — the relation in the method language (docs/PSEUDOCODE.md). In the
+# sheet hash: the generated code is translated from it.
+[method]
+text = """
+# Transcribed from crates/vleo-mod-solar/nodes/sw_regime/model.rs (HOLE 1 and its guards) — the method the code already runs.
+# The mixture's own decision boundaries read off its published labels in bundles/solar-weather daily_regime.csv (noaa_swpc): quiet Ap 0 to 6, active 7 to 25, storm 26 and above.
+let out = 3
+if ap <= 6 then
+  set out = 1
+else if ap <= 25 then
+  set out = 2
+end
+if out < 1 then
+  refuse "1 is quiet, the lowest regime the mixture defines; below it there is no label."
+end
+if out > 3 then
+  refuse "3 is storm, the highest; a fourth regime would be a different classifier."
+end
+return out
+"""
+by = "Aman Rai / 2026-10-03"
+
+[[case]]
+label = "Ap 158.38 — the five-year return level — storm, as the table labels every day near it."
+refuse = "no"
+expect = 3.0
+tolerance = 1e-12
+inputs = { ap = 158.38 }
+origin = "paper"
+
+[[case]]
+label = "Ap 20 — the bottom of the producer's range — active; the table labels all 20s active."
+refuse = "no"
+expect = 2.0
+tolerance = 1e-12
+inputs = { ap = 20.0 }
+origin = "paper"
+
+[[case]]
+label = "Ap 25 — the last active value in the published table; 26 is the first storm."
+refuse = "no"
+expect = 2.0
+tolerance = 1e-12
+inputs = { ap = 25.0 }
+origin = "paper"
+
+[[case]]
+label = "Ap 26 — the first storm value in the published table, and the boundary that matters."
+refuse = "no"
+expect = 3.0
+tolerance = 1e-12
+inputs = { ap = 26.0 }
+origin = "paper"
+
+[[case]]
+label = "Ap 132 — the G3 design value — storm."
+refuse = "no"
+expect = 3.0
+tolerance = 1e-12
+inputs = { ap = 132.0 }
+origin = "paper"
+
+[[case]]
+label = "Ap 230 — the top of the producer's range — storm."
+refuse = "no"
+expect = 3.0
+tolerance = 1e-12
+inputs = { ap = 230.0 }
+origin = "paper"
+
+[[case]]
+label = "a value that is not a number: the node must refuse it, as every method does at its door. The code before 1.1 answered regime 3 here, which no value is"
+refuse = "yes"
+inputs = { ap = nan }
+origin = "hand"
 
 [[assumption]]
 text = "It departs from the published table on 171 of 10299 days, deliberately"
@@ -230,5 +305,20 @@ about = ["node"]
 changed = "first version: the belief this row already rested on, written down"
 rests_on = "The study's fitted three-part mixture on daily Ap reduces to two integer boundaries, between 6 and 7 and between 25 and 26, reproducing its published labels on 10128 of 10299 days; relation confirmed by A. Rai on 2026-09-14."
 breaks_if = "A reconciliation against the study's published labels finds disagreements other than the 171 days at Ap 0 or 1, or the mixture is refitted on a new bundle and its boundaries move off those integers."
+relation = "regime(Ap) = 1 if Ap <= 6, 2 if Ap <= 25, 3 otherwise"
+source = "noaa_swpc"
+
+[[version]]
+n = 2
+release = "next"
+date = "2026-10-03"
+by = "Aman Rai (l3_solar)"
+about = ["math"]
+believed = "1.0 was ready for the developer: sealed, every method sound by the group application and agreeing with all of its results."
+tested = "The developer took 1.0 in: the seal held and every method agreed with every one of its results, refusals included."
+learned = "Intake refused 1.0 whole for two things the group application did not ask: six nodes had no case the method must refuse, and sw_kp_scenarios publishes ten values while its method gave one. Run with a value that is not a number, the code of sw_activity_band, sw_ap_design and sw_regime answered (band 1, Ap 132, regime 3) where the other three refused."
+changed = "Each of the six has a refusal: a value that is not a number, which every method now refuses at its door, so those three refuse it where their code answered. sw_kp_scenarios publishes its nine members, and every answered row gives all ten values: the design's own fixtures at the defaults, its code at the two others. The method was transcribed by an assistant from crates/vleo-mod-solar/nodes/sw_regime/model.rs; Aman Rai read the copy against it and signs it."
+rests_on = "the 32 model.rs files the pseudocode was copied from, and the fixtures published with them"
+breaks_if = "a result the built node does not reproduce, or a correction to the code a method was copied from"
 relation = "regime(Ap) = 1 if Ap <= 6, 2 if Ap <= 25, 3 otherwise"
 source = "noaa_swpc"

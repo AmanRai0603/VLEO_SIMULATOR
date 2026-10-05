@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `dF107_p95` (F10.7 growth at 95% over a lead), in `-`.
 pub const NODE_ID: &str = "sw_uncertainty_growth";
-pub const SHEET_HASH: u64 = 0x4b1bd73cba36bfab;
+pub const SHEET_HASH: u64 = 0xa291ce636cc21752;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "orbit_mission_duration",
