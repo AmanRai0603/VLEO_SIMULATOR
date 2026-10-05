@@ -2,6 +2,9 @@
 """The team's shared drive, kept by the pipeline rather than by hand.
 
     tools/drive.py pack --out target/drive          # the folder, built here
+    tools/drive.py pack --sealed R.vleo --delivery DIR --zip   # ...with a group's
+                                                    # sealed release and its delivery,
+                                                    # as one zip to put in Drive by hand
     tools/drive.py upload target/drive --folder ID  # mirrored into Drive
     tools/drive.py auth --client-id ID --client-secret S   # once, on your computer
     tools/drive.py --selftest
@@ -17,11 +20,28 @@ drive filled by hand drifts from the release it claims to be within a week.
     apps/group.html, apps/node.html      the group and node applications
     guides/<role>.html                   the three role guides
     design/design.vleo                   the tree, as the one file a kit carries
+    START_HERE.md                        what is here, and who does what
     groups/<group>/                      every group, as group-export writes it
-      <group>.vgroup, nodes/*.vnode, releases/*.vleo
+      <group>.vgroup, nodes/*.vnode
+      releases/<group>-<version>.vleo    only a SEALED release, given by --sealed
     groups/READY.csv                     what each group's own checks still ask
     groups/l3_solar/                     the solar worked example (groups/solar),
                                          in place of solar's plain export
+    deliveries/<group>-<version>/        a test application's record, given by
+                                         --delivery: DELIVERY.toml, DELIVERY.md,
+                                         group-test.csv — what the lead accepts
+
+`releases/` holds sealed releases and nothing else. The export assembles an
+unsealed release for every group; it is left out, because a file of that name
+in the drive reads as the group's release, and an upload by hand beside the
+lead's sealed one makes two files of one name. A lead assembles and seals
+their own (docs/GROUP_APPS.md); the developer adds a sealed one with --sealed.
+
+# By hand, without the sign-in
+
+`pack --zip` writes the same folder as one zip. Unzip it and drag the folder
+into the drive: that is the whole upload, and it needs no secrets. The upload
+below is the same thing done by the pipeline.
 
 # What `upload` does, and what it refuses to do
 
@@ -75,7 +95,7 @@ def run(cmd, cwd=ROOT):
     subprocess.run([str(c) for c in cmd], cwd=cwd, check=True)
 
 
-def pack(out):
+def pack(out, sealed=(), deliveries=(), zip_it=False):
     """Build the drive's folder at `out` from the repository as it stands."""
     out = Path(out).resolve()
     if out.exists():
@@ -101,10 +121,147 @@ def pack(out):
         if solar.exists():
             shutil.rmtree(solar)
         shutil.copytree(tmp / "solar", solar)
+    print("5. releases: sealed ones only")
+    dropped = place_releases(out, sealed)
+    print("  %d unsealed assembl%s left out; %d sealed release(s) in" % (dropped, "y" if dropped == 1 else "ies", len(sealed)))
+    if deliveries:
+        print("6. the test applications' records")
+        for d in place_deliveries(out, deliveries):
+            print("  deliveries/" + d)
+    (out / "START_HERE.md").write_text(START_HERE)
     files = [p for p in out.rglob("*") if p.is_file()]
     size = sum(p.stat().st_size for p in files)
     print("packed %d files, %.0f MB, at %s" % (len(files), size / 1e6, out))
+    if zip_it:
+        z = shutil.make_archive(str(out), "zip", root_dir=out.parent, base_dir=out.name)
+        print("zipped: %s (%.0f MB) — unzip it and drag the folder into the drive" % (z, Path(z).stat().st_size / 1e6))
     return out
+
+
+def release_meta(path):
+    """What a database file says of itself: its meta table, as a dict."""
+    import sqlite3
+
+    try:
+        c = sqlite3.connect("file:%s?mode=ro" % Path(path).resolve(), uri=True)
+        try:
+            return dict(c.execute("select key, value from meta"))
+        finally:
+            c.close()
+    except sqlite3.Error as e:
+        raise SystemExit("%s is not a group database file: %s" % (path, e))
+
+
+def place_releases(out, sealed):
+    """Leave out every unsealed release the export assembled, and put each
+    sealed one given in its group's releases/. Returns how many were left out."""
+    dropped = 0
+    for f in sorted((Path(out) / "groups").glob("*/releases/*.vleo")):
+        if not release_meta(f).get("sealed"):
+            f.unlink()
+            dropped += 1
+    for d in sorted((Path(out) / "groups").glob("*/releases")):
+        if not any(d.iterdir()):
+            d.rmdir()
+    for r in sealed:
+        m = release_meta(r)
+        g, v = m.get("group_id", ""), m.get("version", "")
+        if not m.get("sealed") or not m.get("fingerprint"):
+            raise SystemExit("%s is not sealed: only a sealed release goes in releases/" % r)
+        home = Path(out) / "groups" / g
+        if not g or not home.is_dir():
+            raise SystemExit("%s is a release of %r, which is not a group in this design" % (r, g))
+        (home / "releases").mkdir(exist_ok=True)
+        shutil.copy2(r, home / "releases" / ("%s-%s.vleo" % (g, v)))
+    return dropped
+
+
+#: What a delivery's folder in the drive holds, from the test application.
+DELIVERY_FILES = ["DELIVERY.toml", "DELIVERY.md", "group-test.csv"]
+
+
+def place_deliveries(out, dirs):
+    """Copy each test application's record into deliveries/<group>-<version>/.
+    Refused when the drive does not also hold the sealed release it was built
+    from: the lead accepts a delivery against that release, and nothing else."""
+    placed = []
+    for d in dirs:
+        d = Path(d)
+        toml = d / "DELIVERY.toml"
+        if not toml.is_file():
+            raise SystemExit("%s has no DELIVERY.toml: give the folder `xtask group-deliver` wrote" % d)
+        rec = {}
+        for line in toml.read_text().splitlines():
+            k, sep, v = line.partition("=")
+            if sep and not line.lstrip().startswith("#"):
+                rec[k.strip()] = v.strip().strip('"')
+        g, v, fp = rec.get("group", ""), rec.get("version", ""), rec.get("fingerprint", "")
+        rel = Path(out) / "groups" / g / "releases" / ("%s-%s.vleo" % (g, v))
+        if not rel.is_file() or release_meta(rel).get("fingerprint") != fp:
+            raise SystemExit(
+                "the delivery of %s %s was built from the sealed release with fingerprint %s…, "
+                "and the drive does not hold it: give that release with --sealed" % (g, v, fp[:12])
+            )
+        home = Path(out) / "deliveries" / ("%s-%s" % (g, v))
+        home.mkdir(parents=True, exist_ok=True)
+        for name in DELIVERY_FILES:
+            if (d / name).is_file():
+                shutil.copy2(d / name, home / name)
+        placed.append("%s-%s" % (g, v))
+    return placed
+
+
+START_HERE = """# START HERE — the VLEO design, for every group
+
+Everything here is written from the repository. Do not edit these files in
+place: open them in the two applications, and save your work under a new name
+or in your own folder.
+
+## What is here
+
+| Folder | What it is | Who opens it |
+| --- | --- | --- |
+| `apps/group.html` | the group application: a group's structure, its node files, its release, its acceptance | the group's lead |
+| `apps/node.html` | the node application: fill one node file and sign it | each node's author |
+| `guides/` | the three role guides: user, maintainer, developer | anyone |
+| `design/design.vleo` | the whole design as one file | the tool, Python |
+| `groups/READY.csv` | what each group's own checks still ask of it: its first plan | every lead |
+| `groups/<group>/<group>.vgroup` | the group's structure | the lead |
+| `groups/<group>/nodes/<node>.vnode` | one file per node | its author |
+| `groups/<group>/releases/` | the group's **sealed** releases, and nothing else | the lead, the developer |
+| `deliveries/<group>-<version>/` | a test application's record: `DELIVERY.toml`, `DELIVERY.md`, `group-test.csv` | the lead, to accept it |
+
+The applications are single pages: download one, double-click it, and it opens
+in Chrome or Edge with nothing to install and no network.
+
+## The loop, and who does each step
+
+1. **Author** — open `apps/node.html`, then your `nodes/<node>.vnode`. Fill it,
+   sign it, save it, and give it to your lead.
+2. **Lead** — open `apps/group.html`, then your `<group>.vgroup`. *Node files &
+   release*: assemble the node files into a release. *Sign & seal*: seal it.
+   Put the sealed file in `groups/<group>/releases/` and tell the developer.
+3. **Developer** — takes the sealed release into the design, builds it, tests
+   it against the group's own results, and puts the record of that build in
+   `deliveries/<group>-<version>/`.
+4. **Lead** — accepts it. In `apps/group.html`, open the sealed release from
+   `releases/`, then *Delivery & acceptance*, and choose `DELIVERY.toml` from
+   `deliveries/<group>-<version>/`. Read `group-test.csv`: every check the
+   build ran on your own results. Answer *Accepted* (or *Changes*, saying what),
+   say what you tried, and *Write the answer*. Put the downloaded
+   `<group>-<version>.accept.toml` in the same `deliveries/` folder and tell
+   the developer.
+5. **Developer** — records the acceptance and merges. The group's work reaches
+   everyone in the next release, and a new copy of this folder.
+
+## Good to know
+
+- A file left in the drive is never deleted by a new copy of this folder, but
+  a file of the same name is replaced. Keep work in progress in your own folder
+  until it is handed over.
+- Anyone with the folder's link can read every group's design. Ask the owner
+  before sharing it further.
+"""
 
 
 # ---------------------------------------------------------------------------
@@ -387,6 +544,51 @@ def selftest():
             check("an upload with no sign-in stops and names what is missing", False)
         except SystemExit as e:
             check("an upload with no sign-in stops and names what is missing", "GDRIVE_REFRESH_TOKEN" in str(e))
+    with tempfile.TemporaryDirectory() as t:
+        import sqlite3
+
+        t = Path(t)
+
+        def db(path, **meta):
+            path.parent.mkdir(parents=True, exist_ok=True)
+            c = sqlite3.connect(path)
+            c.execute("create table meta (key text primary key, value text not null)")
+            c.executemany("insert into meta values (?, ?)", meta.items())
+            c.commit()
+            c.close()
+            return path
+
+        out = t / "drive"
+        db(out / "groups" / "solar" / "releases" / "solar-1.0.vleo", group_id="solar", version="1.0", sealed="")
+        db(out / "groups" / "orbit" / "releases" / "orbit-0.1.vleo", group_id="orbit", version="0.1", sealed="")
+        good = db(t / "in" / "solar-1.1.vleo", group_id="solar", version="1.1", sealed="2026-10-03", fingerprint="ab" * 32)
+        dropped = place_releases(out, [good])
+        check(
+            "releases/ keeps sealed releases only: the export's unsealed assemblies are left out",
+            dropped == 2 and sorted(p.name for p in out.rglob("*.vleo")) == ["solar-1.1.vleo"] and not (out / "groups" / "orbit" / "releases").exists(),
+        )
+        for bad_release, why in [
+            (db(t / "in" / "u.vleo", group_id="solar", version="1.2", sealed=""), "not sealed"),
+            (db(t / "in" / "x.vleo", group_id="nobody", version="1", sealed="x", fingerprint="f"), "not a group"),
+        ]:
+            try:
+                place_releases(out, [bad_release])
+                check("a release that is %s is refused" % why, False)
+            except SystemExit as e:
+                check("a release that is %s is refused" % why, why in str(e))
+        dl = t / "dl"
+        dl.mkdir()
+        (dl / "DELIVERY.toml").write_text('group = "solar"\nversion = "1.1"\nfingerprint = "%s"\n' % ("ab" * 32))
+        (dl / "group-test.csv").write_text("node,held\n")
+        placed = place_deliveries(out, [dl])
+        home = out / "deliveries" / "solar-1.1"
+        check("a delivery goes beside the sealed release it was built from", placed == ["solar-1.1"] and (home / "DELIVERY.toml").is_file() and (home / "group-test.csv").is_file())
+        (dl / "DELIVERY.toml").write_text('group = "solar"\nversion = "1.1"\nfingerprint = "%s"\n' % ("cd" * 32))
+        try:
+            place_deliveries(out, [dl])
+            check("a delivery whose sealed release the drive does not hold is refused", False)
+        except SystemExit as e:
+            check("a delivery whose sealed release the drive does not hold is refused", "--sealed" in str(e))
     print("selftest: %s" % ("all as expected" if not bad else "%d FAILED" % bad))
     return 1 if bad else 0
 
@@ -398,6 +600,9 @@ def main():
     sub = ap.add_subparsers(dest="what", required=True)
     p = sub.add_parser("pack", help="build the drive's folder from the repository")
     p.add_argument("--out", default=str(ROOT / "target" / "drive"))
+    p.add_argument("--sealed", nargs="*", default=[], help="sealed releases (.vleo) to put in their groups' releases/")
+    p.add_argument("--delivery", nargs="*", default=[], help="folders `xtask group-deliver` wrote, for deliveries/")
+    p.add_argument("--zip", action="store_true", help="also write the folder as one zip, to put in the drive by hand")
     u = sub.add_parser("upload", help="mirror a packed folder into a Drive folder")
     u.add_argument("local")
     u.add_argument("--folder", required=True, help="the Drive folder's id, from its link")
@@ -406,7 +611,7 @@ def main():
     a.add_argument("--client-secret", required=True)
     args = ap.parse_args()
     if args.what == "pack":
-        pack(args.out)
+        pack(args.out, args.sealed, args.delivery, args.zip)
     elif args.what == "upload":
         upload(args.local, args.folder)
     else:

@@ -1,10 +1,27 @@
 # Setting up the shared drive
 
-> **Answer first.** The team's shared drive is written by the pipeline: on every release tag, and whenever you run it by hand, the `drive` workflow builds each group's files from the repository and mirrors them into one Drive folder. It signs in as the folder's owner, so it needs a refresh token from a one-time sign-in, kept as three repository secrets beside one variable naming the folder.
+> **Answer first.** The team's shared drive is written from the repository. By hand: `tools/drive.py pack --zip` builds the whole folder as one zip, and its owner unzips it and drags the folder into Drive — no secrets, no sign-in. By the pipeline: on every release tag the `drive` workflow builds the same folder and mirrors it into Drive, signed in as the folder's owner with a refresh token from a one-time sign-in, kept as three repository secrets beside one variable naming the folder.
 >
-> **Kind:** how-to · **For:** the drive's owner, once
+> **Kind:** how-to · **For:** the drive's owner, and the developer who builds it
 
 ---
+
+## By hand: one zip, no sign-in
+
+The developer builds the folder, with every group's sealed release and test
+application they hold:
+
+    python3 tools/drive.py pack --out "target/VLEO Drive" --zip \
+        --sealed <group>-<version>.vleo … --delivery <folder group-deliver wrote> …
+
+It writes `target/VLEO Drive.zip`. The drive's owner unzips it and drags the
+`VLEO Drive` folder into the shared drive — with Google Drive for desktop, it
+is an ordinary folder on their computer. When the lead has answered a delivery,
+their `<group>-<version>.accept.toml` goes in that delivery's folder, and the
+developer reads it from there.
+
+*Said simply:* the pipeline below is this, done for you on every release. Until
+the secrets exist, this is how the drive is filled.
 
 ## What ends up in the drive
 
@@ -18,11 +35,21 @@ used):
   guides/user.html, maintainer.html, developer.html
   design/design.vleo                  the whole design, as one file
   groups/READY.csv                    what each group's own checks still ask of it
+  START_HERE.md                       what is here, and who does what
   groups/<group>/                     one folder per group that owns a node
     <group>.vgroup                    the structure — the lead's
     nodes/<node>.vnode                one per node — each its author's
-    releases/<group>-<version>.vleo
+    releases/<group>-<version>.vleo   SEALED releases only (--sealed)
+  deliveries/<group>-<version>/       a test application's record (--delivery):
+                                      DELIVERY.toml, DELIVERY.md, group-test.csv
 ```
+
+`releases/` holds sealed releases and nothing else. The export assembles an
+unsealed release for every group; the pack leaves it out, because a file of
+that name reads as the group's release and would sit beside — or, mirrored,
+replace — the one the lead sealed. A delivery is refused unless the folder also
+holds the sealed release it was built from: that is what the lead accepts it
+against.
 
 `groups/l3_solar/` is the solar worked example (`groups/solar`), not solar's plain
 export. *Said simply:* every group starts from what the design already holds, and
