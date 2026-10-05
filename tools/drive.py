@@ -5,6 +5,8 @@
     tools/drive.py pack --sealed R.vleo --delivery DIR --zip   # ...with a group's
                                                     # sealed release and its delivery,
                                                     # as one zip to put in Drive by hand
+    tools/drive.py pack --update --zip              # ...only what the repository
+                                                    # owns, to replace on a release
     tools/drive.py upload target/drive --folder ID  # mirrored into Drive
     tools/drive.py auth --client-id ID --client-secret S   # once, on your computer
     tools/drive.py --selftest
@@ -20,7 +22,10 @@ drive filled by hand drifts from the release it claims to be within a week.
     apps/group.html, apps/node.html      the group and node applications
     guides/<role>.html                   the three role guides
     design/design.vleo                   the tree, as the one file a kit carries
-    START_HERE.md                        what is here, and who does what
+    readable/Groups.csv, Nodes.csv,      the released design, to read in any
+      Interfaces.csv                     spreadsheet: each group, every live
+                                         node, every value one group reads
+                                         from another
     groups/<group>/                      every group, as group-export writes it
       <group>.vgroup, nodes/*.vnode
       releases/<group>-<version>.vleo    only a SEALED release, given by --sealed
@@ -39,9 +44,18 @@ their own (docs/GROUP_APPS.md); the developer adds a sealed one with --sealed.
 
 # By hand, without the sign-in
 
-`pack --zip` writes the same folder as one zip. Unzip it and drag the folder
-into the drive: that is the whole upload, and it needs no secrets. The upload
-below is the same thing done by the pipeline.
+`pack --zip` writes the same folder as one zip, its six folders at the top.
+The drive's owner unzips it and drags the six folders into the drive's folder:
+that is the whole upload, and it needs no secrets.
+
+Who owns what decides what a later zip replaces. apps/, guides/, design/ and
+readable/ are the repository's: a release replaces them whole. groups/ is the
+groups' once it is in the drive — the lead's structure, the authors' node
+files, the sealed releases — so a later zip leaves it out (`--update`), and
+only a new group's folder is added by hand. deliveries/ only grows: each test
+application adds its own folder, and the lead adds their answer to it.
+docs/DRIVE_START_HERE.md is the drive's START HERE page, kept as a Google Doc
+beside the six folders.
 
 # What `upload` does, and what it refuses to do
 
@@ -95,7 +109,7 @@ def run(cmd, cwd=ROOT):
     subprocess.run([str(c) for c in cmd], cwd=cwd, check=True)
 
 
-def pack(out, sealed=(), deliveries=(), zip_it=False):
+def pack(out, sealed=(), deliveries=(), zip_it=False, update=False):
     """Build the drive's folder at `out` from the repository as it stands."""
     out = Path(out).resolve()
     if out.exists():
@@ -121,6 +135,8 @@ def pack(out, sealed=(), deliveries=(), zip_it=False):
         if solar.exists():
             shutil.rmtree(solar)
         shutil.copytree(tmp / "solar", solar)
+        print("4b. the released design, to read in a spreadsheet")
+        write_readable(out, tmp / "groups")
     print("5. releases: sealed ones only")
     dropped = place_releases(out, sealed)
     print("  %d unsealed assembl%s left out; %d sealed release(s) in" % (dropped, "y" if dropped == 1 else "ies", len(sealed)))
@@ -128,14 +144,63 @@ def pack(out, sealed=(), deliveries=(), zip_it=False):
         print("6. the test applications' records")
         for d in place_deliveries(out, deliveries):
             print("  deliveries/" + d)
-    (out / "START_HERE.md").write_text(START_HERE)
+    if update:
+        print("7. --update: groups/ left out, as the groups' own once it is in the drive")
+        shutil.rmtree(out / "groups")
     files = [p for p in out.rglob("*") if p.is_file()]
     size = sum(p.stat().st_size for p in files)
     print("packed %d files, %.0f MB, at %s" % (len(files), size / 1e6, out))
     if zip_it:
-        z = shutil.make_archive(str(out), "zip", root_dir=out.parent, base_dir=out.name)
-        print("zipped: %s (%.0f MB) — unzip it and drag the folder into the drive" % (z, Path(z).stat().st_size / 1e6))
+        z = shutil.make_archive(str(out), "zip", root_dir=out, base_dir=".")
+        tops = sorted(p.name for p in out.iterdir())
+        print("zipped: %s (%.0f MB) — unzip it and drag its folders (%s) into the drive" % (z, Path(z).stat().st_size / 1e6, ", ".join(tops)))
     return out
+
+
+def write_readable(out, export):
+    """readable/: the released design as three CSV files, written from the
+    same export as the groups' files, so the two never disagree about what the
+    tree held. UTF-8 with a byte-order mark, which Excel needs to read the
+    dashes and the symbols."""
+    import csv
+    import sqlite3
+
+    home = Path(out) / "readable"
+    home.mkdir(exist_ok=True)
+    ready = {}
+    rp = Path(out) / "groups" / "READY.csv"
+    if rp.is_file():
+        with open(rp, newline="", encoding="utf-8") as f:
+            ready = {r["group"]: r for r in csv.DictReader(f)}
+    with open(Path(export) / "GROUPS.csv", newline="", encoding="utf-8") as f:
+        groups = list(csv.DictReader(f))
+    asks = ["errors", "warnings", "empty_sections", "pseudocode_to_write", "results_to_supply", "values_to_decide", "defaults_to_give", "other"]
+    with open(home / "Groups.csv", "w", newline="", encoding="utf-8-sig") as f:
+        w = csv.writer(f)
+        w.writerow(["group", "name", "layer", "owner", "nodes", "computed", "with_method"] + asks)
+        for g in groups:
+            r = ready.get(g["group"], {})
+            w.writerow([g[k] for k in ["group", "name", "layer", "owner", "nodes", "computed", "with_method"]] + [r.get(a, "") for a in asks])
+    with open(home / "Nodes.csv", "w", newline="", encoding="utf-8-sig") as f:
+        w = csv.writer(f)
+        cols = ["id", "question", "kind", "output", "unit", "lower", "upper", "value"]
+        w.writerow(["group"] + cols)
+        for g in groups:
+            with open(Path(export) / g["group"] / "nodes.csv", newline="", encoding="utf-8") as n:
+                for r in csv.DictReader(n):
+                    w.writerow([g["group"]] + [r.get(c, "") for c in cols])
+    c = sqlite3.connect("file:%s?mode=ro" % (Path(out) / "design" / "design.vleo"), uri=True)
+    try:
+        rows = c.execute(
+            "select p.grp, p.node, r.label, r.kind, r.state, p.unit, p.version, p.crosses_to, p.read_by_grp, p.read_by "
+            "from published p left join row r on r.id = p.node order by p.grp, p.node, p.read_by"
+        ).fetchall()
+    finally:
+        c.close()
+    with open(home / "Interfaces.csv", "w", newline="", encoding="utf-8-sig") as f:
+        w = csv.writer(f)
+        w.writerow(["group", "node", "label", "kind", "state", "unit", "version", "crosses_to", "read_by_group", "read_by_node"])
+        w.writerows(rows)
 
 
 def release_meta(path):
@@ -209,59 +274,6 @@ def place_deliveries(out, dirs):
                 shutil.copy2(d / name, home / name)
         placed.append("%s-%s" % (g, v))
     return placed
-
-
-START_HERE = """# START HERE — the VLEO design, for every group
-
-Everything here is written from the repository. Do not edit these files in
-place: open them in the two applications, and save your work under a new name
-or in your own folder.
-
-## What is here
-
-| Folder | What it is | Who opens it |
-| --- | --- | --- |
-| `apps/group.html` | the group application: a group's structure, its node files, its release, its acceptance | the group's lead |
-| `apps/node.html` | the node application: fill one node file and sign it | each node's author |
-| `guides/` | the three role guides: user, maintainer, developer | anyone |
-| `design/design.vleo` | the whole design as one file | the tool, Python |
-| `groups/READY.csv` | what each group's own checks still ask of it: its first plan | every lead |
-| `groups/<group>/<group>.vgroup` | the group's structure | the lead |
-| `groups/<group>/nodes/<node>.vnode` | one file per node | its author |
-| `groups/<group>/releases/` | the group's **sealed** releases, and nothing else | the lead, the developer |
-| `deliveries/<group>-<version>/` | a test application's record: `DELIVERY.toml`, `DELIVERY.md`, `group-test.csv` | the lead, to accept it |
-
-The applications are single pages: download one, double-click it, and it opens
-in Chrome or Edge with nothing to install and no network.
-
-## The loop, and who does each step
-
-1. **Author** — open `apps/node.html`, then your `nodes/<node>.vnode`. Fill it,
-   sign it, save it, and give it to your lead.
-2. **Lead** — open `apps/group.html`, then your `<group>.vgroup`. *Node files &
-   release*: assemble the node files into a release. *Sign & seal*: seal it.
-   Put the sealed file in `groups/<group>/releases/` and tell the developer.
-3. **Developer** — takes the sealed release into the design, builds it, tests
-   it against the group's own results, and puts the record of that build in
-   `deliveries/<group>-<version>/`.
-4. **Lead** — accepts it. In `apps/group.html`, open the sealed release from
-   `releases/`, then *Delivery & acceptance*, and choose `DELIVERY.toml` from
-   `deliveries/<group>-<version>/`. Read `group-test.csv`: every check the
-   build ran on your own results. Answer *Accepted* (or *Changes*, saying what),
-   say what you tried, and *Write the answer*. Put the downloaded
-   `<group>-<version>.accept.toml` in the same `deliveries/` folder and tell
-   the developer.
-5. **Developer** — records the acceptance and merges. The group's work reaches
-   everyone in the next release, and a new copy of this folder.
-
-## Good to know
-
-- A file left in the drive is never deleted by a new copy of this folder, but
-  a file of the same name is replaced. Keep work in progress in your own folder
-  until it is handed over.
-- Anyone with the folder's link can read every group's design. Ask the owner
-  before sharing it further.
-"""
 
 
 # ---------------------------------------------------------------------------
@@ -589,6 +601,36 @@ def selftest():
             check("a delivery whose sealed release the drive does not hold is refused", False)
         except SystemExit as e:
             check("a delivery whose sealed release the drive does not hold is refused", "--sealed" in str(e))
+    with tempfile.TemporaryDirectory() as t:
+        import csv
+        import sqlite3
+
+        t = Path(t)
+        ex, out = t / "export", t / "drive"
+        for g, rows in {"solar": [("sw_a", "How hot?"), ("sw_b", "How long?")], "orbit": [("orb_h", "How high?")]}.items():
+            (ex / g).mkdir(parents=True)
+            (ex / g / "nodes.csv").write_text("id,question,kind,output,unit,lower,upper,value\n" + "".join("%s,%s,computed,x,1,0,1,\n" % r for r in rows))
+        (ex / "GROUPS.csv").write_text("group,name,layer,owner,nodes,computed,with_method,files\nsolar,Solar,3,env,2,2,2,9\norbit,Orbit,3,env,1,1,0,4\n")
+        (out / "groups").mkdir(parents=True)
+        (out / "groups" / "READY.csv").write_text("group,nodes,errors\nsolar,2,3\n")
+        (out / "design").mkdir()
+        c = sqlite3.connect(out / "design" / "design.vleo")
+        c.execute("create table row (id text, label text, kind text, state text)")
+        c.execute("create table published (grp text, node text, unit text, version int, crosses_to text, read_by_grp text, read_by text)")
+        c.execute("insert into row values ('sw_a', 'Hot level', 'computed', 'published')")
+        c.execute("insert into published values ('solar', 'sw_a', '1', 1, '', 'orbit', 'orb_h')")
+        c.commit()
+        c.close()
+        write_readable(out, ex)
+
+        def rows(name):
+            with open(out / "readable" / name, newline="", encoding="utf-8-sig") as f:
+                return list(csv.DictReader(f))
+
+        n, g, i = rows("Nodes.csv"), rows("Groups.csv"), rows("Interfaces.csv")
+        check("readable/Nodes.csv holds every group's nodes, each named with its group", [(r["group"], r["id"]) for r in n] == [("solar", "sw_a"), ("solar", "sw_b"), ("orbit", "orb_h")])
+        check("readable/Groups.csv joins each group to what its own checks still ask", [(r["group"], r["errors"]) for r in g] == [("solar", "3"), ("orbit", "")])
+        check("readable/Interfaces.csv names who reads each published value", [(r["node"], r["label"], r["read_by_node"]) for r in i] == [("sw_a", "Hot level", "orb_h")])
     print("selftest: %s" % ("all as expected" if not bad else "%d FAILED" % bad))
     return 1 if bad else 0
 
@@ -603,6 +645,7 @@ def main():
     p.add_argument("--sealed", nargs="*", default=[], help="sealed releases (.vleo) to put in their groups' releases/")
     p.add_argument("--delivery", nargs="*", default=[], help="folders `xtask group-deliver` wrote, for deliveries/")
     p.add_argument("--zip", action="store_true", help="also write the folder as one zip, to put in the drive by hand")
+    p.add_argument("--update", action="store_true", help="leave groups/ out: the groups' own once it is in the drive")
     u = sub.add_parser("upload", help="mirror a packed folder into a Drive folder")
     u.add_argument("local")
     u.add_argument("--folder", required=True, help="the Drive folder's id, from its link")
@@ -611,7 +654,7 @@ def main():
     a.add_argument("--client-secret", required=True)
     args = ap.parse_args()
     if args.what == "pack":
-        pack(args.out, args.sealed, args.delivery, args.zip)
+        pack(args.out, args.sealed, args.delivery, args.zip, args.update)
     elif args.what == "upload":
         upload(args.local, args.folder)
     else:

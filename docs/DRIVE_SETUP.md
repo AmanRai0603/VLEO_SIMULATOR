@@ -8,20 +8,24 @@
 
 ## By hand: one zip, no sign-in
 
-The developer builds the folder, with every group's sealed release and test
-application they hold:
+The first time, the developer builds the whole folder, with every group's
+sealed release and test application they hold:
 
     python3 tools/drive.py pack --out "target/VLEO Drive" --zip \
         --sealed <group>-<version>.vleo … --delivery <folder group-deliver wrote> …
 
-It writes `target/VLEO Drive.zip`. The drive's owner unzips it and drags the
-`VLEO Drive` folder into the shared drive — with Google Drive for desktop, it
-is an ordinary folder on their computer. When the lead has answered a delivery,
-their `<group>-<version>.accept.toml` goes in that delivery's folder, and the
-developer reads it from there.
+The drive's owner unzips `target/VLEO Drive.zip` and drags its six folders —
+`apps/`, `guides/`, `design/`, `readable/`, `groups/`, `deliveries/` — into the
+drive's folder, beside its START HERE page (the Google Doc made from
+[`DRIVE_START_HERE.md`](DRIVE_START_HERE.md)).
 
-*Said simply:* the pipeline below is this, done for you on every release. Until
-the secrets exist, this is how the drive is filled.
+**On a release**, `pack --update --zip` leaves `groups/` out. The owner deletes
+`apps/`, `guides/`, `design/` and `readable/` from the drive and drags in the
+new ones; a new delivery's folder goes into `deliveries/`. `groups/` is never
+replaced, because once it is in the drive it is the groups' own work.
+
+*Said simply:* the pipeline below is the first-time zip, mirrored for you on
+every release. Until the secrets exist, this is how the drive is filled.
 
 ## What ends up in the drive
 
@@ -35,7 +39,8 @@ used):
   guides/user.html, maintainer.html, developer.html
   design/design.vleo                  the whole design, as one file
   groups/READY.csv                    what each group's own checks still ask of it
-  START_HERE.md                       what is here, and who does what
+  readable/Groups.csv, Nodes.csv, Interfaces.csv
+                                      the released design, for any spreadsheet
   groups/<group>/                     one folder per group that owns a node
     <group>.vgroup                    the structure — the lead's
     nodes/<node>.vnode                one per node — each its author's
