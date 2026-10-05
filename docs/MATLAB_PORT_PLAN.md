@@ -1439,7 +1439,7 @@ margin rather than an Ap — so that citation is stale in meaning as well.
 
 ### 21.2 · Where the classification went wrong
 
-`docs/SOLAR_ROWS.md` reported seventeen ported rows with no figure and said of
+docs/SOLAR_ROWS.md (a generated table, since removed: each row's own page says the same, checked) reported seventeen ported rows with no figure and said of
 them that there was never a figure to port, the driver set having been a table
 in the legacy tool too. That is right about the *table* and wrong about the rest:
 the design window is a legacy view, its panel is here, and the rows that compute
@@ -1579,7 +1579,7 @@ Eighteen rows, **two new panels and one addition to an existing one.**
 4. The `drivers` panel — Group A, with the legacy values beside this tree's.
 5. The `closure` panel — Group B.
 6. `sw_window_peak_level` onto `design` — Group C.
-7. Re-run `tools/solar_rows.py`. "No figure" should then be empty, and if it is
+7. Re-run tools/solar_rows.py. "No figure" should then be empty, and if it is
    not, what remains is a real finding.
 
 Steps 2 and 3 are subtraction and correction; 4 to 6 are the only new pictures,
@@ -1759,7 +1759,7 @@ more of the record on screen at once rather than less.
 7. `closure`.
 8. Reference images and a person's name against each new panel, as
    `panels/README.md` requires.
-9. Re-run `tools/solar_rows.py`; "no figure" should be empty.
+9. Re-run tools/solar_rows.py; "no figure" should be empty.
 
 ### 23.6 · The reductions, verified against the code — and what the check changed
 
@@ -2207,7 +2207,7 @@ The remaining reductions — `pattern` 19 → 3, `predict` 48 → 4, `forecast`
 13 → 3 — are Part C, where a control becomes an encoding rather than
 disappearing.
 
-**A6. Re-run `tools/solar_rows.py`.** Done. A4's re-citation moves four rows out
+**A6. Re-run tools/solar_rows.py.** Done. A4's re-citation moves four rows out
 of "ported, no figure": 20 → 24 with a figure, 17 → 13 without. `l3_solar_req_01`
 leaves the free set, which drops from 9 to 8, because the `design` panel now
 draws it as the F10.7 requirement. `l3_solar_ach_01` stays free — nothing reads
@@ -2649,7 +2649,7 @@ look for — an axis labelled "Required — …" on `closure` means the lever qu
 is not being asked, and twenty-five cells all sitting on 1 in `drivers` means the
 panel is dividing a number by itself.
 
-**D4. Re-run `tools/solar_rows.py`.** Done, and it comes out exactly as this step
+**D4. Re-run tools/solar_rows.py.** Done, and it comes out exactly as this step
 predicted it should:
 
 ```
@@ -2681,7 +2681,7 @@ in — so the claim is written into `design`'s `correct` block instead, where th
 person who signs it will read it. Which is the eight-of-eleven gap below, showing
 up in practice.
 
-*And one sentence in the generated `SOLAR_ROWS.md` is now wrong and corrected:*
+*And one sentence in the generated SOLAR_ROWS.md is now wrong and corrected:*
 "nothing plots a row's answer anywhere yet" was true until these two panels.
 `drivers` plots the twenty-five variables the crossing publishes and `closure`
 plots the margins.
@@ -2734,7 +2734,7 @@ curves go, and is anything lost?
 
 ### 27.1 · A classifier bug, found first
 
-The ported/added split was **37 / 18** and is **38 / 17**. `tools/solar_rows.py`
+The ported/added split was **37 / 18** and is **38 / 17**. tools/solar_rows.py
 read the plan's mapping tables with a pattern that required the source cell to be
 exactly a backticked name, so two cells — `` `prf_ap2kp` table `` and
 `` `prf_ap2kp` fit `` — failed to parse at all and their rows fell through to
@@ -2746,7 +2746,7 @@ as long as that script has existed.** The cell is now taken whole and searched.
 
 ### 27.2 · Two different questions were being run together
 
-"Curve or number" in `SOLAR_ROWS.md` does **not** mean "has a figure". It is
+"Curve or number" in SOLAR_ROWS.md does **not** mean "has a figure". It is
 measured through `/v1/levers` and means *does any declared decision upstream move
 this row's answer*. A row can be a number in that sense and still be read off a
 curve the face draws in full.

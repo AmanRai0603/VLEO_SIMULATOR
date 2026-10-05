@@ -10,7 +10,8 @@ pages, storage, access and the roadmap — is `docs/ARCHITECTURE.html`, with
 diagrams; open it in a browser.
 
 The design's own architecture, how any system is broken into blocks and
-closed, is `docs/SYSTEM_MODEL.md`; the way to 1.0.0 is `docs/PLAN_1_0.md`.
+closed, is `docs/SYSTEM_MODEL.md`; how it is operated is
+`docs/OPERATING_1_0.md`; the way to 1.0.0 is `docs/PLAN_1_0.md`.
 
 ## Four rings, one direction
 

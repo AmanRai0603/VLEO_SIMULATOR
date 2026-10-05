@@ -1,252 +1,313 @@
 # The plan to 1.0.0
 
-> **Answer first.** One release, 1.0.0, after eight phases. The code becomes the engine and the apps; the shared drive becomes the design, end to end. The team works in three apps, and every change to the design travels one way: a group's sealed release.
+> **Answer first.** One release, 1.0.0, built in eight phases and switched over on one planned day. After it everyone has one application and one shared drive; each person looks after their own part of the design database every day, sees today's design built from everyone's latest work, and the system engineer releases the design decisions are made on. The developer maintains only the code. Each phase proves what it builds in CI and merges into `developer` on your word; nothing changes for anyone until the switch-over.
 >
 > **Kind:** explanation + reference · **For:** everyone
 
-The model this plan builds is `docs/SYSTEM_MODEL.md`. The rules every phase
-works to are `AGENTS.md`, until phase B rewrites them.
+What 1.0.0 is: the design model, `docs/SYSTEM_MODEL.md`, and how it is
+operated, `docs/OPERATING_1_0.md`. That covers the valves and the daily rhythm,
+the roles, the application and its workspaces, today's design, the health map,
+how data comes in, every file, version and folder, each step from W1 to W16,
+and who hears what. This page is only how we get there.
 
 ## Why 1.0.0, and why one release
 
 0.5.0 was never shipped, and what changes is larger than a minor version: the
-file formats, the rules, the apps and where the design lives. So the next
-release is **1.0.0**, and it ships once, when every phase below is done. Each
-phase merges into `developer` when its checks are green; nothing reaches the
-team until 1.0.0.
+file formats, the rules, the application, the roles, and where the design lives.
+So the next release is **1.0.0**, and it ships once. After it:
 
-After 1.0.0 there are two kinds of release:
-
-| release | what changes | how often |
+| what | made by | when |
 |---|---|---|
-| **tool release**, such as 1.1.0 | the code: engine, toolbox, apps | rarely |
-| **design release**, named by date | the data: a new `design.vleo` with a group's accepted work | whenever a group is accepted |
+| an application release, the code | the developer | rarely |
+| today's design | the application, from the drive, for everyone | whenever anyone opens it |
+| a released design | the system engineer, and no one else | when today's design is right |
+| a programme decision | the programme manager, as a release of the programme's branch | after a released design |
 
-A design release needs no new tool, as long as it asks for nothing the tool
-lacks; the tool checks that before it runs anything.
+## The one idea every phase serves
 
-## Who holds what
+**The design never passes through the code again.** The developer moves it out
+of the repository once, at the switch-over. From then on it is written, checked,
+combined, run, signed and released in the application, by the people who own it.
+Everything the developer does today on a group's release (intake, build, test,
+deliver, accept, compile) becomes checks in one library, which the application
+runs at every valve.
 
-| role | holds | works in |
-|---|---|---|
-| **programme lead** | the programme's branch: customers, KPIs, gates, risks; approves rules; says when to ship | group app, on the programme's branch |
-| **system engineer** | the systems branch: where each group mounts, what is allocated to it, the system closures | group app, on the systems branch |
-| **group lead** | one group's branch: breaks it down, assigns authors, seals releases, accepts deliveries | group app |
-| **author** | one node at a time | node app |
-| **team** | cases and results | the tool |
-| **developer** | the code; takes sealed releases in, tests and delivers them, compiles and signs the design, releases the tool | the repository, `xtask`, CI |
-| **reviewer** | the second person on a rule, a change to the tree, or a significant relation | the pull request |
+## While it is built
 
-One person may hold several roles. Today Aman Rai is programme lead and Solar's
-lead.
-
-## Where everything sits
-
-**The repository is the code.** The kernel and its toolbox, the method
-interpreter, the engine, the one library that reads and writes every file, the
-apps' source, the checks, `xtask`, the rules and these documents. It also keeps
-a readable copy of every sealed release, written by `xtask` and never by hand,
-so a change to the design can be reviewed line by line and its history kept.
-
-**The shared drive, "Vleo Database", is the design.**
-
-| folder | holds | written by |
-|---|---|---|
-| START HERE | what the folder is and the loop | the developer |
-| `apps/` | node app, group app, the tool | the developer |
-| `guides/` | the role guides | the developer |
-| `design/` | the current `design.vleo`, signed, and the earlier ones | the developer |
-| `readable/` | the design as CSV: groups, nodes, ports, wires, closures | the developer |
-| `groups/<group>/` | the group's file, `nodes/` one file per node, `releases/` its sealed releases only | the group |
-| `groups/programme/`, `groups/systems/` | the top two branches, held like any group | programme lead, system engineer |
-| `deliveries/<group>-<version>/` | a test application's record, and the lead's answer beside it | the developer, then the lead |
-| `cases/` | cases the team shares | the team |
-
-**A person's machine** holds the tool, and their own cases and results under
-`~/.vleo/`. A file opened from a folder Google Drive for desktop syncs is saved
-straight back into it by the node and group apps, in Chrome and Edge.
-
-## The apps the team works in
-
-The team works only in these. The browser cannot change the design except
-through them, and they change it only through files that are signed and sealed.
-
-| app | who | opens | does | saves |
-|---|---|---|---|---|
-| **node app** | author | one node file | the live node page in edit mode: question, ports with type, unit, range, state and maturity; the behaviour, typed from the source as read, or a table pasted in; cases from the source's worked examples; explanation; sign with the author's own key. It runs while it is written: answer, curve, cases on the curve, the method line by line | `.vnode` |
-| **group app** | group lead, programme lead, system engineer | the group's file | the tree: break down, assign authors, issue node files. The N2 and the map, opened to any depth. The mount: what is asked of the group and what it is given. The status of every node. The group run live, with other groups' values held. Range verdicts and tornadoes for its closures. Assemble and seal. Delivery and acceptance | `.vgroup`, sealed `.vleo`, `.accept.toml` |
-| **the tool** | the team | `design.vleo` and a case | the design map and N2 at any depth; run a case, sweep, compare; every closure with its margin, range verdict and tornado. Results name the design and engine that made them. It changes nothing in the design | `.vcase`, `.vleor` |
-| **readers' pages** | anyone | the released design | read and play with every node; change nothing | nothing |
-
-**Retired at 1.0.0:** the single-node form and its loop (`xtask form`,
-`intake`, `take`, `approve`, `preview`, `queue`). Every change arrives as a
-sealed group release, so there is one way in, not two. A change to one node is
-a release with one node changed.
-
-## How one change travels
-
-1. **Anyone sees a need.** It goes to the node's owner, as a comment in the file
-   or to the group's lead.
-2. **The author** opens the node in the node app, changes it, watches it run and
-   prove itself on its cases, signs it, and saves it in the group's folder.
-3. **The group lead** sees it in the group app, runs the group with it, seals a
-   release into `releases/`, and tells the developer.
-4. **The developer** takes the release in on its own branch: the seal checked
-   first, then every node, then the group built and tested against its own
-   results, then the whole design run to list what the change reaches in other
-   groups. The test application goes into `deliveries/`.
-5. **The lead** tries it and answers Accepted or Changes, saved beside the
-   delivery.
-6. **The developer** records the answer, merges, compiles and signs the new
-   `design.vleo`, and publishes it as a design release.
-7. **The team** is offered the new design the next time the tool opens. Results
-   made with the earlier design say so.
-
-A failure at step 4 goes back to the group with the lines that failed. The
-group's results and tolerances are never the thing changed to make it pass.
+- **Nothing changes for anyone until the switch-over.** Today's apps, tool and
+  loop stay in use as documented now (`docs/GROUP_APPS.md`). A group may keep
+  sealing on them. What it seals is upgraded on the day, and checked against
+  today's answers.
+- **The new application is built beside the old, not patched into it.** The old
+  ones retire on the switch-over day, so nobody has two of anything to choose
+  between.
+- **You try it first.** At the end of phase F you get the application with a
+  converted copy of the design. You live with it for some days in every role
+  (programme manager, system engineer, subsystem engineer of Solar, node
+  engineer), round the whole cycle, W1 to W10. Phase G does not close until that
+  round is answered.
 
 ## The phases
 
-Each phase ends in a pull request into `developer`, green in CI, merged on your
-word. The order follows what each needs: A and B first; C before D and F; D
-before E; G after E and F; H last.
+| phase | needs | delivers | who |
+|---|---|---|---|
+| A · Safe ground | nothing | the application refuses a design it cannot run; results name their design | developer |
+| B · Rules and roles | A | the code's rules, the design's rules, the valves and the role names; your approval | developer, you |
+| C · Files, versions and keys | B | one schema, every file kind, versions, signatures, the one library with every check | developer |
+| D · The engine runs the design | C | the graph read from the design file; today's design; the health map; the parity gate | developer |
+| E · The design leaves the repository | D | the programme, systems and 18 groups as files; built-in relations kept as code by id | developer |
+| F · The application | C, then E | one application, installed and as a page, with its five workspaces, doing W1 to W16 | developer, you to try |
+| G · The drive and the people | E, F | the drive's layout and sharing, keys, one guide per role, START HERE | developer, programme manager |
+| H · Switch-over and proof | G | the new drive in daily use; Solar 1.2 round the whole cycle with no developer; then 1.0.0 | you |
 
 ### A · Safe ground
 
-- The tool checks `design.vleo` against its engine and toolbox, and refuses a
-  mismatch by name.
+- The application checks `design.vleo` against its engine and toolbox, and
+  refuses a mismatch by name.
 - Every result carries the fingerprint of the design and the engine that made
   it, and is marked stale when either changes.
-- The method checker the forms carry is rebuilt whenever the kernel it runs
-  changes: `crates/vleo-sheet/src/method/cases.rs` lists the kernel's own files
-  among its sources.
-- `docs/SOLAR_INVENTORY.md` and `docs/SOLAR_ROWS.md` are either checked against
-  the tree or removed, and the repository's copy of the Solar group folder is
-  either checked or removed.
-- `docs/DRIVE_START_HERE.md` says how to save in place.
+- The method checker is rebuilt whenever the kernel it runs changes:
+  `crates/vleo-sheet/src/method/cases.rs` lists the kernel's own files among its
+  sources.
+- `docs/SOLAR_INVENTORY.md`, `docs/SOLAR_ROWS.md` and the repository's copy of
+  the Solar group folder are each checked against the tree or removed.
 
-**Done when** a design built for another engine is refused in a test, and gate
-and tests are green.
+**Done when** a design built for another engine is refused in a test.
 
-### B · The model and the rules
+### B · Rules and roles
 
-- `docs/SYSTEM_MODEL.md` and this plan.
-- `AGENTS.md`, `CONTRIBUTING.md`, the area files and `docs/WORK_MODEL.md`
-  rewritten: one recursive block; a block reads its children only through
-  their ports; sealed group releases are the source, and the repository keeps
-  their readable copy; one way in. The five rules that do not bend stay, with
-  rule 1 restated.
+- **The code's rules:** `AGENTS.md`, `CONTRIBUTING.md` and the area files,
+  rewritten for a repository that holds only code.
+  - The four rings, portable maths, refusal never substitution, and every
+    formula in the kernel all stay.
+  - An application release must give the current released design's answers
+    unchanged (W15).
+- **The design's rules,** written as checks in the library and described for
+  people in the operating model:
+  - one writer per file, and the signature chain;
+  - an expected value never comes from the code under test;
+  - no relation supplied by an assistant, and a transcription signed by the
+    person who checked it;
+  - every requirement says which way it binds;
+  - a node reads its children only through their ports;
+  - a release is never edited;
+  - a parameter is changed only by the level that owns it;
+  - every valve's owner controls what passes it;
+  - the design is released by the system engineer alone, and today's design is
+    never taken for a released one.
+- **The roles and their names:** programme manager, system engineer, subsystem
+  engineer, node engineer, developer, each with a deputy. Every owner of a branch
+  is the system engineer of that branch. Every page, screen and guide uses these
+  and no other.
+- `docs/WORK_MODEL.md` is replaced by the operating model, not kept beside it.
 
-**Done when** you approve the rules, with a second reviewer.
+**Done when** you approve, with a second reviewer.
 
-### C · One schema, one library
+### C · Files, versions and keys
 
-- One schema for every file: block, with its parent to any depth; port, with
-  type, unit, range and its reason, state, maturity and direction; wire;
-  mount; closure; loop; case; text; table; media; sign-off; change. A file's
-  kind is only the size of its branch: one node, one group, the whole design.
-- One library reads and writes it, in the tool and compiled for the browser,
-  so the apps stop carrying their own copy of the rules.
-- A file in the format before it upgrades when opened and keeps a copy. Solar
-  1.1 converts without anyone in Solar doing anything.
-- Intake keeps everything a group wrote. Nothing a group declares is dropped on
-  the way in.
-- The readable copy: every sealed release written as text into the repository,
-  with a test that text and database round-trip identically.
+- **One schema** for every file kind in section 10 of the operating model:
+  - a block, whose parent goes to any depth;
+  - a port, with type, unit, range and its reason, state, maturity and
+    direction;
+  - wire, mount, closure, loop, case, text, table, media, signature, change,
+    request and issue.
+- **Identity and versions** of every file, by the rules in section 13.
+- **Keys:** make a key, lock it by passphrase, sign, and check a signature
+  through the chain in section 14.
+- **One library** reads, writes and checks every kind, compiled for the installed
+  application and for the page.
+  - Every check the developer's `xtask` runs today on a group's release moves
+    into it: the seal, the signatures, the method and its units, the cases, both
+    ends of every range, the de-risking record, and the assistant rules.
+- **Upgrade:** a file in today's format upgrades when opened, and keeps a copy.
+- **Nothing a group writes is dropped.**
+- **Comparison:** any two revisions, releases or designs, node by node.
 
-**Done when** Solar 1.1 converts, round-trips identically, and opens in the
-tool, in Python and in both apps.
+**Done when** Solar 1.1 upgrades, its signatures check through the chain, and the
+library refuses everything today's intake refuses, in a test for each.
 
-### D · The engine runs the database
+### D · The engine runs the design
 
-- The engine builds its graph from `design.vleo` when it starts, not from
-  tables compiled into it.
-- Behaviours: method, run by the interpreter; children; stated; lookup; open,
-  refused by name; and **built-in**, a relation that is still compiled code,
-  run by its id until its group migrates it to a method.
-- Loops declared on the block that holds them. Ports typed: number, choice,
-  list and parameter first.
-- State, maturity and range carried on every value; every closure gives its
-  range verdict and its tornado.
-- The design names the engine version and the toolbox functions it needs.
+- The graph is built from the design's files when the application opens, not
+  compiled into it, both installed and in the page.
+- **Today's design:** built from the drive on opening, from every group's latest
+  sealed release that passes its checks. A refused release is replaced by its
+  group's last good one and marked. The application says which releases it used.
+  The same at every valve: a group's today is built from its nodes' latest signed
+  revisions.
+- Behaviours:
+  - method, run by the interpreter;
+  - children;
+  - stated;
+  - lookup;
+  - open, refused by name;
+  - built-in: a relation still in compiled code, found by its node's id until
+    its group writes a method for it.
+- Loops are declared on the block that holds them. Ports are typed: number,
+  choice, list and parameter first.
+- Every value carries its state, maturity and range. Every closure gives its
+  range verdict and tornado.
+- Every node gets its health-map state, with the roll-up valve by valve and the
+  trace to cause of section 6.
+- A design names the application version and toolbox it needs.
 
-**The parity gate.** For every row in every case the new engine gives the same
-answer as the 0.4 engine, within each row's own tolerance, and refuses where
-it refused. There is no switch without it.
+**The parity gate.** For every row in every case, the new engine gives today's
+answer within the row's own tolerance, and refuses where today refuses. There is
+no switch without it.
 
-**Done when** parity holds for the whole design on every case shipped.
+**Done when**:
+- parity holds for the whole design on every shared case, installed and in the
+  page;
+- today's design is built identically on two computers from the same drive;
+- a deliberately broken node is traced to by name from the KPI it breaks.
 
-### E · The tree, converted and mounted
+### E · The design leaves the repository
 
-- The layer files and all 1,396 rows become the programme branch, the systems
-  branch and the 18 group branches, in the one schema. Each row's layer becomes
-  its perspective tag.
-- Each group mounts on its system block (`docs/SYSTEM_MODEL.md`, section 8).
-- The proposed next level is added as open blocks, owned by each group's lead.
-- Each group's starting folder is written from the tree for the drive.
+This is the last time the design passes through the code.
 
-**Done when** the design built from these files passes the parity gate, and its
-N2 shows the one declared loop.
+- The layer files and all 1,396 rows become files: the programme's branch, the
+  systems branch and the 18 group branches.
+  - Each row's layer becomes its perspective tag.
+  - Each group mounts on its system block, with its mount drawn from today's
+    interface rows (`docs/SYSTEM_MODEL.md`, section 8).
+  - The proposed next level is added as open blocks.
+  - Today's parameters are placed at the level that owns them.
+- The relations still in code are gathered into one crate, keyed by node id. The
+  node sheets, the layer files and the generators that read them leave the
+  repository's build, and their checks now run in the library.
+- The repository's tests keep the example group, and a copy of the converted
+  design as the regression for W15.
 
-### F · The apps
+**Done when**:
+- the converted design passes the parity gate;
+- its N2 shows the one declared loop;
+- the repository builds and tests with no node sheet in it.
 
-- One node page shared by the node app, the group app, the tool and the readers'
-  pages.
-- The node app, the group app and the tool, as described above.
-- Signing with a person's own key: Ed25519, built into every current browser.
-- The retired form loop and its documents removed.
+### F · The application
 
-**Done when** CI drives each app end to end in a browser on the example group.
+One application, installed and as a page from the drive, with the same screens.
+It knows each person by their key, and opens on My work.
 
-### G · The developer's loop and the drive
+- **My work:** everything that needs the person now, at their valve.
+- **Node workspace:** W3, the node engineer's side of W4 and W13.
+- **System workspace:**
+  - one workspace at every valve: W1 and W8 for the system engineer, W2, W4, W5,
+    W7, W12 and W13 for a subsystem engineer;
+  - today's view of the branch, impact, the sheet view, people, comparisons;
+  - for the system engineer, budgets across releases, previews and requests.
+- **Programme workspace:** W10; mission health, gates, risks, the organisation,
+  measures across releases.
+- **Explore workspace:** today's design and any released one, side by side; runs,
+  sweeps, the health map, trace to cause; W6's daily discussion on one screen.
+- **Bringing data in,** every way in section 7 of the operating model. A formula
+  is typed as written. A table is pasted from any spreadsheet. A worked example
+  becomes a case, and CSV results from MATLAB, Python or a spreadsheet are taken
+  as they are. Units are written naturally, and a range or a spread as typed. A
+  PDF beside the node, and *start from a similar node*.
+- **Made easy to use** by the eight points in section 8 of the operating model.
+- Today's group and node apps, the single-node form and today's intake and
+  delivery commands are removed at the switch-over.
 
-- `xtask` takes, builds, tests, delivers and accepts schema-2 releases;
-  compiles and signs the design; and makes design releases apart from tool
-  releases.
-- `tools/drive.py` packs the drive's new layout.
-- The manual, the role guides, START HERE and `docs/PIPELINE.md` regenerated.
+**Done when** CI drives every workflow on the example group, installed and as a
+page, with no developer step in W1 to W13. That includes:
+- a second writer stopped in W3;
+- a sealed release appearing in today's design for a second person;
+- a refused release replaced by its last good one, and marked;
+- an objection answered in W7;
+- a failing closure traced to its node, raised as an issue, and closed by the
+  release that fixes it;
+- a node broken down whose children reproduce its cases, and one whose children
+  do not;
+- a new group mounted on a node, its owner becoming the valve above it;
+- a design released, reviewed at each level, and a programme decision taken back
+  into today's design;
+- each way of bringing data in.
 
-**Done when** CI runs the whole loop on the example group: sealed release in,
-accepted delivery, signed design out.
+### G · The drive and the people
 
-### H · Proof with real people, then 1.0.0
+- `tools/drive.py` packs only what the developer owns: `apps/` with the
+  application, installed and as a page, its checksums and notes, and `guides/`.
+  Everything else is written by the application.
+- START HERE, with the daily rhythm and the programme manager's key fingerprint.
+- The sharing table, as a checklist for the programme manager.
+- One guide per role: node engineer, subsystem engineer, system engineer,
+  programme manager, developer. Each is written from the operating model, with
+  the role's day and its workflows step by step.
+- `docs/GROUP_APPS.md`, `docs/DRIVE_SETUP.md` and `docs/PIPELINE.md` replaced,
+  not kept beside the new ones.
 
-- **Solar 1.2**, made by Solar in the new apps: `sw_band_confidence` becomes the
-  one parameter its four methods read, in place of the literal 1.28, and
-  `sw_kp_driving_slot` is declared. Sealed, taken in, delivered, accepted.
-- The programme and systems branches sealed by their owners.
-- Gate and tests green. You say **"Ship 1.0.0"**: the tool and the first design
-  release are tagged and published, and the drive is updated.
+**Done when** someone who has never seen the application can follow each role's
+guide, from an empty drive to a released design.
 
-**Done when** Solar 1.2 is accepted on the release candidate.
+### H · Switch-over and proof
+
+One planned day, then some days of real use. Nothing is overwritten.
+
+1. **Freeze.** Groups are told the date; work in progress is sealed or held.
+2. **Convert.** The developer converts the design for the last time (phase E),
+   and parity is checked once more on the day.
+3. **A new drive beside the old one.** The new layout is built as *Vleo
+   Database*, beside today's, which becomes *Vleo Database (0.4, read only)* and
+   is kept for a month.
+4. **Share and register.**
+   - The programme manager shares each folder by the table, writes their key
+     fingerprint into START HERE, and registers the system engineer's, each
+     subsystem engineer's and each deputy's key.
+   - Each subsystem engineer registers their node engineers'.
+5. **First release.** The system engineer releases the first design. The
+   developer puts the 1.0.0 release candidate of the application into `apps/`.
+6. **Live with it, with no developer in the loop.** Every day, today's design is
+   opened and looked at. Solar 1.2 goes round the whole cycle, W1 to W10:
+   - `sw_band_confidence` becomes the one parameter its four methods read, in
+     place of the literal 1.28;
+   - `sw_kp_driving_slot` is declared.
+
+   It is signed, sealed, seen in today's design, released, reviewed at each
+   level, and decided on.
+7. **Ship.** You say **"Ship 1.0.0"**. The application is tagged `v1.0.0`, and
+   START HERE goes to every subsystem engineer.
+
+**Done when** Solar 1.2 is in a released design, decided on by the programme,
+without the developer touching it.
 
 ## After 1.0.0
 
-- Each group moves its built-in relations to methods, transcribed from the code
-  and signed by the group's own people. 158 of the 190 computing nodes start
-  there.
-- Groups break their branches down further.
-- Variance-based sensitivity and the probability each closure holds; an
-  optimiser over the open ranges; each closure's verification method; nodes
-  that keep state from one time step to the next; SysML v2 and FMI exchange.
+- Each group writes methods for its built-in relations, in the Node workspace.
+  - The application runs both the method and the built-in on the node's cases and
+    across its range, and shows any difference.
+  - Once a method is released, the developer deletes the built-in in a later
+    application release.
+  - 158 of the 190 computing nodes start as built-in.
+- Groups break their branches down further, as data, with no developer.
+- New kinds of maths and features arrive as requests (W14) and application
+  releases.
+- Later: variance-based sensitivity and the probability each closure holds; an
+  optimiser over the open ranges; each closure's verification method; nodes that
+  keep state from one time step to the next; SysML v2 and FMI exchange.
 
 ## What needs your word
 
-- The rules in phase B: the block as the source, one way in, the recursive
-  block. Rule changes take your approval and a second reviewer.
+- The rules and roles in phase B.
 - Each phase's merge.
+- The trial of the application at the end of phase F.
+- The switch-over date.
 - "Ship 1.0.0".
 
-The developer does not merge, release, change a rule or migrate a group's
-relations on its own initiative, and no assistant supplies a relation.
+The developer does not merge, release, change a rule or touch the design on its
+own initiative, and no assistant supplies a relation.
 
 ## Where this plan breaks
 
 - **The parity gate is the hard part.** If the engine cannot reproduce today's
-  answers exactly, phase D stops until it does, and everything after it waits.
-- **The apps are the largest phase.** F can start once C is done, alongside D
-  and E.
-- **People learning new apps.** Phase H is the test of that, on one group, before
-  anyone else depends on it.
+  answers, phase D stops until it does, and everything after it waits.
+- **The application carries everything now.** With no developer in the loop,
+  every check the developer made by hand must be in the library, and the
+  application must be easy enough that nobody needs one. Phases C and F are the
+  largest, and F's trial is the test.
+- **Today's design depends on the drive being in step.** Phase D proves two
+  computers build the same one, and the application always says which releases
+  it used.
+- **People learning a new application, roles, keys and a daily rhythm.** Phase H
+  tries it in real use, on one group, before anyone else depends on it.
 - **Built-in relations are a debt.** On 1.0.0 most nodes still compute in code.
-  They are marked, listed by owner, and migrated after the release, not hidden.
+  They are marked, listed by owner, and replaced by methods after, not hidden.
