@@ -289,6 +289,7 @@ pub const CHECKER_SOURCES: &[&str] = &[
     "crates/vleo-sheet/src/method/ast.rs",
     "crates/vleo-sheet/src/method/cases.rs",
     "crates/vleo-sheet/src/method/check.rs",
+    "crates/vleo-sheet/src/method/kernel.rs",
     "crates/vleo-sheet/src/method/node.rs",
     "crates/vleo-sheet/src/method/parse.rs",
     "crates/vleo-sheet/src/method/reference.rs",
@@ -298,6 +299,11 @@ pub const CHECKER_SOURCES: &[&str] = &[
     "crates/vleo-sheet/src/method/tests.rs",
     "crates/vleo-sheet/src/method/units.rs",
     "crates/vleo-sheet/src/lesson.rs",
+    // The kernel functions a method may call, compiled into the checker with
+    // it: a corrected formula there changes what a form computes.
+    "crates/vleo-core/src/physics/env.rs",
+    "crates/vleo-core/src/physics/orbit.rs",
+    "crates/vleo-core/src/math/integrate.rs",
     "crates/vleo-units/src/pmath.rs",
     "crates/vleo-units/src/method_rt.rs",
     "crates/vleo-units/src/unit.rs",
