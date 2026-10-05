@@ -1,6 +1,6 @@
 # The plan to 1.0.0
 
-> **Answer first.** One release, 1.0.0, built in eight phases and switched over on one planned day. After it everyone has one application and one shared drive; each person looks after their own part of the design database every day, sees today's design built from everyone's latest work, and the system engineer releases the design decisions are made on. The developer maintains only the code. Each phase proves what it builds in CI and merges into `developer` on your word; nothing changes for anyone until the switch-over.
+> **Answer first.** One release, 1.0.0, built in eight phases and switched over on one planned day. After it everyone has one application and one shared drive; each person looks after their own part of the design database every day, sees today's design built from everyone's latest work, and the system engineer releases the design decisions are made on. The developer maintains only the code. Each phase proves what it builds in CI and merges into `developer` on your word; nothing changes for anyone until the switch-over. Audited against the code on 5 October 2026, it is about nineteen weeks of work: 1.0.0 around 19 February 2027 if parity holds first time, mid-March if it does not.
 >
 > **Kind:** explanation + reference · **For:** everyone
 
@@ -49,16 +49,16 @@ runs at every valve.
 
 ## The phases
 
-| phase | needs | delivers | who |
-|---|---|---|---|
-| A · Safe ground | nothing | the application refuses a design it cannot run; results name their design | developer |
-| B · Rules and roles | A | the code's rules, the design's rules, the valves and the role names; your approval | developer, you |
-| C · Files, versions and keys | B | one schema, every file kind, versions, signatures, the one library with every check | developer |
-| D · The engine runs the design | C | the graph read from the design file; today's design; the health map; the parity gate | developer |
-| E · The design leaves the repository | D | the programme, systems and 18 groups as files; built-in relations kept as code by id | developer |
-| F · The application | C, then E | one application, installed and as a page, with its five workspaces, doing W1 to W16 | developer, you to try |
-| G · The drive and the people | E, F | the drive's layout and sharing, keys, one guide per role, START HERE | developer, programme manager |
-| H · Switch-over and proof | G | the new drive in daily use; Solar 1.2 round the whole cycle with no developer; then 1.0.0 | you |
+| phase | needs | delivers | who | size | weeks |
+|---|---|---|---|---|---|
+| A · Safe ground | nothing | the application refuses a design it cannot run; results name their design | developer | small | done |
+| B · Rules and roles | A | the code's rules, the design's rules, the valves and the role names; your approval | developer, you | medium | 1½ |
+| C · Files, versions and keys | B | one schema, every file kind, versions, signatures, the one library with every check | developer | large | 3 |
+| D · The engine runs the design | C | today's answers recorded; the graph read from the design file; today's design; the health map; the parity gate | developer | large | 4 |
+| E · The design leaves the repository | D | the programme, systems and 18 groups as files; built-in relations kept as code by id | developer | medium-large | 2 |
+| F · The application | C, D, then E | one application, installed and as a page, with its five workspaces, doing W1 to W16 | developer, you to try | the largest | 6, one of them your trial |
+| G · The drive and the people | E, F | the drive's layout and sharing, keys, one guide per role, START HERE | developer, programme manager | small-medium | 1 |
+| H · Switch-over and proof | G | the new drive in daily use; Solar 1.2 round the whole cycle with no developer; then 1.0.0 | you | your days | 2 |
 
 ### A · Safe ground
 
@@ -101,6 +101,22 @@ runs at every valve.
   and no other.
 - `docs/WORK_MODEL.md` is replaced by the operating model, not kept beside it.
 
+**From the audit:**
+- **Words, not stored names.** B renames what people read: the rules, the
+  documents, the screens and the guides. The role names stored in files (the
+  group schema's `owner`, `author` and `reviewer` in `groups/schema.sql`, and the
+  sheet's `[author]` section) change with C's one schema, or saved files would
+  break twice.
+- **"Lead" is also a forecast's lead time.** About 1,400 uses in the solar rows
+  mean that, and stay. Only the role is renamed, so the sweep is read, not
+  replaced mechanically.
+- **Today's loop keeps working.** The form loop, its approval check and its
+  preview builds (`.github/workflows/preview.yml`) stay, under a section headed
+  *Until the switch-over*, which phase H deletes.
+- **`areas/teams.toml` stays a code concept.** It says who reviews which crate,
+  not who owns which part of the design.
+- **A second reviewer** must be named. Today every team is one person.
+
 **Done when** you approve, with a second reviewer.
 
 ### C · Files, versions and keys
@@ -123,8 +139,32 @@ runs at every valve.
 - **Nothing a group writes is dropped.**
 - **Comparison:** any two revisions, releases or designs, node by node.
 
-**Done when** Solar 1.1 upgrades, its signatures check through the chain, and the
-library refuses everything today's intake refuses, in a test for each.
+**From the audit:**
+- **Signing starts from nothing.** Today a sign-off is a name and a fingerprint;
+  there are no keys and no cryptography in the repository. Signing and checking
+  are written once, in the library, and compiled for both the installed
+  application and the page. That needs Ed25519, SHA-256, PBKDF2 and AES-GCM
+  adopted through `ADOPTION.lock`, which is your word.
+- **About 70 checks exist only in the page.** `web/js/gcheck.js` and the seal
+  rules in `web/js/gseal.js` move into the library. The fingerprint is written
+  twice today, in the page and in `xtask`, and the two have already drifted.
+- **SQLite in the page.** The installed library uses SQLite directly; in the
+  page, it checks the rows the page's own SQLite hands it.
+- **Signatures from before 1.0** are names, so they cannot check through a
+  chain. Each pre-1.0 release is anchored once, by its fingerprint, by the
+  programme manager at the switch-over; from then on only key signatures count.
+- **Nothing dropped** includes the comments and issues a group writes today,
+  which the list of kinds above did not name.
+- **Every reader follows the schema:** `vleo-py`, `vleo-cli`, `vleo-server` and
+  `vleo-ffi`, and the cases and results saved under `~/.vleo`.
+- **Checks that need the engine** (building a node, both ends of a range, the
+  group's own results) move in D, not C.
+
+**Done when**:
+- Solar 1.1 upgrades with nothing dropped, from a copy committed as a test
+  fixture, and its pre-1.0 sign-offs are anchored by fingerprint;
+- a release signed afresh checks through the chain, installed and in the page;
+- the library refuses everything today's intake refuses, in a test for each.
 
 ### D · The engine runs the design
 
@@ -155,6 +195,28 @@ library refuses everything today's intake refuses, in a test for each.
 answer within the row's own tolerance, and refuses where today refuses. There is
 no switch without it.
 
+**From the audit:**
+- **Today's answers are recorded first.** No baseline exists: tolerances today
+  are per fixture, and only one case is shared. Before anything changes, today's
+  engine records every row, every case, every sweep point and every refusal with
+  its reason. This is recorded during phase B's review, so it waits on nothing.
+- **Built-in relations keep their compiled code, so their parity is exact.**
+  Methods run in the interpreter share the same portable maths, so they are
+  held exact too, and any difference is a defect.
+- **The graph becomes data through the resolver's existing seam**, the node
+  table in `crates/vleo-core/src/graph.rs`. The guards generated from each sheet
+  today (units, limits, not-finite) move to run time in the same order with the
+  same reasons. The one loop in `layers/cycles.toml` is reproduced with its order,
+  seed and residual.
+- **The interpreter is measured.** If a sweep is too slow, translated code stays
+  as the fast path, held equal to the interpreter.
+- **Ports in 1.0 are number and parameter.** The bus carries only numbers; choice
+  and list follow after 1.0, unless a node needs one first.
+- **Credibility is part of parity**, as it is computed today.
+- **Every face is re-pointed:** the command line, Python, the C interface, the
+  server, and the engine in the page. The check made in A changes meaning, from
+  "the same compiled tree" to "a toolbox this design can run on".
+
 **Done when**:
 - parity holds for the whole design on every shared case, installed and in the
   page;
@@ -177,6 +239,13 @@ This is the last time the design passes through the code.
   repository's build, and their checks now run in the library.
 - The repository's tests keep the example group, and a copy of the converted
   design as the regression for W15.
+
+**From the audit:** the conversion itself is mechanical; the work is cutting off
+everything that reads the sheets when the code is built. That is the generators,
+the gate, the readers' folder, the de-risking narrative, the manual and the
+catalogue, the contract's recorded examples, CODEOWNERS, the panels and bundles
+that name rows, about 36 row ids written into the code, and the translated
+methods.
 
 **Done when**:
 - the converted design passes the parity gate;
@@ -208,6 +277,21 @@ It knows each person by their key, and opens on My work.
 - Today's group and node apps, the single-node form and today's intake and
   delivery commands are removed at the switch-over.
 
+**From the audit:**
+- **There are four fronts today, not one:** the tool's page, the group and node
+  pages, the single-node form and the readers' folder. The readers' folder
+  becomes the Explore workspace's read-only export.
+- **One engine for both.** The engine runs in the page in both, and the installed
+  application is a local shell serving the same page, so the screens cannot
+  differ. The local server's routes stay for Python and the command line, and
+  the contract tests and mock engine follow them.
+- **New ways in are new code:** a table pasted from a spreadsheet (tab-separated
+  or as the spreadsheet copies it), a typed range or ±, natural units checked by
+  the engine's own unit parser, and *start from a similar node*. None exists
+  today.
+- **No workflow is driven end to end in a browser today.** The CI below is about
+  thirteen scenarios, each with more than one person.
+
 **Done when** CI drives every workflow on the example group, installed and as a
 page, with no developer step in W1 to W13. That includes:
 - a second writer stopped in W3;
@@ -235,6 +319,13 @@ page, with no developer step in W1 to W13. That includes:
   the role's day and its workflows step by step.
 - `docs/GROUP_APPS.md`, `docs/DRIVE_SETUP.md` and `docs/PIPELINE.md` replaced,
   not kept beside the new ones.
+
+**From the audit:**
+- `docs/PIPELINE.md` and the role guides are generated: the first from the table
+  in `xtask/src/pipeline.rs`, the others from `docs/manual.toml`. Their sources
+  change, and the guides go from three to five.
+- Up to 37 files link to the four that go, and each link is fixed.
+- The release, kit, wheel, preview and drive workflows ship the new application.
 
 **Done when** someone who has never seen the application can follow each role's
 guide, from an empty drive to a released design.
@@ -270,6 +361,29 @@ One planned day, then some days of real use. Nothing is overwritten.
 **Done when** Solar 1.2 is in a released design, decided on by the programme,
 without the developer touching it.
 
+## Timeline
+
+Weeks of building, one phase after another, each followed by your review. The
+dates assume no breaks and a review within two working days.
+
+| phase | starts | ready for your merge | what can move it |
+|---|---|---|---|
+| A · Safe ground | done | now, pull request 117 | |
+| B · Rules and roles | 6 Oct 2026 | 16 Oct | the second reviewer |
+| today's answers recorded (D) | 12 Oct | 14 Oct | nothing; it runs during B's review |
+| C · Files, versions and keys | 19 Oct | 6 Nov | the cryptography crates' adoption |
+| D · The engine runs the design | 9 Nov | 4 Dec | parity: up to four more weeks if it does not hold first time |
+| E · The design leaves the repository | 7 Dec | 18 Dec | |
+| F · The application | 21 Dec | 29 Jan 2027 | your trial, its last week |
+| G · The drive and the people | 1 Feb | 5 Feb | |
+| H · Switch-over and proof | 8 Feb | 19 Feb | Solar 1.2's real days; "Ship 1.0.0" |
+
+- **The one lever.** F's shell and Node workspace need only C. Built beside D,
+  they bring 1.0.0 about two weeks earlier, at the cost of two pull requests open
+  for your review at once.
+- **The one risk to the date** is parity, in D. Everything after it waits.
+- **Breaks you take move every later date by the same amount.**
+
 ## After 1.0.0
 
 - Each group writes methods for its built-in relations, in the Node workspace.
@@ -287,7 +401,11 @@ without the developer touching it.
 
 ## What needs your word
 
-- The rules and roles in phase B.
+- The rules and roles in phase B, and the second reviewer.
+- Adopting the cryptography crates in phase C.
+- Anchoring the pre-1.0 releases by fingerprint at the switch-over.
+- Number and parameter ports only in 1.0.
+- One engine in the page, for the installed application too.
 - Each phase's merge.
 - The trial of the application at the end of phase F.
 - The switch-over date.
@@ -298,6 +416,10 @@ own initiative, and no assistant supplies a relation.
 
 ## Where this plan breaks
 
+- **There is no baseline today.** Parity needs today's answers on record before
+  anything changes, which is why they are recorded first.
+- **Signing is built from nothing.** Keys, the chain and the passphrase lock are
+  new code in C, held equal installed and in the page.
 - **The parity gate is the hard part.** If the engine cannot reproduce today's
   answers, phase D stops until it does, and everything after it waits.
 - **The application carries everything now.** With no developer in the loop,

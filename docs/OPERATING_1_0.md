@@ -305,6 +305,11 @@ is, its version, what it was based on, and who wrote it.
 | **results** | `<name>.vleor` | a run's answers, and the design and engine that made them | the application | never |
 | **key** | `<person>.vkey` | a person's private key, locked by their passphrase | the person | kept by the person, never on the shared drive |
 
+A group release and a released design both end `.vleo`; each file's `meta` says
+which it is, and the application refuses one opened as the other, by name.
+Comments, requests and changes are kept inside the node or group file they were
+written on, so nothing a person writes is lost between versions.
+
 **One writer per file.** Nothing is merged by two people. The application
 refuses to sign for anyone but the file's assigned writer, and integration
 refuses a signature from anyone the group file did not assign.
@@ -580,11 +585,20 @@ Each person makes a key once, in the application, and keeps the private half as
     there.
 - **A lost key** is replaced the way it was registered. Old signatures still
   check against the old public key, which stays in the file's history.
+- **A key someone else may have** is revoked from a date by whoever registered
+  it. Signatures made with it after that date stop checking, and the work they
+  covered is signed afresh by its writer.
+- **The programme manager's own key** is replaced by a new fingerprint in START
+  HERE, with a note signed by the old key. If the old key is lost too, every
+  application asks its user to accept the new anchor once, and says why.
 - **Someone leaves.** Their nodes are reassigned and signed afresh.
+- **Releases from before 1.0** carry a name and a fingerprint, not a key's
+  signature. At the switch-over the programme manager anchors each one once, by
+  its fingerprint; after that only key signatures count.
 
 Signing works the same installed or from a page opened from a file, with no
-library and no network. Ed25519 and the passphrase lock are part of Web Crypto,
-built into every current browser.
+network. It is one implementation, in the library that reads every file,
+compiled for both, so a signature made in one always checks in the other.
 
 ## 15 · The shared drive
 
@@ -629,6 +643,10 @@ Vleo Database/
 - Two files where there should be one, such as a name ending `(1)`, are named,
   and their owner keeps one.
 - An application release never touches the design.
+- **One person, two computers.** The application writes a file whole, never
+  leaves a working copy on the drive, and refuses to save over a file that
+  changed on the drive since it was opened. It shows both, and the person keeps
+  one.
 
 ## 16 · The application and the files across versions
 
@@ -642,6 +660,8 @@ Vleo Database/
   Replacing them is the update; each shows its version.
 - **A design names the oldest application that can run it.**
 - **An application release never changes anyone's files.**
+- **Cases and results saved on a computer before 1.0** open and upgrade the same
+  way, with the old copy kept.
 
 ## 17 · The developer's side
 
