@@ -1,6 +1,6 @@
 # The plan to 1.0.0
 
-> **Answer first.** One release, 1.0.0, built in eight phases and switched over on one planned day. After it everyone has one application and one shared drive; each person looks after their own part of the design database every day, sees today's design built from everyone's latest work, and the system engineer releases the design decisions are made on. The developer maintains only the code. Each phase proves what it builds in CI and merges into `developer` on your word; nothing changes for anyone until the switch-over. Audited against the code on 5 October 2026, it is about nineteen weeks of work: 1.0.0 around 19 February 2027 if parity holds first time, mid-March if it does not.
+> **Answer first.** One release, 1.0.0, built in eight phases and switched over on one planned day. After it everyone has one application and one shared drive; each person looks after their own part of the design database every day, sees today's design built from everyone's latest work, and the system engineer releases the design decisions are made on. The developer maintains only the code. Each phase proves what it builds in CI and merges into `developer` on your word; nothing changes for anyone until the switch-over. Audited against the code on 5 October 2026, it is about twenty working days of building, at the pace this repository has kept: 1.0.0 around 6 November 2026 if parity holds first time and each phase is reviewed the day it is ready, a week later if parity does not.
 >
 > **Kind:** explanation + reference · **For:** everyone
 
@@ -49,16 +49,16 @@ runs at every valve.
 
 ## The phases
 
-| phase | needs | delivers | who | size | weeks |
+| phase | needs | delivers | who | size | days of building |
 |---|---|---|---|---|---|
 | A · Safe ground | nothing | the application refuses a design it cannot run; results name their design | developer | small | done |
-| B · Rules and roles | A | the code's rules, the design's rules, the valves and the role names; your approval | developer, you | medium | 1½ |
+| B · Rules and roles | A | the code's rules, the design's rules, the valves and the role names; your approval | developer, you | medium | 1 |
 | C · Files, versions and keys | B | one schema, every file kind, versions, signatures, the one library with every check | developer | large | 3 |
 | D · The engine runs the design | C | today's answers recorded; the graph read from the design file; today's design; the health map; the parity gate | developer | large | 4 |
 | E · The design leaves the repository | D | the programme, systems and 18 groups as files; built-in relations kept as code by id | developer | medium-large | 2 |
-| F · The application | C, D, then E | one application, installed and as a page, with its five workspaces, doing W1 to W16 | developer, you to try | the largest | 6, one of them your trial |
+| F · The application | C, D, then E | one application, installed and as a page, with its five workspaces, doing W1 to W16 | developer, you to try | the largest | 5, then your trial |
 | G · The drive and the people | E, F | the drive's layout and sharing, keys, one guide per role, START HERE | developer, programme manager | small-medium | 1 |
-| H · Switch-over and proof | G | the new drive in daily use; Solar 1.2 round the whole cycle with no developer; then 1.0.0 | you | your days | 2 |
+| H · Switch-over and proof | G | the new drive in daily use; Solar 1.2 round the whole cycle with no developer; then 1.0.0 | you | real days of use |
 
 ### A · Safe ground
 
@@ -363,26 +363,31 @@ without the developer touching it.
 
 ## Timeline
 
-Weeks of building, one phase after another, each followed by your review. The
-dates assume no breaks and a review within two working days.
+Days of building, one phase after another, at the pace this repository has kept
+(about 115 pull requests in its first four weeks). Each phase is ready for your
+merge on the day shown; the dates assume you review it that day. What cannot be
+made faster is people: your reviews, the second reviewer, your trial, and the
+real days of use in H.
 
-| phase | starts | ready for your merge | what can move it |
+| phase | building | ready for your merge | what can move it |
 |---|---|---|---|
 | A · Safe ground | done | now, pull request 117 | |
-| B · Rules and roles | 6 Oct 2026 | 16 Oct | the second reviewer |
-| today's answers recorded (D) | 12 Oct | 14 Oct | nothing; it runs during B's review |
-| C · Files, versions and keys | 19 Oct | 6 Nov | the cryptography crates' adoption |
-| D · The engine runs the design | 9 Nov | 4 Dec | parity: up to four more weeks if it does not hold first time |
-| E · The design leaves the repository | 7 Dec | 18 Dec | |
-| F · The application | 21 Dec | 29 Jan 2027 | your trial, its last week |
-| G · The drive and the people | 1 Feb | 5 Feb | |
-| H · Switch-over and proof | 8 Feb | 19 Feb | Solar 1.2's real days; "Ship 1.0.0" |
+| B · Rules and roles | 6 Oct 2026 | 6 Oct | the second reviewer |
+| today's answers recorded (D) | 6 Oct | 6 Oct, with B | nothing |
+| C · Files, versions and keys | 7–9 Oct | 9 Oct | the cryptography crates' adoption |
+| D · The engine runs the design | 12–15 Oct | 15 Oct | parity: up to five more days if it does not hold first time |
+| E · The design leaves the repository | 16–19 Oct | 19 Oct | |
+| F · The application | 20–26 Oct | 26 Oct; your trial 27–29 Oct | how long you want to try it |
+| G · The drive and the people | 30 Oct | 30 Oct | |
+| H · Switch-over and proof | 2–6 Nov | "Ship 1.0.0" around 6 Nov | Solar 1.2's real days |
 
 - **The one lever.** F's shell and Node workspace need only C. Built beside D,
-  they bring 1.0.0 about two weeks earlier, at the cost of two pull requests open
+  they bring 1.0.0 about two days earlier, at the cost of two pull requests open
   for your review at once.
 - **The one risk to the date** is parity, in D. Everything after it waits.
-- **Breaks you take move every later date by the same amount.**
+- **Every phase keeps the same bar:** the gate and every test green before a
+  push, and every new test shown red against a broken implementation first. A
+  day is not saved by lowering it.
 
 ## After 1.0.0
 
