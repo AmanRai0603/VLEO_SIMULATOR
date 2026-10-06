@@ -46,6 +46,10 @@ pub use tables::{
 /// its sheet's guards applied.
 pub type NodeFn = fn(&[f64], &mut [f64]) -> Result<(), Fault>;
 
+/// A relation the graph runs itself rather than as compiled code — a node's
+/// method, run by the interpreter — with the same contract as a [`NodeFn`].
+pub type Relation = dyn Fn(&[f64], &mut [f64]) -> Result<(), Fault> + Send + Sync;
+
 /// The graph the engine runs: its nodes, its variables, each node's relation
 /// and the cases.
 ///
@@ -58,6 +62,9 @@ pub struct Graph {
     pub nodes: &'static [NodeDef],
     pub vars: &'static [VarDef],
     pub dispatch: &'static [NodeFn],
+    /// Each node's relation when the graph runs it itself, in place of its
+    /// entry in `dispatch`. Empty for the compiled graph.
+    pub run: &'static [Option<&'static Relation>],
     pub cases: &'static [CaseDef],
 }
 
@@ -66,8 +73,25 @@ pub static COMPILED: Graph = Graph {
     nodes: &NODES,
     vars: &VARS,
     dispatch: &tables::DISPATCH,
+    run: &[],
     cases: &CASES,
 };
+
+impl Graph {
+    /// Run node `i`'s relation: the graph's own when it has one, else the
+    /// compiled function.
+    pub fn call(&self, i: usize, inputs: &[f64], outputs: &mut [f64]) -> Result<(), Fault> {
+        match self.run.get(i) {
+            Some(Some(r)) => r(inputs, outputs),
+            _ => (self.dispatch[i])(inputs, outputs),
+        }
+    }
+
+    /// How many nodes the graph runs itself rather than as compiled code.
+    pub fn run_by_the_graph(&self) -> usize {
+        self.run.iter().filter(|r| r.is_some()).count()
+    }
+}
 
 /// Re-exported so a face has one name to import.
 pub use vleo_bus as bus;
@@ -343,7 +367,11 @@ impl NodeTable for Vleo {
         }
 
         let mut outputs = [0.0f64; MAX_OUTPUTS];
-        (self.graph.dispatch[node as usize])(&inputs[..n_in], &mut outputs[..def.outputs.len()])?;
+        self.graph.call(
+            node as usize,
+            &inputs[..n_in],
+            &mut outputs[..def.outputs.len()],
+        )?;
 
         // The evidence executes on the run, using the same function the test
         // calls — one implementation, checked one way.
@@ -381,7 +409,7 @@ impl Graph {
         let mut passed = true;
         for f in def.fixtures {
             let mut out = [0.0f64; MAX_OUTPUTS];
-            match (self.dispatch[node as usize])(f.inputs, &mut out[..def.outputs.len()]) {
+            match self.call(node as usize, f.inputs, &mut out[..def.outputs.len()]) {
                 Ok(()) => {
                     ran = true;
                     // The slot the fixture named. A set row's fixture checks the
@@ -410,7 +438,7 @@ impl Graph {
         for f in def.fixtures {
             let mut o = [0.0f64; MAX_OUTPUTS];
             let (got, passed, err) =
-                match (self.dispatch[node as usize])(f.inputs, &mut o[..def.outputs.len()]) {
+                match self.call(node as usize, f.inputs, &mut o[..def.outputs.len()]) {
                     Ok(()) => {
                         let got = o[f.slot];
                         let e = match f.check(got) {
@@ -475,7 +503,7 @@ impl Graph {
     pub fn probe(&self, node: NodeIdx, inputs: &[f64]) -> Result<[f64; MAX_OUTPUTS], Fault> {
         let def = &self.nodes[node as usize];
         let mut outputs = [0.0f64; MAX_OUTPUTS];
-        (self.dispatch[node as usize])(inputs, &mut outputs[..def.outputs.len()])?;
+        self.call(node as usize, inputs, &mut outputs[..def.outputs.len()])?;
         Ok(outputs)
     }
 
@@ -483,7 +511,7 @@ impl Graph {
     pub fn run_fixture(&self, node: NodeIdx, inputs: &[f64]) -> Result<(f64, Verdict), Fault> {
         let def = &self.nodes[node as usize];
         let mut outputs = [0.0f64; MAX_OUTPUTS];
-        (self.dispatch[node as usize])(inputs, &mut outputs[..def.outputs.len()])?;
+        self.call(node as usize, inputs, &mut outputs[..def.outputs.len()])?;
         // The first fixture's own slot, so a set row's ad-hoc run reports the member
         // its first expected value is about rather than whichever came first.
         let slot = def.fixtures.first().map(|f| f.slot).unwrap_or(0);
@@ -603,7 +631,7 @@ impl Graph {
                 // today and the gate refuses a second, but this loop is the same
                 // shape as the one in `eval` and costs nothing: a hard-coded 1 here
                 // would be a silent truncation the day that gate rule is relaxed.
-                if (self.dispatch[i])(&[], &mut out[..def.outputs.len()]).is_ok() {
+                if self.call(i, &[], &mut out[..def.outputs.len()]).is_ok() {
                     for (k, &o) in def.outputs.iter().enumerate() {
                         store.supply(o, out[k], self.vars[o as usize].unit);
                         store.slots[o as usize].cred =

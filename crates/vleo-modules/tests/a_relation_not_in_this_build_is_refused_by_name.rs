@@ -22,7 +22,14 @@ fn root() -> PathBuf {
 #[test]
 fn a_relation_built_from_another_sheet_is_refused_by_name() {
     let mut tree = vleo_sheet::load_all(&root()).unwrap();
-    // A computed row that answers today, on the compiled engine …
+    // A computed row that answers today, on the compiled engine, whose
+    // relation is built in — a method runs in the interpreter, whatever code
+    // the build has for it …
+    let read = opened::graph(&tree).unwrap();
+    let built_in = |id: &str| {
+        read.find(id)
+            .is_some_and(|k| !matches!(read.run.get(k as usize), Some(Some(_))))
+    };
     let all = Case {
         target: vleo_modules::NODES[0].id.to_string(),
         mode: RunMode::All,
@@ -34,8 +41,9 @@ fn a_relation_built_from_another_sheet_is_refused_by_name() {
         .iter()
         .map(|v| v.id.clone())
         .find(|v| {
-            vleo_modules::Vleo::find(v)
-                .is_some_and(|k| vleo_modules::NODES[k as usize].kind == Kind::Computed)
+            built_in(v)
+                && vleo_modules::Vleo::find(v)
+                    .is_some_and(|k| vleo_modules::NODES[k as usize].kind == Kind::Computed)
         })
         .expect("a computed row that answers");
     // … whose implementation has since changed.

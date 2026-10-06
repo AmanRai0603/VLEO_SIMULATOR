@@ -19,9 +19,14 @@
 //! - anything else — a row this build has no code for, or code from another
 //!   sheet — refuses by name, rather than running something that is not it.
 //!
-//! The 32 rows whose relation is a method still run as translated code here;
-//! running them in the interpreter is the next step (D2), held to the same
-//! answers.
+//! - **a method** — a row whose relation is a method the node engineer wrote
+//!   runs in the method language's interpreter, the same one that checked it
+//!   against their cases, with no compiled code at all. Around it is what the
+//!   compiled row does, in the same order and the same words: the length
+//!   check, an input that is not a number refused at the door, the method's
+//!   own refusal and its undefined values as the same faults, and the guards
+//!   on every value it publishes. Its arithmetic is the same portable maths,
+//!   so it is held to today's answers exactly.
 
 use alloc::boxed::Box;
 use alloc::format;
@@ -38,8 +43,10 @@ use vleo_sheet::model as sheet;
 use vleo_units::Unit;
 
 use crate::{
-    CaseDef, CycleDef, Error, ErrorKind, Graph, NodeFn, COMPILED, MAX_INPUTS, MAX_OUTPUTS,
+    CaseDef, CycleDef, Error, ErrorKind, Graph, NodeFn, Relation, COMPILED, MAX_INPUTS, MAX_OUTPUTS,
 };
+use vleo_core::fault::Edge;
+use vleo_sheet::method::{self, Outcome, Program};
 
 /// Text that lives as long as the graph does: the run's whole life.
 fn text(s: &str) -> &'static str {
@@ -138,6 +145,199 @@ fn not_in_this_build(_: &[f64], _: &mut [f64]) -> Result<(), Fault> {
     })
 }
 
+/// A sentence a refusal says, kept once for the life of the engine: a fault
+/// carries its reason by reference, and a sweep that refuses ten thousand
+/// times must not keep ten thousand copies of the same words.
+fn said(s: String) -> &'static str {
+    use std::sync::Mutex;
+    static SAID: Mutex<std::collections::BTreeSet<&'static str>> =
+        Mutex::new(std::collections::BTreeSet::new());
+    let mut kept = SAID.lock().unwrap_or_else(|e| e.into_inner());
+    if let Some(k) = kept.get(s.as_str()) {
+        return k;
+    }
+    let k: &'static str = Box::leak(s.into_boxed_str());
+    kept.insert(k);
+    k
+}
+
+/// One value a method publishes, and the guards the compiled row puts on it.
+struct Guarded {
+    symbol: &'static str,
+    unit: Unit,
+    lower: f64,
+    upper: f64,
+    reason_lower: &'static str,
+    reason_upper: &'static str,
+}
+
+impl Guarded {
+    #[allow(clippy::too_many_arguments)]
+    fn new(
+        symbol: &str,
+        ty: &str,
+        unit: &str,
+        lower: f64,
+        upper: f64,
+        rl: &str,
+        ru: &str,
+    ) -> Guarded {
+        Guarded {
+            symbol: text(symbol),
+            unit: vleo_units::quantity_unit(ty).unwrap_or(Unit::One),
+            lower: to_si(lower, unit),
+            upper: to_si(upper, unit),
+            reason_lower: text(rl),
+            reason_upper: text(ru),
+        }
+    }
+
+    /// The compiled row's guards on one value, in its order: not a number,
+    /// then below its lower bound, then above its upper.
+    fn check(&self, node: &'static str, v: f64) -> Result<(), Fault> {
+        if !v.is_finite() {
+            return Err(Fault::Degenerate {
+                node,
+                field: self.symbol,
+                reason: "the computation produced a value that is not a number",
+            });
+        }
+        if self.lower.is_finite() && v < self.lower {
+            return Err(Fault::OutOfDomain {
+                node,
+                field: self.symbol,
+                value: v,
+                bound: self.lower,
+                edge: Edge::Lower,
+                unit: self.unit,
+                reason: self.reason_lower,
+            });
+        }
+        if self.upper.is_finite() && v > self.upper {
+            return Err(Fault::OutOfDomain {
+                node,
+                field: self.symbol,
+                value: v,
+                bound: self.upper,
+                edge: Edge::Upper,
+                unit: self.unit,
+                reason: self.reason_upper,
+            });
+        }
+        Ok(())
+    }
+}
+
+/// A row's method, run by the interpreter, with the compiled row's contract
+/// around it.
+struct Interpreted {
+    node: &'static str,
+    program: Program,
+    /// The method's names for its inputs, in the contract's order.
+    inputs: Vec<String>,
+    /// The answer, then each published member, in declared order.
+    outputs: Vec<Guarded>,
+}
+
+impl Interpreted {
+    fn call(&self, inputs: &[f64], outputs: &mut [f64]) -> Result<(), Fault> {
+        let node = self.node;
+        if inputs.len() < self.inputs.len() || outputs.len() < self.outputs.len() {
+            return Err(Fault::Blocked {
+                node,
+                missing: "an input the contract declares",
+            });
+        }
+        // The door, as the compiled method has it: an input that is not a
+        // number is refused before the first line.
+        if inputs[..self.inputs.len()].iter().any(|v| !v.is_finite()) {
+            return Err(Fault::Refused {
+                node,
+                reason: "an input is not a finite number",
+            });
+        }
+        let named: Vec<(String, f64)> = self
+            .inputs
+            .iter()
+            .cloned()
+            .zip(inputs.iter().copied())
+            .collect();
+        let field = self.outputs[0].symbol;
+        let (answer, published) = match method::run_all(&self.program, &named) {
+            Ok((Outcome::Answer(v), p)) => (v, p),
+            Ok((Outcome::Refused { reason, .. }, _)) => {
+                return Err(Fault::Refused {
+                    node,
+                    reason: said(reason),
+                })
+            }
+            Err(d) => {
+                return Err(Fault::Degenerate {
+                    node,
+                    field,
+                    reason: said(d.msg),
+                })
+            }
+        };
+        let mut values = Vec::with_capacity(self.outputs.len());
+        values.push(answer);
+        for g in &self.outputs[1..] {
+            match published.iter().find(|(s, _)| s == g.symbol) {
+                Some((_, v)) => values.push(*v),
+                None => {
+                    return Err(Fault::Degenerate {
+                        node,
+                        field: g.symbol,
+                        reason: "the method did not publish this value",
+                    })
+                }
+            }
+        }
+        for (g, v) in self.outputs.iter().zip(&values) {
+            g.check(node, *v)?;
+        }
+        outputs[..values.len()].copy_from_slice(&values);
+        Ok(())
+    }
+}
+
+/// The row's method, run by the interpreter, when it has one the tool can run.
+fn interpreted(sh: &sheet::Sheet) -> Option<&'static Relation> {
+    if sh.is_seeded() {
+        return None;
+    }
+    let program = method::node_program(sh)?;
+    let mut outputs = vec![Guarded::new(
+        &sh.symbol,
+        &sh.ty,
+        &sh.unit,
+        sh.lower,
+        sh.upper,
+        &sh.reason_lower,
+        &sh.reason_upper,
+    )];
+    for pb in &sh.publishes {
+        outputs.push(Guarded::new(
+            &pb.symbol,
+            &pb.ty,
+            &pb.unit,
+            pb.lower,
+            pb.upper,
+            &pb.reason_lower,
+            &pb.reason_upper,
+        ));
+    }
+    let m: &'static Interpreted = Box::leak(Box::new(Interpreted {
+        node: text(&sh.id),
+        program,
+        inputs: sh.inputs.iter().map(|i| i.binding.clone()).collect(),
+        outputs,
+    }));
+    Some(Box::leak(Box::new(move |i: &[f64], o: &mut [f64]| {
+        m.call(i, o)
+    })))
+}
+
 /// The relation each row runs, by its id: the compiled one when it is this
 /// sheet's.
 fn relation(sh: &sheet::Sheet) -> NodeFn {
@@ -193,6 +393,7 @@ pub fn graph(tree: &Tree) -> Result<&'static Graph, Error> {
 
     let mut nodes = Vec::with_capacity(n);
     let mut dispatch: Vec<NodeFn> = Vec::with_capacity(n);
+    let mut run: Vec<Option<&'static Relation>> = Vec::with_capacity(n);
     for sh in &sheets {
         let inputs: Vec<u16> = sh
             .inputs
@@ -271,7 +472,14 @@ pub fn graph(tree: &Tree) -> Result<&'static Graph, Error> {
             impl_hash: sh.impl_hash,
             view: view_of(&sh.view),
         });
-        dispatch.push(relation(sh));
+        // A method runs in the interpreter, and needs no compiled code.
+        let interp = interpreted(sh);
+        dispatch.push(if interp.is_some() {
+            not_in_this_build
+        } else {
+            relation(sh)
+        });
+        run.push(interp);
     }
 
     let limit = |lower: f64, upper: f64, unit: &str, rl: &str, ru: &str| Limit {
@@ -359,6 +567,7 @@ pub fn graph(tree: &Tree) -> Result<&'static Graph, Error> {
         nodes: slice(nodes),
         vars: slice(vars),
         dispatch: slice(dispatch),
+        run: slice(run),
         cases: slice(cases),
     })))
 }
