@@ -76,6 +76,23 @@ pub struct Taken {
     pub notes: Vec<String>,
 }
 
+impl Today {
+    /// Every node a taken release changes in the design, with which release:
+    /// what changed since the design's own sheets, for tracing a closure that
+    /// held before and does not now (`vleo_modules::health::trace_since`).
+    pub fn changed(&self) -> Vec<(String, String)> {
+        self.groups
+            .iter()
+            .filter_map(|g| g.taken.as_ref().map(|t| (g, t)))
+            .flat_map(|(g, t)| {
+                t.changes
+                    .iter()
+                    .map(move |n| (n.clone(), format!("changed by {} {}", g.id, t.version)))
+            })
+            .collect()
+    }
+}
+
 impl Group {
     /// The group's state in a sentence: which release it is, and whether that
     /// is its latest.

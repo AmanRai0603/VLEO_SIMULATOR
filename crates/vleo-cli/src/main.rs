@@ -97,6 +97,7 @@ fn main() -> ExitCode {
             | "inputs"
             | "selftest"
             | "version"
+            | "health"
     );
     let engine = if runs {
         match vleo_server::run_the_design(None) {
@@ -120,6 +121,7 @@ fn main() -> ExitCode {
         "result" => cmd_result(&rest),
         "results" => cmd_results(&rest),
         "figure" => cmd_figure(&rest),
+        "health" => cmd_health(&rest, &engine),
         "selftest" => cmd_selftest(),
         "data" => cmd_data(&rest),
         "version" => {
@@ -202,6 +204,14 @@ vleo <command>
                        and their keys are listed in the manual; an unknown one
                        is refused by name and the exit status says so.
                        e.g. `vleo figure growth v=ap by=cycle`
+  health [--trace <closure>] [--inputs <file.csv> | --defaults] [--set id=value ...]
+                       where exactly the design breaks: every row closes,
+                       fails, is refused, blocked, unproven or open; each group
+                       as bad as its worst row, and the spacecraft as bad as
+                       its worst group. --trace walks a closure down to the
+                       rows that cause it, names their group and owner, and
+                       ranks the declared inputs by how far each moves its
+                       margin, with the value that would make it close.
   selftest             every fixture declaration in the tree is sound —
                        provenance outside the code, a positive tolerance.
                        It does not execute them: `cargo test` does.
@@ -745,6 +755,194 @@ fn cmd_figure(args: &[&str]) -> Result<(), String> {
         return Err(format!(
             "the engine refused the figure '{id}' — the message is above"
         ));
+    }
+    Ok(())
+}
+
+/// The health map: one run of the whole design on the case, every row's
+/// state, the groups under the programme's each as bad as its worst row, and
+/// every closure's margin. With `--trace`, one closure walked down to what
+/// causes it (docs/OPERATING_1_0.md, section 6).
+fn cmd_health(args: &[&str], engine: &str) -> Result<(), String> {
+    use vleo_modules::health::{health, is_closure, trace_since, State};
+    let g = vleo_modules::engine();
+    let (said, r) = inputs_for(args)?;
+    let mut supply = r.set.clone();
+    supply.extend(sets(args)?);
+    let (data, data_versions) = resolve_data();
+    let case = Case {
+        base: opt(args, "--case").unwrap_or("").to_string(),
+        supply,
+        target: g.nodes[0].id.to_string(),
+        mode: RunMode::All,
+        data,
+        data_versions,
+    };
+    if let Some(why) = vleo_modules::case_refusal(&case) {
+        return Err(format!(
+            "{}. `vleo cases` lists them.",
+            why.trim_end_matches('.')
+        ));
+    }
+    let map = health(g, &case);
+    let colour = |s: State| match s {
+        State::Fails | State::Refused => "\x1b[31m",
+        State::Blocked | State::Unproven | State::Tight => "\x1b[33m",
+        State::Open => "\x1b[2m",
+        State::Closes => "\x1b[32m",
+    };
+    let id = |k: u16| g.nodes[k as usize].id;
+
+    if let Some(c) = opt(args, "--trace") {
+        let k = g
+            .find(c)
+            .ok_or_else(|| format!("no node '{c}'. `vleo list` shows every row."))?;
+        if !is_closure(g, k) {
+            return Err(format!(
+                "{c} is not a closure: a closure is an achieved or KPI row, whose answer is its \
+                 own margin. `vleo health` lists them."
+            ));
+        }
+        // Today's design says what its releases changed: a changed row the
+        // closure reads is a cause, with the release that changed it.
+        let changed: Vec<(u16, String)> = vleo_server::changed_in_the_design()
+            .into_iter()
+            .filter_map(|(id, said)| g.find(&id).map(|k| (k, said)))
+            .collect();
+        let t = trace_since(g, &case, &map, k, &changed);
+        let n = map.node(k);
+        print!(
+            "\x1b[1m{c}\x1b[0m {}{}\x1b[0m",
+            colour(t.state),
+            t.state.name()
+        );
+        match t.margin {
+            Some(m) => println!(", its margin {:+.1}%", m * 100.0),
+            None => println!(" — {}", n.why),
+        }
+        println!("  inputs: {said}");
+        say_set_aside(&r);
+        println!("  design: {engine}");
+        println!();
+        if t.causes.is_empty() {
+            println!("  no row it reads is refused, open or unproven");
+        } else {
+            println!("  caused by, nearest first:");
+            for c in &t.causes {
+                println!(
+                    "    {:<34} {}{:<9}\x1b[0m {} · {} — {}",
+                    id(c.node),
+                    colour(c.state),
+                    c.state.name(),
+                    c.group,
+                    c.owner,
+                    c.why
+                );
+            }
+        }
+        if !t.levers.is_empty() {
+            println!();
+            println!("  what moves its margin, most first, each across its declared range:");
+            for l in &t.levers {
+                let unit = g.vars[g.nodes[l.node as usize].outputs[0] as usize].unit;
+                let m = |x: Option<f64>| {
+                    x.map_or("refused".to_string(), |m| format!("{:+.1}%", m * 100.0))
+                };
+                let closes = match l.closes_at {
+                    Some(x) => {
+                        let (shown, sym) = vleo_bus::present(x, unit, 6);
+                        let sym = if sym == "-" { "" } else { sym };
+                        format!("closes from {shown} {sym}").trim_end().to_string()
+                    }
+                    None => "the same side across its range".to_string(),
+                };
+                println!(
+                    "    {:<34} {} to {}   {closes} · {} · {}",
+                    id(l.node),
+                    m(l.at_lower),
+                    m(l.at_upper),
+                    l.group,
+                    l.owner
+                );
+            }
+        }
+        return Ok(());
+    }
+
+    println!(
+        "\x1b[1mthe spacecraft\x1b[0m {}{}\x1b[0m",
+        colour(map.spacecraft),
+        map.spacecraft.name()
+    );
+    println!("  inputs: {said}");
+    say_set_aside(&r);
+    println!("  design: {engine}");
+    let counts: Vec<String> = map
+        .counts()
+        .iter()
+        .map(|(s, n)| format!("{n} {}", s.name()))
+        .collect();
+    println!("  {} rows: {}", map.nodes.len(), counts.join(", "));
+    println!();
+    println!("  the groups under the programme's, worst first:");
+    let mut top: Vec<_> = map
+        .groups
+        .iter()
+        .filter(|gr| {
+            vleo_modules::GROUPS
+                .iter()
+                .any(|x| x.id == gr.id && x.parent == "root")
+        })
+        .collect();
+    top.sort_by_key(|gr| (gr.state, gr.id));
+    for gr in top {
+        let named: Vec<&str> = gr.worst.iter().take(3).map(|&k| id(k)).collect();
+        let more = gr.worst.len().saturating_sub(3);
+        println!(
+            "    {:<24} {}{:<9}\x1b[0m {}{}",
+            gr.id,
+            colour(gr.state),
+            gr.state.name(),
+            named.join(", "),
+            if more > 0 {
+                format!(" and {more} more")
+            } else {
+                String::new()
+            }
+        );
+    }
+    println!();
+    println!("  closures that answer:");
+    for n in map
+        .nodes
+        .iter()
+        .filter(|n| is_closure(g, n.node) && n.margin.is_some())
+    {
+        println!(
+            "    {:<34} {}{:<9}\x1b[0m {:+.1}%",
+            id(n.node),
+            colour(n.state),
+            n.state.name(),
+            n.margin.unwrap_or(f64::NAN) * 100.0
+        );
+    }
+    let silent = map
+        .nodes
+        .iter()
+        .filter(|n| is_closure(g, n.node) && n.margin.is_none())
+        .count();
+    println!("    and {silent} that do not answer: `vleo health --trace <closure>` says why");
+    for b in map.nodes.iter().filter(|n| n.state == State::Refused) {
+        println!(
+            "  {}refused\x1b[0m {} — {}",
+            colour(State::Refused),
+            id(b.node),
+            b.why
+        );
+    }
+    println!();
+    for note in &map.notes {
+        println!("  {note}");
     }
     Ok(())
 }

@@ -284,6 +284,7 @@ fn open_tree(root: &Path) -> Result<Opened, String> {
         .filter(|v| !v.trim().is_empty())
         .map(PathBuf::from)
     else {
+        *CHANGED.write().unwrap_or_else(|e| e.into_inner()) = Vec::new();
         return Ok((files, design, Vec::new()));
     };
     // Today's design: every group's latest sealed release on the drive that
@@ -310,7 +311,20 @@ fn open_tree(root: &Path) -> Result<Opened, String> {
     for i in &t.ignored {
         said.push(format!("  ignored: {i}"));
     }
+    *CHANGED.write().unwrap_or_else(|e| e.into_inner()) = t.changed();
     Ok((t.files, design, said))
+}
+
+/// What the releases taken into the design the tool opened last change, node
+/// by node, with which release (`today::Today::changed`); empty when the
+/// design is not today's.
+static CHANGED: std::sync::RwLock<Vec<(String, String)>> = std::sync::RwLock::new(Vec::new());
+
+/// Every node a release taken into the open design changes, and which
+/// release: what a closure is traced against when it held before and does
+/// not now (`vleo_modules::health::trace_since`).
+pub fn changed_in_the_design() -> Vec<(String, String)> {
+    CHANGED.read().unwrap_or_else(|e| e.into_inner()).clone()
 }
 
 /// The design as the tool opens it: where its files are read from, the design
