@@ -617,6 +617,43 @@ impl Out {
     }
 }
 
+/// The group's nodes in an order where every node comes after the nodes that
+/// feed it, its wiring read from each input's `from`; a loop keeps file order.
+/// As the page orders them (`web/js/gmodel.js`, `topoOrder`).
+pub fn order(folder: &Folder) -> Vec<String> {
+    let g = load(folder);
+    let ids: Vec<&str> = g.nodes.iter().map(|n| n.id.as_str()).collect();
+    let mut into: BTreeMap<&str, usize> = ids.iter().map(|id| (*id, 0)).collect();
+    for (_, to) in &g.edges {
+        *into.entry(to.as_str()).or_default() += 1;
+    }
+    let mut ready: std::collections::VecDeque<&str> =
+        ids.iter().copied().filter(|id| into[id] == 0).collect();
+    let mut out: Vec<String> = Vec::new();
+    let mut seen = BTreeSet::new();
+    while let Some(id) = ready.pop_front() {
+        if !seen.insert(id) {
+            continue;
+        }
+        out.push(id.to_string());
+        for (from, to) in &g.edges {
+            if from == id {
+                let n = into.entry(to.as_str()).or_default();
+                *n = n.saturating_sub(1);
+                if *n == 0 {
+                    ready.push_back(to.as_str());
+                }
+            }
+        }
+    }
+    for id in ids {
+        if !seen.contains(id) {
+            out.push(id.to_string());
+        }
+    }
+    out
+}
+
 /// Every check of a group folder, against the pattern.
 pub fn check(folder: &Folder, spec: &Spec) -> Vec<Finding> {
     let m = load(folder);

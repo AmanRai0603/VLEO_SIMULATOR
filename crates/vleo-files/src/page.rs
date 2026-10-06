@@ -110,19 +110,7 @@ fn findings(found: &checks::Findings) -> String {
 /// `{"error": ..., "kind": ...}`.
 pub fn check_content(request: &[u8]) -> String {
     let answer = || -> Result<String, Error> {
-        let tables = rows::decode(request)?;
-        let file = if format_of(&tables) == "1" {
-            upgrade::from_format_1(
-                tables,
-                &upgrade::Upgrade {
-                    app: "the page",
-                    at: "",
-                },
-            )?
-            .file
-        } else {
-            File::from_tables(tables)?
-        };
+        let file = opened(rows::decode(request)?)?;
         let found = checks::check_release(&file);
         Ok(format!(
             "{{\"holds\":{},\"findings\":{}}}",
@@ -133,17 +121,92 @@ pub fn check_content(request: &[u8]) -> String {
     answer().unwrap_or_else(|e| error_json(&e))
 }
 
+/// A file's rows as the application opens it: a file from before 1.0 is
+/// upgraded first.
+fn opened(tables: Vec<crate::model::Table>) -> Result<File, Error> {
+    if format_of(&tables) == "1" {
+        Ok(upgrade::from_format_1(
+            tables,
+            &upgrade::Upgrade {
+                app: "the page",
+                at: "",
+            },
+        )?
+        .file)
+    } else {
+        File::from_tables(tables)
+    }
+}
+
+/// Two files compared, block by block (`crate::compare`): the request is the
+/// first file's rows, then the second's. The answer is `{"summary", "same",
+/// "file": [...], "blocks": [{"uid", "id", "before", "after", "status",
+/// "differences": [...]}], "history": [{"table", "only_first",
+/// "only_second"}]}`, each difference in the words a person reads.
+pub fn compare(request: &[u8]) -> String {
+    let answer = || -> Result<String, Error> {
+        let mut r = Reader::new(request);
+        let a = opened(rows::decode(r.bytes()?)?)?;
+        let b = opened(rows::decode(r.bytes()?)?)?;
+        let c = crate::compare::compare(&a, &b);
+        let says = |ds: &[crate::compare::Difference]| {
+            format!(
+                "[{}]",
+                ds.iter()
+                    .map(|d| json_str(&d.says()))
+                    .collect::<Vec<_>>()
+                    .join(",")
+            )
+        };
+        let opt = |s: &Option<String>| s.as_deref().map_or("null".to_string(), json_str);
+        Ok(format!(
+            "{{\"summary\":{},\"same\":{},\"file\":{},\"blocks\":[{}],\"history\":[{}]}}",
+            json_str(&c.summary()),
+            c.same,
+            says(&c.file),
+            c.blocks
+                .iter()
+                .map(|b| format!(
+                    "{{\"uid\":{},\"id\":{},\"before\":{},\"after\":{},\"status\":{},\"differences\":{}}}",
+                    json_str(&b.uid),
+                    json_str(b.id()),
+                    opt(&b.before),
+                    opt(&b.after),
+                    json_str(b.status.name()),
+                    says(&b.differences)
+                ))
+                .collect::<Vec<_>>()
+                .join(","),
+            c.history
+                .iter()
+                .map(|(t, x, y)| format!(
+                    "{{\"table\":{},\"only_first\":{x},\"only_second\":{y}}}",
+                    json_str(t)
+                ))
+                .collect::<Vec<_>>()
+                .join(",")
+        ))
+    };
+    answer().unwrap_or_else(|e| error_json(&e))
+}
+
+/// A request for [`compare`], as the page writes it.
+pub fn compare_request(first_rows: &[u8], second_rows: &[u8]) -> Vec<u8> {
+    let mut out = Vec::new();
+    for bytes in [first_rows, second_rows] {
+        out.extend_from_slice(&(bytes.len() as u32).to_le_bytes());
+        out.extend_from_slice(bytes);
+    }
+    out
+}
+
 /// The group folder's checks (`crate::folder`), the page's group checker said
 /// by the library: the request is a group's file as its rows — a file from
 /// before 1.0 as it is, or one upgraded from it. The answer is
 /// `{"findings": [{level, where, msg, line}, ...]}`, or `{"error", "kind"}`.
 pub fn check_folder(request: &[u8]) -> String {
     let answer = || -> Result<String, Error> {
-        let tables = rows::decode(request)?;
-        let folder = match format_of(&tables).as_str() {
-            "1" => crate::format_1::Old::from_tables(tables)?.folder(),
-            _ => upgrade::to_format_1(&File::from_tables(tables)?)?.folder(),
-        };
+        let folder = folder_of(rows::decode(request)?)?;
         let spec = crate::folder::Spec::carried()?;
         let found = crate::folder::check(&folder, &spec);
         Ok(format!(
@@ -162,6 +225,57 @@ pub fn check_folder(request: &[u8]) -> String {
         ))
     };
     answer().unwrap_or_else(|e| error_json(&e))
+}
+
+/// The seal of a group's folder, the page's seal rules said by the library
+/// (`crate::seal`): the request is a group's file's rows. The answer is
+/// `{"scopes": [{"scope", "fingerprint"}], "reviews": [...], "blockers": [...]}`.
+pub fn seal_state(request: &[u8]) -> String {
+    let answer = || -> Result<String, Error> {
+        let folder = folder_of(rows::decode(request)?)?;
+        let s = crate::seal::state(&folder, &crate::folder::Spec::carried()?);
+        let list = |items: Vec<String>| format!("[{}]", items.join(","));
+        Ok(format!(
+            "{{\"scopes\":{},\"reviews\":{},\"blockers\":{}}}",
+            list(
+                s.scopes
+                    .iter()
+                    .map(|(scope, fp)| format!(
+                        "{{\"scope\":{},\"fingerprint\":{}}}",
+                        json_str(scope),
+                        json_str(fp)
+                    ))
+                    .collect()
+            ),
+            list(
+                s.reviews
+                    .iter()
+                    .map(|r| format!(
+                        "{{\"name\":{},\"scope\":{},\"version\":{},\"fingerprint\":{},\"date\":{},\"verdict\":{},\"note\":{},\"current\":{}}}",
+                        json_str(&r.name),
+                        json_str(&r.scope),
+                        json_str(&r.version),
+                        json_str(&r.fingerprint),
+                        json_str(&r.date),
+                        json_str(&r.verdict),
+                        json_str(&r.note),
+                        r.current
+                    ))
+                    .collect()
+            ),
+            list(s.blockers.iter().map(|b| json_str(b)).collect())
+        ))
+    };
+    answer().unwrap_or_else(|e| error_json(&e))
+}
+
+/// A group's file as the folder its sign-offs were given for, whichever
+/// format it is in.
+fn folder_of(tables: Vec<crate::model::Table>) -> Result<crate::format_1::Folder, Error> {
+    Ok(match format_of(&tables).as_str() {
+        "1" => crate::format_1::Old::from_tables(tables)?.folder(),
+        _ => upgrade::to_format_1(&File::from_tables(tables)?)?.folder(),
+    })
 }
 
 /// The format a file's meta says it is in.

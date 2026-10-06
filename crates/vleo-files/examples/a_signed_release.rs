@@ -205,6 +205,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             page::check_content(&rows),
         )?;
     }
+    // And the two compared, block by block.
+    let rows = |v: &str| -> Result<Vec<u8>, Box<dyn std::error::Error>> {
+        let p = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join(format!("tests/fixtures/l3_solar-{v}.vleo"));
+        Ok(vleo_files::rows::encode(&raw_tables(&p)?))
+    };
+    std::fs::write(
+        dir.join("expected-compare.json"),
+        page::compare(&page::compare_request(&rows("1.0")?, &rows("1.1")?)),
+    )?;
     println!("wrote {} — {answer}", dir.display());
     Ok(())
 }

@@ -111,6 +111,21 @@ for (const v of ['1.0', '1.1']) {
     'page: ' + JSON.stringify(found).slice(0, 300) + '\n      installed: ' + want.slice(0, 300));
 }
 
+// Solar 1.0 against 1.1, block by block, compared in the page: the installed
+// library's answer, byte for byte, and the seven nodes that changed.
+{
+  const read = v => files.rowsOf(new Uint8Array(readFileSync(join(dir, 'l3_solar-' + v + '.vleo'))));
+  const found = lib.compare(await read('1.0'), await read('1.1'));
+  const want = readFileSync(join(dir, 'expected-compare.json'), 'utf8');
+  check('Solar 1.0 against 1.1, compared in the page: ' + found.summary, !found.error &&
+    (found.blocks || []).map(b => b.id).join(' ') === 'sw_activity_band sw_ap_daily_band_drop sw_ap_design sw_exceedance_rate sw_horizon_persistence sw_kp_scenarios sw_regime',
+    JSON.stringify(found).slice(0, 300));
+  check('and the page compares them exactly as the installed library does', JSON.stringify(found) === want,
+    'page: ' + JSON.stringify(found).slice(0, 300) + '\n      installed: ' + want.slice(0, 300));
+  const self = lib.compare(await read('1.1'), await read('1.1'));
+  check('and a file against itself is the same', !self.error && self.blocks.length === 0 && self.file.length === 0, self.summary);
+}
+
 // The group folder's checks, said by the library, against the page's own
 // checker (web/js/gcheck.js) on the same folders, with the pattern the page
 // carries (the spec inlined in web/group.html): the same findings, at the
@@ -166,6 +181,54 @@ const broken = await changed(solar11, `
 const found = await parity('Solar 1.1, broken in many places', broken);
 check('and the broken copy is found broken — at least 15 errors', found.filter(k => k.startsWith('error')).length >= 15,
   found.filter(k => k.startsWith('error')).length + ' errors');
+
+// The seal, said by the library, against the page's own seal rules
+// (web/js/gseal.js: reviewState, sealBlockers) on the same folders: the same
+// fingerprint for the group and every node, every sign-off current or stale
+// alike, and the same things in the way of a seal, in the same words.
+const gseal = await import(pathToFileURL(join(tmp, 'gseal.js')).href);
+async function sealParity(what, bytes) {
+  const folder = gdb.folderFromDb(await gstore.open(bytes));
+  const model = await loadGroup(folder);
+  const { reviews, fingerprintOf } = await gseal.reviewState(folder, model);
+  const scopes = [];
+  for (const s of ['group'].concat(model.order)) scopes.push({ scope: s, fingerprint: await fingerprintOf(s) });
+  const page = {
+    scopes,
+    reviews: reviews.map(r => [r.name, r.scope, r.fingerprint, r.verdict, r.current]),
+    blockers: await gseal.sealBlockers(folder, model, await checkGroup(model, spec)),
+  };
+  const answer = lib.sealState(await files.rowsOf(bytes));
+  const mine = answer.error ? answer : {
+    scopes: answer.scopes,
+    reviews: answer.reviews.map(r => [r.name, r.scope, r.fingerprint, r.verdict, r.current]),
+    blockers: answer.blockers,
+  };
+  check(what + ': the library seals as the page seals — ' + page.reviews.filter(r => !r[4]).length + ' stale sign-off(s), ' +
+    page.blockers.length + ' in the way', JSON.stringify(page) === JSON.stringify(mine),
+    'page: ' + JSON.stringify(page.blockers).slice(0, 300) + '\n      library: ' + JSON.stringify(mine.blockers || mine).slice(0, 300));
+  return page;
+}
+for (const [v, bytes] of [['1.0', solar10], ['1.1', solar11]]) {
+  const page = await sealParity('Solar ' + v, bytes);
+  const sealed = (await gstore.open(bytes)).meta('fingerprint');
+  check('Solar ' + v + ', as sealed: nothing in the way, and the fingerprint the seal recorded',
+    !page.blockers.length && page.scopes[0].fingerprint === sealed, JSON.stringify(page.blockers) + ' ' + page.scopes[0].fingerprint + ' / ' + sealed);
+}
+const stale = await sealParity('Solar 1.1, one node changed after signing', await changed(solar11,
+  "UPDATE doc SET body = body || ' ' WHERE scope = 'sw_regime' AND kind = 'explanation';"));
+check('and that node and the group wait for a new sign-off', stale.blockers.join(' | ') ===
+  'sw_regime has no current sign-off from its node engineer | the group has no current sign-off from its owner', JSON.stringify(stale.blockers));
+// A reviewer, not the owner, gives the group a current ok: it is current, and
+// it does not count, because only the owner signs the whole group.
+const withReviewer = await changed(solar11, "INSERT INTO member (name, role) VALUES ('Somebody Else', 'reviewer');");
+const groupNow = (await gseal.fingerprint(gdb.folderFromDb(await gstore.open(withReviewer)), 'group')).fingerprint;
+const notOwner = await sealParity('Solar 1.1, the group signed by a reviewer', await changed(withReviewer,
+  `UPDATE review SET name = 'Somebody Else', fingerprint = '${groupNow}' WHERE scope = 'group';`));
+check('and the reviewer\'s ok, current, does not seal the group', notOwner.reviews.some(r => r[1] === 'group' && r[4]) &&
+  notOwner.blockers.join(' | ') === 'the group has no current sign-off from its owner', JSON.stringify(notOwner.blockers));
+const unowned = await sealParity('Solar 1.1, broken in many places', broken);
+check('and nothing in it may be sealed', unowned.blockers.length === 1 + unowned.scopes.length, unowned.blockers.length + ' in the way');
 
 rmSync(tmp, { recursive: true, force: true });
 console.log(failed ? failed + ' check(s) failed' : 'every check holds');
