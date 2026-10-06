@@ -9,7 +9,7 @@
 use vleo_core::credibility::{CredVec, Tier};
 use vleo_core::fault::Fault;
 use vleo_core::graph::{
-    Behaviour, Kind, Limit, NodeDef, NodeTable, Retirement, State, VarDef, View,
+    Behaviour, Kind, Limit, NodeDef, NodeTable, Port, Retirement, State, VarDef, View,
 };
 use vleo_core::resolver::{evaluate, CycleSpec, Mode, RunReport, Workspace};
 use vleo_core::units::Unit;
@@ -80,6 +80,7 @@ impl Graph {
                 unit: Unit::One,
                 producer: i as u16,
                 limit: Limit::UNBOUNDED,
+                port: Port::ACHIEVED,
             });
             g.rules.push(rule);
         }

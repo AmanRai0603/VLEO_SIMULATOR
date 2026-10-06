@@ -764,7 +764,7 @@ fn cmd_figure(args: &[&str]) -> Result<(), String> {
 /// every closure's margin. With `--trace`, one closure walked down to what
 /// causes it (docs/OPERATING_1_0.md, section 6).
 fn cmd_health(args: &[&str], engine: &str) -> Result<(), String> {
-    use vleo_modules::health::{health, is_closure, trace_since, State};
+    use vleo_modules::health::{health, is_closure, range, trace_since, State};
     let g = vleo_modules::engine();
     let (said, r) = inputs_for(args)?;
     let mut supply = r.set.clone();
@@ -840,6 +840,43 @@ fn cmd_health(args: &[&str], engine: &str) -> Result<(), String> {
                 );
             }
         }
+        // Over the values still open behind it, one at a time.
+        let rv = range(g, &case, &map, k);
+        println!();
+        println!("  over its open values: {}", rv.verdict.said());
+        for l in &rv.tornado {
+            let m =
+                |x: Option<f64>| x.map_or("refused".to_string(), |m| format!("{:+.1}%", m * 100.0));
+            let var = &g.vars[g.nodes[l.node as usize].outputs[0] as usize];
+            println!(
+                "    {:<34} {} to {}   open, {} by {}",
+                id(l.node),
+                m(l.at_lower),
+                m(l.at_upper),
+                if var.port.open_owner.is_empty() {
+                    "nobody named"
+                } else {
+                    var.port.open_owner
+                },
+                if var.port.open_due.is_empty() {
+                    "no gate named"
+                } else {
+                    var.port.open_due
+                },
+            );
+        }
+        let (maturity, rows) = &rv.least_mature;
+        let named: Vec<&str> = rows.iter().take(3).map(|&r| id(r)).collect();
+        println!(
+            "  the least mature value it rests on is {}: {}{}",
+            maturity.name(),
+            named.join(", "),
+            if rows.len() > 3 {
+                format!(" and {} more", rows.len() - 3)
+            } else {
+                String::new()
+            }
+        );
         if !t.levers.is_empty() {
             println!();
             println!("  what moves its margin, most first, each across its declared range:");
@@ -956,6 +993,15 @@ fn cmd_show(args: &[&str]) -> Result<(), String> {
     println!("  question     {}", def.question);
     println!("  relation     {}", def.expression);
     println!("  behaviour    {}", def.behaviour.name());
+    let port = VARS[i as usize].port;
+    println!(
+        "  its value    {}, {}{}",
+        port.state.name(),
+        port.maturity.name(),
+        port.parameter
+            .map(|l| format!(", the {}'s parameter", l.name()))
+            .unwrap_or_default()
+    );
     println!("  source       {}", def.source);
     println!(
         "  owner        {}  tier {}  kind {}  state {}",

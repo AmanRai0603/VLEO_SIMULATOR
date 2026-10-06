@@ -275,6 +275,97 @@ impl Limit {
     };
 }
 
+/// Where a value stands (docs/SYSTEM_MODEL.md, section 4).
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum PortState {
+    /// Stated at this level, with who, when and why.
+    Decided,
+    /// A bound handed to a child.
+    Allocated,
+    /// To be decided below, by its owner, by the gate it is due at. It carries
+    /// the range it may still take, its declared range, not a blank.
+    Open,
+    /// Computed.
+    Achieved,
+}
+
+impl PortState {
+    pub fn name(self) -> &'static str {
+        match self {
+            PortState::Decided => "decided",
+            PortState::Allocated => "allocated",
+            PortState::Open => "open",
+            PortState::Achieved => "achieved",
+        }
+    }
+}
+
+/// How a value is known, least mature first: a closure rests on the least
+/// mature value behind it, so an early estimate cannot look as safe as a
+/// measurement.
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Debug)]
+pub enum Maturity {
+    /// Nobody has said.
+    Unstated,
+    Estimated,
+    Calculated,
+    Measured,
+}
+
+impl Maturity {
+    pub fn name(self) -> &'static str {
+        match self {
+            Maturity::Unstated => "unstated",
+            Maturity::Estimated => "estimated",
+            Maturity::Calculated => "calculated",
+            Maturity::Measured => "measured",
+        }
+    }
+}
+
+/// The level a parameter belongs to: it decides it, and nobody below can
+/// change it, only ask.
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Debug)]
+pub enum Level {
+    Programme,
+    System,
+    Subsystem,
+}
+
+impl Level {
+    pub fn name(self) -> &'static str {
+        match self {
+            Level::Programme => "programme",
+            Level::System => "system",
+            Level::Subsystem => "subsystem",
+        }
+    }
+}
+
+/// What a port says of its value beside the number: its state, its maturity,
+/// whether it is a parameter and whose, and, while open, who owns it and the
+/// gate it is due by.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub struct Port {
+    pub state: PortState,
+    pub maturity: Maturity,
+    /// The level that owns it, when it is a parameter.
+    pub parameter: Option<Level>,
+    pub open_owner: &'static str,
+    pub open_due: &'static str,
+}
+
+impl Port {
+    /// A computed value nobody has said anything more of.
+    pub const ACHIEVED: Port = Port {
+        state: PortState::Achieved,
+        maturity: Maturity::Unstated,
+        parameter: None,
+        open_owner: "",
+        open_due: "",
+    };
+}
+
 /// A variable: one named, typed quantity that some node produces.
 #[derive(Clone, Copy, Debug)]
 pub struct VarDef {
@@ -290,6 +381,8 @@ pub struct VarDef {
     pub producer: NodeIdx,
     /// The range over which it is meant to be valid, and why.
     pub limit: Limit,
+    /// Its state, maturity and, for a parameter, the level that owns it.
+    pub port: Port,
 }
 
 /// A node: one small question with one answer.

@@ -1874,6 +1874,35 @@ pub fn wiring_errors(tree: &Tree) -> Vec<String> {
 /// Wednesday's graph — so they are generated as tables and compiled in. Adding
 /// an edge is therefore a rebuild, which is correct: it changes what the engine
 /// computes, so it should go through the gate.
+/// What an output says of its value, as the generated table writes it — the
+/// same reading as the graph read at run time (`Sheet::port_state`).
+fn port_expr(sh: &Sheet, p: &PortSheet) -> String {
+    let state = match sh.port_state(p) {
+        "decided" => "Decided",
+        "allocated" => "Allocated",
+        "open" => "Open",
+        _ => "Achieved",
+    };
+    let maturity = match p.maturity.as_str() {
+        "estimated" => "Estimated",
+        "calculated" => "Calculated",
+        "measured" => "Measured",
+        _ => "Unstated",
+    };
+    let parameter = match p.parameter.as_str() {
+        "programme" => "Some(Level::Programme)",
+        "system" => "Some(Level::System)",
+        "subsystem" => "Some(Level::Subsystem)",
+        _ => "None",
+    };
+    format!(
+        "Port {{ state: PortState::{state}, maturity: Maturity::{maturity}, parameter: {parameter}, \
+         open_owner: \"{o}\", open_due: \"{d}\" }}",
+        o = esc(&p.open_owner),
+        d = esc(&p.open_due),
+    )
+}
+
 /// A row's behaviour, as the generated table writes it: a table or the
 /// children that answer it as static data, every other behaviour by name. The
 /// gate has already refused one that does not hold together, so a binding
@@ -1950,7 +1979,7 @@ pub fn tables_rs(tree: &Tree) -> String {
     // have none.
     o.push_str(
         "#[allow(unused_imports)]\n\
-         use vleo_core::graph::{Behaviour, Children, Kind, Limit, Lookup, NodeDef, Read, Retirement, State, VarDef, View};\n",
+         use vleo_core::graph::{Behaviour, Children, Kind, Level, Limit, Lookup, Maturity, NodeDef, Port, PortState, Read, Retirement, State, VarDef, View};\n",
     );
     o.push_str("#[allow(unused_imports)]\nuse vleo_core::math::table::Table1;\n");
     o.push_str("use vleo_core::units::Unit;\n\n");
@@ -2134,7 +2163,7 @@ pub fn tables_rs(tree: &Tree) -> String {
     for (i, sh) in sheets.iter().enumerate() {
         o.push_str(&format!(
             "    VarDef {{ id: \"{id}\", symbol: \"{sym}\", label: \"{label}\", unit: Unit::{unit}, producer: {p}, \
-             limit: Limit {{ lower: {lo:?}, upper: {hi:?}, reason_lower: \"{rl}\", reason_upper: \"{ru}\" }} }},\n",
+             limit: Limit {{ lower: {lo:?}, upper: {hi:?}, reason_lower: \"{rl}\", reason_upper: \"{ru}\" }}, port: {port} }},\n",
             id = esc(&sh.id),
             sym = esc(&sh.symbol),
             label = esc(&sh.label),
@@ -2144,13 +2173,14 @@ pub fn tables_rs(tree: &Tree) -> String {
             hi = to_si(sh.upper, &sh.unit),
             rl = esc(&sh.reason_lower),
             ru = esc(&sh.reason_upper),
+            port = port_expr(sh, &sh.port),
         ));
     }
     // The extras, after every primary, in the order they were indexed above.
     for (producer, pb) in &extras {
         o.push_str(&format!(
             "    VarDef {{ id: \"{id}\", symbol: \"{sym}\", label: \"{label}\", unit: Unit::{unit}, producer: {p}, \
-             limit: Limit {{ lower: {lo:?}, upper: {hi:?}, reason_lower: \"{rl}\", reason_upper: \"{ru}\" }} }},\n",
+             limit: Limit {{ lower: {lo:?}, upper: {hi:?}, reason_lower: \"{rl}\", reason_upper: \"{ru}\" }}, port: {port} }},\n",
             id = esc(&format!("{}.{}", sheets[*producer].id, pb.id)),
             sym = esc(&pb.symbol),
             label = esc(&pb.label),
@@ -2160,6 +2190,7 @@ pub fn tables_rs(tree: &Tree) -> String {
             hi = to_si(pb.upper, &pb.unit),
             rl = esc(&pb.reason_lower),
             ru = esc(&pb.reason_upper),
+            port = port_expr(sheets[*producer], &pb.port),
         ));
     }
     o.push_str("];\n\n");

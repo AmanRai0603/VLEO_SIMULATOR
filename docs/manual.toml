@@ -2712,7 +2712,7 @@ effect = "reads"
 tool = "vleo"
 name = "health"
 usage = "health [--trace <closure>] [--inputs <file.csv> | --defaults] [--set id=value ...]"
-what = "Where exactly the design breaks, from one run of the whole design: every row closes, fails, is refused, blocked (naming the row it waits on), unproven (its own cases not reproduced) or open; each group as bad as its worst row, and the spacecraft as bad as its worst group. `--trace` walks one closure down to the rows that cause it — refused, open, unproven, or changed by a release taken into today's design — with their group and owner, and ranks the declared inputs it reads by how far each moves its margin, with the value that would make it close. No closure is judged tight until the programme declares a margin policy, and it says so."
+what = "Where exactly the design breaks, from one run of the whole design: every row closes, fails, is refused, blocked (naming the row it waits on), unproven (its own cases not reproduced) or open; each group as bad as its worst row, and the spacecraft as bad as its worst group. `--trace` walks one closure down to the rows that cause it — refused, open, unproven, or changed by a release taken into today's design — with their group and owner, and ranks the declared inputs it reads by how far each moves its margin, with the value that would make it close. Over the values still open behind it, it says whether the closure holds for all of their range, part of it or none of it, ranks them in a tornado, and names the least mature value it rests on. No closure is judged tight until the programme declares a margin policy, and it says so."
 who = "everyone"
 effect = "reads"
 

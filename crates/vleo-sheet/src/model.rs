@@ -276,6 +276,26 @@ pub struct Publish {
     pub upper: f64,
     pub reason_lower: String,
     pub reason_upper: String,
+    pub port: PortSheet,
+}
+
+/// What an output says of its value beside the number (docs/SYSTEM_MODEL.md,
+/// section 4): its state, its maturity, whether it is a parameter and whose,
+/// and, while open, who owns it and the gate it is due by. Each is what the
+/// sheet wrote, or empty; [`Sheet::port_state`] says what an empty state
+/// means. Outside the sheet hash: it is what is believed of the value, not
+/// what the row computes.
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct PortSheet {
+    /// `decided`, `allocated`, `open` or `achieved`.
+    pub state: String,
+    /// `estimated`, `calculated` or `measured`.
+    pub maturity: String,
+    /// `programme`, `system` or `subsystem`: the level that owns it, when it
+    /// is a parameter.
+    pub parameter: String,
+    pub open_owner: String,
+    pub open_due: String,
 }
 
 /// One declared input.
@@ -412,6 +432,8 @@ pub struct Sheet {
     pub upper: f64,
     pub reason_lower: String,
     pub reason_upper: String,
+    /// What its primary output says of its value. See [`PortSheet`].
+    pub port: PortSheet,
     /// Extra variables published alongside the primary answer. Empty for all
     /// but the rows whose conclusion is a set; see [`Publish`].
     pub publishes: Vec<Publish>,
@@ -511,6 +533,25 @@ impl Sheet {
             "method"
         } else {
             "built-in"
+        }
+    }
+    /// Where an output's value stands: what the sheet says, or, when it says
+    /// nothing, what its row is — open for a row not decided yet, decided for
+    /// a stated value, allocated for a requirement, achieved for anything
+    /// computed. The same reading the upgrade to the one schema makes
+    /// (`vleo_files::upgrade`).
+    pub fn port_state(&self, port: &PortSheet) -> &'static str {
+        match port.state.as_str() {
+            "decided" => "decided",
+            "allocated" => "allocated",
+            "open" => "open",
+            "achieved" => "achieved",
+            _ if self.is_seeded() => "open",
+            _ => match self.kind.as_str() {
+                "declared" => "decided",
+                "required" => "allocated",
+                _ => "achieved",
+            },
         }
     }
     /// The module path, which is the node identifier.
