@@ -15,7 +15,9 @@
 //!
 //! Every row whose relation is a method runs here in the interpreter, not as
 //! the translated code the compiled graph carries: the record of today's
-//! answers is the check that the two agree, exactly.
+//! answers is the check that the two agree, exactly. (The graph a face runs
+//! takes the translation as its fast path for a method the build was made
+//! from; this is the gate that holds the two equal.)
 
 mod baseline;
 
@@ -26,7 +28,7 @@ use vleo_modules::{opened, Graph, COMPILED};
 
 fn read() -> &'static Graph {
     static G: OnceLock<&'static Graph> = OnceLock::new();
-    G.get_or_init(|| opened::read(&root()).expect("the design's files make a graph"))
+    G.get_or_init(|| opened::read_interpreting(&root()).expect("the design's files make a graph"))
 }
 
 #[test]
@@ -75,6 +77,11 @@ fn every_method_runs_in_the_interpreter() {
         .count();
     assert!(translated > 0);
     assert_eq!(read().run_by_the_graph(), translated);
+    // The graph a face runs takes each translation as its fast path, because
+    // this build was made from these very sheets: no method is interpreted.
+    let faces = opened::read(&root()).unwrap();
+    assert_eq!(faces.run_by_the_graph(), 0);
+    assert_eq!(faces.graph_hash(), COMPILED.graph_hash());
 }
 
 #[test]

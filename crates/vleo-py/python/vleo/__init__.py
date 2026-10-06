@@ -75,10 +75,6 @@ def _load():
 _engine = _load()
 
 Result_ = _engine.Result_
-nodes = _engine.nodes
-evaluate = _engine.evaluate
-sweep = _engine.sweep
-version = _engine.version
 
 
 def kit_root():
@@ -86,6 +82,38 @@ def kit_root():
     for a developer's build — wherever the tool finds them itself (None)."""
     carried = os.path.join(_HERE, "_kit")
     return carried if os.path.isdir(os.path.join(carried, "web")) else None
+
+
+_engine_runs = None
+
+
+def engine():
+    """Which graph the engine runs: the one read from the design's files.
+
+    The design is opened before the first answer — the design file, or a
+    checkout's folders — as the tool opens it. A design that does not open
+    raises ``RuntimeError`` naming why; the graph compiled into the engine is
+    never run in its place.
+    """
+    global _engine_runs
+    if _engine_runs is None:
+        _engine_runs = _engine.open_design(kit_root())
+    return _engine_runs
+
+
+def _on_the_design(f):
+    def run(*args, **kwargs):
+        engine()
+        return f(*args, **kwargs)
+
+    run.__name__, run.__doc__ = f.__name__, f.__doc__
+    return run
+
+
+nodes = _on_the_design(_engine.nodes)
+evaluate = _on_the_design(_engine.evaluate)
+sweep = _on_the_design(_engine.sweep)
+version = _on_the_design(_engine.version)
 
 
 def serve(port=7777, open=True):

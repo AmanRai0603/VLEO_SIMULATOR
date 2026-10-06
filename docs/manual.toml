@@ -2728,7 +2728,7 @@ effect = "writes"
 tool = "vleo"
 name = "version"
 usage = "version"
-what = "The kernel, graph and build identity."
+what = "The kernel, graph and build identity, and which graph the engine runs — the one read from the design's files. Every command that runs the engine opens the design first and refuses, saying why, when it does not open."
 who = "everyone"
 effect = "reads"
 

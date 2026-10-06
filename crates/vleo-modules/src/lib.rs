@@ -77,6 +77,96 @@ pub static COMPILED: Graph = Graph {
     cases: &CASES,
 };
 
+/// The graph this process's engine runs, when a face has installed one.
+#[cfg(feature = "std")]
+static ENGINE: std::sync::RwLock<Option<&'static Graph>> = std::sync::RwLock::new(None);
+
+/// The graph the engine runs: the one a face installed from the design's
+/// files ([`run_on`]), or the compiled one until it does. Every function a
+/// face calls — [`evaluate`], [`probe`], [`fixture_verdicts`], [`Vleo::find`]
+/// and the rest — runs on this one.
+pub fn engine() -> &'static Graph {
+    #[cfg(feature = "std")]
+    {
+        if let Some(g) = *ENGINE.read().unwrap_or_else(|e| e.into_inner()) {
+            return g;
+        }
+    }
+    &COMPILED
+}
+
+/// Run the engine on `graph` from now on (docs/PLAN_1_0.md, phase D: every
+/// face is re-pointed).
+///
+/// Refused unless the graph is laid out as the compiled one is — the same
+/// rows, variables and cases, in the same order — because a face still reads
+/// the compiled tables to name and arrange what the engine answers, and a
+/// graph laid out otherwise would be answered under the wrong names. A design
+/// that differs from this build runs when the faces read it from the graph as
+/// well; until then it is refused here, by name.
+#[cfg(feature = "std")]
+pub fn run_on(graph: &'static Graph) -> Result<(), Error> {
+    if let Some(why) = laid_out_otherwise(graph) {
+        return Err(Error::new(
+            ErrorKind::Invalid,
+            alloc::format!(
+                "this design is laid out otherwise than this build of the engine: {why}"
+            ),
+        ));
+    }
+    *ENGINE.write().unwrap_or_else(|e| e.into_inner()) = Some(graph);
+    Ok(())
+}
+
+/// Run the engine on the compiled graph again.
+#[cfg(feature = "std")]
+pub fn run_compiled() {
+    *ENGINE.write().unwrap_or_else(|e| e.into_inner()) = None;
+}
+
+/// The first way `graph` is laid out otherwise than the compiled one, if any.
+#[cfg(feature = "std")]
+fn laid_out_otherwise(graph: &Graph) -> Option<String> {
+    let c = &COMPILED;
+    if graph.nodes.len() != c.nodes.len() {
+        return Some(alloc::format!(
+            "{} rows, where this build has {}",
+            graph.nodes.len(),
+            c.nodes.len()
+        ));
+    }
+    for (a, b) in graph.nodes.iter().zip(c.nodes) {
+        if a.id != b.id || a.inputs != b.inputs || a.outputs != b.outputs {
+            return Some(alloc::format!(
+                "the row {} is not where this build has {}",
+                a.id,
+                b.id
+            ));
+        }
+    }
+    if graph.vars.len() != c.vars.len() {
+        return Some(alloc::format!(
+            "{} values, where this build has {}",
+            graph.vars.len(),
+            c.vars.len()
+        ));
+    }
+    for (a, b) in graph.vars.iter().zip(c.vars) {
+        if a.id != b.id {
+            return Some(alloc::format!(
+                "the value {} is not where this build has {}",
+                a.id,
+                b.id
+            ));
+        }
+    }
+    let ids = |g: &Graph| g.cases.iter().map(|k| k.id).collect::<Vec<_>>();
+    if ids(graph) != ids(c) {
+        return Some("its cases are not this build's".into());
+    }
+    None
+}
+
 impl Graph {
     /// Run node `i`'s relation: the graph's own when it has one, else the
     /// compiled function.
@@ -122,11 +212,11 @@ impl Vleo {
     /// The engine with no reference data. Every node that declares a bundle
     /// refuses, by name.
     pub fn bare() -> Vleo {
-        Vleo::on(&COMPILED, Vec::new())
+        Vleo::on(engine(), Vec::new())
     }
     /// The engine given the bundles a face verified before the run.
     pub fn with_data(data: Vec<String>) -> Vleo {
-        Vleo::on(&COMPILED, data)
+        Vleo::on(engine(), data)
     }
     /// The engine on a graph, given the bundles a face verified.
     pub fn on(graph: &'static Graph, data: Vec<String>) -> Vleo {
@@ -135,30 +225,30 @@ impl Vleo {
 
     /// Identifies this build of the engine (`Graph::kernel_hash`).
     pub fn kernel_hash() -> u64 {
-        COMPILED.kernel_hash()
+        engine().kernel_hash()
     }
 
     /// Identifies the graph (`Graph::graph_hash`).
     pub fn graph_hash() -> u64 {
-        COMPILED.graph_hash()
+        engine().graph_hash()
     }
 
     pub fn find(id: &str) -> Option<NodeIdx> {
-        COMPILED.find(id)
+        engine().find(id)
     }
 
     pub fn case(id: &str) -> Option<&'static CaseDef> {
-        COMPILED.case(id)
+        engine().case(id)
     }
 
     /// The case a run starts from when nobody names one (`Graph::default_case`).
     pub fn default_case() -> Option<&'static CaseDef> {
-        COMPILED.default_case()
+        engine().default_case()
     }
 
     /// The case a run names, or the default when it names none.
     pub fn case_of(case: &vleo_bus::Case) -> Option<&'static CaseDef> {
-        COMPILED.case_of(case)
+        engine().case_of(case)
     }
 }
 
@@ -230,7 +320,7 @@ impl Graph {
 /// had never heard of, which is a number with somebody else's name on it — a
 /// test and two tools named cases that did not exist and passed for years.
 pub fn case_refusal(case: &vleo_bus::Case) -> Option<String> {
-    COMPILED.case_refusal(case)
+    engine().case_refusal(case)
 }
 
 impl Graph {
@@ -273,7 +363,7 @@ impl Graph {
 /// line and the server each had their own copy of this rule, and the two had
 /// already drifted once; this is the one both call.
 pub fn why_not_suppliable(id: &str) -> Option<String> {
-    COMPILED.why_not_suppliable(id)
+    engine().why_not_suppliable(id)
 }
 
 impl Graph {
@@ -468,7 +558,7 @@ impl Graph {
 
 /// One fixture, executed against the live engine.
 pub fn fixture_verdicts(node: NodeIdx) -> Vec<vleo_bus::VerdictOut> {
-    COMPILED.fixture_verdicts(node)
+    engine().fixture_verdicts(node)
 }
 
 /// Evaluate ONE node's relation at supplied inputs, with no graph at all.
@@ -490,12 +580,12 @@ pub fn fixture_verdicts(node: NodeIdx) -> Vec<vleo_bus::VerdictOut> {
 /// relation's own outputs and touches no store, so nothing downstream can see
 /// what a probe computed, and no run's provenance can contain one.
 pub fn probe(node: NodeIdx, inputs: &[f64]) -> Result<[f64; MAX_OUTPUTS], Fault> {
-    COMPILED.probe(node, inputs)
+    engine().probe(node, inputs)
 }
 
 /// One fixture, executed against the live engine.
 pub fn run_fixture(node: NodeIdx, inputs: &[f64]) -> Result<(f64, Verdict), Fault> {
-    COMPILED.run_fixture(node, inputs)
+    engine().run_fixture(node, inputs)
 }
 
 impl Graph {
@@ -545,7 +635,7 @@ impl Default for Scratch {
 
 impl Scratch {
     pub fn new() -> Scratch {
-        Scratch::for_graph(&COMPILED)
+        Scratch::for_graph(engine())
     }
 
     /// The scratch a run on `graph` needs.
@@ -595,7 +685,7 @@ fn widest_cycle(graph: &Graph) -> usize {
 /// command line, the rig console, the wheel — reaches it, and they all get the
 /// same numbers because there is only one of it.
 pub fn evaluate(case: &vleo_bus::Case, scratch: &mut Scratch) -> Result<vleo_bus::Results, Fault> {
-    COMPILED.evaluate(case, scratch)
+    engine().evaluate(case, scratch)
 }
 
 impl Graph {

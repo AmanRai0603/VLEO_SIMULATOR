@@ -20,12 +20,23 @@ fn root() -> PathBuf {
 }
 
 #[test]
+fn a_relation_built_from_another_implementation_is_refused_by_name() {
+    refused_when(|sh| sh.impl_hash ^= 1);
+}
+
+#[test]
 fn a_relation_built_from_another_sheet_is_refused_by_name() {
+    refused_when(|sh| sh.sheet_hash ^= 1);
+}
+
+fn refused_when(moved: impl Fn(&mut vleo_sheet::model::Sheet)) {
     let mut tree = vleo_sheet::load_all(&root()).unwrap();
     // A computed row that answers today, on the compiled engine, whose
     // relation is built in — a method runs in the interpreter, whatever code
     // the build has for it …
-    let read = opened::graph(&tree).unwrap();
+    // Read with every method interpreted, so a row that runs as compiled code
+    // here is one whose relation is built in.
+    let read = opened::interpreting(&tree).unwrap();
     let built_in = |id: &str| {
         read.find(id)
             .is_some_and(|k| !matches!(read.run.get(k as usize), Some(Some(_))))
@@ -46,8 +57,8 @@ fn a_relation_built_from_another_sheet_is_refused_by_name() {
                     .is_some_and(|k| vleo_modules::NODES[k as usize].kind == Kind::Computed)
         })
         .expect("a computed row that answers");
-    // … whose implementation has since changed.
-    tree.sheets.get_mut(&id).unwrap().impl_hash ^= 1;
+    // … whose sheet or implementation has since changed.
+    moved(tree.sheets.get_mut(&id).unwrap());
     let g = opened::graph(&tree).unwrap();
     let k = g.find(&id).unwrap();
     assert_eq!(g.nodes[k as usize].kind, Kind::Computed);

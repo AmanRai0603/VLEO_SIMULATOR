@@ -83,6 +83,32 @@ fn main() -> ExitCode {
     let args: Vec<String> = std::env::args().skip(1).collect();
     let cmd = args.first().map(|s| s.as_str()).unwrap_or("help");
     let rest: Vec<&str> = args.iter().skip(1).map(|s| s.as_str()).collect();
+    // Every command that runs the engine or names its rows runs it on the graph
+    // read from the design's files, as the server does — and refuses, saying
+    // why, when the design does not open.
+    let runs = matches!(
+        cmd,
+        "run"
+            | "sweep"
+            | "campaign"
+            | "list"
+            | "show"
+            | "cases"
+            | "inputs"
+            | "selftest"
+            | "version"
+    );
+    let engine = if runs {
+        match vleo_server::run_the_design(None) {
+            Ok(said) => said,
+            Err(e) => {
+                eprintln!("\x1b[31mvleo: {e}\x1b[0m");
+                return ExitCode::FAILURE;
+            }
+        }
+    } else {
+        String::new()
+    };
     let r = match cmd {
         "run" => cmd_run(&rest),
         "sweep" => cmd_sweep(&rest),
@@ -97,7 +123,7 @@ fn main() -> ExitCode {
         "selftest" => cmd_selftest(),
         "data" => cmd_data(&rest),
         "version" => {
-            print_version();
+            print_version(&engine);
             Ok(())
         }
         "help" | "--help" | "-h" => {
@@ -183,18 +209,20 @@ vleo <command>
                        reconcile the local store, or say what is in it. A run
                        either has verified data on disk or refuses to start: it
                        does not fetch, wait, retry or fall back silently.
-  version              kernel, graph and build identity.
+  version              kernel, graph and build identity, and which graph the
+                       engine runs: the one read from the design's files.
 
 Everything crossing the boundary is SI. A face converts for display and never
 for transport."
     );
 }
 
-fn print_version() {
+fn print_version(engine: &str) {
     println!("vleo {}", env!("CARGO_PKG_VERSION"));
     println!("  kernel {}", short(Vleo::kernel_hash()));
     println!("  graph  {}", short(Vleo::graph_hash()));
     println!("  nodes  {}", NODES.len());
+    println!("  engine {engine}");
 }
 
 fn short(h: u64) -> String {

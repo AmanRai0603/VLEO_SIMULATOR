@@ -6,7 +6,9 @@
 //! declares, so no input reaches these guards through it. A method a group
 //! writes tomorrow need not, and the guards are what stand between its answer
 //! and the design. So here a row's declared range is narrowed, in memory, until
-//! its own answer falls outside it.
+//! its own answer falls outside it. The graph is the one that interprets every
+//! method: an edit in memory leaves the sheet's hash as it was, and the graph a
+//! face runs would take the translation the build was made from.
 
 #![cfg(feature = "std")]
 
@@ -22,7 +24,7 @@ fn root() -> PathBuf {
 /// A row whose relation is a method, with one answer, and the inputs of its
 /// first fixture.
 fn a_method(tree: &vleo_sheet::Tree) -> (String, Vec<f64>) {
-    let g = opened::graph(tree).unwrap();
+    let g = opened::interpreting(tree).unwrap();
     for (k, def) in g.nodes.iter().enumerate() {
         if matches!(g.run.get(k), Some(Some(_))) && def.outputs.len() == 1 {
             if let Some(f) = def.fixtures.first() {
@@ -40,7 +42,7 @@ fn an_answer_outside_its_declared_range_is_refused_lower_bound_first() {
     let mut tree = vleo_sheet::load_all(&root()).unwrap();
     let (id, inputs) = a_method(&tree);
     let answer = {
-        let g = opened::graph(&tree).unwrap();
+        let g = opened::interpreting(&tree).unwrap();
         g.probe(g.find(&id).unwrap(), &inputs).unwrap()[0]
     };
     let (unit, reason_lower, reason_upper) = {
@@ -58,7 +60,7 @@ fn an_answer_outside_its_declared_range_is_refused_lower_bound_first() {
     // Above: the upper bound moved below the answer.
     let upper = answer / si - 1.0;
     tree.sheets.get_mut(&id).unwrap().upper = upper;
-    let g = opened::graph(&tree).unwrap();
+    let g = opened::interpreting(&tree).unwrap();
     match g.probe(g.find(&id).unwrap(), &inputs) {
         Err(Fault::OutOfDomain {
             edge: Edge::Upper,
@@ -78,7 +80,7 @@ fn an_answer_outside_its_declared_range_is_refused_lower_bound_first() {
     // first, as the compiled row says it.
     let lower = answer / si + 1.0;
     tree.sheets.get_mut(&id).unwrap().lower = lower;
-    let g = opened::graph(&tree).unwrap();
+    let g = opened::interpreting(&tree).unwrap();
     match g.probe(g.find(&id).unwrap(), &inputs) {
         Err(Fault::OutOfDomain {
             edge: Edge::Lower,

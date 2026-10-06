@@ -37,10 +37,14 @@ pub const VLEO_DATA: c_int = 5;
 /// The engine hit a bug. The calling program is unaffected; the message says
 /// what happened and where the crash log is, if the host installed one.
 pub const VLEO_INTERNAL: c_int = 6;
+/// The design did not open: it does not load, or is not one this build of the
+/// engine can run. The message says why.
+pub const VLEO_DESIGN: c_int = 7;
 
 thread_local! {
-    /// The last message, per thread. No global state: a sweep is a parallel map
-    /// with no mutex, because there is nothing shared to protect.
+    /// The last message, per thread. Nothing a run writes is shared — the one
+    /// shared setting is which graph runs, set by `vleo_open` — so a sweep is
+    /// a parallel map with no mutex.
     static LAST: RefCell<String> = const { RefCell::new(String::new()) };
     static SCRATCH: RefCell<Option<Scratch>> = const { RefCell::new(None) };
 }
@@ -128,6 +132,47 @@ pub unsafe extern "C" fn vleo_last_message(buf: *mut c_char, len: c_int) -> c_in
     }
     let s = LAST.with(|m| m.borrow().clone());
     write_cstr(&s, buf, len)
+}
+
+/// Open the design under `root` — the design file, or a checkout's folders —
+/// and run the engine on the graph read from its files, as the server and the
+/// command line do. A null `root` finds the design as the tool finds it.
+///
+/// Until it is called, the engine runs the graph compiled into it. A design
+/// that does not open returns [`VLEO_DESIGN`], and the engine goes on running
+/// what it ran before; `vleo_last_message` says why, or, on success, which
+/// graph runs.
+///
+/// Call it once, before the first evaluation and from one thread: it changes
+/// which graph every thread's next evaluation runs.
+///
+/// # Safety
+/// `root` must be null or a valid NUL-terminated string.
+#[no_mangle]
+pub unsafe extern "C" fn vleo_open(root: *const c_char) -> c_int {
+    guarded(|| {
+        let root = if root.is_null() {
+            None
+        } else {
+            match cstr(root) {
+                Some(r) => Some(std::path::PathBuf::from(r)),
+                None => {
+                    set_message("the root is not valid UTF-8".into());
+                    return VLEO_BAD_ARGUMENT;
+                }
+            }
+        };
+        match vleo_server::run_the_design(root) {
+            Ok(said) => {
+                set_message(said);
+                VLEO_OK
+            }
+            Err(e) => {
+                set_message(e);
+                VLEO_DESIGN
+            }
+        }
+    })
 }
 
 /// Identify the engine build and the graph it was built against.
@@ -218,7 +263,7 @@ unsafe fn evaluate(case: *const VleoCase, out: *mut VleoResult) -> c_int {
         supply,
         target: node.clone(),
         mode,
-        // A C caller resolves its own store. The engine opens nothing.
+        // A C caller resolves its own store. The engine opens no data.
         data: Vec::new(),
         data_versions: Vec::new(),
     };
