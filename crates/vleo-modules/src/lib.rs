@@ -392,6 +392,11 @@ pub mod design;
 mod error;
 pub use error::{Error, ErrorKind};
 pub mod figure;
+/// The health map (phase D): every node's state, rolled up valve by valve,
+/// and a closure traced to its cause. It runs the whole design, so only with
+/// the std feature.
+#[cfg(feature = "std")]
+pub mod health;
 pub mod inputs;
 /// The graph read from the design's files when the engine opens (phase D):
 /// it needs the loader, so only with the std feature.

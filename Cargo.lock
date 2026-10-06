@@ -672,10 +672,12 @@ name = "vleo-cli"
 version = "0.4.0"
 dependencies = [
  "embed-resource",
+ "rusqlite",
  "vleo-bus",
  "vleo-core",
  "vleo-data",
  "vleo-design",
+ "vleo-files",
  "vleo-modules",
  "vleo-server",
 ]

@@ -24,6 +24,12 @@ vleo-server = { workspace = true }
 # same crate that writes the design file.
 vleo-design = { workspace = true }
 
+[dev-dependencies]
+# Make a group's release for the tests, as its group would: one row changed
+# in the file, and the seal worked out by the library the group seals with.
+rusqlite = { workspace = true }
+vleo-files = { path = "../vleo-files" }
+
 [lints.rust]
 unsafe_code = "forbid"
 
