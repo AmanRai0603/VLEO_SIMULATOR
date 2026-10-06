@@ -33,6 +33,11 @@
 //! * [`folder`] — the group folder's checks, the page's group checker
 //!   (`web/js/gcheck.js`) said by the library against the same pattern
 //!   (`groups/SPEC.toml`), held to it finding for finding.
+//!
+//! * [`seal`] — the seal of a group's folder from before 1.0: its sign-offs,
+//!   current or stale against the fingerprint they were given for, who may
+//!   sign what, and what stands between the folder and its seal, as the
+//!   page's seal rules (`web/js/gseal.js`) have them.
 
 pub mod chain;
 pub mod checks;
@@ -45,6 +50,7 @@ pub mod meta;
 pub mod model;
 pub mod page;
 pub mod rows;
+pub mod seal;
 #[cfg(not(target_arch = "wasm32"))]
 pub mod sqlite;
 pub mod upgrade;

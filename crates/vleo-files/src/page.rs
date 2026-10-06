@@ -139,11 +139,7 @@ pub fn check_content(request: &[u8]) -> String {
 /// `{"findings": [{level, where, msg, line}, ...]}`, or `{"error", "kind"}`.
 pub fn check_folder(request: &[u8]) -> String {
     let answer = || -> Result<String, Error> {
-        let tables = rows::decode(request)?;
-        let folder = match format_of(&tables).as_str() {
-            "1" => crate::format_1::Old::from_tables(tables)?.folder(),
-            _ => upgrade::to_format_1(&File::from_tables(tables)?)?.folder(),
-        };
+        let folder = folder_of(rows::decode(request)?)?;
         let spec = crate::folder::Spec::carried()?;
         let found = crate::folder::check(&folder, &spec);
         Ok(format!(
@@ -162,6 +158,57 @@ pub fn check_folder(request: &[u8]) -> String {
         ))
     };
     answer().unwrap_or_else(|e| error_json(&e))
+}
+
+/// The seal of a group's folder, the page's seal rules said by the library
+/// (`crate::seal`): the request is a group's file's rows. The answer is
+/// `{"scopes": [{"scope", "fingerprint"}], "reviews": [...], "blockers": [...]}`.
+pub fn seal_state(request: &[u8]) -> String {
+    let answer = || -> Result<String, Error> {
+        let folder = folder_of(rows::decode(request)?)?;
+        let s = crate::seal::state(&folder, &crate::folder::Spec::carried()?);
+        let list = |items: Vec<String>| format!("[{}]", items.join(","));
+        Ok(format!(
+            "{{\"scopes\":{},\"reviews\":{},\"blockers\":{}}}",
+            list(
+                s.scopes
+                    .iter()
+                    .map(|(scope, fp)| format!(
+                        "{{\"scope\":{},\"fingerprint\":{}}}",
+                        json_str(scope),
+                        json_str(fp)
+                    ))
+                    .collect()
+            ),
+            list(
+                s.reviews
+                    .iter()
+                    .map(|r| format!(
+                        "{{\"name\":{},\"scope\":{},\"version\":{},\"fingerprint\":{},\"date\":{},\"verdict\":{},\"note\":{},\"current\":{}}}",
+                        json_str(&r.name),
+                        json_str(&r.scope),
+                        json_str(&r.version),
+                        json_str(&r.fingerprint),
+                        json_str(&r.date),
+                        json_str(&r.verdict),
+                        json_str(&r.note),
+                        r.current
+                    ))
+                    .collect()
+            ),
+            list(s.blockers.iter().map(|b| json_str(b)).collect())
+        ))
+    };
+    answer().unwrap_or_else(|e| error_json(&e))
+}
+
+/// A group's file as the folder its sign-offs were given for, whichever
+/// format it is in.
+fn folder_of(tables: Vec<crate::model::Table>) -> Result<crate::format_1::Folder, Error> {
+    Ok(match format_of(&tables).as_str() {
+        "1" => crate::format_1::Old::from_tables(tables)?.folder(),
+        _ => upgrade::to_format_1(&File::from_tables(tables)?)?.folder(),
+    })
 }
 
 /// The format a file's meta says it is in.

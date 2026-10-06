@@ -74,6 +74,18 @@ pub unsafe extern "C" fn vleo_check_folder(ptr: *mut u8, len: usize) -> *const u
     answer(vleo_files::page::check_folder(&bytes))
 }
 
+/// The seal of a group's folder: its sign-offs, current or stale, and what
+/// stands between it and its seal (`vleo_files::page::seal_state`).
+///
+/// # Safety
+/// `ptr` must come from `vleo_alloc(len)` and hold `len` written bytes; it is
+/// freed here.
+#[no_mangle]
+pub unsafe extern "C" fn vleo_seal_state(ptr: *mut u8, len: usize) -> *const u8 {
+    let bytes = Vec::from_raw_parts(ptr, len, len.max(1));
+    answer(vleo_files::page::seal_state(&bytes))
+}
+
 /// The length of the last answer.
 #[no_mangle]
 pub extern "C" fn vleo_out_len() -> usize {

@@ -179,14 +179,7 @@ impl Release {
                 );
             }
         } else {
-            let have = fingerprint(dir)?;
-            if have != meta("fingerprint") {
-                return Err(format!(
-                    "the files are not the ones that were sealed: they give the fingerprint {have}, the seal says {}. \
-                     Nothing is taken from a release changed after it was signed",
-                    meta("fingerprint")
-                ));
-            }
+            let have = vleo_files::seal::check_sealed(&folder(dir)?, &meta("fingerprint"))?;
             println!(
                 "  every file is the one sealed — fingerprint {}…",
                 &have[..16]
@@ -627,36 +620,27 @@ fn latest_version(dir: &Path) -> Result<Derisk, String> {
     })
 }
 
-/// The fingerprint the group application seals with (web/js/gseal.js): every
-/// file but the folder's record of itself, by path, each by its SHA-256.
-pub(super) fn fingerprint(dir: &Path) -> Result<String, String> {
-    fn walk(base: &Path, d: &Path, out: &mut Vec<String>) -> Result<(), String> {
+/// The unpacked release as the folder that was sealed, for the library's
+/// seal (`vleo_files::seal`). RELEASE.toml is the unpacking's record of the
+/// seal, written beside the folder's files and never one of them.
+fn folder(dir: &Path) -> Result<vleo_files::format_1::Folder, String> {
+    fn walk(base: &Path, d: &Path, out: &mut vleo_files::format_1::Folder) -> Result<(), String> {
         for e in fs::read_dir(d).map_err(|e| format!("{}: {e}", d.display()))? {
             let p = e.map_err(|e| e.to_string())?.path();
             if p.is_dir() {
                 walk(base, &p, out)?;
             } else {
                 let rel = p.strip_prefix(base).map_err(|e| e.to_string())?;
-                out.push(rel.to_string_lossy().replace('\\', "/"));
+                let bytes = fs::read(&p).map_err(|e| format!("{}: {e}", p.display()))?;
+                out.insert(rel.to_string_lossy().replace('\\', "/"), bytes);
             }
         }
         Ok(())
     }
-    let mut paths = Vec::new();
-    walk(dir, dir, &mut paths)?;
-    paths.retain(|p| {
-        p != "reviews.csv"
-            && p != "RELEASE.toml"
-            && !p.starts_with("packages/")
-            && !p.starts_with("issues/")
-    });
-    paths.sort();
-    let mut lines = Vec::new();
-    for p in &paths {
-        let bytes = fs::read(dir.join(p)).map_err(|e| format!("{p}: {e}"))?;
-        lines.push(format!("{p}\u{0}{}", group::sha256_hex(&bytes)));
-    }
-    Ok(group::sha256_hex(lines.join("\n").as_bytes()))
+    let mut folder = vleo_files::format_1::Folder::new();
+    walk(dir, dir, &mut folder)?;
+    folder.remove("RELEASE.toml");
+    Ok(folder)
 }
 
 /// A CSV file as records by header.
@@ -861,13 +845,13 @@ mod tests {
         fs::write(d.join("reviews.csv"), "name,scope\nsomebody,group\n").unwrap();
         fs::write(d.join("RELEASE.toml"), "sealed = \"x\"\n").unwrap();
         assert_eq!(
-            fingerprint(&d).unwrap(),
+            vleo_files::seal::fingerprint_of(&folder(&d).unwrap(), "group"),
             "e7eda2b52f58711281855d3e2815334551728a2db3b862a724b7ba6f4dc93575"
         );
         // One byte changed after the seal, and it is another fingerprint.
         fs::write(d.join("nodes/a/pseudocode.txt"), "return 2\n").unwrap();
         assert_ne!(
-            fingerprint(&d).unwrap(),
+            vleo_files::seal::fingerprint_of(&folder(&d).unwrap(), "group"),
             "e7eda2b52f58711281855d3e2815334551728a2db3b862a724b7ba6f4dc93575"
         );
         fs::remove_dir_all(&d).ok();

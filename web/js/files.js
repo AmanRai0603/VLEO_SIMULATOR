@@ -124,6 +124,15 @@ export async function library(wasm) {
     checkFolder(groupRows) {
       return call(x.vleo_check_folder, groupRows);
     },
+    /**
+     * A group's folder's seal, by the page's seal rules: `{ scopes: [{ scope,
+     * fingerprint }], reviews: [{ name, scope, version, fingerprint, date,
+     * verdict, note, current }], blockers: [...] }`. No blockers, and it may
+     * be sealed.
+     */
+    sealState(groupRows) {
+      return call(x.vleo_seal_state, groupRows);
+    },
   };
 }
 
