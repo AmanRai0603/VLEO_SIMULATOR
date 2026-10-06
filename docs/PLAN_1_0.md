@@ -115,7 +115,7 @@ runs at every valve.
   *Until the switch-over*, which phase H deletes.
 - **`areas/teams.toml` stays a code concept.** It says who reviews which crate,
   not who owns which part of the design.
-- **A second reviewer** must be named. Today every team is one person.
+- **A second reviewer** must be named. Today every review team is one person.
 
 **Done when** you approve, with a second reviewer.
 

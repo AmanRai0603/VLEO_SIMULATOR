@@ -3,7 +3,7 @@
 //!     take <form.html> --for <author>   the form onto its own branch, applied,
 //!                                       tested, committed and pushed
 //!     preview                           where this branch's preview build is
-//!     approve <approval.toml>           the author's approval, checked against
+//!     approve <approval.toml>           the node engineer's approval, checked against
 //!                                       this exact build, recorded and pushed
 //!     approve --verify <branch>         the same check, for the pipeline
 //!     queue                             every form branch and where it stands
@@ -11,19 +11,19 @@
 //!
 //! THE MAINTAINER'S JOB IS THE SAME EVERY TIME, SO IT IS COMMANDS. A person
 //! who takes a form in by hand forgets a step on the day they are busy — the
-//! branch made from a stale main, the tests not run, the author not named —
+//! branch made from a stale main, the tests not run, the node engineer not named —
 //! and the result looks exactly like a careful one. Each command here does its
 //! whole step or nothing, and says what to do next.
 //!
 //! WHAT CROSSES BETWEEN PEOPLE IS FILES. Authors do not use GitHub: they send a
 //! filled form, receive a preview package, and send back the approval file the
-//! preview saves. How those files travel is the maintainer's choice and nothing
+//! preview saves. How those files travel is the developer's choice and nothing
 //! here depends on it.
 //!
 //! AN APPROVAL IS A RECORD, NOT A PASSWORD. It names the branch, the commit and
 //! the preview build it was given for, so it cannot be carried to anything
 //! else: a change pushed after it needs a new preview and a new approval. It
-//! does not prove who pressed the button — the maintainer who received it does.
+//! does not prove who pressed the button — the developer who received it does.
 
 use crate::pipeline::{OnStop, Run};
 use std::fs;
@@ -72,7 +72,7 @@ pub fn form_branch(author: &str, node: &str) -> String {
     format!("form/{}/{}", slug(author), slug(node))
 }
 
-/// The author a form branch belongs to, and its node, from the branch name.
+/// The node engineer a form branch belongs to, and its node, from the branch name.
 pub fn parse_form_branch(branch: &str) -> Option<(String, String)> {
     let rest = branch.strip_prefix("form/")?;
     let (author, node) = rest.split_once('/')?;
@@ -361,7 +361,7 @@ pub fn cmd_take(root: &Path, args: &[&str]) -> Result<(), String> {
         })?;
         step(run, "gate", half(), || crate::cmd_gate(root, &[]))?;
         // A NODE WITH A METHOD IS BUILT FROM IT, stage by stage: translated,
-        // tested against its author's cases, their code rerun, the tests shown
+        // tested against its node engineer's cases, their code rerun, the tests shown
         // to test — and only then connected. Stops here if any stage fails.
         let has_method = vleo_sheet::load_all(root)
             .ok()
@@ -412,7 +412,7 @@ pub fn cmd_take(root: &Path, args: &[&str]) -> Result<(), String> {
             })?;
         }
 
-        // 4 — one commit, naming the author; then push.
+        // 4 — one commit, naming the node engineer; then push.
         let tree = crate::load(root)?;
         let scope = tree
             .sheets
@@ -445,7 +445,7 @@ pub fn cmd_take(root: &Path, args: &[&str]) -> Result<(), String> {
         };
         let message = commit_message("feat", &scope, &subject, &body);
         step(run, "commit and push", half(), || {
-            // The form is the author's, attached to the pull request — never
+            // The form is the node engineer's, attached to the pull request — never
             // committed. Received forms live in `forms/`, which git ignores; one
             // saved anywhere else is taken back out of the commit here.
             git(root, &["add", "-A"])?;
@@ -652,7 +652,7 @@ pub fn cmd_approve(root: &Path, args: &[&str]) -> Result<(), String> {
         root,
         &a.commit,
         "HEAD",
-        "send the author the new preview and ask them to approve that",
+        "send the node engineer the new preview and ask them to approve that",
     )?;
     fs::create_dir_all(root.join("approvals")).map_err(|e| e.to_string())?;
     fs::write(root.join(&store), &text).map_err(|e| format!("{store}: {e}"))?;
@@ -715,7 +715,7 @@ fn verify_approval(root: &Path, branch: &str, at: &str) -> Result<(), String> {
     };
     let text = git(root, &["show", &format!("{at}:{store}")]).map_err(|_| {
         format!(
-            "{branch} has no approval yet ({store}). Send its author the preview; when they \
+            "{branch} has no approval yet ({store}). Send its node engineer the preview; when they \
              approve, run `cargo run -p xtask -- approve <their file>`"
         )
     })?;
@@ -727,7 +727,7 @@ fn verify_approval(root: &Path, branch: &str, at: &str) -> Result<(), String> {
         root,
         &a.commit,
         at,
-        "send the author the new preview and ask them to approve that",
+        "send the node engineer the new preview and ask them to approve that",
     )?;
     println!(
         "{branch}: approved by {} (preview build {}, commit {}) and unchanged since",
@@ -1040,7 +1040,7 @@ pub fn cmd_queue(root: &Path, _args: &[&str]) -> Result<(), String> {
             match verify_approval_quiet(root, branch, r) {
                 Ok(by) => format!("approved by {by} — review and merge the pull request"),
                 Err(e) if on_branch.is_some() => format!("approval out of date — {e}"),
-                Err(_) => "waiting for the author's approval of the preview".to_string(),
+                Err(_) => "waiting for the node engineer's approval of the preview".to_string(),
             }
         };
         println!("{branch:<44} {date:<11} {stage}");
@@ -1056,7 +1056,7 @@ fn verify_approval_quiet(root: &Path, branch: &str, at: &str) -> Result<String, 
         root,
         &a.commit,
         at,
-        "send the author the new preview and ask them to approve that",
+        "send the node engineer the new preview and ask them to approve that",
     )?;
     Ok(a.by)
 }

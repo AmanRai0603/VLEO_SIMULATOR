@@ -1,4 +1,4 @@
-//! Releases and what ships: stamping, the team kit, guides, CODEOWNERS, bundles.
+//! Releases and what ships: stamping, the kit, guides, CODEOWNERS, bundles.
 
 use super::*;
 
@@ -514,7 +514,7 @@ pub(super) fn cmd_kit(root: &Path, args: &[&str]) -> Result<(), String> {
     };
     println!(
         "kit: {} — vleo {version}, {} rows, {files} files beside {} program(s).\n\
-         Zip that folder and share it. A team member unzips it, {start} \
+         Zip that folder and share it. Each engineer unzips it, {start} \
          and reads START_HERE.md; nothing in it is edited, \
          and their case and results stay under ~/.vleo/ when the next kit replaces it.",
         out.display(),

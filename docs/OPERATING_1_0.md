@@ -37,7 +37,7 @@ it. The owner of the branch above controls both.
 |---|---|---|
 | every day | everyone | opens the application; sees *my work* and today's design; works on their own part; signs what is ready |
 | when a group's work is right | its subsystem engineer | seals a release; it joins today's design for everyone at once |
-| every day, or as the team agrees | everyone together | looks at today's design's health map and discusses what it shows |
+| every day, or as everyone agrees | everyone together | looks at today's design's health map and discusses what it shows |
 | when today's design is right | the system engineer | releases it: the design everyone decides on |
 | after a release | the programme manager | decides on it: gates, risks, customers, KPIs |
 
@@ -82,7 +82,7 @@ Each piece is kept, changed or retired, once. Nothing is laid over the old.
 | each node as `node.toml` in the repository, the source | the node in its group's signed files on the shared drive; the repository holds no design | changed |
 | the tree in `layers/*.toml` in the repository | the programme's and the systems' own files | changed |
 | the developer takes a release in with `xtask`, builds, tests and delivers it | the system engineer integrates it in the application, which runs the same checks | changed |
-| a test application per release, accepted by the lead | today's design, which every group sees as soon as it seals | changed |
+| a test application per release, accepted by the subsystem engineer | today's design, which every group sees as soon as it seals | changed |
 | `design.vleo` built from the repository by the developer | today's design, rebuilt from the drive on opening; the released design, released by the system engineer | changed |
 | a sign-off as a typed name | a signature with the person's own key | changed |
 | `acceptances/` and group branches in the repository | the integration record inside each released design | retired |
@@ -388,7 +388,7 @@ those subsystem engineers see it in their My work.
 
 1. **Everyone**, Explore workspace or their own: today's design, and its health
    map at their level.
-2. **Together,** every day or as the team agrees: the health map on one screen,
+2. **Together,** every day or as everyone agrees: the health map on one screen,
    red marks first, each traced to its cause and owner. Each is either
    understood, or raised as an issue (W11).
 
@@ -419,7 +419,7 @@ When a release moves another group's values:
 3. *Release design* signs it. The application writes:
    - the design into `design/` under its version, and as `design.vleo`;
    - the one before it into `design/archive/`;
-   - `NOTES.md`, `readable/` and the status.
+   - `apps/NOTES.md`, `readable/` and the status.
 
 This is the release every decision refers to. No one else can make it.
 
@@ -590,7 +590,7 @@ Each person makes a key once, in the application, and keeps the private half as
   covered is signed afresh by its writer.
 - **The programme manager's own key** is replaced by a new fingerprint in START
   HERE, with a note signed by the old key. If the old key is lost too, every
-  application asks its user to accept the new anchor once, and says why.
+  application asks the person using it to accept the new anchor once, and says why.
 - **Someone leaves.** Their nodes are reassigned and signed afresh.
 - **Releases from before 1.0** carry a name and a fingerprint, not a key's
   signature. At the switch-over the programme manager anchors each one once, by

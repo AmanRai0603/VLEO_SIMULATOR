@@ -105,7 +105,7 @@ output rows for the engine to answer, check-yourself questions. Content only;
 the page draws it from its component library. Outside the sheet hash.
 → `docs/LESSONS.md`
 
-**Lesson form** — a row's lesson as one HTML file the expert who knows the
+**Lesson form** — a row's lesson as one HTML file the node engineer who knows the
 row fills anywhere, checked as they type by the gate's own lesson check, and
 sent back; `xtask lesson apply` writes it beside the row. → `docs/LESSONS.md`
 
@@ -153,7 +153,7 @@ with `xtask build-node`. → `docs/NODE_AUTHORING.md`
 person who knows it. It is translated by fixed rules into Rust.
 → `docs/PSEUDOCODE.md`
 
-**Author case** — an input and the answer its author expects, given with a
+**Author case** — an input and the answer its node engineer expects, given with a
 method. The translated code is tested against it. → `docs/PSEUDOCODE.md`
 
 **NotRun** — what a row with no content returns, under its own name. A refusal
@@ -200,13 +200,13 @@ only way the design changes. → `AGENTS.md`
 writes it. → `AGENTS.md`, steps 1–2
 
 **Take** — `xtask take`: a form onto its own branch, `form/<author>/<node>`,
-checked, applied, tested, committed naming its author, and pushed.
+checked, applied, tested, committed naming its node engineer, and pushed.
 → `docs/roles/maintainer.html`
 
-**Preview** — the tool built from one form branch, sent to the form's author to
+**Preview** — the tool built from one form branch, sent to the form's node engineer to
 try before anything merges. → `docs/roles/maintainer.html`
 
-**Approval** — the file the author's preview saves when they approve that exact
+**Approval** — the file the node engineer's preview saves when they approve that exact
 build. `xtask approve` records it, and a form branch merges only with it.
 → `docs/roles/maintainer.html`
 
@@ -222,7 +222,7 @@ build. `xtask approve` records it, and a form branch merges only with it.
 and tests, by pull request. → `CONTRIBUTING.md`
 
 **`maintainer`** — the branch the design goes to: each form branch, by pull
-request, with its author's approval. → `CONTRIBUTING.md`
+request, with its node engineer's approval. → `CONTRIBUTING.md`
 
 **`main`** — what ships. It moves only by pull requests from `developer`,
 `maintainer` and `release/<version>`. → `CONTRIBUTING.md`
@@ -231,5 +231,5 @@ request, with its author's approval. → `CONTRIBUTING.md`
 `v<version>`. The release workflow refuses anything else before it builds.
 → `docs/RELEASE_SETUP.md`
 
-**Kit** — the tool for the team without the repository: one folder per system,
+**Kit** — the tool for everyone, without the repository: one folder per system,
 and the one `.whl` for every laptop. → `docs/SHARING.md`

@@ -31,8 +31,8 @@ Then:
 
 ## One form, arrival to release
 
-Almost every change to the design arrives as a filled node form from somebody
-on the team — `docs/examples/` has two, one for an existing node and one for a
+Almost every change to the design arrives as a filled node form from a node
+engineer — `docs/examples/` has two, one for an existing node and one for a
 new one. Start by checking it; nothing is written by checking.
 
     cargo run -p xtask -- intake sw_ap_design_margin.node-form.html
@@ -64,7 +64,7 @@ as still open.
       ok    inputs
       note  gap-pass — no fixture: nothing outside this code has agreed with it
 
-**Review 1**, in two stages, by someone who is not the author:
+**Review 1**, in two stages, by someone who is not the node engineer:
 
 - **H1a — completeness.** Is every question answered, does every declared limit
   have a reason, does the interface close, is a source cited at all? Any
@@ -95,7 +95,7 @@ accepts rather than hunts. That is what makes two reviews per node affordable.
 
 Two reviews. Everything between them is a command. If a node takes materially
 longer, the template has a defect, and it is worth finding: it will be paid 1396
-times. The team gets the node in the next release; their saved case carries
+times. Everyone gets the node in the next release; their saved case carries
 over on its own, with any new input at its default.
 
 A row a developer starts without a form — rare, and usually structural — still

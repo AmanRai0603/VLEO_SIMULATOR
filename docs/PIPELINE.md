@@ -4,20 +4,20 @@
 
 > **Answer first.** Every `xtask` command is a step in a node's journey — a form filled, taken, checked, applied, published, built, gated, previewed and released. This page says, for each one, what it reads, writes and checks, how to undo it, and where its code is. Every command that writes prints numbered steps, stops by saying why, what state the files are in and how to retry, leaves a trace in `target/xtask-trace/`, and takes `--dry-run`.
 >
-> **Kind:** reference · **For:** developers and maintainers
+> **Kind:** reference · **For:** the developer and their deputy
 
 Generated from the one table in `xtask/src/pipeline.rs`; `cargo run -p xtask -- explain <command>` prints the same for one command, and a test fails when the table, `help` and the code disagree.
 
 ## The journey
 
-1. **form** — an expert fills a node's form: `form`, `group-export`
-2. **take** — the maintainer puts it on its own branch: `take`
+1. **form** — a node engineer fills a node's form: `form`, `group-export`
+2. **take** — the developer puts it on its own branch: `take`
 3. **check** — what it would change, before anything is written: `intake`, `group-intake`, `group-test`
 4. **apply** — the form written into the sheet — all of it or none: `lesson`, `new`
 5. **publish** — a filled row's code generated, and its holes written: `group-deliver`, `declare`, `publish`, `fill`, `confirm`
 6. **build** — a node built from its method, and its tests shown to test: `group-build`, `method`, `build-node`, `rerun`, `method-wasm`, `differential`, `mutate`
 7. **gate** — the checks every change passes, and what they generate: `group-app`, `docs`, `assemble`, `gate`, `ready`, `codeowners`, `variables`, `guides`, `pipeline`
-8. **preview** — the author tries the build and approves it: `preview`, `approve`, `queue`
+8. **preview** — the node engineer tries the build and approves it: `preview`, `approve`, `queue`
 9. **release** — the stamped release everyone gets: `readers`, `group-accept`, `ship`, `release`, `derisk`, `kit`, `design`, `bundle`
 10. **read** — reports: what exists, what is open, why a node is what it is: `status`, `active`, `catalogue`, `impact`, `reach`, `gap`, `graph`, `migration`, `explain`, `why`, `trace`
 11. **setup** — once per person per clone: `setup`, `help`
@@ -39,7 +39,7 @@ Every command that writes prints its steps as `n/total · name`. A step that sto
 
 ## Every command
 
-### form — an expert fills a node's form
+### form — a node engineer fills a node's form
 
 #### `form`
 
@@ -72,13 +72,13 @@ a group's folder in the pattern, written from every sheet in the group, for the 
 | dry run | it only reads, so it runs as it is |
 | code | `xtask/src/group.rs` — `cmd_group_export` |
 
-### take — the maintainer puts it on its own branch
+### take — the developer puts it on its own branch
 
 #### `take`
 
     cargo run -p xtask -- take <form.html> --for <author> [--again] [--no-push] [--no-test]
 
-the maintainer's first step: check a filled node form; if it cannot be taken, write <form>.returned.txt to send back and change nothing; otherwise put it on its own branch form/<author>/<node> from a fresh maintainer, apply it, regenerate, gate, test, commit naming the author, push.
+the developer's first step: check a filled node form; if it cannot be taken, write <form>.returned.txt to send back and change nothing; otherwise put it on its own branch form/<author>/<node> from a fresh maintainer, apply it, regenerate, gate, test, commit naming the node engineer, push.
 
 | | |
 |---|---|
@@ -146,7 +146,7 @@ the group tested against its own results: the design holds the release's cases; 
     cargo run -p xtask -- lesson check <file> [--for <node>]
     cargo run -p xtask -- lesson apply <file> [--for <node>] [--check]
 
-a row's lesson form: one HTML file the expert who knows the row fills anywhere, checked as they type by the gate's own lesson check, saved as a filled copy. what a filled lesson form (or a bare lesson.toml, with --for) holds, and every reason it would be refused. Writes nothing. check it, write it as lesson.toml beside the row's node.toml, and gate the row — or put the row back. --check (what --dry-run runs) only checks.
+a row's lesson form: one HTML file the node engineer who knows the row fills anywhere, checked as they type by the gate's own lesson check, saved as a filled copy. what a filled lesson form (or a bare lesson.toml, with --for) holds, and every reason it would be refused. Writes nothing. check it, write it as lesson.toml beside the row's node.toml, and gate the row — or put the row back. --check (what --dry-run runs) only checks.
 
 | | |
 |---|---|
@@ -259,13 +259,13 @@ the relations with nobody's name against them, grouped by the owner who has to s
 
     cargo run -p xtask -- group-build <folder> [--node <id>]
 
-every computed node of a sealed release, taken in with group-intake --apply, built from its method: build-node on each — translated, tested on the author's cases, the tests proved to test, the interface checked.
+every computed node of a sealed release, taken in with group-intake --apply, built from its method: build-node on each — translated, tested on the node engineer's cases, the tests proved to test, the interface checked.
 
 | | |
 |---|---|
 | reads | an unpacked sealed release and the design it was taken into |
 | writes | what build-node writes for each computed node: its kernel translation and generated files; baseline/today.csv, today's answers recorded again |
-| checks | the seal; that the design's method is the release's; then build-node on each — the author's cases, the tests proved to test, the interface |
+| checks | the seal; that the design's method is the release's; then build-node on each — the node engineer's cases, the tests proved to test, the interface |
 | undo | `git restore <files>` (or `git checkout -- .`) before committing; `git revert` after |
 | dry run | --dry-run prints this plan — the steps, what it would write, how to undo it — and touches nothing |
 | code | `xtask/src/group_test.rs` — `cmd_group_build` |
@@ -274,13 +274,13 @@ every computed node of a sealed release, taken in with group-intake --apply, bui
 
     cargo run -p xtask -- method <node>
 
-the node's method, checked, and each of its author's test cases run through it — the check the form runs as the author types, and the one the gate refuses on.
+the node's method, checked, and each of its node engineer's test cases run through it — the check the form runs as the node engineer types, and the one the gate refuses on.
 
 | | |
 |---|---|
-| reads | the node's method and its author's cases |
+| reads | the node's method and its node engineer's cases |
 | writes | nothing |
-| checks | the method parses and its units agree; every case comes out as the author said |
+| checks | the method parses and its units agree; every case comes out as the node engineer said |
 | undo | nothing to undo: it writes nothing |
 | dry run | it only reads, so it runs as it is |
 | code | `xtask/src/method.rs` — `cmd_method` |
@@ -289,15 +289,15 @@ the node's method, checked, and each of its author's test cases run through it �
 
     cargo run -p xtask -- build-node <node>  from a node's method to a connected node, in order: the
 
-method on its cases, the translation into the kernel, the node's tests, the author's code rerun, a mutation the tests must catch — and only then the interface.
+method on its cases, the translation into the kernel, the node's tests, the node engineer's code rerun, a mutation the tests must catch — and only then the interface.
 
 | | |
 |---|---|
-| reads | the node's method, cases and author's code |
+| reads | the node's method, cases and node engineer's code |
 | writes | crates/vleo-core/src/physics/methods/<node>.rs and the node's generated files |
-| checks | the method on its cases; the node's tests; the author's code rerun; a mutation the tests must catch; the tree assembles |
+| checks | the method on its cases; the node's tests; the node engineer's code rerun; a mutation the tests must catch; the tree assembles |
 | undo | `git restore <files>` (or `git checkout -- .`) before committing; `git revert` after |
-| steps | 1 the method, against the author's cases · 2 translate the method into the kernel, and regenerate the node · 3 the node's tests: the author's cases, and the translation against the method · 4 the author's own code, run again on their cases · 5 the tests really test: the answer is moved and the tests must notice · 6 only now, the interface: the node in the tree |
+| steps | 1 the method, against the node engineer's cases · 2 translate the method into the kernel, and regenerate the node · 3 the node's tests: the node engineer's cases, and the translation against the method · 4 the node engineer's own code, run again on their cases · 5 the tests really test: the answer is moved and the tests must notice · 6 only now, the interface: the node in the tree |
 | dry run | --dry-run prints this plan — the steps, what it would write, how to undo it — and touches nothing |
 | code | `xtask/src/method.rs` — `cmd_build_node` |
 
@@ -305,13 +305,13 @@ method on its cases, the translation into the kernel, the node's tests, the auth
 
     cargo run -p xtask -- rerun <node>|--all [--require]
 
-the author's own code run again on their cases: Python directly, MATLAB and Octave through Octave; anything else is kept and read, not rerun.
+the node engineer's own code run again on their cases: Python directly, MATLAB and Octave through Octave; anything else is kept and read, not rerun.
 
 | | |
 |---|---|
-| reads | the author's code and their cases |
+| reads | the node engineer's code and their cases |
 | writes | nothing |
-| checks | the author's own code still gives their cases |
+| checks | the node engineer's own code still gives their cases |
 | undo | nothing to undo: it writes nothing |
 | dry run | it only reads, so it runs as it is |
 | code | `xtask/src/method.rs` — `cmd_rerun` |
@@ -448,7 +448,7 @@ regenerate CODEOWNERS from areas/teams.toml and the owner each sheet names.
 |---|---|
 | reads | areas/teams.toml and each sheet's owner |
 | writes | CODEOWNERS |
-| checks | that every owner is a team |
+| checks | that every owner has a review team |
 | undo | `git restore CODEOWNERS` |
 | dry run | --dry-run prints this plan — the steps, what it would write, how to undo it — and touches nothing |
 | code | `xtask/src/release.rs` — `cmd_codeowners` |
@@ -498,7 +498,7 @@ only says whether it is current.
 | dry run | --dry-run runs pipeline --check: whether docs/PIPELINE.md is current, nothing written |
 | code | `xtask/src/pipeline.rs` — `cmd_pipeline` |
 
-### preview — the author tries the build and approves it
+### preview — the node engineer tries the build and approves it
 
 #### `preview`
 
@@ -520,11 +520,11 @@ where the current form branch's preview build is — every push to a form branch
     cargo run -p xtask -- approve <approval.toml> [--no-push]
     cargo run -p xtask -- approve --verify <branch>
 
-the author's approval of a preview, checked against this branch: it must be for the build of what is here now. Recorded in approvals/, committed and pushed. the same check, as the pipeline runs it on a form branch's pull request.
+the node engineer's approval of a preview, checked against this branch: it must be for the build of what is here now. Recorded in approvals/, committed and pushed. the same check, as the pipeline runs it on a form branch's pull request.
 
 | | |
 |---|---|
-| reads | the author's approval file and this branch |
+| reads | the node engineer's approval file and this branch |
 | writes | approvals/<author>--<node>.toml, a commit and a push |
 | checks | the approval is for the build of exactly what is here now |
 | undo | `git revert` the approval commit |
@@ -535,7 +535,7 @@ the author's approval of a preview, checked against this branch: it must be for 
 
     cargo run -p xtask -- queue
 
-every form branch and every group branch, and where each stands: waiting for the author's approval or the group's acceptance, approved or accepted, merged.
+every form branch and every group branch, and where each stands: waiting for the node engineer's approval or the group's acceptance, approved or accepted, merged.
 
 | | |
 |---|---|
@@ -631,7 +631,7 @@ write docs/DERISK_NARRATIVE.md and docs/derisking.csv — every recorded change,
 
     cargo run -p xtask -- kit [--bin <dir>] [--out <dir>] [--files-only]
 
-the tool as a team member gets it: the two programs and the files they read (the web face, the design as one file, design.vleo, and the reference data) in one folder, with START_HERE.md — on Windows the daemon is `Start VLEO.exe`, elsewhere start.sh starts it. No git, no Rust source. Zip the folder and share it. --bin is where the release-built programs are (default target/release); --files-only leaves the programs out, for the Python package (tools/build_wheel.py).
+the tool as each person gets it: the two programs and the files they read (the web face, the design as one file, design.vleo, and the reference data) in one folder, with START_HERE.md — on Windows the daemon is `Start VLEO.exe`, elsewhere start.sh starts it. No git, no Rust source. Zip the folder and share it. --bin is where the release-built programs are (default target/release); --files-only leaves the programs out, for the Python package (tools/build_wheel.py).
 
 | | |
 |---|---|

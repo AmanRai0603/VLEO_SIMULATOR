@@ -21,7 +21,7 @@ into the binary, and the two differ in the last bit.
 "Golden vectors agree across every face, bit for bit" is gated nightly. Without
 one portable maths library, every node with a trigonometric or exponential term
 — which is most of the orbital ones — fails that gate on the first night for a
-reason that is not a defect. Within a fortnight the team learns to ignore a red
+reason that is not a defect. Within a fortnight people learn to ignore a red
 nightly build, which is strictly worse than having no gate.
 
 ## How it is enforced, in two places

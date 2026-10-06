@@ -418,7 +418,7 @@ equation helper.\n\n\
 `pseudocode.txt`, and `results/isolation.csv` with the defaults row, three ordinary cases, both ends of every \
 range and one refusal.\n\
 4. Add a line to `flow.txt`: `<id> <- <input>, <input>`.\n\
-5. Name the author in `members.csv`, and add a row to `versions.csv` when the version changes.\n\
+5. Name the node engineer in `members.csv`, and add a row to `versions.csv` when the version changes.\n\
 6. Check it in the group application.\n",
         v = version(spec),
         conv = conventions_md(spec),

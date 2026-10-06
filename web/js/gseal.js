@@ -88,7 +88,7 @@ export async function reviewState(folder, model) {
   return { reviews: out, fingerprintOf: fp };
 }
 
-/** Who may sign a scope: the owner signs the group; a node's authors (or `*`) sign it. */
+/** Who may sign a scope: the owner signs the group; a node's engineers (or `*`) sign it. */
 export function maySign(model, name, scope) {
   const m = model.group.members.find(x => x.name === name);
   if (!m) return false;
@@ -118,7 +118,7 @@ export async function sealBlockers(folder, model, findings) {
   if (errors) out.push(errors + ' error(s) in the checks');
   const { reviews } = await reviewState(folder, model);
   const ok = scope => reviews.some(r => r.scope === scope && r.verdict === 'ok' && r.current && maySign(model, r.name, scope));
-  for (const id of model.order) if (!ok(id)) out.push(id + ' has no current sign-off from its author');
+  for (const id of model.order) if (!ok(id)) out.push(id + ' has no current sign-off from its node engineer');
   if (!ok('group')) out.push('the group has no current sign-off from its owner');
   return out;
 }

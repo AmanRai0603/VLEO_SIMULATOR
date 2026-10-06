@@ -7,9 +7,10 @@
 The schema, the nine generators, the gate and the golden corpus.
 
 Applies to `crates/vleo-sheet/**`, `xtask/**`, `tools/**`.
-Maintained by the developers, and the node form lives here too: its template,
-its checker and its apply (`src/template.rs`), read from the same field table
-as the sheet.
+Maintained by the developers. Until the switch-over the node form lives here
+too: its template, its checker and its apply (`src/template.rs`), read from the
+same field table as the sheet. The generators leave the build in phase E, and
+their checks move into the library.
 
 ## Why a change here needs two reviewers
 

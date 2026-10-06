@@ -23,7 +23,7 @@
   if (!L.stations.length) L.stations.push(BLANK.stations());
 
   // ---- TOML, written the one way intake reads it -------------------------
-  // '<' is written as \u003C, so nothing the author types can end the script
+  // '<' is written as \u003C, so nothing typed into the form can end the script
   // element the lesson travels in.
   const q = v => '"' + S(v).replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\n/g, '\\n')
     .replace(/\r/g, '').replace(/\t/g, '\\t').replace(/</g, '\\u003C') + '"';

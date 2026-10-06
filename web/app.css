@@ -418,7 +418,7 @@ ol.algo .binds { color: var(--ink-3); font-size: 10.5px; }
 ul.guards, ul.flags { font-size: 11.5px; color: var(--ink-2); padding-left: 1.2rem; }
 pre.code { background: #f7f5ef; border: 1px solid var(--rule-2); border-radius: 3px;
   padding: .8rem; overflow: auto; font-size: 10.5px; line-height: 1.5; max-height: 38rem; }
-/* THE METHOD, THE AUTHOR'S CODE, THE CASES AND FLIGHT SOFTWARE on a node page. */
+/* THE METHOD, THE NODE ENGINEER'S CODE, THE CASES AND FLIGHT SOFTWARE on a node page. */
 pre.code.method { white-space: pre; border-left: 3px solid var(--in); }
 details.author-code, details.flight { margin: .5rem 0; font-size: 11.5px; }
 details.author-code summary, details.flight summary { cursor: pointer; color: var(--in); }
@@ -1090,7 +1090,7 @@ table.risks td { vertical-align: top; }
 .nform-dr dd { margin: 0; }
 @media (max-width: 640px) { .nform-dr { grid-template-columns: 1fr; } }
 
-/* A PREVIEW build: one author's change, before it is approved. The banner is on
+/* A PREVIEW build: one node engineer's change, before it is approved. The banner is on
    every view and never scrolls away, so a preview is never mistaken for a
    release; amber, the colour this face already uses for "not settled". */
 #contract-bar { padding: .45rem .8rem; font-size: 12px; background: var(--out-pale); color: var(--ink);

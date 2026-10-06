@@ -12,7 +12,7 @@
   and seals the folder into the one file the developer receives.
 
   A group keeps its work as database files (groups/schema.sql): the
-  STRUCTURE (<group>.vgroup) the lead edits here — the nodes, what each one
+  STRUCTURE (<group>.vgroup) the subsystem engineer edits here — the nodes, what each one
   answers and what feeds it — one NODE file per node (<node>.vnode) that its
   author fills in the node application, and the RELEASE (<group>-<v>.vleo)
   this page assembles from the node files, has signed, and seals. A folder of
@@ -128,17 +128,17 @@ function welcome() {
   const pick = canPick(), inPlace = canSaveInPlace();
   $('#gmain').innerHTML =
     '<section class="answer-first view-af"><p class="af-k">Answer first</p><p class="af-a">Open your group\'s database file and this page shows ' +
-    'everything in it the way the VLEO application will show it. The group lead edits the structure here, issues each author their node file, ' +
+    'everything in it the way the VLEO application will show it. The subsystem engineer edits the structure here, issues each node engineer their node file, ' +
     'assembles the files into a release, has it signed and seals it for the developer.</p>' +
     '<ul class="af-points"><li>Nothing leaves this computer. The page has no network and runs nothing.</li>' +
     '<li>A file on your Google shared drive, synced to this computer, is an ordinary file here.</li>' +
-    '<li>An author fills their node file in the node application (node.html), not here.</li></ul></section>' +
+    '<li>A node engineer fills their node file in the node application (node.html), not here.</li></ul></section>' +
     '<div class="gopen gcards">' +
     '<div class="gdrop gcard" id="gdrop"><h2 class="gh3">Open the group\'s database</h2><p class="muted small"><code>.vgroup</code> (the structure) or <code>.vleo</code> (a release). Drop it here, or</p>' +
     '<label class="ctl gbtn">Choose the file…<input type="file" id="gpickdb" accept=".vgroup,.vleo,.vnode" hidden></label>' +
     (inPlace ? ' <button class="ctl gbtn" type="button" id="gpickdbrw">Open it for saving…</button><p class="muted small">"Open it for saving" writes your changes back into the same file. ' +
       'Otherwise Save downloads it, and you put it back on the drive.</p>' : '<p class="muted small">This browser saves by downloading: put the saved file back on the drive.</p>') + '</div>' +
-    '<div class="gcard"><h2 class="gh3">Start a new group</h2><p class="muted small">You set out its nodes and how they connect; the authors fill them.</p>' +
+    '<div class="gcard"><h2 class="gh3">Start a new group</h2><p class="muted small">You set out its nodes and how they connect; the node engineers fill them.</p>' +
     '<p><label>Group id <input id="gn-id" class="gs-in" placeholder="solar" aria-label="new group id"></label></p>' +
     '<p><label>Name <input id="gn-name" class="gs-in gs-wide" placeholder="Solar and geomagnetic activity" aria-label="new group name"></label></p>' +
     '<p><label>You, the owner <input id="gn-me" class="gs-in" placeholder="your name" aria-label="your name"></label></p>' +
@@ -297,7 +297,7 @@ async function signPage() {
   }
   const blockers = await sealBlockers(ctx.folder, m, ctx.findings);
   return '<h1 class="gh1">Sign &amp; seal</h1>' +
-    '<p>Each node is signed by its author and the whole group by its owner (members.csv). A signature is for the content as it is now — its ' +
+    '<p>Each node is signed by its node engineer and the whole group by its owner (members.csv). A signature is for the content as it is now — its ' +
     '<i>fingerprint</i>. Change a file and the signature goes stale.</p>' +
     (ctx.file ? '<p class="gsave-ok">Sign-offs are kept in ' + esc(ctx.file.name) + ' — <b>Save</b> it afterwards.</p>' : ctx.folder.writable ? '<p class="gsave-ok">This folder is open for saving: sign-offs and the package are written straight into it.</p>'
       : '<p class="gsave-dl">This folder was opened read-only, so sign-offs and the package are <b>downloaded</b>. Put each downloaded file into the folder where its name says ' +
@@ -354,8 +354,8 @@ function hasContent(db, uid) {
 function filesPage() {
   if (!ctx.file) {
     return '<h1 class="gh1">Keep this folder as a database</h1><p>The folder becomes one file, <code>' + esc(fileName(ctx.model.meta.id || ctx.folder.name, 'release', ctx.model.meta.version)) + '</code>: ' +
-      'every node, its content, the group\'s text and the sign-offs, in an ordinary SQLite database. From then on the group works from that file — the lead edits its structure here, ' +
-      'and issues each author a node file to fill.</p><p><button class="ctl gbtn" type="button" id="gk-go">Make the database</button></p><p id="gk-out" class="gout" aria-live="polite"></p>';
+      'every node, its content, the group\'s text and the sign-offs, in an ordinary SQLite database. From then on the group works from that file — the subsystem engineer edits its structure here, ' +
+      'and issues each node engineer a node file to fill.</p><p><button class="ctl gbtn" type="button" id="gk-go">Make the database</button></p><p id="gk-out" class="gout" aria-live="polite"></p>';
   }
   const db = ctx.file.db;
   const live = db.all('SELECT * FROM node WHERE archived = 0 ORDER BY ord, id');
@@ -369,15 +369,15 @@ function filesPage() {
   }).join('');
   const dir = typeof window.showDirectoryPicker === 'function';
   return '<h1 class="gh1">Node files &amp; the release</h1>' +
-    '<section class="answer-first view-af"><p class="af-k">Answer first</p><p class="af-a">Each author fills one node file. You issue it from here, they fill it in the node application and put it back on the drive, ' +
+    '<section class="answer-first view-af"><p class="af-k">Answer first</p><p class="af-a">Each node engineer fills one node file. You issue it from here, they fill it in the node application and put it back on the drive, ' +
     'and you assemble every node file into the release.</p><ul class="af-points">' +
-    '<li>A node file carries every node\'s contract, so its author sees their neighbours, and only their own node\'s content.</li>' +
-    '<li>Issued from a release, it carries that release\'s content: the author starts from what was sealed.</li>' +
+    '<li>A node file carries every node\'s contract, so its node engineer sees their neighbours, and only their own node\'s content.</li>' +
+    '<li>Issued from a release, it carries that release\'s content: the node engineer starts from what was sealed.</li>' +
     '<li>Node files are never deleted. Each release records the revision of every node it took.</li></ul></section>' +
     (sealed ? '<p class="gsave-ok">This is the sealed release ' + esc(db.meta('version')) + '. Issue node files from it to start the next version.</p>' : '') +
     '<h2 class="gh">Issue node files</h2><div class="ri-wrap"><table class="fx gtable"><thead><tr><th>Node</th><th>Author</th><th>Contract</th><th>Its file</th><th>Content here</th><th></th></tr></thead><tbody>' + rows + '</tbody></table></div>' +
     '<p><button class="ctl gbtn" type="button" id="gf-all">' + (dir ? 'Issue every node file into a folder…' : 'Issue every node file (one zip)') + '</button></p>' +
-    (sealed ? '' : '<h2 class="gh">Assemble the release</h2><p>Choose the node files the authors put back — several at once, or their whole folder. Each node\'s content is taken from its file; ' +
+    (sealed ? '' : '<h2 class="gh">Assemble the release</h2><p>Choose the node files the node engineers put back — several at once, or their whole folder. Each node\'s content is taken from its file; ' +
       'a node with no file keeps what this file already holds. What does not fit is listed.</p>' +
       '<p><label class="ctl gbtn">Choose node files…<input type="file" id="gf-nodes" accept=".vnode" multiple hidden></label> ' +
       '<label class="ctl gbtn">Choose their folder…<input type="file" id="gf-dir" webkitdirectory directory multiple hidden></label></p>') +
@@ -417,7 +417,7 @@ function wireFiles() {
     await saveBytesAs(r.name, r.bytes);
     r.close();
     await fromDb();
-    flash('Issued ' + r.name + '. Send it to its author, or put it in their folder on the drive. Save this file too: it records what was issued.');
+    flash('Issued ' + r.name + '. Send it to its node engineer, or put it in their folder on the drive. Save this file too: it records what was issued.');
   })));
   $('#gf-all').addEventListener('click', () => trying(async () => {
     const live = ctx.file.db.all('SELECT uid FROM node WHERE archived = 0 ORDER BY ord, id');

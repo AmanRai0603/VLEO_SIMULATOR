@@ -9,7 +9,7 @@
 > the next release for everyone. Your inputs and results are kept on your machine and carry over
 > to every new version.
 >
-> **Kind:** tutorial + how-to · **For:** the team using the tool
+> **Kind:** tutorial + how-to · **For:** everyone using the tool — the programme manager, the system engineer, subsystem engineers and node engineers
 
 The tool comes two ways, and both are the same tool with the same engine. It needs no internet
 and no account, and nothing in it is edited by you — so the next version never loses anything.
@@ -92,7 +92,7 @@ browser, offline, and send to the developers.
    send it when its check says **Sound**.
 4. Press **save a filled copy**. You can check the filled file yourself on the **Forms** page —
    it shows what the developers will see, and changes nothing.
-5. Send the filled file to the maintainer, the way your team shares files.
+5. Send the filled file to the developer, the way your group shares files.
 6. **You get a preview back** — the tool with your change in it, marked with an orange **PREVIEW**
    banner. Install it like a new version (`python -m pip install <file>.whl`), open each node the
    banner names, run it and check it against your own answers.

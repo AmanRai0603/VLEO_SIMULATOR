@@ -455,7 +455,7 @@
   const who = document.createElement('section');
   who.innerHTML = '<h2>Who is filling this</h2>';
   const g = document.createElement('div'); g.className = 'nf-grid2';
-  for (const [k, ask] of [['name', 'your name'], ['team', 'your team or company'], ['date', 'date (filled in on save if blank)']]) {
+  for (const [k, ask] of [['name', 'your name'], ['team', 'your group or company'], ['date', 'date (filled in on save if blank)']]) {
     const q = document.createElement('div'); q.className = 'nf-q'; q.innerHTML = '<label>' + esc(ask) + '</label>';
     q.appendChild(control('line', [], S(DATA.filled_by[k]), v => { DATA.filled_by[k] = v; }, k)); g.appendChild(q);
   }

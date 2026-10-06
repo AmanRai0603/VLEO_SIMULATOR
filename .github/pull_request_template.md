@@ -15,7 +15,7 @@
       code. The filled holes are a few typed lines each and they say what the
       sheet says.
 
-The author is not an eligible reviewer on either.
+The node engineer is not an eligible reviewer on either.
 
 ## Before asking for review
 

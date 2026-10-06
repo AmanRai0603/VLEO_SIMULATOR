@@ -6,7 +6,7 @@
 > sum of unlike units, a logarithm of a length, an answer of the wrong quantity, and a path
 > that ends without an answer or a refusal — before any code exists.
 >
-> **Kind:** reference · **For:** node authors and developers
+> **Kind:** reference · **For:** node engineers and the developer
 
 ## Said simply
 
@@ -148,7 +148,7 @@ let v : Velocity = sqrt(MU_EARTH / r)
 return v
 ```
 
-**The author's own code** (MATLAB, `orbit_speed`), which produced the cases below.
+**The node engineer's own code** (MATLAB, `orbit_speed`), which produced the cases below.
 
 ```text
 function v = orbit_speed(r)
@@ -179,7 +179,7 @@ end
 
 **The cases**, in SI, and what the method gives for each.
 
-| Case | Inputs | The author's code | The method |
+| Case | Inputs | The node engineer's code | The method |
 |---|---|---|---|
 | 250 km | `r = 6628137` | 7754.84549737 | 7754.845497372695 — agrees with your code |
 | 400 km | `r = 6778137` | 7668.55817541 | 7668.558175407055 — agrees with your code |

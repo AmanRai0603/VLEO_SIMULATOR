@@ -15,7 +15,7 @@ Everything below was run against this repository. The outputs are real.
 **The manual in the tool is the reference; this page is the walkthrough.**
 Start the tool and press **? Manual** at the top of the page, or open
 `http://127.0.0.1:7777/#manual`. It lists every task, in the browser and in the
-terminal, for a user and for a developer, with each command ready to copy, and
+terminal, for an engineer and for the developer, with each command ready to copy, and
 it says what cannot be done by hand and what to do instead. It is tested
 against the code, so a command or button it names exists. This page
 does something the manual does not: it drives the tool through worked examples
@@ -733,7 +733,7 @@ ready: 16 of 320 node(s) have passed every machine stage and are waiting on H2
 ```
 
 Then commit, naming whoever filled the form. The message form is checked (§7).
-After review and merge, the next release carries the node to the team — and
+After review and merge, the next release carries the node to everyone — and
 their saved case carries over on its own, with any new input at its default.
 
 ### 3.11 Why it changed, and the release that ships it
@@ -992,7 +992,7 @@ cargo run -p xtask -- gap                    # what every sheet promised and not
 |---|---|
 | how to do any one thing, in the browser or the terminal, and what cannot be done by hand | **? Manual**, in the tool — source `docs/manual.toml` |
 | why the four rings, and what may depend on what | `docs/ARCHITECTURE.md` |
-| who does what — the team and the developers, and what crosses between them | `docs/WORK_MODEL.md` |
+| who does what on 1.0.0 — the five roles, the application, the shared drive, and each step | `docs/OPERATING_1_0.md` |
 | one form from arrival to release, and a developer's first day | `docs/RUNBOOK.md` |
 | every variable, its unit, its bounds and their reasons | `docs/VARIABLES.md` — generated |
 | the sheet field by field, in full | `docs/NODE_AUTHORING.md` |

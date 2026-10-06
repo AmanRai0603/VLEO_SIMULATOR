@@ -2,7 +2,7 @@
 
 > **Answer first.** A release is decided by merging a pull request into `main`; the release workflow builds and publishes only a commit that a merged pull request put on `main`, and refuses everything else before a single binary is built.
 >
-> **Kind:** how-to · **For:** developers and maintainers
+> **Kind:** how-to · **For:** the developer and their deputy
 
 This page says what the rule is, why it replaced the approval button the
 pipeline used to have, what it cannot stop on its own, and how to tell that it
@@ -68,8 +68,8 @@ things were wrong with it here.
   are not available to a private repository on a free personal account.
   GitHub's documentation says so
   ([`manage-environments.md`](https://github.com/github/docs/blob/main/content/actions/how-tos/deploy/configure-and-manage-deployments/manage-environments.md)):
-  *"Users with free plans can only configure environments for public
-  repositories."* So the job failed every time by design, and every release was
+  *“Users with free plans can only configure environments for public
+  repositories.”* So the job failed every time by design, and every release was
   published by hand from the run's artefacts.
 - **It asked the wrong question at the wrong time.** By the time the button
   appeared, everything was built; the approver saw a list of files and release

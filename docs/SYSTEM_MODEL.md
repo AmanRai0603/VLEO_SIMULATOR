@@ -33,7 +33,7 @@ possible, and the closure says whether the two meet.
 
 ## 2 · One block, any depth
 
-There is one kind of element, the **block**. The team calls it a node. There
+There is one kind of element, the **block**. Everyone calls it a node. There
 are three relations between blocks:
 
 | relation | means |
@@ -74,7 +74,7 @@ node can be broken down later, and nothing above it has to change.
 3. **Its cases stay, and test the breakdown.** The children together must
    reproduce the node's own cases within their tolerance. If they do not, a case
    or the breakdown is wrong, and the version that broke it down says which.
-4. **Its children belong to the same group,** unless another team will own
+4. **Its children belong to the same group,** unless another group will own
    them. Then the node becomes a **mount**, a new group hangs there, and the
    node's group is to it what the systems group is to a subsystem group.
 5. **It can be folded back.** A broken-down node can return to a method, for

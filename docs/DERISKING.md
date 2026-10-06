@@ -127,7 +127,7 @@ register and read the same history as the risk's conclusion; run
 
 ## How to
 
-**As a team member.** Fill the node's form as usual. If your change moves what the node computes,
+**As a node engineer.** Fill the node's form as usual. If your change moves what the node computes,
 fill *Why it is changing* — the form says as you type which decisions your changes move and what
 is still missing. For a new node, say what it rests on and what would break it. To register a
 risk, fill the form of the risk-register row it belongs to.

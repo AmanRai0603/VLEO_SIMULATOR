@@ -7,7 +7,7 @@
   ran on, every value it returned, every row it could not run, and the run's
   identity — `sweep.csv` when it is a sweep, and `report.html`, the one file to
   send, which carries both. The daemon keeps it outside the repository, in the
-  results folder (the team's, when VLEO_RESULTS names a shared one).
+  results folder (a shared one, when VLEO_RESULTS names it).
 
   A QUESTION IS KEPT ONCE, AND NOT ASKED AGAIN. Everything that decides an
   answer — the row, the inputs, the engine, the data, what a sweep moved — is

@@ -1,5 +1,9 @@
 # Who each team is on GitHub — the one place CODEOWNERS is decided.
 #
+# A team here is a GitHub review team: who reviews which crate, page and tool.
+# It says nothing about who owns which part of the design; that is the
+# application's, from the group files (docs/OPERATING_1_0.md, section 2).
+#
 # Two kinds of team. The MAINTAINERS own everything shared: the kernel, the
 # generators and the gate, the tools, the layers, cases, sources, the web face
 # and the pipeline — a defect there reaches every node at once. Each

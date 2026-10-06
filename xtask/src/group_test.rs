@@ -6,13 +6,13 @@
 //! produced:
 //!
 //! - `group-build` runs `build-node` on each computed node of the release:
-//!   translated, tested on the author's cases, the tests proved to test, the
+//!   translated, tested on the node engineer's cases, the tests proved to test, the
 //!   interface checked. A node whose method in the design is not the
 //!   release's is refused: the release is taken in first.
 //! - `group-test` asks four things, and writes what it found to a report:
 //!   1. the design holds the group's isolation results as the release has
 //!      them, case for case;
-//!   2. each node's own tests — its author's cases — pass;
+//!   2. each node's own tests — its node engineer's cases — pass;
 //!   3. the group as a whole, through the engine, gives `results/group.csv`;
 //!   4. at both ends of every range the group declares, each answer is a
 //!      number or a refusal by name — never NaN, never a crash.
@@ -339,8 +339,8 @@ pub(super) fn cmd_group_test(root: &Path, args: &[&str]) -> Result<(), String> {
         }
     }
 
-    // 2 · each node's own tests: its author's cases, and the translation
-    println!("\n\x1b[1m2 · each node on its own: its author's cases\x1b[0m");
+    // 2 · each node's own tests: its node engineer's cases, and the translation
+    println!("\n\x1b[1m2 · each node on its own: its node engineer's cases\x1b[0m");
     for id in &ids {
         let sh = &tree.sheets[id];
         let ok = Command::new("cargo")

@@ -215,15 +215,16 @@ function draw(host) {
     '<aside class="man-side">' +
       '<div class="man-side-h">For</div>' +
       '<div class="man-filter" role="group" aria-label="who this is for">' +
-        [['all', 'everyone'], ['user', 'a user'], ['maintainer', 'a maintainer'], ['developer', 'a developer']].map(([k, t]) =>
+        [['all', 'everyone'], ['user', 'an engineer'], ['maintainer', 'intake'], ['developer', 'the developer']].map(([k, t]) =>
           '<button class="ctl man-f' + (VIEW.who === k ? ' sel' : '') + '" data-who="' + k + '">' +
           t + '</button>').join('') +
       '</div>' +
-      '<p class="man-side-note">A <b>user</b> — the team — reads the design, sets the inputs, runs, ' +
-        'keeps results, asks for a change by filling a node’s form, and approves the preview of it. ' +
-        'A <b>maintainer</b> runs the routine: takes each form in, sends the preview, records the ' +
-        'approval, releases. A <b>developer</b> writes what the routine cannot: code, checks, the tool ' +
-        'itself.</p>' +
+      '<p class="man-side-note">An <b>engineer</b> — the programme manager, the system engineer, a ' +
+        'subsystem engineer or a node engineer — reads the design, sets the inputs, runs, keeps ' +
+        'results, asks for a change by filling a node’s form, and approves the preview of it. ' +
+        '<b>Intake</b>, until the switch-over, is the developer running the routine: takes each form ' +
+        'in, sends the preview, records the approval, releases. The <b>developer</b> also writes what ' +
+        'the routine cannot: code, checks, the tool itself.</p>' +
       layers.map(l =>
         '<div class="man-side-h' + (l.id === L.id ? ' cur' : '') + '">' +
           '<a href="#manual/' + esc(l.id) + '" class="man-layer-link" data-layer="' + esc(l.id) + '">' +

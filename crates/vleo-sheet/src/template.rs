@@ -70,7 +70,7 @@ pub const AI_HELP: &[&str] = &["none", "wording", "relation"];
 /// The arrays that ARE the relation, with the scalar fields that are. An
 /// assistant that helped with the relation may not supply any of these.
 ///
-/// The method is the relation once more, and the author's code and cases are
+/// The method is the relation once more, and the node engineer's code and cases are
 /// the evidence it is checked against: an assistant that wrote any of them has
 /// made the check compare the assistant with itself.
 const RELATION_FIELDS: &[&str] = &[
@@ -84,8 +84,8 @@ const RELATION_FIELDS: &[&str] = &[
 ];
 const RELATION_ARRAYS: &[&str] = &["algorithm", "theory", "case"];
 /// The blocks whose change re-confirms the relation itself, and so carries the
-/// applying developer's name onto it. The author's cases are refused from an
-/// assistant like the relation, but they are the author's evidence, not the
+/// applying developer's name onto it. The node engineer's cases are refused from an
+/// assistant like the relation, but they are the node engineer's evidence, not the
 /// relation, and do not move whose name is on it.
 const STAMPS_RELATION: &[&str] = &["algorithm", "theory"];
 
@@ -800,7 +800,7 @@ pub fn document(sh: &Sheet, tree: &Tree) -> String {
 /// The example is the circular orbital speed, which is exactly what
 /// `orbit_velocity` computes from the same one input, so the pipeline can take
 /// that real node through every stage — the form's own check in a browser,
-/// intake, the translation, the author's cases, the author's code rerun, the
+/// intake, the translation, the node engineer's cases, the node engineer's code rerun, the
 /// mutation, the interface — on a throwaway checkout, on every pull request.
 /// Nothing it writes is ever committed: a method comes from a node's owner.
 pub fn document_example(sh: &Sheet, tree: &Tree) -> Result<String, Error> {
@@ -857,7 +857,7 @@ pub fn document_example(sh: &Sheet, tree: &Tree) -> Result<String, Error> {
         ),
         (
             "learned",
-            "the method, the author's code and the generated code agree on every case",
+            "the method, the node engineer's code and the generated code agree on every case",
         ),
         (
             "changed",

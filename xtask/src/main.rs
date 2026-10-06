@@ -2,7 +2,7 @@
 //!
 //! Rust rather than shell scripts or a pipeline-only step: cross-platform,
 //! identical on a laptop and in continuous integration. A rule that lives only
-//! in the pipeline is a rule half the team never sees.
+//! in the pipeline is a rule half the people working here never see.
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
@@ -266,7 +266,7 @@ cargo xtask <command>
                      everything back on a refusal. Known-good values come out as
                      a request, never written.
   lesson form <node> [--out <file.html>]
-                     a row's lesson form: one HTML file the expert who knows
+                     a row's lesson form: one HTML file the node engineer who knows
                      the row fills anywhere, checked as they type by the
                      gate's own lesson check, saved as a filled copy.
   lesson check <file> [--for <node>]
@@ -285,7 +285,7 @@ cargo xtask <command>
                      and every registered risk as it stands. Generated from the
                      sheets' [[version]] and [[risk]] records, never edited.
   kit [--bin <dir>] [--out <dir>] [--files-only]
-                     the tool as a team member gets it: the two programs and
+                     the tool as each person gets it: the two programs and
                      the files they read (the web face, the design as one file,
                      design.vleo, and the reference data) in one folder, with
                      START_HERE.md — on Windows the daemon is `Start VLEO.exe`,
@@ -312,9 +312,9 @@ cargo xtask <command>
                      maintainer.html and developer.html, rendered from
                      docs/manual.toml. Never
                      edited by hand; the pipeline regenerates and compares.
-  method <node>      the node's method, checked, and each of its author's test
+  method <node>      the node's method, checked, and each of its node engineer's test
                      cases run through it — the check the form runs as the
-                     author types, and the one the gate refuses on.
+                     node engineer types, and the one the gate refuses on.
   method-wasm [--check]
                      rebuild web/method.wasm.gz, the checker every node form
                      carries, from vleo_sheet::method; --check only says
@@ -335,7 +335,7 @@ cargo xtask <command>
   group-build <folder> [--node <id>]
                      every computed node of a sealed release, taken in with
                      group-intake --apply, built from its method: build-node
-                     on each — translated, tested on the author's cases, the
+                     on each — translated, tested on the node engineer's cases, the
                      tests proved to test, the interface checked.
   group-test <folder> [--out <dir>]
                      the group tested against its own results: the design
@@ -367,34 +367,34 @@ cargo xtask <command>
                      GROUPS.csv: whose each is and how far the design carries
                      it. Default target/groups/all/.
   rerun <node>|--all [--require]
-                     the author's own code run again on their cases: Python
+                     the node engineer's own code run again on their cases: Python
                      directly, MATLAB and Octave through Octave; anything else
                      is kept and read, not rerun.
   build-node <node>  from a node's method to a connected node, in order: the
                      method on its cases, the translation into the kernel, the
-                     node's tests, the author's code rerun, a mutation the
+                     node's tests, the node engineer's code rerun, a mutation the
                      tests must catch — and only then the interface.
   migration [--owner <o>] [--subsystem <s>] [--forms <dir>]
                      which computed rows still need a method, by owner, and
                      with --forms their node forms written ready to send.
                      Nothing here writes a method: each comes from its owner.
   take <form.html> --for <author> [--again] [--no-push] [--no-test]
-                     the maintainer's first step: check a filled node form;
+                     the developer's first step: check a filled node form;
                      if it cannot be taken, write <form>.returned.txt to send
                      back and change nothing; otherwise put it on its own
                      branch form/<author>/<node> from a fresh maintainer, apply it,
-                     regenerate, gate, test, commit naming the author, push.
+                     regenerate, gate, test, commit naming the node engineer, push.
   preview            where the current form branch's preview build is — every
                      push to a form branch builds one — and what to do with it.
   approve <approval.toml> [--no-push]
-                     the author's approval of a preview, checked against this
+                     the node engineer's approval of a preview, checked against this
                      branch: it must be for the build of what is here now.
                      Recorded in approvals/, committed and pushed.
   approve --verify <branch>
                      the same check, as the pipeline runs it on a form branch's
                      pull request.
   queue              every form branch and every group branch, and where each
-                     stands: waiting for the author's approval or the group's
+                     stands: waiting for the node engineer's approval or the group's
                      acceptance, approved or accepted, merged.
   ship <version> [--no-push] [--no-test]
                      the release branch release/<version> from main: the

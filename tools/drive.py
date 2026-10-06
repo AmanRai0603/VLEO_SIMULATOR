@@ -34,12 +34,12 @@ drive filled by hand drifts from the release it claims to be within a week.
                                          in place of solar's plain export
     deliveries/<group>-<version>/        a test application's record, given by
                                          --delivery: DELIVERY.toml, DELIVERY.md,
-                                         group-test.csv — what the lead accepts
+                                         group-test.csv — what the subsystem engineer accepts
 
 `releases/` holds sealed releases and nothing else. The export assembles an
 unsealed release for every group; it is left out, because a file of that name
 in the drive reads as the group's release, and an upload by hand beside the
-lead's sealed one makes two files of one name. A lead assembles and seals
+subsystem engineer's sealed one makes two files of one name. A subsystem engineer assembles and seals
 their own (docs/GROUP_APPS.md); the developer adds a sealed one with --sealed.
 
 # By hand, without the sign-in
@@ -50,10 +50,10 @@ that is the whole upload, and it needs no secrets.
 
 Who owns what decides what a later zip replaces. apps/, guides/, design/ and
 readable/ are the repository's: a release replaces them whole. groups/ is the
-groups' once it is in the drive — the lead's structure, the authors' node
+groups' once it is in the drive — the subsystem engineer's structure, the node engineers' node
 files, the sealed releases — so a later zip leaves it out (`--update`), and
 only a new group's folder is added by hand. deliveries/ only grows: each test
-application adds its own folder, and the lead adds their answer to it.
+application adds its own folder, and the subsystem engineer adds their answer to it.
 docs/DRIVE_START_HERE.md is the drive's START HERE page, kept as a Google Doc
 beside the six folders.
 
@@ -248,7 +248,7 @@ DELIVERY_FILES = ["DELIVERY.toml", "DELIVERY.md", "group-test.csv"]
 def place_deliveries(out, dirs):
     """Copy each test application's record into deliveries/<group>-<version>/.
     Refused when the drive does not also hold the sealed release it was built
-    from: the lead accepts a delivery against that release, and nothing else."""
+    from: the subsystem engineer accepts a delivery against that release, and nothing else."""
     placed = []
     for d in dirs:
         d = Path(d)

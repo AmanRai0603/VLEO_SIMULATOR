@@ -314,7 +314,18 @@ pub fn render(m: &Manual, role: &str, version: &str) -> Result<String, Error> {
     let others: String = crate::manual::ROLES
         .iter()
         .filter(|o| **o != role)
-        .map(|o| f("other-guide", &[("role", o)]))
+        .map(|o| {
+            // The file keeps the role's id; the link reads as its title.
+            let title = m
+                .roles
+                .iter()
+                .find(|r| r.id == *o)
+                .map_or(*o, |r| r.title.as_str());
+            f(
+                "other-guide",
+                &[("role", o), ("title", &esc(&title.to_lowercase()))],
+            )
+        })
         .collect::<Vec<_>>()
         .join(t("others-sep"));
 
@@ -327,7 +338,6 @@ pub fn render(m: &Manual, role: &str, version: &str) -> Result<String, Error> {
         "body",
         &[
             ("version", &esc(version)),
-            ("role", &esc(role)),
             ("lower", &esc(&r.title.to_lowercase())),
             ("others", &others),
             ("intro", &role_intro(r)),

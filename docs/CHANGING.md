@@ -167,7 +167,7 @@ refuses:
 - an instruction file that names a path that no longer exists.
 
 Beyond what is checked: a change that moves a decision appends its
-`[[version]]` (`docs/DERISKING.md`); a change a team will notice says so in the
+`[[version]]` (`docs/DERISKING.md`); a change people will notice says so in the
 manual (`docs/manual.toml`); and everything that teaches follows
 `docs/EXPLAINING.md` — answer first, then said simply, then the real thing, then
 where it breaks.

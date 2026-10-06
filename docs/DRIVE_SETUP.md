@@ -1,6 +1,6 @@
 # Setting up the shared drive
 
-> **Answer first.** The team's shared drive is written from the repository. By hand: `tools/drive.py pack --zip` builds the whole folder as one zip, and its owner unzips it and drags the folder into Drive — no secrets, no sign-in. By the pipeline: on every release tag the `drive` workflow builds the same folder and mirrors it into Drive, signed in as the folder's owner with a refresh token from a one-time sign-in, kept as three repository secrets beside one variable naming the folder.
+> **Answer first.** The shared drive is written from the repository. By hand: `tools/drive.py pack --zip` builds the whole folder as one zip, and its owner unzips it and drags the folder into Drive — no secrets, no sign-in. By the pipeline: on every release tag the `drive` workflow builds the same folder and mirrors it into Drive, signed in as the folder's owner with a refresh token from a one-time sign-in, kept as three repository secrets beside one variable naming the folder.
 >
 > **Kind:** how-to · **For:** the drive's owner, and the developer who builds it
 
@@ -42,8 +42,8 @@ used):
   readable/Groups.csv, Nodes.csv, Interfaces.csv
                                       the released design, for any spreadsheet
   groups/<group>/                     one folder per group that owns a node
-    <group>.vgroup                    the structure — the lead's
-    nodes/<node>.vnode                one per node — each its author's
+    <group>.vgroup                    the structure — the subsystem engineer's
+    nodes/<node>.vnode                one per node — each its node engineer's
     releases/<group>-<version>.vleo   SEALED releases only (--sealed)
   deliveries/<group>-<version>/       a test application's record (--delivery):
                                       DELIVERY.toml, DELIVERY.md, group-test.csv
@@ -52,8 +52,8 @@ used):
 `releases/` holds sealed releases and nothing else. The export assembles an
 unsealed release for every group; the pack leaves it out, because a file of
 that name reads as the group's release and would sit beside — or, mirrored,
-replace — the one the lead sealed. A delivery is refused unless the folder also
-holds the sealed release it was built from: that is what the lead accepts it
+replace — the one the subsystem engineer sealed. A delivery is refused unless the folder also
+holds the sealed release it was built from: that is what the subsystem engineer accepts it
 against.
 
 `groups/l3_solar/` is the solar worked example (`groups/solar`), not solar's plain
@@ -65,8 +65,8 @@ bytes changed is replaced in place, so every link to it keeps working; a file
 whose bytes are the same is left alone. **It never deletes.** A file the pack no
 longer writes is named in the job's log and kept.
 
-**What it does not do.** It does not read the drive back. A lead's saved
-structure or an author's filled node file is theirs; the next release that
+**What it does not do.** It does not read the drive back. A subsystem engineer's saved
+structure or a node engineer's filled node file is theirs; the next release that
 carries the same file name replaces it. Move work in progress out of the
 mirrored folders — the group application saves where you tell it — or take it
 in first (docs/GROUP_APPS.md, *The developer, taking a sealed release in*).

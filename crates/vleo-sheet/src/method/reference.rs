@@ -17,7 +17,7 @@ pub fn reference_md() -> String {
          > sum of unlike units, a logarithm of a length, an answer of the wrong quantity, and a path\n\
          > that ends without an answer or a refusal — before any code exists.\n\
          >\n\
-         > **Kind:** reference · **For:** node authors and developers\n\n",
+         > **Kind:** reference · **For:** node engineers and the developer\n\n",
     );
     o.push_str("## Said simply\n\n");
     o.push_str(
@@ -112,7 +112,7 @@ pub fn reference_md() -> String {
     let f = |k: &str| crate::example::field(k).unwrap_or("");
     let _ = writeln!(
         o,
-        "**The author's own code** ({}, `{}`), which produced the cases below.\n\n```text\n{}\n```\n",
+        "**The node engineer's own code** ({}, `{}`), which produced the cases below.\n\n```text\n{}\n```\n",
         f("author_language"),
         f("author_entry"),
         f("author_code")
@@ -122,7 +122,7 @@ pub fn reference_md() -> String {
         "**The test code** that ran it on each case.\n\n```text\n{}\n```\n",
         f("author_test_code")
     );
-    o.push_str("**The cases**, in SI, and what the method gives for each.\n\n| Case | Inputs | The author's code | The method |\n|---|---|---|---|\n");
+    o.push_str("**The cases**, in SI, and what the method gives for each.\n\n| Case | Inputs | The node engineer's code | The method |\n|---|---|---|---|\n");
     if let Ok(r) = report_toml(&crate::example::sheet_text()) {
         for (i, (c, v)) in r.cases.iter().enumerate() {
             let inputs = c

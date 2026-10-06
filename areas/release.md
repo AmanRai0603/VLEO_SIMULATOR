@@ -8,8 +8,8 @@ Packaging, the installer, the wheel, the release workflow and the daemon
 packaging.
 
 Applies to `.github/workflows/release.yml`, packaging manifests.
-A pipeline, maintained by the developers. A release is how every applied form
-reaches the team.
+A pipeline, maintained by the developers. A release is how a change to the
+code reaches everyone. It never changes anyone's design files.
 
 ## Two things this area may never do
 
@@ -67,6 +67,11 @@ One kernel, three ways in, built from one merge:
 A published version's numbers. If a release would move a result, that is a
 finding for the integrator before it is a release note — the chain hash of an
 old ledger row must still reproduce.
+
+**The released design's answers.** `baseline/today.csv` holds what the engine
+answers, and `cargo test` fails when an answer moves. From the switch-over on,
+the record is taken from the current released design when a release is prepared
+(W15), and a release that moves an answer is not made.
 
 ## Release notes
 
