@@ -1570,6 +1570,14 @@ pub fn plan_in(tree: &Tree, html: &str) -> Result<Plan, Error> {
     plan_form_in(tree, read(html)?, false)
 }
 
+/// What a form already read would change, against a tree already loaded —
+/// from the folders, a design file, or today's design as it is being built
+/// from the groups' releases. Writes nothing; the sheet it would write is
+/// [`Plan::text`].
+pub fn plan_form_against(tree: &Tree, f: Form) -> Result<Plan, Error> {
+    plan_form_in(tree, f, false)
+}
+
 fn plan_form_in(tree: &Tree, f: Form, first: bool) -> Result<Plan, Error> {
     let root = tree.root.as_path();
     let unlisted = sources_unlisted(tree, &f);

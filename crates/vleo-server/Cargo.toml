@@ -19,6 +19,9 @@ vleo-data = { workspace = true }
 # alternative was a second copy of the form in JavaScript, which would drift
 # and look complete while doing it.
 vleo-sheet = { workspace = true }
+# Today's design is built from the groups' sealed releases, read, sealed and
+# checked by the one library every design file goes through.
+vleo-files = { path = "../vleo-files" }
 # The design file a kit carries in place of the node folders (design.vleo),
 # read through the same interface as the folders.
 vleo-design = { workspace = true }

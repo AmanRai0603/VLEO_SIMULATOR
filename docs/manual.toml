@@ -2996,6 +2996,11 @@ what = "A design file for the daemon to read the design from, in place of the on
 default = "design.vleo beside the tool, else the folders"
 
 [[env]]
+name = "VLEO_DRIVE"
+what = "A shared drive to build today's design from: every group's latest sealed release in its `groups/<group>/releases/` that passes its checks — its seal, its content, and each node as the form its node engineer would have filled — taken into the design, in memory. A group whose latest is refused is built from its last good release, and the tool says which release each group's part is, and why one was refused. A folder that is not a drive stops the tool, naming why. Nothing on the drive is written."
+default = "unset: the design file or the folders, as they are"
+
+[[env]]
 name = "VLEO_PORT"
 what = "The first port the daemon tries. It takes the first free one of sixteen from there."
 default = "7777"
