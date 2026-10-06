@@ -40,6 +40,7 @@ members = [
     "crates/vleo-bus",
     "crates/vleo-data",
     "crates/vleo-design",
+    "crates/vleo-files",
     "crates/vleo-modules",
     "crates/vleo-cli",
     "crates/vleo-daemon",

@@ -89,7 +89,7 @@ pub(super) fn cmd_codeowners(root: &Path) -> Result<(), String> {
         (
             "data",
             both(&["data"]),
-            &["/crates/vleo-data/", "/bundles/"][..],
+            &["/crates/vleo-data/", "/crates/vleo-files/", "/bundles/"][..],
         ),
         (
             "the contract: frontend and backend",
