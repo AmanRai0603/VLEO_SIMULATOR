@@ -11,3 +11,7 @@
 bundles/** -text
 
 *.png binary
+
+# A design file is a SQLite database: bytes, never text. The fixture a test
+# upgrades is the file as the group sealed it.
+*.vleo binary
