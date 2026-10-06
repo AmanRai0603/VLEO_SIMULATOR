@@ -19,7 +19,7 @@ use alloc::vec::Vec;
 use vleo_core::credibility::{self, CredVec, Factor};
 use vleo_core::evidence::Verdict;
 use vleo_core::fault::Fault;
-use vleo_core::graph::{Kind, NodeDef, NodeIdx, NodeTable, VarDef};
+use vleo_core::graph::{Behaviour, Kind, NodeDef, NodeIdx, NodeTable, VarDef};
 use vleo_core::resolver::{self, CycleSpec, RunReport, Workspace};
 use vleo_core::value::{Slot, SlotStatus, Store};
 use vleo_units::Unit;
@@ -168,9 +168,65 @@ fn laid_out_otherwise(graph: &Graph) -> Option<String> {
 }
 
 impl Graph {
-    /// Run node `i`'s relation: the graph's own when it has one, else the
-    /// compiled function.
+    /// Run node `i` as its behaviour says: an open row refuses by its own id;
+    /// a lookup is read along its table and its children's ports are its
+    /// answer, both by the engine itself; any other row runs its relation —
+    /// the graph's own when it has one, else the compiled function.
     pub fn call(&self, i: usize, inputs: &[f64], outputs: &mut [f64]) -> Result<(), Fault> {
+        let def = &self.nodes[i];
+        match def.behaviour {
+            Behaviour::Open => Err(Fault::NotRun { node: def.id }),
+            Behaviour::Lookup(l) => {
+                let x = *inputs.get(l.by as usize).ok_or(Fault::Blocked {
+                    node: def.id,
+                    missing: "the input its table is read along",
+                })?;
+                let var = &self.vars[def.inputs[l.by as usize] as usize];
+                let y = l.read(def.id, var.id, var.unit, x)?;
+                *outputs.first_mut().ok_or(Fault::Degenerate {
+                    node: def.id,
+                    field: "",
+                    reason: "a lookup answers one output, and this row has none",
+                })? = y;
+                Ok(())
+            }
+            Behaviour::Children(c) => {
+                for (k, out) in outputs.iter_mut().enumerate() {
+                    let from = c.from.get(k).ok_or(Fault::Degenerate {
+                        node: def.id,
+                        field: "",
+                        reason: "an output no child answers",
+                    })?;
+                    *out = *inputs.get(*from as usize).ok_or(Fault::Blocked {
+                        node: def.id,
+                        missing: "the child port that answers it",
+                    })?;
+                }
+                Ok(())
+            }
+            _ => self.estimate(i, inputs, outputs),
+        }
+    }
+
+    /// What a row's own cases are run against: its answer, except for a row
+    /// answered by its children, whose cases test the estimate it kept.
+    /// Whether the children together reproduce them is the integration check
+    /// a group makes of its breakdown.
+    fn against_its_cases(
+        &self,
+        i: usize,
+        inputs: &[f64],
+        outputs: &mut [f64],
+    ) -> Result<(), Fault> {
+        match self.nodes[i].behaviour {
+            Behaviour::Children(_) => self.estimate(i, inputs, outputs),
+            _ => self.call(i, inputs, outputs),
+        }
+    }
+
+    /// Node `i`'s own relation, whatever its behaviour: for a row answered by
+    /// its children, the estimate it kept from before it was broken down.
+    pub fn estimate(&self, i: usize, inputs: &[f64], outputs: &mut [f64]) -> Result<(), Fault> {
         match self.run.get(i) {
             Some(Some(r)) => r(inputs, outputs),
             _ => (self.dispatch[i])(inputs, outputs),
@@ -504,7 +560,7 @@ impl Graph {
         let mut passed = true;
         for f in def.fixtures {
             let mut out = [0.0f64; MAX_OUTPUTS];
-            match self.call(node as usize, f.inputs, &mut out[..def.outputs.len()]) {
+            match self.against_its_cases(node as usize, f.inputs, &mut out[..def.outputs.len()]) {
                 Ok(()) => {
                     ran = true;
                     // The slot the fixture named. A set row's fixture checks the
@@ -532,19 +588,22 @@ impl Graph {
         let mut out = Vec::new();
         for f in def.fixtures {
             let mut o = [0.0f64; MAX_OUTPUTS];
-            let (got, passed, err) =
-                match self.call(node as usize, f.inputs, &mut o[..def.outputs.len()]) {
-                    Ok(()) => {
-                        let got = o[f.slot];
-                        let e = match f.check(got) {
-                            Verdict::Pass { relative_error } => relative_error,
-                            Verdict::Fail { relative_error, .. } => relative_error,
-                            _ => f64::NAN,
-                        };
-                        (got, f.check(got).passed(), e)
-                    }
-                    Err(_) => (f64::NAN, false, f64::NAN),
-                };
+            let (got, passed, err) = match self.against_its_cases(
+                node as usize,
+                f.inputs,
+                &mut o[..def.outputs.len()],
+            ) {
+                Ok(()) => {
+                    let got = o[f.slot];
+                    let e = match f.check(got) {
+                        Verdict::Pass { relative_error } => relative_error,
+                        Verdict::Fail { relative_error, .. } => relative_error,
+                        _ => f64::NAN,
+                    };
+                    (got, f.check(got).passed(), e)
+                }
+                Err(_) => (f64::NAN, false, f64::NAN),
+            };
             out.push(vleo_bus::VerdictOut {
                 node: def.id.to_string(),
                 label: f.label.to_string(),

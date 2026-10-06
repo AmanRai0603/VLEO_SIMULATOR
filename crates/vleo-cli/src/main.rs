@@ -955,6 +955,7 @@ fn cmd_show(args: &[&str]) -> Result<(), String> {
     println!("\x1b[1m{}\x1b[0m — {}", def.id, def.label);
     println!("  question     {}", def.question);
     println!("  relation     {}", def.expression);
+    println!("  behaviour    {}", def.behaviour.name());
     println!("  source       {}", def.source);
     println!(
         "  owner        {}  tier {}  kind {}  state {}",

@@ -51,9 +51,27 @@ A block's **behaviour** is exactly one of:
 | stated | a value a person states, with its source |
 | lookup | a table and how to read it |
 | open | not decided yet: a draft, refused by name if a run reaches it |
+| built-in | a relation still in compiled code, found by the block's id until its group writes a method for it |
 
 A block stops being broken down when its behaviour is a method, a stated
 value, a lookup, or a wire from another group.
+
+Until the design leaves the repository (`docs/PLAN_1_0.md`, phase E), a node
+sheet says its behaviour by what it holds, and the engine reads it the same
+way, installed and from the design's files (`crates/vleo-core/src/graph.rs`,
+`Behaviour`):
+
+| the sheet holds | its behaviour |
+|---|---|
+| `state = "empty"` | open: it refuses, by its own id |
+| `[lookup]`: `by` (one of its inputs), `x` and `y` in SI, `read = "linear"` or `"log"` | lookup: the engine reads the table, and refuses outside its first and last row |
+| `[children]`: `group`, and `from`, one input per output | children: each output is that input, a port of a child in the group; its own relation stays as its estimate, and its cases test the estimate |
+| `kind = "declared"` | stated |
+| `[method]` | method |
+| none of these | built-in |
+
+The gate refuses a sheet whose table cannot be read or whose children are not
+its group's, by name.
 
 **A block sees inside its children only through their inputs and outputs.**
 This is the rule "a layer reads the one below it only through a closure",

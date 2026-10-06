@@ -8,7 +8,7 @@
 use vleo_units::pmath;
 
 /// A one-dimensional table with linear interpolation and clamped ends.
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Table1 {
     pub x: &'static [f64],
     pub y: &'static [f64],

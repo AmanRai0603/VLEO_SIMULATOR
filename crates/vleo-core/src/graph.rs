@@ -32,6 +32,122 @@ pub type NodeIdx = u16;
 /// Index into the variable table.
 pub type VarIdx = u16;
 
+/// What a row's answer is: exactly one of these (docs/SYSTEM_MODEL.md,
+/// "behaviour"). A block stops being broken down when its behaviour is a
+/// method, a stated value or a lookup.
+#[derive(Clone, Copy, PartialEq, Debug)]
+pub enum Behaviour {
+    /// A method its node engineer wrote, run by the interpreter — or by its
+    /// translation, when this build was made from that same method.
+    Method,
+    /// A relation still in compiled code, found by the row's id until its
+    /// group writes a method for it.
+    BuiltIn,
+    /// A value a person states, with its source.
+    Stated,
+    /// A table, and how to read it. The engine reads it; no code is written
+    /// for it.
+    Lookup(&'static Lookup),
+    /// Whatever its children give at its outputs. Its own relation, when it
+    /// has one, is kept as its estimate.
+    Children(&'static Children),
+    /// Not decided yet. It refuses, by its own id.
+    Open,
+}
+
+impl Behaviour {
+    pub fn name(&self) -> &'static str {
+        match self {
+            Behaviour::Method => "method",
+            Behaviour::BuiltIn => "built-in",
+            Behaviour::Stated => "stated",
+            Behaviour::Lookup(_) => "lookup",
+            Behaviour::Children(_) => "children",
+            Behaviour::Open => "open",
+        }
+    }
+}
+
+/// How a lookup's table is read between its rows.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum Read {
+    /// A straight line between the two rows either side.
+    Linear,
+    /// A straight line in the logarithm of the answer, for a quantity that
+    /// varies over decades. Every answer in the table must be positive.
+    Log,
+}
+
+impl Read {
+    pub fn name(self) -> &'static str {
+        match self {
+            Read::Linear => "linear",
+            Read::Log => "log",
+        }
+    }
+}
+
+/// A lookup: one input read along a table to the row's one output.
+#[derive(Clone, Copy, PartialEq, Debug)]
+pub struct Lookup {
+    /// Which of the row's inputs the table is read along, by position.
+    pub by: u8,
+    /// The table: rising `x` in the input's SI unit, and the answer at each
+    /// in the output's.
+    pub table: crate::math::table::Table1,
+    pub read: Read,
+}
+
+impl Lookup {
+    /// The answer at `x`, or a refusal: outside its first and last row a table
+    /// says nothing, and the row says so rather than answering with an end.
+    pub fn read(
+        &self,
+        node: &'static str,
+        field: &'static str,
+        unit: Unit,
+        x: f64,
+    ) -> Result<f64, Fault> {
+        let (x0, x1) = (self.table.x[0], self.table.x[self.table.x.len() - 1]);
+        let outside = |bound: f64, edge: crate::fault::Edge| Fault::OutOfDomain {
+            node,
+            field,
+            value: x,
+            bound,
+            edge,
+            unit,
+            reason: "the table says nothing outside its first and last row",
+        };
+        if !x.is_finite() {
+            return Err(Fault::Degenerate {
+                node,
+                field,
+                reason: "a table is read at a number, and this is not one",
+            });
+        }
+        if x < x0 {
+            return Err(outside(x0, crate::fault::Edge::Lower));
+        }
+        if x > x1 {
+            return Err(outside(x1, crate::fault::Edge::Upper));
+        }
+        Ok(match self.read {
+            Read::Linear => self.table.at(x),
+            Read::Log => self.table.at_log(x),
+        })
+    }
+}
+
+/// A row answered by its children: each of its outputs is one of its inputs,
+/// a port of a child in its group.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub struct Children {
+    /// The group whose children answer.
+    pub group: &'static str,
+    /// For each output, by position, the input that answers it.
+    pub from: &'static [u8],
+}
+
 /// What kind of row this is.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Kind {
@@ -268,6 +384,9 @@ pub struct NodeDef {
     /// its verdict and its provenance — which is what all but a handful of
     /// nodes want.
     pub view: View,
+    /// What its answer is: a method, a built-in relation, a stated value, a
+    /// lookup, its children, or open.
+    pub behaviour: Behaviour,
 }
 
 impl NodeDef {

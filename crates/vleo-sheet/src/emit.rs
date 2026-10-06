@@ -169,7 +169,13 @@ pub fn model_rs(sh: &Sheet, holes: &BTreeMap<u32, String>) -> String {
                 .map(|b| b.trim().is_empty())
                 .unwrap_or(true)
         });
-    if unfilled_hole {
+    // A ROW ANSWERED BY ITS TABLE OR ITS CHILDREN, with no relation of its own
+    // to keep as an estimate, has no code to run: the engine reads the table,
+    // or the children's ports, itself. Its function still exists, because
+    // every row has one; it refuses, so nothing can take it for the answer.
+    let read_by_the_engine =
+        method.is_none() && sh.steps.is_empty() && (sh.lookup.is_some() || sh.children.is_some());
+    if unfilled_hole || read_by_the_engine {
         o.push_str("#[allow(unreachable_code, unused_variables)]\n");
     }
     o.push_str(&format!(
@@ -222,6 +228,15 @@ pub fn model_rs(sh: &Sheet, holes: &BTreeMap<u32, String>) -> String {
             sym = esc(&sh.symbol)
         ));
         "method_answer".to_string()
+    } else if read_by_the_engine {
+        o.push_str(&format!(
+            "    // generated · its answer is its {what}: the engine reads it, and this\n\
+             \x20   // code is never what answers.\n\
+             \x20   let engine_answer: {ty} = return Err(Fault::Refused {{ node: NODE_ID, reason: \"its answer is read by the engine from its {what}, never by this code\" }});\n",
+            what = if sh.lookup.is_some() { "table" } else { "children" },
+            ty = ret,
+        ));
+        "engine_answer".to_string()
     } else if sh.steps.is_empty() {
         // A declared value publishes itself. Nothing is computed, and the
         // conversion from the unit it was written in is explicit rather than a
@@ -1859,6 +1874,49 @@ pub fn wiring_errors(tree: &Tree) -> Vec<String> {
 /// Wednesday's graph — so they are generated as tables and compiled in. Adding
 /// an edge is therefore a rebuild, which is correct: it changes what the engine
 /// computes, so it should go through the gate.
+/// A row's behaviour, as the generated table writes it: a table or the
+/// children that answer it as static data, every other behaviour by name. The
+/// gate has already refused one that does not hold together, so a binding
+/// that names no input cannot reach here; it is written as position 0 rather
+/// than a panic in a build script.
+fn behaviour_expr(sh: &Sheet) -> String {
+    let at = |binding: &str| {
+        sh.inputs
+            .iter()
+            .position(|i| i.binding == binding)
+            .unwrap_or(0)
+    };
+    match sh.behaviour() {
+        "open" => "Behaviour::Open".into(),
+        "stated" => "Behaviour::Stated".into(),
+        "method" => "Behaviour::Method".into(),
+        "lookup" => {
+            let l = sh.lookup.as_ref().expect("a lookup row has a table");
+            format!(
+                "Behaviour::Lookup(&Lookup {{ by: {by}, table: Table1 {{ x: &{x:?}, y: &{y:?} }}, read: Read::{read} }})",
+                by = at(&l.by),
+                x = l.x,
+                y = l.y,
+                read = if l.read == "log" { "Log" } else { "Linear" },
+            )
+        }
+        "children" => {
+            let c = sh.children.as_ref().expect("a children row has children");
+            format!(
+                "Behaviour::Children(&Children {{ group: \"{g}\", from: &[{from}] }})",
+                g = esc(&c.group),
+                from = c
+                    .from
+                    .iter()
+                    .map(|b| at(b).to_string())
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            )
+        }
+        _ => "Behaviour::BuiltIn".into(),
+    }
+}
+
 pub fn tables_rs(tree: &Tree) -> String {
     let sheets = tree.ordered();
     let n = sheets.len();
@@ -1888,7 +1946,13 @@ pub fn tables_rs(tree: &Tree) -> String {
     o.push_str("use vleo_core::credibility::Tier;\n");
     o.push_str("use vleo_core::evidence::{Fixture, Provenance};\n");
     o.push_str("use vleo_core::fault::Fault;\n");
-    o.push_str("use vleo_core::graph::{Kind, Limit, NodeDef, Retirement, State, VarDef, View};\n");
+    // A table or children row is the only user of these, and a design may
+    // have none.
+    o.push_str(
+        "#[allow(unused_imports)]\n\
+         use vleo_core::graph::{Behaviour, Children, Kind, Limit, Lookup, NodeDef, Read, Retirement, State, VarDef, View};\n",
+    );
+    o.push_str("#[allow(unused_imports)]\nuse vleo_core::math::table::Table1;\n");
     o.push_str("use vleo_core::units::Unit;\n\n");
     o.push_str(&format!("pub const NODE_COUNT: usize = {n};\n"));
     // The version each node's record has reached, and the release that
@@ -2032,7 +2096,8 @@ pub fn tables_rs(tree: &Tree) -> String {
              question: \"{q}\", expression: \"{e}\", source: \"{src}\", relation_by: \"{rby}\", derived: {derived}, \
              assumptions: &[{asm}], steps: &[{steps}], \
              inputs: &[{inputs}], outputs: &[{outputs}], contributes: &[{kpis}], bundles: &[{bundles}], \
-             fixtures: &[{fixtures}], sheet_hash: 0x{sh_hash:016x}, impl_hash: 0x{im_hash:016x}, view: {view} }},\n",
+             fixtures: &[{fixtures}], sheet_hash: 0x{sh_hash:016x}, impl_hash: 0x{im_hash:016x}, view: {view}, \
+             behaviour: {behaviour} }},\n",
             id = esc(&sh.id),
             label = esc(&sh.label),
             sub = esc(&sh.subsystem),
@@ -2060,6 +2125,7 @@ pub fn tables_rs(tree: &Tree) -> String {
             sh_hash = sh.sheet_hash,
             im_hash = sh.impl_hash,
             view = view_expr(&sh.view),
+            behaviour = behaviour_expr(sh),
         ));
     }
     o.push_str("];\n\n");

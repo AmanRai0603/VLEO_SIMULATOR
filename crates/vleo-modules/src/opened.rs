@@ -42,7 +42,10 @@ use std::collections::BTreeMap;
 use vleo_core::credibility::Tier;
 use vleo_core::evidence::{Fixture, Provenance};
 use vleo_core::fault::Fault;
-use vleo_core::graph::{Kind, Limit, NodeDef, Retirement, State, VarDef, View};
+use vleo_core::graph::{
+    Behaviour, Children, Kind, Limit, Lookup, NodeDef, Read, Retirement, State, VarDef, View,
+};
+use vleo_core::math::table::Table1;
 use vleo_sheet::load::Tree;
 use vleo_sheet::model as sheet;
 use vleo_units::Unit;
@@ -109,6 +112,46 @@ fn provenance_of(p: &str) -> Provenance {
         "physical-bound" => Provenance::PhysicalBound,
         "self-snapshot" => Provenance::SelfSnapshot,
         _ => Provenance::AgentGenerated,
+    }
+}
+
+/// What a row's answer is, as its sheet says (`Sheet::behaviour`): a table or
+/// the children that answer it held as data the engine reads, every other
+/// behaviour by name.
+fn behaviour_of(sh: &sheet::Sheet) -> Behaviour {
+    let at = |binding: &str| {
+        sh.inputs
+            .iter()
+            .position(|i| i.binding == binding)
+            .unwrap_or(0) as u8
+    };
+    match sh.behaviour() {
+        "open" => Behaviour::Open,
+        "stated" => Behaviour::Stated,
+        "method" => Behaviour::Method,
+        "lookup" => {
+            let l = sh.lookup.as_ref().expect("a lookup row has a table");
+            Behaviour::Lookup(Box::leak(Box::new(Lookup {
+                by: at(&l.by),
+                table: Table1 {
+                    x: slice(l.x.clone()),
+                    y: slice(l.y.clone()),
+                },
+                read: if l.read == "log" {
+                    Read::Log
+                } else {
+                    Read::Linear
+                },
+            })))
+        }
+        "children" => {
+            let c = sh.children.as_ref().expect("a children row has children");
+            Behaviour::Children(Box::leak(Box::new(Children {
+                group: text(&c.group),
+                from: slice(c.from.iter().map(|b| at(b)).collect()),
+            })))
+        }
+        _ => Behaviour::BuiltIn,
     }
 }
 
@@ -516,6 +559,7 @@ fn build(tree: &Tree, methods: Methods) -> Result<&'static Graph, Error> {
             sheet_hash: sh.sheet_hash,
             impl_hash: sh.impl_hash,
             view: view_of(&sh.view),
+            behaviour: behaviour_of(sh),
         });
         // A method runs in the interpreter, and needs no compiled code — or,
         // when this build was made from this very sheet, as its translation.

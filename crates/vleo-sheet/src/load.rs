@@ -123,6 +123,7 @@ pub const SCHEMA: &[(&str, &[&str])] = &[
             "assumption",
             "author",
             "case",
+            "children",
             "contributes",
             "criticality",
             "crosses_to",
@@ -135,6 +136,7 @@ pub const SCHEMA: &[(&str, &[&str])] = &[
             "kind",
             "label",
             "layer",
+            "lookup",
             "maths",
             "method",
             "migrated_from",
@@ -175,6 +177,7 @@ pub const SCHEMA: &[(&str, &[&str])] = &[
             "tolerance",
         ],
     ),
+    ("children", &["from", "group"]),
     ("contributes", &["kpis"]),
     ("data", &["bundles"]),
     ("explain", &["breaks", "by", "simply", "wrong"]),
@@ -190,6 +193,7 @@ pub const SCHEMA: &[(&str, &[&str])] = &[
         ],
     ),
     ("input", &["binding", "type", "var"]),
+    ("lookup", &["by", "read", "x", "y"]),
     ("maths", &["confirmed_by", "expression", "source"]),
     ("method", &["by", "text"]),
     (
@@ -495,6 +499,43 @@ fn load_sheet(files: &dyn Files, dir: &Path, crate_name: &str) -> Result<Sheet, 
         sh.method.text = code(m.get("text"));
         sh.method.by = s(m.get("by")).trim().to_string();
     }
+    if let Some(l) = t.get("lookup").and_then(|x| x.as_table()) {
+        let column = |k: &str| -> Result<Vec<f64>, Error> {
+            l.get(k)
+                .and_then(|v| v.as_array())
+                .map(|a| {
+                    a.iter()
+                        .map(|v| v.as_float().or(v.as_integer().map(|i| i as f64)))
+                        .collect()
+                })
+                .unwrap_or(Some(Vec::new()))
+                .ok_or_else(|| {
+                    Error::new(
+                        ErrorKind::Malformed,
+                        format!(
+                            "{}: [lookup] {k} holds something that is not a number",
+                            path.display()
+                        ),
+                    )
+                })
+        };
+        sh.lookup = Some(crate::model::Lookup {
+            by: s(l.get("by")).trim().to_string(),
+            x: column("x")?,
+            y: column("y")?,
+            read: s(l.get("read")).trim().to_string(),
+        });
+    }
+    if let Some(c) = t.get("children").and_then(|x| x.as_table()) {
+        sh.children = Some(crate::model::ChildrenOf {
+            group: s(c.get("group")).trim().to_string(),
+            from: c
+                .get("from")
+                .and_then(|v| v.as_array())
+                .map(|a| a.iter().map(|v| s(Some(v)).trim().to_string()).collect())
+                .unwrap_or_default(),
+        });
+    }
     if let Some(a) = t.get("author").and_then(|x| x.as_table()) {
         sh.author = crate::model::AuthorCode {
             name: s(a.get("name")),
@@ -752,6 +793,14 @@ fn load_sheet(files: &dyn Files, dir: &Path, crate_name: &str) -> Result<Sheet, 
     if !sh.method.text.trim().is_empty() {
         canon.push_str("method:");
         canon.push_str(&sh.method.text.replace("\r\n", "\n"));
+    }
+    // A table, or the children that answer it, is what the row computes.
+    // Absent on every sheet that has neither, so no existing hash moves.
+    if let Some(l) = &sh.lookup {
+        canon.push_str(&format!("lookup:{}{:?}{:?}{}", l.by, l.x, l.y, l.read));
+    }
+    if let Some(c) = &sh.children {
+        canon.push_str(&format!("children:{}{:?}", c.group, c.from));
     }
     sh.sheet_hash = fnv1a(&canon);
     sh.impl_hash = fnv1a(&read_holes_raw(files, dir));
