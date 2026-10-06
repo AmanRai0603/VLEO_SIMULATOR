@@ -31,6 +31,7 @@ pub(super) fn write(root: &Path, out: &Path) -> Result<vleo_design::Written, Str
         tool: release::workspace_version(root)?,
         commit: head(root),
         built: fills::today(),
+        oldest_application: String::new(),
     };
     vleo_design::write(root, out, &stamp).map_err(String::from)
 }

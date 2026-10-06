@@ -2528,7 +2528,7 @@ effect = "writes"
 tool = "xtask"
 name = "design"
 usage = "design [--out <file>]"
-what = "design.vleo: the tree the tool reads — every node folder with its sheet, fixtures and page, the layers, the cases and the source list — written into one SQLite file, each file whole with its SHA-256. The kit carries it in place of the folders and the daemon reads it as it reads them, so the pages are the same byte for byte. Default target/design.vleo; nothing committed."
+what = "design.vleo: the tree the tool reads — every node folder with its sheet, fixtures and page, the layers, the cases and the source list — written into one SQLite file, each file whole with its SHA-256, and naming the oldest application that can run it — the one that wrote it; an older application refuses it, saying which it needs. The kit carries it in place of the folders and the daemon reads it as it reads them, so the pages are the same byte for byte. Default target/design.vleo; nothing committed."
 who = "developer"
 effect = "writes"
 

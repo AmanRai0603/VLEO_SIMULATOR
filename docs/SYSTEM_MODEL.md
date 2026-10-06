@@ -205,7 +205,11 @@ Browning, 2012), and it is drawn from the wires, never separately.
   architectural loop today in `layers/cycles.toml`: power becomes heat, heat
   sets the array temperature, which sets the power available, which throttles
   the thruster. OpenMDAO puts each solver on the group that holds the cycle in
-  the same way (Gray et al., 2019).
+  the same way (Gray et al., 2019). A group in a layer file declares one as
+  `[[group.iterate]]`, in the same words; the gate refuses one declared on a
+  block too small to hold it, by name, and notes one declared on no block with
+  the block it belongs on. The loop in `layers/cycles.toml` belongs on `root`,
+  and moving it there is its owner's change to the design.
 - **The matrix advises the breakdown.** Reordered, it exposes clusters of
   blocks that mostly talk to each other: candidates for one block and one
   owner.

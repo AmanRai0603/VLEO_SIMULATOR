@@ -946,6 +946,12 @@ fn load_layers(fs: &dyn Files, tree: &mut Tree) -> Result<(), Error> {
             let Some(g) = table(g) else {
                 continue;
             };
+            // A loop declared on the block that holds it (docs/SYSTEM_MODEL.md,
+            // section 5), in the same words as a layer file's own.
+            for mut cy in parse_cycles(&toml::Value::Table(g.clone())) {
+                cy.on = s(g.get("id"));
+                tree.cycles.push(cy);
+            }
             let grp = Group {
                 id: s(g.get("id")),
                 label: s(g.get("label")),

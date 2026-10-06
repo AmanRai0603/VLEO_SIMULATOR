@@ -343,6 +343,25 @@ fn open_base(root: &Path) -> Result<(std::sync::Arc<dyn Files>, Option<DesignFil
     };
     let d = vleo_design::Design::open(&path, root)
         .map_err(|e| format!("the design file does not open: {e}"))?;
+    // A design names the oldest application that can run it; one that needs
+    // a newer one than this is refused before anything is read from it. A
+    // file written before designs named it says nothing, and the check below,
+    // row by row, still stands between it and the engine.
+    let needs = d.meta("oldest_application");
+    if !needs.is_empty() {
+        let ours = env!("CARGO_PKG_VERSION");
+        match vleo_design::runs_on(needs, ours) {
+            Ok(true) => {}
+            Ok(false) => {
+                return Err(format!(
+                    "the design file {} needs vleo {needs} or later, and this is vleo {ours}: \
+                     open it with the application it names, or a newer one",
+                    path.display()
+                ))
+            }
+            Err(e) => return Err(format!("the design file {}: {e}", path.display())),
+        }
+    }
     // A design file this engine was not built from runs, and every answer it
     // gives is from relations its sheets do not state. So it is refused here,
     // naming the rows that differ, before anything is served from it.
