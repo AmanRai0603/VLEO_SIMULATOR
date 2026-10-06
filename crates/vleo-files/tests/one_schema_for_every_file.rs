@@ -134,6 +134,7 @@ fn full_file() -> File {
         block_uid: s("b-1"),
         direction: s("out"),
         name: s("ap"),
+        symbol: s("Ap"),
         port_type: s("number"),
         unit: s("nT"),
         lower: s("0"),

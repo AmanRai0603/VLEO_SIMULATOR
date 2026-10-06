@@ -1,6 +1,6 @@
 [package]
 name = "vleo-files"
-description = "The one library that reads, writes and checks every design file (docs/OPERATING_1_0.md, section 10), compiled for the installed application and for the page. So far: the keys — a person's key made, locked by their passphrase, a signature made and checked (section 14); and the one schema every file is, a file as its rows, what each kind of file says about itself and the versions it follows (sections 10 and 13), read and written as SQLite when installed."
+description = "The one library that reads, writes and checks every design file (docs/OPERATING_1_0.md, section 10), compiled for the installed application and for the page. So far: the keys — a person's key made, locked by their passphrase, a signature made and checked (section 14); and the one schema every file is, a file as its rows, what each kind of file says about itself and the versions it follows (sections 10 and 13), read and written as SQLite when installed; and the upgrade of a group's file from before 1.0, with nothing dropped, its fingerprint and the programme manager's anchor (section 16)."
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true

@@ -73,14 +73,15 @@ CREATE TABLE block (
   revision          INTEGER NOT NULL DEFAULT 0
 );
 
--- A block's inputs and outputs (SYSTEM_MODEL, sections 3 and 4): its type,
--- unit, range and the reason for the range; its state and maturity; while
--- open, who owns it and the gate it is due by. Ports in one `bundle` travel
--- as one wire.
+-- A block's inputs and outputs (SYSTEM_MODEL, sections 3 and 4): the symbol
+-- its method writes it as, its type, unit, range and the reason for the
+-- range; its state and maturity; while open, who owns it and the gate it is
+-- due by. Ports in one `bundle` travel as one wire.
 CREATE TABLE port (
   block_uid     TEXT NOT NULL REFERENCES block (uid),
   direction     TEXT NOT NULL CHECK (direction IN ('in', 'out')),
   name          TEXT NOT NULL,
+  symbol        TEXT NOT NULL DEFAULT '',
   port_type     TEXT NOT NULL CHECK (port_type IN ('number', 'integer', 'choice', 'boolean',
                   'list', 'table', 'series', 'uncertain', 'text', 'file')),
   unit          TEXT NOT NULL DEFAULT '',

@@ -141,6 +141,7 @@ macro_rules! record {
         }
     };
 }
+pub(crate) use record;
 
 record!(
     /// A person a file registers, by their role (OPERATING_1_0, section 2).
@@ -169,7 +170,7 @@ record!(
 record!(
     /// An input or output of a block.
     Port = "port" {
-        block_uid: String, direction: String, name: String, port_type: String,
+        block_uid: String, direction: String, name: String, symbol: String, port_type: String,
         unit: String, lower: String, upper: String, range_reason: String,
         state: String, maturity: String, value: String, choices: String,
         bundle: String, open_owner: String, open_due: String, says: String, ord: i64,

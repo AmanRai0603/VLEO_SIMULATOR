@@ -14,16 +14,25 @@
 //!   is (`schema.sql`), a file as its rows, and what each kind of file must
 //!   say about itself, its version and what it was based on;
 //! * `sqlite` — the file on disk, for the installed application; the page
-//!   hands the same rows from its own SQLite.
+//!   hands the same rows from its own SQLite;
+//! * [`format_1`] and [`upgrade`] — section 16: a group's file from before 1.0
+//!   read as it is, its folder and the fingerprint its sign-offs were given
+//!   for, and upgraded to this format with nothing dropped; a release from
+//!   before 1.0 anchored by the programme manager, by its fingerprint;
+//! * [`csv`] — the group folder's CSV, written byte for byte as the page
+//!   writes it.
 //!
 //! The chain a signature checks through and the checks a release must pass
 //! come next, on top of these.
 
+pub mod csv;
 pub mod error;
+pub mod format_1;
 pub mod keys;
 pub mod meta;
 pub mod model;
 #[cfg(not(target_arch = "wasm32"))]
 pub mod sqlite;
+pub mod upgrade;
 
 pub use error::{Error, ErrorKind};
