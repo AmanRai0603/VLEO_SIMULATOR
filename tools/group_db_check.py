@@ -260,7 +260,7 @@ def check():
         n.fill('#nsig-me', 'Cy Example')
         n.click('#nsig-go')
         n.wait_for_timeout(800)
-        step('only the node\'s author may sign it', 'not this node\'s author' in n.inner_text('#gmain'))
+        step('only the node\'s node engineer may sign it', 'not this node\'s node engineer' in n.inner_text('#gmain'))
         n.fill('#nsig-me', 'Ben Example')
         n.click('#nsig-go')
         n.wait_for_timeout(600)
