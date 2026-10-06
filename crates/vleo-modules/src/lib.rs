@@ -338,6 +338,112 @@ impl Graph {
         h.finish()
     }
 
+    /// The design as this graph runs it, in one number: every row — its id,
+    /// kind, state, behaviour and the table or children it reads, its sheet
+    /// and implementation hashes, its wiring, bundles and cases — every
+    /// variable's unit, limits and port, and every case's supply and loops.
+    /// Two graphs with the same fingerprint run the same design; it is what
+    /// today's design is compared by across computers (docs/PLAN_1_0.md,
+    /// phase D: "built identically on two computers from the same drive").
+    /// Outside it: labels and prose, which change no answer.
+    pub fn design_fingerprint(&self) -> u64 {
+        let mut h = vleo_core::hash::Hasher::new();
+        for n in self.nodes.iter() {
+            h.write_str(n.id);
+            h.write_str(n.kind.name());
+            h.write_u8(n.state as u8);
+            h.write_str(n.behaviour.name());
+            match n.behaviour {
+                Behaviour::Lookup(l) => {
+                    h.write_u8(l.by);
+                    h.write_str(l.read.name());
+                    for v in l.table.x.iter().chain(l.table.y) {
+                        h.write_f64(*v);
+                    }
+                }
+                Behaviour::Children(c) => {
+                    h.write_str(c.group);
+                    h.write_bytes(c.from);
+                }
+                _ => {}
+            }
+            h.write_u64(n.sheet_hash);
+            h.write_u64(n.impl_hash);
+            h.write_u8(n.derived as u8);
+            for i in n.inputs.iter().chain(n.outputs) {
+                h.write_u16(*i);
+            }
+            h.write_u8(0x1e);
+            for b in n.bundles {
+                h.write_str(b);
+            }
+            for f in n.fixtures {
+                h.write_str(f.label);
+                h.write_f64(f.expected);
+                h.write_f64(f.tolerance);
+                for x in f.inputs {
+                    h.write_f64(*x);
+                }
+            }
+        }
+        for v in self.vars.iter() {
+            h.write_str(v.id);
+            h.write_str(v.unit.name());
+            h.write_f64(v.limit.lower);
+            h.write_f64(v.limit.upper);
+            h.write_str(v.port.state.name());
+            h.write_str(v.port.maturity.name());
+            h.write_str(v.port.parameter.map_or("", |l| l.name()));
+            h.write_str(v.port.open_owner);
+            h.write_str(v.port.open_due);
+        }
+        for c in self.cases.iter() {
+            h.write_str(c.id);
+            for (k, x) in c.supply {
+                h.write_u16(*k);
+                h.write_f64(*x);
+            }
+            for cy in c.cycles {
+                for k in cy.nodes {
+                    h.write_u16(*k);
+                }
+                h.write_u16(cy.converge_on);
+                h.write_f64(cy.tolerance);
+                h.write_u64(cy.max_iter as u64);
+                for (k, x) in cy.seeds {
+                    h.write_u16(*k);
+                    h.write_f64(*x);
+                }
+            }
+        }
+        h.finish()
+    }
+
+    /// What the design answers on `case`, in one number: one run of the whole
+    /// design, every value it gives by its bits and every row it refuses with
+    /// its reason, in the order they ran. Two computers that agree on this
+    /// gave every answer alike, to the last bit — which is what portable
+    /// maths (`vleo_units::pmath`) is for.
+    pub fn answers_fingerprint(&'static self, case: &vleo_bus::Case) -> Result<u64, Fault> {
+        let mut all = case.clone();
+        all.mode = vleo_bus::RunMode::All;
+        if self.find(&all.target).is_none() {
+            all.target = self.nodes[0].id.into();
+        }
+        let r = self.evaluate(&all, &mut Scratch::for_graph(self))?;
+        let mut h = vleo_core::hash::Hasher::new();
+        for v in &r.values {
+            h.write_str(&v.id);
+            h.write_bytes(&v.value.to_bits().to_le_bytes());
+        }
+        h.write_u8(0x1e);
+        for b in &r.blocked {
+            h.write_str(&b.id);
+            h.write_str(&b.message);
+        }
+        Ok(h.finish())
+    }
+
     pub fn find(&self, id: &str) -> Option<NodeIdx> {
         self.nodes
             .iter()

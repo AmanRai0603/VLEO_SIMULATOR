@@ -2736,7 +2736,7 @@ effect = "writes"
 tool = "vleo"
 name = "version"
 usage = "version"
-what = "The kernel, graph and build identity, and which graph the engine runs — the one read from the design's files. Every command that runs the engine opens the design first and refuses, saying why, when it does not open."
+what = "The kernel, graph and build identity, and which graph the engine runs — the one read from the design's files, or today's design from a drive, with the releases it took. Then the design it runs and what it answers, each by its fingerprint: two computers that print the same two run the same design and give every answer alike, to the last bit, which CI checks on Linux, Windows and macOS. Every command that runs the engine opens the design first and refuses, saying why, when it does not open."
 who = "everyone"
 effect = "reads"
 
