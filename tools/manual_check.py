@@ -442,12 +442,12 @@ def browser_walk():
             ok("a link to one section opens the manual at that section", deep_link)
 
             def who_filter():
-                page.locator(".man-f", has_text="a user").click()
-                assert page.locator('.man-sec[data-who="developer"]').count() == 0, "a developer section shows to a user"
-                page.locator(".man-f", has_text="a developer").click()
-                assert page.locator('.man-sec[data-who="user"]').count() == 0, "a user section shows to a developer"
+                page.locator(".man-f", has_text="an engineer").click()
+                assert page.locator('.man-sec[data-who="developer"]').count() == 0, "a developer section shows to an engineer"
+                page.locator(".man-f", has_text="the developer").click()
+                assert page.locator('.man-sec[data-who="user"]').count() == 0, "an engineer's section shows to the developer"
                 page.locator(".man-f", has_text="everyone").click()
-            ok("'for a user' and 'for a developer' each show only their own", who_filter)
+            ok("'for an engineer' and 'for the developer' each show only their own", who_filter)
 
             def copy_button():
                 b = page.locator(".man-copy").first
