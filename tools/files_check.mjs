@@ -111,6 +111,62 @@ for (const v of ['1.0', '1.1']) {
     'page: ' + JSON.stringify(found).slice(0, 300) + '\n      installed: ' + want.slice(0, 300));
 }
 
+// The group folder's checks, said by the library, against the page's own
+// checker (web/js/gcheck.js) on the same folders, with the pattern the page
+// carries (the spec inlined in web/group.html): the same findings, at the
+// same level, place, words and line. The maths reader (texmath.js) stays in
+// the page for now, and its warnings are left out of the comparison.
+window.VLEO_GROUP_SCHEMA = readFileSync(join(ROOT, 'groups/schema.sql'), 'utf8');
+window.VLEO_METHOD_WASM = readFileSync(join(ROOT, 'web/method.wasm.gz')).toString('base64');
+const groupHtml = readFileSync(join(ROOT, 'web/group.html'), 'utf8');
+const specAt = groupHtml.indexOf('window.VLEO_GROUP_SPEC = ');
+const spec = JSON.parse(groupHtml.slice(specAt + 'window.VLEO_GROUP_SPEC = '.length, groupHtml.indexOf('\n', specAt)).replace(/;\s*$/, ''));
+const gdb = await import(pathToFileURL(join(tmp, 'gdb.js')).href);
+const gstore = await import(pathToFileURL(join(tmp, 'gstore.js')).href);
+const { loadGroup } = await import(pathToFileURL(join(tmp, 'gmodel.js')).href);
+const { checkGroup } = await import(pathToFileURL(join(tmp, 'gcheck.js')).href);
+const maths = f => /^maths: /.test(f.msg) || /^shown as an equation with a gap: /.test(f.msg) || (f.where === 'equations.csv' && f.level === 'warning');
+const key = f => f.level + ' | ' + f.where + ' | ' + f.msg + ' | ' + (f.line || 0);
+async function parity(what, bytes) {
+  const model = await loadGroup(gdb.folderFromDb(await gstore.open(bytes)));
+  const page = (await checkGroup(model, spec)).filter(f => !maths(f)).map(key).sort();
+  const answer = lib.checkFolder(await files.rowsOf(bytes));
+  const mine = (answer.findings || []).map(key).sort();
+  const only = (a, b) => a.filter(x => !b.includes(x));
+  const same = JSON.stringify(page) === JSON.stringify(mine);
+  check(what + ': the library finds what the page checker finds — ' + page.length + ' finding(s), ' +
+    page.filter(k => k.startsWith('error')).length + ' error(s)', same && !answer.error,
+    (answer.error ? 'error: ' + answer.error + '\n      ' : '') +
+    'only the page: ' + JSON.stringify(only(page, mine).slice(0, 8)) + '\n      only the library: ' + JSON.stringify(only(mine, page).slice(0, 8)));
+  return page;
+}
+const solar10 = new Uint8Array(readFileSync(join(dir, 'l3_solar-1.0.vleo')));
+const solar11 = new Uint8Array(readFileSync(join(dir, 'l3_solar-1.1.vleo')));
+await parity('Solar 1.0', solar10);
+const clean = await parity('Solar 1.1', solar11);
+check('Solar 1.1, sealed, has no error by either', !clean.some(k => k.startsWith('error')), JSON.stringify(clean.filter(k => k.startsWith('error'))));
+// A copy of 1.1 broken in many places at once: every check that finds
+// something must find the same thing in both.
+const broken = await changed(solar11, `
+  UPDATE doc SET body = body || '\n{{eq NOPE}} {{bogus x}} {{node nope}} {{guess q}} {{fig nofig}}\n' WHERE scope = 'sw_regime' AND kind = 'explanation';
+  UPDATE doc SET body = replace(body, '## Validity', '## Validity, later') WHERE scope = 'sw_regime' AND kind = 'theory';
+  UPDATE doc SET body = body || '\n$$x$$\n' WHERE scope = 'sw_regime' AND kind = 'explanation';
+  DELETE FROM doc WHERE scope = 'sw_ap_design' AND kind = 'theory';
+  UPDATE doc SET body = body || '\nnot a step\nsw_regime <- nowhere_node, case\n' WHERE scope = 'group' AND kind = 'flow';
+  UPDATE node SET question = 'no question here' WHERE uid = 'sw_regime';
+  UPDATE node SET lower = '5', upper = '1' WHERE uid = 'sw_band_confidence';
+  UPDATE input SET dflt = '', source = 'Nowhere Else' WHERE node_uid = 'sw_regime';
+  UPDATE tbl SET csv = csv || 'a,b\n' WHERE scope = 'sw_regime' AND path = 'results/isolation.csv';
+  UPDATE tbl SET csv = replace(csv, 'Aman Rai,transcribed', 'Aman Rai,transcribed-ish') WHERE scope = 'sw_regime' AND path = 'declaration.csv';
+  UPDATE tbl SET csv = replace(csv, ',<=,', ',=,') WHERE scope = 'group' AND path = 'requirements.csv';
+  UPDATE member SET role = 'author';
+  INSERT INTO media (scope, path, type, sha256, bytes) VALUES ('group', 'notes.xlsx', 'application/octet-stream', '', x'00');
+  INSERT INTO tbl (scope, path, csv) VALUES ('group', 'loops.csv', 'nodes,converge_on,tolerance,max_iter,seed_node,seed_value,source\nsw_regime ghost,sw_regime,1e-6,10,sw_regime,1,s\n');
+`);
+const found = await parity('Solar 1.1, broken in many places', broken);
+check('and the broken copy is found broken — at least 15 errors', found.filter(k => k.startsWith('error')).length >= 15,
+  found.filter(k => k.startsWith('error')).length + ' errors');
+
 rmSync(tmp, { recursive: true, force: true });
 console.log(failed ? failed + ' check(s) failed' : 'every check holds');
 process.exit(failed ? 1 : 0);

@@ -30,12 +30,15 @@
 //!   today's intake makes of its content, its methods read and run by the
 //!   method language against their own cases, one test for each refusal.
 //!
-//! The rest of the page's folder checks come next, on top of these.
+//! * [`folder`] — the group folder's checks, the page's group checker
+//!   (`web/js/gcheck.js`) said by the library against the same pattern
+//!   (`groups/SPEC.toml`), held to it finding for finding.
 
 pub mod chain;
 pub mod checks;
 pub mod csv;
 pub mod error;
+pub mod folder;
 pub mod format_1;
 pub mod keys;
 pub mod meta;
