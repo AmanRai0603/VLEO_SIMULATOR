@@ -3267,7 +3267,7 @@ what = "How any system is defined: one block broken down to any depth, requireme
 
 [[doc]]
 path = "docs/PLAN_1_0.md"
-what = "The eight phases to 1.0.0, what each delivers and must prove, how the design leaves the repository, and the switch-over and the days of real use before shipping."
+what = "The eight phases to 1.0.0, what each delivers and must prove, how the design leaves the repository, the switch-over and the release, and the use that comes after it."
 
 [[doc]]
 path = "docs/OPERATING_1_0.md"

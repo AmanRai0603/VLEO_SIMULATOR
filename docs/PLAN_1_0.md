@@ -1,6 +1,6 @@
 # The plan to 1.0.0
 
-> **Answer first.** One release, 1.0.0, built in eight phases and switched over on one planned day. After it everyone has one application and one shared drive; each person looks after their own part of the design database every day, sees today's design built from everyone's latest work, and the system engineer releases the design decisions are made on. The developer maintains only the code. Each phase proves what it builds in CI and merges into `developer` on your word; nothing changes for anyone until the switch-over. Audited against the code on 5 October 2026, it is about twenty working days of building, at the pace this repository has kept: 1.0.0 around 6 November 2026 if parity holds first time and each phase is reviewed the day it is ready, a week later if parity does not.
+> **Answer first.** One release, 1.0.0, built in eight phases and switched over on one planned day. After it everyone has one application and one shared drive; each person looks after their own part of the design database every day, sees today's design built from everyone's latest work, and the system engineer releases the design decisions are made on. The developer maintains only the code. Each phase proves what it builds in CI and merges into `developer` on your word; nothing changes for anyone until the switch-over. There is no trial before the release: 1.0.0 ships once everything is built and the design is switched over, and you use it after, bringing what you find as the next update. Audited against the code on 5 October 2026, it is about twenty working days of building, at the pace this repository has kept: 1.0.0 around 2 November 2026 if parity holds first time and each phase is reviewed the day it is ready, a week later if parity does not.
 >
 > **Kind:** explanation + reference · **For:** everyone
 
@@ -41,11 +41,11 @@ runs at every valve.
 - **The new application is built beside the old, not patched into it.** The old
   ones retire on the switch-over day, so nobody has two of anything to choose
   between.
-- **You try it first.** At the end of phase F you get the application with a
-  converted copy of the design. You live with it for some days in every role
-  (programme manager, system engineer, subsystem engineer of Solar, node
-  engineer), round the whole cycle, W1 to W10. Phase G does not close until that
-  round is answered.
+- **No trial before 1.0.0, by your choice.** Everything planned is built and
+  proved in CI, the design is switched over, and 1.0.0 ships. You use it after
+  the release, in every role, round the whole cycle, and what you find comes
+  back as requests (W14) for the next update. So every workflow, W1 to W16, is
+  proved end to end in CI before it ships, because nobody tries it first.
 
 ## The phases
 
@@ -56,9 +56,9 @@ runs at every valve.
 | C · Files, versions and keys | B | one schema, every file kind, versions, signatures, the one library with every check | developer | large | 3 |
 | D · The engine runs the design | C | today's answers recorded; the graph read from the design file; today's design; the health map; the parity gate | developer | large | 4 |
 | E · The design leaves the repository | D | the programme, systems and 18 groups as files; built-in relations kept as code by id | developer | medium-large | 2 |
-| F · The application | C, D, then E | one application, installed and as a page, with its five workspaces, doing W1 to W16 | developer, you to try | the largest | 5, then your trial |
+| F · The application | C, D, then E | one application, installed and as a page, with its five workspaces, doing W1 to W16, each proved end to end in CI | developer | the largest | 5 |
 | G · The drive and the people | E, F | the drive's layout and sharing, keys, one guide per role, START HERE | developer, programme manager | small-medium | 1 |
-| H · Switch-over and proof | G | the new drive in daily use; Solar 1.2 round the whole cycle with no developer; then 1.0.0 | you | real days of use |
+| H · Switch-over and release | G | the design converted for the last time, the new drive, the first released design; then 1.0.0 | developer, you | one day |
 
 ### A · Safe ground
 
@@ -329,12 +329,13 @@ page, with no developer step in W1 to W13. That includes:
 - Up to 37 files link to the four that go, and each link is fixed.
 - The release, kit, wheel, preview and drive workflows ship the new application.
 
-**Done when** someone who has never seen the application can follow each role's
-guide, from an empty drive to a released design.
+**Done when** CI follows each role's guide, step by step as it is written, from
+an empty drive to a released design, so a guide that says one thing while the
+application does another fails before anyone reads it.
 
-### H · Switch-over and proof
+### H · Switch-over and release
 
-One planned day, then some days of real use. Nothing is overwritten.
+One planned day. Nothing is overwritten.
 
 1. **Freeze.** Groups are told the date; work in progress is sealed or held.
 2. **Convert.** The developer converts the design for the last time (phase E),
@@ -349,27 +350,22 @@ One planned day, then some days of real use. Nothing is overwritten.
    - Each subsystem engineer registers their node engineers'.
 5. **First release.** The system engineer releases the first design. The
    developer puts the 1.0.0 release candidate of the application into `apps/`.
-6. **Live with it, with no developer in the loop.** Every day, today's design is
-   opened and looked at. Solar 1.2 goes round the whole cycle, W1 to W10:
-   - `sw_band_confidence` becomes the one parameter its four methods read, in
-     place of the literal 1.28;
-   - `sw_kp_driving_slot` is declared.
-
-   It is signed, sealed, seen in today's design, released, reviewed at each
-   level, and decided on.
-7. **Ship.** You say **"Ship 1.0.0"**. The application is tagged `v1.0.0`, and
+6. **Ship.** You say **"Ship 1.0.0"**. The application is tagged `v1.0.0`, and
    START HERE goes to every subsystem engineer.
 
-**Done when** Solar 1.2 is in a released design, decided on by the programme,
-without the developer touching it.
+**Done when** the first design is released from the new drive with parity
+holding on the day, and 1.0.0 is tagged.
+
+There are no days of real use before the release. The first use is yours,
+after it (*After 1.0.0*).
 
 ## Timeline
 
 Days of building, one phase after another, at the pace this repository has kept
 (about 115 pull requests in its first four weeks). Each phase is ready for your
 merge on the day shown; the dates assume you review it that day. What cannot be
-made faster is people: your reviews, the second reviewer, your trial, and the
-real days of use in H.
+made faster is people: your reviews, the second reviewer, and the switch-over
+day itself.
 
 | phase | building | ready for your merge | what can move it |
 |---|---|---|---|
@@ -379,9 +375,9 @@ real days of use in H.
 | C · Files, versions and keys | 7–9 Oct | 9 Oct | the cryptography crates' adoption |
 | D · The engine runs the design | 12–15 Oct | 15 Oct | parity: up to five more days if it does not hold first time |
 | E · The design leaves the repository | 16–19 Oct | 19 Oct | |
-| F · The application | 20–26 Oct | 26 Oct; your trial 27–29 Oct | how long you want to try it |
+| F · The application | 20–26 Oct | 26 Oct | |
 | G · The drive and the people | 30 Oct | 30 Oct | |
-| H · Switch-over and proof | 2–6 Nov | "Ship 1.0.0" around 6 Nov | Solar 1.2's real days |
+| H · Switch-over and release | 2 Nov | "Ship 1.0.0" around 2 Nov | the day you set |
 
 - **The one lever.** F's shell and Node workspace need only C. Built beside D,
   they bring 1.0.0 about two days earlier, at the cost of two pull requests open
@@ -393,6 +389,16 @@ real days of use in H.
 
 ## After 1.0.0
 
+- **You use it, and what you find is the next update.** In every role, round
+  the whole cycle, W1 to W10. Each thing you find comes back as a request (W14)
+  and is answered by an application release, which gives the released design's
+  answers unchanged (`AGENTS.md`, rule 5).
+- **Solar 1.2 goes round the whole cycle,** signed, sealed, seen in today's
+  design, released, reviewed at each level and decided on, without the
+  developer touching it:
+  - `sw_band_confidence` becomes the one parameter its four methods read, in
+    place of the literal 1.28;
+  - `sw_kp_driving_slot` is declared.
 - Each group writes methods for its built-in relations, in the Node workspace.
   - The application runs both the method and the built-in on the node's cases and
     across its range, and shows any difference.
@@ -414,7 +420,6 @@ real days of use in H.
 - Number and parameter ports only in 1.0.
 - One engine in the page, for the installed application too.
 - Each phase's merge.
-- The trial of the application at the end of phase F.
 - The switch-over date.
 - "Ship 1.0.0".
 
@@ -432,11 +437,14 @@ own initiative, and no assistant supplies a relation.
 - **The application carries everything now.** With no developer in the loop,
   every check the developer made by hand must be in the library, and the
   application must be easy enough that nobody needs one. Phases C and F are the
-  largest, and F's trial is the test.
+  largest, and with no trial before the release, CI is the only test before you
+  use it: every workflow, W1 to W16, is run end to end there.
 - **Today's design depends on the drive being in step.** Phase D proves two
   computers build the same one, and the application always says which releases
   it used.
-- **People learning a new application, roles, keys and a daily rhythm.** Phase H
-  tries it in real use, on one group, before anyone else depends on it.
+- **People learning a new application, roles, keys and a daily rhythm,** with no
+  days of real use before the release. The first real use is yours, after
+  1.0.0; what it finds is the next update, and the old drive is kept read only
+  for a month in case the new one has to wait.
 - **Built-in relations are a debt.** On 1.0.0 most nodes still compute in code.
   They are marked, listed by owner, and replaced by methods after, not hidden.
