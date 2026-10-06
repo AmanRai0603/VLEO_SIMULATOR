@@ -491,6 +491,90 @@ fn behaviour_checks(sh: &Sheet, tree: &Tree) -> Vec<Check> {
     out
 }
 
+/// What an output says of its value holds together: words the schema knows,
+/// a state its row can have, an open value with its owner, its gate and a
+/// range, a parameter only on a stated value. Nothing for a row whose outputs
+/// say none of it.
+fn port_checks(sh: &Sheet) -> Vec<Check> {
+    let mut ports = vec![("output".to_string(), &sh.port, sh.lower, sh.upper)];
+    for pb in &sh.publishes {
+        ports.push((format!("publishes {}", pb.id), &pb.port, pb.lower, pb.upper));
+    }
+    if ports.iter().all(|(_, p, ..)| **p == Default::default()) {
+        return Vec::new();
+    }
+    let mut bad = Vec::new();
+    for (place, p, lower, upper) in ports {
+        let one_of = |what: &str, v: &str, among: &[&str], bad: &mut Vec<String>| {
+            if !v.is_empty() && !among.contains(&v) {
+                bad.push(format!(
+                    "{place}: {what} = '{v}' is not one of {}",
+                    among.join(", ")
+                ));
+            }
+        };
+        one_of(
+            "state",
+            &p.state,
+            &["decided", "allocated", "open", "achieved"],
+            &mut bad,
+        );
+        one_of(
+            "maturity",
+            &p.maturity,
+            &["estimated", "calculated", "measured"],
+            &mut bad,
+        );
+        one_of(
+            "parameter",
+            &p.parameter,
+            &["programme", "system", "subsystem"],
+            &mut bad,
+        );
+        let stated = sh.is_declared() || sh.kind == "required";
+        match p.state.as_str() {
+            "decided" if !sh.is_declared() => bad.push(format!(
+                "{place}: decided is a value stated at this level, and this row is {}",
+                sh.kind
+            )),
+            "allocated" if sh.kind != "required" => bad.push(format!(
+                "{place}: allocated is a bound handed to a child, and this row is {}",
+                sh.kind
+            )),
+            "achieved" if stated => bad.push(format!(
+                "{place}: achieved is computed, and this row states its value"
+            )),
+            "open" if !stated => bad.push(format!(
+                "{place}: open is a value still to decide, and this row computes its own"
+            )),
+            "open" => {
+                if p.open_owner.is_empty() || p.open_due.is_empty() {
+                    bad.push(format!(
+                        "{place}: an open value names who owns it (open_owner) and the gate it is due by (open_due)"
+                    ));
+                }
+                if !(lower.is_finite() && upper.is_finite() && lower < upper) {
+                    bad.push(format!(
+                        "{place}: an open value carries the range it may still take — a finite lower and upper"
+                    ));
+                }
+            }
+            _ => {}
+        }
+        if !p.parameter.is_empty() && !sh.is_declared() {
+            bad.push(format!(
+                "{place}: a parameter is a stated value, and this row is {}",
+                sh.kind
+            ));
+        }
+    }
+    vec![if bad.is_empty() {
+        Check::pass("port")
+    } else {
+        Check::fail("port", bad.join("; "))
+    }]
+}
+
 pub fn gate_node(sh: &Sheet, tree: &Tree) -> Vec<Check> {
     let mut out = Vec::new();
     let holes = read_holes(&sh.dir);
@@ -528,6 +612,7 @@ pub fn gate_node(sh: &Sheet, tree: &Tree) -> Vec<Check> {
         out.extend(method_checks(sh));
         out.extend(lesson_check(sh, tree));
         out.extend(behaviour_checks(sh, tree));
+        out.extend(port_checks(sh));
         let gaps = emit::gap_pass(sh, &holes);
         out.push(if gaps.is_empty() {
             Check::pass("gap-pass")
@@ -540,6 +625,7 @@ pub fn gate_node(sh: &Sheet, tree: &Tree) -> Vec<Check> {
     out.extend(method_checks(sh));
     out.extend(lesson_check(sh, tree));
     out.extend(behaviour_checks(sh, tree));
+    out.extend(port_checks(sh));
 
     // 1 — the sheet validates; no required field is blank.
     let mut missing = Vec::new();

@@ -200,8 +200,13 @@ pub const SCHEMA: &[(&str, &[&str])] = &[
         "output",
         &[
             "lower",
+            "maturity",
+            "open_due",
+            "open_owner",
+            "parameter",
             "reason_lower",
             "reason_upper",
+            "state",
             "symbol",
             "type",
             "unit",
@@ -214,8 +219,13 @@ pub const SCHEMA: &[(&str, &[&str])] = &[
             "id",
             "label",
             "lower",
+            "maturity",
+            "open_due",
+            "open_owner",
+            "parameter",
             "reason_lower",
             "reason_upper",
+            "state",
             "symbol",
             "type",
             "unit",
@@ -323,6 +333,17 @@ pub fn unknown_keys(v: &toml::Value) -> Vec<String> {
         walk("", t, &mut out);
     }
     out
+}
+
+/// What an output's table says of its value beside the number.
+fn port_of(o: &toml::value::Table) -> crate::model::PortSheet {
+    crate::model::PortSheet {
+        state: s(o.get("state")).trim().to_string(),
+        maturity: s(o.get("maturity")).trim().to_string(),
+        parameter: s(o.get("parameter")).trim().to_string(),
+        open_owner: s(o.get("open_owner")).trim().to_string(),
+        open_due: s(o.get("open_due")).trim().to_string(),
+    }
 }
 
 pub fn load_all(root: &Path) -> Result<Tree, Error> {
@@ -629,6 +650,7 @@ fn load_sheet(files: &dyn Files, dir: &Path, crate_name: &str) -> Result<Sheet, 
         sh.upper = f(o.get("upper"));
         sh.reason_lower = s(o.get("reason_lower"));
         sh.reason_upper = s(o.get("reason_upper"));
+        sh.port = port_of(o);
     }
     for pb in t
         .get("publishes")
@@ -649,6 +671,7 @@ fn load_sheet(files: &dyn Files, dir: &Path, crate_name: &str) -> Result<Sheet, 
             upper: f(pb.get("upper")),
             reason_lower: s(pb.get("reason_lower")),
             reason_upper: s(pb.get("reason_upper")),
+            port: port_of(pb),
         });
     }
     if let Some(val) = t.get("value").and_then(|v| v.as_table()) {

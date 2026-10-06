@@ -41,7 +41,7 @@ use alloc::vec;
 use alloc::vec::Vec;
 
 use vleo_bus::{Case, RunMode};
-use vleo_core::graph::Kind;
+use vleo_core::graph::{Kind, Maturity, PortState};
 
 use crate::{Graph, NodeIdx, Scratch, GROUPS};
 
@@ -450,72 +450,179 @@ pub fn trace_since(
             });
         }
     }
-    let mut levers = Vec::new();
-    if map.nodes[k].margin.is_some() {
-        let margin_at = |var: usize, x: f64| -> Option<f64> {
-            let mut c = case.clone();
-            c.target = graph.nodes[k].id.to_string();
-            c.mode = RunMode::Branch;
-            c.supply.retain(|(id, _)| id != graph.vars[var].id);
-            c.supply.push((graph.vars[var].id.to_string(), x));
-            graph
-                .evaluate(&c, &mut Scratch::for_graph(graph))
-                .ok()?
-                .values
-                .iter()
-                .find(|v| v.id == graph.nodes[k].id)
-                .map(|v| v.value)
-        };
-        for p in upstream(graph, k) {
-            let def = &graph.nodes[p];
-            if def.kind != Kind::Declared {
-                continue;
-            }
-            let var = def.outputs[0] as usize;
-            let lim = graph.vars[var].limit;
-            if !(lim.lower.is_finite() && lim.upper.is_finite() && lim.lower < lim.upper) {
-                continue;
-            }
-            let (lo, hi) = (margin_at(var, lim.lower), margin_at(var, lim.upper));
-            // Where in the range it begins to close: halve the interval on
-            // the sign of the margin, from the end that fails to the end that
-            // holds.
-            let closes_at = match (lo, hi) {
-                (Some(a), Some(b)) if (a < 0.0) != (b < 0.0) => {
-                    let (mut fail, mut hold) = if a < 0.0 {
-                        (lim.lower, lim.upper)
-                    } else {
-                        (lim.upper, lim.lower)
-                    };
-                    for _ in 0..48 {
-                        let mid = 0.5 * (fail + hold);
-                        match margin_at(var, mid) {
-                            Some(m) if m >= 0.0 => hold = mid,
-                            Some(_) => fail = mid,
-                            None => break,
-                        }
-                    }
-                    Some(hold)
-                }
-                _ => None,
-            };
-            let (group, owner) = group_of(graph, p);
-            levers.push(Lever {
-                node: p as NodeIdx,
-                at_lower: lo,
-                at_upper: hi,
-                closes_at,
-                group,
-                owner,
-            });
-        }
-        levers.sort_by(|a, b| b.swing().total_cmp(&a.swing()));
-    }
+    let levers = if map.nodes[k].margin.is_some() {
+        levers_of(graph, case, k, |_| true)
+    } else {
+        Vec::new()
+    };
     Trace {
         closure,
         state: map.nodes[k].state,
         margin: map.nodes[k].margin,
         causes,
         levers,
+    }
+}
+
+/// The declared inputs closure `k` reads that `take` keeps, each with a finite
+/// declared range, and what each does to its margin across that range, the
+/// one that moves it most first.
+fn levers_of(
+    graph: &'static Graph,
+    case: &Case,
+    k: usize,
+    take: impl Fn(usize) -> bool,
+) -> Vec<Lever> {
+    let margin_at = |var: usize, x: f64| -> Option<f64> {
+        let mut c = case.clone();
+        c.target = graph.nodes[k].id.to_string();
+        c.mode = RunMode::Branch;
+        c.supply.retain(|(id, _)| id != graph.vars[var].id);
+        c.supply.push((graph.vars[var].id.to_string(), x));
+        graph
+            .evaluate(&c, &mut Scratch::for_graph(graph))
+            .ok()?
+            .values
+            .iter()
+            .find(|v| v.id == graph.nodes[k].id)
+            .map(|v| v.value)
+    };
+    let mut levers = Vec::new();
+    for p in upstream(graph, k) {
+        let def = &graph.nodes[p];
+        if def.kind != Kind::Declared || !take(p) {
+            continue;
+        }
+        let var = def.outputs[0] as usize;
+        let lim = graph.vars[var].limit;
+        if !(lim.lower.is_finite() && lim.upper.is_finite() && lim.lower < lim.upper) {
+            continue;
+        }
+        let (lo, hi) = (margin_at(var, lim.lower), margin_at(var, lim.upper));
+        // Where in the range it begins to close: halve the interval on the
+        // sign of the margin, from the end that fails to the end that holds.
+        let closes_at = match (lo, hi) {
+            (Some(a), Some(b)) if (a < 0.0) != (b < 0.0) => {
+                let (mut fail, mut hold) = if a < 0.0 {
+                    (lim.lower, lim.upper)
+                } else {
+                    (lim.upper, lim.lower)
+                };
+                for _ in 0..48 {
+                    let mid = 0.5 * (fail + hold);
+                    match margin_at(var, mid) {
+                        Some(m) if m >= 0.0 => hold = mid,
+                        Some(_) => fail = mid,
+                        None => break,
+                    }
+                }
+                Some(hold)
+            }
+            _ => None,
+        };
+        let (group, owner) = group_of(graph, p);
+        levers.push(Lever {
+            node: p as NodeIdx,
+            at_lower: lo,
+            at_upper: hi,
+            closes_at,
+            group,
+            owner,
+        });
+    }
+    levers.sort_by(|a, b| b.swing().total_cmp(&a.swing()));
+    levers
+}
+
+/// What a closure says over the open values behind it (docs/SYSTEM_MODEL.md,
+/// section 4, "Range"), one open value at a time.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Verdict {
+    /// No value it rests on is open: what it says is its margin.
+    NoOpenValue,
+    /// It holds at both ends of every open value's range: the decision can
+    /// wait.
+    ClosesForAll,
+    /// It holds for part of the range: decide soon; each open value's
+    /// crossing is in the tornado.
+    ClosesForPart,
+    /// It holds nowhere in the range: change the design, not the timing.
+    FailsForAll,
+}
+
+impl Verdict {
+    pub fn said(self) -> &'static str {
+        match self {
+            Verdict::NoOpenValue => "no value it rests on is open",
+            Verdict::ClosesForAll => {
+                "it closes for the whole range of every open value: the decision can wait"
+            }
+            Verdict::ClosesForPart => "it closes for part of the range: decide soon",
+            Verdict::FailsForAll => {
+                "it fails for all of the range: change the design, not the timing"
+            }
+        }
+    }
+}
+
+/// A closure's range verdict, its tornado, and the least mature value it
+/// rests on.
+#[derive(Clone, Debug)]
+pub struct Range {
+    pub closure: NodeIdx,
+    pub verdict: Verdict,
+    /// The open values behind it, the one that moves its margin most first,
+    /// each with its crossing when it has one.
+    pub tornado: Vec<Lever>,
+    /// How the least mature value behind it is known, and the rows known so,
+    /// nearest first: it is the one whose margin the closure must carry.
+    pub least_mature: (Maturity, Vec<NodeIdx>),
+}
+
+/// The range verdict of `closure` on `case`: the margin at both ends of every
+/// open value's range, one at a time. Interactions between open values are
+/// not judged; a variance-based index is the step after this one.
+pub fn range(graph: &'static Graph, case: &Case, map: &Health, closure: NodeIdx) -> Range {
+    let k = closure as usize;
+    let open = |p: usize| {
+        graph.nodes[p]
+            .outputs
+            .first()
+            .is_some_and(|&v| graph.vars[v as usize].port.state == PortState::Open)
+    };
+    let tornado = levers_of(graph, case, k, open);
+    let verdict = if tornado.is_empty() {
+        Verdict::NoOpenValue
+    } else {
+        let ends: Vec<Option<f64>> = tornado
+            .iter()
+            .flat_map(|l| [l.at_lower, l.at_upper])
+            .chain(core::iter::once(map.nodes[k].margin))
+            .collect();
+        if ends.iter().all(|m| m.is_some_and(|m| m >= 0.0)) {
+            Verdict::ClosesForAll
+        } else if ends.iter().all(|m| !m.is_some_and(|m| m >= 0.0)) {
+            Verdict::FailsForAll
+        } else {
+            Verdict::ClosesForPart
+        }
+    };
+    let mut least = (Maturity::Measured, Vec::new());
+    for p in core::iter::once(k).chain(upstream(graph, k)) {
+        for &v in graph.nodes[p].outputs.iter().take(1) {
+            let m = graph.vars[v as usize].port.maturity;
+            if m < least.0 {
+                least = (m, Vec::new());
+            }
+            if m == least.0 {
+                least.1.push(p as NodeIdx);
+            }
+        }
+    }
+    Range {
+        closure,
+        verdict,
+        tornado,
+        least_mature: least,
     }
 }

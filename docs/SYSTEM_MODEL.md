@@ -170,6 +170,22 @@ widest bar is the decision that matters most.
 makes a closure look settled. Ranges and maturities are stated, sourced and
 signed like any other value.
 
+Until the design leaves the repository, a node sheet says these on its
+`[output]`, and on each `[[publishes]]`, with the names the one schema gives
+them (`crates/vleo-files/src/schema.sql`, `port`):
+
+| key | says |
+|---|---|
+| `state` | `decided`, `allocated`, `open` or `achieved`; when absent, what the row is — open for a row not decided yet, decided for a stated value, allocated for a requirement, achieved for anything computed |
+| `maturity` | `estimated`, `calculated` or `measured`; when absent, unstated |
+| `parameter` | `programme`, `system` or `subsystem`: the level that owns it, on a stated value only |
+| `open_owner`, `open_due` | while open, who owns it and the gate it is due by; its range is its declared `lower` and `upper` |
+
+`vleo health --trace <closure>` gives each closure's verdict over its open
+values, one at a time, their tornado, and the least mature value it rests on.
+Interactions between open values are not judged yet. Tight is not judged until
+the programme states its margin policy, a parameter it owns.
+
 ## 5 · Connections, and the N2
 
 The **N2** of a block is the matrix of its children: each child on the

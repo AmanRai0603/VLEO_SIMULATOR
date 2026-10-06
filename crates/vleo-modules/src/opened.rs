@@ -43,7 +43,8 @@ use vleo_core::credibility::Tier;
 use vleo_core::evidence::{Fixture, Provenance};
 use vleo_core::fault::Fault;
 use vleo_core::graph::{
-    Behaviour, Children, Kind, Limit, Lookup, NodeDef, Read, Retirement, State, VarDef, View,
+    Behaviour, Children, Kind, Level, Limit, Lookup, Maturity, NodeDef, Port, PortState, Read,
+    Retirement, State, VarDef, View,
 };
 use vleo_core::math::table::Table1;
 use vleo_sheet::load::Tree;
@@ -112,6 +113,34 @@ fn provenance_of(p: &str) -> Provenance {
         "physical-bound" => Provenance::PhysicalBound,
         "self-snapshot" => Provenance::SelfSnapshot,
         _ => Provenance::AgentGenerated,
+    }
+}
+
+/// What an output says of its value, as its sheet says (`Sheet::port_state`):
+/// a word it does not know is no maturity and no parameter, which the gate
+/// has already refused by name.
+fn port_of(sh: &sheet::Sheet, p: &sheet::PortSheet) -> Port {
+    Port {
+        state: match sh.port_state(p) {
+            "decided" => PortState::Decided,
+            "allocated" => PortState::Allocated,
+            "open" => PortState::Open,
+            _ => PortState::Achieved,
+        },
+        maturity: match p.maturity.as_str() {
+            "estimated" => Maturity::Estimated,
+            "calculated" => Maturity::Calculated,
+            "measured" => Maturity::Measured,
+            _ => Maturity::Unstated,
+        },
+        parameter: match p.parameter.as_str() {
+            "programme" => Some(Level::Programme),
+            "system" => Some(Level::System),
+            "subsystem" => Some(Level::Subsystem),
+            _ => None,
+        },
+        open_owner: text(&p.open_owner),
+        open_due: text(&p.open_due),
     }
 }
 
@@ -594,6 +623,7 @@ fn build(tree: &Tree, methods: Methods) -> Result<&'static Graph, Error> {
                 &sh.reason_lower,
                 &sh.reason_upper,
             ),
+            port: port_of(sh, &sh.port),
         });
     }
     for (producer, pb) in &extras {
@@ -610,6 +640,7 @@ fn build(tree: &Tree, methods: Methods) -> Result<&'static Graph, Error> {
                 &pb.reason_lower,
                 &pb.reason_upper,
             ),
+            port: port_of(sheets[*producer], &pb.port),
         });
     }
 
