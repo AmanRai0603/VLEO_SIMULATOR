@@ -19,18 +19,24 @@
 //!   read as it is, its folder and the fingerprint its sign-offs were given
 //!   for, and upgraded to this format with nothing dropped; a release from
 //!   before 1.0 anchored by the programme manager, by its fingerprint;
+//! * [`chain`] — section 14: what a signature signs, and the chain it checks
+//!   through, from the anchored programme manager to every node;
+//! * [`rows`] and [`page`] — a file's rows as bytes, and everything the page
+//!   asks the library, answered by the same functions the native tests run;
 //! * [`csv`] — the group folder's CSV, written byte for byte as the page
 //!   writes it.
 //!
-//! The chain a signature checks through and the checks a release must pass
-//! come next, on top of these.
+//! The checks a release must pass come next, on top of these.
 
+pub mod chain;
 pub mod csv;
 pub mod error;
 pub mod format_1;
 pub mod keys;
 pub mod meta;
 pub mod model;
+pub mod page;
+pub mod rows;
 #[cfg(not(target_arch = "wasm32"))]
 pub mod sqlite;
 pub mod upgrade;

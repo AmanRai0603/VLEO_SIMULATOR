@@ -319,6 +319,17 @@ pub(crate) const PIPELINE: &[Cmd] = &[
         dry: Dry::Check("method-wasm --check: whether it is current, nothing built"),
     },
     Cmd {
+        name: "files-wasm",
+        stage: "build",
+        reads: "crates/vleo-files and crates/vleo-files-wasm",
+        writes: "web/files.wasm.gz and its stamp",
+        checks: "with --check: whether the committed library is built from the sources as they are",
+        undo: "`git restore web/files.wasm.gz web/files.wasm.stamp`",
+        code: ("xtask/src/files.rs", "cmd_files_wasm"),
+        steps: &[],
+        dry: Dry::Check("files-wasm --check: whether it is current, nothing built"),
+    },
+    Cmd {
         name: "group-app",
         stage: "gate",
         reads: "groups/SPEC.toml, groups/schema.sql, web/pages/group.html, node-app.html and group.css, web/app.css and its fonts, web/vendor/sqlite, web/method.wasm.gz, web/js",

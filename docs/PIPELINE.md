@@ -15,7 +15,7 @@ Generated from the one table in `xtask/src/pipeline.rs`; `cargo run -p xtask -- 
 3. **check** — what it would change, before anything is written: `intake`, `group-intake`, `group-test`
 4. **apply** — the form written into the sheet — all of it or none: `lesson`, `new`
 5. **publish** — a filled row's code generated, and its holes written: `group-deliver`, `declare`, `publish`, `fill`, `confirm`
-6. **build** — a node built from its method, and its tests shown to test: `group-build`, `method`, `build-node`, `rerun`, `method-wasm`, `differential`, `mutate`
+6. **build** — a node built from its method, and its tests shown to test: `group-build`, `method`, `build-node`, `rerun`, `method-wasm`, `files-wasm`, `differential`, `mutate`
 7. **gate** — the checks every change passes, and what they generate: `group-app`, `docs`, `assemble`, `gate`, `ready`, `codeowners`, `variables`, `guides`, `pipeline`
 8. **preview** — the node engineer tries the build and approves it: `preview`, `approve`, `queue`
 9. **release** — the stamped release everyone gets: `readers`, `group-accept`, `ship`, `release`, `derisk`, `kit`, `design`, `bundle`
@@ -330,6 +330,21 @@ rebuild web/method.wasm.gz, the checker every node form carries, from vleo_sheet
 | undo | `git restore web/method.wasm.gz web/method.wasm.stamp` |
 | dry run | --dry-run runs method-wasm --check: whether it is current, nothing built |
 | code | `xtask/src/method.rs` — `cmd_method_wasm` |
+
+#### `files-wasm`
+
+    cargo run -p xtask -- files-wasm [--check]
+
+rebuild web/files.wasm.gz, the design-file library the pages carry, from vleo_files; --check only says whether the committed one is current.
+
+| | |
+|---|---|
+| reads | crates/vleo-files and crates/vleo-files-wasm |
+| writes | web/files.wasm.gz and its stamp |
+| checks | with --check: whether the committed library is built from the sources as they are |
+| undo | `git restore web/files.wasm.gz web/files.wasm.stamp` |
+| dry run | --dry-run runs files-wasm --check: whether it is current, nothing built |
+| code | `xtask/src/files.rs` — `cmd_files_wasm` |
 
 #### `differential`
 

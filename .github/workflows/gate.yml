@@ -759,6 +759,7 @@ jobs:
             ~/.cargo/git
             crates/vleo-wasm/target
             crates/vleo-method-wasm/target
+            crates/vleo-files-wasm/target
             crates/vleo-kernel-wasm/target
             crates/vleo-py/target
           key: ${{ runner.os }}-excluded-${{ hashFiles('**/Cargo.lock', 'rust-toolchain.toml') }}
@@ -776,6 +777,18 @@ jobs:
       # resolved from the workspace's own lockfile.
       - name: the design-file library, for the page
         run: cargo build --locked -p vleo-files --target wasm32-unknown-unknown --release
+      # The same library as the pages carry it (web/files.wasm.gz). Its
+      # committed build is held to its sources by a test; this proves the
+      # face still builds, and that a release signed through the chain checks
+      # in the page exactly as it does installed — read with the page's own
+      # SQLite, answered by the page's build, compared byte for byte.
+      - name: the design-file library the pages carry
+        working-directory: crates/vleo-files-wasm
+        run: cargo build --locked --target wasm32-unknown-unknown --release
+      - name: a release signed afresh checks through the chain in the page
+        run: |
+          cargo run --locked -q -p vleo-files --example a_signed_release -- "$RUNNER_TEMP/signed"
+          node tools/files_check.mjs "$RUNNER_TEMP/signed"
       # The method checker every node form carries. Its committed build is held
       # to its sources by a test; this proves the sources still build at all.
       - name: the node form's method checker
