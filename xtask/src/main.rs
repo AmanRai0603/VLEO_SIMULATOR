@@ -12,6 +12,7 @@ use vleo_sheet::{emit, gate, load_all, page, Tree};
 
 mod catalogue;
 mod design;
+mod files;
 mod fills;
 mod flow;
 mod forms;
@@ -136,6 +137,7 @@ pub(crate) fn dispatch(root: &Path, cmd: &str, rest: &[&str]) -> Result<(), Stri
         "ship" => flow::cmd_ship(&root, &rest),
         "method" => method::cmd_method(&root, &rest),
         "method-wasm" => method::cmd_method_wasm(&root, &rest),
+        "files-wasm" => files::cmd_files_wasm(&root, &rest),
         "group-app" => group::cmd_group_app(&root, &rest),
         "group-export" => group::cmd_group_export(&root, &rest),
         "group-intake" => group_intake::cmd_group_intake(&root, &rest),
@@ -319,6 +321,10 @@ cargo xtask <command>
                      rebuild web/method.wasm.gz, the checker every node form
                      carries, from vleo_sheet::method; --check only says
                      whether the committed one is current.
+  files-wasm [--check]
+                     rebuild web/files.wasm.gz, the design-file library the
+                     pages carry, from vleo_files; --check only says whether
+                     the committed one is current.
   group-app [--check] the group and node applications, web/group.html and
                      web/node.html — offline pages a group keeps its database
                      files in (docs/GROUP_APPS.md) — and docs/GROUP_FOLDER.md

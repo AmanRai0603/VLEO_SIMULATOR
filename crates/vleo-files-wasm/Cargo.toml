@@ -1,0 +1,26 @@
+[package]
+name = "vleo-files-wasm"
+description = "FACE — the design-file library inside a page. The same checks the installed application runs (vleo_files::page), compiled to WebAssembly so a page opened from a file checks a release through the signature chain with no server and no network. No bindings crate: a buffer each way."
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.94"
+license = "UNLICENSED"
+authors = ["Orbitt Space"]
+repository = "https://github.com/AmanRai0603/VLEO_SIMULATOR"
+
+# Excluded from the workspace, like vleo-method-wasm: it needs the wasm32
+# target. `cargo run -p xtask -- files-wasm` builds it and writes
+# web/files.wasm.gz, which the pages carry.
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+vleo-files = { path = "../vleo-files" }
+
+[profile.release]
+opt-level = "z"
+lto = "fat"
+panic = "abort"
+codegen-units = 1
+strip = "symbols"

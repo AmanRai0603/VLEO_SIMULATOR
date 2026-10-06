@@ -14,6 +14,7 @@ vleo-sheet = { workspace = true }
 vleo-units = { workspace = true }
 vleo-data = { workspace = true }
 vleo-design = { workspace = true }
+vleo-files = { path = "../crates/vleo-files" }
 toml = { workspace = true }
 toml_edit = { workspace = true }
 

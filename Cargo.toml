@@ -48,7 +48,7 @@ members = [
     "crates/vleo-ffi",
     "xtask",
 ]
-exclude = ["crates/vleo-wasm", "crates/vleo-py", "crates/vleo-method-wasm", "crates/vleo-kernel-wasm"]
+exclude = ["crates/vleo-wasm", "crates/vleo-py", "crates/vleo-method-wasm", "crates/vleo-kernel-wasm", "crates/vleo-files-wasm"]
 
 [workspace.package]
 version = "0.4.0"
