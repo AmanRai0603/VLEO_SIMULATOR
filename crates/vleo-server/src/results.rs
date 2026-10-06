@@ -164,6 +164,10 @@ pub(super) fn result_head(j: &mut Json, file: &str, s: &vleo_modules::results::S
     j.str_field("chain", &s.chain);
     j.str_field("kernel", &s.kernel);
     j.str_field("graph", &s.graph);
+    j.str_field("design", &s.design);
+    // Made by the engine that answers here, or by another one: a result from
+    // another engine is shown as it was, and the page says so.
+    j.bool_field("engine_current", vleo_modules::results::engine_current(s));
     j.str_field("template", &s.template);
     j.bool_field(
         "template_current",
@@ -1131,6 +1135,11 @@ pub(super) fn result_save(params: &str, ctx: &Ctx) -> String {
     };
     let label = param(params, "label").map(decode).unwrap_or_default();
     let mut s = vleo_modules::results::from_run(&r, &case.supply, &now_utc(), label.trim());
+    s.design = ctx
+        .design
+        .as_ref()
+        .map(|d| d.fingerprint.clone())
+        .unwrap_or_default();
     s.sweep = sweep;
     kept_json(&s)
 }

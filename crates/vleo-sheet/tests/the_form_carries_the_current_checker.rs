@@ -73,3 +73,50 @@ fn the_form_carries_the_checker_it_finds_beside_the_tree() {
     tree.root = std::env::temp_dir().join("vleo-no-checker-here");
     assert!(carried(&vleo_sheet::template::document(&sh, &tree)).is_empty());
 }
+
+/// The checker is compiled with the kernel functions a method may call, so the
+/// files those functions live in are among the sources its stamp is taken
+/// over. Leave one out and a corrected formula reaches the engine but not the
+/// forms, and nothing says so.
+#[test]
+fn the_checker_is_stamped_over_the_kernel_it_calls() {
+    let listed = vleo_sheet::method::CHECKER_SOURCES;
+    assert!(
+        listed.contains(&"crates/vleo-sheet/src/method/kernel.rs"),
+        "the table of kernel functions is not among the checker's sources"
+    );
+    let mut wanted = std::collections::BTreeSet::new();
+    for f in vleo_sheet::method::KERNEL_FUNCTIONS {
+        for part in f
+            .kernel
+            .split(|c: char| !(c.is_ascii_alphanumeric() || c == '_' || c == ':'))
+        {
+            if let Some((module, _)) = part.split_once("::") {
+                wanted.insert(format!("crates/vleo-core/src/physics/{module}.rs"));
+            }
+        }
+    }
+    // And whatever those files reach for in the kernel's own maths.
+    for f in wanted.clone() {
+        let text = std::fs::read_to_string(root().join(&f)).unwrap();
+        for (i, _) in text.match_indices("crate::math::") {
+            let rest = &text[i + "crate::math::".len()..];
+            let name: String = rest
+                .chars()
+                .take_while(|c| c.is_ascii_alphanumeric() || *c == '_')
+                .collect();
+            wanted.insert(format!("crates/vleo-core/src/math/{name}.rs"));
+        }
+    }
+    assert!(
+        !wanted.is_empty(),
+        "no kernel module was found in the table"
+    );
+    for f in &wanted {
+        assert!(root().join(f).is_file(), "{f} does not exist");
+        assert!(
+            listed.contains(&f.as_str()),
+            "{f} is called by the checker but not among its sources"
+        );
+    }
+}

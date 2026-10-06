@@ -11,6 +11,8 @@
   "chain": "075c5d",
   "kernel": "7fec07",
   "graph": "adb684",
+  "design": "",
+  "engine_current": true,
   "template": "48afb0100e92",
   "template_current": true,
   "data": "solar-drivers@2026.09.04#54784567db11b868 solar-weather@2026.09.14#f3557eb8443bfdaa",

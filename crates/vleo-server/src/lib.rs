@@ -281,12 +281,59 @@ fn open_tree(root: &Path) -> Result<(std::sync::Arc<dyn Files>, Option<DesignFil
     };
     let d = vleo_design::Design::open(&path, root)
         .map_err(|e| format!("the design file does not open: {e}"))?;
+    // A design file this engine was not built from runs, and every answer it
+    // gives is from relations its sheets do not state. So it is refused here,
+    // naming the rows that differ, before anything is served from it.
+    let tree = vleo_sheet::load::load_all_from(&d, root)
+        .map_err(|e| format!("the design file {} does not load: {e}", path.display()))?;
+    let differs = engine_differs(&tree);
+    if !differs.is_empty() {
+        let first = differs
+            .iter()
+            .take(5)
+            .cloned()
+            .collect::<Vec<_>>()
+            .join("; ");
+        return Err(format!(
+            "the design file {} was made for a different engine than this tool \
+             ({} row(s) differ — {first}{}). Open it with the tool from the same \
+             release as the design, or use the design this tool was released with.",
+            path.display(),
+            differs.len(),
+            if differs.len() > 5 { "; …" } else { "" }
+        ));
+    }
     let info = DesignFile {
         file: path.display().to_string(),
         rows: d.meta("rows").to_string(),
         fingerprint: d.meta("fingerprint").to_string(),
     };
     Ok((std::sync::Arc::new(d), Some(info)))
+}
+
+/// Every row where the design and this engine are not one design: a row the
+/// engine has and the file does not, one the file has and the engine does not,
+/// or one whose sheet or relation differs. Empty when they are the same.
+fn engine_differs(tree: &vleo_sheet::Tree) -> Vec<String> {
+    let mut out = Vec::new();
+    for n in NODES.iter() {
+        match tree.sheets.get(n.id) {
+            None => out.push(format!("{}: in this engine, not in the file", n.id)),
+            Some(s) if s.sheet_hash != n.sheet_hash => {
+                out.push(format!("{}: a different sheet", n.id))
+            }
+            Some(s) if s.impl_hash != n.impl_hash => {
+                out.push(format!("{}: a different relation", n.id))
+            }
+            Some(_) => {}
+        }
+    }
+    for id in tree.sheets.keys() {
+        if Vleo::find(id).is_none() {
+            out.push(format!("{id}: in the file, not in this engine"));
+        }
+    }
+    out
 }
 
 impl Ctx {
@@ -1525,6 +1572,50 @@ pub(crate) fn levers_of(params: &str, ctx: &Ctx, node: &str, ni: u16) -> (Option
     });
 
     (base, out)
+}
+
+#[cfg(test)]
+mod one_design {
+    use super::{engine_differs, NODES};
+    use std::path::Path;
+
+    fn tree() -> vleo_sheet::Tree {
+        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        vleo_sheet::load_all(&root).expect("the checkout's tree does not load")
+    }
+
+    #[test]
+    fn the_engine_and_the_checkout_it_was_built_from_are_one_design() {
+        assert_eq!(engine_differs(&tree()), Vec::<String>::new());
+    }
+
+    #[test]
+    fn every_kind_of_difference_is_named() {
+        let first = NODES[0].id.to_string();
+        let second = NODES[1].id.to_string();
+        let third = NODES[2].id.to_string();
+        let mut t = tree();
+        t.sheets.get_mut(&first).unwrap().sheet_hash ^= 1;
+        t.sheets.get_mut(&second).unwrap().impl_hash ^= 1;
+        let mut extra = t.sheets.remove(&third).unwrap();
+        extra.id = "not_in_this_engine".into();
+        t.sheets.insert(extra.id.clone(), extra);
+        let d = engine_differs(&t);
+        assert!(d.contains(&format!("{first}: a different sheet")), "{d:?}");
+        assert!(
+            d.contains(&format!("{second}: a different relation")),
+            "{d:?}"
+        );
+        assert!(
+            d.contains(&format!("{third}: in this engine, not in the file")),
+            "{d:?}"
+        );
+        assert!(
+            d.contains(&"not_in_this_engine: in the file, not in this engine".to_string()),
+            "{d:?}"
+        );
+        assert_eq!(d.len(), 4, "{d:?}");
+    }
 }
 
 #[cfg(test)]

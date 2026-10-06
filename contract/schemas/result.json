@@ -38,6 +38,14 @@
     "graph": {
       "type": "string"
     },
+    "design": {
+      "type": "string",
+      "description": "The fingerprint of the design file the run read; empty when it read the folders of a checkout."
+    },
+    "engine_current": {
+      "type": "boolean",
+      "description": "Whether the engine that made the result is the one answering now. False: the result is shown as it was, and running its inputs again gives this engine's answer."
+    },
     "template": {
       "type": "string"
     },
@@ -938,6 +946,8 @@
     "chain",
     "kernel",
     "graph",
+    "design",
+    "engine_current",
     "template",
     "template_current",
     "data",
