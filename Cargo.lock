@@ -924,6 +924,7 @@ dependencies = [
  "vleo-core",
  "vleo-data",
  "vleo-design",
+ "vleo-files",
  "vleo-modules",
  "vleo-sheet",
  "vleo-units",

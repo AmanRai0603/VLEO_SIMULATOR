@@ -30,6 +30,7 @@ mod json;
 mod pages;
 mod results;
 pub mod results_file;
+pub mod today;
 
 use http::*;
 use inputs::*;
@@ -89,7 +90,7 @@ pub fn serve(
     // both start here.
     vleo_data::crash::install("vleo-server", env!("CARGO_PKG_VERSION"));
     let root = root.unwrap_or_else(repo_root);
-    let (tree, design) = open_tree(&root)?;
+    let (tree, design, today) = open_tree(&root)?;
     let engine = run_on_the_files(&*tree, &root, design.is_some())?;
     let (data, data_versions, bundles, data_refused) = resolve_data(&root);
 
@@ -119,6 +120,9 @@ pub fn serve(
         NODES.len()
     );
     println!("  engine {engine}");
+    for line in &today {
+        println!("  {line}");
+    }
     if data.is_empty() {
         println!("  \x1b[33mno reference data in the store — nodes that declare a bundle will refuse\x1b[0m");
         // Say why. A warning with no reason is the one a person cannot act on,
@@ -184,7 +188,7 @@ pub fn serve(
 /// `"ok":false` and a message, never a stand-in figure.
 pub fn figure(root: Option<PathBuf>, id: &str, params: &str) -> String {
     let root = root.unwrap_or_else(repo_root);
-    let (tree, design) = match open_tree(&root) {
+    let (tree, design, _) = match open_tree(&root) {
         Ok(t) => t,
         Err(e) => return format!("{{\"ok\":false,\"message\":{}}}", json::string(&e)),
     };
@@ -273,7 +277,49 @@ struct DesignFile {
 /// otherwise. A design file that is there and does not open stops the tool,
 /// naming why: falling back to whatever folders happen to sit beside it would
 /// show a different design under the same name.
-fn open_tree(root: &Path) -> Result<(std::sync::Arc<dyn Files>, Option<DesignFile>), String> {
+fn open_tree(root: &Path) -> Result<Opened, String> {
+    let (files, design) = open_base(root)?;
+    let Some(drive) = std::env::var("VLEO_DRIVE")
+        .ok()
+        .filter(|v| !v.trim().is_empty())
+        .map(PathBuf::from)
+    else {
+        return Ok((files, design, Vec::new()));
+    };
+    // Today's design: every group's latest sealed release on the drive that
+    // passes its checks, taken into the design (`today`). A drive that is not
+    // one stops the tool, naming why; the design is never shown as today's
+    // when it is not.
+    let t = today::build(files, root, &drive)
+        .map_err(|e| format!("today's design is not built: {e}"))?;
+    let mut said = vec![format!(
+        "today's design, built from the drive {}:",
+        drive.display()
+    )];
+    if t.groups.is_empty() {
+        said.push("  no group has a release on the drive: the design's own sheets".into());
+    }
+    for g in &t.groups {
+        said.push(format!("  {}", g.said()));
+        if let Some(k) = &g.taken {
+            for n in &k.notes {
+                said.push(format!("    {n}"));
+            }
+        }
+    }
+    for i in &t.ignored {
+        said.push(format!("  ignored: {i}"));
+    }
+    Ok((t.files, design, said))
+}
+
+/// The design as the tool opens it: where its files are read from, the design
+/// file when it is one, and — when it is today's design — what it was built
+/// from, line by line.
+type Opened = (std::sync::Arc<dyn Files>, Option<DesignFile>, Vec<String>);
+
+/// The design the tool is given: the design file, or the folders.
+fn open_base(root: &Path) -> Result<(std::sync::Arc<dyn Files>, Option<DesignFile>), String> {
     let named = std::env::var("VLEO_DESIGN")
         .ok()
         .filter(|v| !v.trim().is_empty())
@@ -325,8 +371,13 @@ fn open_tree(root: &Path) -> Result<(std::sync::Arc<dyn Files>, Option<DesignFil
 /// the engine runs the graph compiled into it, and says so.
 pub fn run_the_design(root: Option<PathBuf>) -> Result<String, String> {
     let root = root.unwrap_or_else(repo_root);
-    let (tree, design) = open_tree(&root)?;
-    run_on_the_files(&*tree, &root, design.is_some())
+    let (tree, design, today) = open_tree(&root)?;
+    let mut said = run_on_the_files(&*tree, &root, design.is_some())?;
+    for line in today {
+        said.push_str("\n  ");
+        said.push_str(&line);
+    }
+    Ok(said)
 }
 
 /// Run the engine on the graph read from `files`, and say which graph runs.
