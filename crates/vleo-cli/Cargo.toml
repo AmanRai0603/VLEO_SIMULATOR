@@ -29,6 +29,9 @@ vleo-design = { workspace = true }
 # in the file, and the seal worked out by the library the group seals with.
 rusqlite = { workspace = true }
 vleo-files = { path = "../vleo-files" }
+# Read the design converted to its files back as the folders it came from,
+# and hold the engine run on it to today's answers.
+vleo-sheet = { workspace = true }
 
 [lints.rust]
 unsafe_code = "forbid"

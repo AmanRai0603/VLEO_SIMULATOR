@@ -338,6 +338,9 @@ fn open_base(root: &Path) -> Result<(std::sync::Arc<dyn Files>, Option<DesignFil
         .ok()
         .filter(|v| !v.trim().is_empty())
         .map(PathBuf::from);
+    if let Some(dir) = named.as_ref().filter(|p| p.is_dir()) {
+        return open_converted(root, dir);
+    }
     let Some(path) = named.or_else(|| vleo_design::beside(root)) else {
         return Ok((std::sync::Arc::new(vleo_sheet::files::Disk), None));
     };
@@ -390,6 +393,65 @@ fn open_base(root: &Path) -> Result<(std::sync::Arc<dyn Files>, Option<DesignFil
         fingerprint: d.meta("fingerprint").to_string(),
     };
     Ok((std::sync::Arc::new(d), Some(info)))
+}
+
+/// The design converted to its files (docs/PLAN_1_0.md, phase E): every
+/// group, node and case file in the folder `VLEO_DESIGN` names, read as the
+/// folders they were converted from (`vleo_files::convert::Served`), with the
+/// relations still in code read from this engine's own.
+///
+/// Held as a design file is: a row this engine does not answer as the files
+/// state it is refused, by name. A block that is open and new is the one
+/// exception, because an open block asks nothing of the engine: it is refused
+/// by its own id if a run reaches it.
+fn open_converted(
+    root: &Path,
+    dir: &Path,
+) -> Result<(std::sync::Arc<dyn Files>, Option<DesignFile>), String> {
+    let (files, fingerprint) = vleo_files::convert::read_folder(dir)
+        .map_err(|e| format!("the design folder {} does not open: {e}", dir.display()))?;
+    let served = vleo_files::convert::Served::new(
+        root,
+        &files,
+        std::sync::Arc::new(vleo_sheet::files::Disk),
+    )
+    .map_err(|e| format!("the design folder {} does not read: {e}", dir.display()))?;
+    let tree = vleo_sheet::load::load_all_from(&served, root)
+        .map_err(|e| format!("the design folder {} does not load: {e}", dir.display()))?;
+    let open_and_new: std::collections::BTreeSet<&str> = tree
+        .sheets
+        .values()
+        .filter(|s| s.is_seeded() && Vleo::find(&s.id).is_none())
+        .map(|s| s.id.as_str())
+        .collect();
+    let differs: Vec<String> = engine_differs(&tree)
+        .into_iter()
+        .filter(|d| {
+            !d.split_once(':')
+                .is_some_and(|(id, _)| open_and_new.contains(id))
+        })
+        .collect();
+    if !differs.is_empty() {
+        return Err(format!(
+            "the design folder {} was made for a different engine than this tool \
+             ({} row(s) differ — {}{})",
+            dir.display(),
+            differs.len(),
+            differs
+                .iter()
+                .take(5)
+                .cloned()
+                .collect::<Vec<_>>()
+                .join("; "),
+            if differs.len() > 5 { "; …" } else { "" }
+        ));
+    }
+    let info = DesignFile {
+        file: dir.display().to_string(),
+        rows: tree.sheets.len().to_string(),
+        fingerprint,
+    };
+    Ok((std::sync::Arc::new(served), Some(info)))
 }
 
 /// Open the design where the tool finds it — the design file, or the folders

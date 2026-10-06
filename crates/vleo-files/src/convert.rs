@@ -1637,3 +1637,48 @@ impl Files for Served {
         self.files.contains_key(p) || (!self.is_design(p) && self.code.is_file(p))
     }
 }
+
+/// Every group, node and case file in `dir`, laid out as [`convert`] lays
+/// them out, each with its path there, and the fingerprint of all of them: the
+/// SHA-256 of every file's path and bytes, in order.
+pub fn read_folder(dir: &Path) -> Result<(Vec<(String, File)>, String), Error> {
+    fn walk(dir: &Path, out: &mut Vec<PathBuf>) -> Result<(), Error> {
+        for e in std::fs::read_dir(dir).map_err(|e| io_error(dir, e))? {
+            let p = e.map_err(|e| io_error(dir, e))?.path();
+            if p.is_dir() {
+                walk(&p, out)?;
+            } else if p
+                .extension()
+                .and_then(|x| x.to_str())
+                .is_some_and(|x| [GROUP_FILE, NODE_FILE, CASE_FILE].contains(&x))
+            {
+                out.push(p);
+            }
+        }
+        Ok(())
+    }
+    let mut paths = Vec::new();
+    walk(dir, &mut paths)?;
+    paths.sort();
+    if paths.is_empty() {
+        return Err(malformed(format!(
+            "{} holds no group, node or case file",
+            dir.display()
+        )));
+    }
+    let mut all = Vec::new();
+    let mut files = Vec::new();
+    for p in paths {
+        let rel = p
+            .strip_prefix(dir)
+            .map_err(|_| malformed(format!("{} is outside {}", p.display(), dir.display())))?
+            .to_string_lossy()
+            .replace('\\', "/");
+        let bytes = std::fs::read(&p).map_err(|e| io_error(&p, e))?;
+        all.extend_from_slice(rel.as_bytes());
+        all.push(0);
+        all.extend_from_slice(&crate::keys::sha256(&bytes));
+        files.push((rel, crate::sqlite::read(&p)?));
+    }
+    Ok((files, crate::keys::hex(&crate::keys::sha256(&all))))
+}
