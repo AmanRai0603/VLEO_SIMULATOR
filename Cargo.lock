@@ -728,6 +728,7 @@ dependencies = [
  "getrandom",
  "hmac",
  "pbkdf2",
+ "rusqlite",
  "sha2",
  "zeroize",
 ]
