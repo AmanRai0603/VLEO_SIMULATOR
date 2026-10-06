@@ -11,9 +11,11 @@
 //! the release, each as its rows.
 
 use crate::chain;
+use crate::checks;
 use crate::error::Error;
 use crate::model::File;
 use crate::rows::{self, Reader};
+use crate::upgrade;
 
 /// Text as a JSON string.
 pub fn json_str(s: &str) -> String {
@@ -70,11 +72,74 @@ pub fn check_release(request: &[u8]) -> String {
         let release = file(&mut r)?;
         let registry = chain::open_programme(programme, &anchor)?;
         let checked = chain::check_release(&release, &registry)?;
+        let found = checks::check_release(&release);
         Ok(format!(
-            "{{\"holds\":{},\"signed\":{},\"refused\":{}}}",
-            checked.holds(),
+            "{{\"holds\":{},\"signed\":{},\"refused\":{},\"findings\":{}}}",
+            checked.holds() && found.holds(),
             list(&checked.signed),
-            list(&checked.refused)
+            list(&checked.refused),
+            findings(&found)
+        ))
+    };
+    answer().unwrap_or_else(|e| error_json(&e))
+}
+
+fn findings(found: &checks::Findings) -> String {
+    format!(
+        "[{}]",
+        found
+            .0
+            .iter()
+            .map(|f| format!(
+                "{{\"level\":{},\"place\":{},\"what\":{}}}",
+                json_str(match f.level {
+                    checks::Level::Error => "error",
+                    checks::Level::Warning => "warning",
+                }),
+                json_str(&f.place),
+                json_str(&f.what)
+            ))
+            .collect::<Vec<_>>()
+            .join(",")
+    )
+}
+
+/// Check what one release holds (`crate::checks`): the request is its rows. A
+/// file from before 1.0 is upgraded first, as the application opens it. The
+/// answer is `{"holds": bool, "findings": [{level, place, what}, ...]}`, or
+/// `{"error": ..., "kind": ...}`.
+pub fn check_content(request: &[u8]) -> String {
+    let answer = || -> Result<String, Error> {
+        let tables = rows::decode(request)?;
+        let format = tables
+            .iter()
+            .find(|t| t.name == "meta")
+            .and_then(|t| {
+                t.rows.iter().find_map(|r| match r.as_slice() {
+                    [crate::model::Cell::Text(k), crate::model::Cell::Text(v)] if k == "format" => {
+                        Some(v.clone())
+                    }
+                    _ => None,
+                })
+            })
+            .unwrap_or_default();
+        let file = if format == "1" {
+            upgrade::from_format_1(
+                tables,
+                &upgrade::Upgrade {
+                    app: "the page",
+                    at: "",
+                },
+            )?
+            .file
+        } else {
+            File::from_tables(tables)?
+        };
+        let found = checks::check_release(&file);
+        Ok(format!(
+            "{{\"holds\":{},\"findings\":{}}}",
+            found.holds(),
+            findings(&found)
         ))
     };
     answer().unwrap_or_else(|e| error_json(&e))

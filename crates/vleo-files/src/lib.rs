@@ -26,9 +26,14 @@
 //! * [`csv`] — the group folder's CSV, written byte for byte as the page
 //!   writes it.
 //!
-//! The checks a release must pass come next, on top of these.
+//! * [`checks`] — what a release must hold before it is taken: the checks
+//!   today's intake makes of its content, its methods read and run by the
+//!   method language against their own cases, one test for each refusal.
+//!
+//! The rest of the page's folder checks come next, on top of these.
 
 pub mod chain;
+pub mod checks;
 pub mod csv;
 pub mod error;
 pub mod format_1;

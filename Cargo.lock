@@ -730,6 +730,7 @@ dependencies = [
  "pbkdf2",
  "rusqlite",
  "sha2",
+ "vleo-sheet",
  "zeroize",
 ]
 

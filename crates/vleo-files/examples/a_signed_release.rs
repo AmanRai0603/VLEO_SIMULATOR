@@ -103,13 +103,44 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             direction: s("out"),
             name: s("value"),
             port_type: s("number"),
+            unit: s("1"),
             state: s("achieved"),
             ..Port::default()
         });
+        // One input, set by the case, and the node's whole content: its
+        // method, who made it, and the cases its code must reproduce.
+        release.ports.push(Port {
+            block_uid: s(uid),
+            direction: s("in"),
+            name: s("x"),
+            port_type: s("number"),
+            unit: s("1"),
+            lower: s("0"),
+            upper: s("10"),
+            state: s("decided"),
+            value: s("1"),
+            ..Port::default()
+        });
+        release.wires.push(Wire {
+            to_block: s(uid),
+            to_port: s("x"),
+            from_ref: s("case"),
+        });
         release.texts.push(Text {
             scope: s(uid),
-            kind: s("method"),
-            body: s("result = 1"),
+            kind: s("pseudocode"),
+            body: s("if x < 0 then\n  refuse \"x is never below zero\"\nend\nreturn x"),
+        });
+        release.tables.push(Tbl {
+            scope: s(uid),
+            path: s("declaration.csv"),
+            csv: s("author,ai,date,source,checked_by\nNia Node,none,2026-03-01,,\n"),
+        });
+        release.tables.push(Tbl {
+            scope: s(uid),
+            path: s("results/isolation.csv"),
+            csv: s("x [1],answer [1],tolerance,refuses,origin\n\
+                    1,1,1e-9,no,hand\n0,0,1e-9,no,hand\n10,10,1e-9,no,hand\n-1,,,yes,hand\n"),
         });
         release.media.push(Media {
             scope: s(uid),
@@ -124,6 +155,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             contract_version: 1,
         });
     }
+    release.tables.push(Tbl {
+        scope: s(FILE),
+        path: s("versions.csv"),
+        csv: s(
+            "version,date,by,believed,tested,learned,changed,risks,cost,rests_on,breaks_if\n\
+                1.1,2026-02-01,Ola Sun,b,t,l,c,,,r,k\n\
+                1.2,2026-03-02,Ola Sun,the two nodes answer their input,every case,nothing broke,\
+                the cases at both ends,,,the cases,a case either node does not reproduce\n",
+        ),
+    });
     for uid in ["b-ap", "b-f107"] {
         let row = chain::sign(&release, uid, "Nia Node", &ne, "2026-03-01", "ok", "")?;
         release.signatures.push(row);
@@ -152,6 +193,57 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let back_r = sqlite::read(&dir.join("release.vleo"))?;
     let answer = page::check_release(&page::check_release_request(&anchor, &back_p, &back_r));
     std::fs::write(dir.join("expected.json"), &answer)?;
+    // And what the installed library finds in the two real solar releases: 1.0,
+    // which intake refused, and 1.1, which it took.
+    for v in ["1.0", "1.1"] {
+        let fixture = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join(format!("tests/fixtures/l3_solar-{v}.vleo"));
+        std::fs::copy(&fixture, dir.join(format!("l3_solar-{v}.vleo")))?;
+        let rows = vleo_files::rows::encode(&raw_tables(&fixture)?);
+        std::fs::write(
+            dir.join(format!("expected-{v}.json")),
+            page::check_content(&rows),
+        )?;
+    }
     println!("wrote {} — {answer}", dir.display());
     Ok(())
+}
+
+/// A file's tables as SQLite holds them, whatever its format: what the page's
+/// own SQLite reads.
+fn raw_tables(path: &std::path::Path) -> Result<Vec<Table>, Box<dyn std::error::Error>> {
+    let db = rusqlite::Connection::open(path)?;
+    let names: Vec<String> = db
+        .prepare("SELECT name FROM sqlite_master WHERE type = 'table' ORDER BY name")?
+        .query_map([], |r| r.get(0))?
+        .collect::<Result<_, _>>()?;
+    let mut out = Vec::new();
+    for name in names {
+        let mut st = db.prepare(&format!("SELECT * FROM \"{name}\" ORDER BY rowid"))?;
+        let columns: Vec<String> = st.column_names().iter().map(|c| c.to_string()).collect();
+        let n = columns.len();
+        let rows = st
+            .query_map([], |r| {
+                (0..n)
+                    .map(|i| {
+                        Ok(match r.get_ref(i)? {
+                            rusqlite::types::ValueRef::Null => Cell::Null,
+                            rusqlite::types::ValueRef::Integer(v) => Cell::Int(v),
+                            rusqlite::types::ValueRef::Real(v) => Cell::Text(v.to_string()),
+                            rusqlite::types::ValueRef::Text(t) => {
+                                Cell::Text(String::from_utf8_lossy(t).into_owned())
+                            }
+                            rusqlite::types::ValueRef::Blob(b) => Cell::Blob(b.to_vec()),
+                        })
+                    })
+                    .collect::<rusqlite::Result<Vec<Cell>>>()
+            })?
+            .collect::<rusqlite::Result<Vec<_>>>()?;
+        out.push(Table {
+            name,
+            columns,
+            rows,
+        });
+    }
+    Ok(out)
 }
