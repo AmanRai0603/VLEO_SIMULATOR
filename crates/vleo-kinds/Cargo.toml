@@ -1,0 +1,12 @@
+[package]
+name = "vleo-kinds"
+description = "Every kind of file the tools write: the name it gives itself, the format it is in, which reader takes it and what it becomes when opened. One table, so the installed application, the command line, the server, the Python package and the library that checks every design file tell one file from another by the same rule — and today's design is never taken for a released one."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+
+[lints.rust]
+unsafe_code = "forbid"

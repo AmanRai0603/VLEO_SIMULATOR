@@ -154,7 +154,7 @@ pub fn write(out: &Path, kept: &[Kept], tool: &str, written: &str) -> Result<(),
 /// Every result in `file`, in the order they were written. Refuses a file that
 /// is not SQLite, not ours, not a results file, or newer than this code.
 pub fn read(file: &Path) -> Result<Vec<Kept>, Error> {
-    let db = crate::open_ours(file, KIND, FORMAT)?;
+    let db = crate::open_ours(file, KIND, "a results file")?;
     let db_err =
         |e: rusqlite::Error| Error::new(ErrorKind::Database, format!("{}: {e}", file.display()));
     let mut out = Vec::new();
@@ -223,7 +223,7 @@ pub fn read(file: &Path) -> Result<Vec<Kept>, Error> {
 
 /// What a results file says about itself, without reading its results.
 pub fn meta(file: &Path, key: &str) -> Result<String, Error> {
-    let db = crate::open_ours(file, KIND, FORMAT)?;
+    let db = crate::open_ours(file, KIND, "a results file")?;
     db.query_row("SELECT value FROM meta WHERE key = ?1", params![key], |r| {
         r.get(0)
     })

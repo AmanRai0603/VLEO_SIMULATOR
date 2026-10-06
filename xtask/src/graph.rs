@@ -24,6 +24,7 @@ pub(super) fn ring(crate_name: &str) -> Option<(u8, &'static str)> {
             4,
             "beside the design — every design file, read, written and checked, its methods by the method language",
         ),
+        "vleo-kinds" => (2, "beside the bus — every kind of file the tools write"),
         "vleo-bus" => (2, "RING 2 — transport"),
         "vleo-data" => (2, "reference data"),
         "vleo-modules" => (4, "the facade over every node crate"),

@@ -198,3 +198,28 @@ fn what_is_not_a_design_file_is_refused_by_name() {
     assert_eq!(e.kind(), ErrorKind::Newer);
     let _ = std::fs::remove_dir_all(&dir);
 }
+
+#[test]
+fn the_design_and_results_files_are_the_kinds_the_one_table_lists() {
+    use vleo_kinds::{Reader, KINDS};
+    let listed = |name: &str, format: u32| {
+        KINDS
+            .iter()
+            .any(|k| k.name == name && k.format() == Some(format) && k.reader == Reader::Design)
+    };
+    assert!(listed("design", vleo_design::FORMAT));
+    assert!(listed(
+        vleo_design::results::KIND,
+        vleo_design::results::FORMAT
+    ));
+    for (sql, format) in [
+        (include_str!("../design.sql"), vleo_design::FORMAT),
+        (include_str!("../results.sql"), vleo_design::results::FORMAT),
+    ] {
+        assert!(sql.contains(&format!(
+            "PRAGMA application_id = {};",
+            vleo_kinds::APPLICATION_ID
+        )));
+        assert!(sql.contains(&format!("PRAGMA user_version = {format};")));
+    }
+}

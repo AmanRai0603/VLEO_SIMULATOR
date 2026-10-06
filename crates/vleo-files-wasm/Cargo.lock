@@ -616,6 +616,7 @@ dependencies = [
  "rusqlite",
  "sha2",
  "toml",
+ "vleo-kinds",
  "vleo-sheet",
  "zeroize",
 ]
@@ -626,6 +627,10 @@ version = "0.1.0"
 dependencies = [
  "vleo-files",
 ]
+
+[[package]]
+name = "vleo-kinds"
+version = "0.4.0"
 
 [[package]]
 name = "vleo-sheet"

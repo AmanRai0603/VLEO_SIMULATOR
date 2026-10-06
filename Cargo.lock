@@ -708,6 +708,7 @@ name = "vleo-design"
 version = "0.4.0"
 dependencies = [
  "rusqlite",
+ "vleo-kinds",
  "vleo-sheet",
 ]
 
@@ -731,9 +732,14 @@ dependencies = [
  "rusqlite",
  "sha2",
  "toml 0.8.23",
+ "vleo-kinds",
  "vleo-sheet",
  "zeroize",
 ]
+
+[[package]]
+name = "vleo-kinds"
+version = "0.4.0"
 
 [[package]]
 name = "vleo-mod-acs"
@@ -882,6 +888,7 @@ dependencies = [
  "vleo-bus",
  "vleo-core",
  "vleo-data",
+ "vleo-kinds",
  "vleo-mod-acs",
  "vleo-mod-atthw",
  "vleo-mod-closure",

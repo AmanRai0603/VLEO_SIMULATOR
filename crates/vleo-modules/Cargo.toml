@@ -40,6 +40,10 @@ vleo-mod-ttc = { path = "../vleo-mod-ttc" }
 [build-dependencies]
 vleo-sheet = { workspace = true }
 
+[dev-dependencies]
+# The table every reader takes a file by: the saved files here are held to it.
+vleo-kinds = { workspace = true }
+
 [features]
 default = []
 # With std the facade also keeps the case and saved results on disk, and every

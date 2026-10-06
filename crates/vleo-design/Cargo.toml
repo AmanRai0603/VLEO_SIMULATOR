@@ -10,6 +10,8 @@ repository.workspace = true
 
 [dependencies]
 vleo-sheet = { workspace = true }
+# Every kind of file the tools write, and the one rule a reader takes one by.
+vleo-kinds = { workspace = true }
 # SQLite, compiled in (`bundled`): the same database engine the group
 # applications run in the page, so a design file, a group's release and a
 # Python reader all open one format. ADOPTION.lock records it and its fallback.
