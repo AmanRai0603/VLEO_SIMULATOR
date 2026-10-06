@@ -2358,6 +2358,14 @@ effect = "writes"
 
 [[command]]
 tool = "xtask"
+name = "files-wasm"
+usage = "files-wasm [--check]"
+what = "Builds the design-file library the pages carry — vleo_files compiled to WebAssembly, so a page checks a release through the signature chain by the same code as the installed application — into web/files.wasm.gz with the fingerprint of its sources; --check only says whether the committed file is current."
+who = "developer"
+effect = "writes"
+
+[[command]]
+tool = "xtask"
 name = "group-app"
 usage = "group-app [--check]"
 what = "Builds the two offline pages a group works in — web/group.html, where the subsystem engineer sets out the nodes and their contracts, issues each node engineer a node file, assembles the files into a release, has it signed and seals it, and web/node.html, where a node engineer fills their node file — each carrying SQLite (web/vendor/sqlite, checked against its recorded hashes) and the database format of groups/schema.sql; and the folder pattern's two documents, docs/GROUP_FOLDER.md and groups/skill/vleo-group-folder/SKILL.md, all from groups/SPEC.toml. --check only says whether the committed four are current."
