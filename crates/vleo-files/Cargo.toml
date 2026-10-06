@@ -1,0 +1,30 @@
+[package]
+name = "vleo-files"
+description = "The one library that reads, writes and checks every design file (docs/OPERATING_1_0.md, section 10), compiled for the installed application and for the page. This first part is the keys: a person's key made, locked by their passphrase, a signature made with it, and a signature checked — one implementation, so a signature made installed checks in the page and the other way round (section 14)."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+
+[dependencies]
+# The cryptography, adopted through ADOPTION.lock (docs/PLAN_1_0.md, phase C):
+# signatures, the digest every fingerprint is, the passphrase's key
+# derivation, and the cipher that locks a private key. All pure Rust, so the
+# same code compiles for wasm32 and the page and the application agree.
+ed25519-dalek = "3"
+sha2 = "0.11"
+pbkdf2 = { version = "0.13", default-features = false, features = ["hmac"] }
+hmac = "0.13"
+aes-gcm = { version = "0.11", default-features = false, features = ["aes", "alloc"] }
+zeroize = "1"
+
+# Randomness comes from the operating system when installed; in the page the
+# caller passes bytes from the browser's crypto.getRandomValues, so the page's
+# build carries no randomness of its own.
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+getrandom = "0.3"
+
+[lints.rust]
+unsafe_code = "forbid"

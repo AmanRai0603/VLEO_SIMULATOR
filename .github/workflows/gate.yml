@@ -770,6 +770,12 @@ jobs:
       - name: the browser face
         working-directory: crates/vleo-wasm
         run: cargo build --locked --target wasm32-unknown-unknown --release
+      # The library every design file is read, written and checked by, built
+      # for the page: the same signing and checking the installed application
+      # runs (docs/OPERATING_1_0.md, section 14). A workspace crate, so it is
+      # resolved from the workspace's own lockfile.
+      - name: the design-file library, for the page
+        run: cargo build --locked -p vleo-files --target wasm32-unknown-unknown --release
       # The method checker every node form carries. Its committed build is held
       # to its sources by a test; this proves the sources still build at all.
       - name: the node form's method checker

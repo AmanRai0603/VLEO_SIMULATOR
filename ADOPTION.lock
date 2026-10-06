@@ -106,6 +106,79 @@ why = "the tool a team runs reads the design from one file, design.vleo, rather 
 fallback = "the folders: design.vleo is written from them and read through the same interface (vleo_sheet::files), so a kit can carry the node folders again — as every kit before 0.5.0 did — with nothing else changed"
 verified = "2026-10-03"
 
+# The cryptography of the keys (docs/OPERATING_1_0.md, section 14), adopted
+# for phase C of docs/PLAN_1_0.md on the programme manager's word, 6 October
+# 2026. One implementation, pure Rust, compiled for the installed application
+# and for the page, so a signature made in one checks in the other. Written
+# here rather than by hand because a cryptographic primitive written by hand is
+# the one kind of code nobody here can review.
+
+[[adopted]]
+name = "ed25519-dalek"
+upstream = "https://github.com/dalek-cryptography/curve25519-dalek (ed25519-dalek/)"
+licence = "BSD-3-Clause (ed25519-dalek and curve25519-dalek)"
+version = "3.0 (curve25519-dalek 5.0)"
+used_by = "vleo-files"
+load_bearing = true
+why = "every signature in the design: a node signed by its engineer, a release sealed by its subsystem engineer, a design released by the system engineer. Ed25519 (RFC 8032), checked strictly"
+fallback = "the `ed25519-compact` crate (MIT), which implements the same RFC 8032 signatures; a signature is 64 bytes in either, so nothing already signed changes"
+verified = "2026-10-06"
+
+[[adopted]]
+name = "sha2"
+upstream = "https://github.com/RustCrypto/hashes (sha2/)"
+licence = "MIT OR Apache-2.0"
+version = "0.11"
+used_by = "vleo-files"
+load_bearing = true
+why = "SHA-256 (FIPS 180-4): every fingerprint of a key, and the digest PBKDF2 derives a passphrase's key with"
+fallback = "vleo-design's own SHA-256 (crates/vleo-design/src/sha.rs), held to the same published vectors"
+verified = "2026-10-06"
+
+[[adopted]]
+name = "pbkdf2 and hmac"
+upstream = "https://github.com/RustCrypto/password-hashes (pbkdf2/) and https://github.com/RustCrypto/MACs (hmac/)"
+licence = "MIT OR Apache-2.0"
+version = "pbkdf2 0.13, hmac 0.13"
+used_by = "vleo-files"
+load_bearing = true
+why = "a person's passphrase becomes the key that locks their private key: PBKDF2-HMAC-SHA256 (RFC 8018), 600 000 iterations for a new key, the count kept in the key so it can be raised"
+fallback = "PBKDF2 is twenty lines over HMAC-SHA256 and is held to RFC 7914's vector, so it can be written here against that vector if the crate goes"
+verified = "2026-10-06"
+
+[[adopted]]
+name = "aes-gcm"
+upstream = "https://github.com/RustCrypto/AEADs (aes-gcm/)"
+licence = "Apache-2.0 OR MIT"
+version = "0.11"
+used_by = "vleo-files"
+load_bearing = true
+why = "seals a private key under the passphrase's key: AES-256-GCM (NIST SP 800-38D), with whose key it is bound in as associated data, so a key cannot be passed off as someone else's"
+fallback = "the `chacha20poly1305` crate from the same project; only new keys would use it, and a key records how it was sealed"
+verified = "2026-10-06"
+
+[[adopted]]
+name = "zeroize"
+upstream = "https://github.com/RustCrypto/utils (zeroize/)"
+licence = "Apache-2.0 OR MIT"
+version = "1"
+used_by = "vleo-files"
+load_bearing = false
+why = "wipes a private key and a derived key from memory once they are used"
+fallback = "drop it: the keys are still correct, they only stay in memory a little longer"
+verified = "2026-10-06"
+
+[[adopted]]
+name = "getrandom"
+upstream = "https://github.com/rust-random/getrandom"
+licence = "MIT OR Apache-2.0"
+version = "0.3"
+used_by = "vleo-files, installed only — the page passes the browser's crypto.getRandomValues instead"
+load_bearing = true
+why = "the randomness a new key, a salt and a nonce are made from, from the operating system"
+fallback = "read the operating system's source directly (/dev/urandom, BCryptGenRandom); the page is unaffected"
+verified = "2026-10-06"
+
 # --- deliberately not adopted, with the reason -------------------------------
 #
 # hifitime, ANISE, nalgebra and hyperdual are the right answers to time, frames,
