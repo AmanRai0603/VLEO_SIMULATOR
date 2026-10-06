@@ -110,19 +110,7 @@ fn findings(found: &checks::Findings) -> String {
 /// `{"error": ..., "kind": ...}`.
 pub fn check_content(request: &[u8]) -> String {
     let answer = || -> Result<String, Error> {
-        let tables = rows::decode(request)?;
-        let file = if format_of(&tables) == "1" {
-            upgrade::from_format_1(
-                tables,
-                &upgrade::Upgrade {
-                    app: "the page",
-                    at: "",
-                },
-            )?
-            .file
-        } else {
-            File::from_tables(tables)?
-        };
+        let file = opened(rows::decode(request)?)?;
         let found = checks::check_release(&file);
         Ok(format!(
             "{{\"holds\":{},\"findings\":{}}}",
@@ -131,6 +119,85 @@ pub fn check_content(request: &[u8]) -> String {
         ))
     };
     answer().unwrap_or_else(|e| error_json(&e))
+}
+
+/// A file's rows as the application opens it: a file from before 1.0 is
+/// upgraded first.
+fn opened(tables: Vec<crate::model::Table>) -> Result<File, Error> {
+    if format_of(&tables) == "1" {
+        Ok(upgrade::from_format_1(
+            tables,
+            &upgrade::Upgrade {
+                app: "the page",
+                at: "",
+            },
+        )?
+        .file)
+    } else {
+        File::from_tables(tables)
+    }
+}
+
+/// Two files compared, block by block (`crate::compare`): the request is the
+/// first file's rows, then the second's. The answer is `{"summary", "same",
+/// "file": [...], "blocks": [{"uid", "id", "before", "after", "status",
+/// "differences": [...]}], "history": [{"table", "only_first",
+/// "only_second"}]}`, each difference in the words a person reads.
+pub fn compare(request: &[u8]) -> String {
+    let answer = || -> Result<String, Error> {
+        let mut r = Reader::new(request);
+        let a = opened(rows::decode(r.bytes()?)?)?;
+        let b = opened(rows::decode(r.bytes()?)?)?;
+        let c = crate::compare::compare(&a, &b);
+        let says = |ds: &[crate::compare::Difference]| {
+            format!(
+                "[{}]",
+                ds.iter()
+                    .map(|d| json_str(&d.says()))
+                    .collect::<Vec<_>>()
+                    .join(",")
+            )
+        };
+        let opt = |s: &Option<String>| s.as_deref().map_or("null".to_string(), json_str);
+        Ok(format!(
+            "{{\"summary\":{},\"same\":{},\"file\":{},\"blocks\":[{}],\"history\":[{}]}}",
+            json_str(&c.summary()),
+            c.same,
+            says(&c.file),
+            c.blocks
+                .iter()
+                .map(|b| format!(
+                    "{{\"uid\":{},\"id\":{},\"before\":{},\"after\":{},\"status\":{},\"differences\":{}}}",
+                    json_str(&b.uid),
+                    json_str(b.id()),
+                    opt(&b.before),
+                    opt(&b.after),
+                    json_str(b.status.name()),
+                    says(&b.differences)
+                ))
+                .collect::<Vec<_>>()
+                .join(","),
+            c.history
+                .iter()
+                .map(|(t, x, y)| format!(
+                    "{{\"table\":{},\"only_first\":{x},\"only_second\":{y}}}",
+                    json_str(t)
+                ))
+                .collect::<Vec<_>>()
+                .join(",")
+        ))
+    };
+    answer().unwrap_or_else(|e| error_json(&e))
+}
+
+/// A request for [`compare`], as the page writes it.
+pub fn compare_request(first_rows: &[u8], second_rows: &[u8]) -> Vec<u8> {
+    let mut out = Vec::new();
+    for bytes in [first_rows, second_rows] {
+        out.extend_from_slice(&(bytes.len() as u32).to_le_bytes());
+        out.extend_from_slice(bytes);
+    }
+    out
 }
 
 /// The group folder's checks (`crate::folder`), the page's group checker said

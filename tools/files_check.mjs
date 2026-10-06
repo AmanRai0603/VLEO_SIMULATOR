@@ -111,6 +111,21 @@ for (const v of ['1.0', '1.1']) {
     'page: ' + JSON.stringify(found).slice(0, 300) + '\n      installed: ' + want.slice(0, 300));
 }
 
+// Solar 1.0 against 1.1, block by block, compared in the page: the installed
+// library's answer, byte for byte, and the seven nodes that changed.
+{
+  const read = v => files.rowsOf(new Uint8Array(readFileSync(join(dir, 'l3_solar-' + v + '.vleo'))));
+  const found = lib.compare(await read('1.0'), await read('1.1'));
+  const want = readFileSync(join(dir, 'expected-compare.json'), 'utf8');
+  check('Solar 1.0 against 1.1, compared in the page: ' + found.summary, !found.error &&
+    (found.blocks || []).map(b => b.id).join(' ') === 'sw_activity_band sw_ap_daily_band_drop sw_ap_design sw_exceedance_rate sw_horizon_persistence sw_kp_scenarios sw_regime',
+    JSON.stringify(found).slice(0, 300));
+  check('and the page compares them exactly as the installed library does', JSON.stringify(found) === want,
+    'page: ' + JSON.stringify(found).slice(0, 300) + '\n      installed: ' + want.slice(0, 300));
+  const self = lib.compare(await read('1.1'), await read('1.1'));
+  check('and a file against itself is the same', !self.error && self.blocks.length === 0 && self.file.length === 0, self.summary);
+}
+
 // The group folder's checks, said by the library, against the page's own
 // checker (web/js/gcheck.js) on the same folders, with the pattern the page
 // carries (the spec inlined in web/group.html): the same findings, at the

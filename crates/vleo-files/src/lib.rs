@@ -34,6 +34,10 @@
 //!   (`web/js/gcheck.js`) said by the library against the same pattern
 //!   (`groups/SPEC.toml`), held to it finding for finding.
 //!
+//! * [`compare`] — any two files, block by block: two revisions, two
+//!   releases, two designs, each row matched by its key and given to its
+//!   block, a block matched by its uid through a rename;
+//!
 //! * [`seal`] — the seal of a group's folder from before 1.0: its sign-offs,
 //!   current or stale against the fingerprint they were given for, who may
 //!   sign what, and what stands between the folder and its seal, as the
@@ -41,6 +45,7 @@
 
 pub mod chain;
 pub mod checks;
+pub mod compare;
 pub mod csv;
 pub mod error;
 pub mod folder;

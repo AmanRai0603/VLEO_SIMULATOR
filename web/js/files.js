@@ -133,6 +133,18 @@ export async function library(wasm) {
     sealState(groupRows) {
       return call(x.vleo_seal_state, groupRows);
     },
+    /**
+     * Two files compared, block by block — two revisions, two releases, two
+     * designs: `{ summary, same, file: [...], blocks: [{ uid, id, before,
+     * after, status, differences: [...] }], history: [{ table, only_first,
+     * only_second }] }`, each difference in the words a person reads.
+     */
+    compare(firstRows, secondRows) {
+      const out = new Out();
+      out.bytes(firstRows);
+      out.bytes(secondRows);
+      return call(x.vleo_compare, out.done());
+    },
   };
 }
 
