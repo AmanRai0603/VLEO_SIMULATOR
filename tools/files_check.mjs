@@ -93,6 +93,24 @@ const notOurs = lib.checkRelease(anchor, await files.rowsOf(programme),
 check('a file that does not say what it is is refused by name',
   /does not say what kind of file it is/.test(notOurs.error || ''), JSON.stringify(notOurs));
 
+// What a release holds, checked in the page as intake checks it: Solar 1.0,
+// which intake refused for six nodes with no case their method must refuse,
+// and Solar 1.1, which it took — each the installed library's answer, byte
+// for byte.
+for (const v of ['1.0', '1.1']) {
+  const found = lib.checkContent(await files.rowsOf(new Uint8Array(readFileSync(join(dir, 'l3_solar-' + v + '.vleo')))));
+  const want = readFileSync(join(dir, 'expected-' + v + '.json'), 'utf8');
+  const errors = (found.findings || []).filter(f => f.level === 'error');
+  if (v === '1.0') {
+    check('Solar 1.0, which intake refused, is refused in the page for the six nodes intake named',
+      found.holds === false && new Set(errors.map(e => e.place)).size === 6 && errors.every(e => /no case the node must refuse/.test(e.what)), JSON.stringify(errors));
+  } else {
+    check('Solar 1.1, which intake took, holds in the page', found.holds === true && errors.length === 0, JSON.stringify(errors));
+  }
+  check('and the page finds in Solar ' + v + ' exactly what the installed library finds', JSON.stringify(found) === want,
+    'page: ' + JSON.stringify(found).slice(0, 300) + '\n      installed: ' + want.slice(0, 300));
+}
+
 rmSync(tmp, { recursive: true, force: true });
 console.log(failed ? failed + ' check(s) failed' : 'every check holds');
 process.exit(failed ? 1 : 0);

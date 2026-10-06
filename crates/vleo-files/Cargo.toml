@@ -1,6 +1,6 @@
 [package]
 name = "vleo-files"
-description = "The one library that reads, writes and checks every design file (docs/OPERATING_1_0.md, section 10), compiled for the installed application and for the page. So far: the keys — a person's key made, locked by their passphrase, a signature made and checked (section 14); and the one schema every file is, a file as its rows, what each kind of file says about itself and the versions it follows (sections 10 and 13), read and written as SQLite when installed; and the upgrade of a group's file from before 1.0, with nothing dropped, its fingerprint and the programme manager's anchor (section 16)."
+description = "The one library that reads, writes and checks every design file (docs/OPERATING_1_0.md, section 10), compiled for the installed application and for the page. So far: the keys — a person's key made, locked by their passphrase, a signature made and checked (section 14); and the one schema every file is, a file as its rows, what each kind of file says about itself and the versions it follows (sections 10 and 13), read and written as SQLite when installed; and the upgrade of a group's file from before 1.0, with nothing dropped, its fingerprint and the programme manager's anchor (section 16); the chain a signature checks through (section 14); and what a release must hold before it is taken — the checks today's intake makes of its content."
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
@@ -19,6 +19,10 @@ pbkdf2 = { version = "0.13", default-features = false, features = ["hmac"] }
 hmac = "0.13"
 aes-gcm = { version = "0.11", default-features = false, features = ["aes", "alloc"] }
 zeroize = "1"
+# What a sheet means, and the method language: a release is refused for what
+# intake refuses it for — a method that does not reproduce its cases, a name
+# that is an assistant's — by the one implementation of each.
+vleo-sheet = { workspace = true }
 
 # Randomness comes from the operating system when installed; in the page the
 # caller passes bytes from the browser's crypto.getRandomValues, so the page's

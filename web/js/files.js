@@ -107,6 +107,14 @@ export async function library(wasm) {
       out.bytes(releaseRows);
       return call(x.vleo_check_release, out.done());
     },
+    /**
+     * What one release holds, checked as intake checks it: `{ holds,
+     * findings: [{ level, place, what }] }`. A file from before 1.0 is
+     * upgraded first, as the application opens it.
+     */
+    checkContent(releaseRows) {
+      return call(x.vleo_check_content, releaseRows);
+    },
   };
 }
 
