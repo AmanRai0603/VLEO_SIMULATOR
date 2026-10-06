@@ -6,13 +6,24 @@
 //! the page runs it compiled to WebAssembly, so a check that refuses a file in
 //! one refuses it in the other, by the same code.
 //!
-//! It is built in parts (docs/PLAN_1_0.md, phase C). This is the first: the
-//! keys of section 14 — a key made, locked by its owner's passphrase, a
-//! signature made with it, and a signature checked. The schema every file
-//! shares, the chain a signature checks through and the checks a release must
-//! pass come next, on top of it.
+//! It is built in parts (docs/PLAN_1_0.md, phase C):
+//!
+//! * [`keys`] — section 14: a key made, locked by its owner's passphrase, a
+//!   signature made with it, and a signature checked;
+//! * [`model`] and [`meta`] — sections 10 and 13: the one schema every file
+//!   is (`schema.sql`), a file as its rows, and what each kind of file must
+//!   say about itself, its version and what it was based on;
+//! * `sqlite` — the file on disk, for the installed application; the page
+//!   hands the same rows from its own SQLite.
+//!
+//! The chain a signature checks through and the checks a release must pass
+//! come next, on top of these.
 
 pub mod error;
 pub mod keys;
+pub mod meta;
+pub mod model;
+#[cfg(not(target_arch = "wasm32"))]
+pub mod sqlite;
 
 pub use error::{Error, ErrorKind};

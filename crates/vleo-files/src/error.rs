@@ -18,6 +18,12 @@ pub enum ErrorKind {
     Signature,
     /// The operating system gave no randomness to make a key with.
     Randomness,
+    /// The file is not the kind it was opened as, or not a VLEO file at all.
+    WrongKind,
+    /// The file is in a format this application does not read as it is.
+    Format,
+    /// The file could not be read or written.
+    Io,
 }
 
 /// An error from this crate: its kind, and the sentence that says it.

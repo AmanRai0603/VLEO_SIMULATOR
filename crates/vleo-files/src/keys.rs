@@ -335,3 +335,49 @@ fn aad(person: &str, public: &PublicKey) -> Vec<u8> {
     a.extend_from_slice(&public.0);
     a
 }
+
+impl LockedKey {
+    /// The row a key file keeps it as (`locked_key`).
+    pub fn to_row(&self) -> crate::model::LockedKeyRow {
+        crate::model::LockedKeyRow {
+            person: self.person.clone(),
+            public_key: self.public.to_hex(),
+            salt: hex(&self.salt),
+            nonce: hex(&self.nonce),
+            iterations: i64::from(self.iterations),
+            sealed: hex(&self.sealed),
+        }
+    }
+
+    /// The key a key file's row holds, refused if a field is not what it
+    /// should be. Whether the passphrase opens it is [`LockedKey::unlock`]'s.
+    pub fn from_row(row: &crate::model::LockedKeyRow) -> Result<LockedKey, Error> {
+        let sealed_hex = row.sealed.trim();
+        if !sealed_hex.len().is_multiple_of(2) || !sealed_hex.bytes().all(|c| c.is_ascii_hexdigit())
+        {
+            return Err(Error::new(
+                ErrorKind::Malformed,
+                format!("{}'s sealed key is not hexadecimal", row.person),
+            ));
+        }
+        let sealed = sealed_hex
+            .as_bytes()
+            .chunks(2)
+            .map(|p| u8::from_str_radix(std::str::from_utf8(p).unwrap_or("zz"), 16))
+            .collect::<Result<Vec<u8>, _>>()
+            .map_err(|_| Error::new(ErrorKind::Malformed, "the sealed key is not hexadecimal"))?;
+        Ok(LockedKey {
+            person: row.person.clone(),
+            public: PublicKey::from_hex(&row.public_key)?,
+            salt: unhex::<16>(&row.salt, "the salt")?,
+            nonce: unhex::<12>(&row.nonce, "the nonce")?,
+            iterations: u32::try_from(row.iterations).map_err(|_| {
+                Error::new(
+                    ErrorKind::Malformed,
+                    format!("{} iterations is not a count", row.iterations),
+                )
+            })?,
+            sealed,
+        })
+    }
+}

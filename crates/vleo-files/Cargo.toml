@@ -1,6 +1,6 @@
 [package]
 name = "vleo-files"
-description = "The one library that reads, writes and checks every design file (docs/OPERATING_1_0.md, section 10), compiled for the installed application and for the page. This first part is the keys: a person's key made, locked by their passphrase, a signature made with it, and a signature checked — one implementation, so a signature made installed checks in the page and the other way round (section 14)."
+description = "The one library that reads, writes and checks every design file (docs/OPERATING_1_0.md, section 10), compiled for the installed application and for the page. So far: the keys — a person's key made, locked by their passphrase, a signature made and checked (section 14); and the one schema every file is, a file as its rows, what each kind of file says about itself and the versions it follows (sections 10 and 13), read and written as SQLite when installed."
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
@@ -25,6 +25,12 @@ zeroize = "1"
 # build carries no randomness of its own.
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 getrandom = "0.3"
+# The file on disk, installed. The page reads its files with its own SQLite
+# (web/vendor/sqlite) and hands the library the rows.
+rusqlite = { workspace = true }
+
+[dev-dependencies]
+rusqlite = { workspace = true }
 
 [lints.rust]
 unsafe_code = "forbid"
