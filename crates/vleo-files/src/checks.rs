@@ -164,6 +164,7 @@ pub fn check_release(f: &File) -> Findings {
                     );
                 }
                 results(f, b, &ins, out_port, &mut out);
+                method(f, b, &ins, out_port, &mut out);
             }
             "stated" => {
                 if let Some(p) = out_port {
@@ -443,6 +444,144 @@ fn results(f: &File, b: &Block, ins: &[&Port], out_port: Option<&Port>, out: &mu
                     );
                 }
             }
+        }
+    }
+}
+
+/// A value as a case writes it: a number, or — where the node must refuse it —
+/// a value that is not a finite one.
+fn case_value(v: &str) -> Option<f64> {
+    match v.trim().to_lowercase().as_str() {
+        "nan" => Some(f64::NAN),
+        "inf" | "+inf" | "infinity" => Some(f64::INFINITY),
+        "-inf" | "-infinity" => Some(f64::NEG_INFINITY),
+        t => t.parse().ok(),
+    }
+}
+
+/// The method, read and run by the method language — `vleo_sheet::method`, the
+/// one implementation the node form, the gate and intake read it by: every
+/// line parses, every unit agrees, every path ends, and every case comes out
+/// as the node engineer's own code gave it. The release's units are its
+/// contract; every value is taken to SI by them, as intake takes it.
+fn method(f: &File, b: &Block, ins: &[&Port], out_port: Option<&Port>, out: &mut Findings) {
+    use vleo_sheet::method as m;
+    let Some(src) = f
+        .texts
+        .iter()
+        .find(|t| t.scope == b.uid && t.kind == "pseudocode" && !t.body.trim().is_empty())
+    else {
+        return;
+    };
+    let Some(t) = Csv::of(f, &b.uid, "results/isolation.csv") else {
+        return;
+    };
+    let unit = |u: &str| m::parse_unit(if u.trim().is_empty() { "1" } else { u });
+    let mut bad = false;
+    let mut dim = |what: &str, u: &str, out: &mut Findings| match unit(u) {
+        Ok(fd) => Some(fd),
+        Err(e) => {
+            out.error(
+                &b.id,
+                format!(
+                    "{what} is in [{u}], which the method language does not read: {}",
+                    e.message()
+                ),
+            );
+            bad = true;
+            None
+        }
+    };
+    let mut inputs = Vec::new();
+    for p in ins {
+        if let Some((_, d)) = dim(&format!("the input {}", p.name), &p.unit, out) {
+            inputs.push((p.name.clone(), d));
+        }
+    }
+    let out_unit = out_port.map_or("", |p| p.unit.as_str());
+    let output = dim("the answer", out_unit, out).map(|(_, d)| d);
+    // The members a node publishes beside its answer: its results'
+    // answer.<member> [unit] columns.
+    let mut members = Vec::new();
+    for (i, h) in t.head.iter().enumerate() {
+        if let Some(name) = csv::name_of(h).strip_prefix("answer.") {
+            if let Some((factor, d)) = dim(&format!("the member {name}"), unit_of(h), out) {
+                members.push((i, name.to_string(), factor, d));
+            }
+        }
+    }
+    let (Some(output), false) = (output, bad) else {
+        return;
+    };
+    // Every column's factor to SI, by its own header.
+    let factor_of = |i: usize| unit(unit_of(&t.head[i])).map_or(1.0, |(fct, _)| fct);
+    let answer = t.head.iter().position(|h| csv::name_of(h) == "answer");
+    let mut cases = Vec::new();
+    for (k, r) in t.rows.iter().enumerate() {
+        let refuses = t.get(r, "refuses") == "yes";
+        let mut inputs_si = Vec::new();
+        for p in ins {
+            let Some(i) = t.col(&p.name) else { continue };
+            if let Some(v) = case_value(r.get(i).map_or("", String::as_str)) {
+                inputs_si.push((p.name.clone(), v * factor_of(i)));
+            }
+        }
+        let value =
+            |i: usize| case_value(r.get(i).map_or("", String::as_str)).map(|v| v * factor_of(i));
+        let label = t.get(r, "says");
+        cases.push(m::Case {
+            label: if label.is_empty() {
+                format!("results line {}", k + 2)
+            } else {
+                label.to_string()
+            },
+            inputs: inputs_si,
+            expect: if refuses {
+                None
+            } else {
+                answer.and_then(value)
+            },
+            tolerance: if refuses {
+                0.0
+            } else {
+                number(t.get(r, "tolerance")).unwrap_or(0.0)
+            },
+            also: if refuses {
+                Vec::new()
+            } else {
+                members
+                    .iter()
+                    .filter_map(|(i, name, _, _)| value(*i).map(|v| (name.clone(), v)))
+                    .collect()
+            },
+            origin: t.get(r, "origin").to_string(),
+        });
+    }
+    let sig = m::Signature {
+        inputs,
+        output,
+        publishes: members
+            .iter()
+            .map(|(_, name, _, d)| (name.clone(), *d))
+            .collect(),
+    };
+    let report = m::report(&src.body, &sig, &cases);
+    for d in &report.diags {
+        let what = format!("its method, line {}: {}", d.line, d.msg);
+        if d.severity == m::Severity::Error {
+            out.error(&b.id, what);
+        } else {
+            out.warning(&b.id, what);
+        }
+    }
+    // Too few cases, no refusal, no tolerance: already said by the results'
+    // own checks, once.
+    for (c, v) in &report.cases {
+        if !v.agrees() {
+            out.error(
+                &b.id,
+                format!("its method does not reproduce «{}»: {}", c.label, v.text(c)),
+            );
         }
     }
 }

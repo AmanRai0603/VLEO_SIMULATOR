@@ -129,7 +129,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         release.texts.push(Text {
             scope: s(uid),
             kind: s("pseudocode"),
-            body: s("return x"),
+            body: s("if x < 0 then\n  refuse \"x is never below zero\"\nend\nreturn x"),
         });
         release.tables.push(Tbl {
             scope: s(uid),

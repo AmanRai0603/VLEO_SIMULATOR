@@ -187,6 +187,53 @@ const REFUSALS: &[(&str, Change, &str, &str)] = &[
         "sw_regime",
         "has no method",
     ),
+    // ── the method, read and run by the method language ──
+    (
+        "a method that does not parse",
+        |f| set_method(f, "sw_regime", "let out =\nreturn out"),
+        "sw_regime",
+        "its method, line",
+    ),
+    (
+        "a method whose units disagree",
+        |f| {
+            port(f, "sw_regime", "ap").unit = "m".into();
+            results_line(f, "ap [1],", "ap [m],");
+        },
+        "sw_regime",
+        "its method, line",
+    ),
+    (
+        "an answer the method does not reproduce",
+        |f| results_line(f, "\n20,2,", "\n20,3,"),
+        "sw_regime",
+        "the method gives 2, your code gave 3",
+    ),
+    (
+        "a refusal the method answers",
+        |f| results_line(f, "\nNaN,,,yes,", "\n50,,,yes,"),
+        "sw_regime",
+        "your code refuses this case, but the method answers 3",
+    ),
+    (
+        "a published member the method does not reproduce",
+        |f| {
+            edit(f, "sw_kp_scenarios", "results/isolation.csv", |t| {
+                t.replacen(",7.9850088183,2.6", ",7.9850088183,9.6", 1)
+            })
+        },
+        "sw_kp_scenarios",
+        "the method publishes Kp_mean_nominal",
+    ),
+    (
+        "an input in a unit the method language does not read",
+        |f| {
+            port(f, "sw_regime", "ap").unit = "furlongs".into();
+            results_line(f, "ap [1],", "ap [furlongs],");
+        },
+        "sw_regime",
+        "which the method language does not read",
+    ),
     // ── the results: the reference the code must match (rule 4) ──
     (
         "no results",
@@ -429,6 +476,15 @@ const REFUSALS: &[(&str, Change, &str, &str)] = &[
         "its record is missing: learned",
     ),
 ];
+
+fn set_method(f: &mut File, block: &str, body: &str) {
+    let t = f
+        .texts
+        .iter_mut()
+        .find(|t| t.scope == block && t.kind == "pseudocode")
+        .unwrap();
+    t.body = body.to_string();
+}
 
 fn port<'a>(f: &'a mut File, block: &str, name: &str) -> &'a mut vleo_files::model::Port {
     f.ports

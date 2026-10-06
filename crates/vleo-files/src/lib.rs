@@ -27,10 +27,10 @@
 //!   writes it.
 //!
 //! * [`checks`] — what a release must hold before it is taken: the checks
-//!   today's intake makes of its content, one test for each refusal.
+//!   today's intake makes of its content, its methods read and run by the
+//!   method language against their own cases, one test for each refusal.
 //!
-//! The method checks — a method that does not reproduce its own cases — and
-//! the rest of the page's folder checks come next, on top of these.
+//! The rest of the page's folder checks come next, on top of these.
 
 pub mod chain;
 pub mod checks;
