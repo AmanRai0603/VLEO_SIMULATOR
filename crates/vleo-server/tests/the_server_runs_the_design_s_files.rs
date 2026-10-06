@@ -30,9 +30,9 @@ fn the_server_runs_the_graph_read_from_the_design_s_files() {
         "the server runs the compiled graph"
     );
     assert_eq!(g.nodes.len(), COMPILED.nodes.len());
-    assert!(
-        g.run_by_the_graph() > 0,
-        "no method runs in the interpreter"
-    );
+    // This build was made from these very sheets, so every method runs as
+    // its translation, the fast path; a method a release changes is the one
+    // the interpreter runs (today_s_design_is_built_from_the_releases).
+    assert_eq!(g.run_by_the_graph(), 0);
     assert_eq!(g.graph_hash(), COMPILED.graph_hash());
 }

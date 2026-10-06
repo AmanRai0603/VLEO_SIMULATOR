@@ -27,6 +27,11 @@
 //!   own refusal and its undefined values as the same faults, and the guards
 //!   on every value it publishes. Its arithmetic is the same portable maths,
 //!   so it is held to today's answers exactly.
+//!
+//!   A method this build was made from — the very sheet — runs as its
+//!   translation instead, the fast path a sweep needs, held equal to the
+//!   interpreter by the parity gate ([`interpreting`] builds the graph that
+//!   gate runs). A method the build has not seen runs in the interpreter.
 
 use alloc::boxed::Box;
 use alloc::format;
@@ -350,20 +355,51 @@ fn relation(sh: &sheet::Sheet) -> NodeFn {
     if sh.is_seeded() {
         return unspecified;
     }
-    match COMPILED.find(&sh.id) {
-        Some(k)
-            if COMPILED.nodes[k as usize].impl_hash == sh.impl_hash
-                && COMPILED.nodes[k as usize].sheet_hash == sh.sheet_hash =>
-        {
-            COMPILED.dispatch[k as usize]
-        }
-        _ => not_in_this_build,
-    }
+    this_build(sh).unwrap_or(not_in_this_build)
+}
+
+/// The compiled code for this sheet, when this build was made from it: the
+/// same implementation and the same sheet — and so, for a method, the same
+/// method, translated.
+fn this_build(sh: &sheet::Sheet) -> Option<NodeFn> {
+    let k = COMPILED.find(&sh.id)? as usize;
+    (COMPILED.nodes[k].impl_hash == sh.impl_hash && COMPILED.nodes[k].sheet_hash == sh.sheet_hash)
+        .then(|| COMPILED.dispatch[k])
+}
+
+/// How the graph runs a row whose relation is a method.
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum Methods {
+    /// Its translation, when this build was made from the very sheet; the
+    /// interpreter otherwise. docs/PLAN_1_0.md, phase D: "If a sweep is too
+    /// slow, translated code stays as the fast path, held equal to the
+    /// interpreter." A sweep runs a method thousands of times, and one call
+    /// costs about 1.7 µs translated and 40 µs interpreted: the design
+    /// panel's F10.7 view took 3.3 s interpreted and 0.16 s translated.
+    Translated,
+    /// Always in the interpreter — how the parity gate holds every
+    /// translation equal to it.
+    Interpreted,
 }
 
 /// The graph of `tree`, built as the generator builds the compiled one. It
 /// lives as long as the engine that opened it.
+///
+/// A method this build was made from runs as its translation, held equal to
+/// the interpreter by the parity gate; a method the build has not seen — a
+/// group's release changed it — runs in the interpreter.
 pub fn graph(tree: &Tree) -> Result<&'static Graph, Error> {
+    build(tree, Methods::Translated)
+}
+
+/// The graph of `tree` with every method run by the interpreter, whatever
+/// code the build has for it: the graph the parity gate holds every
+/// translation to.
+pub fn interpreting(tree: &Tree) -> Result<&'static Graph, Error> {
+    build(tree, Methods::Interpreted)
+}
+
+fn build(tree: &Tree, methods: Methods) -> Result<&'static Graph, Error> {
     let sheets = tree.ordered();
     let n = sheets.len();
     let mut idx: BTreeMap<String, usize> = sheets
@@ -481,8 +517,10 @@ pub fn graph(tree: &Tree) -> Result<&'static Graph, Error> {
             impl_hash: sh.impl_hash,
             view: view_of(&sh.view),
         });
-        // A method runs in the interpreter, and needs no compiled code.
-        let interp = interpreted(sh);
+        // A method runs in the interpreter, and needs no compiled code — or,
+        // when this build was made from this very sheet, as its translation.
+        let translated = methods == Methods::Translated && this_build(sh).is_some();
+        let interp = if translated { None } else { interpreted(sh) };
         dispatch.push(if interp.is_some() {
             not_in_this_build
         } else {
@@ -584,8 +622,16 @@ pub fn graph(tree: &Tree) -> Result<&'static Graph, Error> {
 /// The graph of the design's files under `root`: the tree read by the one
 /// loader, then built as above.
 pub fn read(root: &std::path::Path) -> Result<&'static Graph, Error> {
-    let tree = vleo_sheet::load_all(root).map_err(|e| {
+    graph(&load(root)?)
+}
+
+/// The same, with every method run by the interpreter ([`interpreting`]).
+pub fn read_interpreting(root: &std::path::Path) -> Result<&'static Graph, Error> {
+    interpreting(&load(root)?)
+}
+
+fn load(root: &std::path::Path) -> Result<Tree, Error> {
+    vleo_sheet::load_all(root).map_err(|e| {
         Error::new(ErrorKind::Malformed, e.to_string()).within("the design does not load")
-    })?;
-    graph(&tree)
+    })
 }

@@ -284,24 +284,24 @@ jobs:
           set -o pipefail
           cargo run -p xtask -- group-test "$RUNNER_TEMP/release" | tee "$RUNNER_TEMP/test.log"
           grep -q "20 held, 0 did not" "$RUNNER_TEMP/test.log"
-      # The engine every face runs takes a node's method through the
-      # interpreter, from the design's files: a broken interpreter is what the
-      # group's results must catch. Here its π, one part in ten thousand out.
+      # The engine every face runs takes a method the build was made from as
+      # its translation, the fast path: a broken translation is what the
+      # group's results must catch.
       - name: a broken engine is caught by the group's results
         run: |
-          f=crates/vleo-sheet/src/method/spec.rs
+          f=crates/vleo-core/src/physics/methods/orbit_period.rs
           cp "$f" "$RUNNER_TEMP/kept.rs"
-          sed -i 's/name: "PI", value: core::f64::consts::PI,/name: "PI", value: core::f64::consts::PI * 1.0001,/' "$f"
-          grep -q "PI \* 1.0001" "$f"
+          sed -i 's/(2.0 \* core::f64::consts::PI)/(2.0002 * core::f64::consts::PI)/' "$f"
+          grep -q "2.0002" "$f"
           if cargo run -p xtask -- group-test "$RUNNER_TEMP/release" > "$RUNNER_TEMP/broken.log" 2>&1; then
             echo "the group test passed an engine one part in ten thousand out"; exit 1
           fi
           grep -q "orbit_period — 5554.17" "$RUNNER_TEMP/broken.log"
           cp "$RUNNER_TEMP/kept.rs" "$f"
           cargo run -p xtask -- group-test "$RUNNER_TEMP/release" | grep -q "20 held, 0 did not"
-      # The translation the compiled engine still carries — the page's engine,
-      # and every face until it opens the design — is held to the interpreter
-      # by the parity gate, method by method, to the bit.
+      # And the same broken translation is refused by the parity gate, which
+      # holds every translation to the interpreter, method by method, to the
+      # bit — the interpreter that runs a method the build has not seen.
       - name: a broken translation is caught by the parity gate
         run: |
           f=crates/vleo-core/src/physics/methods/orbit_period.rs

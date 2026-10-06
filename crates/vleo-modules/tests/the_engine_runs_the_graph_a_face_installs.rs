@@ -35,7 +35,9 @@ fn the_engine_runs_the_installed_graph_and_refuses_one_laid_out_otherwise() {
     // A built-in row that answers, in a design whose copy of it has moved on:
     // the same layout, one relation this build does not have.
     let mut tree = vleo_sheet::load_all(&root()).unwrap();
-    let read = opened::graph(&tree).unwrap();
+    // Read with every method interpreted, so a row that runs as compiled code
+    // here is one whose relation is built in.
+    let read = opened::interpreting(&tree).unwrap();
     let id = read
         .nodes
         .iter()

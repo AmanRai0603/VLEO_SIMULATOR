@@ -34,7 +34,9 @@ fn refused_when(moved: impl Fn(&mut vleo_sheet::model::Sheet)) {
     // A computed row that answers today, on the compiled engine, whose
     // relation is built in — a method runs in the interpreter, whatever code
     // the build has for it …
-    let read = opened::graph(&tree).unwrap();
+    // Read with every method interpreted, so a row that runs as compiled code
+    // here is one whose relation is built in.
+    let read = opened::interpreting(&tree).unwrap();
     let built_in = |id: &str| {
         read.find(id)
             .is_some_and(|k| !matches!(read.run.get(k as usize), Some(Some(_))))
