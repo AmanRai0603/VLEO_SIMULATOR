@@ -1316,6 +1316,63 @@ pub fn validate_tree(tree: &Tree) -> Vec<Check> {
         Check::fail("V10 relations resolve and are labelled", badrel.join(", "))
     });
 
+    // V11b — a loop belongs to the smallest block that holds it. One declared
+    //        on a block is held to that; one declared on none is noted with
+    //        the block it belongs on, for its owner to move it there.
+    let chain = |g: &str| -> Vec<String> {
+        let mut out = vec![g.to_string()];
+        let mut at = g.to_string();
+        while let Some(p) = tree.groups.get(&at).map(|x| x.parent.clone()) {
+            if p.is_empty() || out.contains(&p) {
+                break;
+            }
+            out.push(p.clone());
+            at = p;
+        }
+        out
+    };
+    let (mut misplaced, mut unplaced) = (Vec::new(), Vec::new());
+    for cy in &tree.cycles {
+        let chains: Vec<Vec<String>> = cy
+            .nodes
+            .iter()
+            .filter_map(|n| tree.sheets.get(n))
+            .map(|sh| chain(&sh.parent))
+            .collect();
+        let holds = chains.first().and_then(|first| {
+            first
+                .iter()
+                .find(|g| chains.iter().all(|c| c.contains(g)))
+                .cloned()
+        });
+        let Some(holds) = holds else { continue };
+        let named = cy.nodes.first().cloned().unwrap_or_default();
+        if cy.on.is_empty() {
+            unplaced.push(format!(
+                "the loop through {named} and {} more is declared on no block; the smallest that holds it is {holds}",
+                cy.nodes.len().saturating_sub(1)
+            ));
+        } else if cy.on != holds {
+            misplaced.push(format!(
+                "the loop through {named} is declared on {}, and the smallest block that holds it is {holds}",
+                cy.on
+            ));
+        }
+    }
+    out.push(if !misplaced.is_empty() {
+        Check::fail(
+            "V11b loops on the block that holds them",
+            misplaced.join("; "),
+        )
+    } else if !unplaced.is_empty() {
+        Check::note(
+            "V11b loops on the block that holds them",
+            unplaced.join("; "),
+        )
+    } else {
+        Check::pass("V11b loops on the block that holds them")
+    });
+
     // V11 — every declared cycle names nodes that exist and a convergence
     //       variable inside the loop.
     let mut badcy = Vec::new();

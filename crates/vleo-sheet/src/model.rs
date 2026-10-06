@@ -609,6 +609,10 @@ pub struct Group {
 
 #[derive(Clone, Debug, Default)]
 pub struct CycleSpec {
+    /// The block it is declared on: a loop belongs to the smallest block
+    /// that holds it. Empty for one declared in a layer file's own
+    /// `[[iterate]]`, or a case's, on no block.
+    pub on: String,
     pub nodes: Vec<String>,
     pub converge_on: String,
     pub tolerance: f64,

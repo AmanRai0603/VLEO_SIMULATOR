@@ -28,6 +28,7 @@ fn written(dir: &Path) -> PathBuf {
         tool: "test".into(),
         commit: String::new(),
         built: "2026-10-03".into(),
+        oldest_application: "0.4.0".into(),
     };
     let w = vleo_design::write(&root(), &out, &stamp).expect("the design file was not written");
     assert!(w.rows > 1000, "only {} rows written", w.rows);

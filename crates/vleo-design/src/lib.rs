@@ -101,6 +101,25 @@ pub struct Stamp {
     pub commit: String,
     /// When it was written, as the caller states it.
     pub built: String,
+    /// The oldest application that can run it. Empty is the tool that wrote
+    /// it: nothing older is known to read what it wrote.
+    pub oldest_application: String,
+}
+
+/// Whether an application at version `app` can run a design that names
+/// `oldest` as the oldest application that can: each `major.minor.patch`,
+/// compared as numbers. A version that is not one is refused by what it says.
+pub fn runs_on(oldest: &str, app: &str) -> Result<bool, String> {
+    let parse = |v: &str| -> Option<(u64, u64, u64)> {
+        let mut it = v.trim().split('.').map(|p| p.parse::<u64>().ok());
+        let t = (it.next()??, it.next()??, it.next()??);
+        it.next().is_none().then_some(t)
+    };
+    let need = parse(oldest)
+        .ok_or_else(|| format!("'{oldest}' is not an application's version (major.minor.patch)"))?;
+    let have = parse(app)
+        .ok_or_else(|| format!("'{app}' is not an application's version (major.minor.patch)"))?;
+    Ok(have >= need)
 }
 
 /// What `write` wrote.
@@ -227,6 +246,14 @@ pub fn write(root: &Path, out: &Path, stamp: &Stamp) -> Result<Written, Error> {
             ("tool", stamp.tool.clone()),
             ("commit", stamp.commit.clone()),
             ("built", stamp.built.clone()),
+            (
+                "oldest_application",
+                if stamp.oldest_application.is_empty() {
+                    stamp.tool.clone()
+                } else {
+                    stamp.oldest_application.clone()
+                },
+            ),
             ("rows", tree.sheets.len().to_string()),
             ("files", paths.len().to_string()),
             ("fingerprint", fp),
