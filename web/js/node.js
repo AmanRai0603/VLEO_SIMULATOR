@@ -63,7 +63,7 @@ export async function openNode(id) {
       '<div class="tabrow sub sheet-tabs">' +
         '<button class="ctl sheet-tab sel" data-view="read">as written</button>' +
         '<button class="ctl sheet-tab" data-view="form">the node form — fill it anywhere</button>' +
-        // A LESSON IS WRITTEN THE SAME WAY: a form the expert fills anywhere and
+        // A LESSON IS WRITTEN THE SAME WAY: a form the node engineer fills anywhere and
         // sends back, applied by a developer. Downloading it writes nothing.
         '<a class="ctl lesson-form-dl" href="/v1/lesson-form/' + encodeURIComponent(id) + '" download="' +
           esc(id) + '.lesson-form.html">' + (lesson && lesson.lesson ? 'the lesson form' : 'write a lesson — its form') +

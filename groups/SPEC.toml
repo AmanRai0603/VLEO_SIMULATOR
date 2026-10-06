@@ -129,7 +129,7 @@ says = "everyone who signs, and what they sign"
 columns = [
   { name = "name", says = "as they sign" },
   { name = "role", says = "owner, author or reviewer", one_of = ["owner", "author", "reviewer"] },
-  { name = "nodes", says = "the node ids they are the author of, space-separated; * for every node", optional = true },
+  { name = "nodes", says = "the node ids they are the node engineer of, space-separated; * for every node", optional = true },
 ]
 
 [[file]]
@@ -224,7 +224,7 @@ columns = [
 path = "sources.csv"
 level = "both"
 required = true
-says = "every source the group rests on; a cited PDF sits in sources/. A node may add its own in nodes/<id>/sources.csv, so its author never waits on the lead to cite a paper"
+says = "every source the group rests on; a cited PDF sits in sources/. A node may add its own in nodes/<id>/sources.csv, so its node engineer never waits on the subsystem engineer to cite a paper"
 columns = [
   { name = "id", says = "the source's id, used wherever it is cited" },
   { name = "cite", says = "author, year, title, where" },
@@ -363,7 +363,7 @@ kinds = ["computed"]
 says = "every input: where it comes from and the value it takes by default"
 columns = [
   { name = "name", says = "the name the pseudocode uses" },
-  { name = "from", says = "the node it comes from (id in this group, or group.node in another), or case when a user sets it" },
+  { name = "from", says = "the node it comes from (id in this group, or group.node in another), or case when the case sets it" },
   { name = "unit", says = "its unit" },
   { name = "default", says = "the value used when nothing else is given", optional = true },
   { name = "min", says = "the lowest valid value", optional = true },
@@ -427,7 +427,7 @@ Who made this node's method and its numbers, and whether an assistant helped:
 equations, the results or the evidence), or `transcribed` (an assistant copied
 into pseudocode a relation a person had already written: their code, their
 paper, the design as it stands). Written by the node application when its
-author signs. An assistant may never supply mathematics: the developer's
+node engineer signs. An assistant may never supply mathematics: the developer's
 intake refuses a method or results an assistant supplied, and takes a node
 with no declaration as one an assistant helped with. A `transcribed` node
 names the `source` it was copied from and the person who read the copy against

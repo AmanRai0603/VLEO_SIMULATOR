@@ -235,7 +235,7 @@ Would break if
 <details class="author-code"><summary>{{name}}'s own code — {{language}}{{entry}}</summary>
 <p class="muted">The implementation the test cases came from. Kept and read, never compiled into the tool.</p>
 <pre class="code"><code>{{code}}</code></pre>
-<!-- part: author-name -->The author<!-- part: author-entry -->, <code>{{entry}}</code><!-- part: author-test -->
+<!-- part: author-name -->The node engineer<!-- part: author-entry -->, <code>{{entry}}</code><!-- part: author-test -->
 <p><b>The test code</b> — what ran it on each case.</p>
 <pre class="code"><code>{{code}}</code></pre>
 <!-- part: author-run -->
@@ -269,9 +269,9 @@ Would break if
 </tbody></table>
 <p class="muted">An expected value may never be produced by the code under test. The schema refuses a row whose provenance is the implementation.</p>
 <!-- part: cases-open -->
-<h4>The author's test cases</h4>
-<p class="muted">Inputs and answers from the author's own code, in SI. The method is run on each one; the code the tool generates must reproduce every one before the node is connected to anything.</p>
-<table class="fx cases"><thead><tr><th>case</th><th>inputs</th><th>the author's code</th><th>tolerance</th><th>the method</th></tr></thead><tbody>
+<h4>The node engineer's test cases</h4>
+<p class="muted">Inputs and answers from the node engineer's own code, in SI. The method is run on each one; the code the tool generates must reproduce every one before the node is connected to anything.</p>
+<table class="fx cases"><thead><tr><th>case</th><th>inputs</th><th>the node engineer's code</th><th>tolerance</th><th>the method</th></tr></thead><tbody>
 <!-- part: case -->
 <tr><td>{{label}}</td><td><code>{{inputs}}</code></td><td class="num">{{want}}</td><td class="num">{{tolerance}}</td><td>{{verdict}}</td></tr>
 <!-- part: case-refuses -->refuses<!-- part: case-no-method --><span class="muted">no method yet</span><!-- part: case-not-run --><span class="muted">not run — the method does not check</span><!-- part: case-verdict --><span class="{{class}}">{{text}}{{got}}</span><!-- part: case-got --> — {{got}}<!-- part: flags -->

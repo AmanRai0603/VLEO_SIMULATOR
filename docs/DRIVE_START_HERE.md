@@ -1,6 +1,6 @@
 # START HERE — Vleo Database
 
-> **Answer first.** This folder is the VLEO spacecraft design, shared with every group: two pages that open its files, the design to read in a spreadsheet, and each group's own working files. A lead opens their group in `apps/group.html`; an author opens their node in `apps/node.html`. Nothing to install.
+> **Answer first.** This folder is the VLEO spacecraft design, shared with every group: two pages that open its files, the design to read in a spreadsheet, and each group's own working files. A subsystem engineer opens their group in `apps/group.html`; a node engineer opens their node in `apps/node.html`. Nothing to install.
 >
 > **Kind:** how-to · **For:** everyone in a group, and the drive's owner
 
@@ -17,7 +17,7 @@ drive. `tools/drive.py pack` builds the six folders beside it
 | `design/design.vleo` | the whole released design as one file, for the tool and for Python | the repository's |
 | `readable/` | the released design to read in any spreadsheet: `Groups.csv` (each group, and what its own checks still ask of it), `Nodes.csv` (every live node), `Interfaces.csv` (every value one group reads from another) | the repository's |
 | `groups/<group>/` | the group's working files: `<group>.vgroup` (the structure), `nodes/<node>.vnode` (one per node), `releases/` (its **sealed** releases, and nothing else); `groups/READY.csv` is each group's first plan | the group's |
-| `deliveries/<group>-<version>/` | a test application's record: `DELIVERY.toml`, `DELIVERY.md`, `group-test.csv`, and the lead's answer beside them | the developer's, then the lead's answer |
+| `deliveries/<group>-<version>/` | a test application's record: `DELIVERY.toml`, `DELIVERY.md`, `group-test.csv`, and the subsystem engineer's answer beside them | the developer's, then the subsystem engineer's answer |
 
 *Said simply:* `readable/` is what the design holds today; `groups/` is what
 each group is working on, which can be ahead of it until the developer takes it
@@ -26,7 +26,7 @@ in.
 ## The loop, and who does each step
 
 1. **Author** — open `apps/node.html`, then your `groups/<group>/nodes/<node>.vnode`.
-   Fill it, sign it, save it, give it to your lead.
+   Fill it, sign it, save it, give it to your subsystem engineer.
 2. **Lead** — open `apps/group.html`, then `groups/<group>/<group>.vgroup`.
    *Node files & release*: assemble the node files. *Sign & seal*: seal the
    release. Save the sealed file in `groups/<group>/releases/` and tell the

@@ -323,12 +323,12 @@ pub(super) fn print_plan(p: &vleo_sheet::template::Plan) {
         }
     }
     // THE METHOD, AGAINST ITS AUTHOR'S CASES, on the node as it would be after
-    // this form — the same check the author saw in the form and the gate runs
-    // on apply, so a refusal here is one the author could already see.
+    // this form — the same check the node engineer saw in the form and the gate runs
+    // on apply, so a refusal here is one the node engineer could already see.
     if let Some(text) = &p.text {
         if let Ok(r) = vleo_sheet::method::report_toml(text) {
             if text.contains("\n[method]") || !r.cases.is_empty() {
-                println!("\nthe method, against the author's cases:");
+                println!("\nthe method, against the node engineer's cases:");
                 for d in &r.diags {
                     println!("  {d}");
                 }

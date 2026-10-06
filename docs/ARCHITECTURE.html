@@ -113,7 +113,7 @@ td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
   <h1>How the tool is built, end to end</h1>
   <p class="lede">What each part is, where its code and data live, how a number becomes a picture and a picture becomes a shared result, who can reach what, and the order in which the rest is built.</p>
   <p class="answer"><b>Answer first.</b> The tool has three parts. The <b>backend</b> is the engine: one Rust kernel that computes every number, and the local server that answers the browser. The <b>frontend</b> is HTML: the pages, charts, forms and — as they arrive — animations and 3D views that show what the engine produced. The <b>data</b> part keeps everything: the design in git, reference data in hashed bundles, and each person's case and results as files, optionally in a shared folder. The three meet only at written contracts, so each can be worked on by people with different backgrounds, at the same time, without breaking the others.</p>
-  <p class="kind"><b>Kind:</b> reference + explanation · <b>For:</b> everyone — users, maintainers, developers, and anyone deciding how to extend the tool</p>
+  <p class="kind"><b>Kind:</b> reference + explanation · <b>For:</b> everyone — the programme manager, the system, subsystem and node engineers, the developer, and anyone deciding how to extend the tool</p>
   <nav class="toc" aria-label="Sections">
     <a href="#parts">1 · Three parts</a>
     <a href="#parallel">2 · Working in parallel</a>
@@ -304,7 +304,7 @@ td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
       <rect x="700" y="162" width="165" height="68" rx="6" class="d-both"/>
       <text x="714" y="186" class="d-tb">Shared results folder</text>
       <text x="714" y="206" class="d-ts">network or synced drive</text>
-      <text x="714" y="222" class="d-ts">the team's archive</text>
+      <text x="714" y="222" class="d-ts">the shared archive</text>
       <rect x="700" y="246" width="165" height="54" rx="6" class="d-slate"/>
       <text x="714" y="270" class="d-tb">④ Personal state</text>
       <text x="714" y="288" class="d-ts">stays in the browser</text>
@@ -313,19 +313,19 @@ td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
       <path d="M646 234 C 676 234, 676 272, 698 272" class="d-a" marker-end="url(#w-ah)"/>
       <text x="20" y="318" class="d-tm">WHO CHANGES WHAT</text>
       <rect x="20" y="330" width="200" height="80" rx="6" class="d-box"/>
-      <text x="34" y="354" class="d-tb">Experts</text>
+      <text x="34" y="354" class="d-tb">Node engineers</text>
       <text x="34" y="374" class="d-ts">fill a node or lesson form;</text>
       <text x="34" y="392" class="d-ts">never touch the repository</text>
       <rect x="236" y="330" width="200" height="80" rx="6" class="d-box"/>
-      <text x="250" y="354" class="d-tb">Maintainers</text>
+      <text x="250" y="354" class="d-tb">Intake (the developer)</text>
       <text x="250" y="374" class="d-ts">take forms, preview, approve,</text>
       <text x="250" y="392" class="d-ts">merge, release</text>
       <rect x="452" y="330" width="200" height="80" rx="6" class="d-box"/>
-      <text x="466" y="354" class="d-tb">Developers</text>
+      <text x="466" y="354" class="d-tb">The developer</text>
       <text x="466" y="374" class="d-ts">frontend, backend, data —</text>
       <text x="466" y="392" class="d-ts">by pull request</text>
       <rect x="668" y="330" width="197" height="80" rx="6" class="d-box"/>
-      <text x="682" y="354" class="d-tb">The team</text>
+      <text x="682" y="354" class="d-tb">Every engineer</text>
       <text x="682" y="374" class="d-ts">set inputs, run, keep,</text>
       <text x="682" y="392" class="d-ts">share results</text>
     </svg>
@@ -398,11 +398,11 @@ td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
 <section id="pages">
   <p class="sec-n">5 · PAGES AND HTML</p>
   <h2>How a node page is made, including rich interactive lessons</h2>
-  <p class="answer"><b>Answer first.</b> Nobody writes HTML for a page. An expert writes <b>content</b> through a form — text, equations, stories, "try it" widgets declared as <i>sliders for these inputs, show these outputs</i>, diagrams as SVG files. A generator assembles the page from a <b>component library</b> that frontend developers build once and test. When a page needs something new, it is added to the library once, and from then on any page can use it by name.</p>
+  <p class="answer"><b>Answer first.</b> Nobody writes HTML for a page. A node engineer writes <b>content</b> through a form — text, equations, stories, "try it" widgets declared as <i>sliders for these inputs, show these outputs</i>, diagrams as SVG files. A generator assembles the page from a <b>component library</b> that frontend developers build once and test. When a page needs something new, it is added to the library once, and from then on any page can use it by name.</p>
   <figure class="fig">
     <svg viewBox="0 0 880 300" role="img" aria-label="node.toml, lesson.toml and diagram files go through the generator, which uses the component library, to produce a small page; shared styles, scripts and fonts are loaded once; try-it widgets compute with the kernel compiled for the browser; personal state stays in the browser.">
       <defs><marker id="g-ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" class="d-ah"/></marker></defs>
-      <text x="20" y="22" class="d-tm">WRITTEN BY THE EXPERT (THROUGH A FORM)</text>
+      <text x="20" y="22" class="d-tm">WRITTEN BY THE NODE ENGINEER (THROUGH A FORM)</text>
       <rect x="20" y="34" width="200" height="54" rx="6" class="d-in"/>
       <text x="34" y="57" class="d-tb">node.toml</text>
       <text x="34" y="76" class="d-ts">relation, bounds, sources</text>
@@ -446,7 +446,7 @@ td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
     </svg>
   </figure>
   <div class="grid2">
-    <div class="card"><h3>What the expert writes</h3>
+    <div class="card"><h3>What the node engineer writes</h3>
       <ul class="plain">
         <li>Text for each station, with claim tags: sourced, derived, declared, illustrative</li>
         <li>Equations, and the source each comes from</li>
@@ -512,7 +512,7 @@ td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
   </figure>
   <div class="grid2">
     <div class="card"><h3>No database server</h3><p>The design stays in git, where history, review and blame are free. Reference data stays in hashed bundles. Nothing on the physics path waits on a network. An embedded SQLite index is the one database the tool may take on, and only at the size where files stop being quick to list.</p></div>
-    <div class="card"><h3>One storage interface</h3><p>Saving, listing, opening and thinning results go through <code>vleo-data</code>, which the server, the command line and Python all call. Files today; SQLite or a team server later, without touching the engine or the pages.</p></div>
+    <div class="card"><h3>One storage interface</h3><p>Saving, listing, opening and thinning results go through <code>vleo-data</code>, which the server, the command line and Python all call. Files today; SQLite or a shared server later, without touching the engine or the pages.</p></div>
   </div>
 </section>
 
@@ -522,7 +522,7 @@ td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
   <h2>Who reaches what, and how it stays in step</h2>
   <p class="answer"><b>Answer first.</b> Everyone gets the tool from one place — a release — and nobody has to install anything just to read. The design reaches people as a new version; results reach people through a shared folder or as a single file; pages and reports open in any browser.</p>
   <figure class="fig">
-    <svg viewBox="0 0 880 330" role="img" aria-label="The developer and maintainer branches merge into main; main produces a release; the release reaches team laptops, which share a results folder, a docs folder for readers, and result files anyone can open. Experts reach the repository through forms.">
+    <svg viewBox="0 0 880 330" role="img" aria-label="The developer and maintainer branches merge into main; main produces a release; the release reaches everyone's laptops, which share a results folder, a docs folder for readers, and result files anyone can open. Node engineers reach the repository through forms.">
       <defs><marker id="a-ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="d-ah"/></marker></defs>
       <text x="20" y="22" class="d-tm">THE REPOSITORY</text>
       <rect x="20" y="34" width="270" height="176" rx="8" class="d-band"/>
@@ -562,7 +562,7 @@ td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
       <text x="536" y="288" class="d-ts">.vleo to reopen; report.html to read,</text>
       <text x="536" y="303" class="d-ts">print or PDF — figures included</text>
       <rect x="20" y="236" width="270" height="72" rx="6" class="d-in"/>
-      <text x="36" y="260" class="d-tb">Experts' forms</text>
+      <text x="36" y="260" class="d-tb">Node engineers' forms</text>
       <text x="36" y="278" class="d-ts">own branch, preview, approval,</text>
       <text x="36" y="294" class="d-ts">then merged into maintainer</text>
     </svg>
@@ -571,8 +571,8 @@ td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
   <div class="tbl"><table>
     <thead><tr><th>What</th><th>How it stays in step</th><th>Who maintains it</th></tr></thead>
     <tbody>
-      <tr><td>The design and pages</td><td>A new release; the tool shows its version and what moved since a result was saved.</td><td>Maintainers, through forms</td></tr>
-      <tr><td>Reference data</td><td>A new bundle version, verified by hash before any run uses it.</td><td>Maintainers</td></tr>
+      <tr><td>The design and pages</td><td>A new release; the tool shows its version and what moved since a result was saved.</td><td>The developer, through forms</td></tr>
+      <tr><td>Reference data</td><td>A new bundle version, verified by hash before any run uses it.</td><td>The developer</td></tr>
       <tr><td>Team results</td><td>The shared folder (<code>VLEO_RESULTS</code>). Each person's index is rebuilt from it, so there is nothing to merge; names are unique and every write is whole, so nobody overwrites or half-writes another's result.</td><td>Everyone adds; pins protect</td></tr>
       <tr><td>The tool itself</td><td>Pull requests into <code>developer</code>, then <code>main</code>, then a release.</td><td>Frontend, backend and data developers</td></tr>
     </tbody>
@@ -596,7 +596,7 @@ td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
       <rect x="722" y="30" width="140" height="56" rx="6" class="d-both"/><text x="792" y="54" text-anchor="middle" class="d-tb">gate + test</text><text x="792" y="72" text-anchor="middle" class="d-ts">the green line</text>
       <path d="M110 58 L130 58" class="d-a" marker-end="url(#s-ah)"/><path d="M228 58 L248 58" class="d-a" marker-end="url(#s-ah)"/><path d="M346 58 L366 58" class="d-a" marker-end="url(#s-ah)"/><path d="M464 58 L484 58" class="d-a" marker-end="url(#s-ah)"/><path d="M582 58 L602 58" class="d-a" marker-end="url(#s-ah)"/><path d="M700 58 L720 58" class="d-a" marker-end="url(#s-ah)"/>
       <path d="M792 86 C 792 112, 760 112, 740 126" class="d-a" marker-end="url(#s-ah)"/>
-      <rect x="604" y="126" width="140" height="56" rx="6" class="d-out"/><text x="674" y="150" text-anchor="middle" class="d-tb">preview · approve</text><text x="674" y="168" text-anchor="middle" class="d-ts">the author tries it</text>
+      <rect x="604" y="126" width="140" height="56" rx="6" class="d-out"/><text x="674" y="150" text-anchor="middle" class="d-tb">preview · approve</text><text x="674" y="168" text-anchor="middle" class="d-ts">the node engineer tries it</text>
       <rect x="444" y="126" width="138" height="56" rx="6" class="d-in"/><text x="513" y="150" text-anchor="middle" class="d-tb">→ maintainer</text><text x="513" y="168" text-anchor="middle" class="d-ts">pull request</text>
       <rect x="286" y="126" width="136" height="56" rx="6" class="d-in"/><text x="354" y="150" text-anchor="middle" class="d-tb">→ main</text><text x="354" y="168" text-anchor="middle" class="d-ts">pull request</text>
       <rect x="132" y="126" width="132" height="56" rx="6" class="d-out"/><text x="198" y="150" text-anchor="middle" class="d-tb">ship · release</text><text x="198" y="168" text-anchor="middle" class="d-ts">to everyone</text>
@@ -665,11 +665,11 @@ td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
       <tr><td class="num">7</td><td>The contract: <code>contract/</code> schemas and recorded answers, contract tests, the mock engine, the versioning rule, frontend / backend / data teams in CODEOWNERS, split CI</td><td>all</td><td><span class="tag t-done">done</span></td></tr>
       <tr><td class="num">8</td><td>Storage and outputs: the figure description — line, scatter, bar, heatmap, <b>animation, 3D scene</b> — in the engine and the contract, the saved sweep drawn from it; tiers: pin, and thinning to the summary after 30 days; the index, so finding a kept question does not read every result; PNG and CSV export of every chart. Waiting for a reason: a zipped <code>.vleo</code> (one report page still carries every result) and input dedupe (a result's inputs are 9 KB)</td><td>data · backend</td><td><span class="tag t-done">done</span></td></tr>
       <tr><td class="num">9</td><td>Frontend, first part: <b>the figure player</b> — heatmap, animation and 3D view drawn from the figure description, every kind with PNG and CSV, a gallery of samples (<code>/v1/figures/samples</code>); <b>lessons</b> — <code>lesson.toml</code> with its reader and gate check, <code>/v1/lesson/&lt;id&gt;</code>; <b>the component library</b> (<code>web/js/components.js</code>) and the lesson drawn from it on the row's page, with try-it widgets the engine answers</td><td>frontend</td><td><span class="tag t-done">done</span></td></tr>
-      <tr><td class="num">9b</td><td>The lesson form: one HTML file an expert fills anywhere, checked as it is typed by the gate's own lesson check (compiled into the checker every form carries); <code>xtask lesson form|check|apply</code>; <i>write a lesson — its form</i> on every row's page</td><td>frontend · backend</td><td><span class="tag t-done">done</span></td></tr>
+      <tr><td class="num">9b</td><td>The lesson form: one HTML file a node engineer fills anywhere, checked as it is typed by the gate's own lesson check (compiled into the checker every form carries); <code>xtask lesson form|check|apply</code>; <i>write a lesson — its form</i> on every row's page</td><td>frontend · backend</td><td><span class="tag t-done">done</span></td></tr>
       <tr><td class="num">9c</td><td>The readers' folder (<code>xtask readers</code>): every row's page and every lesson as plain pages for a shared drive or an internal web server, drawn by the tool's own components (bundled into one script); the whole engine compiled for the browser (<code>crates/vleo-kernel-wasm</code>) answers a lesson's widgets there; the sweep one loop, the engine's, for every face</td><td>frontend · backend</td><td><span class="tag t-done">done</span></td></tr>
       <tr><td class="num">9d</td><td>Frontend, the rest: every page the tool writes filled from one template, <code>web/page.html</code>; the face's own type bundled (IBM Plex Mono, <code>web/fonts</code>), served at <code>/fonts/</code> and carried into the readers' folder; the readers' folder built in the pipeline and opened there from a file (<code>tools/readers_check.py</code>), with every answer its engine gives held to the engine built natively, byte for byte</td><td>frontend</td><td><span class="tag t-done">done</span></td></tr>
       <tr><td class="num">9e</td><td>Every page's fixed markup, style and script moved out of the generators into <code>web/pages/</code> — the node and lesson forms, the role guides, the saved result, the readers' pages — each a template with named slots; every page the tool writes is byte for byte what it was. The readers' folder refuses to build without the generated pages rather than writing 1,396 empty ones</td><td>frontend</td><td><span class="tag t-done">done</span></td></tr>
-      <tr><td class="num">—</td><td>The first real lesson, written by its expert: its form is made (<code>xtask lesson form l3_prop_interface</code>) and waits on the propulsion owner. Not an assistant's to write</td><td>design</td><td><span class="tag t-new">waiting on its expert</span></td></tr>
+      <tr><td class="num">—</td><td>The first real lesson, written by its node engineer: its form is made (<code>xtask lesson form l3_prop_interface</code>) and waits on the propulsion owner. Not an assistant's to write</td><td>design</td><td><span class="tag t-new">waiting on its node engineer</span></td></tr>
       <tr><td class="num">9f</td><td>The row pages: every word and tag of a row's page moved from <code>vleo-sheet/src/page.rs</code> into <code>web/pages/row.html</code>, as named parts the generator chooses and fills; all 1,396 committed pages byte for byte what they were, and a test refusing a tag written back into the generator or a part nothing uses</td><td>frontend</td><td><span class="tag t-done">done</span></td></tr>
       <tr><td class="num">9g</td><td>The last of it: the role guides, a saved result's page (its tables and its drawn sweep), the node and lesson forms and the readers' pages as parts files the same way; the one filler for all of them, so a saved result no longer carries its own copy (<code>vleo-modules</code> reads the parts through <code>vleo-sheet</code>, with its <code>std</code> feature). No generator writes a tag</td><td>frontend</td><td><span class="tag t-done">done</span></td></tr>
       <tr><td class="num">10a</td><td>The first figure's numbers in the engine: percentiles and correlation in the kernel (<code>vleo_core::math::stats</code>), the density figure worked out from the bundle (<code>vleo_modules::record</code>) and served at <code>/v1/figures/solar/&lt;id&gt;</code> under the contract; the panel draws them and computes none, its reference picture unchanged; the panel check's new 2c refuses a panel that asks for a figure and states a number of its own</td><td>backend · frontend</td><td><span class="tag t-done">done</span></td></tr>
@@ -685,11 +685,11 @@ td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
       <tr><td class="num">10j</td><td>The thermosphere panel: env_exospheric_temperature run and probed by the engine as each view asks (<code>thermosphere</code>) — the three ways to raise the flux and their slopes, one Kp curve per scenario and the widest gap between its two readings, each scenario's two readings side by side, the Kp sweep against the straight line its quiet end sets — worked out by <code>vleo_modules::thermo</code>; the page no longer probes or runs anything itself; all four views byte for byte what they drew, in both schemes</td><td>backend · frontend</td><td><span class="tag t-done">done</span></td></tr>
       <tr><td class="num">10l</td><td>The design and closure panels, the last of the solar figures: the return curve on the reader's case, where it reaches the G-level bound and the requirement, and the record's days above the bound in how many runs; the F10.7 window's five curves, its width, the worst single day and where the analogue's peak climbs above it (<code>design</code>); the decision that spends a closure's margin fastest, taken from the levers' own ranking, and where the margin and the achieved curve each run out (<code>closure</code>) — worked out by <code>vleo_modules::design</code>; the page no longer sweeps, runs or ranks anything itself, and says when a swept point was refused; all ten views byte for byte what they drew, in both schemes</td><td>backend · frontend</td><td><span class="tag t-done">done</span></td></tr>
       <tr><td class="num">11</td><td>Readability: a guide to changing the code (a node, a route, a component, an output kind), the two 3,200-line files split, generator examples, required docs; typed errors</td><td>all</td><td><span class="tag t-done">done</span></td></tr>
-      <tr><td class="num">11a</td><td>The method language, one 3,200-line file, split into its parts — units, the spec, the tree it parses to, the parser, the checker, the interpreter, the author's cases, the node, the Rust it translates to, the reference — under the module that says how they fit; nothing it does changed, and the checker every form carries is rebuilt from the parts</td><td>backend</td><td><span class="tag t-done">done</span></td></tr>
+      <tr><td class="num">11a</td><td>The method language, one 3,200-line file, split into its parts — units, the spec, the tree it parses to, the parser, the checker, the interpreter, the node engineer's cases, the node, the Rust it translates to, the reference — under the module that says how they fit; nothing it does changed, and the checker every form carries is rebuilt from the parts</td><td>backend</td><td><span class="tag t-done">done</span></td></tr>
       <tr><td class="num">11b</td><td>The declaration form, the other 3,200-line file, split the same way — its fields, what it asks, an edit, who answers, a save, the blocks, the view, publishing; nothing it does changed</td><td>backend</td><td><span class="tag t-done">done</span></td></tr>
       <tr><td class="num">11c</td><td>Typed errors: each library crate outside the kernel says why it refused by a kind a caller decides on — <code>vleo_data</code>, <code>vleo_modules</code>, <code>vleo_sheet</code> — with the sentence a person sees kept word for word</td><td>backend</td><td><span class="tag t-done">done</span></td></tr>
       <tr><td class="num">11d</td><td>A guide to changing the code (<code>docs/CHANGING.md</code>): a node, a route, a component, an output kind, the generators with one field followed from the sheet to the code and the page; and the docs it requires, checked — every hand-written Rust file says what it is, and every kind of figure is in the guide</td><td>all</td><td><span class="tag t-done">done</span></td></tr>
-      <tr><td class="num">—</td><td>Grows with use: richer 3D (see section 4); Parquet when a dataset passes ~100,000 values; the SQLite index past ~50,000 results; a team server only if live shared runs or access control are needed</td><td>all</td><td><span class="tag t-grow">continuous</span></td></tr>
+      <tr><td class="num">—</td><td>Grows with use: richer 3D (see section 4); Parquet when a dataset passes ~100,000 values; the SQLite index past ~50,000 results; a shared server only if live shared runs or access control are needed</td><td>all</td><td><span class="tag t-grow">continuous</span></td></tr>
       <tr><td class="num">—</td><td>Content, by people: 124 of 190 computing rows have no outside check and 137 have no theory. Filled through forms, alongside every phase</td><td>design</td><td><span class="tag t-grow">continuous</span></td></tr>
     </tbody>
   </table></div>
@@ -703,7 +703,7 @@ td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
   <div class="tbl"><table>
     <thead><tr><th>Question</th><th>Decided</th><th>Look again when</th></tr></thead>
     <tbody>
-      <tr><td>Where the tool runs</td><td>On each person's computer, with a shared results folder for the team (<code>VLEO_RESULTS</code>). No server to run, works offline, one archive for everyone.</td><td>People need to see each other's runs live, or who may run what must be controlled — then one team server behind sign-in and HTTPS, on the same storage interface.</td></tr>
+      <tr><td>Where the tool runs</td><td>On each person's computer, with a shared results folder for everyone (<code>VLEO_RESULTS</code>). No server to run, works offline, one archive for everyone.</td><td>People need to see each other's runs live, or who may run what must be controlled — then one shared server behind sign-in and HTTPS, on the same storage interface.</td></tr>
       <tr><td>Database</td><td>No database server. Files and a rebuildable index; SQLite as an embedded index only past ~50,000 results.</td><td>The index grows past that, or queries across runs are needed.</td></tr>
       <tr><td>How a result is saved and shared</td><td>A folder on disk; to share, its <code>report.html</code> — one file that opens in any browser, draws its sweep, and uploads back whole.</td><td>A result carries what one page cannot — animation frames, a 3D scene — then one zipped <code>.vleo</code> file.</td></tr>
       <tr><td>The same question asked twice</td><td>Answered from its saved result, never silently: the answer names the result and when it was saved, and <i>run again anyway</i> runs it fresh. A question is kept once.</td><td>—</td></tr>
@@ -730,7 +730,7 @@ td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
       <tr><td><code>docs/EXPLAINING.md</code></td><td>How every page, form and document explains itself</td></tr>
       <tr><td><code>panels/README.md</code></td><td>How a figure is declared and checked</td></tr>
       <tr><td><code>docs/RELEASE_SETUP.md</code></td><td>How a release is decided, tagged, proved and shipped</td></tr>
-      <tr><td><code>docs/SHARING.md</code></td><td>The kit and the one-file package for the team</td></tr>
+      <tr><td><code>docs/SHARING.md</code></td><td>The kit and the one-file package for everyone</td></tr>
       <tr><td><code>docs/GLOSSARY.md</code></td><td>The words used here in a sense of their own</td></tr>
     </tbody>
   </table></div>

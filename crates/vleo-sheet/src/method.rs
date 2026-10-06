@@ -1,4 +1,4 @@
-//! THE METHOD LANGUAGE — the pseudocode a node's author writes.
+//! THE METHOD LANGUAGE — the pseudocode a node's engineer writes.
 //!
 //! A node's relation arrives in three independent forms: the author's own
 //! code, which produced their test cases; this method, which says the same

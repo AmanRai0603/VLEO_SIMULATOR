@@ -108,7 +108,7 @@ export async function mountRelation(host) {
     // A declared row has no relation to walk — it has a number somebody chose.
     // What there IS to see is where that number sits inside the domain the
     // sheet declared for it, which is the question a reviewer asks of a
-    // declared value: how much room did the author leave on each side, and is
+    // declared value: how much room did the node engineer leave on each side, and is
     // the number near a bound it was never meant to approach?
     if (r.kind === 'declared') {
       await declaredValue(host, r);
@@ -338,7 +338,7 @@ async function declaredValue(host, r) {
     fmt(v - lo) + ' below and ' + fmt(hi - v) + ' above. ' +
     (frac < 0.05 || frac > 0.95
       ? 'It sits within five per cent of a bound. That is worth a reviewer\u2019s attention: either ' +
-        'the bound is tighter than the author needed, or the value is closer to refusing than anyone ' +
+        'the bound is tighter than the node engineer needed, or the value is closer to refusing than anyone ' +
         'intended.'
       : 'Neither bound is close, so the guards are catching a mistake rather than constraining the ' +
         'choice \u2014 which is what a guard is for.');

@@ -9,7 +9,7 @@ The layered interactive document, the browser face, the panels and the figures.
 Applies to `web/**`, `docs/img/**`.
 Maintained by the developers. The face reads the design and never writes it:
 no route it calls changes the repository, and a node changes only through its
-form.
+owner, in the application; until the switch-over, through its form.
 
 ## The document is the GUI
 

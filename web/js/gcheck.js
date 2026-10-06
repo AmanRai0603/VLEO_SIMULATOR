@@ -82,7 +82,7 @@ export async function checkGroup(model, spec) {
   const members = model.group.members;
   if (model.g.files['members.csv'] && !members.some(m => m.role === 'owner')) add('error', 'members.csv', 'names no owner — somebody must sign the whole group');
   for (const m of members) for (const id of String(m.nodes || '').split(/\s+/).filter(x => x && x !== '*')) {
-    if (!model.nodes.has(id)) add('error', 'members.csv', m.name + ' is the author of "' + id + '", which is not a node', m._line);
+    if (!model.nodes.has(id)) add('error', 'members.csv', m.name + ' is the node engineer of "' + id + '", which is not a node', m._line);
   }
 
   // ── nodes.csv ──

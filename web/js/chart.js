@@ -276,7 +276,7 @@ const nice = v => {
  * reason they exist. `forecast` scores the published outlook three ways — skill, a
  * dimensionless ratio; bias, in sfu; RMS error, in sfu but on a different scale —
  * and all three are read against the same lead. Putting two of them on one frame
- * needs two y scales, which lets the author choose where the curves cross and is
+ * needs two y scales, which lets whoever writes the figure choose where the curves cross and is
  * the most reliable way to make a chart say something the data did not. Offering
  * them as three settings of a control instead is honest and costs the comparison:
  * the reader has to hold one picture in their head while looking at the next.

@@ -1158,7 +1158,7 @@ const PANELS = [
   // and how far that decision can move before it is gone. The sweep axis is NOT
   // chosen here — it is whatever /v1/levers reports as spending this margin
   // fastest, which is why that endpoint exists. A panel that picked its own axis
-  // would be the author guessing, and the sweep control on the old face offered
+  // would be the developer guessing, and the sweep control on the old face offered
   // a decision worth exactly zero because somebody did.
   //
   // Two frames, because the bound and the achieved value share a unit and the
@@ -1926,7 +1926,7 @@ function issueAge(fig) {
       'a median of ' + fig.median + ' days and a mean of ' + fig.mean.toFixed(2) +
       ', so on a typical day the newest outlook is already that old and its nominal lead understates ' +
       'the real one. A verification keyed on lead_days alone, as the rows here are, measures the ' +
-      'forecast and not the staleness a user actually meets.',
+      'forecast and not the staleness a person actually meets.',
   };
 }
 

@@ -5,7 +5,7 @@
     tools/docs_lint.py --selftest
 
 The house rules are Markdown — AGENTS.md, the area files, CONTRIBUTING.md and
-the work model. That makes them an input to every change, and prose is the one
+the operating model. That makes them an input to every change, and prose is the one
 input nothing else checks.
 
 The failure these files will actually have is not a contradiction; it is rot.
@@ -39,7 +39,7 @@ REQUIRED = [
     "areas/numerics.md",
     "areas/release.md",
     "CONTRIBUTING.md",
-    "docs/WORK_MODEL.md",
+    "docs/OPERATING_1_0.md",
 ]
 
 #: A path-looking token inside backticks. Two shapes, checked differently:
@@ -147,13 +147,16 @@ def check():
     # the check for the staleness that actually happened: three commands were
     # added — declare, fill, ready — and docs/USING_IT.md, which calls itself
     # the page to read first, still described the workflow they replaced. A
-    # document that is merely out of date reads as authoritative.
+    # document that is merely out of date reads as authoritative. AGENTS.md
+    # keeps only the commands that outlive the switch-over and sends the rest
+    # to docs/PIPELINE.md, the table every command is generated from.
     xt = ROOT / "xtask" / "src" / "main.rs"
     if xt.is_file():
         m = re.search(r'match cmd \{(.*?)\n    \};', xt.read_text(), re.S)
         listed = set(re.findall(r'"([a-z]+)" =>', m.group(1))) if m else set()
         prose = "\n".join(
-            (ROOT / f).read_text() for f in ("README.md", "AGENTS.md", "docs/USING_IT.md")
+            (ROOT / f).read_text()
+            for f in ("README.md", "AGENTS.md", "docs/USING_IT.md", "docs/PIPELINE.md")
             if (ROOT / f).is_file()
         )
         for c in sorted(listed):
@@ -278,6 +281,13 @@ def check():
                 if "\n    breaks: '" not in block:
                     bad.append(("web/js/solar.js", "the panel «%s» does not say where its picture stops being true (E4)" % pid))
 
+    # The roles, by their names (docs/PLAN_1_0.md, phase B). Five roles and a
+    # deputy for each, and every page, screen and guide uses those and no
+    # other: a page that says "the lead" or "the team" is describing an
+    # organisation that no longer exists, and a reader takes it for the one
+    # that does. The names stored in files change with the files (phase C).
+    bad.extend(role_words())
+
     # Adopted libraries carry the two fields that exist because of real failures.
     try:
         lock = tomllib.loads((ROOT / "ADOPTION.lock").read_text())
@@ -291,9 +301,84 @@ def check():
     return bad
 
 
+#: The pages, screens and guides people read, where the five roles are the only
+#: names for people (docs/OPERATING_1_0.md, section 2; docs/PLAN_1_0.md,
+#: phase B). Globs from the root.
+ROLE_PAGES = [
+    "README.md", "AGENTS.md", "CONTRIBUTING.md", "areas/*.md",
+    "docs/*.md", "docs/*.html", "docs/roles/*.html", "docs/manual.toml",
+    "docs/examples/*.html", "web/*.html", "web/*.css", "web/js/*.js",
+    "web/pages/*", "approvals/README.md", "acceptances/README.md",
+    ".github/pull_request_template.md", "groups/SPEC.toml",
+    "groups/skill/*/*.md", ".claude/skills/*/*.md", "contract/README.md",
+    "xtask/src/main.rs", "xtask/src/pipeline.rs",
+]
+
+#: Read, but not by this check — each with the reason. Nothing else is skipped.
+ROLE_EXEMPT = {
+    "web/group.html": "generated from web/pages and web/js, which are checked",
+    "web/node.html": "generated from web/pages and web/js, which are checked",
+    "docs/MATLAB_PORT_PLAN.md": "the record of the port as it was planned, kept as written",
+    "docs/VARIABLES.md": "generated from the design's own sheets, whose words are their owners'",
+    "docs/DERISK_NARRATIVE.md": "generated from the design's own version records, whose words are their owners'",
+}
+
+#: What is masked before the words are read: a name in backticks (or in
+#: `<code>` on a page), a
+#: placeholder, a word quoted as a word, an identifier, and the pipeline's
+#: check *the author approved this exact change*, which is a job's name and
+#: retires with the form loop at the switch-over.
+ROLE_MASK = re.compile(
+    r"`[^`\n]*`|<code>[^<]*</code>|<[a-z_]+>|“[^”]*”|‘[^’\n]*’"
+    r"|the author approved this exact[\s\\]+change"
+    r"|\bcommit authors?\b|\b(?:review|GitHub) teams?\b|\bmaintainer branch(?:es)?\b",
+    re.I)
+
+#: An old name used for a person. "Lead" is also a forecast's lead time, which
+#: keeps its name, so it is read only in the shapes a person has.
+OLD_ROLE = re.compile(
+    r"(?<![\w.$!/<\[-])(?:"
+    r"(?:the|a|an|its|their|your|each|every|one|this|that|no|whose|our)\s+"
+    r"(?:users?|teams?|maintainers?|authors?)(?:['’]s)?"
+    r"|(?:users|maintainers|authors|teammates?|team\s+members?)(?!\s*[=(\[:])"
+    r"|(?:user|team|maintainer|author|lead)['’]s"
+    r"|group\s+leads?"
+    r"|(?:your|its|their)\s+lead"
+    r"|the\s+lead(?=\s+(?:sets|edits|signs|seals|issues|accepts|opens|writes|decides|says|sees|keeps|assembles|owns|gave|set)\b)"
+    r"|(?:the|an|its)\s+experts?(?=\s+(?:who|fills|writes|knows)\b)"
+    r")(?![\w/>\]-]|\.\w)",
+    re.I)
+
+
+def role_words(root=None):
+    """Every place a page names a person by a role that no longer exists."""
+    root = root or ROOT
+    out = []
+    seen = set()
+    for g in ROLE_PAGES:
+        for p in sorted(root.glob(g)):
+            rel = p.relative_to(root).as_posix()
+            if rel in seen or not p.is_file() or rel in ROLE_EXEMPT:
+                continue
+            seen.add(rel)
+            try:
+                text = p.read_text(encoding="utf-8")
+            except UnicodeDecodeError:
+                continue
+            if rel.endswith(".md"):
+                text = re.sub(r'"[^"\n]*"', lambda m: " " * len(m.group(0)), text)
+            text = ROLE_MASK.sub(lambda m: re.sub(r"[^\n]", " ", m.group(0)), text)
+            for n, line in enumerate(text.split("\n"), 1):
+                for m in OLD_ROLE.finditer(line):
+                    out.append((rel, "line %d names a person «%s» — the roles are programme manager, "
+                                     "system engineer, subsystem engineer, node engineer, developer"
+                                % (n, " ".join(m.group(0).split()))))
+    return out
+
+
 def _unname_publish(d):
     """Take `xtask publish` out of every document that names it."""
-    for f in ("README.md", "AGENTS.md", "docs/USING_IT.md"):
+    for f in ("README.md", "AGENTS.md", "docs/USING_IT.md", "docs/PIPELINE.md"):
         p = d / f
         p.write_text(p.read_text().replace("xtask -- publish", "xtask -- xxpub")
                      .replace("xtask publish", "xtask xxpub"))
@@ -342,6 +427,20 @@ def selftest():
          lambda d: (d / "docs" / "CHANGING.md").write_text(
              (d / "docs" / "CHANGING.md").read_text() + "\nSee `web/js/gone.js`.\n"),
          "docs/CHANGING.md points at web/js/gone.js"),
+        ("a page naming a person by an old role",
+         lambda d: (d / "docs" / "RUNBOOK.md").write_text(
+             (d / "docs" / "RUNBOOK.md").read_text() + "\nSend it to the group lead.\n"),
+         "«group lead»"),
+        ("a guide calling the people the team",
+         lambda d: (d / "docs" / "manual.toml").write_text(
+             (d / "docs" / "manual.toml").read_text().replace(
+                 "reaches everyone in the next release", "reaches the team in the next release")),
+         "«the team»"),
+        ("a screen naming the author",
+         lambda d: (d / "web" / "js" / "napp.js").write_text(
+             (d / "web" / "js" / "napp.js").read_text().replace(
+                 "Only its node engineer signs it.", "Only its author signs it.")),
+         "«its author»"),
         ("an adopted row with no licence",
          lambda d: (d / "ADOPTION.lock").write_text(
              (d / "ADOPTION.lock").read_text().replace('licence = "MIT OR Apache-2.0"', 'licence = ""', 1)),

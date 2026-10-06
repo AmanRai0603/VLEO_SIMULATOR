@@ -1,8 +1,8 @@
 /*
-  THE GROUP'S STRUCTURE — what the group lead decides, edited in place.
+  THE GROUP'S STRUCTURE — what the subsystem engineer decides, edited in place.
 
   A group is its nodes and the arrows between them. Before anybody writes a
-  word of explanation, the lead says how many nodes there are, what each one
+  word of explanation, the subsystem engineer says how many nodes there are, what each one
   answers, in what unit, and which node feeds which: the CONTRACT. Each
   author then fills their own node's file against it, and the release is
   assembled from those files.
@@ -10,10 +10,10 @@
   Everything here edits the open database (the structure file, or a release
   being prepared) and records each change in its `change` table. A change to
   a node's contract after its file was issued raises the node's contract
-  version, so the file its author holds is known to be behind, and the page
-  names every node that reads the one changed — those are the authors to tell.
+  version, so the file its node engineer holds is known to be behind, and the page
+  names every node that reads the one changed — those are the node engineers to tell.
 
-  Nothing here edits a node's content: that is its author's, in their file.
+  Nothing here edits a node's content: that is its node engineer's, in their file.
 */
 'use strict';
 
@@ -41,7 +41,7 @@ function touch(db, uid) {
   }
 }
 
-/** The nodes that read `uid` as an input: the authors a change to it reaches. */
+/** The nodes that read `uid` as an input: the node engineers a change to it reaches. */
 export function readersOf(db, uid) {
   return db.all('SELECT DISTINCT n.id FROM input i JOIN node n ON n.uid = i.node_uid WHERE i.source = ? AND n.archived = 0 ORDER BY n.ord', [uid]).map(r => r.id);
 }
@@ -162,7 +162,7 @@ export function setMember(db, who, name, role) {
 
 export function removeMember(db, who, name) {
   const authors = db.all('SELECT id FROM node WHERE archived = 0').filter(n => authorsOf(db, n.id).includes(name));
-  if (authors.length) throw new Error(name + ' still authors ' + authors.map(a => a.id).join(', ') + ': give those nodes to somebody else first');
+  if (authors.length) throw new Error(name + ' is still the node engineer of ' + authors.map(a => a.id).join(', ') + ': give those nodes to somebody else first');
   db.tx(() => { db.exec('DELETE FROM member WHERE name = ?', [name]); logChange(db, who, 'group', 'removed the member ' + name, name, null); });
 }
 
@@ -221,7 +221,7 @@ export function structurePage(ctx, sel) {
 
   let html = '<h1 class="gh1">Structure</h1>' +
     '<section class="answer-first view-af"><p class="af-k">Answer first</p><p class="af-a">The group\'s nodes and the arrows between them — ' +
-    'what each node answers, in what unit, fed by what. You decide this; each author then fills their own node\'s file against it.</p>' +
+    'what each node answers, in what unit, fed by what. You decide this; each node engineer then fills their own node\'s file against it.</p>' +
     '<ul class="af-points"><li>' + live.length + ' nodes, ' + db.value('SELECT COUNT(*) FROM input i JOIN node n ON n.uid = i.node_uid WHERE n.archived = 0') + ' inputs, ' + members.length + ' people.</li>' +
     (behind.length ? '<li><b>' + behind.length + ' node file(s) are behind their contract</b>: ' + behind.map(n => esc(n.id)).join(', ') + ' — <a href="#/files">re-issue them</a>.</li>'
       : '<li>Every issued node file matches its contract.</li>') +
@@ -242,14 +242,14 @@ export function structurePage(ctx, sel) {
     '<label>Version ' + field('group', db.meta('version'), { key: 'version', label: 'version', ph: '1.0' }) + '</label>' +
     '<label class="gs-span">Summary — what the group answers, in one sentence ' + field('group', db.meta('summary'), { key: 'summary', label: 'summary', wide: true }) + '</label></div>';
 
-  html += '<h2 class="gh">People</h2><div class="ri-wrap"><table class="fx gtable gs-table"><thead><tr><th>Name</th><th>Role</th><th>Authors</th><th></th></tr></thead><tbody>' +
+  html += '<h2 class="gh">People</h2><div class="ri-wrap"><table class="fx gtable gs-table"><thead><tr><th>Name</th><th>Role</th><th>Node engineer of</th><th></th></tr></thead><tbody>' +
     members.map(m => '<tr><td>' + esc(m.name) + '</td><td>' + field('role', m.role, { key: m.name, type: 'select', options: ROLES, label: 'role of ' + m.name }) + '</td><td class="small">' +
       esc(live.filter(n => String(n.author || '').split(/,\s*/).includes(m.name)).map(n => n.id).join(' ') || '—') + '</td><td><button class="ctl small gs-x" type="button" data-act="rm-member" data-key="' + esc(m.name) + '" aria-label="remove ' + esc(m.name) + '" title="remove">×</button></td></tr>').join('') +
     '</tbody></table></div><p class="gs-add"><input class="gs-in" id="gs-mname" placeholder="a name" aria-label="new member\'s name"> ' + field('', 'author', { type: 'select', options: ROLES, label: 'new member\'s role' }).replace('data-op=""', 'id="gs-mrole"') +
     ' <button class="ctl small" type="button" data-act="add-member">add a person</button></p>';
 
   html += '<h2 class="gh">Nodes</h2><p class="muted">In the order the group lists them. A node\'s <b>uid</b> never changes; its id can be renamed and every arrow follows.</p>' +
-    '<div class="ri-wrap"><table class="fx gtable gs-table"><thead><tr><th>Node</th><th>Kind</th><th>Answers</th><th>Author</th><th>Contract</th><th></th></tr></thead><tbody>' +
+    '<div class="ri-wrap"><table class="fx gtable gs-table"><thead><tr><th>Node</th><th>Kind</th><th>Answers</th><th>Node engineer</th><th>Contract</th><th></th></tr></thead><tbody>' +
     live.map(n => '<tr' + (node && node.uid === n.uid ? ' class="gs-sel"' : '') + '><td><a href="#/structure/' + esc(n.id) + '"><b>' + esc(n.id) + '</b></a></td><td><span class="gkind k-' + esc(n.kind) + '">' + esc(n.kind) + '</span></td><td class="small">' +
       esc(n.output || '—') + (n.unit ? ' [' + esc(n.unit) + ']' : '') + '</td><td class="small">' + esc(n.author || '—') + '</td><td class="small">v' + esc(n.contract_version) + '</td><td class="gs-acts">' +
       '<button class="ctl small" type="button" data-act="up" data-key="' + esc(n.uid) + '" aria-label="move ' + esc(n.id) + ' up">↑</button>' +
@@ -271,7 +271,7 @@ export function structurePage(ctx, sel) {
     html += '<h2 class="gh" id="gs-node">' + esc(node.id) + (node.archived ? ' <span class="muted">(archived)</span>' : '') + '</h2>' +
       '<p class="muted small">uid <code>' + esc(node.uid) + '</code> · contract v' + esc(node.contract_version) +
       (issued ? ' · its file was issued at v' + issued + (issued < Number(node.contract_version) ? ' — <b>behind: re-issue it</b>' : '') : ' · no file issued yet') + '</p>' +
-      '<div class="gs-impact">' + (readers.length ? 'Read by <b>' + readers.map(esc).join(', ') + '</b>. A change to what this node answers reaches their authors too.' : 'No node of this group reads it.') + '</div>' +
+      '<div class="gs-impact">' + (readers.length ? 'Read by <b>' + readers.map(esc).join(', ') + '</b>. A change to what this node answers reaches their node engineers too.' : 'No node of this group reads it.') + '</div>' +
       '<div class="gs-grid">' +
       '<label>Id ' + field('node', node.id, { key: 'id', label: 'node id' }) + '</label>' +
       '<label>Kind ' + field('node', node.kind, { key: 'kind', type: 'select', options: KINDS, label: 'kind' }) + '</label>' +
@@ -281,10 +281,10 @@ export function structurePage(ctx, sel) {
       '<label>Lower bound ' + field('node', node.lower, { key: 'lower', label: 'lower bound' }) + '</label>' +
       '<label>Upper bound ' + field('node', node.upper, { key: 'upper', label: 'upper bound' }) + '</label>' +
       (node.kind === 'declared' || node.kind === 'required' ? '<label>Value ' + field('node', node.value, { key: 'value', label: 'value' }) + '</label>' : '') +
-      '<label>Author ' + field('node', node.author, { key: 'author', type: 'select', options: memberOpts, label: 'author' }) + '</label></div>';
+      '<label>Node engineer ' + field('node', node.author, { key: 'author', type: 'select', options: memberOpts, label: 'node engineer' }) + '</label></div>';
     html += '<h3 class="gh3">Inputs — what feeds it</h3><p class="muted small">Name, where it comes from and its unit are the contract. ' +
-      'How it is written, its default and range are filled by the author in their file, and shown here.</p>' +
-      '<datalist id="gs-srcs"><option value="case">a value the user sets</option>' + srcOpts.map(s => '<option value="' + esc(s) + '"></option>').join('') + '</datalist>' +
+      'How it is written, its default and range are filled by the node engineer in their file, and shown here.</p>' +
+      '<datalist id="gs-srcs"><option value="case">a value set in the case</option>' + srcOpts.map(s => '<option value="' + esc(s) + '"></option>').join('') + '</datalist>' +
       '<div class="ri-wrap"><table class="fx gtable gs-table"><thead><tr><th>Name</th><th>From</th><th>Unit</th><th>Default</th><th>Range</th><th></th></tr></thead><tbody>' +
       ins.map(i => '<tr><td>' + field('input', i.name, { key: i.name + '|name', label: 'input name' }) + '</td><td>' +
         field('input', idOf.get(i.source) || i.source, { key: i.name + '|source', list: 'gs-srcs', label: 'where ' + i.name + ' comes from' }) + '</td><td>' +

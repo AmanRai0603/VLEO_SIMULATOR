@@ -1,6 +1,6 @@
 # VLEO Integrated Design Tool
 
-> **Answer first.** A design tool for a very-low-Earth-orbit multipayload spacecraft: one kernel computes every number, a team runs it on its own inputs and asks for changes through node forms, each change is previewed and approved by the person who asked for it, and only then released to everyone. Start the tool with `cargo run --release -p vleo-daemon` and press ? Manual.
+> **Answer first.** A design tool for a very-low-Earth-orbit multipayload spacecraft: one kernel computes every number, the people who own the design run it on their own inputs and ask for changes through node forms, each change is previewed and approved by the node engineer who asked for it, and only then released to everyone. Start the tool with `cargo run --release -p vleo-daemon` and press ? Manual.
 >
 > **Kind:** explanation + reference · **For:** everyone
 
@@ -31,16 +31,16 @@ every step and command for it:
                                └─ each form on its own branch, form/<author>/<node>; main holds approved work only
 
 The five commands — `take`, `preview`, `approve`, `queue`, `ship` — are
-`cargo run -p xtask -- <command>`; the maintainer's guide walks one form from
-arrival to release. Nothing reaches `main` without its author's approval of the
+`cargo run -p xtask -- <command>`; the intake guide walks one form from
+arrival to release. Nothing reaches `main` without its node engineer's approval of the
 exact build they tried, and the pipeline checks that on every form branch.
 
 **A node's relation arrives three ways, and each checks the other two.** Its
-author's own code — MATLAB, Python, anything — produced their test cases; the
+node engineer's own code — MATLAB, Python, anything — produced their test cases; the
 *method* says the same relation in a small fixed language the tool can check
 for units and run ([`docs/PSEUDOCODE.md`](docs/PSEUDOCODE.md)); and the code the
 tool ships is translated from the method by fixed rules. The form runs the
-method on the author's cases as they type; `take` builds the node stage by
+method on the node engineer's cases as they type; `take` builds the node stage by
 stage (`build-node`) and connects it to the design only once every case agrees.
 `migration` lists the rows still without a method, by owner.
 
@@ -92,7 +92,7 @@ the one it got. Set `VLEO_PORT` to pin it.
 **The tool carries its own manual.** Press **? Manual** at the top of the page,
 or open `/#manual` (a single section is `/#manual/<section>`, such as
 `/#manual/term-run`). It covers the browser and the terminal, can be filtered
-to what a user does or what a developer does, and lists what cannot be done by
+to what an engineer does, what intake does or what the developer does, and lists what cannot be done by
 hand with why and what to do instead. Every command has a copy button. A card
 at its top says where this copy keeps the case and the results, and whether a
 case is saved. Its source is `docs/manual.toml`, and it is tested
@@ -100,18 +100,18 @@ against the code: `cargo test` fails on a command, route, variable, folder or
 button it names that does not exist, or one the code has that it leaves out,
 and the pipeline runs every command it calls safe, exactly as written.
 
-**The tool never writes the repository.** The team using it sets the inputs,
+**The tool never writes the repository.** Everyone using it sets the inputs,
 runs, and keeps results — all of it outside the checkout, under `~/.vleo/` —
-and asks for the design to change through a node's form, which the developers
-check, apply and release. There is no edit mode to turn on: a node cannot be
+and asks for the design to change through a node's form, which the developer
+checks, applies and releases. There is no edit mode to turn on: a node cannot be
 changed, added or removed from the browser.
 
-**The team does not need this repository.** `cargo run -p xtask -- kit` builds a
+**Nobody using the tool needs this repository.** `cargo run -p xtask -- kit` builds a
 folder with the two programs beside exactly the files they read, and
 `START_HERE.md` on top; the release pipeline attaches one per platform. Zip it,
 share it, and take back the node forms it hands out —
 [`docs/SHARING.md`](docs/SHARING.md) is the loop, and
-[`docs/TEAM_GUIDE.md`](docs/TEAM_GUIDE.md) is what the team reads.
+[`docs/TEAM_GUIDE.md`](docs/TEAM_GUIDE.md) is what everyone using it reads.
 
 To change an input and watch the answer move —
 [`docs/USING_IT.md` §2b](docs/USING_IT.md) drives it end to end on the solar
@@ -350,8 +350,8 @@ Nothing here is autonomous, and the line that matters is between the people who
 
 | | does | cannot |
 |---|---|---|
-| **the team** | sets the inputs, runs, keeps and sends results; fills a node's form — or a new node's — when the design should change | change the design from the tool. A form is a request, with a record of who asked and why |
-| **a developer** | checks each form (`xtask intake`), applies it in its layer, publishes, implements the holes, records evidence, gates, releases | apply a form the checker has not passed, or overwrite a change made since the form was drawn |
+| **the programme manager, the system engineer, each subsystem engineer and each node engineer** | set the inputs, run, keep and send results; the node engineer fills a node's form — or a new node's — when the design should change | change the design from the tool. A form is a request, with a record of who asked and why |
+| **the developer** | checks each form (`xtask intake`), applies it in its layer, publishes, implements the holes, records evidence, gates, releases | apply a form the checker has not passed, or overwrite a change made since the form was drawn |
 | **a person** — either side | states the question, the relation, its source, the domain and the reason for each bound; derives the known-good numbers; accepts the node | be replaced at any of it — none of it is checkable by machine |
 | **a generator** | emits every artefact from the sheet, deterministically | decide anything. It combines and refuses; a decision taken during generation is a decision nobody reviewed |
 | **an assistant** | whatever a developer runs it for — a hole body (`fill --by --model` records it), ordinary engineering on the tool | supply a relation: intake refuses a form whose relation an assistant filled, and relation stamping refuses an assistant's name |
@@ -660,7 +660,7 @@ showing an optimum near 300 km — recorded 15 September 2026](docs/img/sweep.pn
 
 | | |
 |---|---|
-| **? Manual**, in the tool | the place to start. Every task in the browser and in the terminal, for a user and for a developer, what cannot be done by hand, and every command, route, setting and folder. Source: [`docs/manual.toml`](docs/manual.toml) |
+| **? Manual**, in the tool | the place to start. Every task in the browser and in the terminal, for an engineer and for the developer, what cannot be done by hand, and every command, route, setting and folder. Source: [`docs/manual.toml`](docs/manual.toml) |
 | [`docs/HOW_IT_WORKS.html`](docs/HOW_IT_WORKS.html) | **read this first if you will develop or maintain the tool.** The architecture of the codebase and how it works, end to end: an explorable map of every crate and file, one row opened file by file, a run stepped through from a click to a number, how a change lands, how releases travel and what happens when something breaks. Open it in a browser |
 | [`docs/GLOSSARY.md`](docs/GLOSSARY.md) | the words this repository uses in a sense of its own — row, closure, sense, fixture, form, take — each in a sentence, with where it is defined |
 | [`docs/USING_IT.md`](docs/USING_IT.md) | the worked walkthrough, with real outputs — running it, changing an input, keeping a result, a form from filling to release |
@@ -668,12 +668,12 @@ showing an optimum near 300 km — recorded 15 September 2026](docs/img/sweep.pn
 | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | why the rings are shaped the way they are |
 | [`docs/NODE_AUTHORING.md`](docs/NODE_AUTHORING.md) | the sheet, field by field |
 | [`docs/CHANGING.md`](docs/CHANGING.md) | changing the code — a node, a route, a component, an output kind — and what each brings with it; one field followed through the generators |
-| [`docs/GROUP_APPS.md`](docs/GROUP_APPS.md) | the group and node applications — [`web/group.html`](web/group.html), where a group lead sets out the nodes and their contracts, issues node files and assembles and seals a release, and [`web/node.html`](web/node.html), where an author fills their node — and the three database files a group keeps on its shared drive ([`groups/schema.sql`](groups/schema.sql)); the solar group worked through in full is [`groups/solar/`](groups/solar/) |
+| [`docs/GROUP_APPS.md`](docs/GROUP_APPS.md) | the group and node applications — [`web/group.html`](web/group.html), where a subsystem engineer sets out the nodes and their contracts, issues node files and assembles and seals a release, and [`web/node.html`](web/node.html), where a node engineer fills their node — and the three database files a group keeps on its shared drive ([`groups/schema.sql`](groups/schema.sql)); the solar group worked through in full is [`groups/solar/`](groups/solar/) |
 | [`docs/GROUP_FOLDER.md`](docs/GROUP_FOLDER.md) | the group folder — the one place a group keeps its part of the design, as CSV, Markdown, pseudocode and its own results — and [`web/group.html`](web/group.html), the offline page a group opens it in; both generated from [`groups/SPEC.toml`](groups/SPEC.toml), with a worked example in [`groups/example/`](groups/example/) |
 | [`docs/PSEUDOCODE.md`](docs/PSEUDOCODE.md) | the method language — every statement, function, constant and unit, and the worked example in full — generated from the checker |
 | [`docs/EXPLAINING.md`](docs/EXPLAINING.md) | how the tool explains itself — the rules every page, form, result, figure and document follows, and what checks each |
 | [`docs/DERISKING.md`](docs/DERISKING.md) | why the design is what it is — beliefs, versions, the risk register, releases; the generated narrative is [`docs/DERISK_NARRATIVE.md`](docs/DERISK_NARRATIVE.md) |
-| [`docs/WORK_MODEL.md`](docs/WORK_MODEL.md) | who does what — the team and the developers, and what crosses between them |
+| [`docs/OPERATING_1_0.md`](docs/OPERATING_1_0.md) | who does what on 1.0.0 — the five roles, the application, the shared drive, and each step from W1 to W16 |
 | [`docs/VARIABLES.md`](docs/VARIABLES.md) | every variable, unit, bound and the reason for it — generated |
 | [`docs/RUNBOOK.md`](docs/RUNBOOK.md) | a developer's first day, one form from arrival to release, and what to do when the tool is down |
 | [`docs/RELEASE_SETUP.md`](docs/RELEASE_SETUP.md) | how a release is decided, tagged, proved and shipped |

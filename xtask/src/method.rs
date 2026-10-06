@@ -1,9 +1,9 @@
 //! The method language, from the terminal: a node's method checked against its
-//! author's cases, and the checker every node form carries rebuilt.
+//! node engineer's cases, and the checker every node form carries rebuilt.
 //!
 //! Both read `vleo_sheet::method`, the one implementation — the form runs the
 //! same function compiled to WebAssembly, so what `xtask method` says about a
-//! node is what the author saw in their form before they sent it.
+//! node is what the node engineer saw in their form before they sent it.
 
 use std::fs;
 use std::path::Path;
@@ -13,7 +13,7 @@ use std::process::Command;
 pub const WASM: &str = "web/method.wasm.gz";
 pub const STAMP: &str = "web/method.wasm.stamp";
 
-/// `method <node>` — the node's method, checked, and each of its author's
+/// `method <node>` — the node's method, checked, and each of its node engineer's
 /// cases run through it.
 pub fn cmd_method(root: &Path, args: &[&str]) -> Result<(), String> {
     let id = args
@@ -51,7 +51,9 @@ pub fn cmd_method(root: &Path, args: &[&str]) -> Result<(), String> {
         println!("  missing: {s}");
     }
     if r.sound() {
-        println!("sound: the method checks and agrees with every one of its author's cases.");
+        println!(
+            "sound: the method checks and agrees with every one of its node engineer's cases."
+        );
         Ok(())
     } else {
         Err(format!("{id}: the method is not sound yet — see above"))
@@ -136,9 +138,9 @@ pub fn cmd_method_wasm(root: &Path, args: &[&str]) -> Result<(), String> {
 }
 
 // ---------------------------------------------------------------------------
-// rerun: the author's own code, run again on their cases
+// rerun: the node engineer's own code, run again on their cases
 
-/// What running the author's code again said about one node.
+/// What running the node engineer's code again said about one node.
 enum Rerun {
     /// Every case gave what the sheet records.
     Agrees(usize),
@@ -159,7 +161,7 @@ fn which(cmd: &str) -> bool {
         .unwrap_or(false)
 }
 
-/// Run the author's code on each of their cases and compare with what they
+/// Run the node engineer's code on each of their cases and compare with what they
 /// recorded. Python is called with each input as a keyword argument named by
 /// its binding; MATLAB and Octave code with the inputs in the node's declared
 /// order. A raised error or exception is a refusal.
@@ -295,7 +297,7 @@ fn rerun_one(sh: &vleo_sheet::model::Sheet, work: &Path) -> Result<Rerun, String
     })
 }
 
-/// `rerun <node>|--all [--require]` — run each author's own code again on
+/// `rerun <node>|--all [--require]` — run each node engineer's own code again on
 /// their cases. `--require` refuses a node whose code could not be run here,
 /// for a pipeline that has installed the runners and means to use them.
 pub fn cmd_rerun(root: &Path, args: &[&str]) -> Result<(), String> {
@@ -317,7 +319,7 @@ pub fn cmd_rerun(root: &Path, args: &[&str]) -> Result<(), String> {
         seen += 1;
         match rerun_one(sh, &work_root.join(&sh.id))? {
             Rerun::Agrees(n) => println!(
-                "  ok   {}: the author's code gives all {n} recorded case(s)",
+                "  ok   {}: the node engineer's code gives all {n} recorded case(s)",
                 sh.id
             ),
             Rerun::NotRun(why) => {
@@ -336,14 +338,14 @@ pub fn cmd_rerun(root: &Path, args: &[&str]) -> Result<(), String> {
     let _ = fs::remove_dir_all(&work_root);
     if seen == 0 {
         println!(
-            "rerun: no node{} has author's cases yet",
+            "rerun: no node{} has node engineer's cases yet",
             only.map(|o| format!(" '{o}'")).unwrap_or_default()
         );
     }
     if differs > 0 {
         return Err(format!(
-            "{differs} node(s): the author's code no longer gives the cases recorded from it. \
-             The cases are the author's evidence — take it to them."
+            "{differs} node(s): the node engineer's code no longer gives the cases recorded from it. \
+             The cases are the node engineer's evidence — take it to them."
         ));
     }
     if require && not_run > 0 {
@@ -358,7 +360,7 @@ pub fn cmd_rerun(root: &Path, args: &[&str]) -> Result<(), String> {
 // build-node: every stage, in order, stopping at the first that fails
 
 /// `build-node <node>` — from the node's method to a node that may be
-/// connected: translate, test against the author's cases, rerun their code,
+/// connected: translate, test against the node engineer's cases, rerun their code,
 /// prove the tests test, and only then check the interface.
 pub fn cmd_build_node(root: &Path, args: &[&str]) -> Result<(), String> {
     use crate::pipeline::{OnStop, Run};
@@ -378,7 +380,7 @@ pub fn cmd_build_node(root: &Path, args: &[&str]) -> Result<(), String> {
                  is NOT connected — `git diff` shows them";
 
     run.step(
-        "the method, against the author's cases",
+        "the method, against the node engineer's cases",
         OnStop::new(
             "unchanged — nothing was written",
             format!("fix the method on the node's form, then {again}"),
@@ -393,7 +395,10 @@ pub fn cmd_build_node(root: &Path, args: &[&str]) -> Result<(), String> {
             cmd_method(root, &[id])?;
             Ok((
                 (),
-                format!("{} case(s) come out as the author said", sh.cases.len()),
+                format!(
+                    "{} case(s) come out as the node engineer said",
+                    sh.cases.len()
+                ),
             ))
         },
     )?;
@@ -417,11 +422,11 @@ pub fn cmd_build_node(root: &Path, args: &[&str]) -> Result<(), String> {
     )?;
 
     run.step(
-        "the node's tests: the author's cases, and the translation against the method",
+        "the node's tests: the node engineer's cases, and the translation against the method",
         OnStop::new(
             built,
             format!(
-                "a case that disagrees goes back to the author; a translation test that fails is a \
+                "a case that disagrees goes back to the node engineer; a translation test that fails is a \
                  translator defect for a developer. Then {again}"
             ),
         ),
@@ -440,10 +445,10 @@ pub fn cmd_build_node(root: &Path, args: &[&str]) -> Result<(), String> {
     )?;
 
     run.step(
-        "the author's own code, run again on their cases",
+        "the node engineer's own code, run again on their cases",
         OnStop::new(
             built,
-            format!("take the disagreement to the author, then {again}"),
+            format!("take the disagreement to the node engineer, then {again}"),
         ),
         || {
             cmd_rerun(root, &[id])?;
@@ -508,7 +513,7 @@ pub fn cmd_build_node(root: &Path, args: &[&str]) -> Result<(), String> {
         },
     )?;
     run.done(&format!(
-        "build-node: {id} is built from its method, tested against its author's cases, and connected."
+        "build-node: {id} is built from its method, tested against its node engineer's cases, and connected."
     ));
     Ok(())
 }

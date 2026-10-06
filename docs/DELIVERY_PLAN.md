@@ -125,7 +125,7 @@ release time fails on the day it can least be afforded — and link-time
 optimisation with a single codegen unit changes inlining, so the profile that
 ships is the profile that must be proven.
 
-The tester exercises the user profile first, deliberately: testing the
+The tester exercises the `user` profile first, deliberately: testing the
 engineering build tests something no customer will ever run.
 
 ### What a closed binary actually buys

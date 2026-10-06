@@ -2,7 +2,7 @@
 
 > **Answer first.** A lesson is `lesson.toml` beside a row's `node.toml`: content only — stations of text with a claim each, equations with their source, "try it" widgets that name input and output rows, check-yourself questions, references. The page draws every part from one component library, and a widget computes nothing itself: the engine answers it. The gate refuses a lesson with markup, an untagged claim, or a widget naming a row that is not there.
 >
-> **Kind:** reference · **For:** the experts who write lessons, and the developers who place them
+> **Kind:** reference · **For:** the node engineers who write lessons, and the developer who places them
 
 ## Said simply
 
@@ -58,7 +58,7 @@ row, and applied by a developer.
 1. **The form.** `cargo run -p xtask -- lesson form <node> --out <file>`, or
    *write a lesson — its form* on the row's page. One HTML file that works
    with no server and no network: the lesson as fields, the row's question
-   beside it, and **the check the gate runs, run in the page** as the author
+   beside it, and **the check the gate runs, run in the page** as the node engineer
    types. The form carries the checker every node form carries
    (`web/method.wasm.gz`, which holds `vleo_sheet::lesson::report`) and a
    table of the tree's rows, so a widget naming a row that is not there — or

@@ -1,18 +1,18 @@
 /*
-  THE NODE APPLICATION — one author fills one node's file.
+  THE NODE APPLICATION — one node engineer fills one node's file.
 
   One HTML file, offline, nothing to install (web/node.html, built by
-  `cargo run -p xtask -- group-app`). The group lead issues each author their
-  node's database file (<node>.vnode); the author opens it here and is walked
+  `cargo run -p xtask -- group-app`). The subsystem engineer issues each node engineer their
+  node's database file (<node>.vnode); the node engineer opens it here and is walked
   through what the node needs, step by step: what it answers (the contract —
-  theirs to read, the lead's to change), the explanation, the theory, the
+  theirs to read, the subsystem engineer's to change), the explanation, the theory, the
   pseudocode, the inputs' defaults, the results from their own code, the
   evidence, the pictures, the code. Every step shows what it will look like,
   as it is typed. Then a preview of the whole node as the group will see it,
-  the checks, and the author's sign-off. Save writes the file back.
+  the checks, and the node engineer's sign-off. Save writes the file back.
 
   Nothing here runs anything. The pseudocode is read and typeset, never
-  executed; the results are the author's, from their own code, a hand
+  executed; the results are the node engineer's, from their own code, a hand
   calculation or a paper — the developer's code is later tested against them.
 */
 'use strict';
@@ -100,7 +100,7 @@ function topbar() {
 async function save() {
   if (!ctx.file) return;
   const db = ctx.file.db;
-  // Each save is a revision: the lead sees which revision a release took.
+  // Each save is a revision: the subsystem engineer sees which revision a release took.
   db.tx(() => {
     db.exec('UPDATE node SET revision = revision + 1 WHERE uid = ?', [ctx.uid]);
     logChange(db, ctx.me, ctx.uid, 'saved revision ' + (Number(contract().revision)), null, null);
@@ -130,10 +130,10 @@ function welcome() {
   const inPlace = canSaveInPlace();
   $('#gnav').innerHTML = '<p class="muted small">Open your node file to begin.</p>';
   $('#gmain').innerHTML =
-    '<section class="answer-first view-af"><p class="af-k">Answer first</p><p class="af-a">Open the node file your group lead gave you ' +
+    '<section class="answer-first view-af"><p class="af-k">Answer first</p><p class="af-a">Open the node file your subsystem engineer gave you ' +
     '(<code>&lt;node&gt;.vnode</code>) and this page walks you through everything your node needs, showing each part as the group will see it.</p>' +
     '<ul class="af-points"><li>Nothing leaves this computer. The page has no network and runs nothing.</li>' +
-    '<li>What your node answers and what feeds it — its contract — is set by your lead. You can read it here and ask for a change.</li>' +
+    '<li>What your node answers and what feeds it — its contract — is set by your subsystem engineer. You can read it here and ask for a change.</li>' +
     '<li>Save often. Then put the file back in your folder on the group\'s drive.</li></ul></section>' +
     '<div class="gopen gcards"><div class="gdrop gcard"><h2 class="gh3">Open your node file</h2><p class="muted small">Drop it here, or</p>' +
     '<label class="ctl gbtn">Choose the file…<input type="file" id="npick" accept=".vnode" hidden></label>' +
@@ -237,20 +237,20 @@ async function pageContract(host) {
   const readers = db.all('SELECT DISTINCT n.id FROM input i JOIN node n ON n.uid = i.node_uid WHERE i.source = ? AND n.archived = 0', [ctx.uid]).map(r => r.id);
   const reqs = db.all('SELECT * FROM request WHERE node_uid = ? ORDER BY at DESC', [ctx.uid]);
   const issuedFrom = db.meta('issued_from'), issuedAt = db.meta('issued_at');
-  host.innerHTML = lead(ctx.id, '<span class="af-q">' + esc(c.question || 'Your lead has not yet written the question this node answers.') + '</span><br><b>' +
+  host.innerHTML = lead(ctx.id, '<span class="af-q">' + esc(c.question || 'Your subsystem engineer has not yet written the question this node answers.') + '</span><br><b>' +
     esc(c.output || ctx.id) + '</b>' + (c.unit ? ' [' + esc(c.unit) + ']' : '') + ((c.lower || c.upper) ? ' · from ' + esc(c.lower || '—') + ' to ' + esc(c.upper || '—') : ''), [
     '<span class="gkind k-' + esc(c.kind) + '">' + esc(c.kind) + '</span> · author ' + esc(c.author || '—') + ' · contract v' + esc(c.contract_version) + ' · revision ' + esc(c.revision),
     'Group ' + esc(db.meta('group_name') || db.meta('group_id')) + ', version ' + esc(db.meta('version')) + (issuedFrom ? ' · issued from ' + esc(issuedFrom) + ' on ' + esc(String(issuedAt).slice(0, 10)) : ''),
   ]) +
-    '<p>This is your node\'s <b>contract</b>: what it answers, in what unit, and what feeds it. Your lead set it, so the nodes around yours can rely on it. ' +
+    '<p>This is your node\'s <b>contract</b>: what it answers, in what unit, and what feeds it. Your subsystem engineer set it, so the nodes around yours can rely on it. ' +
     'You fill everything else. If the contract is wrong — a unit, a missing input — ask for a change below; do not work around it.</p>' +
     '<h2 class="gh">Where it sits</h2><div class="gwire">' + neighbourhood() + '</div>' +
     '<h2 class="gh">What feeds it</h2>' + (ins.length ? '<div class="ri-wrap"><table class="fx gtable"><thead><tr><th>Input</th><th>From</th><th>Unit</th><th>Default</th><th>Range</th></tr></thead><tbody>' +
-      ins.map(i => '<tr><td><b>' + esc(i.name) + '</b></td><td>' + esc(i.source === 'case' ? 'a value the user sets' : idOf.get(i.source) || i.source) + '</td><td>' + esc(i.unit || '—') + '</td><td>' +
+      ins.map(i => '<tr><td><b>' + esc(i.name) + '</b></td><td>' + esc(i.source === 'case' ? 'a value set in the case' : idOf.get(i.source) || i.source) + '</td><td>' + esc(i.unit || '—') + '</td><td>' +
         esc(i.dflt || '—') + '</td><td>' + esc(i.min || i.max ? (i.min || '…') + ' to ' + (i.max || '…') : '—') + '</td></tr>').join('') + '</tbody></table></div>'
       : '<p class="muted">Nothing: a ' + esc(c.kind) + ' node takes no inputs.</p>') +
     '<p class="muted small">Read by: ' + (readers.length ? readers.map(esc).join(', ') : 'no node of this group') + '.</p>' +
-    '<h2 class="gh">Ask your lead for a change</h2><p class="muted small">Kept in your node file; your lead sees it when the files are assembled.</p>' +
+    '<h2 class="gh">Ask your subsystem engineer for a change</h2><p class="muted small">Kept in your node file; your subsystem engineer sees it when the files are assembled.</p>' +
     '<p><textarea id="nreq" class="gnote" rows="3" placeholder="e.g. the input h should be in metres, not kilometres; or: this node also needs the solar flux"></textarea></p>' +
     '<p><button class="ctl gbtn" type="button" id="nreq-go">Ask</button></p>' +
     (reqs.length ? '<ul class="gs-log">' + reqs.map(q => '<li><span class="muted small">' + esc(q.at.slice(0, 10)) + ' · ' + esc(q.author) + ' · ' + esc(q.status) + '</span> ' + esc(q.body) +
@@ -270,7 +270,7 @@ async function pageContract(host) {
     ctx.file.dirty = true;
     topbar();
     await route();
-    flash('Asked. Save the file, and tell your lead.');
+    flash('Asked. Save the file, and tell your subsystem engineer.');
   }));
 }
 
@@ -442,7 +442,7 @@ async function pageInputs(host) {
   const ins = db.all('SELECT * FROM input WHERE node_uid = ? ORDER BY ord', [ctx.uid]);
   const idOf = new Map(db.all('SELECT uid, id FROM node').map(r => [r.uid, r.id]));
   host.innerHTML = lead('Inputs', 'For each input: how it is written, its default — the value a run takes when nobody sets it — and the range your node holds for.', [
-    'Its name, where it comes from and its unit are the contract: your lead sets those.',
+    'Its name, where it comes from and its unit are the contract: your subsystem engineer sets those.',
     'The range is where your node holds. A value outside it is refused, never quietly used.',
   ]) + (ins.length ? '<div class="ri-wrap"><table class="fx gtable"><thead><tr><th>Input</th><th>From</th><th>Unit</th><th>Written as</th><th>Default</th><th>Min</th><th>Max</th><th>What it is</th></tr></thead><tbody>' +
     ins.map(i => '<tr><td><b>' + esc(i.name) + '</b></td><td class="small">' + esc(i.source === 'case' ? 'user' : idOf.get(i.source) || i.source) + '</td><td class="small">' + esc(i.unit || '—') + '</td>' +
@@ -607,7 +607,7 @@ async function pageSign(host) {
   const decl = (node().files['declaration.csv'] ? records(node().files['declaration.csv'])[0] : null) || {};
   host.innerHTML = lead('Check & sign', errors ? '<b>' + errors + ' thing(s) to fix</b> before your node is ready. Each one says where.' : 'Your node passes its checks. Sign it, save it, and put the file back on the drive.', [
     'Signing says: this is my node, as it is now. Change anything afterwards and the signature goes stale — sign again.',
-    'Your lead assembles every node\'s file into the group\'s release, and the owner signs the whole.',
+    'Your subsystem engineer assembles every node\'s file into the group\'s release, and the owner signs the whole.',
   ]) +
     '<h2 class="gh">Errors (' + errors + ')</h2>' + findingsList(by('error'), 'No errors.') +
     '<h2 class="gh">Warnings (' + by('warning').length + ')</h2>' + findingsList(by('warning'), 'No warnings.') +
@@ -620,7 +620,7 @@ async function pageSign(host) {
       ['transcribed', 'It copied into pseudocode a relation a person had already written, and a person checked the copy against it']].map(([v, t]) =>
       '<label><input type="radio" name="nai" value="' + v + '"> ' + esc(t) + '</label>').join('') +
     // Asked afresh at every signing: the node may have changed since, and so
-    // may the answer. The last one is shown, never chosen for the author.
+    // may the answer. The last one is shown, never chosen for the node engineer.
     (decl.ai ? '<p class="muted small">Last time this node was signed, the answer was <b>' + esc(decl.ai) + '</b>.</p>' : '') +
     '<div id="nai-tr" hidden>' +
     '<p><label>Copied from <input id="nai-src" class="gs-in" value="' + esc(decl.source || '') + '" placeholder="a file and line, a paper and equation, a node" aria-label="what the relation was copied from"></label></p>' +
@@ -638,7 +638,7 @@ async function pageSign(host) {
     const name = $('#nsig-me').value.trim();
     if (!name) throw new Error('say who you are');
     const authors = String(c.author || '').split(/,\s*/).filter(Boolean);
-    if (authors.length && !authors.includes(name)) throw new Error(name + ' is not this node\'s author (' + authors.join(', ') + '). Only its author signs it.');
+    if (authors.length && !authors.includes(name)) throw new Error(name + ' is not this node\'s node engineer (' + authors.join(', ') + '). Only its node engineer signs it.');
     const ai = (host.querySelector('input[name=nai]:checked') || {}).value;
     if (!ai) throw new Error('say whether an assistant helped with this node');
     const src = ai === 'transcribed' ? $('#nai-src').value.trim() : '';

@@ -1,334 +1,206 @@
 # AGENTS.md
 
-> **Answer first.** The rules that do not bend, and the developer's loop: every change to the design arrives as a node form, is checked, applied with its de-risking record, implemented, gated and released. An assistant may help with the code; it never supplies a relation.
+> **Answer first.** This repository holds the code that runs the design, not the design. The developer maintains the engine, the one library that reads and checks every design file, and the application; the people who own the design write it, check it and release it in that application, on the shared drive. Six rules about the code do not bend, and the first is that every formula lives in the kernel. An assistant may help write the code; it never supplies a relation.
 >
-> **Kind:** reference · **For:** developers and any assistant they run
+> **Kind:** reference · **For:** the developer, their deputy, and any assistant they run
 
-The root instruction file for the people who maintain this repository — and
-for any assistant a developer runs inside it, which works to exactly the same
-rules. `areas/*.md` narrow it per area, and the nearer file wins on anything
-they disagree about.
+The root instruction file for the people who maintain this repository, and for
+any assistant a developer runs inside it, which works to the same rules.
+`areas/*.md` narrow it per area, and the nearer file wins where they disagree.
 
-This file is reviewed like code, not like documentation. It decides what every
-change to the design goes through, so a change to it has the blast radius of a
-generator change.
+This file is reviewed like code. It decides what every change to the code goes
+through, so a change to it has the blast radius of a change to the gate.
 
 Before your first change, read [`docs/HOW_IT_WORKS.html`](docs/HOW_IT_WORKS.html)
-in a browser: the architecture of the codebase and how it works, end to end.
-This file is the rules. That page is how they fit together.
+in a browser, and the three pages that say what 1.0 is:
+[`docs/SYSTEM_MODEL.md`](docs/SYSTEM_MODEL.md),
+[`docs/OPERATING_1_0.md`](docs/OPERATING_1_0.md) and
+[`docs/PLAN_1_0.md`](docs/PLAN_1_0.md).
 
 ## What this repository is
 
-An integrated design tool for very-low-Earth-orbit spacecraft. One kernel
-computes every number; four rings depend inward only:
+The code of an integrated design tool for very-low-Earth-orbit spacecraft. One
+kernel computes every number; four rings depend inward only:
 
     vleo-units  →  vleo-core  →  vleo-bus  →  vleo-mod-*  →  the faces
     RING 0         RING 1        RING 2       RING 3
 
-The tree is 1396 rows across four layers. Each row is one small question with
-one answer, one folder, and one variable whose id is the row's id.
+Around them: the method interpreter, the library that reads, writes and checks
+every design file, and the application, installed and as a page.
 
-## Who changes it
+**What it does not hold, from the switch-over on:** the design. The programme's,
+the systems' and every group's files live on the shared drive, written by their
+owners in the application (`docs/OPERATING_1_0.md`, section 15). Until the
+switch-over the design is still here, and the section *Until the switch-over*
+below says how it changes.
 
-**The team uses the tool; the developers maintain it.** A team never edits
-this repository. They set the inputs, run, keep and send results — all of it
-outside the repository, under `~/.vleo/` — and when the design itself is wrong,
-missing or unfinished, the person who knows the answer sends it here in one
-of two shapes: **the node's form** (or the form for a new node), or, for a group
-that owns a part of the tree, **the group's sealed release** — the database
-file its group application assembled from every node file it keeps, signed by
-the people who wrote them (`docs/GROUP_APPS.md`). The browser cannot change a
-node, add one or remove one, by design: a change typed into one copy of the
-tool is a change nobody checked, implemented or released.
+## Who does what
 
-So every change to the design arrives as a form or a sealed release, and a
-form goes through this loop:
+Everyone uses the application. Each role has a deputy who may act for it.
 
-    0  TAKE      cargo run -p xtask -- take <form.html> --for <author>
-                 steps 1–2 and 6 in one: the form on its own branch
-                 form/<author>/<node> from `maintainer`, checked, applied,
-                 gated, tested,
-                 committed naming the author, pushed — or a note to send back.
-                 Every push to a form branch builds a PREVIEW for the author;
-                 their APPROVE file is recorded with `xtask approve`, and a
-                 form branch merges into `maintainer` only with it
-                 (docs/roles/maintainer.html).
-    1  CHECK     cargo run -p xtask -- intake <form.html>
-                 what it would change, field by field; every interface it
-                 declares (each input a row that exists, of the quantity the
-                 node expects); what cannot be applied — a conflict with a
-                 change made since, a relation an assistant supplied.
-                 Nothing is written. If it does not pass, it goes back to
-                 whoever filled it, with the lines intake printed.
-    2  APPLY     cargo run -p xtask -- intake <form.html> --apply
-                 into its layer: an existing node's sheet, or a new node built
-                 in its place in the tree. Regenerated and gated as one edit,
-                 or put back entirely. A change that moves a decision appends
-                 its [[version]] — what we believed, what we tested, what we
-                 now know, what changed; without that record, only the form's
-                 wording goes in (docs/DERISKING.md).
-    3  PUBLISH   cargo run -p xtask -- publish <node>
-                 a filled seeded row becomes published and its code is
-                 generated, with numbered HOLE blocks.
-    4  IMPLEMENT a node with a method (docs/PSEUDOCODE.md) is built from it:
-                 cargo run -p xtask -- build-node <node>
-                 translated by fixed rules into vleo-core::physics::methods,
-                 tested against its author's own cases, no holes. Otherwise:
-                 cargo run -p xtask -- fill <node> --hole <n> --body - \
-                     --by "<who>" --model <model>
-                 the few typed lines per hole, composing kernel relations.
-    5  EVIDENCE  fixtures.toml — values from outside this code, including any
-                 known values the form supplied (intake prints them; it never
-                 writes them).
-    6  GATE      cargo run -p xtask -- gate && cargo test
-    7  RELEASE   commit naming whoever filled the form, review, merge into
-                 `maintainer`; a pull request takes `maintainer` (and
-                 `developer`) into `main`; then, on `main`,
-                 cargo run -p xtask -- derisk      (the narrative, regenerated)
-                 cargo run -p xtask -- release <version>
-                 stamps every version still `next` with the release that ships
-                 it. The team gets it in that release, and their saved case
-                 carries over on its own.
+| role | owns | in this repository |
+|---|---|---|
+| **programme manager** | the programme's branch, and the decision | nothing |
+| **system engineer** | the systems' branch; the main valve between the programme and the subsystems; the one who releases the design | nothing |
+| **subsystem engineer** | one group's branch; the valve above its nodes. Every owner of a branch is the system engineer of that branch | nothing |
+| **node engineer** | one or more nodes in a group | nothing |
+| **developer** | the code: the engine, the library, the application, their tests and their releases | everything here |
 
-A sealed release goes through the same loop at the scale of a group, each
-of its computed nodes becoming the form its author would have filled. It is
-taken in on its own branch, `group/<group>-<version>` from `maintainer`, and
-the release is never edited there: a fix goes back to the group, and comes
-back as the next sealed version.
+The design reaches the developer only as a **request** (W14): something the code
+cannot yet do, raised in the application with the evidence. The developer
+answers it with an application release. The developer never edits, signs,
+seals or releases anyone's design.
 
-    G1 TAKE IN  node tools/group_db.mjs --unpack <release.vleo> --out <folder>
-                cargo run -p xtask -- group-intake <folder> [--apply]
-                the seal checked first — every file's SHA-256 against the
-                fingerprint the group signed; then steps 1–2 for every node,
-                applied as one edit or put back whole.
-    G2 BUILD    cargo run -p xtask -- group-build <folder>
-                step 4 for every computed node, from the group's pseudocode.
-    G3 TEST     cargo run -p xtask -- group-test <folder>
-                the group's own results are the evidence of step 5: each
-                node's cases, the group as a whole through the engine, and
-                both ends of every declared range. A failure goes to the
-                group; their results and tolerances are never the thing to
-                change.
-    G4 DELIVER  cargo run -p xtask -- group-deliver <folder>
-                the test application, built from a commit on the group branch.
-    G5 ACCEPT   cargo run -p xtask -- group-accept <file> --delivery <toml>
-                the lead's answer from the group application, recorded only
-                for the exact build the group tried. A group branch merges
-                into `maintainer` only with it; then step 7.
+## The six rules that do not bend
 
-**An assistant may help at step 4, and anywhere a developer uses one for
-ordinary engineering** — the generators, the daemon, the faces, the tests. It
-is released on a change only after the form has passed the check at step 1,
-and it works to every rule in this file. There is no roster of specialised
-agents: the checks enforce the rules, not a prompt. What no assistant may do is
-**supply a relation** — intake refuses a form whose relation an assistant
-filled, group intake refuses a node whose declaration says an assistant
-supplied its method or results (or says nothing), and relation stamping
-refuses a checkout whose `git config user.name` is an assistant's. `fill --by
---model` records who wrote each hole, so a significant one written twice by
-different model families can be compared with `xtask differential`.
+**1 · Every formula lives in `vleo-core::physics` and nowhere else.** A relation
+inlined anywhere else is a relation nobody can review or reuse. Adding one to
+the kernel is a reviewed change to a crate every node reads. A design reaches
+the kernel only through a node's method, run by the interpreter, or through a
+built-in relation kept in code by its node's id until its group writes a method.
 
-**Transcribing is not supplying.** An assistant may copy a relation a person
-already wrote — their code, their paper, the design as it stands — into
-pseudocode, when the node says so: its declaration reads `transcribed`, names
-the source it was copied from, and names the person who read the copy against
-that source and signs it as theirs. The relation was a person's before the
-assistant touched it, and is a person's again once they sign. Intake takes a
-`transcribed` node with no source or no signature as one an assistant
-supplied, and the method checker runs the copy on its author's own cases,
-which came from outside it (rule 2). A transcription is reviewed at H1b like
-any relation; the signature does not replace the review
-([`CONTRIBUTING.md`](CONTRIBUTING.md)).
-
-## The five rules that do not bend
-
-**1 · The sheet is the only source.** `node.toml` is written by hand. Every
-other file in a node folder is generated from it. A hand edit outside a
-numbered `HOLE` block in `model.rs` is discarded by the next `xtask docs` and
-fails the regeneration diff in the gate.
-
-**2 · An expected value may never come from the code under test.** The gate
-refuses a fixture whose provenance is `self-snapshot` or `agent-generated`.
-This is the one external oracle in the entire system; everything else compares
-the software against itself.
-
-**3 · Every formula lives in `vleo-core::physics` and nowhere else.** A
-relation inlined in a node is a relation nobody can review or reuse. Adding one
-to the kernel is a reviewed change to a crate every node reads.
-
-**4 · Portable maths only.** `vleo_core::units::pmath`, never the standard
+**2 · Portable maths only.** `vleo_core::units::pmath`, never the standard
 library's transcendentals. The kernel crates are `no_std`, so `f64::cos` does
-not exist there and the compiler refuses; in a hole body the splice and then
-the gate refuse it by name.
+not exist there and the compiler refuses; in an interpreted method the
+interpreter has only `pmath`.
 
-**5 · A refusal is never a substitution.** A row with no content returns
+**3 · A refusal is never a substitution.** A row with no content returns
 `NotRun` under its own name. A run always prints "n ran, m blocked" and names
 the blocked. A sweep records refused points; it never drops them.
 
-## Requirements and closure — the contract between layers
+**4 · An expected value never comes from the code under test.** The library
+refuses a case whose provenance is `self-snapshot` or `agent-generated`, and so
+does the gate. It is the one external oracle in the system; everything else
+compares the software against itself.
 
-A layer does not read into the layer below it. What crosses is a **closure**: a
-requirement, an achieved value, and a margin between them. That is the only
-contract there is, so it is the one thing that must not be ambiguous.
+**5 · An application release gives the released design's answers unchanged.**
+`baseline/today.csv` holds what the engine answers today, and `cargo test`
+fails when an answer moves. A change to the code that moves an answer is a
+defect, whatever else it improves. From the switch-over on, the record is taken
+from the current released design when an application release is prepared (W15).
 
-**A requirement declares which way it binds.** `sense = "<="` means the achieved
-value must stay **under** the bound; `sense = ">="` means it must **reach** it.
-Never defaulted, and gate check 7d refuses a written requirement without it —
-where a requirement is any row of `kind = "required"` **or** any row some
-closure reads as its `req` binding. That second half is taken from the graph
-rather than from a naming convention, because a convention can be dodged by
-renaming a folder and a contract edge cannot.
+**6 · No assistant supplies a relation.** It may write code: the engine, the
+library, the application, their tests. It may transcribe a relation a person
+already wrote, when the node declares it `transcribed`, names the source and
+carries the signature of the person who read the copy against it. The library
+refuses a node whose declaration says an assistant supplied its method or its
+results, or says nothing, and refuses a signature made by an assistant's name.
 
-The reason is not tidiness. *The design sustains Ap 200* and *the design needs
-Ap 200* are the same number and opposite requirements. Read the wrong way, the
-closure still computes, still has a plausible sign, and reports a comfortable
-margin for a spacecraft that is about to be destroyed. The prior MATLAB was
-stricter than this repository here for exactly that reason: its contract
-declares an adverse direction per requirement and fails its build without one,
-because "defaulting either is how a silently wrong bound gets shipped".
+## The design's rules, which the code enforces
 
-**The sheet's sense and the hole's sense are checked against each other.** A
-closure's hole applies `mission::Sense::AtLeast` or `mission::Sense::AtMost`,
-and that is what actually runs. Gate check 7e refuses a node whose hole applies
-the opposite of what its requirement declares. Two statements of one fact drift,
-and this one drifts in the direction nobody looks.
+These are the people's rules, described for them in `docs/OPERATING_1_0.md`.
+The developer's part is that the library checks each one, the same installed
+and in the page, and that a check is never weakened to let a file through. Each
+is a check with a test that a file breaking it is refused, by name.
 
-**Not every closure runs in the same direction.** Most of this tree is a promise
-— a subsystem must reach what it was asked for. The environment is not promised:
-nobody builds the Sun, and a solar requirement is the worst sky the design can
-sustain, closing when the achieved sky stays under it. Both senses are correct
-and they are opposite, which is the whole reason the field exists.
+Most of these checks are built in phases C and D of the plan. Until they are,
+the gate and intake hold the ones they hold today (the sense of a requirement,
+the provenance of a case, the assistant rules, the seal, the de-risking record),
+and the others are not yet enforced by anything. That is said here so nobody
+takes the table for a list of what is checked now.
 
-## Two standards every change is held to
+| the rule | refused when |
+|---|---|
+| one writer per file | a file is signed by anyone but its assigned writer |
+| a signature checks through the chain | it does not check against the key its parent file registered |
+| an expected value never comes from the code under test | rule 4 above |
+| no relation supplied by an assistant | rule 6 above |
+| every requirement says which way it binds | a requirement, or any row a closure reads as its bound, has no `sense` |
+| the sheet's sense and the method's agree | a closure's method applies the opposite of what its requirement declares |
+| a node reads its children only through their ports | a method reads a child's value that is not a port |
+| a release is never edited | one byte differs from what was sealed |
+| a parameter is changed only by the level that owns it | a file below that level sets it |
+| every valve's owner controls what passes it | a release integrates without its subsystem engineer's seal |
+| the design is released by the system engineer alone | a released design is not signed by the registered system engineer |
+| today's design is never taken for a released one | a screen, file or result does not say which it is |
+| every change says which belief broke | a change to what a node computes carries no version record (`docs/DERISKING.md`) |
 
-**Every change says which belief broke** — `docs/DERISKING.md`. A node changes
-because something tested one of its beliefs and it did not hold; the change
-records what we believed, what we tested, what we now know, what it cost, what
-changed and which risks it moved, and every version says what it rests on and
-what would break it. Risks are registered once, on the risk-register rows of the
-management layer, and moved only by versions. The gate refuses a malformed
-record (`versions`, V17, V18); the gap pass holds a row that has none.
+**Not every closure runs in the same direction.** `sense = "<="` means the
+achieved value must stay under the bound; `sense = ">="` means it must reach it.
+Never defaulted. *The design sustains Ap 200* and *the design needs Ap 200* are
+the same number and opposite requirements; read the wrong way, the closure
+still computes and reports a comfortable margin for a spacecraft that is about
+to be destroyed.
 
-**Everything that teaches, teaches the same way** — `docs/EXPLAINING.md`. Answer
-first; then said simply; then the real thing with its source; then where the
-simple version breaks. Every claim says whether it is sourced, derived, declared
-or illustrative, and every block what kind of reading it is. Node pages, forms,
-results, the manual, figures and these documents are all held to it by check.
+## Everything that teaches, teaches the same way
 
-## The commands
+`docs/EXPLAINING.md`. Answer first; then said simply; then the real thing with
+its source; then where the simple version breaks. Every claim says whether it
+is sourced, derived, declared or illustrative, and every block what kind of
+reading it is. The application's screens, guides, results, figures and these
+documents are all held to it by check.
 
-    cargo run -p xtask -- form <node>|--new    a node's form, to send out
-    cargo run -p xtask -- intake <form.html> [--apply [--partial]]
-                                            the checker, then the apply
-    cargo run -p xtask -- lesson form <node> | check <file> | apply <file>
-                                            a row's lesson: its form to send,
-                                            the gate's check, then the apply
-                                            (docs/LESSONS.md)
-    cargo run -p xtask -- publish <node>    seeded and filled → published
-    cargo run -p xtask -- declare <node>    the completion questions, and which
-                                            are still open
-    cargo run -p xtask -- docs [<node>]     the six per-node generators
-    cargo run -p xtask -- assemble          the three assembly generators
-    cargo run -p xtask -- gate [<node>]     the checks, in order
-    cargo run -p xtask -- fill <node> --hole <n> --body - [--by <who> --model <model>]
-                                            splice one hole body
-    cargo run -p xtask -- ready [<node>]    has it earned a person's attention
-    cargo run -p xtask -- status            what exists, what is blocking
-    cargo run -p xtask -- active            what answers, what is undefined, and
-                                            what is blocked by a named row
-    cargo run -p xtask -- reach             where each answer goes, and which
-                                            reach no KPI closure
-    cargo run -p xtask -- catalogue [<group>]
-                                            what each group publishes to the
-                                            others, and who reads each row
-    cargo run -p xtask -- impact <node|group>
-                                            which other groups a change reaches
-    cargo run -p xtask -- gap               what the sheets promised and
-                                            nothing covers
-    cargo run -p xtask -- derisk            the de-risking narrative, regenerated
-    cargo run -p xtask -- release <version> [--check]
-                                            stamp every `next` version; set the
-                                            workspace version
-    cargo run -p xtask -- readers           every row's page and lesson, read
-                                            with no tool running (docs/LESSONS.md)
-    cargo run -p xtask -- kit               the tool for the team, without the
-                                            repository (docs/SHARING.md)
-    cargo run -p xtask -- group-app [--check]
-                                            web/group.html and web/node.html, the
-                                            pages a group keeps its database files
-                                            in (docs/GROUP_APPS.md), and the folder
-                                            pattern's two documents, from
-                                            groups/SPEC.toml
-    cargo run -p xtask -- group-intake <folder> [--apply]
-                                            a group's sealed release into the
-                                            design: the seal checked, each node's
-                                            pseudocode and results taken as its
-                                            form (docs/GROUP_APPS.md)
-    cargo run -p xtask -- group-build <folder>
-                                            every computed node of a taken-in
-                                            release, built from its method
-    cargo run -p xtask -- group-test <folder>
-                                            the group against its own results:
-                                            its cases, its group results through
-                                            the engine, the ends of its ranges
-    cargo run -p xtask -- group-deliver <folder>
-                                            the test application for the group,
-                                            with what it holds and what to try
-    cargo run -p xtask -- group-accept <file.accept.toml>
-                                            the group's answer to its test
-                                            application, recorded on its branch;
-                                            only an accepted build merges
-    cargo run -p xtask -- group-export <group>
-                                            a group's folder, written from the tree,
-                                            for the group to start from
-    cargo run -p xtask -- take <form.html> --for <author>
-                                            a form onto its own branch, applied,
-                                            tested, committed, pushed
-    cargo run -p xtask -- preview           where this form branch's preview is
-    cargo run -p xtask -- approve <file>    the author's approval of that build
-    cargo run -p xtask -- queue             every form branch and its stage
-    cargo run -p xtask -- ship <version>    the release branch, stamped and
-                                            proved (docs/roles/maintainer.html)
-    cargo run -p xtask -- design [--check <file>]
-                                            design.vleo: the tree as the one file a
-                                            kit carries, or a file held to the tree
-    cargo run -p xtask -- guides            the three role guides, from the manual
-    cargo run -p xtask -- method <node>     the node's method, run on its author's
-                                            cases (docs/PSEUDOCODE.md)
-    cargo run -p xtask -- method-wasm       rebuild the checker every node form
-                                            carries, web/method.wasm.gz
-    cargo run -p xtask -- rerun <node>|--all
-                                            each author's own code, run again on
-                                            the cases recorded from it
-    cargo run -p xtask -- build-node <node> a node from its method: translated,
-                                            tested on its author's cases, then
-                                            connected
-    cargo run -p xtask -- migration         which rows still need a method, by
-                                            owner, and their forms to send
-    cargo run -p xtask -- explain [<command>]
-                                            what a command reads, writes and
-                                            checks, how to undo it, where its
-                                            code is (docs/PIPELINE.md)
-    cargo run -p xtask -- why <node>        a node's history, and its gate now
-    cargo run -p xtask -- trace             the last writing run, step by step
-    cargo run -p xtask -- pipeline [--check]
-                                            docs/PIPELINE.md, from the table
-    cargo run -p vleo-cli --bin vleo -- run <node> [--save <file.csv>] [--keep]
-    cargo run -p vleo-cli --bin vleo -- result <file|folder>
+## The developer's loop
 
-Every command that writes prints numbered steps, says on a stop why, what state
-the files are in and how to retry, leaves a trace in `target/xtask-trace/`, and
-takes `--dry-run`.
+    1  REQUEST    a request (W14) or an issue arrives, with its evidence
+    2  BRANCH     a working branch from `developer`
+    3  CHANGE     the code, and its tests — each new test shown red against a
+                  deliberately broken implementation before it is trusted
+    4  GATE       cargo run -p xtask -- gate && cargo test
+    5  REVIEW     a pull request into `developer`, reviewed as CONTRIBUTING.md says
+    6  RELEASE    `developer` into `main` by pull request; on `main`,
+                  cargo run -p xtask -- ship <version>
+                  the release gives the released design's answers unchanged
+                  (rule 5), and names the oldest design it can run
 
 One command must be green before anything is pushed:
 
     cargo run -p xtask -- gate && cargo test
 
+## Until the switch-over
+
+The design is still in this repository, and the loop that changes it stays in
+use exactly as it is today, so nothing changes for anyone before the planned day
+(`docs/PLAN_1_0.md`, phase H). This section is deleted on that day.
+
+- **A change to one node** arrives as its form, and goes through `xtask take`:
+  its own branch `form/<name>/<node>` from `maintainer`, checked, applied with
+  its de-risking record, gated, tested, committed naming the person who filled
+  it, pushed, previewed, and merged only with their approval of that build
+  (`docs/roles/maintainer.html`).
+- **A group's work** arrives as its sealed release, and goes through
+  `group-intake`, `group-build`, `group-test`, `group-deliver` and
+  `group-accept` on its own branch `group/<group>-<version>` from `maintainer`.
+  The release is never edited there; a fix goes back to the group
+  (`docs/GROUP_APPS.md`).
+- **The node sheet is the only source.** `node.toml` is written by intake from
+  a form; every other file in a node folder is generated from it, and a hand
+  edit outside a numbered `HOLE` block fails the regeneration diff.
+- **`xtask explain <command>`** says what each of those commands reads, writes
+  and checks, and how to undo it (`docs/PIPELINE.md`).
+
+## The commands
+
+    cargo run -p xtask -- gate [<node>]      the checks, in order
+    cargo run -p xtask -- explain [<command>]
+                                             what a command reads, writes and
+                                             checks, how to undo it, where its
+                                             code is
+    cargo run -p xtask -- method-wasm        rebuild the checker the pages carry
+    cargo run -p xtask -- group-app [--check]
+                                             the pages built from the checker
+    cargo run -p xtask -- kit                the application, without the
+                                             repository
+    cargo run -p xtask -- ship <version>     the release branch, stamped and
+                                             proved
+    cargo run -p xtask -- pipeline [--check] docs/PIPELINE.md, from the table
+    VLEO_BASELINE=write cargo test -p vleo-cli --test today_s_answers_are_on_record
+                                             today's answers recorded again, in
+                                             the same commit as a deliberate
+                                             change to the design (`take` and
+                                             `group-build` do it themselves)
+    cargo run -p vleo-cli --bin vleo -- run <node> [--save <file.csv>] [--keep]
+
+The commands of today's loop are in `docs/PIPELINE.md` until the switch-over.
+Every command that writes prints numbered steps, says on a stop why, what state
+the files are in and how to retry, leaves a trace in `target/xtask-trace/`, and
+takes `--dry-run`.
+
 ## Testing
 
-`cargo test --workspace`. A fixture disagreement is a physics disagreement, not
-a build failure — it goes to the node owner, and the tolerance is never the
-thing to change.
+`cargo test --workspace`. A disagreement with a case is a physics disagreement,
+not a build failure. It goes to the node's engineer, and the tolerance is never
+the thing to change.
 
 A test that passes against a deliberately broken implementation is not testing
 anything. Before claiming a test is load-bearing, break what it covers, watch
@@ -337,15 +209,16 @@ it go red, and put it back.
 ## Review standards
 
 How many reviewers a change needs is stated once, in
-[`CONTRIBUTING.md`](CONTRIBUTING.md). Read it there. It is not repeated here
-because it was, and the two copies had already begun to differ — one listed
-tolerance changes and bundle publication, the other listed `tools/` scripts and
-instruction files, and neither was complete.
+[`CONTRIBUTING.md`](CONTRIBUTING.md), and not repeated here.
 
 ## House rules
 
 Write code that reads like the code around it. Match the comment density and
 the naming of the file you are in.
+
+Use the role names above and no others: programme manager, system engineer,
+subsystem engineer, node engineer, developer, and each one's deputy. A
+forecast's *lead time* is not a role, and keeps its name.
 
 Commit messages: `type(scope): a sentence saying what changed`.
 `tools/commit_message.py --types` prints the types and every valid scope. The

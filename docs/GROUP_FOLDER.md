@@ -48,7 +48,7 @@ Its sections, in this order: `## Equations`, `## Derivation`, `## Assumptions`, 
 - `members.csv` — **required**. everyone who signs, and what they sign
   - `name` — as they sign.
   - `role` — owner, author or reviewer. One of: owner, author, reviewer.
-  - `nodes` (optional) — the node ids they are the author of, space-separated; * for every node.
+  - `nodes` (optional) — the node ids they are the node engineer of, space-separated; * for every node.
 - `explanation.md` — **required**. the whole group, understood: what it answers, how its nodes work together, with the flow as a picture
 - `theory.md` — **required**. only the maths that spans nodes: coupled equations, the logic of a loop, shared assumptions. Write 'None beyond the nodes' own.' under each heading when there is none.
 - `flow.txt` — **required**. the group's pseudocode: which node feeds which, in order. One line per step: `node_id <- input_a, input_b`.
@@ -85,7 +85,7 @@ Its sections, in this order: `## Equations`, `## Derivation`, `## Assumptions`, 
   - `unit` — its unit.
   - `source` — a sources.csv id.
   - `says` — what it is.
-- `sources.csv` — **required**. every source the group rests on; a cited PDF sits in sources/. A node may add its own in nodes/<id>/sources.csv, so its author never waits on the lead to cite a paper
+- `sources.csv` — **required**. every source the group rests on; a cited PDF sits in sources/. A node may add its own in nodes/<id>/sources.csv, so its node engineer never waits on the subsystem engineer to cite a paper
   - `id` — the source's id, used wherever it is cited.
   - `cite` — author, year, title, where.
   - `file` (optional) — the file under sources/, if there is one.
@@ -144,7 +144,7 @@ Its sections, in this order: `## Equations`, `## Derivation`, `## Assumptions`, 
 - `nodes/<id>/pseudocode.txt` — **required** for computed nodes. The algorithm, in the method language (docs/PSEUDOCODE.md): `let`, `if`, `for`, `refuse`, `return`, every number with its unit. Required on every computed node. The developer's code is generated from it, so it must say exactly what the node does. Nothing in the group application runs it.
 - `nodes/<id>/inputs.csv` — **required** for computed nodes. every input: where it comes from and the value it takes by default
   - `name` — the name the pseudocode uses.
-  - `from` — the node it comes from (id in this group, or group.node in another), or case when a user sets it.
+  - `from` — the node it comes from (id in this group, or group.node in another), or case when the case sets it.
   - `unit` — its unit.
   - `default` (optional) — the value used when nothing else is given.
   - `min` (optional) — the lowest valid value.
@@ -163,7 +163,7 @@ Its sections, in this order: `## Equations`, `## Derivation`, `## Assumptions`, 
   - `unit` — its unit.
   - `source` — a sources.csv id.
   - `says` (optional) — what it is.
-- `nodes/<id>/declaration.csv` — optional. Who made this node's method and its numbers, and whether an assistant helped: `none`, `wording` (the words only), `relation` (the pseudocode, the equations, the results or the evidence), or `transcribed` (an assistant copied into pseudocode a relation a person had already written: their code, their paper, the design as it stands). Written by the node application when its author signs. An assistant may never supply mathematics: the developer's intake refuses a method or results an assistant supplied, and takes a node with no declaration as one an assistant helped with. A `transcribed` node names the `source` it was copied from and the person who read the copy against that source (`checked_by`). Without both, or with an assistant's name as the checker, intake takes it as one an assistant supplied.
+- `nodes/<id>/declaration.csv` — optional. Who made this node's method and its numbers, and whether an assistant helped: `none`, `wording` (the words only), `relation` (the pseudocode, the equations, the results or the evidence), or `transcribed` (an assistant copied into pseudocode a relation a person had already written: their code, their paper, the design as it stands). Written by the node application when its node engineer signs. An assistant may never supply mathematics: the developer's intake refuses a method or results an assistant supplied, and takes a node with no declaration as one an assistant helped with. A `transcribed` node names the `source` it was copied from and the person who read the copy against that source (`checked_by`). Without both, or with an assistant's name as the checker, intake takes it as one an assistant supplied.
   - `author` — the person who owns the method and its numbers.
   - `ai` — none, wording, relation or transcribed. One of: none, wording, relation, transcribed.
   - `date` — when it was declared.

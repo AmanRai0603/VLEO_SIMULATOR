@@ -1,6 +1,6 @@
-# Sharing the tool with the team
+# Sharing the tool with everyone
 
-> **Answer first.** The team gets the tool, not the repository — as **one Python package for every
+> **Answer first.** Everyone gets the tool, not the repository — as **one Python package for every
 > laptop** (`vleo-<version>-py3-none-any.whl`, started with `python -m vleo`), or as a **kit**: one
 > zip per platform with the programs and the files they read, and `START_HERE.md` on top. They run
 > it, keep their inputs and results on their own machine, and send back filled node forms. You
@@ -11,7 +11,7 @@
 
 The loop, end to end:
 
-    you                                   a team member
+    you                                   an engineer
     ───                                   ─────────────
     release → build a kit → share zip ──▶ unzip → start → use
                                           fill a node form → send the file
@@ -41,7 +41,7 @@ There is no git history in it, no generator, and no kernel source. Zip the folde
 zip. `dist/` is ignored by git.
 
 **The design travels as one file.** A developer edits the tree as folders, because review and the
-gate work on them; the tool a team runs needs the design whole, as one thing that cannot be
+gate work on them; the tool everyone runs needs the design whole, as one thing that cannot be
 half-copied. So the kit carries `design.vleo`, and the daemon reads it through the same interface
 it reads the folders through, with every check the loader makes. A page served from it is the page
 served from the folders, byte for byte — `crates/vleo-server/tests/the_design_file_serves_the_same_pages.rs`
@@ -55,7 +55,7 @@ file in it by its repository path, with the standard library. `VLEO_DESIGN` poin
 another one; a design file that does not open stops the daemon rather than falling back to
 whatever folders sit beside it.
 
-**One kit per platform.** The programs are built for the machine that built them. For a teammate
+**One kit per platform.** The programs are built for the machine that built them. For an engineer
 on another platform, use the release: `.github/workflows/release.yml` builds a kit on Linux,
 macOS and Windows and attaches `vleo-<version>-<platform>.zip` to the GitHub release. Anyone
 with access to the release page can download it without the repository.
@@ -76,18 +76,18 @@ or an antivirus to question — the reason it exists. It is checked by installin
 
 ## 2 · Take a form back
 
-A teammate sends a filled `*.node-form.html`. Save it into `forms/` (git ignores
-it) and take it in, naming its author:
+A node engineer sends a filled `*.node-form.html`. Save it into `forms/` (git ignores
+it) and take it in, naming its node engineer:
 
     cargo run -p xtask -- take forms/<file>.node-form.html --for "<author>"
 
 That puts it on its own branch `form/<author>/<node>` — checked, applied,
-regenerated, gated, tested, committed naming the author, pushed — or writes a
-note to send back and changes nothing. The push builds the author a **preview**
+regenerated, gated, tested, committed naming the node engineer, pushed — or writes a
+note to send back and changes nothing. The push builds the node engineer a **preview**
 by itself; send it to them, and when they press Approve, record the file they
 send back with `cargo run -p xtask -- approve <file>`. Merge once every check is
 green. A new relation still needs a developer (`publish`, `fill`). Every step,
-with what you will see and what to do when it refuses, is in the maintainer's
+with what you will see and what to do when it refuses, is in the intake
 guide, `docs/roles/maintainer.html`.
 
 ## 3 · Release and share the next kit
@@ -95,7 +95,7 @@ guide, `docs/roles/maintainer.html`.
     cargo run -p xtask -- ship <version>    # the release branch: narrative, stamp, gate, tests, push
     # merge its pull request, tag v<version>; the pipeline builds the three kits and the package
 
-The teammate replaces their folder with the new one. Their inputs, saved case and results are
+The engineer replaces their folder with the new one. Their inputs, saved case and results are
 under `~/.vleo/`, outside the folder, so they carry over; an input that no longer exists is set
 aside by name, and a kept result whose belief has changed says so on the Results page.
 
@@ -122,7 +122,7 @@ natively, and must be the same, byte for byte.
 
 ## Where the simple version breaks
 
-A kit is read-only by design, but nothing stops a teammate editing a file inside it. That edit is
+A kit is read-only by design, but nothing stops an engineer editing a file inside it. That edit is
 invisible to everyone else and is lost when the next kit replaces the folder. Anything that should
 change the design comes back as a form. And a kit is only as current as the release it was built
 from: `VERSION` in the folder, and the version the tool prints on start, say which one it is.

@@ -4,10 +4,10 @@
   The developer builds the tool with the group's sealed release in it and
   sends it as a folder: the programs, DELIVERY.toml (which release, which seal,
   which commit, which nodes, how many checks held) and DELIVERY.md (what to
-  try). The group tries it. Then the lead opens DELIVERY.toml here, beside
+  try). The group tries it. Then the subsystem engineer opens DELIVERY.toml here, beside
   their sealed release, and answers: ACCEPTED, or CHANGES with what they saw.
 
-  The answer is a small file, <group>-<version>.accept.toml, which the lead
+  The answer is a small file, <group>-<version>.accept.toml, which the subsystem engineer
   sends back. It names the delivery by its SHA-256 and the commit it was built
   from, so it accepts one build and nothing else: `cargo run -p xtask --
   group-accept <file>` refuses it against a branch that has changed since.

@@ -225,7 +225,7 @@ export function nodePage(ctx, id, tab) {
   const head = answerFirst('<span class="af-q">' + esc(r.question || '') + '</span><br>' +
     '<b>' + esc(r.output || id) + '</b>' + (r.unit ? ' [' + esc(r.unit) + ']' : '') + range +
     (r.kind === 'declared' ? ' · declared value <b>' + esc(r.value || '—') + '</b>' : ''), [
-    '<span class="gkind gk-' + esc(r.kind) + '">' + esc(r.kind || '?') + '</span> · authors: ' + esc(authors.join(', ') || 'nobody yet — members.csv'),
+    '<span class="gkind gk-' + esc(r.kind) + '">' + esc(r.kind || '?') + '</span> · node engineers: ' + esc(authors.join(', ') || 'nobody yet — members.csv'),
     errors ? '<b>' + errors + ' error(s)</b> in this node — <a href="#/node/' + esc(id) + '/checks">see them</a>' : 'No errors in this node',
   ], 'explanation');
   const tabs = '<div class="tabs gtabs" role="tablist">' + NODE_TABS.map(([k, label]) =>
@@ -307,7 +307,7 @@ function codeTab(ctx, n) {
   const files = n.code;
   if (!files.length) return '<p class="muted">No code kept with this node (code/). The results came from: ' +
     esc([...new Set((n.files['results/isolation.csv'] ? records(n.files['results/isolation.csv']) : []).map(r => r.origin).filter(Boolean))].join(', ') || 'nothing yet') + '.</p>';
-  return '<p class="muted">The author\'s own code, kept for the record. Nothing runs it here; what it gave is in Results.</p>' +
+  return '<p class="muted">The node engineer\'s own code, kept for the record. Nothing runs it here; what it gave is in Results.</p>' +
     files.map(p => '<details class="gcode" data-path="' + esc(p) + '"><summary>' + esc(p.slice(n.dir.length)) + '</summary><pre class="md-code"><code>…</code></pre></details>').join('');
 }
 

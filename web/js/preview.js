@@ -1,18 +1,18 @@
 /**
- * A PREVIEW BUILD, AND ITS AUTHOR'S APPROVAL.
+ * A PREVIEW BUILD, AND ITS NODE ENGINEER'S APPROVAL.
  *
- * A preview is the tool built from one author's form branch, before their
+ * A preview is the tool built from one node engineer's form branch, before their
  * change is approved (docs/roles/maintainer.html). It must never be mistaken for
  * a release, so every view carries a banner saying whose change it is, which
  * nodes it touches and which build it is.
  *
- * The author tries the changed nodes here and, when they are right, presses
+ * The node engineer tries the changed nodes here and, when they are right, presses
  * Approve. That saves a small file — the branch, the commit and the build it
  * was given for, their name and what they checked — which they send back to
- * the maintainer. `xtask approve` refuses it for any other build, so an
+ * the developer. `xtask approve` refuses it for any other build, so an
  * approval cannot be carried to a change it was not given for. It is a record,
  * not a password: it proves which build was approved, not who pressed the
- * button, and the maintainer who received it vouches for that.
+ * button, and the developer who received it vouches for that.
  */
 
 import { esc } from './dom.js';
@@ -113,11 +113,11 @@ export function showPreview() {
     '<p><b>What this preview changes:</b> ' + (nodeLinks(p.nodes) || '—') + '</p>' +
     '<ol class="pv-steps"><li>Open each node above and read its page.</li>' +
     '<li>Run it, and move its inputs; check the answers against your own.</li>' +
-    '<li>If anything is wrong, do not approve — tell the maintainer what.</li></ol>' +
+    '<li>If anything is wrong, do not approve — tell the developer what.</li></ol>' +
     '<label>Your name <input name="by" required value="' + esc(p.author_name || p.author || '') + '"></label>' +
     '<label class="pv-check"><input type="checkbox" name="checked"> ' +
     'I opened each changed node, ran it, and it gives what I expect</label>' +
-    '<label>Anything the maintainer should know <span class="muted">(optional)</span>' +
+    '<label>Anything the developer should know <span class="muted">(optional)</span>' +
     '<textarea name="note" rows="3"></textarea></label>' +
     '<p class="pv-btns"><button class="ctl pv-save" type="button" disabled>Save the approval file</button> ' +
     '<button class="ctl" value="cancel">Not yet</button></p>' +

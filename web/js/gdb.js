@@ -58,7 +58,7 @@ export async function dbFromFolder(folder, kind = 'release') {
 
   db.tx(() => {
     for (const m of members) db.exec('INSERT INTO member (name, role) VALUES (?, ?)', [m.name, m.role || 'author']);
-    // A member's `nodes` column is who authors what: it lands on each node.
+    // A member's `nodes` column is who is node engineer of what: it lands on each node.
     const authorOf = id => members.filter(m => String(m.nodes || '').split(/\s+/).includes(id)).map(m => m.name).join(', ');
     nodes.forEach((n, i) => {
       db.exec('INSERT INTO node (uid, id, question, kind, output, unit, lower, upper, value, author, ord) VALUES (?,?,?,?,?,?,?,?,?,?,?)',
@@ -237,7 +237,7 @@ export async function structureOf(db) {
 
 /**
  * One node's file, issued from the structure (or a release): every contract,
- * so the author sees their neighbours, the group's tables, and only this
+ * so the node engineer sees their neighbours, the group's tables, and only this
  * node's content.
  */
 export async function issueNode(db, uid) {
@@ -245,7 +245,7 @@ export async function issueNode(db, uid) {
   const n = await copy(db);
   n.tx(() => {
     // The group's tables stay — sources, symbols, constants, requirements — so
-    // the author can cite and check against them; its texts and pictures go.
+    // the node engineer can cite and check against them; its texts and pictures go.
     n.exec('DELETE FROM doc WHERE scope <> ?', [uid]);
     n.exec("DELETE FROM tbl WHERE scope <> ? AND scope <> 'group'", [uid]);
     n.exec('DELETE FROM media WHERE scope <> ?', [uid]);
@@ -297,7 +297,7 @@ export async function assemble(structure, nodeFiles) {
       for (const q of nf.all('SELECT * FROM request WHERE node_uid = ?', [uid])) r.exec('INSERT INTO request VALUES (?,?,?,?,?,?)', [q.node_uid, q.author, q.at, q.body, q.status, q.answer]);
       if (own) r.exec('UPDATE node SET revision = ? WHERE uid = ?', [own.revision, uid]);
       // An input's name, source and unit are the contract; how it is written,
-      // its default and its range are the author's, and come from their file.
+      // its default and its range are the node engineer's, and come from their file.
       for (const i of nf.all('SELECT * FROM input WHERE node_uid = ?', [uid])) {
         r.exec('UPDATE input SET symbol = ?, dflt = ?, min = ?, max = ?, says = ? WHERE node_uid = ? AND name = ?',
           [i.symbol, i.dflt, i.min, i.max, i.says, uid, i.name]);

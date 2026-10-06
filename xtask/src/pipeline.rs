@@ -21,8 +21,8 @@ use std::io::Write as _;
 
 /// Where a command sits in a node's journey, in order.
 pub(crate) const STAGES: &[(&str, &str)] = &[
-    ("form", "an expert fills a node's form"),
-    ("take", "the maintainer puts it on its own branch"),
+    ("form", "a node engineer fills a node's form"),
+    ("take", "the developer puts it on its own branch"),
     ("check", "what it would change, before anything is written"),
     (
         "apply",
@@ -40,7 +40,10 @@ pub(crate) const STAGES: &[(&str, &str)] = &[
         "gate",
         "the checks every change passes, and what they generate",
     ),
-    ("preview", "the author tries the build and approves it"),
+    (
+        "preview",
+        "the node engineer tries the build and approves it",
+    ),
     ("release", "the stamped release everyone gets"),
     (
         "read",
@@ -170,7 +173,7 @@ pub(crate) const PIPELINE: &[Cmd] = &[
         stage: "build",
         reads: "an unpacked sealed release and the design it was taken into",
         writes: "what build-node writes for each computed node: its kernel translation and generated files; baseline/today.csv, today's answers recorded again",
-        checks: "the seal; that the design's method is the release's; then build-node on each — the author's cases, the tests proved to test, the interface",
+        checks: "the seal; that the design's method is the release's; then build-node on each — the node engineer's cases, the tests proved to test, the interface",
         undo: GIT_UNDO,
         code: ("xtask/src/group_test.rs", "cmd_group_build"),
         steps: &[],
@@ -267,9 +270,9 @@ pub(crate) const PIPELINE: &[Cmd] = &[
     Cmd {
         name: "method",
         stage: "build",
-        reads: "the node's method and its author's cases",
+        reads: "the node's method and its node engineer's cases",
         writes: NOTHING,
-        checks: "the method parses and its units agree; every case comes out as the author said",
+        checks: "the method parses and its units agree; every case comes out as the node engineer said",
         undo: READS_ONLY,
         code: ("xtask/src/method.rs", "cmd_method"),
         steps: &[],
@@ -278,16 +281,16 @@ pub(crate) const PIPELINE: &[Cmd] = &[
     Cmd {
         name: "build-node",
         stage: "build",
-        reads: "the node's method, cases and author's code",
+        reads: "the node's method, cases and node engineer's code",
         writes: "crates/vleo-core/src/physics/methods/<node>.rs and the node's generated files",
-        checks: "the method on its cases; the node's tests; the author's code rerun; a mutation the tests must catch; the tree assembles",
+        checks: "the method on its cases; the node's tests; the node engineer's code rerun; a mutation the tests must catch; the tree assembles",
         undo: GIT_UNDO,
         code: ("xtask/src/method.rs", "cmd_build_node"),
         steps: &[
-            "the method, against the author's cases",
+            "the method, against the node engineer's cases",
             "translate the method into the kernel, and regenerate the node",
-            "the node's tests: the author's cases, and the translation against the method",
-            "the author's own code, run again on their cases",
+            "the node's tests: the node engineer's cases, and the translation against the method",
+            "the node engineer's own code, run again on their cases",
             "the tests really test: the answer is moved and the tests must notice",
             "only now, the interface: the node in the tree",
         ],
@@ -296,9 +299,9 @@ pub(crate) const PIPELINE: &[Cmd] = &[
     Cmd {
         name: "rerun",
         stage: "build",
-        reads: "the author's code and their cases",
+        reads: "the node engineer's code and their cases",
         writes: NOTHING,
-        checks: "the author's own code still gives their cases",
+        checks: "the node engineer's own code still gives their cases",
         undo: READS_ONLY,
         code: ("xtask/src/method.rs", "cmd_rerun"),
         steps: &[],
@@ -408,7 +411,7 @@ pub(crate) const PIPELINE: &[Cmd] = &[
         stage: "gate",
         reads: "areas/teams.toml and each sheet's owner",
         writes: "CODEOWNERS",
-        checks: "that every owner is a team",
+        checks: "that every owner has a review team",
         undo: "`git restore CODEOWNERS`",
         code: ("xtask/src/release.rs", "cmd_codeowners"),
         steps: &[],
@@ -461,7 +464,7 @@ pub(crate) const PIPELINE: &[Cmd] = &[
     Cmd {
         name: "approve",
         stage: "preview",
-        reads: "the author's approval file and this branch",
+        reads: "the node engineer's approval file and this branch",
         writes: "approvals/<author>--<node>.toml, a commit and a push",
         checks: "the approval is for the build of exactly what is here now",
         undo: "`git revert` the approval commit",
@@ -1315,7 +1318,7 @@ pub(crate) fn pipeline_md() -> String {
          for each one, what it reads, writes and checks, how to undo it, and where its code is. \
          Every command that writes prints numbered steps, stops by saying why, what state the files \
          are in and how to retry, leaves a trace in `target/xtask-trace/`, and takes `--dry-run`.\n>\n\
-         > **Kind:** reference · **For:** developers and maintainers\n\n",
+         > **Kind:** reference · **For:** the developer and their deputy\n\n",
     );
     o.push_str(
         "Generated from the one table in `xtask/src/pipeline.rs`; `cargo run -p xtask -- explain \

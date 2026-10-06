@@ -54,7 +54,7 @@ Run from the repository root. `<file>` is the `.vleo` the group sealed;
 | 4 · test | the four sections; every `FAIL` line names the node, the inputs, the expected and the found value | any `FAIL` |
 | 5 · gate | `0 node check failure(s)` and every test passing | anything fails |
 | 7 · deliver | the folder it wrote; `DELIVERY.md` is what the group reads | it refuses: commit on the group branch first |
-| 8 · answer | `accepted … recorded in acceptances/`; an answer of **changes** prints the group's note | always: an acceptance is the group's to give. Record only the file the lead's page wrote — never write or edit one |
+| 8 · answer | `accepted … recorded in acceptances/`; an answer of **changes** prints the group's note | always: an acceptance is the group's to give. Record only the file the subsystem engineer's page wrote — never write or edit one |
 
 At 6 the developer commits the change on the branch named for the group and
 version (`group/<group>-<version>`), with a message naming the group and its
@@ -72,7 +72,7 @@ To the developer, in this order:
 - for the group, each thing **they** must change, by file and line where the
   command named one — e.g. *"nodes/orbit_period/results/isolation.csv, case 3:
   the engine gives 5431.18 s from your method; your row says 5430.0"*;
-- what was not checked, and why (an author's code not rerun because no entry
+- what was not checked, and why (a node engineer's code not rerun because no entry
   function is named; a node not in the design yet).
 
 Never report a step as passed that you did not see pass.
