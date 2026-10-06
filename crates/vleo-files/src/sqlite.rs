@@ -41,6 +41,12 @@ pub fn write(file: &File, path: &Path) -> Result<(), Error> {
     let _ = std::fs::remove_file(&tmp);
     {
         let db = Connection::open(&tmp).map_err(|e| io(&tmp, "could not be made", e))?;
+        // Small pages: a file holds every table of the one schema, and most
+        // of a node's are empty. At SQLite's usual 4 KB each empty table and
+        // its index is 8 KB of nothing, and a design of fourteen hundred node
+        // files a quarter of a gigabyte on the shared drive.
+        db.execute_batch("PRAGMA page_size = 1024;")
+            .map_err(|e| io(&tmp, "could not be made", e))?;
         db.execute_batch(SCHEMA)
             .map_err(|e| io(&tmp, "the schema could not be written", e))?;
         let tx = db

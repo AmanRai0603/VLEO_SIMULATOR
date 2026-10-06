@@ -18,7 +18,7 @@ Generated from the one table in `xtask/src/pipeline.rs`; `cargo run -p xtask -- 
 6. **build** — a node built from its method, and its tests shown to test: `group-build`, `method`, `build-node`, `rerun`, `method-wasm`, `files-wasm`, `differential`, `mutate`
 7. **gate** — the checks every change passes, and what they generate: `group-app`, `docs`, `assemble`, `gate`, `ready`, `codeowners`, `variables`, `guides`, `pipeline`
 8. **preview** — the node engineer tries the build and approves it: `preview`, `approve`, `queue`
-9. **release** — the stamped release everyone gets: `readers`, `group-accept`, `ship`, `release`, `derisk`, `kit`, `design`, `bundle`
+9. **release** — the stamped release everyone gets: `readers`, `group-accept`, `ship`, `release`, `derisk`, `kit`, `design`, `convert`, `bundle`
 10. **read** — reports: what exists, what is open, why a node is what it is: `status`, `active`, `catalogue`, `impact`, `reach`, `gap`, `graph`, `migration`, `explain`, `why`, `trace`
 11. **setup** — once per person per clone: `setup`, `help`
 
@@ -673,6 +673,21 @@ the layers, the cases and the source list — written into one SQLite file, whic
 | undo | delete the file it wrote; nothing in the repository changes |
 | dry run | --dry-run prints this plan — the steps, what it would write, how to undo it — and touches nothing |
 | code | `xtask/src/design.rs` — `cmd_design` |
+
+#### `convert`
+
+    cargo run -p xtask -- convert [--out <dir>]
+
+the design as its files (docs/PLAN_1_0.md, phase E): each branch's group file and node files, each case, as the shared drive holds them, read back to show they are the tree. To target/converted/, or an empty --out.
+
+| | |
+|---|---|
+| reads | every file of the tree the loader reads: the node folders, the layers, the cases and the source list |
+| writes | target/converted/, or an empty --out: groups/<group>/<group>.vgroup, groups/<group>/nodes/<node>.vnode, cases/<case>.vcase |
+| checks | that the tree loads, converts, and loads again from the files it was converted to |
+| undo | delete the folder it wrote; nothing in the repository changes |
+| dry run | --dry-run prints this plan — the steps, what it would write, how to undo it — and touches nothing |
+| code | `xtask/src/convert.rs` — `cmd_convert` |
 
 #### `bundle`
 

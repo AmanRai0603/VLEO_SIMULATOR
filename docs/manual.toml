@@ -2542,6 +2542,14 @@ effect = "reads"
 
 [[command]]
 tool = "xtask"
+name = "convert"
+usage = "convert [--out <dir>]"
+what = "The design as its files, for the switch-over (docs/PLAN_1_0.md, phase E): the programme's, the systems' and each subsystem group's group file, a node file for every row and for each open block proposed one level deeper, and each case, laid out as the shared drive holds them. Before anything is written they are read back as the folders and loaded as the design. Default target/converted/, or an empty --out; nothing in the repository changes."
+who = "developer"
+effect = "writes"
+
+[[command]]
+tool = "xtask"
 name = "kit"
 usage = "kit [--bin <dir>] [--out <dir>] [--files-only]"
 what = "The tool as each person gets it: the two release-built programs beside exactly the files they read — the design among them as one file, design.vleo — with START_HERE.md and VERSION (and start.sh off Windows, where the daemon ships as Start VLEO.exe), in dist/vleo-<version>/. Zip it and share it; see docs/SHARING.md. --files-only leaves the programs out: the files the Python package carries."

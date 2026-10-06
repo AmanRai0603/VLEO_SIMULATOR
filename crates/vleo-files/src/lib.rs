@@ -38,6 +38,11 @@
 //!   releases, two designs, each row matched by its key and given to its
 //!   block, a block matched by its uid through a rename;
 //!
+//! * [`convert`] — the design itself, from the repository's sheets and layer
+//!   files to its files, once, at the switch-over: each branch's group file,
+//!   a node file per row, each case; and its exact inverse, the files read as
+//!   the folders they were converted from;
+//!
 //! * [`seal`] — the seal of a group's folder from before 1.0: its sign-offs,
 //!   current or stale against the fingerprint they were given for, who may
 //!   sign what, and what stands between the folder and its seal, as the
@@ -46,6 +51,8 @@
 pub mod chain;
 pub mod checks;
 pub mod compare;
+#[cfg(not(target_arch = "wasm32"))]
+pub mod convert;
 pub mod csv;
 pub mod error;
 pub mod folder;

@@ -64,7 +64,7 @@ CREATE TABLE block (
   parent_uid        TEXT NOT NULL DEFAULT '',
   question          TEXT NOT NULL DEFAULT '',
   behaviour         TEXT NOT NULL CHECK (behaviour IN ('method', 'children', 'stated',
-                      'lookup', 'open')),
+                      'lookup', 'open', 'built-in')),
   perspective       TEXT NOT NULL DEFAULT '' CHECK (perspective IN ('', 'management',
                       'system', 'subsystem')),
   ord               INTEGER NOT NULL DEFAULT 0,
@@ -75,8 +75,9 @@ CREATE TABLE block (
 
 -- A block's inputs and outputs (SYSTEM_MODEL, sections 3 and 4): the symbol
 -- its method writes it as, its type, unit, range and the reason for the
--- range; its state and maturity; while open, who owns it and the gate it is
--- due by. Ports in one `bundle` travel as one wire.
+-- range; its state and maturity; on a stated value, the level that owns it as
+-- a parameter; while open, who owns it and the gate it is due by. Ports in one
+-- `bundle` travel as one wire.
 CREATE TABLE port (
   block_uid     TEXT NOT NULL REFERENCES block (uid),
   direction     TEXT NOT NULL CHECK (direction IN ('in', 'out')),
@@ -91,6 +92,8 @@ CREATE TABLE port (
   state         TEXT NOT NULL CHECK (state IN ('decided', 'allocated', 'open', 'achieved')),
   maturity      TEXT NOT NULL DEFAULT '' CHECK (maturity IN ('', 'estimated', 'calculated',
                   'measured')),
+  parameter     TEXT NOT NULL DEFAULT '' CHECK (parameter IN ('', 'programme', 'system',
+                  'subsystem')),
   value         TEXT NOT NULL DEFAULT '',
   choices       TEXT NOT NULL DEFAULT '',
   bundle        TEXT NOT NULL DEFAULT '',

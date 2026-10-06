@@ -73,6 +73,18 @@ way, installed and from the design's files (`crates/vleo-core/src/graph.rs`,
 The gate refuses a sheet whose table cannot be read or whose children are not
 its group's, by name.
 
+In the files (`crates/vleo-files/src/schema.sql`) a block's `behaviour` is
+written the same way, `built-in` among them. The design becomes its files once,
+at the switch-over, by `cargo run -p xtask -- convert`
+(`crates/vleo-files/src/convert.rs`): the programme's branch, the systems
+branch and each subsystem group's, each a group file with a node file per row.
+Read back as the folders, they are the tree they were converted from, except
+for four things the conversion is for: each subsystem group hangs from the
+block it mounts on (section 8), the architecture's loop is declared on the
+smallest block that holds it (section 5), every stated value is a parameter
+of the level whose branch states it (section 6), and the next level each group
+may open is there as open blocks (section 8).
+
 **A block sees inside its children only through their inputs and outputs.**
 This is the rule "a layer reads the one below it only through a closure",
 applied at every depth instead of at three fixed floors.
