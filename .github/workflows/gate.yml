@@ -205,11 +205,11 @@ jobs:
           cargo run -p xtask -- intake "$RUNNER_TEMP/example.node-form.html" --apply | tee "$RUNNER_TEMP/intake.log"
           grep -q "sound — the method checks and agrees with every case" "$RUNNER_TEMP/intake.log"
           grep -q "^applied:" "$RUNNER_TEMP/intake.log"
-      - name: the author's MATLAB code, rerun through Octave
+      - name: the node engineer's MATLAB code, rerun through Octave
         run: |
           set -o pipefail
           cargo run -p xtask -- rerun orbit_velocity --require | tee "$RUNNER_TEMP/rerun.log"
-          grep -q "ok   orbit_velocity: the author's code gives all 4 recorded case(s)" "$RUNNER_TEMP/rerun.log"
+          grep -q "ok   orbit_velocity: the node engineer's code gives all 4 recorded case(s)" "$RUNNER_TEMP/rerun.log"
       - name: build the node from its method, every stage
         run: |
           set -o pipefail
@@ -218,7 +218,7 @@ jobs:
           grep -q "orbit_velocity::evaluate(r.get())" crates/vleo-mod-envorbit/nodes/orbit_velocity/model.rs
           grep -q "killed" "$RUNNER_TEMP/build.log"
           grep -q "build-node: orbit_velocity is built from its method" "$RUNNER_TEMP/build.log"
-      - name: the node's own tests are the author's cases and the translation
+      - name: the node's own tests are the node engineer's cases and the translation
         run: |
           set -o pipefail
           cargo test -p vleo-mod-envorbit -- orbit_velocity --list | tee "$RUNNER_TEMP/list.log"

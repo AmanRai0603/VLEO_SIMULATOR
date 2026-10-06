@@ -338,7 +338,7 @@ pub fn cmd_rerun(root: &Path, args: &[&str]) -> Result<(), String> {
     let _ = fs::remove_dir_all(&work_root);
     if seen == 0 {
         println!(
-            "rerun: no node{} has node engineer's cases yet",
+            "rerun: no node{} has its node engineer's cases yet",
             only.map(|o| format!(" '{o}'")).unwrap_or_default()
         );
     }
