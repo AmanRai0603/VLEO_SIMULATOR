@@ -42,6 +42,33 @@ pub use tables::{
     RELATIONS, VARS, VAR_COUNT,
 };
 
+/// One node's relation, as the engine calls it: SI values in, SI values out,
+/// its sheet's guards applied.
+pub type NodeFn = fn(&[f64], &mut [f64]) -> Result<(), Fault>;
+
+/// The graph the engine runs: its nodes, its variables, each node's relation
+/// and the cases.
+///
+/// The graph compiled into this build is [`COMPILED`]. One read from the
+/// design's files when the engine opens has the same shape (`opened`,
+/// docs/PLAN_1_0.md phase D), so both run through this one engine and each is
+/// the other's check: there is no second resolver, adapter or fixture runner
+/// for a parity gate to compare against itself.
+pub struct Graph {
+    pub nodes: &'static [NodeDef],
+    pub vars: &'static [VarDef],
+    pub dispatch: &'static [NodeFn],
+    pub cases: &'static [CaseDef],
+}
+
+/// The graph compiled into this build, from the sheets as they were.
+pub static COMPILED: Graph = Graph {
+    nodes: &NODES,
+    vars: &VARS,
+    dispatch: &tables::DISPATCH,
+    cases: &CASES,
+};
+
 /// Re-exported so a face has one name to import.
 pub use vleo_bus as bus;
 pub use vleo_core as core_engine;
@@ -64,39 +91,74 @@ pub use vleo_units as units;
 /// a parallel map with no mutex, because there is nothing shared to protect.
 pub struct Vleo {
     data: Vec<String>,
+    graph: &'static Graph,
 }
 
 impl Vleo {
     /// The engine with no reference data. Every node that declares a bundle
     /// refuses, by name.
     pub fn bare() -> Vleo {
-        Vleo { data: Vec::new() }
+        Vleo::on(&COMPILED, Vec::new())
     }
     /// The engine given the bundles a face verified before the run.
     pub fn with_data(data: Vec<String>) -> Vleo {
-        Vleo { data }
+        Vleo::on(&COMPILED, data)
+    }
+    /// The engine on a graph, given the bundles a face verified.
+    pub fn on(graph: &'static Graph, data: Vec<String>) -> Vleo {
+        Vleo { data, graph }
     }
 
+    /// Identifies this build of the engine (`Graph::kernel_hash`).
+    pub fn kernel_hash() -> u64 {
+        COMPILED.kernel_hash()
+    }
+
+    /// Identifies the graph (`Graph::graph_hash`).
+    pub fn graph_hash() -> u64 {
+        COMPILED.graph_hash()
+    }
+
+    pub fn find(id: &str) -> Option<NodeIdx> {
+        COMPILED.find(id)
+    }
+
+    pub fn case(id: &str) -> Option<&'static CaseDef> {
+        COMPILED.case(id)
+    }
+
+    /// The case a run starts from when nobody names one (`Graph::default_case`).
+    pub fn default_case() -> Option<&'static CaseDef> {
+        COMPILED.default_case()
+    }
+
+    /// The case a run names, or the default when it names none.
+    pub fn case_of(case: &vleo_bus::Case) -> Option<&'static CaseDef> {
+        COMPILED.case_of(case)
+    }
+}
+
+impl Graph {
     /// Identifies this build of the engine. Travels into every result: a page
     /// carrying a different one refuses to run rather than showing a number
     /// from an engine it was not built against.
-    pub fn kernel_hash() -> u64 {
+    pub fn kernel_hash(&self) -> u64 {
         let mut h = vleo_core::hash::Hasher::new();
         h.write_str(env!("CARGO_PKG_VERSION"));
         // The relations every node calls, not only each node's own code: a
         // saved result is reused on this identity, so a corrected formula
         // must be a different engine.
         h.write_u64(ENGINE_SOURCE);
-        for n in NODES.iter() {
+        for n in self.nodes.iter() {
             h.write_u64(n.impl_hash);
         }
         h.finish()
     }
 
     /// Identifies the graph. Changes when an edge does.
-    pub fn graph_hash() -> u64 {
+    pub fn graph_hash(&self) -> u64 {
         let mut h = vleo_core::hash::Hasher::new();
-        for n in NODES.iter() {
+        for n in self.nodes.iter() {
             h.write_str(n.id);
             h.write_u64(n.sheet_hash);
             for i in n.inputs {
@@ -106,12 +168,15 @@ impl Vleo {
         h.finish()
     }
 
-    pub fn find(id: &str) -> Option<NodeIdx> {
-        NODES.iter().position(|n| n.id == id).map(|i| i as NodeIdx)
+    pub fn find(&self, id: &str) -> Option<NodeIdx> {
+        self.nodes
+            .iter()
+            .position(|n| n.id == id)
+            .map(|i| i as NodeIdx)
     }
 
-    pub fn case(id: &str) -> Option<&'static CaseDef> {
-        CASES.iter().find(|c| c.id == id)
+    pub fn case(&self, id: &str) -> Option<&'static CaseDef> {
+        self.cases.iter().find(|c| c.id == id)
     }
 
     /// The case a run starts from when nobody names one: the first, and today
@@ -120,16 +185,16 @@ impl Vleo {
     /// Read from the table rather than written into each face, because five
     /// faces each holding the string "nominal" is how a renamed file turned
     /// every default run into a run of nothing in particular.
-    pub fn default_case() -> Option<&'static CaseDef> {
-        CASES.first()
+    pub fn default_case(&self) -> Option<&'static CaseDef> {
+        self.cases.first()
     }
 
     /// The case a run names, or the default when it names none.
-    pub fn case_of(case: &vleo_bus::Case) -> Option<&'static CaseDef> {
+    pub fn case_of(&self, case: &vleo_bus::Case) -> Option<&'static CaseDef> {
         if case.base.is_empty() {
-            Vleo::default_case()
+            self.default_case()
         } else {
-            Vleo::case(&case.base)
+            self.case(&case.base)
         }
     }
 }
@@ -141,27 +206,39 @@ impl Vleo {
 /// had never heard of, which is a number with somebody else's name on it — a
 /// test and two tools named cases that did not exist and passed for years.
 pub fn case_refusal(case: &vleo_bus::Case) -> Option<String> {
-    // A value for a row that does not exist was skipped, and the run went on
-    // without it — the same substitution, one level down.
-    for (id, v) in &case.supply {
-        if Vleo::find(id).is_none() {
-            return Some(alloc::format!(
-                "the case sets '{id}', and there is no such row"
-            ));
+    COMPILED.case_refusal(case)
+}
+
+impl Graph {
+    /// Why a run cannot start from the case it names ([`case_refusal`]).
+    pub fn case_refusal(&self, case: &vleo_bus::Case) -> Option<String> {
+        // A value for a row that does not exist was skipped, and the run went on
+        // without it — the same substitution, one level down.
+        for (id, v) in &case.supply {
+            if self.find(id).is_none() {
+                return Some(alloc::format!(
+                    "the case sets '{id}', and there is no such row"
+                ));
+            }
+            if !v.is_finite() {
+                return Some(alloc::format!("the value set for '{id}' is not a number"));
+            }
         }
-        if !v.is_finite() {
-            return Some(alloc::format!("the value set for '{id}' is not a number"));
+        if self.case_of(case).is_some() {
+            return None;
         }
+        let names = self
+            .cases
+            .iter()
+            .map(|c| c.id)
+            .collect::<Vec<_>>()
+            .join(", ");
+        Some(if case.base.is_empty() {
+            "cases/ holds no case, so there is nothing to run".to_string()
+        } else {
+            alloc::format!("there is no case '{}'. The cases are: {}", case.base, names)
+        })
     }
-    if Vleo::case_of(case).is_some() {
-        return None;
-    }
-    let names = CASES.iter().map(|c| c.id).collect::<Vec<_>>().join(", ");
-    Some(if case.base.is_empty() {
-        "cases/ holds no case, so there is nothing to run".to_string()
-    } else {
-        alloc::format!("there is no case '{}'. The cases are: {}", case.base, names)
-    })
 }
 
 /// Why a value supplied to `id` cannot be applied, or `None` when it can.
@@ -172,22 +249,29 @@ pub fn case_refusal(case: &vleo_bus::Case) -> Option<String> {
 /// line and the server each had their own copy of this rule, and the two had
 /// already drifted once; this is the one both call.
 pub fn why_not_suppliable(id: &str) -> Option<String> {
-    let Some(k) = Vleo::find(id) else {
-        return Some(alloc::format!("there is no row called '{id}'"));
-    };
-    let def = &NODES[k as usize];
-    let what = match def.kind {
-        Kind::Declared => return None,
-        Kind::Computed => "computed from its inputs",
-        Kind::Required => "a target handed down from the layer above",
-        Kind::Achieved => "what a subsystem returned",
-        Kind::Kpi => "a key performance indicator",
-    };
-    Some(alloc::format!(
-        "'{}' is {what}, so a supplied value would be overwritten the moment it is \
+    COMPILED.why_not_suppliable(id)
+}
+
+impl Graph {
+    /// Why a value supplied to `id` cannot be applied ([`why_not_suppliable`]).
+    pub fn why_not_suppliable(&self, id: &str) -> Option<String> {
+        let Some(k) = self.find(id) else {
+            return Some(alloc::format!("there is no row called '{id}'"));
+        };
+        let def = &self.nodes[k as usize];
+        let what = match def.kind {
+            Kind::Declared => return None,
+            Kind::Computed => "computed from its inputs",
+            Kind::Required => "a target handed down from the layer above",
+            Kind::Achieved => "what a subsystem returned",
+            Kind::Kpi => "a key performance indicator",
+        };
+        Some(alloc::format!(
+            "'{}' is {what}, so a supplied value would be overwritten the moment it is \
          evaluated. Set one of the declared numbers it reads instead.",
-        def.id
-    ))
+            def.id
+        ))
+    }
 }
 
 pub mod design;
@@ -195,6 +279,10 @@ mod error;
 pub use error::{Error, ErrorKind};
 pub mod figure;
 pub mod inputs;
+/// The graph read from the design's files when the engine opens (phase D):
+/// it needs the loader, so only with the std feature.
+#[cfg(feature = "std")]
+pub mod opened;
 /// The numbers the record's figures draw (phase 10): read from the reference
 /// bundle, so only with the store that holds it.
 #[cfg(feature = "std")]
@@ -204,10 +292,10 @@ pub mod thermo;
 
 impl NodeTable for Vleo {
     fn nodes(&self) -> &[NodeDef] {
-        &NODES
+        self.graph.nodes
     }
     fn vars(&self) -> &[VarDef] {
-        &VARS
+        self.graph.vars
     }
 
     /// Move values between the store and one node's typed function.
@@ -218,7 +306,7 @@ impl NodeTable for Vleo {
     /// a millinewton is, and that is the point: the bus carries no quantity
     /// types.
     fn eval(&self, node: NodeIdx, store: &mut Store<'_>) -> Result<(), Fault> {
-        let def = &NODES[node as usize];
+        let def = &self.graph.nodes[node as usize];
         let mut inputs = [0.0f64; MAX_INPUTS];
         let n_in = def.inputs.len().min(MAX_INPUTS);
 
@@ -229,7 +317,7 @@ impl NodeTable for Vleo {
             if !slot.is_known() {
                 return Err(Fault::Blocked {
                     node: def.id,
-                    missing: NODES[VARS[v as usize].producer as usize].id,
+                    missing: self.graph.nodes[self.graph.vars[v as usize].producer as usize].id,
                 });
             }
             inputs[k] = slot.value;
@@ -255,17 +343,17 @@ impl NodeTable for Vleo {
         }
 
         let mut outputs = [0.0f64; MAX_OUTPUTS];
-        (tables::DISPATCH[node as usize])(&inputs[..n_in], &mut outputs[..def.outputs.len()])?;
+        (self.graph.dispatch[node as usize])(&inputs[..n_in], &mut outputs[..def.outputs.len()])?;
 
         // The evidence executes on the run, using the same function the test
         // calls — one implementation, checked one way.
-        let (ran, passed) = check_fixtures(node);
+        let (ran, passed) = self.graph.check_fixtures(node);
         let cred = credibility::score(def, ran, passed, data_ok, upstream);
 
         for (k, &o) in def.outputs.iter().enumerate() {
             let slot = &mut store.slots[o as usize];
             slot.value = outputs[k];
-            slot.unit = VARS[o as usize].unit;
+            slot.unit = self.graph.vars[o as usize].unit;
             slot.status = SlotStatus::Computed;
             slot.producer = node;
             slot.cred = cred;
@@ -274,74 +362,85 @@ impl NodeTable for Vleo {
     }
 }
 
-/// Run one node's fixtures, on the run.
 ///
 /// The same function the test calls, called from the run — one implementation,
 /// checked one way. A verdict shown on a page has to have come from a run: a
 /// badge read out of a field is a claim about last March.
-fn check_fixtures(node: NodeIdx) -> (bool, bool) {
-    let def = &NODES[node as usize];
-    if def.fixtures.is_empty() {
-        return (false, false);
-    }
-    let mut ran = false;
-    let mut passed = true;
-    for f in def.fixtures {
-        let mut out = [0.0f64; MAX_OUTPUTS];
-        match (tables::DISPATCH[node as usize])(f.inputs, &mut out[..def.outputs.len()]) {
-            Ok(()) => {
-                ran = true;
-                // The slot the fixture named. A set row's fixture checks the
-                // member it is about; a row with one answer has slot 0.
-                if !f.check(out[f.slot]).passed() {
+impl Graph {
+    /// Run one node's fixtures, on the run.
+    ///
+    /// The same function the test calls, called from the run — one implementation,
+    /// checked one way. A verdict shown on a page has to have come from a run: a
+    /// badge read out of a field is a claim about last March.
+    fn check_fixtures(&self, node: NodeIdx) -> (bool, bool) {
+        let def = &self.nodes[node as usize];
+        if def.fixtures.is_empty() {
+            return (false, false);
+        }
+        let mut ran = false;
+        let mut passed = true;
+        for f in def.fixtures {
+            let mut out = [0.0f64; MAX_OUTPUTS];
+            match (self.dispatch[node as usize])(f.inputs, &mut out[..def.outputs.len()]) {
+                Ok(()) => {
+                    ran = true;
+                    // The slot the fixture named. A set row's fixture checks the
+                    // member it is about; a row with one answer has slot 0.
+                    if !f.check(out[f.slot]).passed() {
+                        passed = false;
+                    }
+                }
+                // The node refused its own fixture's case. That is a verdict, and a
+                // failing one: an expected value the implementation will not even
+                // evaluate is stronger evidence of a defect than a numeric
+                // disagreement.
+                Err(_) => {
+                    ran = true;
                     passed = false;
                 }
             }
-            // The node refused its own fixture's case. That is a verdict, and a
-            // failing one: an expected value the implementation will not even
-            // evaluate is stronger evidence of a defect than a numeric
-            // disagreement.
-            Err(_) => {
-                ran = true;
-                passed = false;
-            }
         }
+        (ran, passed)
     }
-    (ran, passed)
+
+    /// One fixture, executed against the live engine ([`fixture_verdicts`]).
+    pub fn fixture_verdicts(&self, node: NodeIdx) -> Vec<vleo_bus::VerdictOut> {
+        let def = &self.nodes[node as usize];
+        let mut out = Vec::new();
+        for f in def.fixtures {
+            let mut o = [0.0f64; MAX_OUTPUTS];
+            let (got, passed, err) =
+                match (self.dispatch[node as usize])(f.inputs, &mut o[..def.outputs.len()]) {
+                    Ok(()) => {
+                        let got = o[f.slot];
+                        let e = match f.check(got) {
+                            Verdict::Pass { relative_error } => relative_error,
+                            Verdict::Fail { relative_error, .. } => relative_error,
+                            _ => f64::NAN,
+                        };
+                        (got, f.check(got).passed(), e)
+                    }
+                    Err(_) => (f64::NAN, false, f64::NAN),
+                };
+            out.push(vleo_bus::VerdictOut {
+                node: def.id.to_string(),
+                label: f.label.to_string(),
+                expected: f.expected,
+                got,
+                relative_error: err,
+                tolerance: f.tolerance,
+                passed,
+                provenance: f.provenance.name(),
+                source: f.source,
+            });
+        }
+        out
+    }
 }
 
 /// One fixture, executed against the live engine.
 pub fn fixture_verdicts(node: NodeIdx) -> Vec<vleo_bus::VerdictOut> {
-    let def = &NODES[node as usize];
-    let mut out = Vec::new();
-    for f in def.fixtures {
-        let mut o = [0.0f64; MAX_OUTPUTS];
-        let (got, passed, err) =
-            match (tables::DISPATCH[node as usize])(f.inputs, &mut o[..def.outputs.len()]) {
-                Ok(()) => {
-                    let got = o[f.slot];
-                    let e = match f.check(got) {
-                        Verdict::Pass { relative_error } => relative_error,
-                        Verdict::Fail { relative_error, .. } => relative_error,
-                        _ => f64::NAN,
-                    };
-                    (got, f.check(got).passed(), e)
-                }
-                Err(_) => (f64::NAN, false, f64::NAN),
-            };
-        out.push(vleo_bus::VerdictOut {
-            node: def.id.to_string(),
-            label: f.label.to_string(),
-            expected: f.expected,
-            got,
-            relative_error: err,
-            tolerance: f.tolerance,
-            passed,
-            provenance: f.provenance.name(),
-            source: f.source,
-        });
-    }
-    out
+    COMPILED.fixture_verdicts(node)
 }
 
 /// Evaluate ONE node's relation at supplied inputs, with no graph at all.
@@ -363,27 +462,39 @@ pub fn fixture_verdicts(node: NodeIdx) -> Vec<vleo_bus::VerdictOut> {
 /// relation's own outputs and touches no store, so nothing downstream can see
 /// what a probe computed, and no run's provenance can contain one.
 pub fn probe(node: NodeIdx, inputs: &[f64]) -> Result<[f64; MAX_OUTPUTS], Fault> {
-    let def = &NODES[node as usize];
-    let mut outputs = [0.0f64; MAX_OUTPUTS];
-    (tables::DISPATCH[node as usize])(inputs, &mut outputs[..def.outputs.len()])?;
-    Ok(outputs)
+    COMPILED.probe(node, inputs)
 }
 
 /// One fixture, executed against the live engine.
 pub fn run_fixture(node: NodeIdx, inputs: &[f64]) -> Result<(f64, Verdict), Fault> {
-    let def = &NODES[node as usize];
-    let mut outputs = [0.0f64; MAX_OUTPUTS];
-    (tables::DISPATCH[node as usize])(inputs, &mut outputs[..def.outputs.len()])?;
-    // The first fixture's own slot, so a set row's ad-hoc run reports the member
-    // its first expected value is about rather than whichever came first.
-    let slot = def.fixtures.first().map(|f| f.slot).unwrap_or(0);
-    let got = outputs[slot];
-    let verdict = def
-        .fixtures
-        .first()
-        .map(|f| f.check(got))
-        .unwrap_or(Verdict::NotRun);
-    Ok((got, verdict))
+    COMPILED.run_fixture(node, inputs)
+}
+
+impl Graph {
+    /// One node's relation at supplied inputs, with no graph at all ([`probe`]).
+    pub fn probe(&self, node: NodeIdx, inputs: &[f64]) -> Result<[f64; MAX_OUTPUTS], Fault> {
+        let def = &self.nodes[node as usize];
+        let mut outputs = [0.0f64; MAX_OUTPUTS];
+        (self.dispatch[node as usize])(inputs, &mut outputs[..def.outputs.len()])?;
+        Ok(outputs)
+    }
+
+    /// One fixture, executed against the live engine ([`run_fixture`]).
+    pub fn run_fixture(&self, node: NodeIdx, inputs: &[f64]) -> Result<(f64, Verdict), Fault> {
+        let def = &self.nodes[node as usize];
+        let mut outputs = [0.0f64; MAX_OUTPUTS];
+        (self.dispatch[node as usize])(inputs, &mut outputs[..def.outputs.len()])?;
+        // The first fixture's own slot, so a set row's ad-hoc run reports the member
+        // its first expected value is about rather than whichever came first.
+        let slot = def.fixtures.first().map(|f| f.slot).unwrap_or(0);
+        let got = outputs[slot];
+        let verdict = def
+            .fixtures
+            .first()
+            .map(|f| f.check(got))
+            .unwrap_or(Verdict::NotRun);
+        Ok((got, verdict))
+    }
 }
 
 /// The scratch a run needs. Allocated once by a face and reused: the kernel
@@ -406,6 +517,12 @@ impl Default for Scratch {
 
 impl Scratch {
     pub fn new() -> Scratch {
+        Scratch::for_graph(&COMPILED)
+    }
+
+    /// The scratch a run on `graph` needs.
+    pub fn for_graph(graph: &Graph) -> Scratch {
+        let (node_count, var_count) = (graph.nodes.len(), graph.vars.len());
         Scratch {
             // VAR_COUNT, not NODE_COUNT. A slot is one VARIABLE, and a row
             // whose conclusion is a set publishes several — so the two counts
@@ -413,28 +530,29 @@ impl Scratch {
             // this panicked on the first set row rather than returning a wrong
             // answer, which is the right failure, but it is not a failure worth
             // having: the array is indexed by a variable index everywhere.
-            slots: alloc::vec![Slot::EMPTY; VAR_COUNT],
-            order: alloc::vec![0; NODE_COUNT + 1],
-            mark: alloc::vec![0; NODE_COUNT + 1],
+            slots: alloc::vec![Slot::EMPTY; var_count],
+            order: alloc::vec![0; node_count + 1],
+            mark: alloc::vec![0; node_count + 1],
             // Every expansion pushes the inputs of its node (or of its whole
             // cycle), and a producer can be waiting more than once, so the
             // bound is the inputs, times the widest cycle, not the node count.
-            stack: alloc::vec![0; NODE_COUNT + 2 + input_edges() * widest_cycle()],
-            ran: alloc::vec![0; NODE_COUNT + 1],
-            blocked: alloc::vec![0; NODE_COUNT + 1],
-            blocked_fault: alloc::vec![Fault::NotRun { node: "" }; NODE_COUNT + 1],
+            stack: alloc::vec![0; node_count + 2 + input_edges(graph) * widest_cycle(graph)],
+            ran: alloc::vec![0; node_count + 1],
+            blocked: alloc::vec![0; node_count + 1],
+            blocked_fault: alloc::vec![Fault::NotRun { node: "" }; node_count + 1],
         }
     }
 }
 
 /// Every input of every row: the edges of the dependency graph.
-fn input_edges() -> usize {
-    NODES.iter().map(|d| d.inputs.len()).sum()
+fn input_edges(graph: &Graph) -> usize {
+    graph.nodes.iter().map(|d| d.inputs.len()).sum()
 }
 
 /// The most rows any declared cycle holds, and at least one.
-fn widest_cycle() -> usize {
-    CASES
+fn widest_cycle(graph: &Graph) -> usize {
+    graph
+        .cases
         .iter()
         .flat_map(|c| c.cycles.iter())
         .map(|c| c.nodes.len())
@@ -449,95 +567,107 @@ fn widest_cycle() -> usize {
 /// command line, the rig console, the wheel — reaches it, and they all get the
 /// same numbers because there is only one of it.
 pub fn evaluate(case: &vleo_bus::Case, scratch: &mut Scratch) -> Result<vleo_bus::Results, Fault> {
-    let table = Vleo::with_data(case.data.clone());
-    let target = Vleo::find(&case.target).ok_or(Fault::NotRun {
-        node: "unknown node",
-    })?;
-    // Asked again here, not only by the faces: a caller that skipped the
-    // question must not get the declared design under another case's name.
-    if case_refusal(case).is_some() {
-        return Err(Fault::NotRun {
-            node: "the case named",
-        });
-    }
-    let base = Vleo::case_of(case);
+    COMPILED.evaluate(case, scratch)
+}
 
-    let mut store = Store::new(&mut scratch.slots);
+impl Graph {
+    /// Evaluate a case on this graph ([`evaluate`]). The graph lives for the
+    /// run, as every graph the engine is given does.
+    pub fn evaluate(
+        &'static self,
+        case: &vleo_bus::Case,
+        scratch: &mut Scratch,
+    ) -> Result<vleo_bus::Results, Fault> {
+        let table = Vleo::on(self, case.data.clone());
+        let target = self.find(&case.target).ok_or(Fault::NotRun {
+            node: "unknown node",
+        })?;
+        // Asked again here, not only by the faces: a caller that skipped the
+        // question must not get the declared design under another case's name.
+        if self.case_refusal(case).is_some() {
+            return Err(Fault::NotRun {
+                node: "the case named",
+            });
+        }
+        let base = self.case_of(case);
 
-    // Declared values publish themselves, then the case overrides. A supply is
-    // the start of a run rather than an edit to one, so nothing is marked stale
-    // here.
-    for (i, def) in NODES.iter().enumerate() {
-        if def.kind == Kind::Declared {
-            let mut out = [0.0f64; MAX_OUTPUTS];
-            // Every slot the row declares, not the first. A declared row has one
-            // today and the gate refuses a second, but this loop is the same
-            // shape as the one in `eval` and costs nothing: a hard-coded 1 here
-            // would be a silent truncation the day that gate rule is relaxed.
-            if (tables::DISPATCH[i])(&[], &mut out[..def.outputs.len()]).is_ok() {
-                for (k, &o) in def.outputs.iter().enumerate() {
-                    store.supply(o, out[k], VARS[o as usize].unit);
-                    store.slots[o as usize].cred =
-                        credibility::score(def, false, false, true, CredVec([4; 8]));
+        let mut store = Store::new(&mut scratch.slots);
+
+        // Declared values publish themselves, then the case overrides. A supply is
+        // the start of a run rather than an edit to one, so nothing is marked stale
+        // here.
+        for (i, def) in self.nodes.iter().enumerate() {
+            if def.kind == Kind::Declared {
+                let mut out = [0.0f64; MAX_OUTPUTS];
+                // Every slot the row declares, not the first. A declared row has one
+                // today and the gate refuses a second, but this loop is the same
+                // shape as the one in `eval` and costs nothing: a hard-coded 1 here
+                // would be a silent truncation the day that gate rule is relaxed.
+                if (self.dispatch[i])(&[], &mut out[..def.outputs.len()]).is_ok() {
+                    for (k, &o) in def.outputs.iter().enumerate() {
+                        store.supply(o, out[k], self.vars[o as usize].unit);
+                        store.slots[o as usize].cred =
+                            credibility::score(def, false, false, true, CredVec([4; 8]));
+                    }
                 }
             }
         }
-    }
-    // Declared, then the case, then whatever the face sends — the saved
-    // inputs first and a person's unsaved edits after, so the last word is
-    // always the one typed most recently.
-    if let Some(b) = base {
-        for (v, val) in b.supply {
-            supply_checked(&mut store, *v, *val)?;
-        }
-    }
-    for (id, val) in &case.supply {
-        match Vleo::find(id) {
-            Some(v) => supply_checked(&mut store, v, *val)?,
-            // `case_refusal` names the row; a face that did not ask it still
-            // gets a refusal rather than a run without the value.
-            None => {
-                return Err(Fault::Refused {
-                    node: "the case",
-                    reason: "it sets a row that does not exist",
-                })
+        // Declared, then the case, then whatever the face sends — the saved
+        // inputs first and a person's unsaved edits after, so the last word is
+        // always the one typed most recently.
+        if let Some(b) = base {
+            for (v, val) in b.supply {
+                supply_checked(self, &mut store, *v, *val)?;
             }
         }
+        for (id, val) in &case.supply {
+            match self.find(id) {
+                Some(v) => supply_checked(self, &mut store, v, *val)?,
+                // `case_refusal` names the row; a face that did not ask it still
+                // gets a refusal rather than a run without the value.
+                None => {
+                    return Err(Fault::Refused {
+                        node: "the case",
+                        reason: "it sets a row that does not exist",
+                    })
+                }
+            }
+        }
+
+        // The declared cycles this case carries.
+        let cycles: Vec<CycleSpec<'_>> = base
+            .map(|b| {
+                b.cycles
+                    .iter()
+                    .map(|c| CycleSpec {
+                        nodes: c.nodes,
+                        converge_on: c.converge_on,
+                        tolerance: c.tolerance,
+                        max_iter: c.max_iter,
+                        seeds: c.seeds,
+                    })
+                    .collect()
+            })
+            .unwrap_or_default();
+
+        let mut ws = Workspace {
+            order: &mut scratch.order,
+            mark: &mut scratch.mark,
+            stack: &mut scratch.stack,
+            ran: &mut scratch.ran,
+            blocked: &mut scratch.blocked,
+            blocked_fault: &mut scratch.blocked_fault,
+        };
+        let report = resolver::evaluate(
+            &table,
+            &mut store,
+            case.mode.to_mode(target),
+            &cycles,
+            &mut ws,
+        )?;
+
+        Ok(collect(self, &store, &ws, &report, case, target))
     }
-
-    // The declared cycles this case carries.
-    let cycles: Vec<CycleSpec<'_>> = base
-        .map(|b| {
-            b.cycles
-                .iter()
-                .map(|c| CycleSpec {
-                    nodes: c.nodes,
-                    converge_on: c.converge_on,
-                    tolerance: c.tolerance,
-                    max_iter: c.max_iter,
-                    seeds: c.seeds,
-                })
-                .collect()
-        })
-        .unwrap_or_default();
-
-    let mut ws = Workspace {
-        order: &mut scratch.order,
-        mark: &mut scratch.mark,
-        stack: &mut scratch.stack,
-        ran: &mut scratch.ran,
-        blocked: &mut scratch.blocked,
-        blocked_fault: &mut scratch.blocked_fault,
-    };
-    let report = resolver::evaluate(
-        &table,
-        &mut store,
-        case.mode.to_mode(target),
-        &cycles,
-        &mut ws,
-    )?;
-
-    Ok(collect(&table, &store, &ws, &report, case, target))
 }
 
 /// Supply a value, refusing rather than clamping when it is outside the
@@ -546,9 +676,14 @@ pub fn evaluate(case: &vleo_bus::Case, scratch: &mut Scratch) -> Result<vleo_bus
 /// Out of domain is an error naming the field and the bound, at every face. A
 /// value silently corrected is a design that drifted without anyone deciding
 /// to.
-fn supply_checked(store: &mut Store<'_>, v: NodeIdx, value: f64) -> Result<(), Fault> {
-    let var = &VARS[v as usize];
-    let def = &NODES[var.producer as usize];
+fn supply_checked(
+    graph: &Graph,
+    store: &mut Store<'_>,
+    v: NodeIdx,
+    value: f64,
+) -> Result<(), Fault> {
+    let var = &graph.vars[v as usize];
+    let def = &graph.nodes[var.producer as usize];
     // NaN passes both range comparisons below, so it is refused first.
     if !value.is_finite() {
         return Err(Fault::Refused {
@@ -588,20 +723,19 @@ fn supply_checked(store: &mut Store<'_>, v: NodeIdx, value: f64) -> Result<(), F
 
 #[allow(clippy::too_many_arguments)]
 fn collect(
-    table: &Vleo,
+    graph: &Graph,
     store: &Store<'_>,
     ws: &Workspace<'_>,
     report: &RunReport,
     case: &vleo_bus::Case,
     target: NodeIdx,
 ) -> vleo_bus::Results {
-    let _ = table;
     let mut values = Vec::new();
     for &n in ws.ran[..report.ran].iter() {
-        let def = &NODES[n as usize];
+        let def = &graph.nodes[n as usize];
         for &o in def.outputs {
             let slot = store.get(o);
-            let var = &VARS[o as usize];
+            let var = &graph.vars[o as usize];
             values.push(vleo_bus::ValueOut {
                 id: var.id.to_string(),
                 symbol: var.symbol.to_string(),
@@ -618,13 +752,13 @@ fn collect(
     for i in 0..report.blocked {
         let n = ws.blocked[i];
         blocked.push(vleo_bus::BlockedOut {
-            id: NODES[n as usize].id.to_string(),
+            id: graph.nodes[n as usize].id.to_string(),
             kind: ws.blocked_fault[i].kind(),
             message: vleo_bus::fault_message(&ws.blocked_fault[i]),
         });
     }
 
-    let target_cred = NODES[target as usize]
+    let target_cred = graph.nodes[target as usize]
         .outputs
         .first()
         .map(|&o| store.get(o).cred)
@@ -633,8 +767,8 @@ fn collect(
     let manifest = vleo_bus::RunManifest {
         node: case.target.clone(),
         mode: case.mode.name(),
-        kernel: hex(Vleo::kernel_hash()),
-        graph: hex(Vleo::graph_hash()),
+        kernel: hex(graph.kernel_hash()),
+        graph: hex(graph.graph_hash()),
         case: hex(case.hash()),
         chain: hex(report.chain_hash),
         data: case.data_versions.clone(),
@@ -648,7 +782,7 @@ fn collect(
     };
     let mut verdicts = Vec::new();
     for &n in ws.ran[..report.ran].iter() {
-        verdicts.extend(fixture_verdicts(n));
+        verdicts.extend(graph.fixture_verdicts(n));
     }
     vleo_bus::Results {
         values,
