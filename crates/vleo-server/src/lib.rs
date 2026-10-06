@@ -90,6 +90,7 @@ pub fn serve(
     vleo_data::crash::install("vleo-server", env!("CARGO_PKG_VERSION"));
     let root = root.unwrap_or_else(repo_root);
     let (tree, design) = open_tree(&root)?;
+    let engine = run_on_the_files(&*tree, &root, design.is_some())?;
     let (data, data_versions, bundles, data_refused) = resolve_data(&root);
 
     // Try a range and record the port that actually bound. A daemon that fails
@@ -117,6 +118,7 @@ pub fn serve(
         short(Vleo::graph_hash()),
         NODES.len()
     );
+    println!("  engine {engine}");
     if data.is_empty() {
         println!("  \x1b[33mno reference data in the store — nodes that declare a bundle will refuse\x1b[0m");
         // Say why. A warning with no reason is the one a person cannot act on,
@@ -309,6 +311,42 @@ fn open_tree(root: &Path) -> Result<(std::sync::Arc<dyn Files>, Option<DesignFil
         fingerprint: d.meta("fingerprint").to_string(),
     };
     Ok((std::sync::Arc::new(d), Some(info)))
+}
+
+/// Open the design where the tool finds it — the design file, or the folders
+/// of a checkout, as the server opens them — and run the engine on the graph
+/// read from its files (docs/PLAN_1_0.md, phase D: every face is re-pointed).
+/// Says which graph runs. The command line, Python and the C interface open
+/// the design here, so every face runs the same graph the server does.
+///
+/// A design that does not open, does not load, or is not one this build of the
+/// engine can run is refused, naming why; the compiled graph is never run in
+/// its place. Where there is no design at all — no design file and no folders —
+/// the engine runs the graph compiled into it, and says so.
+pub fn run_the_design(root: Option<PathBuf>) -> Result<String, String> {
+    let root = root.unwrap_or_else(repo_root);
+    let (tree, design) = open_tree(&root)?;
+    run_on_the_files(&*tree, &root, design.is_some())
+}
+
+/// Run the engine on the graph read from `files`, and say which graph runs.
+fn run_on_the_files(files: &dyn Files, root: &Path, from_a_file: bool) -> Result<String, String> {
+    if !from_a_file && !root.join("layers").is_dir() {
+        vleo_modules::run_compiled();
+        return Ok(
+            "the graph compiled into this build — no design's files where the tool looked".into(),
+        );
+    }
+    let tree = vleo_sheet::load::load_all_from(files, root)
+        .map_err(|e| format!("the design's files do not load: {e}"))?;
+    let graph = vleo_modules::opened::graph(&tree)
+        .map_err(|e| format!("the design's files do not make a graph: {e}"))?;
+    vleo_modules::run_on(graph).map_err(|e| e.to_string())?;
+    Ok(format!(
+        "the graph read from the design's files — {} rows, {} of them methods run by the interpreter",
+        graph.nodes.len(),
+        graph.run_by_the_graph()
+    ))
 }
 
 /// Every row where the design and this engine are not one design: a row the

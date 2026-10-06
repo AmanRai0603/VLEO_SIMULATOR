@@ -12,8 +12,9 @@
 //! golden vector, and that vector becomes what the Rust must reproduce.
 //! Exploration becomes evidence rather than a parallel codebase.
 //!
-//! The GIL is released during evaluation, so a sweep parallelises — there is no
-//! global state in the engine and nothing shared to protect.
+//! The GIL is released during evaluation, so a sweep parallelises. The engine's
+//! one shared setting is which graph it runs, set when the design is opened
+//! and only read after; a run holds nothing else in common.
 
 use pyo3::exceptions::{PyRuntimeError, PyValueError};
 use pyo3::prelude::*;
@@ -94,8 +95,8 @@ fn evaluate(
     if let Some(why) = vleo_modules::case_refusal(&c) {
         return Err(PyValueError::new_err(why));
     }
-    // The GIL is released for the duration: there is no global state in the
-    // engine, so a sweep is a parallel map with no mutex.
+    // The GIL is released for the duration: nothing a run writes is shared,
+    // so a sweep is a parallel map with no mutex.
     let out = py.allow_threads(|| {
         let mut scratch = Scratch::new();
         vleo_modules::evaluate(&c, &mut scratch)
@@ -216,6 +217,18 @@ fn serve(py: Python<'_>, root: Option<String>, port: u16, open: bool) -> PyResul
         .map_err(PyRuntimeError::new_err)
 }
 
+/// Open the design — the design file, or a checkout's folders, where the tool
+/// finds them under `root` — and run the engine on the graph read from its
+/// files, as the server does. Says which graph runs. The package calls it
+/// before the first answer; a design that does not open is refused, naming
+/// why, and the compiled graph is never run in its place.
+#[pyfunction]
+#[pyo3(signature = (root = None))]
+fn open_design(py: Python<'_>, root: Option<String>) -> PyResult<String> {
+    py.allow_threads(|| vleo_server::run_the_design(root.map(Into::into)))
+        .map_err(PyRuntimeError::new_err)
+}
+
 #[pymodule]
 fn _vleo(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<Result_>()?;
@@ -225,5 +238,6 @@ fn _vleo(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(sweep, m)?)?;
     m.add_function(wrap_pyfunction!(version, m)?)?;
     m.add_function(wrap_pyfunction!(figure, m)?)?;
+    m.add_function(wrap_pyfunction!(open_design, m)?)?;
     Ok(())
 }

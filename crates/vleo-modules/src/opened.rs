@@ -12,9 +12,9 @@
 //! SI, the same fixtures. A node's relation is found by its id:
 //!
 //! - **built-in** — a relation still in compiled code is the compiled one,
-//!   taken only when its implementation is the one the sheet was built with
-//!   (its `impl_hash`); its guards are the compiled guards, so its parity is
-//!   exact;
+//!   taken only when it was built from this sheet (its `impl_hash` and its
+//!   `sheet_hash` both the same); its guards are the compiled guards, so its
+//!   parity is exact;
 //! - **seeded** — a row nobody has specified refuses, as the compiled one does;
 //! - anything else — a row this build has no code for, or code from another
 //!   sheet — refuses by name, rather than running something that is not it.
@@ -340,12 +340,21 @@ fn interpreted(sh: &sheet::Sheet) -> Option<&'static Relation> {
 
 /// The relation each row runs, by its id: the compiled one when it is this
 /// sheet's.
+///
+/// The compiled function carries the guards generated from the sheet it was
+/// built from — its units, its limits and their reasons — so it is this
+/// sheet's only when both are the same: its implementation (`impl_hash`) and
+/// the sheet itself (`sheet_hash`). A sheet whose range has moved, run on the
+/// compiled code, would be guarded by the range it no longer declares.
 fn relation(sh: &sheet::Sheet) -> NodeFn {
     if sh.is_seeded() {
         return unspecified;
     }
     match COMPILED.find(&sh.id) {
-        Some(k) if COMPILED.nodes[k as usize].impl_hash == sh.impl_hash => {
+        Some(k)
+            if COMPILED.nodes[k as usize].impl_hash == sh.impl_hash
+                && COMPILED.nodes[k as usize].sheet_hash == sh.sheet_hash =>
+        {
             COMPILED.dispatch[k as usize]
         }
         _ => not_in_this_build,

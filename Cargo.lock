@@ -718,6 +718,7 @@ version = "0.4.0"
 dependencies = [
  "vleo-bus",
  "vleo-modules",
+ "vleo-server",
 ]
 
 [[package]]
