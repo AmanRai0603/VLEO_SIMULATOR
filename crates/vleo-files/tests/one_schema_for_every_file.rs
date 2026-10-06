@@ -397,14 +397,31 @@ fn a_file_newer_than_the_library_or_not_a_vleo_file_is_refused() {
     assert!(e.message().contains("newer"));
     let older = dir.join("older.vleo");
     let db = Connection::open(&older).unwrap();
-    db.execute_batch("PRAGMA application_id = 1447838031; PRAGMA user_version = 1;")
-        .unwrap();
+    db.execute_batch(
+        "PRAGMA application_id = 1447838031; PRAGMA user_version = 1;
+         CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
+         INSERT INTO meta VALUES ('file_kind', 'release');",
+    )
+    .unwrap();
     drop(db);
     assert!(sqlite::read(&older)
         .err()
         .unwrap()
         .message()
         .contains("upgraded"));
+    // One that does not say what it is is not guessed at.
+    let unsaid = dir.join("unsaid.vleo");
+    let db = Connection::open(&unsaid).unwrap();
+    db.execute_batch("PRAGMA application_id = 1447838031; PRAGMA user_version = 1;")
+        .unwrap();
+    drop(db);
+    let e = sqlite::read(&unsaid).err().unwrap();
+    assert_eq!(e.kind(), ErrorKind::WrongKind);
+    assert!(
+        e.message().contains("does not say what kind it is"),
+        "{}",
+        e.message()
+    );
     let other = dir.join("other.db");
     Connection::open(&other)
         .unwrap()
@@ -477,4 +494,22 @@ fn a_key_file_keeps_a_key_that_still_unlocks() {
     assert_eq!(again, locked);
     assert_eq!(again.unlock("pass phrase").unwrap().public(), key.public());
     std::fs::remove_dir_all(&dir).unwrap();
+}
+
+#[test]
+fn every_kind_the_schema_names_is_in_the_one_table_of_kinds() {
+    use vleo_files::meta::FORMAT;
+    for k in Kind::ALL {
+        assert!(
+            vleo_kinds::KINDS.iter().any(|t| t.name == k.name()
+                && t.format() == Some(FORMAT as u32)
+                && t.reader == vleo_kinds::Reader::Files),
+            "{} is not in crates/vleo-kinds as format {FORMAT}, read by vleo-files",
+            k.name()
+        );
+    }
+    assert!(SCHEMA.contains(&format!(
+        "PRAGMA application_id = {};",
+        vleo_kinds::APPLICATION_ID
+    )));
 }

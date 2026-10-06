@@ -48,6 +48,7 @@
 # team: data
 /crates/vleo-data/        @AmanRai0603
 /crates/vleo-files/       @AmanRai0603
+/crates/vleo-kinds/       @AmanRai0603
 /bundles/                 @AmanRai0603
 
 # team: the contract: frontend and backend

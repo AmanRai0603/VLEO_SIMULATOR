@@ -22,7 +22,7 @@ pub const SCHEMA: &str = include_str!("schema.sql");
 /// SQLite's `application_id` for every VLEO file — the number the group files
 /// have carried since format 1 (groups/schema.sql), kept so one test tells a
 /// VLEO file from any other database whatever its format.
-pub const APPLICATION_ID: i64 = 1_447_838_031;
+pub const APPLICATION_ID: i64 = vleo_kinds::APPLICATION_ID;
 
 fn io(path: &Path, what: &str, e: impl std::fmt::Display) -> Error {
     Error::new(ErrorKind::Io, format!("{}: {what}: {e}", path.display()))
@@ -223,30 +223,52 @@ fn raw(path: &Path) -> Result<(i64, Vec<Table>), Error> {
     Ok((format, tables))
 }
 
-/// The format of an open VLEO file, refused if it is not one or is newer than
-/// this library reads.
+/// Every kind this library reads, by name: the one schema's, and a group's
+/// files from before 1.0, which it upgrades.
+fn read_here() -> Vec<&'static str> {
+    let mut names: Vec<&'static str> = Vec::new();
+    for k in vleo_kinds::KINDS {
+        if k.reader == vleo_kinds::Reader::Files && !names.contains(&k.name) {
+            names.push(k.name);
+        }
+    }
+    names
+}
+
+/// The format of an open VLEO file, refused by the one rule every reader
+/// follows (`vleo_kinds::identify`) if it is not one, is a kind this library
+/// does not read — today's design, `design.vleo`, is the tool's own until
+/// phase D — or is newer than this library reads.
 fn format_of(db: &Connection, path: &Path) -> Result<i64, Error> {
     let pragma = |name: &str| -> Result<i64, Error> {
         db.query_row(&format!("PRAGMA {name}"), [], |r| r.get(0))
             .map_err(|e| io(path, "is not a SQLite database", e))
     };
-    if pragma("application_id")? != APPLICATION_ID {
-        return Err(Error::new(
-            ErrorKind::WrongKind,
-            format!("{} is not a VLEO design file", path.display()),
-        ));
+    let (app, format) = (pragma("application_id")?, pragma("user_version")?);
+    let kind: Option<String> = if app == APPLICATION_ID {
+        db.query_row("SELECT value FROM meta WHERE key = 'file_kind'", [], |r| {
+            r.get(0)
+        })
+        .ok()
+    } else {
+        None
+    };
+    let names = read_here();
+    let want = vleo_kinds::Want {
+        reader: vleo_kinds::Reader::Files,
+        names: &names,
+        called: "a file in the one schema",
+    };
+    match vleo_kinds::identify(app, format, kind.as_deref(), want) {
+        Ok(_) => Ok(format),
+        Err(refused) => Err(Error::new(
+            match refused {
+                vleo_kinds::Refusal::Newer { .. } => ErrorKind::Format,
+                _ => ErrorKind::WrongKind,
+            },
+            refused.says(&path.display().to_string()),
+        )),
     }
-    let format = pragma("user_version")?;
-    if format > FORMAT {
-        return Err(Error::new(
-            ErrorKind::Format,
-            format!(
-                "{} is format {format}, newer than this application reads ({FORMAT}): install the newer application",
-                path.display()
-            ),
-        ));
-    }
-    Ok(format)
 }
 
 fn table(db: &Connection, name: &str) -> rusqlite::Result<Table> {

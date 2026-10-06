@@ -7,6 +7,7 @@
 #   RING 3  vleo-mod-*    one crate per subsystem — a sibling it did not declare will not compile
 #           vleo-modules  facade + dispatch table; re-exports the twelve, holds no formula
 #           vleo-design   design.vleo: the tree as one file, read as the folders are
+#           vleo-kinds    every kind of file the tools write, and how a reader takes it
 #           vleo-server   the local server both the daemon and the Python package start
 #   FACES   vleo-cli · vleo-daemon · vleo-wasm · vleo-ffi · vleo-py
 [workspace]
@@ -39,6 +40,7 @@ members = [
     "crates/vleo-sheet",
     "crates/vleo-bus",
     "crates/vleo-data",
+    "crates/vleo-kinds",
     "crates/vleo-design",
     "crates/vleo-files",
     "crates/vleo-modules",
@@ -65,6 +67,7 @@ vleo-core    = { path = "crates/vleo-core" }
 vleo-bus     = { path = "crates/vleo-bus" }
 vleo-data    = { path = "crates/vleo-data" }
 vleo-design  = { path = "crates/vleo-design" }
+vleo-kinds   = { path = "crates/vleo-kinds" }
 vleo-modules = { path = "crates/vleo-modules" }
 vleo-server = { path = "crates/vleo-server" }
 toml         = "0.8"
