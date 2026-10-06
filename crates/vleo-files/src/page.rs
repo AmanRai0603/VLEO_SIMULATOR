@@ -111,19 +111,7 @@ fn findings(found: &checks::Findings) -> String {
 pub fn check_content(request: &[u8]) -> String {
     let answer = || -> Result<String, Error> {
         let tables = rows::decode(request)?;
-        let format = tables
-            .iter()
-            .find(|t| t.name == "meta")
-            .and_then(|t| {
-                t.rows.iter().find_map(|r| match r.as_slice() {
-                    [crate::model::Cell::Text(k), crate::model::Cell::Text(v)] if k == "format" => {
-                        Some(v.clone())
-                    }
-                    _ => None,
-                })
-            })
-            .unwrap_or_default();
-        let file = if format == "1" {
+        let file = if format_of(&tables) == "1" {
             upgrade::from_format_1(
                 tables,
                 &upgrade::Upgrade {
@@ -143,6 +131,53 @@ pub fn check_content(request: &[u8]) -> String {
         ))
     };
     answer().unwrap_or_else(|e| error_json(&e))
+}
+
+/// The group folder's checks (`crate::folder`), the page's group checker said
+/// by the library: the request is a group's file as its rows — a file from
+/// before 1.0 as it is, or one upgraded from it. The answer is
+/// `{"findings": [{level, where, msg, line}, ...]}`, or `{"error", "kind"}`.
+pub fn check_folder(request: &[u8]) -> String {
+    let answer = || -> Result<String, Error> {
+        let tables = rows::decode(request)?;
+        let folder = match format_of(&tables).as_str() {
+            "1" => crate::format_1::Old::from_tables(tables)?.folder(),
+            _ => upgrade::to_format_1(&File::from_tables(tables)?)?.folder(),
+        };
+        let spec = crate::folder::Spec::carried()?;
+        let found = crate::folder::check(&folder, &spec);
+        Ok(format!(
+            "{{\"findings\":[{}]}}",
+            found
+                .iter()
+                .map(|f| format!(
+                    "{{\"level\":{},\"where\":{},\"msg\":{},\"line\":{}}}",
+                    json_str(f.level.name()),
+                    json_str(&f.place),
+                    json_str(&f.msg),
+                    f.line
+                ))
+                .collect::<Vec<_>>()
+                .join(",")
+        ))
+    };
+    answer().unwrap_or_else(|e| error_json(&e))
+}
+
+/// The format a file's meta says it is in.
+fn format_of(tables: &[crate::model::Table]) -> String {
+    tables
+        .iter()
+        .find(|t| t.name == "meta")
+        .and_then(|t| {
+            t.rows.iter().find_map(|r| match r.as_slice() {
+                [crate::model::Cell::Text(k), crate::model::Cell::Text(v)] if k == "format" => {
+                    Some(v.clone())
+                }
+                _ => None,
+            })
+        })
+        .unwrap_or_default()
 }
 
 /// A request for [`check_release`], as the page writes it.

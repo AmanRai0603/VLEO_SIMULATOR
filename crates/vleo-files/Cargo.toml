@@ -23,6 +23,8 @@ zeroize = "1"
 # intake refuses it for — a method that does not reproduce its cases, a name
 # that is an assistant's — by the one implementation of each.
 vleo-sheet = { workspace = true }
+# The group folder pattern, groups/SPEC.toml, read as the page reads it.
+toml = { workspace = true }
 
 # Randomness comes from the operating system when installed; in the page the
 # caller passes bytes from the browser's crypto.getRandomValues, so the page's

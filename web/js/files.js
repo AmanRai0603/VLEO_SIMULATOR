@@ -115,6 +115,15 @@ export async function library(wasm) {
     checkContent(releaseRows) {
       return call(x.vleo_check_content, releaseRows);
     },
+    /**
+     * A group's folder, checked against the pattern (groups/SPEC.toml) as the
+     * page's group checker checks it: `{ findings: [{ level, where, msg,
+     * line }] }`. The file is a group's file from before 1.0, or one upgraded
+     * from it.
+     */
+    checkFolder(groupRows) {
+      return call(x.vleo_check_folder, groupRows);
+    },
   };
 }
 
