@@ -1,5 +1,5 @@
 # The design-file library the pages carry: web/files.wasm.gz, built by
 # `cargo run -p xtask -- files-wasm` from vleo_files::page::WASM_SOURCES.
 # A test refuses a checkout whose sources have moved on from it.
-fingerprint = "bcb54db5f4fe0821"
+fingerprint = "0892332bdeb96ab8"
 format = 2
