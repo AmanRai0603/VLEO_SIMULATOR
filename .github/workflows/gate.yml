@@ -284,18 +284,35 @@ jobs:
           set -o pipefail
           cargo run -p xtask -- group-test "$RUNNER_TEMP/release" | tee "$RUNNER_TEMP/test.log"
           grep -q "20 held, 0 did not" "$RUNNER_TEMP/test.log"
+      # The engine every face runs takes a node's method through the
+      # interpreter, from the design's files: a broken interpreter is what the
+      # group's results must catch. Here its π, one part in ten thousand out.
       - name: a broken engine is caught by the group's results
         run: |
-          f=crates/vleo-core/src/physics/methods/orbit_period.rs
+          f=crates/vleo-sheet/src/method/spec.rs
           cp "$f" "$RUNNER_TEMP/kept.rs"
-          sed -i 's/(2.0 \* core::f64::consts::PI)/(2.0002 * core::f64::consts::PI)/' "$f"
-          grep -q "2.0002" "$f"
+          sed -i 's/name: "PI", value: core::f64::consts::PI,/name: "PI", value: core::f64::consts::PI * 1.0001,/' "$f"
+          grep -q "PI \* 1.0001" "$f"
           if cargo run -p xtask -- group-test "$RUNNER_TEMP/release" > "$RUNNER_TEMP/broken.log" 2>&1; then
             echo "the group test passed an engine one part in ten thousand out"; exit 1
           fi
           grep -q "orbit_period — 5554.17" "$RUNNER_TEMP/broken.log"
           cp "$RUNNER_TEMP/kept.rs" "$f"
           cargo run -p xtask -- group-test "$RUNNER_TEMP/release" | grep -q "20 held, 0 did not"
+      # The translation the compiled engine still carries — the page's engine,
+      # and every face until it opens the design — is held to the interpreter
+      # by the parity gate, method by method, to the bit.
+      - name: a broken translation is caught by the parity gate
+        run: |
+          f=crates/vleo-core/src/physics/methods/orbit_period.rs
+          cp "$f" "$RUNNER_TEMP/kept.rs"
+          sed -i 's/(2.0 \* core::f64::consts::PI)/(2.0002 * core::f64::consts::PI)/' "$f"
+          grep -q "2.0002" "$f"
+          if cargo test -p vleo-cli --test the_design_read_at_run_time_answers_as_today > "$RUNNER_TEMP/parity.log" 2>&1; then
+            echo "the parity gate passed a translation one part in ten thousand out"; exit 1
+          fi
+          grep -q "orbit_period at" "$RUNNER_TEMP/parity.log"
+          cp "$RUNNER_TEMP/kept.rs" "$f"
       - name: the whole design, with the group built from its methods
         run: cargo run -p xtask -- gate && cargo test --workspace
       - name: committed on the release's own branch, and delivered from it
