@@ -873,3 +873,57 @@ jobs:
       # target and never `--workspace`.
       - run: cargo build -p vleo-units --target thumbv7em-none-eabihf --no-default-features
       - run: cargo build -p vleo-core --target thumbv7em-none-eabihf --no-default-features
+
+  # TODAY'S DESIGN, BUILT ALIKE ON THREE SYSTEMS (docs/PLAN_1_0.md, phase D:
+  # "today's design is built identically on two computers from the same
+  # drive"). Each system builds the command line, builds today's design from
+  # one drive — the solar group's sealed release — and prints the design it
+  # runs and what it answers, each by its fingerprint. The three must agree
+  # to the last bit: the same files, read alike, and every answer given
+  # alike, which is what portable maths is for.
+  alike:
+    name: today's design (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - name: today's design, from a drive
+        shell: bash
+        run: |
+          cargo build --locked -p vleo-cli
+          mkdir -p drive/groups/l3_solar/releases scratch
+          cp crates/vleo-files/tests/fixtures/l3_solar-1.1.vleo drive/groups/l3_solar/releases/
+          # A path the program can open: Git Bash on Windows says /d/a/...,
+          # which Windows does not.
+          here() { (cd "$1" && (pwd -W 2>/dev/null || pwd)); }
+          export VLEO_DRIVE="$(here drive)"
+          s="$(here scratch)"
+          export VLEO_DATA="$s/data" VLEO_CASE="$s/case.csv" VLEO_LOG="$s/log" VLEO_RESULTS="$s/results"
+          ./target/debug/vleo version | tee version.txt
+          grep -E "^  (design|answers) " version.txt > "fingerprint-${{ runner.os }}.txt"
+          grep -q "l3_solar 1.1" version.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: fingerprint-${{ runner.os }}
+          path: fingerprint-${{ runner.os }}.txt
+          if-no-files-found: error
+
+  alike-compare:
+    name: today's design, alike on three systems
+    needs: alike
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: fingerprint-*
+          merge-multiple: true
+      - name: the three agree
+        run: |
+          for f in fingerprint-*.txt; do echo "== $f"; cat "$f"; done
+          test "$(ls fingerprint-*.txt | wc -l)" -eq 3
+          test "$(cat fingerprint-*.txt | sort | uniq | wc -l)" -eq 2

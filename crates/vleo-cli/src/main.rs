@@ -220,7 +220,10 @@ vleo <command>
                        either has verified data on disk or refuses to start: it
                        does not fetch, wait, retry or fall back silently.
   version              kernel, graph and build identity, and which graph the
-                       engine runs: the one read from the design's files.
+                       engine runs: the one read from the design's files. Then
+                       the design it runs and what it answers, each by its
+                       fingerprint — the same two on any computer for the
+                       same design.
 
 Everything crossing the boundary is SI. A face converts for display and never
 for transport."
@@ -233,6 +236,28 @@ fn print_version(engine: &str) {
     println!("  graph  {}", short(Vleo::graph_hash()));
     println!("  nodes  {}", NODES.len());
     println!("  engine {engine}");
+    // The design the engine runs, and what it answers, each in one number:
+    // two computers that print the same two are running the same design and
+    // giving every answer alike, to the last bit.
+    let g = vleo_modules::engine();
+    println!("  design {:016x}", g.design_fingerprint());
+    let (data, data_versions) = resolve_data();
+    let case = Case {
+        data,
+        data_versions,
+        ..Default::default()
+    };
+    match g.answers_fingerprint(&case) {
+        Ok(a) => println!(
+            "  answers {a:016x} (the declared defaults, with {})",
+            if case.data.is_empty() {
+                "no reference data".to_string()
+            } else {
+                case.data.join(", ")
+            }
+        ),
+        Err(f) => println!("  answers — the design does not run: {f}"),
+    }
 }
 
 fn short(h: u64) -> String {
