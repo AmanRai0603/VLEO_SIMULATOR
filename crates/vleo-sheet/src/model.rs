@@ -112,6 +112,36 @@ pub struct Method {
     pub by: String,
 }
 
+/// A row whose answer is a table (`[lookup]`): one input read along it to the
+/// row's one output.
+///
+/// IN the sheet hash when present: the table is what the row computes. Both
+/// columns in SI — the input's unit for `x`, the output's for `y` — as a
+/// case's numbers are.
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct Lookup {
+    /// The binding of the input the table is read along.
+    pub by: String,
+    pub x: Vec<f64>,
+    pub y: Vec<f64>,
+    /// `"linear"`, or `"log"` for an answer that varies over decades.
+    pub read: String,
+}
+
+/// A row whose answer is its children's (`[children]`): each output is one of
+/// its inputs, a port of a child in `group`. Whatever else the row says — its
+/// method, its relation — stays as its estimate.
+///
+/// IN the sheet hash when present.
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct ChildrenOf {
+    /// The group whose children answer.
+    pub group: String,
+    /// For each output, primary first, the binding of the input that answers
+    /// it.
+    pub from: Vec<String>,
+}
+
 /// The node author's own implementation — the code that produced their test
 /// cases — and the script that ran it.
 ///
@@ -357,6 +387,11 @@ pub struct Sheet {
     pub explain: Explain,
     /// The method, if one has been written. See [`Method`].
     pub method: Method,
+    /// The table it is read from, when its answer is a lookup. See [`Lookup`].
+    pub lookup: Option<Lookup>,
+    /// The children that answer it, when its answer is theirs. See
+    /// [`ChildrenOf`].
+    pub children: Option<ChildrenOf>,
     /// The author's own code, which produced `cases`. Evidence, outside the hash.
     pub author: AuthorCode,
     /// The author's test cases, from their own code: in SI, by input binding.
@@ -459,6 +494,24 @@ impl Sheet {
     /// it is a reported state rather than a failing one.
     pub fn is_seeded(&self) -> bool {
         self.state == "empty" || self.state.is_empty()
+    }
+    /// What its answer is (docs/SYSTEM_MODEL.md, "behaviour"): `open`,
+    /// `lookup`, `children`, `stated`, `method` or `built-in`, the first of
+    /// them that holds.
+    pub fn behaviour(&self) -> &'static str {
+        if self.is_seeded() {
+            "open"
+        } else if self.lookup.is_some() {
+            "lookup"
+        } else if self.children.is_some() {
+            "children"
+        } else if self.is_declared() {
+            "stated"
+        } else if !self.method.text.trim().is_empty() {
+            "method"
+        } else {
+            "built-in"
+        }
     }
     /// The module path, which is the node identifier.
     pub fn module_path(&self) -> String {

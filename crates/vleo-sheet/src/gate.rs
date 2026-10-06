@@ -386,6 +386,111 @@ pub fn platform_maths(src: &str) -> Vec<String> {
 }
 
 /// The per-node checks.
+/// A row answered by a table or by its children holds together: exactly one
+/// behaviour, a table that can be read, children that are its group's.
+/// Nothing for any other row.
+fn behaviour_checks(sh: &Sheet, tree: &Tree) -> Vec<Check> {
+    let mut out = Vec::new();
+    let binding = |b: &str| sh.inputs.iter().find(|i| i.binding == b);
+    if let Some(l) = &sh.lookup {
+        let mut bad = Vec::new();
+        if sh.is_declared() {
+            bad.push("a stated row is its value, not a table".to_string());
+        }
+        if !sh.method.text.trim().is_empty() || !sh.steps.is_empty() || sh.children.is_some() {
+            bad.push(
+                "a row has one behaviour, and this one also has a method, steps or children".into(),
+            );
+        }
+        if !sh.publishes.is_empty() {
+            bad.push("a table answers one output, and this row publishes more".into());
+        }
+        if binding(&l.by).is_none() {
+            bad.push(format!("by = '{}' names none of its inputs", l.by));
+        }
+        if l.x.len() != l.y.len() || l.x.len() < 2 {
+            bad.push(format!(
+                "x and y must be the same length, two rows at least — they are {} and {}",
+                l.x.len(),
+                l.y.len()
+            ));
+        }
+        if l.x.iter().chain(&l.y).any(|v| !v.is_finite()) {
+            bad.push("every entry must be a finite number".into());
+        }
+        if l.x.windows(2).any(|w| w[1] <= w[0]) {
+            bad.push("x must rise from row to row, each strictly above the last".into());
+        }
+        match l.read.as_str() {
+            "linear" => {}
+            "log" if l.y.iter().all(|v| *v > 0.0) => {}
+            "log" => bad.push("read = 'log' needs every y above zero".into()),
+            r => bad.push(format!("read = '{r}' is neither 'linear' nor 'log'")),
+        }
+        out.push(if bad.is_empty() {
+            Check::pass("lookup")
+        } else {
+            Check::fail("lookup", bad.join("; "))
+        });
+    }
+    if let Some(c) = &sh.children {
+        let mut bad = Vec::new();
+        if sh.is_declared() {
+            bad.push("a stated row is its value, not its children's".to_string());
+        }
+        // The group and every group under it: where its children are.
+        let mut under = vec![c.group.clone()];
+        let mut i = 0;
+        while i < under.len() {
+            for (id, g) in &tree.groups {
+                if g.parent == under[i] && !under.contains(id) {
+                    under.push(id.clone());
+                }
+            }
+            i += 1;
+        }
+        if !tree.groups.contains_key(&c.group) {
+            bad.push(format!("group = '{}' is not a group", c.group));
+        } else if under.contains(&sh.parent) {
+            bad.push(format!(
+                "the row is inside {}: a block's answer is read from its children, not from itself",
+                c.group
+            ));
+        }
+        let outputs = 1 + sh.publishes.len();
+        if c.from.len() != outputs {
+            bad.push(format!(
+                "from names {} port(s) for {outputs} output(s): one each, primary first",
+                c.from.len()
+            ));
+        }
+        for b in &c.from {
+            match binding(b) {
+                None => bad.push(format!("from names '{b}', none of its inputs")),
+                Some(i) => {
+                    let producer = i.var.split('.').next().unwrap_or("");
+                    let inside = tree
+                        .sheets
+                        .get(producer)
+                        .is_some_and(|p| under.contains(&p.parent));
+                    if !inside {
+                        bad.push(format!(
+                            "'{b}' reads {}, which is not a port of a child in {}",
+                            i.var, c.group
+                        ));
+                    }
+                }
+            }
+        }
+        out.push(if bad.is_empty() {
+            Check::pass("children")
+        } else {
+            Check::fail("children", bad.join("; "))
+        });
+    }
+    out
+}
+
 pub fn gate_node(sh: &Sheet, tree: &Tree) -> Vec<Check> {
     let mut out = Vec::new();
     let holes = read_holes(&sh.dir);
@@ -422,6 +527,7 @@ pub fn gate_node(sh: &Sheet, tree: &Tree) -> Vec<Check> {
         out.push(versions_check(sh));
         out.extend(method_checks(sh));
         out.extend(lesson_check(sh, tree));
+        out.extend(behaviour_checks(sh, tree));
         let gaps = emit::gap_pass(sh, &holes);
         out.push(if gaps.is_empty() {
             Check::pass("gap-pass")
@@ -433,6 +539,7 @@ pub fn gate_node(sh: &Sheet, tree: &Tree) -> Vec<Check> {
     out.push(versions_check(sh));
     out.extend(method_checks(sh));
     out.extend(lesson_check(sh, tree));
+    out.extend(behaviour_checks(sh, tree));
 
     // 1 — the sheet validates; no required field is blank.
     let mut missing = Vec::new();

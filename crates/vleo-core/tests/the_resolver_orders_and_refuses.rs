@@ -8,7 +8,9 @@
 
 use vleo_core::credibility::{CredVec, Tier};
 use vleo_core::fault::Fault;
-use vleo_core::graph::{Kind, Limit, NodeDef, NodeTable, Retirement, State, VarDef, View};
+use vleo_core::graph::{
+    Behaviour, Kind, Limit, NodeDef, NodeTable, Retirement, State, VarDef, View,
+};
 use vleo_core::resolver::{evaluate, CycleSpec, Mode, RunReport, Workspace};
 use vleo_core::units::Unit;
 use vleo_core::value::{Slot, SlotStatus, Store};
@@ -69,6 +71,7 @@ impl Graph {
                 sheet_hash: i as u64,
                 impl_hash: i as u64,
                 view: View::Number,
+                behaviour: Behaviour::BuiltIn,
             });
             g.vars.push(VarDef {
                 id,
