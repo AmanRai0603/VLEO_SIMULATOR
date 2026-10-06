@@ -69,8 +69,8 @@ pub(super) fn cmd_convert(root: &Path, args: &[&str]) -> Result<(), String> {
         .filter(|(p, _)| p.ends_with(&format!(".{}", vleo_files::convert::GROUP_FILE)))
         .count();
     println!(
-        "converted: {groups} groups, {} rows read back ({} of them the open blocks proposed one \
-         level deeper), {} cases. Read them back with `vleo_files::convert::Served`; delete {} to undo.",
+        "converted: {groups} groups, {} rows read back ({} of them open blocks proposed where the \
+         breakdown holds none yet), {} cases. Read them back with `vleo_files::convert::Served`; delete {} to undo.",
         back.sheets.len(),
         back.sheets.len() - tree.sheets.len(),
         back.cases.len(),

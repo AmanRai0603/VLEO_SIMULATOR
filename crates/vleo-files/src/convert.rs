@@ -45,8 +45,9 @@
 //!    it (section 5);
 //! 3. every stated value is a parameter of the level whose branch states it
 //!    (section 6, "A parameter belongs to the level that decides it");
-//! 4. the next level each group may open is there, as open blocks (section
-//!    8, "Proposed: one level deeper").
+//! 4. the five blocks the breakdown does not hold yet are there, as open
+//!    blocks, each with why ([`PROPOSED`]; section 8, "Proposed: one level
+//!    deeper").
 //!
 //! The relations still in code are not design and are not converted: a
 //! row's built-in relation is found in the code by its id
@@ -95,121 +96,68 @@ const CONVERTED: &str = "converted";
 /// folder is the code's: the generated module and the relation still in code.
 const NODE_DESIGN: &[&str] = &["node.toml", "fixtures.toml", "parity.csv"];
 
-/// The next level each group may open, as `docs/SYSTEM_MODEL.md` (section 8,
-/// "Proposed: one level deeper") proposes it, by group. Each is an open block
-/// until its group's subsystem engineer breaks it down; none computes. Solar
-/// weather is broken down already, and the closures and cost are the KPI
-/// closure rows themselves, so neither has one here. The payload's
-/// accommodation of each payload is the multi-payload group's.
-pub const PROPOSED: &[(&str, &[&str])] = &[
+/// The blocks a group's breakdown does not hold yet, proposed when the design
+/// is converted, each with why: the next level `docs/SYSTEM_MODEL.md`
+/// (section 8, "Proposed: one level deeper") proposes, less every one its
+/// owners' rows already cover — station-keeping delta-v is the drag make-up,
+/// the deorbit delta-v the disposal, the relative performance error the
+/// pointing stability, the radiator, heater and insulation rows the thermal
+/// hardware, and so on. Each is an open block, for its owner to confirm,
+/// rename, break down or remove; none computes. The breakdown itself is its
+/// owners', and is not moved.
+pub const PROPOSED: &[(&str, &[(&str, &str)])] = &[
     (
-        "l3_prop",
-        &[
-            "Thruster head",
-            "Power processing unit",
-            "Propellant storage and feed",
-        ],
-    ),
-    (
-        "l3_orbmaint",
-        &[
-            "Drag make-up",
-            "Collision avoidance",
-            "End-of-life disposal",
-        ],
-    ),
-    (
-        "l3_acs",
-        &[
-            "Disturbance torques, aerodynamic first",
-            "Actuator sizing",
-            "Momentum management",
-        ],
-    ),
-    (
-        "l3_atthw",
-        &["Attitude sensors", "Actuators", "Attitude electronics"],
-    ),
-    (
-        "l3_pointing",
-        &["Knowledge error", "Control error", "Stability"],
-    ),
-    ("l3_navsense", &["GNSS receiver", "GNSS antenna"]),
-    (
-        "l3_navod",
-        &[
-            "Orbit determination",
-            "Ephemeris propagation",
-            "Accuracy budget",
-        ],
-    ),
-    (
-        "l3_power",
-        &[
-            "Solar array",
-            "Battery",
-            "Power conditioning and distribution",
-            "Harness",
-        ],
-    ),
-    (
-        "l3_thermal",
-        &[
-            "Radiators",
-            "Heaters and their control",
-            "Insulation",
-            "Thermal interfaces",
-        ],
+        "l3_x_envorbit",
+        &[(
+            "Radiation environment",
+            "Proposed when the design was converted: the group states the atmosphere, \
+             its atomic oxygen and the geomagnetic field, and nothing of the radiation \
+             the spacecraft receives (trapped protons and electrons, solar energetic \
+             particles, the dose behind its shielding), which the space environment \
+             standard treats beside them (ECSS-E-ST-10-04C). Open until its owner \
+             confirms it or removes it.",
+        )],
     ),
     (
         "l3_fsw",
         &[
-            "On-board computer",
-            "Modes and autonomy",
-            "Fault detection and recovery",
-            "Data handling and storage",
-        ],
-    ),
-    (
-        "l3_ttc",
-        &[
-            "Command and telemetry link",
-            "Payload downlink",
-            "Ground passes",
-        ],
-    ),
-    (
-        "l3_multipay",
-        &[
-            "Payload power accommodation",
-            "Payload data accommodation",
-            "Payload pointing accommodation",
-            "Payload mass accommodation",
-        ],
-    ),
-    (
-        "l3_massaero",
-        &[
-            "Mass budget",
-            "Drag area and shape",
-            "Centre of mass and inertia",
+            (
+                "Modes and autonomy",
+                "Proposed when the design was converted: the group sizes the computer \
+                 (processor throughput, memory, clock) and states nothing of the modes the \
+                 spacecraft runs in, or of what it decides on board between passes, which \
+                 a flight software breakdown usually holds beside the computer \
+                 (ECSS-E-ST-70-11C, space segment operability). Open until its owner \
+                 confirms it or removes it.",
+            ),
+            (
+                "Fault detection and recovery",
+                "Proposed when the design was converted: nothing in the group says how a \
+                 fault is detected, isolated and recovered from on board, which a flight \
+                 software breakdown usually holds as its own branch (ECSS-E-ST-70-11C). \
+                 Open until its owner confirms it or removes it.",
+            ),
         ],
     ),
     (
         "l3_struct",
         &[
-            "Primary structure",
-            "Secondary structure",
-            "Mechanisms and deployments",
-            "Launch adapter interface",
-        ],
-    ),
-    (
-        "l3_x_envorbit",
-        &[
-            "Atmospheric density",
-            "Orbit geometry and lifetime",
-            "Atomic oxygen and radiation",
+            (
+                "Mechanisms and deployments",
+                "Proposed when the design was converted: the group states the primary \
+                 structure (its material, panels and dimensions) and nothing of the \
+                 mechanisms that deploy or hold anything, the array, the antennas, the \
+                 hold-down and release, which a structure breakdown usually holds as its \
+                 own branch (ECSS-E-ST-33-01C). Open until its owner confirms it or \
+                 removes it.",
+            ),
+            (
+                "Launch adapter interface",
+                "Proposed when the design was converted: nothing in the group states the \
+                 interface to the launcher's adapter (its ring, its separation system, the \
+                 loads it carries), usually its own item at this level. Open until its \
+                 owner confirms it or removes it.",
+            ),
         ],
     ),
 ];
@@ -786,11 +734,12 @@ fn node_file(
     Ok(f)
 }
 
-/// The sheet of an open block the conversion adds: the next level a group
-/// may open, seeded as every row not decided yet is.
+/// The sheet of an open block the conversion adds, seeded as every row not
+/// decided yet is, with why it was proposed as its question's note.
 fn proposed_sheet(
     id: &str,
     name: &str,
+    why: &str,
     interface: &Sheet,
     heading: &str,
     owner: &str,
@@ -811,6 +760,7 @@ fn proposed_sheet(
     t.insert("state".into(), s("empty"));
     let mut q = TomlTable::new();
     q.insert("text".into(), s(""));
+    q.insert("note".into(), s(why));
     t.insert("question".into(), Value::Table(q));
     let mut m = TomlTable::new();
     m.insert("expression".into(), s(""));
@@ -1162,7 +1112,7 @@ pub fn convert(tree: &Tree, fs: &dyn Files, app: &str) -> Result<Vec<(String, Fi
         out.push((format!("groups/{b}/nodes/{}.{NODE_FILE}", sh.id), f));
     }
 
-    // ── the next level each group may open, as open blocks
+    // ── the blocks a breakdown does not hold yet, as open blocks
     for (group, names) in PROPOSED {
         let interface = tree
             .sheets
@@ -1179,7 +1129,7 @@ pub fn convert(tree: &Tree, fs: &dyn Files, app: &str) -> Result<Vec<(String, Fi
             .map(|s| s.order)
             .max()
             .unwrap_or(0);
-        for name in *names {
+        for (name, why) in *names {
             let id = proposed_id(group, name);
             if tree.sheets.contains_key(&id) || tree.groups.contains_key(&id) {
                 return Err(malformed(format!(
@@ -1187,7 +1137,15 @@ pub fn convert(tree: &Tree, fs: &dyn Files, app: &str) -> Result<Vec<(String, Fi
                 )));
             }
             order += 1;
-            let text = proposed_sheet(&id, name, interface, &heading.id, &heading.owner, order);
+            let text = proposed_sheet(
+                &id,
+                name,
+                why,
+                interface,
+                &heading.id,
+                &heading.owner,
+                order,
+            );
             let raw = toml_table(&text, &id)?;
             let sheet = Sheet {
                 id: id.clone(),

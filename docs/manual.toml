@@ -2544,7 +2544,7 @@ effect = "reads"
 tool = "xtask"
 name = "convert"
 usage = "convert [--out <dir>]"
-what = "The design as its files, for the switch-over (docs/PLAN_1_0.md, phase E): the programme's, the systems' and each subsystem group's group file, a node file for every row and for each open block proposed one level deeper, and each case, laid out as the shared drive holds them. Before anything is written they are read back as the folders and loaded as the design. Default target/converted/, or an empty --out; nothing in the repository changes."
+what = "The design as its files, for the switch-over (docs/PLAN_1_0.md, phase E): the programme's, the systems' and each subsystem group's group file, a node file for every row and for each open block proposed where its group's breakdown holds none yet, and each case, laid out as the shared drive holds them. Before anything is written they are read back as the folders and loaded as the design. Default target/converted/, or an empty --out; nothing in the repository changes."
 who = "developer"
 effect = "writes"
 

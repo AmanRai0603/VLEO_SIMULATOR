@@ -73,7 +73,7 @@ fn every_branch_every_row_and_every_case_is_a_file_that_holds_together() {
     expected.insert(SYSTEMS);
     assert_eq!(groups, expected);
     assert_eq!(groups.len(), 20);
-    // A node file for every row, and for every proposed block.
+    // A node file for every row, and for every block proposed.
     let proposed: usize = PROPOSED.iter().map(|(_, n)| n.len()).sum();
     assert_eq!(of(Kind::Node).count(), t.sheets.len() + proposed);
     // The one case, and the two kept as CSV beside it.
@@ -174,14 +174,16 @@ fn the_files_read_back_as_the_design_with_only_what_the_conversion_is_for() {
     }
     assert!(stated > 0);
 
-    // 4. The next level each group may open is there, open, under its group.
+    // 4. The blocks the breakdown does not hold yet are there, open, under
+    //    their group, each saying why it was proposed.
     let mut back_sheets = back.sheets.clone();
     for (group, names) in PROPOSED {
-        for name in *names {
+        for (name, why) in *names {
             let id = proposed_id(group, name);
             let sh = back_sheets.remove(&id).unwrap_or_else(|| panic!("{id}"));
             assert_eq!((sh.behaviour(), sh.parent.as_str()), ("open", *group));
             assert_eq!((sh.label.as_str(), sh.layer), (*name, 3));
+            assert_eq!(sh.note, *why, "{id}");
         }
     }
 
@@ -213,33 +215,48 @@ fn the_files_read_back_as_the_design_with_only_what_the_conversion_is_for() {
 }
 
 #[test]
-fn the_proposed_level_is_the_one_the_system_model_proposes() {
+fn every_block_proposed_is_one_the_system_model_proposes_and_the_breakdown_has_not() {
+    // Each is in the system model's proposed next level, under its group.
     let doc = std::fs::read_to_string(root().join("docs/SYSTEM_MODEL.md")).unwrap();
     let at = doc.find("### Proposed: one level deeper").unwrap();
-    let mut in_doc: BTreeSet<String> = BTreeSet::new();
+    let mut in_doc: BTreeMap<String, BTreeSet<String>> = BTreeMap::new();
     for line in doc[at..]
         .lines()
         .skip_while(|l| !l.starts_with("| Propulsion"))
         .take_while(|l| l.starts_with('|'))
     {
         let cells: Vec<&str> = line.trim_matches('|').split(" | ").collect();
-        let (group, children) = (cells[0].trim(), cells[1].trim());
-        match group {
-            // Broken down already, and the closures themselves.
-            "Solar weather" | "Closure and cost" => continue,
-            "Payload and multi-payload" => {
-                for part in ["power", "data", "pointing", "mass"] {
-                    in_doc.insert(format!("payload {part} accommodation"));
-                }
-            }
-            _ => in_doc.extend(children.split(" · ").map(str::to_lowercase)),
+        in_doc.insert(
+            cells[0].trim().to_lowercase(),
+            cells[1]
+                .split(" · ")
+                .map(|c| c.trim().to_lowercase())
+                .collect(),
+        );
+    }
+    let t = tree();
+    for (group, names) in PROPOSED {
+        let heading = t.groups[*group].label.to_lowercase();
+        let row = in_doc
+            .iter()
+            .find(|(g, _)| heading.starts_with(g.as_str()) || g.starts_with(heading.as_str()))
+            .map(|(_, c)| c)
+            .unwrap_or_else(|| panic!("{group} ({heading}) has no row in the model's table"));
+        for (name, why) in *names {
+            assert!(row.contains(&name.to_lowercase()), "{group}: {name}");
+            assert!(
+                why.starts_with("Proposed when the design was converted"),
+                "{name}"
+            );
+            // And no row of the group already has its name.
+            assert!(
+                t.sheets
+                    .values()
+                    .all(|s| !s.label.to_lowercase().contains(&name.to_lowercase())),
+                "{group} already has {name}"
+            );
         }
     }
-    let in_code: BTreeSet<String> = PROPOSED
-        .iter()
-        .flat_map(|(_, n)| n.iter().map(|n| n.to_lowercase()))
-        .collect();
-    assert_eq!(in_code, in_doc);
 }
 
 #[test]
