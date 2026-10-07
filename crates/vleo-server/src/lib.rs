@@ -365,28 +365,14 @@ fn open_base(root: &Path) -> Result<(std::sync::Arc<dyn Files>, Option<DesignFil
             Err(e) => return Err(format!("the design file {}: {e}", path.display())),
         }
     }
-    // A design file this engine was not built from runs, and every answer it
-    // gives is from relations its sheets do not state. So it is refused here,
-    // naming the rows that differ, before anything is served from it.
-    let tree = vleo_sheet::load::load_all_from(&d, root)
+    // The file must load as a design: every check the loader makes, made,
+    // before anything is served from it. Its rows run as it states them —
+    // every relation is a method or a value of the design's own, a method
+    // the tool was not built from run by the interpreter — so a design other
+    // than the one this tool was released with runs too, answering from its
+    // own files.
+    vleo_sheet::load::load_all_from(&d, root)
         .map_err(|e| format!("the design file {} does not load: {e}", path.display()))?;
-    let differs = engine_differs(&tree);
-    if !differs.is_empty() {
-        let first = differs
-            .iter()
-            .take(5)
-            .cloned()
-            .collect::<Vec<_>>()
-            .join("; ");
-        return Err(format!(
-            "the design file {} was made for a different engine than this tool \
-             ({} row(s) differ — {first}{}). Open it with the tool from the same \
-             release as the design, or use the design this tool was released with.",
-            path.display(),
-            differs.len(),
-            if differs.len() > 5 { "; …" } else { "" }
-        ));
-    }
     let info = DesignFile {
         file: path.display().to_string(),
         rows: d.meta("rows").to_string(),
@@ -397,13 +383,12 @@ fn open_base(root: &Path) -> Result<(std::sync::Arc<dyn Files>, Option<DesignFil
 
 /// The design converted to its files (docs/PLAN_1_0.md, phase E): every
 /// group, node and case file in the folder `VLEO_DESIGN` names, read as the
-/// folders they were converted from (`vleo_files::convert::Served`), with the
-/// relations still in code read from this engine's own.
+/// folders they were converted from (`vleo_files::convert::Served`).
 ///
-/// Held as a design file is: a row this engine does not answer as the files
-/// state it is refused, by name. A block that is open and new is the one
-/// exception, because an open block asks nothing of the engine: it is refused
-/// by its own id if a run reaches it.
+/// It must load as a design, every check the loader makes, made. Its rows run
+/// as its files state them: a method as its translation when this tool was
+/// built from that very method, in the interpreter otherwise, and a stated
+/// value as stated.
 fn open_converted(
     root: &Path,
     dir: &Path,
@@ -418,34 +403,6 @@ fn open_converted(
     .map_err(|e| format!("the design folder {} does not read: {e}", dir.display()))?;
     let tree = vleo_sheet::load::load_all_from(&served, root)
         .map_err(|e| format!("the design folder {} does not load: {e}", dir.display()))?;
-    let open_and_new: std::collections::BTreeSet<&str> = tree
-        .sheets
-        .values()
-        .filter(|s| s.is_seeded() && vleo_modules::COMPILED.find(&s.id).is_none())
-        .map(|s| s.id.as_str())
-        .collect();
-    let differs: Vec<String> = engine_differs(&tree)
-        .into_iter()
-        .filter(|d| {
-            !d.split_once(':')
-                .is_some_and(|(id, _)| open_and_new.contains(id))
-        })
-        .collect();
-    if !differs.is_empty() {
-        return Err(format!(
-            "the design folder {} was made for a different engine than this tool \
-             ({} row(s) differ — {}{})",
-            dir.display(),
-            differs.len(),
-            differs
-                .iter()
-                .take(5)
-                .cloned()
-                .collect::<Vec<_>>()
-                .join("; "),
-            if differs.len() > 5 { "; …" } else { "" }
-        ));
-    }
     let info = DesignFile {
         file: dir.display().to_string(),
         rows: tree.sheets.len().to_string(),
@@ -460,10 +417,10 @@ fn open_converted(
 /// Says which graph runs. The command line, Python and the C interface open
 /// the design here, so every face runs the same graph the server does.
 ///
-/// A design that does not open, does not load, or is not one this build of the
-/// engine can run is refused, naming why; the compiled graph is never run in
-/// its place. Where there is no design at all — no design file and no folders —
-/// the engine runs the graph compiled into it, and says so.
+/// A design that does not open or does not load is refused, naming why; the
+/// compiled graph is never run in its place. Where there is no design at all —
+/// no design named, no design file and no folders — the engine runs the graph
+/// compiled into it, and says so.
 pub fn run_the_design(root: Option<PathBuf>) -> Result<String, String> {
     let root = root.unwrap_or_else(repo_root);
     let (tree, design, today) = open_tree(&root)?;
@@ -491,35 +448,15 @@ fn run_on_the_files(files: &dyn Files, root: &Path, from_a_file: bool) -> Result
     Ok(format!(
         "the graph read from the design's files — {} rows, {} of them methods run by the interpreter",
         graph.nodes.len(),
-        graph.run_by_the_graph()
+        graph
+            .nodes
+            .iter()
+            .zip(graph.run.iter())
+            .filter(|(d, r)| {
+                d.behaviour == vleo_modules::core_engine::graph::Behaviour::Method && r.is_some()
+            })
+            .count()
     ))
-}
-
-/// Every row where the design and this engine are not one design: a row the
-/// engine has and the file does not, one the file has and the engine does not,
-/// or one whose sheet or relation differs. Empty when they are the same.
-fn engine_differs(tree: &vleo_sheet::Tree) -> Vec<String> {
-    // This build's own graph, whichever one a face has installed since.
-    let built = &vleo_modules::COMPILED;
-    let mut out = Vec::new();
-    for n in built.nodes.iter() {
-        match tree.sheets.get(n.id) {
-            None => out.push(format!("{}: in this engine, not in the file", n.id)),
-            Some(s) if s.sheet_hash != n.sheet_hash => {
-                out.push(format!("{}: a different sheet", n.id))
-            }
-            Some(s) if s.impl_hash != n.impl_hash => {
-                out.push(format!("{}: a different relation", n.id))
-            }
-            Some(_) => {}
-        }
-    }
-    for id in tree.sheets.keys() {
-        if built.find(id).is_none() {
-            out.push(format!("{id}: in the file, not in this engine"));
-        }
-    }
-    out
 }
 
 impl Ctx {
@@ -1758,51 +1695,6 @@ pub(crate) fn levers_of(params: &str, ctx: &Ctx, node: &str, ni: u16) -> (Option
     });
 
     (base, out)
-}
-
-#[cfg(test)]
-mod one_design {
-    use super::engine_differs;
-    use std::path::Path;
-    use vleo_modules::COMPILED;
-
-    fn tree() -> vleo_sheet::Tree {
-        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
-        vleo_sheet::load_all(&root).expect("the checkout's tree does not load")
-    }
-
-    #[test]
-    fn the_engine_and_the_checkout_it_was_built_from_are_one_design() {
-        assert_eq!(engine_differs(&tree()), Vec::<String>::new());
-    }
-
-    #[test]
-    fn every_kind_of_difference_is_named() {
-        let first = COMPILED.nodes[0].id.to_string();
-        let second = COMPILED.nodes[1].id.to_string();
-        let third = COMPILED.nodes[2].id.to_string();
-        let mut t = tree();
-        t.sheets.get_mut(&first).unwrap().sheet_hash ^= 1;
-        t.sheets.get_mut(&second).unwrap().impl_hash ^= 1;
-        let mut extra = t.sheets.remove(&third).unwrap();
-        extra.id = "not_in_this_engine".into();
-        t.sheets.insert(extra.id.clone(), extra);
-        let d = engine_differs(&t);
-        assert!(d.contains(&format!("{first}: a different sheet")), "{d:?}");
-        assert!(
-            d.contains(&format!("{second}: a different relation")),
-            "{d:?}"
-        );
-        assert!(
-            d.contains(&format!("{third}: in this engine, not in the file")),
-            "{d:?}"
-        );
-        assert!(
-            d.contains(&"not_in_this_engine: in the file, not in this engine".to_string()),
-            "{d:?}"
-        );
-        assert_eq!(d.len(), 4, "{d:?}");
-    }
 }
 
 #[cfg(test)]

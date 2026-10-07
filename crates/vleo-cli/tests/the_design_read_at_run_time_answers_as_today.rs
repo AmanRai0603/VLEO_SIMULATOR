@@ -24,6 +24,7 @@ mod baseline;
 use std::sync::OnceLock;
 
 use baseline::{record_path, root, today};
+use vleo_modules::core_engine::graph::Behaviour;
 use vleo_modules::{opened, Graph, COMPILED};
 
 fn read() -> &'static Graph {
@@ -65,9 +66,9 @@ fn the_graph_read_at_run_time_is_the_compiled_graph() {
 }
 
 #[test]
-fn every_method_runs_in_the_interpreter() {
+fn no_row_runs_compiled_code_but_a_method_s_own_translation() {
     // Counted from the translated methods the compiled engine carries, one
-    // file each: every one of them is run by the interpreter instead.
+    // file each.
     let translated = std::fs::read_dir(root().join("crates/vleo-core/src/physics/methods"))
         .unwrap()
         .filter(|e| {
@@ -76,12 +77,59 @@ fn every_method_runs_in_the_interpreter() {
         })
         .count();
     assert!(translated > 0);
-    assert_eq!(read().run_by_the_graph(), translated);
-    // The graph a face runs takes each translation as its fast path, because
-    // this build was made from these very sheets: no method is interpreted.
+    // In the graph the parity gate runs, every method is run by the
+    // interpreter. In the graph a face runs, a method this build was made
+    // from runs as its translation, the fast path — all of them, here, since
+    // this build was made from these very sheets. In both, every stated value
+    // is published by the graph itself.
     let faces = opened::read(&root()).unwrap();
-    assert_eq!(faces.run_by_the_graph(), 0);
+    for (g, interpreted) in [(read(), translated), (faces, 0)] {
+        let methods = g
+            .nodes
+            .iter()
+            .filter(|d| d.behaviour == Behaviour::Method)
+            .count();
+        assert_eq!(methods, translated);
+        let by_the_graph = |k: usize| g.run.get(k).is_some_and(|r| r.is_some());
+        let run_by_the_interpreter = (0..g.nodes.len())
+            .filter(|&k| g.nodes[k].behaviour == Behaviour::Method && by_the_graph(k))
+            .count();
+        assert_eq!(run_by_the_interpreter, interpreted);
+        for (k, d) in g.nodes.iter().enumerate() {
+            if d.behaviour == Behaviour::Stated && d.inputs.is_empty() {
+                assert!(by_the_graph(k), "{} is not published by the graph", d.id);
+            }
+        }
+    }
     assert_eq!(faces.graph_hash(), COMPILED.graph_hash());
+}
+
+/// Each stated value, published by the graph, against the row the generator
+/// compiled for it: the same value to the bit, or the same fault.
+#[test]
+fn every_stated_value_is_published_as_the_compiled_row_published_it() {
+    let g = read();
+    let mut compared = 0;
+    for (k, def) in g.nodes.iter().enumerate() {
+        if def.behaviour != Behaviour::Stated || !def.inputs.is_empty() {
+            continue;
+        }
+        let c = COMPILED
+            .find(def.id)
+            .expect("the stated row is compiled in");
+        let said = |r: Result<[f64; vleo_modules::MAX_OUTPUTS], _>| match r {
+            Ok(v) => format!("{:?}", v[0].to_bits()),
+            Err(f) => format!("{f:?}"),
+        };
+        assert_eq!(
+            said(g.probe(k as u16, &[])),
+            said(COMPILED.probe(c, &[])),
+            "{}",
+            def.id
+        );
+        compared += 1;
+    }
+    assert!(compared > 100, "only {compared} stated rows compared");
 }
 
 #[test]

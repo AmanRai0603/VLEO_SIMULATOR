@@ -9,29 +9,29 @@
 //! Each node, variable and case is built from the tree exactly as the
 //! generator writes them into the compiled tables (`vleo_sheet::emit`,
 //! `tables_rs`): the same order, the same indices, the same units turned to
-//! SI, the same fixtures. A node's relation is found by its id:
+//! SI, the same fixtures. Every relation is the design's own (docs/PLAN_1_0.md,
+//! phase E):
 //!
-//! - **built-in** — a relation still in compiled code is the compiled one,
-//!   taken only when it was built from this sheet (its `impl_hash` and its
-//!   `sheet_hash` both the same); its guards are the compiled guards, so its
-//!   parity is exact;
-//! - **seeded** — a row nobody has specified refuses, as the compiled one does;
-//! - anything else — a row this build has no code for, or code from another
-//!   sheet — refuses by name, rather than running something that is not it.
-//!
-//! - **a method** — a row whose relation is a method the node engineer wrote
-//!   runs in the method language's interpreter, the same one that checked it
-//!   against their cases, with no compiled code at all. Around it is what the
-//!   compiled row does, in the same order and the same words: the length
-//!   check, an input that is not a number refused at the door, the method's
-//!   own refusal and its undefined values as the same faults, and the guards
-//!   on every value it publishes. Its arithmetic is the same portable maths,
-//!   so it is held to today's answers exactly.
+//! - **a method** — a row whose relation is a method runs in the method
+//!   language's interpreter, the same one that checked it against its cases.
+//!   Around it is what the compiled row did, in the same order and the same
+//!   words: the length check, an input that is not a number refused at the
+//!   door, the method's own refusal and its undefined values as the same
+//!   faults, and the guards on every value it publishes. Its arithmetic is the
+//!   same portable maths, so it is held to today's answers exactly.
 //!
 //!   A method this build was made from — the very sheet — runs as its
 //!   translation instead, the fast path a sweep needs, held equal to the
 //!   interpreter by the parity gate ([`interpreting`] builds the graph that
-//!   gate runs). A method the build has not seen runs in the interpreter.
+//!   gate runs). A method the build has not seen runs in the interpreter. The
+//!   translation is the method itself, translated by rule; no other compiled
+//!   code runs for any row.
+//! - **a stated value** — published as written, converted from its unit to
+//!   its type's as the generated row did, and guarded by its declared domain.
+//! - **a table, or its children** — read by the engine itself.
+//! - **seeded** — a row nobody has specified refuses, as the compiled one does;
+//!   anything else refuses by name, rather than running something that is not
+//!   it.
 
 use alloc::boxed::Box;
 use alloc::format;
@@ -416,24 +416,20 @@ fn interpreted(sh: &sheet::Sheet) -> Option<&'static Relation> {
     })))
 }
 
-/// The relation each row runs, by its id: the compiled one when it is this
-/// sheet's.
-///
-/// The compiled function carries the guards generated from the sheet it was
-/// built from — its units, its limits and their reasons — so it is this
-/// sheet's only when both are the same: its implementation (`impl_hash`) and
-/// the sheet itself (`sheet_hash`). A sheet whose range has moved, run on the
-/// compiled code, would be guarded by the range it no longer declares.
+/// The relation a row runs when it has no method: a row nobody has specified
+/// refuses as unspecified, and anything else refuses by name. Every relation
+/// of the design is a method, a stated value, a table or its children.
 fn relation(sh: &sheet::Sheet) -> NodeFn {
     if sh.is_seeded() {
         return unspecified;
     }
-    this_build(sh).unwrap_or(not_in_this_build)
+    not_in_this_build
 }
 
-/// The compiled code for this sheet, when this build was made from it: the
-/// same implementation and the same sheet — and so, for a method, the same
-/// method, translated.
+/// The translation of this row's method, when this build was made from the
+/// very sheet: the same implementation (`impl_hash`) and the same sheet
+/// (`sheet_hash`), and so the same method, translated, with the guards
+/// generated from the range it declares.
 fn this_build(sh: &sheet::Sheet) -> Option<NodeFn> {
     let k = COMPILED.find(&sh.id)? as usize;
     (COMPILED.nodes[k].impl_hash == sh.impl_hash && COMPILED.nodes[k].sheet_hash == sh.sheet_hash)
@@ -446,13 +442,47 @@ enum Methods {
     /// Its translation, when this build was made from the very sheet; the
     /// interpreter otherwise. docs/PLAN_1_0.md, phase D: "If a sweep is too
     /// slow, translated code stays as the fast path, held equal to the
-    /// interpreter." A sweep runs a method thousands of times, and one call
-    /// costs about 1.7 µs translated and 40 µs interpreted: the design
-    /// panel's F10.7 view took 3.3 s interpreted and 0.16 s translated.
+    /// interpreter." A sweep runs a method thousands of times: the design
+    /// panel's F10.7 view took 6.7 s interpreted and 0.28 s translated.
     Translated,
     /// Always in the interpreter — how the parity gate holds every
     /// translation equal to it.
     Interpreted,
+}
+
+/// A stated value, as the row publishes it: converted from the unit it was
+/// written in to its type's, exactly as the generated row did
+/// (`from_unit`), and guarded by its declared domain.
+fn stated(sh: &sheet::Sheet) -> Option<&'static Relation> {
+    if !sh.is_declared() || !sh.inputs.is_empty() {
+        return None;
+    }
+    let node = text(&sh.id);
+    let symbol = text(&sh.symbol);
+    let value = vleo_units::quantity_unit(&sh.ty)
+        .and_then(|ty| unit_of(&sh.unit).convert(sh.value.unwrap_or(0.0), ty));
+    let guard: &'static Guarded = Box::leak(Box::new(Guarded::new(
+        &sh.symbol,
+        &sh.ty,
+        &sh.unit,
+        sh.lower,
+        sh.upper,
+        &sh.reason_lower,
+        &sh.reason_upper,
+    )));
+    Some(Box::leak(Box::new(move |_: &[f64], o: &mut [f64]| {
+        let v = value.ok_or(Fault::Degenerate {
+            node,
+            field: symbol,
+            reason: "the declared unit does not match the declared type",
+        })?;
+        guard.check(node, v)?;
+        *o.first_mut().ok_or(Fault::Blocked {
+            node,
+            missing: "an input the contract declares",
+        })? = v;
+        Ok(())
+    })))
 }
 
 /// The graph of `tree`, built as the generator builds the compiled one. It
@@ -466,7 +496,7 @@ pub fn graph(tree: &Tree) -> Result<&'static Graph, Error> {
 }
 
 /// The graph of `tree` with every method run by the interpreter, whatever
-/// code the build has for it: the graph the parity gate holds every
+/// translation the build has for it: the graph the parity gate holds every
 /// translation to.
 pub fn interpreting(tree: &Tree) -> Result<&'static Graph, Error> {
     build(tree, Methods::Interpreted)
@@ -591,16 +621,25 @@ fn build(tree: &Tree, methods: Methods) -> Result<&'static Graph, Error> {
             view: view_of(&sh.view),
             behaviour: behaviour_of(sh),
         });
-        // A method runs in the interpreter, and needs no compiled code — or,
-        // when this build was made from this very sheet, as its translation.
-        let translated = methods == Methods::Translated && this_build(sh).is_some();
-        let interp = if translated { None } else { interpreted(sh) };
-        dispatch.push(if interp.is_some() {
+        // A method runs in the interpreter — or, when this build was made
+        // from this very sheet, as its translation — and a stated value is
+        // published by the graph itself.
+        let method = interpreted(sh);
+        let fast = match (methods, &method) {
+            (Methods::Translated, Some(_)) => this_build(sh),
+            _ => None,
+        };
+        let own = if fast.is_some() {
+            None
+        } else {
+            method.or_else(|| stated(sh))
+        };
+        dispatch.push(fast.unwrap_or(if own.is_some() {
             not_in_this_build
         } else {
             relation(sh)
-        });
-        run.push(interp);
+        }));
+        run.push(own);
     }
 
     let limit = |lower: f64, upper: f64, unit: &str, rl: &str, ru: &str| Limit {
