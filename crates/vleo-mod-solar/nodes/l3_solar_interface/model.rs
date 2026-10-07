@@ -34,7 +34,7 @@ use vleo_core::units::*;
 pub const NODE_ID: &str = "l3_solar_interface";
 /// Hash of the sheet this file was generated from. A face carrying a
 /// different one refuses to run rather than showing a stale page.
-pub const SHEET_HASH: u64 = 0xab82ebb6e9826449;
+pub const SHEET_HASH: u64 = 0x594e53b7dde9e4a0;
 
 /// The set this node publishes. One field per published variable, named
 /// by the sheet's own symbol, in the order `OUTPUT_VARS` declares: this
@@ -96,70 +96,18 @@ pub struct Answer {
 }
 
 pub fn evaluate(f107_centre: Ratio, f107_hot_long: Ratio, f107_cold_long: Ratio, f107_hot_day: Ratio, f107_cold_day: Ratio, ap_centre: Ratio, ap_hot_long: Ratio, ap_cold_long: Ratio, ap_hot_day: Ratio, ap_cold_day: Ratio, kp_mean_nominal: Ratio, kp_mean_hotmean: Ratio, kp_mean_coldmean: Ratio, kp_mean_hotday: Ratio, kp_mean_coldday: Ratio, kp_peak_nominal: Ratio, kp_peak_hotmean: Ratio, kp_peak_coldmean: Ratio, kp_peak_hotday: Ratio, kp_peak_coldday: Ratio) -> Result<Answer, Fault> {
-    // ---- HOLE 1 : assemble the five scenarios from the ten rows that computed them, and carry them across the seam unchanged -> Answer
-    // A crossing carries; it does not compute. The one thing that can go wrong
-    // here is that the seam alters what it is handed — a stray factor, an
-    // unasked-for unit conversion, a clamp inherited from the wrong row — and
-    // both sides would still look plausible. So every member below is one input,
-    // named, with no arithmetic anywhere in the block.
-    //
-    // Written out member by member rather than looped, because the mapping from
-    // scenario to producing row IS the content of this row and a reader has to
-    // be able to check it against the study's own table. Fifteen assignments is
-    // the price of that being checkable.
-    let set: Answer = Answer {
-        // The three *mean scenarios: f107 == f107bar, because they ARE the
-        // window mean. The study's own table shows the same.
-        F107_hotmean: f107_hot_long,
-        F107bar_hotmean: f107_hot_long,
-
-        F107_nominal: f107_centre,
-        F107bar_nominal: f107_centre,
-
-        F107_coldmean: f107_cold_long,
-        F107bar_coldmean: f107_cold_long,
-
-        // The two *day scenarios: f107 is the day, f107bar is the SUSTAINED
-        // level it rides on. This is the one place the row publishes an input
-        // under a second name, and it is selection rather than arithmetic.
-        F107_hotday: f107_hot_day,
-        F107bar_hotday: f107_hot_long,
-
-        F107_coldday: f107_cold_day,
-        F107bar_coldday: f107_cold_long,
-
-        // Ap has no 81-day companion in the study's driver set, so five members
-        // rather than ten. The Kp columns are the ones missing from this set and
-        // the sheet's first assumption says why.
-        Ap_nominal: ap_centre,
-        Ap_hotmean: ap_hot_long,
-        Ap_coldmean: ap_cold_long,
-        Ap_hotday: ap_hot_day,
-        Ap_coldday: ap_cold_day,
-
-        // The two Kp columns, relayed from the one row that evaluates the
-        // published scale and both measured slot offsets at all five Ap. The
-        // arithmetic is there and not here, because a crossing relays: putting
-        // kp_from_ap(ap) + bias in this block would be subsystem work done where
-        // no subsystem reviewer reads it.
-        Kp_mean_nominal: kp_mean_nominal,
-        Kp_mean_hotmean: kp_mean_hotmean,
-        Kp_mean_coldmean: kp_mean_coldmean,
-        Kp_mean_hotday: kp_mean_hotday,
-        Kp_mean_coldday: kp_mean_coldday,
-
-        Kp_peak_nominal: kp_peak_nominal,
-        Kp_peak_hotmean: kp_peak_hotmean,
-        Kp_peak_coldmean: kp_peak_coldmean,
-        Kp_peak_hotday: kp_peak_hotday,
-        Kp_peak_coldday: kp_peak_coldday,
+    // generated · from the node's method, translated by rule into
+    // vleo_core::physics::methods::l3_solar_interface. No hole: the method is the
+    // implementation, and the author's cases in evidence.rs test it.
+    let method_answer: Answer = match methods::l3_solar_interface::evaluate(f107_centre.get(), f107_hot_long.get(), f107_cold_long.get(), f107_hot_day.get(), f107_cold_day.get(), ap_centre.get(), ap_hot_long.get(), ap_cold_long.get(), ap_hot_day.get(), ap_cold_day.get(), kp_mean_nominal.get(), kp_mean_hotmean.get(), kp_mean_coldmean.get(), kp_mean_hotday.get(), kp_mean_coldday.get(), kp_peak_nominal.get(), kp_peak_hotmean.get(), kp_peak_coldmean.get(), kp_peak_hotday.get(), kp_peak_coldday.get()) {
+        Ok((v, p)) => Answer { F107_hotmean: Ratio::new(v), F107_nominal: Ratio::new(p[0]), F107_coldmean: Ratio::new(p[1]), F107_hotday: Ratio::new(p[2]), F107_coldday: Ratio::new(p[3]), F107bar_nominal: Ratio::new(p[4]), F107bar_hotmean: Ratio::new(p[5]), F107bar_coldmean: Ratio::new(p[6]), F107bar_hotday: Ratio::new(p[7]), F107bar_coldday: Ratio::new(p[8]), Ap_nominal: Ratio::new(p[9]), Ap_hotmean: Ratio::new(p[10]), Ap_coldmean: Ratio::new(p[11]), Ap_hotday: Ratio::new(p[12]), Ap_coldday: Ratio::new(p[13]), Kp_mean_nominal: Ratio::new(p[14]), Kp_mean_hotmean: Ratio::new(p[15]), Kp_mean_coldmean: Ratio::new(p[16]), Kp_mean_hotday: Ratio::new(p[17]), Kp_mean_coldday: Ratio::new(p[18]), Kp_peak_nominal: Ratio::new(p[19]), Kp_peak_hotmean: Ratio::new(p[20]), Kp_peak_coldmean: Ratio::new(p[21]), Kp_peak_hotday: Ratio::new(p[22]), Kp_peak_coldday: Ratio::new(p[23]) },
+        Err(e) => return Err(method::fault(e, NODE_ID, "F107_hotmean")),
     };
-    // ---- end HOLE 1
 
     // generated · the declared domain of this node's own answer. The
     // reason travels with the guard, because a guard whose reason is not
     // written down gets deleted by the next person who finds it awkward.
-    let answer: Answer = set;
+    let answer: Answer = method_answer;
 
     // generated · every published member carries its own declared domain.
     // A set whose primary is in range and whose fifth member is not is not a

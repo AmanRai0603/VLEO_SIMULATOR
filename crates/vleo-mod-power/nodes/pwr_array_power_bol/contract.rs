@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `P_bol` (Array power, beginning of life), in `W`.
 pub const NODE_ID: &str = "pwr_array_power_bol";
-pub const SHEET_HASH: u64 = 0x2bed5eea0d8280a8;
+pub const SHEET_HASH: u64 = 0xb3866ff1a5367347;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "pwr_array_area",

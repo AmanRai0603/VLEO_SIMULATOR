@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `H` (Density scale height), in `km`.
 pub const NODE_ID: &str = "env_scale_height";
-pub const SHEET_HASH: u64 = 0xb4944e3db633510e;
+pub const SHEET_HASH: u64 = 0xb1ee379c59b52b32;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "orbit_altitude",

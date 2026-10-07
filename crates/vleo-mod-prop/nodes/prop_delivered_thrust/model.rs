@@ -20,17 +20,21 @@ use vleo_core::units::*;
 pub const NODE_ID: &str = "prop_delivered_thrust";
 /// Hash of the sheet this file was generated from. A face carrying a
 /// different one refuses to run rather than showing a stale page.
-pub const SHEET_HASH: u64 = 0x11173687f5907800;
+pub const SHEET_HASH: u64 = 0xdba9cea358b29580;
 
 pub fn evaluate(t: Force, k: Ratio) -> Result<Force, Fault> {
-    // ---- HOLE 1 : scale thrust with the throttle at fixed specific impulse -> Force
-    let d: Force = t * k.get();
-    // ---- end HOLE 1
+    // generated · from the node's method, translated by rule into
+    // vleo_core::physics::methods::prop_delivered_thrust. No hole: the method is the
+    // implementation, and the author's cases in evidence.rs test it.
+    let method_answer: Force = match methods::prop_delivered_thrust::evaluate(t.get(), k.get()) {
+        Ok(v) => Force::new(v),
+        Err(e) => return Err(method::fault(e, NODE_ID, "T_del")),
+    };
 
     // generated · the declared domain of this node's own answer. The
     // reason travels with the guard, because a guard whose reason is not
     // written down gets deleted by the next person who finds it awkward.
-    let answer: Force = d;
+    let answer: Force = method_answer;
     if !answer.is_finite() {
         return Err(Fault::Degenerate { node: NODE_ID, field: "T_del", reason: "the computation produced a value that is not a number" });
     }

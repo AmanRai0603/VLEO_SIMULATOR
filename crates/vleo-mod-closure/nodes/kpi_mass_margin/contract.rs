@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `M` (Mass margin — closure), in `-`.
 pub const NODE_ID: &str = "kpi_mass_margin";
-pub const SHEET_HASH: u64 = 0x57253d012a744715;
+pub const SHEET_HASH: u64 = 0x75181be6d4fe1c70;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "kpi_mass_margin_required",

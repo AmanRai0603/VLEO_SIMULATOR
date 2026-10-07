@@ -242,6 +242,11 @@ pub(super) fn trailing_comment(rhs: &str) -> String {
     }
 }
 
+/// Whether the sheet carries this field's key at all.
+pub fn carries(text: &str, field: &str) -> bool {
+    place(field).is_some_and(|(table, key)| has_key(text, table, key).is_some())
+}
+
 /// Whether the sheet carries this key at all, and where.
 pub(super) fn has_key(text: &str, table: &str, key: &str) -> Option<(usize, usize)> {
     assignments(text, table, key)

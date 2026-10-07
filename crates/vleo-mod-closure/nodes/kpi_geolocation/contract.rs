@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `M` (Emitter geolocation accuracy — closure), in `-`.
 pub const NODE_ID: &str = "kpi_geolocation";
-pub const SHEET_HASH: u64 = 0x04c41fb315d52bc1;
+pub const SHEET_HASH: u64 = 0xe93bafc60d9d339f;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "kpi_geolocation_required",

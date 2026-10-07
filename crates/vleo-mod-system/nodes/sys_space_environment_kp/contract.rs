@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `Kp_sys` (Kp, worst slot of the sustained day), in `-`.
 pub const NODE_ID: &str = "sys_space_environment_kp";
-pub const SHEET_HASH: u64 = 0xdad48006ee870c21;
+pub const SHEET_HASH: u64 = 0x51f22c460d770a0e;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "l3_solar_interface.kp_peak_hotmean",

@@ -16,17 +16,21 @@ use vleo_core::units::*;
 pub const NODE_ID: &str = "com_daily_volume";
 /// Hash of the sheet this file was generated from. A face carrying a
 /// different one refuses to run rather than showing a stale page.
-pub const SHEET_HASH: u64 = 0x47dae619cfcce246;
+pub const SHEET_HASH: u64 = 0xd4980e2069084c72;
 
 pub fn evaluate(v: DataVolume, n: Ratio) -> Result<DataVolume, Fault> {
-    // ---- HOLE 1 : multiply by the usable passes per day at 95% station availability -> DataVolume
-    let vd: DataVolume = comms::daily_downlink_volume(v, n.get(), Ratio::new(0.95));
-    // ---- end HOLE 1
+    // generated · from the node's method, translated by rule into
+    // vleo_core::physics::methods::com_daily_volume. No hole: the method is the
+    // implementation, and the author's cases in evidence.rs test it.
+    let method_answer: DataVolume = match methods::com_daily_volume::evaluate(v.get(), n.get()) {
+        Ok(v) => DataVolume::new(v),
+        Err(e) => return Err(method::fault(e, NODE_ID, "V_day")),
+    };
 
     // generated · the declared domain of this node's own answer. The
     // reason travels with the guard, because a guard whose reason is not
     // written down gets deleted by the next person who finds it awkward.
-    let answer: DataVolume = vd;
+    let answer: DataVolume = method_answer;
     if !answer.is_finite() {
         return Err(Fault::Degenerate { node: NODE_ID, field: "V_day", reason: "the computation produced a value that is not a number" });
     }

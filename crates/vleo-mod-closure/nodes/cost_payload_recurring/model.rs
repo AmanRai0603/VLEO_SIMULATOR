@@ -16,17 +16,21 @@ use vleo_core::units::*;
 pub const NODE_ID: &str = "cost_payload_recurring";
 /// Hash of the sheet this file was generated from. A face carrying a
 /// different one refuses to run rather than showing a stale page.
-pub const SHEET_HASH: u64 = 0x84f47dfb200c926d;
+pub const SHEET_HASH: u64 = 0x3f0b91a922095f68;
 
 pub fn evaluate(m: Mass, i: Ratio) -> Result<Money, Fault> {
-    // ---- HOLE 1 : evaluate the payload cost estimating relation on payload mass and escalate to 2026 -> Money
-    let c: Money = cost::PAYLOAD_RECURRING_CER.evaluate_inflated(m.get(), 2026, i.get());
-    // ---- end HOLE 1
+    // generated · from the node's method, translated by rule into
+    // vleo_core::physics::methods::cost_payload_recurring. No hole: the method is the
+    // implementation, and the author's cases in evidence.rs test it.
+    let method_answer: Money = match methods::cost_payload_recurring::evaluate(m.get(), i.get()) {
+        Ok(v) => Money::new(v),
+        Err(e) => return Err(method::fault(e, NODE_ID, "C_pay")),
+    };
 
     // generated · the declared domain of this node's own answer. The
     // reason travels with the guard, because a guard whose reason is not
     // written down gets deleted by the next person who finds it awkward.
-    let answer: Money = c;
+    let answer: Money = method_answer;
     if !answer.is_finite() {
         return Err(Fault::Degenerate { node: NODE_ID, field: "C_pay", reason: "the computation produced a value that is not a number" });
     }

@@ -25,36 +25,21 @@ use vleo_core::units::*;
 pub const NODE_ID: &str = "sw_cycle_number";
 /// Hash of the sheet this file was generated from. A face carrying a
 /// different one refuses to run rather than showing a stale page.
-pub const SHEET_HASH: u64 = 0x5306a6af2974c2b1;
+pub const SHEET_HASH: u64 = 0xb536b9a649d52093;
 
 pub fn evaluate(epoch: Time) -> Result<Ratio, Fault> {
-    // ---- HOLE 1 : count how many of the record's cycle starts the epoch has passed, and add the first cycle's number -> Ratio
-    // The record's three cycle starts, as days since 2000-01-01, from
-    // solar_cycles.csv: cycle 23 at 1997-01-15, 24 at 2008-12-01, 25 at 2019-12-01.
-    // The comparison is >= so a boundary day belongs to the cycle it OPENS, which is
-    // what the boundary fixtures beside this pin.
-    //
-    // An epoch past the last start still returns 25, because nothing in the data
-    // says when cycle 26 begins and this row will not invent a boundary. The
-    // declared upper bound of 26 is what keeps that from being silent.
-    const STARTS: [f64; 3] = [-1081.0, 3257.0, 7274.0];
-    const FIRST: f64 = 23.0;
-    let d: f64 = epoch.days();
-    let mut n: f64 = FIRST - 1.0;
-    let mut i: usize = 0;
-    while i < STARTS.len() {
-        if d >= STARTS[i] {
-            n += 1.0;
-        }
-        i += 1;
-    }
-    let out: Ratio = Ratio::new(n);
-    // ---- end HOLE 1
+    // generated · from the node's method, translated by rule into
+    // vleo_core::physics::methods::sw_cycle_number. No hole: the method is the
+    // implementation, and the author's cases in evidence.rs test it.
+    let method_answer: Ratio = match methods::sw_cycle_number::evaluate(epoch.get()) {
+        Ok(v) => Ratio::new(v),
+        Err(e) => return Err(method::fault(e, NODE_ID, "cyc")),
+    };
 
     // generated · the declared domain of this node's own answer. The
     // reason travels with the guard, because a guard whose reason is not
     // written down gets deleted by the next person who finds it awkward.
-    let answer: Ratio = out;
+    let answer: Ratio = method_answer;
     if !answer.is_finite() {
         return Err(Fault::Degenerate { node: NODE_ID, field: "cyc", reason: "the computation produced a value that is not a number" });
     }

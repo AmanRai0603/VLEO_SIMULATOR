@@ -16,17 +16,21 @@ use vleo_core::units::*;
 pub const NODE_ID: &str = "gnc_nav_position_error";
 /// Hash of the sheet this file was generated from. A face carrying a
 /// different one refuses to run rather than showing a stale page.
-pub const SHEET_HASH: u64 = 0x354d798dbde16bf1;
+pub const SHEET_HASH: u64 = 0xe4e3864c0bf88ba4;
 
 pub fn evaluate(u: Length, g: Ratio) -> Result<Length, Fault> {
-    // ---- HOLE 1 : multiply the user range error by the geometric dilution -> Length
-    let e: Length = gnc::navigation_position_error(u, g.get());
-    // ---- end HOLE 1
+    // generated · from the node's method, translated by rule into
+    // vleo_core::physics::methods::gnc_nav_position_error. No hole: the method is the
+    // implementation, and the author's cases in evidence.rs test it.
+    let method_answer: Length = match methods::gnc_nav_position_error::evaluate(u.get(), g.get()) {
+        Ok(v) => Length::new(v),
+        Err(e) => return Err(method::fault(e, NODE_ID, "e_nav")),
+    };
 
     // generated · the declared domain of this node's own answer. The
     // reason travels with the guard, because a guard whose reason is not
     // written down gets deleted by the next person who finds it awkward.
-    let answer: Length = e;
+    let answer: Length = method_answer;
     if !answer.is_finite() {
         return Err(Fault::Degenerate { node: NODE_ID, field: "e_nav", reason: "the computation produced a value that is not a number" });
     }

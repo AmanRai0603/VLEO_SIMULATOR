@@ -16,17 +16,21 @@ use vleo_core::units::*;
 pub const NODE_ID: &str = "mis_availability";
 /// Hash of the sheet this file was generated from. A face carrying a
 /// different one refuses to run rather than showing a stale page.
-pub const SHEET_HASH: u64 = 0xb02fbde73f15f327;
+pub const SHEET_HASH: u64 = 0xdbcde12e57985f9a;
 
 pub fn evaluate(a: Ratio, n: Ratio) -> Result<Ratio, Fault> {
-    // ---- HOLE 1 : evaluate the binomial probability that at least 80% of the constellation is operational -> Ratio
-    let av: Ratio = mission::k_of_n_availability(a, n.get() as u32, ((n.get() * 0.8).ceil()) as u32);
-    // ---- end HOLE 1
+    // generated · from the node's method, translated by rule into
+    // vleo_core::physics::methods::mis_availability. No hole: the method is the
+    // implementation, and the author's cases in evidence.rs test it.
+    let method_answer: Ratio = match methods::mis_availability::evaluate(a.get(), n.get()) {
+        Ok(v) => Ratio::new(v),
+        Err(e) => return Err(method::fault(e, NODE_ID, "A_svc")),
+    };
 
     // generated · the declared domain of this node's own answer. The
     // reason travels with the guard, because a guard whose reason is not
     // written down gets deleted by the next person who finds it awkward.
-    let answer: Ratio = av;
+    let answer: Ratio = method_answer;
     if !answer.is_finite() {
         return Err(Fault::Degenerate { node: NODE_ID, field: "A_svc", reason: "the computation produced a value that is not a number" });
     }

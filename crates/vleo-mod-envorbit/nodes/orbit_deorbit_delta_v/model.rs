@@ -19,17 +19,21 @@ use vleo_core::units::*;
 pub const NODE_ID: &str = "orbit_deorbit_delta_v";
 /// Hash of the sheet this file was generated from. A face carrying a
 /// different one refuses to run rather than showing a stale page.
-pub const SHEET_HASH: u64 = 0x8ef8576fb8b9f5a1;
+pub const SHEET_HASH: u64 = 0x4f950770ccebee9f;
 
 pub fn evaluate(h: Length) -> Result<Velocity, Fault> {
-    // ---- HOLE 1 : lower perigee to a 60 km re-entry interface on a Hohmann transfer -> Velocity
-    let dv: Velocity = orbit::deorbit_delta_v(h, Length::from_km(60.0));
-    // ---- end HOLE 1
+    // generated · from the node's method, translated by rule into
+    // vleo_core::physics::methods::orbit_deorbit_delta_v. No hole: the method is the
+    // implementation, and the author's cases in evidence.rs test it.
+    let method_answer: Velocity = match methods::orbit_deorbit_delta_v::evaluate(h.get()) {
+        Ok(v) => Velocity::new(v),
+        Err(e) => return Err(method::fault(e, NODE_ID, "dv_dis")),
+    };
 
     // generated · the declared domain of this node's own answer. The
     // reason travels with the guard, because a guard whose reason is not
     // written down gets deleted by the next person who finds it awkward.
-    let answer: Velocity = dv;
+    let answer: Velocity = method_answer;
     if !answer.is_finite() {
         return Err(Fault::Degenerate { node: NODE_ID, field: "dv_dis", reason: "the computation produced a value that is not a number" });
     }

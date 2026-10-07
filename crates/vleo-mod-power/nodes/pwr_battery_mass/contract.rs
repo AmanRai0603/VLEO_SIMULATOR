@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `m_batt` (Battery mass), in `kg`.
 pub const NODE_ID: &str = "pwr_battery_mass";
-pub const SHEET_HASH: u64 = 0x526ea485477d7437;
+pub const SHEET_HASH: u64 = 0x92a4c6ca56d2d39d;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "pwr_battery_energy",

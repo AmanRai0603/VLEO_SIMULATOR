@@ -19,17 +19,21 @@ use vleo_core::units::*;
 pub const NODE_ID: &str = "aero_ballistic_coefficient";
 /// Hash of the sheet this file was generated from. A face carrying a
 /// different one refuses to run rather than showing a stale page.
-pub const SHEET_HASH: u64 = 0x7512f2f652dac3fa;
+pub const SHEET_HASH: u64 = 0x16f00403b97750d2;
 
 pub fn evaluate(m: Mass, cd: Ratio, a: Area) -> Result<Ratio, Fault> {
-    // ---- HOLE 1 : divide the wet mass by the product of drag coefficient and frontal area -> Ratio
-    let bc: Ratio = Ratio::new(aero::ballistic_coefficient(m, cd.get(), a));
-    // ---- end HOLE 1
+    // generated · from the node's method, translated by rule into
+    // vleo_core::physics::methods::aero_ballistic_coefficient. No hole: the method is the
+    // implementation, and the author's cases in evidence.rs test it.
+    let method_answer: Ratio = match methods::aero_ballistic_coefficient::evaluate(m.get(), cd.get(), a.get()) {
+        Ok(v) => Ratio::new(v),
+        Err(e) => return Err(method::fault(e, NODE_ID, "BC")),
+    };
 
     // generated · the declared domain of this node's own answer. The
     // reason travels with the guard, because a guard whose reason is not
     // written down gets deleted by the next person who finds it awkward.
-    let answer: Ratio = bc;
+    let answer: Ratio = method_answer;
     if !answer.is_finite() {
         return Err(Fault::Degenerate { node: NODE_ID, field: "BC", reason: "the computation produced a value that is not a number" });
     }

@@ -16,17 +16,21 @@ use vleo_core::units::*;
 pub const NODE_ID: &str = "pay_snr";
 /// Hash of the sheet this file was generated from. A face carrying a
 /// different one refuses to run rather than showing a stale page.
-pub const SHEET_HASH: u64 = 0x4e50bd785bf32275;
+pub const SHEET_HASH: u64 = 0xbcbf4c0bde35a569;
 
 pub fn evaluate(n: Ratio, nr: Ratio) -> Result<Ratio, Fault> {
-    // ---- HOLE 1 : combine shot noise, a nominal 5-electron dark contribution and read noise in quadrature -> Ratio
-    let s: Ratio = Ratio::new(payload::optical_snr(n.get(), 5.0, nr.get()));
-    // ---- end HOLE 1
+    // generated · from the node's method, translated by rule into
+    // vleo_core::physics::methods::pay_snr. No hole: the method is the
+    // implementation, and the author's cases in evidence.rs test it.
+    let method_answer: Ratio = match methods::pay_snr::evaluate(n.get(), nr.get()) {
+        Ok(v) => Ratio::new(v),
+        Err(e) => return Err(method::fault(e, NODE_ID, "SNR_o")),
+    };
 
     // generated · the declared domain of this node's own answer. The
     // reason travels with the guard, because a guard whose reason is not
     // written down gets deleted by the next person who finds it awkward.
-    let answer: Ratio = s;
+    let answer: Ratio = method_answer;
     if !answer.is_finite() {
         return Err(Fault::Degenerate { node: NODE_ID, field: "SNR_o", reason: "the computation produced a value that is not a number" });
     }

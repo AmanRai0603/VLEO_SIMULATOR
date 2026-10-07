@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `N_e` (Signal electrons per sample), in `-`.
 pub const NODE_ID: &str = "pay_signal_electrons";
-pub const SHEET_HASH: u64 = 0x121be8c520a01b03;
+pub const SHEET_HASH: u64 = 0xb446ee6f7016daa4;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "pay_radiance",

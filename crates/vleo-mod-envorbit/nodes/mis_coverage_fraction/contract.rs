@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `f_cov` (Instantaneous coverage fraction), in `-`.
 pub const NODE_ID: &str = "mis_coverage_fraction";
-pub const SHEET_HASH: u64 = 0xf37f87b4cebb9512;
+pub const SHEET_HASH: u64 = 0x334f677afc256356;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "orbit_earth_central_angle",

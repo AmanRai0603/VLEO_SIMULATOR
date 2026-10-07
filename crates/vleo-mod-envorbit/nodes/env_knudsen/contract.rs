@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `Kn` (Knudsen number), in `-`.
 pub const NODE_ID: &str = "env_knudsen";
-pub const SHEET_HASH: u64 = 0xaf695b95fd705ba8;
+pub const SHEET_HASH: u64 = 0x24cdc9404dbdad62;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "env_mean_free_path",

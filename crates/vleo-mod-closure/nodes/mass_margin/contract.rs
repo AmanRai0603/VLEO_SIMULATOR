@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `M_mass` (Mass margin), in `-`.
 pub const NODE_ID: &str = "mass_margin";
-pub const SHEET_HASH: u64 = 0x727f32468ceb4f94;
+pub const SHEET_HASH: u64 = 0x1612cfcafd68c4ca;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "mass_limit",

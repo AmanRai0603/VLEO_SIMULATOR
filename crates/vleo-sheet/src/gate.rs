@@ -165,6 +165,26 @@ fn method_checks(sh: &Sheet) -> Vec<Check> {
                 sh.method.by
             ));
         }
+        let checker = sh.method.checked_by.to_lowercase();
+        if !checker.is_empty()
+            && crate::form::agent_identities(&sh.dir).iter().any(|a| {
+                checker == *a
+                    || checker.starts_with(&format!("{a} "))
+                    || checker.contains(&format!("{a}/"))
+            })
+        {
+            bad.push(format!(
+                "the transcription is said to be checked by «{}», an assistant — a person reads \
+                 the copy against its source",
+                sh.method.checked_by
+            ));
+        }
+        if !sh.method.checked_by.is_empty() && sh.method.transcribed_from.is_empty() {
+            bad.push(
+                "the method says who checked a transcription, and not what it was copied from"
+                    .into(),
+            );
+        }
         let text = std::fs::read_to_string(sh.dir.join("node.toml")).unwrap_or_default();
         match method::report_toml(&text) {
             Err(e) => bad.push(e.into()),
@@ -181,7 +201,14 @@ fn method_checks(sh: &Sheet) -> Vec<Check> {
                         bad.push(format!("case «{}»: {}", c.label, v.text(c)));
                     }
                 }
-                bad.extend(r.shortfall.iter().cloned());
+                // A method copied from the code it replaced is held to what
+                // that code answered (baseline/transcribed.csv), not to author
+                // cases it never had: cases made now would take their
+                // expected values from the code under test (AGENTS.md, rule
+                // 4). Its evidence is the fixtures it had before.
+                if sh.method.transcribed_from.is_empty() {
+                    bad.extend(r.shortfall.iter().cloned());
+                }
             }
         }
         out.push(if bad.is_empty() {
@@ -974,7 +1001,24 @@ pub fn gate_node(sh: &Sheet, tree: &Tree) -> Vec<Check> {
             "Sense::AtMost"
         };
         let body: String = code_only(&holes.values().cloned().collect::<Vec<_>>().join("\n"));
-        if body.contains(other) && !body.contains(want) {
+        // A method says it in its own words: `margin_at_most` for `<=`,
+        // `margin_at_least` for `>=`, read from its lines and not its comments.
+        let method: String = sh
+            .method
+            .text
+            .lines()
+            .map(|l| l.split('#').next().unwrap_or_default())
+            .collect::<Vec<_>>()
+            .join("\n");
+        let says = |sense: &str| {
+            body.contains(sense)
+                || method.contains(if sense == "Sense::AtMost" {
+                    "margin_at_most"
+                } else {
+                    "margin_at_least"
+                })
+        };
+        if says(other) && !says(want) {
             disagree.push(format!(
                 "{} declares sense {:?} so this must apply {want}, and it applies {other}",
                 req.id,

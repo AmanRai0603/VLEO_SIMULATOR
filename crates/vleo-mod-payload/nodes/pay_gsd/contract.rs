@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `GSD` (Achieved ground sample distance), in `m`.
 pub const NODE_ID: &str = "pay_gsd";
-pub const SHEET_HASH: u64 = 0xa2be9523e2310e0a;
+pub const SHEET_HASH: u64 = 0x64384ae664faa745;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "pay_gsd_diffraction",

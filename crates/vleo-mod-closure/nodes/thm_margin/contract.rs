@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `M_thm` (Thermal margin), in `K`.
 pub const NODE_ID: &str = "thm_margin";
-pub const SHEET_HASH: u64 = 0xbea93c4906da4c9a;
+pub const SHEET_HASH: u64 = 0xd261c3441f2f5147;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "thm_equilibrium_temperature",

@@ -137,6 +137,23 @@ fails_when = "this is read as a bound. sw_kp_slot_bias measures the median of ma
 text = "It receives and does not compute, and a reader here sees none of the subsystem's limitations"
 fails_when = "a margin is taken against this number. It rests on an Ap that stacks two one-sided percentiles, a conversion that is a lookup with straight lines between 28 points, and a slot offset measured over one bundle version. None of that crosses the seam"
 
+[method]
+text = """
+# Transcribed from crates/vleo-mod-system/nodes/sys_space_environment_kp/model.rs (its HOLE): the relation the code ran, line for line.
+# The relation itself stays in the kernel; this says which one, with which inputs, in which units.
+#
+# What the code said beside it:
+# A layer-2 row receives; it does not compute. The identity is the point.
+#
+# The member received is kp_peak_hotday: the worst three-hour slot of the
+# disturbed single day. The crossing carries nine others and they run down
+# to 1.27, so the sheet says which this is and why.
+return crossing
+"""
+by = ""
+transcribed_from = "crates/vleo-mod-system/nodes/sys_space_environment_kp/model.rs"
+checked_by = ""
+
 [output]
 # The node's one answer. The variable id is the node id: one small
 # question, one answer, one folder, one row on the tree.

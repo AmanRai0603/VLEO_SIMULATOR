@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `Q_aero` (Free-molecular aerodynamic heating), in `W`.
 pub const NODE_ID: &str = "thm_aero_heating";
-pub const SHEET_HASH: u64 = 0xaa3d9a875436e9ee;
+pub const SHEET_HASH: u64 = 0xdfda6220971c013b;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "env_mass_density",

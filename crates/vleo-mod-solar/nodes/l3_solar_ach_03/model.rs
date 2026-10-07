@@ -25,23 +25,21 @@ use vleo_core::units::*;
 pub const NODE_ID: &str = "l3_solar_ach_03";
 /// Hash of the sheet this file was generated from. A face carrying a
 /// different one refuses to run rather than showing a stale page.
-pub const SHEET_HASH: u64 = 0x9c39338e2d10d41e;
+pub const SHEET_HASH: u64 = 0xcb71602e0ca5a6ba;
 
 pub fn evaluate(ach: Ratio, req: Ratio) -> Result<Ratio, Fault> {
-    // ---- HOLE 1 : compare achieved against required in the declared sense and return the signed fractional margin -> Ratio
-    // The requirement declares sense "<=", so the achieved value must stay UNDER
-    // the bound and the margin is (required - achieved) / required. Positive is
-    // room; negative is a violation and its size. mission::closure is the twelve
-    // KPI closures' own function rather than the arithmetic written out again,
-    // because a second way of computing a margin is a second way of getting its
-    // sign wrong -- and a sign error here still produces a plausible number.
-    let m: Ratio = Ratio::new(mission::closure(req.get(), ach.get(), mission::Sense::AtMost).margin);
-    // ---- end HOLE 1
+    // generated · from the node's method, translated by rule into
+    // vleo_core::physics::methods::l3_solar_ach_03. No hole: the method is the
+    // implementation, and the author's cases in evidence.rs test it.
+    let method_answer: Ratio = match methods::l3_solar_ach_03::evaluate(ach.get(), req.get()) {
+        Ok(v) => Ratio::new(v),
+        Err(e) => return Err(method::fault(e, NODE_ID, "M_ap_survive")),
+    };
 
     // generated · the declared domain of this node's own answer. The
     // reason travels with the guard, because a guard whose reason is not
     // written down gets deleted by the next person who finds it awkward.
-    let answer: Ratio = m;
+    let answer: Ratio = method_answer;
     if !answer.is_finite() {
         return Err(Fault::Degenerate { node: NODE_ID, field: "M_ap_survive", reason: "the computation produced a value that is not a number" });
     }

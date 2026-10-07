@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `V` (Circular orbital speed), in `m/s`.
 pub const NODE_ID: &str = "orbit_velocity";
-pub const SHEET_HASH: u64 = 0xf3181e3719f1fb4a;
+pub const SHEET_HASH: u64 = 0xe128d81a6f495612;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "orbit_radius",

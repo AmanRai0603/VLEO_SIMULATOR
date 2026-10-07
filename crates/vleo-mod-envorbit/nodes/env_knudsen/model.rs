@@ -16,17 +16,21 @@ use vleo_core::units::*;
 pub const NODE_ID: &str = "env_knudsen";
 /// Hash of the sheet this file was generated from. A face carrying a
 /// different one refuses to run rather than showing a stale page.
-pub const SHEET_HASH: u64 = 0xaf695b95fd705ba8;
+pub const SHEET_HASH: u64 = 0x24cdc9404dbdad62;
 
 pub fn evaluate(lam: Length, l_body: Length) -> Result<Ratio, Fault> {
-    // ---- HOLE 1 : divide the mean free path by the vehicle's characteristic length -> Ratio
-    let kn: Ratio = env::knudsen(lam, l_body);
-    // ---- end HOLE 1
+    // generated · from the node's method, translated by rule into
+    // vleo_core::physics::methods::env_knudsen. No hole: the method is the
+    // implementation, and the author's cases in evidence.rs test it.
+    let method_answer: Ratio = match methods::env_knudsen::evaluate(lam.get(), l_body.get()) {
+        Ok(v) => Ratio::new(v),
+        Err(e) => return Err(method::fault(e, NODE_ID, "Kn")),
+    };
 
     // generated · the declared domain of this node's own answer. The
     // reason travels with the guard, because a guard whose reason is not
     // written down gets deleted by the next person who finds it awkward.
-    let answer: Ratio = kn;
+    let answer: Ratio = method_answer;
     if !answer.is_finite() {
         return Err(Fault::Degenerate { node: NODE_ID, field: "Kn", reason: "the computation produced a value that is not a number" });
     }

@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `r` (Geocentric radius), in `m`.
 pub const NODE_ID: &str = "orbit_radius";
-pub const SHEET_HASH: u64 = 0x23a3a87429910134;
+pub const SHEET_HASH: u64 = 0x4f66737f39031c3b;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "orbit_altitude",

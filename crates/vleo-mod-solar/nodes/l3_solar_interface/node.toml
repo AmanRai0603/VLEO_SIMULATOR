@@ -211,6 +211,65 @@ fails_when = "this is read as a defect in the seam. It is the seam's job: a driv
 # fifteen is named <quantity>_<scenario> so the mapping to the study's own table
 # is a lookup rather than a deduction.
 
+[method]
+text = """
+# Transcribed from crates/vleo-mod-solar/nodes/l3_solar_interface/model.rs (its HOLE): the relation the code ran, line for line.
+# The relation itself stays in the kernel; this says which one, with which inputs, in which units.
+#
+# What the code said beside it:
+# A crossing carries; it does not compute. The one thing that can go wrong
+# here is that the seam alters what it is handed — a stray factor, an
+# unasked-for unit conversion, a clamp inherited from the wrong row — and
+# both sides would still look plausible. So every member below is one input,
+# named, with no arithmetic anywhere in the block.
+#
+# Written out member by member rather than looped, because the mapping from
+# scenario to producing row IS the content of this row and a reader has to
+# be able to check it against the study's own table. Fifteen assignments is
+# the price of that being checkable.
+# The three *mean scenarios: f107 == f107bar, because they ARE the
+# window mean. The study's own table shows the same.
+# The two *day scenarios: f107 is the day, f107bar is the SUSTAINED
+# level it rides on. This is the one place the row publishes an input
+# under a second name, and it is selection rather than arithmetic.
+# Ap has no 81-day companion in the study's driver set, so five members
+# rather than ten. The Kp columns are the ones missing from this set and
+# the sheet's first assumption says why.
+# The two Kp columns, relayed from the one row that evaluates the
+# published scale and both measured slot offsets at all five Ap. The
+# arithmetic is there and not here, because a crossing relays: putting
+# kp_from_ap(ap) + bias in this block would be subsystem work done where
+# no subsystem reviewer reads it.
+publish F107bar_hotmean = f107_hot_long
+publish F107_nominal = f107_centre
+publish F107bar_nominal = f107_centre
+publish F107_coldmean = f107_cold_long
+publish F107bar_coldmean = f107_cold_long
+publish F107_hotday = f107_hot_day
+publish F107bar_hotday = f107_hot_long
+publish F107_coldday = f107_cold_day
+publish F107bar_coldday = f107_cold_long
+publish Ap_nominal = ap_centre
+publish Ap_hotmean = ap_hot_long
+publish Ap_coldmean = ap_cold_long
+publish Ap_hotday = ap_hot_day
+publish Ap_coldday = ap_cold_day
+publish Kp_mean_nominal = kp_mean_nominal
+publish Kp_mean_hotmean = kp_mean_hotmean
+publish Kp_mean_coldmean = kp_mean_coldmean
+publish Kp_mean_hotday = kp_mean_hotday
+publish Kp_mean_coldday = kp_mean_coldday
+publish Kp_peak_nominal = kp_peak_nominal
+publish Kp_peak_hotmean = kp_peak_hotmean
+publish Kp_peak_coldmean = kp_peak_coldmean
+publish Kp_peak_hotday = kp_peak_hotday
+publish Kp_peak_coldday = kp_peak_coldday
+return f107_hot_long
+"""
+by = ""
+transcribed_from = "crates/vleo-mod-solar/nodes/l3_solar_interface/model.rs"
+checked_by = ""
+
 [output]
 symbol = "F107_hotmean"
 type = "Ratio"

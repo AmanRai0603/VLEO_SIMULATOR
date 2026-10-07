@@ -16,17 +16,21 @@ use vleo_core::units::*;
 pub const NODE_ID: &str = "mass_margin";
 /// Hash of the sheet this file was generated from. A face carrying a
 /// different one refuses to run rather than showing a stale page.
-pub const SHEET_HASH: u64 = 0x727f32468ceb4f94;
+pub const SHEET_HASH: u64 = 0x1612cfcafd68c4ca;
 
 pub fn evaluate(l: Mass, w: Mass) -> Result<Ratio, Fault> {
-    // ---- HOLE 1 : form the signed fractional margin against the declared limit -> Ratio
-    let m: Ratio = mass::mass_margin(l, w);
-    // ---- end HOLE 1
+    // generated · from the node's method, translated by rule into
+    // vleo_core::physics::methods::mass_margin. No hole: the method is the
+    // implementation, and the author's cases in evidence.rs test it.
+    let method_answer: Ratio = match methods::mass_margin::evaluate(l.get(), w.get()) {
+        Ok(v) => Ratio::new(v),
+        Err(e) => return Err(method::fault(e, NODE_ID, "M_mass")),
+    };
 
     // generated · the declared domain of this node's own answer. The
     // reason travels with the guard, because a guard whose reason is not
     // written down gets deleted by the next person who finds it awkward.
-    let answer: Ratio = m;
+    let answer: Ratio = method_answer;
     if !answer.is_finite() {
         return Err(Fault::Degenerate { node: NODE_ID, field: "M_mass", reason: "the computation produced a value that is not a number" });
     }

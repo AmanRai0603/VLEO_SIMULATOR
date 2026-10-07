@@ -20,17 +20,21 @@ use vleo_core::units::*;
 pub const NODE_ID: &str = "aero_torque";
 /// Hash of the sheet this file was generated from. A face carrying a
 /// different one refuses to run rather than showing a stale page.
-pub const SHEET_HASH: u64 = 0x8449f27f0b1a807d;
+pub const SHEET_HASH: u64 = 0xb45ee819d58ec713;
 
 pub fn evaluate(d: Force, x: Length) -> Result<Torque, Fault> {
-    // ---- HOLE 1 : multiply the drag force by the centre-of-pressure offset -> Torque
-    let t: Torque = aero::aerodynamic_torque(d, x);
-    // ---- end HOLE 1
+    // generated · from the node's method, translated by rule into
+    // vleo_core::physics::methods::aero_torque. No hole: the method is the
+    // implementation, and the author's cases in evidence.rs test it.
+    let method_answer: Torque = match methods::aero_torque::evaluate(d.get(), x.get()) {
+        Ok(v) => Torque::new(v),
+        Err(e) => return Err(method::fault(e, NODE_ID, "T_aero")),
+    };
 
     // generated · the declared domain of this node's own answer. The
     // reason travels with the guard, because a guard whose reason is not
     // written down gets deleted by the next person who finds it awkward.
-    let answer: Torque = t;
+    let answer: Torque = method_answer;
     if !answer.is_finite() {
         return Err(Fault::Degenerate { node: NODE_ID, field: "T_aero", reason: "the computation produced a value that is not a number" });
     }

@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `e_gnd` (Ground pointing error), in `m`.
 pub const NODE_ID: &str = "gnc_ground_pointing_error";
-pub const SHEET_HASH: u64 = 0xc988332d760c0455;
+pub const SHEET_HASH: u64 = 0x0ee71f6d808ad486;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "gnc_pointing_error",

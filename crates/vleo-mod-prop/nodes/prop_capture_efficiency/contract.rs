@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `eta_c` (Intake collection efficiency), in `-`.
 pub const NODE_ID: &str = "prop_capture_efficiency";
-pub const SHEET_HASH: u64 = 0xa67dd2ff75479fc1;
+pub const SHEET_HASH: u64 = 0x9f9bab354e522703;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "prop_intake_area",

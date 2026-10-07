@@ -16,17 +16,21 @@ use vleo_core::units::*;
 pub const NODE_ID: &str = "orbit_swath_width";
 /// Hash of the sheet this file was generated from. A face carrying a
 /// different one refuses to run rather than showing a stale page.
-pub const SHEET_HASH: u64 = 0x3d5237ca30a079ef;
+pub const SHEET_HASH: u64 = 0xefe602237c2b4751;
 
 pub fn evaluate(lam: Angle) -> Result<Length, Fault> {
-    // ---- HOLE 1 : convert the Earth-central half-angle into a great-circle width -> Length
-    let w: Length = orbit::swath_width(lam);
-    // ---- end HOLE 1
+    // generated · from the node's method, translated by rule into
+    // vleo_core::physics::methods::orbit_swath_width. No hole: the method is the
+    // implementation, and the author's cases in evidence.rs test it.
+    let method_answer: Length = match methods::orbit_swath_width::evaluate(lam.get()) {
+        Ok(v) => Length::new(v),
+        Err(e) => return Err(method::fault(e, NODE_ID, "W")),
+    };
 
     // generated · the declared domain of this node's own answer. The
     // reason travels with the guard, because a guard whose reason is not
     // written down gets deleted by the next person who finds it awkward.
-    let answer: Length = w;
+    let answer: Length = method_answer;
     if !answer.is_finite() {
         return Err(Fault::Degenerate { node: NODE_ID, field: "W", reason: "the computation produced a value that is not a number" });
     }

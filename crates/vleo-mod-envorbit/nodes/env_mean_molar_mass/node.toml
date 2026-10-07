@@ -33,6 +33,16 @@ by = "an assistant, from what this sheet states — for its owner (environment) 
 expression = "M = rho*N_A/n"
 source = "jacchia1971"
 
+[method]
+text = """
+# Transcribed from crates/vleo-mod-envorbit/nodes/env_mean_molar_mass/model.rs (its HOLE): the relation the code ran, line for line.
+# The relation itself stays in the kernel; this says which one, with which inputs, in which units.
+return thermosphere_molar_mass(h, t_inf)
+"""
+by = ""
+transcribed_from = "crates/vleo-mod-envorbit/nodes/env_mean_molar_mass/model.rs"
+checked_by = ""
+
 [output]
 # The node's one answer. The variable id is the node id: one small
 # question, one answer, one folder, one row on the tree.

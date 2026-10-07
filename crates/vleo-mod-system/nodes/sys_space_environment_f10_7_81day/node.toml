@@ -137,6 +137,24 @@ fails_when = "somebody pairs it with sys_space_environment_solar_flux and thinks
 text = "It receives and does not compute, and a reader here sees none of the subsystem's limitations"
 fails_when = "a margin is taken against this number. It is a 1.28-sigma band edge — the 90th percentile, while the run is labelled 95 per cent — on a centre that beyond one cycle past cycle 25's maximum is scaled by the mean amplitude of two completed cycles whose peaks differ by 41 per cent"
 
+[method]
+text = """
+# Transcribed from crates/vleo-mod-system/nodes/sys_space_environment_f10_7_81day/model.rs (its HOLE): the relation the code ran, line for line.
+# The relation itself stays in the kernel; this says which one, with which inputs, in which units.
+#
+# What the code said beside it:
+# A layer-2 row receives; it does not compute. The identity is the point, and
+# the fixtures beside it pin that the number arriving is the number leaving.
+#
+# The member received is f107bar_hotday, which is the hot MEAN and not the
+# 81-day mean of the hot day — a *day scenario rides on the sustained level
+# beneath it. The sheet argues about why that name is easy to misread.
+return crossing
+"""
+by = ""
+transcribed_from = "crates/vleo-mod-system/nodes/sys_space_environment_f10_7_81day/model.rs"
+checked_by = ""
+
 [output]
 # The node's one answer. The variable id is the node id: one small
 # question, one answer, one folder, one row on the tree.

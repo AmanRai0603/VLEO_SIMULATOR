@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `W_o` (Optical swath width), in `km`.
 pub const NODE_ID: &str = "pay_swath";
-pub const SHEET_HASH: u64 = 0x591f9bd891c5d9e6;
+pub const SHEET_HASH: u64 = 0x7e619c7baa1507f9;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "pay_gsd",

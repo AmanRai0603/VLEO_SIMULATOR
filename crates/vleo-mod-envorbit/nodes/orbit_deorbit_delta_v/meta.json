@@ -1,8 +1,8 @@
 {
   "id": "orbit_deorbit_delta_v",
   "state": "published",
-  "sheet_hash": "b9f5a1",
-  "impl_hash": "001a6b",
+  "sheet_hash": "ebee9f",
+  "impl_hash": "222325",
   "owner": "systems",
   "tier": "A",
   "fixtures": 0,
@@ -13,5 +13,5 @@
   "holes": 1,
   "inputs": ["orbit_altitude"],
   "contributes": [],
-  "gaps": ["the relation has nobody's name against it — an assistant may never supply mathematics, and without an attribution nothing can tell whether one did", "no method yet — the relation in the method language, with the author's own code and test cases, so the tool can check it three ways (docs/PSEUDOCODE.md)", "no fixture: nothing outside this code has ever agreed with what it computes", "no theory: the relation is stated but not derived — THE ROW DOES NOT ANSWER. A function is defined by its derivation, not by its expression and not by its citation, and until one is written every reader of this row is blocked on it by name"]
+  "gaps": ["the relation has nobody's name against it — an assistant may never supply mathematics, and without an attribution nothing can tell whether one did", "no fixture: nothing outside this code has ever agreed with what it computes", "no theory: the relation is stated but not derived — THE ROW DOES NOT ANSWER. A function is defined by its derivation, not by its expression and not by its citation, and until one is written every reader of this row is blocked on it by name"]
 }

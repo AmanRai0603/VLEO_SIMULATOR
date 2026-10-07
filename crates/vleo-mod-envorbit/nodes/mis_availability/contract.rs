@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `A_svc` (Constellation service availability), in `-`.
 pub const NODE_ID: &str = "mis_availability";
-pub const SHEET_HASH: u64 = 0xb02fbde73f15f327;
+pub const SHEET_HASH: u64 = 0xdbcde12e57985f9a;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "mis_unit_availability",

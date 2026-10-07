@@ -47,10 +47,46 @@ pub fn cmd_method(root: &Path, args: &[&str]) -> Result<(), String> {
         };
         println!("  {mark} {}: {}{shown}", c.label, v.text(c));
     }
-    for s in &r.shortfall {
-        println!("  missing: {s}");
+    // A method copied from the code it replaced is held, as the gate holds
+    // it, to what that code answered (baseline/transcribed.csv), not to
+    // author cases it never had: cases made now would take their expected
+    // values from the code under test (AGENTS.md, rule 4).
+    let transcribed = !sh.method.transcribed_from.is_empty();
+    if transcribed {
+        println!(
+            "  transcribed from {}: held to what that code answered, in baseline/transcribed.csv, \
+             not to cases of its own; read against its source by {}",
+            sh.method.transcribed_from,
+            if sh.method.checked_by.is_empty() {
+                "nobody yet"
+            } else {
+                sh.method.checked_by.as_str()
+            }
+        );
+    } else {
+        for s in &r.shortfall {
+            println!("  missing: {s}");
+        }
     }
-    if r.sound() {
+    let sound = if transcribed {
+        !r.diags
+            .iter()
+            .any(|d| d.severity == vleo_sheet::method::Severity::Error)
+            && r.cases.iter().all(|(_, v)| v.agrees())
+    } else {
+        r.sound()
+    };
+    if sound && transcribed {
+        println!(
+            "sound: the method checks{}.",
+            if r.cases.is_empty() {
+                ", and carries no case of its own"
+            } else {
+                ", and agrees with every case it carries"
+            }
+        );
+        Ok(())
+    } else if sound {
         println!(
             "sound: the method checks and agrees with every one of its node engineer's cases."
         );

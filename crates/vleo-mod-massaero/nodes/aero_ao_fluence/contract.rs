@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `F_AO` (Atomic oxygen fluence), in `-`.
 pub const NODE_ID: &str = "aero_ao_fluence";
-pub const SHEET_HASH: u64 = 0x5bf5b881c612f42f;
+pub const SHEET_HASH: u64 = 0x9771f23449c0b7b1;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "env_atomic_oxygen_density",

@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `t_lat` (End to end latency), in `min`.
 pub const NODE_ID: &str = "mis_latency";
-pub const SHEET_HASH: u64 = 0xb28f9549923d391d;
+pub const SHEET_HASH: u64 = 0xb43ba3f4676e5bf3;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "mis_time_to_downlink",

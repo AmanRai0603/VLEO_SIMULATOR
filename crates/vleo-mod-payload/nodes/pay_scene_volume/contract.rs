@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `V_scene` (Data volume per scene), in `Gbit`.
 pub const NODE_ID: &str = "pay_scene_volume";
-pub const SHEET_HASH: u64 = 0x04360bd70a781701;
+pub const SHEET_HASH: u64 = 0x4723b0f38d8ecc92;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "pay_pixels_across",

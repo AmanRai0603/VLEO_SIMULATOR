@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `V_day` (Daily downlink capacity), in `Gbit`.
 pub const NODE_ID: &str = "com_daily_volume";
-pub const SHEET_HASH: u64 = 0x47dae619cfcce246;
+pub const SHEET_HASH: u64 = 0xd4980e2069084c72;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "com_pass_volume",

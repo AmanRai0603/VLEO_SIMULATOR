@@ -1,8 +1,8 @@
 {
   "id": "sw_storm_rate",
   "state": "deprecated",
-  "sheet_hash": "490e21",
-  "impl_hash": "490bfd",
+  "sheet_hash": "2d008f",
+  "impl_hash": "222325",
   "owner": "environment",
   "tier": "A",
   "fixtures": 13,
@@ -13,5 +13,5 @@
   "holes": 1,
   "inputs": ["env_kp"],
   "contributes": [],
-  "gaps": ["the relation has nobody's name against it — an assistant may never supply mathematics, and without an attribution nothing can tell whether one did", "no method yet — the relation in the method language, with the author's own code and test cases, so the tool can check it three ways (docs/PSEUDOCODE.md)"]
+  "gaps": ["the relation has nobody's name against it — an assistant may never supply mathematics, and without an attribution nothing can tell whether one did"]
 }

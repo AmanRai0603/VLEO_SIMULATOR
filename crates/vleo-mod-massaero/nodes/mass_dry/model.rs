@@ -16,17 +16,21 @@ use vleo_core::units::*;
 pub const NODE_ID: &str = "mass_dry";
 /// Hash of the sheet this file was generated from. A face carrying a
 /// different one refuses to run rather than showing a stale page.
-pub const SHEET_HASH: u64 = 0xbfe6d4527b361563;
+pub const SHEET_HASH: u64 = 0x08d40cc20b54f17e;
 
 pub fn evaluate(st: Mass, pr: Mass, pw: Mass, th: Mass, av: Mass, cm: Mass, gn: Mass, pa: Mass, mg: Ratio) -> Result<Mass, Fault> {
-    // ---- HOLE 1 : sum the subsystem masses and apply the system margin -> Mass
-    let m: Mass = mass::dry_mass(st, pr, pw, Mass::ZERO, av, cm, gn, th, pa, mg);
-    // ---- end HOLE 1
+    // generated · from the node's method, translated by rule into
+    // vleo_core::physics::methods::mass_dry. No hole: the method is the
+    // implementation, and the author's cases in evidence.rs test it.
+    let method_answer: Mass = match methods::mass_dry::evaluate(st.get(), pr.get(), pw.get(), th.get(), av.get(), cm.get(), gn.get(), pa.get(), mg.get()) {
+        Ok(v) => Mass::new(v),
+        Err(e) => return Err(method::fault(e, NODE_ID, "m_dry")),
+    };
 
     // generated · the declared domain of this node's own answer. The
     // reason travels with the guard, because a guard whose reason is not
     // written down gets deleted by the next person who finds it awkward.
-    let answer: Mass = m;
+    let answer: Mass = method_answer;
     if !answer.is_finite() {
         return Err(Fault::Degenerate { node: NODE_ID, field: "m_dry", reason: "the computation produced a value that is not a number" });
     }

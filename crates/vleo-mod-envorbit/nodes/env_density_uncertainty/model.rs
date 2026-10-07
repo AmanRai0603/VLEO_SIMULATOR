@@ -19,17 +19,21 @@ use vleo_core::units::*;
 pub const NODE_ID: &str = "env_density_uncertainty";
 /// Hash of the sheet this file was generated from. A face carrying a
 /// different one refuses to run rather than showing a stale page.
-pub const SHEET_HASH: u64 = 0xbf9f7a40456c0f15;
+pub const SHEET_HASH: u64 = 0x27a8cbf447f7af93;
 
 pub fn evaluate(kp: Ratio) -> Result<Ratio, Fault> {
-    // ---- HOLE 1 : apply the quiet-time residual and grow it with geomagnetic activity -> Ratio
-    let s: Ratio = env::density_uncertainty(kp.get());
-    // ---- end HOLE 1
+    // generated · from the node's method, translated by rule into
+    // vleo_core::physics::methods::env_density_uncertainty. No hole: the method is the
+    // implementation, and the author's cases in evidence.rs test it.
+    let method_answer: Ratio = match methods::env_density_uncertainty::evaluate(kp.get()) {
+        Ok(v) => Ratio::new(v),
+        Err(e) => return Err(method::fault(e, NODE_ID, "sigma_rho")),
+    };
 
     // generated · the declared domain of this node's own answer. The
     // reason travels with the guard, because a guard whose reason is not
     // written down gets deleted by the next person who finds it awkward.
-    let answer: Ratio = s;
+    let answer: Ratio = method_answer;
     if !answer.is_finite() {
         return Err(Fault::Degenerate { node: NODE_ID, field: "sigma_rho", reason: "the computation produced a value that is not a number" });
     }

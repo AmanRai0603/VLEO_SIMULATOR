@@ -16,17 +16,21 @@ use vleo_core::units::*;
 pub const NODE_ID: &str = "mis_access_area";
 /// Hash of the sheet this file was generated from. A face carrying a
 /// different one refuses to run rather than showing a stale page.
-pub const SHEET_HASH: u64 = 0xb3349c53a804b26c;
+pub const SHEET_HASH: u64 = 0xc7e3307074e3a731;
 
 pub fn evaluate(lam: Angle) -> Result<Area, Fault> {
-    // ---- HOLE 1 : integrate the spherical cap subtended by the Earth-central half-angle -> Area
-    let a: Area = mission::access_area(lam);
-    // ---- end HOLE 1
+    // generated · from the node's method, translated by rule into
+    // vleo_core::physics::methods::mis_access_area. No hole: the method is the
+    // implementation, and the author's cases in evidence.rs test it.
+    let method_answer: Area = match methods::mis_access_area::evaluate(lam.get()) {
+        Ok(v) => Area::new(v),
+        Err(e) => return Err(method::fault(e, NODE_ID, "A_acc")),
+    };
 
     // generated · the declared domain of this node's own answer. The
     // reason travels with the guard, because a guard whose reason is not
     // written down gets deleted by the next person who finds it awkward.
-    let answer: Area = a;
+    let answer: Area = method_answer;
     if !answer.is_finite() {
         return Err(Fault::Degenerate { node: NODE_ID, field: "A_acc", reason: "the computation produced a value that is not a number" });
     }

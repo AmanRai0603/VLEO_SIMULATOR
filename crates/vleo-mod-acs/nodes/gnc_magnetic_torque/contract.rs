@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `T_mag` (Residual dipole torque), in `N.m`.
 pub const NODE_ID: &str = "gnc_magnetic_torque";
-pub const SHEET_HASH: u64 = 0x2239c901b93a477a;
+pub const SHEET_HASH: u64 = 0x2312b65c832d8be5;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "gnc_residual_dipole",

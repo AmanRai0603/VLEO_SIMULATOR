@@ -20,17 +20,21 @@ use vleo_core::units::*;
 pub const NODE_ID: &str = "thm_equilibrium_temperature";
 /// Hash of the sheet this file was generated from. A face carrying a
 /// different one refuses to run rather than showing a stale page.
-pub const SHEET_HASH: u64 = 0x0b60557bf95b3e31;
+pub const SHEET_HASH: u64 = 0xf28ad0f3a096358d;
 
 pub fn evaluate(qs: Power, qa: Power, qi: Power, qh: Power, qd: Power, ar: Area, e: Ratio) -> Result<Temperature, Fault> {
-    // ---- HOLE 1 : balance every absorbed and dissipated term against grey-body radiation from the radiator -> Temperature
-    let t: Temperature = thermal::equilibrium_temperature(Power::new(qs.get() + qa.get() + qi.get() + qh.get()), qd, ar, e);
-    // ---- end HOLE 1
+    // generated · from the node's method, translated by rule into
+    // vleo_core::physics::methods::thm_equilibrium_temperature. No hole: the method is the
+    // implementation, and the author's cases in evidence.rs test it.
+    let method_answer: Temperature = match methods::thm_equilibrium_temperature::evaluate(qs.get(), qa.get(), qi.get(), qh.get(), qd.get(), ar.get(), e.get()) {
+        Ok(v) => Temperature::new(v),
+        Err(e) => return Err(method::fault(e, NODE_ID, "T_eq")),
+    };
 
     // generated · the declared domain of this node's own answer. The
     // reason travels with the guard, because a guard whose reason is not
     // written down gets deleted by the next person who finds it awkward.
-    let answer: Temperature = t;
+    let answer: Temperature = method_answer;
     if !answer.is_finite() {
         return Err(Fault::Degenerate { node: NODE_ID, field: "T_eq", reason: "the computation produced a value that is not a number" });
     }

@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `f_ecl` (Eclipse fraction of the orbit), in `-`.
 pub const NODE_ID: &str = "orbit_eclipse_fraction";
-pub const SHEET_HASH: u64 = 0x7a14a71340a66dd2;
+pub const SHEET_HASH: u64 = 0x091ebb3484ae9c66;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "orbit_radius",

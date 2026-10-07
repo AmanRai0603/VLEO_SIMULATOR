@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `Isp` (Specific impulse), in `s`.
 pub const NODE_ID: &str = "prop_specific_impulse";
-pub const SHEET_HASH: u64 = 0x4166b581dfb0dbaa;
+pub const SHEET_HASH: u64 = 0x308cca69e0838e48;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "prop_thrust",

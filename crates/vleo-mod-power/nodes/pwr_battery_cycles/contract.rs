@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `N_cyc` (Battery charge cycles), in `-`.
 pub const NODE_ID: &str = "pwr_battery_cycles";
-pub const SHEET_HASH: u64 = 0x65d0729cb5ce91c2;
+pub const SHEET_HASH: u64 = 0x6efe0fc01462a799;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "orbit_mission_duration",
@@ -29,8 +29,8 @@ pub fn call(inputs: &[f64], outputs: &mut [f64]) -> Result<(), Fault> {
         return Err(Fault::Blocked { node: NODE_ID, missing: "an input the contract declares" });
     }
     let tm: Time = Time::new(inputs[0]);
-    let to: Time = Time::new(inputs[1]);
-    let answer = super::model::evaluate(tm, to)?;
+    let t_orbit: Time = Time::new(inputs[1]);
+    let answer = super::model::evaluate(tm, t_orbit)?;
     outputs[0] = answer.get();
     Ok(())
 }

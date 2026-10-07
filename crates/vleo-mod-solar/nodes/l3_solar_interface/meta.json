@@ -1,8 +1,8 @@
 {
   "id": "l3_solar_interface",
   "state": "published",
-  "sheet_hash": "826449",
-  "impl_hash": "a6bede",
+  "sheet_hash": "e9e4a0",
+  "impl_hash": "222325",
   "owner": "environment",
   "tier": "A",
   "fixtures": 25,

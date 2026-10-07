@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `e_at` (Along-track prediction error after one day), in `m`.
 pub const NODE_ID: &str = "gnc_along_track_error";
-pub const SHEET_HASH: u64 = 0x36ebbec60610e596;
+pub const SHEET_HASH: u64 = 0x56a14eac37c9d140;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "aero_drag_acceleration",

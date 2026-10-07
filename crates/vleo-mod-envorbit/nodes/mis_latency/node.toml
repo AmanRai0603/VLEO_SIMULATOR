@@ -34,6 +34,16 @@ by = "an assistant, from what this sheet states — for its owner (operations) t
 expression = "t = t_wait + t_downlink + t_process + t_deliver"
 source = "orbitt_case_c1"
 
+[method]
+text = """
+# Transcribed from crates/vleo-mod-envorbit/nodes/mis_latency/model.rs (its HOLE): the relation the code ran, line for line.
+# The relation itself stays in the kernel; this says which one, with which inputs, in which units.
+return end_to_end_latency(tw, td, tp, tdl)
+"""
+by = ""
+transcribed_from = "crates/vleo-mod-envorbit/nodes/mis_latency/model.rs"
+checked_by = ""
+
 [output]
 # The node's one answer. The variable id is the node id: one small
 # question, one answer, one folder, one row on the tree.

@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `F107_hotmean` (Solar weather — subsystem interface), in `-`.
 pub const NODE_ID: &str = "l3_solar_interface";
-pub const SHEET_HASH: u64 = 0xab82ebb6e9826449;
+pub const SHEET_HASH: u64 = 0x594e53b7dde9e4a0;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "sw_central_expectation",

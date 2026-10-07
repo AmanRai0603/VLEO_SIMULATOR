@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `dOmega` (Nodal regression rate), in `deg/d`.
 pub const NODE_ID: &str = "orbit_nodal_regression";
-pub const SHEET_HASH: u64 = 0x9762affa57436b4d;
+pub const SHEET_HASH: u64 = 0x24d2ccb302703321;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "orbit_radius",

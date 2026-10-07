@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `sig_pt` (Pointing error, three sigma), in `arcsec`.
 pub const NODE_ID: &str = "gnc_pointing_error";
-pub const SHEET_HASH: u64 = 0xb9d0fc83eea02e71;
+pub const SHEET_HASH: u64 = 0xf01bfee955a3dee5;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "gnc_sensor_noise",

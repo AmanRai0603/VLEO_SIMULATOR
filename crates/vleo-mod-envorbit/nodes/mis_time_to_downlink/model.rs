@@ -16,17 +16,21 @@ use vleo_core::units::*;
 pub const NODE_ID: &str = "mis_time_to_downlink";
 /// Hash of the sheet this file was generated from. A face carrying a
 /// different one refuses to run rather than showing a stale page.
-pub const SHEET_HASH: u64 = 0xdb9bf4704a146539;
+pub const SHEET_HASH: u64 = 0x6ef8168e5d95f5d0;
 
 pub fn evaluate(n: Ratio) -> Result<Time, Fault> {
-    // ---- HOLE 1 : take half the mean interval between passes -> Time
-    let t: Time = mission::mean_time_to_downlink(n.get());
-    // ---- end HOLE 1
+    // generated · from the node's method, translated by rule into
+    // vleo_core::physics::methods::mis_time_to_downlink. No hole: the method is the
+    // implementation, and the author's cases in evidence.rs test it.
+    let method_answer: Time = match methods::mis_time_to_downlink::evaluate(n.get()) {
+        Ok(v) => Time::new(v),
+        Err(e) => return Err(method::fault(e, NODE_ID, "t_dl")),
+    };
 
     // generated · the declared domain of this node's own answer. The
     // reason travels with the guard, because a guard whose reason is not
     // written down gets deleted by the next person who finds it awkward.
-    let answer: Time = t;
+    let answer: Time = method_answer;
     if !answer.is_finite() {
         return Err(Fault::Degenerate { node: NODE_ID, field: "t_dl", reason: "the computation produced a value that is not a number" });
     }

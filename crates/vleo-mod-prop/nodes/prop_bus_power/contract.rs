@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `P_prop` (Propulsion demand on the bus), in `W`.
 pub const NODE_ID: &str = "prop_bus_power";
-pub const SHEET_HASH: u64 = 0x5793a8c1487725ae;
+pub const SHEET_HASH: u64 = 0xb811346c2a4e4e0a;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "prop_input_power",

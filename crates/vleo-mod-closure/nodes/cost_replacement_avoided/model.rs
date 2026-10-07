@@ -19,17 +19,21 @@ use vleo_core::units::*;
 pub const NODE_ID: &str = "cost_replacement_avoided";
 /// Hash of the sheet this file was generated from. A face carrying a
 /// different one refuses to run rather than showing a stale page.
-pub const SHEET_HASH: u64 = 0xd78b109d944002ff;
+pub const SHEET_HASH: u64 = 0x30d28eb931fc1dc7;
 
 pub fn evaluate(cb: Money, cp: Money, lc: Money, n: Ratio, td: Ratio) -> Result<Money, Fault> {
-    // ---- HOLE 1 : count one avoided replacement of the whole constellation when thrust exceeds drag, and none when it does not -> Money
-    let c: Money = cost::replacement_avoided(Money::new(cb.get() + cp.get()), lc, if td.get() >= 1.0 { n.get() } else { 0.0 });
-    // ---- end HOLE 1
+    // generated · from the node's method, translated by rule into
+    // vleo_core::physics::methods::cost_replacement_avoided. No hole: the method is the
+    // implementation, and the author's cases in evidence.rs test it.
+    let method_answer: Money = match methods::cost_replacement_avoided::evaluate(cb.get(), cp.get(), lc.get(), n.get(), td.get()) {
+        Ok(v) => Money::new(v),
+        Err(e) => return Err(method::fault(e, NODE_ID, "C_avd")),
+    };
 
     // generated · the declared domain of this node's own answer. The
     // reason travels with the guard, because a guard whose reason is not
     // written down gets deleted by the next person who finds it awkward.
-    let answer: Money = c;
+    let answer: Money = method_answer;
     if !answer.is_finite() {
         return Err(Fault::Degenerate { node: NODE_ID, field: "C_avd", reason: "the computation produced a value that is not a number" });
     }

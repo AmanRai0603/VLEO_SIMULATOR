@@ -16,17 +16,21 @@ use vleo_core::units::*;
 pub const NODE_ID: &str = "env_local_temperature";
 /// Hash of the sheet this file was generated from. A face carrying a
 /// different one refuses to run rather than showing a stale page.
-pub const SHEET_HASH: u64 = 0x49908ec9f78b357d;
+pub const SHEET_HASH: u64 = 0xd2f9d109a57ca737;
 
 pub fn evaluate(h: Length, t_inf: Temperature) -> Result<Temperature, Fault> {
-    // ---- HOLE 1 : evaluate the Bates profile between the 120 km base and the exospheric limit -> Temperature
-    let t: Temperature = env::temperature(h, t_inf);
-    // ---- end HOLE 1
+    // generated · from the node's method, translated by rule into
+    // vleo_core::physics::methods::env_local_temperature. No hole: the method is the
+    // implementation, and the author's cases in evidence.rs test it.
+    let method_answer: Temperature = match methods::env_local_temperature::evaluate(h.get(), t_inf.get()) {
+        Ok(v) => Temperature::new(v),
+        Err(e) => return Err(method::fault(e, NODE_ID, "T")),
+    };
 
     // generated · the declared domain of this node's own answer. The
     // reason travels with the guard, because a guard whose reason is not
     // written down gets deleted by the next person who finds it awkward.
-    let answer: Temperature = t;
+    let answer: Temperature = method_answer;
     if !answer.is_finite() {
         return Err(Fault::Degenerate { node: NODE_ID, field: "T", reason: "the computation produced a value that is not a number" });
     }

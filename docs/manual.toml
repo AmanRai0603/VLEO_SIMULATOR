@@ -821,7 +821,7 @@ line printed, never to a tolerance."""
 say = "Check one node's method and cases."
 run = "cargo run -p xtask -- method orbit_velocity"
 check = "exits"
-why = "prints each case with what the node engineer's code gave and what the method gives, or says the node has no method yet"
+why = "prints each case with what the node engineer's code gave and what the method gives; for a method transcribed from code, what it is held to instead; or says the node has no method yet"
 
 [[layer.section]]
 id = "maint-build"
@@ -2969,6 +2969,11 @@ default = "unset — check"
 [[env]]
 name = "VLEO_BASELINE"
 what = "Set to `write` when running the test of today's answers, to record baseline/today.csv again after a deliberate change to the design, in the same commit as the change. Unset, the test compares and fails on any difference."
+default = "unset — compare"
+
+[[env]]
+name = "VLEO_TRANSCRIBED"
+what = "Set to `write` when running the test of the transcribed relations, to record baseline/transcribed.csv from the build that still has the code each method replaces. Written once, before the methods; never again to get green. Unset, the test holds every method to the record."
 default = "unset — compare"
 
 [[env]]

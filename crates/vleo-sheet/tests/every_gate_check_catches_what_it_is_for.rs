@@ -243,10 +243,10 @@ fn regenerate_refuses_a_hand_edit_outside_a_hole() {
 #[test]
 fn portable_maths_refuses_the_platform_library_in_any_spelling() {
     let t = tree();
-    let ok = row(&t, |s| {
-        !s.is_declared()
-            && std::fs::read_to_string(s.dir.join("model.rs")).is_ok_and(|m| m.contains("HOLE 1 :"))
-    });
+    // Every relation of the design is a method now, and its code is its
+    // translation, with no hole; the check still reads any hole a row's code
+    // holds, so the copy is given one.
+    let ok = row(&t, |s| !s.is_declared() && s.dir.join("model.rs").is_file());
     for call in [
         "x.asin()",
         "f64::sin(x)",
@@ -255,6 +255,10 @@ fn portable_maths_refuses_the_platform_library_in_any_spelling() {
         "x.exp_m1()",
     ] {
         let bad = in_temp(&ok, "maths");
+        let p = bad.dir.join("model.rs");
+        let mut code = std::fs::read_to_string(&p).unwrap();
+        code.push_str("\n// ---- HOLE 1 : a body written by hand\n// ---- end HOLE 1\n");
+        std::fs::write(&p, code).unwrap();
         with_hole(&bad, 1, &format!("    let _leak = {call};"));
         let f = failed(&gate_node(&bad, &t));
         assert!(
@@ -282,26 +286,28 @@ fn sense_applied_reads_the_code_and_not_its_comments() {
         .sense
         .trim()
         .to_string();
+    // A method says it as the margin it takes.
     let (want, other) = if sense == "<=" {
-        ("Sense::AtMost", "Sense::AtLeast")
+        ("margin_at_most", "margin_at_least")
     } else {
-        ("Sense::AtLeast", "Sense::AtMost")
+        ("margin_at_least", "margin_at_most")
     };
-    let model = std::fs::read_to_string(ok.dir.join("model.rs")).unwrap();
-    assert!(model.contains(want), "{} does not apply {want}", ok.id);
-    let bad = in_temp(&ok, "sense");
-    let p = bad.dir.join("model.rs");
-    // The code applies the opposite; a comment names the right one. The check
-    // once read the comment and passed.
-    let swapped = model.replacen(want, other, 1);
-    let swapped = swapped.replacen(
-        "// ---- end HOLE 1",
-        &format!("    // the requirement is {want}\n    // ---- end HOLE 1"),
-        1,
+    assert!(
+        ok.method.text.contains(want),
+        "{} does not apply {want}",
+        ok.id
     );
-    std::fs::write(&p, swapped).unwrap();
+    let mut bad = in_temp(&ok, "sense");
+    // The method applies the opposite; a comment names the right one. The
+    // check once read the comment and passed.
+    bad.method.text = format!(
+        "# the requirement is {want}\n{}",
+        ok.method.text.replacen(want, other, 1)
+    );
     let f = failed(&gate_node(&bad, &t));
     assert!(f.contains(&"sense-applied"), "{f:?}");
+    // And the method as it is passes.
+    assert!(!failed(&gate_node(&ok, &t)).contains(&"sense-applied"));
     let _ = std::fs::remove_dir_all(&bad.dir);
 }
 

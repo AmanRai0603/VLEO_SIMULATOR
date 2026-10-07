@@ -195,7 +195,7 @@ pub const SCHEMA: &[(&str, &[&str])] = &[
     ("input", &["binding", "type", "var"]),
     ("lookup", &["by", "read", "x", "y"]),
     ("maths", &["confirmed_by", "expression", "source"]),
-    ("method", &["by", "text"]),
+    ("method", &["by", "checked_by", "text", "transcribed_from"]),
     (
         "output",
         &[
@@ -519,6 +519,8 @@ fn load_sheet(files: &dyn Files, dir: &Path, crate_name: &str) -> Result<Sheet, 
         // meaning, and a reflow would join them.
         sh.method.text = code(m.get("text"));
         sh.method.by = s(m.get("by")).trim().to_string();
+        sh.method.transcribed_from = s(m.get("transcribed_from")).trim().to_string();
+        sh.method.checked_by = s(m.get("checked_by")).trim().to_string();
     }
     if let Some(l) = t.get("lookup").and_then(|x| x.as_table()) {
         let column = |k: &str| -> Result<Vec<f64>, Error> {

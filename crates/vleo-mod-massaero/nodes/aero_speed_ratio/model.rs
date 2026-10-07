@@ -16,17 +16,21 @@ use vleo_core::units::*;
 pub const NODE_ID: &str = "aero_speed_ratio";
 /// Hash of the sheet this file was generated from. A face carrying a
 /// different one refuses to run rather than showing a stale page.
-pub const SHEET_HASH: u64 = 0x9a432528dfbb8276;
+pub const SHEET_HASH: u64 = 0xeed45befd22d7f0a;
 
 pub fn evaluate(v: Velocity, t: Temperature, m: MolarMass) -> Result<Ratio, Fault> {
-    // ---- HOLE 1 : divide the bulk speed by the most probable thermal speed of the local mixture -> Ratio
-    let s: Ratio = aero::speed_ratio(v, t, m);
-    // ---- end HOLE 1
+    // generated · from the node's method, translated by rule into
+    // vleo_core::physics::methods::aero_speed_ratio. No hole: the method is the
+    // implementation, and the author's cases in evidence.rs test it.
+    let method_answer: Ratio = match methods::aero_speed_ratio::evaluate(v.get(), t.get(), m.get()) {
+        Ok(v) => Ratio::new(v),
+        Err(e) => return Err(method::fault(e, NODE_ID, "s")),
+    };
 
     // generated · the declared domain of this node's own answer. The
     // reason travels with the guard, because a guard whose reason is not
     // written down gets deleted by the next person who finds it awkward.
-    let answer: Ratio = s;
+    let answer: Ratio = method_answer;
     if !answer.is_finite() {
         return Err(Fault::Degenerate { node: NODE_ID, field: "s", reason: "the computation produced a value that is not a number" });
     }

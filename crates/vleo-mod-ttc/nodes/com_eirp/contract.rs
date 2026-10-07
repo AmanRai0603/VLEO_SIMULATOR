@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `EIRP` (Effective isotropic radiated power), in `dB`.
 pub const NODE_ID: &str = "com_eirp";
-pub const SHEET_HASH: u64 = 0x36ffd1f74ff7467a;
+pub const SHEET_HASH: u64 = 0xeb1a369ea6533ec2;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "com_tx_power",

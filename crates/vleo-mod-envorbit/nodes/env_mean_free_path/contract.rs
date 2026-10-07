@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `lambda` (Mean free path), in `m`.
 pub const NODE_ID: &str = "env_mean_free_path";
-pub const SHEET_HASH: u64 = 0xb898a6fb2272a28b;
+pub const SHEET_HASH: u64 = 0xdd7ca3a3dda753f6;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "env_number_density",

@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `n_c` (Collection chamber number density), in `1/m^3`.
 pub const NODE_ID: &str = "prop_chamber_density";
-pub const SHEET_HASH: u64 = 0x5b3e5a6c2a6391cd;
+pub const SHEET_HASH: u64 = 0xf031d7e4b79095d5;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "env_number_density",

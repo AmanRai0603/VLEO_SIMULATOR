@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `C_pay` (Payload recurring cost, first unit), in `MUSD`.
 pub const NODE_ID: &str = "cost_payload_recurring";
-pub const SHEET_HASH: u64 = 0x84f47dfb200c926d;
+pub const SHEET_HASH: u64 = 0x3f0b91a922095f68;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "mass_payload",

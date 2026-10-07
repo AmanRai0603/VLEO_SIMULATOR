@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `da_dt` (Orbital decay rate), in `m/s`.
 pub const NODE_ID: &str = "orbit_decay_rate";
-pub const SHEET_HASH: u64 = 0x07a146616c53ae63;
+pub const SHEET_HASH: u64 = 0x5488a3d4ea2782d2;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "env_mass_density",

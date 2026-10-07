@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `T_eq` (Equilibrium temperature), in `K`.
 pub const NODE_ID: &str = "thm_equilibrium_temperature";
-pub const SHEET_HASH: u64 = 0x0b60557bf95b3e31;
+pub const SHEET_HASH: u64 = 0xf28ad0f3a096358d;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "thm_absorbed_solar",

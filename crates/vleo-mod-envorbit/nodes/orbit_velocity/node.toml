@@ -36,6 +36,16 @@ source = "vallado2013"
 text = "Two-body, circular"
 fails_when = "at e = 0.05 the speed varies by 5% around the orbit and a drag figure computed at the mean underestimates the perigee pass"
 
+[method]
+text = """
+# Transcribed from crates/vleo-mod-envorbit/nodes/orbit_velocity/model.rs (its HOLE): the relation the code ran, line for line.
+# The relation itself stays in the kernel; this says which one, with which inputs, in which units.
+return circular_velocity(r)
+"""
+by = ""
+transcribed_from = "crates/vleo-mod-envorbit/nodes/orbit_velocity/model.rs"
+checked_by = ""
+
 [output]
 # The node's one answer. The variable id is the node id: one small
 # question, one answer, one folder, one row on the tree.

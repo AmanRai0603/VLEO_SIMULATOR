@@ -32,25 +32,23 @@ fn the_engine_runs_the_installed_graph_and_refuses_one_laid_out_otherwise() {
         "before a face installs one"
     );
 
-    // A built-in row that answers, in a design whose copy of it has moved on:
-    // the same layout, one relation this build does not have.
+    // A row that answers, held as code by its id, in a design whose copy of it
+    // has moved on: the same layout, one relation this build does not have.
+    // Every relation of the design is a method now, and a method the build
+    // has not seen runs in the interpreter; so the row is taken without it.
     let mut tree = vleo_sheet::load_all(&root()).unwrap();
-    // Read with every method interpreted, so a row that runs as compiled code
-    // here is one whose relation is built in.
-    let read = opened::interpreting(&tree).unwrap();
-    let id = read
-        .nodes
+    let id = vleo_modules::NODES
         .iter()
-        .enumerate()
-        .find(|(k, d)| {
+        .find(|d| {
             d.kind == Kind::Computed
-                && !matches!(read.run.get(*k), Some(Some(_)))
                 && vleo_modules::evaluate(&alone(d.id), &mut Scratch::new())
                     .is_ok_and(|r| r.values.iter().any(|v| v.id == d.id))
         })
-        .map(|(_, d)| d.id.to_string())
-        .expect("a built-in row that answers");
-    tree.sheets.get_mut(&id).unwrap().impl_hash ^= 1;
+        .map(|d| d.id.to_string())
+        .expect("a computed row that answers");
+    let sh = tree.sheets.get_mut(&id).unwrap();
+    sh.method = Default::default();
+    sh.impl_hash ^= 1;
     let moved = opened::graph(&tree).unwrap();
 
     // Installed, every free function runs on it: the row is refused by name.

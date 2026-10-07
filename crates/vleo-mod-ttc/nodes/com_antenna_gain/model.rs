@@ -16,17 +16,21 @@ use vleo_core::units::*;
 pub const NODE_ID: &str = "com_antenna_gain";
 /// Hash of the sheet this file was generated from. A face carrying a
 /// different one refuses to run rather than showing a stale page.
-pub const SHEET_HASH: u64 = 0xa27b7caec0d31226;
+pub const SHEET_HASH: u64 = 0x3f2a126ab96a304e;
 
 pub fn evaluate(d: Length, f: Frequency, e: Ratio) -> Result<Ratio, Fault> {
-    // ---- HOLE 1 : apply the circular aperture gain relation at the carrier wavelength -> Ratio
-    let g: Ratio = Ratio::new(comms::aperture_gain_db(d, f, e));
-    // ---- end HOLE 1
+    // generated · from the node's method, translated by rule into
+    // vleo_core::physics::methods::com_antenna_gain. No hole: the method is the
+    // implementation, and the author's cases in evidence.rs test it.
+    let method_answer: Ratio = match methods::com_antenna_gain::evaluate(d.get(), f.get(), e.get()) {
+        Ok(v) => Ratio::new(v),
+        Err(e) => return Err(method::fault(e, NODE_ID, "G_t")),
+    };
 
     // generated · the declared domain of this node's own answer. The
     // reason travels with the guard, because a guard whose reason is not
     // written down gets deleted by the next person who finds it awkward.
-    let answer: Ratio = g;
+    let answer: Ratio = method_answer;
     if !answer.is_finite() {
         return Err(Fault::Degenerate { node: NODE_ID, field: "G_t", reason: "the computation produced a value that is not a number" });
     }

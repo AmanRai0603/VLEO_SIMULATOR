@@ -33,6 +33,19 @@ by = "an assistant, from what this sheet states — for its owner (power) to con
 expression = "f_T = 1 + k_T*(T_eq - 298.15)"
 source = "larson_wertz"
 
+[method]
+text = """
+# Transcribed from crates/vleo-mod-power/nodes/pwr_cell_derating/model.rs (its HOLE): the relation the code ran, line for line.
+# The relation itself stays in the kernel; this says which one, with which inputs, in which units.
+# "* 1 [unit]" gives a number this design states as a pure ratio the unit the kernel reads it in,
+# and "/ 1 [unit]" the other way; the number itself does not change.
+# Constants the code held, written out here as it held them: 0.3; 298.15 [K].
+return max(0.3, 1 + k * 1 [1/K] * (t - 298.15 [K]))
+"""
+by = ""
+transcribed_from = "crates/vleo-mod-power/nodes/pwr_cell_derating/model.rs"
+checked_by = ""
+
 [output]
 # The node's one answer. The variable id is the node id: one small
 # question, one answer, one folder, one row on the tree.

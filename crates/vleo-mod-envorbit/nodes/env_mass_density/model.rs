@@ -21,17 +21,21 @@ use vleo_core::units::*;
 pub const NODE_ID: &str = "env_mass_density";
 /// Hash of the sheet this file was generated from. A face carrying a
 /// different one refuses to run rather than showing a stale page.
-pub const SHEET_HASH: u64 = 0x6ee594b58f539680;
+pub const SHEET_HASH: u64 = 0x8997b766ae042015;
 
 pub fn evaluate(h: Length, t_inf: Temperature) -> Result<MassDensity, Fault> {
-    // ---- HOLE 1 : integrate diffusive equilibrium from the 120 km base for every species and sum the masses -> MassDensity
-    let rho: MassDensity = env::mass_density(h, t_inf);
-    // ---- end HOLE 1
+    // generated · from the node's method, translated by rule into
+    // vleo_core::physics::methods::env_mass_density. No hole: the method is the
+    // implementation, and the author's cases in evidence.rs test it.
+    let method_answer: MassDensity = match methods::env_mass_density::evaluate(h.get(), t_inf.get()) {
+        Ok(v) => MassDensity::new(v),
+        Err(e) => return Err(method::fault(e, NODE_ID, "rho")),
+    };
 
     // generated · the declared domain of this node's own answer. The
     // reason travels with the guard, because a guard whose reason is not
     // written down gets deleted by the next person who finds it awkward.
-    let answer: MassDensity = rho;
+    let answer: MassDensity = method_answer;
     if !answer.is_finite() {
         return Err(Fault::Degenerate { node: NODE_ID, field: "rho", reason: "the computation produced a value that is not a number" });
     }

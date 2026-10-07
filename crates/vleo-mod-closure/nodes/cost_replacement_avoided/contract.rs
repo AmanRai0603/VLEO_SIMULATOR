@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `C_avd` (Replacement cost avoided), in `MUSD`.
 pub const NODE_ID: &str = "cost_replacement_avoided";
-pub const SHEET_HASH: u64 = 0xd78b109d944002ff;
+pub const SHEET_HASH: u64 = 0x30d28eb931fc1dc7;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "cost_bus_recurring",

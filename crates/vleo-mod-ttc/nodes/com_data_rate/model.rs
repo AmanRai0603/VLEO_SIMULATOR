@@ -16,17 +16,21 @@ use vleo_core::units::*;
 pub const NODE_ID: &str = "com_data_rate";
 /// Hash of the sheet this file was generated from. A face carrying a
 /// different one refuses to run rather than showing a stale page.
-pub const SHEET_HASH: u64 = 0x7cd4c4bc025cbc11;
+pub const SHEET_HASH: u64 = 0x93298b4ccd59e1b5;
 
 pub fn evaluate(c: Ratio, er: Ratio, li: Ratio, m: Ratio) -> Result<DataRate, Fault> {
-    // ---- HOLE 1 : solve the link equation for the rate that leaves exactly the required margin -> DataRate
-    let r: DataRate = comms::achievable_data_rate(c.get(), er.get(), li.get(), m.get());
-    // ---- end HOLE 1
+    // generated · from the node's method, translated by rule into
+    // vleo_core::physics::methods::com_data_rate. No hole: the method is the
+    // implementation, and the author's cases in evidence.rs test it.
+    let method_answer: DataRate = match methods::com_data_rate::evaluate(c.get(), er.get(), li.get(), m.get()) {
+        Ok(v) => DataRate::new(v),
+        Err(e) => return Err(method::fault(e, NODE_ID, "R_b")),
+    };
 
     // generated · the declared domain of this node's own answer. The
     // reason travels with the guard, because a guard whose reason is not
     // written down gets deleted by the next person who finds it awkward.
-    let answer: DataRate = r;
+    let answer: DataRate = method_answer;
     if !answer.is_finite() {
         return Err(Fault::Degenerate { node: NODE_ID, field: "R_b", reason: "the computation produced a value that is not a number" });
     }

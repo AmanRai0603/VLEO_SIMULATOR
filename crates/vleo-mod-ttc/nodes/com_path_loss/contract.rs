@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `L_fs` (Free space path loss), in `dB`.
 pub const NODE_ID: &str = "com_path_loss";
-pub const SHEET_HASH: u64 = 0xbf3e9805fc7ae4b4;
+pub const SHEET_HASH: u64 = 0x8452f968513d8a2c;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "orbit_slant_range",

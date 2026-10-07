@@ -20,17 +20,21 @@ use vleo_core::units::*;
 pub const NODE_ID: &str = "orbit_lifetime_uncontrolled";
 /// Hash of the sheet this file was generated from. A face carrying a
 /// different one refuses to run rather than showing a stale page.
-pub const SHEET_HASH: u64 = 0xbd35717f3d5b3da4;
+pub const SHEET_HASH: u64 = 0x62e7d144b0e30866;
 
 pub fn evaluate(h: Length, bc: Ratio, t_inf: Temperature) -> Result<Time, Fault> {
-    // ---- HOLE 1 : integrate the decay rate down to the 120 km model base at fixed atmospheric conditions -> Time
-    let t: Time = orbit::lifetime_estimate(h, Length::from_km(120.0), bc.get(), 64, |z| env::mass_density(z, t_inf));
-    // ---- end HOLE 1
+    // generated · from the node's method, translated by rule into
+    // vleo_core::physics::methods::orbit_lifetime_uncontrolled. No hole: the method is the
+    // implementation, and the author's cases in evidence.rs test it.
+    let method_answer: Time = match methods::orbit_lifetime_uncontrolled::evaluate(h.get(), bc.get(), t_inf.get()) {
+        Ok(v) => Time::new(v),
+        Err(e) => return Err(method::fault(e, NODE_ID, "t_life")),
+    };
 
     // generated · the declared domain of this node's own answer. The
     // reason travels with the guard, because a guard whose reason is not
     // written down gets deleted by the next person who finds it awkward.
-    let answer: Time = t;
+    let answer: Time = method_answer;
     if !answer.is_finite() {
         return Err(Fault::Degenerate { node: NODE_ID, field: "t_life", reason: "the computation produced a value that is not a number" });
     }

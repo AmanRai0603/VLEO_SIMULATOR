@@ -19,17 +19,21 @@ use vleo_core::units::*;
 pub const NODE_ID: &str = "pwr_array_power_eol";
 /// Hash of the sheet this file was generated from. A face carrying a
 /// different one refuses to run rather than showing a stale page.
-pub const SHEET_HASH: u64 = 0xe22a74ca6e74fb63;
+pub const SHEET_HASH: u64 = 0xf739111e878d8a04;
 
 pub fn evaluate(p: Power, f: Ratio, ft: Ratio) -> Result<Power, Fault> {
-    // ---- HOLE 1 : apply both the ageing degradation and the temperature derating to the beginning-of-life output -> Power
-    let pe: Power = power::array_power_eol(p, f) * ft.get();
-    // ---- end HOLE 1
+    // generated · from the node's method, translated by rule into
+    // vleo_core::physics::methods::pwr_array_power_eol. No hole: the method is the
+    // implementation, and the author's cases in evidence.rs test it.
+    let method_answer: Power = match methods::pwr_array_power_eol::evaluate(p.get(), f.get(), ft.get()) {
+        Ok(v) => Power::new(v),
+        Err(e) => return Err(method::fault(e, NODE_ID, "P_eol")),
+    };
 
     // generated · the declared domain of this node's own answer. The
     // reason travels with the guard, because a guard whose reason is not
     // written down gets deleted by the next person who finds it awkward.
-    let answer: Power = pe;
+    let answer: Power = method_answer;
     if !answer.is_finite() {
         return Err(Fault::Degenerate { node: NODE_ID, field: "P_eol", reason: "the computation produced a value that is not a number" });
     }

@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `Q_alb` (Absorbed albedo), in `W`.
 pub const NODE_ID: &str = "thm_absorbed_albedo";
-pub const SHEET_HASH: u64 = 0x8fb4b22b914c5426;
+pub const SHEET_HASH: u64 = 0x666756364829fdd7;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "aero_frontal_area",

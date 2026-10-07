@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `f_deg` (Array degradation factor), in `-`.
 pub const NODE_ID: &str = "pwr_degradation";
-pub const SHEET_HASH: u64 = 0xfb83cb4102b23762;
+pub const SHEET_HASH: u64 = 0xaa2e813cf1e37ac6;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "pwr_degradation_rate",

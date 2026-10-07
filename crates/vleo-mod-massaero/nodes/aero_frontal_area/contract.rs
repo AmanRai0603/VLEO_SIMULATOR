@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `A` (Total frontal area), in `m^2`.
 pub const NODE_ID: &str = "aero_frontal_area";
-pub const SHEET_HASH: u64 = 0x9ede9c56e1a0d5b8;
+pub const SHEET_HASH: u64 = 0x075e2c0499caca31;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "aero_body_diameter",

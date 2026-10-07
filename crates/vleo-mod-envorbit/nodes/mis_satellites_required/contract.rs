@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `N_req` (Satellites required for the revisit target), in `-`.
 pub const NODE_ID: &str = "mis_satellites_required";
-pub const SHEET_HASH: u64 = 0x88ada5e2e1cc89a1;
+pub const SHEET_HASH: u64 = 0x6cf89f2cd283bbce;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "kpi_revisit_required",

@@ -19,17 +19,21 @@ use vleo_core::units::*;
 pub const NODE_ID: &str = "mis_latency";
 /// Hash of the sheet this file was generated from. A face carrying a
 /// different one refuses to run rather than showing a stale page.
-pub const SHEET_HASH: u64 = 0xb28f9549923d391d;
+pub const SHEET_HASH: u64 = 0xb43ba3f4676e5bf3;
 
 pub fn evaluate(tw: Time, td: Time, tp: Time, tdl: Time) -> Result<Time, Fault> {
-    // ---- HOLE 1 : sum the wait, the downlink, the processing and the delivery -> Time
-    let t: Time = mission::end_to_end_latency(tw, td, tp, tdl);
-    // ---- end HOLE 1
+    // generated · from the node's method, translated by rule into
+    // vleo_core::physics::methods::mis_latency. No hole: the method is the
+    // implementation, and the author's cases in evidence.rs test it.
+    let method_answer: Time = match methods::mis_latency::evaluate(tw.get(), td.get(), tp.get(), tdl.get()) {
+        Ok(v) => Time::new(v),
+        Err(e) => return Err(method::fault(e, NODE_ID, "t_lat")),
+    };
 
     // generated · the declared domain of this node's own answer. The
     // reason travels with the guard, because a guard whose reason is not
     // written down gets deleted by the next person who finds it awkward.
-    let answer: Time = t;
+    let answer: Time = method_answer;
     if !answer.is_finite() {
         return Err(Fault::Degenerate { node: NODE_ID, field: "t_lat", reason: "the computation produced a value that is not a number" });
     }

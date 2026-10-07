@@ -25,17 +25,21 @@ use vleo_core::units::*;
 pub const NODE_ID: &str = "env_kp";
 /// Hash of the sheet this file was generated from. A face carrying a
 /// different one refuses to run rather than showing a stale page.
-pub const SHEET_HASH: u64 = 0x2181dd88d8825954;
+pub const SHEET_HASH: u64 = 0x23bdc4cd1ed51a85;
 
 pub fn evaluate(from_system: Ratio) -> Result<Ratio, Fault> {
-    // ---- HOLE 1 : carry the system layer's geomagnetic index through unchanged -> Ratio
-    let index: Ratio = from_system;
-    // ---- end HOLE 1
+    // generated · from the node's method, translated by rule into
+    // vleo_core::physics::methods::env_kp. No hole: the method is the
+    // implementation, and the author's cases in evidence.rs test it.
+    let method_answer: Ratio = match methods::env_kp::evaluate(from_system.get()) {
+        Ok(v) => Ratio::new(v),
+        Err(e) => return Err(method::fault(e, NODE_ID, "Kp")),
+    };
 
     // generated · the declared domain of this node's own answer. The
     // reason travels with the guard, because a guard whose reason is not
     // written down gets deleted by the next person who finds it awkward.
-    let answer: Ratio = index;
+    let answer: Ratio = method_answer;
     if !answer.is_finite() {
         return Err(Fault::Degenerate { node: NODE_ID, field: "Kp", reason: "the computation produced a value that is not a number" });
     }

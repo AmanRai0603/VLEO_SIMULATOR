@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `mdot` (Collected mass flow), in `mg/s`.
 pub const NODE_ID: &str = "prop_collected_flow";
-pub const SHEET_HASH: u64 = 0x80ca74de8b3c4880;
+pub const SHEET_HASH: u64 = 0x9ec105285927c224;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "env_mass_density",

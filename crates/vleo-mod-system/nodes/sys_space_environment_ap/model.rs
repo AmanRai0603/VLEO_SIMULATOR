@@ -27,26 +27,21 @@ use vleo_core::units::*;
 pub const NODE_ID: &str = "sys_space_environment_ap";
 /// Hash of the sheet this file was generated from. A face carrying a
 /// different one refuses to run rather than showing a stale page.
-pub const SHEET_HASH: u64 = 0x643016096e92c010;
+pub const SHEET_HASH: u64 = 0xe55e29de9363f057;
 
 pub fn evaluate(crossing: Ratio) -> Result<Ratio, Fault> {
-    // ---- HOLE 1 : receive the subsystem's single-day conclusion across the seam -> Ratio
-    // A layer-2 row receives; it does not compute. The one thing that can go
-    // wrong here is that the seam alters what it carries — a stray factor, an
-    // unasked-for unit conversion, a clamp inherited from the wrong row — and
-    // both sides would still look plausible. So this is the identity, and the
-    // fixtures beside it pin the identity at real values.
-    //
-    // The declared range is the crossing's own, restated so a system reader sees
-    // the limit without opening the subsystem. It therefore guards nothing this
-    // line can break, and that is correct.
-    let received: Ratio = crossing;
-    // ---- end HOLE 1
+    // generated · from the node's method, translated by rule into
+    // vleo_core::physics::methods::sys_space_environment_ap. No hole: the method is the
+    // implementation, and the author's cases in evidence.rs test it.
+    let method_answer: Ratio = match methods::sys_space_environment_ap::evaluate(crossing.get()) {
+        Ok(v) => Ratio::new(v),
+        Err(e) => return Err(method::fault(e, NODE_ID, "Ap_sys")),
+    };
 
     // generated · the declared domain of this node's own answer. The
     // reason travels with the guard, because a guard whose reason is not
     // written down gets deleted by the next person who finds it awkward.
-    let answer: Ratio = received;
+    let answer: Ratio = method_answer;
     if !answer.is_finite() {
         return Err(Fault::Degenerate { node: NODE_ID, field: "Ap_sys", reason: "the computation produced a value that is not a number" });
     }

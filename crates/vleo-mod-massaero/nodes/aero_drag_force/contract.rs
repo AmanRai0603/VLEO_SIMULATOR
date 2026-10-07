@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `D` (Drag force), in `mN`.
 pub const NODE_ID: &str = "aero_drag_force";
-pub const SHEET_HASH: u64 = 0x7eec597d6fa80708;
+pub const SHEET_HASH: u64 = 0xca48dbc59a719a79;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "aero_dynamic_pressure",

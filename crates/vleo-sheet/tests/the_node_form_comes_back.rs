@@ -768,3 +768,44 @@ fn a_known_value_is_requested_in_si_by_binding_as_fixtures_hold_it() {
     let v: toml::Value = req.parse().unwrap();
     assert!(v["fixture"][0].get("inputs").is_none(), "{req}");
 }
+
+#[test]
+fn a_method_of_the_forms_own_is_no_longer_a_transcription() {
+    // A transcribed method names what it was copied from and who read the
+    // copy against it. When a person's own method replaces it, neither
+    // describes the row any more: intake clears both, and names the person.
+    // Any row still a transcription will do: which ones are changes as
+    // groups send their own methods.
+    let tree = load_all(&root()).unwrap();
+    let (id, copied) = tree
+        .sheets
+        .values()
+        .find(|s| !s.method.transcribed_from.is_empty())
+        .map(|s| (s.id.clone(), s.method.text.clone()))
+        .expect("a row whose method is a transcription");
+    let id = id.as_str();
+    // The person's own method: the same relation, in their words.
+    let own = format!(
+        "# The relation as I read it in its source.\n{}",
+        copied.trim_end()
+    );
+    let html = with_record(&edit(&form_for(id), DATA, |t| {
+        set_field(t, "method_text", &own);
+        t.get_mut("filled_by")
+            .and_then(|b| b.as_table_mut())
+            .unwrap()
+            .insert("name".into(), toml::Value::String("R. Kumar".into()));
+    }));
+    let p = template::plan(&root(), &html).unwrap();
+    assert_eq!(
+        verdict_of(&p, "method_text"),
+        Verdict::Apply,
+        "{:?}",
+        p.items
+    );
+    let v: toml::Value = p.text.unwrap().parse().unwrap();
+    let m = &v["method"];
+    assert!(m["by"].as_str().unwrap().starts_with("R. Kumar"), "{m}");
+    assert_eq!(m["transcribed_from"].as_str(), Some(""), "{m}");
+    assert_eq!(m["checked_by"].as_str(), Some(""), "{m}");
+}

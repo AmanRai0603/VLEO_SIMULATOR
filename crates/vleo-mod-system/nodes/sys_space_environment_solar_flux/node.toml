@@ -164,6 +164,27 @@ fails_when = "somebody reads the three as one case. sys_space_environment_f10_7 
 text = "It is the sustained level and not the single day"
 fails_when = "somebody sizes a thermal transient on it. The single day is sys_space_environment_f10_7 at 124.14, twenty sfu higher. Reading the wrong one of the two under-sizes a transient case or over-sizes a steady one"
 
+[method]
+text = """
+# Transcribed from crates/vleo-mod-system/nodes/sys_space_environment_solar_flux/model.rs (its HOLE): the relation the code ran, line for line.
+# The relation itself stays in the kernel; this says which one, with which inputs, in which units.
+#
+# What the code said beside it:
+# A layer-2 row receives; it does not compute. The one thing that can go
+# wrong here is that the seam alters what it carries — a stray factor, an
+# unasked-for unit conversion, a clamp inherited from the wrong row — and
+# both sides would still look plausible. So this is the identity, and the
+# fixtures beside it pin the identity at real values.
+#
+# The declared range is the crossing's own, restated so a system reader sees
+# the limit without opening the subsystem. It therefore guards nothing this
+# line can break, and that is correct.
+return crossing
+"""
+by = ""
+transcribed_from = "crates/vleo-mod-system/nodes/sys_space_environment_solar_flux/model.rs"
+checked_by = ""
+
 [output]
 # The node's one answer. The variable id is the node id: one small
 # question, one answer, one folder, one row on the tree.

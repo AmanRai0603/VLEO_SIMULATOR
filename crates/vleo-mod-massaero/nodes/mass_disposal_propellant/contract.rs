@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `m_dis` (Disposal propellant mass), in `kg`.
 pub const NODE_ID: &str = "mass_disposal_propellant";
-pub const SHEET_HASH: u64 = 0x017253f616cf1d5a;
+pub const SHEET_HASH: u64 = 0x755420b80af8a721;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "mass_dry",

@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `phi` (Incident mass flux), in `kg/s`.
 pub const NODE_ID: &str = "prop_incident_flux";
-pub const SHEET_HASH: u64 = 0xc9cacfd9b90887e4;
+pub const SHEET_HASH: u64 = 0x4d764a6baeaa2f0f;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "env_mass_density",

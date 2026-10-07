@@ -46,23 +46,21 @@ use vleo_core::units::*;
 pub const NODE_ID: &str = "sw_f107_design";
 /// Hash of the sheet this file was generated from. A face carrying a
 /// different one refuses to run rather than showing a stale page.
-pub const SHEET_HASH: u64 = 0x83cf717ba776d8c7;
+pub const SHEET_HASH: u64 = 0x6b536a740783588f;
 
 pub fn evaluate(central: Ratio, spread: Ratio) -> Result<Ratio, Fault> {
-    // ---- HOLE 1 : add the 95th-percentile growth over the mission to the central expectation -> Ratio
-    // The study's construction, and the whole of it: the centre plus the spread.
-    // Both come from rows that declare where their numbers came from and what
-    // they cannot do, so there is nothing to measure or choose here. The
-    // confidence is whatever sw_uncertainty_growth publishes, which is the 95th
-    // percentile, and the sheet says a mission needing another one must change
-    // that row rather than this one.
-    let design: Ratio = Ratio::new(central.get() + spread.get());
-    // ---- end HOLE 1
+    // generated · from the node's method, translated by rule into
+    // vleo_core::physics::methods::sw_f107_design. No hole: the method is the
+    // implementation, and the author's cases in evidence.rs test it.
+    let method_answer: Ratio = match methods::sw_f107_design::evaluate(central.get(), spread.get()) {
+        Ok(v) => Ratio::new(v),
+        Err(e) => return Err(method::fault(e, NODE_ID, "F107_design")),
+    };
 
     // generated · the declared domain of this node's own answer. The
     // reason travels with the guard, because a guard whose reason is not
     // written down gets deleted by the next person who finds it awkward.
-    let answer: Ratio = design;
+    let answer: Ratio = method_answer;
     if !answer.is_finite() {
         return Err(Fault::Degenerate { node: NODE_ID, field: "F107_design", reason: "the computation produced a value that is not a number" });
     }

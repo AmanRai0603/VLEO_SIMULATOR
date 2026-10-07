@@ -38,6 +38,16 @@ source = "doornbos2011"
 text = "Free-molecular flow — a molecule leaving the surface never returns and never strikes an incoming one"
 fails_when = "below Kn = 10, which is roughly 150 km for this body; the Knudsen number is an input so that the guard on it is visible here"
 
+[method]
+text = """
+# Transcribed from crates/vleo-mod-massaero/nodes/aero_drag_coefficient/model.rs (its HOLE): the relation the code ran, line for line.
+# The relation itself stays in the kernel; this says which one, with which inputs, in which units.
+return cylinder_drag_coefficient(s, l, d, alpha, t_w, v, m)
+"""
+by = ""
+transcribed_from = "crates/vleo-mod-massaero/nodes/aero_drag_coefficient/model.rs"
+checked_by = ""
+
 [output]
 # The node's one answer. The variable id is the node id: one small
 # question, one answer, one folder, one row on the tree.

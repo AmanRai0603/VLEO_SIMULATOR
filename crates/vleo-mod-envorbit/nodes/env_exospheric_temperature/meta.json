@@ -1,8 +1,8 @@
 {
   "id": "env_exospheric_temperature",
   "state": "published",
-  "sheet_hash": "4416ab",
-  "impl_hash": "292cba",
+  "sheet_hash": "e8dccc",
+  "impl_hash": "222325",
   "owner": "environment",
   "tier": "A",
   "fixtures": 8,
@@ -13,5 +13,5 @@
   "holes": 1,
   "inputs": ["env_f107", "env_f107a", "env_kp"],
   "contributes": [],
-  "gaps": ["the relation has nobody's name against it — an assistant may never supply mathematics, and without an attribution nothing can tell whether one did", "no method yet — the relation in the method language, with the author's own code and test cases, so the tool can check it three ways (docs/PSEUDOCODE.md)"]
+  "gaps": ["the relation has nobody's name against it — an assistant may never supply mathematics, and without an attribution nothing can tell whether one did"]
 }

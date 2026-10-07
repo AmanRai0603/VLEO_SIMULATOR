@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `G_r` (Ground station antenna gain), in `dB`.
 pub const NODE_ID: &str = "com_gs_gain";
-pub const SHEET_HASH: u64 = 0xe2fb8c5b1bba699a;
+pub const SHEET_HASH: u64 = 0x58afe2c5c9304b97;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "com_gs_antenna_diameter",

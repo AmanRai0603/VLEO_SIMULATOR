@@ -1614,7 +1614,15 @@ fn plan_form_in(tree: &Tree, f: Form, first: bool) -> Result<Plan, Error> {
         } else {
             format!(" / {}", p.form.date.trim())
         };
-        p.text = Some(form::set(&text, "method_by", &format!("{who}{when}"))?);
+        let mut text = form::set(&text, "method_by", &format!("{who}{when}"))?;
+        // A method of the form's own is no longer a transcription: what it
+        // was copied from, and whoever read the copy, no longer describe it.
+        for key in ["method_transcribed_from", "method_checked_by"] {
+            if form::carries(&text, key) {
+                text = form::set(&text, key, "")?;
+            }
+        }
+        p.text = Some(text);
     }
     Ok(p)
 }

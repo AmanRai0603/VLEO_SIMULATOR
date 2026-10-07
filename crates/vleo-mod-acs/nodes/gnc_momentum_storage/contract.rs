@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `h_req` (Momentum storage required), in `N.m.s`.
 pub const NODE_ID: &str = "gnc_momentum_storage";
-pub const SHEET_HASH: u64 = 0xbe5b3da4ce44bb9f;
+pub const SHEET_HASH: u64 = 0xf752b3bb426fbf9f;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "gnc_total_disturbance",

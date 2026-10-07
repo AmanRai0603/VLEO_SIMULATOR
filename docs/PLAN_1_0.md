@@ -55,7 +55,7 @@ runs at every valve.
 | B · Rules and roles | A | the code's rules, the design's rules, the valves and the role names; your approval | developer, you | medium | 1 |
 | C · Files, versions and keys | B | one schema, every file kind, versions, signatures, the one library with every check | developer | large | 3 |
 | D · The engine runs the design | C | today's answers recorded; the graph read from the design file; today's design; the health map; the parity gate | developer | large | 4 |
-| E · The design leaves the repository | D | the programme, systems and 18 groups as files; built-in relations kept as code by id | developer | medium-large | 2 |
+| E · The design leaves the repository | D | the programme, systems and 18 groups as files; every relation in code moved into its node's method | developer | medium-large | 2 |
 | F · The application | C, D, then E | one application, installed and as a page, with its five workspaces, doing W1 to W16, each proved end to end in CI | developer | the largest | 5 |
 | G · The drive and the people | E, F | the drive's layout and sharing, keys, one guide per role, START HERE | developer, programme manager | small-medium | 1 |
 | H · Switch-over and release | G | the design converted for the last time, the new drive, the first released design; then 1.0.0 | developer, you | one day |
@@ -435,12 +435,12 @@ day itself.
   - `sw_band_confidence` becomes the one parameter its four methods read, in
     place of the literal 1.28;
   - `sw_kp_driving_slot` is declared.
-- Each group writes methods for its built-in relations, in the Node workspace.
-  - The application runs both the method and the built-in on the node's cases and
-    across its range, and shows any difference.
-  - Once a method is released, the developer deletes the built-in in a later
-    application release.
-  - 158 of the 190 computing nodes start as built-in.
+- Each group owns the methods E transcribed from the code, in the Node workspace.
+  - 158 of the 190 computing nodes start as transcriptions: the relation the
+    code ran, copied line for line, waiting for its owner's signature, and
+    held to what the code answered (`baseline/transcribed.csv`).
+  - A group rewrites one as its own understanding grows; the application
+    shows any difference from the transcription before it is released.
 - Groups break their branches down further, as data, with no developer.
 - New kinds of maths and features arrive as requests (W14) and application
   releases.

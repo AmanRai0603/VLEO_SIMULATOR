@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `Cd` (Drag coefficient), in `-`.
 pub const NODE_ID: &str = "aero_drag_coefficient";
-pub const SHEET_HASH: u64 = 0x05d4235d29c026dd;
+pub const SHEET_HASH: u64 = 0x974a6e112b7d70f7;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "aero_speed_ratio",

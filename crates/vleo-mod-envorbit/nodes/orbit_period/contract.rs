@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `T_orb` (Orbital period), in `min`.
 pub const NODE_ID: &str = "orbit_period";
-pub const SHEET_HASH: u64 = 0xa1b930e9f6077007;
+pub const SHEET_HASH: u64 = 0x99516c57ad8b21ab;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "orbit_radius",

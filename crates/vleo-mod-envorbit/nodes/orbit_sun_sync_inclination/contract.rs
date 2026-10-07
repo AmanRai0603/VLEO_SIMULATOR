@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `i_ss` (Sun-synchronous inclination), in `deg`.
 pub const NODE_ID: &str = "orbit_sun_sync_inclination";
-pub const SHEET_HASH: u64 = 0xd4a03c688f75c533;
+pub const SHEET_HASH: u64 = 0xef1bd67caed7e0be;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "orbit_radius",

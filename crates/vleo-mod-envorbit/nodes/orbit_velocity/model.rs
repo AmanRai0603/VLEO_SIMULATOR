@@ -20,17 +20,21 @@ use vleo_core::units::*;
 pub const NODE_ID: &str = "orbit_velocity";
 /// Hash of the sheet this file was generated from. A face carrying a
 /// different one refuses to run rather than showing a stale page.
-pub const SHEET_HASH: u64 = 0xf3181e3719f1fb4a;
+pub const SHEET_HASH: u64 = 0xe128d81a6f495612;
 
 pub fn evaluate(r: Length) -> Result<Velocity, Fault> {
-    // ---- HOLE 1 : apply the circular two-body speed relation -> Velocity
-    let v: Velocity = orbit::circular_velocity(r);
-    // ---- end HOLE 1
+    // generated · from the node's method, translated by rule into
+    // vleo_core::physics::methods::orbit_velocity. No hole: the method is the
+    // implementation, and the author's cases in evidence.rs test it.
+    let method_answer: Velocity = match methods::orbit_velocity::evaluate(r.get()) {
+        Ok(v) => Velocity::new(v),
+        Err(e) => return Err(method::fault(e, NODE_ID, "V")),
+    };
 
     // generated · the declared domain of this node's own answer. The
     // reason travels with the guard, because a guard whose reason is not
     // written down gets deleted by the next person who finds it awkward.
-    let answer: Velocity = v;
+    let answer: Velocity = method_answer;
     if !answer.is_finite() {
         return Err(Fault::Degenerate { node: NODE_ID, field: "V", reason: "the computation produced a value that is not a number" });
     }

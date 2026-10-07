@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `t_rev` (Mean revisit time), in `h`.
 pub const NODE_ID: &str = "mis_revisit";
-pub const SHEET_HASH: u64 = 0xa655d3aca1c941c0;
+pub const SHEET_HASH: u64 = 0xb005190cfd558ce2;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "pay_swath",

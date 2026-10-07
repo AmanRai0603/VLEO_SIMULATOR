@@ -16,17 +16,21 @@ use vleo_core::units::*;
 pub const NODE_ID: &str = "com_system_noise_temperature";
 /// Hash of the sheet this file was generated from. A face carrying a
 /// different one refuses to run rather than showing a stale page.
-pub const SHEET_HASH: u64 = 0x7c0723a21a23bdfd;
+pub const SHEET_HASH: u64 = 0x094809e74ff69d86;
 
 pub fn evaluate(ta: Temperature, ll: Ratio) -> Result<Temperature, Fault> {
-    // ---- HOLE 1 : combine the antenna, line and receiver noise contributions at a 290 K physical temperature and a 1.2 dB noise figure -> Temperature
-    let t: Temperature = comms::system_noise_temperature(ta, ll.get(), 1.2, Temperature::new(290.0));
-    // ---- end HOLE 1
+    // generated · from the node's method, translated by rule into
+    // vleo_core::physics::methods::com_system_noise_temperature. No hole: the method is the
+    // implementation, and the author's cases in evidence.rs test it.
+    let method_answer: Temperature = match methods::com_system_noise_temperature::evaluate(ta.get(), ll.get()) {
+        Ok(v) => Temperature::new(v),
+        Err(e) => return Err(method::fault(e, NODE_ID, "T_s")),
+    };
 
     // generated · the declared domain of this node's own answer. The
     // reason travels with the guard, because a guard whose reason is not
     // written down gets deleted by the next person who finds it awkward.
-    let answer: Temperature = t;
+    let answer: Temperature = method_answer;
     if !answer.is_finite() {
         return Err(Fault::Degenerate { node: NODE_ID, field: "T_s", reason: "the computation produced a value that is not a number" });
     }

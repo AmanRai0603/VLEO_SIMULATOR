@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `eta_T` (Total propulsion efficiency), in `-`.
 pub const NODE_ID: &str = "prop_total_efficiency";
-pub const SHEET_HASH: u64 = 0x47cdcf14fcd9a879;
+pub const SHEET_HASH: u64 = 0xea68293bba46b790;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "prop_jet_power",

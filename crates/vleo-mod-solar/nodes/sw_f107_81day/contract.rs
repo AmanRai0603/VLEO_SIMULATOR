@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `F107A` (F10.7 81-day centred mean), in `-`.
 pub const NODE_ID: &str = "sw_f107_81day";
-pub const SHEET_HASH: u64 = 0xfef1984cfd53b87b;
+pub const SHEET_HASH: u64 = 0xae75c256999ade0e;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "sw_mean_cycle_level",

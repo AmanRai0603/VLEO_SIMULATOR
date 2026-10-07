@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `Q_ir` (Absorbed Earth infrared), in `W`.
 pub const NODE_ID: &str = "thm_absorbed_ir";
-pub const SHEET_HASH: u64 = 0x7e4b29a2028023fd;
+pub const SHEET_HASH: u64 = 0x005e25d4d7924341;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "aero_frontal_area",

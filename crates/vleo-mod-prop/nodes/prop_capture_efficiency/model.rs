@@ -26,17 +26,21 @@ use vleo_core::units::*;
 pub const NODE_ID: &str = "prop_capture_efficiency";
 /// Hash of the sheet this file was generated from. A face carrying a
 /// different one refuses to run rather than showing a stale page.
-pub const SHEET_HASH: u64 = 0xa67dd2ff75479fc1;
+pub const SHEET_HASH: u64 = 0x9f9bab354e522703;
 
 pub fn evaluate(a_in: Area, a_out: Area, eta_geo: Ratio, beta: Ratio, t_c: Temperature, m: MolarMass, n: NumberDensity, v: Velocity) -> Result<Ratio, Fault> {
-    // ---- HOLE 1 : balance the hyperthermal inflow against the thermal outflow through the throat and back out of the mouth -> Ratio
-    let r: Ratio = prop::intake_balance(n, v, a_in, a_out, eta_geo, beta, t_c, m).collection_efficiency;
-    // ---- end HOLE 1
+    // generated · from the node's method, translated by rule into
+    // vleo_core::physics::methods::prop_capture_efficiency. No hole: the method is the
+    // implementation, and the author's cases in evidence.rs test it.
+    let method_answer: Ratio = match methods::prop_capture_efficiency::evaluate(a_in.get(), a_out.get(), eta_geo.get(), beta.get(), t_c.get(), m.get(), n.get(), v.get()) {
+        Ok(v) => Ratio::new(v),
+        Err(e) => return Err(method::fault(e, NODE_ID, "eta_c")),
+    };
 
     // generated · the declared domain of this node's own answer. The
     // reason travels with the guard, because a guard whose reason is not
     // written down gets deleted by the next person who finds it awkward.
-    let answer: Ratio = r;
+    let answer: Ratio = method_answer;
     if !answer.is_finite() {
         return Err(Fault::Degenerate { node: NODE_ID, field: "eta_c", reason: "the computation produced a value that is not a number" });
     }

@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `CR` (Intake compression ratio), in `-`.
 pub const NODE_ID: &str = "prop_compression_ratio";
-pub const SHEET_HASH: u64 = 0x11c51ef5b8338a0c;
+pub const SHEET_HASH: u64 = 0x83fd5bd11a19174c;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "prop_intake_area",

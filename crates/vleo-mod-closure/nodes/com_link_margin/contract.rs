@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `M_link` (Link margin), in `dB`.
 pub const NODE_ID: &str = "com_link_margin";
-pub const SHEET_HASH: u64 = 0x2a8a4b878cfc7a72;
+pub const SHEET_HASH: u64 = 0x2508e2ba73942b19;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "com_ebn0",

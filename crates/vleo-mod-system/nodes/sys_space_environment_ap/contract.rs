@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `Ap_sys` (Ap, sustained), in `-`.
 pub const NODE_ID: &str = "sys_space_environment_ap";
-pub const SHEET_HASH: u64 = 0x643016096e92c010;
+pub const SHEET_HASH: u64 = 0xe55e29de9363f057;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "l3_solar_interface.ap_hotmean",

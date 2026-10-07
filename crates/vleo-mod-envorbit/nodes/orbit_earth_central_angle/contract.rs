@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `lambda` (Earth central half-angle), in `deg`.
 pub const NODE_ID: &str = "orbit_earth_central_angle";
-pub const SHEET_HASH: u64 = 0xb2ac9702170c4196;
+pub const SHEET_HASH: u64 = 0x1103029d90b3f21c;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "orbit_radius",

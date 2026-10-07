@@ -20,17 +20,21 @@ use vleo_core::units::*;
 pub const NODE_ID: &str = "pwr_available";
 /// Hash of the sheet this file was generated from. A face carrying a
 /// different one refuses to run rather than showing a stale page.
-pub const SHEET_HASH: u64 = 0xe92e10c367773f38;
+pub const SHEET_HASH: u64 = 0x46169b9b05c4aeff;
 
 pub fn evaluate(pe: Power, fe: Ratio, ed: Ratio) -> Result<Power, Fault> {
-    // ---- HOLE 1 : average the direct and battery-borne paths over the sunlit and eclipsed parts of the orbit -> Power
-    let p: Power = Power::new(pe.get() * ((1.0 - fe.get()) * 0.97 + fe.get() * ed.get() * 0.95));
-    // ---- end HOLE 1
+    // generated · from the node's method, translated by rule into
+    // vleo_core::physics::methods::pwr_available. No hole: the method is the
+    // implementation, and the author's cases in evidence.rs test it.
+    let method_answer: Power = match methods::pwr_available::evaluate(pe.get(), fe.get(), ed.get()) {
+        Ok(v) => Power::new(v),
+        Err(e) => return Err(method::fault(e, NODE_ID, "P_avail")),
+    };
 
     // generated · the declared domain of this node's own answer. The
     // reason travels with the guard, because a guard whose reason is not
     // written down gets deleted by the next person who finds it awkward.
-    let answer: Power = p;
+    let answer: Power = method_answer;
     if !answer.is_finite() {
         return Err(Fault::Degenerate { node: NODE_ID, field: "P_avail", reason: "the computation produced a value that is not a number" });
     }

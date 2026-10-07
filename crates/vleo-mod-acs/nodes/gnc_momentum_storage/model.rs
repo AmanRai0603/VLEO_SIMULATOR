@@ -16,17 +16,21 @@ use vleo_core::units::*;
 pub const NODE_ID: &str = "gnc_momentum_storage";
 /// Hash of the sheet this file was generated from. A face carrying a
 /// different one refuses to run rather than showing a stale page.
-pub const SHEET_HASH: u64 = 0xbe5b3da4ce44bb9f;
+pub const SHEET_HASH: u64 = 0xf752b3bb426fbf9f;
 
 pub fn evaluate(t: Torque, p: Time) -> Result<AngularMomentum, Fault> {
-    // ---- HOLE 1 : accumulate the secular torque over half a revolution with a 50% margin -> AngularMomentum
-    let h: AngularMomentum = gnc::momentum_storage_required(t, p, Ratio::new(0.5));
-    // ---- end HOLE 1
+    // generated · from the node's method, translated by rule into
+    // vleo_core::physics::methods::gnc_momentum_storage. No hole: the method is the
+    // implementation, and the author's cases in evidence.rs test it.
+    let method_answer: AngularMomentum = match methods::gnc_momentum_storage::evaluate(t.get(), p.get()) {
+        Ok(v) => AngularMomentum::new(v),
+        Err(e) => return Err(method::fault(e, NODE_ID, "h_req")),
+    };
 
     // generated · the declared domain of this node's own answer. The
     // reason travels with the guard, because a guard whose reason is not
     // written down gets deleted by the next person who finds it awkward.
-    let answer: AngularMomentum = h;
+    let answer: AngularMomentum = method_answer;
     if !answer.is_finite() {
         return Err(Fault::Degenerate { node: NODE_ID, field: "h_req", reason: "the computation produced a value that is not a number" });
     }

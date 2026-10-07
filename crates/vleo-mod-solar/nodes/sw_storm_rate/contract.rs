@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `rate` (Days a year above a Kp threshold), in `-`.
 pub const NODE_ID: &str = "sw_storm_rate";
-pub const SHEET_HASH: u64 = 0x277914b0f3490e21;
+pub const SHEET_HASH: u64 = 0xd39815d8cb2d008f;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "env_kp",
