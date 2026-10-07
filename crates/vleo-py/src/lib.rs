@@ -63,7 +63,10 @@ impl Result_ {
 /// Every row in the tree.
 #[pyfunction]
 fn nodes() -> Vec<String> {
-    vleo_modules::nodes().iter().map(|n| n.id.to_string()).collect()
+    vleo_modules::nodes()
+        .iter()
+        .map(|n| n.id.to_string())
+        .collect()
 }
 
 /// Evaluate one node.
@@ -102,18 +105,14 @@ fn evaluate(
         vleo_modules::evaluate(&c, &mut scratch)
     });
     let r = out.map_err(|f| PyRuntimeError::new_err(format!("{f}")))?;
-    let v = r
-        .values
-        .iter()
-        .find(|v| v.id == node)
-        .ok_or_else(|| {
-            PyRuntimeError::new_err(
-                r.blocked
-                    .first()
-                    .map(|b| b.message.clone())
-                    .unwrap_or_else(|| "the node did not produce a value".into()),
-            )
-        })?;
+    let v = r.values.iter().find(|v| v.id == node).ok_or_else(|| {
+        PyRuntimeError::new_err(
+            r.blocked
+                .first()
+                .map(|b| b.message.clone())
+                .unwrap_or_else(|| "the node did not produce a value".into()),
+        )
+    })?;
     let i = Vleo::find(node).unwrap_or(0);
     Ok(Result_ {
         value: v.value,
@@ -145,7 +144,9 @@ fn sweep(
     case: &str,
 ) -> PyResult<(Vec<f64>, Vec<f64>, Vec<(f64, String)>)> {
     if Vleo::find(node).is_none() || Vleo::find(over).is_none() {
-        return Err(PyValueError::new_err("the sweep names a node that does not exist"));
+        return Err(PyValueError::new_err(
+            "the sweep names a node that does not exist",
+        ));
     }
     let probe = Case {
         base: case.to_string(),
@@ -190,8 +191,10 @@ fn sweep(
 #[pyfunction]
 fn version() -> (String, String, usize) {
     (
-        String::from_utf8(vleo_core::hash::short_hex(Vleo::kernel_hash()).to_vec()).unwrap_or_default(),
-        String::from_utf8(vleo_core::hash::short_hex(Vleo::graph_hash()).to_vec()).unwrap_or_default(),
+        String::from_utf8(vleo_core::hash::short_hex(Vleo::kernel_hash()).to_vec())
+            .unwrap_or_default(),
+        String::from_utf8(vleo_core::hash::short_hex(Vleo::graph_hash()).to_vec())
+            .unwrap_or_default(),
         vleo_modules::nodes().len(),
     )
 }
