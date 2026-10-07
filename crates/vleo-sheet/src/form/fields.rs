@@ -425,6 +425,32 @@ pub const FIELDS: &[Field] = &[
         asked: false,
         insert: true,
     },
+    // Not asked: a transcription's source and the person who read it against
+    // the method. Intake clears both when a form's own method replaces it.
+    Field {
+        field: "method_transcribed_from",
+        table: "method",
+        key: "transcribed_from",
+        shape: Shape::Line,
+        group: "the method",
+        ask: "where the method was transcribed from",
+        why: "a transcription is held to what it copies, and names it",
+        blocks: false,
+        asked: false,
+        insert: false,
+    },
+    Field {
+        field: "method_checked_by",
+        table: "method",
+        key: "checked_by",
+        shape: Shape::Line,
+        group: "the method",
+        ask: "who read the transcription against its source",
+        why: "a copy is trusted only as far as the person who checked it",
+        blocks: false,
+        asked: false,
+        insert: false,
+    },
     Field {
         field: "author_name",
         table: "author",

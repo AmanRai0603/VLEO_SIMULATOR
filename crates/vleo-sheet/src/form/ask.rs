@@ -68,6 +68,8 @@ pub fn value(sh: &Sheet, field: &str) -> String {
         "explain_by" => sh.explain.by.clone(),
         "method_text" => sh.method.text.clone(),
         "method_by" => sh.method.by.clone(),
+        "method_transcribed_from" => sh.method.transcribed_from.clone(),
+        "method_checked_by" => sh.method.checked_by.clone(),
         "author_name" => sh.author.name.clone(),
         "author_language" => sh.author.language.clone(),
         "author_entry" => sh.author.entry.clone(),

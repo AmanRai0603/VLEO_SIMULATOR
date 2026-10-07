@@ -229,8 +229,26 @@ fn the_transcribed_relations_answer_as_the_code_they_replaced() {
         return;
     }
     let was = std::fs::read_to_string(&path).expect("baseline/transcribed.csv is on record");
-    let nodes = recorded_nodes(&was);
+    // A row is held to the code it replaced while its method is still that
+    // transcription. A method its group writes in its place is its own, held
+    // by its own cases and by today's answers on record, not by the code.
+    let tree = vleo_sheet::load::load_all(&root()).expect("the design loads");
+    let still = |id: &str| {
+        tree.sheets
+            .get(id)
+            .is_some_and(|s| !s.method.transcribed_from.is_empty())
+    };
+    let nodes: Vec<String> = recorded_nodes(&was)
+        .into_iter()
+        .filter(|id| still(id))
+        .collect();
     assert!(!nodes.is_empty());
+    let was: String = was
+        .lines()
+        .enumerate()
+        .filter(|(n, l)| *n == 0 || still(l.split(',').next().unwrap_or_default()))
+        .map(|(_, l)| format!("{l}\n"))
+        .collect();
 
     let interpreted = opened::read_interpreting(&root()).expect("the design's files make a graph");
     let mut said = String::new();
