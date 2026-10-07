@@ -145,7 +145,7 @@ pub fn inputs(case: &CaseDef) -> Vec<Input> {
             continue;
         }
         let mut val = [0.0f64; tables::MAX_OUTPUTS];
-        let default = match (tables::DISPATCH[i])(&[], &mut val[..def.outputs.len()]) {
+        let default = match crate::engine().estimate(i, &[], &mut val[..def.outputs.len()]) {
             Ok(_) => val[0],
             Err(_) => continue,
         };

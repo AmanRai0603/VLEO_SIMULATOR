@@ -89,6 +89,31 @@ fn the_engine_runs_the_installed_graph_and_names_what_it_answers_from_it() {
     assert_eq!(vleo_modules::cases().len(), COMPILED.cases.len());
     run_compiled();
     assert!(std::ptr::eq(engine(), &COMPILED));
+
+    // The case's inputs, read from a graph whose rows have all moved: the
+    // first row gone, every other one place earlier than this build has it.
+    // Each input still says its own row's declared value, not its neighbour's.
+    let defaults = || -> std::collections::BTreeMap<&'static str, u64> {
+        vleo_modules::inputs::inputs(&vleo_modules::cases()[0])
+            .iter()
+            .map(|i| (i.id, i.default.to_bits()))
+            .collect()
+    };
+    let built = defaults();
+    let mut shifted = vleo_sheet::load_all(&root()).unwrap();
+    let first = shifted.ordered().first().unwrap().id.clone();
+    shifted.sheets.remove(&first);
+    run_on(opened::graph(&shifted).unwrap());
+    let moved = defaults();
+    run_compiled();
+    assert!(moved.len() > 100, "only {} inputs", moved.len());
+    for (id, v) in &moved {
+        assert_eq!(
+            Some(v),
+            built.get(id),
+            "{id}'s declared value is not its own"
+        );
+    }
 }
 
 #[test]
