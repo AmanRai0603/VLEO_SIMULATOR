@@ -314,3 +314,24 @@ fn children_that_are_not_the_group_s_are_refused_by_the_gate_by_name() {
         other => panic!("{other:?}"),
     }
 }
+
+#[test]
+fn each_graph_keeps_its_own_cases_answers_and_no_other_s() {
+    // A graph runs a row's cases once and keeps what they gave. Two graphs
+    // with the same row, one with its method changed, give that row's
+    // cases different answers, whichever is asked first and however often.
+    let id = "sys_space_environment_f10_7";
+    let same = opened::interpreting(&tree()).unwrap();
+    let mut t = tree();
+    t.sheets.get_mut(id).unwrap().method.text = "return crossing * 2".into();
+    let changed = opened::interpreting(&t).unwrap();
+    let k = same.find(id).unwrap();
+    assert_eq!(changed.find(id), Some(k));
+    let passes = |g: &Graph| g.fixture_verdicts(k).iter().all(|v| v.passed);
+    assert!(passes(same), "today's method reproduces its cases");
+    assert!(
+        !passes(changed),
+        "a doubled identity reproduces none of them"
+    );
+    assert!(passes(same), "and asking again gives the first graph's own");
+}
