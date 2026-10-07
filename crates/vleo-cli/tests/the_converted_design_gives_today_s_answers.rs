@@ -6,9 +6,9 @@
 //! The record of today's answers (`baseline/today.csv`) is made by the same
 //! recording, from the graph read through the files' inverse with every
 //! method in the interpreter. The blocks the conversion adds where a
-//! breakdown holds none are open, and the record of the rows that were there
-//! is held without them; what they add is held on its own: each is a row
-//! that is not run, by its own id, and nothing else moves.
+//! breakdown holds none are open and on record with the rest; what they add
+//! is held on its own too: each is a row that is not run, by its own id, and
+//! nothing else moves.
 
 mod baseline;
 
@@ -64,21 +64,13 @@ fn first_difference(on_record: &str, now: &str) -> String {
         )
 }
 
+/// The sheets, converted to their files, give today's answers, the open
+/// blocks the conversion proposes with them: today's answers are recorded
+/// from the design's files (`today_s_answers_are_on_record`).
 #[test]
-fn the_rows_that_were_there_give_today_s_answers_from_their_files() {
-    let added = proposed();
-    let without: Vec<(String, File)> = files()
-        .iter()
-        .filter(|(_, f)| {
-            !f.blocks.first().is_some_and(|b| {
-                f.kind().ok() == Some(vleo_files::meta::Kind::Node) && added.contains(&b.uid)
-            })
-        })
-        .cloned()
-        .collect();
-    assert_eq!(without.len(), files().len() - added.len());
+fn the_sheets_converted_give_today_s_answers() {
     let on_record = std::fs::read_to_string(record_path()).expect("baseline/today.csv");
-    let now = today(graph_of(&without));
+    let now = today(graph_of(files()));
     assert!(
         now == on_record,
         "the converted design does not give today's answers — {}",

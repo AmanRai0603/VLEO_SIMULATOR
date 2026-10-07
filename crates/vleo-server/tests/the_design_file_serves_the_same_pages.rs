@@ -56,13 +56,18 @@ fn the_file_and_the_folders_serve_the_same_pages() {
     let from_file = vleo_server::serve(Some(root()), 18941, false, true).expect("no server");
     std::env::remove_var("VLEO_DESIGN");
 
-    // Each says where it reads the design from.
+    // Each says where it reads the design from: the checkout's design/ and
+    // the design file are both the design's files.
     let (_, v) = get(folders, "/v1/version");
-    assert!(v.contains("\"from\":\"folders\""), "{v}");
+    assert!(v.contains("\"from\":\"file\""), "{v}");
     let (_, v) = get(from_file, "/v1/version");
     assert!(v.contains("\"from\":\"file\""), "{v}");
 
-    let tree = vleo_sheet::load_all(&root()).expect("the tree does not load");
+    let tree = vleo_sheet::load::load_all_from(
+        &*vleo_design::source(&root()).expect("the design opens"),
+        &root(),
+    )
+    .expect("the design does not load");
     let mut paths: Vec<String> = vec![
         "/v1/index".into(),
         "/v1/derisk".into(),

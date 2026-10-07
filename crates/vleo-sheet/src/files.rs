@@ -146,6 +146,50 @@ pub fn design_files(root: &Path) -> io::Result<Vec<String>> {
     Ok(out)
 }
 
+/// [`design_files`], as `files` holds them: the design's files read through
+/// whatever serves them, the folders on disk or the files of `design/`.
+pub fn design_files_in(files: &dyn Files, root: &Path) -> io::Result<Vec<String>> {
+    fn walk(files: &dyn Files, root: &Path, dir: &Path, out: &mut Vec<String>) -> io::Result<()> {
+        for p in files.entries(dir)? {
+            if files.is_dir(&p) {
+                walk(files, root, &p, out)?;
+            } else if files.is_file(&p) {
+                let rel = p
+                    .strip_prefix(root)
+                    .map_err(|e| io::Error::new(io::ErrorKind::InvalidInput, e))?;
+                let rel: Vec<String> = rel
+                    .components()
+                    .map(|c| c.as_os_str().to_string_lossy().into_owned())
+                    .collect();
+                let rel = rel.join("/");
+                if in_design(&rel) {
+                    out.push(rel);
+                }
+            }
+        }
+        Ok(())
+    }
+    let mut out = Vec::new();
+    for top in ["layers", "cases", "sources"] {
+        let d = root.join(top);
+        if files.is_dir(&d) {
+            walk(files, root, &d, &mut out)?;
+        }
+    }
+    for c in files.entries(&root.join("crates"))? {
+        let is_mod = c
+            .file_name()
+            .and_then(|n| n.to_str())
+            .is_some_and(|n| n.starts_with("vleo-mod-"));
+        if is_mod && files.is_dir(&c.join("nodes")) {
+            walk(files, root, &c.join("nodes"), &mut out)?;
+        }
+    }
+    out.sort();
+    out.dedup();
+    Ok(out)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
