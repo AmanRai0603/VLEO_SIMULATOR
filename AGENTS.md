@@ -169,7 +169,7 @@ use exactly as it is today, so nothing changes for anyone before the planned day
 - **`design/` is the design as its files,** converted from the sheets and held
   equal to them by a test. A change to a sheet converts it again in the same
   commit: delete `design/`, then `cargo run -p xtask -- convert --out design`
-  (`take` and `group-build` do it themselves).
+  (`intake`, `group-intake` and `build-node` do it themselves).
 - **`xtask explain <command>`** says what each of those commands reads, writes
   and checks, and how to undo it (`docs/PIPELINE.md`).
 

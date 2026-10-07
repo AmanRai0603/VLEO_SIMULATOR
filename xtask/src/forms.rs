@@ -230,6 +230,9 @@ pub(super) fn cmd_intake(root: &Path, args: &[&str]) -> Result<(), String> {
                     Err(format!("{e} — the new node was removed again"))
                 }
             })?;
+            run.step("the design's files, converted again", put_back(), || {
+                crate::convert::record_design(root).map(|said| ((), said))
+            })?;
             run.done(&format!(
                 "added: {} under {}. It is seeded: `cargo run -p xtask -- declare {}` says what is \
                  still open, and `cargo run -p xtask -- publish {}` generates its code once it is \
@@ -248,6 +251,9 @@ pub(super) fn cmd_intake(root: &Path, args: &[&str]) -> Result<(), String> {
                     "node.toml changed while the form was being checked. Run intake again".into(),
                 ),
                 vleo_sheet::form::Saved::Refused(e) => Err(e),
+            })?;
+            run.step("the design's files, converted again", put_back(), || {
+                crate::convert::record_design(root).map(|said| ((), said))
             })?;
             run.done(&format!(
                 "applied: review with `git diff`, and name {named} in the commit — the form is theirs."

@@ -385,13 +385,9 @@ pub fn cmd_take(root: &Path, args: &[&str]) -> Result<(), String> {
         }
         if args.contains(&"--no-test") {
             run.skip("today's answers, recorded again", "--no-test");
-            run.skip("the design's files, converted again", "--no-test");
         } else {
             run.step("today's answers, recorded again", half(), || {
                 record_today(root).map(|said| ((), said))
-            })?;
-            run.step("the design's files, converted again", half(), || {
-                crate::convert::record_design(root).map(|said| ((), said))
             })?;
         }
         if args.contains(&"--no-test") {

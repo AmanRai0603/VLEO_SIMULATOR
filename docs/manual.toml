@@ -3072,7 +3072,7 @@ who = "developer"
 
 [[folder]]
 name = "design"
-what = "The design as its files: each group's file and node files under design/groups/, each case under design/cases/, converted from the node sheets and held equal to them by a test until the sheets leave. Written by `cargo run -p xtask -- convert --out design`, and again by take and group-build; never edited by hand."
+what = "The design as its files: each group's file and node files under design/groups/, each case under design/cases/, converted from the node sheets and held equal to them by a test until the sheets leave. Written by `cargo run -p xtask -- convert --out design`, and again by intake, group-intake and build-node whenever they write a sheet; never edited by hand."
 who = "developer"
 
 [[folder]]
