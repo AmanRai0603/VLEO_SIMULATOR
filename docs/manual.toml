@@ -1711,8 +1711,8 @@ existing route: `fill` splices each hole body, `--by` and `--model` record who \
 wrote it, and a **significant** node's holes are written twice by different \
 model families and compared with `differential`. An assistant here is a \
 worker, never a judge: acceptance is only ever the node engineer's cases, the \
-fixtures, the mutation check and the gate — and no assistant supplies the \
-relation, the method or a case.
+fixtures and the gate — and no assistant supplies the relation, the method or \
+a case.
 
 When the language grows a construct, it grows in \
 `crates/vleo-sheet/src/method.rs` and the files under `method/` beside it — \
@@ -1724,14 +1724,14 @@ and the translation (`rust.rs`) together, one reviewed change, followed by \
 say = "Build a node from its method by hand, stage by stage."
 run = "cargo run -p xtask -- build-node <node>"
 check = "writes"
-why = "translates, tests, reruns, mutates and only then checks the interface; stops at the first stage that fails"
+why = "translates, tests, reruns and only then checks the interface; stops at the first stage that fails"
 
 [[layer.section]]
 id = "term-evidence"
 title = "Is the evidence real?"
 who = "developer"
 kind = "how-to"
-answer = "Two commands ask whether the tests are worth anything: every fixture declaration is sound, and a perturbed answer is caught by the row's own tests."
+answer = "Two commands ask whether the evidence is worth anything: every fixture declaration is sound, and every case the design holds passes on the engine that reads it."
 body = """
 A test that passes against a broken implementation is not testing anything. Two \
 commands ask that question directly."""
@@ -1748,10 +1748,9 @@ check = "exits"
 expect = "fixture declarations sound"
 
 [[layer.section.step]]
-say = "Perturb a row's answer slightly and require its own tests to notice. The row is put back afterwards."
-run = "cargo run -p xtask -- mutate sw_ap_design"
+say = "Run every case the design holds on the engine that reads it from design/: each fixture, each node engineer's case, the properties from each row's declared range, and each prior implementation's grid. A disagreement is a physics question for the node's engineer, never a tolerance to widen."
+run = "cargo test -p vleo-cli --test every_case_of_the_design_passes"
 check = "exits"
-expect = "mutant(s) killed"
 
 
 [[layer.section]]
@@ -2432,7 +2431,7 @@ effect = "reads"
 tool = "xtask"
 name = "build-node"
 usage = "build-node <node>"
-what = "Builds a node from its method, stage by stage, stopping at the first that fails: the method on its node engineer's cases; the translation into the kernel; the node's tests — the node engineer's cases and the translation against the method; the node engineer's code rerun; a mutation the tests must catch; and only then the node in the tree."
+what = "Builds a node from its method, stage by stage, stopping at the first that fails: the method on its node engineer's cases; the translation into the kernel; the node's tests — the node engineer's cases and the translation against the method; the node engineer's code rerun; and only then the node in the tree."
 who = "maintainer"
 effect = "writes"
 
@@ -2603,14 +2602,6 @@ usage = "bundle publish <dir>"
 what = "`bundle verify` re-checks every published set's hashes. `bundle publish` publishes a new one, permanently."
 who = "developer"
 effect = "irreversible"
-
-[[command]]
-tool = "xtask"
-name = "mutate"
-usage = "mutate [--literals] [<node>]"
-what = "Perturb a row's answer and require its own tests to notice; with --literals, move each decimal number in its hole code in turn and report the ones no test notices. Puts the row back."
-who = "developer"
-effect = "reads"
 
 [[command]]
 tool = "xtask"

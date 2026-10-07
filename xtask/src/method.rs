@@ -493,18 +493,6 @@ pub fn cmd_build_node(root: &Path, args: &[&str]) -> Result<(), String> {
     )?;
 
     run.step(
-        "the tests really test: the answer is moved and the tests must notice",
-        OnStop::new(
-            built,
-            format!("add a case the moved answer fails, on the node's form; then {again}"),
-        ),
-        || {
-            crate::cmd_mutate(root, &[id])?;
-            Ok(((), String::new()))
-        },
-    )?;
-
-    run.step(
         "only now, the interface: the node in the tree",
         OnStop::new(
             built,

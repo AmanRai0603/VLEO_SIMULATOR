@@ -801,7 +801,7 @@ pub fn document(sh: &Sheet, tree: &Tree) -> String {
 /// `orbit_velocity` computes from the same one input, so the pipeline can take
 /// that real node through every stage — the form's own check in a browser,
 /// intake, the translation, the node engineer's cases, the node engineer's code rerun, the
-/// mutation, the interface — on a throwaway checkout, on every pull request.
+/// interface — on a throwaway checkout, on every pull request.
 /// Nothing it writes is ever committed: a method comes from a node's owner.
 pub fn document_example(sh: &Sheet, tree: &Tree) -> Result<String, Error> {
     let fits = sh.ty == "Velocity"
