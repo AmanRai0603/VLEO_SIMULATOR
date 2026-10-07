@@ -55,16 +55,16 @@ fn tree(dir: &Path) -> Vec<(String, Vec<u8>)> {
     out
 }
 
-/// How many rows the tree has, as the design file counts them.
-fn vleo_sheet_rows() -> usize {
-    std::fs::read_dir(root().join("crates"))
+/// How many rows the design has, as the design file counts them: one node
+/// file each in `design/`, which the design file is written from.
+fn design_rows() -> usize {
+    std::fs::read_dir(root().join("design/groups"))
         .unwrap()
         .flatten()
-        .filter(|e| e.file_name().to_string_lossy().starts_with("vleo-mod-"))
-        .filter_map(|e| std::fs::read_dir(e.path().join("nodes")).ok())
+        .filter_map(|g| std::fs::read_dir(g.path().join("nodes")).ok())
         .map(|d| {
             d.flatten()
-                .filter(|n| n.path().join("node.toml").is_file())
+                .filter(|n| n.path().extension().is_some_and(|x| x == "vnode"))
                 .count()
         })
         .sum()
@@ -182,7 +182,7 @@ except ValueError as e:
     );
     assert!(py.status.success(), "{said}");
     assert!(said.contains("results 3 [132.0]"), "{said}");
-    let rows = vleo_sheet_rows();
+    let rows = design_rows();
     assert!(said.contains(&format!("rows {rows} {rows}")), "{said}");
     assert!(said.contains("sheet True"), "{said}");
     assert!(said.contains("a design file, not a results file"), "{said}");
