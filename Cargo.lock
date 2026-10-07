@@ -680,6 +680,7 @@ dependencies = [
  "vleo-files",
  "vleo-modules",
  "vleo-server",
+ "vleo-sheet",
 ]
 
 [[package]]

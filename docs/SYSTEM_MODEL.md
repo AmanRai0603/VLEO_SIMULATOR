@@ -207,7 +207,11 @@ one feeds the other. A mark above the diagonal feeds forward. A mark below it
 feeds back, and is a loop. It is a design structure matrix (Eppinger and
 Browning, 2012), and it is drawn from the wires, never separately.
 
-- **Every block has its own N2**, so the matrix opens to any depth. The main
+- **Every block has its own N2**, so the matrix opens to any depth. In the
+  design's files it is drawn from the wires, and so is every loop: rows that read
+  each other round a circle, the smallest block that holds them, and whether
+  that block declares them (`crates/vleo-files/src/n2.rs`). The design, converted
+  to its files, makes one loop, and it is the one declared. The main
   app already draws the whole tree's N2 with the hierarchy as nested boxes on
   the diagonal.
 - **A mark that leaves a box** is a connection that crosses a boundary, and

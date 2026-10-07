@@ -3008,7 +3008,7 @@ default = "found"
 
 [[env]]
 name = "VLEO_DESIGN"
-what = "A design file for the daemon to read the design from, in place of the one beside it or the folders of a checkout. A file that does not open stops the daemon, naming why: it never falls back to whatever folders sit beside it."
+what = "A design file for the daemon to read the design from, in place of the one beside it or the folders of a checkout; or a folder of the design converted to its files (`cargo run -p xtask -- convert`), its group, node and case files read as the folders they came from. A file or folder that does not open stops the daemon, naming why: it never falls back to whatever folders sit beside it. A converted design with rows this build has not, such as the open blocks the conversion adds, is refused, saying so, until the faces read the graph (docs/PLAN_1_0.md, phase E)."
 default = "design.vleo beside the tool, else the folders"
 
 [[env]]
