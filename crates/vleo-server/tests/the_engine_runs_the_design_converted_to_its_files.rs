@@ -1,8 +1,9 @@
 //! The tool opens the design converted to its files, and runs the engine on
 //! the graph read from them (docs/PLAN_1_0.md, phase E): `VLEO_DESIGN` names
 //! the folder the group, node and case files are in, laid out as the shared
-//! drive holds them. A file that states a row other than this engine answers
-//! it is refused, by name, as a design file is.
+//! drive holds them. A design other than the one this tool was released with
+//! runs as its files state it: a changed method answers by its own method, and
+//! a stated value outside its bounds is refused under its row's name.
 //!
 //! The faces name what the engine answers from the graph that runs, so a
 //! design with rows this build has not, the open blocks the conversion adds
@@ -29,7 +30,7 @@ fn write_all(files: &[(String, vleo_files::model::File)], dir: &Path) {
 }
 
 #[test]
-fn the_engine_runs_the_design_from_its_files_and_refuses_one_it_does_not_answer() {
+fn the_engine_runs_the_design_from_its_files_as_they_state_it() {
     let scratch = std::env::temp_dir().join(format!("vleo-converted-run-{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&scratch);
     std::fs::create_dir_all(&scratch).unwrap();
@@ -100,6 +101,32 @@ fn the_engine_runs_the_design_from_its_files_and_refuses_one_it_does_not_answer(
     assert!(
         before.is_some() && after.is_some() && before != after,
         "the changed method did not answer: {before:?} then {after:?}"
+    );
+
+    // One stated value changed in its file to below its bound: the design
+    // opens, and the row refuses, under its own name; nothing is published.
+    let mut low = files.clone();
+    let (_, f) = low
+        .iter_mut()
+        .find(|(p, _)| p.ends_with("/com_frequency.vnode"))
+        .unwrap();
+    let port = f
+        .ports
+        .iter_mut()
+        .find(|p| p.block_uid == "com_frequency" && p.direction == "out")
+        .unwrap();
+    assert_eq!(port.value, "8.2");
+    port.value = "0.01".into();
+    write_all(&low, &dir);
+    vleo_server::run_the_design(Some(root())).expect("a design with a value of its own");
+    let k = vleo_modules::Vleo::find("com_frequency").unwrap();
+    let e = format!(
+        "{:?}",
+        vleo_modules::probe(k, &[]).expect_err("a stated value below its bound")
+    );
+    assert!(
+        e.contains("OutOfDomain") && e.contains("com_frequency"),
+        "{e}"
     );
 
     // A folder with nothing of the design in it is refused, saying so.
