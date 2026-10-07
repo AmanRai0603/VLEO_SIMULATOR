@@ -40,7 +40,7 @@ return thermal_margin(t, lim)
 """
 by = ""
 transcribed_from = "crates/vleo-mod-closure/nodes/thm_margin/model.rs"
-checked_by = ""
+checked_by = "Aman Rai"
 
 [output]
 # The node's one answer. The variable id is the node id: one small

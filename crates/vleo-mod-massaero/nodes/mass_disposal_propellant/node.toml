@@ -43,7 +43,7 @@ return propellant_mass(m, dv, exhaust_velocity(220 [s]))
 """
 by = ""
 transcribed_from = "crates/vleo-mod-massaero/nodes/mass_disposal_propellant/model.rs"
-checked_by = ""
+checked_by = "Aman Rai"
 
 [output]
 # The node's one answer. The variable id is the node id: one small

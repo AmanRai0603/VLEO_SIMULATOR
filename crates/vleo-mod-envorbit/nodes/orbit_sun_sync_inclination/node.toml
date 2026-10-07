@@ -40,7 +40,7 @@ return sun_synchronous_inclination(r, e)
 """
 by = ""
 transcribed_from = "crates/vleo-mod-envorbit/nodes/orbit_sun_sync_inclination/model.rs"
-checked_by = ""
+checked_by = "Aman Rai"
 
 [output]
 # The node's one answer. The variable id is the node id: one small

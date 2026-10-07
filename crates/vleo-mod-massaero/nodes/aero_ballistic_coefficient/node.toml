@@ -44,7 +44,7 @@ return ballistic_coefficient(m, cd, a) / 1 [kg/m^2]
 """
 by = ""
 transcribed_from = "crates/vleo-mod-massaero/nodes/aero_ballistic_coefficient/model.rs"
-checked_by = ""
+checked_by = "Aman Rai"
 
 [output]
 # The node's one answer. The variable id is the node id: one small

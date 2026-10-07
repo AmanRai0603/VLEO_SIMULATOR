@@ -41,7 +41,7 @@ return k_of_n_availability(a, n, ceil(n * 0.8))
 """
 by = ""
 transcribed_from = "crates/vleo-mod-envorbit/nodes/mis_availability/model.rs"
-checked_by = ""
+checked_by = "Aman Rai"
 
 [output]
 # The node's one answer. The variable id is the node id: one small

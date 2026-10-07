@@ -268,7 +268,7 @@ return f107_hot_long
 """
 by = ""
 transcribed_from = "crates/vleo-mod-solar/nodes/l3_solar_interface/model.rs"
-checked_by = ""
+checked_by = "Aman Rai"
 
 [output]
 symbol = "F107_hotmean"

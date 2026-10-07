@@ -42,7 +42,7 @@ return 3 * pointing_error_rss(sen, ali, ctl, thm)
 """
 by = ""
 transcribed_from = "crates/vleo-mod-acs/nodes/gnc_pointing_error/model.rs"
-checked_by = ""
+checked_by = "Aman Rai"
 
 [output]
 # The node's one answer. The variable id is the node id: one small

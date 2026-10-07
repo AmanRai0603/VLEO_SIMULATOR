@@ -40,7 +40,7 @@ return ionisation_power(mi, m, eps)
 """
 by = ""
 transcribed_from = "crates/vleo-mod-prop/nodes/prop_ionisation_power/model.rs"
-checked_by = ""
+checked_by = "Aman Rai"
 
 [output]
 # The node's one answer. The variable id is the node id: one small

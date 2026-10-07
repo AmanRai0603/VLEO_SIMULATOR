@@ -44,7 +44,7 @@ return max(0.3, 1 + k * 1 [1/K] * (t - 298.15 [K]))
 """
 by = ""
 transcribed_from = "crates/vleo-mod-power/nodes/pwr_cell_derating/model.rs"
-checked_by = ""
+checked_by = "Aman Rai"
 
 [output]
 # The node's one answer. The variable id is the node id: one small

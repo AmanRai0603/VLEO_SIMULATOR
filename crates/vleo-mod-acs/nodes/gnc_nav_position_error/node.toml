@@ -40,7 +40,7 @@ return navigation_position_error(u, g)
 """
 by = ""
 transcribed_from = "crates/vleo-mod-acs/nodes/gnc_nav_position_error/model.rs"
-checked_by = ""
+checked_by = "Aman Rai"
 
 [output]
 # The node's one answer. The variable id is the node id: one small

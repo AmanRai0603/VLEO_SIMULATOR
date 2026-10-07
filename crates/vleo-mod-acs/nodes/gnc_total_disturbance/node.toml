@@ -42,7 +42,7 @@ return total_disturbance_torque(ta, tg, ts, tm)
 """
 by = ""
 transcribed_from = "crates/vleo-mod-acs/nodes/gnc_total_disturbance/model.rs"
-checked_by = ""
+checked_by = "Aman Rai"
 
 [output]
 # The node's one answer. The variable id is the node id: one small

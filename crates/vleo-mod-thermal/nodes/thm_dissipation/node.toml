@@ -45,7 +45,7 @@ return max(0, dem - pj - tx)
 """
 by = ""
 transcribed_from = "crates/vleo-mod-thermal/nodes/thm_dissipation/model.rs"
-checked_by = ""
+checked_by = "Aman Rai"
 
 [output]
 # The node's one answer. The variable id is the node id: one small

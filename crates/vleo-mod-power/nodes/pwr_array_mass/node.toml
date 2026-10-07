@@ -42,7 +42,7 @@ return array_mass(a, s * 1 [kg/m^2])
 """
 by = ""
 transcribed_from = "crates/vleo-mod-power/nodes/pwr_array_mass/model.rs"
-checked_by = ""
+checked_by = "Aman Rai"
 
 [output]
 # The node's one answer. The variable id is the node id: one small

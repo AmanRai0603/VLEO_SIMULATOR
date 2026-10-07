@@ -43,7 +43,7 @@ return atomic_oxygen_fluence(n_o, v, t) / 1 [1/m^2]
 """
 by = ""
 transcribed_from = "crates/vleo-mod-massaero/nodes/aero_ao_fluence/model.rs"
-checked_by = ""
+checked_by = "Aman Rai"
 
 [output]
 # The node's one answer. The variable id is the node id: one small

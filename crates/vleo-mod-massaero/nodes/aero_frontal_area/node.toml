@@ -41,7 +41,7 @@ return 0.25 * PI * d * d + a_app
 """
 by = ""
 transcribed_from = "crates/vleo-mod-massaero/nodes/aero_frontal_area/model.rs"
-checked_by = ""
+checked_by = "Aman Rai"
 
 [output]
 # The node's one answer. The variable id is the node id: one small

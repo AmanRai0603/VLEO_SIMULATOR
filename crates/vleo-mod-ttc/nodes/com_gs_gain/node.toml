@@ -40,7 +40,7 @@ return aperture_gain_db(d, f, e)
 """
 by = ""
 transcribed_from = "crates/vleo-mod-ttc/nodes/com_gs_gain/model.rs"
-checked_by = ""
+checked_by = "Aman Rai"
 
 [output]
 # The node's one answer. The variable id is the node id: one small

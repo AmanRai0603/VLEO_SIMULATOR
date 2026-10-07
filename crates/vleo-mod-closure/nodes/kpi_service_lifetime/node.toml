@@ -42,7 +42,7 @@ return margin_at_least(req, ach)
 """
 by = ""
 transcribed_from = "crates/vleo-mod-closure/nodes/kpi_service_lifetime/model.rs"
-checked_by = ""
+checked_by = "Aman Rai"
 
 [output]
 # The node's one answer. The variable id is the node id: one small

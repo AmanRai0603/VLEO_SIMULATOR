@@ -103,3 +103,11 @@ strip = "symbols"
 opt-level = 0
 [profile.dev.package."*"]
 opt-level = 2
+# The kernel too: a probe far outside every range runs a production run or a
+# binomial four billion units long, and unoptimised that is minutes a test.
+# Optimising changes no answer: the compiler neither reorders nor fuses
+# floating-point arithmetic, and baseline/ holds every answer to the bit.
+[profile.dev.package.vleo-units]
+opt-level = 2
+[profile.dev.package.vleo-core]
+opt-level = 2

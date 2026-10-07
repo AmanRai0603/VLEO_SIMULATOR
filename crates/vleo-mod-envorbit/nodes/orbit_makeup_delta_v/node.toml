@@ -42,7 +42,7 @@ return drag_makeup_delta_v(a_drag, 31557600 [s])
 """
 by = ""
 transcribed_from = "crates/vleo-mod-envorbit/nodes/orbit_makeup_delta_v/model.rs"
-checked_by = ""
+checked_by = "Aman Rai"
 
 [output]
 # The node's one answer. The variable id is the node id: one small

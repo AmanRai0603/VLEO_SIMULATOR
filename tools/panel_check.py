@@ -125,6 +125,15 @@ class Server:
         # not whatever case is saved on the machine running the check.
         case = Path(tempfile.mkdtemp(prefix="vleo-panel-case-")) / "inputs.csv"
         env = dict(os.environ, VLEO_PORT=str(self.port), VLEO_CASE=str(case))
+        # Built first, to the end: the wait below is for the daemon to serve,
+        # and a build from a cold tree (the self-test's copy has none) can
+        # take longer than that wait on a slow runner.
+        built = subprocess.run(
+            ["cargo", "build", "-q", "--release", "-p", "vleo-daemon"],
+            cwd=self.root, env=env,
+        )
+        if built.returncode != 0:
+            raise SystemExit("the daemon does not build")
         self.proc = subprocess.Popen(
             ["cargo", "run", "-q", "--release", "-p", "vleo-daemon"],
             cwd=self.root, env=env,

@@ -40,7 +40,7 @@ return pointing_to_ground_error(s, d)
 """
 by = ""
 transcribed_from = "crates/vleo-mod-acs/nodes/gnc_ground_pointing_error/model.rs"
-checked_by = ""
+checked_by = "Aman Rai"
 
 [output]
 # The node's one answer. The variable id is the node id: one small

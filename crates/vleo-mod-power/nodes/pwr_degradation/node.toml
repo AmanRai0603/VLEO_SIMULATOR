@@ -40,7 +40,7 @@ return array_degradation(d, t / 31557600 [s])
 """
 by = ""
 transcribed_from = "crates/vleo-mod-power/nodes/pwr_degradation/model.rs"
-checked_by = ""
+checked_by = "Aman Rai"
 
 [output]
 # The node's one answer. The variable id is the node id: one small

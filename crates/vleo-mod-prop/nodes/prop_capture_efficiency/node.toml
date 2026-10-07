@@ -50,7 +50,7 @@ return intake_collection_efficiency(n, v, a_in, a_out, eta_geo, beta, t_c, m)
 """
 by = ""
 transcribed_from = "crates/vleo-mod-prop/nodes/prop_capture_efficiency/model.rs"
-checked_by = ""
+checked_by = "Aman Rai"
 
 [output]
 # The node's one answer. The variable id is the node id: one small

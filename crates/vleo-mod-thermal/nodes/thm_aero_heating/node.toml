@@ -43,7 +43,7 @@ return free_molecular_heating(rho, v, a, 0.9)
 """
 by = ""
 transcribed_from = "crates/vleo-mod-thermal/nodes/thm_aero_heating/model.rs"
-checked_by = ""
+checked_by = "Aman Rai"
 
 [output]
 # The node's one answer. The variable id is the node id: one small

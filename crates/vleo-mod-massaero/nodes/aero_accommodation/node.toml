@@ -46,7 +46,7 @@ return accommodation_coefficient(n_o, t_inf)
 """
 by = ""
 transcribed_from = "crates/vleo-mod-massaero/nodes/aero_accommodation/model.rs"
-checked_by = ""
+checked_by = "Aman Rai"
 
 [output]
 # The node's one answer. The variable id is the node id: one small

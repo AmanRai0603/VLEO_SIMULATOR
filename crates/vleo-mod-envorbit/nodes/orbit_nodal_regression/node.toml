@@ -40,7 +40,7 @@ return nodal_regression(r, e, i)
 """
 by = ""
 transcribed_from = "crates/vleo-mod-envorbit/nodes/orbit_nodal_regression/model.rs"
-checked_by = ""
+checked_by = "Aman Rai"
 
 [output]
 # The node's one answer. The variable id is the node id: one small

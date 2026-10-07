@@ -23,7 +23,7 @@ mod baseline;
 
 use std::sync::OnceLock;
 
-use baseline::{record_path, root, today};
+use baseline::{first_difference, methods_record, record_path, root, the_graph, today};
 use vleo_modules::core_engine::graph::Behaviour;
 use vleo_modules::{opened, Graph, COMPILED};
 
@@ -201,4 +201,43 @@ fn every_method_answers_and_refuses_as_its_translation_does() {
         }
     }
     assert!(compared > 32 * 6, "only {compared} comparisons");
+}
+
+/// The graph read from the design's files, held to the graph on record
+/// (`baseline/graph.txt`) node for node, variable for variable and case for
+/// case. It is recorded with today's answers
+/// (`today_s_answers_are_on_record`), and the record was written while the
+/// compiled graph still existed and was that graph exactly.
+#[test]
+fn the_graph_read_at_run_time_is_the_graph_on_record() {
+    let on_record =
+        std::fs::read_to_string(root().join("baseline/graph.txt")).expect("baseline/graph.txt");
+    let now = the_graph(read());
+    assert!(
+        now == on_record,
+        "the graph read from the design's files is not the graph on record — {}",
+        first_difference(&on_record, &now)
+    );
+}
+
+/// Every method, run by the interpreter, against what it answers on record
+/// (`baseline/methods.csv`), to the bit or the same fault: at its fixtures
+/// and at inputs today's answers never reach. The record is written with
+/// today's answers, by the graph a face runs, which takes each method's
+/// translation while this build has them.
+#[test]
+fn every_method_answers_and_refuses_as_on_record() {
+    let g = read();
+    let on_record =
+        std::fs::read_to_string(root().join("baseline/methods.csv")).expect("baseline/methods.csv");
+    assert!(
+        on_record.lines().count() > 32 * 6,
+        "baseline/methods.csv is too short"
+    );
+    let now = methods_record(g, |k, t| g.probe(k as u16, t));
+    assert!(
+        now == on_record,
+        "a method does not answer as on record — {}",
+        first_difference(&on_record, &now)
+    );
 }

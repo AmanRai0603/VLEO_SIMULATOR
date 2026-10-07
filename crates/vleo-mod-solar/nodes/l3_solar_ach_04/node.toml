@@ -140,7 +140,7 @@ return margin_at_most(req, ach)
 """
 by = ""
 transcribed_from = "crates/vleo-mod-solar/nodes/l3_solar_ach_04/model.rs"
-checked_by = ""
+checked_by = "Aman Rai"
 
 [output]
 # The node's one answer. The variable id is the node id: one small

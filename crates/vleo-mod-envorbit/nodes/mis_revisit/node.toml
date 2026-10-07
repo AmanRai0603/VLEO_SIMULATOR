@@ -45,7 +45,7 @@ return mean_revisit_time(w, v, n)
 """
 by = ""
 transcribed_from = "crates/vleo-mod-envorbit/nodes/mis_revisit/model.rs"
-checked_by = ""
+checked_by = "Aman Rai"
 
 [output]
 # The node's one answer. The variable id is the node id: one small

@@ -43,7 +43,7 @@ return jet_power(t, mi)
 """
 by = ""
 transcribed_from = "crates/vleo-mod-prop/nodes/prop_jet_power/model.rs"
-checked_by = ""
+checked_by = "Aman Rai"
 
 [output]
 # The node's one answer. The variable id is the node id: one small
