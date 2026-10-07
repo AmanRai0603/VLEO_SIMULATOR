@@ -172,7 +172,7 @@ record!(
     Port = "port" {
         block_uid: String, direction: String, name: String, symbol: String, port_type: String,
         unit: String, lower: String, upper: String, range_reason: String,
-        state: String, maturity: String, value: String, choices: String,
+        state: String, maturity: String, parameter: String, value: String, choices: String,
         bundle: String, open_owner: String, open_due: String, says: String, ord: i64,
     }
 );
@@ -280,7 +280,7 @@ pub const ALLOWED: &[(&str, &str, &[&str])] = &[
     (
         "block",
         "behaviour",
-        &["method", "children", "stated", "lookup", "open"],
+        &["method", "children", "stated", "lookup", "open", "built-in"],
     ),
     (
         "block",
@@ -313,6 +313,11 @@ pub const ALLOWED: &[(&str, &str, &[&str])] = &[
         "port",
         "maturity",
         &["", "estimated", "calculated", "measured"],
+    ),
+    (
+        "port",
+        "parameter",
+        &["", "programme", "system", "subsystem"],
     ),
     ("closure", "sense", &["<=", ">="]),
     (

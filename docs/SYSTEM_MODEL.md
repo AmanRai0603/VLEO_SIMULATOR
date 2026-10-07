@@ -73,6 +73,19 @@ way, installed and from the design's files (`crates/vleo-core/src/graph.rs`,
 The gate refuses a sheet whose table cannot be read or whose children are not
 its group's, by name.
 
+In the files (`crates/vleo-files/src/schema.sql`) a block's `behaviour` is
+written the same way, `built-in` among them. The design becomes its files once,
+at the switch-over, by `cargo run -p xtask -- convert`
+(`crates/vleo-files/src/convert.rs`): the programme's branch, the systems
+branch and each subsystem group's, each a group file with a node file per row.
+Read back as the folders, they are the tree they were converted from, except
+for four things the conversion is for: each subsystem group hangs from the
+block it mounts on (section 8), the architecture's loop is declared on the
+smallest block that holds it (section 5), every stated value is a parameter
+of the level whose branch states it (section 6), and the five blocks the
+breakdown does not hold yet are there as open blocks, each saying why (section
+8).
+
 **A block sees inside its children only through their inputs and outputs.**
 This is the rule "a layer reads the one below it only through a closure",
 applied at every depth instead of at three fixed floors.
@@ -406,9 +419,19 @@ group may break down differently; its subsystem engineer decides.
 | Payload and multi-payload | each payload's accommodation: power, data, pointing, mass |
 | Mass and aero | mass budget · drag area and shape · centre of mass and inertia |
 | Structure | primary structure · secondary structure · mechanisms and deployments · launch adapter interface |
-| Environment and orbit | atmospheric density · orbit geometry and lifetime · atomic oxygen and radiation |
+| Environment and orbit | atmospheric density · orbit geometry and lifetime · atomic oxygen · radiation environment |
 | Solar weather | already broken down: 65 blocks, F10.7, Ap and Kp design levels, cycle, forecast, storms |
 | Closure and cost | the 12 KPI closures · cost per operational year |
+
+Most of these each group's own rows already hold, under other names: the
+station-keeping delta-v is the drag make-up, the deorbit delta-v the disposal,
+the relative performance error the pointing stability. The design, converted to
+its files, carries the breakdown as its owners wrote it, and adds only the five
+blocks no row of theirs holds yet: the radiation environment; flight software's
+modes and autonomy, and fault detection and recovery; structure's mechanisms
+and deployments, and launch adapter interface. Each is an open block saying why
+it was proposed (`crates/vleo-files/src/convert.rs`, `PROPOSED`), for its owner
+to confirm, rename, break down or remove.
 
 ## 9 · Where this model breaks
 

@@ -563,6 +563,17 @@ pub(crate) const PIPELINE: &[Cmd] = &[
         dry: Dry::Plan,
     },
     Cmd {
+        name: "convert",
+        stage: "release",
+        reads: "every file of the tree the loader reads: the node folders, the layers, the cases and the source list",
+        writes: "target/converted/, or an empty --out: groups/<group>/<group>.vgroup, groups/<group>/nodes/<node>.vnode, cases/<case>.vcase",
+        checks: "that the tree loads, converts, and loads again from the files it was converted to",
+        undo: "delete the folder it wrote; nothing in the repository changes",
+        code: ("xtask/src/convert.rs", "cmd_convert"),
+        steps: &[],
+        dry: Dry::Plan,
+    },
+    Cmd {
         name: "bundle",
         stage: "release",
         reads: "a bundle's payload files",

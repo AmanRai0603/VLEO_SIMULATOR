@@ -234,11 +234,34 @@ This is the last time the design passes through the code.
   - Each row's layer becomes its perspective tag.
   - Each group mounts on its system block, with its mount drawn from today's
     interface rows (`docs/SYSTEM_MODEL.md`, section 8).
-  - The proposed next level is added as open blocks.
+  - The breakdown is carried as its owners wrote it. The 1,076 rows not filled
+    yet are part of it: each has its name, place, owner and role, and becomes an
+    open block, refused by name if a run reaches it, never given a value.
+  - Only the blocks the breakdown does not hold yet are added, as open blocks
+    each saying why, for its owner to confirm or remove: five of the next level
+    `docs/SYSTEM_MODEL.md` proposes. A regrouping of the rows already there is
+    proposed separately, group by group, and changes nothing until you accept
+    it.
   - Today's parameters are placed at the level that owns them.
-- The relations still in code are gathered into one crate, keyed by node id. The
-  node sheets, the layer files and the generators that read them leave the
-  repository's build, and their checks now run in the library.
+- **Nothing of the design stays in code (your word).** The 158 relations still in
+  code move into the design as methods:
+  - the toolbox functions they call are opened to the method language: the
+    formulas stay in the kernel, and which one a node uses, with which inputs
+    and constants, becomes the node's method;
+  - each is transcribed, declared `transcribed` with its source, and held by the
+    parity gate to the code it replaces, to the bit, at every case, both ends of
+    every range and on bad inputs; it waits for your signature, given in the
+    application before "Ship 1.0.0";
+  - a solar-weather relation moves exactly, whatever the language needs. Any
+    other that cannot be transcribed exactly loses its relation and keeps its
+    block, open, with the expression and source it had, for its group to write
+    again;
+  - then the built-in code is deleted.
+- **Freeze and switch (your word), at the end of E.** The converted files become
+  the design's only source, and the design is frozen until 1.0.0. The node
+  sheets, the layer files, the generators, the `vleo-mod-*` crates, today's
+  loop and its commands, and today's pages leave the repository then, not at H.
+  The application in F is built on the real converted design.
 - The repository's tests keep the example group, and a copy of the converted
   design as the regression for W15.
 
@@ -252,12 +275,26 @@ methods.
 **Done when**:
 - the converted design passes the parity gate;
 - its N2 shows the one declared loop;
-- the repository builds and tests with no node sheet in it.
+- no relation of the design is in code: each is a method waiting for its
+  signature, or an open block saying why;
+- the repository builds and tests with no node sheet, layer file or node crate
+  in it.
 
 ### F · The application
 
 One application, installed and as a page from the drive, with the same screens.
 It knows each person by their key, and opens on My work.
+
+**Built in this order (your word),** each workflow proved end to end in CI as it
+lands, and all of it in 1.0.0: the shell and the key; Explore; Node, with the
+breakdown itself edited there; System at the subsystem's valve, then the
+system engineer's; Programme; then the easier ways of bringing data in.
+
+**Growing the breakdown is the core of it.** The design is broken down as far as
+it is understood, and goes deeper as understanding grows. So a block is added,
+broken down, moved, renamed, split, folded back or removed in the application,
+by its owner, with its history saying why. An open block is filled a part at a
+time, and every branch shows what is still open.
 
 - **My work:** everything that needs the person now, at their valve.
 - **Node workspace:** W3, the node engineer's side of W4 and W13.
@@ -337,9 +374,8 @@ application does another fails before anyone reads it.
 
 One planned day. Nothing is overwritten.
 
-1. **Freeze.** Groups are told the date; work in progress is sealed or held.
-2. **Convert.** The developer converts the design for the last time (phase E),
-   and parity is checked once more on the day.
+1. **Freeze.** The design has been frozen since its conversion at the end of E.
+2. **Parity, once more.** The converted design gives today's answers on the day.
 3. **A new drive beside the old one.** The new layout is built as *Vleo
    Database*, beside today's, which becomes *Vleo Database (0.4, read only)* and
    is kept for a month.
@@ -420,6 +456,8 @@ day itself.
 - Number and parameter ports only in 1.0.
 - One engine in the page, for the installed application too.
 - Each phase's merge.
+- Your signature on each relation transcribed into a method, in the application.
+- The regrouping proposed for the breakdown, item by item.
 - The switch-over date.
 - "Ship 1.0.0".
 

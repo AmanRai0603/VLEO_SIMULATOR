@@ -11,6 +11,7 @@ use std::process::ExitCode;
 use vleo_sheet::{emit, gate, load_all, page, Tree};
 
 mod catalogue;
+mod convert;
 mod design;
 mod files;
 mod fills;
@@ -129,6 +130,7 @@ pub(crate) fn dispatch(root: &Path, cmd: &str, rest: &[&str]) -> Result<(), Stri
         "release" => cmd_release(&root, &rest),
         "kit" => cmd_kit(&root, &rest),
         "design" => design::cmd_design(&root, &rest),
+        "convert" => convert::cmd_convert(&root, &rest),
         "take" => flow::cmd_take(&root, &rest),
         "guides" => cmd_guides(&root),
         "preview" => flow::cmd_preview(&root, &rest),
@@ -305,6 +307,11 @@ cargo xtask <command>
   design --check <file>
                      the file held to the tree: each file against its SHA-256,
                      the fingerprint, and every file against the folders.
+  convert [--out <dir>]
+                     the design as its files (docs/PLAN_1_0.md, phase E): each
+                     branch's group file and node files, each case, as the
+                     shared drive holds them, read back to show they are the
+                     tree. To target/converted/, or an empty --out.
   readers [--out <dir>]
                      the docs folder for readers: every row's page and every
                      lesson, read with no tool running — from a shared drive or
