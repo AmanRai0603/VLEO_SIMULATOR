@@ -301,8 +301,18 @@ pub const CHECKER_SOURCES: &[&str] = &[
     "crates/vleo-sheet/src/lesson.rs",
     // The kernel functions a method may call, compiled into the checker with
     // it: a corrected formula there changes what a form computes.
+    "crates/vleo-core/src/physics/aero.rs",
+    "crates/vleo-core/src/physics/comms.rs",
+    "crates/vleo-core/src/physics/cost.rs",
     "crates/vleo-core/src/physics/env.rs",
+    "crates/vleo-core/src/physics/gnc.rs",
+    "crates/vleo-core/src/physics/mass.rs",
+    "crates/vleo-core/src/physics/mission.rs",
     "crates/vleo-core/src/physics/orbit.rs",
+    "crates/vleo-core/src/physics/payload.rs",
+    "crates/vleo-core/src/physics/power.rs",
+    "crates/vleo-core/src/physics/prop.rs",
+    "crates/vleo-core/src/physics/thermal.rs",
     "crates/vleo-core/src/math/integrate.rs",
     "crates/vleo-units/src/pmath.rs",
     "crates/vleo-units/src/method_rt.rs",

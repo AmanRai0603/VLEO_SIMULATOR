@@ -340,7 +340,40 @@ impl Checker<'_> {
             return None;
         }
         let mut ok = true;
+        // Every `~` argument in the unit of the first one given.
+        let mut alike: Option<(Dim, &str)> = None;
         for (a, (an, au)) in args.iter().zip(k.args) {
+            if *au == ANY {
+                let t = self.expr(a)?;
+                if matches!(t, Ty::Zero) {
+                    continue;
+                }
+                let Some(d) = t.dim() else {
+                    ok = false;
+                    self.err(
+                        line,
+                        format!("{}: {an} is a condition, not a value", k.name),
+                    );
+                    continue;
+                };
+                match alike {
+                    None => alike = Some((d, an)),
+                    Some((first, by)) if first != d => {
+                        ok = false;
+                        self.err(
+                            line,
+                            format!(
+                                "{}: {an} is in [{}] and {by} in [{}]; the kernel takes them in one unit",
+                                k.name,
+                                dim_text(d),
+                                dim_text(first)
+                            ),
+                        );
+                    }
+                    Some(_) => {}
+                }
+                continue;
+            }
             let want = parse_unit(au).map(|u| u.1).unwrap_or(Dim::NONE);
             match self.expr(a)? {
                 Ty::Zero => {}

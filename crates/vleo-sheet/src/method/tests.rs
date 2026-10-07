@@ -374,6 +374,123 @@ fn a_kernel_function_is_called_by_name_with_its_units_checked() {
     );
 }
 
+#[test]
+fn every_kernel_function_takes_and_gives_the_number_the_kernel_reads() {
+    // A method holds every value in SI. An argument declared in a unit that
+    // is not SI would hand the kernel a number a thousand times off, and the
+    // checker would call it right.
+    let mut names = std::collections::BTreeSet::new();
+    for k in KERNEL_FUNCTIONS {
+        assert!(names.insert(k.name), "{} twice", k.name);
+        assert!(
+            function(k.name).is_none(),
+            "{} is a function of the language too",
+            k.name
+        );
+        assert!(
+            KERNEL_CONSTANTS.iter().all(|c| c.name != k.name),
+            "{} is a constant too",
+            k.name
+        );
+        for (a, u) in k.args.iter().chain([&("the answer", k.out)]) {
+            if *u == ANY {
+                continue;
+            }
+            let (factor, _) =
+                parse_unit(u).unwrap_or_else(|e| panic!("{}: {a} in [{u}]: {e}", k.name));
+            assert_eq!(factor, 1.0, "{}: {a} in [{u}] is not the SI unit", k.name);
+        }
+        assert!(!k.meaning.is_empty() && !k.kernel.is_empty(), "{}", k.name);
+    }
+}
+
+#[test]
+fn the_toolbox_runs_the_kernel_itself_with_the_constants_the_method_writes() {
+    use vleo_units::{Angle, Area, Length};
+    // A stated number in a pure port, given its unit where the kernel reads it.
+    let s = sig(&[("a", "Area"), ("s", "Ratio")], "Mass");
+    let p = compile("return array_mass(a, s * 1 [kg/m^2])", &s).unwrap_or_else(|e| panic!("{e:?}"));
+    let Outcome::Answer(m) = run(&p, &[("a".into(), 2.5), ("s".into(), 3.1)]).unwrap() else {
+        panic!("no answer")
+    };
+    let kernel = vleo_core::physics::power::array_mass(Area::new(2.5), 3.1).get();
+    assert_eq!(m.to_bits(), kernel.to_bits());
+    // Without it, the checker says which argument and in what unit.
+    let e = errors("return array_mass(a, s)", &s);
+    assert!(
+        e.iter().any(|m| m.contains(
+            "areal_density is in [dimensionless] here, and the kernel takes it in [kg/m^2]"
+        )),
+        "{e:?}"
+    );
+    // A constant the code held out of sight is written in the method, in its
+    // unit: the gravity-gradient torque at ten degrees of pitch.
+    let s = sig(
+        &[("r", "Length"), ("imax", "Ratio"), ("imin", "Ratio")],
+        "Torque",
+    );
+    let src = "return gravity_gradient_torque(r, imax * 1 [kg.m^2], imin * 1 [kg.m^2], 10 [deg])";
+    let p = compile(src, &s).unwrap_or_else(|e| panic!("{e:?}"));
+    let i = [
+        ("r".into(), 6.6e6),
+        ("imax".into(), 40.0),
+        ("imin".into(), 12.0),
+    ];
+    let Outcome::Answer(t) = run(&p, &i).unwrap() else {
+        panic!("no answer")
+    };
+    let kernel = vleo_core::physics::gnc::gravity_gradient_torque(
+        Length::new(6.6e6),
+        40.0,
+        12.0,
+        Angle::from_deg(10.0),
+    )
+    .get();
+    assert_eq!(t.to_bits(), kernel.to_bits());
+}
+
+#[test]
+fn a_closure_takes_its_two_values_in_any_one_unit_and_says_which_way_it_binds() {
+    let s = sig(&[("req", "Time"), ("ach", "Time")], "Ratio");
+    let p = compile("return margin_at_most(req, ach)", &s).unwrap_or_else(|e| panic!("{e:?}"));
+    let Outcome::Answer(m) = run(&p, &[("req".into(), 100.0), ("ach".into(), 80.0)]).unwrap()
+    else {
+        panic!("no answer")
+    };
+    assert_eq!(m, 0.2);
+    let p = compile("return margin_at_least(req, ach)", &s).unwrap();
+    let Outcome::Answer(m) = run(&p, &[("req".into(), 100.0), ("ach".into(), 80.0)]).unwrap()
+    else {
+        panic!("no answer")
+    };
+    assert_eq!(m, -0.2);
+    // Two values in different units are not one requirement.
+    let s = sig(&[("req", "Time"), ("ach", "Mass")], "Ratio");
+    let e = errors("return margin_at_most(req, ach)", &s);
+    assert!(
+        e.iter()
+            .any(|m| m.contains("achieved is in [kg] and required in [s]")),
+        "{e:?}"
+    );
+}
+
+#[test]
+fn a_kernel_function_with_no_answer_refuses_in_its_own_words() {
+    let s = sig(&[("r", "Length"), ("e", "Ratio")], "Angle");
+    let p = compile("return sun_synchronous_inclination(r, e)", &s).unwrap();
+    let Outcome::Answer(i) = run(&p, &[("r".into(), 6.778e6), ("e".into(), 0.0)]).unwrap() else {
+        panic!("no answer at 400 km")
+    };
+    assert!((i.to_degrees() - 97.0).abs() < 0.5, "{}", i.to_degrees());
+    // Far enough out, no inclination regresses the node with the Sun.
+    let e = run(&p, &[("r".into(), 2.0e7), ("e".into(), 0.0)]).unwrap_err();
+    assert!(
+        e.msg
+            .contains("no inclination gives Sun-synchronous regression"),
+        "{e:?}"
+    );
+}
+
 /// A node that publishes two members beside its answer.
 fn publishing() -> Signature {
     let mut s = sig(&[("x", "Length")], "Length");

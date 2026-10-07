@@ -67,7 +67,9 @@ pub fn reference_md() -> String {
         "\n## Kernel functions\n\nRelations too long to write as a formula — an integral up the \
          atmosphere, a decay over many orbits — already live in the kernel, reviewed once. A method \
          calls them by name, each argument in the unit shown; the checker holds the units, and the \
-         engine runs the kernel itself, so the method and the built node cannot differ.\n\n\
+         engine runs the kernel itself, so the method and the built node cannot differ. An \
+         argument in `[~]` takes any unit, so long as every `[~]` argument of the call is in the \
+         same one; a function that can find no answer refuses, in the words shown.\n\n\
          | Call | Answer | Meaning | In the kernel |\n|---|---|---|---|\n",
     );
     for k in KERNEL_FUNCTIONS {
@@ -78,7 +80,11 @@ pub fn reference_md() -> String {
             k.name,
             args.join(", "),
             k.out,
-            k.meaning,
+            if k.refuses.is_empty() {
+                k.meaning.to_string()
+            } else {
+                format!("{}; refuses: «{}»", k.meaning, k.refuses)
+            },
             k.kernel
         );
     }

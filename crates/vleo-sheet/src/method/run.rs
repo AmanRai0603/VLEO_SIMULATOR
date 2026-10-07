@@ -150,7 +150,11 @@ impl Machine<'_> {
         }
         let l = line as u32;
         if let Some(k) = kernel_function(name) {
-            return Ok((k.eval)(&a));
+            let v = (k.eval)(&a);
+            if v.is_nan() && !k.refuses.is_empty() {
+                return Err(Diag::err(line, k.refuses));
+            }
+            return Ok(v);
         }
         match implementation(name) {
             Some(Impl::Plain1(f, _)) => Ok(f(a[0])),
