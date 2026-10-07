@@ -1077,6 +1077,24 @@ pub fn gate_node(sh: &Sheet, tree: &Tree) -> Vec<Check> {
                 break;
             }
         }
+        // A method says the same in its own words: its one line of code is
+        // `return` of its one input. Read from its lines, not its comments,
+        // as the sense is; the relation is the method once the code is gone.
+        let code: Vec<&str> = sh
+            .method
+            .text
+            .lines()
+            .map(|l| l.split('#').next().unwrap_or_default().trim())
+            .filter(|l| !l.is_empty())
+            .collect();
+        if let [only] = code.as_slice() {
+            if let Some(rhs) = only.strip_prefix("return ") {
+                let rhs = rhs.trim();
+                if sh.inputs.len() == 1 && sh.inputs[0].binding == rhs {
+                    found = Some(rhs.to_string());
+                }
+            }
+        }
         found
     };
     let same_layer = |binding: &str| {
