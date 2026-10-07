@@ -160,7 +160,7 @@ return exospheric_temperature(f107, f107a, kp)
 """
 by = ""
 transcribed_from = "crates/vleo-mod-envorbit/nodes/env_exospheric_temperature/model.rs"
-checked_by = ""
+checked_by = "Aman Rai"
 
 [output]
 # The node's one answer. The variable id is the node id: one small

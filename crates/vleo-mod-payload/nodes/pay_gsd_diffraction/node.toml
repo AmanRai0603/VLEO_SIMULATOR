@@ -40,7 +40,7 @@ return diffraction_limited_gsd(h, lam, d)
 """
 by = ""
 transcribed_from = "crates/vleo-mod-payload/nodes/pay_gsd_diffraction/model.rs"
-checked_by = ""
+checked_by = "Aman Rai"
 
 [output]
 # The node's one answer. The variable id is the node id: one small

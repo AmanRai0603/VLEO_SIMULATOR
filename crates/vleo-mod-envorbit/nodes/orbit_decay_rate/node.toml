@@ -43,7 +43,7 @@ return decay_rate(rho, bc * 1 [kg/m^2], r)
 """
 by = ""
 transcribed_from = "crates/vleo-mod-envorbit/nodes/orbit_decay_rate/model.rs"
-checked_by = ""
+checked_by = "Aman Rai"
 
 [output]
 # The node's one answer. The variable id is the node id: one small

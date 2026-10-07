@@ -40,7 +40,7 @@ return carrier_to_noise_density_db(e, lf, la, gt)
 """
 by = ""
 transcribed_from = "crates/vleo-mod-ttc/nodes/com_cn0/model.rs"
-checked_by = ""
+checked_by = "Aman Rai"
 
 [output]
 # The node's one answer. The variable id is the node id: one small

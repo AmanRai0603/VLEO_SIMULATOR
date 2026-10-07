@@ -40,7 +40,7 @@ return free_space_path_loss_db(d, f)
 """
 by = ""
 transcribed_from = "crates/vleo-mod-ttc/nodes/com_path_loss/model.rs"
-checked_by = ""
+checked_by = "Aman Rai"
 
 [output]
 # The node's one answer. The variable id is the node id: one small

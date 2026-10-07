@@ -48,7 +48,7 @@ return orbit_decay_time(h, 120 [km], bc * 1 [kg/m^2], t_inf)
 """
 by = ""
 transcribed_from = "crates/vleo-mod-envorbit/nodes/orbit_lifetime_uncontrolled/model.rs"
-checked_by = ""
+checked_by = "Aman Rai"
 
 [output]
 # The node's one answer. The variable id is the node id: one small

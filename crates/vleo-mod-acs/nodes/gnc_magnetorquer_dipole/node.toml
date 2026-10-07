@@ -40,7 +40,7 @@ return magnetorquer_dipole_required(h, b, td)
 """
 by = ""
 transcribed_from = "crates/vleo-mod-acs/nodes/gnc_magnetorquer_dipole/model.rs"
-checked_by = ""
+checked_by = "Aman Rai"
 
 [output]
 # The node's one answer. The variable id is the node id: one small

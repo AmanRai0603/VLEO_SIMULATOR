@@ -41,7 +41,7 @@ return power_demand(pp, pay, av, com, th, lh)
 """
 by = ""
 transcribed_from = "crates/vleo-mod-power/nodes/pwr_demand/model.rs"
-checked_by = ""
+checked_by = "Aman Rai"
 
 [output]
 # The node's one answer. The variable id is the node id: one small

@@ -43,7 +43,7 @@ return along_track_error_from_drag(a * s, 1 [d])
 """
 by = ""
 transcribed_from = "crates/vleo-mod-acs/nodes/gnc_along_track_error/model.rs"
-checked_by = ""
+checked_by = "Aman Rai"
 
 [output]
 # The node's one answer. The variable id is the node id: one small

@@ -40,7 +40,7 @@ return tdoa_geolocation_error(s, g)
 """
 by = ""
 transcribed_from = "crates/vleo-mod-payload/nodes/pay_geolocation_error/model.rs"
-checked_by = ""
+checked_by = "Aman Rai"
 
 [output]
 # The node's one answer. The variable id is the node id: one small

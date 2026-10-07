@@ -41,7 +41,7 @@ return daily_downlink_volume(v, n, 0.95)
 """
 by = ""
 transcribed_from = "crates/vleo-mod-ttc/nodes/com_daily_volume/model.rs"
-checked_by = ""
+checked_by = "Aman Rai"
 
 [output]
 # The node's one answer. The variable id is the node id: one small

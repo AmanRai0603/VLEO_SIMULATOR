@@ -40,7 +40,7 @@ return mean_free_path(n)
 """
 by = ""
 transcribed_from = "crates/vleo-mod-envorbit/nodes/env_mean_free_path/model.rs"
-checked_by = ""
+checked_by = "Aman Rai"
 
 [output]
 # The node's one answer. The variable id is the node id: one small

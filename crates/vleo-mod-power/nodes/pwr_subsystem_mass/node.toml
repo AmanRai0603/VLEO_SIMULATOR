@@ -41,7 +41,7 @@ return (ma + mb) * 1.25
 """
 by = ""
 transcribed_from = "crates/vleo-mod-power/nodes/pwr_subsystem_mass/model.rs"
-checked_by = ""
+checked_by = "Aman Rai"
 
 [output]
 # The node's one answer. The variable id is the node id: one small

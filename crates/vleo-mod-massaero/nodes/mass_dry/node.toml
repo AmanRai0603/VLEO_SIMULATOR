@@ -41,7 +41,7 @@ return dry_mass(st, pr, pw, 0 [kg], av, cm, gn, th, pa, mg)
 """
 by = ""
 transcribed_from = "crates/vleo-mod-massaero/nodes/mass_dry/model.rs"
-checked_by = ""
+checked_by = "Aman Rai"
 
 [output]
 # The node's one answer. The variable id is the node id: one small

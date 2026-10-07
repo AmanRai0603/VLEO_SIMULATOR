@@ -40,7 +40,7 @@ return programme_cost(nre, pr + lc * n, op, y / 31557600 [s])
 """
 by = ""
 transcribed_from = "crates/vleo-mod-closure/nodes/cost_programme/model.rs"
-checked_by = ""
+checked_by = "Aman Rai"
 
 [output]
 # The node's one answer. The variable id is the node id: one small

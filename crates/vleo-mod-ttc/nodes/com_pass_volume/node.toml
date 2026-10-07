@@ -41,7 +41,7 @@ return pass_data_volume(r, t, 0.60)
 """
 by = ""
 transcribed_from = "crates/vleo-mod-ttc/nodes/com_pass_volume/model.rs"
-checked_by = ""
+checked_by = "Aman Rai"
 
 [output]
 # The node's one answer. The variable id is the node id: one small

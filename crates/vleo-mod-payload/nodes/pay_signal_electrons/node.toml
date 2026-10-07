@@ -41,7 +41,7 @@ return signal_electrons(l * 1.0e6, d, f, p, tau, qe, t, lam, 1.0e-7 [m])
 """
 by = ""
 transcribed_from = "crates/vleo-mod-payload/nodes/pay_signal_electrons/model.rs"
-checked_by = ""
+checked_by = "Aman Rai"
 
 [output]
 # The node's one answer. The variable id is the node id: one small

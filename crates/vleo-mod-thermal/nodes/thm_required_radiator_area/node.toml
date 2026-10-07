@@ -42,7 +42,7 @@ return required_radiator_area(q, e, lim, 250 [K])
 """
 by = ""
 transcribed_from = "crates/vleo-mod-thermal/nodes/thm_required_radiator_area/model.rs"
-checked_by = ""
+checked_by = "Aman Rai"
 
 [output]
 # The node's one answer. The variable id is the node id: one small

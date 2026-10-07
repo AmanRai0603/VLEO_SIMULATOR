@@ -145,7 +145,7 @@ return n
 """
 by = ""
 transcribed_from = "crates/vleo-mod-solar/nodes/sw_cycle_number/model.rs"
-checked_by = ""
+checked_by = "Aman Rai"
 
 [output]
 # The node's one answer. The variable id is the node id: one small
