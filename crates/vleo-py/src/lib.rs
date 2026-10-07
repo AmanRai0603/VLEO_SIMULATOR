@@ -19,7 +19,7 @@
 use pyo3::exceptions::{PyRuntimeError, PyValueError};
 use pyo3::prelude::*;
 use vleo_bus::{Case, RunMode};
-use vleo_modules::{nodes, vars, Scratch, Vleo};
+use vleo_modules::{vars, Scratch, Vleo};
 
 /// One answer, with everything needed to defend it.
 #[pyclass]
@@ -63,7 +63,7 @@ impl Result_ {
 /// Every row in the tree.
 #[pyfunction]
 fn nodes() -> Vec<String> {
-    nodes().iter().map(|n| n.id.to_string()).collect()
+    vleo_modules::nodes().iter().map(|n| n.id.to_string()).collect()
 }
 
 /// Evaluate one node.
@@ -192,7 +192,7 @@ fn version() -> (String, String, usize) {
     (
         String::from_utf8(vleo_core::hash::short_hex(Vleo::kernel_hash()).to_vec()).unwrap_or_default(),
         String::from_utf8(vleo_core::hash::short_hex(Vleo::graph_hash()).to_vec()).unwrap_or_default(),
-        nodes().len(),
+        vleo_modules::nodes().len(),
     )
 }
 
