@@ -43,7 +43,7 @@ use std::net::{TcpListener, TcpStream};
 use std::path::{Path, PathBuf};
 use vleo_bus::{Case, RunMode};
 use vleo_core::graph::Kind;
-use vleo_modules::{tables, Scratch, Vleo, GROUPS, NODES, RELATIONS, VARS};
+use vleo_modules::{cases, groups, nodes, relations, vars, Scratch, Vleo};
 use vleo_sheet::files::Files;
 
 /// Start the tool from the command line: `vleo-daemon [--open]`.
@@ -117,7 +117,7 @@ pub fn serve(
         "  kernel {}  graph {}  {} nodes",
         short(Vleo::kernel_hash()),
         short(Vleo::graph_hash()),
-        NODES.len()
+        nodes().len()
     );
     println!("  engine {engine}");
     for line in &today {
@@ -421,7 +421,7 @@ fn open_converted(
     let open_and_new: std::collections::BTreeSet<&str> = tree
         .sheets
         .values()
-        .filter(|s| s.is_seeded() && Vleo::find(&s.id).is_none())
+        .filter(|s| s.is_seeded() && vleo_modules::COMPILED.find(&s.id).is_none())
         .map(|s| s.id.as_str())
         .collect();
     let differs: Vec<String> = engine_differs(&tree)
@@ -487,7 +487,7 @@ fn run_on_the_files(files: &dyn Files, root: &Path, from_a_file: bool) -> Result
         .map_err(|e| format!("the design's files do not load: {e}"))?;
     let graph = vleo_modules::opened::graph(&tree)
         .map_err(|e| format!("the design's files do not make a graph: {e}"))?;
-    vleo_modules::run_on(graph).map_err(|e| e.to_string())?;
+    vleo_modules::run_on(graph);
     Ok(format!(
         "the graph read from the design's files — {} rows, {} of them methods run by the interpreter",
         graph.nodes.len(),
@@ -499,8 +499,10 @@ fn run_on_the_files(files: &dyn Files, root: &Path, from_a_file: bool) -> Result
 /// engine has and the file does not, one the file has and the engine does not,
 /// or one whose sheet or relation differs. Empty when they are the same.
 fn engine_differs(tree: &vleo_sheet::Tree) -> Vec<String> {
+    // This build's own graph, whichever one a face has installed since.
+    let built = &vleo_modules::COMPILED;
     let mut out = Vec::new();
-    for n in NODES.iter() {
+    for n in built.nodes.iter() {
         match tree.sheets.get(n.id) {
             None => out.push(format!("{}: in this engine, not in the file", n.id)),
             Some(s) if s.sheet_hash != n.sheet_hash => {
@@ -513,7 +515,7 @@ fn engine_differs(tree: &vleo_sheet::Tree) -> Vec<String> {
         }
     }
     for id in tree.sheets.keys() {
-        if Vleo::find(id).is_none() {
+        if built.find(id).is_none() {
             out.push(format!("{id}: in the file, not in this engine"));
         }
     }
@@ -720,7 +722,7 @@ fn version_json(ctx: &Ctx) -> String {
     j.str_field("version", env!("CARGO_PKG_VERSION"));
     j.str_field("endpoint", "local-daemon");
     j.num_field("port", ctx.port as f64);
-    j.num_field("nodes", NODES.len() as f64);
+    j.num_field("nodes", nodes().len() as f64);
     // Where this copy reads the design from, and which design that is.
     j.key("design").raw("{");
     match &ctx.design {
@@ -769,12 +771,12 @@ fn version_json(ctx: &Ctx) -> String {
 /// this must never be wrong in. `xtask reach` carries the same walk and the
 /// tests that pin it.
 fn reach_and_readers() -> (Vec<bool>, Vec<usize>) {
-    let n = NODES.len();
+    let n = nodes().len();
     let mut parents: Vec<Vec<usize>> = vec![Vec::new(); n];
     let mut readers = vec![0usize; n];
-    for (i, d) in NODES.iter().enumerate() {
+    for (i, d) in nodes().iter().enumerate() {
         for &v in d.inputs {
-            let p = VARS[v as usize].producer as usize;
+            let p = vars()[v as usize].producer as usize;
             if p != i {
                 parents[i].push(p);
                 readers[p] += 1;
@@ -782,7 +784,7 @@ fn reach_and_readers() -> (Vec<bool>, Vec<usize>) {
         }
     }
     let mut reach = vec![false; n];
-    let mut stack: Vec<usize> = (0..n).filter(|&i| NODES[i].kind == Kind::Kpi).collect();
+    let mut stack: Vec<usize> = (0..n).filter(|&i| nodes()[i].kind == Kind::Kpi).collect();
     while let Some(i) = stack.pop() {
         if reach[i] {
             continue;
@@ -797,13 +799,13 @@ fn index_json() -> String {
     let mut j = Json::new();
     let (reach, readers) = reach_and_readers();
     j.raw("{");
-    j.num_field("nodes", NODES.len() as f64);
+    j.num_field("nodes", nodes().len() as f64);
     j.key("rows").open_arr();
-    for (i, d) in NODES.iter().enumerate() {
+    for (i, d) in nodes().iter().enumerate() {
         if i > 0 {
             j.raw(",");
         }
-        let v = &VARS[i];
+        let v = &vars()[i];
         j.raw("{");
         j.num_field("i", i as f64);
         j.str_field("id", d.id);
@@ -879,7 +881,7 @@ fn index_json() -> String {
             if k > 0 {
                 j.raw(",");
             }
-            j.raw(&VARS[*x as usize].producer.to_string());
+            j.raw(&vars()[*x as usize].producer.to_string());
         }
         j.close_arr();
         j.key("kpi").open_arr();
@@ -894,7 +896,7 @@ fn index_json() -> String {
     }
     j.close_arr();
     j.key("groups").open_arr();
-    for (i, g) in GROUPS.iter().enumerate() {
+    for (i, g) in groups().iter().enumerate() {
         if i > 0 {
             j.raw(",");
         }
@@ -919,7 +921,7 @@ fn index_json() -> String {
     }
     j.close_arr();
     j.key("relations").open_arr();
-    for (i, (a, b, why)) in RELATIONS.iter().enumerate() {
+    for (i, (a, b, why)) in relations().iter().enumerate() {
         if i > 0 {
             j.raw(",");
         }
@@ -936,7 +938,7 @@ fn index_json() -> String {
     j.key("crates").open_arr();
     {
         let mut seen: Vec<(&str, usize)> = Vec::new();
-        for d in NODES.iter() {
+        for d in nodes().iter() {
             let name = d.folder.split('/').nth(1).unwrap_or("");
             match seen.iter_mut().find(|(n, _)| *n == name) {
                 Some((_, c)) => *c += 1,
@@ -956,7 +958,7 @@ fn index_json() -> String {
     }
     j.close_arr();
     j.key("cases").open_arr();
-    for (i, c) in tables::CASES.iter().enumerate() {
+    for (i, c) in cases().iter().enumerate() {
         if i > 0 {
             j.raw(",");
         }
@@ -971,7 +973,7 @@ fn index_json() -> String {
                 j.raw(",");
             }
             j.raw("{");
-            j.str_field("id", VARS[*v as usize].id);
+            j.str_field("id", vars()[*v as usize].id);
             j.num_field("value", *val);
             j.close_obj();
         }
@@ -1133,7 +1135,7 @@ fn run_json(params: &str, ctx: &Ctx) -> String {
                     j.raw(",");
                 }
                 let unit = Vleo::find(&v.id)
-                    .map(|k| VARS[k as usize].unit)
+                    .map(|k| vars()[k as usize].unit)
                     .unwrap_or(vleo_units::Unit::One);
                 let (shown, sym) = vleo_bus::present(v.value, unit, 6);
                 j.raw("{");
@@ -1233,7 +1235,7 @@ fn probe_json(params: &str) -> String {
     let Some(k) = Vleo::find(&node) else {
         return refuse(&node, "no such row");
     };
-    let def = &NODES[k as usize];
+    let def = &nodes()[k as usize];
 
     let mut given: BTreeMap<String, f64> = BTreeMap::new();
     for kv in params.split('&') {
@@ -1254,7 +1256,7 @@ fn probe_json(params: &str) -> String {
     // about, which is the whole failure this endpoint exists to stop repeating.
     let mut inputs = Vec::with_capacity(def.inputs.len());
     for &v in def.inputs {
-        let id = VARS[v as usize].id;
+        let id = vars()[v as usize].id;
         match given.remove(id) {
             Some(x) => inputs.push(x),
             None => {
@@ -1294,7 +1296,7 @@ fn probe_json(params: &str) -> String {
             // and draws nothing — which is exactly what the thermosphere
             // panel's two flux curves did the first time they came through
             // here: legend entries with no lines under them.
-            let ov = VARS[def.outputs[0] as usize].unit;
+            let ov = vars()[def.outputs[0] as usize].unit;
             j.str_field("unit", ov.symbol());
             j.num_field("factor", ov.si_factor());
             j.key("inputs").open_arr();
@@ -1302,7 +1304,7 @@ fn probe_json(params: &str) -> String {
                 if i > 0 {
                     j.raw(",");
                 }
-                let var = &VARS[v as usize];
+                let var = &vars()[v as usize];
                 j.raw("{");
                 j.str_field("id", var.id);
                 j.str_field("unit", var.unit.symbol());
@@ -1316,7 +1318,7 @@ fn probe_json(params: &str) -> String {
                     j.raw(",");
                 }
                 j.raw("{");
-                j.str_field("id", VARS[v as usize].id);
+                j.str_field("id", vars()[v as usize].id);
                 j.num_field("si", out[i]);
                 j.close_obj();
             }
@@ -1480,7 +1482,7 @@ fn branches_json(params: &str) -> String {
     let mut j = Json::new();
     j.raw("{");
     let ni = match Vleo::find(&node) {
-        Some(a) => VARS[a as usize].producer,
+        Some(a) => vars()[a as usize].producer,
         None => {
             j.bool_field("ok", false);
             j.str_field("message", "the branches name a node that does not exist");
@@ -1494,14 +1496,14 @@ fn branches_json(params: &str) -> String {
     // node -> the nodes that read it. Built from `inputs`, which holds VARIABLE
     // indices, so each is mapped to its producing node first; conflating the
     // two indices is a defect this file has already shipped once.
-    let mut cons: Vec<Vec<u16>> = vec![Vec::new(); NODES.len()];
-    for (n, d) in NODES.iter().enumerate() {
+    let mut cons: Vec<Vec<u16>> = vec![Vec::new(); nodes().len()];
+    for (n, d) in nodes().iter().enumerate() {
         for x in d.inputs {
-            cons[VARS[*x as usize].producer as usize].push(n as u16);
+            cons[vars()[*x as usize].producer as usize].push(n as u16);
         }
     }
     let walk = |from: u16, edges: &Vec<Vec<u16>>| -> Vec<bool> {
-        let mut seen = vec![false; NODES.len()];
+        let mut seen = vec![false; nodes().len()];
         let mut st = vec![from];
         while let Some(n) = st.pop() {
             for m in &edges[n as usize] {
@@ -1513,17 +1515,17 @@ fn branches_json(params: &str) -> String {
         }
         seen
     };
-    let mut prod: Vec<Vec<u16>> = vec![Vec::new(); NODES.len()];
-    for (n, d) in NODES.iter().enumerate() {
+    let mut prod: Vec<Vec<u16>> = vec![Vec::new(); nodes().len()];
+    for (n, d) in nodes().iter().enumerate() {
         for x in d.inputs {
-            prod[n].push(VARS[*x as usize].producer);
+            prod[n].push(vars()[*x as usize].producer);
         }
     }
-    let live = |n: u16| NODES[n as usize].state == vleo_core::graph::State::Published;
+    let live = |n: u16| nodes()[n as usize].state == vleo_core::graph::State::Published;
 
     let down = walk(ni, &cons);
     let mut cand: Vec<(u16, usize)> = Vec::new();
-    for n in 0..NODES.len() as u16 {
+    for n in 0..nodes().len() as u16 {
         if !down[n as usize] || !live(n) {
             continue;
         }
@@ -1544,7 +1546,7 @@ fn branches_json(params: &str) -> String {
         }
     }
     let is_cand: Vec<bool> = {
-        let mut v = vec![false; NODES.len()];
+        let mut v = vec![false; nodes().len()];
         for (n, _) in &cand {
             v[*n as usize] = true;
         }
@@ -1554,7 +1556,7 @@ fn branches_json(params: &str) -> String {
         .iter()
         .filter(|(n, _)| {
             let up = walk(*n, &cons);
-            !(0..NODES.len()).any(|k| up[k] && is_cand[k])
+            !(0..nodes().len()).any(|k| up[k] && is_cand[k])
         })
         .cloned()
         .collect();
@@ -1562,12 +1564,12 @@ fn branches_json(params: &str) -> String {
     // reader wants at the top.
     out.sort_by(|a, b| {
         b.1.cmp(&a.1)
-            .then_with(|| NODES[a.0 as usize].id.cmp(NODES[b.0 as usize].id))
+            .then_with(|| nodes()[a.0 as usize].id.cmp(nodes()[b.0 as usize].id))
     });
 
     // How many rows read this one at all, so a face can say whether an empty
     // list means "nothing reads it" or "everything that does is unfinished".
-    let read_by = (0..NODES.len()).filter(|k| down[*k]).count();
+    let read_by = (0..nodes().len()).filter(|k| down[*k]).count();
     j.num_field("read_by", read_by as f64);
 
     j.key("branches").open_arr();
@@ -1575,7 +1577,7 @@ fn branches_json(params: &str) -> String {
         if i > 0 {
             j.raw(",");
         }
-        let d = &NODES[*n as usize];
+        let d = &nodes()[*n as usize];
         j.raw("{");
         j.str_field("id", d.id);
         j.str_field("label", d.label);
@@ -1618,7 +1620,7 @@ fn levers_json(params: &str, ctx: &Ctx) -> String {
         if i > 0 {
             j.raw(",");
         }
-        let d = &VARS[lev.var as usize];
+        let d = &vars()[lev.var as usize];
         j.raw("{");
         j.str_field("id", d.id);
         j.str_field("symbol", d.symbol);
@@ -1672,21 +1674,21 @@ pub(crate) fn levers_of(params: &str, ctx: &Ctx, node: &str, ni: u16) -> (Option
     // it reads. A candidate is a VARIABLE, because that is what a sweep
     // supplies: the two indices are different spaces and conflating them is
     // the defect this file has already shipped once.
-    let start = VARS[ni as usize].producer;
-    let mut seen = vec![false; NODES.len()];
+    let start = vars()[ni as usize].producer;
+    let mut seen = vec![false; nodes().len()];
     let mut stack = vec![start];
     seen[start as usize] = true;
     let mut cands: Vec<u16> = Vec::new();
     while let Some(n) = stack.pop() {
-        for x in NODES[n as usize].inputs {
-            let pv = &VARS[*x as usize];
+        for x in nodes()[n as usize].inputs {
+            let pv = &vars()[*x as usize];
             let pn = pv.producer;
             if !seen[pn as usize] {
                 seen[pn as usize] = true;
                 stack.push(pn);
             }
             if *x != ni
-                && NODES[pn as usize].kind == vleo_core::graph::Kind::Declared
+                && nodes()[pn as usize].kind == vleo_core::graph::Kind::Declared
                 && pv.limit.upper > pv.limit.lower
                 && !cands.contains(x)
             {
@@ -1705,7 +1707,7 @@ pub(crate) fn levers_of(params: &str, ctx: &Ctx, node: &str, ni: u16) -> (Option
     };
     let mut out: Vec<Lever> = Vec::new();
     for v in cands {
-        let d = &VARS[v as usize];
+        let d = &vars()[v as usize];
         let mut ends: [Option<f64>; 2] = [None, None];
         let mut why = String::new();
         for (k, x) in [d.limit.lower, d.limit.upper].iter().enumerate() {
@@ -1752,7 +1754,7 @@ pub(crate) fn levers_of(params: &str, ctx: &Ctx, node: &str, ni: u16) -> (Option
         b.span
             .partial_cmp(&a.span)
             .unwrap_or(core::cmp::Ordering::Equal)
-            .then_with(|| VARS[a.var as usize].id.cmp(VARS[b.var as usize].id))
+            .then_with(|| vars()[a.var as usize].id.cmp(vars()[b.var as usize].id))
     });
 
     (base, out)
@@ -1760,8 +1762,9 @@ pub(crate) fn levers_of(params: &str, ctx: &Ctx, node: &str, ni: u16) -> (Option
 
 #[cfg(test)]
 mod one_design {
-    use super::{engine_differs, NODES};
+    use super::engine_differs;
     use std::path::Path;
+    use vleo_modules::COMPILED;
 
     fn tree() -> vleo_sheet::Tree {
         let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
@@ -1775,9 +1778,9 @@ mod one_design {
 
     #[test]
     fn every_kind_of_difference_is_named() {
-        let first = NODES[0].id.to_string();
-        let second = NODES[1].id.to_string();
-        let third = NODES[2].id.to_string();
+        let first = COMPILED.nodes[0].id.to_string();
+        let second = COMPILED.nodes[1].id.to_string();
+        let third = COMPILED.nodes[2].id.to_string();
         let mut t = tree();
         t.sheets.get_mut(&first).unwrap().sheet_hash ^= 1;
         t.sheets.get_mut(&second).unwrap().impl_hash ^= 1;
@@ -1892,7 +1895,7 @@ mod requests {
 
     #[test]
     fn a_value_that_cannot_be_applied_is_named_not_dropped() {
-        let id = vleo_modules::NODES[0].id;
+        let id = vleo_modules::nodes()[0].id;
         assert!(set_refusal(&format!("set={id}:1.5")).is_none());
         assert!(set_refusal(&format!("set={id}%3A2")).is_none());
         let named = |p: &str| set_refusal(p).map(|(n, _)| n);

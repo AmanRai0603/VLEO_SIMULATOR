@@ -43,7 +43,7 @@ use alloc::vec::Vec;
 use vleo_bus::{Case, RunMode};
 use vleo_core::graph::{Kind, Maturity, PortState};
 
-use crate::{Graph, NodeIdx, Scratch, GROUPS};
+use crate::{Graph, NodeIdx, Scratch};
 
 /// A node's state on the health map, worst first: a group is as bad as the
 /// first of these any of its nodes has.
@@ -317,7 +317,7 @@ fn roll_up(graph: &Graph, nodes: &[Node]) -> Vec<Group> {
         let mut ids = vec![gid];
         let mut i = 0;
         while i < ids.len() {
-            for g in GROUPS.iter() {
+            for g in graph.groups.iter() {
                 if g.parent == ids[i] && !ids.contains(&g.id) {
                     ids.push(g.id);
                 }
@@ -328,7 +328,8 @@ fn roll_up(graph: &Graph, nodes: &[Node]) -> Vec<Group> {
             .filter(|&k| ids.contains(&graph.nodes[k].parent))
             .collect()
     };
-    GROUPS
+    graph
+        .groups
         .iter()
         .map(|g| {
             let mine = under(g.id);
@@ -400,7 +401,7 @@ pub struct Trace {
 
 fn group_of(graph: &Graph, k: usize) -> (&'static str, &'static str) {
     let def = &graph.nodes[k];
-    let g = GROUPS.iter().find(|g| g.id == def.parent);
+    let g = graph.groups.iter().find(|g| g.id == def.parent);
     (
         g.map_or(def.parent, |g| g.id),
         if def.owner.is_empty() {

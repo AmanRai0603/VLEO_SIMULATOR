@@ -36,8 +36,9 @@ use alloc::vec::Vec;
 use vleo_core::graph::{Kind, State};
 use vleo_units::Unit;
 
-use crate::tables::{self, CaseDef, NODES, VARS};
+use crate::tables::{self, CaseDef};
 use crate::Vleo;
+use crate::{nodes, vars};
 
 /// Which half of the case an input sits in.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -132,19 +133,19 @@ pub fn num(v: f64) -> String {
 /// upper bound does not exceed its lower has nowhere to go.
 pub fn inputs(case: &CaseDef) -> Vec<Input> {
     let mut out = Vec::new();
-    for (i, def) in NODES.iter().enumerate() {
+    for (i, def) in nodes().iter().enumerate() {
         if def.kind != Kind::Declared || def.state != State::Published {
             continue;
         }
         let Some(&o) = def.outputs.first() else {
             continue;
         };
-        let var = &VARS[o as usize];
+        let var = &vars()[o as usize];
         if var.limit.upper <= var.limit.lower {
             continue;
         }
         let mut val = [0.0f64; tables::MAX_OUTPUTS];
-        let default = match (tables::DISPATCH[i])(&[], &mut val[..def.outputs.len()]) {
+        let default = match crate::engine().estimate(i, &[], &mut val[..def.outputs.len()]) {
             Ok(_) => val[0],
             Err(_) => continue,
         };
@@ -452,7 +453,7 @@ pub fn read_csv(text: &str) -> Reading {
         };
         let Some(inp) = all.iter().find(|i| i.id == id) else {
             let why = match Vleo::find(&id) {
-                Some(v) => match NODES[VARS[v as usize].producer as usize].kind {
+                Some(v) => match nodes()[vars()[v as usize].producer as usize].kind {
                     Kind::Declared => "is not an input that can be set: it is retired, or has no \
                                        range to move in"
                         .to_string(),

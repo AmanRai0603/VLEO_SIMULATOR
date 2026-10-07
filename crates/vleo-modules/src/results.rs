@@ -24,7 +24,7 @@ use alloc::vec;
 use alloc::vec::Vec;
 
 use crate::inputs::{case_inputs, num, template};
-use crate::tables::VARS;
+use crate::vars;
 use crate::Vleo;
 use crate::{Error, ErrorKind};
 
@@ -175,7 +175,7 @@ pub fn from_run(r: &vleo_bus::Results, supply: &[(String, f64)], saved: &str, na
     for v in &r.values {
         let (shown, unit) = match Vleo::find(&v.id) {
             Some(k) => {
-                let u = VARS[k as usize].unit;
+                let u = vars()[k as usize].unit;
                 (num(v.value / u.si_factor()), u.symbol())
             }
             None => (num(v.value), v.unit),
@@ -207,7 +207,7 @@ pub fn from_run(r: &vleo_bus::Results, supply: &[(String, f64)], saved: &str, na
         s.blocked.push(Row {
             id: b.id.clone(),
             name: Vleo::find(&b.id)
-                .map(|k| VARS[k as usize].label.to_string())
+                .map(|k| vars()[k as usize].label.to_string())
                 .unwrap_or_default(),
             note: b.message.clone(),
             ..Default::default()
@@ -251,7 +251,7 @@ pub fn ran_inputs(supply: &[(String, f64)]) -> Vec<Row> {
         let si = last(id).unwrap_or_default();
         let (name, value, unit) = match Vleo::find(id) {
             Some(k) => {
-                let v = &VARS[k as usize];
+                let v = &vars()[k as usize];
                 (
                     v.label.to_string(),
                     num(si / v.unit.si_factor()),
@@ -400,11 +400,11 @@ pub fn sweep(
     }
     let mut w = Sweep {
         over: over.to_string(),
-        over_name: VARS[oi].label.to_string(),
-        x_unit: VARS[oi].unit.symbol().to_string(),
-        x_factor: VARS[oi].unit.si_factor(),
-        y_unit: VARS[ni].unit.symbol().to_string(),
-        y_factor: VARS[ni].unit.si_factor(),
+        over_name: vars()[oi].label.to_string(),
+        x_unit: vars()[oi].unit.symbol().to_string(),
+        x_factor: vars()[oi].unit.si_factor(),
+        y_unit: vars()[ni].unit.symbol().to_string(),
+        y_factor: vars()[ni].unit.si_factor(),
         from,
         to,
         points,

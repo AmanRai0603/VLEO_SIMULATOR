@@ -33,7 +33,7 @@
 //! site never needs special response headers and any static host will serve it.
 
 use vleo_bus::{Case, RunMode};
-use vleo_modules::{Scratch, Vleo, NODES, VARS};
+use vleo_modules::{nodes, vars, Scratch, Vleo};
 use wasm_bindgen::prelude::*;
 
 /// The nodes the public build will run.
@@ -125,7 +125,7 @@ pub fn evaluate(node: &str, base: &str, sets: &str) -> String {
             None => "{\"ok\":false,\"message\":\"the node did not produce a value\"}".to_string(),
             Some(v) => {
                 let i = Vleo::find(node).unwrap_or(0);
-                let (shown, sym) = vleo_bus::present(v.value, VARS[i as usize].unit, 6);
+                let (shown, sym) = vleo_bus::present(v.value, vars()[i as usize].unit, 6);
                 format!(
                     "{{\"ok\":true,\"id\":\"{}\",\"si\":{},\"shown\":\"{}\",\"unit\":\"{}\",\"cred\":{},\"governing\":\"{}\",\"ran\":{},\"chain\":\"{}\",\"endpoint\":\"demo-kernel\"}}",
                     v.id,
@@ -146,7 +146,7 @@ pub fn evaluate(node: &str, base: &str, sets: &str) -> String {
 /// when it can only run sixteen of them.
 #[wasm_bindgen]
 pub fn node_count() -> usize {
-    NODES.len()
+    nodes().len()
 }
 
 fn hex(h: u64) -> String {

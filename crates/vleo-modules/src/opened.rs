@@ -52,7 +52,8 @@ use vleo_sheet::model as sheet;
 use vleo_units::Unit;
 
 use crate::{
-    CaseDef, CycleDef, Error, ErrorKind, Graph, NodeFn, Relation, COMPILED, MAX_INPUTS, MAX_OUTPUTS,
+    CaseDef, CycleDef, Error, ErrorKind, Graph, GroupDef, NodeFn, Relation, COMPILED, MAX_INPUTS,
+    MAX_OUTPUTS,
 };
 use vleo_core::fault::Edge;
 use vleo_sheet::method::{self, Outcome, Program};
@@ -685,12 +686,37 @@ fn build(tree: &Tree, methods: Methods) -> Result<&'static Graph, Error> {
         })
         .collect();
 
+    // The headings and their relations, in the order the generator writes
+    // them.
+    let groups: Vec<GroupDef> = tree
+        .groups
+        .values()
+        .map(|g| GroupDef {
+            id: text(&g.id),
+            label: text(&g.label),
+            parent: text(&g.parent),
+            owner: text(&g.owner),
+            layer: g.layer,
+            order: g.order,
+            is_box: g.is_box,
+            tone: text(&g.tone),
+            cases: slice(g.cases.iter().map(|c| text(c)).collect()),
+        })
+        .collect();
+    let relations: Vec<(&'static str, &'static str, &'static str)> = tree
+        .relations
+        .iter()
+        .map(|r| (text(&r.from), text(&r.to), text(&r.why)))
+        .collect();
+
     Ok(Box::leak(Box::new(Graph {
         nodes: slice(nodes),
         vars: slice(vars),
         dispatch: slice(dispatch),
         run: slice(run),
         cases: slice(cases),
+        groups: slice(groups),
+        relations: slice(relations),
     })))
 }
 

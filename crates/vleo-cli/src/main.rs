@@ -9,7 +9,7 @@ use std::path::PathBuf;
 use std::process::ExitCode;
 use vleo_bus::{Case, RunMode};
 use vleo_core::graph::Kind;
-use vleo_modules::{tables, Scratch, Vleo, NODES, VARS};
+use vleo_modules::{cases, nodes, vars, Scratch, Vleo};
 
 /// The local store, resolved before the run.
 ///
@@ -234,7 +234,7 @@ fn print_version(engine: &str) {
     println!("vleo {}", env!("CARGO_PKG_VERSION"));
     println!("  kernel {}", short(Vleo::kernel_hash()));
     println!("  graph  {}", short(Vleo::graph_hash()));
-    println!("  nodes  {}", NODES.len());
+    println!("  nodes  {}", nodes().len());
     println!("  engine {engine}");
     // The design the engine runs, and what it answers, each in one number:
     // two computers that print the same two are running the same design and
@@ -280,7 +280,7 @@ fn opt<'a>(args: &'a [&'a str], name: &str) -> Option<&'a str> {
 /// name is the only honest version: a refusal the user can see beats a silent
 /// substitution every time.
 fn suppliable(idx: u16) -> Result<(), String> {
-    let id = NODES[idx as usize].id;
+    let id = nodes()[idx as usize].id;
     match vleo_modules::why_not_suppliable(id) {
         None => Ok(()),
         Some(why) => Err(format!("{why} `vleo show {id}` lists them.")),
@@ -439,7 +439,7 @@ fn cmd_run(args: &[&str]) -> Result<(), String> {
     }
 
     let idx = Vleo::find(node).unwrap();
-    let def = &NODES[idx as usize];
+    let def = &nodes()[idx as usize];
     println!("\x1b[1m{}\x1b[0m — {}", def.id, def.label);
     println!("  {}", def.question);
     let (said, r) = inputs_for(args)?;
@@ -448,7 +448,7 @@ fn cmd_run(args: &[&str]) -> Result<(), String> {
     println!();
     match results.values.iter().find(|v| v.id == def.id) {
         Some(v) => {
-            let (shown, sym) = vleo_bus::present(v.value, VARS[idx as usize].unit, 6);
+            let (shown, sym) = vleo_bus::present(v.value, vars()[idx as usize].unit, 6);
             println!("  \x1b[1m{} = {} {}\x1b[0m", v.symbol, shown, sym);
             println!(
                 "  credibility {} of 4, governed by {}",
@@ -503,8 +503,8 @@ fn cmd_run(args: &[&str]) -> Result<(), String> {
     println!();
     println!("  the chain behind this number");
     for v in results.values.iter().take(200) {
-        if def.inputs.iter().any(|&i| VARS[i as usize].id == v.id) || v.id == def.id {
-            let unit = VARS[Vleo::find(&v.id).unwrap_or(0) as usize].unit;
+        if def.inputs.iter().any(|&i| vars()[i as usize].id == v.id) || v.id == def.id {
+            let unit = vars()[Vleo::find(&v.id).unwrap_or(0) as usize].unit;
             let (shown, sym) = vleo_bus::present(v.value, unit, 6);
             println!(
                 "    {:<34} {:>18} {:<10} cred {}",
@@ -554,11 +554,11 @@ fn cmd_sweep(args: &[&str]) -> Result<(), String> {
 
     let mut w = vleo_modules::results::Sweep {
         over: over.to_string(),
-        over_name: VARS[over_idx as usize].label.to_string(),
-        x_unit: VARS[over_idx as usize].unit.symbol().to_string(),
-        x_factor: VARS[over_idx as usize].unit.si_factor(),
-        y_unit: VARS[node_idx as usize].unit.symbol().to_string(),
-        y_factor: VARS[node_idx as usize].unit.si_factor(),
+        over_name: vars()[over_idx as usize].label.to_string(),
+        x_unit: vars()[over_idx as usize].unit.symbol().to_string(),
+        x_factor: vars()[over_idx as usize].unit.si_factor(),
+        y_unit: vars()[node_idx as usize].unit.symbol().to_string(),
+        y_factor: vars()[node_idx as usize].unit.si_factor(),
         from,
         to,
         points,
@@ -600,11 +600,11 @@ fn print_sweep(w: &vleo_modules::results::Sweep, node_idx: u16) {
     let over_idx = Vleo::find(&w.over).unwrap_or(0);
     println!(
         "# {} against {} — {} points\n# {:<18} {:<22} note",
-        NODES[node_idx as usize].id,
+        nodes()[node_idx as usize].id,
         w.over,
         w.points,
-        VARS[over_idx as usize].symbol,
-        NODES[node_idx as usize].id
+        vars()[over_idx as usize].symbol,
+        nodes()[node_idx as usize].id
     );
     let mut pts: Vec<(f64, Option<f64>, &str)> =
         w.x.iter()
@@ -616,8 +616,8 @@ fn print_sweep(w: &vleo_modules::results::Sweep, node_idx: u16) {
     for (x, y, why) in pts {
         match y {
             Some(y) => {
-                let (sx, _) = vleo_bus::present(x, VARS[over_idx as usize].unit, 6);
-                let (sy, _) = vleo_bus::present(y, VARS[node_idx as usize].unit, 9);
+                let (sx, _) = vleo_bus::present(x, vars()[over_idx as usize].unit, 6);
+                let (sy, _) = vleo_bus::present(y, vars()[node_idx as usize].unit, 9);
                 println!("{:<20} {:<24} ok", sx, sy);
             }
             None if why == "blocked" => println!("{:<20.6} {:<22} blocked", x, "-"),
@@ -702,7 +702,11 @@ fn cmd_campaign(args: &[&str]) -> Result<(), String> {
     let w = runs.iter().map(|(n, _)| n.len()).max().unwrap_or(0).max(28);
     println!(
         "{:<w$} {:>20} {:>8} {:>8} {:>10}  chain",
-        "inputs", NODES[node_idx as usize].id, "ran", "blocked", "cred"
+        "inputs",
+        nodes()[node_idx as usize].id,
+        "ran",
+        "blocked",
+        "cred"
     );
     for (name, flags) in runs {
         let mut a: Vec<&str> = vec![node];
@@ -714,7 +718,7 @@ fn cmd_campaign(args: &[&str]) -> Result<(), String> {
                 println!(
                     "{:<w$} {:>20} {:>8} {:>8} {:>10}  {}",
                     name,
-                    v.map(|v| vleo_bus::present(v.value, VARS[node_idx as usize].unit, 6).0)
+                    v.map(|v| vleo_bus::present(v.value, vars()[node_idx as usize].unit, 6).0)
                         .unwrap_or_else(|| "-".into()),
                     r.manifest.ran,
                     r.manifest.blocked_count,
@@ -732,7 +736,7 @@ fn cmd_campaign(args: &[&str]) -> Result<(), String> {
 fn cmd_list(args: &[&str]) -> Result<(), String> {
     let filter = args.first().copied();
     let mut by_sub: BTreeMap<&str, usize> = BTreeMap::new();
-    for def in NODES.iter() {
+    for def in nodes().iter() {
         if let Some(f) = filter {
             if def.subsystem != f {
                 continue;
@@ -951,7 +955,7 @@ fn cmd_health(args: &[&str], engine: &str) -> Result<(), String> {
         .groups
         .iter()
         .filter(|gr| {
-            vleo_modules::GROUPS
+            vleo_modules::groups()
                 .iter()
                 .any(|x| x.id == gr.id && x.parent == "root")
         })
@@ -1012,13 +1016,13 @@ fn cmd_health(args: &[&str], engine: &str) -> Result<(), String> {
 fn cmd_show(args: &[&str]) -> Result<(), String> {
     let node = *args.first().ok_or("usage: vleo show <node>")?;
     let i = Vleo::find(node).ok_or_else(|| format!("no node '{node}'"))?;
-    let def = &NODES[i as usize];
-    let var = &VARS[i as usize];
+    let def = &nodes()[i as usize];
+    let var = &vars()[i as usize];
     println!("\x1b[1m{}\x1b[0m — {}", def.id, def.label);
     println!("  question     {}", def.question);
     println!("  relation     {}", def.expression);
     println!("  behaviour    {}", def.behaviour.name());
-    let port = VARS[i as usize].port;
+    let port = vars()[i as usize].port;
     println!(
         "  its value    {}, {}{}",
         port.state.name(),
@@ -1058,7 +1062,11 @@ fn cmd_show(args: &[&str]) -> Result<(), String> {
     if !def.inputs.is_empty() {
         println!("  reads");
         for &i in def.inputs {
-            println!("    {:<34} {}", VARS[i as usize].id, VARS[i as usize].label);
+            println!(
+                "    {:<34} {}",
+                vars()[i as usize].id,
+                vars()[i as usize].label
+            );
         }
     }
     if !def.steps.is_empty() {
@@ -1067,7 +1075,7 @@ fn cmd_show(args: &[&str]) -> Result<(), String> {
             println!("    {}. {s}", n + 1);
         }
     }
-    let consumers: Vec<&str> = NODES
+    let consumers: Vec<&str> = nodes()
         .iter()
         .filter(|c| c.inputs.contains(&i))
         .map(|c| c.id)
@@ -1105,7 +1113,7 @@ fn cmd_show(args: &[&str]) -> Result<(), String> {
 }
 
 fn cmd_cases() -> Result<(), String> {
-    for c in tables::CASES.iter() {
+    for c in cases().iter() {
         let all = vleo_modules::inputs::inputs(c);
         let cond = all
             .iter()
@@ -1123,7 +1131,7 @@ fn cmd_cases() -> Result<(), String> {
             println!(
                 "  declared cycle over {} nodes, converging on {} to {:e} in at most {} sweeps",
                 cy.nodes.len(),
-                VARS[cy.converge_on as usize].id,
+                vars()[cy.converge_on as usize].id,
                 cy.tolerance,
                 cy.max_iter
             );
@@ -1413,7 +1421,7 @@ fn cmd_selftest() -> Result<(), String> {
     let mut total = 0usize;
     let mut passed = 0usize;
     let mut unevidenced = 0usize;
-    for (i, def) in NODES.iter().enumerate() {
+    for (i, def) in nodes().iter().enumerate() {
         if def.fixtures.is_empty() {
             if def.kind != Kind::Declared {
                 unevidenced += 1;

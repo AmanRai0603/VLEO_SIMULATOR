@@ -266,7 +266,7 @@ pub(super) fn node_endpoint(ctx: &Ctx, id: &str) -> (&'static str, &'static str,
             )
         }
     };
-    let def = &NODES[i as usize];
+    let def = &nodes()[i as usize];
     let dir = ctx.root.join(def.folder);
 
     // The seven files, and who writes each. This list is the template: it is
@@ -365,7 +365,7 @@ pub(super) fn fragment(ctx: &Ctx, id: &str) -> (&'static str, &'static str, Vec<
     // RENDERED, NOT READ. A node's page is written from its sheet when it is
     // opened — from the folders or from a design file alike — so there is no
     // committed copy to fall behind the sheet it describes.
-    let def = &NODES[i as usize];
+    let def = &nodes()[i as usize];
     let tree = match ctx.load() {
         Ok(t) => t,
         Err(e) => {
@@ -565,7 +565,7 @@ pub(super) fn lesson_json(ctx: &Ctx, id: &str) -> String {
     let Some(i) = Vleo::find(id) else {
         return failed("no such node");
     };
-    let dir = ctx.root.join(NODES[i as usize].folder);
+    let dir = ctx.root.join(nodes()[i as usize].folder);
     let l = match vleo_sheet::lesson::load_from(&*ctx.tree, &dir, id) {
         None => return "{\"ok\":true,\"checked\":true,\"lesson\":null}".to_string(),
         Some(Err(e)) => return failed(e.message()),
