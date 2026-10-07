@@ -821,7 +821,7 @@ line printed, never to a tolerance."""
 say = "Check one node's method and cases."
 run = "cargo run -p xtask -- method orbit_velocity"
 check = "exits"
-why = "prints each case with what the node engineer's code gave and what the method gives, or says the node has no method yet"
+why = "prints each case with what the node engineer's code gave and what the method gives; for a method transcribed from code, what it is held to instead; or says the node has no method yet"
 
 [[layer.section]]
 id = "maint-build"
