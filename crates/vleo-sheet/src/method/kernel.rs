@@ -301,7 +301,7 @@ pub const KERNEL_FUNCTIONS: &[KernelFn] = &[
         kernel: "gnc::momentum_storage_required(secular_torque, orbital_period, margin)",
         rust: "vleo_core::physics::gnc::momentum_storage_required(vleo_units::Torque::new({0}), vleo_units::Time::new({1}), vleo_units::Ratio::new({2})).get()" },
     KernelFn { name: "navigation_position_error", args: &[("user_range_error", unit_of(Length::UNIT)), ("gdop", "1")], out: unit_of(Length::UNIT), eval: t_navigation_position_error, refuses: "",
-        meaning: "GNSS position error from the user range error and the geometry",
+        meaning: "GNSS position error from the receiver's range error (URE) and the geometry",
         kernel: "gnc::navigation_position_error(user_range_error, gdop)",
         rust: "vleo_core::physics::gnc::navigation_position_error(vleo_units::Length::new({0}), {1}).get()" },
     KernelFn { name: "pointing_error_rss", args: &[("a", unit_of(Angle::UNIT)), ("b", unit_of(Angle::UNIT)), ("c", unit_of(Angle::UNIT)), ("d", unit_of(Angle::UNIT))], out: unit_of(Angle::UNIT), eval: t_pointing_error_rss, refuses: "",

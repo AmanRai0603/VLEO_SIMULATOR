@@ -135,7 +135,7 @@ Relations too long to write as a formula — an integral up the atmosphere, a de
 | `magnetic_torque(residual_dipole [A.m^2], field [T])` | `[N.m]` | torque from a residual dipole in the geomagnetic field | `gnc::magnetic_torque(residual_dipole, field)` |
 | `magnetorquer_dipole_required(momentum [N.m.s], field [T], dump_time [s])` | `[A.m^2]` | the dipole a torque rod needs to dump a momentum in a time | `gnc::magnetorquer_dipole_required(momentum, field, dump_time)` |
 | `momentum_storage_required(secular_torque [N.m], orbital_period [s], margin [1])` | `[N.m.s]` | momentum a wheel stores against a secular torque for half an orbit, with a margin | `gnc::momentum_storage_required(secular_torque, orbital_period, margin)` |
-| `navigation_position_error(user_range_error [m], gdop [1])` | `[m]` | GNSS position error from the user range error and the geometry | `gnc::navigation_position_error(user_range_error, gdop)` |
+| `navigation_position_error(user_range_error [m], gdop [1])` | `[m]` | GNSS position error from the receiver's range error (URE) and the geometry | `gnc::navigation_position_error(user_range_error, gdop)` |
 | `pointing_error_rss(a [rad], b [rad], c [rad], d [rad])` | `[rad]` | root-sum-square of four pointing error terms | `gnc::pointing_error_rss(&[a, b, c, d])` |
 | `solar_pressure_torque(area [m^2], reflectivity [1], cp_offset [m], incidence [rad])` | `[N.m]` | solar radiation pressure torque | `gnc::solar_pressure_torque(area, reflectivity, cp_offset, incidence)` |
 | `total_disturbance_torque(aerodynamic [N.m], gravity_gradient [N.m], solar [N.m], magnetic [N.m])` | `[N.m]` | the disturbance torques summed, worst case | `gnc::total_disturbance_torque(aerodynamic, gravity_gradient, solar, magnetic)` |
