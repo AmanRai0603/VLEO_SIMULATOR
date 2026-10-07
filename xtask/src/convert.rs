@@ -37,6 +37,37 @@ pub(super) fn cmd_convert(root: &Path, args: &[&str]) -> Result<(), String> {
         }
         fs::remove_dir_all(&out).map_err(|e| format!("{}: {e}", out.display()))?;
     }
+    write(root, &out)
+}
+
+/// The design converted again into `design/`, after a deliberate change to it.
+///
+/// `design/` is the design as its files, and a test holds it equal to the
+/// sheets until they leave (AGENTS.md, *Until the switch-over*). A form
+/// applied, or a group's release built, changes the sheets on purpose, so the
+/// copy is written again here, beside today's answers, and the difference goes
+/// into the same commit. What it says is how many files changed.
+pub(crate) fn record_design(root: &Path) -> Result<String, String> {
+    let out = root.join("design");
+    if out.exists() {
+        fs::remove_dir_all(&out).map_err(|e| format!("{}: {e}", out.display()))?;
+    }
+    write(root, &out)?;
+    let changed = std::process::Command::new("git")
+        .args(["status", "--porcelain", "--", "design"])
+        .current_dir(root)
+        .output()
+        .map_err(|e| e.to_string())?;
+    let n = String::from_utf8_lossy(&changed.stdout).lines().count();
+    Ok(if n == 0 {
+        "no file of design/ changed".to_string()
+    } else {
+        format!("{n} file(s) of design/ written again: commit them with the change")
+    })
+}
+
+/// The tree converted and written into `out`, which is empty or absent.
+fn write(root: &Path, out: &Path) -> Result<(), String> {
     println!("1/3  reading the tree");
     let tree = load(root)?;
     println!(

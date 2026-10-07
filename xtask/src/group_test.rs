@@ -116,9 +116,14 @@ pub(super) fn cmd_group_build(root: &Path, args: &[&str]) -> Result<(), String> 
     if built.is_empty() {
         return Err("nothing was built: no computed node of this release is in the design".into());
     }
-    // The release moves answers on purpose; they are recorded again here, so
-    // the difference is committed and reviewed with the release.
+    // The release moves answers on purpose; they, and the design's files, are
+    // recorded again here, so the difference is committed and reviewed with
+    // the release.
     println!("today's answers: {}", crate::flow::record_today(root)?);
+    println!(
+        "the design's files: {}",
+        crate::convert::record_design(root)?
+    );
     println!("next: cargo run -p xtask -- group-test {}", dir.display());
     Ok(())
 }

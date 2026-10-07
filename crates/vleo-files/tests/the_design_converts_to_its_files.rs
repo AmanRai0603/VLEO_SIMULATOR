@@ -328,4 +328,3 @@ fn the_design_in_the_repository_is_the_design_converted() {
         );
     }
 }
-
