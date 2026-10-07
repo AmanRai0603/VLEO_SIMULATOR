@@ -500,6 +500,21 @@ pub fn interpreting(tree: &Tree) -> Result<&'static Graph, Error> {
 }
 
 fn build(tree: &Tree, methods: Methods) -> Result<&'static Graph, Error> {
+    // Every name the design wires by must resolve before anything is built
+    // from it. Below, a name that does not would run as the first variable,
+    // or as zero, or be left out; the compiled build refused it at compile
+    // time, and this graph refuses it here, by name (`vleo_sheet::wiring`).
+    let wrong = vleo_sheet::wiring::errors(tree);
+    if !wrong.is_empty() {
+        return Err(Error::new(
+            ErrorKind::Invalid,
+            format!(
+                "{} name(s) in the design resolve to nothing, so it is not run:\n  {}",
+                wrong.len(),
+                wrong.join("\n  ")
+            ),
+        ));
+    }
     let sheets = tree.ordered();
     let n = sheets.len();
     let mut idx: BTreeMap<String, usize> = sheets

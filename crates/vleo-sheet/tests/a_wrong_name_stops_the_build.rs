@@ -5,8 +5,8 @@
 //! Each is tried here on a copy of the real tree held in memory.
 
 use std::path::Path;
-use vleo_sheet::emit::wiring_errors;
 use vleo_sheet::load::load_all;
+use vleo_sheet::wiring::errors as wiring_errors;
 
 fn tree() -> vleo_sheet::load::Tree {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
