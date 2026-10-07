@@ -329,6 +329,9 @@ fn each_graph_keeps_its_own_cases_answers_and_no_other_s() {
     assert_eq!(changed.find(id), Some(k));
     let passes = |g: &Graph| g.fixture_verdicts(k).iter().all(|v| v.passed);
     assert!(passes(same), "today's method reproduces its cases");
-    assert!(!passes(changed), "a doubled identity reproduces none of them");
+    assert!(
+        !passes(changed),
+        "a doubled identity reproduces none of them"
+    );
     assert!(passes(same), "and asking again gives the first graph's own");
 }
