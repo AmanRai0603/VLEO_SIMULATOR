@@ -9,7 +9,7 @@ use std::fmt::Write as _;
 use std::path::{Path, PathBuf};
 
 use vleo_bus::{Case, RunMode};
-use vleo_modules::core_engine::graph::Kind;
+use vleo_modules::core_engine::graph::{Behaviour, Kind};
 use vleo_modules::{Graph, Scratch};
 
 pub fn root() -> PathBuf {
@@ -181,4 +181,101 @@ pub fn today(graph: &'static Graph) -> String {
     }
     let _ = std::fs::remove_dir_all(&scratch);
     out
+}
+
+/// The graph as text, one line per node, variable, case and cycle, and its
+/// fingerprint: what `baseline/graph.txt` holds.
+pub fn the_graph(g: &Graph) -> String {
+    let mut s = String::new();
+    for n in g.nodes {
+        s += &format!("node {n:?}\n");
+    }
+    for v in g.vars {
+        s += &format!("variable {v:?}\n");
+    }
+    for c in g.cases {
+        s += &format!(
+            "case {:?}\n",
+            (c.id, c.label, c.note, c.supply, c.conditions)
+        );
+        for y in c.cycles {
+            s += &format!(
+                "cycle {:?}\n",
+                (y.nodes, y.converge_on, y.tolerance, y.max_iter, y.seeds)
+            );
+        }
+    }
+    s += &format!("graph {:016x}\n", g.graph_hash());
+    s
+}
+
+/// The first line two records differ at, said for a person.
+pub fn first_difference(on_record: &str, now: &str) -> String {
+    on_record
+        .lines()
+        .zip(now.lines())
+        .position(|(a, b)| a != b)
+        .map_or("a line count".to_string(), |n| {
+            format!(
+                "line {}:\n  on record  {}\n  now        {}",
+                n + 1,
+                on_record.lines().nth(n).unwrap_or(""),
+                now.lines().nth(n).unwrap_or("")
+            )
+        })
+}
+
+/// What a method answers at one set of inputs, as `baseline/methods.csv`
+/// holds it: the inputs and the answer to the bit, or the fault in its words.
+fn method_line(
+    id: &str,
+    t: &[f64],
+    outputs: usize,
+    r: Result<[f64; vleo_modules::MAX_OUTPUTS], vleo_modules::core_engine::fault::Fault>,
+) -> String {
+    let bits = |v: &[f64]| {
+        v.iter()
+            .map(|x| format!("{:016x}", x.to_bits()))
+            .collect::<Vec<_>>()
+            .join(";")
+    };
+    let said = match r {
+        Ok(v) => bits(&v[..outputs]),
+        Err(f) => format!("{f:?}"),
+    };
+    format!("{id},{},{}\n", bits(t), said.replace('\n', " "))
+}
+
+/// Every method's answer at inputs today's record never reaches, as the
+/// translated code answered it: each of its fixtures, and each input in turn
+/// not a number, infinite, far outside every range, zero and negative, the
+/// rest at its first fixture.
+pub fn methods_record(
+    g: &Graph,
+    answer: impl Fn(
+        usize,
+        &[f64],
+    )
+        -> Result<[f64; vleo_modules::MAX_OUTPUTS], vleo_modules::core_engine::fault::Fault>,
+) -> String {
+    let mut s = String::from("node,inputs,answer\n");
+    for (k, def) in g.nodes.iter().enumerate() {
+        if def.behaviour != Behaviour::Method {
+            continue;
+        }
+        let n = def.inputs.len();
+        let mut tries: Vec<Vec<f64>> = def.fixtures.iter().map(|f| f.inputs.to_vec()).collect();
+        let base = tries.first().cloned().unwrap_or_else(|| vec![1.0; n]);
+        for i in 0..n {
+            for bad in [f64::NAN, f64::INFINITY, -1e12, 1e12, 0.0, -1.0] {
+                let mut t = base.clone();
+                t[i] = bad;
+                tries.push(t);
+            }
+        }
+        for t in &tries {
+            s += &method_line(def.id, t, def.outputs.len(), answer(k, t));
+        }
+    }
+    s
 }

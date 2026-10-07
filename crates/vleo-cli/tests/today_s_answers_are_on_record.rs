@@ -30,17 +30,42 @@ mod baseline;
 
 use std::fmt::Write as _;
 
-use baseline::{record_path, today};
+use baseline::{first_difference, methods_record, record_path, root, the_graph, today};
 use vleo_modules::COMPILED;
 
+/// With today's answers, two more records written by the same command: the
+/// graph itself (`baseline/graph.txt`) and every method's answers at inputs
+/// the design never reaches (`baseline/methods.csv`). The design read from
+/// its files is held to all three (`the_design_read_at_run_time_answers_as_today`).
 #[test]
 fn today_s_answers_are_on_record() {
-    let now = today(&COMPILED);
+    let graph = &COMPILED;
+    let now = today(graph);
+    let graph_now = the_graph(graph);
+    let methods_now = methods_record(graph, |k, t| graph.probe(k as u16, t));
     let path = record_path();
+    let graph_path = root().join("baseline/graph.txt");
+    let methods_path = root().join("baseline/methods.csv");
     if std::env::var("VLEO_BASELINE").as_deref() == Ok("write") {
         std::fs::create_dir_all(path.parent().unwrap()).unwrap();
         std::fs::write(&path, &now).unwrap();
+        std::fs::write(&graph_path, &graph_now).unwrap();
+        std::fs::write(&methods_path, &methods_now).unwrap();
         return;
+    }
+    for (name, file, now) in [
+        ("the graph", &graph_path, &graph_now),
+        ("every method's answers", &methods_path, &methods_now),
+    ] {
+        let was = std::fs::read_to_string(file).unwrap_or_default();
+        assert!(
+            &was == now,
+            "{name} is not as on record in {} — {}. A deliberate change to the design \
+             is recorded again on purpose: VLEO_BASELINE=write cargo test -p vleo-cli \
+             --test today_s_answers_are_on_record",
+            file.display(),
+            first_difference(&was, now)
+        );
     }
     let was = std::fs::read_to_string(&path).unwrap_or_default();
     if was == now {
