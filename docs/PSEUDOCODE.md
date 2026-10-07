@@ -82,7 +82,7 @@ A bare `0` is zero of any unit; any other number that is not a pure ratio needs 
 
 ## Kernel functions
 
-Relations too long to write as a formula — an integral up the atmosphere, a decay over many orbits — already live in the kernel, reviewed once. A method calls them by name, each argument in the unit shown; the checker holds the units, and the engine runs the kernel itself, so the method and the built node cannot differ.
+Relations too long to write as a formula — an integral up the atmosphere, a decay over many orbits — already live in the kernel, reviewed once. A method calls them by name, each argument in the unit shown; the checker holds the units, and the engine runs the kernel itself, so the method and the built node cannot differ. An argument in `[~]` takes any unit, so long as every `[~]` argument of the call is in the same one; a function that can find no answer refuses, in the words shown.
 
 | Call | Answer | Meaning | In the kernel |
 |---|---|---|---|
@@ -97,6 +97,116 @@ Relations too long to write as a formula — an integral up the atmosphere, a de
 | `kp_from_ap(ap [1])` | `[1]` | Kp on the published three-hour scale for the planetary index ap, between its tabulated thirds | `env::kp_from_ap(ap)` |
 | `kp_mean_slot_bias(ap [1])` | `[1]` | the measured offset of a day's mean three-hour Kp from the Kp of its daily Ap | `env::kp_mean_slot_bias(ap)` |
 | `kp_peak_slot_bias(ap [1])` | `[1]` | the measured offset of a day's highest three-hour Kp from the Kp of its daily Ap | `env::kp_peak_slot_bias(ap)` |
+| `aerodynamic_torque(drag [N], cp_cm_offset [m])` | `[N.m]` | the torque drag makes about the centre of mass, from the centre-of-pressure offset | `aero::aerodynamic_torque(drag, cp_cm_offset)` |
+| `drag_acceleration(drag [N], mass [kg])` | `[m/s^2]` | drag deceleration, D/m | `aero::drag_acceleration(drag, mass)` |
+| `dynamic_pressure(density [kg/m^3], velocity [m/s])` | `[Pa]` | dynamic pressure, 0.5·rho·V^2 | `aero::dynamic_pressure(density, velocity)` |
+| `speed_ratio(velocity [m/s], t [K], molar_mass [kg/mol])` | `[1]` | molecular speed ratio, V over the most probable thermal speed | `aero::speed_ratio(velocity, t, molar_mass)` |
+| `accommodation_coefficient(n_atomic_oxygen [1/m^3], t_inf [K])` | `[1]` | energy accommodation coefficient from Langmuir adsorption of atomic oxygen (Moe & Moe 2005) | `aero::accommodation_coefficient(n_atomic_oxygen, t_inf)` |
+| `atomic_oxygen_fluence(n_atomic_oxygen [1/m^3], velocity [m/s], duration [s])` | `[1/m^2]` | atomic oxygen fluence over a duration, atoms per square metre | `aero::atomic_oxygen_fluence(n_atomic_oxygen, velocity, duration)` |
+| `ballistic_coefficient(mass [kg], drag_coefficient [1], reference_area [m^2])` | `[kg/m^2]` | ballistic coefficient, m/(Cd·A) | `aero::ballistic_coefficient(mass, drag_coefficient, reference_area)` |
+| `cylinder_drag_coefficient(s [1], length [m], diameter [m], alpha [1], t_wall [K], velocity [m/s], molar_mass [kg/mol])` | `[1]` | drag coefficient of a right circular cylinder flying axially, Sentman free-molecular, for speed ratio s and accommodation alpha | `aero::cylinder_drag_coefficient(s, length, diameter, alpha, t_wall, velocity, molar_mass)` |
+| `aperture_gain_db(diameter [m], frequency [Hz], efficiency [1])` | `[1]` | gain of a circular aperture antenna, in dBi as a pure number | `comms::aperture_gain_db(diameter, frequency, efficiency)` |
+| `carrier_to_noise_density_db(eirp_dbw [1], path_loss_db [1], atmospheric_loss_db [1], g_over_t_db [1])` | `[1]` | carrier to noise density ratio, in dB-Hz as a pure number; every argument in dB as a pure number | `comms::carrier_to_noise_density_db(eirp_dbw, path_loss_db, atmospheric_loss_db, g_over_t_db)` |
+| `max_contact_time(earth_central_angle [rad], orbital_period [s])` | `[s]` | contact time for one overhead pass | `comms::max_contact_time(earth_central_angle, orbital_period)` |
+| `daily_downlink_volume(per_pass [bit], passes_per_day [1], availability [1])` | `[bit]` | data downlinked in a day, from the volume per pass and the passes per day | `comms::daily_downlink_volume(per_pass, passes_per_day, availability)` |
+| `achievable_data_rate(cn0_db [1], required_eb_n0_db [1], implementation_loss_db [1], margin_db [1])` | `[bit/s]` | the highest data rate that closes the link at the stated margin; every argument in dB as a pure number | `comms::achievable_data_rate(cn0_db, required_eb_n0_db, implementation_loss_db, margin_db)` |
+| `doppler_shift(frequency [Hz], relative_velocity [m/s])` | `[Hz]` | Doppler shift at closest approach, f·v/c | `comms::doppler_shift(frequency, relative_velocity)` |
+| `eb_over_n0_db(cn0_db [1], data_rate [bit/s])` | `[1]` | energy per bit over noise density, in dB as a pure number | `comms::eb_over_n0_db(cn0_db, data_rate)` |
+| `eirp_dbw(transmit_power [W], antenna_gain_db [1], line_loss_db [1])` | `[1]` | effective isotropic radiated power, in dBW as a pure number | `comms::eirp_dbw(transmit_power, antenna_gain_db, line_loss_db)` |
+| `g_over_t_db(receive_gain_db [1], system_noise_temperature [K])` | `[1]` | receiver figure of merit G/T, in dB/K as a pure number | `comms::g_over_t_db(receive_gain_db, system_noise_temperature)` |
+| `pass_data_volume(rate [bit/s], contact [s], link_efficiency [1])` | `[bit]` | data volume downlinked in one pass | `comms::pass_data_volume(rate, contact, link_efficiency)` |
+| `free_space_path_loss_db(range [m], frequency [Hz])` | `[1]` | free-space path loss, in dB as a pure number | `comms::free_space_path_loss_db(range, frequency)` |
+| `system_noise_temperature(antenna_temperature [K], line_loss_db [1], receiver_noise_figure_db [1], physical_temperature [K])` | `[K]` | system noise temperature from the antenna, line and receiver; losses in dB as pure numbers | `comms::system_noise_temperature(antenna_temperature, line_loss_db, receiver_noise_figure_db, physical_temperature)` |
+| `link_margin_db(eb_n0_db [1], required_eb_n0_db [1], implementation_loss_db [1])` | `[1]` | link margin against a required Eb/N0, with implementation loss; every value in dB as a pure number | `comms::link_margin_db(eb_n0_db, required_eb_n0_db, implementation_loss_db)` |
+| `cost_per_service_unit(programme_cost [USD], service_units [1])` | `[USD]` | cost per unit of delivered service | `cost::cost_per_service_unit(programme_cost, service_units)` |
+| `production_run_cost(first_unit [USD], units [1], slope [1])` | `[USD]` | a production run's cost under Wright's learning curve, summed unit by unit; units a whole number, cut toward zero | `cost::production_run_cost(first_unit, units, slope)` |
+| `programme_cost(non_recurring [USD], production [USD], annual_operations [USD], years [1])` | `[USD]` | non-recurring plus production plus operations for the years given | `cost::programme_cost(non_recurring, production, annual_operations, years)` |
+| `replacement_avoided(satellite_unit_cost [USD], launch_cost [USD], replacements_avoided [1])` | `[USD]` | the saving of satellites that need not be replaced and relaunched | `cost::replacement_avoided(satellite_unit_cost, launch_cost, replacements_avoided)` |
+| `cer_inflated(driver [~], a [1], b [1], base_year [1], target_year [1], annual_inflation [1])` | `[USD]` | a cost estimating relationship a·driver^b in millions, in its base year's money, inflated to the target year at the annual rate; years whole numbers | `cost::Cer { a, b, base_year, .. }.evaluate_inflated(driver, target_year, annual_inflation)` |
+| `density_uncertainty(kp [1])` | `[1]` | the one-sigma uncertainty the density model claims, as a fraction | `env::density_uncertainty(kp)` |
+| `exospheric_temperature(f107 [1], f107a [1], kp [1])` | `[K]` | exospheric temperature from F10.7, its 81-day mean and Kp (Jacchia 1971) | `env::exospheric_temperature(f107, f107a, kp)` |
+| `knudsen(mean_free_path [m], characteristic_length [m])` | `[1]` | Knudsen number, lambda/L | `env::knudsen(mean_free_path, characteristic_length)` |
+| `thermosphere_temperature(altitude [m], t_inf [K])` | `[K]` | the gas's kinetic temperature at altitude, Bates profile | `env::temperature(altitude, t_inf)` |
+| `magnetic_field(r [m], magnetic_latitude [rad])` | `[T]` | the geomagnetic field's magnitude, dipole approximation | `env::magnetic_field(r, magnetic_latitude)` |
+| `mean_free_path(n [1/m^3])` | `[m]` | mean free path for a number density | `env::mean_free_path(n)` |
+| `along_track_error_from_drag(drag_acceleration_error [m/s^2], duration [s])` | `[m]` | along-track error grown from an unmodelled drag acceleration over a duration | `gnc::along_track_error_from_drag(drag_acceleration_error, duration)` |
+| `gravity_gradient_torque(radius [m], inertia_max [kg.m^2], inertia_min [kg.m^2], theta [rad])` | `[N.m]` | gravity-gradient torque at pitch angle theta from local vertical | `gnc::gravity_gradient_torque(radius, inertia_max, inertia_min, theta)` |
+| `pointing_to_ground_error(pointing_error [rad], slant_range [m])` | `[m]` | ground position error from a pointing error at a slant range | `gnc::pointing_to_ground_error(pointing_error, slant_range)` |
+| `magnetic_torque(residual_dipole [A.m^2], field [T])` | `[N.m]` | torque from a residual dipole in the geomagnetic field | `gnc::magnetic_torque(residual_dipole, field)` |
+| `magnetorquer_dipole_required(momentum [N.m.s], field [T], dump_time [s])` | `[A.m^2]` | the dipole a torque rod needs to dump a momentum in a time | `gnc::magnetorquer_dipole_required(momentum, field, dump_time)` |
+| `momentum_storage_required(secular_torque [N.m], orbital_period [s], margin [1])` | `[N.m.s]` | momentum a wheel stores against a secular torque for half an orbit, with a margin | `gnc::momentum_storage_required(secular_torque, orbital_period, margin)` |
+| `navigation_position_error(user_range_error [m], gdop [1])` | `[m]` | GNSS position error from the receiver's range error (URE) and the geometry | `gnc::navigation_position_error(user_range_error, gdop)` |
+| `pointing_error_rss(a [rad], b [rad], c [rad], d [rad])` | `[rad]` | root-sum-square of four pointing error terms | `gnc::pointing_error_rss(&[a, b, c, d])` |
+| `solar_pressure_torque(area [m^2], reflectivity [1], cp_offset [m], incidence [rad])` | `[N.m]` | solar radiation pressure torque | `gnc::solar_pressure_torque(area, reflectivity, cp_offset, incidence)` |
+| `total_disturbance_torque(aerodynamic [N.m], gravity_gradient [N.m], solar [N.m], magnetic [N.m])` | `[N.m]` | the disturbance torques summed, worst case | `gnc::total_disturbance_torque(aerodynamic, gravity_gradient, solar, magnetic)` |
+| `dry_mass(structure [kg], propulsion [kg], power [kg], thermal [kg], avionics [kg], comms [kg], gnc [kg], harness [kg], payloads [kg], system_margin [1])` | `[kg]` | dry mass: the subsystems summed, with the system margin | `mass::dry_mass(structure, propulsion, power, thermal, avionics, comms, gnc, harness, payloads, system_margin)` |
+| `mass_margin(limit [kg], actual [kg])` | `[1]` | mass margin against a limit, as a fraction of the limit | `mass::mass_margin(limit, actual)` |
+| `wet_mass(dry [kg], propellant [kg])` | `[kg]` | dry plus propellant | `mass::wet_mass(dry, propellant)` |
+| `margin_at_least(required [~], achieved [~])` | `[1]` | signed margin of an achieved value that must be AT LEAST the required one, as a fraction of it: (achieved - required) / required, and 0 when nothing is required | `mission::closure(required, achieved, AtLeast).margin` |
+| `margin_at_most(required [~], achieved [~])` | `[1]` | signed margin of an achieved value that must be AT MOST the required one, as a fraction of it: (required - achieved) / required, and 0 when nothing is required | `mission::closure(required, achieved, AtMost).margin` |
+| `access_area(earth_central_angle [rad])` | `[m^2]` | instantaneous access area on the ground | `mission::access_area(earth_central_angle)` |
+| `k_of_n_availability(unit_availability [1], n [1], k [1])` | `[1]` | availability of k of n, binomial; n and k whole numbers, cut toward zero | `mission::k_of_n_availability(unit_availability, n, k)` |
+| `instantaneous_coverage_fraction(earth_central_angle [rad])` | `[1]` | fraction of the Earth one satellite sees at an instant | `mission::instantaneous_coverage_fraction(earth_central_angle)` |
+| `end_to_end_latency(time_to_downlink [s], downlink_duration [s], ground_processing [s], delivery [s])` | `[s]` | collect, hold, downlink, process and deliver | `mission::end_to_end_latency(time_to_downlink, downlink_duration, ground_processing, delivery)` |
+| `mean_revisit_time(swath_width [m], ground_track_speed [m/s], satellites [1])` | `[s]` | mean revisit time by an area-rate argument | `mission::mean_revisit_time(swath_width, ground_track_speed, satellites)` |
+| `satellites_for_revisit(target_revisit [s], swath_width [m], ground_track_speed [m/s])` | `[1]` | satellites needed for a revisit target | `mission::satellites_for_revisit(target_revisit, swath_width, ground_track_speed)` |
+| `mean_time_to_downlink(passes_per_day [1])` | `[s]` | mean time to the next ground contact | `mission::mean_time_to_downlink(passes_per_day)` |
+| `circular_velocity(radius [m])` | `[m/s]` | circular orbital speed, sqrt(mu/r) | `orbit::circular_velocity(radius)` |
+| `decay_rate(density [kg/m^3], ballistic_coefficient [kg/m^2], semi_major_axis [m])` | `[m/s]` | rate of change of semi-major axis under drag | `orbit::decay_rate(density, ballistic_coefficient, semi_major_axis)` |
+| `deorbit_delta_v(from_altitude [m], target_perigee_altitude [m])` | `[m/s]` | delta-v to lower perigee to a re-entry altitude | `orbit::deorbit_delta_v(from_altitude, target_perigee_altitude)` |
+| `drag_makeup_delta_v(drag_acceleration [m/s^2], duration [s])` | `[m/s]` | delta-v to hold altitude against drag for a duration | `orbit::drag_makeup_delta_v(drag_acceleration, duration)` |
+| `earth_central_angle(radius [m], min_elevation [rad])` | `[rad]` | Earth-central angle to the horizon at a minimum elevation | `orbit::earth_central_angle(radius, min_elevation)` |
+| `eclipse_fraction(radius [m], beta [rad])` | `[1]` | fraction of an orbit in the Earth's shadow, cylindrical model | `orbit::eclipse_fraction(radius, beta)` |
+| `ground_track_speed(orbital_speed [m/s], radius [m])` | `[m/s]` | speed of the sub-satellite point | `orbit::ground_track_speed(orbital_speed, radius)` |
+| `nodal_regression(semi_major_axis [m], eccentricity [1], inclination [rad])` | `[rad/s]` | secular regression of the node from J2 | `orbit::nodal_regression(semi_major_axis, eccentricity, inclination)` |
+| `orbital_period(semi_major_axis [m])` | `[s]` | orbital period, 2·pi·sqrt(a^3/mu) | `orbit::period(semi_major_axis)` |
+| `orbit_radius(altitude [m])` | `[m]` | geocentric radius from altitude above the WGS-84 equatorial radius | `orbit::radius(altitude)` |
+| `slant_range(radius [m], min_elevation [rad])` | `[m]` | slant range to the edge of the access circle | `orbit::slant_range(radius, min_elevation)` |
+| `sun_synchronous_inclination(semi_major_axis [m], eccentricity [1])` | `[rad]` | the inclination at which the node regresses with the Sun; refused where none does; refuses: «no inclination gives Sun-synchronous regression at this radius» | `orbit::sun_synchronous_inclination(semi_major_axis, eccentricity)` |
+| `swath_width(earth_central_angle [rad])` | `[m]` | ground swath width for an Earth-central half-angle | `orbit::swath_width(earth_central_angle)` |
+| `propellant_mass(dry_mass [kg], delta_v [m/s], exhaust_velocity [m/s])` | `[kg]` | the rocket equation, solved for propellant mass | `orbit::propellant_mass(dry_mass, delta_v, exhaust_velocity)` |
+| `exhaust_velocity(specific_impulse [s])` | `[m/s]` | exhaust velocity from specific impulse, Isp·g0 | `orbit::exhaust_velocity(specific_impulse)` |
+| `dwell_time(gsd [m], ground_track_speed [m/s])` | `[s]` | integration time per ground sample | `payload::dwell_time(gsd, ground_track_speed)` |
+| `tdoa_geolocation_error(timing_uncertainty [s], gdop [1])` | `[m]` | geolocation error from time difference of arrival | `payload::tdoa_geolocation_error(timing_uncertainty, gdop)` |
+| `achieved_gsd(diffraction [m], detector [m])` | `[m]` | the ground sample distance achieved: the worse of the two limits | `payload::achieved_gsd(diffraction, detector)` |
+| `detector_limited_gsd(altitude [m], pixel_pitch [m], focal_length [m])` | `[m]` | detector-limited ground sample distance, h·p/f | `payload::detector_limited_gsd(altitude, pixel_pitch, focal_length)` |
+| `diffraction_limited_gsd(altitude [m], wavelength [m], aperture [m])` | `[m]` | diffraction-limited ground resolution, Rayleigh | `payload::diffraction_limited_gsd(altitude, wavelength, aperture)` |
+| `scene_data_volume(pixels_across [1], pixels_along [1], bits_per_pixel [1], bands [1], compression_ratio [1])` | `[bit]` | raw data volume of one optical scene | `payload::scene_data_volume(pixels_across, pixels_along, bits_per_pixel, bands, compression_ratio)` |
+| `signal_electrons(radiance [1], aperture [m], focal_length [m], pixel_pitch [m], transmission [1], quantum_efficiency [1], integration_time [s], wavelength [m], bandwidth [m])` | `[1]` | signal electrons per sample; radiance in W/m^2/sr/m as a pure number | `payload::signal_electrons(radiance, aperture, focal_length, pixel_pitch, transmission, quantum_efficiency, integration_time, wavelength, bandwidth)` |
+| `optical_snr(signal_electrons [1], dark_electrons [1], read_noise_electrons [1])` | `[1]` | signal to noise ratio: shot, dark and read noise | `payload::optical_snr(signal_electrons, dark_electrons, read_noise_electrons)` |
+| `optical_swath(gsd [m], pixels_across_track [1])` | `[m]` | swath from the pixels across track and the ground sample distance | `payload::optical_swath(gsd, pixels_across_track)` |
+| `toa_timing_uncertainty(bandwidth [Hz], snr_linear [1], integration [s])` | `[s]` | Cramér-Rao bound on time-of-arrival | `payload::toa_timing_uncertainty(bandwidth, snr_linear, integration)` |
+| `array_mass(area [m^2], areal_density [kg/m^2])` | `[kg]` | solar array mass from area and areal density | `power::array_mass(area, areal_density)` |
+| `array_power_bol(area [m^2], cell_efficiency [1], packing_factor [1], incidence [rad])` | `[W]` | solar array output at beginning of life | `power::array_power_bol(area, cell_efficiency, packing_factor, incidence)` |
+| `array_power_eol(bol [W], degradation [1])` | `[W]` | array output at end of life | `power::array_power_eol(bol, degradation)` |
+| `battery_cycles(mission_duration [s], orbital_period [s])` | `[1]` | charge-discharge cycles over a mission, one per orbit | `power::battery_cycles(mission_duration, orbital_period)` |
+| `battery_energy_required(eclipse_load [W], eclipse_duration [s], depth_of_discharge [1], discharge_efficiency [1])` | `[J]` | battery energy to carry the eclipse load | `power::battery_energy_required(eclipse_load, eclipse_duration, depth_of_discharge, discharge_efficiency)` |
+| `battery_mass(energy [J], specific_energy_wh_per_kg [1])` | `[kg]` | battery mass from energy and specific energy; specific energy in Wh/kg as a pure number | `power::battery_mass(energy, specific_energy_wh_per_kg)` |
+| `array_degradation(annual_rate [1], years [1])` | `[1]` | degradation factor after a number of years at an annual rate | `power::degradation(annual_rate, years)` |
+| `power_demand(propulsion [W], payload [W], avionics [W], comms [W], thermal [W], harness_loss [1])` | `[W]` | the named loads summed, with the harness loss | `power::power_demand(propulsion, payload, avionics, comms, thermal, harness_loss)` |
+| `power_margin(available [W], demand [W])` | `[1]` | power margin as a fraction of the demand | `power::power_margin(available, demand)` |
+| `bus_power_demand(thruster_input [W], ppu_efficiency [1])` | `[W]` | power drawn from the bus, after the power processing unit | `prop::bus_power_demand(thruster_input, ppu_efficiency)` |
+| `intake_collection_efficiency(free_stream_density [1/m^3], velocity [m/s], intake_area [m^2], throat_area [m^2], eta_geo [1], beta_backflow [1], chamber_temperature [K], molar_mass [kg/mol])` | `[1]` | the intake's collection efficiency, from its particle balance | `prop::intake_balance(free_stream_density, velocity, intake_area, throat_area, eta_geo, beta_backflow, chamber_temperature, molar_mass).collection_efficiency` |
+| `intake_compression_ratio(free_stream_density [1/m^3], velocity [m/s], intake_area [m^2], throat_area [m^2], eta_geo [1], beta_backflow [1], chamber_temperature [K], molar_mass [kg/mol])` | `[1]` | the intake's compression ratio, from its particle balance | `prop::intake_balance(free_stream_density, velocity, intake_area, throat_area, eta_geo, beta_backflow, chamber_temperature, molar_mass).compression_ratio` |
+| `collected_mass_flow(density [kg/m^3], velocity [m/s], intake_area [m^2], collection_efficiency [1])` | `[kg/s]` | mass flow reaching the thruster | `prop::collected_mass_flow(density, velocity, intake_area, collection_efficiency)` |
+| `beam_exhaust_velocity(beam_voltage [V], molar_mass [kg/mol])` | `[m/s]` | exhaust velocity of a beam accelerated through a potential, sqrt(2qV/m) | `prop::beam_exhaust_velocity(beam_voltage, molar_mass)` |
+| `incident_mass_flux(density [kg/m^3], velocity [m/s])` | `[kg/s]` | incident mass flux, rho·V | `prop::incident_mass_flux(density, velocity)` |
+| `thruster_input_power(jet [W], ionisation [W], other_losses [1])` | `[W]` | electrical power the thruster draws | `prop::thruster_input_power(jet, ionisation, other_losses)` |
+| `ion_mass_flow(collected [kg/s], propellant_utilisation [1])` | `[kg/s]` | ion mass flow, from propellant utilisation | `prop::ion_mass_flow(collected, propellant_utilisation)` |
+| `ionisation_power(ion_flow [kg/s], molar_mass [kg/mol], epsilon_ev [1])` | `[W]` | power spent making the ions; energy per ion in eV as a pure number | `prop::ionisation_power(ion_flow, molar_mass, epsilon_ev)` |
+| `jet_power(thrust [N], ion_flow [kg/s])` | `[W]` | jet power, F^2/(2·m_dot) | `prop::jet_power(thrust, ion_flow)` |
+| `specific_impulse(thrust [N], collected_flow [kg/s])` | `[s]` | specific impulse referred to the collected flow | `prop::specific_impulse(thrust, collected_flow)` |
+| `beam_thrust(ion_flow [kg/s], exhaust_velocity [m/s], alpha_div [1], alpha_double [1])` | `[N]` | thrust of an ion beam, with divergence and doubly-charged corrections | `prop::beam_thrust(ion_flow, exhaust_velocity, alpha_div, alpha_double)` |
+| `total_efficiency(jet [W], bus_power [W])` | `[1]` | jet power over bus power | `prop::total_efficiency(jet, bus_power)` |
+| `thrust_to_drag(thrust [N], drag [N])` | `[1]` | thrust over drag | `prop::thrust_to_drag(thrust, drag)` |
+| `absorbed_albedo(area [m^2], absorptivity [1], view_factor [1])` | `[W]` | albedo absorbed | `thermal::absorbed_albedo(area, absorptivity, view_factor)` |
+| `absorbed_earth_ir(area [m^2], emissivity [1], view_factor [1])` | `[W]` | Earth infrared absorbed | `thermal::absorbed_earth_ir(area, emissivity, view_factor)` |
+| `absorbed_solar(area [m^2], absorptivity [1], incidence [rad])` | `[W]` | direct solar absorbed | `thermal::absorbed_solar(area, absorptivity, incidence)` |
+| `free_molecular_heating(density [kg/m^3], velocity [m/s], area [m^2], heat_transfer_coefficient [1])` | `[W]` | aerodynamic heating in free-molecular flow | `thermal::free_molecular_heating(density, velocity, area, heat_transfer_coefficient)` |
+| `equilibrium_temperature(total_absorbed [W], internal_dissipation [W], radiating_area [m^2], emissivity [1])` | `[K]` | the temperature that balances what is absorbed and dissipated | `thermal::equilibrium_temperature(total_absorbed, internal_dissipation, radiating_area, emissivity)` |
+| `required_radiator_area(heat_to_reject [W], emissivity [1], radiator_temperature [K], sink_temperature [K])` | `[m^2]` | radiator area to hold a temperature against a load | `thermal::required_radiator_area(heat_to_reject, emissivity, radiator_temperature, sink_temperature)` |
+| `earth_view_factor(radius [m])` | `[1]` | view factor to the Earth from a nadir-facing plate | `thermal::earth_view_factor(radius)` |
+| `thermal_margin(predicted [K], limit [K])` | `[K]` | thermal margin, in kelvin, against a limit | `thermal::thermal_margin(predicted, limit)` |
 
 ## Constants every method may use
 
