@@ -159,6 +159,40 @@ fn record(graph: &'static Graph, nodes: &[String]) -> String {
     out
 }
 
+/// The record's every line answered again by `graph`, at the inputs the line
+/// holds. The inputs are the record's, not probes made again from today's
+/// design: a release taken in moves what the rest of the design answers, and
+/// a relation is held to the code it replaced at the points that code was
+/// asked, whatever else has changed.
+fn replay(graph: &Graph, was: &str) -> String {
+    let mut out = String::from("node,probe,inputs,answer\n");
+    for line in was.lines().skip(1) {
+        let (id, rest) = line.split_once(',').expect("a line names its row");
+        // The probe's label is quoted, and may hold commas.
+        let close = rest[1..]
+            .match_indices('"')
+            .map(|(i, _)| i + 1)
+            .find(|&i| rest[i + 1..].starts_with(','))
+            .expect("a probe's label is closed");
+        let label = &rest[..=close];
+        let (ins, _) = rest[close + 2..]
+            .rsplit_once(',')
+            .expect("a line holds inputs and an answer");
+        let inputs: Vec<f64> = ins
+            .split(';')
+            .filter(|v| !v.is_empty())
+            .map(|v| v.parse().expect("an input on record is a number"))
+            .collect();
+        let i = graph
+            .nodes
+            .iter()
+            .position(|n| n.id == id)
+            .unwrap_or_else(|| panic!("{id} is no longer a row"));
+        let _ = writeln!(out, "{id},{label},{ins},{}", answer(graph, i, &inputs));
+    }
+    out
+}
+
 /// The rows the record holds, in its order.
 fn recorded_nodes(text: &str) -> Vec<String> {
     let mut out: Vec<String> = Vec::new();
@@ -256,7 +290,7 @@ fn the_transcribed_relations_answer_as_the_code_they_replaced() {
         ("the interpreter", interpreted),
         ("the translation", &COMPILED),
     ] {
-        let (allowed, other) = differences(&was, &record(graph, &nodes));
+        let (allowed, other) = differences(&was, &replay(graph, &was));
         if !other.is_empty() {
             let shown: Vec<&String> = other.iter().take(20).collect();
             let _ =
