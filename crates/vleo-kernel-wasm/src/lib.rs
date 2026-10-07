@@ -26,7 +26,7 @@
 
 use std::cell::RefCell;
 use vleo_bus::{Case, RunMode};
-use vleo_modules::{Scratch, Vleo, VARS};
+use vleo_modules::{vars, Scratch, Vleo};
 
 thread_local! {
     static OUT: RefCell<Vec<u8>> = const { RefCell::new(Vec::new()) };
@@ -77,7 +77,7 @@ pub extern "C" fn vleo_identity() -> *const u8 {
         "{{\"kernel\":\"{}\",\"graph\":\"{}\",\"rows\":{}}}",
         hex(Vleo::kernel_hash()),
         hex(Vleo::graph_hash()),
-        VARS.len()
+        vars().len()
     ))
 }
 
@@ -163,11 +163,11 @@ fn run(q: &Request) -> String {
         .iter()
         .map(|v| {
             let i = Vleo::find(&v.id).unwrap_or(0) as usize;
-            let (shown, unit) = vleo_bus::present(v.value, VARS[i].unit, 6);
+            let (shown, unit) = vleo_bus::present(v.value, vars()[i].unit, 6);
             format!(
                 "{{\"id\":{},\"label\":{},\"si\":{},\"shown\":{},\"unit\":{}}}",
                 text(&v.id),
-                text(VARS[i].label),
+                text(vars()[i].label),
                 num(v.value),
                 text(&shown),
                 text(unit)

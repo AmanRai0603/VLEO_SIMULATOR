@@ -4,11 +4,9 @@
 //! drive holds them. A file that states a row other than this engine answers
 //! it is refused, by name, as a design file is.
 //!
-//! The faces still name what the engine answers from the tables compiled into
-//! this build, so a design with rows this build has not, the open blocks the
-//! conversion adds where a breakdown holds none, is refused by the engine,
-//! saying so, until the faces read the graph (docs/PLAN_1_0.md, phase E, its
-//! last part). The design without them runs.
+//! The faces name what the engine answers from the graph that runs, so a
+//! design with rows this build has not, the open blocks the conversion adds
+//! where a breakdown holds none, runs, each of them under its own name.
 //!
 //! One test, alone in its binary, because which design opens is read from the
 //! environment the whole process shares.
@@ -52,18 +50,17 @@ fn the_engine_runs_the_design_from_its_files_and_refuses_one_it_does_not_answer(
         .collect();
     let dir = scratch.join("design");
 
-    // With the blocks the conversion adds: refused by the engine, saying why.
+    // With the blocks the conversion adds: run, and every one of them named.
     write_all(&files, &dir);
     std::env::set_var("VLEO_DESIGN", &dir);
-    let e = vleo_server::run_the_design(Some(root())).expect_err("rows this build has not");
+    let said = vleo_server::run_the_design(Some(root())).expect("the converted design runs");
     assert!(
-        e.contains(&format!(
-            "laid out otherwise than this build of the engine: {} rows, where this build has {}",
-            tree.sheets.len() + added.len(),
-            tree.sheets.len()
-        )),
-        "{e}"
+        said.contains(&format!("{} rows", tree.sheets.len() + added.len())),
+        "{said}"
     );
+    for id in &added {
+        assert!(vleo_modules::Vleo::find(id).is_some(), "{id} is not named");
+    }
 
     // The rows that were there: run from their files.
     let files: Vec<_> = files

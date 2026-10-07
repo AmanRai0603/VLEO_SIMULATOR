@@ -66,6 +66,10 @@ pub struct Graph {
     /// entry in `dispatch`. Empty for the compiled graph.
     pub run: &'static [Option<&'static Relation>],
     pub cases: &'static [CaseDef],
+    /// The headings of the tree the rows hang from.
+    pub groups: &'static [GroupDef],
+    /// The labelled relations between headings: (from, to, why).
+    pub relations: &'static [(&'static str, &'static str, &'static str)],
 }
 
 /// The graph compiled into this build, from the sheets as they were.
@@ -75,6 +79,8 @@ pub static COMPILED: Graph = Graph {
     dispatch: &tables::DISPATCH,
     run: &[],
     cases: &CASES,
+    groups: &GROUPS,
+    relations: &RELATIONS,
 };
 
 /// The graph this process's engine runs, when a face has installed one.
@@ -95,76 +101,47 @@ pub fn engine() -> &'static Graph {
     &COMPILED
 }
 
+/// The rows of the graph the engine runs, in its order.
+pub fn nodes() -> &'static [NodeDef] {
+    engine().nodes
+}
+
+/// The variables of the graph the engine runs, in its order.
+pub fn vars() -> &'static [VarDef] {
+    engine().vars
+}
+
+/// The cases of the graph the engine runs.
+pub fn cases() -> &'static [CaseDef] {
+    engine().cases
+}
+
+/// The headings of the graph the engine runs.
+pub fn groups() -> &'static [GroupDef] {
+    engine().groups
+}
+
+/// The labelled relations between the headings of the graph the engine runs.
+pub fn relations() -> &'static [(&'static str, &'static str, &'static str)] {
+    engine().relations
+}
+
 /// Run the engine on `graph` from now on (docs/PLAN_1_0.md, phase D: every
 /// face is re-pointed).
 ///
-/// Refused unless the graph is laid out as the compiled one is — the same
-/// rows, variables and cases, in the same order — because a face still reads
-/// the compiled tables to name and arrange what the engine answers, and a
-/// graph laid out otherwise would be answered under the wrong names. A design
-/// that differs from this build runs when the faces read it from the graph as
-/// well; until then it is refused here, by name.
+/// Any graph the design's files make: every face reads the rows, values,
+/// cases and headings it names from the graph that runs ([`nodes`], [`vars`],
+/// [`cases`], [`groups`]), so a design laid out otherwise than this build is
+/// answered under its own names.
 #[cfg(feature = "std")]
-pub fn run_on(graph: &'static Graph) -> Result<(), Error> {
-    if let Some(why) = laid_out_otherwise(graph) {
-        return Err(Error::new(
-            ErrorKind::Invalid,
-            alloc::format!(
-                "this design is laid out otherwise than this build of the engine: {why}"
-            ),
-        ));
-    }
+pub fn run_on(graph: &'static Graph) {
     *ENGINE.write().unwrap_or_else(|e| e.into_inner()) = Some(graph);
-    Ok(())
 }
 
 /// Run the engine on the compiled graph again.
 #[cfg(feature = "std")]
 pub fn run_compiled() {
     *ENGINE.write().unwrap_or_else(|e| e.into_inner()) = None;
-}
-
-/// The first way `graph` is laid out otherwise than the compiled one, if any.
-#[cfg(feature = "std")]
-fn laid_out_otherwise(graph: &Graph) -> Option<String> {
-    let c = &COMPILED;
-    if graph.nodes.len() != c.nodes.len() {
-        return Some(alloc::format!(
-            "{} rows, where this build has {}",
-            graph.nodes.len(),
-            c.nodes.len()
-        ));
-    }
-    for (a, b) in graph.nodes.iter().zip(c.nodes) {
-        if a.id != b.id || a.inputs != b.inputs || a.outputs != b.outputs {
-            return Some(alloc::format!(
-                "the row {} is not where this build has {}",
-                a.id,
-                b.id
-            ));
-        }
-    }
-    if graph.vars.len() != c.vars.len() {
-        return Some(alloc::format!(
-            "{} values, where this build has {}",
-            graph.vars.len(),
-            c.vars.len()
-        ));
-    }
-    for (a, b) in graph.vars.iter().zip(c.vars) {
-        if a.id != b.id {
-            return Some(alloc::format!(
-                "the value {} is not where this build has {}",
-                a.id,
-                b.id
-            ));
-        }
-    }
-    let ids = |g: &Graph| g.cases.iter().map(|k| k.id).collect::<Vec<_>>();
-    if ids(graph) != ids(c) {
-        return Some("its cases are not this build's".into());
-    }
-    None
 }
 
 impl Graph {
@@ -1091,8 +1068,9 @@ pub(crate) fn hex(h: u64) -> String {
 /// The management view asks one question — what is holding the design down —
 /// and the answer is a node identifier rather than a meeting.
 pub fn governing_node(store: &Store<'_>, subtree_root: NodeIdx) -> (Factor, &'static str, u8) {
-    let mut worst = (Factor::Mathematics, NODES[subtree_root as usize].id, 4u8);
-    for (i, def) in NODES.iter().enumerate() {
+    let nodes = nodes();
+    let mut worst = (Factor::Mathematics, nodes[subtree_root as usize].id, 4u8);
+    for (i, def) in nodes.iter().enumerate() {
         for &o in def.outputs {
             let slot = store.get(o);
             if slot.status != SlotStatus::Computed {
@@ -1100,7 +1078,7 @@ pub fn governing_node(store: &Store<'_>, subtree_root: NodeIdx) -> (Factor, &'st
             }
             let s = slot.cred.governing_score();
             if s < worst.2 {
-                worst = (slot.cred.governing_factor(), NODES[i].id, s);
+                worst = (slot.cred.governing_factor(), nodes[i].id, s);
             }
         }
     }
@@ -1109,5 +1087,5 @@ pub fn governing_node(store: &Store<'_>, subtree_root: NodeIdx) -> (Factor, &'st
 
 /// The unit a variable is published in, for a face that has to draw it.
 pub fn unit_of(v: NodeIdx) -> Unit {
-    VARS[v as usize].unit
+    vars()[v as usize].unit
 }

@@ -20,7 +20,7 @@
 use std::cell::RefCell;
 use std::ffi::{c_char, c_int, CStr};
 use vleo_bus::{Case, RunMode};
-use vleo_modules::{Scratch, Vleo, NODES, VARS};
+use vleo_modules::{nodes, vars, Scratch, Vleo};
 
 /// Success.
 pub const VLEO_OK: c_int = 0;
@@ -94,7 +94,7 @@ pub struct VleoResult {
 /// How many rows the tree holds.
 #[no_mangle]
 pub extern "C" fn vleo_node_count() -> c_int {
-    NODES.len() as c_int
+    nodes().len() as c_int
 }
 
 /// Copy the identifier of row `i` into a caller-owned buffer.
@@ -103,10 +103,10 @@ pub extern "C" fn vleo_node_count() -> c_int {
 /// `buf` must point to at least `len` writable bytes.
 #[no_mangle]
 pub unsafe extern "C" fn vleo_node_id(i: c_int, buf: *mut c_char, len: c_int) -> c_int {
-    if buf.is_null() || len <= 0 || i < 0 || i as usize >= NODES.len() {
+    if buf.is_null() || len <= 0 || i < 0 || i as usize >= nodes().len() {
         return VLEO_BAD_ARGUMENT;
     }
-    write_cstr(NODES[i as usize].id, buf, len)
+    write_cstr(nodes()[i as usize].id, buf, len)
 }
 
 /// The unit symbol row `i` publishes in.
@@ -115,10 +115,10 @@ pub unsafe extern "C" fn vleo_node_id(i: c_int, buf: *mut c_char, len: c_int) ->
 /// `buf` must point to at least `len` writable bytes.
 #[no_mangle]
 pub unsafe extern "C" fn vleo_node_unit(i: c_int, buf: *mut c_char, len: c_int) -> c_int {
-    if buf.is_null() || len <= 0 || i < 0 || i as usize >= NODES.len() {
+    if buf.is_null() || len <= 0 || i < 0 || i as usize >= nodes().len() {
         return VLEO_BAD_ARGUMENT;
     }
-    write_cstr(VARS[i as usize].unit.symbol(), buf, len)
+    write_cstr(vars()[i as usize].unit.symbol(), buf, len)
 }
 
 /// The last message, for the thread that produced it.

@@ -66,7 +66,7 @@ pub(super) fn saved_run_json(
         }
         first = false;
         let (symbol, unit) = match Vleo::find(&o.id) {
-            Some(k) => (VARS[k as usize].symbol, VARS[k as usize].unit),
+            Some(k) => (vars()[k as usize].symbol, vars()[k as usize].unit),
             None => ("", vleo_units::Unit::One),
         };
         let (shown, sym) = vleo_bus::present(si, unit, 6);
@@ -1434,10 +1434,10 @@ fn run_on_saved_case(ctx: &Ctx, node: &str) -> Result<BTreeMap<String, f64>, Str
 /// is missing: a point that did not answer is a point not drawn.
 fn probe_at(node: &str, given: &[(&str, Option<f64>)]) -> Option<f64> {
     let k = Vleo::find(node)?;
-    let def = &NODES[k as usize];
+    let def = &nodes()[k as usize];
     let mut inputs = Vec::with_capacity(def.inputs.len());
     for &v in def.inputs {
-        let id = VARS[v as usize].id;
+        let id = vars()[v as usize].id;
         inputs.push(given.iter().find(|(g, _)| *g == id)?.1?);
     }
     vleo_modules::probe(k, &inputs)
@@ -1491,7 +1491,7 @@ fn probe_sweep(
 }
 
 fn write_sweep(j: &mut Json, k: &str, s: &ProbeSweep) {
-    let var = |id: &str| Vleo::find(id).map(|i| VARS[i as usize].unit);
+    let var = |id: &str| Vleo::find(id).map(|i| vars()[i as usize].unit);
     j.key(k).raw("{");
     j.str_field("x_id", s.over);
     j.str_field("y_id", s.node);
@@ -1736,7 +1736,7 @@ fn case_sweep(
     points: usize,
 ) -> Result<vleo_modules::results::Sweep, String> {
     let d = Vleo::find(over)
-        .map(|i| &VARS[i as usize])
+        .map(|i| &vars()[i as usize])
         .ok_or_else(|| format!("no row called {over}"))?;
     vleo_modules::results::sweep(
         &build_case(params, ctx),
@@ -1912,7 +1912,7 @@ fn closure(ctx: &Ctx, params: &str, j: &mut Json) -> Result<(), String> {
     let (_, levers) = crate::levers_of(params, ctx, &ach, ni);
     let Some(lv) = levers
         .iter()
-        .map(|l| (l, &VARS[l.var as usize]))
+        .map(|l| (l, &vars()[l.var as usize]))
         .find(|(l, d)| d.id != req && l.span > 0.0)
     else {
         j.key("lever").raw("null");
