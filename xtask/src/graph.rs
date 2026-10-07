@@ -121,7 +121,7 @@ pub(super) fn crate_direction(root: &Path) -> Result<Vec<String>, String> {
 }
 
 pub(super) fn cmd_graph(root: &Path) -> Result<(), String> {
-    let tree = load(root)?;
+    let tree = read(root)?;
     let derivation: usize = tree.ordered().iter().map(|s| s.inputs.len()).sum();
     let contribution: usize = tree.ordered().iter().map(|s| s.kpis.len()).sum();
     println!("three graphs, never merged:");

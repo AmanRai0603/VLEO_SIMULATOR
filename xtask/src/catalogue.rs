@@ -59,7 +59,7 @@ fn group_arg<'a>(args: &[&'a str]) -> Option<&'a str> {
 }
 
 pub(super) fn cmd_catalogue(root: &Path, args: &[&str]) -> Result<(), String> {
-    let tree = load(root)?;
+    let tree = read(root)?;
     let only = group_arg(args);
     if let Some(g) = only {
         if !tree.groups.contains_key(g) {
@@ -184,7 +184,7 @@ pub(super) fn cmd_impact(root: &Path, args: &[&str]) -> Result<(), String> {
     if names.is_empty() {
         return Err("usage: impact <node|group> ...".into());
     }
-    let tree = load(root)?;
+    let tree = read(root)?;
     let rows = rows_named(&tree, &names)?;
     println!("a change to {}:", names.join(", "));
     print_impact(&impact(&tree, &rows));

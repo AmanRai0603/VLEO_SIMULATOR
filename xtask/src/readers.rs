@@ -61,14 +61,13 @@ pub(super) fn cmd_readers(root: &Path, args: &[&str]) -> Result<(), String> {
             Ok((b, said))
         },
     )?;
-    let tree = load(root)?;
+    let tree = read(root)?;
     let design = run.step(
-        "convert the design the pages run",
+        "read the design the pages run",
         OnStop::new("nothing written", retry.clone()),
         || {
-            let files =
-                vleo_files::convert::convert(&tree, &vleo_sheet::files::Disk, "xtask readers")
-                    .map_err(|e| format!("the design does not convert: {e}"))?;
+            let (files, _) = vleo_files::convert::read_folder(&root.join("design"))
+                .map_err(|e| format!("the design folder does not open: {e}"))?;
             let n = files.len();
             let d = gzip(&vleo_files::rows::encode_design(&files))?;
             let said = format!("{n} files, {} KB compressed", d.len() / 1024);
