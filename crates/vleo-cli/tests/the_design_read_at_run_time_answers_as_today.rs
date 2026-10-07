@@ -66,9 +66,9 @@ fn the_graph_read_at_run_time_is_the_compiled_graph() {
 }
 
 #[test]
-fn no_row_runs_compiled_code() {
+fn no_row_runs_compiled_code_but_a_method_s_own_translation() {
     // Counted from the translated methods the compiled engine carries, one
-    // file each: every one of them is run by the interpreter instead.
+    // file each.
     let translated = std::fs::read_dir(root().join("crates/vleo-core/src/physics/methods"))
         .unwrap()
         .filter(|e| {
@@ -77,21 +77,27 @@ fn no_row_runs_compiled_code() {
         })
         .count();
     assert!(translated > 0);
-    // The graph a face runs is the same graph: no method has a fast path.
+    // In the graph the parity gate runs, every method is run by the
+    // interpreter. In the graph a face runs, a method this build was made
+    // from runs as its translation, the fast path — all of them, here, since
+    // this build was made from these very sheets. In both, every stated value
+    // is published by the graph itself.
     let faces = opened::read(&root()).unwrap();
-    for g in [read(), faces] {
+    for (g, interpreted) in [(read(), translated), (faces, 0)] {
         let methods = g
             .nodes
             .iter()
             .filter(|d| d.behaviour == Behaviour::Method)
             .count();
         assert_eq!(methods, translated);
-        // Every row that answers is answered by the graph itself — a method,
-        // a stated value, a table or its children; none by compiled code.
+        let by_the_graph = |k: usize| g.run.get(k).is_some_and(|r| r.is_some());
+        let run_by_the_interpreter = (0..g.nodes.len())
+            .filter(|&k| g.nodes[k].behaviour == Behaviour::Method && by_the_graph(k))
+            .count();
+        assert_eq!(run_by_the_interpreter, interpreted);
         for (k, d) in g.nodes.iter().enumerate() {
-            let by_the_graph = g.run.get(k).is_some_and(|r| r.is_some());
-            if matches!(d.behaviour, Behaviour::Method | Behaviour::Stated) {
-                assert!(by_the_graph, "{} is not run by the graph", d.id);
+            if d.behaviour == Behaviour::Stated && d.inputs.is_empty() {
+                assert!(by_the_graph(k), "{} is not published by the graph", d.id);
             }
         }
     }

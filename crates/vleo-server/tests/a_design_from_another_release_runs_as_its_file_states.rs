@@ -1,10 +1,10 @@
 //! A design file from another release runs, as its file states it.
 //!
 //! The tool holds no relation of the design in code: every row is a method,
-//! a stated value, a table or its children, read from the design's own files
-//! and run by the interpreter. So a design file other than the one the tool
-//! was released with is not refused for differing from it: it runs, and what
-//! it serves is the file's.
+//! a stated value, a table or its children, read from the design's own files,
+//! and a method the tool was not built from runs in the interpreter. So a
+//! design file other than the one the tool was released with is not refused
+//! for differing from it: it runs, and what it serves is the file's.
 
 use std::path::{Path, PathBuf};
 

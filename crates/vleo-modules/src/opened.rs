@@ -9,8 +9,8 @@
 //! Each node, variable and case is built from the tree exactly as the
 //! generator writes them into the compiled tables (`vleo_sheet::emit`,
 //! `tables_rs`): the same order, the same indices, the same units turned to
-//! SI, the same fixtures. Every relation is the design's own, and none is
-//! compiled code (docs/PLAN_1_0.md, phase E):
+//! SI, the same fixtures. Every relation is the design's own (docs/PLAN_1_0.md,
+//! phase E):
 //!
 //! - **a method** — a row whose relation is a method runs in the method
 //!   language's interpreter, the same one that checked it against its cases.
@@ -19,6 +19,13 @@
 //!   door, the method's own refusal and its undefined values as the same
 //!   faults, and the guards on every value it publishes. Its arithmetic is the
 //!   same portable maths, so it is held to today's answers exactly.
+//!
+//!   A method this build was made from — the very sheet — runs as its
+//!   translation instead, the fast path a sweep needs, held equal to the
+//!   interpreter by the parity gate ([`interpreting`] builds the graph that
+//!   gate runs). A method the build has not seen runs in the interpreter. The
+//!   translation is the method itself, translated by rule; no other compiled
+//!   code runs for any row.
 //! - **a stated value** — published as written, converted from its unit to
 //!   its type's as the generated row did, and guarded by its declared domain.
 //! - **a table, or its children** — read by the engine itself.
@@ -45,7 +52,8 @@ use vleo_sheet::model as sheet;
 use vleo_units::Unit;
 
 use crate::{
-    CaseDef, CycleDef, Error, ErrorKind, Graph, GroupDef, NodeFn, Relation, MAX_INPUTS, MAX_OUTPUTS,
+    CaseDef, CycleDef, Error, ErrorKind, Graph, GroupDef, NodeFn, Relation, COMPILED, MAX_INPUTS,
+    MAX_OUTPUTS,
 };
 use vleo_core::fault::Edge;
 use vleo_sheet::method::{self, Outcome, Program};
@@ -410,13 +418,36 @@ fn interpreted(sh: &sheet::Sheet) -> Option<&'static Relation> {
 
 /// The relation a row runs when it has no method: a row nobody has specified
 /// refuses as unspecified, and anything else refuses by name. Every relation
-/// of the design is a method, a stated value, a table or its children; none
-/// is compiled code.
+/// of the design is a method, a stated value, a table or its children.
 fn relation(sh: &sheet::Sheet) -> NodeFn {
     if sh.is_seeded() {
         return unspecified;
     }
     not_in_this_build
+}
+
+/// The translation of this row's method, when this build was made from the
+/// very sheet: the same implementation (`impl_hash`) and the same sheet
+/// (`sheet_hash`), and so the same method, translated, with the guards
+/// generated from the range it declares.
+fn this_build(sh: &sheet::Sheet) -> Option<NodeFn> {
+    let k = COMPILED.find(&sh.id)? as usize;
+    (COMPILED.nodes[k].impl_hash == sh.impl_hash && COMPILED.nodes[k].sheet_hash == sh.sheet_hash)
+        .then(|| COMPILED.dispatch[k])
+}
+
+/// How the graph runs a row whose relation is a method.
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum Methods {
+    /// Its translation, when this build was made from the very sheet; the
+    /// interpreter otherwise. docs/PLAN_1_0.md, phase D: "If a sweep is too
+    /// slow, translated code stays as the fast path, held equal to the
+    /// interpreter." A sweep runs a method thousands of times: the design
+    /// panel's F10.7 view took 6.7 s interpreted and 0.28 s translated.
+    Translated,
+    /// Always in the interpreter — how the parity gate holds every
+    /// translation equal to it.
+    Interpreted,
 }
 
 /// A stated value, as the row publishes it: converted from the unit it was
@@ -455,19 +486,23 @@ fn stated(sh: &sheet::Sheet) -> Option<&'static Relation> {
 }
 
 /// The graph of `tree`, built as the generator builds the compiled one. It
-/// lives as long as the engine that opened it. Every method runs in the
-/// interpreter: there is no compiled code for any row to run instead.
+/// lives as long as the engine that opened it.
+///
+/// A method this build was made from runs as its translation, held equal to
+/// the interpreter by the parity gate; a method the build has not seen — a
+/// group's release changed it — runs in the interpreter.
 pub fn graph(tree: &Tree) -> Result<&'static Graph, Error> {
-    build(tree)
+    build(tree, Methods::Translated)
 }
 
-/// The same graph: every method is run by the interpreter in [`graph`] too.
-/// Kept for the readers that name the interpreter.
+/// The graph of `tree` with every method run by the interpreter, whatever
+/// translation the build has for it: the graph the parity gate holds every
+/// translation to.
 pub fn interpreting(tree: &Tree) -> Result<&'static Graph, Error> {
-    build(tree)
+    build(tree, Methods::Interpreted)
 }
 
-fn build(tree: &Tree) -> Result<&'static Graph, Error> {
+fn build(tree: &Tree, methods: Methods) -> Result<&'static Graph, Error> {
     let sheets = tree.ordered();
     let n = sheets.len();
     let mut idx: BTreeMap<String, usize> = sheets
@@ -586,14 +621,24 @@ fn build(tree: &Tree) -> Result<&'static Graph, Error> {
             view: view_of(&sh.view),
             behaviour: behaviour_of(sh),
         });
-        // A method runs in the interpreter, and a stated value is published
-        // by the graph itself; neither needs compiled code.
-        let own = interpreted(sh).or_else(|| stated(sh));
-        dispatch.push(if own.is_some() {
+        // A method runs in the interpreter — or, when this build was made
+        // from this very sheet, as its translation — and a stated value is
+        // published by the graph itself.
+        let method = interpreted(sh);
+        let fast = match (methods, &method) {
+            (Methods::Translated, Some(_)) => this_build(sh),
+            _ => None,
+        };
+        let own = if fast.is_some() {
+            None
+        } else {
+            method.or_else(|| stated(sh))
+        };
+        dispatch.push(fast.unwrap_or(if own.is_some() {
             not_in_this_build
         } else {
             relation(sh)
-        });
+        }));
         run.push(own);
     }
 

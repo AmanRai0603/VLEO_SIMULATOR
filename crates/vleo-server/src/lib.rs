@@ -367,9 +367,10 @@ fn open_base(root: &Path) -> Result<(std::sync::Arc<dyn Files>, Option<DesignFil
     }
     // The file must load as a design: every check the loader makes, made,
     // before anything is served from it. Its rows run as it states them —
-    // every relation is a method or a value of the design's own, run by the
-    // interpreter — so a design other than the one this tool was released
-    // with runs too, answering from its own files.
+    // every relation is a method or a value of the design's own, a method
+    // the tool was not built from run by the interpreter — so a design other
+    // than the one this tool was released with runs too, answering from its
+    // own files.
     vleo_sheet::load::load_all_from(&d, root)
         .map_err(|e| format!("the design file {} does not load: {e}", path.display()))?;
     let info = DesignFile {
@@ -385,8 +386,9 @@ fn open_base(root: &Path) -> Result<(std::sync::Arc<dyn Files>, Option<DesignFil
 /// folders they were converted from (`vleo_files::convert::Served`).
 ///
 /// It must load as a design, every check the loader makes, made. Its rows run
-/// as its files state them, a method in the interpreter and a stated value as
-/// stated; no row runs code compiled into this tool.
+/// as its files state them: a method as its translation when this tool was
+/// built from that very method, in the interpreter otherwise, and a stated
+/// value as stated.
 fn open_converted(
     root: &Path,
     dir: &Path,
@@ -449,7 +451,10 @@ fn run_on_the_files(files: &dyn Files, root: &Path, from_a_file: bool) -> Result
         graph
             .nodes
             .iter()
-            .filter(|d| d.behaviour == vleo_modules::core_engine::graph::Behaviour::Method)
+            .zip(graph.run.iter())
+            .filter(|(d, r)| {
+                d.behaviour == vleo_modules::core_engine::graph::Behaviour::Method && r.is_some()
+            })
             .count()
     ))
 }
