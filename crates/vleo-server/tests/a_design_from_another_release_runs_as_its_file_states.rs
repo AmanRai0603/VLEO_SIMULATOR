@@ -1,10 +1,10 @@
-//! A design file is only run by the engine built from it.
+//! A design file from another release runs, as its file states it.
 //!
-//! The kit carries `design.vleo` beside a tool whose relations are compiled
-//! in. A design file from another release still opens and still answers —
-//! with relations its sheets do not state. So the tool compares every row of
-//! the file with the engine before it serves anything, and refuses a file that
-//! differs, naming the rows.
+//! The tool holds no relation of the design in code: every row is a method,
+//! a stated value, a table or its children, read from the design's own files
+//! and run by the interpreter. So a design file other than the one the tool
+//! was released with is not refused for differing from it: it runs, and what
+//! it serves is the file's.
 
 use std::path::{Path, PathBuf};
 
@@ -13,7 +13,7 @@ fn root() -> PathBuf {
 }
 
 #[test]
-fn a_design_file_changed_in_one_row_is_refused_by_name() {
+fn a_design_file_changed_in_one_row_runs_and_serves_the_change() {
     let scratch = std::env::temp_dir().join(format!("vleo-design-engine-{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&scratch);
     std::fs::create_dir_all(&scratch).unwrap();
@@ -25,10 +25,10 @@ fn a_design_file_changed_in_one_row_is_refused_by_name() {
     vleo_design::write(&root(), &file, &vleo_design::Stamp::default())
         .expect("the design file was not written");
 
-    // The file as written is this engine's design: it opens.
+    // The file as written opens.
     std::env::set_var("VLEO_DESIGN", &file);
     vleo_server::serve(Some(root()), 18971, false, true)
-        .expect("a design file of this engine was refused");
+        .expect("the design file as written was refused");
 
     // One row's question changed, as another release's design would have it.
     let node = "crates/vleo-mod-solar/nodes/sw_activity_band/node.toml";
@@ -52,13 +52,15 @@ fn a_design_file_changed_in_one_row_is_refused_by_name() {
     .unwrap();
     drop(db);
 
-    let refused = vleo_server::serve(Some(root()), 18991, false, true)
-        .expect_err("a design file for another engine was served");
+    vleo_server::serve(Some(root()), 18991, false, true)
+        .expect("a design file from another release was refused");
     std::env::remove_var("VLEO_DESIGN");
-    assert!(refused.contains("different engine"), "{refused}");
+    let k = vleo_modules::Vleo::find("sw_activity_band").expect("the row runs");
     assert!(
-        refused.contains("sw_activity_band: a different sheet"),
-        "{refused}"
+        vleo_modules::nodes()[k as usize]
+            .question
+            .contains("as another release asks it"),
+        "the row served is not the file's"
     );
     let _ = std::fs::remove_dir_all(&scratch);
 }

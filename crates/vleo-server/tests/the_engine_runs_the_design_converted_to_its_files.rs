@@ -74,22 +74,32 @@ fn the_engine_runs_the_design_from_its_files_and_refuses_one_it_does_not_answer(
         "{said}"
     );
 
-    // One row's method changed in its file: not the design this engine
-    // answers, and refused, naming the row.
+    // The answer one row gives at its first case, on the graph that runs.
+    let at_its_case = |id: &str| {
+        let k = vleo_modules::Vleo::find(id).expect("the row is in the design");
+        let inputs = vleo_modules::nodes()[k as usize].fixtures[0]
+            .inputs
+            .to_vec();
+        vleo_modules::probe(k, &inputs).map(|o| o[0]).ok()
+    };
+    let before = at_its_case("sw_f107_design_long");
+
+    // One row's method changed in its file: a design other than the one this
+    // tool was released with. It runs, and the row answers by its own method.
     let mut changed = files.clone();
     let (_, f) = changed
         .iter_mut()
         .find(|(p, _)| p.ends_with("/sw_f107_design_long.vnode"))
         .unwrap();
     let m = f.texts.iter_mut().find(|t| t.kind == "method").unwrap();
+    assert!(m.body.contains("const z = 1.28 [1]"));
     m.body = m.body.replace("const z = 1.28 [1]", "const z = 1.29 [1]");
     write_all(&changed, &dir);
-    let e =
-        vleo_server::run_the_design(Some(root())).expect_err("a row this engine does not answer");
+    vleo_server::run_the_design(Some(root())).expect("a design with a method of its own");
+    let after = at_its_case("sw_f107_design_long");
     assert!(
-        e.contains("was made for a different engine")
-            && e.contains("sw_f107_design_long: a different sheet"),
-        "{e}"
+        before.is_some() && after.is_some() && before != after,
+        "the changed method did not answer: {before:?} then {after:?}"
     );
 
     // A folder with nothing of the design in it is refused, saying so.

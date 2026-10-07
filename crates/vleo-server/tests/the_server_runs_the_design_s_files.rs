@@ -30,9 +30,10 @@ fn the_server_runs_the_graph_read_from_the_design_s_files() {
         "the server runs the compiled graph"
     );
     assert_eq!(g.nodes.len(), COMPILED.nodes.len());
-    // This build was made from these very sheets, so every method runs as
-    // its translation, the fast path; a method a release changes is the one
-    // the interpreter runs (today_s_design_is_built_from_the_releases).
-    assert_eq!(g.run_by_the_graph(), 0);
-    assert_eq!(g.graph_hash(), COMPILED.graph_hash());
+    // No row runs compiled code: every method is run by the interpreter.
+    for (k, d) in g.nodes.iter().enumerate() {
+        if d.behaviour == vleo_modules::core_engine::graph::Behaviour::Method {
+            assert!(g.run[k].is_some(), "{} runs compiled code", d.id);
+        }
+    }
 }
