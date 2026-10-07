@@ -774,24 +774,23 @@ fn a_method_of_the_forms_own_is_no_longer_a_transcription() {
     // A transcribed method names what it was copied from and who read the
     // copy against it. When a person's own method replaces it, neither
     // describes the row any more: intake clears both, and names the person.
-    let id = "orbit_velocity";
+    // Any row still a transcription will do: which ones are changes as
+    // groups send their own methods.
     let tree = load_all(&root()).unwrap();
-    assert!(
-        !tree
-            .sheets
-            .get(id)
-            .unwrap()
-            .method
-            .transcribed_from
-            .is_empty(),
-        "{id} is no longer a transcription; pick another"
+    let (id, copied) = tree
+        .sheets
+        .values()
+        .find(|s| !s.method.transcribed_from.is_empty())
+        .map(|s| (s.id.clone(), s.method.text.clone()))
+        .expect("a row whose method is a transcription");
+    let id = id.as_str();
+    // The person's own method: the same relation, in their words.
+    let own = format!(
+        "# The relation as I read it in its source.\n{}",
+        copied.trim_end()
     );
     let html = with_record(&edit(&form_for(id), DATA, |t| {
-        set_field(
-            t,
-            "method_text",
-            "# Vallado (2013), eq. 1-18: the circular two-body speed.\nreturn circular_velocity(r)",
-        );
+        set_field(t, "method_text", &own);
         t.get_mut("filled_by")
             .and_then(|b| b.as_table_mut())
             .unwrap()
