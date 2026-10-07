@@ -56,7 +56,7 @@ use crate::{
     MAX_OUTPUTS,
 };
 use vleo_core::fault::Edge;
-use vleo_sheet::method::{self, Outcome, Program};
+use vleo_sheet::method::{self, Compiled, Outcome};
 
 /// Text that lives as long as the graph does: the run's whole life.
 fn text(s: &str) -> &'static str {
@@ -310,7 +310,9 @@ impl Guarded {
 /// around it.
 struct Interpreted {
     node: &'static str,
-    program: Program,
+    /// The method, read once for its inputs: a sweep runs it thousands of
+    /// times, and nothing is looked up by name on any of them.
+    compiled: Compiled,
     /// The method's names for its inputs, in the contract's order.
     inputs: Vec<String>,
     /// The answer, then each published member, in declared order.
@@ -334,14 +336,8 @@ impl Interpreted {
                 reason: "an input is not a finite number",
             });
         }
-        let named: Vec<(String, f64)> = self
-            .inputs
-            .iter()
-            .cloned()
-            .zip(inputs.iter().copied())
-            .collect();
         let field = self.outputs[0].symbol;
-        let (answer, published) = match method::run_all(&self.program, &named) {
+        let (answer, published) = match self.compiled.run_all(&inputs[..self.inputs.len()]) {
             Ok((Outcome::Answer(v), p)) => (v, p),
             Ok((Outcome::Refused { reason, .. }, _)) => {
                 return Err(Fault::Refused {
@@ -405,10 +401,11 @@ fn interpreted(sh: &sheet::Sheet) -> Option<&'static Relation> {
             &pb.reason_upper,
         ));
     }
+    let inputs: Vec<String> = sh.inputs.iter().map(|i| i.binding.clone()).collect();
     let m: &'static Interpreted = Box::leak(Box::new(Interpreted {
         node: text(&sh.id),
-        program,
-        inputs: sh.inputs.iter().map(|i| i.binding.clone()).collect(),
+        compiled: Compiled::new(&program, &inputs),
+        inputs,
         outputs,
     }));
     Some(Box::leak(Box::new(move |i: &[f64], o: &mut [f64]| {
