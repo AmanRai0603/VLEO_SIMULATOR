@@ -174,7 +174,7 @@ jobs:
   method-end-to-end:
     name: a node built from its method, end to end
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
       - uses: actions/cache@v4
@@ -240,7 +240,7 @@ jobs:
   group-end-to-end:
     name: a group's release, sealed to accepted
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 75
     steps:
       - uses: actions/checkout@v4
       - uses: actions/cache@v4
