@@ -16,23 +16,33 @@ import { S } from './state.js';
 import { renderLesson, useEngine } from './components.js';
 import { initDepth } from './depth.js';
 
-/** The engine in the page: crates/vleo-kernel-wasm, carried by kernel.js. */
-async function kernel() {
-  const b64 = window.VLEO_KERNEL || '';
-  if (!b64) throw new Error('this folder was built without its engine (assets/kernel.js)');
+/** Bytes kernel.js carries, gzipped and base64-encoded, unpacked. */
+async function unpack(b64) {
   const bin = atob(b64);
   const gz = new Uint8Array(bin.length);
   for (let k = 0; k < bin.length; k++) gz[k] = bin.charCodeAt(k);
   if (typeof DecompressionStream !== 'function') throw new Error('this browser is too old to unpack the engine');
-  const bytes = await new Response(new Blob([gz]).stream().pipeThrough(new DecompressionStream('gzip'))).arrayBuffer();
-  const v = (await WebAssembly.instantiate(bytes, {})).instance.exports;
-  const call = (fn, text) => {
-    const enc = new TextEncoder().encode(text);
+  return new Uint8Array(await new Response(new Blob([gz]).stream().pipeThrough(new DecompressionStream('gzip'))).arrayBuffer());
+}
+
+/**
+ * The engine in the page: crates/vleo-kernel-wasm, carried by kernel.js with
+ * the design it runs. The design is opened before the first run, and a design
+ * that does not open stops here, saying why: the engine runs nothing else.
+ */
+async function kernel() {
+  if (!window.VLEO_KERNEL) throw new Error('this folder was built without its engine (assets/kernel.js)');
+  if (!window.VLEO_DESIGN) throw new Error('this folder was built without the design its engine runs (assets/kernel.js)');
+  const v = (await WebAssembly.instantiate(await unpack(window.VLEO_KERNEL), {})).instance.exports;
+  const callBytes = (fn, enc) => {
     const p = v.vleo_alloc(enc.length);
     new Uint8Array(v.memory.buffer, p, enc.length).set(enc);
     const at = v[fn](p, enc.length), n = v.vleo_out_len();
     return JSON.parse(new TextDecoder().decode(new Uint8Array(v.memory.buffer, at, n)));
   };
+  const call = (fn, text) => callBytes(fn, new TextEncoder().encode(text));
+  const opened = callBytes('vleo_open', await unpack(window.VLEO_DESIGN));
+  if (!opened.ok) throw new Error(opened.message);
   // The request the engine reads: `node`, the sweep's `over`/`from`/`to`/
   // `points`, and a `set <id> <si>` for each supplied value.
   const request = p => {

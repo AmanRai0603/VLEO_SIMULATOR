@@ -7,13 +7,17 @@
 //! sweep and the same figure description as the local engine. A widget still
 //! computes nothing itself.
 //!
-//! Unlike `vleo-wasm` (the demonstration subset a public URL carries), this
-//! holds every row: the folder goes to the team, who already hold the engine
-//! in the kit. Reference data does not travel here, so a row that declares a
+//! It runs the design the page carries, not a graph compiled into it: the
+//! page hands it the design's files with `vleo_open`, as the rows the page's
+//! SQLite reads (`vleo_files::rows::encode_design`), and it builds the graph
+//! from them as the tool does from the files on the drive — read with no
+//! folder behind them, every method run by the interpreter. Until a design is
+//! open it runs nothing, and says so; the compiled graph is never run in its
+//! place. Reference data does not travel here, so a row that declares a
 //! bundle refuses by name, as it would in an engine with none installed.
 //!
 //! The protocol is the form checker's: the page asks for `len` bytes with
-//! `vleo_alloc`, writes a request as UTF-8 plain text, calls `vleo_run` or
+//! `vleo_alloc`, writes a request, calls `vleo_open`, `vleo_run` or
 //! `vleo_sweep`, and reads `vleo_out_len` bytes of JSON at the returned
 //! pointer. The answer stays valid until the next call.
 //!
@@ -24,12 +28,32 @@
 // job, and there is no way to take a buffer from JavaScript without them.
 #![allow(unsafe_code)]
 
-use std::cell::RefCell;
+use std::cell::{Cell, RefCell};
+use std::path::Path;
 use vleo_bus::{Case, RunMode};
-use vleo_modules::{vars, Scratch, Vleo};
+use vleo_modules::{vars, Graph, Scratch, Vleo};
 
 thread_local! {
     static OUT: RefCell<Vec<u8>> = const { RefCell::new(Vec::new()) };
+    /// Whether a design is open: nothing runs until one is.
+    static OPEN: Cell<bool> = const { Cell::new(false) };
+}
+
+/// What a run before `vleo_open` is answered with.
+const NOT_OPEN: &str = "no design is open: the page opens the design it carries before it runs";
+
+/// Open the design the page carries, and run on it from now on: its files,
+/// as `vleo_files::rows::encode_design` wrote them. Answers
+/// `{"ok":true,"rows":n,"graph":"…"}`, or refuses naming why — and then no
+/// design is open, so a design that did not open is never answered for by
+/// one that did before it.
+///
+/// # Safety
+/// As [`vleo_run`].
+#[no_mangle]
+pub unsafe extern "C" fn vleo_open(ptr: *mut u8, len: usize) -> *const u8 {
+    let bytes = Vec::from_raw_parts(ptr, len, len.max(1));
+    put(open(&bytes))
 }
 
 /// Room for `len` bytes of input, owned by the caller until the next call.
@@ -73,12 +97,54 @@ pub extern "C" fn vleo_out_len() -> usize {
 /// Which engine this is, as JSON — so a page can say which it carries.
 #[no_mangle]
 pub extern "C" fn vleo_identity() -> *const u8 {
-    put(format!(
-        "{{\"kernel\":\"{}\",\"graph\":\"{}\",\"rows\":{}}}",
-        hex(Vleo::kernel_hash()),
-        hex(Vleo::graph_hash()),
-        vars().len()
-    ))
+    put(if OPEN.with(Cell::get) {
+        format!(
+            "{{\"kernel\":\"{}\",\"graph\":\"{}\",\"rows\":{}}}",
+            hex(Vleo::kernel_hash()),
+            hex(Vleo::graph_hash()),
+            vars().len()
+        )
+    } else {
+        format!(
+            "{{\"kernel\":\"{}\",\"graph\":null,\"rows\":0}}",
+            hex(Vleo::kernel_hash())
+        )
+    })
+}
+
+fn open(bytes: &[u8]) -> String {
+    OPEN.with(|o| o.set(false));
+    match graph_of(bytes) {
+        Ok(g) => {
+            vleo_modules::run_on(g);
+            OPEN.with(|o| o.set(true));
+            format!(
+                "{{\"ok\":true,\"rows\":{},\"graph\":\"{}\"}}",
+                g.nodes.len(),
+                hex(g.graph_hash())
+            )
+        }
+        Err(why) => failed(&why),
+    }
+}
+
+/// The graph the design's files make, read as the tool reads them from the
+/// drive: served as the folders they were converted from, with no folder of
+/// any kind behind them.
+fn graph_of(bytes: &[u8]) -> Result<&'static Graph, String> {
+    let files = vleo_files::rows::decode_design(bytes)
+        .map_err(|e| format!("the design the page carries does not read: {e}"))?;
+    let root = Path::new("/design");
+    let served = vleo_files::convert::Served::new(
+        root,
+        &files,
+        std::sync::Arc::new(vleo_sheet::files::Nowhere),
+    )
+    .map_err(|e| format!("the design the page carries does not read: {e}"))?;
+    let tree = vleo_sheet::load::load_all_from(&served, root)
+        .map_err(|e| format!("the design the page carries does not load: {e}"))?;
+    vleo_modules::opened::graph(&tree)
+        .map_err(|e| format!("the design the page carries does not run: {e}"))
 }
 
 unsafe fn take(ptr: *mut u8, len: usize) -> String {
@@ -146,6 +212,9 @@ impl Request {
 }
 
 fn run(q: &Request) -> String {
+    if !OPEN.with(Cell::get) {
+        return failed(NOT_OPEN);
+    }
     let case = match q.case() {
         Ok(c) => c,
         Err(e) => return failed(&e),
@@ -194,6 +263,9 @@ fn run(q: &Request) -> String {
 }
 
 fn sweep(q: &Request) -> String {
+    if !OPEN.with(Cell::get) {
+        return failed(NOT_OPEN);
+    }
     let case = match q.case() {
         Ok(c) => c,
         Err(e) => return failed(&e),
@@ -247,6 +319,47 @@ fn hex(h: u64) -> String {
 mod tests {
     use super::*;
 
+    /// The design the readers' folder carries — the checkout's sheets,
+    /// converted to their files as `xtask readers` converts them — opened here
+    /// as the page opens it.
+    fn the_design() -> &'static [u8] {
+        static BYTES: std::sync::OnceLock<Vec<u8>> = std::sync::OnceLock::new();
+        BYTES.get_or_init(|| {
+            let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+            let tree = vleo_sheet::load::load_all(&root).expect("the checkout's sheets load");
+            let files = vleo_files::convert::convert(&tree, &vleo_sheet::files::Disk, "vleo test")
+                .expect("the sheets convert");
+            vleo_files::rows::encode_design(&files)
+        })
+    }
+
+    fn opened() {
+        let said = open(the_design());
+        assert!(said.starts_with("{\"ok\":true"), "{said}");
+    }
+
+    #[test]
+    fn nothing_runs_until_a_design_is_open() {
+        let before = run(&Request::read("node sw_ap_design_long\n"));
+        assert!(before.contains(NOT_OPEN), "{before}");
+        let sweep_before = sweep(&Request::read(
+            "node sw_ap_design_long\nover sw_ap_central_expectation\nfrom 5\nto 35\npoints 7\n",
+        ));
+        assert!(sweep_before.contains(NOT_OPEN), "{sweep_before}");
+
+        let said = open(the_design());
+        assert!(said.starts_with("{\"ok\":true,\"rows\":"), "{said}");
+        assert!(run(&Request::read("node sw_ap_design_long\n")).starts_with("{\"ok\":true"));
+
+        // A design that does not read is refused, and then none is open: the
+        // one opened before it does not answer in its place.
+        let cut = &the_design()[..the_design().len() - 1];
+        let refused = open(cut);
+        assert!(refused.contains("does not read"), "{refused}");
+        let after = run(&Request::read("node sw_ap_design_long\n"));
+        assert!(after.contains(NOT_OPEN), "{after}");
+    }
+
     #[test]
     fn a_request_reads_as_the_page_writes_it() {
         let q =
@@ -259,6 +372,7 @@ mod tests {
 
     #[test]
     fn what_the_engine_would_refuse_is_refused_here() {
+        opened();
         let no_row = run(&Request::read("node no_such_row\n"));
         assert!(
             no_row.starts_with("{\"ok\":false") && no_row.contains("no_such_row"),
@@ -291,6 +405,7 @@ mod tests {
     fn the_page_answers_every_question_as_the_tool_does() {
         let path = std::env::var("VLEO_BROWSER_ANSWERS")
             .expect("VLEO_BROWSER_ANSWERS: the file tools/readers_check.py --answers wrote");
+        opened();
         let text = std::fs::read_to_string(&path).unwrap_or_else(|e| panic!("{path}: {e}"));
         let mut asked = 0;
         let mut differ = Vec::new();

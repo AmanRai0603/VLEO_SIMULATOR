@@ -17,10 +17,21 @@
 //! Every number is little-endian. Nothing is optional and nothing is guessed:
 //! bytes that are not exactly this are refused, by name.
 
+//!
+//! A whole design crosses the same way, each of its files by its path and its
+//! rows, so a page that carries no SQLite of the design's can still hand the
+//! engine every file the design is:
+//!
+//! ```text
+//! "VLEODESIGN1"  u32 files
+//! per file:      str path  u32 len, the file's rows as above
+//! ```
+
 use crate::error::{Error, ErrorKind};
-use crate::model::{Cell, Table};
+use crate::model::{Cell, File, Table};
 
 const MAGIC: &[u8] = b"VLEOROWS1";
+const DESIGN: &[u8] = b"VLEODESIGN1";
 
 fn put_u32(out: &mut Vec<u8>, n: usize) {
     out.extend_from_slice(&(n as u32).to_le_bytes());
@@ -163,6 +174,47 @@ pub fn decode(bytes: &[u8]) -> Result<Vec<Table>, Error> {
     Ok(tables)
 }
 
+/// A design's files as bytes: each by its path, in the order given.
+pub fn encode_design(files: &[(String, File)]) -> Vec<u8> {
+    let mut out = DESIGN.to_vec();
+    put_u32(&mut out, files.len());
+    for (path, f) in files {
+        put_str(&mut out, path);
+        let rows = encode(&f.to_tables());
+        put_u32(&mut out, rows.len());
+        out.extend_from_slice(&rows);
+    }
+    out
+}
+
+/// A design's files from bytes [`encode_design`] wrote, each read back as the
+/// file it was; refused, naming the file, if any is anything else.
+pub fn decode_design(bytes: &[u8]) -> Result<Vec<(String, File)>, Error> {
+    let mut r = Reader::new(bytes);
+    if r.take(DESIGN.len()).ok() != Some(DESIGN) {
+        return Err(Error::new(
+            ErrorKind::Malformed,
+            "this is not a design's files: it does not begin VLEODESIGN1",
+        ));
+    }
+    let n = r.u32()?;
+    let mut files = Vec::with_capacity(n);
+    for _ in 0..n {
+        let path = r.str()?;
+        let f = decode(r.bytes()?)
+            .and_then(File::from_tables)
+            .map_err(|e| Error::new(e.kind(), format!("{path}: {}", e.message())))?;
+        files.push((path, f));
+    }
+    if !r.done() {
+        return Err(Error::new(
+            ErrorKind::Malformed,
+            "the design goes on after its last file",
+        ));
+    }
+    Ok(files)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -186,5 +238,36 @@ mod tests {
         more.push(0);
         assert!(decode(&more).is_err(), "run on");
         assert!(decode(b"VLEOROWS2\0\0\0\0").is_err(), "another format");
+    }
+
+    #[test]
+    fn a_design_comes_back_file_for_file_and_a_damaged_file_is_named() {
+        let mut one = File::default();
+        one.meta.insert("file_kind".into(), "node".into());
+        let mut two = File::default();
+        two.meta.insert("file_kind".into(), "case".into());
+        let files = vec![
+            ("groups/a/nodes/x.vnode".to_string(), one),
+            ("cases/c.vcase".to_string(), two),
+        ];
+        let bytes = encode_design(&files);
+        assert_eq!(decode_design(&bytes).unwrap(), files);
+        assert!(
+            decode_design(&bytes[..bytes.len() - 1]).is_err(),
+            "cut short"
+        );
+        assert!(
+            decode_design(&encode(&[])).is_err(),
+            "one file's rows, not a design"
+        );
+        // The second file's rows, damaged where its magic is: refused by its path.
+        let at = bytes
+            .windows(MAGIC.len())
+            .rposition(|w| w == MAGIC)
+            .unwrap();
+        let mut bad = bytes.clone();
+        bad[at] = b'X';
+        let e = decode_design(&bad).unwrap_err();
+        assert!(e.message().starts_with("cases/c.vcase: "), "{e}");
     }
 }

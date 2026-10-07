@@ -1,6 +1,6 @@
 [package]
 name = "vleo-kernel-wasm"
-description = "FACE — the engine for a page read without the engine. The whole kernel, compiled to WebAssembly for the readers' docs folder, so a lesson's try-it widgets are answered by the same relations the tool runs. No bindings crate: raw exports and a buffer, like the form checker."
+description = "FACE — the engine for a page read without the engine. The whole kernel, compiled to WebAssembly for the readers' docs folder, run on the design the page carries, so a lesson's try-it widgets are answered by the same relations the tool runs. No bindings crate: raw exports and a buffer, like the form checker."
 version = "0.1.0"
 edition = "2021"
 rust-version = "1.94"
@@ -16,8 +16,14 @@ repository = "https://github.com/AmanRai0603/VLEO_SIMULATOR"
 crate-type = ["cdylib"]
 
 [dependencies]
-vleo-modules = { path = "../vleo-modules" }
+# With std, the engine runs the graph a face installs: here, the design the
+# page carries, opened by `vleo_open` before the first run.
+vleo-modules = { path = "../vleo-modules", features = ["std"] }
 vleo-bus = { path = "../vleo-bus" }
+# The design's files, read back from the rows the page carries
+# (vleo_files::rows) and served as the folders they were converted from.
+vleo-files = { path = "../vleo-files" }
+vleo-sheet = { path = "../vleo-sheet" }
 
 [profile.release]
 opt-level = "s"

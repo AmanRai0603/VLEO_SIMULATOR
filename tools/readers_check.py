@@ -58,24 +58,32 @@ async (rows) => {
     s.src = 'assets/kernel.js'; s.onload = ok; s.onerror = () => no(new Error('assets/kernel.js did not load'));
     document.head.appendChild(s);
   });
-  const bin = atob(window.VLEO_KERNEL || '');
-  const gz = new Uint8Array(bin.length);
-  for (let k = 0; k < bin.length; k++) gz[k] = bin.charCodeAt(k);
-  const bytes = await new Response(new Blob([gz]).stream().pipeThrough(new DecompressionStream('gzip'))).arrayBuffer();
-  const mod = await WebAssembly.compile(bytes);
+  const unpack = async b64 => {
+    const bin = atob(b64 || '');
+    const gz = new Uint8Array(bin.length);
+    for (let k = 0; k < bin.length; k++) gz[k] = bin.charCodeAt(k);
+    return new Uint8Array(await new Response(new Blob([gz]).stream().pipeThrough(new DecompressionStream('gzip'))).arrayBuffer());
+  };
+  const mod = await WebAssembly.compile(await unpack(window.VLEO_KERNEL));
   const imports = WebAssembly.Module.imports(mod).map(i => i.module + '.' + i.name);
   const v = (await WebAssembly.instantiate(mod, {})).exports;
   const read = at => new TextDecoder().decode(new Uint8Array(v.memory.buffer, at, v.vleo_out_len()));
-  const call = (fn, text) => {
-    const enc = new TextEncoder().encode(text);
+  const callBytes = (fn, enc) => {
     const p = v.vleo_alloc(enc.length);
     new Uint8Array(v.memory.buffer, p, enc.length).set(enc);
     return read(v[fn](p, enc.length));
   };
+  const call = (fn, text) => callBytes(fn, new TextEncoder().encode(text));
+  // Before the design is open the engine runs nothing; then the design the
+  // folder carries is opened, as the page opens it.
+  const before = call('vleo_run', 'node sw_ap_design_long\n');
+  const opened = callBytes('vleo_open', await unpack(window.VLEO_DESIGN));
   const runs = {};
   for (const id of rows) runs[id] = call('vleo_run', 'node ' + id + '\n');
   return {
     imports,
+    before,
+    opened,
     identity: read(v.vleo_identity()),
     runs,
     supplied: call('vleo_run', 'node sw_ap_design_long\nset sw_ap_design_long 3\n'),
@@ -129,8 +137,24 @@ def engine_findings(e, asked):
         ident = json.loads(e.get("identity") or "")
         if not ident.get("kernel"):
             bad.append("the engine does not say which kernel it is: %s" % e.get("identity"))
+        if not ident.get("graph"):
+            bad.append("the engine does not say which graph it runs: %s" % e.get("identity"))
     except ValueError:
         bad.append("the engine's identity is not JSON: %r" % (e.get("identity") or "")[:120])
+    # Before the design the folder carries is open, the engine runs nothing;
+    # then it opens, every row of it.
+    try:
+        before = json.loads(e.get("before") or "")
+        if before.get("ok") or "no design is open" not in (before.get("message") or ""):
+            bad.append("the engine ran before a design was open: %s" % (e.get("before") or "")[:200])
+    except ValueError:
+        bad.append("the engine's answer before a design was open is not JSON")
+    try:
+        opened = json.loads(e.get("opened") or "")
+        if not opened.get("ok") or not opened.get("rows"):
+            bad.append("the design the folder carries did not open: %s" % (e.get("opened") or "")[:300])
+    except ValueError:
+        bad.append("the engine's answer to opening the design is not JSON")
     answered, missing_data = 0, 0
     for rid in asked:
         text = (e.get("runs") or {}).get(rid)
@@ -283,7 +307,9 @@ def run(folder, answers_out, chromium):
 def selftest():
     good = {
         "imports": [],
-        "identity": json.dumps({"kernel": "abc"}),
+        "identity": json.dumps({"kernel": "abc", "graph": "def", "rows": 2}),
+        "before": json.dumps({"ok": False, "message": "no design is open: the page opens the design it carries before it runs"}),
+        "opened": json.dumps({"ok": True, "rows": 2, "graph": "def"}),
         "runs": {
             "a": json.dumps({"ok": True, "values": [{"id": "a", "si": 1.0}], "blocked": []}),
             "b": json.dumps({"ok": True, "values": [], "blocked": [{"id": "b", "kind": "data-missing"}]}),
@@ -300,6 +326,9 @@ def selftest():
 
     assert any("asks the page" in x for x in broken(imports=["env.f"]))
     assert any("identity" in x for x in broken(identity="nope"))
+    assert any("which graph" in x for x in broken(identity=json.dumps({"kernel": "abc", "graph": None})))
+    assert any("ran before a design was open" in x for x in broken(before=good["runs"]["a"]))
+    assert any("did not open" in x for x in broken(opened=json.dumps({"ok": False, "message": "does not read"})))
     assert any("took a value" in x for x in broken(supplied=json.dumps({"ok": True})))
     assert any("7 of 7" in x for x in broken(sweep=json.dumps({"ok": True, "figure": {"series": [{"y": [1, None]}]}})))
     assert any("same value" in x for x in broken(sweep=json.dumps({"ok": True, "figure": {"series": [{"y": [2] * 7}]}})))

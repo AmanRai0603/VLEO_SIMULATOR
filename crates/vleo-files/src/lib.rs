@@ -54,7 +54,6 @@
 pub mod chain;
 pub mod checks;
 pub mod compare;
-#[cfg(not(target_arch = "wasm32"))]
 pub mod convert;
 pub mod csv;
 pub mod error;

@@ -57,6 +57,28 @@ impl Files for Disk {
     }
 }
 
+/// No folders at all: what a page has. A design served over it is read from
+/// its own files and nothing else; every path it does not hold is not there.
+pub struct Nowhere;
+
+impl Files for Nowhere {
+    fn read(&self, p: &Path) -> io::Result<Vec<u8>> {
+        Err(io::Error::new(
+            io::ErrorKind::NotFound,
+            format!("{}: there are no folders here", p.display()),
+        ))
+    }
+    fn entries(&self, _: &Path) -> io::Result<Vec<PathBuf>> {
+        Ok(Vec::new())
+    }
+    fn is_dir(&self, _: &Path) -> bool {
+        false
+    }
+    fn is_file(&self, _: &Path) -> bool {
+        false
+    }
+}
+
 /// Whether a path, relative to the tree's root, is one a design file holds:
 /// a file in a node folder (`crates/vleo-mod-*/nodes/…`), a layer, a case or
 /// the source list.

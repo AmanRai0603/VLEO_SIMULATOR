@@ -1631,7 +1631,7 @@ check = "writes"
 why = "writes target/readers"
 
 [[layer.section.step]]
-say = "Open that folder as a reader does — from a file, in a browser: the pages load, the engine in the page answers, refuses and sweeps, and a widget moves. With --answers it writes every answer down, and cargo test in crates/vleo-kernel-wasm, given the file in VLEO_BROWSER_ANSWERS, holds each one to the engine built natively."
+say = "Open that folder as a reader does — from a file, in a browser: the pages load, the engine in the page runs nothing until it opens the design the folder carries, then answers, refuses and sweeps, and a widget moves. With --answers it writes every answer down, and cargo test in crates/vleo-kernel-wasm, given the file in VLEO_BROWSER_ANSWERS, holds each one to the engine built natively."
 run = "python3 tools/readers_check.py"
 check = "ci"
 
@@ -2520,7 +2520,7 @@ effect = "writes"
 tool = "xtask"
 name = "readers"
 usage = "readers [--out <dir>]"
-what = "The docs folder for readers: every row's page — the tool's own generated page — and every lesson, read with no tool running, from a shared drive or an internal web server. A lesson's widgets are answered by the engine compiled for the browser (crates/vleo-kernel-wasm), on the declared values; a row that reads reference data refuses there by name. Written to target/readers, or --out; nothing committed."
+what = "The docs folder for readers: every row's page — the tool's own generated page — and every lesson, read with no tool running, from a shared drive or an internal web server. A lesson's widgets are answered by the engine compiled for the browser (crates/vleo-kernel-wasm), run on the design the folder carries — the tree converted to its files, opened by the page before its first run — on the declared values; a row that reads reference data refuses there by name. Written to target/readers, or --out; nothing committed."
 who = "developer"
 effect = "writes"
 
