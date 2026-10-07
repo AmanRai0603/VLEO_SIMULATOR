@@ -9,9 +9,12 @@
 //!   that returns its exports, in the order its imports need. The code is the
 //!   tool's own, unchanged — the component library, the figure player, the
 //!   chart — so a lesson here is drawn exactly as in the tool.
-//! - **The engine in the page.** `crates/vleo-kernel-wasm`, built here and
-//!   carried in `assets/kernel.js`, answers a lesson's widgets with the same
-//!   relations the tool runs. A row that reads reference data refuses by name.
+//! - **The engine in the page, and the design it runs.** `crates/vleo-kernel-wasm`,
+//!   built here and carried in `assets/kernel.js` with the design beside it —
+//!   the tree's sheets converted to their files, as the rows the page hands
+//!   the engine (`vleo_files::rows::encode_design`) — answers a lesson's
+//!   widgets with the same relations the tool runs, from the graph those files
+//!   make. A row that reads reference data refuses by name.
 //! - **The pages the tool already generates.** Each row's page is its
 //!   generated fragment (`generated/fragments/<id>.html`); nothing is written
 //!   twice.
@@ -38,7 +41,7 @@ pub(super) fn cmd_readers(root: &Path, args: &[&str]) -> Result<(), String> {
                 .into(),
         );
     }
-    let mut run = Run::start(root, "readers", args, 4);
+    let mut run = Run::start(root, "readers", args, 5);
     let retry = format!("cargo run -p xtask -- readers --out {}", out.display());
     let kernel = run.step(
         "build the engine for the browser",
@@ -59,6 +62,19 @@ pub(super) fn cmd_readers(root: &Path, args: &[&str]) -> Result<(), String> {
         },
     )?;
     let tree = load(root)?;
+    let design = run.step(
+        "convert the design the pages run",
+        OnStop::new("nothing written", retry.clone()),
+        || {
+            let files =
+                vleo_files::convert::convert(&tree, &vleo_sheet::files::Disk, "xtask readers")
+                    .map_err(|e| format!("the design does not convert: {e}"))?;
+            let n = files.len();
+            let d = gzip(&vleo_files::rows::encode_design(&files))?;
+            let said = format!("{n} files, {} KB compressed", d.len() / 1024);
+            Ok((d, said))
+        },
+    )?;
     let (pages, lessons) = run.step(
         "write the pages",
         OnStop::new(
@@ -69,7 +85,7 @@ pub(super) fn cmd_readers(root: &Path, args: &[&str]) -> Result<(), String> {
             retry.clone(),
         ),
         || {
-            let (p, l) = write_folder(root, &tree, &out, &script, &kernel)?;
+            let (p, l) = write_folder(root, &tree, &out, &script, &kernel, &design)?;
             Ok(((p, l), format!("{p} row pages, {l} with a lesson")))
         },
     )?;
@@ -123,15 +139,35 @@ fn build_kernel(root: &Path) -> Result<Vec<u8>, String> {
     let built = root.join(
         "crates/vleo-kernel-wasm/target/wasm32-unknown-unknown/release/vleo_kernel_wasm.wasm",
     );
-    let gz = std::process::Command::new("gzip")
+    gzip(&fs::read(&built).map_err(|e| format!("{}: {e}", built.display()))?)
+}
+
+/// Bytes gzipped with no name or time in the header, so the same bytes give
+/// the same file.
+fn gzip(bytes: &[u8]) -> Result<Vec<u8>, String> {
+    use std::io::Write;
+    use std::process::{Command, Stdio};
+    let mut child = Command::new("gzip")
         .args(["-9", "-n", "-c"])
-        .arg(&built)
-        .output()
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .spawn()
         .map_err(|e| format!("gzip could not be run: {e}"))?;
-    if !gz.status.success() {
-        return Err("gzip failed on the built engine".into());
+    let mut stdin = child.stdin.take().ok_or("gzip took no input")?;
+    let input = bytes.to_vec();
+    // Written from its own thread, so gzip's output never waits on its input.
+    let writer = std::thread::spawn(move || stdin.write_all(&input));
+    let out = child
+        .wait_with_output()
+        .map_err(|e| format!("gzip could not be run: {e}"))?;
+    writer
+        .join()
+        .map_err(|_| "gzip's input could not be written".to_string())?
+        .map_err(|e| format!("gzip's input could not be written: {e}"))?;
+    if !out.status.success() {
+        return Err("gzip failed".into());
     }
-    Ok(gz.stdout)
+    Ok(out.stdout)
 }
 
 /// One classic script from an ES module in `web/js` and every module it
@@ -295,6 +331,7 @@ fn write_folder(
     out: &Path,
     script: &str,
     kernel: &[u8],
+    design: &[u8],
 ) -> Result<(usize, usize), String> {
     let _ = fs::remove_dir_all(out);
     let (assets, rows_dir) = (out.join("assets"), out.join("rows"));
@@ -316,8 +353,10 @@ fn write_folder(
     w(
         assets.join("kernel.js"),
         &format!(
-            "/* The engine, compiled for the browser (crates/vleo-kernel-wasm), gzipped and base64-encoded. */\nwindow.VLEO_KERNEL = \"{}\";\n",
-            vleo_sheet::template::base64(kernel)
+            "/* The engine, compiled for the browser (crates/vleo-kernel-wasm), gzipped and base64-encoded. */\nwindow.VLEO_KERNEL = \"{}\";\n\
+             /* The design it runs: the tree's sheets converted to their files, as their rows (vleo_files::rows::encode_design), gzipped and base64-encoded. */\nwindow.VLEO_DESIGN = \"{}\";\n",
+            vleo_sheet::template::base64(kernel),
+            vleo_sheet::template::base64(design)
         ),
     )?;
     let mut rows = 0;

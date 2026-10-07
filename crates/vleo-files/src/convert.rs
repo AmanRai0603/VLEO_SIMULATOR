@@ -1640,7 +1640,9 @@ impl Files for Served {
 
 /// Every group, node and case file in `dir`, laid out as [`convert`] lays
 /// them out, each with its path there, and the fingerprint of all of them: the
-/// SHA-256 of every file's path and bytes, in order.
+/// SHA-256 of every file's path and bytes, in order. Installed only: a page
+/// has no folder, and is handed the files' rows instead (`crate::rows`).
+#[cfg(not(target_arch = "wasm32"))]
 pub fn read_folder(dir: &Path) -> Result<(Vec<(String, File)>, String), Error> {
     fn walk(dir: &Path, out: &mut Vec<PathBuf>) -> Result<(), Error> {
         for e in std::fs::read_dir(dir).map_err(|e| io_error(dir, e))? {
