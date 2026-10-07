@@ -98,6 +98,13 @@ pub(super) fn cmd_group_intake(root: &Path, args: &[&str]) -> Result<(), String>
             }
         }
     }
+    // The sheets changed: the design's files are converted again with them.
+    if applied > 0 {
+        println!(
+            "the design's files: {}",
+            crate::convert::record_design(root)?
+        );
+    }
     // 3 · whom it reaches: every row of another group downstream of a node
     // this release changes, so the developer knows who to tell before merging.
     if !changes.is_empty() {

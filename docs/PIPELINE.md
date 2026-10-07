@@ -83,7 +83,7 @@ the developer's first step: check a filled node form; if it cannot be taken, wri
 | | |
 |---|---|
 | reads | the filled form, the `maintainer` branch, the tree |
-| writes | a branch form/<author>/<node>: the applied sheet, regenerated files, today's answers recorded again, a commit, a push — or <form>.returned.txt |
+| writes | a branch form/<author>/<node>: the applied sheet, regenerated files, today's answers recorded again, design/ converted again (by intake and build-node), a commit, a push — or <form>.returned.txt |
 | checks | the form, as intake does; the gate; cargo test; a node with a method built from it |
 | undo | delete the branch (`git branch -D form/<author>/<node>`, and on the remote); nothing on `maintainer` changes |
 | steps | 1 the branch · 2 apply the form · 3 regenerate · 4 gate · 5 build the node from its method · 6 today's answers, recorded again · 7 tests (cargo test --workspace) · 8 commit and push |
@@ -101,10 +101,10 @@ the checker: what a filled form would change, field by field, and every interfac
 | | |
 |---|---|
 | reads | the filled form, the node's sheet, every row an interface names |
-| writes | with --apply: node.toml (or a new node's folder), every generated file, CODEOWNERS for a new node |
+| writes | with --apply: node.toml (or a new node's folder), every generated file, CODEOWNERS for a new node, design/ converted again |
 | checks | every field against the sheet; every interface; a conflict with a change made since; a relation an assistant supplied; the whole tree's gate |
 | undo | a refused apply is put back by intake itself; an applied one: `git restore` the node's folder, or `git revert` |
-| steps | 1 read the form · 2 check every change · 3 build the new node · 4 apply to the sheet |
+| steps | 1 read the form · 2 check every change · 3 build the new node · 4 apply to the sheet · 5 the design's files, converted again |
 | dry run | --dry-run runs intake without --apply: the same check, nothing written |
 | code | `xtask/src/forms.rs` — `cmd_intake` |
 
@@ -117,7 +117,7 @@ a group's sealed release, written out with `node tools/group_db.mjs --unpack`, t
 | | |
 |---|---|
 | reads | a group's release written out by `node tools/group_db.mjs --unpack`, its RELEASE.toml, and each of its nodes' sheets |
-| writes | with --apply: each computed node's node.toml (its method and cases) and every generated file |
+| writes | with --apply: each computed node's node.toml (its method and cases), every generated file, design/ converted again |
 | checks | every file against the seal's fingerprint; then each node as its form: a conflict with a change made since, a method or results an assistant supplied (a transcription without its source and a person who checked it counts as one), the de-risking record, the whole tree's gate |
 | undo | a refused apply is put back by the transaction itself; an applied one: `git restore` the node's folder, or `git revert` |
 | dry run | --dry-run runs group-intake without --apply: the same check, nothing written |
@@ -294,10 +294,10 @@ method on its cases, the translation into the kernel, the node's tests, the node
 | | |
 |---|---|
 | reads | the node's method, cases and node engineer's code |
-| writes | crates/vleo-core/src/physics/methods/<node>.rs and the node's generated files |
+| writes | crates/vleo-core/src/physics/methods/<node>.rs, the node's generated files, design/ converted again |
 | checks | the method on its cases; the node's tests; the node engineer's code rerun; a mutation the tests must catch; the tree assembles |
 | undo | `git restore <files>` (or `git checkout -- .`) before committing; `git revert` after |
-| steps | 1 the method, against the node engineer's cases · 2 translate the method into the kernel, and regenerate the node · 3 the node's tests: the node engineer's cases, and the translation against the method · 4 the node engineer's own code, run again on their cases · 5 the tests really test: the answer is moved and the tests must notice · 6 only now, the interface: the node in the tree |
+| steps | 1 the method, against the node engineer's cases · 2 translate the method into the kernel, and regenerate the node · 3 the node's tests: the node engineer's cases, and the translation against the method · 4 the node engineer's own code, run again on their cases · 5 the tests really test: the answer is moved and the tests must notice · 6 only now, the interface: the node in the tree · 7 the design's files, converted again |
 | dry run | --dry-run prints this plan — the steps, what it would write, how to undo it — and touches nothing |
 | code | `xtask/src/method.rs` — `cmd_build_node` |
 

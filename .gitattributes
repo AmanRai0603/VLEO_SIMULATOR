@@ -15,3 +15,9 @@ bundles/** -text
 # A design file is a SQLite database: bytes, never text. The fixture a test
 # upgrades is the file as the group sealed it.
 *.vleo binary
+
+# The design as its files (design/): group, node and case files, each a SQLite
+# database like the release above.
+*.vgroup binary
+*.vnode binary
+*.vcase binary

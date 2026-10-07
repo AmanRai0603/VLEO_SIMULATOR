@@ -3071,6 +3071,11 @@ what = "The group folder pattern, groups/SPEC.toml, from which the group and nod
 who = "developer"
 
 [[folder]]
+name = "design"
+what = "The design as its files: each group's file and node files under design/groups/, each case under design/cases/, converted from the node sheets and held equal to them by a test until the sheets leave. Written by `cargo run -p xtask -- convert --out design`, and again by intake, group-intake and build-node whenever they write a sheet; never edited by hand."
+who = "developer"
+
+[[folder]]
 name = "cases"
 what = "The one case: which inputs are the condition the design flies in, and so which are the customer's. Its values are not kept here — they are saved by the tool outside the repository. `cases/examples/` holds case files to read and copy, one as an older version of the tool wrote it."
 who = "user"

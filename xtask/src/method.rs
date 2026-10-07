@@ -548,6 +548,11 @@ pub fn cmd_build_node(root: &Path, args: &[&str]) -> Result<(), String> {
             ))
         },
     )?;
+    run.step(
+        "the design's files, converted again",
+        OnStop::new(built, format!("convert them again: {again}")),
+        || crate::convert::record_design(root).map(|said| ((), said)),
+    )?;
     run.done(&format!(
         "build-node: {id} is built from its method, tested against its node engineer's cases, and connected."
     ));

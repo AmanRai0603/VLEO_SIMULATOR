@@ -298,3 +298,33 @@ fn what_a_file_says_is_what_the_design_reads() {
         "{e}"
     );
 }
+
+#[test]
+fn the_design_in_the_repository_is_the_design_converted() {
+    // `design/` is the design as its files, committed (docs/PLAN_1_0.md,
+    // phase E). Until the node sheets leave, it must be exactly what they
+    // convert to: the same files, holding the same rows.
+    let (kept, _) = convert::read_folder(&root().join("design")).expect("design/ reads");
+    let mut kept: Vec<(String, File)> = kept;
+    let mut now = converted().to_vec();
+    kept.sort_by(|a, b| a.0.cmp(&b.0));
+    now.sort_by(|a, b| a.0.cmp(&b.0));
+    let names = |v: &[(String, File)]| v.iter().map(|(p, _)| p.clone()).collect::<Vec<_>>();
+    assert_eq!(
+        names(&kept),
+        names(&now),
+        "design/ holds other files than the design converts to: \
+         delete design/, then cargo run -p xtask -- convert --out design"
+    );
+    for ((path, a), (_, b)) in kept.iter().zip(&now) {
+        // Who converted it is the one thing that may differ.
+        let (mut a, mut b) = (a.clone(), b.clone());
+        a.meta.remove("written_by_app");
+        b.meta.remove("written_by_app");
+        assert!(
+            a == b,
+            "design/{path} is not the design as it converts today: \
+             delete design/, then cargo run -p xtask -- convert --out design"
+        );
+    }
+}
