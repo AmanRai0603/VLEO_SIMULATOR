@@ -202,3 +202,153 @@ fn every_method_answers_and_refuses_as_its_translation_does() {
     }
     assert!(compared > 32 * 6, "only {compared} comparisons");
 }
+
+/// The graph as text, one line per node, variable, case and cycle, and its
+/// fingerprint: what `baseline/graph.txt` holds.
+fn the_graph(g: &Graph) -> String {
+    let mut s = String::new();
+    for n in g.nodes {
+        s += &format!("node {n:?}\n");
+    }
+    for v in g.vars {
+        s += &format!("variable {v:?}\n");
+    }
+    for c in g.cases {
+        s += &format!(
+            "case {:?}\n",
+            (c.id, c.label, c.note, c.supply, c.conditions)
+        );
+        for y in c.cycles {
+            s += &format!(
+                "cycle {:?}\n",
+                (y.nodes, y.converge_on, y.tolerance, y.max_iter, y.seeds)
+            );
+        }
+    }
+    s += &format!("graph {:016x}\n", g.graph_hash());
+    s
+}
+
+/// The first line two records differ at, said for a person.
+fn first_difference(on_record: &str, now: &str) -> String {
+    on_record
+        .lines()
+        .zip(now.lines())
+        .position(|(a, b)| a != b)
+        .map_or("a line count".to_string(), |n| {
+            format!(
+                "line {}:\n  on record  {}\n  now        {}",
+                n + 1,
+                on_record.lines().nth(n).unwrap_or(""),
+                now.lines().nth(n).unwrap_or("")
+            )
+        })
+}
+
+/// The graph read from the design's files, held to the graph on record
+/// (`baseline/graph.txt`) node for node, variable for variable and case for
+/// case. The record was written while the compiled graph still existed and
+/// was that graph exactly; it outlives it. A deliberate change to the design
+/// records it again, with today's answers:
+///
+///     VLEO_BASELINE=write cargo test -p vleo-cli --test the_design_read_at_run_time_answers_as_today
+#[test]
+fn the_graph_read_at_run_time_is_the_graph_on_record() {
+    let path = root().join("baseline/graph.txt");
+    let now = the_graph(read());
+    if std::env::var("VLEO_BASELINE").as_deref() == Ok("write") {
+        std::fs::write(&path, &now).unwrap();
+        return;
+    }
+    let on_record = std::fs::read_to_string(&path).expect("baseline/graph.txt");
+    assert!(
+        now == on_record,
+        "the graph read from the design's files is not the graph on record — {}",
+        first_difference(&on_record, &now)
+    );
+}
+
+/// What a method answers at one set of inputs, as `baseline/methods.csv`
+/// holds it: the inputs and the answer to the bit, or the fault in its words.
+fn method_line(
+    id: &str,
+    t: &[f64],
+    outputs: usize,
+    r: Result<[f64; vleo_modules::MAX_OUTPUTS], vleo_modules::core_engine::fault::Fault>,
+) -> String {
+    let bits = |v: &[f64]| {
+        v.iter()
+            .map(|x| format!("{:016x}", x.to_bits()))
+            .collect::<Vec<_>>()
+            .join(";")
+    };
+    let said = match r {
+        Ok(v) => bits(&v[..outputs]),
+        Err(f) => format!("{f:?}"),
+    };
+    format!("{id},{},{}\n", bits(t), said.replace('\n', " "))
+}
+
+/// Every method's answer at inputs today's record never reaches, as the
+/// translated code answered it: each of its fixtures, and each input in turn
+/// not a number, infinite, far outside every range, zero and negative, the
+/// rest at its first fixture.
+fn methods_record(
+    g: &Graph,
+    answer: impl Fn(
+        usize,
+        &[f64],
+    )
+        -> Result<[f64; vleo_modules::MAX_OUTPUTS], vleo_modules::core_engine::fault::Fault>,
+) -> String {
+    let mut s = String::from("node,inputs,answer\n");
+    for (k, def) in g.nodes.iter().enumerate() {
+        if def.behaviour != Behaviour::Method {
+            continue;
+        }
+        let n = def.inputs.len();
+        let mut tries: Vec<Vec<f64>> = def.fixtures.iter().map(|f| f.inputs.to_vec()).collect();
+        let base = tries.first().cloned().unwrap_or_else(|| vec![1.0; n]);
+        for i in 0..n {
+            for bad in [f64::NAN, f64::INFINITY, -1e12, 1e12, 0.0, -1.0] {
+                let mut t = base.clone();
+                t[i] = bad;
+                tries.push(t);
+            }
+        }
+        for t in &tries {
+            s += &method_line(def.id, t, def.outputs.len(), answer(k, t));
+        }
+    }
+    s
+}
+
+/// Every method, run by the interpreter, against what its translation
+/// answered (`baseline/methods.csv`), to the bit or the same fault. The
+/// record was written once, by the translations, while this build still had
+/// them, and never again to get green:
+///
+///     VLEO_METHODS=write cargo test -p vleo-cli --test the_design_read_at_run_time_answers_as_today
+#[test]
+fn every_method_answers_and_refuses_as_its_translation_did() {
+    let g = read();
+    let path = root().join("baseline/methods.csv");
+    if std::env::var("VLEO_METHODS").as_deref() == Ok("write") {
+        let translated = methods_record(g, |k, t| {
+            COMPILED.probe(COMPILED.find(g.nodes[k].id).expect("compiled in"), t)
+        });
+        std::fs::write(&path, translated).unwrap();
+        return;
+    }
+    let on_record = std::fs::read_to_string(&path).expect("baseline/methods.csv");
+    assert!(
+        on_record.lines().count() > 32 * 6,
+        "baseline/methods.csv is too short"
+    );
+    let now = methods_record(g, |k, t| g.probe(k as u16, t));
+    assert!(
+        now == on_record,
+        "a method does not answer as its translation did — {}",
+        first_difference(&on_record, &now)
+    );
+}

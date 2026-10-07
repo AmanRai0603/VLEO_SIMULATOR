@@ -51,3 +51,22 @@ The record is never written again to get a build green.
   are not recorded.
 - **A range is recorded only at its ends.** The points between them are not
   recorded.
+
+## The other records
+
+The compiled engine leaves the repository in phase E. These were written
+from it before it went, and outlive it:
+
+| file | holds | written | test |
+|---|---|---|---|
+| `graph.txt` | every node, variable, case and cycle of the graph, and its fingerprint | with today's answers, on a deliberate change to the design | `the_graph_read_at_run_time_is_the_graph_on_record` |
+| `methods.csv` | every method's answer, by its translated code, at each of its fixtures and with each input not a number, infinite, far outside every range, zero and negative | once, while the translations existed | `every_method_answers_and_refuses_as_its_translation_did` |
+| `transcribed.csv` | what each relation answered while it was still code, before it became a method | once, while that code existed | `the_transcribed_relations_answer_as_the_code_they_replaced` |
+
+The tests are in `crates/vleo-cli/tests/`. `graph.txt` is written again with:
+
+    VLEO_BASELINE=write cargo test -p vleo-cli --test the_design_read_at_run_time_answers_as_today
+
+`methods.csv` and `transcribed.csv` are never written again. The code that
+wrote them is gone, and a method that answers differently is either a defect
+or a deliberate change to the design, recorded in `today.csv`.
