@@ -32,6 +32,19 @@ by = "an assistant, from what this sheet states — for its owner (gnc) to confi
 expression = "T = (3*mu/(2*r^3))*|Iz - Iy|*sin(2*theta)"
 source = "larson_wertz"
 
+[method]
+text = """
+# Transcribed from crates/vleo-mod-acs/nodes/gnc_gravity_gradient_torque/model.rs (its HOLE): the relation the code ran, line for line.
+# The relation itself stays in the kernel; this says which one, with which inputs, in which units.
+# "* 1 [unit]" gives a number this design states as a pure ratio the unit the kernel reads it in,
+# and "/ 1 [unit]" the other way; the number itself does not change.
+# Constants the code held, written out here as it held them: 10 [deg].
+return gravity_gradient_torque(r, imax * 1 [kg.m^2], imin * 1 [kg.m^2], 10 [deg])
+"""
+by = ""
+transcribed_from = "crates/vleo-mod-acs/nodes/gnc_gravity_gradient_torque/model.rs"
+checked_by = ""
+
 [output]
 # The node's one answer. The variable id is the node id: one small
 # question, one answer, one folder, one row on the tree.

@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `m_req` (Magnetorquer dipole required), in `A.m^2`.
 pub const NODE_ID: &str = "gnc_magnetorquer_dipole";
-pub const SHEET_HASH: u64 = 0xf66190f61f3da001;
+pub const SHEET_HASH: u64 = 0x85e09adca11f1d9b;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "gnc_momentum_storage",

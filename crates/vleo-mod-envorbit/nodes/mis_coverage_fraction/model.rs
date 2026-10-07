@@ -16,17 +16,21 @@ use vleo_core::units::*;
 pub const NODE_ID: &str = "mis_coverage_fraction";
 /// Hash of the sheet this file was generated from. A face carrying a
 /// different one refuses to run rather than showing a stale page.
-pub const SHEET_HASH: u64 = 0xf37f87b4cebb9512;
+pub const SHEET_HASH: u64 = 0x334f677afc256356;
 
 pub fn evaluate(lam: Angle) -> Result<Ratio, Fault> {
-    // ---- HOLE 1 : take the spherical cap as a fraction of the whole sphere -> Ratio
-    let f: Ratio = mission::instantaneous_coverage_fraction(lam);
-    // ---- end HOLE 1
+    // generated · from the node's method, translated by rule into
+    // vleo_core::physics::methods::mis_coverage_fraction. No hole: the method is the
+    // implementation, and the author's cases in evidence.rs test it.
+    let method_answer: Ratio = match methods::mis_coverage_fraction::evaluate(lam.get()) {
+        Ok(v) => Ratio::new(v),
+        Err(e) => return Err(method::fault(e, NODE_ID, "f_cov")),
+    };
 
     // generated · the declared domain of this node's own answer. The
     // reason travels with the guard, because a guard whose reason is not
     // written down gets deleted by the next person who finds it awkward.
-    let answer: Ratio = f;
+    let answer: Ratio = method_answer;
     if !answer.is_finite() {
         return Err(Fault::Degenerate { node: NODE_ID, field: "f_cov", reason: "the computation produced a value that is not a number" });
     }

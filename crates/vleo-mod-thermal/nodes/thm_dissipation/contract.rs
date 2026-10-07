@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `Q` (Heat to reject), in `W`.
 pub const NODE_ID: &str = "thm_dissipation";
-pub const SHEET_HASH: u64 = 0x36bc4652762c72ab;
+pub const SHEET_HASH: u64 = 0x19a22cd099a3e571;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "pwr_demand",

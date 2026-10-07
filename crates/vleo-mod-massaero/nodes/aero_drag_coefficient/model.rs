@@ -23,17 +23,21 @@ use vleo_core::units::*;
 pub const NODE_ID: &str = "aero_drag_coefficient";
 /// Hash of the sheet this file was generated from. A face carrying a
 /// different one refuses to run rather than showing a stale page.
-pub const SHEET_HASH: u64 = 0x05d4235d29c026dd;
+pub const SHEET_HASH: u64 = 0x974a6e112b7d70f7;
 
 pub fn evaluate(s: Ratio, l: Length, d: Length, alpha: Ratio, t_w: Temperature, v: Velocity, m: MolarMass, kn: Ratio) -> Result<Ratio, Fault> {
-    // ---- HOLE 1 : evaluate Sentman's free-molecular coefficients for the front face and the side walls, referred back to the frontal area -> Ratio
-    let cd: Ratio = Ratio::new(aero::cylinder_drag_coefficient(s.get(), l, d, alpha.get(), t_w, v, m));
-    // ---- end HOLE 1
+    // generated · from the node's method, translated by rule into
+    // vleo_core::physics::methods::aero_drag_coefficient. No hole: the method is the
+    // implementation, and the author's cases in evidence.rs test it.
+    let method_answer: Ratio = match methods::aero_drag_coefficient::evaluate(s.get(), l.get(), d.get(), alpha.get(), t_w.get(), v.get(), m.get(), kn.get()) {
+        Ok(v) => Ratio::new(v),
+        Err(e) => return Err(method::fault(e, NODE_ID, "Cd")),
+    };
 
     // generated · the declared domain of this node's own answer. The
     // reason travels with the guard, because a guard whose reason is not
     // written down gets deleted by the next person who finds it awkward.
-    let answer: Ratio = cd;
+    let answer: Ratio = method_answer;
     if !answer.is_finite() {
         return Err(Fault::Degenerate { node: NODE_ID, field: "Cd", reason: "the computation produced a value that is not a number" });
     }

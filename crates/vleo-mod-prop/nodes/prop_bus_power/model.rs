@@ -19,17 +19,21 @@ use vleo_core::units::*;
 pub const NODE_ID: &str = "prop_bus_power";
 /// Hash of the sheet this file was generated from. A face carrying a
 /// different one refuses to run rather than showing a stale page.
-pub const SHEET_HASH: u64 = 0x5793a8c1487725ae;
+pub const SHEET_HASH: u64 = 0xb811346c2a4e4e0a;
 
 pub fn evaluate(pin: Power, eta: Ratio) -> Result<Power, Fault> {
-    // ---- HOLE 1 : divide by the power processing unit efficiency -> Power
-    let p: Power = prop::bus_power_demand(pin, eta);
-    // ---- end HOLE 1
+    // generated · from the node's method, translated by rule into
+    // vleo_core::physics::methods::prop_bus_power. No hole: the method is the
+    // implementation, and the author's cases in evidence.rs test it.
+    let method_answer: Power = match methods::prop_bus_power::evaluate(pin.get(), eta.get()) {
+        Ok(v) => Power::new(v),
+        Err(e) => return Err(method::fault(e, NODE_ID, "P_prop")),
+    };
 
     // generated · the declared domain of this node's own answer. The
     // reason travels with the guard, because a guard whose reason is not
     // written down gets deleted by the next person who finds it awkward.
-    let answer: Power = p;
+    let answer: Power = method_answer;
     if !answer.is_finite() {
         return Err(Fault::Degenerate { node: NODE_ID, field: "P_prop", reason: "the computation produced a value that is not a number" });
     }

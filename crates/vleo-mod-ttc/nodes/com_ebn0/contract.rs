@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `EbN0` (Achieved energy per bit over noise density), in `dB`.
 pub const NODE_ID: &str = "com_ebn0";
-pub const SHEET_HASH: u64 = 0x02f5e9962027c2e5;
+pub const SHEET_HASH: u64 = 0xb6876e7d6b84914e;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "com_cn0",

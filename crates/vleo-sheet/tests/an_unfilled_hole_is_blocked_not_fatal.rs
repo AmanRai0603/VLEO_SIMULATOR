@@ -25,12 +25,16 @@ fn a_row_with_a_step() -> (vleo_sheet::model::Sheet, vleo_sheet::load::Tree) {
         .parent()
         .unwrap();
     let tree = vleo_sheet::load::load_all(root).unwrap();
-    let sh = tree
+    let mut sh = tree
         .ordered()
         .iter()
         .find(|s| !s.is_seeded() && !s.steps.is_empty())
         .map(|s| (*s).clone())
         .expect("the tree has a published row with a numbered step");
+    // Every relation of the design is a method now, and a method's code is
+    // its translation, with no hole. The holes are what this file is about,
+    // so the row is taken as it is without its method.
+    sh.method = Default::default();
     (sh, tree)
 }
 

@@ -33,6 +33,16 @@ by = "an assistant, from what this sheet states — for its owner (power) to con
 expression = "P_dem = (P_prop + P_pay + P_av + P_com + P_th)*(1 + L_h)"
 source = "larson_wertz"
 
+[method]
+text = """
+# Transcribed from crates/vleo-mod-power/nodes/pwr_demand/model.rs (its HOLE): the relation the code ran, line for line.
+# The relation itself stays in the kernel; this says which one, with which inputs, in which units.
+return power_demand(pp, pay, av, com, th, lh)
+"""
+by = ""
+transcribed_from = "crates/vleo-mod-power/nodes/pwr_demand/model.rs"
+checked_by = ""
+
 [output]
 # The node's one answer. The variable id is the node id: one small
 # question, one answer, one folder, one row on the tree.

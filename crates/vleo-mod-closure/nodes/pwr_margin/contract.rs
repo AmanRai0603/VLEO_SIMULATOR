@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `M_pwr` (Power margin), in `-`.
 pub const NODE_ID: &str = "pwr_margin";
-pub const SHEET_HASH: u64 = 0x271ca56851628b20;
+pub const SHEET_HASH: u64 = 0xb800b4c477686956;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "pwr_available",

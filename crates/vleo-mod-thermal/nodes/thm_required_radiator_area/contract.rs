@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `A_req` (Radiator area required), in `m^2`.
 pub const NODE_ID: &str = "thm_required_radiator_area";
-pub const SHEET_HASH: u64 = 0x79de83d4426eea8c;
+pub const SHEET_HASH: u64 = 0xf24b41be1540ee45;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "thm_dissipation",

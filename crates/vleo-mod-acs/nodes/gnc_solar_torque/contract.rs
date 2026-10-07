@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `T_srp` (Solar radiation pressure torque), in `N.m`.
 pub const NODE_ID: &str = "gnc_solar_torque";
-pub const SHEET_HASH: u64 = 0x9f49b5cc78db9d4e;
+pub const SHEET_HASH: u64 = 0xfc7f48fc733d8d2b;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "aero_frontal_area",

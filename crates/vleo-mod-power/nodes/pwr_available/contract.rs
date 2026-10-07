@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `P_avail` (Orbit-average power available), in `W`.
 pub const NODE_ID: &str = "pwr_available";
-pub const SHEET_HASH: u64 = 0xe92e10c367773f38;
+pub const SHEET_HASH: u64 = 0x46169b9b05c4aeff;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "pwr_array_power_eol",

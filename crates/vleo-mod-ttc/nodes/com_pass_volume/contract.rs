@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `V_pass` (Data volume per pass), in `Gbit`.
 pub const NODE_ID: &str = "com_pass_volume";
-pub const SHEET_HASH: u64 = 0xeb9d83e91c885863;
+pub const SHEET_HASH: u64 = 0x656a7e231a4b1229;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "com_data_rate",

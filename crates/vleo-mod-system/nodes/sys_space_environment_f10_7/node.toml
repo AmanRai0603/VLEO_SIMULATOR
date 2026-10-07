@@ -121,6 +121,27 @@ fails_when = "the wrong member is named. The crossing's f107 column alone holds 
 text = "It is the single day and not the sustained level"
 fails_when = "somebody integrates it over a mission. The sustained level is what sys_space_environment_solar_flux carries, and a drag budget or an array sizing built on a single-day value is designing for a sky the mission does not sit in"
 
+[method]
+text = """
+# Transcribed from crates/vleo-mod-system/nodes/sys_space_environment_f10_7/model.rs (its HOLE): the relation the code ran, line for line.
+# The relation itself stays in the kernel; this says which one, with which inputs, in which units.
+#
+# What the code said beside it:
+# A layer-2 row receives; it does not compute. The one thing that can go
+# wrong here is that the seam alters what it carries — a stray factor, an
+# unasked-for unit conversion, a clamp inherited from the wrong row — and
+# both sides would still look plausible. So this is the identity, and the
+# fixtures beside it pin the identity at real values.
+#
+# The declared range is the crossing's own, restated so a system reader sees
+# the limit without opening the subsystem. It therefore guards nothing this
+# line can break, and that is correct.
+return crossing
+"""
+by = ""
+transcribed_from = "crates/vleo-mod-system/nodes/sys_space_environment_f10_7/model.rs"
+checked_by = ""
+
 [output]
 # The node's one answer. The variable id is the node id: one small
 # question, one answer, one folder, one row on the tree.

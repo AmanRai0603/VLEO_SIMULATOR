@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `SNR_o` (Optical signal to noise ratio), in `-`.
 pub const NODE_ID: &str = "pay_snr";
-pub const SHEET_HASH: u64 = 0x4e50bd785bf32275;
+pub const SHEET_HASH: u64 = 0xbcbf4c0bde35a569;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "pay_signal_electrons",

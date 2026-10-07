@@ -37,6 +37,19 @@ source = "vallado2013"
 text = "Atmospheric conditions fixed at the current activity for the whole decay"
 fails_when = "over a solar cycle the density at a given altitude changes by more than an order of magnitude, so this is an order-of-magnitude answer and is reported as one"
 
+[method]
+text = """
+# Transcribed from crates/vleo-mod-envorbit/nodes/orbit_lifetime_uncontrolled/model.rs (its HOLE): the relation the code ran, line for line.
+# The relation itself stays in the kernel; this says which one, with which inputs, in which units.
+# "* 1 [unit]" gives a number this design states as a pure ratio the unit the kernel reads it in,
+# and "/ 1 [unit]" the other way; the number itself does not change.
+# Constants the code held, written out here as it held them: 120 [km].
+return orbit_decay_time(h, 120 [km], bc * 1 [kg/m^2], t_inf)
+"""
+by = ""
+transcribed_from = "crates/vleo-mod-envorbit/nodes/orbit_lifetime_uncontrolled/model.rs"
+checked_by = ""
+
 [output]
 # The node's one answer. The variable id is the node id: one small
 # question, one answer, one folder, one row on the tree.

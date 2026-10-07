@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `M` (Thrust to drag closure — closure), in `-`.
 pub const NODE_ID: &str = "kpi_thrust_margin";
-pub const SHEET_HASH: u64 = 0x326c10c58bce84a7;
+pub const SHEET_HASH: u64 = 0x131a219ad8cbf604;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "kpi_thrust_margin_required",

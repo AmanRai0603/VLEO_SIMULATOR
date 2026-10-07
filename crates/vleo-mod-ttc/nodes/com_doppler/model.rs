@@ -16,17 +16,21 @@ use vleo_core::units::*;
 pub const NODE_ID: &str = "com_doppler";
 /// Hash of the sheet this file was generated from. A face carrying a
 /// different one refuses to run rather than showing a stale page.
-pub const SHEET_HASH: u64 = 0x59e27edeff3abd6a;
+pub const SHEET_HASH: u64 = 0x57c70281c07710e0;
 
 pub fn evaluate(f: Frequency, v: Velocity) -> Result<Frequency, Fault> {
-    // ---- HOLE 1 : apply the first-order Doppler relation at the ground track speed -> Frequency
-    let d: Frequency = comms::doppler_shift(f, v);
-    // ---- end HOLE 1
+    // generated · from the node's method, translated by rule into
+    // vleo_core::physics::methods::com_doppler. No hole: the method is the
+    // implementation, and the author's cases in evidence.rs test it.
+    let method_answer: Frequency = match methods::com_doppler::evaluate(f.get(), v.get()) {
+        Ok(v) => Frequency::new(v),
+        Err(e) => return Err(method::fault(e, NODE_ID, "df")),
+    };
 
     // generated · the declared domain of this node's own answer. The
     // reason travels with the guard, because a guard whose reason is not
     // written down gets deleted by the next person who finds it awkward.
-    let answer: Frequency = d;
+    let answer: Frequency = method_answer;
     if !answer.is_finite() {
         return Err(Fault::Degenerate { node: NODE_ID, field: "df", reason: "the computation produced a value that is not a number" });
     }

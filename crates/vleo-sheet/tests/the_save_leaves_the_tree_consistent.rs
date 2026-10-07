@@ -506,15 +506,41 @@ fn a_refused_method_leaves_the_rust_its_hole_held() {
     let _serial = serially();
     let root = root();
     // A published row whose hole holds hand-written Rust, and no method of its
-    // own; a solar row once was, until its group's release gave it one.
+    // own. Every relation of the design is a method now, so the row is put
+    // back, inside the guard, as it was before its relation was transcribed:
+    // its sheet without the method, its code with its Rust in the hole.
     let row = "gnc_total_disturbance";
+    let dir = vleo_sheet::load::load_all(&root).unwrap().sheets[row]
+        .dir
+        .clone();
+    let _guard = RestoreFolder::take(&dir);
+    let toml = std::fs::read_to_string(dir.join("node.toml")).unwrap();
+    let (head, rest) = toml.split_once("[method]\n").expect("its method");
+    let rest = &rest[rest.find("checked_by = ").expect("the method's last key")..];
+    let rest = &rest[rest.find('\n').unwrap() + 1..];
+    std::fs::write(
+        dir.join("node.toml"),
+        format!("{head}{}", rest.trim_start_matches('\n')),
+    )
+    .unwrap();
     let tree = vleo_sheet::load::load_all(&root).unwrap();
     let sh = tree
         .sheets
         .get(row)
         .expect("the published row this test edits");
-    let dir = sh.dir.clone();
-    let _guard = RestoreFolder::take(&dir);
+    let holes: std::collections::BTreeMap<u32, String> = [(
+        sh.steps[0].number,
+        "    let t: Torque = gnc::total_disturbance_torque(ta, tg, ts, tm);".to_string(),
+    )]
+    .into();
+    for (name, text) in [
+        ("model.rs", vleo_sheet::emit::model_rs(sh, &holes)),
+        ("contract.rs", vleo_sheet::emit::contract_rs(sh)),
+        ("mod.rs", vleo_sheet::emit::mod_rs(sh)),
+        ("evidence.rs", vleo_sheet::emit::evidence_rs(sh)),
+    ] {
+        std::fs::write(dir.join(name), vleo_sheet::emit::rustfmt_standalone(&text)).unwrap();
+    }
     let model = std::fs::read(dir.join("model.rs")).unwrap();
     assert!(
         String::from_utf8_lossy(&model).contains("gnc::total_disturbance_torque"),

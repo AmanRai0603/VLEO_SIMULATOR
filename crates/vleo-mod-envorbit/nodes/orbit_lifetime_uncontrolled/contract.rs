@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `t_life` (Uncontrolled orbital lifetime), in `d`.
 pub const NODE_ID: &str = "orbit_lifetime_uncontrolled";
-pub const SHEET_HASH: u64 = 0xbd35717f3d5b3da4;
+pub const SHEET_HASH: u64 = 0x62e7d144b0e30866;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "orbit_altitude",

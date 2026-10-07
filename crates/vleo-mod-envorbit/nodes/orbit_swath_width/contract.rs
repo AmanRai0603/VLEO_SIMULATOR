@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `W` (Ground swath width), in `km`.
 pub const NODE_ID: &str = "orbit_swath_width";
-pub const SHEET_HASH: u64 = 0x3d5237ca30a079ef;
+pub const SHEET_HASH: u64 = 0xefe602237c2b4751;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "orbit_earth_central_angle",

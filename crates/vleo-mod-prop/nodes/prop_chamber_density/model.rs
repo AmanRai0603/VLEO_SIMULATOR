@@ -20,17 +20,21 @@ use vleo_core::units::*;
 pub const NODE_ID: &str = "prop_chamber_density";
 /// Hash of the sheet this file was generated from. A face carrying a
 /// different one refuses to run rather than showing a stale page.
-pub const SHEET_HASH: u64 = 0x5b3e5a6c2a6391cd;
+pub const SHEET_HASH: u64 = 0xf031d7e4b79095d5;
 
 pub fn evaluate(n: NumberDensity, cr: Ratio) -> Result<NumberDensity, Fault> {
-    // ---- HOLE 1 : scale the free-stream number density by the compression ratio -> NumberDensity
-    let nc: NumberDensity = NumberDensity::new(n.get() * cr.get());
-    // ---- end HOLE 1
+    // generated · from the node's method, translated by rule into
+    // vleo_core::physics::methods::prop_chamber_density. No hole: the method is the
+    // implementation, and the author's cases in evidence.rs test it.
+    let method_answer: NumberDensity = match methods::prop_chamber_density::evaluate(n.get(), cr.get()) {
+        Ok(v) => NumberDensity::new(v),
+        Err(e) => return Err(method::fault(e, NODE_ID, "n_c")),
+    };
 
     // generated · the declared domain of this node's own answer. The
     // reason travels with the guard, because a guard whose reason is not
     // written down gets deleted by the next person who finds it awkward.
-    let answer: NumberDensity = nc;
+    let answer: NumberDensity = method_answer;
     if !answer.is_finite() {
         return Err(Fault::Degenerate { node: NODE_ID, field: "n_c", reason: "the computation produced a value that is not a number" });
     }

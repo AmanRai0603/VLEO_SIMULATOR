@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `M` (Ground sample distance — closure), in `-`.
 pub const NODE_ID: &str = "kpi_gsd";
-pub const SHEET_HASH: u64 = 0xf556d2ab47af8124;
+pub const SHEET_HASH: u64 = 0x706765f50150d438;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "kpi_gsd_required",

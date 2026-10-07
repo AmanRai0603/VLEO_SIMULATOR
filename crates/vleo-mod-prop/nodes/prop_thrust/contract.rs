@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `T` (Thrust), in `mN`.
 pub const NODE_ID: &str = "prop_thrust";
-pub const SHEET_HASH: u64 = 0x59520bfdfec2a689;
+pub const SHEET_HASH: u64 = 0xe53eebcf85715c13;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "prop_ion_flow",

@@ -32,6 +32,16 @@ by = "an assistant, from what this sheet states — for its owner (operations) t
 expression = "t = 86400/(2*N_pass)"
 source = "larson_wertz"
 
+[method]
+text = """
+# Transcribed from crates/vleo-mod-envorbit/nodes/mis_time_to_downlink/model.rs (its HOLE): the relation the code ran, line for line.
+# The relation itself stays in the kernel; this says which one, with which inputs, in which units.
+return mean_time_to_downlink(n)
+"""
+by = ""
+transcribed_from = "crates/vleo-mod-envorbit/nodes/mis_time_to_downlink/model.rs"
+checked_by = ""
+
 [output]
 # The node's one answer. The variable id is the node id: one small
 # question, one answer, one folder, one row on the tree.

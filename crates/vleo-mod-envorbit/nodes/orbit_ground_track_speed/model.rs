@@ -19,17 +19,21 @@ use vleo_core::units::*;
 pub const NODE_ID: &str = "orbit_ground_track_speed";
 /// Hash of the sheet this file was generated from. A face carrying a
 /// different one refuses to run rather than showing a stale page.
-pub const SHEET_HASH: u64 = 0xe15473059019bed1;
+pub const SHEET_HASH: u64 = 0x533299c892b4e6a9;
 
 pub fn evaluate(v: Velocity, r: Length) -> Result<Velocity, Fault> {
-    // ---- HOLE 1 : scale the orbital speed by the ratio of Earth radius to orbital radius -> Velocity
-    let vg: Velocity = orbit::ground_track_speed(v, r);
-    // ---- end HOLE 1
+    // generated · from the node's method, translated by rule into
+    // vleo_core::physics::methods::orbit_ground_track_speed. No hole: the method is the
+    // implementation, and the author's cases in evidence.rs test it.
+    let method_answer: Velocity = match methods::orbit_ground_track_speed::evaluate(v.get(), r.get()) {
+        Ok(v) => Velocity::new(v),
+        Err(e) => return Err(method::fault(e, NODE_ID, "V_g")),
+    };
 
     // generated · the declared domain of this node's own answer. The
     // reason travels with the guard, because a guard whose reason is not
     // written down gets deleted by the next person who finds it awkward.
-    let answer: Velocity = vg;
+    let answer: Velocity = method_answer;
     if !answer.is_finite() {
         return Err(Fault::Degenerate { node: NODE_ID, field: "V_g", reason: "the computation produced a value that is not a number" });
     }

@@ -16,17 +16,21 @@ use vleo_core::units::*;
 pub const NODE_ID: &str = "aero_dynamic_pressure";
 /// Hash of the sheet this file was generated from. A face carrying a
 /// different one refuses to run rather than showing a stale page.
-pub const SHEET_HASH: u64 = 0x93ebee77dae44a8b;
+pub const SHEET_HASH: u64 = 0x0a23af54ba5a3f8b;
 
 pub fn evaluate(rho: MassDensity, v: Velocity) -> Result<Pressure, Fault> {
-    // ---- HOLE 1 : form the dynamic pressure of the free stream -> Pressure
-    let q: Pressure = aero::dynamic_pressure(rho, v);
-    // ---- end HOLE 1
+    // generated · from the node's method, translated by rule into
+    // vleo_core::physics::methods::aero_dynamic_pressure. No hole: the method is the
+    // implementation, and the author's cases in evidence.rs test it.
+    let method_answer: Pressure = match methods::aero_dynamic_pressure::evaluate(rho.get(), v.get()) {
+        Ok(v) => Pressure::new(v),
+        Err(e) => return Err(method::fault(e, NODE_ID, "q")),
+    };
 
     // generated · the declared domain of this node's own answer. The
     // reason travels with the guard, because a guard whose reason is not
     // written down gets deleted by the next person who finds it awkward.
-    let answer: Pressure = q;
+    let answer: Pressure = method_answer;
     if !answer.is_finite() {
         return Err(Fault::Degenerate { node: NODE_ID, field: "q", reason: "the computation produced a value that is not a number" });
     }

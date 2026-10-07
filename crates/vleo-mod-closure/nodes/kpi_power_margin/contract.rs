@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `M` (Power margin — closure), in `-`.
 pub const NODE_ID: &str = "kpi_power_margin";
-pub const SHEET_HASH: u64 = 0xbb637f9fe5dfe271;
+pub const SHEET_HASH: u64 = 0x1a0cb55d20757dd1;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "kpi_power_margin_required",

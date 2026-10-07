@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `T_D` (Thrust to drag ratio), in `-`.
 pub const NODE_ID: &str = "prop_thrust_to_drag";
-pub const SHEET_HASH: u64 = 0xb0b65a7d9b47f9b4;
+pub const SHEET_HASH: u64 = 0x9a6c2a832ff9bc1d;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "prop_delivered_thrust",

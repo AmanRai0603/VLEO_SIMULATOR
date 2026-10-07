@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `f_T` (Array temperature derating factor), in `-`.
 pub const NODE_ID: &str = "pwr_cell_derating";
-pub const SHEET_HASH: u64 = 0x04fbe8e14dbad38f;
+pub const SHEET_HASH: u64 = 0x59709d4db1cd5d1d;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "pwr_cell_temperature_coefficient",

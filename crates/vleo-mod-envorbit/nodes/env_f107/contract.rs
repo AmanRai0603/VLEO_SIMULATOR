@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `F107` (Solar radio flux F10.7, daily), in `-`.
 pub const NODE_ID: &str = "env_f107";
-pub const SHEET_HASH: u64 = 0x4be050189834fcca;
+pub const SHEET_HASH: u64 = 0x8ef85289477e8bfe;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "sys_space_environment_f10_7",

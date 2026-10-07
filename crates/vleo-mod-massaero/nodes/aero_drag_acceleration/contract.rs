@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `a_D` (Drag deceleration), in `m/s^2`.
 pub const NODE_ID: &str = "aero_drag_acceleration";
-pub const SHEET_HASH: u64 = 0xb93db6e6e32b7af8;
+pub const SHEET_HASH: u64 = 0x5acac2813aa9de6a;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "aero_drag_force",

@@ -16,17 +16,21 @@ use vleo_core::units::*;
 pub const NODE_ID: &str = "orbit_period";
 /// Hash of the sheet this file was generated from. A face carrying a
 /// different one refuses to run rather than showing a stale page.
-pub const SHEET_HASH: u64 = 0xa1b930e9f6077007;
+pub const SHEET_HASH: u64 = 0x99516c57ad8b21ab;
 
 pub fn evaluate(r: Length) -> Result<Time, Fault> {
-    // ---- HOLE 1 : apply Kepler's third law at the circular radius -> Time
-    let t: Time = orbit::period(r);
-    // ---- end HOLE 1
+    // generated · from the node's method, translated by rule into
+    // vleo_core::physics::methods::orbit_period. No hole: the method is the
+    // implementation, and the author's cases in evidence.rs test it.
+    let method_answer: Time = match methods::orbit_period::evaluate(r.get()) {
+        Ok(v) => Time::new(v),
+        Err(e) => return Err(method::fault(e, NODE_ID, "T_orb")),
+    };
 
     // generated · the declared domain of this node's own answer. The
     // reason travels with the guard, because a guard whose reason is not
     // written down gets deleted by the next person who finds it awkward.
-    let answer: Time = t;
+    let answer: Time = method_answer;
     if !answer.is_finite() {
         return Err(Fault::Degenerate { node: NODE_ID, field: "T_orb", reason: "the computation produced a value that is not a number" });
     }

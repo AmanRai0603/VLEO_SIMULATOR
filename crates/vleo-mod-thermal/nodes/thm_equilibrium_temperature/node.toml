@@ -37,6 +37,16 @@ source = "larson_wertz"
 text = "One node — the whole spacecraft is at one temperature"
 fails_when = "a real design has a gradient across every panel; this sizes a radiator and bounds a temperature, and it does not predict a gradient"
 
+[method]
+text = """
+# Transcribed from crates/vleo-mod-thermal/nodes/thm_equilibrium_temperature/model.rs (its HOLE): the relation the code ran, line for line.
+# The relation itself stays in the kernel; this says which one, with which inputs, in which units.
+return equilibrium_temperature(qs + qa + qi + qh, qd, ar, e)
+"""
+by = ""
+transcribed_from = "crates/vleo-mod-thermal/nodes/thm_equilibrium_temperature/model.rs"
+checked_by = ""
+
 [output]
 # The node's one answer. The variable id is the node id: one small
 # question, one answer, one folder, one row on the tree.

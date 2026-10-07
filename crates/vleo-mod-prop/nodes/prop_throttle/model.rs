@@ -19,17 +19,21 @@ use vleo_core::units::*;
 pub const NODE_ID: &str = "prop_throttle";
 /// Hash of the sheet this file was generated from. A face carrying a
 /// different one refuses to run rather than showing a stale page.
-pub const SHEET_HASH: u64 = 0xc16699a360a6c290;
+pub const SHEET_HASH: u64 = 0xfcda28634faa6d8b;
 
 pub fn evaluate(av: Power, pp: Power, pay: Power, ax: Power, cm: Power, th: Power, lh: Ratio) -> Result<Ratio, Fault> {
-    // ---- HOLE 1 : subtract every other load from what is available and give the remainder to propulsion, capped at what it asked for -> Ratio
-    let k: Ratio = { let other = (pay.get() + ax.get() + cm.get() + th.get()) * (1.0 + lh.get()); let spare = pmath::max(0.0, av.get() - other); Ratio::new(if pp.get() <= 0.0 { 0.0 } else { pmath::min(1.0, spare / pp.get()) }) };
-    // ---- end HOLE 1
+    // generated · from the node's method, translated by rule into
+    // vleo_core::physics::methods::prop_throttle. No hole: the method is the
+    // implementation, and the author's cases in evidence.rs test it.
+    let method_answer: Ratio = match methods::prop_throttle::evaluate(av.get(), pp.get(), pay.get(), ax.get(), cm.get(), th.get(), lh.get()) {
+        Ok(v) => Ratio::new(v),
+        Err(e) => return Err(method::fault(e, NODE_ID, "k_thr")),
+    };
 
     // generated · the declared domain of this node's own answer. The
     // reason travels with the guard, because a guard whose reason is not
     // written down gets deleted by the next person who finds it awkward.
-    let answer: Ratio = k;
+    let answer: Ratio = method_answer;
     if !answer.is_finite() {
         return Err(Fault::Degenerate { node: NODE_ID, field: "k_thr", reason: "the computation produced a value that is not a number" });
     }

@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `F_E` (Earth view factor), in `-`.
 pub const NODE_ID: &str = "thm_view_factor";
-pub const SHEET_HASH: u64 = 0x524902c1f5f56891;
+pub const SHEET_HASH: u64 = 0xe71ff13aa3eb95b7;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "orbit_radius",

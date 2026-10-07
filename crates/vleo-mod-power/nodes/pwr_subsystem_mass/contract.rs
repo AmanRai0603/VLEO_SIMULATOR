@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `m_pwr` (Power subsystem mass), in `kg`.
 pub const NODE_ID: &str = "pwr_subsystem_mass";
-pub const SHEET_HASH: u64 = 0xc3a7f44f93fc55c9;
+pub const SHEET_HASH: u64 = 0x5fe96eeb7f7a1cf8;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "pwr_array_mass",

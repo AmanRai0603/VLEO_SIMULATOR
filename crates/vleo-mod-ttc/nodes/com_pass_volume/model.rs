@@ -16,17 +16,21 @@ use vleo_core::units::*;
 pub const NODE_ID: &str = "com_pass_volume";
 /// Hash of the sheet this file was generated from. A face carrying a
 /// different one refuses to run rather than showing a stale page.
-pub const SHEET_HASH: u64 = 0xeb9d83e91c885863;
+pub const SHEET_HASH: u64 = 0x656a7e231a4b1229;
 
 pub fn evaluate(r: DataRate, t: Time) -> Result<DataVolume, Fault> {
-    // ---- HOLE 1 : multiply rate by contact time and apply a 60% mean-pass and protocol efficiency -> DataVolume
-    let v: DataVolume = comms::pass_data_volume(r, t, Ratio::new(0.60));
-    // ---- end HOLE 1
+    // generated · from the node's method, translated by rule into
+    // vleo_core::physics::methods::com_pass_volume. No hole: the method is the
+    // implementation, and the author's cases in evidence.rs test it.
+    let method_answer: DataVolume = match methods::com_pass_volume::evaluate(r.get(), t.get()) {
+        Ok(v) => DataVolume::new(v),
+        Err(e) => return Err(method::fault(e, NODE_ID, "V_pass")),
+    };
 
     // generated · the declared domain of this node's own answer. The
     // reason travels with the guard, because a guard whose reason is not
     // written down gets deleted by the next person who finds it awkward.
-    let answer: DataVolume = v;
+    let answer: DataVolume = method_answer;
     if !answer.is_finite() {
         return Err(Fault::Degenerate { node: NODE_ID, field: "V_pass", reason: "the computation produced a value that is not a number" });
     }

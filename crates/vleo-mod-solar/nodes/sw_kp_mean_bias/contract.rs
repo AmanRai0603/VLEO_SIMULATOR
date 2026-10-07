@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `dKp_mean` (Kp slot bias, 24-hour mean), in `-`.
 pub const NODE_ID: &str = "sw_kp_mean_bias";
-pub const SHEET_HASH: u64 = 0xb74115f951260a2b;
+pub const SHEET_HASH: u64 = 0x7557b44957685ca4;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "sw_storm_return_level",

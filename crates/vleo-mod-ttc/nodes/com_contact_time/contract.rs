@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `t_con` (Maximum contact time per pass), in `min`.
 pub const NODE_ID: &str = "com_contact_time";
-pub const SHEET_HASH: u64 = 0x45f6819f1ebf7960;
+pub const SHEET_HASH: u64 = 0x7db1404e9b5c3e38;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "orbit_earth_central_angle",

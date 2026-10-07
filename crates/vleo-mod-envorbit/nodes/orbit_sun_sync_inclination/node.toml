@@ -32,6 +32,16 @@ by = "an assistant, from what this sheet states — for its owner (systems) to c
 expression = "cos(i) = -Omega_sun*(1-e^2)^2*a^(7/2)/(1.5*J2*sqrt(mu)*Re^2)"
 source = "vallado2013"
 
+[method]
+text = """
+# Transcribed from crates/vleo-mod-envorbit/nodes/orbit_sun_sync_inclination/model.rs (its HOLE): the relation the code ran, line for line.
+# The relation itself stays in the kernel; this says which one, with which inputs, in which units.
+return sun_synchronous_inclination(r, e)
+"""
+by = ""
+transcribed_from = "crates/vleo-mod-envorbit/nodes/orbit_sun_sync_inclination/model.rs"
+checked_by = ""
+
 [output]
 # The node's one answer. The variable id is the node id: one small
 # question, one answer, one folder, one row on the tree.

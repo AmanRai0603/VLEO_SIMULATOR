@@ -16,17 +16,21 @@ use vleo_core::units::*;
 pub const NODE_ID: &str = "pay_toa_uncertainty";
 /// Hash of the sheet this file was generated from. A face carrying a
 /// different one refuses to run rather than showing a stale page.
-pub const SHEET_HASH: u64 = 0x1b8751e76d2e38da;
+pub const SHEET_HASH: u64 = 0xd57177b4bdb19165;
 
 pub fn evaluate(b: Frequency, s: Ratio, t: Time) -> Result<Time, Fault> {
-    // ---- HOLE 1 : apply the Cramer-Rao lower bound on time-of-arrival estimation -> Time
-    let sg: Time = payload::toa_timing_uncertainty(b, s.get(), t);
-    // ---- end HOLE 1
+    // generated · from the node's method, translated by rule into
+    // vleo_core::physics::methods::pay_toa_uncertainty. No hole: the method is the
+    // implementation, and the author's cases in evidence.rs test it.
+    let method_answer: Time = match methods::pay_toa_uncertainty::evaluate(b.get(), s.get(), t.get()) {
+        Ok(v) => Time::new(v),
+        Err(e) => return Err(method::fault(e, NODE_ID, "sig_tau")),
+    };
 
     // generated · the declared domain of this node's own answer. The
     // reason travels with the guard, because a guard whose reason is not
     // written down gets deleted by the next person who finds it awkward.
-    let answer: Time = sg;
+    let answer: Time = method_answer;
     if !answer.is_finite() {
         return Err(Fault::Degenerate { node: NODE_ID, field: "sig_tau", reason: "the computation produced a value that is not a number" });
     }

@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `sig_tau` (Time of arrival uncertainty), in `s`.
 pub const NODE_ID: &str = "pay_toa_uncertainty";
-pub const SHEET_HASH: u64 = 0x1b8751e76d2e38da;
+pub const SHEET_HASH: u64 = 0xd57177b4bdb19165;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "pay_rf_bandwidth",

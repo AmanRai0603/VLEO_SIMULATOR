@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `BC` (Ballistic coefficient), in `-`.
 pub const NODE_ID: &str = "aero_ballistic_coefficient";
-pub const SHEET_HASH: u64 = 0x7512f2f652dac3fa;
+pub const SHEET_HASH: u64 = 0x16f00403b97750d2;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "mass_wet",

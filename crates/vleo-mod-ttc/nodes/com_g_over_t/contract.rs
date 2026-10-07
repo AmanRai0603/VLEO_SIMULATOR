@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `GT` (Ground station figure of merit), in `dB`.
 pub const NODE_ID: &str = "com_g_over_t";
-pub const SHEET_HASH: u64 = 0x19b40aeecbb760bb;
+pub const SHEET_HASH: u64 = 0xeab819de5bb528ba;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "com_gs_gain",

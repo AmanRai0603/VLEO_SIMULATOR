@@ -32,6 +32,19 @@ by = "an assistant, from what this sheet states — for its owner (propulsion) t
 expression = "P_jet = T^2/(2*mdot_i)"
 source = "romano2021"
 
+[method]
+text = """
+# Transcribed from crates/vleo-mod-prop/nodes/prop_jet_power/model.rs (its HOLE): the relation the code ran, line for line.
+# The relation itself stays in the kernel; this says which one, with which inputs, in which units.
+if mi <= 0 [kg/s] then
+  refuse "no ion flow, so jet power is undefined rather than infinite"
+end
+return jet_power(t, mi)
+"""
+by = ""
+transcribed_from = "crates/vleo-mod-prop/nodes/prop_jet_power/model.rs"
+checked_by = ""
+
 [output]
 # The node's one answer. The variable id is the node id: one small
 # question, one answer, one folder, one row on the tree.

@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `m_wet` (Wet mass), in `kg`.
 pub const NODE_ID: &str = "mass_wet";
-pub const SHEET_HASH: u64 = 0x95045a36676f29d7;
+pub const SHEET_HASH: u64 = 0x2266825229a5334c;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "mass_dry",

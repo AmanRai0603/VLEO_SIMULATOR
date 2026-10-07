@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `M` (Service lifetime — closure), in `-`.
 pub const NODE_ID: &str = "kpi_service_lifetime";
-pub const SHEET_HASH: u64 = 0xfe2986aaf62c36ad;
+pub const SHEET_HASH: u64 = 0xbe094a9b6aa041ec;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "kpi_service_lifetime_required",

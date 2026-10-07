@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `M` (Daily downlink volume — closure), in `-`.
 pub const NODE_ID: &str = "kpi_data_volume";
-pub const SHEET_HASH: u64 = 0x56e417c8dc202941;
+pub const SHEET_HASH: u64 = 0xbb329eac7b74a570;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "kpi_data_volume_required",

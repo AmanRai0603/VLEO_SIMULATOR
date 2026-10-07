@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `T_del` (Thrust actually delivered), in `mN`.
 pub const NODE_ID: &str = "prop_delivered_thrust";
-pub const SHEET_HASH: u64 = 0x11173687f5907800;
+pub const SHEET_HASH: u64 = 0xdba9cea358b29580;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "prop_thrust",

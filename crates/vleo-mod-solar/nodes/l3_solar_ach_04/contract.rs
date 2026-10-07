@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `M_ap_long` (Closure — Ap, sustained), in `-`.
 pub const NODE_ID: &str = "l3_solar_ach_04";
-pub const SHEET_HASH: u64 = 0x1b206c2ef28b8732;
+pub const SHEET_HASH: u64 = 0xfec79204c19a238f;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "sw_ap_design_long",

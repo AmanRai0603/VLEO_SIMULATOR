@@ -33,6 +33,17 @@ by = "an assistant, from what this sheet states — for its owner (thermal) to c
 expression = "A = Q/(eps*sigma*(T^4 - T_sink^4))"
 source = "larson_wertz"
 
+[method]
+text = """
+# Transcribed from crates/vleo-mod-thermal/nodes/thm_required_radiator_area/model.rs (its HOLE): the relation the code ran, line for line.
+# The relation itself stays in the kernel; this says which one, with which inputs, in which units.
+# Constants the code held, written out here as it held them: 250 [K].
+return required_radiator_area(q, e, lim, 250 [K])
+"""
+by = ""
+transcribed_from = "crates/vleo-mod-thermal/nodes/thm_required_radiator_area/model.rs"
+checked_by = ""
+
 [output]
 # The node's one answer. The variable id is the node id: one small
 # question, one answer, one folder, one row on the tree.

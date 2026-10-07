@@ -16,17 +16,21 @@ use vleo_core::units::*;
 pub const NODE_ID: &str = "orbit_decay_rate";
 /// Hash of the sheet this file was generated from. A face carrying a
 /// different one refuses to run rather than showing a stale page.
-pub const SHEET_HASH: u64 = 0x07a146616c53ae63;
+pub const SHEET_HASH: u64 = 0x5488a3d4ea2782d2;
 
 pub fn evaluate(rho: MassDensity, bc: Ratio, r: Length) -> Result<Velocity, Fault> {
-    // ---- HOLE 1 : apply the circular-orbit secular decay relation -> Velocity
-    let d: Velocity = orbit::decay_rate(rho, bc.get(), r);
-    // ---- end HOLE 1
+    // generated · from the node's method, translated by rule into
+    // vleo_core::physics::methods::orbit_decay_rate. No hole: the method is the
+    // implementation, and the author's cases in evidence.rs test it.
+    let method_answer: Velocity = match methods::orbit_decay_rate::evaluate(rho.get(), bc.get(), r.get()) {
+        Ok(v) => Velocity::new(v),
+        Err(e) => return Err(method::fault(e, NODE_ID, "da_dt")),
+    };
 
     // generated · the declared domain of this node's own answer. The
     // reason travels with the guard, because a guard whose reason is not
     // written down gets deleted by the next person who finds it awkward.
-    let answer: Velocity = d;
+    let answer: Velocity = method_answer;
     if !answer.is_finite() {
         return Err(Fault::Degenerate { node: NODE_ID, field: "da_dt", reason: "the computation produced a value that is not a number" });
     }

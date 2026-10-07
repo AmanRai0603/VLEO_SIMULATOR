@@ -16,17 +16,21 @@ use vleo_core::units::*;
 pub const NODE_ID: &str = "com_eirp";
 /// Hash of the sheet this file was generated from. A face carrying a
 /// different one refuses to run rather than showing a stale page.
-pub const SHEET_HASH: u64 = 0x36ffd1f74ff7467a;
+pub const SHEET_HASH: u64 = 0xeb1a369ea6533ec2;
 
 pub fn evaluate(p: Power, g: Ratio, l: Ratio) -> Result<Ratio, Fault> {
-    // ---- HOLE 1 : add the antenna gain to the transmitter power in decibels and subtract the line loss -> Ratio
-    let e: Ratio = Ratio::new(comms::eirp_dbw(p, g.get(), l.get()));
-    // ---- end HOLE 1
+    // generated · from the node's method, translated by rule into
+    // vleo_core::physics::methods::com_eirp. No hole: the method is the
+    // implementation, and the author's cases in evidence.rs test it.
+    let method_answer: Ratio = match methods::com_eirp::evaluate(p.get(), g.get(), l.get()) {
+        Ok(v) => Ratio::new(v),
+        Err(e) => return Err(method::fault(e, NODE_ID, "EIRP")),
+    };
 
     // generated · the declared domain of this node's own answer. The
     // reason travels with the guard, because a guard whose reason is not
     // written down gets deleted by the next person who finds it awkward.
-    let answer: Ratio = e;
+    let answer: Ratio = method_answer;
     if !answer.is_finite() {
         return Err(Fault::Degenerate { node: NODE_ID, field: "EIRP", reason: "the computation produced a value that is not a number" });
     }

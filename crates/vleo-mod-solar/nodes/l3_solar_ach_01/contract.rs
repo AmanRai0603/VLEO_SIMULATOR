@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `M_f107_long` (Closure — F10.7, sustained), in `-`.
 pub const NODE_ID: &str = "l3_solar_ach_01";
-pub const SHEET_HASH: u64 = 0x906ef3769bef9709;
+pub const SHEET_HASH: u64 = 0xacabefc6caf6b9c9;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "sw_f107_design_long",

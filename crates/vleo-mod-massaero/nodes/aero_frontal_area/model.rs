@@ -16,17 +16,21 @@ use vleo_core::units::*;
 pub const NODE_ID: &str = "aero_frontal_area";
 /// Hash of the sheet this file was generated from. A face carrying a
 /// different one refuses to run rather than showing a stale page.
-pub const SHEET_HASH: u64 = 0x9ede9c56e1a0d5b8;
+pub const SHEET_HASH: u64 = 0x075e2c0499caca31;
 
 pub fn evaluate(d: Length, a_app: Area) -> Result<Area, Fault> {
-    // ---- HOLE 1 : add the circular body cross-section to the appendage area -> Area
-    let a: Area = Area::new(0.25 * pmath::PI * d.get() * d.get() + a_app.get());
-    // ---- end HOLE 1
+    // generated · from the node's method, translated by rule into
+    // vleo_core::physics::methods::aero_frontal_area. No hole: the method is the
+    // implementation, and the author's cases in evidence.rs test it.
+    let method_answer: Area = match methods::aero_frontal_area::evaluate(d.get(), a_app.get()) {
+        Ok(v) => Area::new(v),
+        Err(e) => return Err(method::fault(e, NODE_ID, "A")),
+    };
 
     // generated · the declared domain of this node's own answer. The
     // reason travels with the guard, because a guard whose reason is not
     // written down gets deleted by the next person who finds it awkward.
-    let answer: Area = a;
+    let answer: Area = method_answer;
     if !answer.is_finite() {
         return Err(Fault::Degenerate { node: NODE_ID, field: "A", reason: "the computation produced a value that is not a number" });
     }

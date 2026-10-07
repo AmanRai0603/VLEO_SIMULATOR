@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `M` (Mean revisit time — closure), in `-`.
 pub const NODE_ID: &str = "kpi_revisit";
-pub const SHEET_HASH: u64 = 0xdb31437c55276667;
+pub const SHEET_HASH: u64 = 0x7b20d01bda86d117;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "kpi_revisit_required",

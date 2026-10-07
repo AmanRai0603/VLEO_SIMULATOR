@@ -19,17 +19,21 @@ use vleo_core::units::*;
 pub const NODE_ID: &str = "thm_aero_heating";
 /// Hash of the sheet this file was generated from. A face carrying a
 /// different one refuses to run rather than showing a stale page.
-pub const SHEET_HASH: u64 = 0xaa3d9a875436e9ee;
+pub const SHEET_HASH: u64 = 0xdfda6220971c013b;
 
 pub fn evaluate(rho: MassDensity, v: Velocity, a: Area) -> Result<Power, Fault> {
-    // ---- HOLE 1 : form the incident kinetic energy flux and apply a heat transfer coefficient of 0.9 -> Power
-    let q: Power = thermal::free_molecular_heating(rho, v, a, Ratio::new(0.9));
-    // ---- end HOLE 1
+    // generated · from the node's method, translated by rule into
+    // vleo_core::physics::methods::thm_aero_heating. No hole: the method is the
+    // implementation, and the author's cases in evidence.rs test it.
+    let method_answer: Power = match methods::thm_aero_heating::evaluate(rho.get(), v.get(), a.get()) {
+        Ok(v) => Power::new(v),
+        Err(e) => return Err(method::fault(e, NODE_ID, "Q_aero")),
+    };
 
     // generated · the declared domain of this node's own answer. The
     // reason travels with the guard, because a guard whose reason is not
     // written down gets deleted by the next person who finds it awkward.
-    let answer: Power = q;
+    let answer: Power = method_answer;
     if !answer.is_finite() {
         return Err(Fault::Degenerate { node: NODE_ID, field: "Q_aero", reason: "the computation produced a value that is not a number" });
     }

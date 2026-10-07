@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `t_dwell` (Per-sample dwell time), in `s`.
 pub const NODE_ID: &str = "pay_dwell_time";
-pub const SHEET_HASH: u64 = 0xae7273b1409107fc;
+pub const SHEET_HASH: u64 = 0x8a8a3874d439ef02;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "pay_gsd",

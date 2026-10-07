@@ -36,6 +36,16 @@ fn bad(line: u32, what: &'static str) -> MethodError {
     MethodError::Degenerate { line, what }
 }
 
+/// A kernel function's answer, or, where it has none, its refusal in its own
+/// words: the same sentence the interpreter refuses with.
+pub fn answered(v: f64, why: &'static str, line: u32) -> Result<f64, MethodError> {
+    if pmath::is_nan(v) {
+        Err(bad(line, why))
+    } else {
+        Ok(v)
+    }
+}
+
 /// A named value, checked: a method never carries a value that is not a
 /// finite number from one line to the next.
 pub fn fin(v: f64, line: u32) -> Result<f64, MethodError> {

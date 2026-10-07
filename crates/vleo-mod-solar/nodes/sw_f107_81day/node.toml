@@ -156,6 +156,23 @@ fails_when = "the smoothing width matters to the caller. sw_mean_cycle_level bin
 text = "A single day's F10.7 strays from this by about twelve per cent, one standard deviation"
 fails_when = "F10.7A is used where the daily value belongs. Measured over 10284 days the ratio of daily F10.7 to its own 81-day centred mean has mean 0.999340 and standard deviation 0.122210, and reaches 2.11 at the extreme — sw_f107a_ratio carries that figure. Handing a density model F10.7A for both of its two drivers loses every spike the atmosphere actually felt"
 
+[method]
+text = """
+# Transcribed from crates/vleo-mod-solar/nodes/sw_f107_81day/model.rs (its HOLE): the relation the code ran, line for line.
+# The relation itself stays in the kernel; this says which one, with which inputs, in which units.
+#
+# What the code said beside it:
+# A pass-through, and the sheet says why at length: at an epoch past the
+# record there are no 81 days to centre on, so the honest F10.7A is the
+# phase-conditioned mean-cycle level. What this row adds is the question,
+# the declared smoothing width and the named density-model contract, not
+# arithmetic.
+return level
+"""
+by = ""
+transcribed_from = "crates/vleo-mod-solar/nodes/sw_f107_81day/model.rs"
+checked_by = ""
+
 [output]
 # The node's one answer. The variable id is the node id: one small
 # question, one answer, one folder, one row on the tree.

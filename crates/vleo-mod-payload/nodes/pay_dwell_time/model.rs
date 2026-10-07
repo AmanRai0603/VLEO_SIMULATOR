@@ -20,17 +20,21 @@ use vleo_core::units::*;
 pub const NODE_ID: &str = "pay_dwell_time";
 /// Hash of the sheet this file was generated from. A face carrying a
 /// different one refuses to run rather than showing a stale page.
-pub const SHEET_HASH: u64 = 0xae7273b1409107fc;
+pub const SHEET_HASH: u64 = 0x8a8a3874d439ef02;
 
 pub fn evaluate(g: Length, v: Velocity) -> Result<Time, Fault> {
-    // ---- HOLE 1 : divide the ground sample distance by the ground track speed -> Time
-    let t: Time = payload::dwell_time(g, v);
-    // ---- end HOLE 1
+    // generated · from the node's method, translated by rule into
+    // vleo_core::physics::methods::pay_dwell_time. No hole: the method is the
+    // implementation, and the author's cases in evidence.rs test it.
+    let method_answer: Time = match methods::pay_dwell_time::evaluate(g.get(), v.get()) {
+        Ok(v) => Time::new(v),
+        Err(e) => return Err(method::fault(e, NODE_ID, "t_dwell")),
+    };
 
     // generated · the declared domain of this node's own answer. The
     // reason travels with the guard, because a guard whose reason is not
     // written down gets deleted by the next person who finds it awkward.
-    let answer: Time = t;
+    let answer: Time = method_answer;
     if !answer.is_finite() {
         return Err(Fault::Degenerate { node: NODE_ID, field: "t_dwell", reason: "the computation produced a value that is not a number" });
     }

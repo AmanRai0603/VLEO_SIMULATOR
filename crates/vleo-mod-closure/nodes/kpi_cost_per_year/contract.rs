@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `M` (Cost per operational year — closure), in `-`.
 pub const NODE_ID: &str = "kpi_cost_per_year";
-pub const SHEET_HASH: u64 = 0xddf36607236bc15e;
+pub const SHEET_HASH: u64 = 0xd96363741abaa83b;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "kpi_cost_per_year_required",

@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `C_yr` (Cost per operational year), in `MUSD`.
 pub const NODE_ID: &str = "cost_per_year";
-pub const SHEET_HASH: u64 = 0xd82656d28ceb7657;
+pub const SHEET_HASH: u64 = 0xe0f6ad221af5d55a;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "cost_programme",

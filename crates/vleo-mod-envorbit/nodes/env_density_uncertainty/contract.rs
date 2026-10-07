@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `sigma_rho` (Density model uncertainty), in `-`.
 pub const NODE_ID: &str = "env_density_uncertainty";
-pub const SHEET_HASH: u64 = 0xbf9f7a40456c0f15;
+pub const SHEET_HASH: u64 = 0x27a8cbf447f7af93;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "env_kp",

@@ -16,17 +16,21 @@ use vleo_core::units::*;
 pub const NODE_ID: &str = "prop_ion_flow";
 /// Hash of the sheet this file was generated from. A face carrying a
 /// different one refuses to run rather than showing a stale page.
-pub const SHEET_HASH: u64 = 0x4814e56ff8e46c05;
+pub const SHEET_HASH: u64 = 0x3558bc55488a25fe;
 
 pub fn evaluate(md: MassFlow, eta_u: Ratio) -> Result<MassFlow, Fault> {
-    // ---- HOLE 1 : apply the propellant utilisation efficiency -> MassFlow
-    let mi: MassFlow = prop::ion_mass_flow(md, eta_u);
-    // ---- end HOLE 1
+    // generated · from the node's method, translated by rule into
+    // vleo_core::physics::methods::prop_ion_flow. No hole: the method is the
+    // implementation, and the author's cases in evidence.rs test it.
+    let method_answer: MassFlow = match methods::prop_ion_flow::evaluate(md.get(), eta_u.get()) {
+        Ok(v) => MassFlow::new(v),
+        Err(e) => return Err(method::fault(e, NODE_ID, "mdot_i")),
+    };
 
     // generated · the declared domain of this node's own answer. The
     // reason travels with the guard, because a guard whose reason is not
     // written down gets deleted by the next person who finds it awkward.
-    let answer: MassFlow = mi;
+    let answer: MassFlow = method_answer;
     if !answer.is_finite() {
         return Err(Fault::Degenerate { node: NODE_ID, field: "mdot_i", reason: "the computation produced a value that is not a number" });
     }

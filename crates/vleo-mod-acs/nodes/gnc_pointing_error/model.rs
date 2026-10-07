@@ -20,17 +20,21 @@ use vleo_core::units::*;
 pub const NODE_ID: &str = "gnc_pointing_error";
 /// Hash of the sheet this file was generated from. A face carrying a
 /// different one refuses to run rather than showing a stale page.
-pub const SHEET_HASH: u64 = 0xb9d0fc83eea02e71;
+pub const SHEET_HASH: u64 = 0xf01bfee955a3dee5;
 
 pub fn evaluate(sen: Angle, ali: Angle, ctl: Angle, thm: Angle) -> Result<Angle, Fault> {
-    // ---- HOLE 1 : root-sum-square the four independent contributors and scale to three sigma -> Angle
-    let s: Angle = Angle::new(3.0 * gnc::pointing_error_rss(&[sen, ali, ctl, thm]).get());
-    // ---- end HOLE 1
+    // generated · from the node's method, translated by rule into
+    // vleo_core::physics::methods::gnc_pointing_error. No hole: the method is the
+    // implementation, and the author's cases in evidence.rs test it.
+    let method_answer: Angle = match methods::gnc_pointing_error::evaluate(sen.get(), ali.get(), ctl.get(), thm.get()) {
+        Ok(v) => Angle::new(v),
+        Err(e) => return Err(method::fault(e, NODE_ID, "sig_pt")),
+    };
 
     // generated · the declared domain of this node's own answer. The
     // reason travels with the guard, because a guard whose reason is not
     // written down gets deleted by the next person who finds it awkward.
-    let answer: Angle = s;
+    let answer: Angle = method_answer;
     if !answer.is_finite() {
         return Err(Fault::Degenerate { node: NODE_ID, field: "sig_pt", reason: "the computation produced a value that is not a number" });
     }

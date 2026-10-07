@@ -20,17 +20,21 @@ use vleo_core::units::*;
 pub const NODE_ID: &str = "pwr_cell_derating";
 /// Hash of the sheet this file was generated from. A face carrying a
 /// different one refuses to run rather than showing a stale page.
-pub const SHEET_HASH: u64 = 0x04fbe8e14dbad38f;
+pub const SHEET_HASH: u64 = 0x59709d4db1cd5d1d;
 
 pub fn evaluate(k: Ratio, t: Temperature) -> Result<Ratio, Fault> {
-    // ---- HOLE 1 : apply the linear temperature coefficient about the 298.15 K reference, floored at 30% so the relaxation cannot chase a negative array -> Ratio
-    let f: Ratio = Ratio::new(pmath::max(0.3, 1.0 + k.get() * (t.get() - 298.15)));
-    // ---- end HOLE 1
+    // generated · from the node's method, translated by rule into
+    // vleo_core::physics::methods::pwr_cell_derating. No hole: the method is the
+    // implementation, and the author's cases in evidence.rs test it.
+    let method_answer: Ratio = match methods::pwr_cell_derating::evaluate(k.get(), t.get()) {
+        Ok(v) => Ratio::new(v),
+        Err(e) => return Err(method::fault(e, NODE_ID, "f_T")),
+    };
 
     // generated · the declared domain of this node's own answer. The
     // reason travels with the guard, because a guard whose reason is not
     // written down gets deleted by the next person who finds it awkward.
-    let answer: Ratio = f;
+    let answer: Ratio = method_answer;
     if !answer.is_finite() {
         return Err(Fault::Degenerate { node: NODE_ID, field: "f_T", reason: "the computation produced a value that is not a number" });
     }

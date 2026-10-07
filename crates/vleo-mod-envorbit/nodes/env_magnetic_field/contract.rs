@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `B` (Geomagnetic flux density), in `T`.
 pub const NODE_ID: &str = "env_magnetic_field";
-pub const SHEET_HASH: u64 = 0x803500f0a601e268;
+pub const SHEET_HASH: u64 = 0x850ed3c538fa707e;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "orbit_radius",

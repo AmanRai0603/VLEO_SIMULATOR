@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `df` (Doppler shift at closest approach), in `MHz`.
 pub const NODE_ID: &str = "com_doppler";
-pub const SHEET_HASH: u64 = 0x59e27edeff3abd6a;
+pub const SHEET_HASH: u64 = 0x57c70281c07710e0;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "com_frequency",

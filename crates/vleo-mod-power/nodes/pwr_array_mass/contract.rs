@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `m_arr` (Array mass), in `kg`.
 pub const NODE_ID: &str = "pwr_array_mass";
-pub const SHEET_HASH: u64 = 0xfbc1c4f746a49e94;
+pub const SHEET_HASH: u64 = 0x5e22689b7a774c6e;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "pwr_array_area",

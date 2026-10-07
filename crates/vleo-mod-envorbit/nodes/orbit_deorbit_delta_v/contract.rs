@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `dv_dis` (Disposal delta-v), in `m/s`.
 pub const NODE_ID: &str = "orbit_deorbit_delta_v";
-pub const SHEET_HASH: u64 = 0x8ef8576fb8b9f5a1;
+pub const SHEET_HASH: u64 = 0x4f950770ccebee9f;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "orbit_altitude",

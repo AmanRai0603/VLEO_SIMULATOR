@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `R_b` (Achievable downlink data rate), in `Mbit/s`.
 pub const NODE_ID: &str = "com_data_rate";
-pub const SHEET_HASH: u64 = 0x7cd4c4bc025cbc11;
+pub const SHEET_HASH: u64 = 0x93298b4ccd59e1b5;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "com_cn0",

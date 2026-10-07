@@ -99,6 +99,13 @@ impl Rust {
                 }
                 let a: Vec<String> = args.iter().map(|x| self.expr(x)).collect();
                 if let Some(k) = kernel_function(name) {
+                    if !k.refuses.is_empty() {
+                        return format!(
+                            "rt::answered({}, {:?}, {line})?",
+                            translate(k, &a),
+                            k.refuses
+                        );
+                    }
                     return format!("({})", translate(k, &a));
                 }
                 match implementation(name) {

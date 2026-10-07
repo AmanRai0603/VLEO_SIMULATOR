@@ -16,17 +16,21 @@ use vleo_core::units::*;
 pub const NODE_ID: &str = "cost_programme";
 /// Hash of the sheet this file was generated from. A face carrying a
 /// different one refuses to run rather than showing a stale page.
-pub const SHEET_HASH: u64 = 0xcf81c6a1039de7b8;
+pub const SHEET_HASH: u64 = 0x5bf347f832418ec3;
 
 pub fn evaluate(nre: Money, pr: Money, lc: Money, n: Ratio, op: Money, y: Time) -> Result<Money, Fault> {
-    // ---- HOLE 1 : add the non-recurring cost, the production run, the launch of every satellite and the operations over the mission -> Money
-    let c: Money = cost::programme_cost(nre, Money::new(pr.get() + lc.get() * n.get()), op, y.get() / 31_557_600.0);
-    // ---- end HOLE 1
+    // generated · from the node's method, translated by rule into
+    // vleo_core::physics::methods::cost_programme. No hole: the method is the
+    // implementation, and the author's cases in evidence.rs test it.
+    let method_answer: Money = match methods::cost_programme::evaluate(nre.get(), pr.get(), lc.get(), n.get(), op.get(), y.get()) {
+        Ok(v) => Money::new(v),
+        Err(e) => return Err(method::fault(e, NODE_ID, "C_tot")),
+    };
 
     // generated · the declared domain of this node's own answer. The
     // reason travels with the guard, because a guard whose reason is not
     // written down gets deleted by the next person who finds it awkward.
-    let answer: Money = c;
+    let answer: Money = method_answer;
     if !answer.is_finite() {
         return Err(Fault::Degenerate { node: NODE_ID, field: "C_tot", reason: "the computation produced a value that is not a number" });
     }

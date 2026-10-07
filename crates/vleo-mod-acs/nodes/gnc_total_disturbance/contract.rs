@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `T_dis` (Total disturbance torque), in `N.m`.
 pub const NODE_ID: &str = "gnc_total_disturbance";
-pub const SHEET_HASH: u64 = 0xe43e6a3d4530dadb;
+pub const SHEET_HASH: u64 = 0xdd2495b0f1723502;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "aero_torque",

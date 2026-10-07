@@ -16,17 +16,21 @@ use vleo_core::units::*;
 pub const NODE_ID: &str = "aero_drag_acceleration";
 /// Hash of the sheet this file was generated from. A face carrying a
 /// different one refuses to run rather than showing a stale page.
-pub const SHEET_HASH: u64 = 0xb93db6e6e32b7af8;
+pub const SHEET_HASH: u64 = 0x5acac2813aa9de6a;
 
 pub fn evaluate(d: Force, m: Mass) -> Result<Acceleration, Fault> {
-    // ---- HOLE 1 : divide the drag force by the wet mass -> Acceleration
-    let a: Acceleration = aero::drag_acceleration(d, m);
-    // ---- end HOLE 1
+    // generated · from the node's method, translated by rule into
+    // vleo_core::physics::methods::aero_drag_acceleration. No hole: the method is the
+    // implementation, and the author's cases in evidence.rs test it.
+    let method_answer: Acceleration = match methods::aero_drag_acceleration::evaluate(d.get(), m.get()) {
+        Ok(v) => Acceleration::new(v),
+        Err(e) => return Err(method::fault(e, NODE_ID, "a_D")),
+    };
 
     // generated · the declared domain of this node's own answer. The
     // reason travels with the guard, because a guard whose reason is not
     // written down gets deleted by the next person who finds it awkward.
-    let answer: Acceleration = a;
+    let answer: Acceleration = method_answer;
     if !answer.is_finite() {
         return Err(Fault::Degenerate { node: NODE_ID, field: "a_D", reason: "the computation produced a value that is not a number" });
     }

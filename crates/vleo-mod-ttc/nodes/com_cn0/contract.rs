@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `CN0` (Carrier to noise density ratio), in `dB`.
 pub const NODE_ID: &str = "com_cn0";
-pub const SHEET_HASH: u64 = 0x542e132e5634ca84;
+pub const SHEET_HASH: u64 = 0x71e1056904c50ca6;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "com_eirp",

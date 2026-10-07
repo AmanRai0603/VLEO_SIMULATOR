@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `k_thr` (Propulsion throttle), in `-`.
 pub const NODE_ID: &str = "prop_throttle";
-pub const SHEET_HASH: u64 = 0xc16699a360a6c290;
+pub const SHEET_HASH: u64 = 0xfcda28634faa6d8b;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "pwr_available",

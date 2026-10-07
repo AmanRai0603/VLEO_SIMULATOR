@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `P_del` (Propulsion power actually drawn), in `W`.
 pub const NODE_ID: &str = "prop_delivered_bus_power";
-pub const SHEET_HASH: u64 = 0x092102307fb8c8d8;
+pub const SHEET_HASH: u64 = 0xac8d27d860133e6a;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "prop_bus_power",

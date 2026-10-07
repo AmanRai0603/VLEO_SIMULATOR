@@ -16,17 +16,21 @@ use vleo_core::units::*;
 pub const NODE_ID: &str = "pwr_battery_cycles";
 /// Hash of the sheet this file was generated from. A face carrying a
 /// different one refuses to run rather than showing a stale page.
-pub const SHEET_HASH: u64 = 0x65d0729cb5ce91c2;
+pub const SHEET_HASH: u64 = 0x6efe0fc01462a799;
 
-pub fn evaluate(tm: Time, to: Time) -> Result<Ratio, Fault> {
-    // ---- HOLE 1 : divide the mission duration by the orbital period -> Ratio
-    let n: Ratio = Ratio::new(power::battery_cycles(tm, to));
-    // ---- end HOLE 1
+pub fn evaluate(tm: Time, t_orbit: Time) -> Result<Ratio, Fault> {
+    // generated · from the node's method, translated by rule into
+    // vleo_core::physics::methods::pwr_battery_cycles. No hole: the method is the
+    // implementation, and the author's cases in evidence.rs test it.
+    let method_answer: Ratio = match methods::pwr_battery_cycles::evaluate(tm.get(), t_orbit.get()) {
+        Ok(v) => Ratio::new(v),
+        Err(e) => return Err(method::fault(e, NODE_ID, "N_cyc")),
+    };
 
     // generated · the declared domain of this node's own answer. The
     // reason travels with the guard, because a guard whose reason is not
     // written down gets deleted by the next person who finds it awkward.
-    let answer: Ratio = n;
+    let answer: Ratio = method_answer;
     if !answer.is_finite() {
         return Err(Fault::Degenerate { node: NODE_ID, field: "N_cyc", reason: "the computation produced a value that is not a number" });
     }

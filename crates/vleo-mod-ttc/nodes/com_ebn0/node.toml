@@ -32,6 +32,16 @@ by = "an assistant, from what this sheet states — for its owner (comms) to con
 expression = "Eb/N0 = C/N0 - 10*log10(R)"
 source = "larson_wertz"
 
+[method]
+text = """
+# Transcribed from crates/vleo-mod-ttc/nodes/com_ebn0/model.rs (its HOLE): the relation the code ran, line for line.
+# The relation itself stays in the kernel; this says which one, with which inputs, in which units.
+return eb_over_n0_db(c, r)
+"""
+by = ""
+transcribed_from = "crates/vleo-mod-ttc/nodes/com_ebn0/model.rs"
+checked_by = ""
+
 [output]
 # The node's one answer. The variable id is the node id: one small
 # question, one answer, one folder, one row on the tree.

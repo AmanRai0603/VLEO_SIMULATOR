@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `n_O` (Atomic oxygen number density), in `1/m^3`.
 pub const NODE_ID: &str = "env_atomic_oxygen_density";
-pub const SHEET_HASH: u64 = 0xdfc6709ddcc473b9;
+pub const SHEET_HASH: u64 = 0x21cf383390ebb1bb;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "orbit_altitude",

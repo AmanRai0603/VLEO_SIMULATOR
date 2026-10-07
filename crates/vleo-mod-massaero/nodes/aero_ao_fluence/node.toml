@@ -33,6 +33,18 @@ by = "an assistant, from what this sheet states — for its owner (mass) to conf
 expression = "F = n_O*V*t"
 source = "moe2005"
 
+[method]
+text = """
+# Transcribed from crates/vleo-mod-massaero/nodes/aero_ao_fluence/model.rs (its HOLE): the relation the code ran, line for line.
+# The relation itself stays in the kernel; this says which one, with which inputs, in which units.
+# "* 1 [unit]" gives a number this design states as a pure ratio the unit the kernel reads it in,
+# and "/ 1 [unit]" the other way; the number itself does not change.
+return atomic_oxygen_fluence(n_o, v, t) / 1 [1/m^2]
+"""
+by = ""
+transcribed_from = "crates/vleo-mod-massaero/nodes/aero_ao_fluence/model.rs"
+checked_by = ""
+
 [output]
 # The node's one answer. The variable id is the node id: one small
 # question, one answer, one folder, one row on the tree.

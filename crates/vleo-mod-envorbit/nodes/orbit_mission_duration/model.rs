@@ -16,17 +16,21 @@ use vleo_core::units::*;
 pub const NODE_ID: &str = "orbit_mission_duration";
 /// Hash of the sheet this file was generated from. A face carrying a
 /// different one refuses to run rather than showing a stale page.
-pub const SHEET_HASH: u64 = 0xa4de90cb1b5e53e8;
+pub const SHEET_HASH: u64 = 0x3d5d2505ec429f97;
 
 pub fn evaluate(required: Time) -> Result<Time, Fault> {
-    // ---- HOLE 1 : carry the declared mission duration through unchanged -> Time
-    let duration: Time = required;
-    // ---- end HOLE 1
+    // generated · from the node's method, translated by rule into
+    // vleo_core::physics::methods::orbit_mission_duration. No hole: the method is the
+    // implementation, and the author's cases in evidence.rs test it.
+    let method_answer: Time = match methods::orbit_mission_duration::evaluate(required.get()) {
+        Ok(v) => Time::new(v),
+        Err(e) => return Err(method::fault(e, NODE_ID, "T_mis")),
+    };
 
     // generated · the declared domain of this node's own answer. The
     // reason travels with the guard, because a guard whose reason is not
     // written down gets deleted by the next person who finds it awkward.
-    let answer: Time = duration;
+    let answer: Time = method_answer;
     if !answer.is_finite() {
         return Err(Fault::Degenerate { node: NODE_ID, field: "T_mis", reason: "the computation produced a value that is not a number" });
     }

@@ -31,16 +31,10 @@ fn a_relation_built_from_another_sheet_is_refused_by_name() {
 
 fn refused_when(moved: impl Fn(&mut vleo_sheet::model::Sheet)) {
     let mut tree = vleo_sheet::load_all(&root()).unwrap();
-    // A computed row that answers today, on the compiled engine, whose
-    // relation is built in — a method runs in the interpreter, whatever code
-    // the build has for it …
-    // Read with every method interpreted, so a row that runs as compiled code
-    // here is one whose relation is built in.
-    let read = opened::interpreting(&tree).unwrap();
-    let built_in = |id: &str| {
-        read.find(id)
-            .is_some_and(|k| !matches!(read.run.get(k as usize), Some(Some(_))))
-    };
+    // A computed row that answers today, on the compiled engine. Every
+    // relation of the design is a method now, and a method the build has not
+    // seen runs in the interpreter; so the row is taken without its method,
+    // as a relation this build holds as code, found by its id …
     let all = Case {
         target: vleo_modules::NODES[0].id.to_string(),
         mode: RunMode::All,
@@ -52,11 +46,11 @@ fn refused_when(moved: impl Fn(&mut vleo_sheet::model::Sheet)) {
         .iter()
         .map(|v| v.id.clone())
         .find(|v| {
-            built_in(v)
-                && vleo_modules::Vleo::find(v)
-                    .is_some_and(|k| vleo_modules::NODES[k as usize].kind == Kind::Computed)
+            vleo_modules::Vleo::find(v)
+                .is_some_and(|k| vleo_modules::NODES[k as usize].kind == Kind::Computed)
         })
         .expect("a computed row that answers");
+    tree.sheets.get_mut(&id).unwrap().method = Default::default();
     // … whose sheet or implementation has since changed.
     moved(tree.sheets.get_mut(&id).unwrap());
     let g = opened::graph(&tree).unwrap();

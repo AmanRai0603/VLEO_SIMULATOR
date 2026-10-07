@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `e_nav` (Navigation position error), in `m`.
 pub const NODE_ID: &str = "gnc_nav_position_error";
-pub const SHEET_HASH: u64 = 0x354d798dbde16bf1;
+pub const SHEET_HASH: u64 = 0xe4e3864c0bf88ba4;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "gnc_user_range_error",

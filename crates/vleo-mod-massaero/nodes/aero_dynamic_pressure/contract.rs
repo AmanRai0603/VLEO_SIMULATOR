@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `q` (Dynamic pressure), in `Pa`.
 pub const NODE_ID: &str = "aero_dynamic_pressure";
-pub const SHEET_HASH: u64 = 0x93ebee77dae44a8b;
+pub const SHEET_HASH: u64 = 0x0a23af54ba5a3f8b;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "env_mass_density",

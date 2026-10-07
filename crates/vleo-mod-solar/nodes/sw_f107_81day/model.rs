@@ -26,22 +26,21 @@ use vleo_core::units::*;
 pub const NODE_ID: &str = "sw_f107_81day";
 /// Hash of the sheet this file was generated from. A face carrying a
 /// different one refuses to run rather than showing a stale page.
-pub const SHEET_HASH: u64 = 0xfef1984cfd53b87b;
+pub const SHEET_HASH: u64 = 0xae75c256999ade0e;
 
 pub fn evaluate(level: Ratio) -> Result<Ratio, Fault> {
-    // ---- HOLE 1 : take the mean-cycle level at the epoch's phase as the 81-day mean a density model should be given -> Ratio
-    // A pass-through, and the sheet says why at length: at an epoch past the
-    // record there are no 81 days to centre on, so the honest F10.7A is the
-    // phase-conditioned mean-cycle level. What this row adds is the question,
-    // the declared smoothing width and the named density-model contract, not
-    // arithmetic.
-    let out: Ratio = level;
-    // ---- end HOLE 1
+    // generated · from the node's method, translated by rule into
+    // vleo_core::physics::methods::sw_f107_81day. No hole: the method is the
+    // implementation, and the author's cases in evidence.rs test it.
+    let method_answer: Ratio = match methods::sw_f107_81day::evaluate(level.get()) {
+        Ok(v) => Ratio::new(v),
+        Err(e) => return Err(method::fault(e, NODE_ID, "F107A")),
+    };
 
     // generated · the declared domain of this node's own answer. The
     // reason travels with the guard, because a guard whose reason is not
     // written down gets deleted by the next person who finds it awkward.
-    let answer: Ratio = out;
+    let answer: Ratio = method_answer;
     if !answer.is_finite() {
         return Err(Fault::Degenerate { node: NODE_ID, field: "F107A", reason: "the computation produced a value that is not a number" });
     }

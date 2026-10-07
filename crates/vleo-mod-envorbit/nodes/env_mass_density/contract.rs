@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `rho` (Atmospheric mass density), in `kg/m^3`.
 pub const NODE_ID: &str = "env_mass_density";
-pub const SHEET_HASH: u64 = 0x6ee594b58f539680;
+pub const SHEET_HASH: u64 = 0x8997b766ae042015;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "orbit_altitude",

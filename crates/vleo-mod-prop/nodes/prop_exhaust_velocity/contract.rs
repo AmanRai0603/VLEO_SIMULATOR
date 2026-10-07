@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `v_e` (Beam exhaust velocity), in `m/s`.
 pub const NODE_ID: &str = "prop_exhaust_velocity";
-pub const SHEET_HASH: u64 = 0x4eb97c906369687a;
+pub const SHEET_HASH: u64 = 0x25af469bf116a4ba;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "prop_beam_voltage",

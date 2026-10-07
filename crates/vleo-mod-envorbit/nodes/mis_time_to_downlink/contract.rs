@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `t_dl` (Mean time to next downlink), in `min`.
 pub const NODE_ID: &str = "mis_time_to_downlink";
-pub const SHEET_HASH: u64 = 0xdb9bf4704a146539;
+pub const SHEET_HASH: u64 = 0x6ef8168e5d95f5d0;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "com_passes_per_day",

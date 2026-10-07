@@ -156,6 +156,24 @@ something the kernel evaluates.
 text = "It inherits every limitation of the row it restates, and a closure reading it sees none of them"
 fails_when = "the same cost as the interface, and worth repeating on the row a closure actually binds. The number is sized on the cycle analogue at the mission's own epoch rather than on the record's unconditional mean, which this chain now reads the epoch to do; where it is a band it is 1.28 sigma, the 90th percentile, and not the 95 per cent the run is labelled; and where it is a return level its top end rests on two observations in 28.2 years. A margin computed from this row against a capability carries none of that, and will look like a clean number either way."
 
+[method]
+text = """
+# Transcribed from crates/vleo-mod-solar/nodes/l3_solar_ach_01/model.rs (its HOLE): the relation the code ran, line for line.
+# The relation itself stays in the kernel; this says which one, with which inputs, in which units.
+#
+# What the code said beside it:
+# The requirement declares sense "<=", so the achieved value must stay UNDER
+# the bound and the margin is (required - achieved) / required. Positive is
+# room; negative is a violation and its size. mission::closure is the twelve
+# KPI closures' own function rather than the arithmetic written out again,
+# because a second way of computing a margin is a second way of getting its
+# sign wrong -- and a sign error here still produces a plausible number.
+return margin_at_most(req, ach)
+"""
+by = ""
+transcribed_from = "crates/vleo-mod-solar/nodes/l3_solar_ach_01/model.rs"
+checked_by = ""
+
 [output]
 # The node's one answer. The variable id is the node id: one small
 # question, one answer, one folder, one row on the tree.

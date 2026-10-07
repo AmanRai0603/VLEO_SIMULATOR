@@ -19,17 +19,21 @@ use vleo_core::units::*;
 pub const NODE_ID: &str = "gnc_total_disturbance";
 /// Hash of the sheet this file was generated from. A face carrying a
 /// different one refuses to run rather than showing a stale page.
-pub const SHEET_HASH: u64 = 0xe43e6a3d4530dadb;
+pub const SHEET_HASH: u64 = 0xdd2495b0f1723502;
 
 pub fn evaluate(ta: Torque, tg: Torque, ts: Torque, tm: Torque) -> Result<Torque, Fault> {
-    // ---- HOLE 1 : sum the magnitudes rather than root-sum-squaring them -> Torque
-    let t: Torque = gnc::total_disturbance_torque(ta, tg, ts, tm);
-    // ---- end HOLE 1
+    // generated · from the node's method, translated by rule into
+    // vleo_core::physics::methods::gnc_total_disturbance. No hole: the method is the
+    // implementation, and the author's cases in evidence.rs test it.
+    let method_answer: Torque = match methods::gnc_total_disturbance::evaluate(ta.get(), tg.get(), ts.get(), tm.get()) {
+        Ok(v) => Torque::new(v),
+        Err(e) => return Err(method::fault(e, NODE_ID, "T_dis")),
+    };
 
     // generated · the declared domain of this node's own answer. The
     // reason travels with the guard, because a guard whose reason is not
     // written down gets deleted by the next person who finds it awkward.
-    let answer: Torque = t;
+    let answer: Torque = method_answer;
     if !answer.is_finite() {
         return Err(Fault::Degenerate { node: NODE_ID, field: "T_dis", reason: "the computation produced a value that is not a number" });
     }

@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `d` (Slant range at working elevation), in `km`.
 pub const NODE_ID: &str = "orbit_slant_range";
-pub const SHEET_HASH: u64 = 0x905d018989bc1655;
+pub const SHEET_HASH: u64 = 0xbb906494a88be9a5;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "orbit_radius",

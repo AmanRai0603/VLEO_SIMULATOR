@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `s` (Molecular speed ratio), in `-`.
 pub const NODE_ID: &str = "aero_speed_ratio";
-pub const SHEET_HASH: u64 = 0x9a432528dfbb8276;
+pub const SHEET_HASH: u64 = 0xeed45befd22d7f0a;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "orbit_velocity",

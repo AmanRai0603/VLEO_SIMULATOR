@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `Q_sol` (Absorbed direct solar), in `W`.
 pub const NODE_ID: &str = "thm_absorbed_solar";
-pub const SHEET_HASH: u64 = 0x4c52eac00fa26eab;
+pub const SHEET_HASH: u64 = 0xcbd1ffda457552fa;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "aero_frontal_area",

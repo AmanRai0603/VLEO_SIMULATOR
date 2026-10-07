@@ -156,6 +156,31 @@ fails_when = "prf_ap2kp's own minimum for using a bin at all is 20 days, and the
 text = "This is NOT the daily-peak slot"
 fails_when = "the two slots have opposite signs. The peak-slot offset measured on the same 10,297 days runs from +0.833 to +1.747; this one runs from +0.042 to -0.487. Applying this row where sw_kp_slot_bias was wanted moves the answer the wrong way by roughly one and a half Kp, and the result is still a plausible Kp, so nothing downstream will refuse it."
 
+[method]
+text = """
+# Transcribed from crates/vleo-mod-solar/nodes/sw_kp_mean_bias/model.rs (its HOLE): the relation the code ran, line for line.
+# The relation itself stays in the kernel; this says which one, with which inputs, in which units.
+#
+# What the code said beside it:
+# The nine bin medians, measured on solar-weather@2026.09.14. The x values are
+# prf_ap2kp's own bin CENTRES — the midpoints of its edges 0 5 10 15 20 30 45
+# 70 110 400 — and the y values are the medians in each bin. They belong to
+# the record, not to this code, and the sheet names the bundle version.
+#
+# THE TABLE LIVES IN vleo-core AS `env::kp_mean_slot_bias` RATHER THAN HERE, and
+# this hole calls it. Two callers read it now: this row, at one Ap, and
+# sw_kp_scenarios, at the five the driver set carries. A table copied into
+# both would drift from itself without anything noticing — which is not
+# hypothetical, it is what happened to the ap-to-Kp scale.
+#
+# It holds the end values instead of extrapolating, which is the same choice
+# prf_ap2kp makes explicitly ("hold the end bins, never extrapolate").
+return kp_mean_slot_bias(ap)
+"""
+by = ""
+transcribed_from = "crates/vleo-mod-solar/nodes/sw_kp_mean_bias/model.rs"
+checked_by = ""
+
 [output]
 # The node's one answer. The variable id is the node id: one small
 # question, one answer, one folder, one row on the tree.

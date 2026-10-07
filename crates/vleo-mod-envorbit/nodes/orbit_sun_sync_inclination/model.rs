@@ -16,17 +16,21 @@ use vleo_core::units::*;
 pub const NODE_ID: &str = "orbit_sun_sync_inclination";
 /// Hash of the sheet this file was generated from. A face carrying a
 /// different one refuses to run rather than showing a stale page.
-pub const SHEET_HASH: u64 = 0xd4a03c688f75c533;
+pub const SHEET_HASH: u64 = 0xef1bd67caed7e0be;
 
 pub fn evaluate(r: Length, e: Ratio) -> Result<Angle, Fault> {
-    // ---- HOLE 1 : solve the nodal regression relation for the inclination that matches the Sun's apparent motion; refuse when no such inclination exists -> Angle
-    let i: Angle = match orbit::sun_synchronous_inclination(r, e.get()) { Some(i) => i, None => return Err(Fault::Degenerate { node: NODE_ID, field: "r", reason: "no inclination gives Sun-synchronous regression at this radius" }) };
-    // ---- end HOLE 1
+    // generated · from the node's method, translated by rule into
+    // vleo_core::physics::methods::orbit_sun_sync_inclination. No hole: the method is the
+    // implementation, and the author's cases in evidence.rs test it.
+    let method_answer: Angle = match methods::orbit_sun_sync_inclination::evaluate(r.get(), e.get()) {
+        Ok(v) => Angle::new(v),
+        Err(e) => return Err(method::fault(e, NODE_ID, "i_ss")),
+    };
 
     // generated · the declared domain of this node's own answer. The
     // reason travels with the guard, because a guard whose reason is not
     // written down gets deleted by the next person who finds it awkward.
-    let answer: Angle = i;
+    let answer: Angle = method_answer;
     if !answer.is_finite() {
         return Err(Fault::Degenerate { node: NODE_ID, field: "i_ss", reason: "the computation produced a value that is not a number" });
     }

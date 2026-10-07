@@ -16,17 +16,21 @@ use vleo_core::units::*;
 pub const NODE_ID: &str = "orbit_nodal_regression";
 /// Hash of the sheet this file was generated from. A face carrying a
 /// different one refuses to run rather than showing a stale page.
-pub const SHEET_HASH: u64 = 0x9762affa57436b4d;
+pub const SHEET_HASH: u64 = 0x24d2ccb302703321;
 
 pub fn evaluate(r: Length, e: Ratio, i: Angle) -> Result<AngularRate, Fault> {
-    // ---- HOLE 1 : evaluate the secular J2 node rate -> AngularRate
-    let d: AngularRate = orbit::nodal_regression(r, e.get(), i);
-    // ---- end HOLE 1
+    // generated · from the node's method, translated by rule into
+    // vleo_core::physics::methods::orbit_nodal_regression. No hole: the method is the
+    // implementation, and the author's cases in evidence.rs test it.
+    let method_answer: AngularRate = match methods::orbit_nodal_regression::evaluate(r.get(), e.get(), i.get()) {
+        Ok(v) => AngularRate::new(v),
+        Err(e) => return Err(method::fault(e, NODE_ID, "dOmega")),
+    };
 
     // generated · the declared domain of this node's own answer. The
     // reason travels with the guard, because a guard whose reason is not
     // written down gets deleted by the next person who finds it awkward.
-    let answer: AngularRate = d;
+    let answer: AngularRate = method_answer;
     if !answer.is_finite() {
         return Err(Fault::Degenerate { node: NODE_ID, field: "dOmega", reason: "the computation produced a value that is not a number" });
     }

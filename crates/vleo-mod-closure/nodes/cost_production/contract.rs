@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `C_prod` (Production run cost), in `MUSD`.
 pub const NODE_ID: &str = "cost_production";
-pub const SHEET_HASH: u64 = 0xe767cda4aeb4290c;
+pub const SHEET_HASH: u64 = 0x123e5bb3608c52fe;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "cost_bus_recurring",

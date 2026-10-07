@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `T_mis` (Mission duration), in `yr`.
 pub const NODE_ID: &str = "orbit_mission_duration";
-pub const SHEET_HASH: u64 = 0xa4de90cb1b5e53e8;
+pub const SHEET_HASH: u64 = 0x3d5d2505ec429f97;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "sys_mission_requirements_mission_duration",

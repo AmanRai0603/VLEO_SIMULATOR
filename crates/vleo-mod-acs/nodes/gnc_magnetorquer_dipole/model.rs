@@ -16,17 +16,21 @@ use vleo_core::units::*;
 pub const NODE_ID: &str = "gnc_magnetorquer_dipole";
 /// Hash of the sheet this file was generated from. A face carrying a
 /// different one refuses to run rather than showing a stale page.
-pub const SHEET_HASH: u64 = 0xf66190f61f3da001;
+pub const SHEET_HASH: u64 = 0x85e09adca11f1d9b;
 
 pub fn evaluate(h: AngularMomentum, b: MagneticFluxDensity, td: Time) -> Result<DipoleMoment, Fault> {
-    // ---- HOLE 1 : divide the stored momentum by the field and the available dump interval -> DipoleMoment
-    let m: DipoleMoment = gnc::magnetorquer_dipole_required(h, b, td);
-    // ---- end HOLE 1
+    // generated · from the node's method, translated by rule into
+    // vleo_core::physics::methods::gnc_magnetorquer_dipole. No hole: the method is the
+    // implementation, and the author's cases in evidence.rs test it.
+    let method_answer: DipoleMoment = match methods::gnc_magnetorquer_dipole::evaluate(h.get(), b.get(), td.get()) {
+        Ok(v) => DipoleMoment::new(v),
+        Err(e) => return Err(method::fault(e, NODE_ID, "m_req")),
+    };
 
     // generated · the declared domain of this node's own answer. The
     // reason travels with the guard, because a guard whose reason is not
     // written down gets deleted by the next person who finds it awkward.
-    let answer: DipoleMoment = m;
+    let answer: DipoleMoment = method_answer;
     if !answer.is_finite() {
         return Err(Fault::Degenerate { node: NODE_ID, field: "m_req", reason: "the computation produced a value that is not a number" });
     }

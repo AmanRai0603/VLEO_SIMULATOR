@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `M` (Mean molar mass of the local gas), in `kg/mol`.
 pub const NODE_ID: &str = "env_mean_molar_mass";
-pub const SHEET_HASH: u64 = 0x1f6c235a719a7055;
+pub const SHEET_HASH: u64 = 0x428f7925a32d1dc5;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "orbit_altitude",

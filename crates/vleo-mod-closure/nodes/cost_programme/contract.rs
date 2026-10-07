@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `C_tot` (Total programme cost), in `MUSD`.
 pub const NODE_ID: &str = "cost_programme";
-pub const SHEET_HASH: u64 = 0xcf81c6a1039de7b8;
+pub const SHEET_HASH: u64 = 0x5bf347f832418ec3;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "cost_non_recurring",

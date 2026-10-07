@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `T_inf` (Exospheric temperature), in `K`.
 pub const NODE_ID: &str = "env_exospheric_temperature";
-pub const SHEET_HASH: u64 = 0x2e87228e844416ab;
+pub const SHEET_HASH: u64 = 0x2f4884c416e8dccc;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "env_f107",

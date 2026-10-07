@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `V_g` (Ground track speed), in `m/s`.
 pub const NODE_ID: &str = "orbit_ground_track_speed";
-pub const SHEET_HASH: u64 = 0xe15473059019bed1;
+pub const SHEET_HASH: u64 = 0x533299c892b4e6a9;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "orbit_velocity",

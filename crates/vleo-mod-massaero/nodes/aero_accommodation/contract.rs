@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `alpha` (Energy accommodation coefficient), in `-`.
 pub const NODE_ID: &str = "aero_accommodation";
-pub const SHEET_HASH: u64 = 0x78377e9d2f7decb8;
+pub const SHEET_HASH: u64 = 0xccfd7b2bd3ee976b;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "env_atomic_oxygen_density",

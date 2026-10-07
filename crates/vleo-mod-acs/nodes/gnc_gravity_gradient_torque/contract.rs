@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `T_gg` (Gravity gradient torque), in `N.m`.
 pub const NODE_ID: &str = "gnc_gravity_gradient_torque";
-pub const SHEET_HASH: u64 = 0x41ee037a30bbd93f;
+pub const SHEET_HASH: u64 = 0x26207e14190ca771;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "orbit_radius",

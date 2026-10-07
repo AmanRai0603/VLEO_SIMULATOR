@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `C_nre` (Non-recurring engineering cost), in `MUSD`.
 pub const NODE_ID: &str = "cost_non_recurring";
-pub const SHEET_HASH: u64 = 0x96419917c9aa182d;
+pub const SHEET_HASH: u64 = 0x60c7ebf109488d93;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "mass_dry",

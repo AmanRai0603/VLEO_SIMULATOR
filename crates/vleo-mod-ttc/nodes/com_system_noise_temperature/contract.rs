@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `T_s` (System noise temperature), in `K`.
 pub const NODE_ID: &str = "com_system_noise_temperature";
-pub const SHEET_HASH: u64 = 0x7c0723a21a23bdfd;
+pub const SHEET_HASH: u64 = 0x094809e74ff69d86;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "com_gs_noise_temperature",

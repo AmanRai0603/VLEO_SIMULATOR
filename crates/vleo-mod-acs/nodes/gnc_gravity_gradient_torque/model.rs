@@ -16,17 +16,21 @@ use vleo_core::units::*;
 pub const NODE_ID: &str = "gnc_gravity_gradient_torque";
 /// Hash of the sheet this file was generated from. A face carrying a
 /// different one refuses to run rather than showing a stale page.
-pub const SHEET_HASH: u64 = 0x41ee037a30bbd93f;
+pub const SHEET_HASH: u64 = 0x26207e14190ca771;
 
 pub fn evaluate(r: Length, imax: Ratio, imin: Ratio) -> Result<Torque, Fault> {
-    // ---- HOLE 1 : evaluate the gravity gradient torque at a 10 degree offset from local vertical -> Torque
-    let t: Torque = gnc::gravity_gradient_torque(r, imax.get(), imin.get(), Angle::from_deg(10.0));
-    // ---- end HOLE 1
+    // generated · from the node's method, translated by rule into
+    // vleo_core::physics::methods::gnc_gravity_gradient_torque. No hole: the method is the
+    // implementation, and the author's cases in evidence.rs test it.
+    let method_answer: Torque = match methods::gnc_gravity_gradient_torque::evaluate(r.get(), imax.get(), imin.get()) {
+        Ok(v) => Torque::new(v),
+        Err(e) => return Err(method::fault(e, NODE_ID, "T_gg")),
+    };
 
     // generated · the declared domain of this node's own answer. The
     // reason travels with the guard, because a guard whose reason is not
     // written down gets deleted by the next person who finds it awkward.
-    let answer: Torque = t;
+    let answer: Torque = method_answer;
     if !answer.is_finite() {
         return Err(Fault::Degenerate { node: NODE_ID, field: "T_gg", reason: "the computation produced a value that is not a number" });
     }

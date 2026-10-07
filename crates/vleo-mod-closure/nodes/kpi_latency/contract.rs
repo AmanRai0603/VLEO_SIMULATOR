@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `M` (End to end latency — closure), in `-`.
 pub const NODE_ID: &str = "kpi_latency";
-pub const SHEET_HASH: u64 = 0x17961ad4be15ef77;
+pub const SHEET_HASH: u64 = 0x8b3e273e4083b215;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "kpi_latency_required",

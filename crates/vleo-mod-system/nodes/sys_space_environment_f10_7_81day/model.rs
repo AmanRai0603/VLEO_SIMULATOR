@@ -30,23 +30,21 @@ use vleo_core::units::*;
 pub const NODE_ID: &str = "sys_space_environment_f10_7_81day";
 /// Hash of the sheet this file was generated from. A face carrying a
 /// different one refuses to run rather than showing a stale page.
-pub const SHEET_HASH: u64 = 0xc1065c44dfd1ed58;
+pub const SHEET_HASH: u64 = 0xf3061f7f30c1d173;
 
 pub fn evaluate(crossing: Ratio) -> Result<Ratio, Fault> {
-    // ---- HOLE 1 : receive the 81-day mean the design day rides on across the seam -> Ratio
-    // A layer-2 row receives; it does not compute. The identity is the point, and
-    // the fixtures beside it pin that the number arriving is the number leaving.
-    //
-    // The member received is f107bar_hotday, which is the hot MEAN and not the
-    // 81-day mean of the hot day — a *day scenario rides on the sustained level
-    // beneath it. The sheet argues about why that name is easy to misread.
-    let received: Ratio = crossing;
-    // ---- end HOLE 1
+    // generated · from the node's method, translated by rule into
+    // vleo_core::physics::methods::sys_space_environment_f10_7_81day. No hole: the method is the
+    // implementation, and the author's cases in evidence.rs test it.
+    let method_answer: Ratio = match methods::sys_space_environment_f10_7_81day::evaluate(crossing.get()) {
+        Ok(v) => Ratio::new(v),
+        Err(e) => return Err(method::fault(e, NODE_ID, "F107bar_sys")),
+    };
 
     // generated · the declared domain of this node's own answer. The
     // reason travels with the guard, because a guard whose reason is not
     // written down gets deleted by the next person who finds it awkward.
-    let answer: Ratio = received;
+    let answer: Ratio = method_answer;
     if !answer.is_finite() {
         return Err(Fault::Degenerate { node: NODE_ID, field: "F107bar_sys", reason: "the computation produced a value that is not a number" });
     }

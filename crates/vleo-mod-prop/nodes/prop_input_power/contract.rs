@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `P_in` (Thruster input power), in `W`.
 pub const NODE_ID: &str = "prop_input_power";
-pub const SHEET_HASH: u64 = 0xaf669d8a1f081784;
+pub const SHEET_HASH: u64 = 0x699ed1cb38a1a343;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "prop_jet_power",

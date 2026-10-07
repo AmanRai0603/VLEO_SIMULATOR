@@ -20,17 +20,21 @@ use vleo_core::units::*;
 pub const NODE_ID: &str = "prop_exhaust_velocity";
 /// Hash of the sheet this file was generated from. A face carrying a
 /// different one refuses to run rather than showing a stale page.
-pub const SHEET_HASH: u64 = 0x4eb97c906369687a;
+pub const SHEET_HASH: u64 = 0x25af469bf116a4ba;
 
 pub fn evaluate(vb: Voltage, m: MolarMass) -> Result<Velocity, Fault> {
-    // ---- HOLE 1 : accelerate a singly-charged ion of the local mean mass through the beam potential -> Velocity
-    let ve: Velocity = prop::beam_exhaust_velocity(vb, m);
-    // ---- end HOLE 1
+    // generated · from the node's method, translated by rule into
+    // vleo_core::physics::methods::prop_exhaust_velocity. No hole: the method is the
+    // implementation, and the author's cases in evidence.rs test it.
+    let method_answer: Velocity = match methods::prop_exhaust_velocity::evaluate(vb.get(), m.get()) {
+        Ok(v) => Velocity::new(v),
+        Err(e) => return Err(method::fault(e, NODE_ID, "v_e")),
+    };
 
     // generated · the declared domain of this node's own answer. The
     // reason travels with the guard, because a guard whose reason is not
     // written down gets deleted by the next person who finds it awkward.
-    let answer: Velocity = ve;
+    let answer: Velocity = method_answer;
     if !answer.is_finite() {
         return Err(Fault::Degenerate { node: NODE_ID, field: "v_e", reason: "the computation produced a value that is not a number" });
     }

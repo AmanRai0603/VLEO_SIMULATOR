@@ -173,6 +173,24 @@ fails_when = "the whole of this limitation belongs to sw_central_expectation and
 text = "Adding a percentile of the CHANGE to a central value is not the same as the percentile of the VALUE"
 fails_when = "the record's own 95th percentile of daily F10.7 is 201 sfu, while this construction returns 228 at a five-year lead. The two answer different questions — the highest flux a day is likely to show, against how far the flux can move from its central expectation — and the second is the larger because it compounds where the centre sits with how wrong the centre can be. A reader who wants 'the 95th percentile of F10.7' wants the record, not this row."
 
+[method]
+text = """
+# Transcribed from crates/vleo-mod-solar/nodes/sw_f107_design/model.rs (its HOLE): the relation the code ran, line for line.
+# The relation itself stays in the kernel; this says which one, with which inputs, in which units.
+#
+# What the code said beside it:
+# The study's construction, and the whole of it: the centre plus the spread.
+# Both come from rows that declare where their numbers came from and what
+# they cannot do, so there is nothing to measure or choose here. The
+# confidence is whatever sw_uncertainty_growth publishes, which is the 95th
+# percentile, and the sheet says a mission needing another one must change
+# that row rather than this one.
+return central + spread
+"""
+by = ""
+transcribed_from = "crates/vleo-mod-solar/nodes/sw_f107_design/model.rs"
+checked_by = ""
+
 [output]
 # The node's one answer. The variable id is the node id: one small
 # question, one answer, one folder, one row on the tree.

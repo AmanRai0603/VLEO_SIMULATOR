@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `M` (Service availability — closure), in `-`.
 pub const NODE_ID: &str = "kpi_availability";
-pub const SHEET_HASH: u64 = 0xe5671d7e13107ce6;
+pub const SHEET_HASH: u64 = 0xc3346d52430e7155;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "kpi_availability_required",

@@ -16,17 +16,21 @@ use vleo_core::units::*;
 pub const NODE_ID: &str = "cost_per_year";
 /// Hash of the sheet this file was generated from. A face carrying a
 /// different one refuses to run rather than showing a stale page.
-pub const SHEET_HASH: u64 = 0xd82656d28ceb7657;
+pub const SHEET_HASH: u64 = 0xe0f6ad221af5d55a;
 
 pub fn evaluate(c: Money, y: Time) -> Result<Money, Fault> {
-    // ---- HOLE 1 : divide the programme cost by the mission duration in years -> Money
-    let cy: Money = cost::cost_per_service_unit(c, y.get() / 31_557_600.0);
-    // ---- end HOLE 1
+    // generated · from the node's method, translated by rule into
+    // vleo_core::physics::methods::cost_per_year. No hole: the method is the
+    // implementation, and the author's cases in evidence.rs test it.
+    let method_answer: Money = match methods::cost_per_year::evaluate(c.get(), y.get()) {
+        Ok(v) => Money::new(v),
+        Err(e) => return Err(method::fault(e, NODE_ID, "C_yr")),
+    };
 
     // generated · the declared domain of this node's own answer. The
     // reason travels with the guard, because a guard whose reason is not
     // written down gets deleted by the next person who finds it awkward.
-    let answer: Money = cy;
+    let answer: Money = method_answer;
     if !answer.is_finite() {
         return Err(Fault::Degenerate { node: NODE_ID, field: "C_yr", reason: "the computation produced a value that is not a number" });
     }

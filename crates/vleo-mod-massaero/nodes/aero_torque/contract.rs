@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `T_aero` (Aerodynamic disturbance torque), in `N.m`.
 pub const NODE_ID: &str = "aero_torque";
-pub const SHEET_HASH: u64 = 0x8449f27f0b1a807d;
+pub const SHEET_HASH: u64 = 0xb45ee819d58ec713;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "aero_drag_force",

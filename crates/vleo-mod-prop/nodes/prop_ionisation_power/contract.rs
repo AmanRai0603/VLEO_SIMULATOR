@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `P_ion` (Ionisation power), in `W`.
 pub const NODE_ID: &str = "prop_ionisation_power";
-pub const SHEET_HASH: u64 = 0x9fa00e51e687ad45;
+pub const SHEET_HASH: u64 = 0x87d57289cfae932b;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "prop_ion_flow",

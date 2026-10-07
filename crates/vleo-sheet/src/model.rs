@@ -110,6 +110,14 @@ pub struct Method {
     /// Who wrote it, as intake stamps it. The same rule as the relation: an
     /// assistant may never be the one who supplied it.
     pub by: String,
+    /// For a method copied from a relation that was already written — the
+    /// code it replaced — where it was copied from. Empty for a method its
+    /// author wrote.
+    pub transcribed_from: String,
+    /// The person who read the copy against what it was copied from and signs
+    /// it. Empty until they do: the method runs, and is held to what it was
+    /// copied from, but a release refuses it (AGENTS.md, rule 6).
+    pub checked_by: String,
 }
 
 /// A row whose answer is a table (`[lookup]`): one input read along it to the

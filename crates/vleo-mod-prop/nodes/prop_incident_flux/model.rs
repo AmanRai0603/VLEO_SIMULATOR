@@ -19,17 +19,21 @@ use vleo_core::units::*;
 pub const NODE_ID: &str = "prop_incident_flux";
 /// Hash of the sheet this file was generated from. A face carrying a
 /// different one refuses to run rather than showing a stale page.
-pub const SHEET_HASH: u64 = 0xc9cacfd9b90887e4;
+pub const SHEET_HASH: u64 = 0x4d764a6baeaa2f0f;
 
 pub fn evaluate(rho: MassDensity, v: Velocity) -> Result<MassFlux, Fault> {
-    // ---- HOLE 1 : multiply the free-stream density by the flight speed -> MassFlux
-    let f: MassFlux = prop::incident_mass_flux(rho, v);
-    // ---- end HOLE 1
+    // generated · from the node's method, translated by rule into
+    // vleo_core::physics::methods::prop_incident_flux. No hole: the method is the
+    // implementation, and the author's cases in evidence.rs test it.
+    let method_answer: MassFlux = match methods::prop_incident_flux::evaluate(rho.get(), v.get()) {
+        Ok(v) => MassFlux::new(v),
+        Err(e) => return Err(method::fault(e, NODE_ID, "phi")),
+    };
 
     // generated · the declared domain of this node's own answer. The
     // reason travels with the guard, because a guard whose reason is not
     // written down gets deleted by the next person who finds it awkward.
-    let answer: MassFlux = f;
+    let answer: MassFlux = method_answer;
     if !answer.is_finite() {
         return Err(Fault::Degenerate { node: NODE_ID, field: "phi", reason: "the computation produced a value that is not a number" });
     }

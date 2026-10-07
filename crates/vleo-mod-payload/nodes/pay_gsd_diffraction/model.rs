@@ -16,17 +16,21 @@ use vleo_core::units::*;
 pub const NODE_ID: &str = "pay_gsd_diffraction";
 /// Hash of the sheet this file was generated from. A face carrying a
 /// different one refuses to run rather than showing a stale page.
-pub const SHEET_HASH: u64 = 0x61dfbce5e713c72c;
+pub const SHEET_HASH: u64 = 0xb224c9cdd1202248;
 
 pub fn evaluate(h: Length, lam: Length, d: Length) -> Result<Length, Fault> {
-    // ---- HOLE 1 : apply the Rayleigh criterion at the flight altitude -> Length
-    let g: Length = payload::diffraction_limited_gsd(h, lam, d);
-    // ---- end HOLE 1
+    // generated · from the node's method, translated by rule into
+    // vleo_core::physics::methods::pay_gsd_diffraction. No hole: the method is the
+    // implementation, and the author's cases in evidence.rs test it.
+    let method_answer: Length = match methods::pay_gsd_diffraction::evaluate(h.get(), lam.get(), d.get()) {
+        Ok(v) => Length::new(v),
+        Err(e) => return Err(method::fault(e, NODE_ID, "GSD_d")),
+    };
 
     // generated · the declared domain of this node's own answer. The
     // reason travels with the guard, because a guard whose reason is not
     // written down gets deleted by the next person who finds it awkward.
-    let answer: Length = g;
+    let answer: Length = method_answer;
     if !answer.is_finite() {
         return Err(Fault::Degenerate { node: NODE_ID, field: "GSD_d", reason: "the computation produced a value that is not a number" });
     }

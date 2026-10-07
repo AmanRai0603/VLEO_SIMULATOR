@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `Kp` (Planetary geomagnetic index Kp), in `-`.
 pub const NODE_ID: &str = "env_kp";
-pub const SHEET_HASH: u64 = 0x2181dd88d8825954;
+pub const SHEET_HASH: u64 = 0x23bdc4cd1ed51a85;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "sys_space_environment_kp",

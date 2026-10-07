@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `T` (Local kinetic temperature), in `K`.
 pub const NODE_ID: &str = "env_local_temperature";
-pub const SHEET_HASH: u64 = 0x49908ec9f78b357d;
+pub const SHEET_HASH: u64 = 0xd2f9d109a57ca737;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "orbit_altitude",

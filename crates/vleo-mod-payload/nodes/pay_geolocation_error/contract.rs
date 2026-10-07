@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `e_geo` (RF geolocation error), in `m`.
 pub const NODE_ID: &str = "pay_geolocation_error";
-pub const SHEET_HASH: u64 = 0x11554f19c2ed118f;
+pub const SHEET_HASH: u64 = 0x99f4a3bb373a60c1;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "pay_toa_uncertainty",
