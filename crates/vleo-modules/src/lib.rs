@@ -70,6 +70,41 @@ pub struct Graph {
     pub groups: &'static [GroupDef],
     /// The labelled relations between headings: (from, to, why).
     pub relations: &'static [(&'static str, &'static str, &'static str)],
+    /// What each node gave on its own cases, worked out the first time they
+    /// are asked for ([`Graph::fixture_runs`]).
+    pub cases_run: CasesRun,
+}
+
+/// Each node's answers to its own cases, kept by the graph that ran them.
+#[cfg(feature = "std")]
+pub struct CasesRun(std::sync::OnceLock<Box<[std::sync::OnceLock<Answers>]>>);
+
+/// One node's answers to its cases, in order: `None` where it refused one.
+#[cfg(feature = "std")]
+type Answers = Vec<Option<f64>>;
+
+#[cfg(feature = "std")]
+impl CasesRun {
+    pub const fn new() -> Self {
+        CasesRun(std::sync::OnceLock::new())
+    }
+}
+
+/// Without the standard library nothing is kept, and every ask runs the cases.
+#[cfg(not(feature = "std"))]
+pub struct CasesRun;
+
+#[cfg(not(feature = "std"))]
+impl CasesRun {
+    pub const fn new() -> Self {
+        CasesRun
+    }
+}
+
+impl Default for CasesRun {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 /// The graph compiled into this build, from the sheets as they were.
@@ -81,6 +116,7 @@ pub static COMPILED: Graph = Graph {
     cases: &CASES,
     groups: &GROUPS,
     relations: &RELATIONS,
+    cases_run: CasesRun::new(),
 };
 
 /// The graph this process's engine runs, when a face has installed one.
@@ -641,14 +677,11 @@ impl Graph {
         }
         let mut ran = false;
         let mut passed = true;
-        for f in def.fixtures {
-            let mut out = [0.0f64; MAX_OUTPUTS];
-            match self.against_its_cases(node as usize, f.inputs, &mut out[..def.outputs.len()]) {
-                Ok(()) => {
+        for (f, got) in def.fixtures.iter().zip(self.fixture_runs(node).iter()) {
+            match got {
+                Some(got) => {
                     ran = true;
-                    // The slot the fixture named. A set row's fixture checks the
-                    // member it is about; a row with one answer has slot 0.
-                    if !f.check(out[f.slot]).passed() {
+                    if !f.check(*got).passed() {
                         passed = false;
                     }
                 }
@@ -656,7 +689,7 @@ impl Graph {
                 // failing one: an expected value the implementation will not even
                 // evaluate is stronger evidence of a defect than a numeric
                 // disagreement.
-                Err(_) => {
+                None => {
                     ran = true;
                     passed = false;
                 }
@@ -665,19 +698,51 @@ impl Graph {
         (ran, passed)
     }
 
+    /// What node `node` gave on each of its own cases, in order: the slot the
+    /// case names (a set row's case checks the member it is about; a row with
+    /// one answer has slot 0), or `None` where the node refused it.
+    fn run_fixtures(&self, node: NodeIdx) -> Vec<Option<f64>> {
+        let def = &self.nodes[node as usize];
+        def.fixtures
+            .iter()
+            .map(|f| {
+                let mut out = [0.0f64; MAX_OUTPUTS];
+                self.against_its_cases(node as usize, f.inputs, &mut out[..def.outputs.len()])
+                    .ok()
+                    .map(|()| out[f.slot])
+            })
+            .collect()
+    }
+
+    /// [`run_fixtures`], worked out once for each node and kept by the graph.
+    /// A node's relation reads nothing but the inputs it is given, and a graph
+    /// does not change once it is built, so its cases give the same answers
+    /// every time they are asked: a sweep asks at every point, and with every
+    /// method interpreted that asking was most of what a sweep cost. Every
+    /// verdict is still the engine running the case, never a value read from a
+    /// file.
+    #[cfg(feature = "std")]
+    fn fixture_runs(&self, node: NodeIdx) -> &[Option<f64>] {
+        let all = self.cases_run.0.get_or_init(|| {
+            (0..self.nodes.len())
+                .map(|_| std::sync::OnceLock::new())
+                .collect()
+        });
+        all[node as usize].get_or_init(|| self.run_fixtures(node))
+    }
+
+    #[cfg(not(feature = "std"))]
+    fn fixture_runs(&self, node: NodeIdx) -> Vec<Option<f64>> {
+        self.run_fixtures(node)
+    }
+
     /// One fixture, executed against the live engine ([`fixture_verdicts`]).
     pub fn fixture_verdicts(&self, node: NodeIdx) -> Vec<vleo_bus::VerdictOut> {
         let def = &self.nodes[node as usize];
         let mut out = Vec::new();
-        for f in def.fixtures {
-            let mut o = [0.0f64; MAX_OUTPUTS];
-            let (got, passed, err) = match self.against_its_cases(
-                node as usize,
-                f.inputs,
-                &mut o[..def.outputs.len()],
-            ) {
-                Ok(()) => {
-                    let got = o[f.slot];
+        for (f, got) in def.fixtures.iter().zip(self.fixture_runs(node).iter()) {
+            let (got, passed, err) = match *got {
+                Some(got) => {
                     let e = match f.check(got) {
                         Verdict::Pass { relative_error } => relative_error,
                         Verdict::Fail { relative_error, .. } => relative_error,
@@ -685,7 +750,7 @@ impl Graph {
                     };
                     (got, f.check(got).passed(), e)
                 }
-                Err(_) => (f64::NAN, false, f64::NAN),
+                None => (f64::NAN, false, f64::NAN),
             };
             out.push(vleo_bus::VerdictOut {
                 node: def.id.to_string(),

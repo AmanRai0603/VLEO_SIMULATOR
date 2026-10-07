@@ -753,6 +753,7 @@ fn build(tree: &Tree, methods: Methods) -> Result<&'static Graph, Error> {
         cases: slice(cases),
         groups: slice(groups),
         relations: slice(relations),
+        cases_run: crate::CasesRun::new(),
     })))
 }
 
