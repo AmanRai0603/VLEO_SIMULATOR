@@ -768,8 +768,32 @@ pub fn read_interpreting(root: &std::path::Path) -> Result<&'static Graph, Error
     interpreting(&load(root)?)
 }
 
+/// The design under `root`: its files in `design/`, read as the folders they
+/// were converted from. A checkout with no `design/` is read from its sheets.
 fn load(root: &std::path::Path) -> Result<Tree, Error> {
-    vleo_sheet::load_all(root).map_err(|e| {
-        Error::new(ErrorKind::Malformed, e.to_string()).within("the design does not load")
-    })
+    let refused =
+        |e: String| Error::new(ErrorKind::Malformed, e).within("the design does not load");
+    let dir = root.join("design");
+    if dir.is_dir() {
+        return read_folder(root, &dir).map_err(refused);
+    }
+    vleo_sheet::load_all(root).map_err(|e| refused(e.to_string()))
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+fn read_folder(root: &std::path::Path, dir: &std::path::Path) -> Result<Tree, String> {
+    let (files, _) = vleo_files::convert::read_folder(dir).map_err(|e| e.to_string())?;
+    let served = vleo_files::convert::Served::new(
+        root,
+        &files,
+        std::sync::Arc::new(vleo_sheet::files::Disk),
+    )
+    .map_err(|e| e.to_string())?;
+    vleo_sheet::load::load_all_from(&served, root).map_err(|e| e.to_string())
+}
+
+/// A page has no folders: it opens the design it carries ([`graph`]).
+#[cfg(target_arch = "wasm32")]
+fn read_folder(_: &std::path::Path, dir: &std::path::Path) -> Result<Tree, String> {
+    Err(format!("{} cannot be read from a page", dir.display()))
 }

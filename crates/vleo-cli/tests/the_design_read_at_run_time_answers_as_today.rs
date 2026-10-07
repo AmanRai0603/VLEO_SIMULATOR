@@ -32,37 +32,124 @@ fn read() -> &'static Graph {
     G.get_or_init(|| opened::read_interpreting(&root()).expect("the design's files make a graph"))
 }
 
+/// The graph read from the design's files, against the compiled graph while
+/// it exists: every row, variable and case the compiled graph holds, the same,
+/// field for field, each reference taken by name rather than by place, and
+/// nothing more but the open blocks the design's files propose where a
+/// breakdown holds none yet, which compute nothing.
 #[test]
-fn the_graph_read_at_run_time_is_the_compiled_graph() {
+fn the_graph_read_at_run_time_is_the_compiled_graph_and_its_open_blocks() {
     let g = read();
-    assert_eq!(g.nodes.len(), COMPILED.nodes.len());
-    for (a, b) in g.nodes.iter().zip(COMPILED.nodes) {
-        assert_eq!(format!("{a:?}"), format!("{b:?}"), "node {}", b.id);
+    let extra: Vec<&str> = g
+        .nodes
+        .iter()
+        .filter(|n| COMPILED.find(n.id).is_none())
+        .map(|n| n.id)
+        .collect();
+    assert_eq!(extra.len(), g.nodes.len() - COMPILED.nodes.len());
+    for id in &extra {
+        let n = &g.nodes[g.find(id).unwrap() as usize];
+        assert_eq!(n.behaviour, Behaviour::Open, "{id} is not an open block");
     }
-    assert_eq!(g.vars.len(), COMPILED.vars.len());
-    for (a, b) in g.vars.iter().zip(COMPILED.vars) {
-        assert_eq!(format!("{a:?}"), format!("{b:?}"), "variable {}", b.id);
+    // Each graph's references, by name.
+    let var = |g: &Graph, i: u16| g.vars[i as usize].id;
+    let node = |g: &Graph, i: u16| g.nodes[i as usize].id;
+    let vars = |g: &Graph, ix: &[u16]| ix.iter().map(|&i| var(g, i)).collect::<Vec<_>>();
+    let pairs = |g: &Graph, s: &[(u16, f64)]| {
+        s.iter()
+            .map(|&(i, v)| (var(g, i), v.to_bits()))
+            .collect::<Vec<_>>()
+    };
+    let node_said = |g: &Graph, n: &vleo_modules::core_engine::graph::NodeDef| {
+        let bare = vleo_modules::core_engine::graph::NodeDef {
+            inputs: &[],
+            outputs: &[],
+            ..*n
+        };
+        format!("{bare:?} {:?} {:?}", vars(g, n.inputs), vars(g, n.outputs))
+    };
+    for b in COMPILED.nodes {
+        let a = &g.nodes[g.find(b.id).expect("every compiled row is read") as usize];
+        assert_eq!(node_said(g, a), node_said(&COMPILED, b), "node {}", b.id);
     }
+    // One difference is the conversion's, and stated: every stated value is a
+    // parameter of the level whose branch states it (vleo_files::convert,
+    // rule 3), which the sheets left unsaid.
+    let mut named_a_level = 0;
+    for b in COMPILED.vars {
+        let a = g
+            .vars
+            .iter()
+            .find(|v| v.id == b.id)
+            .expect("every compiled variable is read");
+        let mut port = a.port;
+        if port.parameter != b.port.parameter {
+            assert!(
+                b.port.parameter.is_none()
+                    && g.nodes[a.producer as usize].behaviour == Behaviour::Stated,
+                "variable {}: its parameter level moved from {:?} to {:?}",
+                b.id,
+                b.port.parameter,
+                port.parameter
+            );
+            port.parameter = b.port.parameter;
+            named_a_level += 1;
+        }
+        let said = |g: &Graph, v: &vleo_modules::core_engine::graph::VarDef, port| {
+            format!(
+                "{:?} {}",
+                vleo_modules::core_engine::graph::VarDef {
+                    producer: 0,
+                    port,
+                    ..*v
+                },
+                node(g, v.producer)
+            )
+        };
+        assert_eq!(
+            said(g, a, port),
+            said(&COMPILED, b, b.port),
+            "variable {}",
+            b.id
+        );
+    }
+    assert!(named_a_level > 0);
     assert_eq!(g.cases.len(), COMPILED.cases.len());
     for (a, b) in g.cases.iter().zip(COMPILED.cases) {
         assert_eq!(
-            (a.id, a.label, a.note, a.supply, a.conditions),
-            (b.id, b.label, b.note, b.supply, b.conditions),
+            (
+                a.id,
+                a.label,
+                a.note,
+                pairs(g, a.supply),
+                vars(g, a.conditions)
+            ),
+            (
+                b.id,
+                b.label,
+                b.note,
+                pairs(&COMPILED, b.supply),
+                vars(&COMPILED, b.conditions)
+            ),
             "case {}",
             b.id
         );
         assert_eq!(a.cycles.len(), b.cycles.len(), "case {}", b.id);
         for (x, y) in a.cycles.iter().zip(b.cycles) {
-            assert_eq!(
-                (x.nodes, x.converge_on, x.tolerance, x.max_iter, x.seeds),
-                (y.nodes, y.converge_on, y.tolerance, y.max_iter, y.seeds),
-                "a cycle of case {}",
-                b.id
-            );
+            let cycle = |g: &Graph, c: &vleo_modules::CycleDef| {
+                (
+                    c.nodes.iter().map(|&i| node(g, i)).collect::<Vec<_>>(),
+                    var(g, c.converge_on),
+                    c.tolerance.to_bits(),
+                    c.max_iter,
+                    pairs(g, c.seeds),
+                )
+            };
+            assert_eq!(cycle(g, x), cycle(&COMPILED, y), "a cycle of case {}", b.id);
         }
     }
-    assert_eq!(g.kernel_hash(), COMPILED.kernel_hash());
-    assert_eq!(g.graph_hash(), COMPILED.graph_hash());
+    // The engine's own fingerprint folds in every row, the open blocks with
+    // them; each row's part of it, its `impl_hash`, is compared above.
 }
 
 #[test]
@@ -101,7 +188,6 @@ fn no_row_runs_compiled_code_but_a_method_s_own_translation() {
             }
         }
     }
-    assert_eq!(faces.graph_hash(), COMPILED.graph_hash());
 }
 
 /// Each stated value, published by the graph, against the row the generator

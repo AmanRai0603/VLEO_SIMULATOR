@@ -393,7 +393,9 @@ declared · with data,blocked,l3_atthw_req_09,not-run,,l3_atthw_req_09: has not 
 declared · with data,blocked,l3_fsw_ach_01,not-run,,l3_fsw_ach_01: has not run
 declared · with data,blocked,l3_fsw_ach_02,not-run,,l3_fsw_ach_02: has not run
 declared · with data,blocked,l3_fsw_ach_03,not-run,,l3_fsw_ach_03: has not run
+declared · with data,blocked,l3_fsw_fault_detection_and_recovery,not-run,,l3_fsw_fault_detection_and_recovery: has not run
 declared · with data,blocked,l3_fsw_interface,not-run,,l3_fsw_interface: has not run
+declared · with data,blocked,l3_fsw_modes_and_autonomy,not-run,,l3_fsw_modes_and_autonomy: has not run
 declared · with data,blocked,l3_fsw_n_01,not-run,,l3_fsw_n_01: has not run
 declared · with data,blocked,l3_fsw_n_02,not-run,,l3_fsw_n_02: has not run
 declared · with data,blocked,l3_fsw_n_03,not-run,,l3_fsw_n_03: has not run
@@ -819,6 +821,8 @@ declared · with data,blocked,l3_struct_ach_02,not-run,,l3_struct_ach_02: has no
 declared · with data,blocked,l3_struct_ach_03,not-run,,l3_struct_ach_03: has not run
 declared · with data,blocked,l3_struct_ach_04,not-run,,l3_struct_ach_04: has not run
 declared · with data,blocked,l3_struct_interface,not-run,,l3_struct_interface: has not run
+declared · with data,blocked,l3_struct_launch_adapter_interface,not-run,,l3_struct_launch_adapter_interface: has not run
+declared · with data,blocked,l3_struct_mechanisms_and_deployments,not-run,,l3_struct_mechanisms_and_deployments: has not run
 declared · with data,blocked,l3_struct_n_01,not-run,,l3_struct_n_01: has not run
 declared · with data,blocked,l3_struct_n_02,not-run,,l3_struct_n_02: has not run
 declared · with data,blocked,l3_struct_n_03,not-run,,l3_struct_n_03: has not run
@@ -915,6 +919,7 @@ declared · with data,blocked,l3_ttc_req_07,not-run,,l3_ttc_req_07: has not run
 declared · with data,blocked,l3_ttc_req_08,not-run,,l3_ttc_req_08: has not run
 declared · with data,blocked,l3_x_closure_interface,not-run,,l3_x_closure_interface: has not run
 declared · with data,blocked,l3_x_envorbit_interface,not-run,,l3_x_envorbit_interface: has not run
+declared · with data,blocked,l3_x_envorbit_radiation_environment,not-run,,l3_x_envorbit_radiation_environment: has not run
 declared · with data,blocked,mgt_component_level_eee_part_screening,not-run,,mgt_component_level_eee_part_screening: has not run
 declared · with data,blocked,mgt_component_level_materials_and_processes,not-run,,mgt_component_level_materials_and_processes: has not run
 declared · with data,blocked,mgt_component_level_outgassing_and_contamination,not-run,,mgt_component_level_outgassing_and_contamination: has not run
@@ -1428,7 +1433,7 @@ declared · with data,blocked,sys_tt_and_c_and_downlink_tt_and_c_transmit_power,
 declared · with data,blocked,sys_tt_and_c_and_downlink_tt_and_c_link_margin,not-run,,sys_tt_and_c_and_downlink_tt_and_c_link_margin: has not run
 declared · with data,blocked,thm_dissipation,undefined,,"thm_dissipation: the relation is stated and never derived — nothing on the sheet says where it came from, so this row does not answer"
 declared · with data,blocked,thm_required_radiator_area,undefined,,"thm_required_radiator_area: the relation is stated and never derived — nothing on the sheet says where it came from, so this row does not answer"
-declared · with data,counted,,183 ran,1213 blocked,0 iterations
+declared · with data,counted,,183 ran,1218 blocked,0 iterations
 declared · no data,value,sw_ap_mean_band_spread,3.593688,Supplied,44434134
 declared · no data,value,sw_ap_central_expectation,22.095389,Supplied,44434134
 declared · no data,value,sw_ap_cold_long,17.49546836,Computed,14434134
@@ -1772,7 +1777,9 @@ declared · no data,blocked,l3_atthw_req_09,not-run,,l3_atthw_req_09: has not ru
 declared · no data,blocked,l3_fsw_ach_01,not-run,,l3_fsw_ach_01: has not run
 declared · no data,blocked,l3_fsw_ach_02,not-run,,l3_fsw_ach_02: has not run
 declared · no data,blocked,l3_fsw_ach_03,not-run,,l3_fsw_ach_03: has not run
+declared · no data,blocked,l3_fsw_fault_detection_and_recovery,not-run,,l3_fsw_fault_detection_and_recovery: has not run
 declared · no data,blocked,l3_fsw_interface,not-run,,l3_fsw_interface: has not run
+declared · no data,blocked,l3_fsw_modes_and_autonomy,not-run,,l3_fsw_modes_and_autonomy: has not run
 declared · no data,blocked,l3_fsw_n_01,not-run,,l3_fsw_n_01: has not run
 declared · no data,blocked,l3_fsw_n_02,not-run,,l3_fsw_n_02: has not run
 declared · no data,blocked,l3_fsw_n_03,not-run,,l3_fsw_n_03: has not run
@@ -2202,6 +2209,8 @@ declared · no data,blocked,l3_struct_ach_02,not-run,,l3_struct_ach_02: has not 
 declared · no data,blocked,l3_struct_ach_03,not-run,,l3_struct_ach_03: has not run
 declared · no data,blocked,l3_struct_ach_04,not-run,,l3_struct_ach_04: has not run
 declared · no data,blocked,l3_struct_interface,not-run,,l3_struct_interface: has not run
+declared · no data,blocked,l3_struct_launch_adapter_interface,not-run,,l3_struct_launch_adapter_interface: has not run
+declared · no data,blocked,l3_struct_mechanisms_and_deployments,not-run,,l3_struct_mechanisms_and_deployments: has not run
 declared · no data,blocked,l3_struct_n_01,not-run,,l3_struct_n_01: has not run
 declared · no data,blocked,l3_struct_n_02,not-run,,l3_struct_n_02: has not run
 declared · no data,blocked,l3_struct_n_03,not-run,,l3_struct_n_03: has not run
@@ -2298,6 +2307,7 @@ declared · no data,blocked,l3_ttc_req_07,not-run,,l3_ttc_req_07: has not run
 declared · no data,blocked,l3_ttc_req_08,not-run,,l3_ttc_req_08: has not run
 declared · no data,blocked,l3_x_closure_interface,not-run,,l3_x_closure_interface: has not run
 declared · no data,blocked,l3_x_envorbit_interface,not-run,,l3_x_envorbit_interface: has not run
+declared · no data,blocked,l3_x_envorbit_radiation_environment,not-run,,l3_x_envorbit_radiation_environment: has not run
 declared · no data,blocked,mgt_component_level_eee_part_screening,not-run,,mgt_component_level_eee_part_screening: has not run
 declared · no data,blocked,mgt_component_level_materials_and_processes,not-run,,mgt_component_level_materials_and_processes: has not run
 declared · no data,blocked,mgt_component_level_outgassing_and_contamination,not-run,,mgt_component_level_outgassing_and_contamination: has not run
@@ -2834,7 +2844,7 @@ declared · no data,blocked,sys_tt_and_c_and_downlink_tt_and_c_transmit_power,no
 declared · no data,blocked,sys_tt_and_c_and_downlink_tt_and_c_link_margin,not-run,,sys_tt_and_c_and_downlink_tt_and_c_link_margin: has not run
 declared · no data,blocked,thm_dissipation,undefined,,"thm_dissipation: the relation is stated and never derived — nothing on the sheet says where it came from, so this row does not answer"
 declared · no data,blocked,thm_required_radiator_area,undefined,,"thm_required_radiator_area: the relation is stated and never derived — nothing on the sheet says where it came from, so this row does not answer"
-declared · no data,counted,,141 ran,1255 blocked,0 iterations
+declared · no data,counted,,141 ran,1260 blocked,0 iterations
 from_an_older_tool · with data,value,sw_ap_mean_band_spread,3.593688,Supplied,44434134
 from_an_older_tool · with data,value,sw_ap_central_expectation,22.095389,Supplied,44434134
 from_an_older_tool · with data,value,sw_ap_cold_long,17.49546836,Computed,14434134
@@ -3229,7 +3239,9 @@ from_an_older_tool · with data,blocked,l3_atthw_req_09,not-run,,l3_atthw_req_09
 from_an_older_tool · with data,blocked,l3_fsw_ach_01,not-run,,l3_fsw_ach_01: has not run
 from_an_older_tool · with data,blocked,l3_fsw_ach_02,not-run,,l3_fsw_ach_02: has not run
 from_an_older_tool · with data,blocked,l3_fsw_ach_03,not-run,,l3_fsw_ach_03: has not run
+from_an_older_tool · with data,blocked,l3_fsw_fault_detection_and_recovery,not-run,,l3_fsw_fault_detection_and_recovery: has not run
 from_an_older_tool · with data,blocked,l3_fsw_interface,not-run,,l3_fsw_interface: has not run
+from_an_older_tool · with data,blocked,l3_fsw_modes_and_autonomy,not-run,,l3_fsw_modes_and_autonomy: has not run
 from_an_older_tool · with data,blocked,l3_fsw_n_01,not-run,,l3_fsw_n_01: has not run
 from_an_older_tool · with data,blocked,l3_fsw_n_02,not-run,,l3_fsw_n_02: has not run
 from_an_older_tool · with data,blocked,l3_fsw_n_03,not-run,,l3_fsw_n_03: has not run
@@ -3655,6 +3667,8 @@ from_an_older_tool · with data,blocked,l3_struct_ach_02,not-run,,l3_struct_ach_
 from_an_older_tool · with data,blocked,l3_struct_ach_03,not-run,,l3_struct_ach_03: has not run
 from_an_older_tool · with data,blocked,l3_struct_ach_04,not-run,,l3_struct_ach_04: has not run
 from_an_older_tool · with data,blocked,l3_struct_interface,not-run,,l3_struct_interface: has not run
+from_an_older_tool · with data,blocked,l3_struct_launch_adapter_interface,not-run,,l3_struct_launch_adapter_interface: has not run
+from_an_older_tool · with data,blocked,l3_struct_mechanisms_and_deployments,not-run,,l3_struct_mechanisms_and_deployments: has not run
 from_an_older_tool · with data,blocked,l3_struct_n_01,not-run,,l3_struct_n_01: has not run
 from_an_older_tool · with data,blocked,l3_struct_n_02,not-run,,l3_struct_n_02: has not run
 from_an_older_tool · with data,blocked,l3_struct_n_03,not-run,,l3_struct_n_03: has not run
@@ -3751,6 +3765,7 @@ from_an_older_tool · with data,blocked,l3_ttc_req_07,not-run,,l3_ttc_req_07: ha
 from_an_older_tool · with data,blocked,l3_ttc_req_08,not-run,,l3_ttc_req_08: has not run
 from_an_older_tool · with data,blocked,l3_x_closure_interface,not-run,,l3_x_closure_interface: has not run
 from_an_older_tool · with data,blocked,l3_x_envorbit_interface,not-run,,l3_x_envorbit_interface: has not run
+from_an_older_tool · with data,blocked,l3_x_envorbit_radiation_environment,not-run,,l3_x_envorbit_radiation_environment: has not run
 from_an_older_tool · with data,blocked,mgt_component_level_eee_part_screening,not-run,,mgt_component_level_eee_part_screening: has not run
 from_an_older_tool · with data,blocked,mgt_component_level_materials_and_processes,not-run,,mgt_component_level_materials_and_processes: has not run
 from_an_older_tool · with data,blocked,mgt_component_level_outgassing_and_contamination,not-run,,mgt_component_level_outgassing_and_contamination: has not run
@@ -4264,7 +4279,7 @@ from_an_older_tool · with data,blocked,sys_tt_and_c_and_downlink_tt_and_c_trans
 from_an_older_tool · with data,blocked,sys_tt_and_c_and_downlink_tt_and_c_link_margin,not-run,,sys_tt_and_c_and_downlink_tt_and_c_link_margin: has not run
 from_an_older_tool · with data,blocked,thm_dissipation,undefined,,"thm_dissipation: the relation is stated and never derived — nothing on the sheet says where it came from, so this row does not answer"
 from_an_older_tool · with data,blocked,thm_required_radiator_area,undefined,,"thm_required_radiator_area: the relation is stated and never derived — nothing on the sheet says where it came from, so this row does not answer"
-from_an_older_tool · with data,counted,,183 ran,1213 blocked,0 iterations
+from_an_older_tool · with data,counted,,183 ran,1218 blocked,0 iterations
 from_an_older_tool · no data,value,sw_ap_mean_band_spread,3.593688,Supplied,44434134
 from_an_older_tool · no data,value,sw_ap_central_expectation,22.095389,Supplied,44434134
 from_an_older_tool · no data,value,sw_ap_cold_long,17.49546836,Computed,14434134
@@ -4608,7 +4623,9 @@ from_an_older_tool · no data,blocked,l3_atthw_req_09,not-run,,l3_atthw_req_09: 
 from_an_older_tool · no data,blocked,l3_fsw_ach_01,not-run,,l3_fsw_ach_01: has not run
 from_an_older_tool · no data,blocked,l3_fsw_ach_02,not-run,,l3_fsw_ach_02: has not run
 from_an_older_tool · no data,blocked,l3_fsw_ach_03,not-run,,l3_fsw_ach_03: has not run
+from_an_older_tool · no data,blocked,l3_fsw_fault_detection_and_recovery,not-run,,l3_fsw_fault_detection_and_recovery: has not run
 from_an_older_tool · no data,blocked,l3_fsw_interface,not-run,,l3_fsw_interface: has not run
+from_an_older_tool · no data,blocked,l3_fsw_modes_and_autonomy,not-run,,l3_fsw_modes_and_autonomy: has not run
 from_an_older_tool · no data,blocked,l3_fsw_n_01,not-run,,l3_fsw_n_01: has not run
 from_an_older_tool · no data,blocked,l3_fsw_n_02,not-run,,l3_fsw_n_02: has not run
 from_an_older_tool · no data,blocked,l3_fsw_n_03,not-run,,l3_fsw_n_03: has not run
@@ -5038,6 +5055,8 @@ from_an_older_tool · no data,blocked,l3_struct_ach_02,not-run,,l3_struct_ach_02
 from_an_older_tool · no data,blocked,l3_struct_ach_03,not-run,,l3_struct_ach_03: has not run
 from_an_older_tool · no data,blocked,l3_struct_ach_04,not-run,,l3_struct_ach_04: has not run
 from_an_older_tool · no data,blocked,l3_struct_interface,not-run,,l3_struct_interface: has not run
+from_an_older_tool · no data,blocked,l3_struct_launch_adapter_interface,not-run,,l3_struct_launch_adapter_interface: has not run
+from_an_older_tool · no data,blocked,l3_struct_mechanisms_and_deployments,not-run,,l3_struct_mechanisms_and_deployments: has not run
 from_an_older_tool · no data,blocked,l3_struct_n_01,not-run,,l3_struct_n_01: has not run
 from_an_older_tool · no data,blocked,l3_struct_n_02,not-run,,l3_struct_n_02: has not run
 from_an_older_tool · no data,blocked,l3_struct_n_03,not-run,,l3_struct_n_03: has not run
@@ -5134,6 +5153,7 @@ from_an_older_tool · no data,blocked,l3_ttc_req_07,not-run,,l3_ttc_req_07: has 
 from_an_older_tool · no data,blocked,l3_ttc_req_08,not-run,,l3_ttc_req_08: has not run
 from_an_older_tool · no data,blocked,l3_x_closure_interface,not-run,,l3_x_closure_interface: has not run
 from_an_older_tool · no data,blocked,l3_x_envorbit_interface,not-run,,l3_x_envorbit_interface: has not run
+from_an_older_tool · no data,blocked,l3_x_envorbit_radiation_environment,not-run,,l3_x_envorbit_radiation_environment: has not run
 from_an_older_tool · no data,blocked,mgt_component_level_eee_part_screening,not-run,,mgt_component_level_eee_part_screening: has not run
 from_an_older_tool · no data,blocked,mgt_component_level_materials_and_processes,not-run,,mgt_component_level_materials_and_processes: has not run
 from_an_older_tool · no data,blocked,mgt_component_level_outgassing_and_contamination,not-run,,mgt_component_level_outgassing_and_contamination: has not run
@@ -5670,7 +5690,7 @@ from_an_older_tool · no data,blocked,sys_tt_and_c_and_downlink_tt_and_c_transmi
 from_an_older_tool · no data,blocked,sys_tt_and_c_and_downlink_tt_and_c_link_margin,not-run,,sys_tt_and_c_and_downlink_tt_and_c_link_margin: has not run
 from_an_older_tool · no data,blocked,thm_dissipation,undefined,,"thm_dissipation: the relation is stated and never derived — nothing on the sheet says where it came from, so this row does not answer"
 from_an_older_tool · no data,blocked,thm_required_radiator_area,undefined,,"thm_required_radiator_area: the relation is stated and never derived — nothing on the sheet says where it came from, so this row does not answer"
-from_an_older_tool · no data,counted,,141 ran,1255 blocked,0 iterations
+from_an_older_tool · no data,counted,,141 ran,1260 blocked,0 iterations
 storm_level_2 · with data,value,sw_ap_mean_band_spread,3.593688,Supplied,44434134
 storm_level_2 · with data,value,sw_ap_central_expectation,22.095389,Supplied,44434134
 storm_level_2 · with data,value,sw_ap_cold_long,17.49546836,Computed,14434134
@@ -6065,7 +6085,9 @@ storm_level_2 · with data,blocked,l3_atthw_req_09,not-run,,l3_atthw_req_09: has
 storm_level_2 · with data,blocked,l3_fsw_ach_01,not-run,,l3_fsw_ach_01: has not run
 storm_level_2 · with data,blocked,l3_fsw_ach_02,not-run,,l3_fsw_ach_02: has not run
 storm_level_2 · with data,blocked,l3_fsw_ach_03,not-run,,l3_fsw_ach_03: has not run
+storm_level_2 · with data,blocked,l3_fsw_fault_detection_and_recovery,not-run,,l3_fsw_fault_detection_and_recovery: has not run
 storm_level_2 · with data,blocked,l3_fsw_interface,not-run,,l3_fsw_interface: has not run
+storm_level_2 · with data,blocked,l3_fsw_modes_and_autonomy,not-run,,l3_fsw_modes_and_autonomy: has not run
 storm_level_2 · with data,blocked,l3_fsw_n_01,not-run,,l3_fsw_n_01: has not run
 storm_level_2 · with data,blocked,l3_fsw_n_02,not-run,,l3_fsw_n_02: has not run
 storm_level_2 · with data,blocked,l3_fsw_n_03,not-run,,l3_fsw_n_03: has not run
@@ -6491,6 +6513,8 @@ storm_level_2 · with data,blocked,l3_struct_ach_02,not-run,,l3_struct_ach_02: h
 storm_level_2 · with data,blocked,l3_struct_ach_03,not-run,,l3_struct_ach_03: has not run
 storm_level_2 · with data,blocked,l3_struct_ach_04,not-run,,l3_struct_ach_04: has not run
 storm_level_2 · with data,blocked,l3_struct_interface,not-run,,l3_struct_interface: has not run
+storm_level_2 · with data,blocked,l3_struct_launch_adapter_interface,not-run,,l3_struct_launch_adapter_interface: has not run
+storm_level_2 · with data,blocked,l3_struct_mechanisms_and_deployments,not-run,,l3_struct_mechanisms_and_deployments: has not run
 storm_level_2 · with data,blocked,l3_struct_n_01,not-run,,l3_struct_n_01: has not run
 storm_level_2 · with data,blocked,l3_struct_n_02,not-run,,l3_struct_n_02: has not run
 storm_level_2 · with data,blocked,l3_struct_n_03,not-run,,l3_struct_n_03: has not run
@@ -6587,6 +6611,7 @@ storm_level_2 · with data,blocked,l3_ttc_req_07,not-run,,l3_ttc_req_07: has not
 storm_level_2 · with data,blocked,l3_ttc_req_08,not-run,,l3_ttc_req_08: has not run
 storm_level_2 · with data,blocked,l3_x_closure_interface,not-run,,l3_x_closure_interface: has not run
 storm_level_2 · with data,blocked,l3_x_envorbit_interface,not-run,,l3_x_envorbit_interface: has not run
+storm_level_2 · with data,blocked,l3_x_envorbit_radiation_environment,not-run,,l3_x_envorbit_radiation_environment: has not run
 storm_level_2 · with data,blocked,mgt_component_level_eee_part_screening,not-run,,mgt_component_level_eee_part_screening: has not run
 storm_level_2 · with data,blocked,mgt_component_level_materials_and_processes,not-run,,mgt_component_level_materials_and_processes: has not run
 storm_level_2 · with data,blocked,mgt_component_level_outgassing_and_contamination,not-run,,mgt_component_level_outgassing_and_contamination: has not run
@@ -7100,7 +7125,7 @@ storm_level_2 · with data,blocked,sys_tt_and_c_and_downlink_tt_and_c_transmit_p
 storm_level_2 · with data,blocked,sys_tt_and_c_and_downlink_tt_and_c_link_margin,not-run,,sys_tt_and_c_and_downlink_tt_and_c_link_margin: has not run
 storm_level_2 · with data,blocked,thm_dissipation,undefined,,"thm_dissipation: the relation is stated and never derived — nothing on the sheet says where it came from, so this row does not answer"
 storm_level_2 · with data,blocked,thm_required_radiator_area,undefined,,"thm_required_radiator_area: the relation is stated and never derived — nothing on the sheet says where it came from, so this row does not answer"
-storm_level_2 · with data,counted,,183 ran,1213 blocked,0 iterations
+storm_level_2 · with data,counted,,183 ran,1218 blocked,0 iterations
 storm_level_2 · no data,value,sw_ap_mean_band_spread,3.593688,Supplied,44434134
 storm_level_2 · no data,value,sw_ap_central_expectation,22.095389,Supplied,44434134
 storm_level_2 · no data,value,sw_ap_cold_long,17.49546836,Computed,14434134
@@ -7444,7 +7469,9 @@ storm_level_2 · no data,blocked,l3_atthw_req_09,not-run,,l3_atthw_req_09: has n
 storm_level_2 · no data,blocked,l3_fsw_ach_01,not-run,,l3_fsw_ach_01: has not run
 storm_level_2 · no data,blocked,l3_fsw_ach_02,not-run,,l3_fsw_ach_02: has not run
 storm_level_2 · no data,blocked,l3_fsw_ach_03,not-run,,l3_fsw_ach_03: has not run
+storm_level_2 · no data,blocked,l3_fsw_fault_detection_and_recovery,not-run,,l3_fsw_fault_detection_and_recovery: has not run
 storm_level_2 · no data,blocked,l3_fsw_interface,not-run,,l3_fsw_interface: has not run
+storm_level_2 · no data,blocked,l3_fsw_modes_and_autonomy,not-run,,l3_fsw_modes_and_autonomy: has not run
 storm_level_2 · no data,blocked,l3_fsw_n_01,not-run,,l3_fsw_n_01: has not run
 storm_level_2 · no data,blocked,l3_fsw_n_02,not-run,,l3_fsw_n_02: has not run
 storm_level_2 · no data,blocked,l3_fsw_n_03,not-run,,l3_fsw_n_03: has not run
@@ -7874,6 +7901,8 @@ storm_level_2 · no data,blocked,l3_struct_ach_02,not-run,,l3_struct_ach_02: has
 storm_level_2 · no data,blocked,l3_struct_ach_03,not-run,,l3_struct_ach_03: has not run
 storm_level_2 · no data,blocked,l3_struct_ach_04,not-run,,l3_struct_ach_04: has not run
 storm_level_2 · no data,blocked,l3_struct_interface,not-run,,l3_struct_interface: has not run
+storm_level_2 · no data,blocked,l3_struct_launch_adapter_interface,not-run,,l3_struct_launch_adapter_interface: has not run
+storm_level_2 · no data,blocked,l3_struct_mechanisms_and_deployments,not-run,,l3_struct_mechanisms_and_deployments: has not run
 storm_level_2 · no data,blocked,l3_struct_n_01,not-run,,l3_struct_n_01: has not run
 storm_level_2 · no data,blocked,l3_struct_n_02,not-run,,l3_struct_n_02: has not run
 storm_level_2 · no data,blocked,l3_struct_n_03,not-run,,l3_struct_n_03: has not run
@@ -7970,6 +7999,7 @@ storm_level_2 · no data,blocked,l3_ttc_req_07,not-run,,l3_ttc_req_07: has not r
 storm_level_2 · no data,blocked,l3_ttc_req_08,not-run,,l3_ttc_req_08: has not run
 storm_level_2 · no data,blocked,l3_x_closure_interface,not-run,,l3_x_closure_interface: has not run
 storm_level_2 · no data,blocked,l3_x_envorbit_interface,not-run,,l3_x_envorbit_interface: has not run
+storm_level_2 · no data,blocked,l3_x_envorbit_radiation_environment,not-run,,l3_x_envorbit_radiation_environment: has not run
 storm_level_2 · no data,blocked,mgt_component_level_eee_part_screening,not-run,,mgt_component_level_eee_part_screening: has not run
 storm_level_2 · no data,blocked,mgt_component_level_materials_and_processes,not-run,,mgt_component_level_materials_and_processes: has not run
 storm_level_2 · no data,blocked,mgt_component_level_outgassing_and_contamination,not-run,,mgt_component_level_outgassing_and_contamination: has not run
@@ -8506,7 +8536,7 @@ storm_level_2 · no data,blocked,sys_tt_and_c_and_downlink_tt_and_c_transmit_pow
 storm_level_2 · no data,blocked,sys_tt_and_c_and_downlink_tt_and_c_link_margin,not-run,,sys_tt_and_c_and_downlink_tt_and_c_link_margin: has not run
 storm_level_2 · no data,blocked,thm_dissipation,undefined,,"thm_dissipation: the relation is stated and never derived — nothing on the sheet says where it came from, so this row does not answer"
 storm_level_2 · no data,blocked,thm_required_radiator_area,undefined,,"thm_required_radiator_area: the relation is stated and never derived — nothing on the sheet says where it came from, so this row does not answer"
-storm_level_2 · no data,counted,,141 ran,1255 blocked,0 iterations
+storm_level_2 · no data,counted,,141 ran,1260 blocked,0 iterations
 l3_solar_req_01 at its lower end · with data,value,l3_solar_ach_01,-0.7345222308490598,Computed,12404134
 l3_solar_req_01 at its upper end · with data,value,l3_solar_ach_01,0.739821665372641,Computed,12404134
 l3_solar_req_02 at its lower end · with data,value,l3_solar_ach_02,-1.0690599919370098,Computed,12404134
@@ -8617,7 +8647,7 @@ sys_mission_requirements_mission_epoch at its lower end · with data,value,sys_s
 sys_mission_requirements_mission_epoch at its lower end · with data,blocked,sw_cycle_phase,refused,,sw_cycle_phase: refused — a phase cannot be negative: the epoch precedes the cycle it was assigned to
 sys_mission_requirements_mission_epoch at its lower end · with data,blocked,sw_mean_cycle_level,blocked,,sw_mean_cycle_level: blocked — sw_cycle_phase has never run
 sys_mission_requirements_mission_epoch at its lower end · with data,blocked,sw_f107_81day,blocked,,sw_f107_81day: blocked — sw_mean_cycle_level has never run
-sys_mission_requirements_mission_epoch at its lower end · with data,counted,,180 ran,1216 blocked,0 iterations
+sys_mission_requirements_mission_epoch at its lower end · with data,counted,,180 ran,1221 blocked,0 iterations
 sys_mission_requirements_mission_epoch at its lower end · with data,value,sw_cycle_phase,absent,,
 sys_mission_requirements_mission_epoch at its lower end · with data,value,sw_f107_81day,absent,,
 sys_mission_requirements_mission_epoch at its lower end · with data,value,sw_mean_cycle_level,absent,,
@@ -8651,7 +8681,7 @@ sys_mission_requirements_mission_epoch at its upper end · with data,value,sys_s
 sys_mission_requirements_mission_epoch at its upper end · with data,blocked,sw_cycle_phase,refused,,"sw_cycle_phase: refused — past the end of the cycle the epoch belongs to the next one, whose start the record does not contain"
 sys_mission_requirements_mission_epoch at its upper end · with data,blocked,sw_mean_cycle_level,blocked,,sw_mean_cycle_level: blocked — sw_cycle_phase has never run
 sys_mission_requirements_mission_epoch at its upper end · with data,blocked,sw_f107_81day,blocked,,sw_f107_81day: blocked — sw_mean_cycle_level has never run
-sys_mission_requirements_mission_epoch at its upper end · with data,counted,,180 ran,1216 blocked,0 iterations
+sys_mission_requirements_mission_epoch at its upper end · with data,counted,,180 ran,1221 blocked,0 iterations
 sys_mission_requirements_mission_epoch at its upper end · with data,value,sw_cycle_phase,absent,,
 sys_mission_requirements_mission_epoch at its upper end · with data,value,sw_f107_81day,absent,,
 sys_mission_requirements_mission_epoch at its upper end · with data,value,sw_mean_cycle_level,absent,,
@@ -8675,7 +8705,7 @@ sw_ap_central_expectation at its lower end · with data,blocked,env_exospheric_t
 sw_ap_central_expectation at its lower end · with data,blocked,sw_storm_rate,blocked,,sw_storm_rate: blocked — env_kp has never run
 sw_ap_central_expectation at its lower end · with data,blocked,sys_space_environment_ap,blocked,,sys_space_environment_ap: blocked — l3_solar_interface has never run
 sw_ap_central_expectation at its lower end · with data,blocked,sys_space_environment_solar_flux,blocked,,sys_space_environment_solar_flux: blocked — l3_solar_interface has never run
-sw_ap_central_expectation at its lower end · with data,counted,,168 ran,1228 blocked,0 iterations
+sw_ap_central_expectation at its lower end · with data,counted,,168 ran,1233 blocked,0 iterations
 sw_ap_central_expectation at its lower end · with data,value,env_exospheric_temperature,absent,,
 sw_ap_central_expectation at its lower end · with data,value,env_f107,absent,,
 sw_ap_central_expectation at its lower end · with data,value,env_f107a,absent,,
@@ -8869,7 +8899,7 @@ sw_mean_band_spread at its upper end · with data,blocked,env_exospheric_tempera
 sw_mean_band_spread at its upper end · with data,blocked,sw_storm_rate,blocked,,sw_storm_rate: blocked — env_kp has never run
 sw_mean_band_spread at its upper end · with data,blocked,sys_space_environment_ap,blocked,,sys_space_environment_ap: blocked — l3_solar_interface has never run
 sw_mean_band_spread at its upper end · with data,blocked,sys_space_environment_solar_flux,blocked,,sys_space_environment_solar_flux: blocked — l3_solar_interface has never run
-sw_mean_band_spread at its upper end · with data,counted,,169 ran,1227 blocked,0 iterations
+sw_mean_band_spread at its upper end · with data,counted,,169 ran,1232 blocked,0 iterations
 sw_mean_band_spread at its upper end · with data,value,env_exospheric_temperature,absent,,
 sw_mean_band_spread at its upper end · with data,value,env_f107,absent,,
 sw_mean_band_spread at its upper end · with data,value,env_f107a,absent,,

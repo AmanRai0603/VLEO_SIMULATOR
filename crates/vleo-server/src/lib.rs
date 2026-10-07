@@ -341,6 +341,10 @@ fn open_base(root: &Path) -> Result<(std::sync::Arc<dyn Files>, Option<DesignFil
     if let Some(dir) = named.as_ref().filter(|p| p.is_dir()) {
         return open_converted(root, dir);
     }
+    // The design is its files: `design/` where the tool finds it.
+    if named.is_none() && root.join("design").is_dir() {
+        return open_converted(root, &root.join("design"));
+    }
     let Some(path) = named.or_else(|| vleo_design::beside(root)) else {
         return Ok((std::sync::Arc::new(vleo_sheet::files::Disk), None));
     };
@@ -381,9 +385,9 @@ fn open_base(root: &Path) -> Result<(std::sync::Arc<dyn Files>, Option<DesignFil
     Ok((std::sync::Arc::new(d), Some(info)))
 }
 
-/// The design converted to its files (docs/PLAN_1_0.md, phase E): every
-/// group, node and case file in the folder `VLEO_DESIGN` names, read as the
-/// folders they were converted from (`vleo_files::convert::Served`).
+/// The design as its files (docs/PLAN_1_0.md, phase E): every group, node
+/// and case file in `design/`, or in the folder `VLEO_DESIGN` names, read as
+/// the folders they were converted from (`vleo_files::convert::Served`).
 ///
 /// It must load as a design, every check the loader makes, made. Its rows run
 /// as its files state them: a method as its translation when this tool was
@@ -479,7 +483,10 @@ fn short(h: u64) -> String {
 /// a double-clicked binary starts wherever the desktop chose.
 fn repo_root() -> PathBuf {
     let holds = |p: &Path| {
-        p.join("web").is_dir() && (p.join("layers").is_dir() || vleo_design::beside(p).is_some())
+        p.join("web").is_dir()
+            && (p.join("design").is_dir()
+                || p.join("layers").is_dir()
+                || vleo_design::beside(p).is_some())
     };
     if let Ok(r) = std::env::var("VLEO_ROOT") {
         let r = PathBuf::from(r);

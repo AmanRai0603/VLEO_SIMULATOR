@@ -31,7 +31,7 @@ mod baseline;
 use std::fmt::Write as _;
 
 use baseline::{first_difference, methods_record, record_path, root, the_graph, today};
-use vleo_modules::COMPILED;
+use vleo_modules::opened;
 
 /// With today's answers, two more records written by the same command: the
 /// graph itself (`baseline/graph.txt`) and every method's answers at inputs
@@ -39,7 +39,9 @@ use vleo_modules::COMPILED;
 /// its files is held to all three (`the_design_read_at_run_time_answers_as_today`).
 #[test]
 fn today_s_answers_are_on_record() {
-    let graph = &COMPILED;
+    // The design as a face opens it: its files in design/, a method this
+    // build was made from run as its translation.
+    let graph = opened::read(&root()).expect("the design's files make a graph");
     let now = today(graph);
     let graph_now = the_graph(graph);
     let methods_now = methods_record(graph, |k, t| graph.probe(k as u16, t));
