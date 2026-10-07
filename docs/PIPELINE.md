@@ -294,10 +294,10 @@ method on its cases, the translation into the kernel, the node's tests, the node
 | | |
 |---|---|
 | reads | the node's method, cases and node engineer's code |
-| writes | crates/vleo-core/src/physics/methods/<node>.rs, the node's generated files, design/ converted again |
+| writes | crates/vleo-core/src/physics/methods/<node>.rs, the node's generated files, design/ converted again, baseline/ recorded again |
 | checks | the method on its cases; the node's tests; the node engineer's code rerun; a mutation the tests must catch; the tree assembles |
 | undo | `git restore <files>` (or `git checkout -- .`) before committing; `git revert` after |
-| steps | 1 the method, against the node engineer's cases · 2 translate the method into the kernel, and regenerate the node · 3 the node's tests: the node engineer's cases, and the translation against the method · 4 the node engineer's own code, run again on their cases · 5 the tests really test: the answer is moved and the tests must notice · 6 only now, the interface: the node in the tree · 7 the design's files, converted again |
+| steps | 1 the method, against the node engineer's cases · 2 translate the method into the kernel, and regenerate the node · 3 the node's tests: the node engineer's cases, and the translation against the method · 4 the node engineer's own code, run again on their cases · 5 the tests really test: the answer is moved and the tests must notice · 6 only now, the interface: the node in the tree · 7 the design's files, converted again · 8 today's answers, recorded again |
 | dry run | --dry-run prints this plan — the steps, what it would write, how to undo it — and touches nothing |
 | code | `xtask/src/method.rs` — `cmd_build_node` |
 

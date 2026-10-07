@@ -553,6 +553,14 @@ pub fn cmd_build_node(root: &Path, args: &[&str]) -> Result<(), String> {
         OnStop::new(built, format!("convert them again: {again}")),
         || crate::convert::record_design(root).map(|said| ((), said)),
     )?;
+    // A node built from a changed method changes what the design answers on
+    // purpose, so today's answers, the graph and every method's answers are
+    // recorded again here, into the same commit (baseline/README.md).
+    run.step(
+        "today's answers, recorded again",
+        OnStop::new(built, format!("record them again: {again}")),
+        || crate::flow::record_today(root).map(|said| ((), said)),
+    )?;
     run.done(&format!(
         "build-node: {id} is built from its method, tested against its node engineer's cases, and connected."
     ));
