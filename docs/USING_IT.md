@@ -1,13 +1,13 @@
 # Using it
 
-> **Answer first.** The walkthrough, with real outputs: run the design on your inputs, keep and send results, see where a change to the design comes from, and — as a developer — work a node's loop and release the tool. The manual in the tool is the reference; this is the worked tour.
+> **Answer first.** The walkthrough, with real outputs: run the design on your inputs, keep and send results, see where a change to the design comes from, and — as a developer — check a node and release the tool. The manual in the tool is the reference; this is the worked tour.
 >
 > **Kind:** tutorial · **For:** everyone
 
 This is the page to read first. It is about doing the work — opening the tool,
 running the design on your inputs, keeping what it said, where a change to the
-design comes from, and, for a developer, a node's loop all the way to a
-release —
+design comes from, and, for a developer, checking a node and releasing the
+tool —
 not about how the system checks itself. Where a check matters it is mentioned in one line, at the moment
 you would actually meet it.
 
@@ -384,7 +384,8 @@ Nobody changes the design from the tool. A node changes in its own file, written
 by its node engineer in the node application; the subsystem engineer assembles
 the group's node files into a release, has it signed and seals it.
 [`docs/GROUP_APPS.md`](GROUP_APPS.md) is the group's side of that. This section
-is where the release goes, and then the loop a developer lives in for each node.
+is where the release goes, and then what a developer does with a node once it
+is in `design/`: check it, and edit none of it.
 
 ### 3.1 The release goes on the drive
 
@@ -405,40 +406,33 @@ built from its last good release, and the tool says which release each group's
 part is and why one was refused. The fix goes back to the group, as a new
 sealed release; a release is never fixed up on the way in.
 
-A row is a folder. Only one file in it is the sheet:
+A row is a folder. Every file in it is written by hand, and only one is the
+sheet:
 
 ```
 crates/vleo-mod-prop/nodes/prop_throat_area/
   node.toml      ← the sheet.
   fixtures.toml  the known-good values
-  meta.json      generated
   parity.csv     optional — the prior implementation's numbers
 ```
 
-A developer's own structural row, with no release behind it, still starts from a
-sibling: `cargo run -p xtask -- new <id> --like <sibling>`, which blanks every
-field that must be decided again.
+Nothing in this repository writes a node. It arrives in `design/`, the design
+as its files, with its sheet beside it, and a test holds the two equal. A need
+the code cannot meet comes back as a request (W14), answered with an
+application release.
 
 ### 3.2 Ask what is still open
 
 ```
-cargo run -p xtask -- declare prop_intake_mouth
+cargo run -p xtask -- gap
+cargo run -p xtask -- why prop_intake_mouth
 ```
 
-It prints every field that is still blank, with what cannot be emitted without
-it, and stops when there are none:
-
-```
-  ?  what one question does it answer
-     question — without it: an equation with no question gets reused for the wrong thing
-  ?  cited where — book, paper, page
-     source — without it: this is the claim everything else rests on
-  ...
-6 question(s) open. Generation refuses until they are answered.
-```
-
-The open set is computed from the same list `xtask docs` refuses on, so there
-is never a question that blocks generation and is not on this page.
+`gap` lists what every sheet promised and nothing yet covers. `why` puts one
+node's history in one place — every recorded version and who made it, the
+commits that changed it, and its gate, run now. Both only read. A gap is closed
+by the node's node engineer, in the group's next release; nothing here fills
+one in.
 
 ### 3.3 What the sheet holds
 
@@ -465,35 +459,13 @@ Two more that are decisions rather than drafting:
 - **`migrated_from`** — set it when the node exists in the MATLAB tool. Its
   numbers then go in `parity.csv` beside the node and never in `fixtures.toml`.
 
-### 3.4 Publish and generate
+### 3.4 Nothing to publish or generate
 
-A seeded row, filled, becomes published:
-
-```
-cargo run -p xtask -- publish prop_intake_mouth
-```
-
-It refuses, naming every reason, while the row is not ready. After that, any
-change to the sheet is regenerated with:
-
-```
-cargo run -p xtask -- docs prop_intake_mouth
-docs: 1 node(s), 1 artefact(s) written
-```
-
-It writes the node's metadata and reads no other row — which is what makes
-1396 rows 1396 independent pieces of work rather than one large one.
-
-While any field is still open it refuses instead, names them, and writes
-nothing:
-
-```
-  refused prop_intake_mouth — nothing to generate from: label, question,
-          expression, source, reason_lower, reason_upper
-```
-
-That refusal is the mechanism. It turns ambiguity from something an implementer
-settles quietly into a blocking item on an engineer's screen.
+A node is not published or generated here. Its `state`, `published` among
+them, arrives with it as its node engineer set it; nothing in its folder is
+generated, and its page is rendered from the sheet when it is opened.
+`cargo run -p xtask -- docs` writes one file, `docs/PSEUDOCODE.md`, the method
+language's reference, and reads no node.
 
 ### 3.5 See what the gate says
 
@@ -516,7 +488,7 @@ Every one names the field. This is the design: an open decision becomes a line
 on your screen rather than something an implementer settles quietly at two in
 the afternoon.
 
-### 3.6 Write the maths
+### 3.6 Check the maths
 
 There is no generated code to open and no hole to fill. The relation is the
 node's method — the pseudocode in its sheet's `[method]`
@@ -525,16 +497,15 @@ interpreter runs it when the engine runs the design read from `design/`.
 
 ```
 cargo run -p xtask -- method prop_intake_mouth
-cargo run -p xtask -- build-node prop_intake_mouth
+cargo run -p xtask -- rerun prop_intake_mouth
 ```
 
 `method` checks the method and runs each of its node engineer's test cases
 through it: the check the group's application runs as the node engineer types,
-and the one the gate refuses on. `build-node` takes the node from its method to
-a connected node, in order: the method on its cases, the node's metadata, the
-node engineer's code rerun, and only then the interface; then the design's
-files converted again, every case of the design on the engine that reads them,
-and today's answers recorded again. Nothing translates the method into Rust.
+and the one the gate refuses on. `rerun` runs the node engineer's own code
+again on their cases — Python directly, MATLAB and Octave through Octave — and
+writes nothing; `--all` does it for every node. Nothing translates the method
+into Rust.
 
 ### 3.7 Get evidence
 
@@ -594,9 +565,10 @@ ready: 16 of 320 node(s) have passed every machine stage and are waiting on H2
       7  significant, with fewer than two checks behind it
 ```
 
-Then commit. The message form is checked (§7).
-After review and merge, the next release carries the node to everyone — and
-their saved case carries over on its own, with any new input at its default.
+Nothing here is committed for the node: it reaches everyone in its group's
+next sealed release, taken into today's design when the tool opens on the
+drive (§3.1) — and their saved case carries over on its own, with any new
+input at its default.
 
 ### 3.9 Why it changed, and the release that ships it
 
@@ -604,18 +576,19 @@ If a release moves what a node computes, it carries the newest row of its
 `versions.csv` — what we believed, what we tested, what we now know, what
 changed, what the node rests on now and what would break it — and a release
 whose record is incomplete is refused. On a sheet the record is a
-`[[version]]`, marked `next` until a release of the tool stamps it. `sw_central_expectation` carries three real versions as the worked
+`[[version]]`, marked `next` until the design's release that carries it names
+it; a release of the tool stamps nothing in the design. `sw_central_expectation` carries three real versions as the worked
 example; its *de-risking* tab reads them newest first, and the *Technical
 risk* row under the risk register shows the risk they moved.
 
 ```
 cargo run -p xtask -- derisk            # docs/DERISK_NARRATIVE.md and docs/derisking.csv
-cargo run -p xtask -- release 0.2.0     # every `next` stamped 0.2.0; the workspace set to 0.2.0
+cargo run -p xtask -- release 0.2.0     # the workspace set to 0.2.0; no node stamped
 cargo run -p xtask -- release 0.2.0 --check
 ```
 
-The release pipeline runs the last line and refuses while any version is still
-`next`. A result saved before the release keeps the versions it ran on, and
+The release pipeline runs the last line and refuses while the workspace says
+another version. A result saved before the release keeps the versions it ran on, and
 from then on says which of its beliefs have broken since. The rules are in
 `docs/DERISKING.md`.
 
@@ -631,7 +604,7 @@ assistant's change exactly as to anyone's.
 |---|---|---|
 | a node file | help its node engineer with the words — the node's declaration says whether it did | a release's checks refuse a method or results an assistant supplied, and a declaration that says nothing |
 | evidence (§3.7) | turn a value a person derived into a `[[fixture]]` with its provenance | the schema refuses `self-snapshot` and `agent-generated`: an expected value may never come from the code under test |
-| a relation's name | nothing | relation stamping and `confirm` refuse a name that is an assistant's |
+| a relation's name | nothing | a release's checks refuse a name that is an assistant's |
 | the tool itself | ordinary engineering — generators, daemon, faces, tests | the gate, `cargo test`, the regeneration diff and review, as for anyone |
 
 They are ordinary help, not oracles. Three things are worth doing every time:
@@ -672,32 +645,18 @@ regeneration diff in the pipeline catches it if you forget.
 
 ### Putting a name against a relation
 
-`cargo run -p xtask -- confirm --list` prints every written relation with nobody's
-name against it, grouped by the owner who owes one. On 26 September that is
-**183 of the 185 published rows that carry a relation** — every declared value
-already carries a confirmation and only two relations do, which is why `ready`
-holds almost the whole written tree.
+A relation's `[maths] confirmed_by` is its node engineer's: written in the
+node application, with the relation and its source in front of them, and
+arriving with the group's release. Nothing in this repository writes it. On 26
+September **183 of the 185 published rows that carry a relation** had nobody's
+name against it — every declared value already carries a confirmation and only
+two relations do, which is why `ready` holds almost the whole written tree
+(§3.8).
 
-`cargo run -p xtask -- confirm <node> --by "<your name>"` puts one there. It
-prints the question, the relation, the source, the assumptions and the declared
-range first, because a name put against a relation nobody re-read is a keystroke
-rather than a confirmation. Then it writes `<name> / <today>` into `[maths]` and
-reads the sheet back through the loader to prove it landed.
-
-Three things it refuses, and the first is the point of the field:
-
-- **a name that belongs to an assistant.** An assistant may never supply
-  mathematics, and this field is the only thing that can tell whether one did.
-  The refused identities are one list in `vleo-sheet`, shared by `confirm`,
-  a release's checks and relation stamping, so the three cannot disagree.
-- **a declared value.** Its confirmation lives under `[value]` and it already
-  has one.
-- **a relation that is already confirmed.** Changing an attribution is a review
-  decision, not a command.
-
-There is no flag that confirms many at once, and that absence is deliberate: a
-person asked to approve thirty things at a keystroke is not approving any of
-them. One relation, one reading, one name.
+A name that belongs to an assistant is refused. An assistant may never supply
+mathematics, and this field is the only thing that can tell whether one did.
+The refused identities are one list in `vleo-sheet`, which a release's checks
+read, so the two cannot disagree. One relation, one reading, one name.
 
 ### The command that asks whether the evidence is real
 

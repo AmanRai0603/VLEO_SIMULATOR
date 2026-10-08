@@ -351,7 +351,7 @@ pub(super) fn ensure_table(text: &str, table: &str) -> Result<String, Error> {
 ///
 /// TEXTUAL, never a TOML round-trip. These sheets carry more comment than
 /// content and every comment is somebody's reason; a serialiser would silently
-/// drop the lot. The same choice `xtask confirm` makes, for the same reason.
+/// drop the lot.
 ///
 /// Refuses rather than guesses: a duplicated key, or a multi-line block under a
 /// field whose shape is a number, are reported instead of being patched
@@ -416,9 +416,8 @@ pub fn set(text: &str, field: &str, value: &str) -> Result<String, Error> {
                 ),
             ));
         }
-        // Insertable and absent: directly under the table header, which is
-        // where `xtask confirm` puts the one key it adds and the only place in
-        // a table that is unambiguous. The method and the author's code are
+        // Insertable and absent: directly under the table header, the only
+        // place in a table that is unambiguous. The method and the author's code are
         // the exception: the form writes their keys one after another into a
         // table it made, and under the header would write them backwards.
         let (from, to) = window(text, f.table).ok_or_else(|| {

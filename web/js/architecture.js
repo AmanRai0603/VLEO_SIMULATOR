@@ -79,21 +79,16 @@ function secNode() {
     'The variable id <b>is</b> the node id, so there is no second name to keep in step.') +
 
   '<div class="cards">' +
-    card(total, 'folders', 'one per row, all built from the same seven files') +
-    card(withCode, 'specified', 'the sheet is filled and the generators have run') +
+    card(total, 'folders', 'one per row, each holding the same two files') +
+    card(withCode, 'specified', 'the sheet is filled') +
     card(seeded, 'seeded', 'folder and sheet exist, nothing is specified in them') +
     card(withFixture, 'carry evidence', 'a known-good value from outside this code') +
   '</div>' +
 
   h4('the same files, every time') +
   '<table class="asm-t"><thead><tr><th>file</th><th>written</th><th>what it is</th></tr></thead><tbody>' +
-  [['node.toml', 'by hand', 'the sheet — the only file in the folder written by hand'],
-   ['fixtures.toml', 'by hand', 'known-good values, and where each came from'],
-   ['model.rs', 'generated', 'the whole file, with one numbered HOLE per algorithm step'],
-   ['contract.rs', 'generated', 'the untyped adapter the bus calls'],
-   ['mod.rs', 'generated', 'the module wiring'],
-   ['evidence.rs', 'generated', 'the fixtures, as tests'],
-   ['meta.json', 'generated', 'state and hashes, written by the gate']].map(([f, w, d]) =>
+  [['node.toml', 'by hand', 'the sheet — the node\'s ports, its method and its record'],
+   ['fixtures.toml', 'by hand', 'known-good values, and where each came from']].map(([f, w, d]) =>
     '<tr><td><code>' + f + '</code></td><td><span class="by ' +
     (w === 'by hand' ? 'hand' : 'gen') + '">' + w + '</span></td><td>' + esc(d) + '</td></tr>').join('') +
   '</tbody></table>' +

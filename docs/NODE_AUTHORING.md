@@ -2,7 +2,7 @@
 
 > **Answer first.** What a node's sheet holds, field by field, and why each field is there — for the node engineer who writes the node and for the developer who maintains the code that reads it.
 >
-> **Kind:** reference + explanation · **For:** every node engineer, and the developer who takes their node in
+> **Kind:** reference + explanation · **For:** every node engineer, and the developer who checks their node
 
 ## What a node is, in plain words
 
@@ -21,10 +21,10 @@ To answer it properly, seven things are written down once:
 | 6 | known-good answers from somewhere that is not our own code | a number from the thing being tested proves nothing |
 | 7 | how much we trust it, and why | so a reader can weigh the result |
 
-Once those exist, **eight artefacts are printed automatically**: the
-implementation scaffold, the contract, the module wiring, the test harness, the
-documentation fragment, the metadata, the graph entry and the binding. That is
-the entire point of the design. Write the physics once; get eight artefacts.
+Once those exist, **nothing else is written for the node**: the engine runs
+its method, renders its page from the sheet when it is opened, and checks it
+against its known-good answers. That is the entire point of the design. Write
+the physics once.
 
 ## Who writes it, and how it arrives
 
@@ -38,8 +38,10 @@ Nobody takes the release in by hand. It goes on the shared drive, and when the
 tool opens there it plans each computed node against the design, field by field,
 and refuses a conflict, or a method or results an assistant supplied; a release
 that passes is taken into today's design, and this file in the repository stays
-as it is until the switch-over. What the repository's own rows need — publishing,
-building each from its method, the fixtures — is the developer's, and is described below.
+as it is until the switch-over. In the repository the developer checks a node —
+its method on its node engineer's cases, with `xtask method`, `gate` and
+`ready` — and edits none of it; a need the code cannot meet comes back as a
+request (W14).
 
 So this page is written for both: for the node engineer, what each answer is
 for; for the developer, what the loader does with it.
@@ -125,8 +127,8 @@ to a sheet and not explained here fails the lint rather than waiting to be
 noticed.
 
 - **`[maths] confirmed_by`** — who supplied the relation, and when. Write it
-  with `cargo xtask confirm <node> --by "<your name>"`, which shows you the
-  relation and its source first and refuses a name belonging to an assistant. An
+  in your own name, with the relation and its source in front of you; a name
+  belonging to an assistant is refused. An
   assistant may never supply mathematics, and without a name nothing can tell
   whether one did. A relation with nobody against it is a gap, so the node cannot reach H2.
   It does not make the formula right; it makes it somebody's, which is what H1b
@@ -195,8 +197,8 @@ interpreter runs the method when the engine runs the design read from
 
 `cargo run -p xtask -- method <node>` checks the method and runs each of its
 node engineer's test cases through it — the check the gate refuses on.
-`cargo run -p xtask -- build-node <node>` then takes the node from its method
-to a connected node. Nothing translates the method into Rust; the
+`cargo run -p xtask -- gate <node>` and `ready <node>` then check it with the
+rest of the design. Nothing translates the method into Rust; the
 interpreter is the one thing that runs it.
 
 **Use `pmath`, never the standard library's transcendental functions.** The
@@ -298,7 +300,7 @@ open gap, and the gap pass holds it back from review.
 ```toml
 [[version]]
 n = 2
-release = "next"            # stamped by `xtask release <version>`
+release = "next"            # until the design's release that carries it names it
 date = "2026-09-15"
 by = "A. Person (Solar team)"
 about = ["math", "model"]   # read off what the change touched — never typed

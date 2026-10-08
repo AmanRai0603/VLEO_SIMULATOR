@@ -28,18 +28,19 @@ A node changes in its own file, written by its node engineer, and reaches the
 design with its group's sealed release — never by editing the sheet in a browser
 and never by an assistant supplying a relation. The release goes on the shared
 drive, and the tool builds today's design from it when it opens there, checked,
-with no command in this repository (`docs/GROUP_APPS.md`). What the code does
-for a node, each command explaining itself
-(`cargo run -p xtask -- explain <command>`):
+with no command in this repository (`docs/GROUP_APPS.md`). The node arrives
+here in `design/`. What the developer does with it is check it, each command
+explaining itself (`cargo run -p xtask -- explain <command>`):
 
-    cargo run -p xtask -- publish <node>              a filled, seeded row moved to published
-    cargo run -p xtask -- build-node <node>           a node with a method, tested and connected
-    cargo run -p xtask -- gate && cargo test
+    cargo run -p xtask -- method <node>               its method, on its node engineer's cases
+    cargo run -p xtask -- ready <node>                how far it is past every machine stage
+    cargo run -p xtask -- gate <node> && cargo test
 
-What you may edit by hand in a node's folder: `node.toml` (only through a
-reviewed developer change), and `fixtures.toml` (values from outside this
-code, never `self-snapshot`). Every other file is generated and is overwritten —
-see §5. What a sheet's fields mean is
+A need the code cannot meet comes back as a request (W14), answered with an
+application release; the developer edits no node. Nothing in a node's folder is
+generated: `node.toml`, `fixtures.toml` (values from outside this code, never
+`self-snapshot`) and, where there is one, `parity.csv` are all written by hand,
+by its node engineer. What a sheet's fields mean is
 `docs/NODE_AUTHORING.md`; the method language is `docs/PSEUDOCODE.md`.
 
 A relation is a formula, and a formula lives in `vleo-core::physics` (rule 3).
@@ -123,7 +124,7 @@ its generator would write now.
 
 | Command | Reads | Writes |
 |---|---|---|
-| `xtask docs [<node>]` | each `node.toml` | the node's `meta.json`, and `docs/PSEUDOCODE.md` — a node's page is rendered when it is opened, never written |
+| `xtask docs` | the method language's checker, `vleo_sheet::method` | `docs/PSEUDOCODE.md`, the method language's reference — a node's page is rendered when it is opened, never written |
 | `xtask assemble` | every sheet | the index the faces read and every page fragment, in `generated/` |
 | `xtask variables` | every sheet | `docs/VARIABLES.md` |
 | `xtask codeowners` | every sheet's owner | `CODEOWNERS` |

@@ -23,13 +23,13 @@ sees a diff here.
 ## The generators
 
 No generator writes code: every relation is the node's method, in its sheet,
-run by the interpreter. Two run per node and read nothing but that node's
-sheet, which is what makes 1396 rows 1396 independent acts:
+run by the interpreter, and nothing in a node's folder is generated. One runs
+per node, writes nothing, and reads nothing but that node's sheet, which is
+what makes 1396 rows 1396 independent acts:
 
 | generator | emits |
 |---|---|
 | page | the node's fragment of the document — rendered from the sheet when it is opened, never written to the folder |
-| metadata | `meta.json` |
 
 Three run at assembly and may combine and refuse, never decide — a decision
 taken during assembly is a decision nobody reviewed:

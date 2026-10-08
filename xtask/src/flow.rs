@@ -1,6 +1,6 @@
 //! The release.
 //!
-//!     ship <version>                    a release branch, stamped and proved
+//!     ship <version>                    a release branch, versioned and proved
 //!
 //! THE DEVELOPER'S JOB IS THE SAME EVERY TIME, SO IT IS COMMANDS. A person
 //! who does a step by hand forgets part of it on the day they are busy — the
@@ -70,46 +70,6 @@ fn step<F: FnOnce() -> Result<(), String>>(
     f: F,
 ) -> Result<(), String> {
     run.step(what, stop, || f().map(|()| ((), String::new())))
-}
-
-/// Today's answers, recorded again after a deliberate change to the design.
-///
-/// `baseline/today.csv` holds what the engine answers, and `cargo test` fails
-/// when an answer moves. A node built from its method moves answers on
-/// purpose, so the record is written again here, before the tests,
-/// and the difference goes into the same commit as the change, where it is
-/// reviewed with it (`baseline/README.md`). What it says is how many lines
-/// moved, so the person reading the steps sees it too.
-pub(crate) fn record_today(root: &Path) -> Result<String, String> {
-    let ok = Command::new("cargo")
-        .args([
-            "test",
-            "-q",
-            "-p",
-            "vleo-cli",
-            "--test",
-            "today_s_answers_are_on_record",
-        ])
-        .env("VLEO_BASELINE", "write")
-        .current_dir(root)
-        .status()
-        .map_err(|e| e.to_string())?
-        .success();
-    if !ok {
-        return Err(
-            "today's answers could not be recorded: the engine did not build or run".into(),
-        );
-    }
-    let moved = git(root, &["diff", "--numstat", "--", "baseline/today.csv"]).unwrap_or_default();
-    let mut n = moved
-        .split_whitespace()
-        .map(|n| n.parse::<usize>().unwrap_or(0));
-    let (added, removed) = (n.next().unwrap_or(0), n.next().unwrap_or(0));
-    Ok(if added + removed == 0 {
-        "no answer moved".to_string()
-    } else {
-        format!("{added} line(s) of baseline/today.csv written, {removed} replaced: review them with the change")
-    })
 }
 
 /// A commit message that passes tools/commit_message.py: `type(scope):
@@ -238,7 +198,7 @@ pub fn cmd_ship(root: &Path, args: &[&str]) -> Result<(), String> {
     step(&mut run, "the de-risking narrative", half(), || {
         crate::cmd_derisk(root, &[])
     })?;
-    step(&mut run, "stamp the release", half(), || {
+    step(&mut run, "the workspace version", half(), || {
         crate::cmd_release(root, &[version])
     })?;
     // The version is written into the role guides and into three lockfiles
@@ -273,7 +233,7 @@ pub fn cmd_ship(root: &Path, args: &[&str]) -> Result<(), String> {
         "chore",
         "tree",
         &format!("release {version}"),
-        &[format!("`xtask ship {version}`: every node version still `next` is stamped with {version}, and the workspace and every lock file move to it.")],
+        &[format!("`xtask ship {version}`: the workspace and every lock file move to {version}.")],
     );
     step(&mut run, "commit and push", half(), || {
         git(root, &["add", "-A"])?;

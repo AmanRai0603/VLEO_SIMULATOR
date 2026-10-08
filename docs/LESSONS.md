@@ -2,7 +2,7 @@
 
 > **Answer first.** A lesson is `lesson.toml` beside a row's `node.toml`: content only — stations of text with a claim each, equations with their source, "try it" widgets that name input and output rows, check-yourself questions, references. The page draws every part from one component library, and a widget computes nothing itself: the engine answers it. The gate refuses a lesson with markup, an untagged claim, or a widget naming a row that is not there.
 >
-> **Kind:** reference · **For:** the node engineers who write lessons, and the developer who places them
+> **Kind:** reference · **For:** the node engineers who write lessons, and the developer who keeps the form and its check
 
 ## Said simply
 
@@ -52,8 +52,9 @@ the same numbers as the tool's, which the pipeline proves on every push
 
 ## How one arrives
 
-Like a change to a node: through a form, filled by the person who knows the
-row, and applied by a developer.
+Like a change to a node: through a form, filled by the node engineer who knows
+the row, and into the design with its group's release. The developer applies
+none.
 
 1. **The form.** `cargo run -p xtask -- lesson form <node> --out <file>`, or
    *write a lesson — its form* on the row's page. One HTML file that works
@@ -67,10 +68,10 @@ row, and applied by a developer.
 2. **The check.** `cargo run -p xtask -- lesson check <file>` says what the
    filled form holds and every reason it would be refused. It reads a filled
    form or a bare `lesson.toml` (with `--for <node>`), and writes nothing.
-3. **The apply.** `cargo run -p xtask -- lesson apply <file>` checks it again,
-   writes it as `lesson.toml` beside the row's `node.toml`, and gates the row —
-   or puts the row back as it was. It goes through review like a node change,
-   and ships in the kit with the row's folder.
+3. **Into the design.** The checked lesson goes into the design with its
+   group's release, as `lesson.toml` beside the row's `node.toml`, and ships
+   in the kit with the row's folder. Nothing in this repository writes it
+   beside the row.
 
 The lesson travels in the form escaped, so nothing it says can end or open an
 element of the page.

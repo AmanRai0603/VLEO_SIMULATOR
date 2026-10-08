@@ -520,82 +520,6 @@ fn write_block(a: &Array, values: &[(&str, String)]) -> String {
     o
 }
 
-/// Change one repeated block, and leave the tree consistent or untouched.
-///
-/// `op` is `add`, `set` or `remove`. `values` carries the keys to write for an
-/// add, or the one key and its value for a set.
-///
-/// This is the half that needs the tree: what the sheet already reads, and what
-/// the hand-written hole bodies in `model.rs` depend on. The textual half is
-/// `block_text`, which can be tested against a sheet in a string. The
-/// transaction is `commit_edit`'s — the same stale-hash check, atomic write,
-/// regenerate-then-gate and restore-on-any-failure that a scalar edit gets.
-pub fn save_block(
-    root: &std::path::Path,
-    id: &str,
-    name: &str,
-    op: &str,
-    index: usize,
-    values: &[(&str, String)],
-    base: &str,
-) -> Saved {
-    let Some(a) = array(name) else {
-        return Saved::Refused(format!("'{name}' is not a repeated block this form writes"));
-    };
-    let tree = match crate::load::load_all(root) {
-        Ok(t) => t,
-        Err(e) => return Saved::Refused(format!("the tree does not load: {e}")),
-    };
-    let Some(sh) = tree.sheets.get(id) else {
-        return Saved::Refused(format!("no node '{id}'"));
-    };
-    let path = sh.dir.join("node.toml");
-    let before = match std::fs::read_to_string(&path) {
-        Ok(t) => t,
-        Err(e) => return Saved::Refused(format!("{}: {e}", path.display())),
-    };
-    if base != file_hash(&before) {
-        return Saved::Stale {
-            current: file_hash(&before),
-        };
-    }
-
-    let blocks = array_blocks(&before, a.path);
-    let at = |i: usize| -> Option<(usize, usize)> { blocks.get(i).copied() };
-
-    match op {
-        "add" if a.path == "input" => {
-            // V2 — each edge is declared once, by the end it changes. That is an
-            // assembly validation, and this refuses it here so the reason names
-            // the row rather than arriving as a rolled-back tree failure.
-            if let Some((_, v)) = values.iter().find(|(k, _)| *k == "var") {
-                if sh.inputs.iter().any(|i| &i.var == v) {
-                    return Saved::Refused(format!(
-                        "this row already reads '{v}'. Each edge is declared once, by the end it \
-                         changes — a second declaration is two edges the graph cannot tell apart"
-                    ));
-                }
-            }
-        }
-        "set" | "remove" => {
-            if at(index).is_none() {
-                return Saved::Refused(no_such_block(a, blocks.len(), index));
-            }
-        }
-        _ => {}
-    }
-
-    let after = match block_text(&before, name, op, index, values) {
-        Ok(t) => t,
-        Err(e) => return Saved::Refused(e.into()),
-    };
-    // AN EDGE IS THE ONE EDIT THAT CAN BREAK A ROW THAT IS NOT THIS ONE. The
-    // per-node gate asks whether each input resolves and agrees on type; whether
-    // the edge closes a loop in the derivation graph is a question about the
-    // whole graph, and only the assembly validations can ask it.
-    commit_edit(root, id, &path, &before, after, a.path == "input")
-}
-
 fn no_such_block(a: &Array, have: usize, index: usize) -> String {
     format!(
         "this row has {have} {} block(s); there is no number {}",
@@ -606,10 +530,9 @@ fn no_such_block(a: &Array, have: usize, index: usize) -> String {
 
 /// The textual half of a block edit: what the sheet becomes.
 ///
-/// Separate from `save_block` so it can be tested against a sheet in a string.
-/// What is here is everything decidable from the file itself — the shapes, the
-/// required keys, the managed number, where a new block goes. What needs the
-/// tree or the hole bodies stays in `save_block`.
+/// Tested against a sheet in a string. What is here is everything decidable
+/// from the file itself — the shapes, the required keys, the managed number,
+/// where a new block goes.
 pub fn block_text(
     text: &str,
     name: &str,

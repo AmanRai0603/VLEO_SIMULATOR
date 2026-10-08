@@ -303,7 +303,8 @@ fn what_a_file_says_is_what_the_design_reads() {
 fn the_design_in_the_repository_is_the_design_converted() {
     // `design/` is the design as its files, committed (docs/PLAN_1_0.md,
     // phase E). Until the node sheets leave, it must be exactly what they
-    // convert to: the same files, holding the same rows.
+    // convert to: the same files, holding the same rows. Nothing writes
+    // either any more, so a difference is a hand edit to one of them.
     let (kept, _) = convert::read_folder(&root().join("design")).expect("design/ reads");
     let mut kept: Vec<(String, File)> = kept;
     let mut now = converted().to_vec();
@@ -313,8 +314,8 @@ fn the_design_in_the_repository_is_the_design_converted() {
     assert_eq!(
         names(&kept),
         names(&now),
-        "design/ holds other files than the design converts to: \
-         delete design/, then cargo run -p xtask -- convert --out design"
+        "design/ holds other files than the sheets convert to. Nothing writes either \
+         any more: one was edited by hand, and `git restore` puts it back"
     );
     for ((path, a), (_, b)) in kept.iter().zip(&now) {
         // Who converted it is the one thing that may differ.
@@ -323,8 +324,8 @@ fn the_design_in_the_repository_is_the_design_converted() {
         b.meta.remove("written_by_app");
         assert!(
             a == b,
-            "design/{path} is not the design as it converts today: \
-             delete design/, then cargo run -p xtask -- convert --out design"
+            "design/{path} is not what the sheets convert to. Nothing writes either \
+             any more: one was edited by hand, and `git restore` puts it back"
         );
     }
 }

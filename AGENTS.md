@@ -160,13 +160,11 @@ this repository takes it in. This section is deleted on that day.
   drive, it builds today's design from every group's latest sealed release that
   passes its checks, or a group's last good one, and says which and why. The
   release is never edited; a fix goes back to the group (`docs/GROUP_APPS.md`).
-- **The node sheet is the only source.** A node folder holds its sheet, its
-  fixtures and the `meta.json` generated from them, and no code: every
-  relation is the node's method, run by the interpreter.
-- **`design/` is the design as its files,** converted from the sheets and held
-  equal to them by a test. A change to a sheet converts it again in the same
-  commit: delete `design/`, then `cargo run -p xtask -- convert --out design`
-  (`build-node` does it itself).
+- **`design/` is the design as its files.** Nothing in this repository writes
+  it, or the node sheets it was converted from, any more. A test holds the two
+  equal until the sheets leave, so a difference is a hand edit, and
+  `git restore` puts it back. A node folder holds its sheet and its fixtures,
+  and no code: every relation is the node's method, run by the interpreter.
 - **`xtask explain <command>`** says what each of those commands reads, writes
   and checks, and how to undo it (`docs/PIPELINE.md`).
 
@@ -182,14 +180,13 @@ this repository takes it in. This section is deleted on that day.
                                              the pages built from the checker
     cargo run -p xtask -- kit                the application, without the
                                              repository
-    cargo run -p xtask -- ship <version>     the release branch, stamped and
+    cargo run -p xtask -- ship <version>     the release branch, versioned and
                                              proved
     cargo run -p xtask -- pipeline [--check] docs/PIPELINE.md, from the table
     VLEO_BASELINE=write cargo test -p vleo-cli --test today_s_answers_are_on_record
                                              today's answers recorded again, in
                                              the same commit as a deliberate
                                              change to the design
-                                             (`build-node` does it itself)
     cargo run -p vleo-cli --bin vleo -- run <node> [--save <file.csv>] [--keep]
 
 The commands of today's loop are in `docs/PIPELINE.md` until the switch-over.

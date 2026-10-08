@@ -74,9 +74,10 @@ The gate refuses a sheet whose table cannot be read or whose children are not
 its group's, by name.
 
 In the files (`crates/vleo-files/src/schema.sql`) a block's `behaviour` is
-written the same way, `built-in` among them. The design becomes its files once,
-at the switch-over, by `cargo run -p xtask -- convert`
-(`crates/vleo-files/src/convert.rs`): the programme's branch, the systems
+written the same way, `built-in` among them. The design was converted to its
+files, `design/`, once (`crates/vleo-files/src/convert.rs`); nothing writes them
+now, and a test holds them equal to the sheets until the sheets are retired.
+They hold the programme's branch, the systems
 branch and each subsystem group's, each a group file with a node file per row.
 Read back as the folders, they are the tree they were converted from, except
 for four things the conversion is for: each subsystem group hangs from the

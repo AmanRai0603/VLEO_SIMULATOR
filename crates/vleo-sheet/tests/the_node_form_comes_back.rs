@@ -10,7 +10,7 @@
 //! fills it without the page.
 
 use std::path::{Path, PathBuf};
-use vleo_sheet::form::{self, Saved};
+use vleo_sheet::form;
 use vleo_sheet::load::load_all;
 use vleo_sheet::template::{self, Verdict};
 
@@ -317,94 +317,6 @@ fn what_is_not_a_form_for_a_node_here_is_refused_by_name() {
         .unwrap_err()
         .message()
         .contains("a little"));
-}
-
-// ---------------------------------------------------------------------------
-// applying — against the real tree, one test at a time, and put back
-
-fn serially() -> std::sync::MutexGuard<'static, ()> {
-    static LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
-    LOCK.lock().unwrap_or_else(|p| p.into_inner())
-}
-
-/// Puts a node's folder back exactly as it was, whatever the test did.
-struct Restore(Vec<(PathBuf, Vec<u8>)>, PathBuf);
-
-impl Restore {
-    fn take(id: &str) -> Restore {
-        let tree = load_all(&root()).unwrap();
-        let dir = tree.sheets.get(id).unwrap().dir.clone();
-        let files = std::fs::read_dir(&dir)
-            .unwrap()
-            .flatten()
-            .map(|e| e.path())
-            .filter(|p| p.is_file())
-            .map(|p| {
-                let b = std::fs::read(&p).unwrap();
-                (p, b)
-            })
-            .collect();
-        Restore(files, dir)
-    }
-}
-
-impl Drop for Restore {
-    fn drop(&mut self) {
-        for e in std::fs::read_dir(&self.1).unwrap().flatten() {
-            if e.path().is_file() && !self.0.iter().any(|(p, _)| *p == e.path()) {
-                let _ = std::fs::remove_file(e.path());
-            }
-        }
-        for (p, b) in &self.0 {
-            let _ = std::fs::write(p, b);
-        }
-    }
-}
-
-fn sheet_text(id: &str) -> String {
-    let tree = load_all(&root()).unwrap();
-    std::fs::read_to_string(tree.sheets.get(id).unwrap().dir.join("node.toml")).unwrap()
-}
-
-#[test]
-fn applying_writes_regenerates_and_gates_or_puts_everything_back() {
-    let _serial = serially();
-    let _put_back = Restore::take(ROW);
-    let before = sheet_text(ROW);
-
-    // A bound the gate refuses — above the upper one — is not left behind.
-    let bad = edit(&form_for(ROW), DATA, |t| set_field(t, "lower", "1000000.0"));
-    let p = template::plan(&root(), &bad).unwrap();
-    if p.text.is_some() {
-        match template::apply(&root(), &p) {
-            Saved::Refused(_) => {}
-            Saved::Ok { .. } => panic!("a lower bound above the upper was applied"),
-            Saved::Stale { .. } => panic!("stale on a fresh plan"),
-        }
-    }
-    assert_eq!(
-        sheet_text(ROW),
-        before,
-        "a refused form left the sheet changed"
-    );
-
-    // A good one is written, and the gate passes on it.
-    let good = edit(&form_for(ROW), DATA, |t| {
-        set_field(t, "note", "A note applied from a form.")
-    });
-    let p = template::plan(&root(), &good).unwrap();
-    match template::apply(&root(), &p) {
-        Saved::Ok { .. } => {}
-        Saved::Stale { .. } => panic!("stale on a fresh plan"),
-        Saved::Refused(e) => panic!("a good form was refused: {e}"),
-    }
-    assert!(sheet_text(ROW).contains("A note applied from a form."));
-
-    // And a plan made before that write is stale now, not applied over it.
-    let late = edit(&form_for(ROW), DATA, |t| set_field(t, "note", "Too late."));
-    let mut p2 = template::plan(&root(), &late).unwrap();
-    p2.current_hash = "000000".into();
-    assert!(matches!(template::apply(&root(), &p2), Saved::Stale { .. }));
 }
 
 // ---------------------------------------------------------------------------

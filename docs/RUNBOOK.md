@@ -52,15 +52,12 @@ part is. The fix goes back to the group, which seals a new release and puts it
 beside the old one; the release is never edited. Every check is in
 `docs/GROUP_APPS.md`.
 
-A node whose method is new is built into the kernel with
-`cargo run -p xtask -- build-node <node>`, and reaches everyone in the next
-release of the tool, reviewed as `CONTRIBUTING.md` says.
-
-A row a developer starts without a release — rare, and usually structural —
-still starts with `cargo run -p xtask -- new <id> --like <sibling>`, then
-`publish`, its method — written by its node engineer — built with `build-node`,
-and the same gate; it is
-reviewed as `CONTRIBUTING.md` says.
+A node is written in its group's application and arrives in `design/`; no
+developer starts, builds or edits one. Here the developer checks it:
+`cargo run -p xtask -- method <node>` runs its method on its node engineer's
+cases, and `gate <node>` and `ready <node>` check it with the rest. A need the
+code cannot meet comes back as a request (W14), answered with an application
+release, reviewed as `CONTRIBUTING.md` says.
 
 ## When the gate refuses
 

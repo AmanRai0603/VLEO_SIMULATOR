@@ -269,36 +269,19 @@ pub(super) fn node_endpoint(ctx: &Ctx, id: &str) -> (&'static str, &'static str,
     let def = &nodes()[i as usize];
     let dir = ctx.root.join(def.folder);
 
-    // The seven files, and who writes each. This list is the template: it is
-    // the same seven for every folder in the tree, which is what makes
-    // adding the next node a copy rather than a decision.
+    // The files a node's folder holds, and who writes each. Nothing in it is
+    // generated: the node's relation is its method, run by the interpreter,
+    // and its page is rendered when it is opened.
     const ARTEFACTS: &[(&str, &str, &str)] = &[
         (
             "node.toml",
             "by hand",
-            "the sheet — the only file here written by hand",
+            "the sheet — the node's ports, its method and its record",
         ),
         (
             "fixtures.toml",
             "by hand",
             "known-good values, and where each came from",
-        ),
-        (
-            "model.rs",
-            "generated",
-            "the whole file, with one numbered HOLE per algorithm step",
-        ),
-        (
-            "contract.rs",
-            "generated",
-            "the untyped adapter the bus calls",
-        ),
-        ("mod.rs", "generated", "the module wiring"),
-        ("evidence.rs", "generated", "the fixtures, as tests"),
-        (
-            "meta.json",
-            "generated",
-            "state and hashes, written by the gate",
         ),
     ];
 
@@ -432,8 +415,8 @@ pub(super) fn lesson_json(ctx: &Ctx, id: &str) -> String {
 }
 
 /// A row's lesson form: one HTML file to fill anywhere, as `xtask lesson form`
-/// writes it. Reading it writes nothing; a filled one is applied by a
-/// developer, with `xtask lesson apply`.
+/// writes it. Reading it writes nothing; a filled one is checked with
+/// `xtask lesson check`, and goes into the design with its group's release.
 pub(super) fn lesson_form_file(ctx: &Ctx, id: &str) -> (&'static str, &'static str, Vec<u8>) {
     let id = decode(id);
     let text = |status, body: String| (status, "text/plain; charset=utf-8", body.into_bytes());

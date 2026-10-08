@@ -228,14 +228,14 @@ commit an aggregate**. The document was an aggregate hiding in plain sight.
 
 ## What is committed, and what is built
 
-**Committed** — every `node.toml`, every `fixtures.toml`, each node's
-`meta.json`, and `design/`, the design as its files. The last two are
-deliberate: a committed generated file is diffable and reviewable, and a
-generator bug is visible in a pull request rather than only in a build log.
+**Committed** — every `node.toml`, every `fixtures.toml`, and `design/`, the
+design as its files. Nothing in a node's folder is generated. `design/` is
+committed deliberately: it is diffable and reviewable, nothing in this
+repository writes it, and a test holds it equal to the sheets.
 
 **Never committed** — the assembled document, the index, the graph tables, the
 compiled engine. Every node would touch them, so every merge
 would conflict in generated content nobody is allowed to edit.
 
-One sentence: **per-node artefacts are committed, everything that combines them
+One sentence: **per-node files are committed, everything that combines them
 is built.**

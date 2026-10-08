@@ -576,9 +576,15 @@ pub(super) fn cmd_guides(root: &Path) -> Result<(), String> {
     Ok(())
 }
 
+/// `release <version> [--check]` — the application's version, set.
+///
+/// It once stamped every node version still marked `next` with the release
+/// as well. That was an edit to the design, which the developer never makes:
+/// a node's record is its node engineer's, and says which release carried
+/// each belief when the design's own release does.
 pub(super) fn cmd_release(root: &Path, args: &[&str]) -> Result<(), String> {
     use crate::pipeline::{OnStop, Run};
-    use vleo_sheet::derisk::{release_key, stamp, NEXT};
+    use vleo_sheet::derisk::{release_key, NEXT};
     let v = args
         .iter()
         .find(|a| !a.starts_with("--"))
@@ -595,94 +601,16 @@ pub(super) fn cmd_release(root: &Path, args: &[&str]) -> Result<(), String> {
             "{v} is older than the workspace's {now}; a release only moves forward"
         ));
     }
-    // What is stamped, and what already names a later release.
-    let versions = |tree: &Tree| {
-        let mut newer = Vec::new();
-        let mut pending = Vec::new();
-        for sh in tree.ordered() {
-            for ver in &sh.versions {
-                if ver.release == NEXT {
-                    pending.push(format!("{} v{}", sh.id, ver.n));
-                } else if release_key(&ver.release) > Some(key) {
-                    newer.push(format!("{} v{} says {}", sh.id, ver.n, ver.release));
-                }
-            }
-        }
-        (newer, pending)
-    };
     if args.contains(&"--check") {
         // Only reads: the check the release pipeline runs, and --dry-run.
-        let (newer, pending) = versions(&load(root)?);
-        if !newer.is_empty() {
-            return Err(format!(
-                "these versions already name a later release than {v}: {}",
-                newer.join(", ")
-            ));
-        }
         if v != now {
             return Err(format!("the workspace says {now}, and the release is {v}. Run `cargo xtask release {v}` and commit"));
         }
-        if !pending.is_empty() {
-            return Err(format!(
-                "{} version(s) are still `next`, so this release would ship beliefs it does not name: {}. \
-                 Run `cargo xtask release {v}` and commit",
-                pending.len(),
-                pending.join(", ")
-            ));
-        }
-        println!("release {v}: every node version is stamped, and the workspace says {v}");
+        println!("release {v}: the workspace says {v}");
         return Ok(());
     }
-    let mut run = Run::start(root, "release", args, 4);
+    let mut run = Run::start(root, "release", args, 2);
     let again = format!("cargo run -p xtask -- release {v}");
-    let tree = run.step(
-        "check the versions",
-        OnStop::new("unchanged — nothing was written", &again),
-        || {
-            let tree = load(root)?;
-            let (newer, pending) = versions(&tree);
-            if !newer.is_empty() {
-                return Err(format!(
-                    "these versions already name a later release than {v}: {}",
-                    newer.join(", ")
-                ));
-            }
-            let said = format!(
-                "{} version(s) to stamp; the workspace says {now}",
-                pending.len()
-            );
-            Ok((tree, said))
-        },
-    )?;
-    run.step(
-        "stamp the versions",
-        OnStop::new(
-            "the sheets stamped before the one that failed are stamped; `git diff` shows which",
-            format!("`git restore` the sheets, then {again}"),
-        ),
-        || {
-            let mut stamped = 0;
-            let mut nodes = 0;
-            for sh in tree.ordered() {
-                if !sh.versions.iter().any(|x| x.release == NEXT) {
-                    continue;
-                }
-                let path = sh.dir.join("node.toml");
-                let text =
-                    fs::read_to_string(&path).map_err(|e| format!("{}: {e}", path.display()))?;
-                let (out, n) = stamp(&text, v);
-                if n > 0 {
-                    fs::write(&path, out).map_err(|e| format!("{}: {e}", path.display()))?;
-                    stamped += n;
-                    nodes += 1;
-                }
-            }
-            Ok((
-                (),
-                format!("{stamped} version(s) stamped on {nodes} node(s)"),
-            ))
-        },
-    )?;
     if v == now {
         run.skip(
             "set the workspace version",
@@ -692,7 +620,7 @@ pub(super) fn cmd_release(root: &Path, args: &[&str]) -> Result<(), String> {
         run.step(
             "set the workspace version",
             OnStop::new(
-                "the sheets are stamped; Cargo.toml or a lock file may be changed — `git diff` shows which",
+                "Cargo.toml or a lock file may be changed — `git diff` shows which",
                 format!("`git restore Cargo.toml Cargo.lock crates/*/Cargo.lock`, then {again}"),
             ),
             || {
@@ -742,17 +670,17 @@ pub(super) fn cmd_release(root: &Path, args: &[&str]) -> Result<(), String> {
     run.step(
         "regenerate",
         OnStop::new(
-            "stamped and versioned; the generated files are part written",
+            "versioned; the generated files are part written",
             "cargo run -p xtask -- docs && cargo run -p xtask -- derisk",
         ),
         || {
-            cmd_docs(root, &[])?;
+            cmd_docs(root)?;
             cmd_derisk(root, &[])?;
-            Ok(((), "node files and the de-risking narrative".to_string()))
+            Ok(((), "the language page and the de-risking narrative".to_string()))
         },
     )?;
     run.done(&format!(
-        "release {v}: stamped, workspace {now} -> {v}.\n\
+        "release {v}: workspace {now} -> {v}.\n\
          Next: `cargo run -p xtask -- gate && cargo test`, commit, then tag v{v}."
     ));
     Ok(())
