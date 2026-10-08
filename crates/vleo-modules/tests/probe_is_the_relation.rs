@@ -10,7 +10,9 @@
 //! fixture's inputs must reproduce that fixture's expected value, which came
 //! from a published source rather than from this code.
 
-use vleo_modules::{probe, Vleo, NODES};
+mod design;
+
+use vleo_modules::{nodes, probe, Vleo};
 
 /// Every fixture in the tree, asked of the probe.
 ///
@@ -19,8 +21,9 @@ use vleo_modules::{probe, Vleo, NODES};
 /// fixture in the tree is the thing that notices.
 #[test]
 fn a_probe_reproduces_every_fixture() {
+    crate::design::open();
     let mut checked = 0usize;
-    for (i, def) in NODES.iter().enumerate() {
+    for (i, def) in nodes().iter().enumerate() {
         if !def.state.runnable() {
             continue;
         }
@@ -54,6 +57,7 @@ fn a_probe_reproduces_every_fixture() {
 /// now sizes itself somewhere else entirely.
 #[test]
 fn a_probe_ignores_what_the_design_is_wired_to() {
+    crate::design::open();
     let k = Vleo::find("env_exospheric_temperature").expect("the row exists");
     let old = probe(k, &[150.0, 150.0, 3.0]).expect("the old declared point");
     assert!(
@@ -81,12 +85,13 @@ fn a_probe_ignores_what_the_design_is_wired_to() {
 /// exactly where a positional mix-up produces a plausible number and no error.
 #[test]
 fn the_input_order_is_the_declared_order() {
+    crate::design::open();
     let k = Vleo::find("env_exospheric_temperature").expect("the row exists");
-    let def = &NODES[k as usize];
+    let def = &nodes()[k as usize];
     let names: Vec<&str> = def
         .inputs
         .iter()
-        .map(|&v| vleo_modules::VARS[v as usize].id)
+        .map(|&v| vleo_modules::vars()[v as usize].id)
         .collect();
     assert_eq!(names, vec!["env_f107", "env_f107a", "env_kp"]);
 

@@ -11,8 +11,10 @@
 //! never accounted for, and the resolver refuses it rather than printing it
 //! beside the ones it has.
 
+mod design;
+
 use vleo_bus::{Case, RunMode};
-use vleo_modules::{Scratch, NODES};
+use vleo_modules::{nodes, Scratch};
 
 fn run(node: &str, mode: RunMode) -> Result<vleo_bus::Results, vleo_core::fault::Fault> {
     let case = Case {
@@ -40,7 +42,8 @@ fn alone(node: &str) -> vleo_bus::Results {
 /// assertion below is vacuously true and this file is decoration.
 #[test]
 fn the_tree_has_functions_on_both_sides_of_the_rule() {
-    let runnable = || NODES.iter().filter(|d| d.state.runnable());
+    crate::design::open();
+    let runnable = || nodes().iter().filter(|d| d.state.runnable());
     let derived = runnable().filter(|d| d.is_function() && d.derived).count();
     let undefined = runnable().filter(|d| d.is_function() && !d.derived).count();
     let inputs = runnable().filter(|d| !d.is_function()).count();
@@ -57,7 +60,8 @@ fn the_tree_has_functions_on_both_sides_of_the_rule() {
 /// happened to write a test for is not a rule.
 #[test]
 fn every_undefined_function_refuses_by_name() {
-    for def in NODES.iter().filter(|d| d.state.runnable()) {
+    crate::design::open();
+    for def in nodes().iter().filter(|d| d.state.runnable()) {
         if !def.is_function() || def.derived {
             continue;
         }
@@ -86,8 +90,9 @@ fn every_undefined_function_refuses_by_name() {
 /// values at all, which passes the test above perfectly.
 #[test]
 fn an_input_answers_from_its_default() {
+    crate::design::open();
     let mut checked = 0usize;
-    for def in NODES.iter().filter(|d| d.state.runnable()) {
+    for def in nodes().iter().filter(|d| d.state.runnable()) {
         if def.is_function() || !def.inputs.is_empty() {
             continue;
         }
@@ -111,12 +116,13 @@ fn an_input_answers_from_its_default() {
 /// has to fix it.
 #[test]
 fn a_consumer_blocks_on_a_named_row() {
+    crate::design::open();
     // The largest consumer of undefined work in the tree, found rather than
     // written down — whichever row it is, its refusal must name somebody.
     // A branch run, because this is about the closure. A declared cycle the
     // case does not carry is a different refusal and not this test's business,
     // so those are skipped rather than asserted about.
-    let target = NODES
+    let target = nodes()
         .iter()
         .filter(|d| d.state.runnable() && d.is_function() && d.derived)
         .filter_map(|d| run(d.id, RunMode::Branch).ok().map(|r| (d.id, r)))
@@ -134,7 +140,7 @@ fn a_consumer_blocks_on_a_named_row() {
         "{id} blamed itself for an upstream gap"
     );
     let named = own.message.split_whitespace().any(|w| {
-        NODES
+        nodes()
             .iter()
             .any(|d| d.id == w.trim_matches(|c: char| !c.is_alphanumeric() && c != '_'))
     });
@@ -158,6 +164,7 @@ fn a_consumer_blocks_on_a_named_row() {
 /// bundle is on the disk is a question about the machine, not about this rule.
 #[test]
 fn mathematics_is_scored_on_the_attribution_not_the_citation() {
+    crate::design::open();
     use vleo_core::credibility::{score, CredVec, Factor};
     // Everything except the factor under test is held at its best, upstream
     // included. The chain is folded in factor by factor at the end of `score`,
@@ -169,7 +176,7 @@ fn mathematics_is_scored_on_the_attribution_not_the_citation() {
     }
     let m = |def| score(def, true, true, true, best).get(Factor::Mathematics);
     let (mut unconfirmed, mut confirmed) = (0usize, 0usize);
-    for def in NODES
+    for def in nodes()
         .iter()
         .filter(|d| d.state.runnable() && d.is_function() && d.derived)
     {
@@ -204,7 +211,8 @@ fn mathematics_is_scored_on_the_attribution_not_the_citation() {
 /// no attribution — so a change that collapsed them would have to fail here.
 #[test]
 fn an_unconfirmed_relation_is_not_withheld() {
-    let answered = NODES
+    crate::design::open();
+    let answered = nodes()
         .iter()
         .filter(|d| d.state.runnable() && d.is_function() && d.derived && d.relation_by.is_empty())
         .filter(|d| {

@@ -9,6 +9,8 @@
 
 #![cfg(feature = "std")]
 
+mod design;
+
 use vleo_bus::{Case, RunMode};
 use vleo_modules::inputs::case_inputs;
 use vleo_modules::results::{from_run, question_for, read, store, thin, Saved};
@@ -41,6 +43,7 @@ const NOW: i64 = 1_790_640_000;
 
 #[test]
 fn thinning_keeps_the_inputs_the_answer_and_what_could_not_run() {
+    crate::design::open();
     let (s, _) = saved_at("2026-08-01T10:00:00Z", None);
     assert!(
         s.outputs.len() > 5,
@@ -73,6 +76,7 @@ fn thinning_keeps_the_inputs_the_answer_and_what_could_not_run() {
 
 #[test]
 fn old_unpinned_results_are_thinned_and_the_rest_left_whole() {
+    crate::design::open();
     let d = dir("thin");
     let (old, _) = saved_at("2026-08-01T10:00:00Z", None);
     let (pinned, _) = saved_at("2026-08-01T10:00:01Z", Some(case_inputs()[0].hi));
@@ -123,6 +127,7 @@ fn old_unpinned_results_are_thinned_and_the_rest_left_whole() {
 
 #[test]
 fn a_thinned_result_is_not_an_answer_to_reuse() {
+    crate::design::open();
     let d = dir("reuse");
     let (old, case) = saved_at("2026-08-01T10:00:00Z", None);
     let q = question_for(&case, None);
@@ -143,6 +148,7 @@ fn a_thinned_result_is_not_an_answer_to_reuse() {
 
 #[test]
 fn the_index_answers_and_is_rebuilt_when_the_folder_moves_on() {
+    crate::design::open();
     let d = dir("index");
     let (one, c1) = saved_at("2026-09-01T10:00:00Z", None);
     let (a, _) = store::save(&d, &one).unwrap();
@@ -187,6 +193,7 @@ fn the_index_answers_and_is_rebuilt_when_the_folder_moves_on() {
 
 #[test]
 fn a_result_exactly_the_keep_period_old_is_kept_whole() {
+    crate::design::open();
     let d = dir("edge");
     let at = |t: i64| vleo_units::calendar::Civil::from_unix(t).to_string();
     let (edge, _) = saved_at(&at(NOW - 30 * DAY), None);

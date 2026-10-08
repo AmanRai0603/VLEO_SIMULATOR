@@ -15,6 +15,8 @@
 
 #![cfg(feature = "std")]
 
+mod design;
+
 use vleo_bus::{Case, RunMode};
 use vleo_modules::inputs::case_inputs;
 use vleo_modules::results::{
@@ -72,6 +74,7 @@ fn dir(tag: &str) -> std::path::PathBuf {
 
 #[test]
 fn the_key_a_request_works_out_is_the_key_of_the_result_it_saved() {
+    crate::design::open();
     let i = input();
     let v = (i.default + i.hi) / 3.0 + i.lo / 3.0;
     let case = case_at(v);
@@ -98,6 +101,7 @@ fn the_key_a_request_works_out_is_the_key_of_the_result_it_saved() {
 
 #[test]
 fn anything_that_changes_the_answer_changes_the_question() {
+    crate::design::open();
     let i = input();
     let base = case_at(i.default);
     let q = question_for(&base, None);
@@ -138,6 +142,7 @@ fn anything_that_changes_the_answer_changes_the_question() {
 
 #[test]
 fn a_sweep_and_its_report_come_back_whole() {
+    crate::design::open();
     let w = a_sweep();
     assert_eq!(
         read_sweep(&sweep_csv(&w)).unwrap(),
@@ -158,6 +163,7 @@ fn a_sweep_and_its_report_come_back_whole() {
 
 #[test]
 fn a_question_is_kept_once_and_found_again() {
+    crate::design::open();
     let d = dir("once");
     let case = case_at(input().default);
     let s = saved(&case);
@@ -187,6 +193,7 @@ fn a_question_is_kept_once_and_found_again() {
 
 #[test]
 fn a_result_kept_as_one_file_is_still_read_and_what_is_not_a_result_is_left_alone() {
+    crate::design::open();
     let d = dir("old");
     std::fs::create_dir_all(&d).unwrap();
     let s = saved(&case_at(input().default));

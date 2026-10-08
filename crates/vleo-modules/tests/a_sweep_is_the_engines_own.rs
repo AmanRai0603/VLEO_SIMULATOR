@@ -4,6 +4,8 @@
 //! there; the axis must be a row a reader can move; a sweep needs two points;
 //! and every point that could not be computed is kept with why, never dropped.
 
+mod design;
+
 use vleo_bus::{Case, RunMode};
 use vleo_modules::results::sweep;
 use vleo_modules::{evaluate, Scratch};
@@ -18,6 +20,7 @@ fn base() -> Case {
 
 #[test]
 fn every_point_is_the_answer_a_single_run_gives_there() {
+    crate::design::open();
     let w = sweep(
         &base(),
         "sw_ap_design_long",
@@ -49,6 +52,7 @@ fn every_point_is_the_answer_a_single_run_gives_there() {
 
 #[test]
 fn the_axis_is_a_row_a_reader_can_move_and_a_sweep_has_two_points() {
+    crate::design::open();
     let e = sweep(
         &base(),
         "sw_ap_design_long",
@@ -82,6 +86,7 @@ fn the_axis_is_a_row_a_reader_can_move_and_a_sweep_has_two_points() {
 
 #[test]
 fn a_point_that_cannot_be_computed_is_kept_with_why() {
+    crate::design::open();
     // Needs reference data this test does not supply: every point refuses,
     // and every one is kept.
     let w = sweep(

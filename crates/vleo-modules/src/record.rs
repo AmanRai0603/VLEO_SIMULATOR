@@ -620,18 +620,22 @@ pub fn mean_cycle(
 }
 
 /// Which band a day's value falls in, as the row that defines the bands
-/// says: `sw_activity_band` for F10.7, `sw_regime` for Ap. Counted from 0.
-/// `Err` is the row refusing the day, which is counted and never guessed.
+/// says: `sw_activity_band` for F10.7, `sw_regime` for Ap, each run as the
+/// design that is open states it. Counted from 0. `Err` is the row refusing
+/// the day, or not being in the design, which is counted and never guessed.
 fn band_of(driver: Driver, x: f64) -> Result<usize, ()> {
-    use vleo_core::units::Ratio;
-    use vleo_mod_solar::nodes::{sw_activity_band, sw_regime};
-    let b = match driver {
-        Driver::F107 => sw_activity_band::model::evaluate(Ratio::new(x)),
-        Driver::Ap => sw_regime::model::evaluate(Ratio::new(x)),
+    let id = match driver {
+        Driver::F107 => "sw_activity_band",
+        Driver::Ap => "sw_regime",
         Driver::Ssn => return Err(()),
+    };
+    let g = crate::engine();
+    let k = g.find(id).ok_or(())?;
+    let b = g.probe(k, &[x]).map_err(|_| ())?[0];
+    if b.is_nan() || b < 1.0 {
+        return Err(());
     }
-    .map_err(|_| ())?;
-    Ok(b.get() as usize - 1)
+    Ok(b as usize - 1)
 }
 
 /// How many bands each row defines — its declared range, 1 to 4 for
@@ -1545,6 +1549,16 @@ pub fn drivers_parity(
 mod tests {
     use super::*;
 
+    /// The design these tests band days by: its files in `design/`, read
+    /// once and installed as the graph the engine runs.
+    fn design() {
+        static ONCE: std::sync::Once = std::sync::Once::new();
+        ONCE.call_once(|| {
+            let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+            crate::run_on(crate::opened::read(&root).expect("the design's files make a graph"));
+        });
+    }
+
     fn day(n: i32, f107: Option<f64>, ap: Option<f64>) -> SolarDay {
         SolarDay {
             day: n,
@@ -1795,6 +1809,7 @@ mod tests {
 
     #[test]
     fn the_bands_are_the_rows_own_and_the_cuts_are_where_the_record_crosses_them() {
+        design();
         // Ap either side of sw_regime's cuts, quiet to 6, active to 25.
         let ap: Vec<SolarDay> = [
             Some(0.0),
@@ -1849,6 +1864,7 @@ mod tests {
 
     #[test]
     fn storm_and_quiet_shares_are_counted_per_phase_by_the_regime_row() {
+        design();
         // Twenty days of one complete cycle: one day in each phase bin. Day
         // 0 is a storm, day 2 active, the rest quiet.
         let rec: Vec<SolarDay> = (0..20)

@@ -9,6 +9,8 @@
 
 #![cfg(feature = "std")]
 
+mod design;
+
 use std::path::PathBuf;
 
 use vleo_bus::{Case, RunMode};
@@ -21,11 +23,13 @@ fn root() -> PathBuf {
 
 #[test]
 fn a_relation_built_from_another_implementation_is_refused_by_name() {
+    crate::design::open();
     refused_when(|sh| sh.impl_hash ^= 1);
 }
 
 #[test]
 fn a_relation_built_from_another_sheet_is_refused_by_name() {
+    crate::design::open();
     refused_when(|sh| sh.sheet_hash ^= 1);
 }
 
@@ -36,7 +40,7 @@ fn refused_when(moved: impl Fn(&mut vleo_sheet::model::Sheet)) {
     // seen runs in the interpreter; so the row is taken without its method,
     // as a relation this build holds as code, found by its id …
     let all = Case {
-        target: vleo_modules::NODES[0].id.to_string(),
+        target: vleo_modules::nodes()[0].id.to_string(),
         mode: RunMode::All,
         ..Default::default()
     };
@@ -47,7 +51,7 @@ fn refused_when(moved: impl Fn(&mut vleo_sheet::model::Sheet)) {
         .map(|v| v.id.clone())
         .find(|v| {
             vleo_modules::Vleo::find(v)
-                .is_some_and(|k| vleo_modules::NODES[k as usize].kind == Kind::Computed)
+                .is_some_and(|k| vleo_modules::nodes()[k as usize].kind == Kind::Computed)
         })
         .expect("a computed row that answers");
     tree.sheets.get_mut(&id).unwrap().method = Default::default();
