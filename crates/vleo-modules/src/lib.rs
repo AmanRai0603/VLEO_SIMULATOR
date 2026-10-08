@@ -5,10 +5,10 @@
 //! one unit per subsystem, so they build in parallel, and no face can reach a module
 //! directly — which is why adding a face cannot change a result.
 //!
-//! This crate holds **no formula**. It holds the tables generated from the
-//! sheets and the adapter that moves values between the store and a node's
-//! typed function. `cargo xtask gate` fails the build if a formula appears
-//! here.
+//! This crate holds **no formula** and no design. It holds the graph read
+//! from the design's files when a face opens it (`opened`), and the adapter
+//! that moves values between the store and a node's relation. `cargo xtask
+//! gate` fails the build if a formula appears here.
 #![cfg_attr(not(feature = "std"), no_std)]
 #![forbid(unsafe_code)]
 
@@ -24,20 +24,7 @@ use vleo_core::resolver::{self, CycleSpec, RunReport, Workspace};
 use vleo_core::value::{Slot, SlotStatus, Store};
 use vleo_units::Unit;
 
-/// The graph, compiled in.
-///
-/// A declared limit that happens to equal pi/2 — an inclination bound, a beta
-/// angle — is a bound, not an approximation standing in for a named constant,
-/// so the lint that would rewrite it is switched off across the generated
-/// tables.
-#[allow(clippy::approx_constant)]
-pub mod tables {
-    include!(concat!(env!("OUT_DIR"), "/tables.rs"));
-}
-
 include!(concat!(env!("OUT_DIR"), "/engine_source.rs"));
-
-pub use tables::{CASES, GROUPS, NODES, NODE_COUNT, RELATIONS, VARS, VAR_COUNT};
 
 /// The most inputs a row may declare: the size of the engine's scratch.
 ///
@@ -103,19 +90,14 @@ pub type NodeFn = fn(&[f64], &mut [f64]) -> Result<(), Fault>;
 pub type Relation = dyn Fn(&[f64], &mut [f64]) -> Result<(), Fault> + Send + Sync;
 
 /// The graph the engine runs: its nodes, its variables, each node's relation
-/// and the cases.
-///
-/// The graph compiled into this build is [`COMPILED`]. One read from the
-/// design's files when the engine opens has the same shape (`opened`,
-/// docs/PLAN_1_0.md phase D), so both run through this one engine and each is
-/// the other's check: there is no second resolver, adapter or fixture runner
-/// for a parity gate to compare against itself.
+/// and the cases, read from the design's files when a face opens it
+/// (`opened`, docs/PLAN_1_0.md phases D and E).
 pub struct Graph {
     pub nodes: &'static [NodeDef],
     pub vars: &'static [VarDef],
     pub dispatch: &'static [NodeFn],
     /// Each node's relation when the graph runs it itself, in place of its
-    /// entry in `dispatch`. Empty for the compiled graph.
+    /// entry in `dispatch`, which then only refuses.
     pub run: &'static [Option<&'static Relation>],
     pub cases: &'static [CaseDef],
     /// The headings of the tree the rows hang from.
@@ -162,16 +144,18 @@ impl Default for CasesRun {
     }
 }
 
-/// The graph compiled into this build, from the sheets as they were.
-pub static COMPILED: Graph = Graph {
-    nodes: &NODES,
-    vars: &VARS,
-    dispatch: &tables::DISPATCH,
+/// The graph before a face has opened a design: no rows. Every face opens
+/// the design before it asks the engine anything, and refuses, saying why,
+/// when it cannot; a row asked of this graph is not in it.
+pub static EMPTY: Graph = Graph {
+    nodes: &[],
+    vars: &[],
+    dispatch: &[],
     run: &[],
-    cases: &CASES,
-    groups: &GROUPS,
-    relations: &RELATIONS,
-    versions: tables::NODE_VERSIONS,
+    cases: &[],
+    groups: &[],
+    relations: &[],
+    versions: &[],
     cases_run: CasesRun::new(),
 };
 
@@ -180,7 +164,7 @@ pub static COMPILED: Graph = Graph {
 static ENGINE: std::sync::RwLock<Option<&'static Graph>> = std::sync::RwLock::new(None);
 
 /// The graph the engine runs: the one a face installed from the design's
-/// files ([`run_on`]), or the compiled one until it does. Every function a
+/// files ([`run_on`]), or [`EMPTY`] until it does. Every function a
 /// face calls — [`evaluate`], [`probe`], [`fixture_verdicts`], [`Vleo::find`]
 /// and the rest — runs on this one.
 pub fn engine() -> &'static Graph {
@@ -190,7 +174,7 @@ pub fn engine() -> &'static Graph {
             return g;
         }
     }
-    &COMPILED
+    &EMPTY
 }
 
 /// The rows of the graph the engine runs, in its order.
@@ -230,17 +214,11 @@ pub fn run_on(graph: &'static Graph) {
     *ENGINE.write().unwrap_or_else(|e| e.into_inner()) = Some(graph);
 }
 
-/// Run the engine on the compiled graph again.
-#[cfg(feature = "std")]
-pub fn run_compiled() {
-    *ENGINE.write().unwrap_or_else(|e| e.into_inner()) = None;
-}
-
 impl Graph {
     /// Run node `i` as its behaviour says: an open row refuses by its own id;
     /// a lookup is read along its table and its children's ports are its
     /// answer, both by the engine itself; any other row runs its relation —
-    /// the graph's own when it has one, else the compiled function.
+    /// the graph's own when it has one, else its refusal.
     pub fn call(&self, i: usize, inputs: &[f64], outputs: &mut [f64]) -> Result<(), Fault> {
         let def = &self.nodes[i];
         match def.behaviour {

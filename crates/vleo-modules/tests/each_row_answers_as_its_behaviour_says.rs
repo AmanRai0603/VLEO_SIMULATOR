@@ -18,7 +18,7 @@ use std::sync::OnceLock;
 use vleo_bus::{Case, RunMode};
 use vleo_modules::core_engine::fault::{Edge, Fault};
 use vleo_modules::core_engine::graph::Behaviour;
-use vleo_modules::{opened, Graph, Scratch, COMPILED};
+use vleo_modules::{opened, Graph, Scratch};
 use vleo_sheet::gate::{gate_node, Verdict};
 use vleo_sheet::load::Tree;
 use vleo_sheet::model::{ChildrenOf, Lookup};
@@ -79,14 +79,13 @@ fn gate(tree: &Tree, id: &str, check: &str) -> Verdict {
 }
 
 #[test]
-fn every_row_has_one_behaviour_and_the_generator_and_the_reader_agree() {
+fn every_row_has_one_behaviour_and_it_is_the_one_its_sheet_names() {
     let t = tree();
     let read = opened::graph(&t).unwrap();
     let mut counts: BTreeMap<&str, usize> = BTreeMap::new();
-    for (k, def) in COMPILED.nodes.iter().enumerate() {
+    for def in read.nodes.iter() {
         let sh = &t.sheets[def.id];
         assert_eq!(def.behaviour.name(), sh.behaviour(), "{}", def.id);
-        assert_eq!(read.nodes[k].behaviour, def.behaviour, "{}", def.id);
         *counts.entry(def.behaviour.name()).or_default() += 1;
     }
     // Counted from the sheets, by what each says of itself.
@@ -104,12 +103,13 @@ fn every_row_has_one_behaviour_and_the_generator_and_the_reader_agree() {
         None,
         "no row is answered by its children yet"
     );
-    assert_eq!(counts.values().sum::<usize>(), COMPILED.nodes.len());
+    assert_eq!(counts.values().sum::<usize>(), t.sheets.len());
 }
 
 #[test]
 fn an_open_row_refuses_by_its_own_id() {
-    let (k, def) = COMPILED
+    let g = opened::graph(&tree()).unwrap();
+    let (k, def) = g
         .nodes
         .iter()
         .enumerate()
@@ -117,7 +117,7 @@ fn an_open_row_refuses_by_its_own_id() {
         .expect("an open row that reads something");
     let mut out = [0.0; 8];
     let ins = vec![1.0; def.inputs.len()];
-    let e = COMPILED
+    let e = g
         .call(k, &ins, &mut out[..def.outputs.len()])
         .expect_err("an open row answered");
     assert_eq!(e, Fault::NotRun { node: def.id });

@@ -95,6 +95,8 @@ fn main() -> ExitCode {
             | "list"
             | "show"
             | "figure"
+            | "result"
+            | "results"
             | "cases"
             | "inputs"
             | "selftest"

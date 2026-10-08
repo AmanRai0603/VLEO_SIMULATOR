@@ -10,7 +10,7 @@ use std::path::PathBuf;
 use std::sync::OnceLock;
 
 use vleo_bus::Case;
-use vleo_modules::{opened, COMPILED};
+use vleo_modules::{opened, Graph};
 
 fn root() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..")
@@ -18,6 +18,12 @@ fn root() -> PathBuf {
 
 fn tree() -> vleo_sheet::load::Tree {
     vleo_sheet::load_all(&root()).unwrap()
+}
+
+/// Today's design as the sheets hold it, read once.
+fn today() -> &'static Graph {
+    static G: OnceLock<&'static Graph> = OnceLock::new();
+    G.get_or_init(|| opened::graph(&tree()).unwrap())
 }
 
 fn with_data() -> Case {
@@ -39,26 +45,29 @@ fn with_data() -> Case {
 }
 
 #[test]
-fn the_design_read_from_its_files_is_known_as_the_one_compiled() {
-    let t = tree();
-    let compiled = COMPILED.design_fingerprint();
-    assert_eq!(
-        compiled,
-        COMPILED.design_fingerprint(),
-        "not the same twice"
+fn the_design_read_from_its_files_is_known_by_the_same_fingerprint_each_time() {
+    // Its files in design/, read twice as the tool reads them, independently:
+    // the same design, answering alike, with the reference data and without.
+    let (one, two) = (
+        opened::read(&root()).unwrap(),
+        opened::read(&root()).unwrap(),
     );
-    assert_eq!(opened::graph(&t).unwrap().design_fingerprint(), compiled);
-    // And it answers alike, with the reference data and without it.
-    let g = opened::graph(&t).unwrap();
+    assert!(!std::ptr::eq(one, two), "read once, not twice");
+    assert_eq!(one.design_fingerprint(), two.design_fingerprint());
     for case in [with_data(), Case::default()] {
         assert_eq!(
-            g.answers_fingerprint(&case).unwrap(),
-            COMPILED.answers_fingerprint(&case).unwrap()
+            one.answers_fingerprint(&case).unwrap(),
+            two.answers_fingerprint(&case).unwrap()
         );
     }
+    // The sheets they were converted from, likewise.
+    assert_eq!(
+        today().design_fingerprint(),
+        opened::graph(&tree()).unwrap().design_fingerprint()
+    );
     assert_ne!(
-        COMPILED.answers_fingerprint(&with_data()).unwrap(),
-        COMPILED.answers_fingerprint(&Case::default()).unwrap(),
+        today().answers_fingerprint(&with_data()).unwrap(),
+        today().answers_fingerprint(&Case::default()).unwrap(),
         "the reference data changes what the design answers"
     );
 }
@@ -68,7 +77,7 @@ type Edit = fn(&mut vleo_sheet::load::Tree);
 
 #[test]
 fn anything_the_design_runs_moves_its_fingerprint() {
-    let base = COMPILED.design_fingerprint();
+    let base = today().design_fingerprint();
     let edits: [(&str, Edit); 5] = [
         ("a relation's implementation", |t| {
             t.sheets.get_mut("sw_f107_design_long").unwrap().impl_hash ^= 1;
@@ -112,10 +121,10 @@ fn an_answer_that_moves_moves_the_answers_fingerprint() {
     let m = &mut t.sheets.get_mut("sw_f107_design_long").unwrap().method.text;
     *m = m.replace("const z = 1.28 [1]", "const z = 1.29 [1]");
     let g = opened::graph(&t).unwrap();
-    assert_eq!(g.design_fingerprint(), COMPILED.design_fingerprint());
+    assert_eq!(g.design_fingerprint(), today().design_fingerprint());
     let case = with_data();
     assert_ne!(
         g.answers_fingerprint(&case).unwrap(),
-        COMPILED.answers_fingerprint(&case).unwrap()
+        today().answers_fingerprint(&case).unwrap()
     );
 }

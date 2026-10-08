@@ -91,8 +91,7 @@ def engine():
 
     The design is opened before the first answer — the design's files the
     package carries, or a checkout's — as the tool opens them. A design that does not open
-    raises ``RuntimeError`` naming why; the graph compiled into the engine is
-    never run in its place.
+    raises ``RuntimeError`` naming why, and nothing is run in its place.
     """
     global _engine_runs
     if _engine_runs is None:

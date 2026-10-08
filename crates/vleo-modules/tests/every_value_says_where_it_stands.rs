@@ -15,7 +15,7 @@ use std::sync::OnceLock;
 use vleo_bus::Case;
 use vleo_modules::core_engine::graph::{Kind, Maturity, PortState, State};
 use vleo_modules::health::{health, range, Verdict};
-use vleo_modules::{opened, Graph, COMPILED};
+use vleo_modules::{opened, Graph};
 use vleo_sheet::gate::{gate_node, Verdict as Gate};
 use vleo_sheet::load::Tree;
 
@@ -85,16 +85,13 @@ fn port_check(t: &Tree, id: &str) -> Gate {
 }
 
 #[test]
-fn every_value_has_a_state_read_alike_by_the_generator_and_the_reader() {
+fn every_value_has_a_state_read_from_its_sheet() {
     let t = tree();
     let read = opened::graph(&t).unwrap();
-    for (v, var) in COMPILED.vars.iter().enumerate() {
-        assert_eq!(read.vars[v].port, var.port, "{}", var.id);
-    }
     // When a sheet says nothing, its row says it: a stated value is decided,
     // a requirement allocated, a row not decided yet open, the rest achieved.
-    for def in COMPILED.nodes.iter() {
-        let port = COMPILED.vars[def.outputs[0] as usize].port;
+    for def in read.nodes.iter() {
+        let port = read.vars[def.outputs[0] as usize].port;
         let expected = if def.state == State::Empty {
             PortState::Open
         } else {

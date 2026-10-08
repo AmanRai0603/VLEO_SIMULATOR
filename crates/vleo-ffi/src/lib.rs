@@ -138,10 +138,10 @@ pub unsafe extern "C" fn vleo_last_message(buf: *mut c_char, len: c_int) -> c_in
 /// and run the engine on the graph read from its files, as the server and the
 /// command line do. A null `root` finds the design as the tool finds it.
 ///
-/// Until it is called, the engine runs the graph compiled into it. A design
-/// that does not open returns [`VLEO_DESIGN`], and the engine goes on running
-/// what it ran before; `vleo_last_message` says why, or, on success, which
-/// graph runs.
+/// Until it is called, the engine has no design: it holds no rows, and every
+/// row asked of it is not in it. A design that does not open returns
+/// [`VLEO_DESIGN`], and the engine goes on running what it ran before;
+/// `vleo_last_message` says why, or, on success, which graph runs.
 ///
 /// Call it once, before the first evaluation and from one thread: it changes
 /// which graph every thread's next evaluation runs.

@@ -12,9 +12,9 @@
 //! SQLite reads (`vleo_files::rows::encode_design`), and it builds the graph
 //! from them as the tool does from the files on the drive — read with no
 //! folder behind them, every method run by the interpreter. Until a design is
-//! open it runs nothing, and says so; the compiled graph is never run in its
-//! place. Reference data does not travel here, so a row that declares a
-//! bundle refuses by name, as it would in an engine with none installed.
+//! open it runs nothing, and says so; nothing is run in its place. Reference
+//! data does not travel here, so a row that declares a bundle refuses by name,
+//! as it would in an engine with none installed.
 //!
 //! The protocol is the form checker's: the page asks for `len` bytes with
 //! `vleo_alloc`, writes a request, calls `vleo_open`, `vleo_run` or
