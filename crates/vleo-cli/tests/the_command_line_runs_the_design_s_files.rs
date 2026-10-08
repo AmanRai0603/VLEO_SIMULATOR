@@ -118,3 +118,49 @@ fn the_command_line_says_which_releases_today_s_design_is_built_from() {
         "{said}"
     );
 }
+
+fn copy(from: &Path, to: &Path) {
+    std::fs::create_dir_all(to).unwrap();
+    for e in std::fs::read_dir(from).unwrap() {
+        let p = e.unwrap().path();
+        let dest = to.join(p.file_name().unwrap());
+        if p.is_dir() {
+            copy(&p, &dest);
+        } else {
+            std::fs::copy(&p, &dest).unwrap();
+        }
+    }
+}
+
+#[test]
+fn a_figure_is_drawn_from_the_design_s_files() {
+    // The sustained Ap requirement raised from 48 to 60 in a copy of the
+    // design: the closure's figure is drawn from that design, not from the
+    // graph compiled into the program.
+    let s = scratch("figure");
+    let design = s.join("design");
+    copy(&root().join("design"), &design);
+    let node = design.join("groups/l3_solar/nodes/l3_solar_req_04.vnode");
+    let db = rusqlite::Connection::open(&node).unwrap();
+    let changed = db
+        .execute(
+            "UPDATE port SET value = '60.0' WHERE block_uid = 'l3_solar_req_04' AND direction = 'out'",
+            [],
+        )
+        .unwrap();
+    assert_eq!(changed, 1, "the requirement is not in its file");
+    drop(db);
+    let req = |design: Option<&Path>| {
+        let (ok, said) = vleo(&s, design, &["figure", "closure", "pair=04"]);
+        assert!(ok, "{said}");
+        let at = said.find("\"req\":").unwrap_or_else(|| panic!("{said}")) + 6;
+        let v: String = said[at..]
+            .chars()
+            .take_while(|c| !matches!(c, ',' | '}'))
+            .collect();
+        v.trim().parse::<f64>().unwrap()
+    };
+    assert_eq!(req(None), 48.0);
+    assert_eq!(req(Some(&design)), 60.0);
+    let _ = std::fs::remove_dir_all(&s);
+}
