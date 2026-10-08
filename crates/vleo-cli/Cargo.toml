@@ -20,9 +20,8 @@ vleo-data = { workspace = true }
 # The one place a figure of the record is worked out — the same function the
 # daemon's /v1/figures route answers with, so `vleo figure` cannot drift from it.
 vleo-server = { workspace = true }
-# Saved results, many in one file (results.vleor): written and read by the
-# same crate that writes the design file.
-vleo-design = { workspace = true }
+# Saved results, many in one file (results.vleor).
+vleo-results = { workspace = true }
 
 [dev-dependencies]
 # Make a group's release for the tests, as its group would: one row changed

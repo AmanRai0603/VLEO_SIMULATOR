@@ -93,7 +93,7 @@ pub struct Saved {
     pub chain: String,
     pub kernel: String,
     pub graph: String,
-    /// The fingerprint of the design file the run read, or empty when it read
+    /// The fingerprint of the design's files the run read, or empty when it read
     /// the folders of a checkout. Says which design the answer belongs to.
     pub design: String,
     pub case: String,

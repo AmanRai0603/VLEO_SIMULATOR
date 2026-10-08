@@ -1,6 +1,6 @@
 //! Today's answers, on record before the engine changes underneath them.
 //!
-//! 1.0 moves the graph out of the compiled code and into the design file
+//! 1.0 moves the graph out of the compiled code and into the design's files
 //! (`docs/PLAN_1_0.md`, phase D). Its parity gate asks one question: does the
 //! new engine give, for every row in every case, the answer this one gives —
 //! and refuse where this one refuses, for the same reason? That question has no

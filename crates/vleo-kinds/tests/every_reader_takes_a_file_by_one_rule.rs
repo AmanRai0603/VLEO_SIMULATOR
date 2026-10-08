@@ -55,44 +55,59 @@ fn want<'a>(reader: Reader, names: &'a [&'a str], called: &'a str) -> Want<'a> {
 
 #[test]
 fn today_s_design_is_never_taken_for_a_released_one() {
-    // design.vleo, opened as a released design by the library …
+    // A group's file of today's design, opened as a released design …
     let e = identify(
         APPLICATION_ID,
-        1,
-        Some("design"),
+        2,
+        Some("group"),
         want(Reader::Files, &["released design"], "a released design"),
     )
     .unwrap_err();
     assert!(matches!(e, Refusal::OtherKind { .. }));
     assert!(e
         .says("x")
-        .contains("a design file, not a released design — today's design"));
-    // … and a released design opened as today's design by the tool.
+        .contains("a group file, not a released design — a group's file"));
+    // … and a released design opened as one group's file.
     let e = identify(
         APPLICATION_ID,
         2,
         Some("released design"),
-        want(Reader::Design, &["design"], "today's design (design.vleo)"),
+        want(Reader::Files, &["group"], "a group's file"),
     )
     .unwrap_err();
     assert!(e
         .says("x")
-        .contains("a released design file, not today's design (design.vleo)"));
-    // Each is taken by its own reader.
-    assert!(identify(
-        APPLICATION_ID,
-        1,
-        Some("design"),
-        want(Reader::Design, &["design"], "")
-    )
-    .is_ok());
-    assert!(identify(
-        APPLICATION_ID,
-        2,
-        Some("released design"),
-        want(Reader::Files, &["released design"], "")
-    )
-    .is_ok());
+        .contains("a released design file, not a group's file"));
+    // Each is taken as itself.
+    for name in ["group", "released design"] {
+        assert!(identify(
+            APPLICATION_ID,
+            2,
+            Some(name),
+            want(Reader::Files, &[name], "")
+        )
+        .is_ok());
+    }
+}
+
+#[test]
+fn the_design_as_one_file_is_taken_by_no_reader_now() {
+    // design.vleo, which the tool ran before its design was its files, is
+    // refused by every reader, by what it says it is: never taken for today's
+    // design, a released one, or results.
+    for (reader, names) in [
+        (Reader::Files, &["released design", "group", "node"][..]),
+        (Reader::Results, &["results"][..]),
+    ] {
+        let e = identify(APPLICATION_ID, 1, Some("design"), want(reader, names, "x")).unwrap_err();
+        assert_eq!(
+            e,
+            Refusal::Unknown {
+                name: "design".into(),
+                format: 1
+            }
+        );
+    }
 }
 
 #[test]
@@ -121,12 +136,7 @@ type Case = (
 /// Every case the parity runs: (application id, format, kind, reader, names
 /// it takes, what it calls them).
 fn cases() -> Vec<Case> {
-    let design = (
-        Reader::Design,
-        vec!["design"],
-        "today's design (design.vleo)",
-    );
-    let results = (Reader::Design, vec!["results"], "a results file");
+    let results = (Reader::Results, vec!["results"], "a results file");
     let files: Vec<&'static str> = {
         let mut n: Vec<&'static str> = Vec::new();
         for k in KINDS.iter().filter(|k| k.reader == Reader::Files) {
@@ -138,7 +148,7 @@ fn cases() -> Vec<Case> {
     };
     let library = (Reader::Files, files, "a file in the one schema");
     let mut out = Vec::new();
-    for (reader, names, called) in [design, results, library] {
+    for (reader, names, called) in [results, library] {
         for app in [APPLICATION_ID, 12345] {
             for format in [0, 1, 2, 3, 99] {
                 let mut kinds: Vec<Option<&'static str>> = vec![None, Some("spreadsheet")];

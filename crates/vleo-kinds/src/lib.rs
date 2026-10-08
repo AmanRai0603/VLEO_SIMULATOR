@@ -10,11 +10,11 @@
 //!
 //! The table also keeps two things apart that must never be confused
 //! (AGENTS.md: "today's design is never taken for a released one"):
-//! `design.vleo` is **today's design**, the repository's tree as one file,
-//! kind `design`, format 1; a **released design** is a design the system
-//! engineer released, kind `released design`, format 2. Until phase D moves
-//! the design into the one schema, the first is what the tool runs, and no
-//! reader takes either for the other.
+//! **today's design** is its groups' and nodes' own files (`design/`, or
+//! built from the drive), kinds `group` and `node`; a **released design** is
+//! a design the system engineer released, kind `released design`. No reader
+//! takes either for the other. `design.vleo`, the tree as one file the tool
+//! ran before its design was its files, is a kind no tool writes any more.
 //!
 //! Python's reader (`crates/vleo-py/python/vleo/files.py`) carries this
 //! table as generated text, held to it by a test, and its rule is held to
@@ -29,10 +29,9 @@ pub enum Reader {
     /// The one library that reads, writes and checks every design file
     /// (`vleo-files`), installed and in the page.
     Files,
-    /// The tool's own database files before 1.0 (`vleo-design`): today's
-    /// design and saved results, read by the server, the command line and
-    /// the tool.
-    Design,
+    /// The tool's own database file before 1.0 (`vleo-results`): saved
+    /// results, read by the server and the command line.
+    Results,
     /// The text files under `~/.vleo` (`vleo-modules`): a case's inputs and
     /// a saved result.
     Modules,
@@ -42,7 +41,7 @@ impl Reader {
     pub fn name(self) -> &'static str {
         match self {
             Reader::Files => "vleo-files",
-            Reader::Design => "vleo-design",
+            Reader::Results => "vleo-results",
             Reader::Modules => "vleo-modules",
         }
     }
@@ -143,20 +142,12 @@ pub const KINDS: &[Kind] = &[
         Some(("group release", 2)),
         "a group's sealed release before 1.0",
     ),
-    // The tool's own files before 1.0 (crates/vleo-design).
-    db(
-        "design",
-        1,
-        "design.vleo",
-        Reader::Design,
-        None,
-        "today's design: the repository's tree as one file, which the tool runs until phase D; never a released design",
-    ),
+    // The tool's own file before 1.0 (crates/vleo-results).
     db(
         "results",
         1,
         "a .vleor",
-        Reader::Design,
+        Reader::Results,
         None,
         "saved results, many in one file",
     ),

@@ -55,21 +55,6 @@ fn tree(dir: &Path) -> Vec<(String, Vec<u8>)> {
     out
 }
 
-/// How many rows the design has, as the design file counts them: one node
-/// file each in `design/`, which the design file is written from.
-fn design_rows() -> usize {
-    std::fs::read_dir(root().join("design/groups"))
-        .unwrap()
-        .flatten()
-        .filter_map(|g| std::fs::read_dir(g.path().join("nodes")).ok())
-        .map(|d| {
-            d.flatten()
-                .filter(|n| n.path().extension().is_some_and(|x| x == "vnode"))
-                .count()
-        })
-        .sum()
-}
-
 #[test]
 fn results_exported_and_imported_are_the_same_results() {
     let scratch = std::env::temp_dir().join(format!("vleo-vleor-{}", std::process::id()));
@@ -110,7 +95,7 @@ fn results_exported_and_imported_are_the_same_results() {
     assert!(ok && said.contains("wrote 3 result(s)"), "{said}");
 
     // The rows a SQL reader gets are the results' own numbers.
-    let kept = vleo_design::results::read(&file).expect("the file does not read");
+    let kept = vleo_results::read(&file).expect("the file does not read");
     assert_eq!(kept.len(), 3);
     assert_eq!(kept.iter().filter(|k| !k.sweep_csv.is_empty()).count(), 1);
     let ap = kept
@@ -146,12 +131,11 @@ fn results_exported_and_imported_are_the_same_results() {
     );
     assert_eq!(tree(&a), tree(&b), "a second import changed the folder");
 
-    // A design file is not a results file, and is refused by name.
-    let design = scratch.join("design.vleo");
-    vleo_design::write(&root(), &design, &vleo_design::Stamp::default()).unwrap();
+    // A file of the design is not a results file, and is refused by name.
+    let design = root().join("design/groups/l3_solar/nodes/sw_ap_design.vnode");
 
-    // Python reads both files with nothing but the standard library: the same
-    // numbers, the same rows, and a design file refused as results.
+    // Python reads the results file with nothing but the standard library:
+    // the same numbers, and a file of the design refused as results.
     let script = r#"
 import importlib.util, sys
 spec = importlib.util.spec_from_file_location("files", sys.argv[1])
@@ -159,9 +143,6 @@ files = importlib.util.module_from_spec(spec); spec.loader.exec_module(files)
 rs = files.results(sys.argv[2])
 ap = [r for r in rs if r["target"] == "sw_ap_design" and not r["sweep_csv"]][0]
 print("results", len(rs), [v["si"] for v in ap["values"] if v["section"] == "output" and v["id"] == "sw_ap_design"])
-d = files.design(sys.argv[3])
-print("rows", len(d.rows()), d.meta["rows"])
-print("sheet", "id" in d.text("crates/vleo-mod-solar/nodes/sw_ap_design/node.toml"))
 try:
     files.results(sys.argv[3])
 except ValueError as e:
@@ -182,17 +163,14 @@ except ValueError as e:
     );
     assert!(py.status.success(), "{said}");
     assert!(said.contains("results 3 [132.0]"), "{said}");
-    let rows = design_rows();
-    assert!(said.contains(&format!("rows {rows} {rows}")), "{said}");
-    assert!(said.contains("sheet True"), "{said}");
-    assert!(said.contains("a design file, not a results file"), "{said}");
+    assert!(said.contains("a node file, not a results file"), "{said}");
     let (ok, said) = vleo(
         &scratch,
         &b,
         &["results", "import", design.to_str().unwrap()],
     );
     assert!(
-        !ok && said.contains("a design file, not a results file"),
+        !ok && said.contains("a node file, not a results file"),
         "{said}"
     );
 

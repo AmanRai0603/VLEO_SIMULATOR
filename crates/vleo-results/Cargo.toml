@@ -1,0 +1,23 @@
+[package]
+name = "vleo-results"
+description = "results.vleor — saved results, many in one file: each whole as the CSV its folder keeps, and every value again as a row any SQL reader can ask for. Read by the one rule every reader takes a file by."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+
+[dependencies]
+# Every kind of file the tools write, and the one rule a reader takes one by.
+vleo-kinds = { workspace = true }
+# SQLite, compiled in (`bundled`): the same database engine the group
+# applications run in the page, so a results file, a group's release and a
+# Python reader all open one format. ADOPTION.lock records it and its fallback.
+rusqlite = { workspace = true }
+
+[dev-dependencies]
+rusqlite = { workspace = true }
+
+[lints.rust]
+unsafe_code = "forbid"

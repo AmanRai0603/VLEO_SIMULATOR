@@ -800,16 +800,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "vleo-design"
-version = "0.4.0"
-dependencies = [
- "rusqlite",
- "vleo-files",
- "vleo-kinds",
- "vleo-sheet",
-]
-
-[[package]]
 name = "vleo-files"
 version = "0.4.0"
 dependencies = [
@@ -1015,15 +1005,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "vleo-results"
+version = "0.4.0"
+dependencies = [
+ "rusqlite",
+ "vleo-kinds",
+]
+
+[[package]]
 name = "vleo-server"
 version = "0.4.0"
 dependencies = [
  "vleo-bus",
  "vleo-core",
  "vleo-data",
- "vleo-design",
  "vleo-files",
  "vleo-modules",
+ "vleo-results",
  "vleo-sheet",
  "vleo-units",
 ]

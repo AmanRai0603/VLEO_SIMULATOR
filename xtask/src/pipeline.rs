@@ -404,17 +404,6 @@ pub(crate) const PIPELINE: &[Cmd] = &[
         dry: Dry::Plan,
     },
     Cmd {
-        name: "design",
-        stage: "release",
-        reads: "every file of the tree the loader reads: the node folders, the layers, the cases and the source list",
-        writes: "target/design.vleo, or --out; with --check, nothing",
-        checks: "that the tree loads; with --check, each file against its SHA-256 and the folders",
-        undo: "delete the file it wrote; nothing in the repository changes",
-        code: ("xtask/src/design.rs", "cmd_design"),
-        steps: &[],
-        dry: Dry::Plan,
-    },
-    Cmd {
         name: "convert",
         stage: "release",
         reads: "every file of the tree the loader reads: the node folders, the layers, the cases and the source list",

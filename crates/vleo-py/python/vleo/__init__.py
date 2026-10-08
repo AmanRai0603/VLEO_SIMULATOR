@@ -2,7 +2,6 @@
 
     python -m vleo            start the tool and open it in the browser
     import vleo               the engine, from Python or MATLAB
-    vleo.design()             the design file the tool reads (design.vleo)
     vleo.results(file)        saved results, many in one file (.vleor)
 
 One package for every laptop. It carries the engine built for each system it
@@ -90,8 +89,8 @@ _engine_runs = None
 def engine():
     """Which graph the engine runs: the one read from the design's files.
 
-    The design is opened before the first answer — the design file, or a
-    checkout's folders — as the tool opens it. A design that does not open
+    The design is opened before the first answer — the design's files the
+    package carries, or a checkout's — as the tool opens them. A design that does not open
     raises ``RuntimeError`` naming why; the graph compiled into the engine is
     never run in its place.
     """
@@ -144,7 +143,7 @@ def figure(id, **params):
     return answer
 
 
-from .files import design, results  # noqa: E402 — plain Python, no engine needed
+from .files import results  # noqa: E402 — plain Python, no engine needed
 
 try:
     from ._build import VERSION as __version__
@@ -152,4 +151,4 @@ except ImportError:  # a developer's build
     __version__ = "dev"
 
 __all__ = ["Result_", "nodes", "evaluate", "sweep", "version", "serve", "kit_root", "figure",
-           "design", "results"]
+           "results"]

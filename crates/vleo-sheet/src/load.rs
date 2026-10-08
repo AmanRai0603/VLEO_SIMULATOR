@@ -350,7 +350,7 @@ pub fn load_all(root: &Path) -> Result<Tree, Error> {
     load_all_from(&Disk, root)
 }
 
-/// The tree as `files` holds it under `root` — the folders, or a design file
+/// The tree as `files` holds it under `root` — the folders, or the design's files
 /// (`crate::files`). Every check `load_all` makes, made the same way.
 pub fn load_all_from(files: &dyn Files, root: &Path) -> Result<Tree, Error> {
     WRONG.with(|w| w.borrow_mut().clear());
@@ -886,7 +886,7 @@ pub fn read_holes(dir: &Path) -> BTreeMap<u32, String> {
     read_holes_in(&crate::files::Disk, dir)
 }
 
-/// The same, from whatever holds the tree — the folders, or a design file.
+/// The same, from whatever holds the tree — the folders, or the design's files.
 pub fn read_holes_in(files: &dyn Files, dir: &Path) -> BTreeMap<u32, String> {
     let mut map = BTreeMap::new();
     let p = dir.join("model.rs");

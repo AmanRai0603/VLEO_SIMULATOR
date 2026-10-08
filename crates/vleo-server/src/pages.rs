@@ -363,7 +363,7 @@ pub(super) fn fragment(ctx: &Ctx, id: &str) -> (&'static str, &'static str, Vec<
     // row whose folder is not its id minus a prefix — as a 404 that nobody
     // attributes to a layout change.
     // RENDERED, NOT READ. A node's page is written from its sheet when it is
-    // opened — from the folders or from a design file alike — so there is no
+    // opened — from the design's files or the folders alike — so there is no
     // committed copy to fall behind the sheet it describes.
     let def = &nodes()[i as usize];
     let tree = match ctx.load() {

@@ -16,7 +16,8 @@ use super::*;
 /// checker runs that same function — so it sits above the kernel, never in
 /// it. `vleo-data` is reference data and sits at the bus's level. `vleo-files`
 /// sits beside the nodes: it reads only what a sheet means, and the engine
-/// facade and the design file read the design through it.
+/// facade reads the design through it. `vleo-results`, the results file, sits
+/// beside them too: it reads only the table of file kinds.
 pub(super) fn ring(crate_name: &str) -> Option<(u8, &'static str)> {
     Some(match crate_name {
         "vleo-units" => (0, "RING 0 — quantities and portable maths"),
@@ -30,10 +31,7 @@ pub(super) fn ring(crate_name: &str) -> Option<(u8, &'static str)> {
         "vleo-bus" => (2, "RING 2 — transport"),
         "vleo-data" => (2, "reference data"),
         "vleo-modules" => (4, "the facade over every node crate"),
-        "vleo-design" => (
-            4,
-            "the design as one file — the tree, read as the folders are",
-        ),
+        "vleo-results" => (3, "beside the nodes — saved results, many in one file"),
         "vleo-server" => (5, "the server both the daemon and the Python package start"),
         "vleo-cli" | "vleo-daemon" | "vleo-ffi" | "vleo-py" | "vleo-wasm" | "vleo-method-wasm"
         | "vleo-kernel-wasm" | "vleo-files-wasm" => (6, "a face"),

@@ -533,7 +533,7 @@ fn vleor_of(scratch: &std::path::Path, saved: &str) -> String {
     let s = vleo_modules::results::store::open(&dir, saved).expect("the saved result reads");
     let kept = vleo_server::results_file::kept_from(saved, &s, false);
     let file = scratch.join("upload.vleor");
-    vleo_design::results::write(&file, &[kept], "contract", "2026-01-01 00:00:00").unwrap();
+    vleo_results::write(&file, &[kept], "contract", "2026-01-01 00:00:00").unwrap();
     let b = std::fs::read(&file).unwrap();
     const A: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
     let mut o = String::new();

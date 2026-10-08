@@ -220,11 +220,11 @@ fn serve(py: Python<'_>, root: Option<String>, port: u16, open: bool) -> PyResul
         .map_err(PyRuntimeError::new_err)
 }
 
-/// Open the design — the design file, or a checkout's folders, where the tool
-/// finds them under `root` — and run the engine on the graph read from its
-/// files, as the server does. Says which graph runs. The package calls it
-/// before the first answer; a design that does not open is refused, naming
-/// why, and the compiled graph is never run in its place.
+/// Open the design — its files, `design/`, in the package or a checkout,
+/// where the tool finds them under `root` — and run the engine on the graph
+/// read from its files, as the server does. Says which graph runs. The
+/// package calls it before the first answer; a design that does not open is
+/// refused, naming why, and the compiled graph is never run in its place.
 #[pyfunction]
 #[pyo3(signature = (root = None))]
 fn open_design(py: Python<'_>, root: Option<String>) -> PyResult<String> {
