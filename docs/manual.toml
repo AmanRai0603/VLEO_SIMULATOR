@@ -2381,11 +2381,6 @@ what = "Set to `write` when running the test of today's answers, to record basel
 default = "unset — compare"
 
 [[env]]
-name = "VLEO_TRANSCRIBED"
-what = "Set to `write` when running the test of the transcribed relations, to record baseline/transcribed.csv from the build that still has the code each method replaces. Written once, before the methods; never again to get green. Unset, the test holds every method to the record."
-default = "unset — compare"
-
-[[env]]
 name = "VLEO_KINDS"
 what = "Set to `write` when running the tests of crates/vleo-kinds, to write the table of file kinds into the Python reader (crates/vleo-py/python/vleo/files.py) again after a deliberate change to the table. Unset, the test compares and fails on any difference."
 default = "unset — compare"

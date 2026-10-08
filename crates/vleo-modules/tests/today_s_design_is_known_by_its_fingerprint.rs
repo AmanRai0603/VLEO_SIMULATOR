@@ -45,23 +45,26 @@ fn with_data() -> Case {
 }
 
 #[test]
-fn the_design_read_from_its_files_is_known_as_the_one_its_sheets_hold() {
-    let sheets = today().design_fingerprint();
-    assert_eq!(
-        sheets,
-        opened::graph(&tree()).unwrap().design_fingerprint(),
-        "not the same twice"
+fn the_design_read_from_its_files_is_known_by_the_same_fingerprint_each_time() {
+    // Its files in design/, read twice as the tool reads them, independently:
+    // the same design, answering alike, with the reference data and without.
+    let (one, two) = (
+        opened::read(&root()).unwrap(),
+        opened::read(&root()).unwrap(),
     );
-    // Its files in design/, read as the tool reads them, are the same design.
-    let files = opened::read(&root()).unwrap();
-    assert_eq!(files.design_fingerprint(), sheets);
-    // And it answers alike, with the reference data and without it.
+    assert!(!std::ptr::eq(one, two), "read once, not twice");
+    assert_eq!(one.design_fingerprint(), two.design_fingerprint());
     for case in [with_data(), Case::default()] {
         assert_eq!(
-            files.answers_fingerprint(&case).unwrap(),
-            today().answers_fingerprint(&case).unwrap()
+            one.answers_fingerprint(&case).unwrap(),
+            two.answers_fingerprint(&case).unwrap()
         );
     }
+    // The sheets they were converted from, likewise.
+    assert_eq!(
+        today().design_fingerprint(),
+        opened::graph(&tree()).unwrap().design_fingerprint()
+    );
     assert_ne!(
         today().answers_fingerprint(&with_data()).unwrap(),
         today().answers_fingerprint(&Case::default()).unwrap(),

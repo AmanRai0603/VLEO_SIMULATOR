@@ -124,6 +124,9 @@ fn data(scratch: &Path) -> Vec<String> {
 
 /// The whole record, as `graph` answers it today.
 pub fn today(graph: &'static Graph) -> String {
+    // The example cases name the design's rows, and are read against the
+    // graph that runs: this one.
+    vleo_modules::run_on(graph);
     let scratch = std::env::temp_dir().join(format!("vleo-baseline-{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&scratch);
     std::fs::create_dir_all(&scratch).unwrap();
