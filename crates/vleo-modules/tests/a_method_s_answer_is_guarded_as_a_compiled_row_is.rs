@@ -24,7 +24,7 @@ fn root() -> PathBuf {
 /// A row whose relation is a method, with one answer, and the inputs of its
 /// first fixture.
 fn a_method(tree: &vleo_sheet::Tree) -> (String, Vec<f64>) {
-    let g = opened::interpreting(tree).unwrap();
+    let g = opened::graph(tree).unwrap();
     for (k, def) in g.nodes.iter().enumerate() {
         if matches!(g.run.get(k), Some(Some(_))) && def.outputs.len() == 1 {
             if let Some(f) = def.fixtures.first() {
@@ -42,7 +42,7 @@ fn an_answer_outside_its_declared_range_is_refused_lower_bound_first() {
     let mut tree = vleo_sheet::load_all(&root()).unwrap();
     let (id, inputs) = a_method(&tree);
     let answer = {
-        let g = opened::interpreting(&tree).unwrap();
+        let g = opened::graph(&tree).unwrap();
         g.probe(g.find(&id).unwrap(), &inputs).unwrap()[0]
     };
     let (unit, reason_lower, reason_upper) = {
@@ -60,7 +60,7 @@ fn an_answer_outside_its_declared_range_is_refused_lower_bound_first() {
     // Above: the upper bound moved below the answer.
     let upper = answer / si - 1.0;
     tree.sheets.get_mut(&id).unwrap().upper = upper;
-    let g = opened::interpreting(&tree).unwrap();
+    let g = opened::graph(&tree).unwrap();
     match g.probe(g.find(&id).unwrap(), &inputs) {
         Err(Fault::OutOfDomain {
             edge: Edge::Upper,
@@ -80,7 +80,7 @@ fn an_answer_outside_its_declared_range_is_refused_lower_bound_first() {
     // first, as the compiled row says it.
     let lower = answer / si + 1.0;
     tree.sheets.get_mut(&id).unwrap().lower = lower;
-    let g = opened::interpreting(&tree).unwrap();
+    let g = opened::graph(&tree).unwrap();
     match g.probe(g.find(&id).unwrap(), &inputs) {
         Err(Fault::OutOfDomain {
             edge: Edge::Lower,

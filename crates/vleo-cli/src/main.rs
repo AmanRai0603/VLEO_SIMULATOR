@@ -94,6 +94,7 @@ fn main() -> ExitCode {
             | "campaign"
             | "list"
             | "show"
+            | "figure"
             | "cases"
             | "inputs"
             | "selftest"

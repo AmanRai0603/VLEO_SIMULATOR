@@ -211,7 +211,11 @@ no switch without it.
   same reasons. The one loop in `layers/cycles.toml` is reproduced with its order,
   seed and residual.
 - **The interpreter is measured.** If a sweep is too slow, translated code stays
-  as the fast path, held equal to the interpreter.
+  as the fast path, held equal to the interpreter. *Measured in E (stage 4), on
+  a release build:* the solar design and closure figures take the same time
+  both ways, and the heaviest case, `l3_solar_interface` swept over 100,001
+  points, takes 1.6 times as long (0.27 ms a point against 0.17). The fast path
+  is off; every method runs in the interpreter.
 - **Ports in 1.0 are number and parameter.** The bus carries only numbers; choice
   and list follow after 1.0, unless a node needs one first.
 - **Credibility is part of parity**, as it is computed today.

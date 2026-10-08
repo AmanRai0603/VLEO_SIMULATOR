@@ -72,6 +72,8 @@ fn a_design_that_does_not_open_is_refused_not_run_as_the_compiled_one() {
     for args in [
         &["run", "sw_activity_band", "--defaults"][..],
         &["version"][..],
+        // A figure is drawn from the engine's answers, so from the design too.
+        &["figure", "closure", "pair=04"][..],
     ] {
         let (ok, said) = vleo(&s, Some(&missing), args);
         assert!(!ok, "{args:?} ran with no design: {said}");

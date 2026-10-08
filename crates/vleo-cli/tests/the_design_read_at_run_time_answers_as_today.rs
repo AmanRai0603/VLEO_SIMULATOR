@@ -13,11 +13,10 @@
 //! for variable and case for case, so a difference shows as the field that
 //! differs rather than only as an answer that moved.
 //!
-//! Every row whose relation is a method runs here in the interpreter, not as
-//! the translated code the compiled graph carries: the record of today's
-//! answers is the check that the two agree, exactly. (The graph a face runs
-//! takes the translation as its fast path for a method the build was made
-//! from; this is the gate that holds the two equal.)
+//! Every row whose relation is a method runs in the interpreter, not as the
+//! translated code the compiled graph carries — here, and in the graph every
+//! face runs, which is this one: the record of today's answers is the check
+//! that the interpreter answers as the translation did, exactly.
 
 mod baseline;
 
@@ -29,7 +28,7 @@ use vleo_modules::{opened, Graph, COMPILED};
 
 fn read() -> &'static Graph {
     static G: OnceLock<&'static Graph> = OnceLock::new();
-    G.get_or_init(|| opened::read_interpreting(&root()).expect("the design's files make a graph"))
+    G.get_or_init(|| opened::read(&root()).expect("the design's files make a graph"))
 }
 
 /// The graph read from the design's files, against the compiled graph while
@@ -153,7 +152,7 @@ fn the_graph_read_at_run_time_is_the_compiled_graph_and_its_open_blocks() {
 }
 
 #[test]
-fn no_row_runs_compiled_code_but_a_method_s_own_translation() {
+fn no_row_runs_the_code_compiled_for_it() {
     // Counted from the translated methods the compiled engine carries, one
     // file each.
     let translated = std::fs::read_dir(root().join("crates/vleo-core/src/physics/methods"))
@@ -164,28 +163,23 @@ fn no_row_runs_compiled_code_but_a_method_s_own_translation() {
         })
         .count();
     assert!(translated > 0);
-    // In the graph the parity gate runs, every method is run by the
-    // interpreter. In the graph a face runs, a method this build was made
-    // from runs as its translation, the fast path — all of them, here, since
-    // this build was made from these very sheets. In both, every stated value
-    // is published by the graph itself.
-    let faces = opened::read(&root()).unwrap();
-    for (g, interpreted) in [(read(), translated), (faces, 0)] {
-        let methods = g
-            .nodes
-            .iter()
-            .filter(|d| d.behaviour == Behaviour::Method)
-            .count();
-        assert_eq!(methods, translated);
-        let by_the_graph = |k: usize| g.run.get(k).is_some_and(|r| r.is_some());
-        let run_by_the_interpreter = (0..g.nodes.len())
-            .filter(|&k| g.nodes[k].behaviour == Behaviour::Method && by_the_graph(k))
-            .count();
-        assert_eq!(run_by_the_interpreter, interpreted);
-        for (k, d) in g.nodes.iter().enumerate() {
-            if d.behaviour == Behaviour::Stated && d.inputs.is_empty() {
-                assert!(by_the_graph(k), "{} is not published by the graph", d.id);
-            }
+    // Every method is run by the interpreter, and every stated value is
+    // published by the graph itself: no row falls back to the code compiled
+    // for it.
+    let g = read();
+    let methods = g
+        .nodes
+        .iter()
+        .filter(|d| d.behaviour == Behaviour::Method)
+        .count();
+    assert_eq!(methods, translated);
+    let by_the_graph = |k: usize| g.run.get(k).is_some_and(|r| r.is_some());
+    for (k, d) in g.nodes.iter().enumerate() {
+        if d.behaviour == Behaviour::Method {
+            assert!(by_the_graph(k), "{} is not run by the interpreter", d.id);
+        }
+        if d.behaviour == Behaviour::Stated && d.inputs.is_empty() {
+            assert!(by_the_graph(k), "{} is not published by the graph", d.id);
         }
     }
 }
