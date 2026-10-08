@@ -304,10 +304,10 @@ fn a_good_edit_is_written_regenerated_and_then_put_back() {
         meaning1, meaning0,
         "rewording a bound's reason must not change the node's meaning"
     );
-    assert!(
-        n >= 1,
-        "at least the page and the metadata carry the reason"
-    );
+    // Nor is it in any generated file: the metadata does not carry it, and the
+    // page is rendered from the sheet when it is opened. A save that wrote
+    // something here would be writing a file the edit did not change.
+    assert_eq!(n, 0, "rewording a bound's reason regenerates nothing");
     let after = std::fs::read_to_string(&path).unwrap();
     assert!(after.contains("a rewritten reason"));
     assert_eq!(
