@@ -44,7 +44,9 @@ fn the_engine_runs_the_design_from_its_files_as_they_state_it() {
     }
     std::env::remove_var("VLEO_DRIVE");
     let tree = vleo_sheet::load::load_all(&root()).unwrap();
-    let files = convert::convert(&tree, &vleo_sheet::files::Disk, "vleo test").unwrap();
+    // Written by this application: one a later application wrote is refused.
+    let app = format!("vleo {}", env!("CARGO_PKG_VERSION"));
+    let files = convert::convert(&tree, &vleo_sheet::files::Disk, &app).unwrap();
     let added: Vec<String> = convert::PROPOSED
         .iter()
         .flat_map(|(g, n)| n.iter().map(move |(name, _)| convert::proposed_id(g, name)))
