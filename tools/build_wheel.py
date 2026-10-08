@@ -82,9 +82,8 @@ def contents(version, kit, natives):
 
 
 def build(version, kit, natives, out_dir):
-    # A kit carries the design as one file, design.vleo; one written before
-    # it carried the tree's folders, with layers/ among them.
-    design = (Path(kit) / "design.vleo").is_file() or (Path(kit) / "layers").is_dir()
+    # A kit carries the design as its files, design/.
+    design = (Path(kit) / "design").is_dir()
     if not (Path(kit) / "web").is_dir() or not design:
         raise SystemExit("%s is not a kit: build it with `cargo run -p xtask -- kit --files-only --out <dir>`" % kit)
     for system in natives:
@@ -140,7 +139,8 @@ def selftest():
         kit = t / "kit"
         (kit / "web").mkdir(parents=True)
         (kit / "web" / "index.html").write_text("<title>VLEO</title>")
-        (kit / "design.vleo").write_bytes(b"SQLite format 3\x00 not really")
+        (kit / "design" / "groups").mkdir(parents=True)
+        (kit / "design" / "groups" / "solar.vgroup").write_bytes(b"SQLite format 3\x00 not really")
         lib = t / "lib_vleo.so"
         lib.write_bytes(b"\x7fELF not really")
         wheel = build("9.9.9", kit, {"linux-x86_64": lib, "windows-x86_64": lib}, t / "out")
@@ -150,7 +150,7 @@ def selftest():
                      "vleo/_native/linux-x86_64/_vleo.abi3.so",
                      "vleo/_native/windows-x86_64/_vleo.pyd",
                      "vleo/_kit/web/index.html",
-                     "vleo/_kit/design.vleo",
+                     "vleo/_kit/design/groups/solar.vgroup",
                      "vleo-9.9.9.dist-info/METADATA", "vleo-9.9.9.dist-info/WHEEL",
                      "vleo-9.9.9.dist-info/RECORD"):
             if need not in names:

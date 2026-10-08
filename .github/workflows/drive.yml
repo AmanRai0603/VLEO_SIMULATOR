@@ -1,7 +1,7 @@
 # The team's shared drive, written from the repository.
 #
 # Every file in the drive — each group's structure, node files and releases,
-# the two pages that open them, the role guides, design.vleo — is built from
+# the two pages that open them, the role guides — is built from
 # the repository by `tools/drive.py pack` and mirrored into the drive's folder
 # by `tools/drive.py upload`. A drive filled by hand drifts from the release it
 # claims to be; this one is refreshed by the same tag that cuts the release.
