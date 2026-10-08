@@ -122,7 +122,7 @@ Its sections, in this order: `## Equations`, `## Derivation`, `## Assumptions`, 
   - `y` (optional) — the column(s) up, space-separated for several series.
   - `z` (optional) — heatmap: the value column; animation: the frame column.
   - `on` (optional) — steps: the flow figure the steps walk through.
-- `results/group.csv` — optional. The group as a whole: group inputs in, group outputs out, at the defaults and at the edges — the developer's group test. Columns: one per declared node the test sets, named by its node id with its unit (`orbit_altitude [km]`); then one `answer.<node id> [unit]` per node the test reads; then `tolerance`, `refuses` and `origin`, as in a node's isolation results.
+- `results/group.csv` — optional. The group as a whole: group inputs in, group outputs out, at the defaults and at the edges — the group's own test of itself. Columns: one per declared node the test sets, named by its node id with its unit (`orbit_altitude [km]`); then one `answer.<node id> [unit]` per node the test reads; then `tolerance`, `refuses` and `origin`, as in a node's isolation results.
   - `answer` — answer.<node id>, with its unit in the header; one column per node the test reads.
   - `tolerance` — relative tolerance.
   - `refuses` — yes or no. One of: yes, no.
@@ -163,7 +163,7 @@ Its sections, in this order: `## Equations`, `## Derivation`, `## Assumptions`, 
   - `unit` — its unit.
   - `source` — a sources.csv id.
   - `says` (optional) — what it is.
-- `nodes/<id>/declaration.csv` — optional. Who made this node's method and its numbers, and whether an assistant helped: `none`, `wording` (the words only), `relation` (the pseudocode, the equations, the results or the evidence), or `transcribed` (an assistant copied into pseudocode a relation a person had already written: their code, their paper, the design as it stands). Written by the node application when its node engineer signs. An assistant may never supply mathematics: the developer's intake refuses a method or results an assistant supplied, and takes a node with no declaration as one an assistant helped with. A `transcribed` node names the `source` it was copied from and the person who read the copy against that source (`checked_by`). Without both, or with an assistant's name as the checker, intake takes it as one an assistant supplied.
+- `nodes/<id>/declaration.csv` — optional. Who made this node's method and its numbers, and whether an assistant helped: `none`, `wording` (the words only), `relation` (the pseudocode, the equations, the results or the evidence), or `transcribed` (an assistant copied into pseudocode a relation a person had already written: their code, their paper, the design as it stands). Written by the node application when its node engineer signs. An assistant may never supply mathematics: the library refuses a method or results an assistant supplied, and takes a node with no declaration as one an assistant helped with. A `transcribed` node names the `source` it was copied from and the person who read the copy against that source (`checked_by`). Without both, or with an assistant's name as the checker, the library takes it as one an assistant supplied.
   - `author` — the person who owns the method and its numbers.
   - `ai` — none, wording, relation or transcribed. One of: none, wording, relation, transcribed.
   - `date` — when it was declared.

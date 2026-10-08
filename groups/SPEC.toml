@@ -298,7 +298,7 @@ level = "group"
 required = false
 says = """
 The group as a whole: group inputs in, group outputs out, at the defaults and
-at the edges — the developer's group test. Columns: one per declared node the
+at the edges — the group's own test of itself. Columns: one per declared node the
 test sets, named by its node id with its unit (`orbit_altitude [km]`); then
 one `answer.<node id> [unit]` per node the test reads; then `tolerance`,
 `refuses` and `origin`, as in a node's isolation results.
@@ -427,12 +427,12 @@ Who made this node's method and its numbers, and whether an assistant helped:
 equations, the results or the evidence), or `transcribed` (an assistant copied
 into pseudocode a relation a person had already written: their code, their
 paper, the design as it stands). Written by the node application when its
-node engineer signs. An assistant may never supply mathematics: the developer's
-intake refuses a method or results an assistant supplied, and takes a node
+node engineer signs. An assistant may never supply mathematics: the library
+refuses a method or results an assistant supplied, and takes a node
 with no declaration as one an assistant helped with. A `transcribed` node
 names the `source` it was copied from and the person who read the copy against
 that source (`checked_by`). Without both, or with an assistant's name as the
-checker, intake takes it as one an assistant supplied.
+checker, the library takes it as one an assistant supplied.
 """
 columns = [
   { name = "author", says = "the person who owns the method and its numbers" },
