@@ -39,7 +39,7 @@ tool opens there it plans each computed node against the design, field by field,
 and refuses a conflict, or a method or results an assistant supplied; a release
 that passes is taken into today's design, and this file in the repository stays
 as it is until the switch-over. What the repository's own rows need — publishing,
-the holes, the fixtures — is the developer's, and is described below.
+building each from its method, the fixtures — is the developer's, and is described below.
 
 So this page is written for both: for the node engineer, what each answer is
 for; for the developer, what the loader does with it.
@@ -132,7 +132,7 @@ noticed.
   It does not make the formula right; it makes it somebody's, which is what H1b
   needs to be a review rather than a reading.
 - **`criticality`** — `minor` or `significant`, defaulting to minor. Significant
-  means two reviewers and the hole filled twice by different model families.
+  means two reviewers and a second independent check: two fixtures, or a parity grid.
   Everything cannot be significant: a person asked to approve too many things
   stops evaluating each one, so raising it is done on purpose.
 - **`migrated_from`** — the prior MATLAB function and line, when this node was
@@ -151,7 +151,7 @@ noticed.
   the grid is a finding. Defaults to `1e-4`, and that number is set by the
   format rather than by the physics: a MATLAB grid is an export printed to five
   or six significant figures, so anything tighter fails on the printing. The
-  generated test names both engines, the row and the difference, and says what
+  test names both engines, the row and the difference, and says what
   it is not — a disagreement is a finding about one of the two implementations,
   not proof this one is wrong. The two things never to do about one are widening
   this and editing `parity.csv` to agree.
@@ -185,33 +185,27 @@ A declared value with no source cannot reach `specified`. A confirmation older
 than the review cadence is listed by the monthly review — a question, never a
 block.
 
-## The holes
+## The method
 
-The generator emits the whole file. Only the body of each numbered step is
-yours:
+The relation is the node's method: the pseudocode in its sheet's `[method]`
+([`PSEUDOCODE.md`](PSEUDOCODE.md)), written by its node engineer. There is no
+generated code in the node's folder and nothing to fill in; the method
+interpreter runs the method when the engine runs the design read from
+`design/`.
 
-```rust
-// ---- HOLE 1 : balance the hyperthermal inflow against the thermal outflow -> Ratio
-let r: Ratio = prop::intake_balance(n, v, a_in, a_out, eta_geo, beta, t_c, m)
-    .collection_efficiency;
-// ---- end HOLE 1
-```
+`cargo run -p xtask -- method <node>` checks the method and runs each of its
+node engineer's test cases through it — the check the gate refuses on.
+`cargo run -p xtask -- build-node <node>` then takes the node from its method
+to a connected node. Until the next stage of phase E, `xtask docs` also
+translates each method into `vleo-core::physics::methods`; that translation
+goes in phase E.
 
-**Compose relations that already exist in `vleo-core::physics`.** Every formula
-lives there and nowhere else; the gate fails the build if one appears in a node.
-If the relation you need is not in the kernel, that is a reviewed change to the
-crate every node reads — not an inline.
+**Use `pmath`, never the standard library's transcendental functions.** The
+interpreter has only `pmath`, and the reason is in the README.
 
-**Use `pmath`, never the standard library's transcendental functions.** The gate
-lints for it, and the reason is in the README.
-
-**Do not add a guard.** Guards are generated from the declared domain, with
-their reasons attached. A guard added by hand is a guard with no reason, and it
-will be deleted.
-
-A hand edit anywhere outside a `HOLE` block is discarded by the next
-regeneration and fails the regeneration diff. That is what makes the generated
-region genuinely owned by the generator rather than merely labelled that way.
+**Do not add a guard.** Guards come from the declared domain, with their
+reasons attached. A guard added by hand is a guard with no reason, and it will
+be deleted.
 
 ## Fixtures
 
@@ -242,8 +236,8 @@ last March.
 
 ## Theory
 
-`expression` is the relation as the generators need it: one line, no reason.
-That is enough to generate code from and not enough to REVIEW. A reviewer who
+`expression` is the relation as written in the source: one line, no reason.
+That is enough to state it and not enough to REVIEW. A reviewer who
 cannot reconstruct why the line is that line has to take it on trust, and taking
 mathematics on trust is the failure the two reviews exist to prevent. So a
 published node with a relation and no `[theory]` carries an open gap.
@@ -360,12 +354,11 @@ about to fill their first node, and "no data" teaches nothing.
 | tab | empty state |
 |---|---|
 | said simply, then the real thing | Not yet specified. Needs a question, an expression and a source — its node engineer gives them. A written row with no `[explain]` says: nobody has said this row simply yet. |
-| theory | Nobody has written the theory for this row yet — the relation is stated before it and generated after it, and why it is that relation is missing. |
+| theory | Nobody has written the theory for this row yet — the relation is stated before it and run after it, and why it is that relation is missing. |
 | de-risking | No belief recorded yet. This row's next change says what it rests on and what would break it, and from then on every change says which belief broke (D1). |
 | interface | Inputs and outputs are declared. Units are not — a unit is a decision. |
-| algorithm | No steps yet. Each step becomes one hole in the generated code. |
+| algorithm | No steps yet. Each step becomes a line of the row's method. |
 | the relation, moving | Nothing to walk: the sheet is seeded and the node returns NotRun. |
-| generated code | Nothing generated — the sheet is incomplete. |
 | evidence | No known-good numbers yet. A number from our own code does not count. |
 | flags | Not run. |
 | credibility | Tier not set — this decides how much evidence the gate demands. |

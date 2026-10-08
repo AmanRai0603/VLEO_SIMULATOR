@@ -560,31 +560,6 @@ pub fn save_block(
         };
     }
 
-    // THE HOLES ARE THE THING A BLOCK EDIT CAN BREAK. A hole body is Rust
-    // somebody wrote by hand, and the generated code around it is written from
-    // these blocks: an input's `binding` is a parameter name, a step's `binds`
-    // and `type` are the `let` the body has to satisfy. Change either under a
-    // filled hole and the row stops compiling — which the gate cannot see,
-    // because the gate never compiles anything.
-    let holes = crate::load::read_holes(&sh.dir);
-    let filled: Vec<(u32, &String)> = holes
-        .iter()
-        .filter(|(_, b)| !b.trim().is_empty())
-        .map(|(n, b)| (*n, b))
-        .collect();
-    let mentions = |word: &str| -> Option<u32> {
-        let word = word.trim();
-        if word.is_empty() {
-            return None;
-        }
-        filled
-            .iter()
-            .find(|(_, b)| {
-                b.split(|c: char| !c.is_alphanumeric() && c != '_')
-                    .any(|w| w == word)
-            })
-            .map(|(n, _)| *n)
-    };
     let blocks = array_blocks(&before, a.path);
     let at = |i: usize| -> Option<(usize, usize)> { blocks.get(i).copied() };
 
@@ -602,52 +577,9 @@ pub fn save_block(
                 }
             }
         }
-        "set" => {
-            let Some((s0, s1)) = at(index) else {
+        "set" | "remove" => {
+            if at(index).is_none() {
                 return Saved::Refused(no_such_block(a, blocks.len(), index));
-            };
-            // The keys a filled hole is written around.
-            if let Some((key, _)) = values.first() {
-                let guarded = (a.path == "input" && *key == "binding")
-                    || (a.path == "algorithm.step" && matches!(*key, "binds" | "type"));
-                if guarded {
-                    let old = block_value(&before, s0, s1, key).unwrap_or_default();
-                    if let Some(n) = mentions(&old) {
-                        return Saved::Refused(format!(
-                            "hole {n} is filled and its body uses `{}`. Changing it here would \
-                             move the generated code around a body nobody has read since, and \
-                             the gate never compiles anything, so nothing would catch it. Edit \
-                             the hole and this together, in a checkout",
-                            old.trim()
-                        ));
-                    }
-                }
-            }
-        }
-        "remove" => {
-            let Some((s0, s1)) = at(index) else {
-                return Saved::Refused(no_such_block(a, blocks.len(), index));
-            };
-            if a.path == "algorithm.step" {
-                let n = (index + 1) as u32;
-                if holes.get(&n).map(|b| !b.trim().is_empty()).unwrap_or(false) {
-                    return Saved::Refused(format!(
-                        "hole {n} has a body. Removing the step would delete the generated \
-                         model's only home for it. Empty the hole first, in a checkout, so \
-                         losing the Rust is its own reviewable change"
-                    ));
-                }
-            }
-            if a.path == "input" {
-                let old = block_value(&before, s0, s1, "binding").unwrap_or_default();
-                if let Some(n) = mentions(&old) {
-                    return Saved::Refused(format!(
-                        "hole {n} is filled and its body uses `{}`. Removing the input would \
-                         take the parameter out of the generated signature and leave that body \
-                         referring to nothing",
-                        old.trim()
-                    ));
-                }
             }
         }
         _ => {}

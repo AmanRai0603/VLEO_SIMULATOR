@@ -37,10 +37,9 @@ features across a workspace, so one face enabling `std` would hand it to the
 kernel. That is why the no-std job builds a constrained target and never
 `--workspace`.
 
-**In hole bodies**, by refusal. The node crates are not `no_std`, so a hole
-*can* compile `.sin()`. `cargo xtask fill` refuses the call by name before it
-reaches the file, and the gate's `portable-maths` check refuses it again on the
-committed file.
+**In a node's method**, by construction. The interpreter has only `pmath`, and
+the translation of a method into the kernel is `no_std` like the rest of it, so
+there is no way for a method to reach the platform's maths library.
 
 ## Precision
 

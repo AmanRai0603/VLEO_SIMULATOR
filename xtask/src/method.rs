@@ -28,7 +28,7 @@ pub fn cmd_method(root: &Path, args: &[&str]) -> Result<(), String> {
     let text = fs::read_to_string(sh.dir.join("node.toml")).map_err(|e| e.to_string())?;
     let r = vleo_sheet::method::report_toml(&text)?;
     if sh.method.text.trim().is_empty() {
-        println!("{id}: no method yet — the node keeps its hand-written holes until its owner sends one.");
+        println!("{id}: no method yet — the node answers nothing until its owner sends one.");
         return Ok(());
     }
     println!(
@@ -424,8 +424,8 @@ pub fn cmd_build_node(root: &Path, args: &[&str]) -> Result<(), String> {
         || {
             if sh.method.text.trim().is_empty() {
                 return Err(format!(
-                    "{id} has no method. Its code is its hand-written holes, built and tested by \
-                     `gate` and `cargo test` as before; build-node starts from a method."
+                    "{id} has no method, so there is nothing to build: it answers nothing, \
+                     refused by name, until its owner sends one. build-node starts from a method."
                 ));
             }
             cmd_method(root, &[id])?;

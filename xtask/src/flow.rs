@@ -173,7 +173,6 @@ fn refresh_locks(root: &Path) -> Result<(), String> {
     for manifest in [
         "Cargo.toml",
         "crates/vleo-py/Cargo.toml",
-        "crates/vleo-wasm/Cargo.toml",
         "crates/vleo-kernel-wasm/Cargo.toml",
     ] {
         let ok = Command::new("cargo")

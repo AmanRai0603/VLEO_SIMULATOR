@@ -11,9 +11,9 @@ use std::process::ExitCode;
 use vleo_sheet::{emit, gate, load_all, page, Tree};
 
 mod catalogue;
+mod confirm;
 mod convert;
 mod files;
-mod fills;
 mod flow;
 mod forms;
 mod graph;
@@ -24,7 +24,7 @@ mod pipeline;
 mod readers;
 mod release;
 mod report;
-use fills::*;
+use confirm::*;
 use forms::*;
 use graph::*;
 use hooks::*;
@@ -62,7 +62,7 @@ fn main() -> ExitCode {
 
     // The commands in the authoring loop. A person running one of these is
     // about to commit; a person running `status` or `graph` is reading.
-    if matches!(cmd, "gate" | "ready" | "fill" | "declare" | "new" | "docs") {
+    if matches!(cmd, "gate" | "ready" | "declare" | "new" | "docs") {
         warn_if_hooks_are_not_wired(&root);
     }
 
@@ -107,13 +107,11 @@ pub(crate) fn dispatch(root: &Path, cmd: &str, rest: &[&str]) -> Result<(), Stri
         "graph" => cmd_graph(&root),
         "new" => cmd_new(&root, &rest),
         "declare" => cmd_declare(&root, &rest),
-        "fill" => cmd_fill(&root, &rest),
         "ready" => cmd_ready(&root, &rest),
         "codeowners" => cmd_codeowners(&root),
         "bundle" => cmd_bundle(&root, &rest),
         "variables" => cmd_variables(&root),
         "setup" => cmd_setup(&root),
-        "differential" => cmd_differential(&root, &rest),
         "confirm" => cmd_confirm(&root, &rest),
         "lesson" => cmd_lesson(&root, &rest),
         "readers" => readers::cmd_readers(&root, &rest),
@@ -152,10 +150,10 @@ pub(crate) fn dispatch(root: &Path, cmd: &str, rest: &[&str]) -> Result<(), Stri
 const HELP: &str = "\
 cargo xtask <command>
 
-  docs [<node>]      the per-node generators that write files — model,
-                     contract, module, evidence and metadata, each from the
-                     node's own sheet. A node's page is rendered from its
-                     sheet when it is opened, and is never written here.
+  docs [<node>]      the per-node generators that write files — each node's
+                     metadata, from its own sheet, and every method translated
+                     into the kernel. A node's page is rendered from its sheet
+                     when it is opened, and is never written here.
   assemble           the three assembly generators — the index, the document
                      and the graph tables. They combine and refuse; they never
                      decide, because a decision taken during assembly is a
@@ -192,17 +190,6 @@ cargo xtask <command>
                      until every one is answered. Add --source <path> to record
                      where the drafting started; --json prints the questions
                      for a tool to read.
-  fill <node> --hole <n> --body <file|-> [--by <who> --model <model>]
-                     splice one hole body into a generated model.rs. Whoever
-                     writes the body — a developer, or an assistant a developer
-                     runs — returns the few typed lines as text and this puts
-                     them where they go: nothing is handed the whole file.
-  differential <node>
-                     re-run the node against every other recorded body for the
-                     same hole. A significant node is filled twice by different
-                     models and the two are compared; this is the comparison.
-                     Recorded by `fill --by`, which refuses a second body from
-                     the model that wrote the first.
   confirm --list [<subsystem>]
                      the relations with nobody's name against them, grouped by
                      the owner who has to supply one.
@@ -237,9 +224,9 @@ cargo xtask <command>
                      check it, write it as lesson.toml beside the row's
                      node.toml, and gate the row — or put the row back.
                      --check (what --dry-run runs) only checks.
-  publish <node>     move a filled, seeded row to published, so its model,
-                     contract and evidence are generated and its holes can be
-                     written. Refuses, naming every reason, while it is not ready.
+  publish <node>     move a filled, seeded row to published, write its metadata
+                     and gate the tree. Refuses, naming every reason, while it
+                     is not ready.
   derisk             write docs/DERISK_NARRATIVE.md and docs/derisking.csv — every
                      recorded change, in the columns of the de-risking narrative,
                      and every registered risk as it stands. Generated from the
@@ -486,7 +473,7 @@ fn cmd_publish(root: &Path, args: &[&str]) -> Result<(), String> {
         },
     )?;
     run.done(&format!(
-        "published {id}. Its holes are next — `cargo run -p xtask -- fill {id} --hole <n> --body <file>`."
+        "published {id}. Its method is next — `cargo run -p xtask -- build-node {id}`."
     ));
     Ok(())
 }
@@ -518,23 +505,8 @@ fn cmd_docs(root: &Path, args: &[&str]) -> Result<(), String> {
             }
         }
         touched += 1;
-        let holes = vleo_sheet::load::read_holes(&sh.dir);
-        let gaps = emit::gap_pass(sh, &holes);
-        // A seeded row gets its page and its metadata and no code at all.
-        // Everything is ready for it; the content is what is missing, and
-        // generating a file full of `todo!()` would hide that behind something
-        // that looks like work.
-        let artefacts: Vec<(&str, String)> = if sh.is_seeded() {
-            vec![("meta.json", emit::meta_json(sh, &gaps))]
-        } else {
-            vec![
-                ("model.rs", emit::model_rs(sh, &holes)),
-                ("contract.rs", emit::contract_rs(sh)),
-                ("mod.rs", emit::mod_rs(sh)),
-                ("evidence.rs", emit::evidence_rs(sh)),
-                ("meta.json", emit::meta_json(sh, &gaps)),
-            ]
-        };
+        let gaps = emit::gap_pass(sh);
+        let artefacts = [("meta.json", emit::meta_json(sh, &gaps))];
         // A node's page is rendered from its sheet when it is opened; a copy
         // left in the folder from before would be read by nothing and believed
         // by whoever opened it.
@@ -544,15 +516,6 @@ fn cmd_docs(root: &Path, args: &[&str]) -> Result<(), String> {
             written += 1;
         }
         for (name, text) in artefacts {
-            // Format the candidate before comparing, so the generator is a
-            // function of its input: writing unformatted text and formatting it
-            // afterwards makes every run report a change and the
-            // regenerate-and-compare check stops meaning anything.
-            let text = if name.ends_with(".rs") {
-                gate::formatted(&text)
-            } else {
-                text
-            };
             if write_if_changed(&sh.dir.join(name), &text)? {
                 written += 1;
             }
@@ -618,7 +581,7 @@ fn cmd_assemble(root: &Path, args: &[&str]) -> Result<(), String> {
     fs::create_dir_all(&frag_dir).map_err(|e| format!("{}: {e}", frag_dir.display()))?;
     let mut bytes = 0usize;
     for sh in tree.ordered() {
-        let t = page::fragment(sh, &vleo_sheet::load::read_holes(&sh.dir), &tree);
+        let t = page::fragment(sh, &tree);
         bytes += t.len();
         fs::write(frag_dir.join(format!("{}.html", sh.id)), t)
             .map_err(|e| format!("fragment {}: {e}", sh.id))?;
@@ -808,14 +771,13 @@ fn clone_sheet(sheet: &str, id: &str, folder: &str, src_order: u32) -> (String, 
         } else {
             out.push_str(line);
             out.push('\n');
-            // Criticality decides how many people read this node and whether
-            // its hole is filled twice by different model families. A sibling's
+            // Criticality decides how many people read this node. A sibling's
             // answer is not this node's answer, so it is asked here rather than
             // inherited silently.
             if l.starts_with("tier = ") && !sheet.contains("criticality") {
                 out.push_str(
                     "criticality = \"minor\"   # minor | significant — significant means two \
-                     reviewers and a differential fill\n",
+                     reviewers\n",
                 );
             }
         }

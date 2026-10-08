@@ -1,6 +1,6 @@
 # Architecture
 
-> **Answer first.** Four rings depend inward only — units, the kernel, the bus, the subsystem crates — and every face sits outside them; this is why, and what each ring may and may not do.
+> **Answer first.** Four rings depend inward only — units, the kernel, the bus, the engine — and every face sits outside them; this is why, and what each ring may and may not do.
 >
 > **Kind:** explanation · **For:** developers
 
@@ -18,8 +18,7 @@ closed, is `docs/SYSTEM_MODEL.md`; how it is operated is
     RING 0   vleo-units     units and frames as types, constants, portable maths
     RING 1   vleo-core      every formula, faults, credibility, the resolver
     RING 2   vleo-bus       the wire contract every face speaks
-    RING 3   vleo-mod-*     nineteen crates, one per owner
-             vleo-modules   the facade: the graph tables, compiled in
+    RING 3   vleo-modules   the engine: reads the design from its files and runs it
     FACES    wasm · daemon · cli · console · ffi · py
 
 A ring may call inward and never outward. So *the kernel cannot draw* is a
@@ -27,22 +26,17 @@ compile error rather than a review comment: `vleo-core` has no renderer, no
 filesystem crate and no allocator anywhere in its dependency tree, and it has
 exactly one dependency, which is a leaf.
 
-## Why a crate per subsystem, not folders in one
+## Why the nodes are folders, not crates
 
-Inside a single crate, `use crate::prop::…` from `power` compiles and the
-isolation rule is unenforced. Separate crates make it a manifest line: a sibling
-a crate did not declare will not compile.
+The nodes were once twenty crates, one per owner, so that a sibling a crate did
+not declare would not compile. They hold no code now. A node is its sheet, and
+its relation is its method, which the method interpreter runs when the engine
+runs the design read from `design/`. `vleo-modules` holds no formula and no
+row, and the faces take one dependency on it.
 
-The faces still take one dependency on the facade, and the compiler still sees
-nineteen units, so they build in parallel.
-
-One per *owner*, not per discipline: a crate split along discipline puts one
-subsystem layer's rows in three places, and `V12 one crate per owner` fails the
-assembly if any group's rows end up in two crates or any crate holds two layers.
-
-This was found by building it the other way first. The shared-crate version
-passed every other check in the design while quietly making its central claim
-false.
+The folders under `crates/vleo-mod-*/nodes/` stay until the switch-over, one
+per *owner*, not per discipline: `V12 one crate per owner` fails the assembly
+if any group's rows end up in two of them or any one holds two layers.
 
 ## The shell is a tree of modules, not a bundle
 
@@ -218,9 +212,9 @@ and a reader should not watch a blank panel while they run.
 
 |  | back end | front end |
 |---|---|---|
-| per node | `model.rs` | the node's page, rendered from its sheet when it is opened |
-| assembled by | a generated module list | a generated index |
-| into | one crate | one document |
+| per node | its method, in its sheet | the node's page, rendered from its sheet when it is opened |
+| assembled by | the design's files, `design/` | a generated index |
+| into | one graph, run by the engine | one document |
 | touched when a node is added | one new file | none |
 
 An earlier draft had per-node Rust files assembled into a crate and a *single*
@@ -229,18 +223,18 @@ a node on the same afternoon produce four merge conflicts in one document — in
 generated content nobody is allowed to hand-edit — and zero with a fragment
 each.
 
-It is the same rule already stated for the module list and the index: **never
+It is the same rule already stated for the index: **never
 commit an aggregate**. The document was an aggregate hiding in plain sight.
 
 ## What is committed, and what is built
 
-**Committed** — every `node.toml`, every `fixtures.toml`, the hole bodies, and
-the per-node generated artefacts. The last of those is deliberate: a committed
-`model.rs` is diffable and reviewable, and a generator bug is visible in a
-pull request rather than only in a build log.
+**Committed** — every `node.toml`, every `fixtures.toml`, each node's
+`meta.json`, and `design/`, the design as its files. The last two are
+deliberate: a committed generated file is diffable and reviewable, and a
+generator bug is visible in a pull request rather than only in a build log.
 
-**Never committed** — the assembled document, the index, the module lists, the
-graph tables, the compiled engine. Every node would touch them, so every merge
+**Never committed** — the assembled document, the index, the graph tables, the
+compiled engine. Every node would touch them, so every merge
 would conflict in generated content nobody is allowed to edit.
 
 One sentence: **per-node artefacts are committed, everything that combines them

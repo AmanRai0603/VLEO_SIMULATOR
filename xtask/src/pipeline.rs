@@ -31,7 +31,7 @@ pub(crate) const STAGES: &[(&str, &str)] = &[
     ),
     (
         "publish",
-        "a filled row's code generated, and its holes written",
+        "a filled row published, and named by the person who confirms it",
     ),
     (
         "build",
@@ -133,22 +133,11 @@ pub(crate) const PIPELINE: &[Cmd] = &[
         name: "publish",
         stage: "publish",
         reads: "the node's sheet",
-        writes: "node.toml's state, and the node's generated model, contract, evidence, module, page and metadata",
+        writes: "node.toml's state, and the node's metadata",
         checks: "every completion question answered; the whole tree's gate",
         undo: GIT_UNDO,
         code: ("xtask/src/main.rs", "cmd_publish"),
         steps: &["read the sheet", "publish, generate and gate"],
-        dry: Dry::Plan,
-    },
-    Cmd {
-        name: "fill",
-        stage: "publish",
-        reads: "the node's sheet and model.rs, the body",
-        writes: "one HOLE block in model.rs; with --by: fills.toml",
-        checks: "no HOLE marker, fault or early return in the body; portable maths only; a significant node's body is attributed; the body landed",
-        undo: "`git restore` the node's model.rs and fills.toml",
-        code: ("xtask/src/fills.rs", "cmd_fill"),
-        steps: &["read the body", "check the body", "splice into the hole"],
         dry: Dry::Plan,
     },
     Cmd {
@@ -158,7 +147,7 @@ pub(crate) const PIPELINE: &[Cmd] = &[
         writes: "with <node> --by: that node's confirmation",
         checks: "that the relation and its source are printed first",
         undo: GIT_UNDO,
-        code: ("xtask/src/fills.rs", "cmd_confirm"),
+        code: ("xtask/src/confirm.rs", "cmd_confirm"),
         steps: &[],
         dry: Dry::Plan,
     },
@@ -248,21 +237,10 @@ pub(crate) const PIPELINE: &[Cmd] = &[
         dry: Dry::Reads,
     },
     Cmd {
-        name: "differential",
-        stage: "build",
-        reads: "every recorded body for the node's holes",
-        writes: NOTHING,
-        checks: "the node against each other recorded body",
-        undo: READS_ONLY,
-        code: ("xtask/src/fills.rs", "cmd_differential"),
-        steps: &[],
-        dry: Dry::Reads,
-    },
-    Cmd {
         name: "docs",
         stage: "gate",
         reads: "every sheet",
-        writes: "each node's generated files — model, contract, module, evidence, metadata — and docs/PSEUDOCODE.md; a page.html left in a node folder from before is removed",
+        writes: "each node's metadata, the methods translated into the kernel, and docs/PSEUDOCODE.md; a page.html left in a node folder from before is removed",
         checks: "that each sheet generates",
         undo: GIT_UNDO,
         code: ("xtask/src/main.rs", "cmd_docs"),
@@ -516,7 +494,7 @@ pub(crate) const PIPELINE: &[Cmd] = &[
     Cmd {
         name: "why",
         stage: "read",
-        reads: "the node in the design (design/), its git history, fills and traces",
+        reads: "the node in the design (design/), its git history and traces",
         writes: NOTHING,
         checks: "the node's gate, run now",
         undo: READS_ONLY,
@@ -1061,20 +1039,7 @@ pub(crate) fn cmd_why(root: &Path, args: &[&str]) -> Result<(), String> {
             }
         );
     } else {
-        let holes = vleo_sheet::load::read_holes(&sh.dir);
-        let filled = holes.values().filter(|b| !b.trim().is_empty()).count();
-        println!(
-            "  hand-written holes: {filled} of {} filled",
-            sh.steps.len()
-        );
-        if let Ok(t) = fs::read_to_string(sh.dir.join("fills.toml")) {
-            for l in t
-                .lines()
-                .filter(|l| l.trim_start().starts_with("by") || l.trim_start().starts_with("model"))
-            {
-                println!("    {}", l.trim());
-            }
-        }
+        println!("  no method yet: it answers nothing until one is written");
     }
     println!(
         "  fixtures: {} value(s) from outside the code",

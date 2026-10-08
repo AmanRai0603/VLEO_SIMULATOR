@@ -1,6 +1,6 @@
 # Changing the code
 
-> **Answer first.** Four kinds of change reach this code, and each has one path: a **node** arrives in its group's sealed release, on the shared drive, and the generators write its code; a **route** is a handler, a contract entry and a manual entry; a **component** is drawn once in `web/js/components.js` or declared as a panel in `panels/`; an **output kind** is a variant of `vleo_modules::figure::Kind`, a player for it and a sample. Every path ends at the same two commands: `cargo run -p xtask -- gate && cargo test`.
+> **Answer first.** Four kinds of change reach this code, and each has one path: a **node** arrives in its group's sealed release, on the shared drive, and the engine runs its method; a **route** is a handler, a contract entry and a manual entry; a **component** is drawn once in `web/js/components.js` or declared as a panel in `panels/`; an **output kind** is a variant of `vleo_modules::figure::Kind`, a player for it and a sample. Every path ends at the same two commands: `cargo run -p xtask -- gate && cargo test`.
 >
 > **Kind:** how-to + reference · **For:** developers changing the tool, and any assistant they run
 
@@ -32,14 +32,14 @@ with no command in this repository (`docs/GROUP_APPS.md`). What the code does
 for a node, each command explaining itself
 (`cargo run -p xtask -- explain <command>`):
 
-    cargo run -p xtask -- publish <node>              a filled row's code generated, with numbered holes
+    cargo run -p xtask -- publish <node>              a filled, seeded row moved to published
     cargo run -p xtask -- build-node <node>           a node with a method, translated and tested
     cargo run -p xtask -- gate && cargo test
 
 What you may edit by hand in a node's folder: `node.toml` (only through a
-reviewed developer change), `fixtures.toml` (values from outside this
-code, never `self-snapshot`), and the numbered `HOLE` blocks in `model.rs`. Every
-other file is generated and is overwritten — see §5. What a sheet's fields mean is
+reviewed developer change), and `fixtures.toml` (values from outside this
+code, never `self-snapshot`). Every other file is generated and is overwritten —
+see §5. What a sheet's fields mean is
 `docs/NODE_AUTHORING.md`; the method language is `docs/PSEUDOCODE.md`.
 
 A relation is a formula, and a formula lives in `vleo-core::physics` (rule 3).
@@ -118,13 +118,13 @@ documentation check fails until this table names it.
 ## 5 · The generators, with an example
 
 A sheet is the only source (rule 1). From it the generators write the rest, and
-the gate's regeneration diff fails any generated file that does not match what
+the pipeline's regeneration diff fails any generated file that does not match what
 its generator would write now.
 
 | Command | Reads | Writes |
 |---|---|---|
-| `xtask docs [<node>]` | each `node.toml` | the node's `contract.rs`, `model.rs` outside its holes, `mod.rs`, `evidence.rs`, `meta.json` — a node's page is rendered when it is opened, never written |
-| `xtask assemble` | every sheet | the graph tables the kernel loads, the module wiring, the bindings |
+| `xtask docs [<node>]` | each `node.toml` | the node's `meta.json`, and each method translated into `crates/vleo-core/src/physics/methods/`, a translation that goes in phase E — a node's page is rendered when it is opened, never written |
+| `xtask assemble` | every sheet | the index the faces read and every page fragment, in `generated/` |
 | `xtask variables` | every sheet | `docs/VARIABLES.md` |
 | `xtask codeowners` | every sheet's owner | `CODEOWNERS` |
 | `xtask derisk` | every `[[version]]` | `docs/DERISK_NARRATIVE.md` |
@@ -141,19 +141,11 @@ will give, and why:
     lower = 40.0
     reason_lower = "the lowest value this relation can return is 48, at G1. …"
 
-`xtask docs` turns those two lines into a guard in `model.rs` that refuses a
-smaller answer by name, with the reason as the refusal's text —
-
-    if answer.get() < 40.0 {
-        return Err(Fault::OutOfDomain { node: NODE_ID, field: "Ap_design", value: answer.get(),
-            bound: 40.0, edge: Edge::Lower, unit: Ratio::UNIT, reason: "the lowest value …" });
-    }
-
-— and into the row's page, where a reader sees "Outside `40 … 140` the
-row refuses rather than answers" followed by the same reason. Change the bound
-in the sheet and both move together; change it in `model.rs` and the next
-`xtask docs` puts it back, and the gate says so. That is the whole design in one
-field: the number and its reason are written once, by a person, and everything
+The engine turns those two lines into a guard that refuses a smaller answer by
+name, with the reason as the refusal's text; the row's page says "Outside
+`40 … 140` the row refuses rather than answers" followed by the same reason.
+Change the bound in the sheet and both move together. That is the whole design
+in one field: the number and its reason are written once, by a person, and everything
 that repeats them is printed.
 
 ## 6 · The docs a change needs

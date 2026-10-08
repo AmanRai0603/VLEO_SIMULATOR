@@ -7,7 +7,7 @@
 //! register on a risk-register row (docs/DERISKING.md).
 
 use std::path::{Path, PathBuf};
-use vleo_sheet::load::{load_all, read_holes};
+use vleo_sheet::load::load_all;
 use vleo_sheet::page::fragment;
 
 fn root() -> PathBuf {
@@ -22,7 +22,7 @@ fn root() -> PathBuf {
 fn page(id: &str) -> String {
     let tree = load_all(&root()).unwrap();
     let sh = tree.sheets.get(id).unwrap();
-    fragment(sh, &read_holes(&sh.dir), &tree)
+    fragment(sh, &tree)
 }
 
 /// Where a string first appears, failing by name when it does not.

@@ -64,7 +64,6 @@ de-risking
 interface
 algorithm
 the relation, moving
-generated code
 evidence
 flags
 credibility
@@ -76,7 +75,6 @@ explanation
 reference
 reference
 tutorial
-reference
 reference
 reference
 explanation
@@ -131,7 +129,7 @@ reference
 <p class="d-l predict">Before you run it: what do you expect the answer to be, roughly, and which input do you expect to move it most? Write it down — then run, and compare. A guess that was wrong is the most useful thing on this page.</p>
 <p class="d-lr muted">Run it from the panel beside this page, on your own inputs, or open <i>the relation, moving</i> to watch the answer cross its range.</p>
 </div>
-<!-- part: theory-none -->Nobody has written the theory for this row yet. The relation is stated in the tab before this one and generated in the tab after it; what is missing is why it is that relation, which is the part a reader cannot recover from either.<!-- part: theory-why -->
+<!-- part: theory-none -->Nobody has written the theory for this row yet. The relation is stated in the tab before this one and run in the tabs after it; what is missing is why it is that relation, which is the part a reader cannot recover from either.<!-- part: theory-why -->
 <p class="why">{{text}}</p>
 <!-- part: theory-steps-open -->
 <p class="muted">Each line below is {{derived}} from the one before, ending at the relation — which is {{sourced}}.</p>
@@ -191,7 +189,7 @@ Would break if
 <p class="muted">This node answers with a set: <b>{{n}}</b> variable{{s}} in all. The first is the answer the node is named for; the rest are read by name.</p>
 <!-- part: consumers -->
 <p class="consumers"><b>{{n}}</b> node{{s}} read this: {{list}}</p>
-<!-- part: consumers-none -->nothing yet.<!-- part: list-sep -->, <!-- part: algo-none -->No steps yet. Each step becomes one hole in the generated code.<!-- part: algo-declared -->
+<!-- part: consumers-none -->nothing yet.<!-- part: list-sep -->, <!-- part: algo-none -->No steps yet. Each step becomes a line of the row's method.<!-- part: algo-declared -->
 <p>This is a declared value: <b>{{value}}</b> {{unit}}, confirmed by <b>{{by}}</b>.</p>
 <!-- part: algo-open -->
 <ol class="algo">
@@ -222,7 +220,7 @@ Would break if
 
     return {{symbol}}
 </code></pre>
-<p class="muted">Derived from the sheet, not from the generated Rust, so it says what the sheet declares rather than what one compiler made of it. The guards are postconditions: this node refuses rather than returning a number outside them.</p>
+<p class="muted">Derived from the sheet, so it says what the sheet declares rather than what one run made of it. The guards are postconditions: this node refuses rather than returning a number outside them.</p>
 <!-- part: method-none -->
 <h4>The method</h4>
 <p class="muted">No method yet. When this node's owner sends one — the relation in the method language, with their own code and test cases — the tool checks all three against each other (docs/PSEUDOCODE.md).</p>
@@ -258,9 +256,6 @@ Would break if
 <div class="relation-host" data-node="{{id}}" data-lo="{{lo}}" data-hi="{{hi}}" data-symbol="{{symbol}}">
 <p class="muted">asking the engine…</p>
 </div>
-<!-- part: code-none -->Nothing generated — the sheet is incomplete.<!-- part: code-gen -->
-<p class="muted">This is the file compiled into the engine that returns the number above. There is no version of this where the page and the code disagree, because disagreement is a build failure.</p>
-<pre class="code"><code>{{code}}</code></pre>
 <!-- part: fx-none -->No known-good numbers yet. A number from our own code does not count.<!-- part: fx-open -->
 <table class="fx"><thead><tr><th>case</th><th>expected</th><th>tolerance</th><th>provenance</th><th>source</th></tr></thead><tbody>
 <!-- part: fx-row -->

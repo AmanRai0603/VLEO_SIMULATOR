@@ -45,7 +45,7 @@ pub(super) fn cmd_status(root: &Path) -> Result<(), String> {
         } else {
             e[2] += 1;
         }
-        gaps_total += emit::gap_pass(sh, &vleo_sheet::load::read_holes(&sh.dir)).len();
+        gaps_total += emit::gap_pass(sh).len();
     }
     println!(
         "{:<12} {:>6} {:>10} {:>10}",
@@ -68,7 +68,7 @@ pub(super) fn cmd_status(root: &Path) -> Result<(), String> {
             - tree
                 .ordered()
                 .iter()
-                .filter(|s| !emit::gap_pass(s, &vleo_sheet::load::read_holes(&s.dir)).is_empty())
+                .filter(|s| !emit::gap_pass(s).is_empty())
                 .count(),
         tree.sheets.len(),
         tree.sheets.len()
@@ -257,7 +257,7 @@ pub(super) fn cmd_declare(root: &Path, args: &[&str]) -> Result<(), String> {
         "  criticality = {} — {}",
         sh.criticality,
         if sh.criticality == "significant" {
-            "two reviewers, and the hole filled twice by different model families"
+            "two reviewers"
         } else {
             "one reviewer; raise it on purpose, not by default"
         }
@@ -361,7 +361,7 @@ pub(super) fn cmd_ready(root: &Path, args: &[&str]) -> Result<(), String> {
             ));
             continue;
         }
-        let gaps = emit::gap_pass(sh, &vleo_sheet::load::read_holes(&sh.dir));
+        let gaps = emit::gap_pass(sh);
         if !gaps.is_empty() {
             held.push((sh.id.clone(), "the gap pass".into(), gaps.join("; ")));
             continue;

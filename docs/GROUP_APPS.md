@@ -223,8 +223,8 @@ reason, and a release whose relation an assistant supplied is refused.
 ## What the applications do not do
 
 - **They run nothing.** The pseudocode is read and typeset, never executed;
-  the results are the node engineer's. The developer's engine is generated from the
-  pseudocode after the seal and tested against these results.
+  the results are the node engineer's. After the seal the engine runs the pseudocode
+  in the method interpreter, and is tested against these results.
 - **They do not merge two people's edits to one file.** Each file has one
   writer by design. If two copies of one node file come back, the subsystem engineer keeps
   one and the assembly names the other.

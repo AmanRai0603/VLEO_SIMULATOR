@@ -4,14 +4,13 @@
     tools/template_check.py
     tools/template_check.py --selftest
 
-Every node is the same eight files in one directory. That uniformity is what
+Every node is the same few files in one directory. That uniformity is what
 makes adding a node a copy rather than a decision, ownership a path rule, and a
 node's history the history of a directory — and it is the kind of property that
 degrades one folder at a time without anything noticing, because each individual
 departure looks harmless.
 
-`xtask gate` already proves the GENERATED files match what the generators would
-write. What it does not check is the shape of the folder itself: a stray file
+`xtask gate` checks what a sheet says. What it does not check is the shape of the folder itself: a stray file
 somebody left behind, a fixtures.toml beside a declared row that generates no
 tests from it, a sheet missing a section the template requires, a parity.csv
 with nothing to be the parity of. Those are the drifts this looks for.
@@ -30,19 +29,14 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 
-#: The template, and it is STATE-DEPENDENT. A seeded row generates no Rust —
-#: "the folder exists, the row is on the tree, every tab opens and each one says
-#: what goes in it" — so its folder is the sheet, its fixtures and the metadata.
-#: No folder holds its page: the engine renders it from the sheet when it is
-#: opened, and one tab set across every rendered page is held in cargo test
-#: (crates/vleo-sheet/tests/every_page_has_one_tab_set.rs). A published row generates the four Rust files as well. Checking the
-#: Rust against a seeded folder is checking for something the template does not
-#: promise, and a checker that reports 1078 nodes as broken is a checker nobody
-#: will run twice.
+#: The template, the same for a seeded row and a published one: the sheet, its
+#: fixtures and the metadata. No folder holds code — every relation is its
+#: method, in the sheet, run by the interpreter — so Rust in a node folder is a
+#: stray like any other. No folder holds its page either: the engine renders it
+#: from the sheet when it is opened, and one tab set across every rendered page
+#: is held in cargo test (crates/vleo-sheet/tests/every_page_has_one_tab_set.rs).
 BY_HAND = {"node.toml", "fixtures.toml"}
-ALWAYS_GENERATED = {"meta.json"}
-WHEN_PUBLISHED = {"model.rs", "contract.rs", "mod.rs", "evidence.rs"}
-GENERATED = ALWAYS_GENERATED | WHEN_PUBLISHED
+GENERATED = {"meta.json"}
 #: Beside those, exactly one other file is allowed, and only with a reason.
 OPTIONAL = {"parity.csv"}
 
@@ -58,20 +52,13 @@ def node_dirs():
     return sorted(ROOT.glob("crates/*/nodes/*"))
 
 
-def check_folder(d, names, published, findings):
+def check_folder(d, names, findings):
     """The files in one node directory, against the template."""
     strays = names - BY_HAND - GENERATED - OPTIONAL
     for s in sorted(strays):
         findings.append(f"{d.name}: {s} is not part of the node template")
-    want = ALWAYS_GENERATED | (WHEN_PUBLISHED if published else set())
-    for g in sorted(want - names):
+    for g in sorted(GENERATED - names):
         findings.append(f"{d.name}: {g} is missing — the folder was never generated")
-    # The other direction, which is the drift that actually hides: Rust beside a
-    # row that is not published. Either the state was walked back and the
-    # artefacts left behind, or the sheet says one thing and the folder another.
-    if not published:
-        for g in sorted(WHEN_PUBLISHED & names):
-            findings.append(f"{d.name}: {g} exists but the sheet is not published")
     if "node.toml" not in names:
         findings.append(f"{d.name}: no sheet, so nothing here can be regenerated")
     for sub in (p for p in d.iterdir() if p.is_dir()):
@@ -112,17 +99,6 @@ def check_sheet(d, names, findings):
     return sh
 
 
-def check_generated_banner(d, findings):
-    """Every generated file says so, at the top, in the same words."""
-    for g in ("model.rs", "contract.rs", "mod.rs", "evidence.rs"):
-        p = d / g
-        if not p.is_file():
-            continue
-        head = p.read_text(errors="replace")[:400]
-        if "GENERATED from node.toml" not in head:
-            findings.append(f"{d.name}/{g}: no generated banner — a reader cannot tell not to edit it")
-
-
 def run():
     findings = []
     dirs = node_dirs()
@@ -136,8 +112,7 @@ def run():
         sh = check_sheet(d, names, findings)
         published = bool(sh) and (sh.get("state", "") not in ("", "empty"))
         states["published" if published else "seeded"] += 1
-        check_folder(d, names, published, findings)
-        check_generated_banner(d, findings)
+        check_folder(d, names, findings)
     findings.insert(0, None)   # placeholder, replaced by the caller's summary
     findings.pop(0)
     return dirs, findings, states
@@ -194,13 +169,13 @@ def selftest():
         expect("a stray file in a node folder", "not part of the node template",
                lambda: stray.write_text("left behind\n"), lambda: stray.unlink())
 
-        gone = work / "contract.rs"
+        gone = work / "meta.json"
         keep = gone.read_text()
-        expect("a generated file missing from a published node", "never generated",
+        expect("a generated file missing from a node", "never generated",
                lambda: gone.unlink(), lambda: gone.write_text(keep))
 
         intruder = seed / "model.rs"
-        expect("Rust beside a row that is not published", "but the sheet is not published",
+        expect("Rust in a node folder", "model.rs is not part of the node template",
                lambda: intruder.write_text("// left over\n"), lambda: intruder.unlink())
 
         sheet = work / "node.toml"
@@ -217,12 +192,6 @@ def selftest():
         gk = grid.read_text()
         expect("migrated_from with no grid beside it", "migrated_from with no parity.csv",
                lambda: grid.unlink(), lambda: grid.write_text(gk))
-
-        banner = work / "mod.rs"
-        bk = banner.read_text()
-        expect("a generated file with no banner", "no generated banner",
-               lambda: banner.write_text(bk.replace("GENERATED from node.toml", "written by hand", 1)),
-               lambda: banner.write_text(bk))
 
         after = under(tmp)
         cases.append(("everything restored", not after))

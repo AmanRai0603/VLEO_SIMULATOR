@@ -22,7 +22,7 @@ in a browser, and the three pages that say what 1.0 is:
 The code of an integrated design tool for very-low-Earth-orbit spacecraft. One
 kernel computes every number; four rings depend inward only:
 
-    vleo-units  →  vleo-core  →  vleo-bus  →  vleo-mod-*  →  the faces
+    vleo-units  →  vleo-core  →  vleo-bus  →  vleo-modules  →  the faces
     RING 0         RING 1        RING 2       RING 3
 
 Around them: the method interpreter, the library that reads, writes and checks
@@ -160,9 +160,9 @@ this repository takes it in. This section is deleted on that day.
   drive, it builds today's design from every group's latest sealed release that
   passes its checks, or a group's last good one, and says which and why. The
   release is never edited; a fix goes back to the group (`docs/GROUP_APPS.md`).
-- **The node sheet is the only source.** Every other file in a node folder is
-  generated from `node.toml`, and a hand edit outside a numbered `HOLE` block
-  fails the regeneration diff.
+- **The node sheet is the only source.** A node folder holds its sheet, its
+  fixtures and the `meta.json` generated from them, and no code: every
+  relation is the node's method, run by the interpreter.
 - **`design/` is the design as its files,** converted from the sheets and held
   equal to them by a test. A change to a sheet converts it again in the same
   commit: delete `design/`, then `cargo run -p xtask -- convert --out design`

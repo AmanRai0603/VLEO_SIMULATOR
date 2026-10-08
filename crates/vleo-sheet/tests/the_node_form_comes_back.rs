@@ -32,10 +32,6 @@ fn root() -> PathBuf {
                 );
             }
         }
-        copy(
-            &real.join("crates/vleo-wasm/src"),
-            &to.join("crates/vleo-wasm/src"),
-        );
         for d in ["layers", "cases", "sources", "web"] {
             copy(&real.join(d), &to.join(d));
         }

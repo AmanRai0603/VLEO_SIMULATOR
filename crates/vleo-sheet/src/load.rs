@@ -828,7 +828,10 @@ fn load_sheet(files: &dyn Files, dir: &Path, crate_name: &str) -> Result<Sheet, 
         canon.push_str(&format!("children:{}{:?}", c.group, c.from));
     }
     sh.sheet_hash = fnv1a(&canon);
-    sh.impl_hash = fnv1a(&read_holes_raw(files, dir));
+    // The code under a row. No row holds any: every relation is its method,
+    // and the method is in the sheet hash. So this is the hash of nothing, as
+    // every row on record has it, and the chain hash does not move.
+    sh.impl_hash = fnv1a("");
     Ok(sh)
 }
 
@@ -845,81 +848,6 @@ fn reflow(s: &str) -> String {
         .filter(|p| !p.is_empty())
         .collect::<Vec<_>>()
         .join("\n\n")
-}
-
-/// The hole bodies, as one string, for the implementation hash.
-fn read_holes_raw(files: &dyn Files, dir: &Path) -> String {
-    let p = dir.join("model.rs");
-    let text = match files.read_to_string(&p) {
-        Ok(t) => t,
-        Err(_) => return String::new(),
-    };
-    let mut out = String::new();
-    let mut inside = false;
-    for line in text.lines() {
-        let l = line.trim();
-        if l.starts_with("// ---- HOLE ") {
-            inside = true;
-            continue;
-        }
-        if l.starts_with("// ---- end HOLE") {
-            inside = false;
-            continue;
-        }
-        if inside {
-            out.push_str(l);
-            out.push('\n');
-        }
-    }
-    out
-}
-
-/// The bodies of the filled holes, keyed by hole number.
-///
-/// This is the generation gap: the scaffold is emitted from the sheet every
-/// time, and the few typed lines inside each marker are carried across
-/// unchanged. A hand edit anywhere outside a marker is lost by the
-/// regeneration and therefore caught by the regeneration diff, which is what
-/// makes the generated region genuinely owned by the generator rather than
-/// merely labelled that way.
-pub fn read_holes(dir: &Path) -> BTreeMap<u32, String> {
-    read_holes_in(&crate::files::Disk, dir)
-}
-
-/// The same, from whatever holds the tree — the folders, or the design's files.
-pub fn read_holes_in(files: &dyn Files, dir: &Path) -> BTreeMap<u32, String> {
-    let mut map = BTreeMap::new();
-    let p = dir.join("model.rs");
-    let text = match files.read_to_string(&p) {
-        Ok(t) => t,
-        Err(_) => return map,
-    };
-    let mut current: Option<u32> = None;
-    let mut buf = String::new();
-    for line in text.lines() {
-        let l = line.trim();
-        if let Some(rest) = l.strip_prefix("// ---- HOLE ") {
-            let n: u32 = rest
-                .split_whitespace()
-                .next()
-                .and_then(|x| x.parse().ok())
-                .unwrap_or(0);
-            current = Some(n);
-            buf.clear();
-            continue;
-        }
-        if l.starts_with("// ---- end HOLE") {
-            if let Some(n) = current.take() {
-                map.insert(n, buf.trim_end().to_string());
-            }
-            continue;
-        }
-        if current.is_some() {
-            buf.push_str(line);
-            buf.push('\n');
-        }
-    }
-    map
 }
 
 fn load_layers(fs: &dyn Files, tree: &mut Tree) -> Result<(), Error> {

@@ -7,8 +7,8 @@
 //! Checks that read a node's files work on a copy of its folder in a temporary
 //! directory; nothing here writes to the checkout.
 
-use std::path::{Path, PathBuf};
-use vleo_sheet::gate::{code_only, gate_node, platform_maths, validate_tree, Check};
+use std::path::Path;
+use vleo_sheet::gate::{gate_node, validate_tree, Check};
 use vleo_sheet::load::load_all;
 use vleo_sheet::{Sheet, Tree};
 
@@ -34,20 +34,13 @@ fn row(t: &Tree, want: impl Fn(&Sheet) -> bool) -> Sheet {
 }
 
 /// `sh` breaks `check` and nothing else; the row as it was passes it.
-///
-/// `regenerate` is set aside: a sheet changed in memory and not regenerated
-/// has drifted from its files by construction, and that check is tested on
-/// its own below.
 fn breaks(t: &Tree, original: &Sheet, broken: &Sheet, check: &str) {
     assert!(
         !failed(&gate_node(original, t)).contains(&check),
         "{}: {check} fails before anything was broken",
         original.id
     );
-    let mut f = failed(&gate_node(broken, t));
-    if check != "regenerate" {
-        f.retain(|c| *c != "regenerate");
-    }
+    let f = failed(&gate_node(broken, t));
     assert_eq!(
         f,
         vec![check],
@@ -69,19 +62,6 @@ fn in_temp(sh: &Sheet, tag: &str) -> Sheet {
     let mut c = sh.clone();
     c.dir = dir;
     c
-}
-
-/// Replace the body of hole `n` in the copy's model.rs.
-fn with_hole(sh: &Sheet, n: u32, body: &str) {
-    let p: PathBuf = sh.dir.join("model.rs");
-    let text = std::fs::read_to_string(&p).unwrap();
-    let open = format!("// ---- HOLE {n} :");
-    let close = format!("// ---- end HOLE {n}");
-    let a = text.find(&open).expect("no such hole");
-    let a = a + text[a..].find('\n').unwrap() + 1;
-    let b = a + text[a..].find(&close).unwrap();
-    let b = text[..b].rfind('\n').unwrap() + 1;
-    std::fs::write(&p, format!("{}{body}\n{}", &text[..a], &text[b..])).unwrap();
 }
 
 // ---------------------------------------------------------------------------
@@ -225,51 +205,6 @@ fn seeded_rows_are_held_to_what_a_seed_owns() {
 // the checks that read a node's files
 
 #[test]
-fn regenerate_refuses_a_hand_edit_outside_a_hole() {
-    let t = tree();
-    let ok = row(&t, |s| !s.is_declared() && s.dir.join("model.rs").is_file());
-    let bad = in_temp(&ok, "regen");
-    let p = bad.dir.join("model.rs");
-    let text = std::fs::read_to_string(&p).unwrap();
-    std::fs::write(
-        &p,
-        format!("{text}\npub fn hand_written() -> f64 {{ 1.0 }}\n"),
-    )
-    .unwrap();
-    breaks(&t, &ok, &bad, "regenerate");
-    let _ = std::fs::remove_dir_all(&bad.dir);
-}
-
-#[test]
-fn portable_maths_refuses_the_platform_library_in_any_spelling() {
-    let t = tree();
-    // Every relation of the design is a method now, and its code is its
-    // translation, with no hole; the check still reads any hole a row's code
-    // holds, so the copy is given one.
-    let ok = row(&t, |s| !s.is_declared() && s.dir.join("model.rs").is_file());
-    for call in [
-        "x.asin()",
-        "f64::sin(x)",
-        "x . sqrt ( )",
-        "x.hypot(y)",
-        "x.exp_m1()",
-    ] {
-        let bad = in_temp(&ok, "maths");
-        let p = bad.dir.join("model.rs");
-        let mut code = std::fs::read_to_string(&p).unwrap();
-        code.push_str("\n// ---- HOLE 1 : a body written by hand\n// ---- end HOLE 1\n");
-        std::fs::write(&p, code).unwrap();
-        with_hole(&bad, 1, &format!("    let _leak = {call};"));
-        let f = failed(&gate_node(&bad, &t));
-        assert!(
-            f.contains(&"portable-maths"),
-            "{call} was not caught: {f:?}"
-        );
-        let _ = std::fs::remove_dir_all(&bad.dir);
-    }
-}
-
-#[test]
 fn sense_applied_reads_the_code_and_not_its_comments() {
     let t = tree();
     // A closure whose requirement declares a sense.
@@ -309,22 +244,6 @@ fn sense_applied_reads_the_code_and_not_its_comments() {
     // And the method as it is passes.
     assert!(!failed(&gate_node(&ok, &t)).contains(&"sense-applied"));
     let _ = std::fs::remove_dir_all(&bad.dir);
-}
-
-#[test]
-fn the_scanner_reads_code_and_leaves_comments_and_strings() {
-    assert!(platform_maths("let a = pmath::sin(x); // not x.sin()").is_empty());
-    assert!(platform_maths("let s = \"x.sqrt()\"; let r = r#\"f64::cos(1)\"#;").is_empty());
-    assert!(platform_maths("/* x.ln() /* nested */ */ let c = '\"';").is_empty());
-    assert_eq!(
-        platform_maths("let a = x.sin() + y.asin();"),
-        vec![".asin()", ".sin()"]
-    );
-    assert_eq!(code_only("a // b\nc"), "a \nc");
-    assert_eq!(
-        code_only("fn f<'a>(x: &'a str) {}"),
-        "fn f<'a>(x: &'a str) {}"
-    );
 }
 
 // ---------------------------------------------------------------------------

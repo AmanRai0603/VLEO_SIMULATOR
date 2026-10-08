@@ -371,7 +371,7 @@ the bundle:
   because it is still running.
 
 Open any solar row from the tree and its node page carries the same argument in
-eleven tabs, including **the relation, moving** and **de-risking**: the input crosses its declared
+ten tabs, including **the relation, moving** and **de-risking**: the input crosses its declared
 domain, the answer moves, and the guards are drawn as the walls they are. That
 animation is the engine's own sweep, so a picture that disagrees with the row
 is impossible.
@@ -410,12 +410,9 @@ A row is a folder. Only one file in it is the sheet:
 ```
 crates/vleo-mod-prop/nodes/prop_throat_area/
   node.toml      ← the sheet.
-  model.rs       generated, except the numbered holes
-  contract.rs    generated
-  evidence.rs    generated — the fixture tests, plus three properties
   fixtures.toml  the known-good values
   meta.json      generated
-  mod.rs         generated
+  parity.csv     optional — the prior implementation's numbers
 ```
 
 A developer's own structural row, with no release behind it, still starts from a
@@ -462,16 +459,15 @@ a gap left in any of them is still open here:
 Two more that are decisions rather than drafting:
 
 - **`criticality`** — `minor` or `significant`. Significant means two reviewers
-  and the hole filled twice by different model families. The default is minor;
-  raising it is done on purpose, because a person asked to approve too many
+  and a second independent check: two fixtures, or a parity grid. The default
+  is minor; raising it is done on purpose, because a person asked to approve too many
   things stops evaluating each one.
 - **`migrated_from`** — set it when the node exists in the MATLAB tool. Its
   numbers then go in `parity.csv` beside the node and never in `fixtures.toml`.
 
 ### 3.4 Publish and generate
 
-A seeded row, filled, becomes published — and that is what makes its code
-generated:
+A seeded row, filled, becomes published:
 
 ```
 cargo run -p xtask -- publish prop_intake_mouth
@@ -482,10 +478,10 @@ change to the sheet is regenerated with:
 
 ```
 cargo run -p xtask -- docs prop_intake_mouth
-docs: 1 node(s), 6 artefact(s) written
+docs: 1 node(s), 1 artefact(s) written
 ```
 
-Six generators run, and none of them reads another row — which is what makes
+It writes the node's metadata and reads no other row — which is what makes
 1396 rows 1396 independent pieces of work rather than one large one.
 
 While any field is still open it refuses instead, names them, and writes
@@ -511,7 +507,6 @@ cargo run -p xtask -- gate prop_intake_mouth
        confirmed it
   ok   contract
   FAIL sources — these cite nothing in sources/:
-  ok   regenerate
   note gap-pass — no question stated; no relation stated; no source cited; a
        declared limit has no reason; a declared value with nobody's
        confirmation against it
@@ -523,41 +518,22 @@ the afternoon.
 
 ### 3.6 Write the maths
 
-You do not open `model.rs`. The body of each numbered hole goes in as text:
+There is no generated code to open and no hole to fill. The relation is the
+node's method — the pseudocode in its sheet's `[method]`
+([`PSEUDOCODE.md`](PSEUDOCODE.md)) — written by its node engineer. The method
+interpreter runs it when the engine runs the design read from `design/`.
 
 ```
-echo 'let e: Length = gnc::along_track_error_from_drag(
-    Acceleration::new(a.get() * s.get()), Time::from_days(1.0));' \
-  | cargo run -p xtask -- fill prop_intake_mouth --hole 1 --body - --by "A. Developer" --model <model>
+cargo run -p xtask -- method prop_intake_mouth
+cargo run -p xtask -- build-node prop_intake_mouth
 ```
 
-`fill` is the only thing in this system that puts text into a generated file.
-It refuses, before writing anything: a hole the sheet does not declare, a body
-carrying its own `HOLE` marker, a guard, an early return, and a platform maths
-call. Then it re-reads the file and proves the body landed.
-
-So an assistant can write the body — give it the sheet and the hole, take back
-the lines — and never needs the file. An assistant handed the file and told not
-to stray is not constrained, it is asked, and the same applies to a person in a
-hurry. `--by` and `--model` record who wrote the body and with what (§4b).
-
-What the hole looks like once it is in:
-
-```rust
-pub fn evaluate(a: Acceleration, s: Ratio) -> Result<Length, Fault> {
-    // ---- HOLE 1 : propagate the drag acceleration error over one day -> Length
-    let e: Length = gnc::along_track_error_from_drag(
-        Acceleration::new(a.get() * s.get()), Time::from_days(1.0));
-    // ---- end HOLE 1
-```
-
-Everything outside the markers is regenerated, so an edit there is discarded
-the next time anybody runs `docs`, and the gate's regeneration diff catches it
-before that happens, by anyone.
-
-The signature is already correct. `Acceleration`, `Ratio` and `Length` are
-distinct types, so adding a mass to a length does not compile. A hole body is
-usually two or three lines that compose relations already in `vleo-core`.
+`method` checks the method and runs each of its node engineer's test cases
+through it: the check the group's application runs as the node engineer types,
+and the one the gate refuses on. `build-node` takes the node from its method to
+a connected node, in order: the method on its cases, the translation into the
+kernel, the node's tests, the node engineer's code rerun, and only then the
+interface. The translation into `vleo-core::physics::methods` goes in phase E.
 
 ### 3.7 Get evidence
 
@@ -586,7 +562,7 @@ and `agent-generated`: an expected value may never come from the code under
 test. That is the one rule the whole evidence model rests on, and it is worth
 knowing before you are tempted.
 
-**Three properties come with the fixture, generated from the declared domain.**
+**Three properties come with the fixture, derived from the declared domain.**
 One per cent either side of the known-good point the node must still answer;
 every answer it gives must be finite and inside its declared domain, with no
 input scaling making it panic; and the same inputs must give a bit-identical
@@ -598,7 +574,7 @@ that stays inside its domain — that is what a fixture and H2 are for.
 
 ```
 cargo run -p xtask -- ready prop_intake_mouth
-cargo test -p vleo-mod-prop
+cargo test -p vleo-cli --test every_case_of_the_design_passes
 ```
 
 `ready` runs the gate, then the gap pass, then what criticality demands, and
@@ -653,7 +629,6 @@ assistant's change exactly as to anyone's.
 | the step | what an assistant can do | what holds it |
 |---|---|---|
 | a node file | help its node engineer with the words — the node's declaration says whether it did | a release's checks refuse a method or results an assistant supplied, and a declaration that says nothing |
-| a hole body (§3.6) | return the few typed lines, as text | `fill` is the only way into `model.rs`, refuses a guard, an early return or a platform maths call, and records `--by` and `--model` |
 | evidence (§3.7) | turn a value a person derived into a `[[fixture]]` with its provenance | the schema refuses `self-snapshot` and `agent-generated`: an expected value may never come from the code under test |
 | a relation's name | nothing | relation stamping and `confirm` refuse a name that is an assistant's |
 | the tool itself | ordinary engineering — generators, daemon, faces, tests | the gate, `cargo test`, the regeneration diff and review, as for anyone |
@@ -665,7 +640,7 @@ They are ordinary help, not oracles. Three things are worth doing every time:
 2. **Look at what it did not do.** A fixture that covers one edge of a node with
    two bounds has not looked at the other.
 3. **Check a test can fail.** A test that passes against a deliberately broken
-   implementation is not testing anything. Break the hole body, run the test,
+   implementation is not testing anything. Break what it covers, run the test,
    see red, put it back. It takes a minute and it is the difference between
    evidence and decoration.
 
@@ -723,11 +698,11 @@ There is no flag that confirms many at once, and that absence is deliberate: a
 person asked to approve thirty things at a keystroke is not approving any of
 them. One relation, one reading, one name.
 
-### Two commands that ask whether the evidence is real
+### The command that asks whether the evidence is real
 
-Everything else in the gate proves the files are well formed. These two ask
+Everything else in the gate proves the files are well formed. This one asks
 whether the evidence holds: that every case the design carries passes on the
-engine that runs it, and that two readings of one sheet agree.
+engine that runs it.
 
 `cargo test -p vleo-cli --test every_case_of_the_design_passes` runs every case
 the design holds on the engine that reads it from `design/`, in the interpreter
@@ -744,19 +719,6 @@ Whether a case would notice a wrong answer is no longer asked by a command: the
 mutation check was dropped. A test is shown red against a deliberately broken
 implementation when it is written, as the developer's loop says, and the
 parity records hold every method's answer to the bit.
-
-`cargo run -p xtask -- differential <node>` runs every body recorded for a hole
-against that node's evidence. Bodies are recorded by `fill --by <who> --model <model>`, which
-refuses a second body for a hole from the model that wrote the first: two bodies
-from one model are one body written twice, because a model handed its own
-reasoning to check approves it. A significant node refuses an unattributed body
-outright. If two recorded bodies disagree, that is a finding for the node owner
-— at least one reading of the sheet is wrong, or the sheet says less than its
-author thought — and never something to settle by keeping the body that passes.
-
-What neither closes is the vendor half of the rule: `--model` separates models,
-not training, so two models from one vendor count as two. Closing it is a
-developer's choice of assistants, not more code.
 
 ---
 
@@ -848,7 +810,7 @@ which looks exactly like a hook that passed.
 | symptom | first thing to try |
 |---|---|
 | a number moved and nobody expected it | `vleo run <node>` and read the chain — every input is listed with its own credibility |
-| "the committed artefacts differ from what the sheets generate" | you edited outside a hole. `cargo run -p xtask -- docs` and look at the diff |
+| "the committed artefacts differ from what the sheets generate" | you edited a generated file. `cargo run -p xtask -- docs` and look at the diff |
 | a row returns `NotRun` | it has no content yet. `cargo run -p xtask -- status` says how many are like it |
 | a row is written and still does not answer | its relation is stated and never derived. `cargo run -p xtask -- active` says which rows are in that state and how many others are waiting on each |
 | a subsystem looks finished and nothing seems to use it | `cargo run -p xtask -- reach` — a subsystem can answer on every row it has and be wired to nothing. It names the crossing and who reads it |

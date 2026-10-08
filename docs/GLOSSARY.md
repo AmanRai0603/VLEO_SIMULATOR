@@ -135,7 +135,7 @@ time and what it found or why it stopped. `xtask trace` shows the last.
 ## The code
 
 **Ring** — one of the four dependency levels:
-`vleo-units` → `vleo-core` → `vleo-bus` → `vleo-mod-*`. Each ring depends only
+`vleo-units` → `vleo-core` → `vleo-bus` → `vleo-modules`. Each ring depends only
 inward. → `docs/ARCHITECTURE.md`
 
 **Kernel** — `vleo-core::physics`, where every formula lives and nowhere else.
@@ -145,16 +145,14 @@ inward. → `docs/ARCHITECTURE.md`
 uses instead of the standard library's. It gives the same bits on every
 platform. → `AGENTS.md`, rule 4
 
-**HOLE block** — a numbered block in a generated `model.rs`, the only place
-hand-written code goes. It is filled with `xtask fill`, or built from a method
-with `xtask build-node`. → `docs/NODE_AUTHORING.md`
-
 **Method** — a row's calculation in the pseudocode language, written by the
-person who knows it. It is translated by fixed rules into Rust.
+person who knows it. The method interpreter runs it when the engine runs the
+design; until phase E's next stage, `xtask docs` also translates it into
+Rust.
 → `docs/PSEUDOCODE.md`
 
 **Author case** — an input and the answer its node engineer expects, given with a
-method. The translated code is tested against it. → `docs/PSEUDOCODE.md`
+method. The method is tested against it, in the interpreter. → `docs/PSEUDOCODE.md`
 
 **NotRun** — what a row with no content returns, under its own name. A refusal
 is never a substitute value. → `AGENTS.md`, rule 5

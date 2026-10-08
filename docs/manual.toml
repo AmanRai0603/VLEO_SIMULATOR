@@ -590,7 +590,7 @@ answer = "build-node does this for one node. Every stage must pass before the ne
 body = """
 **M** the method runs on the node engineer's cases. **G1** the method is \
 translated, by fixed rules, into a kernel function in \
-`vleo-core::physics::methods` — the node's code calls it and has no holes. \
+`vleo-core::physics::methods`, until the translation goes in phase E. \
 **T1** the node, guards and all, must reproduce every case; **T2** the \
 translation must give the method's own answer to the last bit, around every \
 case. **T3** the node engineer's own code is run again where it can be. **I1** \
@@ -906,24 +906,22 @@ id = "term-fill"
 title = "Implement a node — the developer's loop"
 who = "developer"
 kind = "how-to"
-answer = "After a row's sheet changes: publish the row so its code is generated, write the Rust in each numbered slot, add evidence from outside this code, and check it. Every step names exactly what is still open."
+answer = "After a row's sheet changes: publish the row, check its method against its node engineer's cases, build it, add evidence from outside this code, and check it. Every step names exactly what is still open."
 body = """
 A row is a folder, and **only `node.toml` in it is written by hand** — by a \
-developer, in their editor. Every other file is generated from it; an \
-edit anywhere else is thrown away the next time the row is regenerated, and \
-the checks catch it before then.
+developer, in their editor. Beside it are its fixtures and the metadata \
+generated from it, and no code: the row's relation is its **method**, in the \
+sheet, run by the interpreter.
 
-The loop after a row's sheet changes: publish the row so its code is generated, \
-write the few lines of Rust in each numbered slot, give it evidence from \
-outside this code, check it, and ask whether a person should look yet. Every \
-step names exactly what is still open, so there is never a guess about what \
-is next.
+The loop after a row's sheet changes: publish the row, check its method \
+against its node engineer's cases, build it, give it evidence from outside \
+this code, check it, and ask whether a person should look yet. Every step \
+names exactly what is still open, so there is never a guess about what is \
+next.
 
-**Any assistant may help write a slot.** `fill` takes the body as text, and \
-`--by` and `--model` record who wrote it and with what, so a significant slot \
-written twice by different models can be compared. What no assistant may \
-supply is the relation itself — that comes from its node engineer, and a \
-person's name goes against it. Commit naming the node engineer it came from."""
+**No assistant may supply the relation.** The method comes from its node \
+engineer, and a person's name goes against it. Commit naming the node \
+engineer it came from."""
 
 [[layer.section.step]]
 say = "Ask what is still open, and what goes wrong without each answer."
@@ -932,16 +930,15 @@ check = "exits"
 expect = "ready to generate"
 
 [[layer.section.step]]
-say = "Publish a filled seeded row: its model, contract and evidence are generated and its slots can be written. It refuses, naming every reason, while the row is not ready."
+say = "Publish a filled seeded row. It refuses, naming every reason, while the row is not ready."
 run = "cargo run -p xtask -- publish <row>"
 check = "writes"
-why = "moves the row to published and generates its code"
+why = "moves the row to published and writes its metadata"
 
 [[layer.section.step]]
-say = "Write the Rust for one numbered slot. It goes in as text, never by opening the generated file; the tool refuses a body that would reach outside its slot."
-run = "cargo run -p xtask -- fill <row> --hole <n> --body - --by \"Your Name\" --model <model>"
-check = "writes"
-why = "splices a body into the row's generated model.rs and records who wrote it"
+say = "Check the row's method, every line and every unit, and run it on each of its node engineer's cases."
+run = "cargo run -p xtask -- method sw_ap_design"
+check = "exits"
 
 [[layer.section.step]]
 say = "Add evidence to `fixtures.toml`: values from a paper, a measurement or a trusted tool — including the known values a node engineer supplied. An expected value may never come from the code under test, and the checks refuse one marked as if it did."
@@ -1033,7 +1030,7 @@ prints it for one command, or the whole journey with none; \
 `xtask pipeline`; and a test fails when the table, `help` and the code \
 disagree.
 
-**A command that writes runs as numbered steps** — `publish`, `fill`, `build-node`, `release` and `ship`. Each step prints \
+**A command that writes runs as numbered steps** — `publish`, `build-node`, `release` and `ship`. Each step prints \
 `n/total · name` as it starts and what it found when it ends. A step that \
 stops prints **why**, the state the **files** are in, the exact command to \
 **retry**, and the **code**: the file, and the step's name — a string in that \
@@ -1241,16 +1238,14 @@ id = "term-beyond"
 title = "When the method language cannot say it"
 who = "developer"
 kind = "how-to"
-answer = "A node the method language cannot express — a set of answers, a solver that stops when it converges — keeps hand-written holes. A developer writes them, with an assistant if they like, and the node engineer's cases still decide."
+answer = "A node the method language cannot express has no relation until the language can say it. It stays open, refused by name if a run reaches it, and what it needs is a request to the developer."
 body = """
 The language is closed on purpose: every construct has one translation, so \
-the translator needs no judgement. What it cannot express goes to the \
-existing route: `fill` splices each hole body, `--by` and `--model` record who \
-wrote it, and a **significant** node's holes are written twice by different \
-model families and compared with `differential`. An assistant here is a \
-worker, never a judge: acceptance is only ever the node engineer's cases, the \
-fixtures and the gate — and no assistant supplies the relation, the method or \
-a case.
+the translator needs no judgement. A relation it cannot express is not \
+written in code instead: the node stays an open block, refused by name, and \
+its node engineer raises a request with the evidence. The developer answers \
+it by growing the language — and no assistant supplies the relation, the \
+method or a case.
 
 When the language grows a construct, it grows in \
 `crates/vleo-sheet/src/method.rs` and the files under `method/` beside it — \
@@ -1273,11 +1268,6 @@ answer = "Two commands ask whether the evidence is worth anything: every fixture
 body = """
 A test that passes against a broken implementation is not testing anything. Two \
 commands ask that question directly."""
-
-[[layer.section.step]]
-say = "Run one subsystem's tests, including every row's fixtures."
-run = "cargo test -p vleo-mod-solar"
-check = "exits"
 
 [[layer.section.step]]
 say = "Check every fixture declaration in the tree is sound — its source is outside the code and its tolerance is positive. It does not execute them; `cargo test` does."
@@ -1519,8 +1509,9 @@ body = """
 **One kernel computes every number.** Everything else is arranged in rings \
 that depend inward only: quantities and portable maths (`vleo-units`), then the \
 kernel of physics and relations (`vleo-core`), then transport (`vleo-bus`), \
-then one crate per subsystem of rows (`vleo-mod-*`), then the faces — the \
-browser daemon, the command line, and the Python, WebAssembly and C bindings. \
+then the engine that runs the design read from its files (`vleo-modules`), \
+then the faces — the browser daemon, the command line, and the Python, \
+WebAssembly and C bindings. \
 `xtask graph` checks every dependency points inward.
 
 **Every formula lives in `vleo-core::physics` and nowhere else.** A row \
@@ -1533,10 +1524,9 @@ come from* is answered by walking upward without ever leaving the tree.
 
 **One row is one folder**, under `crates/vleo-mod-<subsystem>/nodes/<row>/`:
 
-`node.toml` — the sheet. The only file written by hand, by a developer.
+`node.toml` — the sheet, with the row's method. The only file written by hand, by a developer.
 `fixtures.toml` — known-good values from outside this code.
-`model.rs` — generated, except the numbered slots where the Rust goes.
-`contract.rs`, `mod.rs`, `evidence.rs`, `meta.json` — generated.
+`meta.json` — generated. No row holds code: its method is run by the interpreter.
 The row's page is not in the folder: the tool renders it from the sheet when it is opened.
 
 The rules that do not bend, and the developer's loop, are in `AGENTS.md`; the \
@@ -1676,13 +1666,6 @@ who = "user"
 
 [[cannot]]
 place = "browser"
-what = "Write the Rust in a step's slot"
-why = "It is code: it has to compile, compose relations that already exist in the kernel, and be reviewed as code."
-instead = "cargo run -p xtask -- fill <row> --hole <n> --body -"
-who = "developer"
-
-[[cannot]]
-place = "browser"
 what = "Add a known-good value (a fixture)"
 why = "An expected value may never come from the code under test. Only a person records one, with its source."
 instead = "Edit fixtures.toml in the row's folder, with the value's source and provenance."
@@ -1815,22 +1798,6 @@ name = "declare"
 usage = "declare <node>"
 what = "The questions a sheet still has open, and what goes wrong without each."
 who = "everyone"
-effect = "reads"
-
-[[command]]
-tool = "xtask"
-name = "fill"
-usage = "fill <node> --hole <n> --body <file|-> [--by <who> --model <model>]"
-what = "Put the Rust for one numbered slot into a row's generated model. `--by` and `--model` record who wrote it, and with what."
-who = "developer"
-effect = "writes"
-
-[[command]]
-tool = "xtask"
-name = "differential"
-usage = "differential <node>"
-what = "Compare two recorded bodies for the same slot, written by different model families."
-who = "developer"
 effect = "reads"
 
 
@@ -2798,10 +2765,10 @@ reveal = "Not yet. Green is the machine's half; the review is the person's. A sm
 [[role]]
 id = "developer"
 title = "Developer"
-answer = "You write what the routine cannot: a new relation in the kernel, a filled HOLE, a diagnosis of a failing check — and you improve the tool itself: its checks, generators, pages and pictures. Everything goes through the gate and a pull request reviewed by the number of people CONTRIBUTING sets."
+answer = "You write what the routine cannot: a new relation in the kernel, a construct the method language lacks, a diagnosis of a failing check — and you improve the tool itself: its checks, generators, pages and pictures. Everything goes through the gate and a pull request reviewed by the number of people CONTRIBUTING sets."
 simply = "If releases are the print shop, you build and repair the presses. You do not decide what is printed — that comes from the people who own the design — but you make sure the presses print it exactly, and you check them against pages you did not print yourself: the fixtures."
 does = [
-  "Build a node from its method with build-node; for what the method language cannot say, fill its HOLEs from kernel relations.",
+  "Build a node from its method with build-node; for what the method language cannot say, grow the language.",
   "Keep the method language, its checker and its translator one reviewed change, and rebuild the pages' checker with method-wasm.",
   "Add a relation to vleo-core::physics when a method needs one — a reviewed change every node reads.",
   "Diagnose a check that fails, with its output.",
@@ -2811,7 +2778,7 @@ does = [
 never = [
   "Supply a relation — the physics comes from a node's engineer.",
   "Take an expected value from the code under test.",
-  "Edit a generated file outside a numbered HOLE.",
+  "Edit a generated file by hand.",
   "Put a formula anywhere but vleo-core::physics, or call the standard library's transcendentals in the kernel.",
   "Widen a tolerance to get green.",
 ]
