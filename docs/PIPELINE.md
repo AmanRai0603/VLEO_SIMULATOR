@@ -2,7 +2,7 @@
 
 # The pipeline
 
-> **Answer first.** Every `xtask` command is a step in a node's journey — a form filled, taken, checked, applied, published, built, gated, previewed and released. This page says, for each one, what it reads, writes and checks, how to undo it, and where its code is. Every command that writes prints numbered steps, stops by saying why, what state the files are in and how to retry, leaves a trace in `target/xtask-trace/`, and takes `--dry-run`.
+> **Answer first.** Every `xtask` command is a step in a node's journey — its group's folder written, applied, published, built, gated and released. This page says, for each one, what it reads, writes and checks, how to undo it, and where its code is. Every command that writes prints numbered steps, stops by saying why, what state the files are in and how to retry, leaves a trace in `target/xtask-trace/`, and takes `--dry-run`.
 >
 > **Kind:** reference · **For:** the developer and their deputy
 
@@ -10,15 +10,14 @@ Generated from the one table in `xtask/src/pipeline.rs`; `cargo run -p xtask -- 
 
 ## The journey
 
-1. **form** — a node engineer fills a node's form: `group-export`
-2. **check** — what it would change, before anything is written: `group-intake`, `group-test`
-3. **apply** — the form written into the sheet — all of it or none: `lesson`, `new`
-4. **publish** — a filled row's code generated, and its holes written: `group-deliver`, `declare`, `publish`, `fill`, `confirm`
-5. **build** — a node built from its method, and its tests shown to test: `group-build`, `method`, `build-node`, `rerun`, `method-wasm`, `files-wasm`, `differential`
-6. **gate** — the checks every change passes, and what they generate: `group-app`, `docs`, `assemble`, `gate`, `ready`, `codeowners`, `variables`, `guides`, `pipeline`
-7. **release** — the stamped release everyone gets: `readers`, `group-accept`, `ship`, `release`, `derisk`, `kit`, `design`, `convert`, `bundle`
-8. **read** — reports: what exists, what is open, why a node is what it is: `status`, `active`, `catalogue`, `impact`, `reach`, `gap`, `graph`, `explain`, `why`, `trace`
-9. **setup** — once per person per clone: `setup`, `help`
+1. **form** — a group's folder written from the design, for the group to start from: `group-export`
+2. **apply** — a new row, or a row's lesson, written into the tree — all of it or none: `lesson`, `new`
+3. **publish** — a filled row's code generated, and its holes written: `declare`, `publish`, `fill`, `confirm`
+4. **build** — a node built from its method, and its tests shown to test: `method`, `build-node`, `rerun`, `method-wasm`, `files-wasm`, `differential`
+5. **gate** — the checks every change passes, and what they generate: `group-app`, `docs`, `assemble`, `gate`, `ready`, `codeowners`, `variables`, `guides`, `pipeline`
+6. **release** — the stamped release everyone gets: `readers`, `ship`, `release`, `derisk`, `kit`, `design`, `convert`, `bundle`
+7. **read** — reports: what exists, what is open, why a node is what it is: `status`, `active`, `catalogue`, `impact`, `reach`, `gap`, `graph`, `explain`, `why`, `trace`
+8. **setup** — once per person per clone: `setup`, `help`
 
 ## When a step stops
 
@@ -37,7 +36,7 @@ Every command that writes prints its steps as `n/total · name`. A step that sto
 
 ## Every command
 
-### form — a node engineer fills a node's form
+### form — a group's folder written from the design, for the group to start from
 
 #### `group-export`
 
@@ -55,39 +54,7 @@ a group's folder in the pattern, written from every sheet in the group, for the 
 | dry run | it only reads, so it runs as it is |
 | code | `xtask/src/group.rs` — `cmd_group_export` |
 
-### check — what it would change, before anything is written
-
-#### `group-intake`
-
-    cargo run -p xtask -- group-intake <folder> [--node <id>] [--apply [--partial]] [--draft]
-
-a group's sealed release, written out with `node tools/group_db.mjs --unpack`, taken into the design: the seal checked against every file, then each computed node's pseudocode and results planned against the design — conflicts, an assistant's method or results refused — and with --apply written and gated. --draft looks at an unsealed release and never applies.
-
-| | |
-|---|---|
-| reads | a group's release written out by `node tools/group_db.mjs --unpack`, its RELEASE.toml, and each of its nodes' sheets |
-| writes | with --apply: each computed node's node.toml (its method and cases), every generated file, design/ converted again |
-| checks | every file against the seal's fingerprint; then each node as its form: a conflict with a change made since, a method or results an assistant supplied (a transcription without its source and a person who checked it counts as one), the de-risking record, the whole tree's gate |
-| undo | a refused apply is put back by the transaction itself; an applied one: `git restore` the node's folder, or `git revert` |
-| dry run | --dry-run runs group-intake without --apply: the same check, nothing written |
-| code | `xtask/src/group_intake.rs` — `cmd_group_intake` |
-
-#### `group-test`
-
-    cargo run -p xtask -- group-test <folder> [--out <dir>]
-
-the group tested against its own results: the design holds the release's cases; each node's tests pass; the group, through the engine, gives results/group.csv; and both ends of every declared range answer or refuse by name. The report goes to target/group/<group>-<version>/.
-
-| | |
-|---|---|
-| reads | an unpacked sealed release, the design, and the engine built from it |
-| writes | target/group/<group>-<version>/group-test.csv, the report, and the runs it rests on |
-| checks | the design holds the release's cases; each node's tests pass; the group gives results/group.csv through the engine; both ends of every declared range answer or refuse by name |
-| undo | nothing to undo: it writes nothing |
-| dry run | it only reads, so it runs as it is |
-| code | `xtask/src/group_test.rs` — `cmd_group_test` |
-
-### apply — the form written into the sheet — all of it or none
+### apply — a new row, or a row's lesson, written into the tree — all of it or none
 
 #### `lesson`
 
@@ -123,21 +90,6 @@ clone the shape of a sibling and blank what must be re-decided. Not a copy: a re
 | code | `xtask/src/forms.rs` — `cmd_new` |
 
 ### publish — a filled row's code generated, and its holes written
-
-#### `group-deliver`
-
-    cargo run -p xtask -- group-deliver <folder> [--out <dir>] [--bin <dir>] [--uncommitted]
-
-the test application for the group: the kit, built from this commit with their release in it, with DELIVERY.toml (which release, seal, commit, nodes) and DELIVERY.md (what to try). Refused until group-test has passed, and from uncommitted changes unless --uncommitted says throwaway.
-
-| | |
-|---|---|
-| reads | an unpacked sealed release, its passing group-test report, the release-built programs |
-| writes | dist/vleo-<version>-<group>-<v>-test/: the kit, DELIVERY.toml, DELIVERY.md and the report |
-| checks | the seal; that group-test passed; that the checkout is committed, unless --uncommitted |
-| undo | delete the folder |
-| dry run | --dry-run prints this plan — the steps, what it would write, how to undo it — and touches nothing |
-| code | `xtask/src/group_test.rs` — `cmd_group_deliver` |
 
 #### `declare`
 
@@ -203,21 +155,6 @@ the relations with nobody's name against them, grouped by the owner who has to s
 | code | `xtask/src/fills.rs` — `cmd_confirm` |
 
 ### build — a node built from its method, and its tests shown to test
-
-#### `group-build`
-
-    cargo run -p xtask -- group-build <folder> [--node <id>]
-
-every computed node of a sealed release, taken in with group-intake --apply, built from its method: build-node on each — translated, tested on the node engineer's cases, the tests proved to test, the interface checked.
-
-| | |
-|---|---|
-| reads | an unpacked sealed release and the design it was taken into |
-| writes | what build-node writes for each computed node: its kernel translation and generated files; baseline/today.csv, today's answers recorded again |
-| checks | the seal; that the design's method is the release's; then build-node on each — the node engineer's cases, the tests proved to test, the interface |
-| undo | `git restore <files>` (or `git checkout -- .`) before committing; `git revert` after |
-| dry run | --dry-run prints this plan — the steps, what it would write, how to undo it — and touches nothing |
-| code | `xtask/src/group_test.rs` — `cmd_group_build` |
 
 #### `method`
 
@@ -464,22 +401,6 @@ the docs folder for readers: every row's page and every lesson, read with no too
 | steps | 1 build the engine for the browser · 2 bundle the page script · 3 read the design the pages run · 4 write the pages · 5 check every page has what it links |
 | dry run | --dry-run prints this plan — the steps, what it would write, how to undo it — and touches nothing |
 | code | `xtask/src/readers.rs` — `cmd_readers` |
-
-#### `group-accept`
-
-    cargo run -p xtask -- group-accept <file.accept.toml> [--delivery <DELIVERY.toml>] [--no-push]
-    cargo run -p xtask -- group-accept --verify <branch>
-
-the group's answer to its test application, written by the group application, recorded in acceptances/ on the branch group/<group>-<version> it was built on. An answer of changes is never recorded: its note is printed to take back. the pipeline's check on a group branch: it carries the group's acceptance of exactly what is on it.
-
-| | |
-|---|---|
-| reads | the group's answer, written by the group application; the branch group/<group>-<version> |
-| writes | acceptances/<group>-<version>.toml on that branch, committed and pushed |
-| checks | the verdict is accepted and says what was tried; a person's name; the delivery record's hash, with --delivery; the accepted commit is this branch, unchanged since but for these records |
-| undo | `git revert` the acceptance commit, or delete the file before pushing |
-| dry run | --dry-run prints this plan — the steps, what it would write, how to undo it — and touches nothing |
-| code | `xtask/src/flow.rs` — `cmd_group_accept` |
 
 #### `ship`
 

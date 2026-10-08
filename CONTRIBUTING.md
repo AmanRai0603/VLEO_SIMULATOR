@@ -103,19 +103,19 @@ pull request exists to move it.
 ## Until the switch-over
 
 The design is still in this repository until the planned day
-(`docs/PLAN_1_0.md`, phase H), and a group's sealed release is its one way in.
+(`docs/PLAN_1_0.md`, phase H), and a group's sealed release, on the shared
+drive, is its one way in.
 This section is deleted on that day, with the `maintainer` branch.
 
-- **A group's sealed release** goes on `group/<group>-<version>` from a fresh
-  `maintainer`, and holds that one release and nothing else. It merges only with
-  the group's acceptance of the exact build they tried, recorded by
-  `xtask group-accept`. The release is never edited on the branch.
+- **A group's sealed release** goes on the shared drive, in
+  `groups/<group>/releases/`, and not in this repository. The tool takes it into
+  today's design when it opens on the drive, or refuses it and says why. The
+  release is never edited.
 - **`maintainer` goes into `main`** by pull request, like `developer`.
 - **Reviewers, for the design while it is here:**
 
   | change | reviewers |
   |---|---|
-  | a group's sealed release | H1b physics for every computed node whose method is new or changed, then H2 |
   | a method an assistant transcribed | H1b physics, read against its source, by someone other than the person who signed it |
   | fixtures and filled holes | H2, after the machine checks pass |
   | moving a branch in `layers/` | two |
@@ -124,10 +124,9 @@ This section is deleted on that day, with the `maintainer` branch.
   expected value came from outside this code. The person who wrote the node is
   eligible for none of them.
 - **While it is here, you may not** edit a generated file outside a numbered
-  `HOLE` block, commit an aggregate, add a guard by hand, apply a release
-  `xtask group-intake` has not passed, apply a change to what a node computes without its
-  reason, edit a recorded version, edit a sealed release, or move a group's
-  results or tolerances to make `group-test` pass.
+  `HOLE` block, commit an aggregate, add a guard by hand, apply a change to what
+  a node computes without its reason, edit a recorded version, edit a sealed
+  release, or move a group's results or tolerances to make a test pass.
 
 ## Commit messages
 

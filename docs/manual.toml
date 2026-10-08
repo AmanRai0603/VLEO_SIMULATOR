@@ -42,8 +42,8 @@ lede = """
 Everything anyone using the tool does: read the design, set the inputs, run, \
 keep what a run returned. **Nothing in the browser changes the design.** \
 What you set and what you keep are yours and stay on your machine; what the \
-design *is* changes only in its owners' own files, taken in with each group's \
-sealed release and released to everyone."""
+design *is* changes only in its owners' own files, sealed as each group's \
+release and taken into today's design from the shared drive."""
 
 [[layer.section]]
 id = "browser-open"
@@ -82,7 +82,7 @@ id = "browser-roles"
 title = "Who does what"
 who = "everyone"
 kind = "explanation"
-answer = "Five roles, and one loop until the switch-over. The programme manager, the system engineer, each subsystem engineer and each node engineer own the design and use the tool; a group's work reaches the design as its sealed release, and its subsystem engineer tries the test application built from it and accepts it. The developer takes each release in, builds and tests it, records the acceptance and releases — and writes what that routine cannot: code, checks, the tool itself. Each role has a deputy who may act for it."
+answer = "Five roles. The programme manager, the system engineer, each subsystem engineer and each node engineer own the design and use the tool; a group's work reaches the design as its sealed release, put on the shared drive, where the tool takes it into today's design when it opens. The developer maintains the code and releases the tool — and writes what no routine can: code, checks, the tool itself. Each role has a deputy who may act for it."
 body = """
 The line between the roles is the line between *owning and using* the design, \
 *moving a change through*, and *building the machinery*. The design's own roles \
@@ -98,12 +98,11 @@ unfinished, its node engineer — the person who knows the answer — changes it
 the node's own file, and their subsystem engineer seals the group's work as a \
 **release** and sends it.
 
-**The developer moves each release through, until the switch-over.** A sealed \
-release that arrives is taken in onto its own branch — checked against its \
-seal, applied, built, tested — and its subsystem engineer is sent the test \
-application. Their acceptance comes back as a file, and is recorded against \
-exactly the build they tried. Accepted releases are merged, and released to \
-everyone when the developer chooses. Every step is one command. From the \
+**A sealed release goes on the shared drive**, in its group's `releases/` \
+folder. When the tool opens on the drive it builds today's design from every \
+group's latest sealed release that passes its checks — its seal, its content, \
+each node against the design — and says which release each group's part is, \
+and why one was refused. Nobody takes a release in by hand. From the \
 switch-over on, each owner signs their own files in the application, and the \
 developer maintains only the code.
 
@@ -113,8 +112,8 @@ the release needs a diagnosis; \
 the tool's pages, pictures, checks and generators are designed and improved. \
 All of it through the gate and a reviewed pull request.
 
-There are three guides — for the engineers, `docs/roles/user.html`; for intake \
-until the switch-over, `maintainer.html`; and for the developer, \
+There are three guides — for the engineers, `docs/roles/user.html`; for the \
+releases until the switch-over, `maintainer.html`; and for the developer, \
 `developer.html` — generated from this manual, so the three can never \
 disagree with it."""
 
@@ -461,7 +460,7 @@ id = "browser-forms"
 title = "What comes in from outside, and what does not"
 who = "user"
 kind = "how-to"
-answer = "Two things reach the tool from outside: your inputs, and a result you kept. Neither changes the design. A node changes only in its own file, written by its node engineer and taken in with its group's sealed release."
+answer = "Two things reach the tool from outside: your inputs, and a result you kept. Neither changes the design. A node changes only in its own file, written by its node engineer and sealed in its group's release."
 body = """
 The **Forms** page lists both, with where each is set: the inputs on the \
 Inputs page, as a CSV or one value at a time, and results on the Results \
@@ -470,8 +469,7 @@ page, shown without running. Both are yours, kept on this machine.
 **A node is not among them.** What a node asks, how it computes and what it \
 reads is the design, and the design is written by the people who own it, \
 each in their own file. A group's work reaches this tool as its sealed \
-release (*Take a group's sealed release in*). The browser never writes a \
-node.
+release, on the shared drive. The browser never writes a node.
 
 **A lesson is the one thing still filled here**: a row's lesson form, filled \
 anywhere and checked as you type, sent back to the developer."""
@@ -559,53 +557,11 @@ reason."""
 id = "maintain"
 title = "Maintaining the repository"
 lede = """
-The routine that moves a group's sealed release to everyone's copy: take it \
-in, build and test it, deliver its test application, record the group's \
-acceptance, merge, release, share. **Every step is one command**, and each does \
-its whole step or nothing and says what to do next. Nothing here writes code — \
+The routine that moves the tool to everyone's copy: build a node from its \
+method, cut a release, build the kits, pack the drive, share. **Every step is \
+one command**, and each does its whole step or nothing and says what to do next. Nothing here writes code — \
 what needs code goes to a developer, with the output that says why."""
 
-
-[[layer.section]]
-id = "maint-group"
-title = "Take a group's sealed release in"
-who = "maintainer"
-kind = "how-to"
-answer = "A group sends its work as a sealed release. Unpack it, read what group-intake says, then apply, build, test and deliver it on the branch group/<group>-<version>. It merges only with the group's acceptance of the test application."
-body = """
-The release is checked against its seal before anything is read: one byte \
-changed and it is refused, and the fix goes back to the group as a note. Each \
-computed node is then checked against the design field by field, with every \
-interface it declares.
-
-**Not taken** means a conflict with a change made since, an incomplete \
-de-risking record, or a method or results an assistant supplied. A node whose \
-declaration says `transcribed` is taken only when it names the source the \
-method was copied from and the person who read the copy against it; without \
-either, or with an assistant as the checker, it counts as one an assistant \
-supplied. A transcription is still reviewed at H1b against its source, by \
-someone other than the person who signed it.
-
-`group-test` holds the build to the group's own results. A disagreement is \
-physics, for the group — never a result or tolerance moved to pass."""
-
-[[layer.section.step]]
-say = "Write the sealed release out as the folder it holds."
-run = "node tools/group_db.mjs --unpack <file.vleo> --out target/groups/<group>-<version>"
-check = "writes"
-why = "writes the release's files and RELEASE.toml, which says who sealed it and the fingerprint every signature was given for"
-
-[[layer.section.step]]
-say = "Read what it would change, node by node, and what cannot be taken."
-run = "cargo run -p xtask -- group-intake target/groups/<group>-<version>"
-check = "writes"
-why = "checks the seal, then prints each computed node's plan and what it reaches in other groups; nothing is written without --apply"
-
-[[layer.section.step]]
-say = "Apply, build from the methods, test against the group's results, and deliver the test application."
-run = "cargo run -p xtask -- group-intake target/groups/<group>-<version> --apply"
-check = "writes"
-why = "then group-build, group-test and group-deliver on the same folder; the group answers with group-accept"
 
 [[layer.section]]
 id = "maint-method"
@@ -614,8 +570,7 @@ who = "maintainer"
 kind = "how-to"
 answer = "Run method with the node's id. It checks the method and runs every one of the node engineer's cases through it — the same check the node engineer saw in the group's application, and the one the gate refuses on."
 body = """
-`group-intake` prints the same check before it applies a release, and the \
-gate refuses a node whose method does not check, whose cases disagree, or that has fewer than three answers and one \
+The gate refuses a node whose method does not check, whose cases disagree, or that has fewer than three answers and one \
 refusal. A case that disagrees is the node engineer's to settle — their code, their \
 method or their expected value is wrong — so it goes back to them with the \
 line printed, never to a tolerance."""
@@ -631,7 +586,7 @@ id = "maint-build"
 title = "Build a node from its method"
 who = "maintainer"
 kind = "how-to"
-answer = "group-build does this for every node of a group's release; build-node does it for one. Every stage must pass before the next runs, and the node is connected to the rest of the design only at the end."
+answer = "build-node does this for one node. Every stage must pass before the next runs, and the node is connected to the rest of the design only at the end."
 body = """
 **M** the method runs on the node engineer's cases. **G1** the method is \
 translated, by fixed rules, into a kernel function in \
@@ -692,17 +647,16 @@ id = "maint-handover"
 title = "What goes to a developer"
 who = "maintainer"
 kind = "reference"
-answer = "Anything that needs code or judgement about the machinery: a release that needs a relation the kernel does not have, a check that fails for a reason not in the release, a merge conflict, a change to the tool itself. Hand over the command and its output."
+answer = "Anything that needs code or judgement about the machinery: a method that needs a relation the kernel does not have, a check that fails for a reason of its own, a merge conflict, a change to the tool itself. Hand over the command and its output."
 body = """
 **A new relation.** A node whose method calls on maths the kernel does not \
 have needs a function in `vleo-core::physics` first — a developer's step, and \
 a reviewed change every node reads.
 
-**A failing check that is not the release's.** The gate or a test fails on \
-the group branch for a reason in another node, a generator or the pipeline. \
-The output names it; hand it over with the branch.
+**A failing check.** The gate or a test fails for a reason in a node, a \
+generator or the pipeline. The output names it; hand it over with the branch.
 
-**A merge conflict** between two releases, once their subsystem engineers agree.
+**A merge conflict** in the code.
 
 **The tool itself** — its pages and pictures, the commands in this layer, the \
 checks, the release pipeline. Those are code, reviewed as code."""
@@ -955,7 +909,7 @@ kind = "how-to"
 answer = "After a row's sheet changes: publish the row so its code is generated, write the Rust in each numbered slot, add evidence from outside this code, and check it. Every step names exactly what is still open."
 body = """
 A row is a folder, and **only `node.toml` in it is written by hand** — by a \
-group release's intake, or in your editor. Every other file is generated from it; an \
+developer, in their editor. Every other file is generated from it; an \
 edit anywhere else is thrown away the next time the row is regenerated, and \
 the checks catch it before then.
 
@@ -1079,8 +1033,7 @@ prints it for one command, or the whole journey with none; \
 `xtask pipeline`; and a test fails when the table, `help` and the code \
 disagree.
 
-**A command that writes runs as numbered steps** — `group-intake --apply`, \
-`publish`, `fill`, `build-node`, `release` and `ship`. Each step prints \
+**A command that writes runs as numbered steps** — `publish`, `fill`, `build-node`, `release` and `ship`. Each step prints \
 `n/total · name` as it starts and what it found when it ends. A step that \
 stops prints **why**, the state the **files** are in, the exact command to \
 **retry**, and the **code**: the file, and the step's name — a string in that \
@@ -1092,8 +1045,7 @@ one, `trace <command>` the last of one command, `trace --list` every one kept \
 (the newest 50).
 
 **--dry-run, on any command that writes**, does nothing: it runs the \
-command's own check where it has one (`group-intake` without `--apply`, \
-`release --check`, `method-wasm --check`, `pipeline --check`), and otherwise \
+command's own check where it has one (`release --check`, `method-wasm --check`, `pipeline --check`), and otherwise \
 prints the plan — its steps, what it would write, how to undo it.
 
 **why <node>** answers "how did this node come to be this?": every recorded \
@@ -1108,7 +1060,7 @@ expect = "A node's journey"
 
 [[layer.section.step]]
 say = "One command: where it sits, what it reads, writes and checks, how to undo it, and where its code is."
-run = "cargo run -p xtask -- explain group-intake"
+run = "cargo run -p xtask -- explain ship"
 check = "exits"
 expect = "undo"
 
@@ -1261,7 +1213,7 @@ who = "developer"
 kind = "how-to"
 answer = "The method language is one module, vleo_sheet::method. The pages that check a method carry it compiled to WebAssembly as web/method.wasm.gz; after changing the language, rebuild that file with method-wasm and commit it with its stamp."
 body = """
-The gate, intake and every page that checks a method call \
+The gate, the library and every page that checks a method call \
 `vleo_sheet::method` — the pages through `web/method.wasm.gz`, which \
 `xtask method-wasm` builds from `crates/vleo-method-wasm`. A test refuses a \
 checkout whose checker sources have moved on from the committed file, so a page \
@@ -1508,9 +1460,10 @@ why. A case is all or nothing, so correct the named rows and upload it again. \
 A file from an older release is carried over rather than refused; one the \
 tool did not write — no `#! result` line — is not a result at all.
 
-**A release's intake says an interface does not connect.** The input names a \
-row that does not exist, or one of a different quantity. The line says which, \
-and what the row it names actually is; the fix goes back to the group.
+**A group's release is refused on the drive.** Today's design names the \
+group, the release and why — an input naming a row that does not exist or one \
+of a different quantity, a broken seal, an assistant's method — and builds that \
+group's part from its last good release. The fix goes back to the group.
 
 **The checks refuse a row.** Each failure names the field and the rule. Read \
 that line before anything else; it is almost always the whole answer.
@@ -1580,7 +1533,7 @@ come from* is answered by walking upward without ever leaving the tree.
 
 **One row is one folder**, under `crates/vleo-mod-<subsystem>/nodes/<row>/`:
 
-`node.toml` — the sheet. The only file written by hand — by a group release's intake, or a developer.
+`node.toml` — the sheet. The only file written by hand, by a developer.
 `fixtures.toml` — known-good values from outside this code.
 `model.rs` — generated, except the numbered slots where the Rust goes.
 `contract.rs`, `mod.rs`, `evidence.rs`, `meta.json` — generated.
@@ -1820,7 +1773,7 @@ effect = "reads"
 tool = "xtask"
 name = "impact"
 usage = "impact <node|group> ..."
-what = "Which other groups a change to these rows reaches: the rows that read them, theirs, and so on, by group and nearest first. A group named stands for all its rows. `group-intake` prints the same for the nodes a release changes."
+what = "Which other groups a change to these rows reaches: the rows that read them, theirs, and so on, by group and nearest first. A group named stands for all its rows."
 who = "developer"
 effect = "reads"
 
@@ -1937,45 +1890,6 @@ what = "Builds the two offline pages a group works in — web/group.html, where 
 who = "developer"
 effect = "writes"
 
-[[command]]
-tool = "xtask"
-name = "group-intake"
-usage = "group-intake <folder> [--node <id>] [--apply [--partial]] [--draft]"
-what = "A group's sealed release taken into the design. The release, written out with `node tools/group_db.mjs --unpack <file.vleo>`, is refused unless every file still gives the fingerprint it was sealed with; then each computed node's pseudocode and results — its method and test cases, in SI — are checked against the design: a conflict with a change made since, a method or results an assistant supplied (a `transcribed` method counts as one unless it names its source and a person who checked the copy), an incomplete de-risking record. `--apply` writes, regenerates and gates each, or puts it back. `--draft` looks at an unsealed release and never applies."
-who = "developer"
-effect = "writes"
-
-[[command]]
-tool = "xtask"
-name = "group-build"
-usage = "group-build <folder> [--node <id>]"
-what = "Every computed node of a sealed release, once `group-intake --apply` has taken it in, built from its method: `build-node` on each — translated into the kernel, tested on its node engineer's cases, the tests proved to test, the interface checked. A node whose method in the design is not the release's is refused: the release is taken in first."
-who = "developer"
-effect = "writes"
-
-[[command]]
-tool = "xtask"
-name = "group-test"
-usage = "group-test <folder> [--out <dir>]"
-what = "The group tested against its own results, never against the code under test: the design holds the release's isolation results case for case; each node's own tests pass; the group as a whole, run through the engine, gives `results/group.csv`; and both ends of every range the group declares answer or refuse by name — never NaN, never a crash. The report goes to `target/group/<group>-<version>/group-test.csv`."
-who = "developer"
-effect = "reads"
-
-[[command]]
-tool = "xtask"
-name = "group-deliver"
-usage = "group-deliver <folder> [--out <dir>] [--bin <dir>] [--uncommitted]"
-what = "The test application for the group: the kit, built from this commit with their release in it, beside `DELIVERY.toml` — which release, which seal, which commit, which nodes — `DELIVERY.md`, what to try, and the group-test report. Refused until `group-test` has passed, and from uncommitted changes unless `--uncommitted` says the checkout is a throwaway. The group answers accepted, or changes."
-who = "developer"
-effect = "writes"
-
-[[command]]
-tool = "xtask"
-name = "group-accept"
-usage = "group-accept <file.accept.toml> [--delivery <DELIVERY.toml>] [--no-push]"
-what = "The group's answer to its test application, recorded. The subsystem engineer writes it on the group application's Delivery & acceptance page, beside their sealed release; it names the delivery by its SHA-256, the commit it was built from and the release's fingerprint. An answer of accepted, saying what was tried and given by a person, is committed to `acceptances/<group>-<version>.toml` on the branch `group/<group>-<version>` — refused if anything but these records changed since the delivered commit. An answer of changes is never recorded: its note is printed, to take back into the group's work. `--verify` is the pipeline's check on a group branch."
-who = "developer"
-effect = "writes"
 
 [[command]]
 tool = "xtask"
@@ -2583,7 +2497,7 @@ who = "developer"
 
 [[folder]]
 name = "design"
-what = "The design as its files: each group's file and node files under design/groups/, each case under design/cases/, converted from the node sheets and held equal to them by a test until the sheets leave. Written by `cargo run -p xtask -- convert --out design`, and again by intake, group-intake and build-node whenever they write a sheet; never edited by hand."
+what = "The design as its files: each group's file and node files under design/groups/, each case under design/cases/, converted from the node sheets and held equal to them by a test until the sheets leave. Written by `cargo run -p xtask -- convert --out design`, and again by build-node whenever it writes a sheet; never edited by hand."
 who = "developer"
 
 [[folder]]
@@ -2643,7 +2557,7 @@ who = "developer"
 
 [[folder]]
 name = ".claude"
-what = "The hooks that run on an edit in a checkout — the regeneration and gate an assistant's edit goes through, the same as anyone's — and the developer's skill for a group's sealed release, skills/vleo-group-release: the loop from intake to test application, and the refusals only a person may answer."
+what = "The hooks that run on an edit in a checkout — the regeneration and gate an assistant's edit goes through, the same as anyone's."
 who = "developer"
 
 [[folder]]
@@ -2661,11 +2575,6 @@ name = "contract"
 what = "Where the page and the engine meet: every /v1 route, a schema for every answer, the file formats, and answers recorded from the real engine that the mock engine serves. Checked by the contract tests; reviewed by both sides (contract/README.md)."
 who = "developer"
 
-
-[[folder]]
-name = "acceptances"
-what = "Each group release's acceptance by its subsystem engineer of the exact test application they tried, recorded by `xtask group-accept`. A group branch merges only with one that matches."
-who = "maintainer"
 
 [[folder]]
 name = ".gitattributes"
@@ -2736,7 +2645,7 @@ what = "The engineers' guide: using the tool — reading the design, setting the
 
 [[doc]]
 path = "docs/roles/maintainer.html"
-what = "The intake guide, until the switch-over: taking group releases in, test applications, acceptances, releases — every step a command. Generated from this manual."
+what = "The releases guide, until the switch-over: building a node from its method, cutting a release, the kits and the drive — every step a command. Generated from this manual."
 
 [[doc]]
 path = "docs/roles/developer.html"
@@ -2865,61 +2774,59 @@ what = "This manual."
 [[role]]
 id = "user"
 title = "Engineer"
-answer = "You own part of the design — as its programme manager, system engineer, subsystem engineer or node engineer, or a deputy for one — and you use the tool: read the design, set your inputs, run, keep results. A node changes in its own file, written by its node engineer; a group's work reaches the design as its sealed release, and its subsystem engineer accepts the test application built from it before it reaches everyone, in the next release."
-simply = "The tool is a shared reference book you can read and calculate with but not write in. Each chapter is written by its owners, in their own copy; the group's editor signs the chapter off, and is shown the printed proof before it goes to everyone."
+answer = "You own part of the design — as its programme manager, system engineer, subsystem engineer or node engineer, or a deputy for one — and you use the tool: read the design, set your inputs, run, keep results. A node changes in its own file, written by its node engineer; a group's work reaches the design as its sealed release, on the shared drive, where the tool takes it into today's design when it opens."
+simply = "The tool is a shared reference book you can read and calculate with but not write in. Each chapter is written by its owners, in their own copy; the group's editor signs the chapter off and files it, and the book is read from what is filed."
 does = [
   "Read the design: the four layers, and each node's page.",
   "Set your inputs, run, save results and send them on.",
   "As a node engineer, give your node's method, your code and your test cases — three answers and one refusal — in the group's application, until its check says Sound.",
-  "As a subsystem engineer, seal the group's release, try the test application built from it, and accept it — or say what is still wrong.",
+  "As a subsystem engineer, seal the group's release and put it in its folder on the shared drive; read what today's design says of it.",
   "Install each new version over the old one; your inputs and results carry over.",
 ]
 never = [
   "Edit files inside the tool — a change there reaches nobody and is lost at the next version.",
-  "Accept a test application you have not run.",
+  "Seal a release whose checks you have not read.",
   "Give an expected value that came from the tool itself — it has to come from outside it.",
 ]
 wrong = "If I change something in my copy of the tool, everyone gets it."
-right = "Your copy changes nobody else's. Inputs you set are yours; the design itself changes only in its owners' files — sealed, built, tested, accepted, and released to everyone at once."
+right = "Your copy changes nobody else's. Inputs you set are yours; the design itself changes only in its owners' files — sealed, put on the drive, checked, and taken into today's design for everyone at once."
 breaks = "‘You cannot write in it’ is about the design, not your own work: your inputs, saved case and results are yours to change freely, and stay on your machine. From the switch-over on, the design is written in the application itself, on the shared drive, by each part's owner (docs/OPERATING_1_0.md)."
-predict = "You accepted the test application of your group's release on Monday. On Tuesday the developer fixes a typo on the same branch and pushes. Is your acceptance still good?"
-reveal = "No. Your acceptance is for that build exactly; anything pushed after it makes a new build, and you are sent that test application to accept. It costs you a minute and it means nobody can merge something you did not see."
+predict = "Your group's new release is on the drive, and today's design says it was refused and built your part from the last good release. Is your new work in the numbers?"
+reveal = "No. A refused release is never taken in part: the numbers are your last good release's, and the tool says so and why. Fix what it names, seal again, and put the new release beside the old one."
 
 [[role]]
 id = "maintainer"
-title = "Intake"
-answer = "Until the switch-over, the developer — or their deputy — moves each group's sealed release through: take it in, build and test it, deliver the test application, record the subsystem engineer's acceptance, merge, release, share. Every step is one command — group-intake, group-build, group-test, group-deliver, group-accept, ship — and each does its whole step or nothing and says what to do next. No code is written here."
-simply = "This is the post office and the print shop. A group's sealed release comes in; it goes into its own envelope — a branch. Its subsystem engineer sees a proof — the test application — and signs it — the acceptance file. When the developer chooses, everything signed is printed for everyone — a release."
+title = "Releases"
+answer = "Until the switch-over, the developer — or their deputy — moves the tool to everyone: build a node from its method, cut a release, build the kits, pack the drive, share. Every step is one command — build-node, ship, kit, the drive's pack — and each does its whole step or nothing and says what to do next. No code is written here."
+simply = "This is the print shop. The pages come from the people who own them, filed on the shared drive; the shop prints the book that reads them — a release — and sends it to everyone."
 does = [
-  "Unpack each sealed release you receive and run group-intake on it.",
-  "Send back what group-intake refuses, by name; the release itself is never edited.",
-  "Build, test and deliver the test application; record the acceptance file the subsystem engineer returns with group-accept.",
-  "Merge each accepted pull request once every check is green.",
+  "Build a node from its method with build-node when its method is new.",
+  "Merge each pull request once every check is green.",
   "Release with ship; publish and share the four files.",
+  "Pack the drive from the release, and share it.",
 ]
 never = [
-  "Edit a node's files by hand — the group's release is the only way in.",
-  "Merge a group branch without its subsystem engineer's acceptance of that exact build.",
+  "Edit a group's release — it comes from the group, sealed, and is never changed after.",
   "Change a tolerance to make a test pass — that is a physics question for the node's engineer.",
   "Skip or silence a failing check; diagnose it as code, with its output.",
 ]
 wrong = "A green pull request is ready to merge."
-right = "Green says the change is consistent, not that it is right. A group branch also needs its subsystem engineer's acceptance, for the exact build — the check named ‘the author approved this exact change’ says whether it has one."
-breaks = "‘Every step is a command’ stops where a release needs new code, where a check fails for a reason not in the release, or where two releases conflict. Those are the developer's work on the code, with the command's output. On the switch-over day this guide retires with the group loop (docs/PLAN_1_0.md, phase H)."
-predict = "Every check on a group branch's pull request is green except ‘the author approved this exact change’. The subsystem engineer said on the phone it is fine. Can you merge?"
-reveal = "Not yet. Ask them to accept the test application and send the file — then run group-accept. The check is the record that they tried this exact build; a phone call leaves none."
+right = "Green says the change is consistent, not that it is right. A change to the code also needs the reviews CONTRIBUTING sets, by the people it names."
+breaks = "‘Every step is a command’ stops where a release needs new code or a check fails for a reason of its own. Those are the developer's work on the code, with the command's output. On the switch-over day this guide retires (docs/PLAN_1_0.md, phase H)."
+predict = "Every check on a pull request is green, but the reviewers CONTRIBUTING names have not looked. The change is small. Can you merge?"
+reveal = "Not yet. Green is the machine's half; the review is the person's. A small change still needs its reviewers, because size is not what decides whether it is right."
 
 [[role]]
 id = "developer"
 title = "Developer"
 answer = "You write what the routine cannot: a new relation in the kernel, a filled HOLE, a diagnosis of a failing check — and you improve the tool itself: its checks, generators, pages and pictures. Everything goes through the gate and a pull request reviewed by the number of people CONTRIBUTING sets."
-simply = "If intake is the print shop, you build and repair the presses. You do not decide what is printed — that comes from the people who own the design — but you make sure the presses print it exactly, and you check them against pages you did not print yourself: the fixtures."
+simply = "If releases are the print shop, you build and repair the presses. You do not decide what is printed — that comes from the people who own the design — but you make sure the presses print it exactly, and you check them against pages you did not print yourself: the fixtures."
 does = [
   "Build a node from its method with build-node; for what the method language cannot say, fill its HOLEs from kernel relations.",
   "Keep the method language, its checker and its translator one reviewed change, and rebuild the pages' checker with method-wasm.",
   "Add a relation to vleo-core::physics when a method needs one — a reviewed change every node reads.",
-  "Diagnose a check that fails for a reason outside the release.",
-  "Improve the tool: its pages and pictures, the loop's commands, the checks, the release pipeline.",
+  "Diagnose a check that fails, with its output.",
+  "Improve the tool: its pages and pictures, the routine's commands, the checks, the release pipeline.",
   "Keep this manual true: every command, route and label it names is tested against the tool.",
 ]
 never = [

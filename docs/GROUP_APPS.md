@@ -109,7 +109,8 @@ also the first plan of each group's work.
    the node application, or here), and the whole group by its owner. A
    signature is for the content as it is: change it and the signature goes
    stale. With no errors and every signature current, *Seal* writes the sealed
-   release. Tell the developer.
+   release. Save it in the group's `releases/` on the drive; nobody takes it in
+   by hand (*A sealed release, into today's design*, below).
 7. **The next version** — open the sealed release and issue node files from
    it: each node engineer starts from what was sealed. A sealed release is never
    edited; *start the next version from this one* makes an unsealed copy.
@@ -176,52 +177,48 @@ step, and every step shows what it will look like as you type:
 **Save** often; each save is a new revision. Then put the file back in
 `nodes/` on the drive.
 
-## The developer, taking a sealed release in
+## A sealed release, into today's design
 
-A sealed release is the group's signed word. The developer takes it in, builds
-it, tests it against the group's own results and sends the group a test
-application, and records the group's answer — each step refusing until the one before has held:
+A sealed release is the group's signed word, and nobody takes it in by hand.
+It goes in the group's `releases/` folder on the shared drive. When the tool
+opens on the drive (`VLEO_DRIVE`), it builds today's design from every group's
+latest sealed release that passes its checks, in memory, and writes nothing on
+the drive. A group whose latest release is refused is built from its last good
+release, and the tool says which release each group's part is and why one was
+refused. The library that does the checking is `vleo-files`
+(`vleo_files::intake`, `vleo_files::checks`, `vleo_files::seal`).
 
-    node tools/group_db.mjs --unpack example_orbit-1.0.vleo --out ~/intake/example
-    cargo run -p xtask -- group-intake  ~/intake/example            # the plan
-    cargo run -p xtask -- group-intake  ~/intake/example --apply    # into the design
-    cargo run -p xtask -- group-build   ~/intake/example            # from the methods
-    cargo run -p xtask -- group-test    ~/intake/example            # against their results
-    git switch -c group/example_orbit-1.0 && git commit -am "…"     # the release's own branch
-    cargo run -p xtask -- group-deliver ~/intake/example            # the test application
-    cargo run -p xtask -- group-accept  example_orbit-1.0.accept.toml   # the group's answer
-
-| Step | What happens |
+| Check | What happens |
 | --- | --- |
-| Unpack | the release written out as the folder it was sealed from, with `RELEASE.toml` — the group, the version, who sealed it, the fingerprint, and each node's revision and author |
-| Seal check | every command recomputes every file's SHA-256; a release whose files no longer give the sealed fingerprint is refused before anything is read. An unsealed release is looked at only with `group-intake --draft`, and never applied |
-| The plan | each computed node is planned field by field against the design: the pseudocode as its method; its results, brought back to SI, as its test cases; its derivation (`theory.md`) as its theory, without which a row never answers; the code that produced the results, and how it was run; its node engineer and the declaration of any assistant's help; and the newest row of `versions.csv` as the de-risking record |
-| Refusals | a conflict with a change the repository made since; a method or results an assistant supplied (`declaration.csv` says `relation`, or says nothing, or says `transcribed` without the `source` it was copied from and the person who checked the copy, `checked_by`, or with an assistant there); an incomplete de-risking record (`rests_on` and `breaks_if` included); a derivation stamped by an assistant's `git config user.name`. Each goes back to the group with the lines printed |
-| Whom it reaches | after the plan, every row of another group downstream of a node the release would change — the rows that read it, theirs, and so on, by group and nearest first. The same list `xtask impact <node|group>` prints; `xtask catalogue` lists what each group publishes and who reads it, and the design file carries that catalogue as its `published` table. Those groups are told before the branch merges |
-| Apply | `--apply` writes each node, regenerates and gates it as one edit, or puts it back whole — its generated files and the kernel's translations byte for byte; `--partial` keeps the nodes that passed |
-| Build | `group-build` runs `build-node` on each computed node: the method translated into the kernel by fixed rules, tested on the node engineer's cases, the tests proved to test by moving the answer, the interface checked (`docs/PSEUDOCODE.md`). The node engineer's code is rerun when `how-run.md` names its entry function (`**Entry:** name`); otherwise the build says it was not |
-| Test | `group-test` asks four things and writes `target/group/<group>-<version>/group-test.csv`: the design holds the release's cases unchanged; each node's own tests pass; the group as a whole, through the engine, gives `results/group.csv` within its tolerances; and both ends of every declared range answer or refuse by name — never NaN, never a crash |
-| Deliver | `group-deliver` builds the tool from a commit on the release's own branch, `group/<group>-<version>`, with the release in it: the kit, `DELIVERY.toml` (release, seal, commit, nodes built, checks held), `DELIVERY.md` (what to try) and the report. It refuses until `group-test` has passed, and from another branch or uncommitted changes unless `--uncommitted` marks a throwaway |
-| Answer | the subsystem engineer opens `DELIVERY.toml` on the group application's **Delivery & acceptance** page, beside the sealed release. The page checks it is a build of exactly that release — group, version, fingerprint, committed, no failed check — and only then offers **accepted**. The answer, `<group>-<version>.accept.toml`, names the delivery by its SHA-256 and its commit |
-| Record | `group-accept <file> --delivery <DELIVERY.toml>` commits an acceptance to `acceptances/` on the group branch; it refuses one given under an assistant's name, one that does not say what was tried, and one for a commit the branch has moved past. An answer of **changes** is never recorded: its note is printed to take back. The pull request from the group branch passes the pipeline's check, *the author approved this exact change*, only with it |
+| It opens | the file is read as a sealed group release, and its group is the one whose folder it is in |
+| Seal | every file's SHA-256 is recomputed; a release whose files no longer give the sealed fingerprint is refused before anything is read |
+| Content | every check of a release's content, each error named: a method or results an assistant supplied (`declaration.csv` says `relation`, or says nothing, or says `transcribed` without the `source` it was copied from and the person who checked the copy, `checked_by`, or with an assistant there); an input that connects to nothing; a signature under an assistant's name |
+| Each node against the design | each computed node is planned field by field against the design: the pseudocode as its method; its results, brought back to SI, as its test cases; its derivation (`theory.md`) as its theory, without which a row never answers; its node engineer and the declaration of any assistant's help; and the newest row of `versions.csv` as the de-risking record. A conflict with a change the design made since, an incomplete de-risking record (`rests_on` and `breaks_if` included), or a case not in SI refuses the release |
+
+To read a sealed release as the folder it was sealed from, with `RELEASE.toml`
+— the group, the version, who sealed it, the fingerprint, and each node's
+revision and author:
+
+    node tools/group_db.mjs --unpack example_orbit-1.0.vleo --out <dir>
+
+`xtask impact <node|group>` lists every row of another group downstream of a
+node — the rows that read it, theirs, and so on, by group and nearest first;
+`xtask catalogue` lists what each group publishes and who reads it, and the
+design file carries that catalogue as its `published` table.
 
 A change the group asks for goes back into the group folder and a new sealed
-release; the developer never edits the release, and never moves a group's
-results to make a test pass. Once accepted, the group branch is reviewed and
-merged like any other, and the release that ships it reaches everyone.
+release, saved beside the old one; the developer never edits the release, and
+never moves a group's results to make a test pass.
 
 What the release holds beyond its methods, derivations, cases and code — its
 plain words, pictures and evidence — stays in the release, which is what the
 group signed.
 
-**The example group goes through all of it** on every pull request, in a
-throwaway checkout: sealed in the group application by a browser, then taken
-in, built, tested, delivered from its own branch, accepted by its subsystem engineer in the
-page and recorded. **The solar group's release is refused** at
-the plan: its 32 methods were transcribed from the code by an assistant, and
-its `declaration.csv` files say so. That is the rule working — each method
-waits for a person who knows it to read it, put their name to it, and seal
-again.
+**Today's design is tested on the solar group's own releases**
+(`crates/vleo-server/tests/today_s_design_is_built_from_the_releases.rs`): the
+two it sealed in the group application are kept as fixtures, 1.1 is taken, a
+refused release is replaced by its group's last good one and marked by its
+reason, and a release whose relation an assistant supplied is refused.
 
 ## What the applications do not do
 

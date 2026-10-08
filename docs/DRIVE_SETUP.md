@@ -9,20 +9,20 @@
 ## By hand: one zip, no sign-in
 
 The first time, the developer builds the whole folder, with every group's
-sealed release and test application they hold:
+sealed release they hold:
 
     python3 tools/drive.py pack --out "target/VLEO Drive" --zip \
-        --sealed <group>-<version>.vleo … --delivery <folder group-deliver wrote> …
+        --sealed <group>-<version>.vleo …
 
-The drive's owner unzips `target/VLEO Drive.zip` and drags its six folders —
-`apps/`, `guides/`, `design/`, `readable/`, `groups/`, `deliveries/` — into the
+The drive's owner unzips `target/VLEO Drive.zip` and drags its five folders —
+`apps/`, `guides/`, `design/`, `readable/`, `groups/` — into the
 drive's folder, beside its START HERE page (the Google Doc made from
 [`DRIVE_START_HERE.md`](DRIVE_START_HERE.md)).
 
 **On a release**, `pack --update --zip` leaves `groups/` out. The owner deletes
 `apps/`, `guides/`, `design/` and `readable/` from the drive and drags in the
-new ones; a new delivery's folder goes into `deliveries/`. `groups/` is never
-replaced, because once it is in the drive it is the groups' own work.
+new ones. `groups/` is never replaced, because once it is in the drive it is the
+groups' own work.
 
 *Said simply:* the pipeline below is the first-time zip, mirrored for you on
 every release. Until the secrets exist, this is how the drive is filled.
@@ -44,17 +44,16 @@ used):
   groups/<group>/                     one folder per group that owns a node
     <group>.vgroup                    the structure — the subsystem engineer's
     nodes/<node>.vnode                one per node — each its node engineer's
-    releases/<group>-<version>.vleo   SEALED releases only (--sealed)
-  deliveries/<group>-<version>/       a test application's record (--delivery):
-                                      DELIVERY.toml, DELIVERY.md, group-test.csv
+    releases/<group>-<version>.vleo   SEALED releases only (--sealed); the tool
+                                      builds today's design from them
 ```
 
 `releases/` holds sealed releases and nothing else. The export assembles an
 unsealed release for every group; the pack leaves it out, because a file of
 that name reads as the group's release and would sit beside — or, mirrored,
-replace — the one the subsystem engineer sealed. A delivery is refused unless the folder also
-holds the sealed release it was built from: that is what the subsystem engineer accepts it
-against.
+replace — the one the subsystem engineer sealed. When the tool opens on the drive
+(`VLEO_DRIVE`), it builds today's design from every group's latest sealed release here that
+passes its checks, and says which release each group's part is and why one was refused.
 
 `groups/l3_solar/` is the solar worked example (`groups/solar`), not solar's plain
 export. *Said simply:* every group starts from what the design already holds, and
@@ -68,8 +67,7 @@ longer writes is named in the job's log and kept.
 **What it does not do.** It does not read the drive back. A subsystem engineer's saved
 structure or a node engineer's filled node file is theirs; the next release that
 carries the same file name replaces it. Move work in progress out of the
-mirrored folders — the group application saves where you tell it — or take it
-in first (docs/GROUP_APPS.md, *The developer, taking a sealed release in*).
+mirrored folders — the group application saves where you tell it.
 
 ---
 

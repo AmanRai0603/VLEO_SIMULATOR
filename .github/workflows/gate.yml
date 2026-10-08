@@ -143,6 +143,21 @@ jobs:
       - name: evidence
         run: cargo test --workspace
 
+      # A broken translation is refused by the parity gate, which holds every
+      # translation to the interpreter, method by method, to the bit — the
+      # interpreter that runs a method the build has not seen.
+      - name: a broken translation is caught by the parity gate
+        run: |
+          f=crates/vleo-core/src/physics/methods/orbit_period.rs
+          cp "$f" "$RUNNER_TEMP/kept.rs"
+          sed -i 's/\.get()),/.get() * 1.0001),/' "$f"
+          grep -q "1.0001" "$f"
+          if cargo test -p vleo-cli --test the_design_read_at_run_time_answers_as_today > "$RUNNER_TEMP/parity.log" 2>&1; then
+            echo "the parity gate passed a translation one part in ten thousand out"; exit 1
+          fi
+          grep -q "orbit_period at" "$RUNNER_TEMP/parity.log"
+          cp "$RUNNER_TEMP/kept.rs" "$f"
+
       # The authors' own code, run again on the cases recorded from it: Python
       # directly; MATLAB and Octave only where Octave is installed, and said
       # when it is not. A case the code no longer gives fails here.
@@ -162,121 +177,6 @@ jobs:
         run: |
           cargo run -p xtask -- status
           cargo run -p xtask -- graph
-
-  # A GROUP'S RELEASE, THROUGH THE DEVELOPER'S LOOP, on every pull request. The
-  # example group is sealed in the group application by a browser, exactly as
-  # its lead would, and that file is taken in, built from its methods, tested
-  # against the group's own results and delivered as a test application — on
-  # this throwaway checkout, under the pipeline's name; the engine is broken on
-  # purpose and the group test must say so. Then it is committed on its own
-  # branch, delivered from that commit, accepted by the lead in the group
-  # application, recorded, and a change after the acceptance must be refused.
-  # Nothing leaves the runner.
-  group-end-to-end:
-    name: a group's release, sealed to accepted
-    runs-on: ubuntu-latest
-    timeout-minutes: 75
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            target
-          key: ${{ runner.os }}-group-e2e-${{ hashFiles('**/Cargo.lock', 'rust-toolchain.toml') }}
-          restore-keys: ${{ runner.os }}-group-e2e-
-      - name: a browser, for the group application
-        run: |
-          pip install --quiet playwright
-          python3 -m playwright install --with-deps chromium
-      # A transcription is taken only with its source and the person who
-      # checked the copy; the group application says so before the group seals.
-      - name: a node's declaration, judged as the rule says
-        run: node tools/declaration_check.mjs
-      - name: the example group, sealed in the group application
-        run: |
-          VLEO_SEALED_OUT="$RUNNER_TEMP/example.vleo" python3 tools/group_db_check.py
-          node tools/group_db.mjs --unpack "$RUNNER_TEMP/example.vleo" --out "$RUNNER_TEMP/release"
-      # Each step also says what it must have printed, so the job cannot pass
-      # by doing less than it claims.
-      - name: taken in
-        run: |
-          set -o pipefail
-          git config user.name "vleo pipeline"
-          cargo run -p xtask -- group-intake "$RUNNER_TEMP/release" --apply | tee "$RUNNER_TEMP/intake.log"
-          grep -q "3 computed node(s) read; 0 with something that cannot be taken; 3 applied" "$RUNNER_TEMP/intake.log"
-      - name: built from the group's methods
-        run: |
-          set -o pipefail
-          cargo run -p xtask -- group-build "$RUNNER_TEMP/release" 2>&1 | tee "$RUNNER_TEMP/build.log"
-          grep -q "3 built from its method, 0 not" "$RUNNER_TEMP/build.log"
-          for n in orbit_radius orbit_velocity orbit_period; do
-            test -f "crates/vleo-core/src/physics/methods/$n.rs"
-          done
-      - name: tested against the group's own results
-        run: |
-          set -o pipefail
-          cargo run -p xtask -- group-test "$RUNNER_TEMP/release" | tee "$RUNNER_TEMP/test.log"
-          grep -q "20 held, 0 did not" "$RUNNER_TEMP/test.log"
-      # The engine every face runs takes a method the build was made from as
-      # its translation, the fast path: a broken translation is what the
-      # group's results must catch.
-      - name: a broken engine is caught by the group's results
-        run: |
-          f=crates/vleo-core/src/physics/methods/orbit_period.rs
-          cp "$f" "$RUNNER_TEMP/kept.rs"
-          sed -i 's/(2.0 \* core::f64::consts::PI)/(2.0002 * core::f64::consts::PI)/' "$f"
-          grep -q "2.0002" "$f"
-          if cargo run -p xtask -- group-test "$RUNNER_TEMP/release" > "$RUNNER_TEMP/broken.log" 2>&1; then
-            echo "the group test passed an engine one part in ten thousand out"; exit 1
-          fi
-          grep -q "orbit_period — 5554.17" "$RUNNER_TEMP/broken.log"
-          cp "$RUNNER_TEMP/kept.rs" "$f"
-          cargo run -p xtask -- group-test "$RUNNER_TEMP/release" | grep -q "20 held, 0 did not"
-      # And the same broken translation is refused by the parity gate, which
-      # holds every translation to the interpreter, method by method, to the
-      # bit — the interpreter that runs a method the build has not seen.
-      - name: a broken translation is caught by the parity gate
-        run: |
-          f=crates/vleo-core/src/physics/methods/orbit_period.rs
-          cp "$f" "$RUNNER_TEMP/kept.rs"
-          sed -i 's/(2.0 \* core::f64::consts::PI)/(2.0002 * core::f64::consts::PI)/' "$f"
-          grep -q "2.0002" "$f"
-          if cargo test -p vleo-cli --test the_design_read_at_run_time_answers_as_today > "$RUNNER_TEMP/parity.log" 2>&1; then
-            echo "the parity gate passed a translation one part in ten thousand out"; exit 1
-          fi
-          grep -q "orbit_period at" "$RUNNER_TEMP/parity.log"
-          cp "$RUNNER_TEMP/kept.rs" "$f"
-      - name: the whole design, with the group built from its methods
-        run: cargo run -p xtask -- gate && cargo test --workspace
-      - name: committed on the release's own branch, and delivered from it
-        run: |
-          set -o pipefail
-          git config user.email "pipeline@vleo.invalid"
-          git switch -c group/example_orbit-1.0
-          git add -A
-          git commit -q -m "feat(tree): example_orbit 1.0 taken in, built and tested"
-          cargo run -p xtask -- group-deliver "$RUNNER_TEMP/release" --out "$RUNNER_TEMP/deliver" | tee "$RUNNER_TEMP/deliver.log"
-          grep -q 'built = \["orbit_radius", "orbit_velocity", "orbit_period"\]' "$RUNNER_TEMP/deliver/DELIVERY.toml"
-          grep -q 'uncommitted = false' "$RUNNER_TEMP/deliver/DELIVERY.toml"
-          test -f "$RUNNER_TEMP/deliver/DELIVERY.md"
-          (cd "$RUNNER_TEMP/deliver" && ./vleo run orbit_period --defaults --set orbit_altitude=400000 --again | grep -q "T_orb = 92.5604 min")
-      - name: accepted by the group in the group application, and recorded
-        run: |
-          set -o pipefail
-          python3 tools/group_db_check.py --accept "$RUNNER_TEMP/example.vleo" "$RUNNER_TEMP/deliver/DELIVERY.toml" "$RUNNER_TEMP/answer.toml"
-          cargo run -p xtask -- group-accept "$RUNNER_TEMP/answer.toml" --delivery "$RUNNER_TEMP/deliver/DELIVERY.toml" --no-push | tee "$RUNNER_TEMP/accept.log"
-          grep -q "accepted example_orbit 1.0" "$RUNNER_TEMP/accept.log"
-          test -f acceptances/example_orbit-1.0.toml
-          cargo run -p xtask -- group-accept --verify group/example_orbit-1.0
-      - name: a change after the acceptance is refused
-        run: |
-          echo "# after" >> groups/example/theory.md
-          git commit -q -am "docs(tree): a change after the acceptance"
-          if cargo run -p xtask -- group-accept --verify group/example_orbit-1.0; then
-            echo "an acceptance held for a build that changed after it"; exit 1
-          fi
 
   # Every script in tools/ checks itself before it is trusted to check
   # anything else. A checker nobody has watched fail is a checker nobody knows
@@ -473,6 +373,10 @@ jobs:
           node-version: 22
       - name: the group and node applications, on database files
         run: python3 tools/group_db_check.py
+      # A transcription is taken only with its source and the person who
+      # checked the copy; the group application says so before the group seals.
+      - name: a node's declaration, judged as the rule says
+        run: node tools/declaration_check.mjs
 
   # THE READERS' FOLDER, AS A READER OPENS IT. `xtask readers` builds the pages
   # a team reads with no tool running, and the engine they carry; its own last
@@ -600,23 +504,6 @@ jobs:
       # is gone.
       - name: what the band confidence costs
         run: python3 tools/band_confidence_cost.py
-
-  # A GROUP BRANCH MERGES ONLY WITH ITS GROUP'S ACCEPTANCE OF EXACTLY WHAT IT
-  # HOLDS. A group branch, group/<group>-<v>, carries the lead's answer to the
-  # test application, recorded in acceptances/ by `xtask group-accept`, and it
-  # binds the commit the delivery names: anything changed since means a new
-  # test application and a new acceptance. Only group branches are asked this.
-  approval:
-    name: the author approved this exact change
-    if: github.event_name == 'pull_request' && startsWith(github.head_ref, 'group/')
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.pull_request.head.sha }}
-          fetch-depth: 0
-      - run: cargo run -p xtask -- group-accept --verify "${{ github.head_ref }}"
 
   # The two faces the workspace excludes, because they need targets of their
   # own. `cargo build --workspace` does not reach them, so until this job

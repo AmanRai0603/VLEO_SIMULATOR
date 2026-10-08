@@ -1,13 +1,13 @@
 # Using it
 
-> **Answer first.** The walkthrough, with real outputs: run the design on your inputs, keep and send results, see where a change to the design comes from, and — as a developer — take a group's sealed release to a release. The manual in the tool is the reference; this is the worked tour.
+> **Answer first.** The walkthrough, with real outputs: run the design on your inputs, keep and send results, see where a change to the design comes from, and — as a developer — work a node's loop and release the tool. The manual in the tool is the reference; this is the worked tour.
 >
 > **Kind:** tutorial · **For:** everyone
 
 This is the page to read first. It is about doing the work — opening the tool,
 running the design on your inputs, keeping what it said, where a change to the
-design comes from, and, for a developer, taking a group's sealed release all the
-way to a release —
+design comes from, and, for a developer, a node's loop all the way to a
+release —
 not about how the system checks itself. Where a check matters it is mentioned in one line, at the moment
 you would actually meet it.
 
@@ -379,42 +379,38 @@ is impossible.
 
 ---
 
-## 3 · A change to the design, from a group's release to a release
+## 3 · A change to the design, from a group's release to today's design
 
 Nobody changes the design from the tool. A node changes in its own file, written
 by its node engineer in the node application; the subsystem engineer assembles
-the group's node files into a release, has it signed, seals it and sends it to
-the developer. [`docs/GROUP_APPS.md`](GROUP_APPS.md) is the group's side of
-that. This section is the developer's side: the release taken in, and then the
-loop a developer lives in for each node.
+the group's node files into a release, has it signed and seals it.
+[`docs/GROUP_APPS.md`](GROUP_APPS.md) is the group's side of that. This section
+is where the release goes, and then the loop a developer lives in for each node.
 
-### 3.1 The release comes in
+### 3.1 The release goes on the drive
+
+The sealed release goes on the shared drive, in its group's folder,
+`groups/<group>/releases/`. Nobody takes it in by hand. When the tool opens on
+the drive, it builds today's design from every group's latest sealed release
+that passes its checks:
 
 ```
-node tools/group_db.mjs --unpack <group>-<version>.vleo --out <dir>
-cargo run -p xtask -- group-intake <dir>            # the plan — writes nothing
-cargo run -p xtask -- group-intake <dir> --apply    # into the design
-cargo run -p xtask -- group-build  <dir>            # each computed node from its method
-cargo run -p xtask -- group-test   <dir>            # against the group's own results
+VLEO_DRIVE=<drive> cargo run --release -p vleo-daemon
 ```
 
-Every command checks the seal first. `group-intake` plans each computed node
-field by field against the design, and refuses a conflict with a change the
-repository made since, a method or results an assistant supplied, and an
-incomplete de-risking record. A release that does not pass goes back to its
-group with those lines; it is never fixed up on the way in. `--apply` writes
-each node, regenerates and gates it as one edit, or puts it back whole. The
-release then goes on its own branch, `group/<group>-<version>`, and
-`group-deliver` and `group-accept` take it to the subsystem engineer and back:
-*The developer, taking a sealed release in*, in `docs/GROUP_APPS.md`, has every
-step.
+The seal is checked first, then the release's content, then each computed node
+field by field against the design: a conflict with a change made since, a
+method or results an assistant supplied, and an incomplete de-risking record
+are each refused. A refused release is never taken in part. The group's part is
+built from its last good release, and the tool says which release each group's
+part is and why one was refused. The fix goes back to the group, as a new
+sealed release; a release is never fixed up on the way in.
 
-A row is a folder. Only one file in it is the sheet — written by `group-intake`,
-or in your editor:
+A row is a folder. Only one file in it is the sheet:
 
 ```
 crates/vleo-mod-prop/nodes/prop_throat_area/
-  node.toml      ← the sheet. what intake writes.
+  node.toml      ← the sheet.
   model.rs       generated, except the numbered holes
   contract.rs    generated
   evidence.rs    generated — the fixture tests, plus three properties
@@ -628,11 +624,11 @@ their saved case carries over on its own, with any new input at its default.
 
 ### 3.9 Why it changed, and the release that ships it
 
-If a release moved what a node computes, `group-intake` wrote the newest row of
-the release's `versions.csv` to the sheet as a `[[version]]` — what we believed,
-what we tested, what we now know, what changed, what the node rests on now and
-what would break it — marked `next`. A release whose record is incomplete is
-refused. `sw_central_expectation` carries three real versions as the worked
+If a release moves what a node computes, it carries the newest row of its
+`versions.csv` — what we believed, what we tested, what we now know, what
+changed, what the node rests on now and what would break it — and a release
+whose record is incomplete is refused. On a sheet the record is a
+`[[version]]`, marked `next` until a release of the tool stamps it. `sw_central_expectation` carries three real versions as the worked
 example; its *de-risking* tab reads them newest first, and the *Technical
 risk* row under the risk register shows the risk they moved.
 
@@ -651,14 +647,13 @@ from then on says which of its beliefs have broken since. The rules are in
 
 ## 4 · Using an assistant
 
-A developer may use any assistant, for anything a developer does — once the
-release has passed intake. There is no roster of specialised agents, each with its
+A developer may use any assistant, for anything a developer does. There is no roster of specialised agents, each with its
 own lane: the rules are held by the checks, and the checks apply to an
 assistant's change exactly as to anyone's.
 
 | the step | what an assistant can do | what holds it |
 |---|---|---|
-| a node file | help its node engineer with the words — the node's declaration says whether it did | `group-intake` refuses a method or results an assistant supplied, and a declaration that says nothing |
+| a node file | help its node engineer with the words — the node's declaration says whether it did | a release's checks refuse a method or results an assistant supplied, and a declaration that says nothing |
 | a hole body (§3.6) | return the few typed lines, as text | `fill` is the only way into `model.rs`, refuses a guard, an early return or a platform maths call, and records `--by` and `--model` |
 | evidence (§3.7) | turn a value a person derived into a `[[fixture]]` with its provenance | the schema refuses `self-snapshot` and `agent-generated`: an expected value may never come from the code under test |
 | a relation's name | nothing | relation stamping and `confirm` refuse a name that is an assistant's |
@@ -719,7 +714,7 @@ Three things it refuses, and the first is the point of the field:
 - **a name that belongs to an assistant.** An assistant may never supply
   mathematics, and this field is the only thing that can tell whether one did.
   The refused identities are one list in `vleo-sheet`, shared by `confirm`,
-  intake and relation stamping, so the three cannot disagree.
+  a release's checks and relation stamping, so the three cannot disagree.
 - **a declared value.** Its confirmation lives under `[value]` and it already
   has one.
 - **a relation that is already confirmed.** Changing an attribution is a review
@@ -860,8 +855,7 @@ which looks exactly like a hook that passed.
 | a subsystem looks finished and nothing seems to use it | `cargo run -p xtask -- reach` — a subsystem can answer on every row it has and be wired to nothing. It names the crossing and who reads it |
 | the gate refuses a fixture | a fixture disagreement is a physics disagreement. Take it to the node owner; do not widen the tolerance |
 | a sweep row says `refused` | the value left the declared domain. The message names the bound and its reason |
-| a release's intake says CONFLICT | the design changed that field since the release was based on it. Nothing is overwritten: the line goes back to the group, for a new sealed release |
-| a release's intake says an interface does not connect | the input names no row, or a row of another quantity. The line names the row and what it actually is; the fix goes back to the group |
+| today's design says a group's release was refused | the tool names the reason — a conflict with a field the design changed since the release was based on it, a broken seal, a method or results an assistant supplied — and builds the group's part from its last good release. Nothing is overwritten: the fix goes back to the group, for a new sealed release |
 | an uploaded case or result is refused | every refused row is named with why. A case is all or nothing; a file from an older release is carried over rather than refused |
 | the daemon shows the wrong tree | an old process. It is the sheet hash that would refuse a stale page, but a stale *process* has its own copy — check the port |
 

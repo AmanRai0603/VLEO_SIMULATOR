@@ -2,9 +2,9 @@
 """The team's shared drive, kept by the pipeline rather than by hand.
 
     tools/drive.py pack --out target/drive          # the folder, built here
-    tools/drive.py pack --sealed R.vleo --delivery DIR --zip   # ...with a group's
-                                                    # sealed release and its delivery,
-                                                    # as one zip to put in Drive by hand
+    tools/drive.py pack --sealed R.vleo --zip       # ...with a group's sealed
+                                                    # release, as one zip to put in
+                                                    # Drive by hand
     tools/drive.py pack --update --zip              # ...only what the repository
                                                     # owns, to replace on a release
     tools/drive.py upload target/drive --folder ID  # mirrored into Drive
@@ -32,9 +32,6 @@ drive filled by hand drifts from the release it claims to be within a week.
     groups/READY.csv                     what each group's own checks still ask
     groups/l3_solar/                     the solar worked example (groups/solar),
                                          in place of solar's plain export
-    deliveries/<group>-<version>/        a test application's record, given by
-                                         --delivery: DELIVERY.toml, DELIVERY.md,
-                                         group-test.csv — what the subsystem engineer accepts
 
 `releases/` holds sealed releases and nothing else. The export assembles an
 unsealed release for every group; it is left out, because a file of that name
@@ -44,18 +41,17 @@ their own (docs/GROUP_APPS.md); the developer adds a sealed one with --sealed.
 
 # By hand, without the sign-in
 
-`pack --zip` writes the same folder as one zip, its six folders at the top.
-The drive's owner unzips it and drags the six folders into the drive's folder:
+`pack --zip` writes the same folder as one zip, its five folders at the top.
+The drive's owner unzips it and drags the five folders into the drive's folder:
 that is the whole upload, and it needs no secrets.
 
 Who owns what decides what a later zip replaces. apps/, guides/, design/ and
 readable/ are the repository's: a release replaces them whole. groups/ is the
 groups' once it is in the drive — the subsystem engineer's structure, the node engineers' node
 files, the sealed releases — so a later zip leaves it out (`--update`), and
-only a new group's folder is added by hand. deliveries/ only grows: each test
-application adds its own folder, and the subsystem engineer adds their answer to it.
+only a new group's folder is added by hand.
 docs/DRIVE_START_HERE.md is the drive's START HERE page, kept as a Google Doc
-beside the six folders.
+beside the five folders.
 
 # What `upload` does, and what it refuses to do
 
@@ -109,7 +105,7 @@ def run(cmd, cwd=ROOT):
     subprocess.run([str(c) for c in cmd], cwd=cwd, check=True)
 
 
-def pack(out, sealed=(), deliveries=(), zip_it=False, update=False):
+def pack(out, sealed=(), zip_it=False, update=False):
     """Build the drive's folder at `out` from the repository as it stands."""
     out = Path(out).resolve()
     if out.exists():
@@ -140,12 +136,8 @@ def pack(out, sealed=(), deliveries=(), zip_it=False, update=False):
     print("5. releases: sealed ones only")
     dropped = place_releases(out, sealed)
     print("  %d unsealed assembl%s left out; %d sealed release(s) in" % (dropped, "y" if dropped == 1 else "ies", len(sealed)))
-    if deliveries:
-        print("6. the test applications' records")
-        for d in place_deliveries(out, deliveries):
-            print("  deliveries/" + d)
     if update:
-        print("7. --update: groups/ left out, as the groups' own once it is in the drive")
+        print("6. --update: groups/ left out, as the groups' own once it is in the drive")
         shutil.rmtree(out / "groups")
     files = [p for p in out.rglob("*") if p.is_file()]
     size = sum(p.stat().st_size for p in files)
@@ -239,41 +231,6 @@ def place_releases(out, sealed):
         (home / "releases").mkdir(exist_ok=True)
         shutil.copy2(r, home / "releases" / ("%s-%s.vleo" % (g, v)))
     return dropped
-
-
-#: What a delivery's folder in the drive holds, from the test application.
-DELIVERY_FILES = ["DELIVERY.toml", "DELIVERY.md", "group-test.csv"]
-
-
-def place_deliveries(out, dirs):
-    """Copy each test application's record into deliveries/<group>-<version>/.
-    Refused when the drive does not also hold the sealed release it was built
-    from: the subsystem engineer accepts a delivery against that release, and nothing else."""
-    placed = []
-    for d in dirs:
-        d = Path(d)
-        toml = d / "DELIVERY.toml"
-        if not toml.is_file():
-            raise SystemExit("%s has no DELIVERY.toml: give the folder `xtask group-deliver` wrote" % d)
-        rec = {}
-        for line in toml.read_text().splitlines():
-            k, sep, v = line.partition("=")
-            if sep and not line.lstrip().startswith("#"):
-                rec[k.strip()] = v.strip().strip('"')
-        g, v, fp = rec.get("group", ""), rec.get("version", ""), rec.get("fingerprint", "")
-        rel = Path(out) / "groups" / g / "releases" / ("%s-%s.vleo" % (g, v))
-        if not rel.is_file() or release_meta(rel).get("fingerprint") != fp:
-            raise SystemExit(
-                "the delivery of %s %s was built from the sealed release with fingerprint %s…, "
-                "and the drive does not hold it: give that release with --sealed" % (g, v, fp[:12])
-            )
-        home = Path(out) / "deliveries" / ("%s-%s" % (g, v))
-        home.mkdir(parents=True, exist_ok=True)
-        for name in DELIVERY_FILES:
-            if (d / name).is_file():
-                shutil.copy2(d / name, home / name)
-        placed.append("%s-%s" % (g, v))
-    return placed
 
 
 # ---------------------------------------------------------------------------
@@ -588,19 +545,6 @@ def selftest():
                 check("a release that is %s is refused" % why, False)
             except SystemExit as e:
                 check("a release that is %s is refused" % why, why in str(e))
-        dl = t / "dl"
-        dl.mkdir()
-        (dl / "DELIVERY.toml").write_text('group = "solar"\nversion = "1.1"\nfingerprint = "%s"\n' % ("ab" * 32))
-        (dl / "group-test.csv").write_text("node,held\n")
-        placed = place_deliveries(out, [dl])
-        home = out / "deliveries" / "solar-1.1"
-        check("a delivery goes beside the sealed release it was built from", placed == ["solar-1.1"] and (home / "DELIVERY.toml").is_file() and (home / "group-test.csv").is_file())
-        (dl / "DELIVERY.toml").write_text('group = "solar"\nversion = "1.1"\nfingerprint = "%s"\n' % ("cd" * 32))
-        try:
-            place_deliveries(out, [dl])
-            check("a delivery whose sealed release the drive does not hold is refused", False)
-        except SystemExit as e:
-            check("a delivery whose sealed release the drive does not hold is refused", "--sealed" in str(e))
     with tempfile.TemporaryDirectory() as t:
         import csv
         import sqlite3
@@ -643,7 +587,6 @@ def main():
     p = sub.add_parser("pack", help="build the drive's folder from the repository")
     p.add_argument("--out", default=str(ROOT / "target" / "drive"))
     p.add_argument("--sealed", nargs="*", default=[], help="sealed releases (.vleo) to put in their groups' releases/")
-    p.add_argument("--delivery", nargs="*", default=[], help="folders `xtask group-deliver` wrote, for deliveries/")
     p.add_argument("--zip", action="store_true", help="also write the folder as one zip, to put in the drive by hand")
     p.add_argument("--update", action="store_true", help="leave groups/ out: the groups' own once it is in the drive")
     u = sub.add_parser("upload", help="mirror a packed folder into a Drive folder")
@@ -654,7 +597,7 @@ def main():
     a.add_argument("--client-secret", required=True)
     args = ap.parse_args()
     if args.what == "pack":
-        pack(args.out, args.sealed, args.delivery, args.zip, args.update)
+        pack(args.out, args.sealed, args.zip, args.update)
     elif args.what == "upload":
         upload(args.local, args.folder)
     else:

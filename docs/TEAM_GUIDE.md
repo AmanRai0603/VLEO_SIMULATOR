@@ -5,9 +5,9 @@
 > your system and start the program in it.) Set your inputs, run the design, keep the results. When
 > the design itself is wrong or missing something, its node engineer changes it in the node's own
 > file, and it reaches the design with the group's sealed release. Once the subsystem engineer
-> accepts the test application built from that release, the change goes into the next release for
-> everyone. Your inputs and results are kept on your machine and carry over
-> to every new version.
+> seals that release and puts it on the shared drive, the tool builds today's design from it, for
+> everyone who opens it on the drive. Your inputs and results are kept on your machine and carry
+> over to every new version.
 >
 > **Kind:** tutorial + how-to · **For:** everyone using the tool — the programme manager, the system engineer, subsystem engineers and node engineers
 
@@ -85,14 +85,15 @@ engineer writes it.
    the pseudocode (checked as you type — every line, every unit), the inputs, your own results,
    the evidence, pictures and your code. Then **Check & sign**.
 3. **Put the file back** in `nodes/` on the drive, replacing the old one.
-4. **Your subsystem engineer assembles the group's release**, has each node signed, seals it and
-   sends it to the developer.
-5. **The subsystem engineer gets a test application back** — the tool with the group's release
-   built in — tries it, and accepts it or says what to change.
+4. **Your subsystem engineer assembles the group's release**, has each node signed and seals it.
+5. **The sealed release goes on the drive**, in the group's `releases/` folder. Nobody takes it in
+   by hand.
 
-Only then is the release merged, and it reaches everyone in the next release. If it cannot be
-taken in, the group gets the reason back, line by line, and nothing was changed. The group's side,
-step by step, is `docs/GROUP_APPS.md`.
+When the tool opens on the drive, it builds today's design from every group's latest sealed
+release that passes its checks — its seal, its content, and each node against the design. If your
+group's latest release is refused, your group's part is built from its last good release, and the
+tool says which release it is and why the new one was refused; fix what it names, seal again, and
+put the new release beside the old one. The group's side, step by step, is `docs/GROUP_APPS.md`.
 
 **Your guide:** `docs/roles/user.html` in this folder is an interactive page with every step for
 you — using the tool, and how a change reaches the design — at three depths (Learn, Read, Expert).

@@ -45,14 +45,15 @@ narrative:
 | **Risks opened / closed** | `R-01 L5->L4`, `R-09 closed`, `R-12 opened` *(optional)* |
 | **Rests on now** · **Would break if** | the new belief, and what to watch for |
 
-The kind of decision is not asked: intake reads it off what the release changes — an input, the
+The kind of decision is not asked: the release's checks read it off what the release changes — an input, the
 output, the model (source, assumptions), the maths (the relation), the algorithm, the
 visualisation. Wording — the note, the plain-words explanation, the prose of the derivation — is
 not a decision and needs no record, because a sentence that needs paperwork to correct never gets
 corrected.
 
-Without a complete record, `group-intake` **refuses the change**, and the lines go back to the
-group. With it, the changes go in and a new `[[version]]` is appended to the sheet.
+Without a complete record, today's design **refuses the release**, says why, and builds the
+group's part from its last good release; the fix goes back to the group. With it, the release
+is taken into today's design, and the node's sheet there carries the new `[[version]]`.
 
 ### D3 · A version is a record, and a release names it
 
@@ -136,8 +137,6 @@ break it.
 
 **As a developer.**
 
-    cargo run -p xtask -- group-intake <dir>          # the record is checked with everything else
-    cargo run -p xtask -- group-intake <dir> --apply  # appends the [[version]]
     cargo run -p xtask -- derisk                      # the narrative, regenerated
     cargo run -p xtask -- release 0.2.0               # stamps `next`, sets the version
     cargo run -p xtask -- release 0.2.0 --check       # what the release pipeline runs

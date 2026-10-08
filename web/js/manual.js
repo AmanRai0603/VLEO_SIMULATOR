@@ -215,16 +215,15 @@ function draw(host) {
     '<aside class="man-side">' +
       '<div class="man-side-h">For</div>' +
       '<div class="man-filter" role="group" aria-label="who this is for">' +
-        [['all', 'everyone'], ['user', 'an engineer'], ['maintainer', 'intake'], ['developer', 'the developer']].map(([k, t]) =>
+        [['all', 'everyone'], ['user', 'an engineer'], ['maintainer', 'releases'], ['developer', 'the developer']].map(([k, t]) =>
           '<button class="ctl man-f' + (VIEW.who === k ? ' sel' : '') + '" data-who="' + k + '">' +
           t + '</button>').join('') +
       '</div>' +
       '<p class="man-side-note">An <b>engineer</b> — the programme manager, the system engineer, a ' +
         'subsystem engineer or a node engineer — reads the design, sets the inputs, runs, keeps ' +
-        'results; a node engineer writes their node, and a subsystem engineer seals the group’s release ' +
-        'and accepts its test application. <b>Intake</b>, until the switch-over, is the developer running ' +
-        'the routine: takes each release in, delivers the test application, records the acceptance, ' +
-        'releases. The <b>developer</b> also writes what ' +
+        'results; a node engineer writes their node, and a subsystem engineer seals the group’s release. ' +
+        '<b>Releases</b>, until the switch-over, is the developer running the routine: cuts a release, ' +
+        'builds the kits, packs the drive and shares them. The <b>developer</b> also writes what ' +
         'the routine cannot: code, checks, the tool itself.</p>' +
       layers.map(l =>
         '<div class="man-side-h' + (l.id === L.id ? ' cur' : '') + '">' +

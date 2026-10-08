@@ -36,7 +36,6 @@ import { DbFile, fromFile, pickForSaving, canSaveInPlace, openMany, fileName, sa
 import { create, copy } from './gstore.js';
 import { structurePage, wireStructure, setMember } from './gstruct.js';
 import { fingerprint, zip } from './gseal.js';
-import { deliveryPage, wireDelivery } from './gaccept.js';
 
 const SPEC = window.VLEO_GROUP_SPEC || { file: [], text: [], embed: [] };
 const ctx = { folder: null, model: null, findings: [], spec: SPEC, file: null, me: '' };
@@ -207,7 +206,6 @@ function nav() {
     '<a class="gnv" href="#/files" data-r="files">' + (ctx.file ? 'Node files &amp; release' : 'Keep as a database') + '</a>' +
     '<a class="gnv" href="#/checks" data-r="checks">Checks <span class="gcount' + (count('error') ? ' bad' : '') + '">' + count('error') + ' · ' + count('warning') + '</span></a>' +
     '<a class="gnv" href="#/sign" data-r="sign">Sign &amp; seal</a>' +
-    (ctx.file ? '<a class="gnv" href="#/delivery" data-r="delivery">Delivery &amp; acceptance</a>' : '') +
     '<p class="gnv-h">Nodes, in flow order</p>' +
     m.order.map(id => '<a class="gnv gnv-node" href="#/node/' + esc(id) + '" data-r="node/' + esc(id) + '"><span class="gdot ' + nodeState(m.nodes.get(id)) + '"></span>' + esc(id) + '</a>').join('') +
     '<p class="gnv-h">Tools</p><a class="gnv" href="#/helper" data-r="helper">Equation helper</a>' +
@@ -246,7 +244,6 @@ async function route() {
   }
   if (r === 'sign') { main.innerHTML = '<p class="muted">Working out what is signed…</p>'; main.innerHTML = await signPage(); wireSign(); return; }
   if (r === 'issue') { main.innerHTML = issuePage(); wireIssue(); return; }
-  if (r === 'delivery' && ctx.file) { main.innerHTML = deliveryPage(ctx); wireDelivery(ctx); return; }
   const m = /^node\/([^/]+)(?:\/([a-z]+))?$/.exec(r);
   if (m) {
     const tab = NODE_TABS.some(([k]) => k === m[2]) ? m[2] : 'explain';
@@ -496,7 +493,7 @@ async function sealDb() {
 // ── raising an issue ───────────────────────────────────────────────────────
 
 function issuePage() {
-  return '<h1 class="gh1">Raise an issue</h1><p>Something wrong, missing or unclear — in this folder, or in the test application the developer sent. ' +
+  return '<h1 class="gh1">Raise an issue</h1><p>Something wrong, missing or unclear — in this folder, or in the design as the tool shows it. ' +
     'It is written into the folder\'s <code>issues/</code>, where the developer reads it.</p>' +
     '<p><label>Your name <input id="gi-by" value="' + esc(me) + '"></label></p>' +
     '<p><label>Where <input id="gi-where" class="gnote" placeholder="e.g. node sw_f107_design, Results tab; or the test app, Run page"></label></p>' +

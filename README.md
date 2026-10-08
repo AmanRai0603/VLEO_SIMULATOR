@@ -1,6 +1,6 @@
 # VLEO Integrated Design Tool
 
-> **Answer first.** A design tool for a very-low-Earth-orbit multipayload spacecraft: one kernel computes every number, the people who own the design run it on their own inputs and write their own parts of it, and each group's work arrives as its sealed release, is built and tested, is accepted by its subsystem engineer, and only then released to everyone. Start the tool with `cargo run --release -p vleo-daemon` and press ? Manual.
+> **Answer first.** A design tool for a very-low-Earth-orbit multipayload spacecraft: one kernel computes every number, the people who own the design run it on their own inputs and write their own parts of it, and each group's work arrives as its sealed release on the shared drive, where the tool checks it and builds today's design from it for everyone. Start the tool with `cargo run --release -p vleo-daemon` and press ? Manual.
 >
 > **Kind:** explanation + reference · **For:** everyone
 
@@ -23,19 +23,22 @@ command for it:
 
 | for | does | guide |
 |---|---|---|
-| **the programme manager, the system engineer, each subsystem engineer and each node engineer** | use the tool; a node engineer writes their own node in its file, the subsystem engineer seals the group's work as a release, tries the test application built from it and accepts it | [`docs/roles/user.html`](docs/roles/user.html) |
-| **the developer at intake, or their deputy** | takes each sealed release in, builds and tests it, delivers the test application, records the acceptance, merges, releases, shares — every step one command | [`docs/roles/maintainer.html`](docs/roles/maintainer.html) |
+| **the programme manager, the system engineer, each subsystem engineer and each node engineer** | use the tool; a node engineer writes their own node in its file, the subsystem engineer seals the group's work as a release and puts it on the shared drive | [`docs/roles/user.html`](docs/roles/user.html) |
+| **the developer at releases, or their deputy** | builds a node from its method, cuts a release, builds the kits, packs the drive, shares — every step one command | [`docs/roles/maintainer.html`](docs/roles/maintainer.html) |
 | **the developer** | writes what the routine cannot: kernel relations, filled holes, checks, the tool itself | [`docs/roles/developer.html`](docs/roles/developer.html) |
 
-    sealed release ──▶ unpack ──▶ group-intake ──▶ group-build ──▶ group-test ──▶ group-deliver ──▶ subsystem engineer tries it ──▶ group-accept ──▶ merge ──▶ ship
-                                  └─ each release on its own branch, group/<group>-<version>; main holds accepted work only
+    node file ──▶ sealed release ──▶ groups/<group>/releases/ on the drive ──▶ checked ──▶ today's design
+                                                                       └─ refused: the group's last good release, and why
 
-The commands — `group-intake`, `group-build`, `group-test`, `group-deliver`,
-`group-accept`, `ship` — are `cargo run -p xtask -- <command>`; the intake guide
-walks one sealed release from arrival to a shipped version, and
-[`docs/GROUP_APPS.md`](docs/GROUP_APPS.md) is the group's side of it. Nothing
-reaches `main` without its subsystem engineer's acceptance of the exact build
-they tried, and the pipeline checks that on every group branch.
+A sealed release goes in its group's folder on the shared drive. When the tool
+opens on the drive (`VLEO_DRIVE`), it builds today's design from every group's
+latest sealed release that passes its checks — its seal, its content, and each
+node against the design. A group whose latest release is refused is built from
+its last good release, and the tool says which release each group's part is
+and why one was refused. Nobody takes a release in by hand.
+[`docs/GROUP_APPS.md`](docs/GROUP_APPS.md) is the group's side of it, and the
+releases guide covers the developer's: `build-node`, `ship`, `kit` and the
+drive's pack, each `cargo run -p xtask -- <command>`.
 
 **A node's relation arrives three ways, and each checks the other two.** Its
 node engineer's own code — MATLAB, Python, anything — produced their test cases; the
@@ -43,8 +46,8 @@ node engineer's own code — MATLAB, Python, anything — produced their test ca
 for units and run ([`docs/PSEUDOCODE.md`](docs/PSEUDOCODE.md)); and the code the
 tool ships is translated from the method by fixed rules. The node application
 checks the method as the node engineer types it — every line, every unit — and
-`group-build` builds each node stage by stage (`build-node`) and connects it to
-the design only once every one of their cases agrees.
+`build-node` builds each node stage by stage and connects it to the design only
+once every one of their cases agrees.
 
 ## Status
 
@@ -94,7 +97,7 @@ the one it got. Set `VLEO_PORT` to pin it.
 **The tool carries its own manual.** Press **? Manual** at the top of the page,
 or open `/#manual` (a single section is `/#manual/<section>`, such as
 `/#manual/term-run`). It covers the browser and the terminal, can be filtered
-to what an engineer does, what intake does or what the developer does, and lists what cannot be done by
+to what an engineer does, what releases do or what the developer does, and lists what cannot be done by
 hand with why and what to do instead. Every command has a copy button. A card
 at its top says where this copy keeps the case and the results, and whether a
 case is saved. Its source is `docs/manual.toml`, and it is tested
@@ -105,8 +108,8 @@ and the pipeline runs every command it calls safe, exactly as written.
 **The tool never writes the repository.** Everyone using it sets the inputs,
 runs, and keeps results — all of it outside the checkout, under `~/.vleo/`.
 The design changes in its owners' own files: a node in its node engineer's file,
-reaching the design with its group's sealed release, which the developer checks,
-builds and releases. There is no edit mode to turn on: a node cannot be changed,
+reaching the design with its group's sealed release, put on the shared drive and
+checked there by the tool itself. There is no edit mode to turn on: a node cannot be changed,
 added or removed from the browser.
 
 **Nobody using the tool needs this repository.** `cargo run -p xtask -- kit` builds a
@@ -255,7 +258,7 @@ moment the row is evaluated.
 | `sources/` | every citation as an object with an id, not as free text | a fixture references `jacchia1971`, never a sentence. Marking a source superseded then lists every row that depended on it, in one query |
 | `cd06/` | `tree.json` — the CD-06 planning document's own node tree, extracted verbatim | where the 1396 rows came from. `tools/seed_tree.py` reads it, so the tree's shape is traceable to the document rather than asserted |
 | `areas/` | six area files that narrow `AGENTS.md` per area | the nearer file wins, so an area can be stricter than the root without restating it |
-| `xtask/` | the task runner — `group-intake`, `publish`, `gate`, `docs`, `assemble`, `fill`, `ready`, `status` and the rest | the one entry point for everything generated or checked. `cargo run -p xtask -- gate && cargo test` is the command that must be green |
+| `xtask/` | the task runner — `build-node`, `publish`, `gate`, `docs`, `assemble`, `fill`, `ready`, `status` and the rest | the one entry point for everything generated or checked. `cargo run -p xtask -- gate && cargo test` is the command that must be green |
 | `.claude/` | four hooks | what fires on an edit made in an assistant's session — the same regeneration and gate anyone's edit goes through |
 | `.github/` | the pipeline (`gate.yml`, `nightly.yml`), the dependency bot, the PR template | eight jobs, and the regeneration diff that catches a generated file nobody re-ran |
 | `.devcontainer/` | the Codespace definition and its setup scripts | a fresh clone that runs without a person installing anything |
@@ -343,10 +346,10 @@ Nothing here is autonomous, and the line that matters is between the people who
 | | does | cannot |
 |---|---|---|
 | **the programme manager, the system engineer, each subsystem engineer and each node engineer** | set the inputs, run, keep and send results; the node engineer writes their node in its own file, and the subsystem engineer seals the group's work as a release | change the design from the tool. A change reaches the design only in its group's sealed release, signed by who wrote it |
-| **the developer** | checks each sealed release (`xtask group-intake`), applies it, builds and tests it, implements the holes, records evidence, gates, releases | apply a release `group-intake` has not passed, or edit a sealed release |
+| **the developer** | builds a node from its method (`xtask build-node`), implements the holes, records evidence, gates, releases the tool | edit a sealed release, or take one into the design by hand — the tool takes each from the drive, checked, or refuses it |
 | **a person** — either side | states the question, the relation, its source, the domain and the reason for each bound; derives the known-good numbers; accepts the node | be replaced at any of it — none of it is checkable by machine |
 | **a generator** | emits every artefact from the sheet, deterministically | decide anything. It combines and refuses; a decision taken during generation is a decision nobody reviewed |
-| **an assistant** | whatever a developer runs it for — a hole body (`fill --by --model` records it), ordinary engineering on the tool | supply a relation: intake refuses a node whose relation an assistant supplied, and relation stamping refuses an assistant's name |
+| **an assistant** | whatever a developer runs it for — a hole body (`fill --by --model` records it), ordinary engineering on the tool | supply a relation: today's design refuses a release whose method or results an assistant supplied, and relation stamping refuses an assistant's name |
 
 Two human decisions per node, and everything between them is a command. If a
 node takes materially longer than that, the template has a defect worth finding
@@ -386,19 +389,18 @@ typed lines per hole, and those are what the five checks below surround.
 
 ### The loop, start to finish
 
-A group's sealed release arrives; a developer takes it to a release:
+A group's sealed release reaches the design without a developer:
 
 ```
-node tools/group_db.mjs --unpack <file.vleo> --out <dir>
-cargo run -p xtask -- group-intake <dir>          # the plan: changes, interfaces, conflicts — writes nothing
-cargo run -p xtask -- group-intake <dir> --apply  # into the design, regenerated and gated as one edit
-cargo run -p xtask -- group-build <dir>           # each computed node from its method
-cargo run -p xtask -- group-test <dir>            # against the group's own results
-cargo run -p xtask -- group-deliver <dir>         # the test application, from group/<group>-<version>
-cargo run -p xtask -- group-accept <file.accept.toml> --delivery <DELIVERY.toml>
+node engineer        writes the node file; the node application checks the method, line by line
+subsystem engineer   assembles the group's release, signs it and seals it: <group>-<version>.vleo
+the shared drive     the release goes in groups/<group>/releases/
+the tool             opens on the drive (VLEO_DRIVE) and builds today's design from every
+                     group's latest sealed release that passes its checks
 ```
 
-then review, merge, and a release —
+The developer's part is the tool: `cargo run -p xtask -- build-node <node>`
+when a node's method is new, then review, merge, and a release —
 `cargo run -p xtask -- release <version>` stamps every node version recorded
 since the last one, and `cargo run -p xtask -- derisk` regenerates the
 de-risking narrative. A change that moves what a node computes carries its
@@ -437,16 +439,16 @@ cargo run -p xtask -- gate && cargo test
 ### Assistants
 
 There is no roster of specialised agents. The rules are enforced by the checks —
-the gate, intake, `fill`'s splice, the fixture schema — and those apply to an
-assistant's change exactly as to anyone's, so an assistant needs no lane of its
-own. A developer may use one after a release has passed intake, for the holes
-and for ordinary engineering on the tool.
+the gate, the checks a release passes before today's design takes it, `fill`'s
+splice, the fixture schema — and those apply to an assistant's change exactly as
+to anyone's, so an assistant needs no lane of its own. A developer may use one
+for the holes and for ordinary engineering on the tool.
 
 Three things hold an assistant out of a person's part mechanically: `fill` is
 the only route into a generated file and refuses a guard, an early return or a
 platform maths call; the fixture schema refuses an expected value whose
 provenance is the code or an assistant; and a relation carries a person's name,
-which intake and relation stamping both refuse to take from an assistant. What
+which a release's checks and relation stamping both refuse to take from an assistant. What
 remains — whether the formula is right — is H1b's job and will not become a
 machine's.
 
@@ -654,7 +656,7 @@ showing an optimum near 300 km — recorded 15 September 2026](docs/img/sweep.pn
 |---|---|
 | **? Manual**, in the tool | the place to start. Every task in the browser and in the terminal, for an engineer and for the developer, what cannot be done by hand, and every command, route, setting and folder. Source: [`docs/manual.toml`](docs/manual.toml) |
 | [`docs/HOW_IT_WORKS.html`](docs/HOW_IT_WORKS.html) | **read this first if you will develop or maintain the tool.** The architecture of the codebase and how it works, end to end: an explorable map of every crate and file, one row opened file by file, a run stepped through from a click to a number, how a change lands, how releases travel and what happens when something breaks. Open it in a browser |
-| [`docs/GLOSSARY.md`](docs/GLOSSARY.md) | the words this repository uses in a sense of its own — row, closure, sense, fixture, sealed release, intake — each in a sentence, with where it is defined |
+| [`docs/GLOSSARY.md`](docs/GLOSSARY.md) | the words this repository uses in a sense of its own — row, closure, sense, fixture, sealed release, today's design — each in a sentence, with where it is defined |
 | [`docs/USING_IT.md`](docs/USING_IT.md) | the worked walkthrough, with real outputs — running it, changing an input, keeping a result, and where a group's sealed release takes over |
 | [`docs/ARCHITECTURE.html`](docs/ARCHITECTURE.html) | the whole tool end to end, with diagrams — frontend, backend and data, how pictures, pages and results are made and shared, and the roadmap. Open it in a browser |
 | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | why the rings are shaped the way they are |
@@ -667,7 +669,7 @@ showing an optimum near 300 km — recorded 15 September 2026](docs/img/sweep.pn
 | [`docs/DERISKING.md`](docs/DERISKING.md) | why the design is what it is — beliefs, versions, the risk register, releases; the generated narrative is [`docs/DERISK_NARRATIVE.md`](docs/DERISK_NARRATIVE.md) |
 | [`docs/OPERATING_1_0.md`](docs/OPERATING_1_0.md) | who does what on 1.0.0 — the five roles, the application, the shared drive, and each step from W1 to W16 |
 | [`docs/VARIABLES.md`](docs/VARIABLES.md) | every variable, unit, bound and the reason for it — generated |
-| [`docs/RUNBOOK.md`](docs/RUNBOOK.md) | a developer's first day, one sealed release from arrival to release, and what to do when the tool is down |
+| [`docs/RUNBOOK.md`](docs/RUNBOOK.md) | a developer's first day, where one sealed release goes from the drive into today's design, and what to do when the tool is down |
 | [`docs/RELEASE_SETUP.md`](docs/RELEASE_SETUP.md) | how a release is decided, tagged, proved and shipped |
 | [`docs/MATLAB_PORT_PLAN.md`](docs/MATLAB_PORT_PLAN.md) | how the study was ported, row by row — the record of a finished job |
 | [`docs/DELIVERY_PLAN.md`](docs/DELIVERY_PLAN.md) | what was to be built, in what order |

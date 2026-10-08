@@ -1,8 +1,5 @@
-//! The release, and a group's acceptance of a build.
+//! The release.
 //!
-//!     group-accept <file.accept.toml>   the group's acceptance of a delivered
-//!                                       build, checked against it and recorded
-//!     group-accept --verify <branch>    the same check, for the pipeline
 //!     ship <version>                    a release branch, stamped and proved
 //!
 //! THE DEVELOPER'S JOB IS THE SAME EVERY TIME, SO IT IS COMMANDS. A person
@@ -10,12 +7,6 @@
 //! branch made from a stale main, the tests not run — and the result looks
 //! exactly like a careful one. Each command here does its whole step or
 //! nothing, and says what to do next.
-//!
-//! AN ACCEPTANCE IS A RECORD, NOT A PASSWORD. It binds the build it was given
-//! for — the commit the delivery names — so it cannot be carried to anything
-//! else: a change made after it needs a new test application and a new
-//! acceptance. It does not prove who pressed the button — the developer who
-//! received it does.
 
 use crate::pipeline::{OnStop, Run};
 use std::fs;
@@ -70,13 +61,6 @@ fn clean(root: &Path) -> Result<(), String> {
     }
 }
 
-fn after<'a>(args: &'a [&str], flag: &str) -> Option<&'a str> {
-    args.iter()
-        .position(|a| *a == flag)
-        .and_then(|i| args.get(i + 1))
-        .copied()
-}
-
 /// One of this program's steps, run as the pipeline runs every step: numbered,
 /// and on a stop saying what state the branch is in and how to get out.
 fn step<F: FnOnce() -> Result<(), String>>(
@@ -91,8 +75,8 @@ fn step<F: FnOnce() -> Result<(), String>>(
 /// Today's answers, recorded again after a deliberate change to the design.
 ///
 /// `baseline/today.csv` holds what the engine answers, and `cargo test` fails
-/// when an answer moves. A form applied, or a group's release built, moves
-/// answers on purpose, so the record is written again here, before the tests,
+/// when an answer moves. A node built from its method moves answers on
+/// purpose, so the record is written again here, before the tests,
 /// and the difference goes into the same commit as the change, where it is
 /// reviewed with it (`baseline/README.md`). What it says is how many lines
 /// moved, so the person reading the steps sees it too.
@@ -177,258 +161,6 @@ fn push(root: &Path, branch: &str, args: &[&str]) -> Result<(), String> {
     git(root, &["push", "-q", "-u", "origin", branch]).map(|_| {
         println!("  pushed {branch}");
     })
-}
-
-// ---------------------------------------------------------------------------
-// group-accept
-
-/// Whether `commit` is what `at` is, apart from acceptance records: the
-/// acceptance binds only while nothing else has changed since the build it was
-/// given for.
-fn binds(root: &Path, commit: &str, at: &str, again: &str) -> Result<(), String> {
-    git(root, &["cat-file", "-e", &format!("{commit}^{{commit}}")]).map_err(|_| {
-        format!("the approved commit {commit} is not in this repository — git fetch, or the branch was rewritten")
-    })?;
-    git(root, &["merge-base", "--is-ancestor", commit, at])
-        .map_err(|_| format!("the approved commit {commit} is not part of this branch any more"))?;
-    let changed = git(root, &["diff", "--name-only", commit, at])?;
-    let other: Vec<&str> = changed
-        .lines()
-        .filter(|l| !l.is_empty() && !l.starts_with("acceptances/"))
-        .collect();
-    if other.is_empty() {
-        Ok(())
-    } else {
-        Err(format!(
-            "the branch has changed since the build that was approved ({} file(s), e.g. {}) — {again}",
-            other.len(),
-            other[0]
-        ))
-    }
-}
-
-/// The branch a group's release is taken in, built and delivered on.
-pub fn group_branch(group: &str, version: &str) -> String {
-    format!("group/{group}-{version}")
-}
-
-/// Where the group's acceptance of a release is kept on its branch.
-pub fn acceptance_path(group: &str, version: &str) -> String {
-    format!("acceptances/{group}-{version}.toml")
-}
-
-/// What the group application writes when the lead answers a test application.
-pub struct Acceptance {
-    pub group: String,
-    pub version: String,
-    pub fingerprint: String,
-    pub commit: String,
-    pub delivery: String,
-    pub verdict: String,
-    pub by: String,
-    pub at: String,
-    pub tried: String,
-    pub note: String,
-}
-
-pub fn read_acceptance(text: &str) -> Result<Acceptance, String> {
-    let v: toml::Value = text
-        .parse()
-        .map_err(|e| format!("it is not an acceptance file: {e}"))?;
-    let s = |k: &str| {
-        v.get(k)
-            .and_then(|x| x.as_str())
-            .unwrap_or("")
-            .trim()
-            .to_string()
-    };
-    let a = Acceptance {
-        group: s("group"),
-        version: s("version"),
-        fingerprint: s("fingerprint"),
-        commit: s("commit"),
-        delivery: s("delivery"),
-        verdict: s("verdict"),
-        by: s("by"),
-        at: s("at"),
-        tried: s("tried"),
-        note: s("note"),
-    };
-    for (k, val) in [
-        ("group", &a.group),
-        ("version", &a.version),
-        ("fingerprint", &a.fingerprint),
-        ("commit", &a.commit),
-        ("verdict", &a.verdict),
-        ("by", &a.by),
-    ] {
-        if val.is_empty() {
-            return Err(format!("the acceptance file has no {k}"));
-        }
-    }
-    Ok(a)
-}
-
-/// `group-accept <file.accept.toml> [--delivery <DELIVERY.toml>] [--no-push]` ·
-/// `group-accept --verify <branch>`.
-///
-/// The group's answer to a test application, recorded on the branch the
-/// release was built on. An answer of `changes` is never recorded: its note
-/// goes back into the group's work, and their next release comes back as a new
-/// test application. An acceptance binds the build it was given for — the
-/// commit the delivery names — and nothing changed since but these records.
-pub fn cmd_group_accept(root: &Path, args: &[&str]) -> Result<(), String> {
-    if let Some(branch) = after(args, "--verify") {
-        return verify_acceptance(root, branch, "HEAD");
-    }
-    let file = args
-        .iter()
-        .enumerate()
-        .find(|(i, a)| !a.starts_with("--") && (*i == 0 || args[i - 1] != "--delivery"))
-        .map(|(_, a)| *a)
-        .ok_or("usage: cargo run -p xtask -- group-accept <file.accept.toml> [--delivery <DELIVERY.toml>] [--no-push] | group-accept --verify <branch>")?;
-    let text = fs::read_to_string(file).map_err(|e| format!("{file}: {e}"))?;
-    let a = read_acceptance(&text)?;
-    match a.verdict.as_str() {
-        "accepted" => {}
-        "changes" => {
-            return Err(format!(
-                "{} answered CHANGES for {} {}, so nothing is recorded. Their note:\n\n  {}\n{}\n\
-                 It goes back into the group's work; their next sealed release comes back through the loop.",
-                a.by,
-                a.group,
-                a.version,
-                if a.note.is_empty() { "(none)" } else { &a.note },
-                if a.tried.is_empty() {
-                    String::new()
-                } else {
-                    format!("  What they tried: {}\n", a.tried)
-                }
-            ))
-        }
-        other => return Err(format!("the verdict is «{other}»; it is accepted or changes")),
-    }
-    if a.tried.is_empty() {
-        return Err(format!(
-            "{} accepted without saying what they tried. An acceptance says what it rests on: ask them to answer again",
-            a.by
-        ));
-    }
-    vleo_sheet::form::refuse_agent_attribution(root, &a.by).map_err(|e| e.to_string())?;
-    // With the delivery record beside it, the answer must be to that record.
-    if let Some(d) = after(args, "--delivery") {
-        let bytes = fs::read(d).map_err(|e| format!("{d}: {e}"))?;
-        let have = crate::group::sha256_hex(&bytes);
-        if have != a.delivery {
-            return Err(format!(
-                "the answer is to another delivery record: {d} hashes to {}…, the answer names {}…",
-                &have[..16],
-                a.delivery.chars().take(16).collect::<String>()
-            ));
-        }
-    }
-    let branch = group_branch(&a.group, &a.version);
-    let store = acceptance_path(&a.group, &a.version);
-    clean(root)?;
-    if current_branch(root)? != branch {
-        git(root, &["switch", "-q", &branch])
-            .map_err(|e| format!("the acceptance is for {branch}, which is not here: {e}"))?;
-        println!("  switched to {branch}");
-    }
-    binds(
-        root,
-        &a.commit,
-        "HEAD",
-        "deliver it again (`xtask group-deliver`) and ask the group to answer that build",
-    )?;
-    fs::create_dir_all(root.join("acceptances")).map_err(|e| e.to_string())?;
-    fs::write(root.join(&store), &text).map_err(|e| format!("{store}: {e}"))?;
-    let message = commit_message(
-        "chore",
-        "tree",
-        &format!("{} {} accepted by {}", a.group, a.version, a.by),
-        &[
-            format!(
-                "{} tried the test application of {} {} (commit {}, release fingerprint {}…, delivery record {}…) and accepted it{}.",
-                a.by,
-                a.group,
-                a.version,
-                a.commit.chars().take(10).collect::<String>(),
-                a.fingerprint.chars().take(16).collect::<String>(),
-                a.delivery.chars().take(16).collect::<String>(),
-                if a.at.is_empty() {
-                    String::new()
-                } else {
-                    format!(" on {}", a.at)
-                }
-            ),
-            format!("What they tried: {}", a.tried),
-            if a.note.is_empty() {
-                String::new()
-            } else {
-                format!("Their note: {}", a.note)
-            },
-            format!("Tested-by: {}", a.by),
-        ]
-        .into_iter()
-        .filter(|p| !p.is_empty())
-        .collect::<Vec<_>>(),
-    );
-    git(root, &["add", &store])?;
-    commit(root, &message)?;
-    push(root, &branch, args)?;
-    println!(
-        "\n\x1b[1maccepted.\x1b[0m {} accepted {} {} — recorded in {store}.\n\
-         The pull request from {branch} can now be reviewed and merged.",
-        a.by, a.group, a.version
-    );
-    Ok(())
-}
-
-/// The pipeline's check on a group branch: it carries the group's acceptance
-/// of its own current content.
-fn verify_acceptance(root: &Path, branch: &str, at: &str) -> Result<(), String> {
-    let a = accepted(root, branch, at)?;
-    println!(
-        "{branch}: accepted by {} (commit {}) and unchanged since",
-        a.by,
-        a.commit.chars().take(10).collect::<String>()
-    );
-    Ok(())
-}
-
-/// The group's acceptance on `branch` at `at`, if it is one and the branch has
-/// not moved past the build it accepts. Prints nothing.
-fn accepted(root: &Path, branch: &str, at: &str) -> Result<Acceptance, String> {
-    let Some((group, version)) = branch
-        .strip_prefix("group/")
-        .and_then(|r| r.rsplit_once('-'))
-    else {
-        return Err(format!(
-            "{branch} is not a group branch (group/<group>-<version>)"
-        ));
-    };
-    let store = acceptance_path(group, version);
-    let text = git(root, &["show", &format!("{at}:{store}")]).map_err(|_| {
-        format!(
-            "{branch} has no acceptance yet ({store}). Send the group its test application \
-             (`xtask group-deliver`); when they accept, run `cargo run -p xtask -- group-accept <their file>`"
-        )
-    })?;
-    let a = read_acceptance(&text)?;
-    if a.group != group || a.version != version || a.verdict != "accepted" {
-        return Err(format!(
-            "{store} is {} of {} {}, not an acceptance of {group} {version}",
-            a.verdict, a.group, a.version
-        ));
-    }
-    binds(
-        root,
-        &a.commit,
-        at,
-        "deliver it again (`xtask group-deliver`) and ask the group to answer that build",
-    )?;
-    Ok(a)
 }
 
 // ---------------------------------------------------------------------------

@@ -16,10 +16,10 @@
   SQLite the page carries, web/vendor/sqlite), so a file made here is the file
   the page would make. Sealing is a person's act and is left to the page.
 
-  --unpack is the developer's way in: a release written out as the folder it
-  holds (default target/groups/<group>-<v>), with RELEASE.toml beside it saying
-  what the file said of itself — sealed, by whom, and the fingerprint every
-  sign-off was given for. `cargo run -p xtask -- group-intake <dir>` reads it.
+  --unpack writes a release out as the folder it holds (default
+  target/groups/<group>-<v>), with RELEASE.toml beside it saying what the file
+  said of itself — sealed, by whom, and the fingerprint every sign-off was
+  given for.
 */
 import { readFileSync, writeFileSync, mkdirSync, readdirSync, statSync, copyFileSync, mkdtempSync, rmSync } from 'node:fs';
 import { join, relative, dirname, resolve } from 'node:path';

@@ -1,9 +1,8 @@
 //! A group's sealed release, read as the design takes it in.
 //!
-//! One implementation, used by `xtask group-intake`, which applies a release
-//! to the sheets, and by today's design (`vleo_server::today`), which builds
-//! the design from every group's latest sealed release when the application
-//! opens. A release is read from the folder it unpacks to or from its file,
+//! One implementation, used by today's design (`vleo_server::today`), which
+//! builds the design from every group's latest sealed release when the
+//! application opens. A release is read from the folder it unpacks to or from its file,
 //! and nothing about it is taken on trust:
 //!
 //! - the seal is checked first ([`Release::check_seal`]) — every file's

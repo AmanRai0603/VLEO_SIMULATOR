@@ -178,7 +178,7 @@ export async function seal(folder, model, sealedBy) {
   return { name, how, fingerprint: fp.fingerprint };
 }
 
-/** Write an issue a member raises while looking at the folder or the test application. */
+/** Write an issue a member raises while looking at the folder or the design. */
 export async function raiseIssue(folder, { by, where, text, version }) {
   const date = new Date().toISOString().slice(0, 10);
   const slug = String(text).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40) || 'issue';

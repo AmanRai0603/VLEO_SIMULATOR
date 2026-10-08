@@ -4,8 +4,8 @@
 > laptop** (`vleo-<version>-py3-none-any.whl`, started with `python -m vleo`), or as a **kit**: one
 > zip per platform with the programs and the files they read, and `START_HERE.md` on top. They run
 > it and keep their inputs and results on their own machine. A group's work comes back as its
-> sealed release; you take it in, release, and send the next version. Their case and results carry
-> over on their own.
+> sealed release on the shared drive, and the tool builds today's design from it; you release and
+> send the next version of the tool. Their case and results carry over on their own.
 >
 > **Kind:** how-to · **For:** developers
 
@@ -15,7 +15,8 @@ The loop, end to end:
     ───                                   ───────
     release → build a kit → share zip ──▶ unzip → start → use
                                           node files → a sealed release
-    intake → build → test → accept   ◀──  (from the group's shared drive)
+                                          → groups/<group>/releases/ on the drive
+                                          → today's design, for everyone who opens it
     release → build the next kit → share ─▶ replace the folder → start again
 
 ---
@@ -74,19 +75,16 @@ or an antivirus to question — the reason it exists. It is checked by installin
 
 — with this machine's engine only; the release carries all of them.
 
-## 2 · Take a group's release back
+## 2 · A group's release, on the drive
 
 A group's work arrives as its sealed release, `<group>-<version>.vleo`, never as one node at a
-time. Unpack it, then take it in:
-
-    node tools/group_db.mjs --unpack <file.vleo> --out <dir>
-    cargo run -p xtask -- group-intake <dir> --apply
-
-It goes on its own branch, `group/<group>-<version>` from `maintainer`, and through `group-build`,
-`group-test`, `group-deliver` and `group-accept`; it merges only with the subsystem engineer's
-acceptance of the exact test application they tried. A release that cannot be taken in goes back
-to the group with the lines that say why, and is never edited here. Every step is in
-`docs/GROUP_APPS.md` and in the intake guide, `docs/roles/maintainer.html`.
+time. Its subsystem engineer puts it in the group's folder on the shared drive,
+`groups/<group>/releases/`, and nobody takes it in by hand. When the tool opens on the drive
+(`VLEO_DRIVE`), it builds today's design from every group's latest sealed release that passes its
+checks — its seal, its content, and each node against the design. A group whose latest release is
+refused is built from its last good release, and the tool says which release each group's part is
+and why one was refused. A refused release goes back to the group, and is never edited here. The
+group's side is in `docs/GROUP_APPS.md`.
 
 ## 3 · Release and share the next kit
 

@@ -6,8 +6,9 @@
 //! file as the solar group sealed it in the group application, byte for byte.
 //!
 //! The expected fingerprint is not computed by this library: it is the one the
-//! group application sealed with and the developer's intake recorded, in
-//! `acceptances/l3_solar-1.1.toml`. Every other expectation here is a count or
+//! group application sealed with, as the developer's intake recorded it when
+//! the group accepted the release (that record retired with the intake; its
+//! value is kept here). Every other expectation here is a count or
 //! a value read from the fixture by SQLite itself, not by the code under test.
 
 use std::path::{Path, PathBuf};
@@ -20,7 +21,7 @@ use vleo_files::sqlite;
 use vleo_files::upgrade::{self, Upgrade};
 use vleo_files::ErrorKind;
 
-/// The fingerprint Solar 1.1 was sealed with (acceptances/l3_solar-1.1.toml).
+/// The fingerprint Solar 1.1 was sealed with, as the group's acceptance recorded it.
 const SOLAR_1_1: &str = "0a9e8b038e926892dd30bf61e04aed61db76d09dddc01821cb5cc575f5acd9e1";
 
 const HOW: Upgrade = Upgrade {
