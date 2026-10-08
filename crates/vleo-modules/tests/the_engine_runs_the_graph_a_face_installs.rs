@@ -73,8 +73,10 @@ fn the_engine_runs_the_installed_graph_and_names_what_it_answers_from_it() {
 
     // A design with a row fewer is laid out otherwise than this build: it
     // runs, and every list a face reads is the design's, not the build's.
+    // The last row nothing reads: a row another reads cannot go, for the
+    // design would name a variable it no longer has and is refused.
     let mut short = vleo_sheet::load_all(&root()).unwrap();
-    let last = short.ordered().last().unwrap().id.clone();
+    let last = unread(&short).last().unwrap().clone();
     short.sheets.remove(&last);
     let fewer = opened::graph(&short).unwrap();
     run_on(fewer);
@@ -101,7 +103,7 @@ fn the_engine_runs_the_installed_graph_and_names_what_it_answers_from_it() {
     };
     let built = defaults();
     let mut shifted = vleo_sheet::load_all(&root()).unwrap();
-    let first = shifted.ordered().first().unwrap().id.clone();
+    let first = unread(&shifted).first().unwrap().clone();
     shifted.sheets.remove(&first);
     run_on(opened::graph(&shifted).unwrap());
     let moved = defaults();
@@ -114,6 +116,31 @@ fn the_engine_runs_the_installed_graph_and_names_what_it_answers_from_it() {
             "{id}'s declared value is not its own"
         );
     }
+}
+
+/// The rows nothing in the design names, in the design's order: no row reads
+/// them and no case supplies, conditions on or loops through them.
+fn unread(tree: &vleo_sheet::load::Tree) -> Vec<String> {
+    let mut named: std::collections::BTreeSet<&str> = std::collections::BTreeSet::new();
+    for sh in tree.sheets.values() {
+        for i in &sh.inputs {
+            named.insert(i.var.split('.').next().unwrap_or(&i.var));
+        }
+    }
+    for c in tree.cases.values() {
+        named.extend(c.supply.iter().map(|(k, _)| k.as_str()));
+        named.extend(c.conditions.iter().map(String::as_str));
+        for cy in &c.cycles {
+            named.extend(cy.nodes.iter().map(String::as_str));
+            named.insert(cy.converge_on.as_str());
+            named.extend(cy.seeds.iter().map(|(k, _)| k.as_str()));
+        }
+    }
+    tree.ordered()
+        .into_iter()
+        .filter(|sh| !named.contains(sh.id.as_str()))
+        .map(|sh| sh.id.clone())
+        .collect()
 }
 
 #[test]
