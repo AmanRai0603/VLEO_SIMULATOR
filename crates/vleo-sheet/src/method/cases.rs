@@ -294,7 +294,6 @@ pub const CHECKER_SOURCES: &[&str] = &[
     "crates/vleo-sheet/src/method/parse.rs",
     "crates/vleo-sheet/src/method/reference.rs",
     "crates/vleo-sheet/src/method/run.rs",
-    "crates/vleo-sheet/src/method/rust.rs",
     "crates/vleo-sheet/src/method/spec.rs",
     "crates/vleo-sheet/src/method/tests.rs",
     "crates/vleo-sheet/src/method/units.rs",

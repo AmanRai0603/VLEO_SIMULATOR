@@ -2,9 +2,9 @@
 # The method language, version 4
 
 > **Answer first.** Every node's relation is written once more as a *method*: a few lines in a
-> small fixed language that the tool can check, run and translate. The checker refuses a
+> small fixed language that the tool can check and run. The checker refuses a
 > sum of unlike units, a logarithm of a length, an answer of the wrong quantity, and a path
-> that ends without an answer or a refusal — before any code exists.
+> that ends without an answer or a refusal — before the method runs.
 >
 > **Kind:** reference · **For:** node engineers and the developer
 

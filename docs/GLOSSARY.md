@@ -147,8 +147,7 @@ platform. → `AGENTS.md`, rule 4
 
 **Method** — a row's calculation in the pseudocode language, written by the
 person who knows it. The method interpreter runs it when the engine runs the
-design; until phase E's next stage, `xtask docs` also translates it into
-Rust.
+design, and nothing translates it into Rust.
 → `docs/PSEUDOCODE.md`
 
 **Author case** — an input and the answer its node engineer expects, given with a

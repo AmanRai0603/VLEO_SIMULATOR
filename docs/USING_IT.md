@@ -531,9 +531,10 @@ cargo run -p xtask -- build-node prop_intake_mouth
 `method` checks the method and runs each of its node engineer's test cases
 through it: the check the group's application runs as the node engineer types,
 and the one the gate refuses on. `build-node` takes the node from its method to
-a connected node, in order: the method on its cases, the translation into the
-kernel, the node's tests, the node engineer's code rerun, and only then the
-interface. The translation into `vleo-core::physics::methods` goes in phase E.
+a connected node, in order: the method on its cases, the node's metadata, the
+node engineer's code rerun, and only then the interface; then the design's
+files converted again, every case of the design on the engine that reads them,
+and today's answers recorded again. Nothing translates the method into Rust.
 
 ### 3.7 Get evidence
 

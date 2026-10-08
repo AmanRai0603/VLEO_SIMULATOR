@@ -196,9 +196,8 @@ interpreter runs the method when the engine runs the design read from
 `cargo run -p xtask -- method <node>` checks the method and runs each of its
 node engineer's test cases through it — the check the gate refuses on.
 `cargo run -p xtask -- build-node <node>` then takes the node from its method
-to a connected node. Until the next stage of phase E, `xtask docs` also
-translates each method into `vleo-core::physics::methods`; that translation
-goes in phase E.
+to a connected node. Nothing translates the method into Rust; the
+interpreter is the one thing that runs it.
 
 **Use `pmath`, never the standard library's transcendental functions.** The
 interpreter has only `pmath`, and the reason is in the README.

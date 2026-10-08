@@ -513,7 +513,7 @@
   // THE METHOD, YOUR CODE, YOUR CASES — and the check that runs one against
   // the others while you type, with the same checker intake and the gate use.
   const INTRO = {
-    'the method': 'Your relation once more, as a few lines the tool can check, run and translate into the code it ships. ' +
+    'the method': 'Your relation once more, as a few lines the tool can check and run — what the design runs. ' +
       'It reads the inputs by their names, gives every number its unit, and ends every path with return or refuse.',
     'your code': 'The code you wrote and tested — in MATLAB, Python, C or anything else — and the script that ran it on ' +
       'your test cases. Your cases decide: the method, and the code the tool generates from it, must reproduce every one.'

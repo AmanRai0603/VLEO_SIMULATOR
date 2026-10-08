@@ -28,10 +28,6 @@
 #![forbid(unsafe_code)]
 #![deny(clippy::float_cmp)]
 
-// A translated method names the kernel as `vleo_core::…`, so the same text
-// compiles here and in the golden tests outside the crate.
-extern crate self as vleo_core;
-
 pub mod credibility;
 pub mod evidence;
 pub mod fault;

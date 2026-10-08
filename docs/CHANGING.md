@@ -33,7 +33,7 @@ for a node, each command explaining itself
 (`cargo run -p xtask -- explain <command>`):
 
     cargo run -p xtask -- publish <node>              a filled, seeded row moved to published
-    cargo run -p xtask -- build-node <node>           a node with a method, translated and tested
+    cargo run -p xtask -- build-node <node>           a node with a method, tested and connected
     cargo run -p xtask -- gate && cargo test
 
 What you may edit by hand in a node's folder: `node.toml` (only through a
@@ -123,7 +123,7 @@ its generator would write now.
 
 | Command | Reads | Writes |
 |---|---|---|
-| `xtask docs [<node>]` | each `node.toml` | the node's `meta.json`, and each method translated into `crates/vleo-core/src/physics/methods/`, a translation that goes in phase E — a node's page is rendered when it is opened, never written |
+| `xtask docs [<node>]` | each `node.toml` | the node's `meta.json`, and `docs/PSEUDOCODE.md` — a node's page is rendered when it is opened, never written |
 | `xtask assemble` | every sheet | the index the faces read and every page fragment, in `generated/` |
 | `xtask variables` | every sheet | `docs/VARIABLES.md` |
 | `xtask codeowners` | every sheet's owner | `CODEOWNERS` |

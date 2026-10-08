@@ -143,51 +143,47 @@ pub const FUNCTIONS: &[FnSpec] = &[
 ];
 
 /// How each function is computed — one table, read by the interpreter to run
-/// a method and by the translator to write its Rust, so the two cannot take
-/// different paths. The checked ones are `vleo_units::method_rt`, which the
-/// translated code calls too.
+/// a method. The checked ones are `vleo_units::method_rt`, which say why a
+/// value has no answer in the method's own words.
 pub enum Impl {
-    Plain1(fn(f64) -> f64, &'static str),
-    Plain2(fn(f64, f64) -> f64, &'static str),
-    Checked1(fn(f64, u32) -> Result<f64, rt::MethodError>, &'static str),
-    Checked2(
-        fn(f64, f64, u32) -> Result<f64, rt::MethodError>,
-        &'static str,
-    ),
+    Plain1(fn(f64) -> f64),
+    Plain2(fn(f64, f64) -> f64),
+    Checked1(fn(f64, u32) -> Result<f64, rt::MethodError>),
+    Checked2(fn(f64, f64, u32) -> Result<f64, rt::MethodError>),
 }
 
 pub fn implementation(name: &str) -> Option<Impl> {
     use Impl::*;
     Some(match name {
-        "sqrt" => Checked1(rt::sqrt, "rt::sqrt"),
-        "cbrt" => Plain1(pmath::cbrt, "pmath::cbrt"),
-        "abs" => Plain1(pmath::abs, "pmath::abs"),
-        "min" => Plain2(pmath::min, "pmath::min"),
-        "max" => Plain2(pmath::max, "pmath::max"),
-        "hypot" => Plain2(pmath::hypot, "pmath::hypot"),
-        "fmod" => Checked2(rt::fmod, "rt::fmod"),
-        "pow" => Plain2(rt::pow, "rt::pow"),
-        "exp" => Plain1(pmath::exp, "pmath::exp"),
-        "ln" => Checked1(rt::ln, "rt::ln"),
-        "log10" => Checked1(rt::log10, "rt::log10"),
-        "log2" => Checked1(rt::log2, "rt::log2"),
-        "sin" => Plain1(pmath::sin, "pmath::sin"),
-        "cos" => Plain1(pmath::cos, "pmath::cos"),
-        "tan" => Plain1(pmath::tan, "pmath::tan"),
-        "asin" => Checked1(rt::asin, "rt::asin"),
-        "acos" => Checked1(rt::acos, "rt::acos"),
-        "atan" => Plain1(pmath::atan, "pmath::atan"),
-        "atan2" => Plain2(pmath::atan2, "pmath::atan2"),
-        "sinh" => Plain1(pmath::sinh, "pmath::sinh"),
-        "cosh" => Plain1(pmath::cosh, "pmath::cosh"),
-        "tanh" => Plain1(pmath::tanh, "pmath::tanh"),
-        "erf" => Plain1(pmath::erf, "pmath::erf"),
-        "erfc" => Plain1(pmath::erfc, "pmath::erfc"),
-        "floor" => Plain1(pmath::floor, "pmath::floor"),
-        "ceil" => Plain1(pmath::ceil, "pmath::ceil"),
-        "round" => Plain1(pmath::round, "pmath::round"),
-        "wrap_2pi" => Plain1(pmath::wrap_2pi, "pmath::wrap_2pi"),
-        "wrap_pi" => Plain1(pmath::wrap_pi, "pmath::wrap_pi"),
+        "sqrt" => Checked1(rt::sqrt),
+        "cbrt" => Plain1(pmath::cbrt),
+        "abs" => Plain1(pmath::abs),
+        "min" => Plain2(pmath::min),
+        "max" => Plain2(pmath::max),
+        "hypot" => Plain2(pmath::hypot),
+        "fmod" => Checked2(rt::fmod),
+        "pow" => Plain2(rt::pow),
+        "exp" => Plain1(pmath::exp),
+        "ln" => Checked1(rt::ln),
+        "log10" => Checked1(rt::log10),
+        "log2" => Checked1(rt::log2),
+        "sin" => Plain1(pmath::sin),
+        "cos" => Plain1(pmath::cos),
+        "tan" => Plain1(pmath::tan),
+        "asin" => Checked1(rt::asin),
+        "acos" => Checked1(rt::acos),
+        "atan" => Plain1(pmath::atan),
+        "atan2" => Plain2(pmath::atan2),
+        "sinh" => Plain1(pmath::sinh),
+        "cosh" => Plain1(pmath::cosh),
+        "tanh" => Plain1(pmath::tanh),
+        "erf" => Plain1(pmath::erf),
+        "erfc" => Plain1(pmath::erfc),
+        "floor" => Plain1(pmath::floor),
+        "ceil" => Plain1(pmath::ceil),
+        "round" => Plain1(pmath::round),
+        "wrap_2pi" => Plain1(pmath::wrap_2pi),
+        "wrap_pi" => Plain1(pmath::wrap_pi),
         _ => return None,
     })
 }
@@ -206,33 +202,31 @@ pub struct ConstSpec {
     /// Its unit, as written in brackets.
     pub unit: &'static str,
     pub meaning: &'static str,
-    /// The Rust the translator writes for it.
-    pub rust: &'static str,
 }
 
 #[rustfmt::skip]
 pub const KERNEL_CONSTANTS: &[ConstSpec] = &[
-    ConstSpec { name: "PI", value: core::f64::consts::PI, unit: "1", meaning: "π", rust: "core::f64::consts::PI" },
-    ConstSpec { name: "MU_EARTH", value: k::MU_EARTH, unit: "m^3/s^2", meaning: "Earth's gravitational parameter", rust: "MU_EARTH" },
-    ConstSpec { name: "R_EARTH", value: k::R_EARTH.get(), unit: "m", meaning: "Earth's equatorial radius (WGS-84)", rust: "R_EARTH.get()" },
-    ConstSpec { name: "R_EARTH_MEAN", value: k::R_EARTH_MEAN.get(), unit: "m", meaning: "Earth's mean radius", rust: "R_EARTH_MEAN.get()" },
-    ConstSpec { name: "F_EARTH", value: k::F_EARTH, unit: "1", meaning: "Earth's flattening (WGS-84)", rust: "F_EARTH" },
-    ConstSpec { name: "J2_EARTH", value: k::J2_EARTH, unit: "1", meaning: "Earth's J2 zonal harmonic", rust: "J2_EARTH" },
-    ConstSpec { name: "OMEGA_EARTH", value: k::OMEGA_EARTH.get(), unit: "rad/s", meaning: "Earth's rotation rate", rust: "OMEGA_EARTH.get()" },
-    ConstSpec { name: "SIDEREAL_DAY", value: k::SIDEREAL_DAY.get(), unit: "s", meaning: "one sidereal day", rust: "SIDEREAL_DAY.get()" },
-    ConstSpec { name: "G0", value: k::G0.get(), unit: "m/s^2", meaning: "standard gravity", rust: "G0.get()" },
-    ConstSpec { name: "SOLAR_CONSTANT", value: k::SOLAR_CONSTANT.get(), unit: "W/m^2", meaning: "total solar irradiance at 1 AU", rust: "SOLAR_CONSTANT.get()" },
-    ConstSpec { name: "EARTH_ALBEDO", value: k::EARTH_ALBEDO, unit: "1", meaning: "Earth's mean Bond albedo", rust: "EARTH_ALBEDO" },
-    ConstSpec { name: "EARTH_IR", value: k::EARTH_IR.get(), unit: "W/m^2", meaning: "Earth's mean outgoing infrared", rust: "EARTH_IR.get()" },
-    ConstSpec { name: "AU", value: k::ASTRONOMICAL_UNIT.get(), unit: "m", meaning: "the astronomical unit", rust: "ASTRONOMICAL_UNIT.get()" },
-    ConstSpec { name: "SPEED_OF_LIGHT", value: k::SPEED_OF_LIGHT.get(), unit: "m/s", meaning: "the speed of light", rust: "SPEED_OF_LIGHT.get()" },
-    ConstSpec { name: "K_BOLTZMANN", value: k::K_BOLTZMANN, unit: "J/K", meaning: "the Boltzmann constant", rust: "K_BOLTZMANN" },
-    ConstSpec { name: "R_UNIVERSAL", value: k::R_UNIVERSAL, unit: "J/K/mol", meaning: "the molar gas constant", rust: "R_UNIVERSAL" },
-    ConstSpec { name: "N_AVOGADRO", value: k::N_AVOGADRO, unit: "1/mol", meaning: "the Avogadro constant", rust: "N_AVOGADRO" },
-    ConstSpec { name: "SIGMA_SB", value: k::SIGMA_SB, unit: "W/m^2/K^4", meaning: "the Stefan–Boltzmann constant", rust: "SIGMA_SB" },
-    ConstSpec { name: "ELEMENTARY_CHARGE", value: k::ELEMENTARY_CHARGE, unit: "C", meaning: "the elementary charge", rust: "ELEMENTARY_CHARGE" },
-    ConstSpec { name: "ATOMIC_MASS_UNIT", value: k::ATOMIC_MASS_UNIT, unit: "kg", meaning: "the atomic mass unit", rust: "ATOMIC_MASS_UNIT" },
-    ConstSpec { name: "PLANCK", value: k::PLANCK, unit: "J.s", meaning: "the Planck constant", rust: "PLANCK" },
+    ConstSpec { name: "PI", value: core::f64::consts::PI, unit: "1", meaning: "π" },
+    ConstSpec { name: "MU_EARTH", value: k::MU_EARTH, unit: "m^3/s^2", meaning: "Earth's gravitational parameter" },
+    ConstSpec { name: "R_EARTH", value: k::R_EARTH.get(), unit: "m", meaning: "Earth's equatorial radius (WGS-84)" },
+    ConstSpec { name: "R_EARTH_MEAN", value: k::R_EARTH_MEAN.get(), unit: "m", meaning: "Earth's mean radius" },
+    ConstSpec { name: "F_EARTH", value: k::F_EARTH, unit: "1", meaning: "Earth's flattening (WGS-84)" },
+    ConstSpec { name: "J2_EARTH", value: k::J2_EARTH, unit: "1", meaning: "Earth's J2 zonal harmonic" },
+    ConstSpec { name: "OMEGA_EARTH", value: k::OMEGA_EARTH.get(), unit: "rad/s", meaning: "Earth's rotation rate" },
+    ConstSpec { name: "SIDEREAL_DAY", value: k::SIDEREAL_DAY.get(), unit: "s", meaning: "one sidereal day" },
+    ConstSpec { name: "G0", value: k::G0.get(), unit: "m/s^2", meaning: "standard gravity" },
+    ConstSpec { name: "SOLAR_CONSTANT", value: k::SOLAR_CONSTANT.get(), unit: "W/m^2", meaning: "total solar irradiance at 1 AU" },
+    ConstSpec { name: "EARTH_ALBEDO", value: k::EARTH_ALBEDO, unit: "1", meaning: "Earth's mean Bond albedo" },
+    ConstSpec { name: "EARTH_IR", value: k::EARTH_IR.get(), unit: "W/m^2", meaning: "Earth's mean outgoing infrared" },
+    ConstSpec { name: "AU", value: k::ASTRONOMICAL_UNIT.get(), unit: "m", meaning: "the astronomical unit" },
+    ConstSpec { name: "SPEED_OF_LIGHT", value: k::SPEED_OF_LIGHT.get(), unit: "m/s", meaning: "the speed of light" },
+    ConstSpec { name: "K_BOLTZMANN", value: k::K_BOLTZMANN, unit: "J/K", meaning: "the Boltzmann constant" },
+    ConstSpec { name: "R_UNIVERSAL", value: k::R_UNIVERSAL, unit: "J/K/mol", meaning: "the molar gas constant" },
+    ConstSpec { name: "N_AVOGADRO", value: k::N_AVOGADRO, unit: "1/mol", meaning: "the Avogadro constant" },
+    ConstSpec { name: "SIGMA_SB", value: k::SIGMA_SB, unit: "W/m^2/K^4", meaning: "the Stefan–Boltzmann constant" },
+    ConstSpec { name: "ELEMENTARY_CHARGE", value: k::ELEMENTARY_CHARGE, unit: "C", meaning: "the elementary charge" },
+    ConstSpec { name: "ATOMIC_MASS_UNIT", value: k::ATOMIC_MASS_UNIT, unit: "kg", meaning: "the atomic mass unit" },
+    ConstSpec { name: "PLANCK", value: k::PLANCK, unit: "J.s", meaning: "the Planck constant" },
 ];
 
 pub(super) fn kernel_constant(name: &str) -> Option<(f64, Dim)> {

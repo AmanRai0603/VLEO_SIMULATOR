@@ -166,17 +166,17 @@ pub(crate) const PIPELINE: &[Cmd] = &[
         name: "build-node",
         stage: "build",
         reads: "the node's method, cases and node engineer's code",
-        writes: "crates/vleo-core/src/physics/methods/<node>.rs, the node's generated files, design/ converted again, baseline/ recorded again",
-        checks: "the method on its cases; the node's tests; the node engineer's code rerun; the tree assembles",
+        writes: "the node's metadata, design/ converted again, baseline/ recorded again",
+        checks: "the method on its cases; the node engineer's code rerun; the tree assembles; every case of the design passes",
         undo: GIT_UNDO,
         code: ("xtask/src/method.rs", "cmd_build_node"),
         steps: &[
             "the method, against the node engineer's cases",
-            "translate the method into the kernel, and regenerate the node",
-            "the node's tests: the node engineer's cases, and the translation against the method",
+            "regenerate the node",
             "the node engineer's own code, run again on their cases",
             "only now, the interface: the node in the tree",
             "the design's files, converted again",
+            "every case of the design, on the engine that reads it",
             "today's answers, recorded again",
         ],
         dry: Dry::Plan,
@@ -240,7 +240,7 @@ pub(crate) const PIPELINE: &[Cmd] = &[
         name: "docs",
         stage: "gate",
         reads: "every sheet",
-        writes: "each node's metadata, the methods translated into the kernel, and docs/PSEUDOCODE.md; a page.html left in a node folder from before is removed",
+        writes: "each node's metadata, and docs/PSEUDOCODE.md; a page.html left in a node folder from before is removed",
         checks: "that each sheet generates",
         undo: GIT_UNDO,
         code: ("xtask/src/main.rs", "cmd_docs"),
@@ -1026,18 +1026,7 @@ pub(crate) fn cmd_why(root: &Path, args: &[&str]) -> Result<(), String> {
     if sh.is_declared() {
         println!("  a declared value: no code of its own");
     } else if vleo_sheet::method::node_program(sh).is_some() {
-        let p = root
-            .join("crates/vleo-core/src/physics/methods")
-            .join(format!("{}.rs", sh.rust_ident()));
-        println!(
-            "  built from its method: {} {}",
-            p.strip_prefix(root).unwrap_or(&p).display(),
-            if p.is_file() {
-                "— translated by rule"
-            } else {
-                "— not built yet: `cargo run -p xtask -- build-node` makes it"
-            }
-        );
+        println!("  its method, run by the interpreter");
     } else {
         println!("  no method yet: it answers nothing until one is written");
     }

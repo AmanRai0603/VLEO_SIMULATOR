@@ -2,6 +2,11 @@
 
 use super::*;
 
+/// Names a method may not define. The language once became Rust, where these
+/// cannot be names at all; a method that used one was refused then, and is
+/// refused still, so the language a design was written in does not move.
+const RESERVED: &[&str] = &["self", "Self", "super", "crate"];
+
 /// What a method is checked against: the node's inputs, by binding name, with
 /// their dimensions, and the dimension of its answer.
 #[derive(Clone, Debug)]
@@ -73,7 +78,7 @@ impl Checker<'_> {
         self.diags.push(Diag::err(line, msg));
     }
     fn define(&mut self, name: &str, kind: Kind, dim: Dim, line: usize) {
-        if RUST_UNRAW.contains(&name) || name.starts_with("__") || name == "_" {
+        if RESERVED.contains(&name) || name.starts_with("__") || name == "_" {
             self.err(
                 line,
                 format!("«{name}» cannot be a name in a method — choose another"),

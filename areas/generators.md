@@ -22,14 +22,12 @@ sees a diff here.
 
 ## The generators
 
-No generator writes code into a node's folder: every relation is the node's
-method, in its sheet, run by the interpreter. Three run per node and read
-nothing but that node's sheet, which is what makes 1396 rows 1396 independent
-acts:
+No generator writes code: every relation is the node's method, in its sheet,
+run by the interpreter. Two run per node and read nothing but that node's
+sheet, which is what makes 1396 rows 1396 independent acts:
 
 | generator | emits |
 |---|---|
-| method | the node's method, translated into the kernel (`crates/vleo-core/src/physics/methods/`) until the translation goes (phase E) |
 | page | the node's fragment of the document — rendered from the sheet when it is opened, never written to the folder |
 | metadata | `meta.json` |
 
@@ -58,11 +56,6 @@ both, in the same commit, or neither.
 A generator whose output depends on iteration order, a clock or a path fails
 the byte-stability check at random, and within a fortnight nobody reads the
 regeneration diff either.
-
-**Formatted before comparison.** A translated method is formatted
-(`emit::rustfmt_standalone`) before it is compared with the file on disk.
-Writing unformatted text and formatting afterwards makes every run report a
-change.
 
 **No cross-node reads.** A per-node generator that reads a sibling is an
 assembly generator wearing the wrong name.

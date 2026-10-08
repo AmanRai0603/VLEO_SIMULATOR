@@ -396,8 +396,9 @@ pub fn cmd_rerun(root: &Path, args: &[&str]) -> Result<(), String> {
 // build-node: every stage, in order, stopping at the first that fails
 
 /// `build-node <node>` — from the node's method to a node that may be
-/// connected: translate, test against the node engineer's cases, rerun their code,
-/// prove the tests test, and only then check the interface.
+/// connected: test the method against the node engineer's cases, rerun their
+/// code, and only then check the interface, convert the design and run every
+/// case it holds on the engine that reads it.
 pub fn cmd_build_node(root: &Path, args: &[&str]) -> Result<(), String> {
     use crate::pipeline::{OnStop, Run};
     let id = args
@@ -410,10 +411,10 @@ pub fn cmd_build_node(root: &Path, args: &[&str]) -> Result<(), String> {
         .sheets
         .get(id)
         .ok_or_else(|| format!("no node '{id}'"))?;
-    let mut run = Run::start(root, "build-node", args, 6);
+    let mut run = Run::start(root, "build-node", args, 7);
     let again = format!("cargo run -p xtask -- build-node {id}");
-    let built = "the kernel's translation and the node's generated files are written; the node \
-                 is NOT connected — `git diff` shows them";
+    let built = "the node's metadata is written; the node is NOT connected — `git diff` \
+                 shows it";
 
     run.step(
         "the method, against the node engineer's cases",
@@ -439,44 +440,12 @@ pub fn cmd_build_node(root: &Path, args: &[&str]) -> Result<(), String> {
         },
     )?;
 
-    let path = root
-        .join("crates/vleo-core/src/physics/methods")
-        .join(format!("{}.rs", sh.rust_ident()));
     run.step(
-        "translate the method into the kernel, and regenerate the node",
+        "regenerate the node",
         OnStop::new("part written — `git diff` shows what", &again),
         || {
             crate::cmd_docs(root, &[id])?;
-            Ok((
-                (),
-                format!(
-                    "{} — translated by rule",
-                    path.strip_prefix(root).unwrap_or(&path).display()
-                ),
-            ))
-        },
-    )?;
-
-    run.step(
-        "the node's tests: the node engineer's cases, and the translation against the method",
-        OnStop::new(
-            built,
-            format!(
-                "a case that disagrees goes back to the node engineer; a translation test that fails is a \
-                 translator defect for a developer. Then {again}"
-            ),
-        ),
-        || {
-            let ok = Command::new("cargo")
-                .args(["test", "-q", "-p", &sh.crate_name, "--", &format!("{id}::")])
-                .current_dir(root)
-                .status()
-                .map_err(|e| e.to_string())?
-                .success();
-            if !ok {
-                return Err(format!("{id}: its tests fail"));
-            }
-            Ok(((), format!("{} — its tests pass", sh.crate_name)))
+            Ok(((), format!("{id}: its metadata, from its sheet")))
         },
     )?;
 
@@ -540,6 +509,39 @@ pub fn cmd_build_node(root: &Path, args: &[&str]) -> Result<(), String> {
         "the design's files, converted again",
         OnStop::new(built, format!("convert them again: {again}")),
         || crate::convert::record_design(root).map(|said| ((), said)),
+    )?;
+    // Every case the design holds, this node's among them, run by the engine
+    // that reads the design from the files just converted: each fixture, each
+    // node engineer's case, the properties from the declared ranges, and each
+    // prior implementation's grid.
+    run.step(
+        "every case of the design, on the engine that reads it",
+        OnStop::new(
+            built,
+            format!(
+                "a case that disagrees goes back to the node engineer; the tolerance is never the \
+                 thing to change. Then {again}"
+            ),
+        ),
+        || {
+            let ok = Command::new("cargo")
+                .args([
+                    "test",
+                    "-q",
+                    "-p",
+                    "vleo-cli",
+                    "--test",
+                    "every_case_of_the_design_passes",
+                ])
+                .current_dir(root)
+                .status()
+                .map_err(|e| e.to_string())?
+                .success();
+            if !ok {
+                return Err("a case of the design does not pass".into());
+            }
+            Ok(((), "every case passes".into()))
+        },
     )?;
     // A node built from a changed method changes what the design answers on
     // purpose, so today's answers, the graph and every method's answers are

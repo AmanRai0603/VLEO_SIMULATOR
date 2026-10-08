@@ -98,11 +98,10 @@ impl Explain {
 ///
 /// A third statement of the node, beside the expression a reviewer reads and
 /// the author's own code: small and strict enough that every construct has one
-/// translation, so the Rust that ships can be generated from it and the
-/// author's cases can check all three against each other.
+/// meaning, so the engine runs it and the author's cases can check it.
 ///
-/// IN the sheet hash when present: the generated code is translated from it,
-/// so a different method is a different node. A sheet with none is hashed
+/// IN the sheet hash when present: it is what the node computes, so a
+/// different method is a different node. A sheet with none is hashed
 /// exactly as before.
 #[derive(Clone, Debug, Default)]
 pub struct Method {

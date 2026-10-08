@@ -73,21 +73,4 @@ fn sw_kp_scenarios_written_as_a_method_meets_its_own_fixtures() {
             fx.expect
         );
     }
-
-    // And the translation is the shape the generated node reads: the answer
-    // and the nine members, in the order the sheet declares them.
-    let order: Vec<String> = sh.publishes.iter().map(|m| m.symbol.clone()).collect();
-    let inputs: Vec<String> = sh.inputs.iter().map(|i| i.binding.clone()).collect();
-    let text = method::to_rust_publishing(&p, &sh.id, &sh.source, METHOD, &inputs, &order);
-    assert!(
-        text.contains("-> Result<(f64, [f64; 9]), MethodError>"),
-        "{text}"
-    );
-    for (i, s) in order.iter().enumerate() {
-        assert!(
-            text.contains(&format!("published[{i}] = rt::fin("))
-                && text.contains(&format!("// {s}")),
-            "{s}"
-        );
-    }
 }
