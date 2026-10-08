@@ -23,7 +23,6 @@ mod group_intake;
 mod group_test;
 mod hooks;
 mod method;
-mod mutate;
 mod pipeline;
 mod readers;
 mod release;
@@ -32,7 +31,6 @@ use fills::*;
 use forms::*;
 use graph::*;
 use hooks::*;
-use mutate::*;
 use release::*;
 use report::*;
 
@@ -118,7 +116,6 @@ pub(crate) fn dispatch(root: &Path, cmd: &str, rest: &[&str]) -> Result<(), Stri
         "bundle" => cmd_bundle(&root, &rest),
         "variables" => cmd_variables(&root),
         "setup" => cmd_setup(&root),
-        "mutate" => cmd_mutate(&root, &rest),
         "differential" => cmd_differential(&root, &rest),
         "confirm" => cmd_confirm(&root, &rest),
         "form" => cmd_form(&root, &rest),
@@ -241,13 +238,6 @@ cargo xtask <command>
                      same hash, which is what makes verification mean anything.
                      Publication is irreversible by design.
   bundle verify      re-check every hash in bundles/.
-  mutate [--literals] [<node>]
-                     perturb the answer by a tenth of a percent and require the
-                     node's own tests to notice. A test that passes against a
-                     wrong number proves nothing, and nothing else in the gate
-                     can tell the difference between evidence and decoration.
-                     --literals moves each decimal number in the node's HOLE
-                     code in turn and reports the ones no test notices.
   setup              point git at tools/githooks, so the commit-message hook
                      runs on this clone. One command per person per clone, and
                      the commands that matter say so until it is done.
@@ -385,8 +375,8 @@ cargo xtask <command>
                      is kept and read, not rerun.
   build-node <node>  from a node's method to a connected node, in order: the
                      method on its cases, the translation into the kernel, the
-                     node's tests, the node engineer's code rerun, a mutation the
-                     tests must catch — and only then the interface.
+                     node's tests, the node engineer's code rerun — and only then
+                     the interface.
   migration [--owner <o>] [--subsystem <s>] [--forms <dir>]
                      which computed rows still need a method, by owner, and
                      with --forms their node forms written ready to send.

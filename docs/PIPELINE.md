@@ -15,7 +15,7 @@ Generated from the one table in `xtask/src/pipeline.rs`; `cargo run -p xtask -- 
 3. **check** — what it would change, before anything is written: `intake`, `group-intake`, `group-test`
 4. **apply** — the form written into the sheet — all of it or none: `lesson`, `new`
 5. **publish** — a filled row's code generated, and its holes written: `group-deliver`, `declare`, `publish`, `fill`, `confirm`
-6. **build** — a node built from its method, and its tests shown to test: `group-build`, `method`, `build-node`, `rerun`, `method-wasm`, `files-wasm`, `differential`, `mutate`
+6. **build** — a node built from its method, and its tests shown to test: `group-build`, `method`, `build-node`, `rerun`, `method-wasm`, `files-wasm`, `differential`
 7. **gate** — the checks every change passes, and what they generate: `group-app`, `docs`, `assemble`, `gate`, `ready`, `codeowners`, `variables`, `guides`, `pipeline`
 8. **preview** — the node engineer tries the build and approves it: `preview`, `approve`, `queue`
 9. **release** — the stamped release everyone gets: `readers`, `group-accept`, `ship`, `release`, `derisk`, `kit`, `design`, `convert`, `bundle`
@@ -289,15 +289,15 @@ the node's method, checked, and each of its node engineer's test cases run throu
 
     cargo run -p xtask -- build-node <node>  from a node's method to a connected node, in order: the
 
-method on its cases, the translation into the kernel, the node's tests, the node engineer's code rerun, a mutation the tests must catch — and only then the interface.
+method on its cases, the translation into the kernel, the node's tests, the node engineer's code rerun — and only then the interface.
 
 | | |
 |---|---|
 | reads | the node's method, cases and node engineer's code |
 | writes | crates/vleo-core/src/physics/methods/<node>.rs, the node's generated files, design/ converted again, baseline/ recorded again |
-| checks | the method on its cases; the node's tests; the node engineer's code rerun; a mutation the tests must catch; the tree assembles |
+| checks | the method on its cases; the node's tests; the node engineer's code rerun; the tree assembles |
 | undo | `git restore <files>` (or `git checkout -- .`) before committing; `git revert` after |
-| steps | 1 the method, against the node engineer's cases · 2 translate the method into the kernel, and regenerate the node · 3 the node's tests: the node engineer's cases, and the translation against the method · 4 the node engineer's own code, run again on their cases · 5 the tests really test: the answer is moved and the tests must notice · 6 only now, the interface: the node in the tree · 7 the design's files, converted again · 8 today's answers, recorded again |
+| steps | 1 the method, against the node engineer's cases · 2 translate the method into the kernel, and regenerate the node · 3 the node's tests: the node engineer's cases, and the translation against the method · 4 the node engineer's own code, run again on their cases · 5 only now, the interface: the node in the tree · 6 the design's files, converted again · 7 today's answers, recorded again |
 | dry run | --dry-run prints this plan — the steps, what it would write, how to undo it — and touches nothing |
 | code | `xtask/src/method.rs` — `cmd_build_node` |
 
@@ -360,21 +360,6 @@ re-run the node against every other recorded body for the same hole. A significa
 | undo | nothing to undo: it writes nothing |
 | dry run | it only reads, so it runs as it is |
 | code | `xtask/src/fills.rs` — `cmd_differential` |
-
-#### `mutate`
-
-    cargo run -p xtask -- mutate [--literals] [<node>]
-
-perturb the answer by a tenth of a percent and require the node's own tests to notice. A test that passes against a wrong number proves nothing, and nothing else in the gate can tell the difference between evidence and decoration. --literals moves each decimal number in the node's HOLE code in turn and reports the ones no test notices.
-
-| | |
-|---|---|
-| reads | the node's code and tests |
-| writes | the node's code, moved and always put back |
-| checks | that the node's own tests notice a moved answer |
-| undo | nothing to undo: the moved code is put back before it returns |
-| dry run | --dry-run prints this plan — the steps, what it would write, how to undo it — and touches nothing |
-| code | `xtask/src/mutate.rs` — `cmd_mutate` |
 
 ### gate — the checks every change passes, and what they generate
 

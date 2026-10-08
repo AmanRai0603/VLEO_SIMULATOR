@@ -39,7 +39,7 @@ fn main() {
             std::process::exit(1);
         }
     };
-    let wrong = vleo_sheet::emit::wiring_errors(&tree);
+    let wrong = vleo_sheet::wiring::errors(&tree);
     if !wrong.is_empty() {
         for w in &wrong {
             println!("cargo:warning={w}");

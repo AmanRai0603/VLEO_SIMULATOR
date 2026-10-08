@@ -841,24 +841,25 @@ them. One relation, one reading, one name.
 
 ### Two commands that ask whether the evidence is real
 
-Everything else in the gate proves the tests pass. These two ask the other
-question, and it is a different one: a test that passes against a wrong number
-proves nothing, and there is no way to tell the two apart by reading.
+Everything else in the gate proves the files are well formed. These two ask
+whether the evidence holds: that every case the design carries passes on the
+engine that runs it, and that two readings of one sheet agree.
 
-`cargo run -p xtask -- mutate [<node>]` moves the node's answer by twice its own
-loosest fixture tolerance and requires the node's tests to notice. The size is
-taken from the node rather than fixed, because a fixed perturbation asks an
-arbitrary question — a first run at a tenth of a percent reported five rows as
-unevidenced whose fixtures declare half a percent, which was a finding about the
-number chosen and not about those rows. A survivor with a fixture is a finding:
-something claims to check this and does not. A survivor with no fixture is a gap
-already counted against that row, and is reported as a count rather than named.
+`cargo test -p vleo-cli --test every_case_of_the_design_passes` runs every case
+the design holds on the engine that reads it from `design/`, in the interpreter
+alone: each fixture within its tolerance, each node engineer's case as their
+code answered or refused it, the properties from each row's declared range
+(it answers one per cent either side of its known-good point, every answer is
+inside its range, the same inputs give the same answer), and each prior
+implementation's grid. That is 342 fixtures, 262 cases, 66 rows' properties and
+14 grids today, asked of every row at once rather than by a test generated into
+each node's crate. A disagreement is a physics question for the node's
+engineer, never a tolerance to widen.
 
-Over the whole tree on 26 September: 183 rows are mutated, and all 59 that
-have a fixture are killed. The other 124 have no fixture. Two rows with several
-outputs, `l3_solar_interface` and `sw_kp_scenarios`, cannot be perturbed this
-way and are named as such. Nothing in the tree has evidence that fails to catch
-an error larger than the evidence's own claim.
+Whether a case would notice a wrong answer is no longer asked by a command: the
+mutation check was dropped. A test is shown red against a deliberately broken
+implementation when it is written, as the developer's loop says, and the
+parity records hold every method's answer to the bit.
 
 `cargo run -p xtask -- differential <node>` runs every body recorded for a hole
 against that node's evidence. Bodies are recorded by `fill --by <who> --model <model>`, which
