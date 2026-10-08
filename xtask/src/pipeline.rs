@@ -1,8 +1,8 @@
 //! The pipeline: every command this program has, in one table, and one way
 //! every command that writes reports what it is doing.
 //!
-//! A command is a step in a node's journey — a form filled, taken, checked,
-//! applied, published, built, gated, previewed and released. For each one the
+//! A command is a step in a node's journey — its group's folder written,
+//! applied, published, built, gated and released. For each one the
 //! table says where in that journey it sits, what it reads, what it writes,
 //! what it checks, how to undo it, and which function in which file does it.
 //! `explain`, `--dry-run` and `docs/PIPELINE.md` are read from the table, and a
@@ -21,11 +21,13 @@ use std::io::Write as _;
 
 /// Where a command sits in a node's journey, in order.
 pub(crate) const STAGES: &[(&str, &str)] = &[
-    ("form", "a node engineer fills a node's form"),
-    ("check", "what it would change, before anything is written"),
+    (
+        "form",
+        "a group's folder written from the design, for the group to start from",
+    ),
     (
         "apply",
-        "the form written into the sheet — all of it or none",
+        "a new row, or a row's lesson, written into the tree — all of it or none",
     ),
     (
         "publish",
@@ -103,61 +105,6 @@ pub(crate) const PIPELINE: &[Cmd] = &[
         undo: "delete the folder",
         code: ("xtask/src/readers.rs", "cmd_readers"),
         steps: &["build the engine for the browser", "bundle the page script", "read the design the pages run", "write the pages", "check every page has what it links"],
-        dry: Dry::Plan,
-    },
-    Cmd {
-        name: "group-intake",
-        stage: "check",
-        reads: "a group's release written out by `node tools/group_db.mjs --unpack`, its RELEASE.toml, and each of its nodes' sheets",
-        writes: "with --apply: each computed node's node.toml (its method and cases), every generated file, design/ converted again",
-        checks: "every file against the seal's fingerprint; then each node as its form: a conflict with a change made since, a method or results an assistant supplied (a transcription without its source and a person who checked it counts as one), the de-risking record, the whole tree's gate",
-        undo: "a refused apply is put back by the transaction itself; an applied one: `git restore` the node's folder, or `git revert`",
-        code: ("xtask/src/group_intake.rs", "cmd_group_intake"),
-        steps: &[],
-        dry: Dry::Check("group-intake without --apply: the same check, nothing written"),
-    },
-    Cmd {
-        name: "group-build",
-        stage: "build",
-        reads: "an unpacked sealed release and the design it was taken into",
-        writes: "what build-node writes for each computed node: its kernel translation and generated files; baseline/today.csv, today's answers recorded again",
-        checks: "the seal; that the design's method is the release's; then build-node on each — the node engineer's cases, the tests proved to test, the interface",
-        undo: GIT_UNDO,
-        code: ("xtask/src/group_test.rs", "cmd_group_build"),
-        steps: &[],
-        dry: Dry::Plan,
-    },
-    Cmd {
-        name: "group-test",
-        stage: "check",
-        reads: "an unpacked sealed release, the design, and the engine built from it",
-        writes: "target/group/<group>-<version>/group-test.csv, the report, and the runs it rests on",
-        checks: "the design holds the release's cases; each node's tests pass; the group gives results/group.csv through the engine; both ends of every declared range answer or refuse by name",
-        undo: READS_ONLY,
-        code: ("xtask/src/group_test.rs", "cmd_group_test"),
-        steps: &[],
-        dry: Dry::Reads,
-    },
-    Cmd {
-        name: "group-deliver",
-        stage: "publish",
-        reads: "an unpacked sealed release, its passing group-test report, the release-built programs",
-        writes: "dist/vleo-<version>-<group>-<v>-test/: the kit, DELIVERY.toml, DELIVERY.md and the report",
-        checks: "the seal; that group-test passed; that the checkout is committed, unless --uncommitted",
-        undo: "delete the folder",
-        code: ("xtask/src/group_test.rs", "cmd_group_deliver"),
-        steps: &[],
-        dry: Dry::Plan,
-    },
-    Cmd {
-        name: "group-accept",
-        stage: "release",
-        reads: "the group's answer, written by the group application; the branch group/<group>-<version>",
-        writes: "acceptances/<group>-<version>.toml on that branch, committed and pushed",
-        checks: "the verdict is accepted and says what was tried; a person's name; the delivery record's hash, with --delivery; the accepted commit is this branch, unchanged since but for these records",
-        undo: "`git revert` the acceptance commit, or delete the file before pushing",
-        code: ("xtask/src/flow.rs", "cmd_group_accept"),
-        steps: &[],
         dry: Dry::Plan,
     },
     Cmd {
@@ -775,13 +722,8 @@ pub(crate) fn dry_run(root: &Path, cmd: &str, rest: &[&str]) -> Result<(), Strin
             crate::dispatch(root, cmd, &args)
         }
         Dry::Check(how) => {
-            let mut a: Vec<&str> = args
-                .iter()
-                .copied()
-                .filter(|x| !matches!(*x, "--apply" | "--partial"))
-                .collect();
-            // group-intake checks by leaving out --apply
-            if cmd != "group-intake" && !a.contains(&"--check") {
+            let mut a: Vec<&str> = args.to_vec();
+            if !a.contains(&"--check") {
                 a.push("--check");
             }
             println!(
@@ -1070,7 +1012,7 @@ pub(crate) fn cmd_why(root: &Path, args: &[&str]) -> Result<(), String> {
 
     println!("\n\x1b[1mwhat it believes, and why it changed\x1b[0m");
     if sh.versions.is_empty() {
-        println!("  no recorded version — its first belief comes on its form (docs/DERISKING.md)");
+        println!("  no recorded version — its first belief comes with its first version record (docs/DERISKING.md)");
     }
     for v in &sh.versions {
         println!(
@@ -1206,8 +1148,8 @@ pub(crate) fn pipeline_md() -> String {
     );
     o.push_str("# The pipeline\n\n");
     o.push_str(
-        "> **Answer first.** Every `xtask` command is a step in a node's journey — a form filled, \
-         taken, checked, applied, published, built, gated, previewed and released. This page says, \
+        "> **Answer first.** Every `xtask` command is a step in a node's journey — its group's \
+         folder written, applied, published, built, gated and released. This page says, \
          for each one, what it reads, writes and checks, how to undo it, and where its code is. \
          Every command that writes prints numbered steps, stops by saying why, what state the files \
          are in and how to retry, leaves a trace in `target/xtask-trace/`, and takes `--dry-run`.\n>\n\
@@ -1389,9 +1331,6 @@ mod the_table_is_true {
     fn a_check_mode_the_table_promises_is_a_flag_the_command_takes() {
         for c in PIPELINE {
             if let Dry::Check(_) = c.dry {
-                if c.name == "group-intake" {
-                    continue; // its check is the command without --apply
-                }
                 assert!(
                     crate::flags_in_help(c.name).is_some_and(|f| f.contains(&"--check")),
                     "{}: --dry-run runs --check, which it does not take",

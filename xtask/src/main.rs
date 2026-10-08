@@ -19,8 +19,6 @@ mod flow;
 mod forms;
 mod graph;
 mod group;
-mod group_intake;
-mod group_test;
 mod hooks;
 mod method;
 mod pipeline;
@@ -133,11 +131,6 @@ pub(crate) fn dispatch(root: &Path, cmd: &str, rest: &[&str]) -> Result<(), Stri
         "files-wasm" => files::cmd_files_wasm(&root, &rest),
         "group-app" => group::cmd_group_app(&root, &rest),
         "group-export" => group::cmd_group_export(&root, &rest),
-        "group-intake" => group_intake::cmd_group_intake(&root, &rest),
-        "group-build" => group_test::cmd_group_build(&root, &rest),
-        "group-test" => group_test::cmd_group_test(&root, &rest),
-        "group-deliver" => group_test::cmd_group_deliver(&root, &rest),
-        "group-accept" => flow::cmd_group_accept(&root, &rest),
         "rerun" => method::cmd_rerun(&root, &rest),
         "build-node" => method::cmd_build_node(&root, &rest),
         "explain" => pipeline::cmd_explain(&root, &rest),
@@ -303,40 +296,6 @@ cargo xtask <command>
                      files in (docs/GROUP_APPS.md) — and docs/GROUP_FOLDER.md
                      and groups/skill/vleo-group-folder/SKILL.md, all from groups/SPEC.toml;
                      --check only says whether the committed four are current.
-  group-intake <folder> [--node <id>] [--apply [--partial]] [--draft]
-                     a group's sealed release, written out with `node
-                     tools/group_db.mjs --unpack`, taken into the design: the
-                     seal checked against every file, then each computed
-                     node's pseudocode and results planned against the
-                     design — conflicts, an assistant's method or results
-                     refused —
-                     and with --apply written and gated. --draft looks at an
-                     unsealed release and never applies.
-  group-build <folder> [--node <id>]
-                     every computed node of a sealed release, taken in with
-                     group-intake --apply, built from its method: build-node
-                     on each — translated, tested on the node engineer's cases, the
-                     tests proved to test, the interface checked.
-  group-test <folder> [--out <dir>]
-                     the group tested against its own results: the design
-                     holds the release's cases; each node's tests pass; the
-                     group, through the engine, gives results/group.csv; and
-                     both ends of every declared range answer or refuse by
-                     name. The report goes to target/group/<group>-<version>/.
-  group-deliver <folder> [--out <dir>] [--bin <dir>] [--uncommitted]
-                     the test application for the group: the kit, built from
-                     this commit with their release in it, with DELIVERY.toml
-                     (which release, seal, commit, nodes) and DELIVERY.md (what
-                     to try). Refused until group-test has passed, and from
-                     uncommitted changes unless --uncommitted says throwaway.
-  group-accept <file.accept.toml> [--delivery <DELIVERY.toml>] [--no-push]
-                     the group's answer to its test application, written by the
-                     group application, recorded in acceptances/ on the branch
-                     group/<group>-<version> it was built on. An answer of
-                     changes is never recorded: its note is printed to take back.
-  group-accept --verify <branch>
-                     the pipeline's check on a group branch: it carries the
-                     group's acceptance of exactly what is on it.
   group-export <group> [--out <dir>]
                      a group's folder in the pattern, written from every sheet
                      in the group, for the group to start from. It invents
