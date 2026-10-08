@@ -221,9 +221,10 @@ function draw(host) {
       '</div>' +
       '<p class="man-side-note">An <b>engineer</b> — the programme manager, the system engineer, a ' +
         'subsystem engineer or a node engineer — reads the design, sets the inputs, runs, keeps ' +
-        'results, asks for a change by filling a node’s form, and approves the preview of it. ' +
-        '<b>Intake</b>, until the switch-over, is the developer running the routine: takes each form ' +
-        'in, sends the preview, records the approval, releases. The <b>developer</b> also writes what ' +
+        'results; a node engineer writes their node, and a subsystem engineer seals the group’s release ' +
+        'and accepts its test application. <b>Intake</b>, until the switch-over, is the developer running ' +
+        'the routine: takes each release in, delivers the test application, records the acceptance, ' +
+        'releases. The <b>developer</b> also writes what ' +
         'the routine cannot: code, checks, the tool itself.</p>' +
       layers.map(l =>
         '<div class="man-side-h' + (l.id === L.id ? ' cur' : '') + '">' +

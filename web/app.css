@@ -530,7 +530,7 @@ h4 { font-size: 10px; text-transform: uppercase; letter-spacing: .08em;
 .case-save-bar { margin-top: .6rem; }
 /* saved results, and the forms page */
 .res-actions, .res-do { flex-wrap: wrap; gap: .4rem; }
-.res-up-l, .forms-up-l, .forms-dl, .forms-new { cursor: pointer; text-decoration: none; }
+.res-up-l { cursor: pointer; text-decoration: none; }
 .res-list tr.sel td { background: var(--in-pale); }
 .res-one { border: 1px solid var(--rule); border-radius: 3px; padding: .6rem .9rem; margin: 1rem 0; background: var(--card); }
 .res-one h3 { margin: 0 0 .3rem; font-size: 13px; }
@@ -547,25 +547,6 @@ h4 { font-size: 10px; text-transform: uppercase; letter-spacing: .08em;
 .forms-who td, .forms-who th { border-bottom: 1px solid var(--rule-2); padding: .3rem .5rem; text-align: left; vertical-align: top; }
 .forms-sec { margin: 1.2rem 0; }
 .forms-sec h3 { font-size: 13px; margin: 0 0 .3rem; }
-.forms-pick { display: flex; gap: .5rem; align-items: center; flex-wrap: wrap; font-size: 11px; }
-.forms-node { width: 20rem; max-width: 100%; font: 11px var(--mono); }
-.nform-open li { margin: .2rem 0; font-size: 11px; }
-
-/* the node's form */
-.nform-steps li { margin: .3rem 0; }
-.nform-dl, .nform-up-l { cursor: pointer; text-decoration: none; }
-.nform-file { border: 1px solid var(--rule); border-radius: 3px; padding: .5rem .7rem; margin: .6rem 0;
-  font-size: 11px; background: var(--card); }
-.nform-file h4 { margin: 0 0 .3rem; font-size: 11.5px; }
-.nform-file table { border-collapse: collapse; font-size: 11px; margin: .3rem 0; width: 100%; }
-.nform-file td, .nform-file th { border-bottom: 1px solid var(--rule-2); padding: .2rem .5rem; text-align: left;
-  vertical-align: top; overflow-wrap: anywhere; }
-.nform-file td:first-child, .nform-file td:nth-child(2) { white-space: nowrap; }
-.nform-file td:nth-child(3), .nform-file td:nth-child(4) { width: 40%; }
-.nform-file tr.nform-apply td:first-child { color: var(--both); }
-.nform-file tr.nform-conflict td:first-child, .nform-file tr.nform-refused td:first-child { color: #a4262c; font-weight: 600; }
-.nform-why { color: #a4262c; font-size: 10px; margin-top: .15rem; }
-.nform-fx { font: 10.5px var(--mono); white-space: pre-wrap; background: var(--paper); padding: .4rem; }
 .case-upgrade { border: 1px solid var(--in); border-radius: 3px; padding: .4rem .7rem; margin: .5rem 0;
   background: var(--in-pale); font-size: 11px; }
 .case-upgrade p { margin: .25rem 0; }
@@ -1085,39 +1066,14 @@ table.risks td { vertical-align: top; }
 .dx-how-to { color: var(--teal); border-color: var(--teal); }
 .dx-reference { color: var(--ink2, #555); border-color: currentColor; }
 .view-af { margin: .4rem 0 .8rem; }
-.nform-dr { display: grid; grid-template-columns: max-content 1fr; gap: .1rem .8rem; }
-.nform-dr dt { color: var(--ink-3); }
-.nform-dr dd { margin: 0; }
-@media (max-width: 640px) { .nform-dr { grid-template-columns: 1fr; } }
-
-/* A PREVIEW build: one node engineer's change, before it is approved. The banner is on
-   every view and never scrolls away, so a preview is never mistaken for a
-   release; amber, the colour this face already uses for "not settled". */
+/* A page in doubt says so above every view: a page and an engine from
+   different releases, or answers from the mock engine. */
 #contract-bar { padding: .45rem .8rem; font-size: 12px; background: var(--out-pale); color: var(--ink);
   border-bottom: 2px solid var(--out); }
 #mock-bar { padding: .45rem .8rem; font-size: 12px; background: var(--in-pale); color: var(--ink);
   border-bottom: 2px solid var(--in); }
 #mock-bar b { color: var(--in); letter-spacing: .04em; }
 #contract-bar b { color: var(--out); letter-spacing: .04em; }
-#preview-bar {
-  position: sticky; top: 0; z-index: 50;
-  background: var(--out-pale); color: var(--ink); border-bottom: 2px solid var(--out);
-  padding: .5rem 2.5rem; font-size: 13px; line-height: 1.6;
-}
-#preview-bar b { color: var(--out); letter-spacing: .04em; }
-#preview-bar .pv-approve { margin-left: .5rem; }
-#approve-dlg { max-width: 34rem; border: 1px solid var(--rule); border-radius: 4px;
-  background: var(--card); color: var(--ink); padding: 1rem 1.2rem; }
-#approve-dlg::backdrop { background: rgba(0, 0, 0, .35); }
-.pv-form label { display: block; margin: .6rem 0; }
-.pv-form input[name="by"], .pv-form textarea { display: block; width: 100%; box-sizing: border-box;
-  margin-top: .25rem; font: inherit; color: inherit; background: var(--paper);
-  border: 1px solid var(--rule); border-radius: 3px; padding: .35rem; }
-.pv-form .pv-check { display: flex; gap: .5rem; align-items: baseline; }
-.pv-answer { border-left: 3px solid var(--both); background: var(--both-pale); padding: .35rem .7rem; }
-.pv-steps { padding-left: 1.2rem; }
-.pv-btns { margin-top: 1rem; }
-@media (max-width: 640px) { #preview-bar { padding: .5rem 16px; } }
 
 /* ── the lesson: every part drawn by web/js/components.js ─────────────────── */
 .lesson { max-width: 60rem; }
