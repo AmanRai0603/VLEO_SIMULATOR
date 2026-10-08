@@ -373,8 +373,8 @@ cargo xtask <command>
                      code is — from the one table docs/PIPELINE.md is written
                      from. With no command, the whole journey.
   why <node>         a node's history in one place: every recorded version and
-                     who made it, the commits that changed it, its approvals,
-                     how its code came to be, and its gate, run now.
+                     who made it, the commits that changed it, how its code
+                     came to be, and its gate, run now.
   trace [<command>] [--list]
                      the last run's trace — every command that writes leaves
                      one in target/xtask-trace/, the newest 50 kept — or the

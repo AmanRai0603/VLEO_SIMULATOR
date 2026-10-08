@@ -1,12 +1,13 @@
 # Using it
 
-> **Answer first.** The walkthrough, with real outputs: run the design on your inputs, keep and send results, ask for a node to change, and — as a developer — take that request to a release. The manual in the tool is the reference; this is the worked tour.
+> **Answer first.** The walkthrough, with real outputs: run the design on your inputs, keep and send results, see where a change to the design comes from, and — as a developer — take a group's sealed release to a release. The manual in the tool is the reference; this is the worked tour.
 >
 > **Kind:** tutorial · **For:** everyone
 
 This is the page to read first. It is about doing the work — opening the tool,
-running the design on your inputs, keeping what it said, asking for the design
-to change, and, for a developer, taking that request all the way to a release —
+running the design on your inputs, keeping what it said, where a change to the
+design comes from, and, for a developer, taking a group's sealed release all the
+way to a release —
 not about how the system checks itself. Where a check matters it is mentioned in one line, at the moment
 you would actually meet it.
 
@@ -378,151 +379,42 @@ is impossible.
 
 ---
 
-## 3 · A change to the design, from form to release
+## 3 · A change to the design, from a group's release to a release
 
-Nobody changes the design from the tool. The person who knows what a node should
-say — a payload team, a customer's engineer, a reviewer — fills in **that
-node's form** and sends it to the developers, who check it, apply it, implement
-it and release it. This section follows one form through, first from the side
-that fills it and then from the side that maintains the repository.
+Nobody changes the design from the tool. A node changes in its own file, written
+by its node engineer in the node application; the subsystem engineer assembles
+the group's node files into a release, has it signed, seals it and sends it to
+the developer. [`docs/GROUP_APPS.md`](GROUP_APPS.md) is the group's side of
+that. This section is the developer's side: the release taken in, and then the
+loop a developer lives in for each node.
 
-### 3.1 The form goes out
-
-In the tool, every node's page has *the node form* tab, and the **Forms** tab
-has every form in one place, including **the form for a new node**. From a
-terminal:
+### 3.1 The release comes in
 
 ```
-$ cargo run -p xtask -- form sw_ap_design --out sw_ap_design.node-form.html
-$ cargo run -p xtask -- form --new --out new-node.node-form.html
+node tools/group_db.mjs --unpack <group>-<version>.vleo --out <dir>
+cargo run -p xtask -- group-intake <dir>            # the plan — writes nothing
+cargo run -p xtask -- group-intake <dir> --apply    # into the design
+cargo run -p xtask -- group-build  <dir>            # each computed node from its method
+cargo run -p xtask -- group-test   <dir>            # against the group's own results
 ```
 
-It is one HTML file that opens anywhere with no connection. It asks every
-question in §3.5 with why each is asked, shows what the node reads and feeds and
-the known values that already hold it, lists every row it could read — typing an
-input's row shows what that row is and its quantity — and saves a filled copy of
-itself. The form for a new node also asks where it goes (its parent, and so its
-layer) and what kind of row it is. It can be filled by hand or given to an
-assistant: the content is a plain block of text near the end.
+Every command checks the seal first. `group-intake` plans each computed node
+field by field against the design, and refuses a conflict with a change the
+repository made since, a method or results an assistant supplied, and an
+incomplete de-risking record. A release that does not pass goes back to its
+group with those lines; it is never fixed up on the way in. `--apply` writes
+each node, regenerates and gates it as one edit, or puts it back whole. The
+release then goes on its own branch, `group/<group>-<version>`, and
+`group-deliver` and `group-accept` take it to the subsystem engineer and back:
+*The developer, taking a sealed release in*, in `docs/GROUP_APPS.md`, has every
+step.
 
-The person who filled it sends the file back. They can check it first on the
-Forms tab — the same checker as below, writing nothing.
-
-### 3.2 It comes back: check it
-
-A developer's first act is the checker. It writes nothing.
-
-```
-$ cargo run -p xtask -- intake docs/examples/sw_ap_design.node-form.html
-sw_ap_design — a node form filled by A. Example (Payload team), 2026-09-27; assistant: none
-  node.toml is still the version the form was made from
-
-  APPLY    note                         «…» → «What the vehicle is built to survive, …»
-  APPLY    assumption 5 · added         «» → «text = The storm level is read on the NOAA G scale, …»
-  APPLY    de-risking · version 2       «» → «model — Adds the assumption that the level is a NOAA G-scale level, …»
-
-why it is changing — the decisions it moves: model
-  what did we believe                      That the storm level needed no scale named: …
-  what did we test                         Compared the row's thresholds with the NOAA Space Weather Scales …
-  what do we now know                      The thresholds are the NOAA scale's exactly, but nothing on the row …
-  …
-  → recorded as version 2, released with the next release
-
-still for the developer to settle:
-  · known value 1 cites 'NOAA Space Weather Scales, the G2 row: Kp 6, ap 80', which is not in sources/sources.toml — …
-
-3 change(s) can be applied, 0 cannot.
-…
-[[fixture]]
-label = "G2 storm"
-expect = 80
-tolerance = 1e-6
-provenance = "published-source"
-source = "NOAA Space Weather Scales, the G2 row: Kp 6, ap 80"
-inputs = { g_level = 2.0 }
-# the form gave the inputs as: sw_storm_design_level = 2
-```
-
-The assumption is a decision about the model, so the form had to say why it
-changes — and it does, so the change goes in with its version. Without the
-*why it is changing* answers, intake would apply only the note and name the
-assumption as withheld (§3.11).
-
-```
-$ cargo run -p xtask -- intake docs/examples/new-node.node-form.html
-a new node — sw_ap_design_margin under l3_solar, a computed row — a node form filled by A. Example (Solar team), 2026-09-27; assistant: none
-
-  APPLY    new · id                     «» → «sw_ap_design_margin»
-  APPLY    new · parent                 «» → «l3_solar»
-  APPLY    new · kind                   «» → «computed»
-  APPLY    label                        «» → «Ap design margin over the storm level»
-  …
-  APPLY    input 1 · added              «» → «binding = ap, var = sw_ap_design, type = Ratio»
-  APPLY    algorithm 1 · added          «» → «text = Divide the design Ap by the storm level., binds = margin, type…»
-  APPLY    de-risking · version 1       «» → «sw_ap_design is the design Ap at the declared storm level, so their r…»
-
-interfaces — what each input reads:
-  connects ap               ← sw_ap_design                       Ratio in One
-
-why it is changing — the decisions it moves: node
-  …
-  → recorded as version 1, released with the next release
-
-still for the developer to settle:
-  · the relation cites 'derived here from sw_ap_design', which is not in sources/sources.toml — …
-
-17 change(s) can be applied, 0 cannot.
-```
-
-Intake compares three versions — the node when the form was made, what the
-filler made of it, and the node now — so a field the repository changed
-meanwhile is a CONFLICT, never overwritten. **Every interface is checked**: an
-input must name a row that exists (or a named output of one), of the quantity
-the node expects, and one that does not says what the row it names actually is.
-For a new node the id must be free and the parent a group. If the filler says an
-assistant helped with the relation, the relation, its steps and its derivation
-are REFUSED: a person derives them. A numbered step removed from the middle is
-refused, because each number is a hole holding somebody's Rust.
-
-A form that does not pass goes back to whoever filled it with those lines. It is
-never fixed up on the way in. What is *still for the developer to settle* does
-not stop it: a work cited that `sources/` does not list yet is added there
-before the row is published (the gate refuses it then, V8), and a known value
-is printed as the `[[fixture]]` it would be — the answer converted from the
-node's unit to SI, the inputs to the node's own binding names — ready for
-§3.9, or the inputs left as a comment where one does not say its unit.
-
-### 3.3 Apply it
-
-```
-$ git switch -c node/sw-ap-design-margin
-$ cargo run -p xtask -- intake docs/examples/new-node.node-form.html --apply
-```
-
-For an existing node `--apply` writes `node.toml`. For a new node it builds the
-folder in its place in the tree, on the shape of a sibling of the same kind —
-the closest one: under the same group, and with the same id prefix where there
-is one — deliberately not a copy, because a copy drags a stale source citation
-through thirty rows. What the form does not ask (subsystem, owner, criticality,
-tier) it takes from that sibling and lists for you to confirm; what is the
-sibling's own (its history, its risks, the KPIs it contributes to) it does not
-take at all. It writes the form into it, makes room in the tree's order (every
-later row's `order` moves up one, which regenerates nothing), and gates the
-**whole tree**, because a new row changes what the tree connects. Either way it regenerates and gates as
-one edit, or puts everything back. It stamps your name on any relation it
-changes, and refuses while anything is blocked unless you add `--partial`.
-Known values in the form are printed as `[[fixture]]` blocks for §3.9; they are
-never written by intake. Anything the form left blank is printed as still open.
-
-Then `git diff`. From here on the node is the developer's, and the rest of this
-section is the loop you will live in.
-
-A row is a folder. Only one file in it is written by hand — by intake, or in
-your editor:
+A row is a folder. Only one file in it is the sheet — written by `group-intake`,
+or in your editor:
 
 ```
 crates/vleo-mod-prop/nodes/prop_throat_area/
-  node.toml      ← the sheet. what a form writes.
+  node.toml      ← the sheet. what intake writes.
   model.rs       generated, except the numbered holes
   contract.rs    generated
   evidence.rs    generated — the fixture tests, plus three properties
@@ -531,11 +423,11 @@ crates/vleo-mod-prop/nodes/prop_throat_area/
   mod.rs         generated
 ```
 
-A developer's own structural row, with no form behind it, still starts from a
+A developer's own structural row, with no release behind it, still starts from a
 sibling: `cargo run -p xtask -- new <id> --like <sibling>`, which blanks every
 field that must be decided again.
 
-### 3.4 Ask what is still open
+### 3.2 Ask what is still open
 
 ```
 cargo run -p xtask -- declare prop_intake_mouth
@@ -556,11 +448,10 @@ it, and stops when there are none:
 The open set is computed from the same list `xtask docs` refuses on, so there
 is never a question that blocks generation and is not on this page.
 
-### 3.5 What the sheet holds
+### 3.3 What the sheet holds
 
 Seven things, and they are all questions a person has to answer — which is why
-they are the form's questions, and why a gap left in the form is still open
-here:
+a gap left in any of them is still open here:
 
 | field | what it is | why it is required |
 |---|---|---|
@@ -582,7 +473,7 @@ Two more that are decisions rather than drafting:
 - **`migrated_from`** — set it when the node exists in the MATLAB tool. Its
   numbers then go in `parity.csv` beside the node and never in `fixtures.toml`.
 
-### 3.6 Publish and generate
+### 3.4 Publish and generate
 
 A seeded row, filled, becomes published — and that is what makes its code
 generated:
@@ -613,7 +504,7 @@ nothing:
 That refusal is the mechanism. It turns ambiguity from something an implementer
 settles quietly into a blocking item on an engineer's screen.
 
-### 3.7 See what the gate says
+### 3.5 See what the gate says
 
 ```
 cargo run -p xtask -- gate prop_intake_mouth
@@ -635,7 +526,7 @@ Every one names the field. This is the design: an open decision becomes a line
 on your screen rather than something an implementer settles quietly at two in
 the afternoon.
 
-### 3.8 Write the maths
+### 3.6 Write the maths
 
 You do not open `model.rs`. The body of each numbered hole goes in as text:
 
@@ -673,12 +564,11 @@ The signature is already correct. `Acceleration`, `Ratio` and `Length` are
 distinct types, so adding a mass to a length does not compile. A hole body is
 usually two or three lines that compose relations already in `vleo-core`.
 
-### 3.9 Get evidence
+### 3.7 Get evidence
 
 A number the code produced is not evidence that the code is right.
 `fixtures.toml` holds values from somewhere else — a paper, a measurement, a
-MATLAB function somebody trusts, or the known values a form supplied, with where
-they came from:
+MATLAB function somebody trusts, with where they came from:
 
 ```toml
 [[fixture]]
@@ -709,7 +599,7 @@ answer. They catch discontinuity, a panic, non-determinism, and a domain
 declared tighter than the physics. They do not catch a relation wrong in shape
 that stays inside its domain — that is what a fixture and H2 are for.
 
-### 3.10 Ask whether a person should look yet
+### 3.8 Ask whether a person should look yet
 
 ```
 cargo run -p xtask -- ready prop_intake_mouth
@@ -732,17 +622,17 @@ ready: 16 of 320 node(s) have passed every machine stage and are waiting on H2
       7  significant, with fewer than two checks behind it
 ```
 
-Then commit, naming whoever filled the form. The message form is checked (§7).
+Then commit. The message form is checked (§7).
 After review and merge, the next release carries the node to everyone — and
 their saved case carries over on its own, with any new input at its default.
 
-### 3.11 Why it changed, and the release that ships it
+### 3.9 Why it changed, and the release that ships it
 
-If the form moved what the node computes, intake appended a `[[version]]` to
-the sheet — what we believed, what we tested, what we now know, what changed,
-what the node rests on now and what would break it — marked `next`. Without
-that record, intake applied only the form's wording and named every decision
-it withheld. `sw_central_expectation` carries three real versions as the worked
+If a release moved what a node computes, `group-intake` wrote the newest row of
+the release's `versions.csv` to the sheet as a `[[version]]` — what we believed,
+what we tested, what we now know, what changed, what the node rests on now and
+what would break it — marked `next`. A release whose record is incomplete is
+refused. `sw_central_expectation` carries three real versions as the worked
 example; its *de-risking* tab reads them newest first, and the *Technical
 risk* row under the risk register shows the risk they moved.
 
@@ -761,16 +651,16 @@ from then on says which of its beliefs have broken since. The rules are in
 
 ## 4 · Using an assistant
 
-A developer may use any assistant, for anything a developer does — once the form
-has passed the checker. There is no roster of specialised agents, each with its
+A developer may use any assistant, for anything a developer does — once the
+release has passed intake. There is no roster of specialised agents, each with its
 own lane: the rules are held by the checks, and the checks apply to an
 assistant's change exactly as to anyone's.
 
 | the step | what an assistant can do | what holds it |
 |---|---|---|
-| filling a form | help whoever fills it with the words — the form asks whether it did | intake refuses the relation, its steps and its derivation from a form an assistant helped with |
-| a hole body (§3.8) | return the few typed lines, as text | `fill` is the only way into `model.rs`, refuses a guard, an early return or a platform maths call, and records `--by` and `--model` |
-| evidence (§3.9) | turn a value a person derived into a `[[fixture]]` with its provenance | the schema refuses `self-snapshot` and `agent-generated`: an expected value may never come from the code under test |
+| a node file | help its node engineer with the words — the node's declaration says whether it did | `group-intake` refuses a method or results an assistant supplied, and a declaration that says nothing |
+| a hole body (§3.6) | return the few typed lines, as text | `fill` is the only way into `model.rs`, refuses a guard, an early return or a platform maths call, and records `--by` and `--model` |
+| evidence (§3.7) | turn a value a person derived into a `[[fixture]]` with its provenance | the schema refuses `self-snapshot` and `agent-generated`: an expected value may never come from the code under test |
 | a relation's name | nothing | relation stamping and `confirm` refuse a name that is an assistant's |
 | the tool itself | ordinary engineering — generators, daemon, faces, tests | the gate, `cargo test`, the regeneration diff and review, as for anyone |
 
@@ -970,8 +860,8 @@ which looks exactly like a hook that passed.
 | a subsystem looks finished and nothing seems to use it | `cargo run -p xtask -- reach` — a subsystem can answer on every row it has and be wired to nothing. It names the crossing and who reads it |
 | the gate refuses a fixture | a fixture disagreement is a physics disagreement. Take it to the node owner; do not widen the tolerance |
 | a sweep row says `refused` | the value left the declared domain. The message names the bound and its reason |
-| a form's check says CONFLICT | the design changed that field after the form was drawn. Nothing is overwritten: send a fresh form with the answer carried across |
-| a form's check says an interface does not connect | the input names no row, or a row of another quantity. The line names the row and what it actually is |
+| a release's intake says CONFLICT | the design changed that field since the release was based on it. Nothing is overwritten: the line goes back to the group, for a new sealed release |
+| a release's intake says an interface does not connect | the input names no row, or a row of another quantity. The line names the row and what it actually is; the fix goes back to the group |
 | an uploaded case or result is refused | every refused row is named with why. A case is all or nothing; a file from an older release is carried over rather than refused |
 | the daemon shows the wrong tree | an old process. It is the sheet hash that would refuse a stale page, but a stale *process* has its own copy — check the port |
 
@@ -994,7 +884,7 @@ cargo run -p xtask -- gap                    # what every sheet promised and not
 | how to do any one thing, in the browser or the terminal, and what cannot be done by hand | **? Manual**, in the tool — source `docs/manual.toml` |
 | why the four rings, and what may depend on what | `docs/ARCHITECTURE.md` |
 | who does what on 1.0.0 — the five roles, the application, the shared drive, and each step | `docs/OPERATING_1_0.md` |
-| one form from arrival to release, and a developer's first day | `docs/RUNBOOK.md` |
+| one sealed release from arrival to release, and a developer's first day | `docs/RUNBOOK.md` |
 | every variable, its unit, its bounds and their reasons | `docs/VARIABLES.md` — generated |
 | the sheet field by field, in full | `docs/NODE_AUTHORING.md` |
 | what to do when the tool is down | `docs/RUNBOOK.md` |

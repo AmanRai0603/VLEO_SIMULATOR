@@ -638,8 +638,8 @@ translated, by fixed rules, into a kernel function in \
 `vleo-core::physics::methods` — the node's code calls it and has no holes. \
 **T1** the node, guards and all, must reproduce every case; **T2** the \
 translation must give the method's own answer to the last bit, around every \
-case. **T3** the node engineer's own code is run again where it can be. **T4** the \
-answer is moved on purpose and the tests must notice. **I1** only then is the \
+case. **T3** the node engineer's own code is run again where it can be. **I1** \
+only then is the \
 node checked in the tree, and the rows that read it are named.
 
 A case that fails is the node engineer's to settle. A translation test that fails is \

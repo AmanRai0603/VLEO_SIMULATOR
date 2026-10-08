@@ -1,6 +1,6 @@
 # Changing the code
 
-> **Answer first.** Four kinds of change reach this code, and each has one path: a **node** arrives as a form and the generators write its code; a **route** is a handler, a contract entry and a manual entry; a **component** is drawn once in `web/js/components.js` or declared as a panel in `panels/`; an **output kind** is a variant of `vleo_modules::figure::Kind`, a player for it and a sample. Every path ends at the same two commands: `cargo run -p xtask -- gate && cargo test`.
+> **Answer first.** Four kinds of change reach this code, and each has one path: a **node** arrives in its group's sealed release and the generators write its code; a **route** is a handler, a contract entry and a manual entry; a **component** is drawn once in `web/js/components.js` or declared as a panel in `panels/`; an **output kind** is a variant of `vleo_modules::figure::Kind`, a player for it and a sample. Every path ends at the same two commands: `cargo run -p xtask -- gate && cargo test`.
 >
 > **Kind:** how-to + reference · **For:** developers changing the tool, and any assistant they run
 
@@ -17,24 +17,27 @@ person approved. Find the place first; the list of what comes with it follows.
 
 | You are changing | It lives in | What comes with it |
 |---|---|---|
-| what a row computes or declares | its sheet, `crates/vleo-mod-<subsystem>/nodes/<id>/node.toml` | a form, the generators, fixtures, a de-risking record |
+| what a row computes or declares | its sheet, `crates/vleo-mod-<subsystem>/nodes/<id>/node.toml` | its group's sealed release, the generators, fixtures, a de-risking record |
 | what the engine answers over HTTP | `crates/vleo-server/src/`, one file per concern | `contract/`, the manual, the mock engine's examples |
 | how something is drawn | `web/js/components.js`, or a panel in `panels/` and `web/js/solar.js` | the panel check, sometimes a reference picture |
 | a new kind of figure | `crates/vleo-modules/src/figure.rs` | a player in `web/js/figures.js`, a sample, the schema |
 
 ## 1 · A node
 
-A node changes only through its form — never by editing the sheet in a browser
+A node changes in its own file, written by its node engineer, and reaches the
+design with its group's sealed release — never by editing the sheet in a browser
 and never by an assistant supplying a relation. The loop is in `AGENTS.md` and
-each command explains itself (`cargo run -p xtask -- explain <command>`):
+`docs/GROUP_APPS.md`, and each command explains itself
+(`cargo run -p xtask -- explain <command>`):
 
-    cargo run -p xtask -- form <node>                 the form, to send to whoever knows the answer
-    cargo run -p xtask -- take <form.html> --for <author>   onto its own branch, checked, applied, tested
+    cargo run -p xtask -- group-intake <dir> --apply  a sealed release, checked against its seal, applied
+    cargo run -p xtask -- group-build <dir>           each computed node from its method
+    cargo run -p xtask -- group-test <dir>            the group against its own results
     cargo run -p xtask -- publish <node>              a filled row's code generated, with numbered holes
     cargo run -p xtask -- build-node <node>           a node with a method, translated and tested
     cargo run -p xtask -- gate && cargo test
 
-What you may edit by hand in a node's folder: `node.toml` (only through a form's
+What you may edit by hand in a node's folder: `node.toml` (only through a release's
 apply, or a reviewed developer change), `fixtures.toml` (values from outside this
 code, never `self-snapshot`), and the numbered `HOLE` blocks in `model.rs`. Every
 other file is generated and is overwritten — see §5. What a sheet's fields mean is
@@ -128,7 +131,7 @@ its generator would write now.
 | `xtask derisk` | every `[[version]]` | `docs/DERISK_NARRATIVE.md` |
 | `xtask guides` | `docs/manual.toml` | `docs/roles/*.html` |
 | `xtask pipeline` | the command table in `xtask/src/pipeline.rs` | `docs/PIPELINE.md` |
-| `xtask method-wasm` | `vleo_sheet::method::CHECKER_SOURCES` | `web/method.wasm.gz`, the checker every form carries |
+| `xtask method-wasm` | `vleo_sheet::method::CHECKER_SOURCES` | `web/method.wasm.gz`, the checker the pages carry |
 | `xtask readers` | the tree and the lessons | the readers' folder, opened from a file |
 
 **One field, followed through.** `sw_ap_design` declares the lowest answer it

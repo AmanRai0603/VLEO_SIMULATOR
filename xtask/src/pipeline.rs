@@ -580,7 +580,7 @@ pub(crate) const PIPELINE: &[Cmd] = &[
     Cmd {
         name: "why",
         stage: "read",
-        reads: "the node in the design (design/), its git history, approvals, fills and traces",
+        reads: "the node in the design (design/), its git history, fills and traces",
         writes: NOTHING,
         checks: "the node's gate, run now",
         undo: READS_ONLY,
@@ -1030,8 +1030,8 @@ pub(crate) fn cmd_trace(root: &Path, args: &[&str]) -> Result<(), String> {
 // ---------------------------------------------------------------------------
 // why a node is what it is
 
-/// `why <node>` — every recorded belief, every change and who made it, its
-/// approvals, how its code came to be, and its gate now.
+/// `why <node>` — every recorded belief, every change and who made it, how
+/// its code came to be, and its gate now.
 pub(crate) fn cmd_why(root: &Path, args: &[&str]) -> Result<(), String> {
     let id = *args
         .first()
@@ -1238,7 +1238,7 @@ pub(crate) fn pipeline_md() -> String {
          trace     target/xtask-trace/<time>-<command>.log\n```\n\n\
          `cargo run -p xtask -- trace` shows the last trace; `trace <command>` the last of one \
          command; `trace --list` every one kept (the newest 50). `cargo run -p xtask -- why <node>` \
-         puts a node's history in one place: its recorded versions, who changed it, its approvals, \
+         puts a node's history in one place: its recorded versions, who changed it, \
          how its code came to be, and its gate now.\n\n## Every command\n",
     );
     for (key, what) in STAGES {

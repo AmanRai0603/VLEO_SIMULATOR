@@ -1,6 +1,6 @@
 # Contributing
 
-> **Answer first.** Changes to the code go out as reviewed pull requests into `developer`, one concern per pull request, with the number of reviewers set by what changed; the table below is the only statement of that rule. Changes to the design are not made here: their owners make them in the application. Until the switch-over, the design's two ways in, node forms and sealed releases, keep working as they do today.
+> **Answer first.** Changes to the code go out as reviewed pull requests into `developer`, one concern per pull request, with the number of reviewers set by what changed; the table below is the only statement of that rule. Changes to the design are not made here: their owners make them in the application. Until the switch-over, the design's one way in is a group's sealed release.
 >
 > **Kind:** reference + how-to · **For:** the developer and their deputy
 
@@ -103,14 +103,9 @@ pull request exists to move it.
 ## Until the switch-over
 
 The design is still in this repository until the planned day
-(`docs/PLAN_1_0.md`, phase H), and its two ways in keep working exactly as they
-do today. This section is deleted on that day, with the `maintainer` branch.
+(`docs/PLAN_1_0.md`, phase H), and a group's sealed release is its one way in.
+This section is deleted on that day, with the `maintainer` branch.
 
-- **A node form** goes on its own branch, `form/<name>/<node>`, made by
-  `xtask take` from a fresh `maintainer`, never named by hand. One form per pull
-  request. It merges into `maintainer` only with the approval of the person who
-  filled it, of the exact build they tried, recorded by `xtask approve` and
-  checked by the pipeline (`docs/roles/maintainer.html`).
 - **A group's sealed release** goes on `group/<group>-<version>` from a fresh
   `maintainer`, and holds that one release and nothing else. It merges only with
   the group's acceptance of the exact build they tried, recorded by
@@ -120,19 +115,17 @@ do today. This section is deleted on that day, with the `maintainer` branch.
 
   | change | reviewers |
   |---|---|
-  | a node sheet — a form applied, or a new node | H1a completeness, then H1b physics |
   | a group's sealed release | H1b physics for every computed node whose method is new or changed, then H2 |
   | a method an assistant transcribed | H1b physics, read against its source, by someone other than the person who signed it |
   | fixtures and filled holes | H2, after the machine checks pass |
   | moving a branch in `layers/` | two |
 
-  H1a asks whether every question is answered and every limit has a reason; H1b
-  whether the relation, its source and its range are right; H2 whether every
-  expected value came from outside this code. The person who filled the form is
+  H1b asks whether the relation, its source and its range are right; H2 whether every
+  expected value came from outside this code. The person who wrote the node is
   eligible for none of them.
 - **While it is here, you may not** edit a generated file outside a numbered
-  `HOLE` block, commit an aggregate, add a guard by hand, apply a form `xtask
-  intake` has not passed, apply a change to what a node computes without its
+  `HOLE` block, commit an aggregate, add a guard by hand, apply a release
+  `xtask group-intake` has not passed, apply a change to what a node computes without its
   reason, edit a recorded version, edit a sealed release, or move a group's
   results or tolerances to make `group-test` pass.
 

@@ -33,7 +33,7 @@ Every command that writes prints its steps as `n/total · name`. A step that sto
     trace     target/xtask-trace/<time>-<command>.log
 ```
 
-`cargo run -p xtask -- trace` shows the last trace; `trace <command>` the last of one command; `trace --list` every one kept (the newest 50). `cargo run -p xtask -- why <node>` puts a node's history in one place: its recorded versions, who changed it, its approvals, how its code came to be, and its gate now.
+`cargo run -p xtask -- trace` shows the last trace; `trace <command>` the last of one command; `trace --list` every one kept (the newest 50). `cargo run -p xtask -- why <node>` puts a node's history in one place: its recorded versions, who changed it, how its code came to be, and its gate now.
 
 ## Every command
 
@@ -717,11 +717,11 @@ where a command sits in a node's journey, what it reads, writes and checks, how 
 
     cargo run -p xtask -- why <node>
 
-a node's history in one place: every recorded version and who made it, the commits that changed it, its approvals, how its code came to be, and its gate, run now.
+a node's history in one place: every recorded version and who made it, the commits that changed it, how its code came to be, and its gate, run now.
 
 | | |
 |---|---|
-| reads | the node in the design (design/), its git history, approvals, fills and traces |
+| reads | the node in the design (design/), its git history, fills and traces |
 | writes | nothing |
 | checks | the node's gate, run now |
 | undo | nothing to undo: it writes nothing |
