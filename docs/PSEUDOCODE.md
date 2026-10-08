@@ -245,7 +245,7 @@ and the simple ones combine with `*` or `.`, `/` and whole-number powers `^`.
 
 ## The worked example: Circular orbital speed (illustrative)
 
-*illustrative — a worked example, not this node.* The same example sits behind **Show the example** on every node form.
+*illustrative — a worked example, not this node.*
 
 **The method.**
 

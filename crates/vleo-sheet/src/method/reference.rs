@@ -4,7 +4,7 @@ use super::*;
 
 /// `docs/PSEUDOCODE.md`, from the tables above, so the page and the checker
 /// cannot describe two different languages — with the worked example from
-/// `crate::example`, the one every node form shows.
+/// `crate::example`, the one the method checker's own tests are held to.
 pub fn reference_md() -> String {
     let example_node = crate::example::TITLE;
     let example_method = crate::example::METHOD;
@@ -107,11 +107,7 @@ pub fn reference_md() -> String {
         "\n\nand the simple ones combine with `*` or `.`, `/` and whole-number powers `^`.\n\n",
     );
     let _ = writeln!(o, "## The worked example: {example_node}\n");
-    let _ = writeln!(
-        o,
-        "*{}.* The same example sits behind **Show the example** on every node form.\n",
-        crate::example::TAG
-    );
+    let _ = writeln!(o, "*{}.*\n", crate::example::TAG);
     o.push_str("**The method.**\n\n```text\n");
     o.push_str(example_method.trim_end());
     o.push_str("\n```\n\n");

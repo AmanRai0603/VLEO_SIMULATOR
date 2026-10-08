@@ -27,8 +27,8 @@
 //! dimensioned value, a return of the wrong dimension, and a path that
 //! neither returns nor refuses.
 //!
-//! One implementation: the gate, `xtask take`, the node form and the
-//! translator all read this module, so the form and the checker cannot
+//! One implementation: the gate, intake, the pages that check a method and
+//! the translator all read this module, so a page and the gate cannot
 //! disagree about what a method means. `docs/PSEUDOCODE.md` is written from
 //! [`FUNCTIONS`], [`KERNEL_CONSTANTS`] and [`STATEMENTS`] by `xtask docs`.
 
