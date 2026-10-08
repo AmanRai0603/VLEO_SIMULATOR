@@ -143,19 +143,19 @@ jobs:
       - name: evidence
         run: cargo test --workspace
 
-      # A broken translation is refused by the parity gate, which holds every
-      # translation to the interpreter, method by method, to the bit — the
-      # interpreter that runs a method the build has not seen.
-      - name: a broken translation is caught by the parity gate
+      # A changed relation is refused by the parity gate, which holds every
+      # answer the design read at run time gives to the one on record, to the
+      # bit. Broken here one part in ten thousand, it must fail, naming the row.
+      - name: a changed relation is caught by the parity gate
         run: |
-          f=crates/vleo-core/src/physics/methods/orbit_period.rs
+          f=crates/vleo-core/src/physics/orbit.rs
           cp "$f" "$RUNNER_TEMP/kept.rs"
-          sed -i 's/\.get()),/.get() * 1.0001),/' "$f"
+          sed -i 's|a \* a \* a / MU_EARTH))|a * a * a / MU_EARTH) * 1.0001)|' "$f"
           grep -q "1.0001" "$f"
           if cargo test -p vleo-cli --test the_design_read_at_run_time_answers_as_today > "$RUNNER_TEMP/parity.log" 2>&1; then
-            echo "the parity gate passed a translation one part in ten thousand out"; exit 1
+            echo "the parity gate passed a relation one part in ten thousand out"; exit 1
           fi
-          grep -q "orbit_period at" "$RUNNER_TEMP/parity.log"
+          grep -q "orbit_period," "$RUNNER_TEMP/parity.log"
           cp "$RUNNER_TEMP/kept.rs" "$f"
 
       # The authors' own code, run again on the cases recorded from it: Python
