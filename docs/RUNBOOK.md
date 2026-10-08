@@ -1,6 +1,6 @@
 # Runbook
 
-> **Answer first.** A developer's first day, then one group's sealed release taken from arrival to release — plan, apply, build, test, deliver, accept, review — and what to do when the gate refuses.
+> **Answer first.** A developer's first day, then where one group's sealed release goes — onto the shared drive and into today's design, with no developer step — and what to do when the gate refuses.
 >
 > **Kind:** how-to · **For:** developers
 
@@ -29,49 +29,32 @@ Then:
     cargo run --release -p vleo-daemon
     # open http://127.0.0.1:7777
 
-## One sealed release, arrival to release
+## One sealed release, from the drive to today's design
 
 Until the switch-over every change to the design arrives as a group's sealed
 release: each node written by its node engineer and signed, the whole sealed by
-the subsystem engineer. Unpack it and read the plan first; nothing is written by
-planning.
+the subsystem engineer. It goes on the shared drive, in its group's folder,
+`groups/<group>/releases/`. Nobody takes it in by hand, and the developer has no
+step in it.
 
-    node tools/group_db.mjs --unpack <group>-<version>.vleo --out <dir>
-    cargo run -p xtask -- group-intake <dir>
+When the tool opens on the drive, it builds today's design from every group's
+latest sealed release that passes its checks: its seal, its content, and each
+node against the design. To see it as everyone does:
 
-A **conflict** means the design changed since the release was based on it; a
-**refused** method or result means its declaration says an assistant supplied
-it, or says nothing; an interface that does not connect names the row and what
-it actually is. Any of those goes back to the group, with those lines — the
-release is never edited on the way in. When it is clean:
+    VLEO_DRIVE=<drive> cargo run --release -p vleo-daemon
 
-    cargo run -p xtask -- group-intake <dir> --apply
-    cargo run -p xtask -- group-build <dir>
-    cargo run -p xtask -- group-test <dir>
+A refused release is refused whole, and the tool says why: a **conflict** means
+the design changed since the release was based on it; a **refused** method or
+result means its declaration says an assistant supplied it, or says nothing; a
+change to what a node computes needs its de-risking record. The group's part is
+built from its last good release, and the tool says which release each group's
+part is. The fix goes back to the group, which seals a new release and puts it
+beside the old one; the release is never edited. Every check is in
+`docs/GROUP_APPS.md`.
 
-`--apply` writes each node, regenerates and gates it as one edit, or puts it
-back whole. `group-build` builds each computed node from its method and tests it
-on its node engineer's cases; `group-test` holds the group to its own results. A
-disagreement is physics, for the group. Then the release's own branch, the test
-application, and the subsystem engineer's answer:
-
-    git switch -c group/<group>-<version> && git commit -am "…"
-    cargo run -p xtask -- group-deliver <dir>
-    cargo run -p xtask -- group-accept <group>-<version>.accept.toml --delivery <DELIVERY.toml>
-
-Every step, with what each one refuses, is in `docs/GROUP_APPS.md`.
-
-**Review**, as `CONTRIBUTING.md` says, by nobody who wrote the node: **H1b —
-physics** for every computed node whose method is new or changed — is the
-relation right, is the source the right source, is the declared range honest?
-— then **H2**: fixtures, their provenance, and the filled holes. By then the
-node has already survived independent machine verification, so the person
-accepts rather than hunts.
-
-    acceptance recorded   →   review   →   merge into maintainer   →   release
-
-Everyone gets the group's nodes in the next release; their saved case carries
-over on its own, with any new input at its default.
+A node whose method is new is built into the kernel with
+`cargo run -p xtask -- build-node <node>`, and reaches everyone in the next
+release of the tool, reviewed as `CONTRIBUTING.md` says.
 
 A row a developer starts without a release — rare, and usually structural —
 still starts with `cargo run -p xtask -- new <id> --like <sibling>`, then

@@ -197,24 +197,15 @@ every hash. → the manual, *Reference data*
 engineer, in the node application. A node changes here. → `docs/GROUP_APPS.md`
 
 **Sealed release** — `<group>-<version>.vleo`: a group's structure with every
-node's content in it, signed, and sealed by its subsystem engineer. Until the
-switch-over it is the design's one way into this repository, and it is never
-edited. → `docs/GROUP_APPS.md`
+node's content in it, signed, and sealed by its subsystem engineer. It goes on
+the shared drive, in `groups/<group>/releases/`, and is taken into today's
+design when it passes its checks. It is never edited. → `docs/GROUP_APPS.md`
 
-**Intake** — `xtask group-intake`: the check a sealed release passes before
-anything is written. `--apply` writes it. → `docs/GROUP_APPS.md`
-
-**Group branch** — `group/<group>-<version>`, from `maintainer`: one sealed
-release, applied, built from its methods and tested against the group's own
-results. → `docs/GROUP_APPS.md`
-
-**Test application** — the tool built by `xtask group-deliver` from a commit on
-the group branch, sent to the subsystem engineer to try before anything merges.
-→ `docs/GROUP_APPS.md`
-
-**Acceptance** — the subsystem engineer's answer to that exact build,
-`<group>-<version>.accept.toml`. `xtask group-accept` records it, and a group
-branch merges only with it. → `docs/GROUP_APPS.md`
+**Today's design** — the design as the tool builds it when it opens on the
+shared drive (`VLEO_DRIVE`): every group's latest sealed release that passes
+its checks — its seal, its content, each node against the design — and, for a
+group whose latest is refused, its last good one, with the reason. Nobody takes
+a release in by hand. → `docs/OPERATING_1_0.md`, section 5
 
 **Gate** — `xtask gate`: the checks every change must pass, in order. With
 `cargo test`, it is the one command that must be green before a push.
@@ -227,8 +218,9 @@ branch merges only with it. → `docs/GROUP_APPS.md`
 **`developer`** — the branch the software goes to: generators, daemon, faces
 and tests, by pull request. → `CONTRIBUTING.md`
 
-**`maintainer`** — the branch the design goes to: each group branch, by pull
-request, with its subsystem engineer's acceptance. → `CONTRIBUTING.md`
+**`maintainer`** — the branch the design's changes were taken in on. Nothing
+goes into it now: a group's sealed release reaches today's design from the
+shared drive. It is deleted on the switch-over day. → `CONTRIBUTING.md`
 
 **`main`** — what ships. It moves only by pull requests from `developer`,
 `maintainer` and `release/<version>`. → `CONTRIBUTING.md`

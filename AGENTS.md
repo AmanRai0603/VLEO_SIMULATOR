@@ -94,7 +94,7 @@ and in the page, and that a check is never weakened to let a file through. Each
 is a check with a test that a file breaking it is refused, by name.
 
 Most of these checks are built in phases C and D of the plan. Until they are,
-the gate and intake hold the ones they hold today (the sense of a requirement,
+the gate and the library hold the ones they hold today (the sense of a requirement,
 the provenance of a case, the assistant rules, the seal, the de-risking record),
 and the others are not yet enforced by anything. That is said here so nobody
 takes the table for a list of what is checked now.
@@ -151,21 +151,22 @@ One command must be green before anything is pushed:
 
 The design is still in this repository until the planned day
 (`docs/PLAN_1_0.md`, phase H), and it is retired from here a part at a time
-(phase E). The single-node form and its loop are gone; a group's sealed release
-is the one way in that is left. This section is deleted on that day.
+(phase E). The single-node form and the group loop are gone; a group's sealed
+release, on the shared drive, is the one way in that is left, and nothing in
+this repository takes it in. This section is deleted on that day.
 
-- **A group's work** arrives as its sealed release, and goes through
-  `group-intake`, `group-build`, `group-test`, `group-deliver` and
-  `group-accept` on its own branch `group/<group>-<version>` from `maintainer`.
-  The release is never edited there; a fix goes back to the group
-  (`docs/GROUP_APPS.md`).
-- **The node sheet is the only source.** `node.toml` is written by
-  `group-intake` from a sealed release; every other file in a node folder is generated from it, and a hand
-  edit outside a numbered `HOLE` block fails the regeneration diff.
+- **A group's work** arrives as its sealed release, in its group's folder on
+  the shared drive, `groups/<group>/releases/`. When the tool opens on the
+  drive, it builds today's design from every group's latest sealed release that
+  passes its checks, or a group's last good one, and says which and why. The
+  release is never edited; a fix goes back to the group (`docs/GROUP_APPS.md`).
+- **The node sheet is the only source.** Every other file in a node folder is
+  generated from `node.toml`, and a hand edit outside a numbered `HOLE` block
+  fails the regeneration diff.
 - **`design/` is the design as its files,** converted from the sheets and held
   equal to them by a test. A change to a sheet converts it again in the same
   commit: delete `design/`, then `cargo run -p xtask -- convert --out design`
-  (`group-intake` and `build-node` do it themselves).
+  (`build-node` does it itself).
 - **`xtask explain <command>`** says what each of those commands reads, writes
   and checks, and how to undo it (`docs/PIPELINE.md`).
 
@@ -188,7 +189,7 @@ is the one way in that is left. This section is deleted on that day.
                                              today's answers recorded again, in
                                              the same commit as a deliberate
                                              change to the design
-                                             (`group-build` does it itself)
+                                             (`build-node` does it itself)
     cargo run -p vleo-cli --bin vleo -- run <node> [--save <file.csv>] [--keep]
 
 The commands of today's loop are in `docs/PIPELINE.md` until the switch-over.

@@ -1,6 +1,6 @@
 # Authoring a node
 
-> **Answer first.** What a node's sheet holds, field by field, and why each field is there — for the node engineer who writes the node and for the developer who takes it in.
+> **Answer first.** What a node's sheet holds, field by field, and why each field is there — for the node engineer who writes the node and for the developer who maintains the code that reads it.
 >
 > **Kind:** reference + explanation · **For:** every node engineer, and the developer who takes their node in
 
@@ -34,12 +34,12 @@ the answer. They write it in the node's own file, in the node application, and
 it reaches the design with its group's sealed release
 ([`docs/GROUP_APPS.md`](GROUP_APPS.md)).
 
-A developer takes the release in with `cargo run -p xtask -- group-intake
-<dir>`, which says what each computed node would change here, field by field,
-and refuses a conflict, or a method or results an assistant supplied.
-`--apply` writes it into this file, regenerates and gates, or puts everything
-back. Everything after that — publishing, the holes, the fixtures — is the
-developer's, and is described below.
+Nobody takes the release in by hand. It goes on the shared drive, and when the
+tool opens there it plans each computed node against the design, field by field,
+and refuses a conflict, or a method or results an assistant supplied; a release
+that passes is taken into today's design, and this file in the repository stays
+as it is until the switch-over. What the repository's own rows need — publishing,
+the holes, the fixtures — is the developer's, and is described below.
 
 So this page is written for both: for the node engineer, what each answer is
 for; for the developer, what the loader does with it.
@@ -322,10 +322,10 @@ source = "noaa_swpc"
 ```
 
 A node changes because a belief broke, and this is the record of each time
-(`docs/DERISKING.md`). **Nobody writes it by hand in the normal course**: `group-intake`
-appends it from the newest row of `versions.csv` in the group's release that
-carried the change, numbered after the last, and refuses to apply a change to
-what the node computes without one. The first
+(`docs/DERISKING.md`). **Nobody writes it by hand in the normal course**: it comes
+from the newest row of `versions.csv` in the group's release that carried the
+change, numbered after the last, and a release that changes what the node
+computes without one is refused. The first
 version needs only `rests_on` and `breaks_if`; every later one needs
 `believed`, `tested`, `learned` and `changed` too. `about` is one or more of
 node, input, output, model, math, algorithm, visualisation. Versions are

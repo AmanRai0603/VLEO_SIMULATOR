@@ -1,6 +1,6 @@
 # Changing the code
 
-> **Answer first.** Four kinds of change reach this code, and each has one path: a **node** arrives in its group's sealed release and the generators write its code; a **route** is a handler, a contract entry and a manual entry; a **component** is drawn once in `web/js/components.js` or declared as a panel in `panels/`; an **output kind** is a variant of `vleo_modules::figure::Kind`, a player for it and a sample. Every path ends at the same two commands: `cargo run -p xtask -- gate && cargo test`.
+> **Answer first.** Four kinds of change reach this code, and each has one path: a **node** arrives in its group's sealed release, on the shared drive, and the generators write its code; a **route** is a handler, a contract entry and a manual entry; a **component** is drawn once in `web/js/components.js` or declared as a panel in `panels/`; an **output kind** is a variant of `vleo_modules::figure::Kind`, a player for it and a sample. Every path ends at the same two commands: `cargo run -p xtask -- gate && cargo test`.
 >
 > **Kind:** how-to + reference · **For:** developers changing the tool, and any assistant they run
 
@@ -26,19 +26,18 @@ person approved. Find the place first; the list of what comes with it follows.
 
 A node changes in its own file, written by its node engineer, and reaches the
 design with its group's sealed release — never by editing the sheet in a browser
-and never by an assistant supplying a relation. The loop is in `AGENTS.md` and
-`docs/GROUP_APPS.md`, and each command explains itself
+and never by an assistant supplying a relation. The release goes on the shared
+drive, and the tool builds today's design from it when it opens there, checked,
+with no command in this repository (`docs/GROUP_APPS.md`). What the code does
+for a node, each command explaining itself
 (`cargo run -p xtask -- explain <command>`):
 
-    cargo run -p xtask -- group-intake <dir> --apply  a sealed release, checked against its seal, applied
-    cargo run -p xtask -- group-build <dir>           each computed node from its method
-    cargo run -p xtask -- group-test <dir>            the group against its own results
     cargo run -p xtask -- publish <node>              a filled row's code generated, with numbered holes
     cargo run -p xtask -- build-node <node>           a node with a method, translated and tested
     cargo run -p xtask -- gate && cargo test
 
-What you may edit by hand in a node's folder: `node.toml` (only through a release's
-apply, or a reviewed developer change), `fixtures.toml` (values from outside this
+What you may edit by hand in a node's folder: `node.toml` (only through a
+reviewed developer change), `fixtures.toml` (values from outside this
 code, never `self-snapshot`), and the numbered `HOLE` blocks in `model.rs`. Every
 other file is generated and is overwritten — see §5. What a sheet's fields mean is
 `docs/NODE_AUTHORING.md`; the method language is `docs/PSEUDOCODE.md`.

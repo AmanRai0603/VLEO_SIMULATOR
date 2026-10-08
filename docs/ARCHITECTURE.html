@@ -259,7 +259,7 @@ td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
 <section id="whole">
   <p class="sec-n">3 · WHERE EVERYTHING LIVES</p>
   <h2>Four places data lives, one engine, several faces</h2>
-  <p class="answer"><b>Answer first.</b> Everything the tool knows lives in exactly one of four places, and each has one rule for how it changes. The design and the reference data change only by review and arrive with a release. A person's case and results are theirs and live outside the repository. Personal reading state never leaves the browser it was made in.</p>
+  <p class="answer"><b>Answer first.</b> Everything the tool knows lives in exactly one of four places, and each has one rule for how it changes. The design in git is held as it is until the switch-over, and today's design is built from each group's sealed releases on the shared drive; the reference data changes only by review and arrives with a release. A person's case and results are theirs and live outside the repository. Personal reading state never leaves the browser it was made in.</p>
   <figure class="fig">
     <svg viewBox="0 0 880 430" role="img" aria-label="The design and reference data are released into the tool on each computer; the tool reads and writes the case and results, which can sit in a shared folder; personal state stays in the browser.">
       <defs><marker id="w-ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="d-ah"/></marker></defs>
@@ -268,7 +268,7 @@ td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
       <text x="36" y="64" class="d-tb">① The design — git</text>
       <text x="36" y="86" class="d-ts">1,396 sheets (node.toml)</text>
       <text x="36" y="104" class="d-ts">lesson.toml pages · diagrams</text>
-      <text x="36" y="122" class="d-ts">changed by sealed releases → PRs</text>
+      <text x="36" y="122" class="d-ts">held as is until switch-over</text>
       <text x="36" y="140" class="d-ts">history, review, blame for free</text>
       <rect x="20" y="176" width="230" height="96" rx="6" class="d-teal"/>
       <text x="36" y="200" class="d-tb">② Reference data — bundles</text>
@@ -317,9 +317,9 @@ td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
       <text x="34" y="374" class="d-ts">a node file, a lesson form;</text>
       <text x="34" y="392" class="d-ts">never touch the repository</text>
       <rect x="236" y="330" width="200" height="80" rx="6" class="d-box"/>
-      <text x="250" y="354" class="d-tb">Intake (the developer)</text>
-      <text x="250" y="374" class="d-ts">take releases in, build, test,</text>
-      <text x="250" y="392" class="d-ts">record acceptance, release</text>
+      <text x="250" y="354" class="d-tb">Releases (the developer)</text>
+      <text x="250" y="374" class="d-ts">build a node from its method,</text>
+      <text x="250" y="392" class="d-ts">release, kits, the drive</text>
       <rect x="452" y="330" width="200" height="80" rx="6" class="d-box"/>
       <text x="466" y="354" class="d-tb">The developer</text>
       <text x="466" y="374" class="d-ts">frontend, backend, data —</text>
@@ -520,9 +520,9 @@ td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
 <section id="access">
   <p class="sec-n">7 · ACCESS, SYNC AND MAINTENANCE</p>
   <h2>Who reaches what, and how it stays in step</h2>
-  <p class="answer"><b>Answer first.</b> Everyone gets the tool from one place — a release — and nobody has to install anything just to read. The design reaches people as a new version; results reach people through a shared folder or as a single file; pages and reports open in any browser.</p>
+  <p class="answer"><b>Answer first.</b> Everyone gets the tool from one place — a release — and nobody has to install anything just to read. The design reaches people from the shared drive, as today's design built from each group's sealed releases, and the tool as a new version; results reach people through a shared folder or as a single file; pages and reports open in any browser.</p>
   <figure class="fig">
-    <svg viewBox="0 0 880 330" role="img" aria-label="The developer and maintainer branches merge into main; main produces a release; the release reaches everyone's laptops, which share a results folder, a docs folder for readers, and result files anyone can open. Node engineers reach the repository through their group's sealed release.">
+    <svg viewBox="0 0 880 330" role="img" aria-label="The developer and maintainer branches merge into main; main produces a release; the release reaches everyone's laptops, which share a results folder, a docs folder for readers, and result files anyone can open. Node engineers reach today's design through their group's sealed release on the shared drive.">
       <defs><marker id="a-ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="d-ah"/></marker></defs>
       <text x="20" y="22" class="d-tm">THE REPOSITORY</text>
       <rect x="20" y="34" width="270" height="176" rx="8" class="d-band"/>
@@ -531,7 +531,7 @@ td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
       <text x="92" y="88" text-anchor="middle" class="d-ts">software</text>
       <rect x="162" y="50" width="112" height="46" rx="6" class="d-in"/>
       <text x="218" y="72" text-anchor="middle" class="d-tb">maintainer</text>
-      <text x="218" y="88" text-anchor="middle" class="d-ts">sealed releases</text>
+      <text x="218" y="88" text-anchor="middle" class="d-ts">nothing goes in</text>
       <rect x="92" y="130" width="126" height="62" rx="6" class="d-out"/>
       <text x="155" y="154" text-anchor="middle" class="d-tb">main</text>
       <text x="155" y="172" text-anchor="middle" class="d-ts">merged PR only</text>
@@ -563,15 +563,15 @@ td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
       <text x="536" y="303" class="d-ts">print or PDF — figures included</text>
       <rect x="20" y="236" width="270" height="72" rx="6" class="d-in"/>
       <text x="36" y="260" class="d-tb">Groups' sealed releases</text>
-      <text x="36" y="278" class="d-ts">own branch, test application, acceptance,</text>
-      <text x="36" y="294" class="d-ts">then merged into maintainer</text>
+      <text x="36" y="278" class="d-ts">on the shared drive, checked there;</text>
+      <text x="36" y="294" class="d-ts">today's design is built from them</text>
     </svg>
     <figcaption>The deployment is laptops plus a shared results folder (see Decisions). GitHub Pages could host the docs folder, but for a private repository it needs a paid plan; a shared drive or any internal web server works on any plan.</figcaption>
   </figure>
   <div class="tbl"><table>
     <thead><tr><th>What</th><th>How it stays in step</th><th>Who maintains it</th></tr></thead>
     <tbody>
-      <tr><td>The design and pages</td><td>A new release; the tool shows its version and what moved since a result was saved.</td><td>The developer, through each group's sealed release</td></tr>
+      <tr><td>The design and pages</td><td>Today's design, built from the drive whenever the tool opens on it; the pages, a new release. The tool shows its version and what moved since a result was saved.</td><td>Each group, by its sealed release on the shared drive; the developer, by a release of the tool</td></tr>
       <tr><td>Reference data</td><td>A new bundle version, verified by hash before any run uses it.</td><td>The developer</td></tr>
       <tr><td>Team results</td><td>The shared folder (<code>VLEO_RESULTS</code>). Each person's index is rebuilt from it, so there is nothing to merge; names are unique and every write is whole, so nobody overwrites or half-writes another's result.</td><td>Everyone adds; pins protect</td></tr>
       <tr><td>The tool itself</td><td>Pull requests into <code>developer</code>, then <code>main</code>, then a release.</td><td>Frontend, backend and data developers</td></tr>
@@ -585,19 +585,19 @@ td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
   <h2>A node's journey, and every script able to explain itself</h2>
   <p class="answer"><b>Answer first.</b> Every command says, in the same way, which step it is on, what it read and wrote, and — if it stops — which step, why, what state the files are in, and the exact command to try again. One table in the code describes every script; the help text and a generated <code>docs/PIPELINE.md</code> come from it, and a test fails if they ever disagree.</p>
   <figure class="fig">
-    <svg viewBox="0 0 880 200" role="img" aria-label="A node's journey: a group's sealed release, unpacked, checked, applied, built from its methods, tested against the group's results, gated and tested, delivered and accepted, pull request into maintainer, main, release.">
+    <svg viewBox="0 0 880 200" role="img" aria-label="A node's journey: a group's sealed release, put on the shared drive, opened, its seal checked, its content checked, each node checked against the design, taken into today's design; then, for a new method, the developer's build-node with the gate and tests, a pull request into developer, main, release.">
       <defs><marker id="s-ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" class="d-ah"/></marker></defs>
       <rect x="14" y="30" width="96" height="56" rx="6" class="d-in"/><text x="62" y="54" text-anchor="middle" class="d-tb">Release</text><text x="62" y="72" text-anchor="middle" class="d-ts">group sealed</text>
-      <rect x="132" y="30" width="96" height="56" rx="6" class="d-box"/><text x="180" y="54" text-anchor="middle" class="d-tb">unpack</text><text x="180" y="72" text-anchor="middle" class="d-ts">its folder</text>
-      <rect x="250" y="30" width="96" height="56" rx="6" class="d-box"/><text x="298" y="54" text-anchor="middle" class="d-tb">intake</text><text x="298" y="72" text-anchor="middle" class="d-ts">check only</text>
-      <rect x="368" y="30" width="96" height="56" rx="6" class="d-box"/><text x="416" y="54" text-anchor="middle" class="d-tb">--apply</text><text x="416" y="72" text-anchor="middle" class="d-ts">all or nothing</text>
-      <rect x="486" y="30" width="96" height="56" rx="6" class="d-box"/><text x="534" y="54" text-anchor="middle" class="d-tb">build</text><text x="534" y="72" text-anchor="middle" class="d-ts">from methods</text>
-      <rect x="604" y="30" width="96" height="56" rx="6" class="d-box"/><text x="652" y="54" text-anchor="middle" class="d-tb">test</text><text x="652" y="72" text-anchor="middle" class="d-ts">own results</text>
-      <rect x="722" y="30" width="140" height="56" rx="6" class="d-both"/><text x="792" y="54" text-anchor="middle" class="d-tb">gate + test</text><text x="792" y="72" text-anchor="middle" class="d-ts">the green line</text>
+      <rect x="132" y="30" width="96" height="56" rx="6" class="d-box"/><text x="180" y="54" text-anchor="middle" class="d-tb">drive</text><text x="180" y="72" text-anchor="middle" class="d-ts">its releases/</text>
+      <rect x="250" y="30" width="96" height="56" rx="6" class="d-box"/><text x="298" y="54" text-anchor="middle" class="d-tb">opens</text><text x="298" y="72" text-anchor="middle" class="d-ts">its own group</text>
+      <rect x="368" y="30" width="96" height="56" rx="6" class="d-box"/><text x="416" y="54" text-anchor="middle" class="d-tb">seal</text><text x="416" y="72" text-anchor="middle" class="d-ts">every file</text>
+      <rect x="486" y="30" width="96" height="56" rx="6" class="d-box"/><text x="534" y="54" text-anchor="middle" class="d-tb">content</text><text x="534" y="72" text-anchor="middle" class="d-ts">every check</text>
+      <rect x="604" y="30" width="96" height="56" rx="6" class="d-box"/><text x="652" y="54" text-anchor="middle" class="d-tb">each node</text><text x="652" y="72" text-anchor="middle" class="d-ts">vs the design</text>
+      <rect x="722" y="30" width="140" height="56" rx="6" class="d-both"/><text x="792" y="54" text-anchor="middle" class="d-tb">today's design</text><text x="792" y="72" text-anchor="middle" class="d-ts">or last good one</text>
       <path d="M110 58 L130 58" class="d-a" marker-end="url(#s-ah)"/><path d="M228 58 L248 58" class="d-a" marker-end="url(#s-ah)"/><path d="M346 58 L366 58" class="d-a" marker-end="url(#s-ah)"/><path d="M464 58 L484 58" class="d-a" marker-end="url(#s-ah)"/><path d="M582 58 L602 58" class="d-a" marker-end="url(#s-ah)"/><path d="M700 58 L720 58" class="d-a" marker-end="url(#s-ah)"/>
       <path d="M792 86 C 792 112, 760 112, 740 126" class="d-a" marker-end="url(#s-ah)"/>
-      <rect x="604" y="126" width="140" height="56" rx="6" class="d-out"/><text x="674" y="150" text-anchor="middle" class="d-tb">deliver · accept</text><text x="674" y="168" text-anchor="middle" class="d-ts">subsystem engineer</text>
-      <rect x="444" y="126" width="138" height="56" rx="6" class="d-in"/><text x="513" y="150" text-anchor="middle" class="d-tb">→ maintainer</text><text x="513" y="168" text-anchor="middle" class="d-ts">pull request</text>
+      <rect x="604" y="126" width="140" height="56" rx="6" class="d-out"/><text x="674" y="150" text-anchor="middle" class="d-tb">build-node</text><text x="674" y="168" text-anchor="middle" class="d-ts">for a new method</text>
+      <rect x="444" y="126" width="138" height="56" rx="6" class="d-in"/><text x="513" y="150" text-anchor="middle" class="d-tb">→ developer</text><text x="513" y="168" text-anchor="middle" class="d-ts">pull request</text>
       <rect x="286" y="126" width="136" height="56" rx="6" class="d-in"/><text x="354" y="150" text-anchor="middle" class="d-tb">→ main</text><text x="354" y="168" text-anchor="middle" class="d-ts">pull request</text>
       <rect x="132" y="126" width="132" height="56" rx="6" class="d-out"/><text x="198" y="150" text-anchor="middle" class="d-tb">ship · release</text><text x="198" y="168" text-anchor="middle" class="d-ts">to everyone</text>
       <path d="M604 154 L584 154" class="d-a" marker-end="url(#s-ah)"/><path d="M444 154 L424 154" class="d-a" marker-end="url(#s-ah)"/><path d="M286 154 L266 154" class="d-a" marker-end="url(#s-ah)"/>
