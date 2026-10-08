@@ -3,10 +3,10 @@
 > **Answer first.** Install the one file with Python — `python -m pip install vleo-<version>-py3-none-any.whl`
 > — then start it with `python -m vleo`, and the tool opens in your browser. (Or unzip the kit for
 > your system and start the program in it.) Set your inputs, run the design, keep the results. When
-> the design itself is wrong or missing something, fill that node's form and send the file to the
-> maintainer — they check it, build it in, and send you a preview of your change to try. When it
-> gives what you expect, press Approve and send back the file it saves; your change then goes into
-> the next release for everyone. Your inputs and results are kept on your machine and carry over
+> the design itself is wrong or missing something, its node engineer changes it in the node's own
+> file, and it reaches the design with the group's sealed release. Once the subsystem engineer
+> accepts the test application built from that release, the change goes into the next release for
+> everyone. Your inputs and results are kept on your machine and carry over
 > to every new version.
 >
 > **Kind:** tutorial + how-to · **For:** everyone using the tool — the programme manager, the system engineer, subsystem engineers and node engineers
@@ -73,37 +73,29 @@ on your machine — nobody else can reach it. To stop it, close that window or p
   send to someone — uploaded, it comes back whole.
 - **? Manual** answers "how do I…" for everything above.
 
-## 3 · Ask for the design to change
+## 3 · Change the design
 
-The tool never changes the design itself. A change is a **node form**: one file you fill in your
-browser, offline, and send to the developers.
+The tool never changes the design itself. A node changes in its own file, and only its node
+engineer writes it.
 
-1. Open the row, choose the tab **the node form — fill it anywhere**, and download the form. For a
-   row that does not exist yet, go to **Forms** and download **the form for a new node**.
-2. Open the downloaded file in your browser — it works offline. Fill what you know: say the row
-   simply, correct the numbers, add an input, give a known value and where it comes from.
-3. If your change moves what the row computes, fill **Why it is changing**: what we believed,
-   what you tested, what you now know, and what would break the new belief. The form tells you as
-   you type which answers it still needs. Wording alone needs none of them.
-   **If it is your relation**, also fill **The method** (the relation as a few lines — see
-   `docs/PSEUDOCODE.md`, and *Show the example* beside each question), **Your code** (the code you
-   wrote and tested, and the script that ran it) and **Your test cases**: at least three answers
-   your code gave and one input it refuses. The form runs your method on your cases as you type;
-   send it when its check says **Sound**.
-4. Press **save a filled copy**. You can check the filled file yourself on the **Forms** page —
-   it shows what the developers will see, and changes nothing.
-5. Send the filled file to the developer, the way your group shares files.
-6. **You get a preview back** — the tool with your change in it, marked with an orange **PREVIEW**
-   banner. Install it like a new version (`python -m pip install <file>.whl`), open each node the
-   banner names, run it and check it against your own answers.
-7. **When it is right, press _Approve this preview…_**, tick that you ran it, and send back the file
-   it saves. If something is wrong, do not approve — say what, and you get a new preview.
+1. **Your subsystem engineer issues you your node file**, `<node>.vnode`, on your group's shared
+   drive.
+2. **Open it in the node application**, `node.html` in the group's `apps/` folder — it works
+   offline. It walks you through, step by step: the node's contract, the explanation, the theory,
+   the pseudocode (checked as you type — every line, every unit), the inputs, your own results,
+   the evidence, pictures and your code. Then **Check & sign**.
+3. **Put the file back** in `nodes/` on the drive, replacing the old one.
+4. **Your subsystem engineer assembles the group's release**, has each node signed, seals it and
+   sends it to the developer.
+5. **The subsystem engineer gets a test application back** — the tool with the group's release
+   built in — tries it, and accepts it or says what to change.
 
-Only then is your change merged, and it reaches everyone in the next release. If your form cannot
-be taken in, you get a note back with the reason, line by line, and nothing was changed.
+Only then is the release merged, and it reaches everyone in the next release. If it cannot be
+taken in, the group gets the reason back, line by line, and nothing was changed. The group's side,
+step by step, is `docs/GROUP_APPS.md`.
 
 **Your guide:** `docs/roles/user.html` in this folder is an interactive page with every step for
-you — using the tool, filling a form, approving a preview — at three depths (Learn, Read, Expert).
+you — using the tool, and how a change reaches the design — at three depths (Learn, Read, Expert).
 
 ## 4 · When a new version arrives
 
@@ -120,5 +112,5 @@ changed, the Results page says which one.
 ## 5 · What you cannot do here, and why
 
 You cannot edit a row, add one or remove one in the tool. A change typed into one copy of the tool
-would be a change nobody checked and everyone else would be running without. The form is the way
-in, and it keeps your name on what you asked for.
+would be a change nobody checked and everyone else would be running without. The node's own file is
+the way in, and your signature keeps your name on it.

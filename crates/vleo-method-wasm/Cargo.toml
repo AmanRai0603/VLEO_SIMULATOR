@@ -10,7 +10,7 @@ repository = "https://github.com/AmanRai0603/VLEO_SIMULATOR"
 
 # Excluded from the workspace, like vleo-wasm: it needs the wasm32 target.
 # `cargo run -p xtask -- method-wasm` builds it and writes web/method.wasm.gz,
-# which every node form carries inline.
+# which the pages that check a method carry inline.
 
 [lib]
 crate-type = ["cdylib"]

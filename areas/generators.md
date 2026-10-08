@@ -1,15 +1,15 @@
 # areas/generators.md
 
-> **Answer first.** The schema, the generators, the node form and the gate: one defect here is in every row at once, so every change here needs two reviewers.
+> **Answer first.** The schema, the generators and the gate: one defect here is in every row at once, so every change here needs two reviewers.
 >
 > **Kind:** reference + explanation · **For:** developers
 
 The schema, the nine generators, the gate and the golden corpus.
 
 Applies to `crates/vleo-sheet/**`, `xtask/**`, `tools/**`.
-Maintained by the developers. Until the switch-over the node form lives here
-too: its template, its checker and its apply (`src/template.rs`), read from the
-same field table as the sheet. The generators leave the build in phase E, and
+Maintained by the developers. Until the sheets go, the plan a group release is
+taken in by lives here too (`src/template.rs`), read from the same field table
+as the sheet. The generators leave the build in phase E, and
 their checks move into the library.
 
 ## Why a change here needs two reviewers

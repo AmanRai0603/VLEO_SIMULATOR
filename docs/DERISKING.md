@@ -31,8 +31,9 @@ has not been thought about enough to be relied on.
 
 ### D2 · A change says which belief broke
 
-A form that changes what a node computes — any field that moves a decision — must carry the
-record, one row of the programme's quarterly de-risking narrative:
+A release that changes what a node computes — any field that moves a decision — must carry the
+record, the newest row of its `versions.csv`, and one row of the programme's quarterly de-risking
+narrative:
 
 | column | the question |
 |---|---|
@@ -44,14 +45,14 @@ record, one row of the programme's quarterly de-risking narrative:
 | **Risks opened / closed** | `R-01 L5->L4`, `R-09 closed`, `R-12 opened` *(optional)* |
 | **Rests on now** · **Would break if** | the new belief, and what to watch for |
 
-The kind of decision is not asked: intake reads it off what the form changes — an input, the
+The kind of decision is not asked: intake reads it off what the release changes — an input, the
 output, the model (source, assumptions), the maths (the relation), the algorithm, the
 visualisation. Wording — the note, the plain-words explanation, the prose of the derivation — is
 not a decision and needs no record, because a sentence that needs paperwork to correct never gets
 corrected.
 
-Without the record, intake applies only the wording and **withholds every decision, by name**.
-With it, the changes go in and a new `[[version]]` is appended to the sheet.
+Without a complete record, `group-intake` **refuses the change**, and the lines go back to the
+group. With it, the changes go in and a new `[[version]]` is appended to the sheet.
 
 ### D3 · A version is a record, and a release names it
 
@@ -127,15 +128,16 @@ register and read the same history as the risk's conclusion; run
 
 ## How to
 
-**As a node engineer.** Fill the node's form as usual. If your change moves what the node computes,
-fill *Why it is changing* — the form says as you type which decisions your changes move and what
-is still missing. For a new node, say what it rests on and what would break it. To register a
-risk, fill the form of the risk-register row it belongs to.
+**As a node engineer.** Write your node in its own file as usual. If your change moves what the
+node computes, the group's release that carries it says why: its `versions.csv` holds what we
+believed, what we tested, what we now know and what changed, and what the version rests on and
+what would break it (`docs/GROUP_FOLDER.md`). For a new node, say what it rests on and what would
+break it.
 
 **As a developer.**
 
-    cargo run -p xtask -- intake <form.html>          # the record is checked with everything else
-    cargo run -p xtask -- intake <form.html> --apply  # appends the [[version]]
+    cargo run -p xtask -- group-intake <dir>          # the record is checked with everything else
+    cargo run -p xtask -- group-intake <dir> --apply  # appends the [[version]]
     cargo run -p xtask -- derisk                      # the narrative, regenerated
     cargo run -p xtask -- release 0.2.0               # stamps `next`, sets the version
     cargo run -p xtask -- release 0.2.0 --check       # what the release pipeline runs

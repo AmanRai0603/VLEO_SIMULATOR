@@ -1,7 +1,7 @@
 # How this tool explains itself
 
-> **Answer first.** Everything in this tool that teaches a person something — a node's form, a
-> node's page, a result, the manual, these documents, the figures — follows one standard: the
+> **Answer first.** Everything in this tool that teaches a person something — a node's page,
+> a result, the manual, these documents, the figures — follows one standard: the
 > answer first, then the thing said simply, then the real thing with its source, then where the
 > simple version breaks. Every claim says whether it is sourced, derived, declared or only an
 > example, and every block says what kind of reading it is. The rules are below, each with where
@@ -43,8 +43,8 @@ needed it. *(Minto, the pyramid principle.)*
 
 **Where:** the *Answer first* box on every node page · the first lines of a result, in the
 Results view and the HTML report · the answer line at the top of every manual section · the
-first block of every document under `docs/` and at the top of the repository · the intro of a
-node form · the live answer under each figure's question.
+first block of every document under `docs/` and at the top of the repository · the live answer
+under each figure's question.
 **Checked by:** the page generator's test (`the_page_follows_the_standard`), the result test
 (`a_result_keeps_the_beliefs_it_rests_on…`: the answer comes before any table), the manual's
 parser (a section without `answer` is refused), `tools/docs_lint.py` (a document without an
@@ -58,8 +58,8 @@ it, with the source. **Where the simple version breaks**: the place the plain wo
 true. **Try it**: a live model, a run, a sweep. *(The Feynman technique; Mayer's segmenting.)*
 
 **Where:** the first tab of every node page (*said simply, then the real thing*) · the node
-form, which asks the plain-words question before the relation and the where-it-breaks question
-after the derivation · a result's report (*Said simply*, *Where it breaks*, then the tables).
+application (`web/node.html`), whose explanation step asks for the plain words, and where they
+break, before its theory step asks for the relation · a result's report (*Said simply*, *Where it breaks*, then the tables).
 **Checked by:** the page generator's test (the four headings, in order); the gap pass lists
 every published row that is not yet said simply, or not where that breaks, as an open gap —
 so it holds the row back from review until it is written.
@@ -76,8 +76,7 @@ Four kinds, marked on the claim itself:
 | **illustrative** | an example or a widget value, not data |
 
 **Where:** the relation on a node page (sourced), each theory step (derived), a declared value
-(declared), the de-risking example on the node form (illustrative), the result report's *Said
-simply*. **Checked by:** the page generator's test; the gate already refuses a relation whose
+(declared), the result report's *Said simply*. **Checked by:** the page generator's test; the gate already refuses a relation whose
 source does not resolve (V8) and a declared value with nobody's name.
 
 ### E4 · Every simplification says where it stops being true
@@ -97,7 +96,8 @@ State the misconception, say why it is wrong, give the right idea. It targets th
 readers share rather than leaving each to rediscover them. *(Refutation text, Tippett 2010.)*
 
 **Where:** *Common wrong idea* on a node page, from `[explain] wrong`. Optional: not every row
-has one. **Checked by:** nothing — it is asked on every form and shown where written.
+has one. **Checked by:** nothing — the node application asks for it (*the common misreading*) and the
+page shows it where written.
 
 ### E6 · Overview first, zoom, details on demand
 
@@ -111,10 +111,11 @@ result's answer before its tables; the manual's layers before its sections.
 
 Name the parts before the process that joins them. *(Mayer's pre-training principle.)*
 
-**Where:** a node page's *assembly* and *connectivity* segments come before its sheet; a node
-form shows what the node reads and feeds before it asks the relation; the interface tab lists
-every input before the algorithm tab composes them. **Checked by:** the order is fixed in
-`web/js/node.js` and the form template; nothing else checks it.
+**Where:** a node page's *assembly* and *connectivity* segments come before its sheet; the node
+application shows what the node answers, what feeds it and who reads it before it asks the
+relation; the interface tab lists every input before the algorithm tab composes them.
+**Checked by:** the order is fixed in `web/js/node.js` and `web/js/napp.js`; nothing else checks
+it.
 
 ### E8 · One kind of documentation per block, and it says which
 
@@ -144,9 +145,8 @@ Show one example fully worked before asking for one. *(The worked-example effect
 2004.)* A node's first fixture is its worked example — inputs and the answer, from outside this
 code.
 
-**Where:** the evidence tab; the de-risking example on the node form (the programme's own
-narrative's first row, marked illustrative); `sw_central_expectation`, whose three versions are
-the worked example of the de-risking record; the example forms and result in `docs/examples/`.
+**Where:** the evidence tab; `sw_central_expectation`, whose three versions are the worked
+example of the de-risking record; the example lesson and result in `docs/examples/`.
 **Checked by:** the gap pass holds a row with no fixture; the manual's commands run the
 examples.
 
@@ -179,8 +179,8 @@ one before it. **Checked by:** nothing mechanical beyond E3; the physics review 
 A name is not knowledge. The plain-words answer uses no symbol and no term a newcomer would have
 to look up; the real thing may, because it is the second step, not the first.
 
-**Where:** `[explain] simply`, the form's first explanatory question. **Checked by:** a person —
-the form asks for it in those words — and `[explain] by` names that person on the page. Words an
+**Where:** `[explain] simply` on the sheet, and *said simply* in the node application's
+explanation step. **Checked by:** a person, and `[explain] by` names that person on the page. Words an
 assistant drafted from the sheet say so there, for the row's owner to confirm.
 
 ### E15 · Do not fool yourself — and do not let the page fool anybody
@@ -198,7 +198,6 @@ Feynman, "Cargo Cult Science".)*
 
 | surface | E1 | E2 | E3 | E4 | E5 | E8 | E9 | E10 | E11 |
 |---|---|---|---|---|---|---|---|---|---|
-| node form | intro | order of questions | illustrative example | asks *breaks* | asks *wrong* | — | — | worked de-risking example | — |
 | node page | Answer first box | first tab | on the claims | breaks + assumptions | if written | tab kinds | yes | evidence tab | Learn |
 | `docs/HOW_IT_WORKS.html` | "In short" box per chapter | plain words, how it works, limits | claim tags | "where this picture stops being true" | "a common misreading" | — | yes | "work it yourself" | "guess first" |
 | the views — the four layers, Architecture, Inputs, Forms, Results | Answer first box | — | — | — | — | kind on the box | — | — | — |

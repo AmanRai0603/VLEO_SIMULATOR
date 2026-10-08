@@ -5,7 +5,7 @@
 //! reads it through the interface it reads the folders through. So one server
 //! is started on the folders and one on the file, and every page a reader
 //! opens is asked of both: each node's fragment and what its folder holds, the
-//! index, the de-risking record, a node form and its check. Any difference is a
+//! index, the de-risking record and a lesson form. Any difference is a
 //! page a team would see and a developer would not.
 
 use std::io::{Read, Write};
@@ -71,7 +71,6 @@ fn the_file_and_the_folders_serve_the_same_pages() {
     let mut paths: Vec<String> = vec![
         "/v1/index".into(),
         "/v1/derisk".into(),
-        "/v1/form/orbit_velocity".into(),
         "/v1/lesson-form/orbit_velocity".into(),
     ];
     for id in tree.sheets.keys() {

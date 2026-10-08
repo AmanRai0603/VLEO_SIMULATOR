@@ -118,8 +118,6 @@ pub(crate) fn dispatch(root: &Path, cmd: &str, rest: &[&str]) -> Result<(), Stri
         "setup" => cmd_setup(&root),
         "differential" => cmd_differential(&root, &rest),
         "confirm" => cmd_confirm(&root, &rest),
-        "form" => cmd_form(&root, &rest),
-        "intake" => cmd_intake(&root, &rest),
         "lesson" => cmd_lesson(&root, &rest),
         "readers" => readers::cmd_readers(&root, &rest),
         "publish" => cmd_publish(&root, &rest),
@@ -128,11 +126,7 @@ pub(crate) fn dispatch(root: &Path, cmd: &str, rest: &[&str]) -> Result<(), Stri
         "kit" => cmd_kit(&root, &rest),
         "design" => design::cmd_design(&root, &rest),
         "convert" => convert::cmd_convert(&root, &rest),
-        "take" => flow::cmd_take(&root, &rest),
         "guides" => cmd_guides(&root),
-        "preview" => flow::cmd_preview(&root, &rest),
-        "approve" => flow::cmd_approve(&root, &rest),
-        "queue" => flow::cmd_queue(&root, &rest),
         "ship" => flow::cmd_ship(&root, &rest),
         "method" => method::cmd_method(&root, &rest),
         "method-wasm" => method::cmd_method_wasm(&root, &rest),
@@ -146,7 +140,6 @@ pub(crate) fn dispatch(root: &Path, cmd: &str, rest: &[&str]) -> Result<(), Stri
         "group-accept" => flow::cmd_group_accept(&root, &rest),
         "rerun" => method::cmd_rerun(&root, &rest),
         "build-node" => method::cmd_build_node(&root, &rest),
-        "migration" => method::cmd_migration(&root, &rest),
         "explain" => pipeline::cmd_explain(&root, &rest),
         "why" => pipeline::cmd_why(&root, &rest),
         "trace" => pipeline::cmd_trace(&root, &rest),
@@ -241,24 +234,6 @@ cargo xtask <command>
   setup              point git at tools/githooks, so the commit-message hook
                      runs on this clone. One command per person per clone, and
                      the commands that matter say so until it is done.
-  form <node>|--new [--example] [--out <file.html>]
-                     a node's form: one HTML file that explains itself, asks
-                     every question the sheet answers, lists every row it could
-                     read, and saves a filled copy. --new is the form for a node
-                     the design does not have yet, which also asks where it goes.
-                     Anyone can fill it, offline, by hand or with an assistant;
-                     the filled file comes back to a developer. --example fills
-                     orbit_velocity's form with the worked example, for the
-                     pipeline's end-to-end test of the method path only.
-  intake <file.html> [--apply [--partial]]
-                     the checker: what a filled form would change, field by
-                     field, and every interface it declares — each input a row
-                     that exists, of the quantity expected. What it cannot do is
-                     named: a conflict with a change made since, a relation an
-                     assistant supplied. --apply writes it (a new node is built
-                     in its place in the tree), regenerates, gates, and puts
-                     everything back on a refusal. Known-good values come out as
-                     a request, never written.
   lesson form <node> [--out <file.html>]
                      a row's lesson form: one HTML file the node engineer who knows
                      the row fills anywhere, checked as they type by the
@@ -312,11 +287,12 @@ cargo xtask <command>
                      docs/manual.toml. Never
                      edited by hand; the pipeline regenerates and compares.
   method <node>      the node's method, checked, and each of its node engineer's test
-                     cases run through it — the check the form runs as the
-                     node engineer types, and the one the gate refuses on.
+                     cases run through it — the check the group's
+                     application runs as the node engineer types, and the
+                     one the gate refuses on.
   method-wasm [--check]
-                     rebuild web/method.wasm.gz, the checker every node form
-                     carries, from vleo_sheet::method; --check only says
+                     rebuild web/method.wasm.gz, the checker the pages
+                     carry, from vleo_sheet::method; --check only says
                      whether the committed one is current.
   files-wasm [--check]
                      rebuild web/files.wasm.gz, the design-file library the
@@ -331,8 +307,9 @@ cargo xtask <command>
                      a group's sealed release, written out with `node
                      tools/group_db.mjs --unpack`, taken into the design: the
                      seal checked against every file, then each computed
-                     node's pseudocode and results planned as its node form —
-                     conflicts, an assistant's method or results refused —
+                     node's pseudocode and results planned against the
+                     design — conflicts, an assistant's method or results
+                     refused —
                      and with --apply written and gated. --draft looks at an
                      unsealed release and never applies.
   group-build <folder> [--node <id>]
@@ -377,28 +354,6 @@ cargo xtask <command>
                      method on its cases, the translation into the kernel, the
                      node's tests, the node engineer's code rerun — and only then
                      the interface.
-  migration [--owner <o>] [--subsystem <s>] [--forms <dir>]
-                     which computed rows still need a method, by owner, and
-                     with --forms their node forms written ready to send.
-                     Nothing here writes a method: each comes from its owner.
-  take <form.html> --for <author> [--again] [--no-push] [--no-test]
-                     the developer's first step: check a filled node form;
-                     if it cannot be taken, write <form>.returned.txt to send
-                     back and change nothing; otherwise put it on its own
-                     branch form/<author>/<node> from a fresh maintainer, apply it,
-                     regenerate, gate, test, commit naming the node engineer, push.
-  preview            where the current form branch's preview build is — every
-                     push to a form branch builds one — and what to do with it.
-  approve <approval.toml> [--no-push]
-                     the node engineer's approval of a preview, checked against this
-                     branch: it must be for the build of what is here now.
-                     Recorded in approvals/, committed and pushed.
-  approve --verify <branch>
-                     the same check, as the pipeline runs it on a form branch's
-                     pull request.
-  queue              every form branch and every group branch, and where each
-                     stands: waiting for the node engineer's approval or the group's
-                     acceptance, approved or accepted, merged.
   ship <version> [--no-push] [--no-test]
                      the release branch release/<version> from main: the
                      de-risking narrative, the stamp, regenerate, gate, test,
@@ -418,8 +373,8 @@ cargo xtask <command>
                      code is — from the one table docs/PIPELINE.md is written
                      from. With no command, the whole journey.
   why <node>         a node's history in one place: every recorded version and
-                     who made it, the commits that changed it, its approvals,
-                     how its code came to be, and its gate, run now.
+                     who made it, the commits that changed it, how its code
+                     came to be, and its gate, run now.
   trace [<command>] [--list]
                      the last run's trace — every command that writes leaves
                      one in target/xtask-trace/, the newest 50 kept — or the

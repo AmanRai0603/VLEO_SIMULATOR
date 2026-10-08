@@ -507,9 +507,8 @@ def browser_walk():
             def read_a_row():
                 open_row(WALK_COMPUTED)
                 text = page.locator("#node-body").inner_text()
-                for n in (1, 2):
+                for n in (1, 2, 3):
                     assert U("browser-read", n).lower() in text.lower(), f"no '{U('browser-read', n)}' on the page"
-                assert button("#node-body .sheet-tabs", U("browser-read", 3)).is_visible()
                 # Back, by the label the manual gives it.
                 page.locator("#nodeview button", has_text=U("browser-read", 4)).first.click()
                 page.wait_for_timeout(300)
@@ -660,43 +659,6 @@ def browser_walk():
             ok("an old case is carried over on update, the old file kept, and what was set aside named",
                case_carried_over)
 
-            # A NODE'S FORM GOES OUT AND COMES BACK. Downloaded from the node's
-            # page, filled in a browser from disk with no daemon behind it, saved,
-            # and read back by the developer's own command — and the page's check
-            # of the filled file writes nothing.
-            def node_form_round_trip():
-                open_row(WALK_COMPUTED)
-                button("#node-body .sheet-tabs", U("browser-nodeform", 2)).click()
-                page.wait_for_selector(".nform-dl")
-                with page.expect_download() as dl:
-                    page.locator(".nform-dl").click()
-                blank = Path(tempfile.mkdtemp()) / dl.value.suggested_filename
-                dl.value.save_as(str(blank))
-                offline = browser.new_page()
-                offline.goto(blank.as_uri())
-                offline.wait_for_selector(".nf-q[data-field=note]")
-                assert "wording only" in offline.locator("#nf-dr-state").inner_text(), \
-                    "the form does not say that no record is needed yet"
-                offline.fill("input[aria-label=name]", "the manual check")
-                offline.locator(".nf-q[data-field=note] textarea").fill("A note from the walk.")
-                with offline.expect_download() as dl2:
-                    offline.click("#nf-save")
-                filled = blank.with_name("filled." + blank.name)
-                dl2.value.save_as(str(filled))
-                offline.close()
-                r = subprocess.run(["cargo", "run", "-q", "-p", "xtask", "--", "intake", str(filled)],
-                                   cwd=ROOT, capture_output=True, text=True, timeout=TIMEOUT_RUN,
-                                   env=dict(os.environ, NO_COLOR="1"))
-                said = plain(r.stdout)
-                assert r.returncode == 0 and "A note from the walk." in said and "1 change(s) can be applied" in said, \
-                    f"intake did not read the form the page saved: {said[-400:]} {r.stderr[-300:]}"
-                page.set_input_files(".nform-up", str(filled))
-                page.wait_for_selector(".nform-file")
-                assert "will apply" in page.locator(".nform-file").inner_text()
-                untouched("a node form, filled and checked")
-            ok("a node's form is downloaded, filled offline, saved, and read back by intake — writing nothing",
-               node_form_round_trip)
-
             print("\nwhat if")
 
             def computed_has_no_box():
@@ -794,28 +756,20 @@ def browser_walk():
             ok("a result is saved from a run, shown, sent as a report, uploaded back, compared, "
                "pinned and unpinned, made the case and deleted — git sees none of it", results_round_trip)
 
-            # THE FORMS PAGE HANDS OUT EVERY FORM AND CHECKS ONE THAT COMES BACK.
-            # It never applies one: that is the developer's, at a terminal.
+            # THE FORMS PAGE SAYS WHAT COMES IN FROM OUTSIDE, AND A NODE IS NOT
+            # AMONG IT: the design is written by its owners, in their own files.
             print("\nforms")
 
             def forms_page():
                 home()
-                tab(U("browser-nodeform", 1))
-                page.wait_for_selector(".forms-node")
-                page.locator(".forms-node").fill(WALK_COMPUTED)
-                page.locator(".forms-node").dispatch_event("input")
-                assert page.locator(".forms-dl").is_visible(), "a row's form is not offered for a row that exists"
-                assert page.locator(".forms-dl").get_attribute("href") == "/v1/form/" + WALK_COMPUTED
-                with page.expect_download() as dl:
-                    page.locator("a", has_text=U("browser-nodeform", 4)).click()
-                assert "vleo-node-form/1" in Path(dl.value.path()).read_text(), "the new-node form is not a form"
-                page.set_input_files(".forms-up", str(ROOT / "docs" / "examples" / "new-node.node-form.html"))
-                page.wait_for_selector(".forms-out .nform-file")
-                said = page.locator(".forms-out").inner_text()
-                assert "connects" in said and "sw_ap_design_margin" in said, \
-                    f"a new node's form was not checked, with its interfaces: {said[:300]}"
-                untouched("checking a form")
-            ok("the Forms page offers a row's form and a new node's, and checks a filled one — writing nothing",
+                tab(U("browser-forms", 1))
+                page.wait_for_selector(".forms-who")
+                said = page.locator("#forms-body").inner_text()
+                assert "the inputs" in said and "a result" in said, f"the Forms page lost a form: {said[:300]}"
+                assert page.locator("#forms-body a[href^='/v1/form']").count() == 0, \
+                    "the Forms page still offers a node form"
+                untouched("the Forms page")
+            ok("the Forms page lists the inputs and results, and offers no node form — writing nothing",
                forms_page)
 
             # HOW DEEP, AND WHY IT CHANGED. The depth switch shows and hides

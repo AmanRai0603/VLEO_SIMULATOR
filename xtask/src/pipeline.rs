@@ -22,7 +22,6 @@ use std::io::Write as _;
 /// Where a command sits in a node's journey, in order.
 pub(crate) const STAGES: &[(&str, &str)] = &[
     ("form", "a node engineer fills a node's form"),
-    ("take", "the developer puts it on its own branch"),
     ("check", "what it would change, before anything is written"),
     (
         "apply",
@@ -39,10 +38,6 @@ pub(crate) const STAGES: &[(&str, &str)] = &[
     (
         "gate",
         "the checks every change passes, and what they generate",
-    ),
-    (
-        "preview",
-        "the node engineer tries the build and approves it",
     ),
     ("release", "the stamped release everyone gets"),
     (
@@ -89,17 +84,6 @@ const GIT_UNDO: &str =
 /// Every command, in the order of a node's journey.
 pub(crate) const PIPELINE: &[Cmd] = &[
     Cmd {
-        name: "form",
-        stage: "form",
-        reads: "the node's sheet, the rows it could read, web/method.wasm.gz",
-        writes: "one HTML file: <node>.node-form.html, or --out",
-        checks: "that the node exists",
-        undo: "delete the file",
-        code: ("xtask/src/forms.rs", "cmd_form"),
-        steps: &[],
-        dry: Dry::Plan,
-    },
-    Cmd {
         name: "lesson",
         stage: "apply",
         reads: "the row's sheet and lesson.toml, the tree's rows, web/method.wasm.gz; a filled lesson form",
@@ -120,43 +104,6 @@ pub(crate) const PIPELINE: &[Cmd] = &[
         code: ("xtask/src/readers.rs", "cmd_readers"),
         steps: &["build the engine for the browser", "bundle the page script", "read the design the pages run", "write the pages", "check every page has what it links"],
         dry: Dry::Plan,
-    },
-    Cmd {
-        name: "take",
-        stage: "take",
-        reads: "the filled form, the `maintainer` branch, the tree",
-        writes: "a branch form/<author>/<node>: the applied sheet, regenerated files, today's answers recorded again, design/ converted again (by intake and build-node), a commit, a push — or <form>.returned.txt",
-        checks: "the form, as intake does; the gate; cargo test; a node with a method built from it",
-        undo: "delete the branch (`git branch -D form/<author>/<node>`, and on the remote); nothing on `maintainer` changes",
-        code: ("xtask/src/flow.rs", "cmd_take"),
-        steps: &[
-            "the branch",
-            "apply the form",
-            "regenerate",
-            "gate",
-            "build the node from its method",
-            "today's answers, recorded again",
-            "tests (cargo test --workspace)",
-            "commit and push",
-        ],
-        dry: Dry::Plan,
-    },
-    Cmd {
-        name: "intake",
-        stage: "check",
-        reads: "the filled form, the node's sheet, every row an interface names",
-        writes: "with --apply: node.toml (or a new node's folder), every generated file, CODEOWNERS for a new node, design/ converted again",
-        checks: "every field against the sheet; every interface; a conflict with a change made since; a relation an assistant supplied; the whole tree's gate",
-        undo: "a refused apply is put back by intake itself; an applied one: `git restore` the node's folder, or `git revert`",
-        code: ("xtask/src/forms.rs", "cmd_intake"),
-        steps: &[
-            "read the form",
-            "check every change",
-            "build the new node",
-            "apply to the sheet",
-            "the design's files, converted again",
-        ],
-        dry: Dry::Check("intake without --apply: the same check, nothing written"),
     },
     Cmd {
         name: "group-intake",
@@ -453,39 +400,6 @@ pub(crate) const PIPELINE: &[Cmd] = &[
         dry: Dry::Check("pipeline --check: whether docs/PIPELINE.md is current, nothing written"),
     },
     Cmd {
-        name: "preview",
-        stage: "preview",
-        reads: "the current branch and its PREVIEW.json",
-        writes: NOTHING,
-        checks: "that this is a form branch",
-        undo: READS_ONLY,
-        code: ("xtask/src/flow.rs", "cmd_preview"),
-        steps: &[],
-        dry: Dry::Reads,
-    },
-    Cmd {
-        name: "approve",
-        stage: "preview",
-        reads: "the node engineer's approval file and this branch",
-        writes: "approvals/<author>--<node>.toml, a commit and a push",
-        checks: "the approval is for the build of exactly what is here now",
-        undo: "`git revert` the approval commit",
-        code: ("xtask/src/flow.rs", "cmd_approve"),
-        steps: &[],
-        dry: Dry::Plan,
-    },
-    Cmd {
-        name: "queue",
-        stage: "preview",
-        reads: "every form branch and every group branch",
-        writes: NOTHING,
-        checks: "where each one stands",
-        undo: READS_ONLY,
-        code: ("xtask/src/flow.rs", "cmd_queue"),
-        steps: &[],
-        dry: Dry::Reads,
-    },
-    Cmd {
         name: "ship",
         stage: "release",
         reads: "main, every sheet",
@@ -653,17 +567,6 @@ pub(crate) const PIPELINE: &[Cmd] = &[
         dry: Dry::Reads,
     },
     Cmd {
-        name: "migration",
-        stage: "read",
-        reads: "every sheet",
-        writes: "with --forms: one node form per row, in the folder named",
-        checks: NOTHING,
-        undo: "delete the forms folder",
-        code: ("xtask/src/method.rs", "cmd_migration"),
-        steps: &[],
-        dry: Dry::Plan,
-    },
-    Cmd {
         name: "explain",
         stage: "read",
         reads: "this table and the help",
@@ -677,7 +580,7 @@ pub(crate) const PIPELINE: &[Cmd] = &[
     Cmd {
         name: "why",
         stage: "read",
-        reads: "the node in the design (design/), its git history, approvals, fills and traces",
+        reads: "the node in the design (design/), its git history, fills and traces",
         writes: NOTHING,
         checks: "the node's gate, run now",
         undo: READS_ONLY,
@@ -877,8 +780,8 @@ pub(crate) fn dry_run(root: &Path, cmd: &str, rest: &[&str]) -> Result<(), Strin
                 .copied()
                 .filter(|x| !matches!(*x, "--apply" | "--partial"))
                 .collect();
-            // intake and group-intake check by leaving out --apply
-            if !matches!(cmd, "intake" | "group-intake") && !a.contains(&"--check") {
+            // group-intake checks by leaving out --apply
+            if cmd != "group-intake" && !a.contains(&"--check") {
                 a.push("--check");
             }
             println!(
@@ -1020,13 +923,6 @@ impl Run {
         }
     }
 
-    /// How many steps there are, once the run knows — a form for a new node
-    /// has one more than a form for an existing one.
-    pub(crate) fn set_total(&mut self, total: usize) {
-        self.total = total;
-        self.log(&format!("steps {total}"));
-    }
-
     /// A step the run skips, said rather than silently dropped.
     pub(crate) fn skip(&mut self, name: &str, why: &str) {
         self.n += 1;
@@ -1134,8 +1030,8 @@ pub(crate) fn cmd_trace(root: &Path, args: &[&str]) -> Result<(), String> {
 // ---------------------------------------------------------------------------
 // why a node is what it is
 
-/// `why <node>` — every recorded belief, every change and who made it, its
-/// approvals, how its code came to be, and its gate now.
+/// `why <node>` — every recorded belief, every change and who made it, how
+/// its code came to be, and its gate now.
 pub(crate) fn cmd_why(root: &Path, args: &[&str]) -> Result<(), String> {
     let id = *args
         .first()
@@ -1215,22 +1111,6 @@ pub(crate) fn cmd_why(root: &Path, args: &[&str]) -> Result<(), String> {
     }
     for l in log.lines() {
         println!("  {l}");
-    }
-
-    let approvals: Vec<String> = fs::read_dir(root.join("approvals"))
-        .map(|rd| {
-            rd.flatten()
-                .map(|e| e.file_name().to_string_lossy().into_owned())
-                .filter(|n| n.ends_with(&format!("--{id}.toml")))
-                .collect()
-        })
-        .unwrap_or_default();
-    println!("\n\x1b[1mapprovals\x1b[0m");
-    if approvals.is_empty() {
-        println!("  none recorded in approvals/");
-    }
-    for a in approvals {
-        println!("  approvals/{a}");
     }
 
     println!("\n\x1b[1mhow its code came to be\x1b[0m");
@@ -1358,7 +1238,7 @@ pub(crate) fn pipeline_md() -> String {
          trace     target/xtask-trace/<time>-<command>.log\n```\n\n\
          `cargo run -p xtask -- trace` shows the last trace; `trace <command>` the last of one \
          command; `trace --list` every one kept (the newest 50). `cargo run -p xtask -- why <node>` \
-         puts a node's history in one place: its recorded versions, who changed it, its approvals, \
+         puts a node's history in one place: its recorded versions, who changed it, \
          how its code came to be, and its gate now.\n\n## Every command\n",
     );
     for (key, what) in STAGES {
@@ -1509,8 +1389,8 @@ mod the_table_is_true {
     fn a_check_mode_the_table_promises_is_a_flag_the_command_takes() {
         for c in PIPELINE {
             if let Dry::Check(_) = c.dry {
-                if matches!(c.name, "intake" | "group-intake") {
-                    continue; // their check is the command without --apply
+                if c.name == "group-intake" {
+                    continue; // its check is the command without --apply
                 }
                 assert!(
                     crate::flags_in_help(c.name).is_some_and(|f| f.contains(&"--check")),

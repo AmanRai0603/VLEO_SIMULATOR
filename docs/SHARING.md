@@ -3,19 +3,19 @@
 > **Answer first.** Everyone gets the tool, not the repository — as **one Python package for every
 > laptop** (`vleo-<version>-py3-none-any.whl`, started with `python -m vleo`), or as a **kit**: one
 > zip per platform with the programs and the files they read, and `START_HERE.md` on top. They run
-> it, keep their inputs and results on their own machine, and send back filled node forms. You
-> check and apply each form, release, and send the next version. Their case and results carry over
-> on their own.
+> it and keep their inputs and results on their own machine. A group's work comes back as its
+> sealed release; you take it in, release, and send the next version. Their case and results carry
+> over on their own.
 >
 > **Kind:** how-to · **For:** developers
 
 The loop, end to end:
 
-    you                                   an engineer
-    ───                                   ─────────────
+    you                                   a group
+    ───                                   ───────
     release → build a kit → share zip ──▶ unzip → start → use
-                                          fill a node form → send the file
-    intake → apply → publish → gate  ◀──  (e-mail, chat, a shared drive)
+                                          node files → a sealed release
+    intake → build → test → accept   ◀──  (from the group's shared drive)
     release → build the next kit → share ─▶ replace the folder → start again
 
 ---
@@ -74,21 +74,19 @@ or an antivirus to question — the reason it exists. It is checked by installin
 
 — with this machine's engine only; the release carries all of them.
 
-## 2 · Take a form back
+## 2 · Take a group's release back
 
-A node engineer sends a filled `*.node-form.html`. Save it into `forms/` (git ignores
-it) and take it in, naming its node engineer:
+A group's work arrives as its sealed release, `<group>-<version>.vleo`, never as one node at a
+time. Unpack it, then take it in:
 
-    cargo run -p xtask -- take forms/<file>.node-form.html --for "<author>"
+    node tools/group_db.mjs --unpack <file.vleo> --out <dir>
+    cargo run -p xtask -- group-intake <dir> --apply
 
-That puts it on its own branch `form/<author>/<node>` — checked, applied,
-regenerated, gated, tested, committed naming the node engineer, pushed — or writes a
-note to send back and changes nothing. The push builds the node engineer a **preview**
-by itself; send it to them, and when they press Approve, record the file they
-send back with `cargo run -p xtask -- approve <file>`. Merge once every check is
-green. A new relation still needs a developer (`publish`, `fill`). Every step,
-with what you will see and what to do when it refuses, is in the intake
-guide, `docs/roles/maintainer.html`.
+It goes on its own branch, `group/<group>-<version>` from `maintainer`, and through `group-build`,
+`group-test`, `group-deliver` and `group-accept`; it merges only with the subsystem engineer's
+acceptance of the exact test application they tried. A release that cannot be taken in goes back
+to the group with the lines that say why, and is never edited here. Every step is in
+`docs/GROUP_APPS.md` and in the intake guide, `docs/roles/maintainer.html`.
 
 ## 3 · Release and share the next kit
 
@@ -124,5 +122,5 @@ natively, and must be the same, byte for byte.
 
 A kit is read-only by design, but nothing stops an engineer editing a file inside it. That edit is
 invisible to everyone else and is lost when the next kit replaces the folder. Anything that should
-change the design comes back as a form. And a kit is only as current as the release it was built
+change the design comes back in its group's sealed release. And a kit is only as current as the release it was built
 from: `VERSION` in the folder, and the version the tool prints on start, say which one it is.

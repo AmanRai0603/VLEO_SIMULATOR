@@ -15,7 +15,7 @@ works.
 | branch | what moves it | what it holds |
 |---|---|---|
 | `developer` | pull requests from working branches | the software — generators, daemon, faces, tests |
-| `maintainer` | pull requests from `form/<author>/<node>` | the design — node forms taken with `xtask take` |
+| `maintainer` | pull requests from `group/<group>-<version>` | the design — each group's sealed release, taken in with `xtask group-intake` and accepted with `xtask group-accept` |
 | `main` | pull requests from `developer`, `maintainer` and `release/<version>` | what ships; every release tag is on it |
 
 `CONTRIBUTING.md` says who reviews each. The only thing this page adds is the
@@ -115,7 +115,7 @@ a repository setting.
   are the same thing, and the check above is a second lock.
 - **On this repository (private, free):** branch protection is not available,
   so a direct push to `main` is possible. It is not releasable — step 3 above
-  refuses it — but it is on `main`. `xtask ship` and `xtask take` never push to
+  refuses it — but it is on `main`. `xtask ship` and `xtask group-accept` never push to
   `main`; if one appears there, revert it with a pull request.
 
 **Signing and notarisation are absent, not stubbed.** They need a certificate a

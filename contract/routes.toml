@@ -218,16 +218,7 @@ schema = "inputs-reset"
 [[route.example]]
 name = "inputs-reset"
 
-# --- forms --------------------------------------------------------------------
-
-[[route]]
-method = "GET"
-path = "/v1/form/<id>"
-answer = "html"
-contains = "orbit_velocity"
-[[route.example]]
-name = "form-orbit_velocity"
-path = "/v1/form/orbit_velocity"
+# --- the lesson form ---------------------------------------------------------
 
 [[route]]
 method = "GET"
@@ -237,15 +228,6 @@ contains = "id=\"vleo-lesson\""
 [[route.example]]
 name = "lesson-form-orbit_velocity"
 path = "/v1/lesson-form/orbit_velocity"
-
-[[route]]
-method = "POST"
-path = "/v1/form/check"
-answer = "json"
-schema = "form-check"
-[[route.example]]
-name = "form-check"
-params = [["html", "@get:/v1/form/orbit_velocity"]]
 
 # --- results: saved, read, sent, taken back -----------------------------------
 

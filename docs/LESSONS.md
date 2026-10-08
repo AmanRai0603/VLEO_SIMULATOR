@@ -59,7 +59,7 @@ row, and applied by a developer.
    *write a lesson — its form* on the row's page. One HTML file that works
    with no server and no network: the lesson as fields, the row's question
    beside it, and **the check the gate runs, run in the page** as the node engineer
-   types. The form carries the checker every node form carries
+   types. The form carries the method checker the pages carry
    (`web/method.wasm.gz`, which holds `vleo_sheet::lesson::report`) and a
    table of the tree's rows, so a widget naming a row that is not there — or
    asking a reader to move a computed one — is refused before it is sent.

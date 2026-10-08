@@ -163,70 +163,6 @@ jobs:
           cargo run -p xtask -- status
           cargo run -p xtask -- graph
 
-  # A NODE BUILT FROM ITS METHOD, END TO END, on every pull request. No node of
-  # the design carries a method until its owner sends one, so without this job
-  # the path a teammate's form takes would never run. It fills orbit_velocity's
-  # real form with the worked example — the same textbook relation that node
-  # computes — and takes it through every stage on this throwaway checkout:
-  # the form's own check in a browser, intake, the author's MATLAB code rerun
-  # through Octave, build-node's translation, cases and interface,
-  # and the whole design's tests. Nothing it writes is committed.
-  method-end-to-end:
-    name: a node built from its method, end to end
-    runs-on: ubuntu-latest
-    timeout-minutes: 60
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            target
-          key: ${{ runner.os }}-method-e2e-${{ hashFiles('**/Cargo.lock', 'rust-toolchain.toml') }}
-          restore-keys: ${{ runner.os }}-method-e2e-
-      - name: the runners — Octave for MATLAB code, a browser for the form
-        run: |
-          sudo apt-get update -q
-          sudo apt-get install -y -q --no-install-recommends octave
-          pip install --quiet playwright
-          python3 -m playwright install --with-deps chromium
-      - name: orbit_velocity's form, filled with the worked example
-        run: cargo run -p xtask -- form orbit_velocity --example --out "$RUNNER_TEMP/example.node-form.html"
-      - name: the form's own check, in a browser — sound, then not sound once a case is wrong
-        run: python3 tools/form_check.py "$RUNNER_TEMP/example.node-form.html"
-      # Each step below also says what it must have printed, so the job cannot
-      # pass by doing less than it claims: an exit code alone would not notice
-      # a stage that quietly found nothing to do.
-      - name: intake applies it
-        run: |
-          set -o pipefail
-          git config user.name "vleo pipeline"
-          cargo run -p xtask -- intake "$RUNNER_TEMP/example.node-form.html" --apply | tee "$RUNNER_TEMP/intake.log"
-          grep -q "sound — the method checks and agrees with every case" "$RUNNER_TEMP/intake.log"
-          grep -q "^applied:" "$RUNNER_TEMP/intake.log"
-      - name: the node engineer's MATLAB code, rerun through Octave
-        run: |
-          set -o pipefail
-          cargo run -p xtask -- rerun orbit_velocity --require | tee "$RUNNER_TEMP/rerun.log"
-          grep -q "ok   orbit_velocity: the node engineer's code gives all 4 recorded case(s)" "$RUNNER_TEMP/rerun.log"
-      - name: build the node from its method, every stage
-        run: |
-          set -o pipefail
-          cargo run -p xtask -- build-node orbit_velocity 2>&1 | tee "$RUNNER_TEMP/build.log"
-          test -f crates/vleo-core/src/physics/methods/orbit_velocity.rs
-          grep -q "orbit_velocity::evaluate(r.get())" crates/vleo-mod-envorbit/nodes/orbit_velocity/model.rs
-          grep -q "build-node: orbit_velocity is built from its method" "$RUNNER_TEMP/build.log"
-      - name: the node's own tests are the node engineer's cases and the translation
-        run: |
-          set -o pipefail
-          cargo test -p vleo-mod-envorbit -- orbit_velocity --list | tee "$RUNNER_TEMP/list.log"
-          for t in case_1 case_2 case_3 case_4 the_translation_gives_the_methods_answers; do
-            grep -q "orbit_velocity::evidence::$t: test" "$RUNNER_TEMP/list.log"
-          done
-      - name: the whole design, with that node built from its method
-        run: cargo test --workspace
-
   # A GROUP'S RELEASE, THROUGH THE DEVELOPER'S LOOP, on every pull request. The
   # example group is sealed in the group application by a browser, exactly as
   # its lead would, and that file is taken in, built from its methods, tested
@@ -333,12 +269,12 @@ jobs:
           cargo run -p xtask -- group-accept "$RUNNER_TEMP/answer.toml" --delivery "$RUNNER_TEMP/deliver/DELIVERY.toml" --no-push | tee "$RUNNER_TEMP/accept.log"
           grep -q "accepted example_orbit 1.0" "$RUNNER_TEMP/accept.log"
           test -f acceptances/example_orbit-1.0.toml
-          cargo run -p xtask -- approve --verify group/example_orbit-1.0
+          cargo run -p xtask -- group-accept --verify group/example_orbit-1.0
       - name: a change after the acceptance is refused
         run: |
           echo "# after" >> groups/example/theory.md
           git commit -q -am "docs(tree): a change after the acceptance"
-          if cargo run -p xtask -- approve --verify group/example_orbit-1.0; then
+          if cargo run -p xtask -- group-accept --verify group/example_orbit-1.0; then
             echo "an acceptance held for a build that changed after it"; exit 1
           fi
 
@@ -400,8 +336,6 @@ jobs:
         run: python3 tools/input_check.py --selftest
       - name: the manual check checks itself
         run: python3 tools/manual_check.py --selftest
-      - name: the node form's browser check
-        run: python3 tools/form_check.py --selftest
       - name: the release's no-checker-inside guard checks itself
         run: python3 tools/checker_not_built_in.py --selftest
       # The walk-forward that reproduces sw_mean_band_spread's sigma disagrees
@@ -667,18 +601,14 @@ jobs:
       - name: what the band confidence costs
         run: python3 tools/band_confidence_cost.py
 
-  # A FORM BRANCH MERGES ONLY WITH ITS AUTHOR'S APPROVAL OF EXACTLY WHAT IT
-  # HOLDS. The author tried a preview build of this branch and pressed Approve;
-  # the file it saved is recorded in approvals/ by `xtask approve`, and names
-  # the commit it was given for. Anything changed since — a fix, a merge from
-  # maintainer — means a new preview and a new approval, because the author
-  # approved a build, not a branch name. A group branch, group/<group>-<v>,
-  # is asked the same of its group: acceptances/ holds the lead's answer to the
-  # test application, recorded by `xtask group-accept`, binding its commit.
-  # Only form and group branches are asked this.
+  # A GROUP BRANCH MERGES ONLY WITH ITS GROUP'S ACCEPTANCE OF EXACTLY WHAT IT
+  # HOLDS. A group branch, group/<group>-<v>, carries the lead's answer to the
+  # test application, recorded in acceptances/ by `xtask group-accept`, and it
+  # binds the commit the delivery names: anything changed since means a new
+  # test application and a new acceptance. Only group branches are asked this.
   approval:
     name: the author approved this exact change
-    if: github.event_name == 'pull_request' && (startsWith(github.head_ref, 'form/') || startsWith(github.head_ref, 'group/'))
+    if: github.event_name == 'pull_request' && startsWith(github.head_ref, 'group/')
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -686,7 +616,7 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
-      - run: cargo run -p xtask -- approve --verify "${{ github.head_ref }}"
+      - run: cargo run -p xtask -- group-accept --verify "${{ github.head_ref }}"
 
   # The two faces the workspace excludes, because they need targets of their
   # own. `cargo build --workspace` does not reach them, so until this job
@@ -735,9 +665,10 @@ jobs:
         run: |
           cargo run --locked -q -p vleo-files --example a_signed_release -- "$RUNNER_TEMP/signed"
           node tools/files_check.mjs "$RUNNER_TEMP/signed"
-      # The method checker every node form carries. Its committed build is held
-      # to its sources by a test; this proves the sources still build at all.
-      - name: the node form's method checker
+      # The method checker the lesson form and the group application carry.
+      # Its committed build is held to its sources by a test; this proves the
+      # sources still build at all.
+      - name: the method checker the pages carry
         working-directory: crates/vleo-method-wasm
         run: cargo build --locked --target wasm32-unknown-unknown --release
       # The engine a readers' page carries (xtask readers): the whole kernel,

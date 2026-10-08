@@ -1,8 +1,8 @@
 # Authoring a node
 
-> **Answer first.** What a node's sheet holds, field by field, and why each field is there — for whoever fills the node's form and for the developer who applies it.
+> **Answer first.** What a node's sheet holds, field by field, and why each field is there — for the node engineer who writes the node and for the developer who takes it in.
 >
-> **Kind:** reference + explanation · **For:** everyone who fills or applies a node form
+> **Kind:** reference + explanation · **For:** every node engineer, and the developer who takes their node in
 
 ## What a node is, in plain words
 
@@ -29,22 +29,20 @@ the entire point of the design. Write the physics once; get eight artefacts.
 ## Who writes it, and how it arrives
 
 The sheet below is what a node **is**, and most of it is written by somebody
-who will never open this repository: the person who knows the answer — a
-payload team, a domain engineer, a customer's engineer — fills in **the node's
-form**. That is one HTML file per node (`cargo run -p xtask -- form <node>`, or
-the node's page in the tool), or per new node (`form --new`), which asks every
-question below with *why* it is asked, in the order this page explains them,
-and saves a filled copy of itself.
+who will never open this repository: its node engineer, the person who knows
+the answer. They write it in the node's own file, in the node application, and
+it reaches the design with its group's sealed release
+([`docs/GROUP_APPS.md`](GROUP_APPS.md)).
 
-A developer then runs the checker on it — `cargo run -p xtask -- intake
-<file.html>` — which says what it would change here, field by field, and
-whether every input it declares is a row that exists, of the quantity the node
-expects. `--apply` writes it into this file, regenerates and gates, or puts
-everything back. Everything after that — publishing, the holes, the fixtures —
-is the developer's, and is described below.
+A developer takes the release in with `cargo run -p xtask -- group-intake
+<dir>`, which says what each computed node would change here, field by field,
+and refuses a conflict, or a method or results an assistant supplied.
+`--apply` writes it into this file, regenerates and gates, or puts everything
+back. Everything after that — publishing, the holes, the fixtures — is the
+developer's, and is described below.
 
-So this page is written for both: for whoever fills the form, what each answer
-is for; for the developer, what the loader does with it.
+So this page is written for both: for the node engineer, what each answer is
+for; for the developer, what the loader does with it.
 
 ## The sheet
 
@@ -287,16 +285,15 @@ breaks = "It is an average over the whole mission, and a spacecraft meets its wo
 wrong  = "That the long-term average of the record, about 115 sfu, is the right centre for any mission. …"
 ```
 
-The first step of every node page, and the last questions on its form
+The first step of every node page
 (`docs/EXPLAINING.md`, E2, E4, E5). **`simply`** says what the row works out and
 why it matters with no symbol and no word a newcomer would have to look up —
 the question a writer who cannot answer has found a gap in their own
 understanding. **`breaks`** says where that plain version stops being true.
 **`wrong`** names the wrong idea readers most often bring, and what is true
 instead; it is optional, because not every row has one. **`by`** names who wrote
-the plain words, and the page says so beside them. Intake writes the form's
-filler there whenever a form changes them; words an assistant drafted from the
-sheet say that, and that the owner is to confirm them — a draft that reads as
+the plain words, and the page says so beside them. Words an assistant drafted
+from the sheet say that, and that the owner is to confirm them — a draft that reads as
 the owner's own is the quietest way a page misleads (E15).
 
 All three are prose, outside the sheet hash: correcting a sentence regenerates
@@ -311,7 +308,7 @@ n = 2
 release = "next"            # stamped by `xtask release <version>`
 date = "2026-09-15"
 by = "A. Person (Solar team)"
-about = ["math", "model"]   # read off what the form changed — never typed
+about = ["math", "model"]   # read off what the change touched — never typed
 believed = "…"              # what we believed
 tested = "…"                # what we tested, and where it is written down
 learned = "…"               # what we now know: the issue with the previous version
@@ -325,9 +322,10 @@ source = "noaa_swpc"
 ```
 
 A node changes because a belief broke, and this is the record of each time
-(`docs/DERISKING.md`). **Nobody writes it by hand in the normal course**: intake
-appends it from the form that carried the change, numbered after the last, and
-refuses to apply a change to what the node computes without one. The first
+(`docs/DERISKING.md`). **Nobody writes it by hand in the normal course**: `group-intake`
+appends it from the newest row of `versions.csv` in the group's release that
+carried the change, numbered after the last, and refuses to apply a change to
+what the node computes without one. The first
 version needs only `rests_on` and `breaks_if`; every later one needs
 `believed`, `tested`, `learned` and `changed` too. `about` is one or more of
 node, input, output, model, math, algorithm, visualisation. Versions are
@@ -361,9 +359,9 @@ about to fill their first node, and "no data" teaches nothing.
 
 | tab | empty state |
 |---|---|
-| said simply, then the real thing | Not yet specified. Needs a question, an expression and a source — its node form is how it gets them. A written row with no `[explain]` says: nobody has said this row simply yet. |
+| said simply, then the real thing | Not yet specified. Needs a question, an expression and a source — its node engineer gives them. A written row with no `[explain]` says: nobody has said this row simply yet. |
 | theory | Nobody has written the theory for this row yet — the relation is stated before it and generated after it, and why it is that relation is missing. |
-| de-risking | No belief recorded yet. This row's next form says what it rests on and what would break it. |
+| de-risking | No belief recorded yet. This row's next change says what it rests on and what would break it, and from then on every change says which belief broke (D1). |
 | interface | Inputs and outputs are declared. Units are not — a unit is a decision. |
 | algorithm | No steps yet. Each step becomes one hole in the generated code. |
 | the relation, moving | Nothing to walk: the sheet is seeded and the node returns NotRun. |

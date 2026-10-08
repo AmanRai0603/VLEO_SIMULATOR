@@ -77,7 +77,7 @@ pub(super) fn cmd_group_build(root: &Path, args: &[&str]) -> Result<(), String> 
         }
         let Some(sh) = tree.sheets.get(&id) else {
             skipped.push(format!(
-                "{id} — not in the design; a new node arrives by its own form"
+                "{id} — not in the design, and a group release does not add a node here"
             ));
             continue;
         };

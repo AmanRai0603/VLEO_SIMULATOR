@@ -206,7 +206,7 @@ pub struct Flight {
 /// what would break it, which is the next version's first question asked in
 /// advance.
 ///
-/// Written by `xtask intake --apply` from the form that carried the change, and
+/// Written by `xtask group-intake --apply` from the release that carried the change, and
 /// never edited after: a version is a record. `release` is `next` until a
 /// release is cut, when `xtask release` stamps it with the tool's version.
 #[derive(Clone, Debug, Default)]

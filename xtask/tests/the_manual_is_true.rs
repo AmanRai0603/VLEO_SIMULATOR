@@ -670,7 +670,7 @@ fn the_checks_refuse_what_they_exist_to_refuse() {
         "cargo run -p vleo-cli --bin vleo -- run sw_ap_design",
         "VLEO_PORT=8080 cargo run --release -p vleo-daemon",
         "curl -s 'http://127.0.0.1:7777/v1/run?node=sw_ap_design'",
-        "curl -s http://127.0.0.1:7777/v1/form/sw_ap_design",
+        "curl -s http://127.0.0.1:7777/v1/lesson-form/sw_ap_design",
     ] {
         command_ok(good, &k).unwrap_or_else(|e| panic!("`{good}` was refused: {e}"));
     }

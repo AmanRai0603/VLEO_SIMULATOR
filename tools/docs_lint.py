@@ -308,7 +308,7 @@ ROLE_PAGES = [
     "README.md", "AGENTS.md", "CONTRIBUTING.md", "areas/*.md",
     "docs/*.md", "docs/*.html", "docs/roles/*.html", "docs/manual.toml",
     "docs/examples/*.html", "web/*.html", "web/*.css", "web/js/*.js",
-    "web/pages/*", "approvals/README.md", "acceptances/README.md",
+    "web/pages/*", "acceptances/README.md",
     ".github/pull_request_template.md", "groups/SPEC.toml",
     "groups/skill/*/*.md", ".claude/skills/*/*.md", "contract/README.md",
     "xtask/src/main.rs", "xtask/src/pipeline.rs",
@@ -327,7 +327,7 @@ ROLE_EXEMPT = {
 #: `<code>` on a page), a
 #: placeholder, a word quoted as a word, an identifier, and the pipeline's
 #: check *the author approved this exact change*, which is a job's name and
-#: retires with the form loop at the switch-over.
+#: retires with the group loop at the switch-over.
 ROLE_MASK = re.compile(
     r"`[^`\n]*`|<code>[^<]*</code>|<[a-z_]+>|“[^”]*”|‘[^’\n]*’"
     r"|the author approved this exact[\s\\]+change"

@@ -149,27 +149,23 @@ One command must be green before anything is pushed:
 
 ## Until the switch-over
 
-The design is still in this repository, and the loop that changes it stays in
-use exactly as it is today, so nothing changes for anyone before the planned day
-(`docs/PLAN_1_0.md`, phase H). This section is deleted on that day.
+The design is still in this repository until the planned day
+(`docs/PLAN_1_0.md`, phase H), and it is retired from here a part at a time
+(phase E). The single-node form and its loop are gone; a group's sealed release
+is the one way in that is left. This section is deleted on that day.
 
-- **A change to one node** arrives as its form, and goes through `xtask take`:
-  its own branch `form/<name>/<node>` from `maintainer`, checked, applied with
-  its de-risking record, gated, tested, committed naming the person who filled
-  it, pushed, previewed, and merged only with their approval of that build
-  (`docs/roles/maintainer.html`).
 - **A group's work** arrives as its sealed release, and goes through
   `group-intake`, `group-build`, `group-test`, `group-deliver` and
   `group-accept` on its own branch `group/<group>-<version>` from `maintainer`.
   The release is never edited there; a fix goes back to the group
   (`docs/GROUP_APPS.md`).
-- **The node sheet is the only source.** `node.toml` is written by intake from
-  a form; every other file in a node folder is generated from it, and a hand
+- **The node sheet is the only source.** `node.toml` is written by
+  `group-intake` from a sealed release; every other file in a node folder is generated from it, and a hand
   edit outside a numbered `HOLE` block fails the regeneration diff.
 - **`design/` is the design as its files,** converted from the sheets and held
   equal to them by a test. A change to a sheet converts it again in the same
   commit: delete `design/`, then `cargo run -p xtask -- convert --out design`
-  (`intake`, `group-intake` and `build-node` do it themselves).
+  (`group-intake` and `build-node` do it themselves).
 - **`xtask explain <command>`** says what each of those commands reads, writes
   and checks, and how to undo it (`docs/PIPELINE.md`).
 
@@ -191,8 +187,8 @@ use exactly as it is today, so nothing changes for anyone before the planned day
     VLEO_BASELINE=write cargo test -p vleo-cli --test today_s_answers_are_on_record
                                              today's answers recorded again, in
                                              the same commit as a deliberate
-                                             change to the design (`take` and
-                                             `group-build` do it themselves)
+                                             change to the design
+                                             (`group-build` does it itself)
     cargo run -p vleo-cli --bin vleo -- run <node> [--save <file.csv>] [--keep]
 
 The commands of today's loop are in `docs/PIPELINE.md` until the switch-over.

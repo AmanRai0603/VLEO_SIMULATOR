@@ -268,7 +268,7 @@ td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
       <text x="36" y="64" class="d-tb">① The design — git</text>
       <text x="36" y="86" class="d-ts">1,396 sheets (node.toml)</text>
       <text x="36" y="104" class="d-ts">lesson.toml pages · diagrams</text>
-      <text x="36" y="122" class="d-ts">changed by forms → pull requests</text>
+      <text x="36" y="122" class="d-ts">changed by sealed releases → PRs</text>
       <text x="36" y="140" class="d-ts">history, review, blame for free</text>
       <rect x="20" y="176" width="230" height="96" rx="6" class="d-teal"/>
       <text x="36" y="200" class="d-tb">② Reference data — bundles</text>
@@ -314,12 +314,12 @@ td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
       <text x="20" y="318" class="d-tm">WHO CHANGES WHAT</text>
       <rect x="20" y="330" width="200" height="80" rx="6" class="d-box"/>
       <text x="34" y="354" class="d-tb">Node engineers</text>
-      <text x="34" y="374" class="d-ts">fill a node or lesson form;</text>
+      <text x="34" y="374" class="d-ts">a node file, a lesson form;</text>
       <text x="34" y="392" class="d-ts">never touch the repository</text>
       <rect x="236" y="330" width="200" height="80" rx="6" class="d-box"/>
       <text x="250" y="354" class="d-tb">Intake (the developer)</text>
-      <text x="250" y="374" class="d-ts">take forms, preview, approve,</text>
-      <text x="250" y="392" class="d-ts">merge, release</text>
+      <text x="250" y="374" class="d-ts">take releases in, build, test,</text>
+      <text x="250" y="392" class="d-ts">record acceptance, release</text>
       <rect x="452" y="330" width="200" height="80" rx="6" class="d-box"/>
       <text x="466" y="354" class="d-tb">The developer</text>
       <text x="466" y="374" class="d-ts">frontend, backend, data —</text>
@@ -466,10 +466,10 @@ td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
       <tr><td class="num">≈ 265 KB, fonts and code inside</td><td class="num">≈ 30 KB of content; the rest shared</td></tr>
       <tr><td>its calculators carry their own formulas</td><td>widgets computed by the kernel — they cannot disagree with the tool</td></tr>
       <tr><td>fonts fetched from the internet at every open</td><td>fonts bundled with the tool; works offline, contacts nobody</td></tr>
-      <tr><td>edited as one large HTML file</td><td>edited as content through a lesson form, reviewed like a node form</td></tr>
+      <tr><td>edited as one large HTML file</td><td>edited as content through a lesson form, checked by the gate's lesson check</td></tr>
     </tbody>
   </table></div>
-  <p class="col muted">The first lesson is <i>Eight loops, one beam</i>, on the propulsion subsystem's row. A group has no sheet, so a lesson cannot hang on it; the row is <code>l3_prop_interface</code>, the subsystem's interface, and its form is made. Its physics is checked against the rows that exist first; rows it needs that do not exist yet (the RF circuit, the grids) arrive as new-node forms before the lesson that uses them.</p>
+  <p class="col muted">The first lesson is <i>Eight loops, one beam</i>, on the propulsion subsystem's row. A group has no sheet, so a lesson cannot hang on it; the row is <code>l3_prop_interface</code>, the subsystem's interface, and its form is made. Its physics is checked against the rows that exist first; rows it needs that do not exist yet (the RF circuit, the grids) arrive in the propulsion group's sealed release before the lesson that uses them.</p>
 </section>
 
 <!-- ─────────────────────────────────────────────────────────────── 6 ── -->
@@ -522,7 +522,7 @@ td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
   <h2>Who reaches what, and how it stays in step</h2>
   <p class="answer"><b>Answer first.</b> Everyone gets the tool from one place — a release — and nobody has to install anything just to read. The design reaches people as a new version; results reach people through a shared folder or as a single file; pages and reports open in any browser.</p>
   <figure class="fig">
-    <svg viewBox="0 0 880 330" role="img" aria-label="The developer and maintainer branches merge into main; main produces a release; the release reaches everyone's laptops, which share a results folder, a docs folder for readers, and result files anyone can open. Node engineers reach the repository through forms.">
+    <svg viewBox="0 0 880 330" role="img" aria-label="The developer and maintainer branches merge into main; main produces a release; the release reaches everyone's laptops, which share a results folder, a docs folder for readers, and result files anyone can open. Node engineers reach the repository through their group's sealed release.">
       <defs><marker id="a-ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="d-ah"/></marker></defs>
       <text x="20" y="22" class="d-tm">THE REPOSITORY</text>
       <rect x="20" y="34" width="270" height="176" rx="8" class="d-band"/>
@@ -531,7 +531,7 @@ td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
       <text x="92" y="88" text-anchor="middle" class="d-ts">software</text>
       <rect x="162" y="50" width="112" height="46" rx="6" class="d-in"/>
       <text x="218" y="72" text-anchor="middle" class="d-tb">maintainer</text>
-      <text x="218" y="88" text-anchor="middle" class="d-ts">forms, design</text>
+      <text x="218" y="88" text-anchor="middle" class="d-ts">sealed releases</text>
       <rect x="92" y="130" width="126" height="62" rx="6" class="d-out"/>
       <text x="155" y="154" text-anchor="middle" class="d-tb">main</text>
       <text x="155" y="172" text-anchor="middle" class="d-ts">merged PR only</text>
@@ -562,8 +562,8 @@ td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
       <text x="536" y="288" class="d-ts">.vleo to reopen; report.html to read,</text>
       <text x="536" y="303" class="d-ts">print or PDF — figures included</text>
       <rect x="20" y="236" width="270" height="72" rx="6" class="d-in"/>
-      <text x="36" y="260" class="d-tb">Node engineers' forms</text>
-      <text x="36" y="278" class="d-ts">own branch, preview, approval,</text>
+      <text x="36" y="260" class="d-tb">Groups' sealed releases</text>
+      <text x="36" y="278" class="d-ts">own branch, test application, acceptance,</text>
       <text x="36" y="294" class="d-ts">then merged into maintainer</text>
     </svg>
     <figcaption>The deployment is laptops plus a shared results folder (see Decisions). GitHub Pages could host the docs folder, but for a private repository it needs a paid plan; a shared drive or any internal web server works on any plan.</figcaption>
@@ -571,7 +571,7 @@ td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
   <div class="tbl"><table>
     <thead><tr><th>What</th><th>How it stays in step</th><th>Who maintains it</th></tr></thead>
     <tbody>
-      <tr><td>The design and pages</td><td>A new release; the tool shows its version and what moved since a result was saved.</td><td>The developer, through forms</td></tr>
+      <tr><td>The design and pages</td><td>A new release; the tool shows its version and what moved since a result was saved.</td><td>The developer, through each group's sealed release</td></tr>
       <tr><td>Reference data</td><td>A new bundle version, verified by hash before any run uses it.</td><td>The developer</td></tr>
       <tr><td>Team results</td><td>The shared folder (<code>VLEO_RESULTS</code>). Each person's index is rebuilt from it, so there is nothing to merge; names are unique and every write is whole, so nobody overwrites or half-writes another's result.</td><td>Everyone adds; pins protect</td></tr>
       <tr><td>The tool itself</td><td>Pull requests into <code>developer</code>, then <code>main</code>, then a release.</td><td>Frontend, backend and data developers</td></tr>
@@ -585,18 +585,18 @@ td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
   <h2>A node's journey, and every script able to explain itself</h2>
   <p class="answer"><b>Answer first.</b> Every command says, in the same way, which step it is on, what it read and wrote, and — if it stops — which step, why, what state the files are in, and the exact command to try again. One table in the code describes every script; the help text and a generated <code>docs/PIPELINE.md</code> come from it, and a test fails if they ever disagree.</p>
   <figure class="fig">
-    <svg viewBox="0 0 880 200" role="img" aria-label="A node's journey: form, take, check, apply, publish, build, gate and test, preview and approve, pull request into maintainer, main, release.">
+    <svg viewBox="0 0 880 200" role="img" aria-label="A node's journey: a group's sealed release, unpacked, checked, applied, built from its methods, tested against the group's results, gated and tested, delivered and accepted, pull request into maintainer, main, release.">
       <defs><marker id="s-ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" class="d-ah"/></marker></defs>
-      <rect x="14" y="30" width="96" height="56" rx="6" class="d-in"/><text x="62" y="54" text-anchor="middle" class="d-tb">Form</text><text x="62" y="72" text-anchor="middle" class="d-ts">expert fills</text>
-      <rect x="132" y="30" width="96" height="56" rx="6" class="d-box"/><text x="180" y="54" text-anchor="middle" class="d-tb">take</text><text x="180" y="72" text-anchor="middle" class="d-ts">own branch</text>
+      <rect x="14" y="30" width="96" height="56" rx="6" class="d-in"/><text x="62" y="54" text-anchor="middle" class="d-tb">Release</text><text x="62" y="72" text-anchor="middle" class="d-ts">group sealed</text>
+      <rect x="132" y="30" width="96" height="56" rx="6" class="d-box"/><text x="180" y="54" text-anchor="middle" class="d-tb">unpack</text><text x="180" y="72" text-anchor="middle" class="d-ts">its folder</text>
       <rect x="250" y="30" width="96" height="56" rx="6" class="d-box"/><text x="298" y="54" text-anchor="middle" class="d-tb">intake</text><text x="298" y="72" text-anchor="middle" class="d-ts">check only</text>
-      <rect x="368" y="30" width="96" height="56" rx="6" class="d-box"/><text x="416" y="54" text-anchor="middle" class="d-tb">apply</text><text x="416" y="72" text-anchor="middle" class="d-ts">all or nothing</text>
-      <rect x="486" y="30" width="96" height="56" rx="6" class="d-box"/><text x="534" y="54" text-anchor="middle" class="d-tb">publish</text><text x="534" y="72" text-anchor="middle" class="d-ts">code generated</text>
-      <rect x="604" y="30" width="96" height="56" rx="6" class="d-box"/><text x="652" y="54" text-anchor="middle" class="d-tb">build-node</text><text x="652" y="72" text-anchor="middle" class="d-ts">from method</text>
+      <rect x="368" y="30" width="96" height="56" rx="6" class="d-box"/><text x="416" y="54" text-anchor="middle" class="d-tb">--apply</text><text x="416" y="72" text-anchor="middle" class="d-ts">all or nothing</text>
+      <rect x="486" y="30" width="96" height="56" rx="6" class="d-box"/><text x="534" y="54" text-anchor="middle" class="d-tb">build</text><text x="534" y="72" text-anchor="middle" class="d-ts">from methods</text>
+      <rect x="604" y="30" width="96" height="56" rx="6" class="d-box"/><text x="652" y="54" text-anchor="middle" class="d-tb">test</text><text x="652" y="72" text-anchor="middle" class="d-ts">own results</text>
       <rect x="722" y="30" width="140" height="56" rx="6" class="d-both"/><text x="792" y="54" text-anchor="middle" class="d-tb">gate + test</text><text x="792" y="72" text-anchor="middle" class="d-ts">the green line</text>
       <path d="M110 58 L130 58" class="d-a" marker-end="url(#s-ah)"/><path d="M228 58 L248 58" class="d-a" marker-end="url(#s-ah)"/><path d="M346 58 L366 58" class="d-a" marker-end="url(#s-ah)"/><path d="M464 58 L484 58" class="d-a" marker-end="url(#s-ah)"/><path d="M582 58 L602 58" class="d-a" marker-end="url(#s-ah)"/><path d="M700 58 L720 58" class="d-a" marker-end="url(#s-ah)"/>
       <path d="M792 86 C 792 112, 760 112, 740 126" class="d-a" marker-end="url(#s-ah)"/>
-      <rect x="604" y="126" width="140" height="56" rx="6" class="d-out"/><text x="674" y="150" text-anchor="middle" class="d-tb">preview · approve</text><text x="674" y="168" text-anchor="middle" class="d-ts">the node engineer tries it</text>
+      <rect x="604" y="126" width="140" height="56" rx="6" class="d-out"/><text x="674" y="150" text-anchor="middle" class="d-tb">deliver · accept</text><text x="674" y="168" text-anchor="middle" class="d-ts">subsystem engineer</text>
       <rect x="444" y="126" width="138" height="56" rx="6" class="d-in"/><text x="513" y="150" text-anchor="middle" class="d-tb">→ maintainer</text><text x="513" y="168" text-anchor="middle" class="d-ts">pull request</text>
       <rect x="286" y="126" width="136" height="56" rx="6" class="d-in"/><text x="354" y="150" text-anchor="middle" class="d-tb">→ main</text><text x="354" y="168" text-anchor="middle" class="d-ts">pull request</text>
       <rect x="132" y="126" width="132" height="56" rx="6" class="d-out"/><text x="198" y="150" text-anchor="middle" class="d-tb">ship · release</text><text x="198" y="168" text-anchor="middle" class="d-ts">to everyone</text>
@@ -623,7 +623,7 @@ td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
       </ul></div>
     <div class="card"><h3>For every node</h3>
       <ul class="plain">
-        <li><code>xtask why &lt;node&gt;</code> — every recorded version and who made it, the commits that changed it, its approvals, how its code came to be, and its gate, run now</li>
+        <li><code>xtask why &lt;node&gt;</code> — every recorded version and who made it, the commits that changed it, how its code came to be, and its gate, run now</li>
         <li>step names in the code equal the printed names — a test holds them — so an error message finds its line</li>
       </ul></div>
   </div>
@@ -690,7 +690,7 @@ td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
       <tr><td class="num">11c</td><td>Typed errors: each library crate outside the kernel says why it refused by a kind a caller decides on — <code>vleo_data</code>, <code>vleo_modules</code>, <code>vleo_sheet</code> — with the sentence a person sees kept word for word</td><td>backend</td><td><span class="tag t-done">done</span></td></tr>
       <tr><td class="num">11d</td><td>A guide to changing the code (<code>docs/CHANGING.md</code>): a node, a route, a component, an output kind, the generators with one field followed from the sheet to the code and the page; and the docs it requires, checked — every hand-written Rust file says what it is, and every kind of figure is in the guide</td><td>all</td><td><span class="tag t-done">done</span></td></tr>
       <tr><td class="num">—</td><td>Grows with use: richer 3D (see section 4); Parquet when a dataset passes ~100,000 values; the SQLite index past ~50,000 results; a shared server only if live shared runs or access control are needed</td><td>all</td><td><span class="tag t-grow">continuous</span></td></tr>
-      <tr><td class="num">—</td><td>Content, by people: 124 of 190 computing rows have no outside check and 137 have no theory. Filled through forms, alongside every phase</td><td>design</td><td><span class="tag t-grow">continuous</span></td></tr>
+      <tr><td class="num">—</td><td>Content, by people: 124 of 190 computing rows have no outside check and 137 have no theory. Filled by node engineers in their own files, alongside every phase</td><td>design</td><td><span class="tag t-grow">continuous</span></td></tr>
     </tbody>
   </table></div>
   <p class="col muted">Not on the roadmap, deliberately: a database server now; a web framework; moving the design out of git; a hidden cache — a full run of all 1,396 rows takes 12 ms, so the reason to reuse a kept answer is that it is named, shared and kept once, never speed, and it is always shown as the saved result it is. New dependencies arrive only with the phase that needs them — a zip library (8); bundled fonts and a WebGL library for 3D (9); Parquet and SQLite when their thresholds are reached — each recorded in <code>ADOPTION.lock</code> with its licence and fallback. The kernel stays free of all of them.</p>

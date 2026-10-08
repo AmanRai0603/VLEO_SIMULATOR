@@ -193,22 +193,28 @@ every hash. → the manual, *Reference data*
 
 ## Changing the design
 
-**Form** — a row's sheet as a page a person fills in and sends back. It is the
-only way the design changes. → `AGENTS.md`
+**Node file** — `<node>.vnode`: one node's content, written only by its node
+engineer, in the node application. A node changes here. → `docs/GROUP_APPS.md`
 
-**Intake** — the check a form passes before anything is written. `--apply`
-writes it. → `AGENTS.md`, steps 1–2
+**Sealed release** — `<group>-<version>.vleo`: a group's structure with every
+node's content in it, signed, and sealed by its subsystem engineer. Until the
+switch-over it is the design's one way into this repository, and it is never
+edited. → `docs/GROUP_APPS.md`
 
-**Take** — `xtask take`: a form onto its own branch, `form/<author>/<node>`,
-checked, applied, tested, committed naming its node engineer, and pushed.
-→ `docs/roles/maintainer.html`
+**Intake** — `xtask group-intake`: the check a sealed release passes before
+anything is written. `--apply` writes it. → `docs/GROUP_APPS.md`
 
-**Preview** — the tool built from one form branch, sent to the form's node engineer to
-try before anything merges. → `docs/roles/maintainer.html`
+**Group branch** — `group/<group>-<version>`, from `maintainer`: one sealed
+release, applied, built from its methods and tested against the group's own
+results. → `docs/GROUP_APPS.md`
 
-**Approval** — the file the node engineer's preview saves when they approve that exact
-build. `xtask approve` records it, and a form branch merges only with it.
-→ `docs/roles/maintainer.html`
+**Test application** — the tool built by `xtask group-deliver` from a commit on
+the group branch, sent to the subsystem engineer to try before anything merges.
+→ `docs/GROUP_APPS.md`
+
+**Acceptance** — the subsystem engineer's answer to that exact build,
+`<group>-<version>.accept.toml`. `xtask group-accept` records it, and a group
+branch merges only with it. → `docs/GROUP_APPS.md`
 
 **Gate** — `xtask gate`: the checks every change must pass, in order. With
 `cargo test`, it is the one command that must be green before a push.
@@ -221,8 +227,8 @@ build. `xtask approve` records it, and a form branch merges only with it.
 **`developer`** — the branch the software goes to: generators, daemon, faces
 and tests, by pull request. → `CONTRIBUTING.md`
 
-**`maintainer`** — the branch the design goes to: each form branch, by pull
-request, with its node engineer's approval. → `CONTRIBUTING.md`
+**`maintainer`** — the branch the design goes to: each group branch, by pull
+request, with its subsystem engineer's acceptance. → `CONTRIBUTING.md`
 
 **`main`** — what ships. It moves only by pull requests from `developer`,
 `maintainer` and `release/<version>`. → `CONTRIBUTING.md`

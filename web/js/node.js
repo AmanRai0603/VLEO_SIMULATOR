@@ -16,7 +16,6 @@ import { mountRelation } from './relation.js';
 import { mountTheory } from './theory.js';
 import { figuresForRow, drawRowFigure } from './solar.js';
 import { isInput, inputControl, mountInput } from './inputs.js';
-import { mountNodeForm } from './nodeform.js';
 import { renderLesson } from './components.js';
 
 export async function openNode(id) {
@@ -56,13 +55,9 @@ export async function openNode(id) {
       connectivityHtml(r) + '</section>' +
     '<section class="seg" data-seg="sheet"><h3 class="seg-h">' +
       '<span class="seg-n">3</span>the sheet — what it says</h3>' +
-      // READ IT HERE; CHANGE IT BY FORM. The generated page is what the sheet
-      // says. Nothing in this tool writes a node: a change is a node form,
-      // filled by whoever knows the answer and applied by a developer, who
-      // checks its interfaces first — so the design moves only through review.
+      // READ IT HERE. The generated page is what the sheet says. Nothing in
+      // this tool writes a node: its owner writes it, in their own file.
       '<div class="tabrow sub sheet-tabs">' +
-        '<button class="ctl sheet-tab sel" data-view="read">as written</button>' +
-        '<button class="ctl sheet-tab" data-view="form">the node form — fill it anywhere</button>' +
         // A LESSON IS WRITTEN THE SAME WAY: a form the node engineer fills anywhere and
         // sends back, applied by a developer. Downloading it writes nothing.
         '<a class="ctl lesson-form-dl" href="/v1/lesson-form/' + encodeURIComponent(id) + '" download="' +
@@ -73,7 +68,6 @@ export async function openNode(id) {
         (fragment || '<p class="empty">The sheet for <code>' + esc(id) +
           '</code> is not on disk. Run <code>cargo xtask docs</code>.</p>') +
       '</div>' +
-      '<div class="sheet-form" hidden></div>' +
     '</section>' +
     // A FIGURE IS NOT A ROW, and it is not a place of its own either. The eight
     // study figures used to live behind a sixth item in a navigation whose own
@@ -115,17 +109,6 @@ export async function openNode(id) {
       };
     });
   }
-
-  $$('.sheet-tabs .sheet-tab', body).forEach(t => {
-    t.addEventListener('click', () => {
-      $$('.sheet-tabs .sheet-tab', body).forEach(x => x.classList.remove('sel'));
-      t.classList.add('sel');
-      $('.sheet-read', body).hidden = t.dataset.view !== 'read';
-      const nf = $('.sheet-form', body);
-      nf.hidden = t.dataset.view !== 'form';
-      if (!nf.hidden && !nf.childElementCount) mountNodeForm(nf, id);
-    });
-  });
 
   // The generated fragment styles its tabs as `.tab`; inside `.tabs` that is
   // the underline tab, not a layer tab.
