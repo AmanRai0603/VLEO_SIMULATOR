@@ -1196,6 +1196,29 @@ fn from_of(tree: &Tree, mine: &BTreeSet<&str>, var: &str) -> String {
 mod tests {
     use super::*;
 
+    /// The group application refuses the same assistants' names the engine
+    /// does: SPEC.toml's list for `declaration.csv` is the engine's own.
+    #[test]
+    fn the_spec_refuses_the_same_assistants_the_engine_does() {
+        let root = Path::new(env!("CARGO_MANIFEST_DIR")).parent().unwrap();
+        let spec: toml::Value = fs::read_to_string(root.join("groups/SPEC.toml"))
+            .unwrap()
+            .parse()
+            .unwrap();
+        let listed: Vec<String> = spec["file"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|f| f["path"].as_str() == Some("declaration.csv"))
+            .and_then(|f| f.get("assistants"))
+            .and_then(|a| a.as_array())
+            .expect("declaration.csv lists the assistants' names")
+            .iter()
+            .map(|v| v.as_str().unwrap().to_string())
+            .collect();
+        assert_eq!(listed, vleo_sheet::form::agent_identities(root));
+    }
+
     #[test]
     fn toml_becomes_json_with_every_kind_of_value() {
         let v: toml::Value = "a = \"x\\\"y\"\nb = 2\nc = [true, 1.5]\n[d]\ne = \"line\\nbreak\""
