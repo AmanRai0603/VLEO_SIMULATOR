@@ -406,10 +406,9 @@ fn open_converted(
 /// Says which graph runs. The command line, Python and the C interface open
 /// the design here, so every face runs the same graph the server does.
 ///
-/// A design that does not open or does not load is refused, naming why; the
-/// compiled graph is never run in its place. Where there is no design at all —
-/// no design named, no design's files and no folders — the engine runs the graph
-/// compiled into it, and says so.
+/// A design that does not open or does not load is refused, naming why, and
+/// so is no design at all — no design named, no design's files and no folders
+/// where the tool looked: the tool holds no design of its own to run instead.
 pub fn run_the_design(root: Option<PathBuf>) -> Result<String, String> {
     let root = root.unwrap_or_else(repo_root);
     let (tree, design, today) = open_tree(&root)?;
@@ -424,10 +423,11 @@ pub fn run_the_design(root: Option<PathBuf>) -> Result<String, String> {
 /// Run the engine on the graph read from `files`, and say which graph runs.
 fn run_on_the_files(files: &dyn Files, root: &Path, from_a_file: bool) -> Result<String, String> {
     if !from_a_file && !root.join("layers").is_dir() {
-        vleo_modules::run_compiled();
-        return Ok(
-            "the graph compiled into this build — no design's files where the tool looked".into(),
-        );
+        return Err(format!(
+            "no design where the tool looked: no design/ folder and no layers/ under {}, and \
+             VLEO_DESIGN names none. Open the tool where the design is, or name it with VLEO_DESIGN",
+            root.display()
+        ));
     }
     let tree = vleo_sheet::load::load_all_from(files, root)
         .map_err(|e| format!("the design's files do not load: {e}"))?;

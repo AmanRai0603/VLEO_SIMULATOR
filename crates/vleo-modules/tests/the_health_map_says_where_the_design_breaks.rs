@@ -14,10 +14,16 @@ use std::sync::OnceLock;
 use vleo_bus::{Case, RunMode};
 use vleo_modules::core_engine::graph::NodeIdx;
 use vleo_modules::health::{health, trace, Health, State};
-use vleo_modules::{opened, Graph, Scratch, COMPILED};
+use vleo_modules::{opened, Graph, Scratch};
 
 fn root() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..")
+}
+
+/// Today's design as the sheets hold it, read once.
+fn today() -> &'static Graph {
+    static G: std::sync::OnceLock<&'static Graph> = std::sync::OnceLock::new();
+    G.get_or_init(|| opened::graph(&vleo_sheet::load_all(&root()).unwrap()).unwrap())
 }
 
 /// The case with the reference data, verified once for every test here.
@@ -63,7 +69,7 @@ const CLOSURES: [&str; 5] = [
 
 #[test]
 fn the_design_today_is_open_and_its_solar_closures_close() {
-    let g: &'static Graph = &COMPILED;
+    let g = today();
     let map = health(g, &with_data());
     assert_eq!(map.nodes.len(), g.nodes.len());
     assert_eq!(
@@ -101,7 +107,7 @@ fn the_design_today_is_open_and_its_solar_closures_close() {
 
 #[test]
 fn without_its_data_a_row_refuses_and_every_row_it_blocks_names_it() {
-    let g: &'static Graph = &COMPILED;
+    let g = today();
     let map = health(g, &Case::default());
     let refused = map.node(k(g, "sw_central_expectation"));
     assert_eq!(refused.state, State::Refused);
@@ -247,22 +253,4 @@ fn two_broken_nodes_are_both_named_the_nearer_first() {
             ("sw_central_expectation", State::Unproven)
         ]
     );
-}
-
-#[test]
-fn the_same_design_unbroken_in_the_interpreter_closes_as_compiled() {
-    // The broken test's graph is the interpreter's; without the break it
-    // gives the compiled map, so what the break shows is the break.
-    let tree = vleo_sheet::load_all(&root()).unwrap();
-    let g = opened::graph(&tree).unwrap();
-    let case = with_data();
-    let (a, b) = (health(g, &case), health(&COMPILED, &case));
-    for (x, y) in a.nodes.iter().zip(&b.nodes) {
-        assert_eq!(
-            (x.state, x.margin),
-            (y.state, y.margin),
-            "{}",
-            g.nodes[x.node as usize].id
-        );
-    }
 }

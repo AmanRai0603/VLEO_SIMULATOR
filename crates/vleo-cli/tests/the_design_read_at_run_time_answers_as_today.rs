@@ -1,5 +1,5 @@
 //! The parity gate: the graph read from the design's files when the engine
-//! opens answers exactly as the compiled one does.
+//! opens answers exactly as the record of today's answers says.
 //!
 //! docs/PLAN_1_0.md, phase D: "For every row in every case, the new engine
 //! gives today's answer within the row's own tolerance, and refuses where
@@ -9,14 +9,14 @@
 //! byte — every value, every status and credibility, every refusal and its
 //! reason, at both ends of every input's range and on every fixture.
 //!
-//! And the graph itself is held to the compiled one, node for node, variable
-//! for variable and case for case, so a difference shows as the field that
-//! differs rather than only as an answer that moved.
+//! And the graph itself is held to the graph on record (`baseline/graph.txt`),
+//! node for node, variable for variable and case for case, so a difference
+//! shows as the field that differs rather than only as an answer that moved;
+//! and every method to its answers on record (`baseline/methods.csv`) at
+//! inputs today's answers never reach. The records were written while the
+//! compiled graph still existed, and were that graph exactly.
 //!
-//! Every row whose relation is a method runs in the interpreter, not as the
-//! translated code the compiled graph carries — here, and in the graph every
-//! face runs, which is this one: the record of today's answers is the check
-//! that the interpreter answers as the translation did, exactly.
+//! Every row whose relation is a method runs in the interpreter.
 
 mod baseline;
 
@@ -24,145 +24,15 @@ use std::sync::OnceLock;
 
 use baseline::{first_difference, methods_record, record_path, root, the_graph, today};
 use vleo_modules::core_engine::graph::Behaviour;
-use vleo_modules::{opened, Graph, COMPILED};
+use vleo_modules::{opened, Graph};
 
 fn read() -> &'static Graph {
     static G: OnceLock<&'static Graph> = OnceLock::new();
     G.get_or_init(|| opened::read(&root()).expect("the design's files make a graph"))
 }
 
-/// The graph read from the design's files, against the compiled graph while
-/// it exists: every row, variable and case the compiled graph holds, the same,
-/// field for field, each reference taken by name rather than by place, and
-/// nothing more but the open blocks the design's files propose where a
-/// breakdown holds none yet, which compute nothing.
-#[test]
-fn the_graph_read_at_run_time_is_the_compiled_graph_and_its_open_blocks() {
-    let g = read();
-    let extra: Vec<&str> = g
-        .nodes
-        .iter()
-        .filter(|n| COMPILED.find(n.id).is_none())
-        .map(|n| n.id)
-        .collect();
-    assert_eq!(extra.len(), g.nodes.len() - COMPILED.nodes.len());
-    for id in &extra {
-        let n = &g.nodes[g.find(id).unwrap() as usize];
-        assert_eq!(n.behaviour, Behaviour::Open, "{id} is not an open block");
-    }
-    // Each graph's references, by name.
-    let var = |g: &Graph, i: u16| g.vars[i as usize].id;
-    let node = |g: &Graph, i: u16| g.nodes[i as usize].id;
-    let vars = |g: &Graph, ix: &[u16]| ix.iter().map(|&i| var(g, i)).collect::<Vec<_>>();
-    let pairs = |g: &Graph, s: &[(u16, f64)]| {
-        s.iter()
-            .map(|&(i, v)| (var(g, i), v.to_bits()))
-            .collect::<Vec<_>>()
-    };
-    let node_said = |g: &Graph, n: &vleo_modules::core_engine::graph::NodeDef| {
-        let bare = vleo_modules::core_engine::graph::NodeDef {
-            inputs: &[],
-            outputs: &[],
-            ..*n
-        };
-        format!("{bare:?} {:?} {:?}", vars(g, n.inputs), vars(g, n.outputs))
-    };
-    for b in COMPILED.nodes {
-        let a = &g.nodes[g.find(b.id).expect("every compiled row is read") as usize];
-        assert_eq!(node_said(g, a), node_said(&COMPILED, b), "node {}", b.id);
-    }
-    // One difference is the conversion's, and stated: every stated value is a
-    // parameter of the level whose branch states it (vleo_files::convert,
-    // rule 3), which the sheets left unsaid.
-    let mut named_a_level = 0;
-    for b in COMPILED.vars {
-        let a = g
-            .vars
-            .iter()
-            .find(|v| v.id == b.id)
-            .expect("every compiled variable is read");
-        let mut port = a.port;
-        if port.parameter != b.port.parameter {
-            assert!(
-                b.port.parameter.is_none()
-                    && g.nodes[a.producer as usize].behaviour == Behaviour::Stated,
-                "variable {}: its parameter level moved from {:?} to {:?}",
-                b.id,
-                b.port.parameter,
-                port.parameter
-            );
-            port.parameter = b.port.parameter;
-            named_a_level += 1;
-        }
-        let said = |g: &Graph, v: &vleo_modules::core_engine::graph::VarDef, port| {
-            format!(
-                "{:?} {}",
-                vleo_modules::core_engine::graph::VarDef {
-                    producer: 0,
-                    port,
-                    ..*v
-                },
-                node(g, v.producer)
-            )
-        };
-        assert_eq!(
-            said(g, a, port),
-            said(&COMPILED, b, b.port),
-            "variable {}",
-            b.id
-        );
-    }
-    assert!(named_a_level > 0);
-    assert_eq!(g.cases.len(), COMPILED.cases.len());
-    for (a, b) in g.cases.iter().zip(COMPILED.cases) {
-        assert_eq!(
-            (
-                a.id,
-                a.label,
-                a.note,
-                pairs(g, a.supply),
-                vars(g, a.conditions)
-            ),
-            (
-                b.id,
-                b.label,
-                b.note,
-                pairs(&COMPILED, b.supply),
-                vars(&COMPILED, b.conditions)
-            ),
-            "case {}",
-            b.id
-        );
-        assert_eq!(a.cycles.len(), b.cycles.len(), "case {}", b.id);
-        for (x, y) in a.cycles.iter().zip(b.cycles) {
-            let cycle = |g: &Graph, c: &vleo_modules::CycleDef| {
-                (
-                    c.nodes.iter().map(|&i| node(g, i)).collect::<Vec<_>>(),
-                    var(g, c.converge_on),
-                    c.tolerance.to_bits(),
-                    c.max_iter,
-                    pairs(g, c.seeds),
-                )
-            };
-            assert_eq!(cycle(g, x), cycle(&COMPILED, y), "a cycle of case {}", b.id);
-        }
-    }
-    // The engine's own fingerprint folds in every row, the open blocks with
-    // them; each row's part of it, its `impl_hash`, is compared above.
-}
-
 #[test]
 fn no_row_runs_the_code_compiled_for_it() {
-    // Counted from the translated methods the compiled engine carries, one
-    // file each.
-    let translated = std::fs::read_dir(root().join("crates/vleo-core/src/physics/methods"))
-        .unwrap()
-        .filter(|e| {
-            let p = e.as_ref().unwrap().path();
-            p.extension().is_some_and(|x| x == "rs") && p.file_stem().is_some_and(|s| s != "mod")
-        })
-        .count();
-    assert!(translated > 0);
     // Every method is run by the interpreter, and every stated value is
     // published by the graph itself: no row falls back to the code compiled
     // for it.
@@ -172,7 +42,7 @@ fn no_row_runs_the_code_compiled_for_it() {
         .iter()
         .filter(|d| d.behaviour == Behaviour::Method)
         .count();
-    assert_eq!(methods, translated);
+    assert!(methods > 150, "only {methods} methods");
     let by_the_graph = |k: usize| g.run.get(k).is_some_and(|r| r.is_some());
     for (k, d) in g.nodes.iter().enumerate() {
         if d.behaviour == Behaviour::Method {
@@ -182,34 +52,6 @@ fn no_row_runs_the_code_compiled_for_it() {
             assert!(by_the_graph(k), "{} is not published by the graph", d.id);
         }
     }
-}
-
-/// Each stated value, published by the graph, against the row the generator
-/// compiled for it: the same value to the bit, or the same fault.
-#[test]
-fn every_stated_value_is_published_as_the_compiled_row_published_it() {
-    let g = read();
-    let mut compared = 0;
-    for (k, def) in g.nodes.iter().enumerate() {
-        if def.behaviour != Behaviour::Stated || !def.inputs.is_empty() {
-            continue;
-        }
-        let c = COMPILED
-            .find(def.id)
-            .expect("the stated row is compiled in");
-        let said = |r: Result<[f64; vleo_modules::MAX_OUTPUTS], _>| match r {
-            Ok(v) => format!("{:?}", v[0].to_bits()),
-            Err(f) => format!("{f:?}"),
-        };
-        assert_eq!(
-            said(g.probe(k as u16, &[])),
-            said(COMPILED.probe(c, &[])),
-            "{}",
-            def.id
-        );
-        compared += 1;
-    }
-    assert!(compared > 100, "only {compared} stated rows compared");
 }
 
 #[test]
@@ -232,55 +74,6 @@ fn the_graph_read_at_run_time_gives_today_s_answers() {
             )
         });
     panic!("the graph read from the design's files does not give today's answers — {first}");
-}
-
-/// Each method, run by the interpreter, against the translated code the
-/// compiled graph carries — at inputs today's record never reaches: each of
-/// its fixtures, a value that is not a number in each place, and values far
-/// outside every range, so the door and the guards are held as well as the
-/// arithmetic. The same answer to the bit, or the same fault in the same words.
-#[test]
-fn every_method_answers_and_refuses_as_its_translation_does() {
-    let g = read();
-    let mut compared = 0;
-    for (k, def) in g.nodes.iter().enumerate() {
-        if !matches!(g.run.get(k), Some(Some(_))) {
-            continue;
-        }
-        let c = COMPILED
-            .find(def.id)
-            .expect("the method's row is compiled in");
-        let n = def.inputs.len();
-        let mut tries: Vec<Vec<f64>> = def.fixtures.iter().map(|f| f.inputs.to_vec()).collect();
-        let base = tries.first().cloned().unwrap_or_else(|| vec![1.0; n]);
-        for i in 0..n {
-            for bad in [f64::NAN, f64::INFINITY, -1e12, 1e12, 0.0, -1.0] {
-                let mut t = base.clone();
-                t[i] = bad;
-                tries.push(t);
-            }
-        }
-        for t in &tries {
-            let said = |r: Result<[f64; vleo_modules::MAX_OUTPUTS], _>| match r {
-                Ok(v) => format!(
-                    "{:?}",
-                    &v[..def.outputs.len()]
-                        .iter()
-                        .map(|x| x.to_bits())
-                        .collect::<Vec<_>>()
-                ),
-                Err(f) => format!("{f:?}"),
-            };
-            assert_eq!(
-                said(g.probe(k as u16, t)),
-                said(COMPILED.probe(c, t)),
-                "{} at {t:?}",
-                def.id
-            );
-            compared += 1;
-        }
-    }
-    assert!(compared > 32 * 6, "only {compared} comparisons");
 }
 
 /// The graph read from the design's files, held to the graph on record

@@ -12,7 +12,7 @@ use std::io;
 use std::path::{Path, PathBuf};
 
 use vleo_bus::{Case, RunMode};
-use vleo_modules::{opened, Scratch, COMPILED};
+use vleo_modules::{opened, Scratch};
 use vleo_sheet::files::{Disk, Files};
 use vleo_sheet::gate::{validate_tree, Verdict};
 use vleo_sheet::load::{load_all_from, Tree};
@@ -100,7 +100,8 @@ fn declared_on_its_block_the_loop_runs_as_it_does_today() {
     // The engine holds the same loop — its rows, what it converges on, its
     // stopping rule and its seed — as the one declared on no block.
     let g = opened::graph(&tree).unwrap();
-    let (a, b) = (&g.cases[0].cycles, &COMPILED.cases[0].cycles);
+    let today = opened::graph(&vleo_sheet::load_all(&root()).unwrap()).unwrap();
+    let (a, b) = (&g.cases[0].cycles, &today.cases[0].cycles);
     assert_eq!(a.len(), 1);
     assert_eq!(a.len(), b.len());
     for (x, y) in a.iter().zip(b.iter()) {
@@ -117,7 +118,9 @@ fn declared_on_its_block_the_loop_runs_as_it_does_today() {
         ..Default::default()
     };
     let x = g.evaluate(&case, &mut Scratch::for_graph(g)).unwrap();
-    let y = COMPILED.evaluate(&case, &mut Scratch::new()).unwrap();
+    let y = today
+        .evaluate(&case, &mut Scratch::for_graph(today))
+        .unwrap();
     let values = |r: &vleo_bus::Results| {
         r.values
             .iter()

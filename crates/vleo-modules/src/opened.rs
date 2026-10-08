@@ -1,16 +1,15 @@
 //! The graph, read from the design's files when the engine opens.
 //!
 //! docs/PLAN_1_0.md, phase D: "The graph is built from the design's files when
-//! the application opens, not compiled into it." This is that graph, in the
-//! same shape as the compiled one ([`crate::COMPILED`]), so it runs through
-//! the one engine — the resolver, the adapter that moves values to and from a
-//! node, the fixtures, the credibility — with nothing of its own to differ.
+//! the application opens, not compiled into it." This is that graph, and the
+//! only one: it runs through the one engine — the resolver, the adapter that
+//! moves values to and from a node, the fixtures, the credibility.
 //!
-//! Each node, variable and case is built from the tree exactly as the
-//! generator writes them into the compiled tables (`vleo_sheet::emit`,
-//! `tables_rs`): the same order, the same indices, the same units turned to
-//! SI, the same fixtures. Every relation is the design's own (docs/PLAN_1_0.md,
-//! phase E):
+//! Each node, variable and case is built from the tree in the order and with
+//! the indices the generator once wrote into the compiled tables, the same
+//! units turned to SI and the same fixtures, so today's answers
+//! (`baseline/`) are held to the bit. Every relation is the design's own
+//! (docs/PLAN_1_0.md, phase E):
 //!
 //! - **a method** — a row whose relation is a method runs in the method
 //!   language's interpreter, the same one that checked it against its cases.
@@ -458,8 +457,7 @@ fn stated(sh: &sheet::Sheet) -> Option<&'static Relation> {
     })))
 }
 
-/// The graph of `tree`, built as the generator builds the compiled one, every
-/// method run by the interpreter. It lives as long as the engine that opened
+/// The graph of `tree`, every method run by the interpreter. It lives as long as the engine that opened
 /// it.
 pub fn graph(tree: &Tree) -> Result<&'static Graph, Error> {
     build(tree)

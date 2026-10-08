@@ -12,7 +12,7 @@ use std::path::PathBuf;
 
 use vleo_bus::{Case, RunMode};
 use vleo_modules::core_engine::graph::Kind;
-use vleo_modules::{engine, opened, run_compiled, run_on, Scratch, COMPILED};
+use vleo_modules::{engine, opened, run_on, Scratch, EMPTY};
 
 fn root() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..")
@@ -28,10 +28,12 @@ fn alone(id: &str) -> Case {
 
 #[test]
 fn the_engine_runs_the_installed_graph_and_names_what_it_answers_from_it() {
-    assert!(
-        std::ptr::eq(engine(), &COMPILED),
-        "before a face installs one"
-    );
+    // Before a face installs one, the engine holds no design at all.
+    assert!(std::ptr::eq(engine(), &EMPTY), "before a face installs one");
+    assert!(vleo_modules::nodes().is_empty());
+    assert!(vleo_modules::Vleo::find("sw_ap_design").is_none());
+    let base = opened::graph(&vleo_sheet::load_all(&root()).unwrap()).unwrap();
+    run_on(base);
 
     // A row that answers, held as code by its id, in a design whose copy of it
     // has moved on: the same layout, one relation this build does not have.
@@ -60,14 +62,14 @@ fn the_engine_runs_the_installed_graph_and_names_what_it_answers_from_it() {
         r.blocked.iter().any(|b| b.id == id
             && b.message
                 .contains("its relation is not in this build of the engine")),
-        "{id} ran on the compiled graph after a face installed another: {:#?}",
+        "{id} ran as the base graph has it after a face installed another: {:#?}",
         r.values
     );
     assert!(!r.values.iter().any(|v| v.id == id));
 
-    // Compiled again, it answers again.
-    run_compiled();
-    assert!(std::ptr::eq(engine(), &COMPILED));
+    // The base installed again, it answers again.
+    run_on(base);
+    assert!(std::ptr::eq(engine(), base));
     let r = vleo_modules::evaluate(&alone(&id), &mut Scratch::new()).unwrap();
     assert!(r.values.iter().any(|v| v.id == id));
 
@@ -81,19 +83,19 @@ fn the_engine_runs_the_installed_graph_and_names_what_it_answers_from_it() {
     let fewer = opened::graph(&short).unwrap();
     run_on(fewer);
     assert!(std::ptr::eq(engine(), fewer));
-    assert_eq!(vleo_modules::nodes().len(), COMPILED.nodes.len() - 1);
+    assert_eq!(vleo_modules::nodes().len(), base.nodes.len() - 1);
     assert_eq!(vleo_modules::vars().len(), fewer.vars.len());
     assert!(
         vleo_modules::Vleo::find(&last).is_none(),
         "{last} is still named"
     );
-    assert_eq!(vleo_modules::groups().len(), COMPILED.groups.len());
-    assert_eq!(vleo_modules::cases().len(), COMPILED.cases.len());
-    run_compiled();
-    assert!(std::ptr::eq(engine(), &COMPILED));
+    assert_eq!(vleo_modules::groups().len(), base.groups.len());
+    assert_eq!(vleo_modules::cases().len(), base.cases.len());
+    run_on(base);
+    assert!(std::ptr::eq(engine(), base));
 
     // The case's inputs, read from a graph whose rows have all moved: the
-    // first row gone, every other one place earlier than this build has it.
+    // first row gone, every other one place earlier than the base has it.
     // Each input still says its own row's declared value, not its neighbour's.
     let defaults = || -> std::collections::BTreeMap<&'static str, u64> {
         vleo_modules::inputs::inputs(&vleo_modules::cases()[0])
@@ -107,7 +109,7 @@ fn the_engine_runs_the_installed_graph_and_names_what_it_answers_from_it() {
     shifted.sheets.remove(&first);
     run_on(opened::graph(&shifted).unwrap());
     let moved = defaults();
-    run_compiled();
+    run_on(base);
     assert!(moved.len() > 100, "only {} inputs", moved.len());
     for (id, v) in &moved {
         assert_eq!(
@@ -146,17 +148,29 @@ fn unread(tree: &vleo_sheet::load::Tree) -> Vec<String> {
 #[test]
 fn the_graph_read_from_the_design_carries_its_headings_and_their_relations() {
     // A face draws the tree from the graph that runs, so the graph read from
-    // the design's files carries every heading and relation the build does,
-    // in the build's order.
-    let read = opened::graph(&vleo_sheet::load_all(&root()).unwrap()).unwrap();
-    let heading = |g: &vleo_modules::GroupDef| {
-        (
-            g.id, g.label, g.parent, g.owner, g.layer, g.order, g.is_box, g.tone, g.cases,
-        )
-    };
-    assert_eq!(read.groups.len(), COMPILED.groups.len());
-    for (a, b) in read.groups.iter().zip(COMPILED.groups) {
-        assert_eq!(heading(a), heading(b));
+    // the design's files carries every heading and relation the sheets hold,
+    // in their order.
+    let tree = vleo_sheet::load_all(&root()).unwrap();
+    let read = opened::graph(&tree).unwrap();
+    assert_eq!(read.groups.len(), tree.groups.len());
+    for (g, (id, h)) in read.groups.iter().zip(&tree.groups) {
+        assert_eq!(
+            (g.id, g.label, g.parent, g.owner, g.layer, g.order),
+            (
+                id.as_str(),
+                h.label.as_str(),
+                h.parent.as_str(),
+                h.owner.as_str(),
+                h.layer,
+                h.order
+            ),
+            "{id}"
+        );
     }
-    assert_eq!(read.relations, COMPILED.relations);
+    let relations: Vec<(&str, &str, &str)> = tree
+        .relations
+        .iter()
+        .map(|r| (r.from.as_str(), r.to.as_str(), r.why.as_str()))
+        .collect();
+    assert_eq!(read.relations, relations.as_slice());
 }
