@@ -22,9 +22,8 @@ vleo-sheet = { workspace = true }
 # Today's design is built from the groups' sealed releases, read, sealed and
 # checked by the one library every design file goes through.
 vleo-files = { path = "../vleo-files" }
-# The design file a kit carries in place of the node folders (design.vleo),
-# read through the same interface as the folders.
-vleo-design = { workspace = true }
+# Saved results, many in one file (results.vleor), which the page imports.
+vleo-results = { workspace = true }
 
 [dev-dependencies]
 # Reads contract/routes.toml and the manual in the contract tests.

@@ -100,10 +100,10 @@ name = "rusqlite (with SQLite compiled in, the `bundled` feature)"
 upstream = "https://github.com/rusqlite/rusqlite — SQLite itself from https://sqlite.org, built from its amalgamation by libsqlite3-sys"
 licence = "MIT (rusqlite and libsqlite3-sys); SQLite is in the public domain"
 version = "0.32 (libsqlite3-sys 0.30)"
-used_by = "vleo-design, and through it vleo-server, the daemon, the command line (results.vleor), xtask and the Python package; and vleo-files, installed, for every design file (the page uses its own SQLite)"
+used_by = "vleo-files, installed, for every design file (the page uses its own SQLite); and vleo-results, and through it vleo-server, the daemon and the command line, for results.vleor"
 load_bearing = true
-why = "the tool a team runs reads the design from one file, design.vleo, rather than seven thousand files in folders; the file is ordinary SQLite so that the same format the group applications write is the one the daemon, the developer's tools and Python read as it is. Compiled in, so no laptop needs SQLite installed"
-fallback = "the folders: design.vleo is written from them and read through the same interface (vleo_sheet::files), so a kit can carry the node folders again — as every kit before 0.5.0 did — with nothing else changed"
+why = "every file of the design (.vgroup, .vnode, .vcase) and the results file are ordinary SQLite, so the format the group applications write in the page is the one the daemon, the developer's tools and Python read as it is. Compiled in, so no laptop needs SQLite installed"
+fallback = "another binding to the same SQLite amalgamation (libsqlite3-sys alone, or the page's own SQLite compiled for the machine): the files are SQLite's format, not this crate's, so they open unchanged"
 verified = "2026-10-03"
 
 # The cryptography of the keys (docs/OPERATING_1_0.md, section 14), adopted
@@ -132,7 +132,7 @@ version = "0.11"
 used_by = "vleo-files"
 load_bearing = true
 why = "SHA-256 (FIPS 180-4): every fingerprint of a key, and the digest PBKDF2 derives a passphrase's key with"
-fallback = "vleo-design's own SHA-256 (crates/vleo-design/src/sha.rs), held to the same published vectors"
+fallback = "the SHA-256 the tool wrote itself before adopting this crate (crates/vleo-design/src/sha.rs, at commit c3d29ede), held to the same published vectors"
 verified = "2026-10-06"
 
 [[adopted]]

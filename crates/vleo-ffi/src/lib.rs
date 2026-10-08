@@ -134,7 +134,7 @@ pub unsafe extern "C" fn vleo_last_message(buf: *mut c_char, len: c_int) -> c_in
     write_cstr(&s, buf, len)
 }
 
-/// Open the design under `root` — the design file, or a checkout's folders —
+/// Open the design under `root` — its files, `design/`, in a kit or a checkout —
 /// and run the engine on the graph read from its files, as the server and the
 /// command line do. A null `root` finds the design as the tool finds it.
 ///

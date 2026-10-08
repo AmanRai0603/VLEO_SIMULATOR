@@ -3,8 +3,8 @@
 //! command line, and the results page's upload through the engine.
 
 use std::path::Path;
-use vleo_design::results::{Kept, Value};
 use vleo_modules::results::{self, store, Saved};
+use vleo_results::{Kept, Value};
 
 /// A saved result as a results file holds it: whole, and as rows.
 pub fn kept_from(name: &str, s: &Saved, pinned: bool) -> Kept {
@@ -69,7 +69,7 @@ impl Imported {
 /// is read whole before anything is kept, so a file that does not read keeps
 /// nothing.
 pub fn import(dir: &Path, file: &Path) -> Result<Imported, String> {
-    let kept = vleo_design::results::read(file).map_err(String::from)?;
+    let kept = vleo_results::read(file).map_err(String::from)?;
     let mut saved = Vec::with_capacity(kept.len());
     for k in &kept {
         let mut s = results::read(&k.csv).map_err(|e| format!("{}: {e}", k.name))?;

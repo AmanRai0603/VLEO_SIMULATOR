@@ -12,7 +12,6 @@ use vleo_sheet::{emit, gate, load_all, page, Tree};
 
 mod catalogue;
 mod convert;
-mod design;
 mod files;
 mod fills;
 mod flow;
@@ -122,7 +121,6 @@ pub(crate) fn dispatch(root: &Path, cmd: &str, rest: &[&str]) -> Result<(), Stri
         "derisk" => cmd_derisk(&root, &rest),
         "release" => cmd_release(&root, &rest),
         "kit" => cmd_kit(&root, &rest),
-        "design" => design::cmd_design(&root, &rest),
         "convert" => convert::cmd_convert(&root, &rest),
         "guides" => cmd_guides(&root),
         "ship" => flow::cmd_ship(&root, &rest),
@@ -248,23 +246,14 @@ cargo xtask <command>
                      sheets' [[version]] and [[risk]] records, never edited.
   kit [--bin <dir>] [--out <dir>] [--files-only]
                      the tool as each person gets it: the two programs and
-                     the files they read (the web face, the design as one file,
-                     design.vleo, and the reference data) in one folder, with
+                     the files they read (the web face, the design's files,
+                     design/, and the reference data) in one folder, with
                      START_HERE.md — on Windows the daemon is `Start VLEO.exe`,
                      elsewhere start.sh starts it. No git, no Rust source.
                      Zip the folder and share it. --bin is where the
                      release-built programs are (default target/release);
                      --files-only leaves the programs out, for the Python
                      package (tools/build_wheel.py).
-  design [--out <file>]
-                     design.vleo: the tree the tool reads — every node folder,
-                     the layers, the cases and the source list — written into
-                     one SQLite file, which the kit carries in their place and
-                     the daemon reads as it reads the folders. Default
-                     target/design.vleo.
-  design --check <file>
-                     the file held to the tree: each file against its SHA-256,
-                     the fingerprint, and every file against the folders.
   convert [--out <dir>]
                      the design as its files (docs/PLAN_1_0.md, phase E): each
                      branch's group file and node files, each case, as the

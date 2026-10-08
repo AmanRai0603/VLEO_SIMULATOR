@@ -5,7 +5,7 @@
 > **Kind:** how-to · **For:** everyone in a group, and the drive's owner
 
 This page is the source of the Google Doc of the same name at the top of the
-drive. `tools/drive.py pack` builds the five folders beside it
+drive. `tools/drive.py pack` builds the four folders beside it
 (docs/DRIVE_SETUP.md).
 
 ## What is here
@@ -14,7 +14,6 @@ drive. `tools/drive.py pack` builds the five folders beside it
 | --- | --- | --- |
 | `apps/` | `group.html` and `node.html`: download one, double-click it, and it opens in Chrome or Edge with no network | the repository's |
 | `guides/` | the three role guides: user, maintainer, developer | the repository's |
-| `design/design.vleo` | the whole released design as one file, for the tool and for Python | the repository's |
 | `readable/` | the released design to read in any spreadsheet: `Groups.csv` (each group, and what its own checks still ask of it), `Nodes.csv` (every live node), `Interfaces.csv` (every value one group reads from another) | the repository's |
 | `groups/<group>/` | the group's working files: `<group>.vgroup` (the structure), `nodes/<node>.vnode` (one per node), `releases/` (its **sealed** releases, and nothing else); `groups/READY.csv` is each group's first plan | the group's |
 

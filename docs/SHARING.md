@@ -29,9 +29,9 @@ The loop, end to end:
 `dist/vleo-<version>/` holds:
 - the two programs: `vleo-daemon` and `vleo` — on Windows `Start VLEO.exe` (the daemon, which opens
   the browser itself because of its name) and `vleo.exe`;
-- the files they read: `web/`, `bundles/`, `docs/manual.toml`, and the design itself as one file,
-  `design.vleo` — every node folder, the layers, the cases and the source list, written into one
-  SQLite database by `cargo run -p xtask -- design` (below);
+- the files they read: `web/`, `bundles/`, `docs/manual.toml`, the design itself as its files,
+  `design/`, and beside it what each node folder holds that is the code's (its generated module,
+  contract and evidence) and the prior implementation's grid (`parity.csv`), never a sheet;
 - `START_HERE.md` (this repository's `docs/TEAM_GUIDE.md`), `VERSION`, and `start.sh` off Windows.
 
 No script starts the Windows program: a script launching an unknown program is one more thing an
@@ -41,20 +41,13 @@ design tool, the version) for the same reason — `tools/windows_identity.rs`.
 There is no git history in it, no generator, and no kernel source. Zip the folder and share the
 zip. `dist/` is ignored by git.
 
-**The design travels as one file.** A developer edits the tree as folders, because review and the
-gate work on them; the tool everyone runs needs the design whole, as one thing that cannot be
-half-copied. So the kit carries `design.vleo`, and the daemon reads it through the same interface
-it reads the folders through, with every check the loader makes. A page served from it is the page
-served from the folders, byte for byte — `crates/vleo-server/tests/the_design_file_serves_the_same_pages.rs`
-asks every node's page of both. To write one or hold one to the tree:
-
-    cargo run -p xtask -- design                         # → target/design.vleo
-    cargo run -p xtask -- design --check dist/vleo-<version>/design.vleo
-
-It is ordinary SQLite (`crates/vleo-design/design.sql`): Python reads its `row` table, and any
-file in it by its repository path, with the standard library. `VLEO_DESIGN` points the daemon at
-another one; a design file that does not open stops the daemon rather than falling back to
-whatever folders sit beside it.
+**The design travels as its files.** The kit carries `design/`, each group's file and each node's,
+as a checkout holds them, and the daemon reads them through the same interface in both, with every
+check the loader makes. A page served from a kit is the page served from a checkout, byte for
+byte — `crates/vleo-server/tests/a_kit_serves_the_pages_a_checkout_serves.rs` asks every node's
+page of both. `VLEO_DESIGN` points the daemon at another folder of the design's files; one that is
+not a folder, or does not open, stops the daemon rather than falling back to whatever sits beside
+it, and so does a file of it written by a newer application than the daemon.
 
 **One kit per platform.** The programs are built for the machine that built them. For an engineer
 on another platform, use the release: `.github/workflows/release.yml` builds a kit on Linux,

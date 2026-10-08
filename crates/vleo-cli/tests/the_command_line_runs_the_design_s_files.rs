@@ -68,14 +68,17 @@ fn the_command_line_says_it_runs_the_graph_read_from_the_design_s_files() {
 #[test]
 fn a_design_that_does_not_open_is_refused_not_run_as_the_compiled_one() {
     let s = scratch("refused");
-    let missing = s.join("not-here.vleo");
+    let missing = s.join("not-here");
     for args in [
         &["run", "sw_activity_band", "--defaults"][..],
         &["version"][..],
     ] {
         let (ok, said) = vleo(&s, Some(&missing), args);
         assert!(!ok, "{args:?} ran with no design: {said}");
-        assert!(said.contains("the design file does not open"), "{said}");
+        assert!(
+            said.contains("is not a folder of the design's files"),
+            "{said}"
+        );
     }
 }
 

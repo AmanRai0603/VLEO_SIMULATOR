@@ -676,9 +676,9 @@ dependencies = [
  "vleo-bus",
  "vleo-core",
  "vleo-data",
- "vleo-design",
  "vleo-files",
  "vleo-modules",
+ "vleo-results",
  "vleo-server",
  "vleo-sheet",
 ]
@@ -704,16 +704,6 @@ version = "0.4.0"
 dependencies = [
  "toml 0.8.23",
  "vleo-core",
-]
-
-[[package]]
-name = "vleo-design"
-version = "0.4.0"
-dependencies = [
- "rusqlite",
- "vleo-files",
- "vleo-kinds",
- "vleo-sheet",
 ]
 
 [[package]]
@@ -920,6 +910,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "vleo-results"
+version = "0.4.0"
+dependencies = [
+ "rusqlite",
+ "vleo-kinds",
+]
+
+[[package]]
 name = "vleo-server"
 version = "0.4.0"
 dependencies = [
@@ -928,9 +926,9 @@ dependencies = [
  "vleo-bus",
  "vleo-core",
  "vleo-data",
- "vleo-design",
  "vleo-files",
  "vleo-modules",
+ "vleo-results",
  "vleo-sheet",
  "vleo-units",
 ]
@@ -1089,7 +1087,6 @@ dependencies = [
  "toml 0.8.23",
  "toml_edit",
  "vleo-data",
- "vleo-design",
  "vleo-files",
  "vleo-sheet",
  "vleo-units",

@@ -41,12 +41,10 @@ fn data_root() -> PathBuf {
 fn repo_bundles() -> PathBuf {
     let mut p = std::env::current_dir().unwrap_or_default();
     loop {
-        // A checkout has the design's files (design/), or the tree's folders;
-        // a kit has the design file in their place (design.vleo). Any of them
-        // marks where the tool's files are.
-        let tree = p.join("design").is_dir()
-            || p.join("layers").is_dir()
-            || p.join("design.vleo").is_file();
+        // A checkout and a kit both have the design's files (design/); a
+        // checkout has the tree's folders too. Either marks where the tool's
+        // files are.
+        let tree = p.join("design").is_dir() || p.join("layers").is_dir();
         if p.join("bundles").is_dir() && tree {
             return p.join("bundles");
         }
@@ -1210,7 +1208,7 @@ fn cmd_result(args: &[&str]) -> Result<(), String> {
         .first()
         .ok_or("usage: vleo result <file|folder> [--html <out.html>]")?;
     let path = std::path::Path::new(file);
-    if !path.is_dir() && vleo_design::results::is_database(path) {
+    if !path.is_dir() && vleo_results::is_database(path) {
         return list_kept(path);
     }
     let s = if path.is_dir() {
@@ -1239,13 +1237,13 @@ fn cmd_result(args: &[&str]) -> Result<(), String> {
 /// A results file's results, one line each, as it holds them. Reads; runs
 /// nothing and puts nothing in the results folder.
 fn list_kept(file: &std::path::Path) -> Result<(), String> {
-    let kept = vleo_design::results::read(file).map_err(String::from)?;
+    let kept = vleo_results::read(file).map_err(String::from)?;
     println!(
         "{} — {} saved result(s), written by vleo {} on {}",
         file.display(),
         kept.len(),
-        vleo_design::results::meta(file, "tool").unwrap_or_default(),
-        vleo_design::results::meta(file, "written").unwrap_or_default()
+        vleo_results::meta(file, "tool").unwrap_or_default(),
+        vleo_results::meta(file, "written").unwrap_or_default()
     );
     for k in &kept {
         let answer = k
@@ -1291,7 +1289,7 @@ fn cmd_results(args: &[&str]) -> Result<(), String> {
                     return Err(format!("no saved result called '{n}' in {}", dir.display()));
                 }
             }
-            let kept: Vec<vleo_design::results::Kept> = all
+            let kept: Vec<vleo_results::Kept> = all
                 .iter()
                 .filter(|(n, _)| names.is_empty() || names.contains(&n.as_str()))
                 .map(|(n, s)| vleo_server::results_file::kept_from(n, s, store::is_pinned(&dir, n)))
@@ -1299,7 +1297,7 @@ fn cmd_results(args: &[&str]) -> Result<(), String> {
             if kept.is_empty() {
                 return Err(format!("{} holds no saved result to export", dir.display()));
             }
-            vleo_design::results::write(file, &kept, env!("CARGO_PKG_VERSION"), &now_utc())
+            vleo_results::write(file, &kept, env!("CARGO_PKG_VERSION"), &now_utc())
                 .map_err(String::from)?;
             println!(
                 "wrote {} result(s) from {} to {}",

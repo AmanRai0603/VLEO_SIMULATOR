@@ -1,17 +1,18 @@
-//! Where the tree is read from: the repository's folders, or a design file.
+//! Where the tree is read from: the repository's folders, or the design's
+//! files.
 //!
 //! The loader reads the design through this and nothing else, so the same
 //! reading — every check the loader makes — applies whichever one it is. A
-//! developer's checkout reads the folders it edits. The tool a team runs reads
-//! `design.vleo`, the one file the release carries in their place
-//! (`vleo-design`), and a page served from it is the page served from the
-//! folders, byte for byte.
+//! developer's checkout reads the folders it edits; the design's files
+//! (`design/`, `vleo_files::convert::Served`) are read through it too, and a
+//! page served from them is the page served from the folders, byte for byte.
 //!
 //! Paths are the ones the folders have: the tree's root joined with
-//! `crates/vleo-mod-solar/nodes/…`, `layers/…`, `cases/…`, `sources/…`. A
-//! design file answers for the paths it holds and for nothing else; it never
-//! falls back to a folder, because a page drawn half from a file and half from
-//! whatever folder happens to sit beside it is two designs presented as one.
+//! `crates/vleo-mod-solar/nodes/…`, `layers/…`, `cases/…`, `sources/…`. The
+//! design's files answer for the paths of the design they hold and for nothing
+//! else; they never fall back to a folder, because a page drawn half from them
+//! and half from whatever folder happens to sit beside them is two designs
+//! presented as one.
 
 use std::io;
 use std::path::{Path, PathBuf};
@@ -76,133 +77,5 @@ impl Files for Nowhere {
     }
     fn is_file(&self, _: &Path) -> bool {
         false
-    }
-}
-
-/// Whether a path, relative to the tree's root, is one a design file holds:
-/// a file in a node folder (`crates/vleo-mod-*/nodes/…`), a layer, a case or
-/// the source list.
-pub fn in_design(rel: &str) -> bool {
-    let mut parts = rel.split('/');
-    match parts.next() {
-        Some("crates") => {
-            let c = parts.next().unwrap_or("");
-            c.starts_with("vleo-mod-") && parts.next() == Some("nodes")
-        }
-        Some("layers" | "cases" | "sources") => true,
-        _ => false,
-    }
-}
-
-/// Every file of the tree a design file holds, relative to the root with `/`
-/// between parts, sorted.
-pub fn design_files(root: &Path) -> io::Result<Vec<String>> {
-    fn walk(root: &Path, dir: &Path, out: &mut Vec<String>) -> io::Result<()> {
-        for e in std::fs::read_dir(dir)? {
-            let p = e?.path();
-            if p.is_dir() {
-                walk(root, &p, out)?;
-            } else if p.is_file() {
-                let rel = p
-                    .strip_prefix(root)
-                    .map_err(|e| io::Error::new(io::ErrorKind::InvalidInput, e))?;
-                let rel: Vec<String> = rel
-                    .components()
-                    .map(|c| c.as_os_str().to_string_lossy().into_owned())
-                    .collect();
-                let rel = rel.join("/");
-                if in_design(&rel) {
-                    out.push(rel);
-                }
-            }
-        }
-        Ok(())
-    }
-    let mut out = Vec::new();
-    for top in ["layers", "cases", "sources"] {
-        let d = root.join(top);
-        if d.is_dir() {
-            walk(root, &d, &mut out)?;
-        }
-    }
-    let crates = root.join("crates");
-    let mut dirs: Vec<PathBuf> = std::fs::read_dir(&crates)?
-        .filter_map(|e| e.ok())
-        .map(|e| e.path())
-        .filter(|p| {
-            p.file_name()
-                .and_then(|n| n.to_str())
-                .is_some_and(|n| n.starts_with("vleo-mod-"))
-        })
-        .collect();
-    dirs.sort();
-    for d in dirs {
-        let nodes = d.join("nodes");
-        if nodes.is_dir() {
-            walk(root, &nodes, &mut out)?;
-        }
-    }
-    out.sort();
-    Ok(out)
-}
-
-/// [`design_files`], as `files` holds them: the design's files read through
-/// whatever serves them, the folders on disk or the files of `design/`.
-pub fn design_files_in(files: &dyn Files, root: &Path) -> io::Result<Vec<String>> {
-    fn walk(files: &dyn Files, root: &Path, dir: &Path, out: &mut Vec<String>) -> io::Result<()> {
-        for p in files.entries(dir)? {
-            if files.is_dir(&p) {
-                walk(files, root, &p, out)?;
-            } else if files.is_file(&p) {
-                let rel = p
-                    .strip_prefix(root)
-                    .map_err(|e| io::Error::new(io::ErrorKind::InvalidInput, e))?;
-                let rel: Vec<String> = rel
-                    .components()
-                    .map(|c| c.as_os_str().to_string_lossy().into_owned())
-                    .collect();
-                let rel = rel.join("/");
-                if in_design(&rel) {
-                    out.push(rel);
-                }
-            }
-        }
-        Ok(())
-    }
-    let mut out = Vec::new();
-    for top in ["layers", "cases", "sources"] {
-        let d = root.join(top);
-        if files.is_dir(&d) {
-            walk(files, root, &d, &mut out)?;
-        }
-    }
-    for c in files.entries(&root.join("crates"))? {
-        let is_mod = c
-            .file_name()
-            .and_then(|n| n.to_str())
-            .is_some_and(|n| n.starts_with("vleo-mod-"));
-        if is_mod && files.is_dir(&c.join("nodes")) {
-            walk(files, root, &c.join("nodes"), &mut out)?;
-        }
-    }
-    out.sort();
-    out.dedup();
-    Ok(out)
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn a_design_file_holds_the_node_folders_and_the_layers_only() {
-        assert!(in_design("crates/vleo-mod-solar/nodes/sw_ap/node.toml"));
-        assert!(in_design("layers/l3_solar.toml"));
-        assert!(in_design("cases/baseline.toml"));
-        assert!(in_design("sources/sources.toml"));
-        assert!(!in_design("crates/vleo-core/src/lib.rs"));
-        assert!(!in_design("crates/vleo-mod-solar/src/lib.rs"));
-        assert!(!in_design("web/index.html"));
-        assert!(!in_design("docs/manual.toml"));
     }
 }

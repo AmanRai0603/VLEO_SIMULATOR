@@ -243,8 +243,8 @@ fn read_here() -> Vec<&'static str> {
 
 /// The format of an open VLEO file, refused by the one rule every reader
 /// follows (`vleo_kinds::identify`) if it is not one, is a kind this library
-/// does not read — today's design, `design.vleo`, is the tool's own until
-/// phase D — or is newer than this library reads.
+/// does not read — the tool's own results file — or is newer than this
+/// library reads.
 fn format_of(db: &Connection, path: &Path) -> Result<i64, Error> {
     let pragma = |name: &str| -> Result<i64, Error> {
         db.query_row(&format!("PRAGMA {name}"), [], |r| r.get(0))

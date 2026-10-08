@@ -13,7 +13,7 @@
 
 The drive is where a team opens the design without the repository: each
 group's structure, node files and releases (docs/GROUP_APPS.md), the two pages
-that open them, the role guides, and design.vleo. Every file in it is written
+that open them, and the role guides. Every file in it is written
 from the repository, so it is built by one command and copied by another — a
 drive filled by hand drifts from the release it claims to be within a week.
 
@@ -21,7 +21,6 @@ drive filled by hand drifts from the release it claims to be within a week.
 
     apps/group.html, apps/node.html      the group and node applications
     guides/<role>.html                   the three role guides
-    design/design.vleo                   the tree, as the one file a kit carries
     readable/Groups.csv, Nodes.csv,      the released design, to read in any
       Interfaces.csv                     spreadsheet: each group, every live
                                          node, every value one group reads
@@ -41,17 +40,17 @@ their own (docs/GROUP_APPS.md); the developer adds a sealed one with --sealed.
 
 # By hand, without the sign-in
 
-`pack --zip` writes the same folder as one zip, its five folders at the top.
-The drive's owner unzips it and drags the five folders into the drive's folder:
+`pack --zip` writes the same folder as one zip, its four folders at the top.
+The drive's owner unzips it and drags the four folders into the drive's folder:
 that is the whole upload, and it needs no secrets.
 
-Who owns what decides what a later zip replaces. apps/, guides/, design/ and
+Who owns what decides what a later zip replaces. apps/, guides/ and
 readable/ are the repository's: a release replaces them whole. groups/ is the
 groups' once it is in the drive — the subsystem engineer's structure, the node engineers' node
 files, the sealed releases — so a later zip leaves it out (`--update`), and
 only a new group's folder is added by hand.
 docs/DRIVE_START_HERE.md is the drive's START HERE page, kept as a Google Doc
-beside the five folders.
+beside the four folders.
 
 # What `upload` does, and what it refuses to do
 
@@ -112,16 +111,15 @@ def pack(out, sealed=(), zip_it=False, update=False):
         shutil.rmtree(out)
     (out / "apps").mkdir(parents=True)
     (out / "guides").mkdir()
-    (out / "design").mkdir()
     print("1. the applications and the guides")
     for page in ["group.html", "node.html"]:
         shutil.copy2(ROOT / "web" / page, out / "apps" / page)
     for g in GUIDES:
         shutil.copy2(ROOT / "docs" / "roles" / g, out / "guides" / g)
-    print("2. the design, as one file")
-    run(["cargo", "run", "-q", "-p", "xtask", "--", "design", "--out", out / "design" / "design.vleo"])
     with tempfile.TemporaryDirectory(prefix="vleo-drive-") as tmp:
         tmp = Path(tmp)
+        print("2. what each group publishes to the others")
+        run(["cargo", "run", "-q", "-p", "xtask", "--", "catalogue", "--csv", tmp / "catalogue.csv"])
         print("3. every group, written from the tree")
         run(["cargo", "run", "-q", "-p", "xtask", "--", "group-export", "--all", "--out", tmp / "groups"])
         run(["node", "tools/group_db.mjs", "--all", tmp / "groups", "--out", out / "groups"])
@@ -132,7 +130,7 @@ def pack(out, sealed=(), zip_it=False, update=False):
             shutil.rmtree(solar)
         shutil.copytree(tmp / "solar", solar)
         print("4b. the released design, to read in a spreadsheet")
-        write_readable(out, tmp / "groups")
+        write_readable(out, tmp / "groups", tmp / "catalogue.csv")
     print("5. releases: sealed ones only")
     dropped = place_releases(out, sealed)
     print("  %d unsealed assembl%s left out; %d sealed release(s) in" % (dropped, "y" if dropped == 1 else "ies", len(sealed)))
@@ -149,13 +147,13 @@ def pack(out, sealed=(), zip_it=False, update=False):
     return out
 
 
-def write_readable(out, export):
+def write_readable(out, export, catalogue):
     """readable/: the released design as three CSV files, written from the
     same export as the groups' files, so the two never disagree about what the
-    tree held. UTF-8 with a byte-order mark, which Excel needs to read the
-    dashes and the symbols."""
+    tree held, and from the catalogue of what each group publishes (`xtask
+    catalogue --csv`). UTF-8 with a byte-order mark, which Excel needs to read
+    the dashes and the symbols."""
     import csv
-    import sqlite3
 
     home = Path(out) / "readable"
     home.mkdir(exist_ok=True)
@@ -181,17 +179,12 @@ def write_readable(out, export):
             with open(Path(export) / g["group"] / "nodes.csv", newline="", encoding="utf-8") as n:
                 for r in csv.DictReader(n):
                     w.writerow([g["group"]] + [r.get(c, "") for c in cols])
-    c = sqlite3.connect("file:%s?mode=ro" % (Path(out) / "design" / "design.vleo"), uri=True)
-    try:
-        rows = c.execute(
-            "select p.grp, p.node, r.label, r.kind, r.state, p.unit, p.version, p.crosses_to, p.read_by_grp, p.read_by "
-            "from published p left join row r on r.id = p.node order by p.grp, p.node, p.read_by"
-        ).fetchall()
-    finally:
-        c.close()
+    cols = ["group", "node", "label", "kind", "state", "unit", "version", "crosses_to", "read_by_group", "read_by_node"]
+    with open(catalogue, newline="", encoding="utf-8") as f:
+        rows = sorted(([r[c] for c in cols] for r in csv.DictReader(f)), key=lambda r: (r[0], r[1], r[9]))
     with open(home / "Interfaces.csv", "w", newline="", encoding="utf-8-sig") as f:
         w = csv.writer(f)
-        w.writerow(["group", "node", "label", "kind", "state", "unit", "version", "crosses_to", "read_by_group", "read_by_node"])
+        w.writerow(cols)
         w.writerows(rows)
 
 
@@ -547,7 +540,6 @@ def selftest():
                 check("a release that is %s is refused" % why, why in str(e))
     with tempfile.TemporaryDirectory() as t:
         import csv
-        import sqlite3
 
         t = Path(t)
         ex, out = t / "export", t / "drive"
@@ -557,15 +549,10 @@ def selftest():
         (ex / "GROUPS.csv").write_text("group,name,layer,owner,nodes,computed,with_method,files\nsolar,Solar,3,env,2,2,2,9\norbit,Orbit,3,env,1,1,0,4\n")
         (out / "groups").mkdir(parents=True)
         (out / "groups" / "READY.csv").write_text("group,nodes,errors\nsolar,2,3\n")
-        (out / "design").mkdir()
-        c = sqlite3.connect(out / "design" / "design.vleo")
-        c.execute("create table row (id text, label text, kind text, state text)")
-        c.execute("create table published (grp text, node text, unit text, version int, crosses_to text, read_by_grp text, read_by text)")
-        c.execute("insert into row values ('sw_a', 'Hot level', 'computed', 'published')")
-        c.execute("insert into published values ('solar', 'sw_a', '1', 1, '', 'orbit', 'orb_h')")
-        c.commit()
-        c.close()
-        write_readable(out, ex)
+        (t / "catalogue.csv").write_text(
+            "group,node,label,type,unit,kind,state,version,crosses_to,read_by_group,read_by_node\n"
+            "solar,sw_a,Hot level,Ratio,1,computed,published,1,,orbit,orb_h\n")
+        write_readable(out, ex, t / "catalogue.csv")
 
         def rows(name):
             with open(out / "readable" / name, newline="", encoding="utf-8-sig") as f:

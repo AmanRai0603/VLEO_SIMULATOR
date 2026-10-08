@@ -148,8 +148,10 @@ fn sqlite(root: &Path) -> Result<(String, String), String> {
     Ok((engine, vleo_sheet::template::base64(&wasm)))
 }
 
-/// SHA-256, written once (`vleo_design::sha256_hex`).
-pub(super) use vleo_design::sha256_hex;
+/// SHA-256 in hex, by the one library every design file goes through.
+pub(super) fn sha256_hex(bytes: &[u8]) -> String {
+    vleo_files::keys::hex(&vleo_files::keys::sha256(bytes))
+}
 
 /// Every `url(fonts/…)` in the stylesheet, as the font itself.
 fn inline_fonts(root: &Path, css: &str) -> Result<String, String> {

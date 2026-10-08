@@ -7,12 +7,122 @@
 //! for numbers without parsing CSV. Its schema is `results.sql`, beside this
 //! crate.
 //!
-//! This module knows the file, not what a result means: the command line turns
+//! The crate held the design as one file, `design.vleo`, too, until the
+//! design's own files (`design/`) became what every face reads.
+//!
+//! This crate knows the file, not what a result means: the command line turns
 //! each saved result into a [`Kept`] and back, with the engine's own reader.
 
-use crate::{Error, ErrorKind};
-use rusqlite::{params, Connection, OptionalExtension};
+use rusqlite::{params, Connection, OpenFlags, OptionalExtension};
+use std::fmt;
 use std::path::Path;
+
+/// What went wrong, as a caller decides by it.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ErrorKind {
+    /// The file system refused.
+    Io,
+    /// Not the file asked for: not SQLite, not one the tools wrote, or another
+    /// kind (a group's release opened as a results file).
+    WrongFile,
+    /// The file is a newer format than this code reads.
+    Newer,
+    /// SQLite refused.
+    Database,
+}
+
+/// An error from this crate: its kind, and the sentence that says it.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Error {
+    kind: ErrorKind,
+    message: String,
+}
+
+impl Error {
+    pub fn new(kind: ErrorKind, message: impl Into<String>) -> Error {
+        Error {
+            kind,
+            message: message.into(),
+        }
+    }
+    fn db(path: &Path, e: rusqlite::Error) -> Error {
+        Error::new(ErrorKind::Database, format!("{}: {e}", path.display()))
+    }
+    pub fn kind(&self) -> ErrorKind {
+        self.kind
+    }
+    pub fn message(&self) -> &str {
+        &self.message
+    }
+}
+
+impl fmt::Display for Error {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(&self.message)
+    }
+}
+
+impl std::error::Error for Error {}
+
+impl From<Error> for String {
+    fn from(e: Error) -> String {
+        e.message
+    }
+}
+
+/// Open one of the tools' databases read-only, as the kind `kind`, by the one
+/// rule every reader follows (`vleo_kinds::identify`): refused if it is not
+/// SQLite, not one the tools wrote, another kind (a group's release opened
+/// as results), or from a newer tool — each by name, before anything is read
+/// from it.
+fn open_ours(path: &Path, kind: &str, called: &str) -> Result<Connection, Error> {
+    let mut head = [0u8; 16];
+    {
+        use std::io::Read;
+        let mut f = std::fs::File::open(path)
+            .map_err(|e| Error::new(ErrorKind::Io, format!("{}: {e}", path.display())))?;
+        if f.read_exact(&mut head).is_err() || &head[..15] != b"SQLite format 3" {
+            return Err(Error::new(
+                ErrorKind::WrongFile,
+                format!("{}: not a database file", path.display()),
+            ));
+        }
+    }
+    let db = Connection::open_with_flags(
+        path,
+        OpenFlags::SQLITE_OPEN_READ_ONLY | OpenFlags::SQLITE_OPEN_NO_MUTEX,
+    )
+    .map_err(|e| Error::db(path, e))?;
+    let pragma = |name: &str| -> Result<i64, Error> {
+        db.query_row(&format!("PRAGMA {name}"), [], |r| r.get(0))
+            .map_err(|e| Error::db(path, e))
+    };
+    let (app, format) = (pragma("application_id")?, pragma("user_version")?);
+    let found: Option<String> = if app == vleo_kinds::APPLICATION_ID {
+        db.query_row("SELECT value FROM meta WHERE key = 'file_kind'", [], |r| {
+            r.get(0)
+        })
+        .optional()
+        .unwrap_or(None)
+    } else {
+        None
+    };
+    let want = vleo_kinds::Want {
+        reader: vleo_kinds::Reader::Results,
+        names: &[kind],
+        called,
+    };
+    match vleo_kinds::identify(app, format, found.as_deref(), want) {
+        Ok(_) => Ok(db),
+        Err(refused) => Err(Error::new(
+            match refused {
+                vleo_kinds::Refusal::Newer { .. } => ErrorKind::Newer,
+                _ => ErrorKind::WrongFile,
+            },
+            refused.says(&path.display().to_string()),
+        )),
+    }
+}
 
 /// The format this code writes and the newest it reads.
 pub const FORMAT: u32 = 1;
@@ -154,7 +264,7 @@ pub fn write(out: &Path, kept: &[Kept], tool: &str, written: &str) -> Result<(),
 /// Every result in `file`, in the order they were written. Refuses a file that
 /// is not SQLite, not ours, not a results file, or newer than this code.
 pub fn read(file: &Path) -> Result<Vec<Kept>, Error> {
-    let db = crate::open_ours(file, KIND, "a results file")?;
+    let db = open_ours(file, KIND, "a results file")?;
     let db_err =
         |e: rusqlite::Error| Error::new(ErrorKind::Database, format!("{}: {e}", file.display()));
     let mut out = Vec::new();
@@ -223,7 +333,7 @@ pub fn read(file: &Path) -> Result<Vec<Kept>, Error> {
 
 /// What a results file says about itself, without reading its results.
 pub fn meta(file: &Path, key: &str) -> Result<String, Error> {
-    let db = crate::open_ours(file, KIND, "a results file")?;
+    let db = open_ours(file, KIND, "a results file")?;
     db.query_row("SELECT value FROM meta WHERE key = ?1", params![key], |r| {
         r.get(0)
     })

@@ -419,9 +419,8 @@ pub(super) fn cmd_kit(root: &Path, args: &[&str]) -> Result<(), String> {
         }
         Ok(n)
     }
-    // What the daemon reads, and only that. The design itself — every node
-    // folder, the layers, the cases and the source list — travels as one file,
-    // design.vleo, which the daemon reads as it reads the folders.
+    // What the daemon reads, and only that. The design itself travels as its
+    // files, `design/`, which the daemon reads as it reads them in a checkout.
     let mut files = 0;
     for dir in ["web", "bundles", "matlab/reference"] {
         let from = root.join(dir);
@@ -453,8 +452,43 @@ pub(super) fn cmd_kit(root: &Path, args: &[&str]) -> Result<(), String> {
         files += 1;
     }
     let tree = load(root)?;
-    let design = crate::design::write(root, &out.join(vleo_design::FILE))?;
-    files += 1;
+    files += copy_tree(&root.join("design"), &out.join("design"))?;
+    let (_, fingerprint) = vleo_files::convert::read_folder(&out.join("design"))
+        .map_err(|e| format!("the design the kit carries does not read: {e}"))?;
+    // Beside it, what each node folder holds that is the code's and not the
+    // design's — its generated module, contract and evidence — which a row's
+    // page shows, and the prior implementation's grid (parity.csv), which a
+    // page's list of gaps still looks for on disk; never the sheet or its
+    // fixtures, which the design's files answer for.
+    for c in fs::read_dir(root.join("crates")).map_err(|e| format!("crates: {e}"))? {
+        let c = c.map_err(|e| e.to_string())?.path();
+        let nodes = c.join("nodes");
+        let name = c.file_name().unwrap().to_string_lossy().into_owned();
+        if !name.starts_with("vleo-mod-") || !nodes.is_dir() {
+            continue;
+        }
+        for n in fs::read_dir(&nodes).map_err(|e| format!("{}: {e}", nodes.display()))? {
+            let n = n.map_err(|e| e.to_string())?.path();
+            if !n.is_dir() {
+                continue;
+            }
+            let to = out
+                .join("crates")
+                .join(&name)
+                .join("nodes")
+                .join(n.file_name().unwrap());
+            for f in fs::read_dir(&n).map_err(|e| format!("{}: {e}", n.display()))? {
+                let f = f.map_err(|e| e.to_string())?.path();
+                let file = f.file_name().unwrap().to_string_lossy().into_owned();
+                if !f.is_file() || ["node.toml", "fixtures.toml"].contains(&file.as_str()) {
+                    continue;
+                }
+                fs::create_dir_all(&to).map_err(|e| format!("{}: {e}", to.display()))?;
+                fs::copy(&f, to.join(&file)).map_err(|e| format!("{}: {e}", f.display()))?;
+                files += 1;
+            }
+        }
+    }
     // On Windows the daemon ships as `Start VLEO.exe`: the program itself is
     // what a person double-clicks, and it opens the browser because of its
     // name. No script starts it — a script launching a program is one more
@@ -485,9 +519,8 @@ pub(super) fn cmd_kit(root: &Path, args: &[&str]) -> Result<(), String> {
     fs::write(
         out.join("VERSION"),
         format!(
-            "vleo {version}\ncommit {commit}\n{} rows\ndesign {}\n",
+            "vleo {version}\ncommit {commit}\n{} rows\ndesign {fingerprint}\n",
             tree.sheets.len(),
-            design.fingerprint
         ),
     )
     .map_err(|e| e.to_string())?;

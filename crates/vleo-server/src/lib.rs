@@ -216,11 +216,11 @@ fn open_browser(url: &str) {
 
 struct Ctx {
     root: PathBuf,
-    /// Where the design is read from: the folders under `root`, or the design
-    /// file beside the tool (`open_tree`). Every read of a sheet, a page or a
+    /// Where the design is read from: its files, `design/`, or the sheets'
+    /// folders under `root` where there are none (`open_tree`). Every read of a sheet, a page or a
     /// lesson goes through it; the web face and the reference data do not.
     tree: std::sync::Arc<dyn Files>,
-    /// The design file, when the design is read from one.
+    /// The design's files, when the design is read from them.
     design: Option<DesignFile>,
     data: Vec<String>,
     data_versions: Vec<String>,
@@ -235,7 +235,7 @@ struct Ctx {
     port: u16,
 }
 
-/// What the tool says about the design file it reads.
+/// What the tool says about the design's files it reads.
 struct DesignFile {
     file: String,
     rows: String,
@@ -244,12 +244,11 @@ struct DesignFile {
 
 /// Where the design is read from.
 ///
-/// A kit carries the design as one file, `design.vleo`, beside the web face
-/// (`vleo-design`); a checkout has the folders a developer edits. The file is
-/// taken when `VLEO_DESIGN` names one or one sits at the root, and the folders
-/// otherwise. A design file that is there and does not open stops the tool,
-/// naming why: falling back to whatever folders happen to sit beside it would
-/// show a different design under the same name.
+/// The design is its files, `design/`, beside the web face in a kit and in a
+/// checkout alike, or the folder `VLEO_DESIGN` names. A design that is there
+/// and does not open stops the tool, naming why: falling back to whatever
+/// else happens to sit beside it would show a different design under the
+/// same name.
 fn open_tree(root: &Path) -> Result<Opened, String> {
     let (files, design) = open_base(root)?;
     let Some(drive) = std::env::var("VLEO_DRIVE")
@@ -305,57 +304,47 @@ pub fn changed_in_the_design() -> Vec<(String, String)> {
 /// from, line by line.
 type Opened = (std::sync::Arc<dyn Files>, Option<DesignFile>, Vec<String>);
 
-/// The design the tool is given: the design file, or the folders.
+/// The design the tool is given: the folder `VLEO_DESIGN` names, or
+/// `design/` where the tool finds it; the sheets' folders only where there is
+/// neither.
 fn open_base(root: &Path) -> Result<(std::sync::Arc<dyn Files>, Option<DesignFile>), String> {
     let named = std::env::var("VLEO_DESIGN")
         .ok()
         .filter(|v| !v.trim().is_empty())
         .map(PathBuf::from);
-    if let Some(dir) = named.as_ref().filter(|p| p.is_dir()) {
-        return open_converted(root, dir);
+    if let Some(dir) = named {
+        // A design is a folder of its files; anything else named is refused,
+        // never read past to whatever sits at the root.
+        if !dir.is_dir() {
+            return Err(format!(
+                "the design {} is not a folder of the design's files: \
+                 VLEO_DESIGN names the folder that holds them, such as design/",
+                dir.display()
+            ));
+        }
+        return open_converted(root, &dir);
     }
-    // The design is its files: `design/` where the tool finds it.
-    if named.is_none() && root.join("design").is_dir() {
+    if root.join("design").is_dir() {
         return open_converted(root, &root.join("design"));
     }
-    let Some(path) = named.or_else(|| vleo_design::beside(root)) else {
-        return Ok((std::sync::Arc::new(vleo_sheet::files::Disk), None));
+    Ok((std::sync::Arc::new(vleo_sheet::files::Disk), None))
+}
+
+/// Whether an application at version `app` can run what the application at
+/// `wrote` wrote: every version is major.minor.patch, compared as numbers,
+/// part by part, so 0.10 is later than 0.9. A version that is not one is
+/// refused by what it says.
+pub fn runs_on(wrote: &str, app: &str) -> Result<bool, String> {
+    let parse = |v: &str| -> Option<(u64, u64, u64)> {
+        let mut it = v.trim().split('.').map(|p| p.parse::<u64>().ok());
+        let t = (it.next()??, it.next()??, it.next()??);
+        it.next().is_none().then_some(t)
     };
-    let d = vleo_design::Design::open(&path, root)
-        .map_err(|e| format!("the design file does not open: {e}"))?;
-    // A design names the oldest application that can run it; one that needs
-    // a newer one than this is refused before anything is read from it. A
-    // file written before designs named it says nothing, and the check below,
-    // row by row, still stands between it and the engine.
-    let needs = d.meta("oldest_application");
-    if !needs.is_empty() {
-        let ours = env!("CARGO_PKG_VERSION");
-        match vleo_design::runs_on(needs, ours) {
-            Ok(true) => {}
-            Ok(false) => {
-                return Err(format!(
-                    "the design file {} needs vleo {needs} or later, and this is vleo {ours}: \
-                     open it with the application it names, or a newer one",
-                    path.display()
-                ))
-            }
-            Err(e) => return Err(format!("the design file {}: {e}", path.display())),
-        }
-    }
-    // The file must load as a design: every check the loader makes, made,
-    // before anything is served from it. Its rows run as it states them —
-    // every relation is a method or a value of the design's own, a method
-    // the tool was not built from run by the interpreter — so a design other
-    // than the one this tool was released with runs too, answering from its
-    // own files.
-    vleo_sheet::load::load_all_from(&d, root)
-        .map_err(|e| format!("the design file {} does not load: {e}", path.display()))?;
-    let info = DesignFile {
-        file: path.display().to_string(),
-        rows: d.meta("rows").to_string(),
-        fingerprint: d.meta("fingerprint").to_string(),
-    };
-    Ok((std::sync::Arc::new(d), Some(info)))
+    let need = parse(wrote)
+        .ok_or_else(|| format!("'{wrote}' is not an application's version (major.minor.patch)"))?;
+    let have = parse(app)
+        .ok_or_else(|| format!("'{app}' is not an application's version (major.minor.patch)"))?;
+    Ok(have >= need)
 }
 
 /// The design as its files (docs/PLAN_1_0.md, phase E): every group, node
@@ -372,6 +361,30 @@ fn open_converted(
 ) -> Result<(std::sync::Arc<dyn Files>, Option<DesignFile>), String> {
     let (files, fingerprint) = vleo_files::convert::read_folder(dir)
         .map_err(|e| format!("the design folder {} does not open: {e}", dir.display()))?;
+    // Each file names the application that wrote it; one written by a newer
+    // application than this is refused before anything is read from it, by
+    // name: what a newer application wrote may mean what this one does not.
+    let ours = env!("CARGO_PKG_VERSION");
+    for (path, f) in &files {
+        let wrote = f.meta.get("written_by_app").map_or("", String::as_str);
+        let version = wrote.strip_prefix("vleo ").unwrap_or(wrote);
+        match runs_on(version, ours) {
+            Ok(true) => {}
+            Ok(false) => {
+                return Err(format!(
+                    "the design folder {}: {path} was written by vleo {version}, and this is \
+                     vleo {ours}: open it with that application, or a newer one",
+                    dir.display()
+                ))
+            }
+            Err(e) => {
+                return Err(format!(
+                    "the design folder {}: {path} names no application that wrote it: {e}",
+                    dir.display()
+                ))
+            }
+        }
+    }
     let served = vleo_files::convert::Served::new(
         root,
         &files,
@@ -388,15 +401,15 @@ fn open_converted(
     Ok((std::sync::Arc::new(served), Some(info)))
 }
 
-/// Open the design where the tool finds it — the design file, or the folders
-/// of a checkout, as the server opens them — and run the engine on the graph
+/// Open the design where the tool finds it — its files, as the server opens
+/// them — and run the engine on the graph
 /// read from its files (docs/PLAN_1_0.md, phase D: every face is re-pointed).
 /// Says which graph runs. The command line, Python and the C interface open
 /// the design here, so every face runs the same graph the server does.
 ///
 /// A design that does not open or does not load is refused, naming why; the
 /// compiled graph is never run in its place. Where there is no design at all —
-/// no design named, no design file and no folders — the engine runs the graph
+/// no design named, no design's files and no folders — the engine runs the graph
 /// compiled into it, and says so.
 pub fn run_the_design(root: Option<PathBuf>) -> Result<String, String> {
     let root = root.unwrap_or_else(repo_root);
@@ -456,10 +469,7 @@ fn short(h: u64) -> String {
 /// a double-clicked binary starts wherever the desktop chose.
 fn repo_root() -> PathBuf {
     let holds = |p: &Path| {
-        p.join("web").is_dir()
-            && (p.join("design").is_dir()
-                || p.join("layers").is_dir()
-                || vleo_design::beside(p).is_some())
+        p.join("web").is_dir() && (p.join("design").is_dir() || p.join("layers").is_dir())
     };
     if let Ok(r) = std::env::var("VLEO_ROOT") {
         let r = PathBuf::from(r);
@@ -637,7 +647,7 @@ fn version_json(ctx: &Ctx) -> String {
     j.key("design").raw("{");
     match &ctx.design {
         Some(d) => {
-            j.str_field("from", "file");
+            j.str_field("from", "files");
             j.str_field("fingerprint", &d.fingerprint);
         }
         None => {

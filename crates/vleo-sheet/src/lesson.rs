@@ -91,7 +91,7 @@ pub fn load(dir: &Path, node: &str) -> Option<Result<Lesson, Error>> {
     load_from(&crate::files::Disk, dir, node)
 }
 
-/// The same, from the folders or a design file (`crate::files`).
+/// The same, from the folders or the design's files (`crate::files`).
 pub fn load_from(
     files: &dyn crate::files::Files,
     dir: &Path,

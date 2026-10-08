@@ -1,10 +1,10 @@
-//! A design file from another release runs, as its file states it.
+//! A design from another release runs, as its files state it.
 //!
 //! The tool holds no relation of the design in code: every row is a method,
 //! a stated value, a table or its children, read from the design's own files,
 //! and a method the tool was not built from runs in the interpreter. So a
-//! design file other than the one the tool was released with is not refused
-//! for differing from it: it runs, and what it serves is the file's.
+//! design other than the one the tool was released with is not refused for
+//! differing from it: it runs, and what it serves is its files'.
 
 use std::path::{Path, PathBuf};
 
@@ -12,8 +12,21 @@ fn root() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../..")
 }
 
+fn copy(from: &Path, to: &Path) {
+    std::fs::create_dir_all(to).unwrap();
+    for e in std::fs::read_dir(from).unwrap() {
+        let p = e.unwrap().path();
+        let dest = to.join(p.file_name().unwrap());
+        if p.is_dir() {
+            copy(&p, &dest);
+        } else {
+            std::fs::copy(&p, &dest).unwrap();
+        }
+    }
+}
+
 #[test]
-fn a_design_file_changed_in_one_row_runs_and_serves_the_change() {
+fn a_design_changed_in_one_row_runs_and_serves_the_change() {
     let scratch = std::env::temp_dir().join(format!("vleo-design-engine-{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&scratch);
     std::fs::create_dir_all(&scratch).unwrap();
@@ -21,39 +34,29 @@ fn a_design_file_changed_in_one_row_runs_and_serves_the_change() {
     std::env::set_var("VLEO_RESULTS", scratch.join("results"));
     std::env::set_var("VLEO_LOG", scratch.join("log"));
     std::env::set_var("VLEO_DATA", scratch.join("data"));
-    let file = scratch.join("design.vleo");
-    vleo_design::write(&root(), &file, &vleo_design::Stamp::default())
-        .expect("the design file was not written");
+    std::env::remove_var("VLEO_DRIVE");
+    let design = scratch.join("design");
+    copy(&root().join("design"), &design);
 
-    // The file as written opens.
-    std::env::set_var("VLEO_DESIGN", &file);
+    // The design as committed opens.
+    std::env::set_var("VLEO_DESIGN", &design);
     vleo_server::serve(Some(root()), 18971, false, true)
-        .expect("the design file as written was refused");
+        .expect("the design as committed was refused");
 
     // One row's question changed, as another release's design would have it.
-    let node = "crates/vleo-mod-solar/nodes/sw_activity_band/node.toml";
-    let db = rusqlite::Connection::open(&file).unwrap();
-    let bytes: Vec<u8> = db
-        .query_row("SELECT bytes FROM file WHERE path = ?1", [node], |r| {
-            r.get(0)
-        })
-        .expect("the row is not in the design file");
-    let text = String::from_utf8(bytes).unwrap();
-    let changed = text.replacen(
-        "Which activity band does this F10.7 fall in?",
-        "Which activity band does this F10.7 fall in, as another release asks it?",
-        1,
-    );
-    assert_ne!(text, changed, "the question was not found to change");
-    db.execute(
-        "UPDATE file SET bytes = ?1 WHERE path = ?2",
-        rusqlite::params![changed.into_bytes(), node],
-    )
-    .unwrap();
+    let node = design.join("groups/l3_solar/nodes/sw_activity_band.vnode");
+    let db = rusqlite::Connection::open(&node).unwrap();
+    let changed = db
+        .execute(
+            "UPDATE block SET question = ?1 WHERE id = 'sw_activity_band'",
+            ["Which activity band does this F10.7 fall in, as another release asks it?"],
+        )
+        .unwrap();
+    assert_eq!(changed, 1, "the row is not in its file");
     drop(db);
 
     vleo_server::serve(Some(root()), 18991, false, true)
-        .expect("a design file from another release was refused");
+        .expect("a design from another release was refused");
     std::env::remove_var("VLEO_DESIGN");
     let k = vleo_modules::Vleo::find("sw_activity_band").expect("the row runs");
     assert!(
