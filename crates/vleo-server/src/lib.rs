@@ -152,13 +152,6 @@ pub fn serve(
     }
 
     results::thin_at_start();
-    let preview = read_preview(&root);
-    if let Some(p) = &preview {
-        println!(
-            "  \x1b[33mPREVIEW build — not a release: {}\x1b[0m",
-            p.chars().take(160).collect::<String>()
-        );
-    }
     let ctx = std::sync::Arc::new(Ctx {
         root,
         tree,
@@ -167,7 +160,6 @@ pub fn serve(
         data_versions,
         bundles,
         port,
-        preview,
     });
     if background {
         std::thread::spawn(move || accept(listener, ctx));
@@ -201,7 +193,6 @@ pub fn figure(root: Option<PathBuf>, id: &str, params: &str) -> String {
         data_versions,
         bundles,
         port: 0,
-        preview: None,
     };
     results::record_figure(&ctx, id, params)
 }
@@ -242,24 +233,6 @@ struct Ctx {
     /// or the picture and the answer are two different claims.
     bundles: BTreeMap<String, (PathBuf, Vec<String>)>,
     port: u16,
-    /// What a preview build says about itself, as the JSON object it was
-    /// written as; `None` for a release. See `read_preview`.
-    preview: Option<String>,
-}
-
-/// A preview build's own description: `PREVIEW.json` beside the tool's files.
-///
-/// A PREVIEW IS BUILT FROM A FORM BRANCH, BEFORE ITS CHANGE IS APPROVED, and
-/// the one thing it must never be is mistaken for a release. The preview
-/// workflow writes this file — the branch, the commit, the build, the author,
-/// the nodes it changes — and the page shows it as a banner on every view, with
-/// the Approve button that saves the author's approval of this exact build. A
-/// release has no such file. Anything that is not one JSON object is ignored,
-/// so a damaged file cannot break the version endpoint.
-fn read_preview(root: &Path) -> Option<String> {
-    let text = std::fs::read_to_string(root.join("PREVIEW.json")).ok()?;
-    let t = text.trim();
-    (t.starts_with('{') && t.ends_with('}') && !t.contains("</")).then(|| t.to_string())
 }
 
 /// What the tool says about the design file it reads.
@@ -571,13 +544,6 @@ fn route(
         ("POST", "/v1/inputs/check") => ok_json(inputs_check(params)),
         ("POST", "/v1/inputs") => ok_json(inputs_save(params)),
         ("POST", "/v1/inputs/reset") => ok_json(inputs_reset()),
-        // A node's form: one self-contained HTML file to fill anywhere, and
-        // the check of a filled one. The check writes nothing — a form is
-        // applied by a developer at a terminal, with `xtask intake --apply`.
-        ("GET", p) if p.starts_with("/v1/form/") => {
-            form_file(ctx, p.trim_start_matches("/v1/form/"))
-        }
-        ("POST", "/v1/form/check") => ok_json(form_check(ctx, params)),
         // Saved results: what runs returned, with the inputs they ran on, kept
         // outside the repository. Viewing one runs nothing.
         ("GET", "/v1/derisk") => ok_json(derisk_json(ctx)),
@@ -680,9 +646,6 @@ fn version_json(ctx: &Ctx) -> String {
         }
     }
     j.close_obj();
-    if let Some(p) = &ctx.preview {
-        j.key("preview").raw(p);
-    }
     j.key("data").open_arr();
     for (i, d) in ctx.data_versions.iter().enumerate() {
         if i > 0 {
