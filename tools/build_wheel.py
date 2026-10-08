@@ -17,12 +17,6 @@ Why not maturin: maturin builds one wheel per system. The point here is one
 file for everyone, and a wheel is a zip with three small text files beside the
 package — writing them is simpler than bending a tool into doing it.
 
-A PREVIEW is the same package built from one author's form branch before the
-change is approved: `--preview <PREVIEW.json>` puts that description beside
-the tool's files, and the page then shows a PREVIEW banner and the Approve
-button on every view (web/js/preview.js). Its version is the release's with a
-local part — `0.2.0+preview.ana.12` — so pip never takes it for the release.
-
 Each native file is renamed to what Python loads: `_vleo.pyd` on Windows,
 `_vleo.abi3.so` elsewhere. `--native` names the system the way the package
 does: `windows-x86_64`, `macos-arm64`, `macos-x86_64`, `linux-x86_64`.
@@ -69,7 +63,7 @@ def native_name(system):
     return "_vleo.pyd" if system.startswith("windows") else "_vleo.abi3.so"
 
 
-def contents(version, kit, natives, preview=None):
+def contents(version, kit, natives):
     """Every file of the wheel as (path in the wheel, bytes), in a fixed order."""
     out = []
     for f in sorted(PACKAGE.glob("*.py")):
@@ -80,18 +74,14 @@ def contents(version, kit, natives, preview=None):
     kit = Path(kit)
     for f in sorted(p for p in kit.rglob("*") if p.is_file()):
         rel = f.relative_to(kit).as_posix()
-        if rel == "PREVIEW.json":
-            continue
         out.append(("vleo/_kit/" + rel, f.read_bytes()))
-    if preview is not None:
-        out.append(("vleo/_kit/PREVIEW.json", Path(preview).read_bytes()))
     info = "vleo-%s.dist-info" % version
     out.append((info + "/METADATA", METADATA.format(version=version).encode()))
     out.append((info + "/WHEEL", WHEEL.encode()))
     return out, info
 
 
-def build(version, kit, natives, out_dir, preview=None):
+def build(version, kit, natives, out_dir):
     # A kit carries the design as one file, design.vleo; one written before
     # it carried the tree's folders, with layers/ among them.
     design = (Path(kit) / "design.vleo").is_file() or (Path(kit) / "layers").is_dir()
@@ -102,11 +92,9 @@ def build(version, kit, natives, out_dir, preview=None):
             raise SystemExit("unknown system %r; one of %s" % (system, ", ".join(SYSTEMS)))
     if not natives:
         raise SystemExit("no --native engine given: the package would run nowhere")
-    if preview is not None and "+preview." not in version:
-        raise SystemExit("a preview's version carries +preview.<author>.<build>, so pip never takes it for a release")
-    if preview is None and "+" in version:
-        raise SystemExit("a release version has no local part; %s looks like a preview's" % version)
-    files, info = contents(version, kit, natives, preview)
+    if "+" in version:
+        raise SystemExit("a release version has no local part; %s is not a release's" % version)
+    files, info = contents(version, kit, natives)
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
     wheel = out_dir / ("vleo-%s-py3-none-any.whl" % version)
@@ -191,23 +179,13 @@ def selftest():
             failures.append("a package with no engine was accepted")
         except SystemExit:
             pass
-        # A preview carries its own description and a version pip cannot take
-        # for the release; a release carries neither.
-        pv = t / "PREVIEW.json"
-        pv.write_text('{"kind": "vleo-preview", "run": "12"}')
-        wp = build("9.9.9+preview.ana.12", kit, {"linux-x86_64": lib}, t / "pv", preview=pv)
-        with zipfile.ZipFile(wp) as z:
-            if "vleo/_kit/PREVIEW.json" not in z.namelist():
-                failures.append("a preview wheel does not carry PREVIEW.json")
-        with zipfile.ZipFile(wheel) as z:
-            if "vleo/_kit/PREVIEW.json" in z.namelist():
-                failures.append("a release wheel carries PREVIEW.json")
-        for bad_v, bad_p in (("9.9.9", pv), ("9.9.9+preview.x.1", None)):
-            try:
-                build(bad_v, kit, {"linux-x86_64": lib}, t / "bad", preview=bad_p)
-                failures.append("version %s with preview=%s was accepted" % (bad_v, bad_p))
-            except SystemExit:
-                pass
+        # A release's version has no local part, so pip never takes some
+        # other build for it.
+        try:
+            build("9.9.9+x.1", kit, {"linux-x86_64": lib}, t / "bad")
+            failures.append("version 9.9.9+x.1 was accepted")
+        except SystemExit:
+            pass
     for f in failures:
         print("selftest: " + f)
     print("selftest: %s" % ("FAILED" if failures else "ok"))
@@ -220,7 +198,6 @@ def main():
     ap.add_argument("--kit", help="a files-only kit: cargo run -p xtask -- kit --files-only --out <dir>")
     ap.add_argument("--native", action="append", default=[], metavar="SYSTEM=PATH")
     ap.add_argument("--out", default=str(ROOT / "dist"))
-    ap.add_argument("--preview", help="a PREVIEW.json: build a preview of a form branch, not a release")
     ap.add_argument("--selftest", action="store_true")
     a = ap.parse_args()
     if a.selftest:
@@ -233,7 +210,7 @@ def main():
         if not path or not os.path.isfile(path):
             ap.error("--native %s: no such file" % n)
         natives[system] = path
-    wheel = build(a.version, a.kit, natives, a.out, a.preview)
+    wheel = build(a.version, a.kit, natives, a.out)
     bad = verify(wheel)
     if bad:
         for b in bad:
