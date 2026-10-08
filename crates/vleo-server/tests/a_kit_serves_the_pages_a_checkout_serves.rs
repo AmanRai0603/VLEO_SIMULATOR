@@ -3,8 +3,8 @@
 //!
 //! The kit carries the design's files, `design/`, and beside them only what
 //! the daemon reads that is not the design: the web face, the reference data,
-//! the manual, and what each node folder holds that is the code's — never a
-//! sheet (`xtask kit`, `cmd_kit`). So one server is started on the checkout
+//! the manual, and what each node folder holds that is the code's and the
+//! prior implementation's grid — never a sheet (`xtask kit`, `cmd_kit`). So one server is started on the checkout
 //! and one on a folder laid out as the kit lays it out, and every page a
 //! reader opens is asked of both: each node's fragment and what its folder
 //! holds, the index, the de-risking record and a lesson form. Any difference
@@ -81,8 +81,7 @@ fn a_kit_and_a_checkout_serve_the_same_pages() {
     let code = |p: &Path| {
         let s = p.to_string_lossy().replace('\\', "/");
         s.contains("/nodes/")
-            && !["node.toml", "fixtures.toml", "parity.csv"]
-                .contains(&p.file_name().unwrap().to_str().unwrap())
+            && !["node.toml", "fixtures.toml"].contains(&p.file_name().unwrap().to_str().unwrap())
     };
     for c in std::fs::read_dir(root().join("crates")).unwrap() {
         let c = c.unwrap().path();
@@ -131,7 +130,22 @@ fn a_kit_and_a_checkout_serve_the_same_pages() {
         if a.0 != 200 {
             differ.push(format!("{p}: {} from the checkout", a.0));
         } else if a != b {
-            differ.push(format!("{p}: differs"));
+            // Where the two first part, so a difference says what it is.
+            let at =
+                a.1.bytes()
+                    .zip(b.1.bytes())
+                    .position(|(x, y)| x != y)
+                    .unwrap_or(a.1.len().min(b.1.len()));
+            let near = |s: &str| {
+                let lo = s.floor_char_boundary(at.saturating_sub(80));
+                let hi = s.ceil_char_boundary((at + 80).min(s.len()));
+                s[lo..hi].to_string()
+            };
+            differ.push(format!(
+                "{p}: differs at byte {at}\n  checkout: {:?}\n  kit:      {:?}",
+                near(&a.1),
+                near(&b.1)
+            ));
         }
     }
     assert!(

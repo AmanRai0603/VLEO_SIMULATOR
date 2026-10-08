@@ -457,7 +457,9 @@ pub(super) fn cmd_kit(root: &Path, args: &[&str]) -> Result<(), String> {
         .map_err(|e| format!("the design the kit carries does not read: {e}"))?;
     // Beside it, what each node folder holds that is the code's and not the
     // design's — its generated module, contract and evidence — which a row's
-    // page shows; never the sheet, which the design's files answer for.
+    // page shows, and the prior implementation's grid (parity.csv), which a
+    // page's list of gaps still looks for on disk; never the sheet or its
+    // fixtures, which the design's files answer for.
     for c in fs::read_dir(root.join("crates")).map_err(|e| format!("crates: {e}"))? {
         let c = c.map_err(|e| e.to_string())?.path();
         let nodes = c.join("nodes");
@@ -478,9 +480,7 @@ pub(super) fn cmd_kit(root: &Path, args: &[&str]) -> Result<(), String> {
             for f in fs::read_dir(&n).map_err(|e| format!("{}: {e}", n.display()))? {
                 let f = f.map_err(|e| e.to_string())?.path();
                 let file = f.file_name().unwrap().to_string_lossy().into_owned();
-                if !f.is_file()
-                    || ["node.toml", "fixtures.toml", "parity.csv"].contains(&file.as_str())
-                {
+                if !f.is_file() || ["node.toml", "fixtures.toml"].contains(&file.as_str()) {
                     continue;
                 }
                 fs::create_dir_all(&to).map_err(|e| format!("{}: {e}", to.display()))?;

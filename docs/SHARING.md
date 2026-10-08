@@ -31,7 +31,7 @@ The loop, end to end:
   the browser itself because of its name) and `vleo.exe`;
 - the files they read: `web/`, `bundles/`, `docs/manual.toml`, the design itself as its files,
   `design/`, and beside it what each node folder holds that is the code's (its generated module,
-  contract and evidence), never a sheet;
+  contract and evidence) and the prior implementation's grid (`parity.csv`), never a sheet;
 - `START_HERE.md` (this repository's `docs/TEAM_GUIDE.md`), `VERSION`, and `start.sh` off Windows.
 
 No script starts the Windows program: a script launching an unknown program is one more thing an
