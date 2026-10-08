@@ -65,7 +65,7 @@ fn every_case_of_the_design_passes() {
     let served = vleo_files::convert::Served::new(&root, &on_disk, Arc::new(Disk))
         .expect("design/ is served");
     let tree: Tree = vleo_sheet::load::load_all_from(&served, &root).expect("design/ loads");
-    let g = opened::interpreting(&tree).expect("design/ makes a graph");
+    let g = opened::graph(&tree).expect("design/ makes a graph");
 
     let mut found = Found::default();
     for sh in tree.ordered() {

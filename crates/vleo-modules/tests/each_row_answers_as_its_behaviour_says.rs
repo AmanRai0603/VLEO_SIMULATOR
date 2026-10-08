@@ -146,7 +146,7 @@ fn a_table_is_read_by_the_engine_and_refuses_outside_its_rows() {
     // spread's own declared range ends at 45 sfu.)
     let t = with_a_table(vec![0.0, 40.0], vec![1.0, 100.0], "linear");
     assert_eq!(gate(&t, "sw_f107_design_long", "lookup"), Verdict::Pass);
-    let g = opened::interpreting(&t).unwrap();
+    let g = opened::graph(&t).unwrap();
     let k = g.find("sw_f107_design_long").unwrap() as usize;
     assert_eq!(g.nodes[k].behaviour.name(), "lookup");
     assert_eq!(
@@ -161,7 +161,7 @@ fn a_table_is_read_by_the_engine_and_refuses_outside_its_rows() {
 
     // Read in the logarithm of the answer, halfway from 1 to 100 is 10.
     let t = with_a_table(vec![0.0, 40.0], vec![1.0, 100.0], "log");
-    let g = opened::interpreting(&t).unwrap();
+    let g = opened::graph(&t).unwrap();
     let (v, _) = run(g, "sw_f107_design_long", &[(spread, 20.0)]);
     assert!((v.unwrap() - 10.0).abs() < 1e-12, "{v:?}");
 
@@ -264,7 +264,7 @@ fn a_row_answered_by_its_children_takes_their_port_and_keeps_its_estimate() {
         gate(&t, "sys_space_environment_f10_7", "children"),
         Verdict::Pass
     );
-    let g = opened::interpreting(&t).unwrap();
+    let g = opened::graph(&t).unwrap();
     let k = g.find("sys_space_environment_f10_7").unwrap() as usize;
     assert_eq!(g.nodes[k].behaviour.name(), "children");
     let (answer, why) = run(g, "sys_space_environment_f10_7", &[]);
@@ -321,10 +321,10 @@ fn each_graph_keeps_its_own_cases_answers_and_no_other_s() {
     // with the same row, one with its method changed, give that row's
     // cases different answers, whichever is asked first and however often.
     let id = "sys_space_environment_f10_7";
-    let same = opened::interpreting(&tree()).unwrap();
+    let same = opened::graph(&tree()).unwrap();
     let mut t = tree();
     t.sheets.get_mut(id).unwrap().method.text = "return crossing * 2".into();
-    let changed = opened::interpreting(&t).unwrap();
+    let changed = opened::graph(&t).unwrap();
     let k = same.find(id).unwrap();
     assert_eq!(changed.find(id), Some(k));
     let passes = |g: &Graph| g.fixture_verdicts(k).iter().all(|v| v.passed);

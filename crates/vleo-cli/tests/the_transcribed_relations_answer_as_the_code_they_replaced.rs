@@ -13,8 +13,9 @@
 //! - with each input in turn at both ends of its declared range, at zero,
 //!   and not a number, the others at today's values.
 //!
-//! Both ways the engine runs a method are held to the record: the interpreter,
-//! and the translation the build carries as its fast path.
+//! Both are held to the record: the interpreter, which is how every face runs
+//! a method, and the translation the compiled graph still carries until it is
+//! deleted.
 //!
 //! The record is written once, from the build that still has the code, and
 //! never again to get green:
@@ -284,7 +285,7 @@ fn the_transcribed_relations_answer_as_the_code_they_replaced() {
         .map(|(_, l)| format!("{l}\n"))
         .collect();
 
-    let interpreted = opened::read_interpreting(&root()).expect("the design's files make a graph");
+    let interpreted = opened::read(&root()).expect("the design's files make a graph");
     let mut said = String::new();
     for (how, graph) in [
         ("the interpreter", interpreted),

@@ -48,14 +48,8 @@ fn the_design_read_from_its_files_is_known_as_the_one_compiled() {
         "not the same twice"
     );
     assert_eq!(opened::graph(&t).unwrap().design_fingerprint(), compiled);
-    // Which methods run in the interpreter is how the engine runs the design,
-    // not which design it is.
-    assert_eq!(
-        opened::interpreting(&t).unwrap().design_fingerprint(),
-        compiled
-    );
     // And it answers alike, with the reference data and without it.
-    let g = opened::interpreting(&t).unwrap();
+    let g = opened::graph(&t).unwrap();
     for case in [with_data(), Case::default()] {
         assert_eq!(
             g.answers_fingerprint(&case).unwrap(),
@@ -117,7 +111,7 @@ fn an_answer_that_moves_moves_the_answers_fingerprint() {
     let mut t = tree();
     let m = &mut t.sheets.get_mut("sw_f107_design_long").unwrap().method.text;
     *m = m.replace("const z = 1.28 [1]", "const z = 1.29 [1]");
-    let g = opened::interpreting(&t).unwrap();
+    let g = opened::graph(&t).unwrap();
     assert_eq!(g.design_fingerprint(), COMPILED.design_fingerprint());
     let case = with_data();
     assert_ne!(

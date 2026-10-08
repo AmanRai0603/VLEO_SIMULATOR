@@ -39,8 +39,8 @@ use vleo_modules::opened;
 /// its files is held to all three (`the_design_read_at_run_time_answers_as_today`).
 #[test]
 fn today_s_answers_are_on_record() {
-    // The design as a face opens it: its files in design/, a method this
-    // build was made from run as its translation.
+    // The design as a face opens it: its files in design/, every method run
+    // by the interpreter.
     let graph = opened::read(&root()).expect("the design's files make a graph");
     let now = today(graph);
     let graph_now = the_graph(graph);

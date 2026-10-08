@@ -143,7 +143,7 @@ fn broken(edits: &[(&str, &str, &str)]) -> &'static Graph {
         assert!(m.contains(from), "{id}'s method has no {from:?}");
         *m = m.replace(from, to);
     }
-    opened::interpreting(&tree).unwrap()
+    opened::graph(&tree).unwrap()
 }
 
 /// The hot edge of the sustained F10.7 band with its multiplier read from
@@ -254,7 +254,7 @@ fn the_same_design_unbroken_in_the_interpreter_closes_as_compiled() {
     // The broken test's graph is the interpreter's; without the break it
     // gives the compiled map, so what the break shows is the break.
     let tree = vleo_sheet::load_all(&root()).unwrap();
-    let g = opened::interpreting(&tree).unwrap();
+    let g = opened::graph(&tree).unwrap();
     let case = with_data();
     let (a, b) = (health(g, &case), health(&COMPILED, &case));
     for (x, y) in a.nodes.iter().zip(&b.nodes) {

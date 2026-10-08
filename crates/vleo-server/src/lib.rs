@@ -352,9 +352,8 @@ pub fn runs_on(wrote: &str, app: &str) -> Result<bool, String> {
 /// the folders they were converted from (`vleo_files::convert::Served`).
 ///
 /// It must load as a design, every check the loader makes, made. Its rows run
-/// as its files state them: a method as its translation when this tool was
-/// built from that very method, in the interpreter otherwise, and a stated
-/// value as stated.
+/// as its files state them: a method in the interpreter, and a stated value
+/// as stated.
 fn open_converted(
     root: &Path,
     dir: &Path,

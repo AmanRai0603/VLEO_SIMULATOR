@@ -42,12 +42,15 @@ fn the_server_runs_the_graph_read_from_the_design_s_files() {
             d.id
         );
     }
-    // Every stated value is published by the graph; a method this build was
-    // made from runs as its translation, the fast path.
+    // Every stated value is published by the graph, and every method is run
+    // by the interpreter: no row runs the code compiled for it.
+    use vleo_modules::core_engine::graph::Behaviour;
     for (k, d) in g.nodes.iter().enumerate() {
-        if d.behaviour == vleo_modules::core_engine::graph::Behaviour::Stated && d.inputs.is_empty()
-        {
+        if d.behaviour == Behaviour::Stated && d.inputs.is_empty() {
             assert!(g.run[k].is_some(), "{} is not published by the graph", d.id);
+        }
+        if d.behaviour == Behaviour::Method {
+            assert!(g.run[k].is_some(), "{} is not run by the interpreter", d.id);
         }
     }
 }

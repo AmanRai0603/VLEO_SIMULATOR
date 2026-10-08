@@ -20,12 +20,13 @@
 //!   faults, and the guards on every value it publishes. Its arithmetic is the
 //!   same portable maths, so it is held to today's answers exactly.
 //!
-//!   A method this build was made from — the very sheet — runs as its
-//!   translation instead, the fast path a sweep needs, held equal to the
-//!   interpreter by the parity gate ([`interpreting`] builds the graph that
-//!   gate runs). A method the build has not seen runs in the interpreter. The
-//!   translation is the method itself, translated by rule; no other compiled
-//!   code runs for any row.
+//!   The interpreter is the only way a method runs: no translation of it
+//!   compiled into this build runs in its place. docs/PLAN_1_0.md, phase D,
+//!   kept translated code as a fast path only if a sweep proved too slow;
+//!   measured, the solar design and closure figures are the same to within
+//!   their timing noise, and the one heavy case — `l3_solar_interface` over
+//!   100 001 points — takes 1.6 times as long, 0.27 ms a point against 0.17.
+//!   No other compiled code runs for any row.
 //! - **a stated value** — published as written, converted from its unit to
 //!   its type's as the generated row did, and guarded by its declared domain.
 //! - **a table, or its children** — read by the engine itself.
@@ -52,8 +53,7 @@ use vleo_sheet::model as sheet;
 use vleo_units::Unit;
 
 use crate::{
-    CaseDef, CycleDef, Error, ErrorKind, Graph, GroupDef, NodeFn, Relation, COMPILED, MAX_INPUTS,
-    MAX_OUTPUTS,
+    CaseDef, CycleDef, Error, ErrorKind, Graph, GroupDef, NodeFn, Relation, MAX_INPUTS, MAX_OUTPUTS,
 };
 use vleo_core::fault::Edge;
 use vleo_sheet::method::{self, Compiled, Outcome};
@@ -423,30 +423,6 @@ fn relation(sh: &sheet::Sheet) -> NodeFn {
     not_in_this_build
 }
 
-/// The translation of this row's method, when this build was made from the
-/// very sheet: the same implementation (`impl_hash`) and the same sheet
-/// (`sheet_hash`), and so the same method, translated, with the guards
-/// generated from the range it declares.
-fn this_build(sh: &sheet::Sheet) -> Option<NodeFn> {
-    let k = COMPILED.find(&sh.id)? as usize;
-    (COMPILED.nodes[k].impl_hash == sh.impl_hash && COMPILED.nodes[k].sheet_hash == sh.sheet_hash)
-        .then(|| COMPILED.dispatch[k])
-}
-
-/// How the graph runs a row whose relation is a method.
-#[derive(Clone, Copy, PartialEq, Eq)]
-enum Methods {
-    /// Its translation, when this build was made from the very sheet; the
-    /// interpreter otherwise. docs/PLAN_1_0.md, phase D: "If a sweep is too
-    /// slow, translated code stays as the fast path, held equal to the
-    /// interpreter." A sweep runs a method thousands of times: the design
-    /// panel's F10.7 view took 6.7 s interpreted and 0.28 s translated.
-    Translated,
-    /// Always in the interpreter — how the parity gate holds every
-    /// translation equal to it.
-    Interpreted,
-}
-
 /// A stated value, as the row publishes it: converted from the unit it was
 /// written in to its type's, exactly as the generated row did
 /// (`from_unit`), and guarded by its declared domain.
@@ -482,24 +458,14 @@ fn stated(sh: &sheet::Sheet) -> Option<&'static Relation> {
     })))
 }
 
-/// The graph of `tree`, built as the generator builds the compiled one. It
-/// lives as long as the engine that opened it.
-///
-/// A method this build was made from runs as its translation, held equal to
-/// the interpreter by the parity gate; a method the build has not seen — a
-/// group's release changed it — runs in the interpreter.
+/// The graph of `tree`, built as the generator builds the compiled one, every
+/// method run by the interpreter. It lives as long as the engine that opened
+/// it.
 pub fn graph(tree: &Tree) -> Result<&'static Graph, Error> {
-    build(tree, Methods::Translated)
+    build(tree)
 }
 
-/// The graph of `tree` with every method run by the interpreter, whatever
-/// translation the build has for it: the graph the parity gate holds every
-/// translation to.
-pub fn interpreting(tree: &Tree) -> Result<&'static Graph, Error> {
-    build(tree, Methods::Interpreted)
-}
-
-fn build(tree: &Tree, methods: Methods) -> Result<&'static Graph, Error> {
+fn build(tree: &Tree) -> Result<&'static Graph, Error> {
     // Every name the design wires by must resolve before anything is built
     // from it. Below, a name that does not would run as the first variable,
     // or as zero, or be left out; the compiled build refused it at compile
@@ -633,24 +599,14 @@ fn build(tree: &Tree, methods: Methods) -> Result<&'static Graph, Error> {
             view: view_of(&sh.view),
             behaviour: behaviour_of(sh),
         });
-        // A method runs in the interpreter — or, when this build was made
-        // from this very sheet, as its translation — and a stated value is
-        // published by the graph itself.
-        let method = interpreted(sh);
-        let fast = match (methods, &method) {
-            (Methods::Translated, Some(_)) => this_build(sh),
-            _ => None,
-        };
-        let own = if fast.is_some() {
-            None
-        } else {
-            method.or_else(|| stated(sh))
-        };
-        dispatch.push(fast.unwrap_or(if own.is_some() {
+        // A method runs in the interpreter, and a stated value is published
+        // by the graph itself.
+        let own = interpreted(sh).or_else(|| stated(sh));
+        dispatch.push(if own.is_some() {
             not_in_this_build
         } else {
             relation(sh)
-        }));
+        });
         run.push(own);
     }
 
@@ -776,11 +732,6 @@ fn build(tree: &Tree, methods: Methods) -> Result<&'static Graph, Error> {
 /// loader, then built as above.
 pub fn read(root: &std::path::Path) -> Result<&'static Graph, Error> {
     graph(&load(root)?)
-}
-
-/// The same, with every method run by the interpreter ([`interpreting`]).
-pub fn read_interpreting(root: &std::path::Path) -> Result<&'static Graph, Error> {
-    interpreting(&load(root)?)
 }
 
 /// The design under `root`: its files in `design/`, read as the folders they
