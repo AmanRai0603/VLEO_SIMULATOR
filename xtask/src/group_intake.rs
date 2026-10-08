@@ -55,7 +55,7 @@ pub(super) fn cmd_group_intake(root: &Path, args: &[&str]) -> Result<(), String>
             continue;
         }
         let Some(sh) = tree.sheets.get(&id) else {
-            println!("\n\x1b[1m{id}\x1b[0m — not in the design: a new node arrives by its own form (`xtask form --new`)");
+            println!("\n\x1b[1m{id}\x1b[0m — not in the design, and a group release does not add a node here");
             continue;
         };
         if n.get("kind").map(String::as_str) != Some("computed") {

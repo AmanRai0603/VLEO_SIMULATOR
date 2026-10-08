@@ -1,9 +1,9 @@
 //! The method language, from the terminal: a node's method checked against its
-//! node engineer's cases, and the checker every node form carries rebuilt.
+//! node engineer's cases, and the checker the pages carry rebuilt.
 //!
-//! Both read `vleo_sheet::method`, the one implementation — the form runs the
+//! Both read `vleo_sheet::method`, the one implementation — the pages run the
 //! same function compiled to WebAssembly, so what `xtask method` says about a
-//! node is what the node engineer saw in their form before they sent it.
+//! node is what the node engineer saw before they sent it.
 
 use std::fs;
 use std::path::Path;
@@ -96,7 +96,7 @@ pub fn cmd_method(root: &Path, args: &[&str]) -> Result<(), String> {
     }
 }
 
-/// `method-wasm [--check]` — rebuild the checker the node form carries, or
+/// `method-wasm [--check]` — rebuild the checker the pages carry, or
 /// only say whether it is current.
 pub fn cmd_method_wasm(root: &Path, args: &[&str]) -> Result<(), String> {
     let now = vleo_sheet::method::checker_fingerprint(root)?;
@@ -112,8 +112,8 @@ pub fn cmd_method_wasm(root: &Path, args: &[&str]) -> Result<(), String> {
             return Ok(());
         }
         return Err(format!(
-            "{WASM} was built from different sources ({recorded:?}, now {now}). Every node form \
-             carries it, so a form would check methods by the old rules. Run \
+            "{WASM} was built from different sources ({recorded:?}, now {now}). Every page that \
+             checks a method carries it, so a page would check methods by the old rules. Run \
              `cargo run -p xtask -- method-wasm` and commit both files."
         ));
     }
@@ -157,7 +157,7 @@ pub fn cmd_method_wasm(root: &Path, args: &[&str]) -> Result<(), String> {
     fs::write(
         root.join(STAMP),
         format!(
-            "# The node form's method checker: web/method.wasm.gz, built by\n\
+            "# The pages' method checker: web/method.wasm.gz, built by\n\
              # `cargo run -p xtask -- method-wasm` from vleo_sheet::method::CHECKER_SOURCES.\n\
              # A test refuses a checkout whose sources have moved on from it.\n\
              fingerprint = \"{now}\"\nlanguage = {}\n",
@@ -557,73 +557,3 @@ pub fn cmd_build_node(root: &Path, args: &[&str]) -> Result<(), String> {
 
 // ---------------------------------------------------------------------------
 // migration: the tree moved over to methods, a batch at a time
-
-/// `migration [--owner <o>] [--subsystem <s>] [--forms <dir>]` — which nodes
-/// still need a method, by owner, and their forms written ready to send.
-///
-/// Nothing here writes a method. Each one comes from the node's owner, on the
-/// node's form, like any other change: this only says whose they are and puts
-/// the forms in one place.
-pub fn cmd_migration(root: &Path, args: &[&str]) -> Result<(), String> {
-    let tree = vleo_sheet::load_all(root)?;
-    let flag = |f: &str| {
-        args.iter()
-            .position(|a| *a == f)
-            .and_then(|i| args.get(i + 1))
-            .copied()
-    };
-    let (owner, subsystem, forms) = (flag("--owner"), flag("--subsystem"), flag("--forms"));
-    let mut by_owner: std::collections::BTreeMap<String, Vec<&vleo_sheet::model::Sheet>> =
-        Default::default();
-    let (mut asked, mut done) = (0usize, 0usize);
-    for sh in tree.ordered() {
-        if sh.is_seeded() || sh.is_declared() {
-            continue;
-        }
-        if owner.is_some_and(|o| sh.owner != o) || subsystem.is_some_and(|s| sh.subsystem != s) {
-            continue;
-        }
-        asked += 1;
-        if !sh.method.text.trim().is_empty() {
-            done += 1;
-            continue;
-        }
-        by_owner.entry(sh.owner.clone()).or_default().push(sh);
-    }
-    println!(
-        "migration: {done} of {asked} computed row(s) have a method; {} still to come.",
-        asked - done
-    );
-    for (o, rows) in &by_owner {
-        let names: Vec<&str> = rows.iter().take(6).map(|s| s.id.as_str()).collect();
-        println!(
-            "  {:<14} {:>4}   {}{}",
-            if o.is_empty() { "(no owner)" } else { o },
-            rows.len(),
-            names.join(", "),
-            if rows.len() > names.len() {
-                ", …"
-            } else {
-                ""
-            }
-        );
-    }
-    if let Some(dir) = forms {
-        let mut n = 0usize;
-        for (o, rows) in &by_owner {
-            let d = Path::new(dir).join(if o.is_empty() { "no-owner" } else { o });
-            fs::create_dir_all(&d).map_err(|e| format!("{}: {e}", d.display()))?;
-            for sh in rows {
-                let html = vleo_sheet::template::document(sh, &tree);
-                let p = d.join(format!("{}.node-form.html", sh.id));
-                fs::write(&p, html).map_err(|e| format!("{}: {e}", p.display()))?;
-                n += 1;
-            }
-        }
-        println!(
-            "\nwrote {n} form(s) under {dir}/<owner>/ — send each owner theirs. Each comes back \
-             through `take`, one form per branch, like any other change."
-        );
-    }
-    Ok(())
-}

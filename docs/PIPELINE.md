@@ -10,17 +10,15 @@ Generated from the one table in `xtask/src/pipeline.rs`; `cargo run -p xtask -- 
 
 ## The journey
 
-1. **form** — a node engineer fills a node's form: `form`, `group-export`
-2. **take** — the developer puts it on its own branch: `take`
-3. **check** — what it would change, before anything is written: `intake`, `group-intake`, `group-test`
-4. **apply** — the form written into the sheet — all of it or none: `lesson`, `new`
-5. **publish** — a filled row's code generated, and its holes written: `group-deliver`, `declare`, `publish`, `fill`, `confirm`
-6. **build** — a node built from its method, and its tests shown to test: `group-build`, `method`, `build-node`, `rerun`, `method-wasm`, `files-wasm`, `differential`
-7. **gate** — the checks every change passes, and what they generate: `group-app`, `docs`, `assemble`, `gate`, `ready`, `codeowners`, `variables`, `guides`, `pipeline`
-8. **preview** — the node engineer tries the build and approves it: `preview`, `approve`, `queue`
-9. **release** — the stamped release everyone gets: `readers`, `group-accept`, `ship`, `release`, `derisk`, `kit`, `design`, `convert`, `bundle`
-10. **read** — reports: what exists, what is open, why a node is what it is: `status`, `active`, `catalogue`, `impact`, `reach`, `gap`, `graph`, `migration`, `explain`, `why`, `trace`
-11. **setup** — once per person per clone: `setup`, `help`
+1. **form** — a node engineer fills a node's form: `group-export`
+2. **check** — what it would change, before anything is written: `group-intake`, `group-test`
+3. **apply** — the form written into the sheet — all of it or none: `lesson`, `new`
+4. **publish** — a filled row's code generated, and its holes written: `group-deliver`, `declare`, `publish`, `fill`, `confirm`
+5. **build** — a node built from its method, and its tests shown to test: `group-build`, `method`, `build-node`, `rerun`, `method-wasm`, `files-wasm`, `differential`
+6. **gate** — the checks every change passes, and what they generate: `group-app`, `docs`, `assemble`, `gate`, `ready`, `codeowners`, `variables`, `guides`, `pipeline`
+7. **release** — the stamped release everyone gets: `readers`, `group-accept`, `ship`, `release`, `derisk`, `kit`, `design`, `convert`, `bundle`
+8. **read** — reports: what exists, what is open, why a node is what it is: `status`, `active`, `catalogue`, `impact`, `reach`, `gap`, `graph`, `explain`, `why`, `trace`
+9. **setup** — once per person per clone: `setup`, `help`
 
 ## When a step stops
 
@@ -41,21 +39,6 @@ Every command that writes prints its steps as `n/total · name`. A step that sto
 
 ### form — a node engineer fills a node's form
 
-#### `form`
-
-    cargo run -p xtask -- form <node>|--new [--example] [--out <file.html>]
-
-a node's form: one HTML file that explains itself, asks every question the sheet answers, lists every row it could read, and saves a filled copy. --new is the form for a node the design does not have yet, which also asks where it goes. Anyone can fill it, offline, by hand or with an assistant; the filled file comes back to a developer. --example fills orbit_velocity's form with the worked example, for the pipeline's end-to-end test of the method path only.
-
-| | |
-|---|---|
-| reads | the node's sheet, the rows it could read, web/method.wasm.gz |
-| writes | one HTML file: <node>.node-form.html, or --out |
-| checks | that the node exists |
-| undo | delete the file |
-| dry run | --dry-run prints this plan — the steps, what it would write, how to undo it — and touches nothing |
-| code | `xtask/src/forms.rs` — `cmd_form` |
-
 #### `group-export`
 
     cargo run -p xtask -- group-export <group> [--out <dir>]
@@ -72,47 +55,13 @@ a group's folder in the pattern, written from every sheet in the group, for the 
 | dry run | it only reads, so it runs as it is |
 | code | `xtask/src/group.rs` — `cmd_group_export` |
 
-### take — the developer puts it on its own branch
-
-#### `take`
-
-    cargo run -p xtask -- take <form.html> --for <author> [--again] [--no-push] [--no-test]
-
-the developer's first step: check a filled node form; if it cannot be taken, write <form>.returned.txt to send back and change nothing; otherwise put it on its own branch form/<author>/<node> from a fresh maintainer, apply it, regenerate, gate, test, commit naming the node engineer, push.
-
-| | |
-|---|---|
-| reads | the filled form, the `maintainer` branch, the tree |
-| writes | a branch form/<author>/<node>: the applied sheet, regenerated files, today's answers recorded again, design/ converted again (by intake and build-node), a commit, a push — or <form>.returned.txt |
-| checks | the form, as intake does; the gate; cargo test; a node with a method built from it |
-| undo | delete the branch (`git branch -D form/<author>/<node>`, and on the remote); nothing on `maintainer` changes |
-| steps | 1 the branch · 2 apply the form · 3 regenerate · 4 gate · 5 build the node from its method · 6 today's answers, recorded again · 7 tests (cargo test --workspace) · 8 commit and push |
-| dry run | --dry-run prints this plan — the steps, what it would write, how to undo it — and touches nothing |
-| code | `xtask/src/flow.rs` — `cmd_take` |
-
 ### check — what it would change, before anything is written
-
-#### `intake`
-
-    cargo run -p xtask -- intake <file.html> [--apply [--partial]]
-
-the checker: what a filled form would change, field by field, and every interface it declares — each input a row that exists, of the quantity expected. What it cannot do is named: a conflict with a change made since, a relation an assistant supplied. --apply writes it (a new node is built in its place in the tree), regenerates, gates, and puts everything back on a refusal. Known-good values come out as a request, never written.
-
-| | |
-|---|---|
-| reads | the filled form, the node's sheet, every row an interface names |
-| writes | with --apply: node.toml (or a new node's folder), every generated file, CODEOWNERS for a new node, design/ converted again |
-| checks | every field against the sheet; every interface; a conflict with a change made since; a relation an assistant supplied; the whole tree's gate |
-| undo | a refused apply is put back by intake itself; an applied one: `git restore` the node's folder, or `git revert` |
-| steps | 1 read the form · 2 check every change · 3 build the new node · 4 apply to the sheet · 5 the design's files, converted again |
-| dry run | --dry-run runs intake without --apply: the same check, nothing written |
-| code | `xtask/src/forms.rs` — `cmd_intake` |
 
 #### `group-intake`
 
     cargo run -p xtask -- group-intake <folder> [--node <id>] [--apply [--partial]] [--draft]
 
-a group's sealed release, written out with `node tools/group_db.mjs --unpack`, taken into the design: the seal checked against every file, then each computed node's pseudocode and results planned as its node form — conflicts, an assistant's method or results refused — and with --apply written and gated. --draft looks at an unsealed release and never applies.
+a group's sealed release, written out with `node tools/group_db.mjs --unpack`, taken into the design: the seal checked against every file, then each computed node's pseudocode and results planned against the design — conflicts, an assistant's method or results refused — and with --apply written and gated. --draft looks at an unsealed release and never applies.
 
 | | |
 |---|---|
@@ -274,7 +223,7 @@ every computed node of a sealed release, taken in with group-intake --apply, bui
 
     cargo run -p xtask -- method <node>
 
-the node's method, checked, and each of its node engineer's test cases run through it — the check the form runs as the node engineer types, and the one the gate refuses on.
+the node's method, checked, and each of its node engineer's test cases run through it — the check the group's application runs as the node engineer types, and the one the gate refuses on.
 
 | | |
 |---|---|
@@ -320,7 +269,7 @@ the node engineer's own code run again on their cases: Python directly, MATLAB a
 
     cargo run -p xtask -- method-wasm [--check]
 
-rebuild web/method.wasm.gz, the checker every node form carries, from vleo_sheet::method; --check only says whether the committed one is current.
+rebuild web/method.wasm.gz, the checker the pages carry, from vleo_sheet::method; --check only says whether the committed one is current.
 
 | | |
 |---|---|
@@ -497,54 +446,6 @@ only says whether it is current.
 | undo | `git restore docs/PIPELINE.md` |
 | dry run | --dry-run runs pipeline --check: whether docs/PIPELINE.md is current, nothing written |
 | code | `xtask/src/pipeline.rs` — `cmd_pipeline` |
-
-### preview — the node engineer tries the build and approves it
-
-#### `preview`
-
-    cargo run -p xtask -- preview
-
-where the current form branch's preview build is — every push to a form branch builds one — and what to do with it.
-
-| | |
-|---|---|
-| reads | the current branch and its PREVIEW.json |
-| writes | nothing |
-| checks | that this is a form branch |
-| undo | nothing to undo: it writes nothing |
-| dry run | it only reads, so it runs as it is |
-| code | `xtask/src/flow.rs` — `cmd_preview` |
-
-#### `approve`
-
-    cargo run -p xtask -- approve <approval.toml> [--no-push]
-    cargo run -p xtask -- approve --verify <branch>
-
-the node engineer's approval of a preview, checked against this branch: it must be for the build of what is here now. Recorded in approvals/, committed and pushed. the same check, as the pipeline runs it on a form branch's pull request.
-
-| | |
-|---|---|
-| reads | the node engineer's approval file and this branch |
-| writes | approvals/<author>--<node>.toml, a commit and a push |
-| checks | the approval is for the build of exactly what is here now |
-| undo | `git revert` the approval commit |
-| dry run | --dry-run prints this plan — the steps, what it would write, how to undo it — and touches nothing |
-| code | `xtask/src/flow.rs` — `cmd_approve` |
-
-#### `queue`
-
-    cargo run -p xtask -- queue
-
-every form branch and every group branch, and where each stands: waiting for the node engineer's approval or the group's acceptance, approved or accepted, merged.
-
-| | |
-|---|---|
-| reads | every form branch and every group branch |
-| writes | nothing |
-| checks | where each one stands |
-| undo | nothing to undo: it writes nothing |
-| dry run | it only reads, so it runs as it is |
-| code | `xtask/src/flow.rs` — `cmd_queue` |
 
 ### release — the stamped release everyone gets
 
@@ -796,21 +697,6 @@ the three graphs, their sizes, and the crate direction check.
 | undo | nothing to undo: it writes nothing |
 | dry run | it only reads, so it runs as it is |
 | code | `xtask/src/graph.rs` — `cmd_graph` |
-
-#### `migration`
-
-    cargo run -p xtask -- migration [--owner <o>] [--subsystem <s>] [--forms <dir>]
-
-which computed rows still need a method, by owner, and with --forms their node forms written ready to send. Nothing here writes a method: each comes from its owner.
-
-| | |
-|---|---|
-| reads | every sheet |
-| writes | with --forms: one node form per row, in the folder named |
-| checks | — |
-| undo | delete the forms folder |
-| dry run | --dry-run prints this plan — the steps, what it would write, how to undo it — and touches nothing |
-| code | `xtask/src/method.rs` — `cmd_migration` |
 
 #### `explain`
 

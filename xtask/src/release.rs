@@ -66,7 +66,6 @@ pub(super) fn cmd_codeowners(root: &Path) -> Result<(), String> {
                 "/panels/",
                 "/tools/panel_check.py",
                 "/tools/panel_review.py",
-                "/tools/form_check.py",
                 "/tools/mock_engine.py",
                 "/tools/mock_check.py",
             ][..],

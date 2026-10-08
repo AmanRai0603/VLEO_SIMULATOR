@@ -23,10 +23,6 @@ __pycache__
 # Built, zipped and shared — never committed.
 /dist/
 
-# Node forms received from authors, and the notes sent back — kept out of git;
-# the filled form is attached to the pull request instead (xtask take).
-/forms/
-
 # A node's page is rendered from its sheet when it is opened (the engine's
 # /v1/fragment route, `xtask assemble` for the readers' folder). A page.html
 # left in a node folder from before is read by nothing; `xtask docs` removes it.

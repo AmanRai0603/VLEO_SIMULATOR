@@ -40,10 +40,10 @@ id = "browser"
 title = "In the browser"
 lede = """
 Everything anyone using the tool does: read the design, set the inputs, run, \
-keep what a run returned, and ask for a node to change. **Nothing in the \
-browser changes the design.** What you set and what you keep are yours and \
-stay on your machine; what the design *is* changes only through a node's form, \
-which the developers check, apply and release."""
+keep what a run returned. **Nothing in the browser changes the design.** \
+What you set and what you keep are yours and stay on your machine; what the \
+design *is* changes only in its owners' own files, taken in with each group's \
+sealed release and released to everyone."""
 
 [[layer.section]]
 id = "browser-open"
@@ -82,7 +82,7 @@ id = "browser-roles"
 title = "Who does what"
 who = "everyone"
 kind = "explanation"
-answer = "Five roles, and one loop until the switch-over. The programme manager, the system engineer, each subsystem engineer and each node engineer own the design and use the tool; when a node is wrong or missing, its node engineer fills its form, tries the preview of the change and approves it. The developer takes each form in, sends the preview, records the approval and releases — and writes what that routine cannot: code, checks, the tool itself. Each role has a deputy who may act for it."
+answer = "Five roles, and one loop until the switch-over. The programme manager, the system engineer, each subsystem engineer and each node engineer own the design and use the tool; a group's work reaches the design as its sealed release, and its subsystem engineer tries the test application built from it and accepts it. The developer takes each release in, builds and tests it, records the acceptance and releases — and writes what that routine cannot: code, checks, the tool itself. Each role has a deputy who may act for it."
 body = """
 The line between the roles is the line between *owning and using* the design, \
 *moving a change through*, and *building the machinery*. The design's own roles \
@@ -94,21 +94,22 @@ engineer** their nodes (`docs/OPERATING_1_0.md`, section 2).
 **Everyone uses it.** Anyone can set the inputs — by hand or as a CSV — run any \
 row on them, save what the run returned and send it on, and look at a result \
 somebody else saved without running anything. When a node is wrong, missing or \
-unfinished, its node engineer — the person who knows the answer — fills in \
-**that node's form** and \
-sends it. They get a **preview** of their change back, try it, and press \
-**Approve** — or say what is still wrong.
+unfinished, its node engineer — the person who knows the answer — changes it in \
+the node's own file, and their subsystem engineer seals the group's work as a \
+**release** and sends it.
 
-**The developer moves each change through, until the switch-over.** A form that \
-arrives is taken in onto its own branch — checked, applied, tested — and the \
-node engineer who filled it is sent the preview. Their approval comes back as a \
-file, and is recorded against exactly the build they tried. Approved changes \
-are merged, and released to everyone when the developer chooses. Every step is \
-one command. From the switch-over on there are no forms: each owner signs their \
-own files in the application, and the developer maintains only the code.
+**The developer moves each release through, until the switch-over.** A sealed \
+release that arrives is taken in onto its own branch — checked against its \
+seal, applied, built, tested — and its subsystem engineer is sent the test \
+application. Their acceptance comes back as a file, and is recorded against \
+exactly the build they tried. Accepted releases are merged, and released to \
+everyone when the developer chooses. Every step is one command. From the \
+switch-over on, each owner signs their own files in the application, and the \
+developer maintains only the code.
 
-**The developer builds the machinery.** A form that adds a relation needs code in \
-the kernel; a check that fails for a reason not in the form needs a diagnosis; \
+**The developer builds the machinery.** A method that needs maths the kernel \
+does not have needs code in the kernel; a check that fails for a reason not in \
+the release needs a diagnosis; \
 the tool's pages, pictures, checks and generators are designed and improved. \
 All of it through the gate and a reviewed pull request.
 
@@ -182,18 +183,17 @@ its relation and where that came from — then **where the simple version \
 breaks**, and the wrong idea readers most often bring. Every claim is marked \
 *sourced*, *derived* or *declared*, and every tab says whether it is an \
 explanation, a reference or something to try. The **de-risking** tab says what \
-the row rests on and why it changed. Beside the sheet is the node's **form**, \
-for when what it says should change.
+the row rests on and why it changed.
 
 **The picture** — for the rows that have one, the figure the claim is argued \
 from.
 
 A **grey** row is *seeded*: its folder exists and nothing is specified in it \
 yet. That is the normal state of most of the tree — the decomposition written \
-down before anyone was asked to fill it — not a failure, and its form is how it \
-gets filled. A row marked **INACTIVE** has a relation but nothing on its sheet \
-saying where the relation came from, so it does not answer until a form \
-supplies that and a developer applies it."""
+down before anyone was asked to fill it — not a failure; its node engineer \
+fills it. A row marked **INACTIVE** has a relation but nothing on its sheet \
+saying where the relation came from, so it does not answer until its node \
+engineer supplies that."""
 
 [[layer.section.step]]
 say = "The four parts of a row's page, top to bottom."
@@ -318,8 +318,8 @@ The result always says **n ran, m blocked**, and names every blocked row. A row 
 with nothing in it does not quietly supply a default — it refuses, under its \
 own name, and everything that needed it says so. That count is never hidden, \
 because a number built partly on refusals is not the number it looks like. \
-What unblocks such a row is its form, filled and applied — see *Ask for a node \
-to change*."""
+What unblocks such a row is its node engineer's answer, taken in with the \
+group's release — see *What comes in from outside, and what does not*."""
 
 [[layer.section.step]]
 say = "Just this row, with its inputs at their declared values."
@@ -457,158 +457,32 @@ ui = "pin"
 
 
 [[layer.section]]
-id = "browser-nodeform"
-title = "Ask for a node to change, or for a new one"
+id = "browser-forms"
+title = "What comes in from outside, and what does not"
 who = "user"
 kind = "how-to"
-answer = "To change a node, or ask for a new one, download its form, fill it anywhere and send it to the developers. If the change moves what the node computes, the form also says why: which belief broke, what was tested and what we now know."
+answer = "Two things reach the tool from outside: your inputs, and a result you kept. Neither changes the design. A node changes only in its own file, written by its node engineer and taken in with its group's sealed release."
 body = """
-Every node has a **form**: one self-contained HTML file that needs no \
-connection and nothing installed. It explains itself, asks every question the \
-node's sheet answers with *why* each is asked, shows what the node reads and \
-feeds and the known-good values that already hold it, lists every row it \
-could read, and saves a filled copy of itself. Send it to whoever should say \
-what the node is — a payload team, a customer's engineer, a reviewer. It can \
-be filled by hand, or given to an assistant: the content is a plain block of \
-text near the end of the file.
+The **Forms** page lists both, with where each is set: the inputs on the \
+Inputs page, as a CSV or one value at a time, and results on the Results \
+page, shown without running. Both are yours, kept on this machine.
 
-**For a node the design does not have yet**, download the form for a new node. \
-It also asks where the node goes — its parent, and so its layer — and what kind \
-of row it is.
+**A node is not among them.** What a node asks, how it computes and what it \
+reads is the design, and the design is written by the people who own it, \
+each in their own file. A group's work reaches this tool as its sealed \
+release (*Take a group's sealed release in*). The browser never writes a \
+node.
 
-**What it reads is its interface.** Every input names a row that exists, and \
-the form says, as you type, what that row is and its quantity. A developer's \
-first check is exactly this: that every input is a row, of the quantity the \
-node expects.
-
-**Why it is changing.** A change to what the node computes — an input, the \
-output, the model, the maths, the algorithm, how it is drawn — also says which \
-belief broke: what we believed, what we tested, what we now know, what \
-changes, and what the node rests on now. The form says as you type which \
-decisions your changes move and what is still to answer; without it the \
-developers apply only your wording. Wording alone needs none of it.
-
-Send the filled file to the developers. **This page can check it first** — \
-what it would change in the node, every interface it declares, and what \
-cannot be applied: a field the design changed since the form was made is a \
-*conflict*, never overwritten, and a relation an assistant supplied is \
-*refused*, because mathematics is derived by a person. Nothing is written \
-here. Known-good values in a form are passed to whoever records fixtures; \
-they are never written from a form."""
+**A lesson is the one thing still filled here**: a row's lesson form, filled \
+anywhere and checked as you type, sent back to the developer."""
 
 [[layer.section.step]]
-say = "Every form in one place: the inputs, results, and each node's form."
+say = "Where the inputs and the results come in."
 ui = "Forms"
 
 [[layer.section.step]]
-say = "Or from a node's own page: in *the sheet*, open the form tab."
-ui = "the node form — fill it anywhere"
-
-[[layer.section.step]]
-say = "Download it and send it to whoever should fill it."
-ui = "download the node form"
-
-[[layer.section.step]]
-say = "For a node that does not exist yet."
-ui = "download the form for a new node"
-
-[[layer.section.step]]
-say = "When it comes back, check it: what it would change, every interface, and what it cannot. Nothing is written."
-ui = "check a filled form…"
-
-
-[[layer.section.step]]
-say = "A lesson is written the same way: its form, filled anywhere, checked as you type, sent back."
+say = "A lesson is written as a form: filled anywhere, checked as you type, sent back."
 ui = "write a lesson — its form"
-
-[[layer.section]]
-id = "browser-method"
-title = "Give the method, your code and your test cases"
-who = "user"
-kind = "how-to"
-answer = "In a node's form, write the relation once more as a method — a few lines in a small fixed language — paste the code you wrote and tested, and give at least three cases your code answered and one it refuses. The form runs your method on your cases as you type and shows any that disagree, before you send it."
-body = """
-A node's relation arrives three ways, and each checks the other two. **Your \
-code** — MATLAB, Python, C, anything — produced your test cases. **The method** \
-says the same relation in the method language (docs/PSEUDOCODE.md), which the \
-tool can check for units and run. **The code the tool ships** is generated from \
-the method. All three must give your answers, so a mistake in any one of them \
-shows up as a case that disagrees.
-
-**The method.** It reads the node's inputs by their names, gives every number \
-its unit in brackets — `250 [km]`, `30 [deg]` — and ends every path with \
-`return` (the answer) or `refuse` (why it will not answer). The form checks \
-the units as you type: adding a length to a time, taking the logarithm of a \
-length, or returning the wrong quantity is shown on the line it happens.
-
-**Your cases.** Each is a set of inputs, in SI, and the answer your code gave \
-for them, with how close counts. At least three answers and one case the node \
-must refuse — the refusal shows the method says no where your code says no. \
-The method's value appears beside yours only after you have typed yours, so \
-the tool is never where your answer came from.
-
-**Your code and its test** are pasted whole, with what ran them. They are \
-kept with the node so the cases can be produced again and a reviewer can read \
-where the numbers came from.
-
-**Flight software** that implements the node can be kept in the same form, \
-each file with its test and its last result. It is stored beside the relation, \
-not built by the tool.
-
-Every question has **Show the example** beside it: the same question answered \
-for one worked node, marked illustrative."""
-
-[[layer.section.step]]
-say = "Open the node's form and find *The method*. Read *The method language on one page* if it is your first."
-
-[[layer.section.step]]
-say = "Write the method, then fill *Your code*: the code, its language, the function that is this node, and the test code that ran it."
-
-[[layer.section.step]]
-say = "Add your test cases — three or more with the answer your code gave, and one it refuses — and watch *Check: the method against your cases* until it says **Sound**."
-
-[[layer.section.step]]
-say = "Say in *Why it is changing* what adding the method tested, save a filled copy and send it."
-
-[[layer.section]]
-id = "browser-preview"
-title = "Try the preview of your change, and approve it"
-who = "user"
-kind = "how-to"
-answer = "After you send a form, you get a preview of the tool with your change in it. Install it, try the nodes it names, and press Approve only when they give what you expect; send back the small file it saves. Nothing reaches everyone else until you do."
-body = """
-A **preview** is the tool built from your form, before the change is approved. \
-It is the same one-file package as a release, and it says so on every view: an \
-orange **PREVIEW** banner names your change, the nodes it touches and the build. \
-Install it exactly like a release, over the one you have — your inputs and \
-results are kept, and the next release replaces the preview.
-
-Open each node the banner names, read its page, run it, move its inputs, and \
-check the answers against your own. **If anything is wrong, do not approve** — \
-tell the developer what, and you will get a new preview. When it is right, \
-press **Approve this preview…**, tick that you ran it, and save the file. Send \
-that file back the way you sent the form.
-
-The file is for this build and no other: if anything changes after you approve, \
-you are sent a new preview to approve."""
-
-[[layer.section.step]]
-say = "Install the preview package you were sent, then start it."
-run = "python -m pip install <preview>.whl"
-check = "writes"
-why = "installs the preview over the tool you have; your case and results are kept"
-
-[[layer.section.step]]
-say = "The banner names the nodes your change touches — open each, run it, check it."
-ui = "not a release"
-
-[[layer.section.step]]
-say = "When every one is right, approve — tick that you ran it — and save the file to send back."
-ui = "Approve this preview…"
-
-[[layer.section.step]]
-say = "The file it saves is your approval of this exact build."
-ui = "Save the approval file"
 
 
 [[layer.section]]
@@ -664,16 +538,17 @@ id = "browser-limits"
 title = "What the browser will not do"
 who = "everyone"
 kind = "reference"
-answer = "The browser never changes the design. Each thing it will not do has a place it is done instead, and for anyone using it that place is almost always a node's form."
+answer = "The browser never changes the design. Each thing it will not do has a place it is done instead, and for anyone using it that place is almost always the node's own file, written by its node engineer."
 body = """
 The browser never changes the design: not a field, not a row, not the tree. \
 That is not to keep anybody out. A change to the design has to be checked \
 against every row that reads it, implemented, given evidence, and released so \
 that everyone runs the same thing — and a change typed into one copy of the \
 tool does none of that. So each one below has a place it is done instead, and \
-for anyone using it that place is almost always a form.
+for anyone using it that place is almost always the node's own file, taken in \
+with its group's release.
 
-The fields a node form does not carry at all — the ones that move a row in the \
+The fields a group's release cannot change — the ones that move a row in the \
 tree or change who owns it — are listed live under *Reference*, each with its \
 reason."""
 
@@ -684,95 +559,24 @@ reason."""
 id = "maintain"
 title = "Maintaining the repository"
 lede = """
-The routine that moves every change from a node form to everyone's copy: take \
-the form in, send the node engineer who filled it a preview, record their \
-approval, merge, release, \
-share. **Every step is one command**, and each does its whole step or nothing \
-and says what to do next. Nothing here writes code — what needs code goes to a \
-developer, with the output that says why."""
+The routine that moves a group's sealed release to everyone's copy: take it \
+in, build and test it, deliver its test application, record the group's \
+acceptance, merge, release, share. **Every step is one command**, and each does \
+its whole step or nothing and says what to do next. Nothing here writes code — \
+what needs code goes to a developer, with the output that says why."""
 
-[[layer.section]]
-id = "maint-loop"
-title = "The loop, and where each change stands"
-who = "maintainer"
-kind = "explanation"
-answer = "Each form lives on its own branch, form/<name>/<node>, and passes through four stages: taken, previewed, approved, merged into the `maintainer` branch. main only ever receives changes whose node engineer tried and approved them, through a pull request from `maintainer`; a release takes everything merged into main since the last one."
-body = """
-**Taken.** `take` checks the form and, if it can be applied, puts it on its own \
-branch from a fresh `maintainer` — applied, regenerated, gated, tested, committed with \
-the node engineer's name, pushed. If it cannot, it writes a note to send back and \
-changes nothing.
-
-**Previewed.** Every push to a form branch builds a preview by itself: the tool \
-with this one change in it, marked PREVIEW on every view. You send it to the \
-node engineer who filled the form.
-
-**Approved.** They try it and press Approve; the file it saves names \
-the exact build. `approve` records it on the branch — refused if anything has \
-changed since that build — and the pull request's approval check turns green.
-
-**Merged, then released.** You merge the pull request into `maintainer` when \
-every check is green. When a set of changes is ready, a pull request takes \
-`maintainer` into `main`; `ship` cuts a release from main when you choose; the \
-release pipeline builds the four files; you publish and share them.
-
-Many forms can be in flight at once, each on its own branch, none waiting for \
-another. `queue` says where each one stands."""
-
-[[layer.section.step]]
-say = "Where every form branch stands right now."
-run = "cargo run -p xtask -- queue"
-check = "exits"
-
-[[layer.section]]
-id = "maint-take"
-title = "Take a node form in"
-who = "maintainer"
-kind = "how-to"
-answer = "Save the form you received into forms/, then run take naming its node engineer. It either puts the change on its own branch — applied, tested, committed, pushed — or writes a note to send back and changes nothing."
-body = """
-`forms/` at the top of the repository is where received forms and the notes \
-sent back live; git ignores it, because the form is its node engineer's and is \
-attached to the pull request rather than committed.
-
-`take` refuses to start with uncommitted changes, so nothing of yours is swept \
-into a commit that names somebody else. It then works in numbered steps — the \
-branch, the form applied, everything regenerated, the gate, the tests, the \
-commit and push — and stops at the first that fails, saying which and how to \
-abandon the branch. A test that fails is a physics question for the node's \
-owner, never a tolerance to change.
-
-**Not taken** means a field conflicts with a change made since the form was \
-downloaded, an input is not a row of the right quantity, or a relation came \
-from an assistant. The note says which, field by field; send it back, and take \
-the corrected form when it returns — with `--again` if its branch exists."""
-
-[[layer.section.step]]
-say = "Save the filled form into `forms/`, then take it in, naming the node engineer who filled it as they want to be called."
-run = "cargo run -p xtask -- take forms/<file>.node-form.html --for \"<author>\""
-check = "writes"
-why = "puts the form on its own branch form/<name>/<node>, applies it, regenerates, gates, tests, commits naming the node engineer, and pushes"
-
-[[layer.section.step]]
-say = "If it says **the form was not taken**, send the node engineer the `.returned.txt` file it wrote beside the form. Nothing was changed."
-
-[[layer.section.step]]
-say = "A corrected form for the same node goes onto the same branch."
-run = "cargo run -p xtask -- take forms/<file>.node-form.html --for \"<author>\" --again"
-check = "writes"
-why = "applies the corrected form onto the branch that already holds the first one"
 
 [[layer.section]]
 id = "maint-group"
 title = "Take a group's sealed release in"
 who = "maintainer"
 kind = "how-to"
-answer = "A group sends a sealed release instead of forms. Unpack it, read what group-intake says, then apply, build, test and deliver it on the branch group/<group>-<version>. It merges only with the group's acceptance of the test application."
+answer = "A group sends its work as a sealed release. Unpack it, read what group-intake says, then apply, build, test and deliver it on the branch group/<group>-<version>. It merges only with the group's acceptance of the test application."
 body = """
 The release is checked against its seal before anything is read: one byte \
 changed and it is refused, and the fix goes back to the group as a note. Each \
-computed node then becomes the form its node engineer would have filled, and goes \
-through intake's own check.
+computed node is then checked against the design field by field, with every \
+interface it declares.
 
 **Not taken** means a conflict with a change made since, an incomplete \
 de-risking record, or a method or results an assistant supplied. A node whose \
@@ -808,11 +612,10 @@ id = "maint-method"
 title = "Check a node's method against its node engineer's cases"
 who = "maintainer"
 kind = "how-to"
-answer = "Run method with the node's id. It checks the method and runs every one of the node engineer's cases through it — the same check the node engineer saw in their form, and the one the gate refuses on."
+answer = "Run method with the node's id. It checks the method and runs every one of the node engineer's cases through it — the same check the node engineer saw in the group's application, and the one the gate refuses on."
 body = """
-`take` prints the same check before it applies a form, under *the method, \
-against the node engineer's cases*, and the gate refuses a node whose method does not \
-check, whose cases disagree, or that has fewer than three answers and one \
+`group-intake` prints the same check before it applies a release, and the \
+gate refuses a node whose method does not check, whose cases disagree, or that has fewer than three answers and one \
 refusal. A case that disagrees is the node engineer's to settle — their code, their \
 method or their expected value is wrong — so it goes back to them with the \
 line printed, never to a tolerance."""
@@ -828,7 +631,7 @@ id = "maint-build"
 title = "Build a node from its method"
 who = "maintainer"
 kind = "how-to"
-answer = "take does this for you when a form carries a method; build-node does it by hand. Every stage must pass before the next runs, and the node is connected to the rest of the design only at the end."
+answer = "group-build does this for every node of a group's release; build-node does it for one. Every stage must pass before the next runs, and the node is connected to the rest of the design only at the end."
 body = """
 **M** the method runs on the node engineer's cases. **G1** the method is \
 translated, by fixed rules, into a kernel function in \
@@ -848,91 +651,6 @@ run = "cargo run -p xtask -- rerun --all"
 check = "exits"
 why = "says, per node with cases, whether the node engineer's code still gives them, or why it could not be run here"
 
-[[layer.section]]
-id = "maint-migrate"
-title = "Move the design over to methods, a batch at a time"
-who = "maintainer"
-kind = "how-to"
-answer = "Run migration to see which rows still need a method and whose they are; with --forms it writes each owner's node forms into one folder. Send them; each comes back through take like any other change."
-body = """
-Nothing breaks meanwhile. A row without a method keeps its hand-written \
-code and its gap list says *no method yet*; a row with one is built from it \
-and tested against its owner's cases. A method is mathematics, so it only \
-ever comes from the node's owner — never from this command, and never from \
-an assistant. A row that answers a set of values keeps its holes: the method \
-language answers one quantity."""
-
-[[layer.section.step]]
-say = "See what is still to come, by owner."
-run = "cargo run -p xtask -- migration"
-check = "exits"
-why = "counts the computed rows with and without a method, and lists each owner's"
-
-[[layer.section.step]]
-say = "Write one owner's forms into a folder, ready to send."
-run = "cargo run -p xtask -- migration --owner <owner> --forms forms/out"
-check = "writes"
-why = "writes that owner's node forms into forms/out/<owner>/"
-
-[[layer.section]]
-id = "maint-preview"
-title = "Send the node engineer a preview"
-who = "maintainer"
-kind = "how-to"
-answer = "The push from take builds the preview by itself, in about ten minutes. Download it from the newest green preview run, unzip it once, and send the .whl inside to the node engineer."
-body = """
-The preview is the one-file Python package a release ships, built from this \
-branch, with Windows and Linux engines. Its version carries \
-`+preview.<author>.<build>`, so it is never taken for a release, and every view \
-shows the PREVIEW banner with the Approve button.
-
-**Node engineers on a Mac:** the macOS engines cost ten times the build minutes, so they \
-are built only when asked — Actions → preview → Run workflow → the branch → \
-*also build the macOS engines*.
-
-**How the file travels is yours to choose.** Whatever channel you use, send \
-the `.whl` itself, not a link that needs a GitHub login."""
-
-[[layer.section.step]]
-say = "Where this branch's preview is. On main it refuses: previews are built for form branches."
-run = "cargo run -p xtask -- preview"
-check = "fails"
-expect = "not a form branch"
-
-[[layer.section.step]]
-say = "Open the newest green **preview** run for the branch, download `vleo-preview-<author>-<build>` at the bottom of the page, unzip it once, and send the `.whl` inside."
-
-[[layer.section]]
-id = "maint-approve"
-title = "Record the node engineer's approval, and merge"
-who = "maintainer"
-kind = "how-to"
-answer = "Run approve on the file the node engineer sends back. It is recorded only if it is for the build of exactly what is on the branch now; then the pull request can be merged once every check is green."
-body = """
-**Refused, and why that is right:** the file is for an older build (anything \
-pushed since — a fix, main merged in — needs a new preview and a new \
-approval); the node engineer did not tick that they ran it; the file is not an \
-approval at all. Each refusal says which.
-
-**The pull request.** `take` and `approve` both print its link. Merge only when \
-every check is green — among them **the author approved this exact change**, \
-which reruns the same check the pipeline's way. Use *Squash and merge*: the \
-node engineer's `Form-by:` line and the approval travel with it into `maintainer`, and on into main.
-
-An approval is a record, not a password: it proves which build was approved, \
-and you, who received it, vouch for who sent it."""
-
-[[layer.section.step]]
-say = "Record the approval the node engineer sent back."
-run = "cargo run -p xtask -- approve <file>.toml"
-check = "writes"
-why = "stores it in approvals/ on the branch, commits naming the node engineer, and pushes"
-
-[[layer.section.step]]
-say = "The same check the pull request runs."
-run = "cargo run -p xtask -- approve --verify <branch>"
-check = "writes"
-why = "reads only; shown as not run because it needs a form branch to name"
 
 [[layer.section]]
 id = "maint-ship"
@@ -943,7 +661,7 @@ answer = "Once maintainer and developer are merged into main, run ship on an up-
 body = """
 `ship` cuts `release/<version>`: the de-risking narrative regenerated, every \
 node version still marked `next` stamped with this release, regeneration, the \
-gate, the tests, one commit, pushed. It lists whose forms the release carries.
+gate, the tests, one commit, pushed.
 
 **The merge is the decision.** The release workflow builds only a commit that \
 a merged pull request put on main, and refuses anything else before it builds \
@@ -968,92 +686,23 @@ run = "git switch main && git pull origin main && git tag v<version> && git push
 check = "writes"
 why = "the tag starts the release workflow, which builds the four files"
 
-[[layer.section]]
-id = "maint-interface"
-title = "When a form changes what a node reads or feeds"
-who = "maintainer"
-kind = "how-to"
-answer = "take prints every input the form declares and whether it connects. A change to what a node reads or feeds can move other nodes' answers, so find who reads it and send those owners the preview too."
-body = """
-The interface check at take is the same one intake runs: each input names a row \
-that exists, of the quantity the node expects. A form that re-points an input \
-or changes a node's output is still one node's change, but its answers travel: \
-`reach` shows where each answer goes, and CODEOWNERS names who owns the nodes \
-downstream. Send them the same preview; an approval from the node engineer who filled \
-the form covers their node, and the downstream nodes' engineers' word covers theirs."""
-
-[[layer.section.step]]
-say = "Where each answer goes, and which reach no KPI closure."
-run = "cargo run -p xtask -- reach"
-check = "exits"
-
-[[layer.section]]
-id = "maint-two"
-title = "Two forms for the same node"
-who = "maintainer"
-kind = "how-to"
-answer = "Each still gets its own branch. Merge the first when it is approved; then bring maintainer into the second, send its node engineer a new preview, and record their new approval."
-body = """
-Two node engineers can send forms for one node at once — each is taken onto its own \
-branch, and neither waits. After the first merges, the second is behind \
-maintainer. Bring maintainer into it (`git switch form/<author>/<node>` then \
-`git merge origin/maintainer`); if the same field changed in both, git stops with a conflict — \
-that is a question for the two node engineers, never a coin toss, and a developer can \
-resolve it once they agree. Anything pushed after an approval needs a new \
-preview and a new approval, so the second author approves the combined \
-change."""
-
-[[layer.section]]
-id = "maint-example"
-title = "Worked example: one form, start to finish"
-who = "maintainer"
-kind = "tutorial"
-answer = "Ana sends a form for sw_ap_design. It is taken onto form/ana-sharma/sw-ap-design, previewed, approved, merged and released — five commands and two files exchanged. (Illustrative: the steps and messages are real, the people are not.)"
-body = """
-**1 · The form arrives.** Ana's filled `sw_ap_design.node-form.html` is saved \
-into `forms/`. `take … --for "Ana Sharma"` prints each change it applies, runs \
-the gate and the tests, commits *feat(mod-solar): sw_ap_design from a node \
-form* with `Form-by: Ana Sharma`, pushes, and prints two links.
-
-**2 · The preview.** Ten minutes later the preview run is green. Its package \
-`vleo-preview-ana-sharma-7` holds one `.whl`, sent to Ana.
-
-**3 · Ana tries it.** The banner reads *PREVIEW of Ana Sharma's change to \
-sw_ap_design · build 7 · not a release*. She runs the node, checks it against \
-the NOAA table she used, presses Approve and sends back \
-`vleo-approval-ana-sharma-build7.toml`.
-
-**4 · Recorded.** `approve` on that file prints *approved. Ana Sharma approved \
-build 7*. `queue` now shows the branch as *approved — review and merge*. The \
-pull request's checks are green, among them *the author approved this exact \
-change*; it is squash-merged.
-
-**5 · Released.** When a few forms are merged, `ship 0.3.0` cuts the release, \
-its pull request is merged, `v0.3.0` is tagged on the merge commit, and the \
-release workflow publishes the four files. Ana installs 0.3.0 over the preview; her inputs and \
-results are still there.
-
-**What would have stopped it:** had Ana's form re-pointed an input to a row \
-that does not exist, take would have written the note to send back and changed \
-nothing; had a fix been pushed after build 7, approve would have refused her \
-file and asked for a new preview."""
 
 [[layer.section]]
 id = "maint-handover"
 title = "What goes to a developer"
 who = "maintainer"
 kind = "reference"
-answer = "Anything that needs code or judgement about the machinery: a form that adds a relation, a check that fails for a reason not in the form, a merge conflict, a change to the tool itself. Hand over the command and its output."
+answer = "Anything that needs code or judgement about the machinery: a release that needs a relation the kernel does not have, a check that fails for a reason not in the release, a merge conflict, a change to the tool itself. Hand over the command and its output."
 body = """
-**A new relation.** A form for a new node, or one that changes its maths, can \
-need a function in the kernel and a filled HOLE. take applies the form; \
-`declare` and `publish` then say what code is owed — a developer's step.
+**A new relation.** A node whose method calls on maths the kernel does not \
+have needs a function in `vleo-core::physics` first — a developer's step, and \
+a reviewed change every node reads.
 
-**A failing check that is not the form's.** The gate or a test fails on the \
-form branch for a reason in another node, a generator or the pipeline. The \
-output names it; hand it over with the branch.
+**A failing check that is not the release's.** The gate or a test fails on \
+the group branch for a reason in another node, a generator or the pipeline. \
+The output names it; hand it over with the branch.
 
-**A merge conflict** between two forms, once their node engineers agree.
+**A merge conflict** between two releases, once their subsystem engineers agree.
 
 **The tool itself** — its pages and pictures, the commands in this layer, the \
 checks, the release pipeline. Those are code, reviewed as code."""
@@ -1299,81 +948,18 @@ expect = "M_f107_long = 0.376314"
 
 
 [[layer.section]]
-id = "term-nodeform"
-title = "Take in a node form — check it first"
-who = "developer"
-kind = "how-to"
-answer = "A developer's first act on a filled form is the checker, which writes nothing: what it would change, every interface it declares, what cannot be applied, and whether its reason is complete. Then --apply writes it as one edit, or not at all."
-body = """
-Every change to the design arrives as a node's form, filled by whoever knew the \
-answer. A developer's first act on one is to **check** it, and nothing is \
-written by checking. `xtask intake` reads the filled file and says, field by \
-field, what it would change in the node's `node.toml`, against three versions: \
-the node when the form was made, what the filler made of it, and the node now \
-— so a change made in the repository meanwhile is a **conflict**, not \
-overwritten. It checks **every interface** the form declares: each input must \
-be a row that exists, or a named output of one, of the quantity the node \
-expects. A relation an assistant supplied is **refused**, and so is a numbered \
-step removed from the middle, because each number is a hole holding somebody's \
-Rust.
-
-A form for a **new node** says where it goes. Intake checks that the id is \
-free and the parent is a group, and on `--apply` builds the folder in its \
-place in the tree — on the shape of a sibling of the same kind — then writes \
-the form into it and gates the **whole tree**, since a new row changes what \
-the tree connects. Anything the form left blank is listed as still open.
-
-`--apply` writes as one edit — regenerate, gate, and put everything back if \
-the gate refuses — with your name on any relation it changes. It refuses while \
-anything is blocked unless you add `--partial`. Known-good values in the form \
-are printed as `[[fixture]]` blocks for whoever records fixtures; they are \
-never written by intake. A filled seeded row is then **published**, which is \
-what generates its code — see *Implement a node*."""
-
-[[layer.section.step]]
-say = "A node's form, to send out. With `--out <file>` it is written to a file."
-run = "cargo run -p xtask -- form sw_ap_design"
-check = "exits"
-expect = "vleo-node-form/1"
-
-[[layer.section.step]]
-say = "The form for a node the design does not have yet."
-run = "cargo run -p xtask -- form --new"
-check = "exits"
-expect = "A new node"
-
-[[layer.section.step]]
-say = "Check a filled form — this one changes the note, adds an assumption and supplies a known value."
-run = "cargo run -p xtask -- intake docs/examples/sw_ap_design.node-form.html"
-check = "exits"
-expect = "can be applied"
-
-[[layer.section.step]]
-say = "Check a filled form for a new node: where it goes, what it would hold, and each interface it declares."
-run = "cargo run -p xtask -- intake docs/examples/new-node.node-form.html"
-check = "exits"
-expect = "connects"
-
-[[layer.section.step]]
-say = "Apply it: written, regenerated and gated as one edit, or not at all. Then read `git diff`."
-run = "cargo run -p xtask -- intake docs/examples/sw_ap_design.node-form.html --apply"
-check = "writes"
-why = "it writes the node's sheet — or builds a new node's folder — and regenerates, which is a change to the repository to review and commit"
-
-
-[[layer.section]]
 id = "term-fill"
 title = "Implement a node — the developer's loop"
 who = "developer"
 kind = "how-to"
-answer = "After a form is applied: publish the row so its code is generated, write the Rust in each numbered slot, add evidence from outside this code, and check it. Every step names exactly what is still open."
+answer = "After a row's sheet changes: publish the row so its code is generated, write the Rust in each numbered slot, add evidence from outside this code, and check it. Every step names exactly what is still open."
 body = """
 A row is a folder, and **only `node.toml` in it is written by hand** — by a \
-form's intake, or in your editor. Every other file is generated from it; an \
+group release's intake, or in your editor. Every other file is generated from it; an \
 edit anywhere else is thrown away the next time the row is regenerated, and \
 the checks catch it before then.
 
-The loop after a form is applied: publish the row so its code is generated, \
+The loop after a row's sheet changes: publish the row so its code is generated, \
 write the few lines of Rust in each numbered slot, give it evidence from \
 outside this code, check it, and ask whether a person should look yet. Every \
 step names exactly what is still open, so there is never a guess about what \
@@ -1382,8 +968,8 @@ is next.
 **Any assistant may help write a slot.** `fill` takes the body as text, and \
 `--by` and `--model` record who wrote it and with what, so a significant slot \
 written twice by different models can be compared. What no assistant may \
-supply is the relation itself — that comes from the form, and a person's name \
-goes against it. Commit naming whoever filled the form."""
+supply is the relation itself — that comes from its node engineer, and a \
+person's name goes against it. Commit naming the node engineer it came from."""
 
 [[layer.section.step]]
 say = "Ask what is still open, and what goes wrong without each answer."
@@ -1404,7 +990,7 @@ check = "writes"
 why = "splices a body into the row's generated model.rs and records who wrote it"
 
 [[layer.section.step]]
-say = "Add evidence to `fixtures.toml`: values from a paper, a measurement or a trusted tool — including the known values a form supplied. An expected value may never come from the code under test, and the checks refuse one marked as if it did."
+say = "Add evidence to `fixtures.toml`: values from a paper, a measurement or a trusted tool — including the known values a node engineer supplied. An expected value may never come from the code under test, and the checks refuse one marked as if it did."
 
 [[layer.section.step]]
 say = "Generate the row's other files from its sheet. On a row that is already up to date, nothing is written."
@@ -1442,13 +1028,13 @@ who = "developer"
 kind = "how-to"
 answer = "Every applied change appends a version to its node; the narrative is regenerated from all of them; and a release stamps every unreleased version with the release that ships it."
 body = """
-A form that moves what a node computes carries its reason — what we believed, \
-what we tested, what we now know, what changed, and what the node rests on now. \
-Intake checks the record with everything else: without it, only the form's \
-wording is applied and every decision is **withheld**, by name; with it, the \
-changes go in and a `[[version]]` is appended to the sheet, numbered and marked \
-`next`. The kinds of decision it moved are read off what the form changed, \
-never asked. A risk move names a risk registered on a risk-register row, or the \
+A change that moves what a node computes carries its reason — what we \
+believed, what we tested, what we now know, what changed, and what the node \
+rests on now. Intake checks the record with everything else: without it, only \
+the change's wording is applied and every decision is **withheld**, by name; \
+with it, the changes go in and a `[[version]]` is appended to the sheet, \
+numbered and marked `next`. The kinds of decision it moved are read off what \
+the change moved, never asked. A risk move names a risk registered on a risk-register row, or the \
 record is refused.
 
 The narrative is generated from every node's record: \
@@ -1493,7 +1079,7 @@ prints it for one command, or the whole journey with none; \
 `xtask pipeline`; and a test fails when the table, `help` and the code \
 disagree.
 
-**A command that writes runs as numbered steps** — `take`, `intake --apply`, \
+**A command that writes runs as numbered steps** — `group-intake --apply`, \
 `publish`, `fill`, `build-node`, `release` and `ship`. Each step prints \
 `n/total · name` as it starts and what it found when it ends. A step that \
 stops prints **why**, the state the **files** are in, the exact command to \
@@ -1506,13 +1092,13 @@ one, `trace <command>` the last of one command, `trace --list` every one kept \
 (the newest 50).
 
 **--dry-run, on any command that writes**, does nothing: it runs the \
-command's own check where it has one (`intake` without `--apply`, \
+command's own check where it has one (`group-intake` without `--apply`, \
 `release --check`, `method-wasm --check`, `pipeline --check`), and otherwise \
 prints the plan — its steps, what it would write, how to undo it.
 
 **why <node>** answers "how did this node come to be this?": every recorded \
-version and who made it, the commits that changed it, its approvals, how its \
-code came to be, and its gate, run now."""
+version and who made it, the commits that changed it, how its code came to \
+be, and its gate, run now."""
 
 [[layer.section.step]]
 say = "The whole journey, and the command at each step."
@@ -1591,14 +1177,14 @@ id = "term-lesson"
 title = "Take a lesson in, from its form"
 who = "developer"
 kind = "how-to"
-answer = "A lesson arrives the way a node change does: the node engineer who knows the row fills its lesson form anywhere, checked as they type by the gate's own check, and sends it back; lesson apply checks it again, writes lesson.toml beside the row's node.toml and gates the row — or puts it back."
+answer = "A lesson arrives as a form: the node engineer who knows the row fills its lesson form anywhere, checked as they type by the gate's own check, and sends it back; lesson apply checks it again, writes lesson.toml beside the row's node.toml and gates the row — or puts it back."
 body = """
 The node engineer writes the lesson; nobody writes HTML for it and nobody writes a \
 formula for the page to compute. `docs/LESSONS.md` is the file, table by \
 table, and `docs/examples/orbit_velocity.lesson.toml` a complete example.
 
 **The form** is one HTML file — from `lesson form`, or *write a lesson — its \
-form* on the row's page. It carries the checker every node form carries, which \
+form* on the row's page. It carries the method checker the pages carry, which \
 holds the lesson check the gate runs, and a table of the tree's rows, so a \
 widget naming a row that is not there is refused while the node engineer types. \
 **lesson check** says what a filled one holds and every reason it would be \
@@ -1670,16 +1256,16 @@ why = "writes dist/vleo-<version>/, which git ignores"
 
 [[layer.section]]
 id = "term-method"
-title = "The method language and the form's checker"
+title = "The method language and the pages' checker"
 who = "developer"
 kind = "how-to"
-answer = "The method language is one module, vleo_sheet::method. Every node form carries it compiled to WebAssembly as web/method.wasm.gz; after changing the language, rebuild that file with method-wasm and commit it with its stamp."
+answer = "The method language is one module, vleo_sheet::method. The pages that check a method carry it compiled to WebAssembly as web/method.wasm.gz; after changing the language, rebuild that file with method-wasm and commit it with its stamp."
 body = """
-The gate, `take`, intake and the node form all call \
-`vleo_sheet::method` — the form through `web/method.wasm.gz`, which \
+The gate, intake and every page that checks a method call \
+`vleo_sheet::method` — the pages through `web/method.wasm.gz`, which \
 `xtask method-wasm` builds from `crates/vleo-method-wasm`. A test refuses a \
-checkout whose checker sources have moved on from the committed file, so a form \
-can never check by older rules than the gate. A form reads the file from beside \
+checkout whose checker sources have moved on from the committed file, so a page \
+can never check by older rules than the gate. A page reads the file from beside \
 the tree when it is made; no program carries it built in, because compressed \
 WebAssembly inside a program is what Chrome blocked in the first 0.3.0 Windows \
 kit, and the release refuses a program that does. `docs/PSEUDOCODE.md` is written \
@@ -1687,7 +1273,7 @@ by `xtask docs` from the same tables the checker reads. Changing what a method \
 means is a reviewed change to every node that has one."""
 
 [[layer.section.step]]
-say = "Rebuild the checker every form carries, after changing the language."
+say = "Rebuild the checker the pages carry, after changing the language."
 run = "cargo run -p xtask -- method-wasm"
 check = "writes"
 why = "builds crates/vleo-method-wasm for wasm32 and writes web/method.wasm.gz and its stamp"
@@ -1718,7 +1304,7 @@ When the language grows a construct, it grows in \
 `crates/vleo-sheet/src/method.rs` and the files under `method/` beside it — \
 the grammar (`parse.rs`), the checker (`check.rs`), the interpreter (`run.rs`) \
 and the translation (`rust.rs`) together, one reviewed change, followed by \
-`method-wasm` so every form checks by the new rules."""
+`method-wasm` so every page checks by the new rules."""
 
 [[layer.section.step]]
 say = "Build a node from its method by hand, stage by stage."
@@ -1765,8 +1351,8 @@ trip. The first is the one that must be green.
 
 Commit messages read `type(scope): a sentence saying what changed`. The hook \
 installed by `setup` refuses anything else before it leaves your machine, and \
-the pipeline runs the same rule. A change that came from a form names who \
-filled it. How many reviewers a change needs is in `CONTRIBUTING.md`.
+the pipeline runs the same rule. A change that came from a group's release \
+names who sealed it. How many reviewers a change needs is in `CONTRIBUTING.md`.
 
 Once merged, the change reaches everyone in the next release: they update, and \
 their saved case carries over on its own — see *Set the inputs*."""
@@ -1922,20 +1508,16 @@ why. A case is all or nothing, so correct the named rows and upload it again. \
 A file from an older release is carried over rather than refused; one the \
 tool did not write — no `#! result` line — is not a result at all.
 
-**A form's check shows a conflict.** Somebody changed that field in the design \
-after the form was made. Nothing is overwritten: download the node's form \
-again, carry the answer across, and send the new one.
-
-**A form's check says an interface does not connect.** The input names a row \
-that does not exist, or one of a different quantity. The line says which, and \
-what the row it names actually is.
+**A release's intake says an interface does not connect.** The input names a \
+row that does not exist, or one of a different quantity. The line says which, \
+and what the row it names actually is; the fix goes back to the group.
 
 **The checks refuse a row.** Each failure names the field and the rule. Read \
 that line before anything else; it is almost always the whole answer.
 
 **A row prints INACTIVE and does not answer.** Its relation is written but \
 nobody has derived it: the sheet has no `[theory]` block saying why it is this \
-relation. That is a person's work, supplied through the node's form, never \
+relation. That is a person's work, supplied by the node's engineer, never \
 something to work around — and every row that reads it is blocked, by name, \
 until it is done. `active` lists each such row and how many rows wait on it.
 
@@ -1953,7 +1535,7 @@ type and scope it accepts.
 **A number looks wrong.** Run the row in the terminal, read its credibility \
 line and which factor governs it, and look at *the chain behind this number* — \
 every value that reached it, with each one's own credibility. If the design is \
-what is wrong, that is a form."""
+what is wrong, that goes to the node's engineer."""
 
 [[layer.section.step]]
 say = "Start the tool on another port."
@@ -1998,7 +1580,7 @@ come from* is answered by walking upward without ever leaving the tree.
 
 **One row is one folder**, under `crates/vleo-mod-<subsystem>/nodes/<row>/`:
 
-`node.toml` — the sheet. The only file written by hand — by a form's intake, or a developer.
+`node.toml` — the sheet. The only file written by hand — by a group release's intake, or a developer.
 `fixtures.toml` — known-good values from outside this code.
 `model.rs` — generated, except the numbered slots where the Rust goes.
 `contract.rs`, `mod.rs`, `evidence.rs`, `meta.json` — generated.
@@ -2044,7 +1626,7 @@ id = "ref-xtask"
 title = "xtask — the tree's own tool"
 who = "developer"
 kind = "reference"
-answer = "The project's own tool for the tree: generate, check, take in forms, record and release."
+answer = "The project's own tool for the tree: generate, check, take group releases in, record and release."
 body = """
 `cargo run -p xtask -- <command>`, or `cargo xtask <command>`. `help` prints \
 the same list with each command's reasons."""
@@ -2080,25 +1662,25 @@ Environment variables the tool and its checks read. None is required."""
 
 [[layer.section]]
 id = "ref-sheet"
-title = "What a node form asks"
+title = "What a node's sheet holds"
 who = "user"
 kind = "reference"
-answer = "Every question a node form asks and every list it holds, read live from the table the form is built from."
+answer = "Every question a node's sheet answers and every list it holds, read live from the table the sheet is read by."
 body = """
-Every question a node's form asks and every list it holds — read live from the \
-table the form itself is built from, so this cannot describe a form that no \
+Every question a node's sheet answers and every list it holds — read live \
+from the table the sheet is read by, so this cannot describe a field that no \
 longer exists."""
 
 [[layer.section]]
 id = "ref-locked"
-title = "What a node form does not change"
+title = "What a group's release does not change"
 who = "everyone"
 kind = "reference"
-answer = "The fields that move a row in the tree or change who owns it. No form carries them; a developer changes them in a reviewed commit."
+answer = "The fields that move a row in the tree or change who owns it. No release carries them; a developer changes them in a reviewed commit."
 body = """
-The fields that move a row in the tree or change who owns it. A node's form \
-does not carry them, so no filled form can change them; a developer does, in a \
-reviewed change. Each one's reason is live, from the rule that refuses them."""
+The fields that move a row in the tree or change who owns it. A group's \
+release does not carry them, so no release can change them; a developer does, \
+in a reviewed change. Each one's reason is live, from the rule that refuses them."""
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -2108,21 +1690,21 @@ reviewed change. Each one's reason is live, from the rule that refuses them."""
 place = "browser"
 what = "Change a node — any field of its sheet"
 why = "A change to the design has to be checked against every row that reads it, implemented, given evidence and released, so that everyone runs the same thing."
-instead = "Fill the node's form and send it to the developers. Check it first, on the Forms page."
+instead = "Its node engineer changes it in the node's own file; it arrives with the group's sealed release."
 who = "user"
 
 [[cannot]]
 place = "browser"
 what = "Add a new node"
 why = "A new node is a new folder in the tree with an owner, a place among its siblings and interfaces to rows that exist."
-instead = "The form for a new node, on the Forms page. A developer applies it with `cargo run -p xtask -- intake <form.html> --apply`."
+instead = "Its subsystem engineer adds it to the group, and it arrives with the group's sealed release."
 who = "user"
 
 [[cannot]]
 place = "browser"
 what = "Delete a node"
-why = "Other rows read it. Removing one is a change to what every reader of it computes, and is decided in review, not in a form."
-instead = "Say so in the node's form, in its note. A developer decides, after `cargo run -p xtask -- reach` shows what reads it."
+why = "Other rows read it. Removing one is a change to what every reader of it computes, and is decided in review."
+instead = "Its subsystem engineer retires it in the group's release, after `cargo run -p xtask -- reach` shows what reads it."
 who = "user"
 
 [[cannot]]
@@ -2136,7 +1718,7 @@ who = "developer"
 place = "browser"
 what = "Change a declared number in the design itself"
 why = "A what-if and the saved case never touch the sheet: a declared value carries the name of the person who chose it."
-instead = "For your own runs, the case. For the design's default, the node's form."
+instead = "For your own runs, the case. For the design's default, the node's own file."
 who = "user"
 
 [[cannot]]
@@ -2149,7 +1731,7 @@ who = "developer"
 [[cannot]]
 place = "browser"
 what = "Add a known-good value (a fixture)"
-why = "An expected value may never come from the code under test. A form may supply one; only a person records it, with its source."
+why = "An expected value may never come from the code under test. Only a person records one, with its source."
 instead = "Edit fixtures.toml in the row's folder, with the value's source and provenance."
 who = "developer"
 
@@ -2298,22 +1880,6 @@ what = "Compare two recorded bodies for the same slot, written by different mode
 who = "developer"
 effect = "reads"
 
-[[command]]
-tool = "xtask"
-name = "form"
-usage = "form <node>|--new [--example] [--out <file.html>]"
-what = "A node's form: one self-contained HTML file that explains itself, asks every question the sheet answers, and saves a filled copy. `--new` is the form for a node the design does not have yet. Filled anywhere, by anyone. --example fills orbit_velocity's form with the worked example, only for the pipeline's end-to-end test of the method path; nothing it produces is committed."
-who = "developer"
-effect = "reads"
-
-[[command]]
-tool = "xtask"
-name = "intake"
-usage = "intake <file.html> [--apply [--partial]]"
-what = "The checker: what a filled node form would change, field by field, and every interface it declares — conflicts and refusals named. `--apply` writes (building a new node in its place), regenerates and gates as one edit, or puts everything back."
-who = "developer"
-effect = "writes"
-
 
 [[command]]
 tool = "xtask"
@@ -2343,7 +1909,7 @@ effect = "writes"
 tool = "xtask"
 name = "method"
 usage = "method <node>"
-what = "Checks a node's method in the method language and runs each of its node engineer's test cases through it: what their code gave, what the method gives, and whether the set is complete — at least three answers and one refusal. The same check the node form runs as the node engineer types, and the gate refuses on."
+what = "Checks a node's method in the method language and runs each of its node engineer's test cases through it: what their code gave, what the method gives, and whether the set is complete — at least three answers and one refusal. The same check the group's application runs as the node engineer types, and the gate refuses on."
 who = "maintainer"
 effect = "reads"
 
@@ -2351,7 +1917,7 @@ effect = "reads"
 tool = "xtask"
 name = "method-wasm"
 usage = "method-wasm [--check]"
-what = "Builds the method checker every node form carries — vleo_sheet::method compiled to WebAssembly — into web/method.wasm.gz with the fingerprint of its sources; --check only says whether the committed file is current."
+what = "Builds the method checker the pages carry — vleo_sheet::method compiled to WebAssembly — into web/method.wasm.gz with the fingerprint of its sources; --check only says whether the committed file is current."
 who = "developer"
 effect = "writes"
 
@@ -2375,7 +1941,7 @@ effect = "writes"
 tool = "xtask"
 name = "group-intake"
 usage = "group-intake <folder> [--node <id>] [--apply [--partial]] [--draft]"
-what = "A group's sealed release taken into the design. The release, written out with `node tools/group_db.mjs --unpack <file.vleo>`, is refused unless every file still gives the fingerprint it was sealed with; then each computed node's pseudocode and results become its node form — its method and test cases, in SI — and go through intake's own check: a conflict with a change made since, a method or results an assistant supplied (a `transcribed` method counts as one unless it names its source and a person who checked the copy), an incomplete de-risking record. `--apply` writes, regenerates and gates each, or puts it back. `--draft` looks at an unsealed release and never applies."
+what = "A group's sealed release taken into the design. The release, written out with `node tools/group_db.mjs --unpack <file.vleo>`, is refused unless every file still gives the fingerprint it was sealed with; then each computed node's pseudocode and results — its method and test cases, in SI — are checked against the design: a conflict with a change made since, a method or results an assistant supplied (a `transcribed` method counts as one unless it names its source and a person who checked the copy), an incomplete de-risking record. `--apply` writes, regenerates and gates each, or puts it back. `--draft` looks at an unsealed release and never applies."
 who = "developer"
 effect = "writes"
 
@@ -2435,13 +2001,6 @@ what = "Builds a node from its method, stage by stage, stopping at the first tha
 who = "maintainer"
 effect = "writes"
 
-[[command]]
-tool = "xtask"
-name = "migration"
-usage = "migration [--owner <o>] [--subsystem <s>] [--forms <dir>]"
-what = "Says which computed rows still need a method, by owner, and with --forms writes each one's node form into <dir>/<owner>/ ready to send. It writes no method: each comes from the node's owner, on the node's form, through take like any other change."
-who = "maintainer"
-effect = "reads"
 
 [[command]]
 tool = "xtask"
@@ -2455,7 +2014,7 @@ effect = "reads"
 tool = "xtask"
 name = "why"
 usage = "why <node>"
-what = "A node's history in one place: every recorded version and who made it, the commits that changed it, its approvals, how its code came to be, and its gate, run now."
+what = "A node's history in one place: every recorded version and who made it, the commits that changed it, how its code came to be, and its gate, run now."
 who = "developer"
 effect = "reads"
 
@@ -2475,37 +2034,6 @@ what = "Write docs/PIPELINE.md from the pipeline table; --check only says whethe
 who = "developer"
 effect = "writes"
 
-[[command]]
-tool = "xtask"
-name = "take"
-usage = "take <form.html> --for <author> [--again] [--no-push] [--no-test]"
-what = "Takes a filled node form in: checks it, and if it cannot be taken writes `<form>.returned.txt` to send back and changes nothing; otherwise puts it on its own branch `form/<author>/<node>` from a fresh `maintainer`, applies it, regenerates, gates, tests, commits naming the node engineer and pushes. The push builds the node engineer's preview."
-who = "maintainer"
-effect = "writes"
-
-[[command]]
-tool = "xtask"
-name = "preview"
-usage = "preview"
-what = "Where the current form branch's preview build is, and what to do with it. Every push to a form branch builds one by itself."
-who = "maintainer"
-effect = "reads"
-
-[[command]]
-tool = "xtask"
-name = "approve"
-usage = "approve <approval.toml> [--no-push]"
-what = "Records the node engineer's approval of a preview — the file the preview saves when they press Approve. Refused unless it is for the build of exactly what is on the branch now. `--verify <branch>` is the same check, as the pipeline runs it."
-who = "maintainer"
-effect = "writes"
-
-[[command]]
-tool = "xtask"
-name = "queue"
-usage = "queue"
-what = "Every form branch and every group branch, and where each stands: not pushed; waiting for the node engineer's approval, or the group's acceptance of its test application; approved or accepted and ready to merge; or merged."
-who = "maintainer"
-effect = "reads"
 
 [[command]]
 tool = "xtask"
@@ -2828,20 +2356,12 @@ method = "POST"
 path = "/v1/inputs/reset"
 what = "Remove the saved case: every input back to its default."
 
-[[route]]
-method = "GET"
-path = "/v1/form/<id>"
-what = "A node's form, as one self-contained HTML file to fill anywhere. `new` is the form for a node the design does not have yet."
 
 [[route]]
 method = "GET"
 path = "/v1/lesson-form/<id>"
 what = "A row's lesson form, as one self-contained HTML file to fill anywhere, checked as it is typed by the gate's own lesson check. Writes nothing — a filled one is applied by a developer with `xtask lesson apply`."
 
-[[route]]
-method = "POST"
-path = "/v1/form/check"
-what = "What a filled node form would change, and every interface it declares: `html=` the file's text. Writes nothing — a form is applied by a developer with `xtask intake --apply`."
 
 [[route]]
 method = "GET"
@@ -3009,7 +2529,7 @@ default = "design.vleo beside the tool, else the folders"
 
 [[env]]
 name = "VLEO_DRIVE"
-what = "A shared drive to build today's design from: every group's latest sealed release in its `groups/<group>/releases/` that passes its checks — its seal, its content, and each node as the form its node engineer would have filled — taken into the design, in memory. A group whose latest is refused is built from its last good release, and the tool says which release each group's part is, and why one was refused. A folder that is not a drive stops the tool, naming why. Nothing on the drive is written."
+what = "A shared drive to build today's design from: every group's latest sealed release in its `groups/<group>/releases/` that passes its checks — its seal, its content, and each node checked against the design — taken into the design, in memory. A group whose latest is refused is built from its last good release, and the tool says which release each group's part is, and why one was refused. A folder that is not a drive stops the tool, naming why. Nothing on the drive is written."
 default = "unset: the design file or the folders, as they are"
 
 [[env]]
@@ -3093,7 +2613,7 @@ who = "developer"
 
 [[folder]]
 name = "docs"
-what = "The written record, this manual's source, manual.toml, the generated de-risking narrative and its spreadsheet, derisking.csv, and examples/: a filled node form, a filled new-node form and a saved result, to read and to run the commands above on."
+what = "The written record, this manual's source, manual.toml, the generated de-risking narrative and its spreadsheet, derisking.csv, and examples/: a lesson and a saved result, to read and to run the commands above on."
 who = "everyone"
 
 [[folder]]
@@ -3141,10 +2661,6 @@ name = "contract"
 what = "Where the page and the engine meet: every /v1 route, a schema for every answer, the file formats, and answers recorded from the real engine that the mock engine serves. Checked by the contract tests; reviewed by both sides (contract/README.md)."
 who = "developer"
 
-[[folder]]
-name = "approvals"
-what = "Each form branch's author approval of the exact preview build they tried, recorded by `xtask approve`. A form branch merges only with one that matches."
-who = "maintainer"
 
 [[folder]]
 name = "acceptances"
@@ -3163,7 +2679,7 @@ who = "developer"
 
 [[folder]]
 name = "AGENTS.md"
-what = "The rules that do not bend, and the developer's loop: a form in, checked, applied, implemented, gated, released."
+what = "The rules that do not bend, and the developer's loop: a request in, the code changed, gated, reviewed, released."
 who = "everyone"
 
 [[folder]]
@@ -3216,11 +2732,11 @@ what = "Lessons: lesson.toml beside a row, what each table holds, how the page d
 
 [[doc]]
 path = "docs/roles/user.html"
-what = "The engineers' guide: using the tool, filling a node form, trying a preview and approving it. Generated from this manual."
+what = "The engineers' guide: using the tool — reading the design, setting the inputs, running, keeping results. Generated from this manual."
 
 [[doc]]
 path = "docs/roles/maintainer.html"
-what = "The intake guide, until the switch-over: taking forms in, previews, approvals, releases — every step a command. Generated from this manual."
+what = "The intake guide, until the switch-over: taking group releases in, test applications, acceptances, releases — every step a command. Generated from this manual."
 
 [[doc]]
 path = "docs/roles/developer.html"
@@ -3248,7 +2764,7 @@ what = "The long walk through doing the work, with real output."
 
 [[doc]]
 path = "docs/RUNBOOK.md"
-what = "A developer's first day, and one form from arrival to release."
+what = "A developer's first day, and one change from request to release."
 
 [[doc]]
 path = "docs/NODE_AUTHORING.md"
@@ -3292,11 +2808,11 @@ what = "How the tool explains itself: the rules every page, form, result, figure
 
 [[doc]]
 path = "docs/SHARING.md"
-what = "How everyone gets the tool without the repository: build a kit, share it, take node forms back, release the next one."
+what = "How everyone gets the tool without the repository: build a kit, share it, release the next one."
 
 [[doc]]
 path = "docs/TEAM_GUIDE.md"
-what = "What each person reads first — START_HERE.md in every kit: start the tool, use it, ask for a change with a node form, take a new version."
+what = "What each person reads first — START_HERE.md in every kit: start the tool, use it, take a new version."
 
 [[doc]]
 path = "docs/DERISKING.md"
@@ -3349,51 +2865,49 @@ what = "This manual."
 [[role]]
 id = "user"
 title = "Engineer"
-answer = "You own part of the design — as its programme manager, system engineer, subsystem engineer or node engineer, or a deputy for one — and you use the tool: read the design, set your inputs, run, keep results. When a node is wrong or missing, its node engineer fills its node form and sends it; a group's work comes as its sealed release. You get a preview of the change back, try it, and approve it; only then does it reach everyone, in the next release."
-simply = "The tool is a shared reference book you can read and calculate with but not write in. To correct a page, you fill in a correction slip — the node form — and hand it in. You are shown the corrected page before it is printed for everyone, and you sign it off."
+answer = "You own part of the design — as its programme manager, system engineer, subsystem engineer or node engineer, or a deputy for one — and you use the tool: read the design, set your inputs, run, keep results. A node changes in its own file, written by its node engineer; a group's work reaches the design as its sealed release, and its subsystem engineer accepts the test application built from it before it reaches everyone, in the next release."
+simply = "The tool is a shared reference book you can read and calculate with but not write in. Each chapter is written by its owners, in their own copy; the group's editor signs the chapter off, and is shown the printed proof before it goes to everyone."
 does = [
   "Read the design: the four layers, and each node's page.",
   "Set your inputs, run, save results and send them on.",
-  "Fill a node's form when it is wrong or missing, and send it to the developer.",
-  "In the form, give the method, your code and your test cases — three answers and one refusal — until its check says Sound.",
-  "Try the preview of your change and press Approve — or say what is still wrong.",
+  "As a node engineer, give your node's method, your code and your test cases — three answers and one refusal — in the group's application, until its check says Sound.",
+  "As a subsystem engineer, seal the group's release, try the test application built from it, and accept it — or say what is still wrong.",
   "Install each new version over the old one; your inputs and results carry over.",
 ]
 never = [
   "Edit files inside the tool — a change there reaches nobody and is lost at the next version.",
-  "Approve a preview you have not run.",
-  "Put an expected value in a form that came from the tool itself — it has to come from outside it.",
+  "Accept a test application you have not run.",
+  "Give an expected value that came from the tool itself — it has to come from outside it.",
 ]
 wrong = "If I change something in my copy of the tool, everyone gets it."
-right = "Your copy changes nobody else's. Inputs you set are yours; the design itself changes only through a node form — checked, previewed, approved by you, and released to everyone at once."
+right = "Your copy changes nobody else's. Inputs you set are yours; the design itself changes only in its owners' files — sealed, built, tested, accepted, and released to everyone at once."
 breaks = "‘You cannot write in it’ is about the design, not your own work: your inputs, saved case and results are yours to change freely, and stay on your machine. From the switch-over on, the design is written in the application itself, on the shared drive, by each part's owner (docs/OPERATING_1_0.md)."
-predict = "You approved build 7 of your change on Monday. On Tuesday the developer fixes a typo in the same node and pushes. Is your approval still good?"
-reveal = "No. Your approval is for build 7 exactly; anything pushed after it makes a new build, and you are sent that preview to approve. It costs you a minute and it means nobody can merge something you did not see."
+predict = "You accepted the test application of your group's release on Monday. On Tuesday the developer fixes a typo on the same branch and pushes. Is your acceptance still good?"
+reveal = "No. Your acceptance is for that build exactly; anything pushed after it makes a new build, and you are sent that test application to accept. It costs you a minute and it means nobody can merge something you did not see."
 
 [[role]]
 id = "maintainer"
 title = "Intake"
-answer = "Until the switch-over, the developer — or their deputy — moves each change to the design through: take a node form in, send the node engineer who filled it a preview, record their approval, merge, release, share. Every step is one command — take, preview, approve, queue, ship — and each does its whole step or nothing and says what to do next. No code is written here."
-simply = "This is the post office and the print shop. Forms come in; each goes into its own envelope — a branch. The node engineer who filled it sees a proof — the preview — and signs it — the approval file. When the developer chooses, everything signed is printed for everyone — a release."
+answer = "Until the switch-over, the developer — or their deputy — moves each group's sealed release through: take it in, build and test it, deliver the test application, record the subsystem engineer's acceptance, merge, release, share. Every step is one command — group-intake, group-build, group-test, group-deliver, group-accept, ship — and each does its whole step or nothing and says what to do next. No code is written here."
+simply = "This is the post office and the print shop. A group's sealed release comes in; it goes into its own envelope — a branch. Its subsystem engineer sees a proof — the test application — and signs it — the acceptance file. When the developer chooses, everything signed is printed for everyone — a release."
 does = [
-  "Save each form you receive into forms/ and run take on it.",
-  "Send back the note take writes when a form cannot be taken.",
-  "Send the node engineer their preview; record the approval file they return with approve.",
-  "Merge each approved pull request once every check is green.",
-  "See what is waiting with queue; release with ship; publish and share the four files.",
-  "Send node engineers the forms for rows still without a method, with migration; take them back like any other.",
+  "Unpack each sealed release you receive and run group-intake on it.",
+  "Send back what group-intake refuses, by name; the release itself is never edited.",
+  "Build, test and deliver the test application; record the acceptance file the subsystem engineer returns with group-accept.",
+  "Merge each accepted pull request once every check is green.",
+  "Release with ship; publish and share the four files.",
 ]
 never = [
-  "Edit a node's files by hand — the form is the only way in.",
-  "Merge a form branch without its node engineer's approval of that exact build.",
+  "Edit a node's files by hand — the group's release is the only way in.",
+  "Merge a group branch without its subsystem engineer's acceptance of that exact build.",
   "Change a tolerance to make a test pass — that is a physics question for the node's engineer.",
   "Skip or silence a failing check; diagnose it as code, with its output.",
 ]
 wrong = "A green pull request is ready to merge."
-right = "Green says the change is consistent, not that it is right. A form branch also needs the approval of the node engineer who filled it, for the exact build — the check named ‘the author approved this exact change’ says whether it has one."
-breaks = "‘Every step is a command’ stops where a form needs new code, where a check fails for a reason not in the form, or where two forms conflict. Those are the developer's work on the code, with the command's output. On the switch-over day this guide retires with the form loop (docs/PLAN_1_0.md, phase H)."
-predict = "Every check on a form branch's pull request is green except ‘the author approved this exact change’. The node engineer said on the phone it is fine. Can you merge?"
-reveal = "Not yet. Ask them to press Approve in the preview and send the file — then run approve. The check is the record that they tried this exact build; a phone call leaves none."
+right = "Green says the change is consistent, not that it is right. A group branch also needs its subsystem engineer's acceptance, for the exact build — the check named ‘the author approved this exact change’ says whether it has one."
+breaks = "‘Every step is a command’ stops where a release needs new code, where a check fails for a reason not in the release, or where two releases conflict. Those are the developer's work on the code, with the command's output. On the switch-over day this guide retires with the group loop (docs/PLAN_1_0.md, phase H)."
+predict = "Every check on a group branch's pull request is green except ‘the author approved this exact change’. The subsystem engineer said on the phone it is fine. Can you merge?"
+reveal = "Not yet. Ask them to accept the test application and send the file — then run group-accept. The check is the record that they tried this exact build; a phone call leaves none."
 
 [[role]]
 id = "developer"
@@ -3402,14 +2916,14 @@ answer = "You write what the routine cannot: a new relation in the kernel, a fil
 simply = "If intake is the print shop, you build and repair the presses. You do not decide what is printed — that comes from the people who own the design — but you make sure the presses print it exactly, and you check them against pages you did not print yourself: the fixtures."
 does = [
   "Build a node from its method with build-node; for what the method language cannot say, fill its HOLEs from kernel relations.",
-  "Keep the method language, its checker and its translator one reviewed change, and rebuild the form's checker with method-wasm.",
-  "Add a relation to vleo-core::physics when a form needs one — a reviewed change every node reads.",
-  "Diagnose a check that fails for a reason outside the form.",
+  "Keep the method language, its checker and its translator one reviewed change, and rebuild the pages' checker with method-wasm.",
+  "Add a relation to vleo-core::physics when a method needs one — a reviewed change every node reads.",
+  "Diagnose a check that fails for a reason outside the release.",
   "Improve the tool: its pages and pictures, the loop's commands, the checks, the release pipeline.",
   "Keep this manual true: every command, route and label it names is tested against the tool.",
 ]
 never = [
-  "Supply a relation — the physics comes from a node's engineer, through their form.",
+  "Supply a relation — the physics comes from a node's engineer.",
   "Take an expected value from the code under test.",
   "Edit a generated file outside a numbered HOLE.",
   "Put a formula anywhere but vleo-core::physics, or call the standard library's transcendentals in the kernel.",
@@ -3418,5 +2932,5 @@ never = [
 wrong = "The tests pass, so the node is right."
 right = "Tests compare the code with values from outside it — the fixtures. A test whose expected value came from the code only proves the code agrees with itself, which is why the gate refuses one."
 breaks = "‘You do not decide what is printed’ stops at the tool itself: its pages, pictures, checks and generators are yours to design — reviewed like any code, by two people where CONTRIBUTING says so."
-predict = "A node's test fails after a form changed its input range. The fixture's expected value is 0.8% off and the tolerance is 0.5%. What do you change?"
+predict = "A node's test fails after a group's release changed its input range. The fixture's expected value is 0.8% off and the tolerance is 0.5%. What do you change?"
 reveal = "Neither the tolerance nor the fixture. A fixture disagreement is a physics question: it goes to the node's engineer, with the number. If the fixture is wrong, its source says so and a person corrects it; if the code is wrong, you fix the code."
