@@ -205,7 +205,7 @@ ui = "connectivity — what it is joined to, as declared"
 
 [[layer.section.step]]
 say = "The sheet, as its node engineer wrote it."
-ui = "as written"
+ui = "the sheet — what it says"
 
 [[layer.section.step]]
 say = "Back to the tree."
@@ -1108,7 +1108,7 @@ expect = "A node's journey"
 
 [[layer.section.step]]
 say = "One command: where it sits, what it reads, writes and checks, how to undo it, and where its code is."
-run = "cargo run -p xtask -- explain intake"
+run = "cargo run -p xtask -- explain group-intake"
 check = "exits"
 expect = "undo"
 

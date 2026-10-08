@@ -507,9 +507,8 @@ def browser_walk():
             def read_a_row():
                 open_row(WALK_COMPUTED)
                 text = page.locator("#node-body").inner_text()
-                for n in (1, 2):
+                for n in (1, 2, 3):
                     assert U("browser-read", n).lower() in text.lower(), f"no '{U('browser-read', n)}' on the page"
-                assert button("#node-body .sheet-tabs", U("browser-read", 3)).is_visible()
                 # Back, by the label the manual gives it.
                 page.locator("#nodeview button", has_text=U("browser-read", 4)).first.click()
                 page.wait_for_timeout(300)
