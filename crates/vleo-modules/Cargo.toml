@@ -45,6 +45,9 @@ vleo-sheet = { workspace = true }
 [dev-dependencies]
 # The table every reader takes a file by: the saved files here are held to it.
 vleo-kinds = { workspace = true }
+# The tests run the engine on the design read from its files, which needs the
+# standard library; the crate itself still builds without it.
+vleo-modules = { path = ".", features = ["std"] }
 
 [features]
 default = []

@@ -6,12 +6,14 @@
 //! browser's own fields, so every way a file can be wrong is tried here, and
 //! each must be refused by name — never corrected, never dropped.
 
+mod design;
+
 use vleo_bus::{Case, RunMode};
 use vleo_modules::inputs::{
     case_inputs, check_values, csv, csv_with, read_csv, template, template_of, Group, SetAside,
     Upgrade,
 };
-use vleo_modules::{case_refusal, Scratch, Vleo, NODES, VARS};
+use vleo_modules::{case_refusal, nodes, vars, Scratch, Vleo};
 
 fn value(case: &Case) -> Option<f64> {
     let mut scratch = Scratch::new();
@@ -41,6 +43,7 @@ fn an_input() -> vleo_modules::inputs::Input {
 
 #[test]
 fn there_is_a_case_and_an_unknown_one_is_refused() {
+    crate::design::open();
     assert!(Vleo::default_case().is_some(), "cases/ holds no case");
     let bad = Case {
         base: "c1".into(),
@@ -56,12 +59,13 @@ fn there_is_a_case_and_an_unknown_one_is_refused() {
 
 #[test]
 fn every_input_is_a_declared_published_row_in_its_group() {
+    crate::design::open();
     let case = Vleo::default_case().unwrap();
     let all = case_inputs();
     assert!(!all.is_empty());
     let mut seen_condition = false;
     for i in &all {
-        let def = &NODES[VARS[i.var as usize].producer as usize];
+        let def = &nodes()[vars()[i.var as usize].producer as usize];
         assert_eq!(
             def.kind,
             vleo_core::graph::Kind::Declared,
@@ -103,6 +107,7 @@ fn every_input_is_a_declared_published_row_in_its_group() {
 
 #[test]
 fn the_template_reads_back_as_every_default() {
+    crate::design::open();
     let r = read_csv(&csv(&[]));
     assert!(r.ok(), "the template refuses itself: {:?}", r.refused);
     assert!(r.set.is_empty());
@@ -112,6 +117,7 @@ fn the_template_reads_back_as_every_default() {
 
 #[test]
 fn a_value_survives_the_round_trip_exactly() {
+    crate::design::open();
     let i = an_input();
     let v = (i.default + i.hi) / 2.0;
     let r = read_csv(&csv(&[(i.id.to_string(), v)]));
@@ -129,6 +135,7 @@ fn a_value_survives_the_round_trip_exactly() {
 
 #[test]
 fn columns_in_any_order_comments_quotes_and_a_blank_value_are_read() {
+    crate::design::open();
     let i = an_input();
     let text = format!(
         "\u{feff}# a note\nvalue,unit,name,id\n{},{},\"a label, with a comma\",{}\n,,,{}\n",
@@ -144,8 +151,9 @@ fn columns_in_any_order_comments_quotes_and_a_blank_value_are_read() {
 
 #[test]
 fn every_kind_of_bad_row_is_refused_by_name_and_nothing_is_kept() {
+    crate::design::open();
     let i = an_input();
-    let computed = NODES
+    let computed = nodes()
         .iter()
         .find(|n| n.kind == vleo_core::graph::Kind::Computed)
         .unwrap()
@@ -196,6 +204,7 @@ fn every_kind_of_bad_row_is_refused_by_name_and_nothing_is_kept() {
 
 #[test]
 fn stored_values_are_rechecked_against_the_tree_as_it_is() {
+    crate::design::open();
     let i = an_input();
     let r = check_values(&[
         (i.id.into(), i.hi * 2.0 + 1.0),
@@ -206,6 +215,7 @@ fn stored_values_are_rechecked_against_the_tree_as_it_is() {
 
 #[test]
 fn an_uploaded_value_is_what_the_run_uses() {
+    crate::design::open();
     // Any input with room to move, run as its own target: what the file says
     // is what comes back. Chosen from the tables rather than named, and with
     // no reference data needed, so it holds as rows are added and retired.
@@ -235,6 +245,7 @@ const OLD: &str = "#! template 000000000000\n";
 
 #[test]
 fn every_file_the_tool_writes_names_its_template_and_reads_back_current() {
+    crate::design::open();
     let t = template();
     assert_eq!(t.len(), 12, "the template id is not 12 hex digits: {t}");
     let text = csv(&[]);
@@ -246,6 +257,7 @@ fn every_file_the_tool_writes_names_its_template_and_reads_back_current() {
 
 #[test]
 fn the_template_moves_with_what_can_stop_a_value_applying_and_nothing_else() {
+    crate::design::open();
     let all = case_inputs();
     let t = template_of(&all);
     let mut ranged = all.clone();
@@ -279,9 +291,10 @@ fn the_template_moves_with_what_can_stop_a_value_applying_and_nothing_else() {
 
 #[test]
 fn an_old_file_is_carried_over_and_what_cannot_be_carried_is_set_aside_by_name() {
+    crate::design::open();
     let i = an_input();
     let v = (i.default + i.hi) / 2.0;
-    let computed = NODES
+    let computed = nodes()
         .iter()
         .find(|n| n.kind == vleo_core::graph::Kind::Computed)
         .unwrap()
@@ -316,6 +329,7 @@ fn an_old_file_is_carried_over_and_what_cannot_be_carried_is_set_aside_by_name()
 
 #[test]
 fn an_old_value_outside_a_changed_range_is_set_aside_and_a_mistake_is_still_refused() {
+    crate::design::open();
     let i = an_input();
     let far = i.shown(i.hi) * 10.0 + 1.0;
     let r = read_csv(&format!("{OLD}id,value\n{},{far}\n", i.id));
@@ -339,6 +353,7 @@ fn an_old_value_outside_a_changed_range_is_set_aside_and_a_mistake_is_still_refu
 
 #[test]
 fn an_old_file_in_another_unit_of_the_same_quantity_is_converted_never_between_ratios() {
+    crate::design::open();
     let km = case_inputs()
         .into_iter()
         .find(|i| i.unit == "km")
@@ -362,6 +377,7 @@ fn an_old_file_in_another_unit_of_the_same_quantity_is_converted_never_between_r
 
 #[test]
 fn the_record_of_an_upgrade_survives_being_written_and_read() {
+    crate::design::open();
     let i = an_input();
     let note = Upgrade {
         from: "0123456789ab".into(),
@@ -399,12 +415,14 @@ mod on_disk {
 
     #[test]
     fn no_saved_case_is_every_default() {
+        crate::design::open();
         let s = load(&scratch("none"));
         assert!(!s.stored && s.reading.set.is_empty() && s.reading.upgrade.is_none());
     }
 
     #[test]
     fn a_saved_case_from_an_older_tool_is_kept_aside_and_carried_over_once() {
+        crate::design::open();
         let i = an_input();
         let v = (i.default + i.hi) / 2.0;
         let path = scratch("old");
@@ -452,6 +470,7 @@ mod on_disk {
 
     #[test]
     fn an_old_case_read_by_many_at_once_is_carried_over_once_and_read_whole() {
+        crate::design::open();
         // The page asks for the case from several requests at once when it
         // opens. Each one reading the old file and carrying it over by itself
         // kept a copy aside per request, and one could read the case while
@@ -489,6 +508,7 @@ mod on_disk {
 
     #[test]
     fn a_saved_case_with_a_row_that_no_longer_applies_still_runs_whole() {
+        crate::design::open();
         // Current template, one row edited by hand into nonsense: the rest
         // applies, the bad row is set aside by name, and the file as it was is
         // kept. A run on the case never leaves a value out without a record.
@@ -506,6 +526,7 @@ mod on_disk {
 
 #[test]
 fn a_value_for_no_row_or_not_a_number_is_refused_not_skipped() {
+    crate::design::open();
     let i = an_input();
     let unknown = run(i.id, vec![("no_such_row".into(), 1.0)]);
     assert!(

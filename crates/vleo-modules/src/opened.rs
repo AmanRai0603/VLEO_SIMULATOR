@@ -715,6 +715,16 @@ fn build(tree: &Tree) -> Result<&'static Graph, Error> {
         .iter()
         .map(|r| (text(&r.from), text(&r.to), text(&r.why)))
         .collect();
+    // Each recorded row's current version, as its sheet records it, in the
+    // order the generator wrote them.
+    let versions: Vec<(&'static str, u32, &'static str)> = sheets
+        .iter()
+        .filter_map(|sh| {
+            sh.versions
+                .last()
+                .map(|v| (text(&sh.id), v.n, text(&v.release)))
+        })
+        .collect();
 
     Ok(Box::leak(Box::new(Graph {
         nodes: slice(nodes),
@@ -724,6 +734,7 @@ fn build(tree: &Tree) -> Result<&'static Graph, Error> {
         cases: slice(cases),
         groups: slice(groups),
         relations: slice(relations),
+        versions: slice(versions),
         cases_run: crate::CasesRun::new(),
     })))
 }

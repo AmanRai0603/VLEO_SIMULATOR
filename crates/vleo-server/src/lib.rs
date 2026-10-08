@@ -1766,6 +1766,11 @@ mod requests {
 
     #[test]
     fn a_value_that_cannot_be_applied_is_named_not_dropped() {
+        // The rows are the design's: its files in design/, opened once.
+        static ONCE: std::sync::Once = std::sync::Once::new();
+        ONCE.call_once(|| {
+            crate::run_the_design(Some(crate::repo_root())).expect("the design opens");
+        });
         let id = vleo_modules::nodes()[0].id;
         assert!(set_refusal(&format!("set={id}:1.5")).is_none());
         assert!(set_refusal(&format!("set={id}%3A2")).is_none());

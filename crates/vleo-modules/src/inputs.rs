@@ -36,7 +36,7 @@ use alloc::vec::Vec;
 use vleo_core::graph::{Kind, State};
 use vleo_units::Unit;
 
-use crate::tables::{self, CaseDef};
+use crate::CaseDef;
 use crate::Vleo;
 use crate::{nodes, vars};
 
@@ -144,7 +144,7 @@ pub fn inputs(case: &CaseDef) -> Vec<Input> {
         if var.limit.upper <= var.limit.lower {
             continue;
         }
-        let mut val = [0.0f64; tables::MAX_OUTPUTS];
+        let mut val = [0.0f64; crate::MAX_OUTPUTS];
         let default = match crate::engine().estimate(i, &[], &mut val[..def.outputs.len()]) {
             Ok(_) => val[0],
             Err(_) => continue,

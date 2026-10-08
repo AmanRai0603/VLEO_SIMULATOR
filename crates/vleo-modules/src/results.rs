@@ -460,9 +460,10 @@ pub fn question_for(case: &vleo_bus::Case, sweep: Option<(&str, f64, f64, usize)
 }
 
 /// A node's current recorded version and the release that carried it, as
-/// this build of the tool knows it.
+/// the design the engine runs records it.
 pub fn node_version(id: &str) -> Option<(u32, &'static str)> {
-    crate::tables::NODE_VERSIONS
+    crate::engine()
+        .versions
         .iter()
         .find(|(n, _, _)| *n == id)
         .map(|(_, v, r)| (*v, *r))

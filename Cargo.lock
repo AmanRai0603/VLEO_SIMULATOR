@@ -905,6 +905,7 @@ dependencies = [
  "vleo-mod-system",
  "vleo-mod-thermal",
  "vleo-mod-ttc",
+ "vleo-modules",
  "vleo-sheet",
  "vleo-units",
 ]

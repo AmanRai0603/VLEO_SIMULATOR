@@ -6,6 +6,8 @@
 //! for bit, that its inputs are the case it ran on, and that a file which is not
 //! a result is refused by name rather than half read.
 
+mod design;
+
 use vleo_bus::{Case, RunMode};
 use vleo_modules::inputs::case_inputs;
 use vleo_modules::results::{csv, from_run, read, unwrap_report, Saved};
@@ -43,6 +45,7 @@ fn a_result() -> (Saved, f64, &'static str) {
 
 #[test]
 fn a_result_reads_back_exactly() {
+    crate::design::open();
     let (s, v, id) = a_result();
     let back = read(&csv(&s)).expect("a result did not read back");
     assert_eq!(back, s, "what was saved is not what came back");
@@ -60,6 +63,7 @@ fn a_result_reads_back_exactly() {
 #[cfg(feature = "std")]
 #[test]
 fn the_report_carries_the_result_and_reads_back_as_it() {
+    crate::design::open();
     let (s, _, _) = a_result();
     let page = html(&s);
     assert!(page.contains("<script type=\"text/csv\" id=\"vleo-result\">"));
@@ -80,6 +84,7 @@ fn the_report_carries_the_result_and_reads_back_as_it() {
 #[cfg(feature = "std")]
 #[test]
 fn the_report_is_the_one_page_template_filled() {
+    crate::design::open();
     let (s, _, _) = a_result();
     let page = html(&s);
     vleo_sheet::shell::is_filled(vleo_sheet::shell::TEMPLATE, &page)
@@ -89,6 +94,7 @@ fn the_report_is_the_one_page_template_filled() {
 
 #[test]
 fn what_is_not_a_result_is_refused_by_name() {
+    crate::design::open();
     // Refused as malformed, and saying what about it.
     let refused = |text: &str, says: &str| {
         let e = read(text).unwrap_err();
@@ -109,6 +115,7 @@ fn what_is_not_a_result_is_refused_by_name() {
 #[cfg(feature = "std")]
 #[test]
 fn results_are_kept_listed_and_removed_and_a_path_is_never_followed() {
+    crate::design::open();
     use vleo_modules::results::store;
     let dir = std::env::temp_dir().join(format!("vleo-results-{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&dir);
@@ -146,11 +153,13 @@ fn results_are_kept_listed_and_removed_and_a_path_is_never_followed() {
 #[cfg(feature = "std")]
 #[test]
 fn a_result_keeps_the_beliefs_it_rests_on_and_says_when_one_breaks() {
+    crate::design::open();
     // The only rows with a recorded history read a reference-data bundle, and
     // whether a bundle is on this machine is not what is being tested. So the
     // record is written into a result the way `from_run` writes it — one
     // `#! versions` line — and read back.
-    let (id, now, rel) = vleo_modules::tables::NODE_VERSIONS
+    let (id, now, rel) = vleo_modules::engine()
+        .versions
         .iter()
         .copied()
         .find(|(_, n, _)| *n >= 2)
@@ -205,11 +214,12 @@ fn a_result_keeps_the_beliefs_it_rests_on_and_says_when_one_breaks() {
 #[cfg(feature = "std")]
 #[test]
 fn a_row_whose_first_belief_came_after_the_result_is_a_belief_that_moved() {
+    crate::design::open();
     // A run through rows with no recorded version says so — `#! versions none`
     // — so a row's first version after it is a belief the result rested on
     // without anyone having written it down, and that has moved since. A
     // result saved before the tool recorded beliefs says nothing either way.
-    let (id, now, _) = vleo_modules::tables::NODE_VERSIONS[0];
+    let (id, now, _) = vleo_modules::engine().versions[0];
     let (mut s, _, _) = a_result();
     // A run whose rows had no recorded version when it was saved.
     s.versions.clear();
@@ -237,6 +247,7 @@ fn a_row_whose_first_belief_came_after_the_result_is_a_belief_that_moved() {
 /// it is shown as it was and never mistaken for this engine's answer.
 #[test]
 fn a_result_names_its_design_and_says_when_its_engine_has_gone() {
+    crate::design::open();
     let (mut s, _, _) = a_result();
     assert!(
         vleo_modules::results::engine_current(&s),

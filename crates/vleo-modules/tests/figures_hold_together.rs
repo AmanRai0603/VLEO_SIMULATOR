@@ -8,11 +8,14 @@
 
 #![cfg(feature = "std")]
 
+mod design;
+
 use vleo_modules::figure::{check, from_sweep, json, samples, Kind};
 use vleo_modules::results::Sweep;
 
 #[test]
 fn every_kind_has_a_sample_that_holds_together() {
+    crate::design::open();
     let all = samples();
     assert_eq!(all.len(), Kind::ALL.len());
     for k in Kind::ALL {
@@ -27,6 +30,7 @@ fn every_kind_has_a_sample_that_holds_together() {
 
 #[test]
 fn a_sweep_draws_its_refused_points_as_gaps_where_they_fell() {
+    crate::design::open();
     let w = Sweep {
         over: "alt".into(),
         over_name: "Altitude".into(),
@@ -64,6 +68,7 @@ fn a_sweep_draws_its_refused_points_as_gaps_where_they_fell() {
 
 #[test]
 fn a_description_that_does_not_hold_together_is_refused() {
+    crate::design::open();
     let base = || {
         samples()
             .into_iter()

@@ -37,10 +37,62 @@ pub mod tables {
 
 include!(concat!(env!("OUT_DIR"), "/engine_source.rs"));
 
-pub use tables::{
-    CaseDef, CycleDef, GroupDef, CASES, GROUPS, MAX_INPUTS, MAX_OUTPUTS, NODES, NODE_COUNT,
-    RELATIONS, VARS, VAR_COUNT,
-};
+pub use tables::{CASES, GROUPS, NODES, NODE_COUNT, RELATIONS, VARS, VAR_COUNT};
+
+/// The most inputs a row may declare: the size of the engine's scratch.
+///
+/// Both caps were once 16 and 4, and both were outgrown. The output cap
+/// panicked on the first row whose answer was a set, which was loud. The
+/// input cap was not: `eval` sliced to it, and a row declaring more inputs
+/// received fewer, which surfaced as a row "blocked on an input that has never
+/// run". A design is read at run time now, so it cannot size the engine; a
+/// design wider than these is refused by name when it is opened, never cut
+/// short (`opened`).
+pub const MAX_INPUTS: usize = 32;
+/// The most values a row may publish, its own answer included.
+pub const MAX_OUTPUTS: usize = 32;
+
+/// A loop the design actually has, declared where design decisions live.
+pub struct CycleDef {
+    pub nodes: &'static [u16],
+    pub converge_on: u16,
+    pub tolerance: f64,
+    pub max_iter: u32,
+    pub seeds: &'static [(u16, f64)],
+}
+
+/// The case: the one multipayload design. See `cases/`.
+pub struct CaseDef {
+    pub id: &'static str,
+    pub label: &'static str,
+    pub note: &'static str,
+    pub supply: &'static [(u16, f64)],
+    pub cycles: &'static [CycleDef],
+    /// The inputs in the Condition group; every other declared input is Customer.
+    pub conditions: &'static [u16],
+}
+
+/// One heading in the tree.
+pub struct GroupDef {
+    pub id: &'static str,
+    pub label: &'static str,
+    pub parent: &'static str,
+    pub owner: &'static str,
+    /// 1 management · 2 the system · 3 subsystem · 4 the run.
+    pub layer: u8,
+    /// Where the heading sits among its siblings, as it was written.
+    /// A face that draws the tree sorts by this; the table itself is
+    /// folder-ordered so that generation stays deterministic.
+    pub order: u32,
+    /// Drawn as a nested box on the diagonal. A mark inside a box is
+    /// coupling that subtree owns; a mark outside it crosses a boundary.
+    pub is_box: bool,
+    /// The colour family the branch is drawn in — what makes a branch
+    /// findable on a tree of thirteen hundred rows.
+    pub tone: &'static str,
+    /// The cases this branch is in play for. Empty means every case.
+    pub cases: &'static [&'static str],
+}
 
 /// One node's relation, as the engine calls it: SI values in, SI values out,
 /// its sheet's guards applied.
@@ -70,6 +122,9 @@ pub struct Graph {
     pub groups: &'static [GroupDef],
     /// The labelled relations between headings: (from, to, why).
     pub relations: &'static [(&'static str, &'static str, &'static str)],
+    /// Each recorded row's current version and the release that carried it:
+    /// (row, version, release).
+    pub versions: &'static [(&'static str, u32, &'static str)],
     /// What each node gave on its own cases, worked out the first time they
     /// are asked for ([`Graph::fixture_runs`]).
     pub cases_run: CasesRun,
@@ -116,6 +171,7 @@ pub static COMPILED: Graph = Graph {
     cases: &CASES,
     groups: &GROUPS,
     relations: &RELATIONS,
+    versions: tables::NODE_VERSIONS,
     cases_run: CasesRun::new(),
 };
 
@@ -256,16 +312,6 @@ impl Graph {
 pub use vleo_bus as bus;
 pub use vleo_core as core_engine;
 pub use vleo_units as units;
-
-// MAX_INPUTS and MAX_OUTPUTS come from `tables`, measured off the tree by the
-// generator rather than written here by hand. Both were hand-written once — 16
-// and 4 — and both were outgrown. The output cap panicked on the first row whose
-// answer was a set, which is a loud failure and an acceptable one. The INPUT cap
-// did not: `eval` sliced to it, so a row declaring more inputs than the cap
-// silently received fewer, and what surfaced was the generated length guard
-// refusing the short slice — reported as a node blocked on "an input that has
-// never run", which is not what had happened. A constant that can be outgrown
-// by a sheet belongs to the sheet, so it is generated.
 
 /// The engine, holding the resolved data handle for one run.
 ///

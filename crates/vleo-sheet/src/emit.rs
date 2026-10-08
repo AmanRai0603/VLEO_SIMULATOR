@@ -1901,7 +1901,8 @@ pub fn tables_rs(tree: &Tree) -> String {
          use vleo_core::graph::{Behaviour, Children, Kind, Level, Limit, Lookup, Maturity, NodeDef, Port, PortState, Read, Retirement, State, VarDef, View};\n",
     );
     o.push_str("#[allow(unused_imports)]\nuse vleo_core::math::table::Table1;\n");
-    o.push_str("use vleo_core::units::Unit;\n\n");
+    o.push_str("use vleo_core::units::Unit;\n");
+    o.push_str("use crate::{CaseDef, CycleDef, GroupDef};\n\n");
     o.push_str(&format!("pub const NODE_COUNT: usize = {n};\n"));
     // The version each node's record has reached, and the release that
     // carried it — every node that has one. A saved result keeps the versions
@@ -1928,17 +1929,9 @@ pub fn tables_rs(tree: &Tree) -> String {
          pub const VAR_COUNT: usize = {};\n",
         n + extras.len()
     ));
-    // THE SCRATCH SIZES ARE MEASURED FROM THE TREE, NOT GUESSED.
-    //
-    // They were two hand-written constants in the kernel, 16 and 4, and both
-    // were outgrown. The output one panicked on the first set row, which is a
-    // loud failure. The INPUT one did not: `eval` sliced to the cap, so a node
-    // declaring more inputs than the cap silently received fewer, and the only
-    // reason that surfaced at all was the generated length guard refusing the
-    // short slice — as a node "blocked on an input that has never run", which
-    // is not what had happened.
-    //
-    // Emitted from the tree, neither can be too small again.
+    // The engine's scratch sizes are the engine's own (`MAX_INPUTS`,
+    // `MAX_OUTPUTS`), and a graph read at run time wider than them is refused
+    // by name. This build's tree is held to them when it is compiled.
     let max_in = sheets.iter().map(|sh| sh.inputs.len()).max().unwrap_or(0);
     let max_out = sheets
         .iter()
@@ -1946,13 +1939,7 @@ pub fn tables_rs(tree: &Tree) -> String {
         .max()
         .unwrap_or(1);
     o.push_str(&format!(
-        "/// The most inputs any row declares. Measured from the tree by the\n\
-         /// generator, so the kernel's scratch cannot be outgrown by a sheet.\n\
-         pub const MAX_INPUTS: usize = {max_in};\n"
-    ));
-    o.push_str(&format!(
-        "/// The most variables any row publishes, its own answer included.\n\
-         pub const MAX_OUTPUTS: usize = {max_out};\n\n"
+        "const _: () = assert!(\n    {max_in} <= crate::MAX_INPUTS && {max_out} <= crate::MAX_OUTPUTS,\n    \"a row declares more inputs or outputs than the engine runs\"\n);\n\n"
     ));
 
     o.push_str("pub static NODES: [NodeDef; NODE_COUNT] = [\n");
@@ -2140,9 +2127,6 @@ pub fn tables_rs(tree: &Tree) -> String {
     o.push_str("];\n\n");
 
     // Cases, including the declared cycles.
-    o.push_str("/// A loop the design actually has, declared where design decisions live.\n");
-    o.push_str("pub struct CycleDef {\n    pub nodes: &'static [u16],\n    pub converge_on: u16,\n    pub tolerance: f64,\n    pub max_iter: u32,\n    pub seeds: &'static [(u16, f64)],\n}\n\n");
-    o.push_str("/// The case: the one multipayload design. See `cases/`.\npub struct CaseDef {\n    pub id: &'static str,\n    pub label: &'static str,\n    pub note: &'static str,\n    pub supply: &'static [(u16, f64)],\n    pub cycles: &'static [CycleDef],\n    /// The inputs in the Condition group; every other declared input is Customer.\n    pub conditions: &'static [u16],\n}\n\n");
     o.push_str(&format!(
         "pub static CASES: [CaseDef; {}] = [\n",
         tree.cases.len()
@@ -2195,29 +2179,6 @@ pub fn tables_rs(tree: &Tree) -> String {
     o.push_str("];\n\n");
 
     // The navigation graph: groups and the relation edges between them.
-    o.push_str(
-        "/// One heading in the tree.\n\
-         pub struct GroupDef {\n\
-         \x20   pub id: &'static str,\n\
-         \x20   pub label: &'static str,\n\
-         \x20   pub parent: &'static str,\n\
-         \x20   pub owner: &'static str,\n\
-         \x20   /// 1 management · 2 the system · 3 subsystem · 4 the run.\n\
-         \x20   pub layer: u8,\n\
-         \x20   /// Where the heading sits among its siblings, as it was written.\n\
-         \x20   /// A face that draws the tree sorts by this; the table itself is\n\
-         \x20   /// folder-ordered so that generation stays deterministic.\n\
-         \x20   pub order: u32,\n\
-         \x20   /// Drawn as a nested box on the diagonal. A mark inside a box is\n\
-         \x20   /// coupling that subtree owns; a mark outside it crosses a boundary.\n\
-         \x20   pub is_box: bool,\n\
-         \x20   /// The colour family the branch is drawn in — what makes a branch\n\
-         \x20   /// findable on a tree of thirteen hundred rows.\n\
-         \x20   pub tone: &'static str,\n\
-         \x20   /// The cases this branch is in play for. Empty means every case.\n\
-         \x20   pub cases: &'static [&'static str],\n\
-         }\n\n",
-    );
     o.push_str(&format!(
         "pub static GROUPS: [GroupDef; {}] = [\n",
         tree.groups.len()
