@@ -233,7 +233,9 @@ pub fn cmd_ship(root: &Path, args: &[&str]) -> Result<(), String> {
         "chore",
         "tree",
         &format!("release {version}"),
-        &[format!("`xtask ship {version}`: the workspace and every lock file move to {version}.")],
+        &[format!(
+            "`xtask ship {version}`: the workspace and every lock file move to {version}."
+        )],
     );
     step(&mut run, "commit and push", half(), || {
         git(root, &["add", "-A"])?;

@@ -676,7 +676,10 @@ pub(super) fn cmd_release(root: &Path, args: &[&str]) -> Result<(), String> {
         || {
             cmd_docs(root)?;
             cmd_derisk(root, &[])?;
-            Ok(((), "the language page and the de-risking narrative".to_string()))
+            Ok((
+                (),
+                "the language page and the de-risking narrative".to_string(),
+            ))
         },
     )?;
     run.done(&format!(

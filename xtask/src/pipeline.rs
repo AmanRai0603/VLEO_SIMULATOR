@@ -1215,9 +1215,11 @@ mod the_table_is_true {
         fs::create_dir_all(&dir).unwrap();
         let mut run = Run::start(&dir, "release", &["x"], 2);
         let first: u32 = run
-            .step("check the version", OnStop::new("unchanged", "again"), || {
-                Ok((7, "read".into()))
-            })
+            .step(
+                "check the version",
+                OnStop::new("unchanged", "again"),
+                || Ok((7, "read".into())),
+            )
             .unwrap();
         assert_eq!(first, 7);
         let err = run

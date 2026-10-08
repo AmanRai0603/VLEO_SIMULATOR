@@ -13,7 +13,7 @@ Generated from the one table in `xtask/src/pipeline.rs`; `cargo run -p xtask -- 
 1. **form** — a group's folder, or a row's lesson form, written from the design for its people to fill: `lesson`, `group-export`
 2. **build** — a node built from its method, and its tests shown to test: `method`, `rerun`, `method-wasm`, `files-wasm`
 3. **gate** — the checks every change passes, and what they generate: `group-app`, `docs`, `assemble`, `gate`, `ready`, `codeowners`, `variables`, `guides`, `pipeline`
-4. **release** — the stamped release everyone gets: `readers`, `ship`, `release`, `derisk`, `kit`, `bundle`
+4. **release** — the versioned release everyone gets: `readers`, `ship`, `release`, `derisk`, `kit`, `bundle`
 5. **read** — reports: what exists, what is open, why a node is what it is: `status`, `active`, `catalogue`, `impact`, `reach`, `gap`, `graph`, `explain`, `why`, `trace`
 6. **setup** — once per person per clone: `setup`, `help`
 
@@ -267,7 +267,7 @@ only says whether it is current.
 | dry run | --dry-run runs pipeline --check: whether docs/PIPELINE.md is current, nothing written |
 | code | `xtask/src/pipeline.rs` — `cmd_pipeline` |
 
-### release — the stamped release everyone gets
+### release — the versioned release everyone gets
 
 #### `readers`
 
@@ -289,7 +289,7 @@ the docs folder for readers: every row's page and every lesson, read with no too
 
     cargo run -p xtask -- ship <version> [--no-push] [--no-test]
 
-the release branch release/<version> from main: the de-risking narrative, the stamp, regenerate, gate, test, commit, push — and the tag commands for after the merge.
+the release branch release/<version> from main: the de-risking narrative, the version, regenerate, gate, test, commit, push — and the tag commands for after the merge.
 
 | | |
 |---|---|
@@ -305,7 +305,7 @@ the release branch release/<version> from main: the de-risking narrative, the st
 
     cargo run -p xtask -- release <version> [--check]
 
-stamp every node version still marked `next` with this release, set the workspace version, and regenerate. The node's record then says which release carried each belief. --check refuses while anything is unstamped or newer.
+set the workspace version, and regenerate. It stamps nothing in the design: a node's record is its node engineer's. --check refuses while the workspace says another version.
 
 | | |
 |---|---|

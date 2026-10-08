@@ -4,8 +4,8 @@
 //! tree. It never reads another node, and its output is byte-stable: sorted
 //! iteration everywhere, so two runs on the same design say the same thing.
 
-use crate::model::*;
 use crate::load::Tree;
+use crate::model::*;
 
 // ---------------------------------------------------------------------------
 // the gap pass
