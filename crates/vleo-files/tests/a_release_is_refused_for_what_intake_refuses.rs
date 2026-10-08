@@ -4,11 +4,11 @@
 //! refuses, in a test for each". Two real releases are the oracle, both as the
 //! solar group sealed them:
 //!
-//! - **Solar 1.0**, which `xtask group-intake` refused whole: six computed
+//! - **Solar 1.0**, which the developer's intake refused whole: six computed
 //!   nodes had no case their method must refuse. The group's own record says
 //!   which six, in the `learned` of its 1.1 row of versions.csv.
-//! - **Solar 1.1**, which intake took and the group accepted
-//!   (acceptances/l3_solar-1.1.toml): nothing in it is refused.
+//! - **Solar 1.1**, which intake took and the group accepted: nothing in it
+//!   is refused.
 //!
 //! Then each refusal is made on its own, one change to Solar 1.1 at a time,
 //! and each is refused by name, at its node.

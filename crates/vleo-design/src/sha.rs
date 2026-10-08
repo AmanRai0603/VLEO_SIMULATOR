@@ -1,7 +1,7 @@
 //! SHA-256 (FIPS 180-4), as hexadecimal.
 //!
 //! One implementation for every hash the tools write: the vendored files', a
-//! group's seal, a delivery's and the design file's. Small, and written here so
+//! group's seal and the design file's. Small, and written here so
 //! nothing needs a crate for it.
 
 /// The SHA-256 of `data`, as 64 lowercase hexadecimal digits.

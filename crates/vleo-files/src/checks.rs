@@ -1,15 +1,14 @@
-//! What a release must hold before it is taken: the checks today's intake
-//! makes of a group's release, made of the file itself.
+//! What a release must hold before it is taken: the checks the developer's
+//! intake made of a group's release, made of the file itself.
 //!
 //! docs/PLAN_1_0.md, phase C: "the library refuses everything today's intake
-//! refuses". `xtask group-intake` refuses a release for what its files say —
+//! refuses". The developer's intake refused a release for what its files say —
 //! a method an assistant supplied, a node that says nothing of who made it, a
 //! transcription nobody checked, results that are not a reference, an input
 //! that connects to nothing, a change that does not say which belief broke —
-//! and, until the switch-over, for conflicts with the repository's own sheets.
-//! The first kind is about the file and is checked here, the same installed and
-//! in the page. The second ends when the design leaves the repository, and
-//! stays with intake.
+//! and for conflicts with the repository's own sheets. The first kind is about
+//! the file and is checked here, the same installed and in the page. The second
+//! ended with that intake, which is retired.
 //!
 //! A finding names its place — the node by its id, or the file — and says
 //! what is wrong in words a person can act on. An error refuses the release; a

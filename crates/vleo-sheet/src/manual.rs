@@ -36,10 +36,9 @@ pub enum Who {
     /// Everything a user does, and the tree itself: rows, holes, fixtures,
     /// checks, merges, data.
     Developer,
-    /// Runs the repository's routine: takes a group's sealed release in onto
-    /// its own branch, delivers the test application, records the group's
-    /// acceptance, releases and shares. Every step is a command; nothing here
-    /// writes code.
+    /// Runs the repository's routine: cuts a release, builds the kits, packs
+    /// the drive and shares them. Every step is a command; nothing here writes
+    /// code.
     Maintainer,
     Everyone,
 }
