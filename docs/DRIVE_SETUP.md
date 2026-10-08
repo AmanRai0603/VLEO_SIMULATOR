@@ -14,13 +14,13 @@ sealed release they hold:
     python3 tools/drive.py pack --out "target/VLEO Drive" --zip \
         --sealed <group>-<version>.vleo …
 
-The drive's owner unzips `target/VLEO Drive.zip` and drags its five folders —
-`apps/`, `guides/`, `design/`, `readable/`, `groups/` — into the
+The drive's owner unzips `target/VLEO Drive.zip` and drags its four folders —
+`apps/`, `guides/`, `readable/`, `groups/` — into the
 drive's folder, beside its START HERE page (the Google Doc made from
 [`DRIVE_START_HERE.md`](DRIVE_START_HERE.md)).
 
 **On a release**, `pack --update --zip` leaves `groups/` out. The owner deletes
-`apps/`, `guides/`, `design/` and `readable/` from the drive and drags in the
+`apps/`, `guides/` and `readable/` from the drive and drags in the
 new ones. `groups/` is never replaced, because once it is in the drive it is the
 groups' own work.
 
@@ -37,7 +37,6 @@ used):
 <the drive folder>/
   apps/group.html, apps/node.html     open a group's files; nothing to install
   guides/user.html, maintainer.html, developer.html
-  design/design.vleo                  the whole design, as one file
   groups/READY.csv                    what each group's own checks still ask of it
   readable/Groups.csv, Nodes.csv, Interfaces.csv
                                       the released design, for any spreadsheet

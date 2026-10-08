@@ -1182,7 +1182,7 @@ answer = "Everyone gets the tool, not the repository: one Python package for eve
 body = """
 The daemon reads the web face, the tree and every node's page at run time, so \
 the programs alone do not run. `xtask kit` puts them beside exactly those files \
-— the tree and its pages as one file, `design.vleo`; no git history, no \
+— the design as its files, `design/`; no git history, no \
 generators, no kernel source — in `dist/vleo-<version>/`, \
 with `START_HERE.md` (from `docs/TEAM_GUIDE.md`) and `VERSION` — and `start.sh` \
 off Windows; on Windows the daemon ships as `Start VLEO.exe`, which opens the \
@@ -1765,7 +1765,7 @@ effect = "reads"
 tool = "xtask"
 name = "catalogue"
 usage = "catalogue [<group>] [--csv <file>]"
-what = "What each group publishes to the others: every row another group reads, or that crosses a layer, with its version and every row that reads it — taken from the inputs the sheets declare. `--csv` writes it as a table. The design file carries it too, as its `published` table."
+what = "What each group publishes to the others: every row another group reads, or that crosses a layer, with its version and every row that reads it — taken from the inputs the sheets declare. `--csv` writes it as a table, which the shared drive carries as readable/Interfaces.csv."
 who = "developer"
 effect = "reads"
 
@@ -1967,22 +1967,6 @@ effect = "writes"
 
 [[command]]
 tool = "xtask"
-name = "design"
-usage = "design [--out <file>]"
-what = "design.vleo: the tree the tool reads — every node folder with its sheet, fixtures and page, the layers, the cases and the source list — written into one SQLite file, each file whole with its SHA-256, and naming the oldest application that can run it — the one that wrote it; an older application refuses it, saying which it needs. The kit carries it in place of the folders and the daemon reads it as it reads them, so the pages are the same byte for byte. Default target/design.vleo; nothing committed."
-who = "developer"
-effect = "writes"
-
-[[command]]
-tool = "xtask"
-name = "design"
-usage = "design --check <file>"
-what = "A design file held to the tree: each file against its SHA-256, all of them against the fingerprint, and every file against the folders it was written from. Prints the differences and fails on any."
-who = "developer"
-effect = "reads"
-
-[[command]]
-tool = "xtask"
 name = "convert"
 usage = "convert [--out <dir>]"
 what = "The design as its files, for the switch-over (docs/PLAN_1_0.md, phase E): the programme's, the systems' and each subsystem group's group file, a node file for every row and for each open block proposed where its group's breakdown holds none yet, and each case, laid out as the shared drive holds them. Before anything is written they are read back as the folders and loaded as the design. Default target/converted/, or an empty --out; nothing in the repository changes."
@@ -1993,7 +1977,7 @@ effect = "writes"
 tool = "xtask"
 name = "kit"
 usage = "kit [--bin <dir>] [--out <dir>] [--files-only]"
-what = "The tool as each person gets it: the two release-built programs beside exactly the files they read — the design among them as one file, design.vleo — with START_HERE.md and VERSION (and start.sh off Windows, where the daemon ships as Start VLEO.exe), in dist/vleo-<version>/. Zip it and share it; see docs/SHARING.md. --files-only leaves the programs out: the files the Python package carries."
+what = "The tool as each person gets it: the two release-built programs beside exactly the files they read — the design among them as its files, design/ — with START_HERE.md and VERSION (and start.sh off Windows, where the daemon ships as Start VLEO.exe), in dist/vleo-<version>/. Zip it and share it; see docs/SHARING.md. --files-only leaves the programs out: the files the Python package carries."
 who = "developer"
 effect = "writes"
 
@@ -2438,13 +2422,13 @@ default = "found"
 
 [[env]]
 name = "VLEO_DESIGN"
-what = "A design file for the daemon to read the design from, in place of the one beside it or the folders of a checkout; or a folder of the design converted to its files (`cargo run -p xtask -- convert`), its group, node and case files read as the folders they came from. A file or folder that does not open stops the daemon, naming why: it never falls back to whatever folders sit beside it. A converted design with rows this build has not, such as the open blocks the conversion adds, is refused, saying so, until the faces read the graph (docs/PLAN_1_0.md, phase E)."
-default = "design.vleo beside the tool, else the folders"
+what = "A folder of the design's files for the daemon to read the design from, in place of design/ beside it (`cargo run -p xtask -- convert` writes one): its group, node and case files, read as the folders they came from. A name that is not a folder, a folder that does not open, and a file in it written by a newer application than the daemon each stop the daemon, naming why: it never falls back to whatever sits beside it."
+default = "design/ beside the tool, else the folders"
 
 [[env]]
 name = "VLEO_DRIVE"
 what = "A shared drive to build today's design from: every group's latest sealed release in its `groups/<group>/releases/` that passes its checks — its seal, its content, and each node checked against the design — taken into the design, in memory. A group whose latest is refused is built from its last good release, and the tool says which release each group's part is, and why one was refused. A folder that is not a drive stops the tool, naming why. Nothing on the drive is written."
-default = "unset: the design file or the folders, as they are"
+default = "unset: the design's files, as they are"
 
 [[env]]
 name = "VLEO_PORT"
