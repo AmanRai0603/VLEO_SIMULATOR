@@ -321,9 +321,14 @@ pub fn to_rust_publishing(
          unused_assignments, unused_imports, unused_mut, unused_variables, unused_parens, non_snake_case)]\n\n",
     );
     o.push_str("use vleo_units::constants::*;\nuse vleo_units::method_rt::{self as rt, MethodError};\nuse vleo_units::pmath;\n\n");
+    // One line each, whatever the sheet holds: a line break in a source would
+    // end the comment and put the rest of it into the kernel as code.
+    let one = |s: &str| s.split_whitespace().collect::<Vec<_>>().join(" ");
     let _ = writeln!(
         o,
-        "/// The method of `{node}`, source `{source}`:\n///\n/// ```text"
+        "/// The method of `{}`, source `{}`:\n///\n/// ```text",
+        one(node),
+        one(source)
     );
     for l in src.lines() {
         let _ = writeln!(o, "/// {l}");

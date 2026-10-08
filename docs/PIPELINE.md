@@ -12,8 +12,8 @@ Generated from the one table in `xtask/src/pipeline.rs`; `cargo run -p xtask -- 
 
 1. **form** — a group's folder written from the design, for the group to start from: `group-export`
 2. **apply** — a new row, or a row's lesson, written into the tree — all of it or none: `lesson`, `new`
-3. **publish** — a filled row's code generated, and its holes written: `declare`, `publish`, `fill`, `confirm`
-4. **build** — a node built from its method, and its tests shown to test: `method`, `build-node`, `rerun`, `method-wasm`, `files-wasm`, `differential`
+3. **publish** — a filled row published, and named by the person who confirms it: `declare`, `publish`, `confirm`
+4. **build** — a node built from its method, and its tests shown to test: `method`, `build-node`, `rerun`, `method-wasm`, `files-wasm`
 5. **gate** — the checks every change passes, and what they generate: `group-app`, `docs`, `assemble`, `gate`, `ready`, `codeowners`, `variables`, `guides`, `pipeline`
 6. **release** — the stamped release everyone gets: `readers`, `ship`, `release`, `derisk`, `kit`, `convert`, `bundle`
 7. **read** — reports: what exists, what is open, why a node is what it is: `status`, `active`, `catalogue`, `impact`, `reach`, `gap`, `graph`, `explain`, `why`, `trace`
@@ -89,7 +89,7 @@ clone the shape of a sibling and blank what must be re-decided. Not a copy: a re
 | dry run | --dry-run prints this plan — the steps, what it would write, how to undo it — and touches nothing |
 | code | `xtask/src/forms.rs` — `cmd_new` |
 
-### publish — a filled row's code generated, and its holes written
+### publish — a filled row published, and named by the person who confirms it
 
 #### `declare`
 
@@ -110,33 +110,17 @@ the completion questions, in order, with what each one is for. A gap left open i
 
     cargo run -p xtask -- publish <node>
 
-move a filled, seeded row to published, so its model, contract and evidence are generated and its holes can be written. Refuses, naming every reason, while it is not ready.
+move a filled, seeded row to published, write its metadata and gate the tree. Refuses, naming every reason, while it is not ready.
 
 | | |
 |---|---|
 | reads | the node's sheet |
-| writes | node.toml's state, and the node's generated model, contract, evidence, module, page and metadata |
+| writes | node.toml's state, and the node's metadata |
 | checks | every completion question answered; the whole tree's gate |
 | undo | `git restore <files>` (or `git checkout -- .`) before committing; `git revert` after |
 | steps | 1 read the sheet · 2 publish, generate and gate |
 | dry run | --dry-run prints this plan — the steps, what it would write, how to undo it — and touches nothing |
 | code | `xtask/src/main.rs` — `cmd_publish` |
-
-#### `fill`
-
-    cargo run -p xtask -- fill <node> --hole <n> --body <file|-> [--by <who> --model <model>]
-
-splice one hole body into a generated model.rs. Whoever writes the body — a developer, or an assistant a developer runs — returns the few typed lines as text and this puts them where they go: nothing is handed the whole file.
-
-| | |
-|---|---|
-| reads | the node's sheet and model.rs, the body |
-| writes | one HOLE block in model.rs; with --by: fills.toml |
-| checks | no HOLE marker, fault or early return in the body; portable maths only; a significant node's body is attributed; the body landed |
-| undo | `git restore` the node's model.rs and fills.toml |
-| steps | 1 read the body · 2 check the body · 3 splice into the hole |
-| dry run | --dry-run prints this plan — the steps, what it would write, how to undo it — and touches nothing |
-| code | `xtask/src/fills.rs` — `cmd_fill` |
 
 #### `confirm`
 
@@ -152,7 +136,7 @@ the relations with nobody's name against them, grouped by the owner who has to s
 | checks | that the relation and its source are printed first |
 | undo | `git restore <files>` (or `git checkout -- .`) before committing; `git revert` after |
 | dry run | --dry-run prints this plan — the steps, what it would write, how to undo it — and touches nothing |
-| code | `xtask/src/fills.rs` — `cmd_confirm` |
+| code | `xtask/src/confirm.rs` — `cmd_confirm` |
 
 ### build — a node built from its method, and its tests shown to test
 
@@ -232,21 +216,6 @@ rebuild web/files.wasm.gz, the design-file library the pages carry, from vleo_fi
 | dry run | --dry-run runs files-wasm --check: whether it is current, nothing built |
 | code | `xtask/src/files.rs` — `cmd_files_wasm` |
 
-#### `differential`
-
-    cargo run -p xtask -- differential <node>
-
-re-run the node against every other recorded body for the same hole. A significant node is filled twice by different models and the two are compared; this is the comparison. Recorded by `fill --by`, which refuses a second body from the model that wrote the first.
-
-| | |
-|---|---|
-| reads | every recorded body for the node's holes |
-| writes | nothing |
-| checks | the node against each other recorded body |
-| undo | nothing to undo: it writes nothing |
-| dry run | it only reads, so it runs as it is |
-| code | `xtask/src/fills.rs` — `cmd_differential` |
-
 ### gate — the checks every change passes, and what they generate
 
 #### `group-app`
@@ -268,12 +237,12 @@ web/node.html — offline pages a group keeps its database files in (docs/GROUP_
 
     cargo run -p xtask -- docs [<node>]
 
-the per-node generators that write files — model, contract, module, evidence and metadata, each from the node's own sheet. A node's page is rendered from its sheet when it is opened, and is never written here.
+the per-node generators that write files — each node's metadata, from its own sheet, and every method translated into the kernel. A node's page is rendered from its sheet when it is opened, and is never written here.
 
 | | |
 |---|---|
 | reads | every sheet |
-| writes | each node's generated files — model, contract, module, evidence, metadata — and docs/PSEUDOCODE.md; a page.html left in a node folder from before is removed |
+| writes | each node's metadata, the methods translated into the kernel, and docs/PSEUDOCODE.md; a page.html left in a node folder from before is removed |
 | checks | that each sheet generates |
 | undo | `git restore <files>` (or `git checkout -- .`) before committing; `git revert` after |
 | dry run | --dry-run prints this plan — the steps, what it would write, how to undo it — and touches nothing |
@@ -625,7 +594,7 @@ a node's history in one place: every recorded version and who made it, the commi
 
 | | |
 |---|---|
-| reads | the node in the design (design/), its git history, fills and traces |
+| reads | the node in the design (design/), its git history and traces |
 | writes | nothing |
 | checks | the node's gate, run now |
 | undo | nothing to undo: it writes nothing |

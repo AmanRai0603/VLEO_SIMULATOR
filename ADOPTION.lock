@@ -30,17 +30,6 @@ fallback = "a hand-written parser for the subset used here — the schema is sma
 verified = "2026-09-11"
 
 [[adopted]]
-name = "wasm-bindgen"
-upstream = "https://github.com/rustwasm/wasm-bindgen"
-licence = "MIT OR Apache-2.0"
-version = "0.2"
-used_by = "vleo-wasm"
-load_bearing = false
-why = "the browser binding surface, and it emits the TypeScript declarations"
-fallback = "the daemon face already covers everything the browser face does"
-verified = "2026-09-11"
-
-[[adopted]]
 name = "pyo3"
 upstream = "https://github.com/PyO3/pyo3"
 licence = "MIT OR Apache-2.0"

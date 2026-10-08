@@ -505,9 +505,9 @@ pub struct Sheet {
     /// from the engine's refuses to run and says so, which makes a stale face
     /// detectable rather than merely wrong.
     pub sheet_hash: u64,
-    /// Hash of the filled hole bodies. Part of the chain hash, so a cached
+    /// Hash of the code under the row. Part of the chain hash, so a cached
     /// result notices when the arithmetic under it changed even though the
-    /// interface did not.
+    /// interface did not. No row holds code now, so it is the hash of nothing.
     pub impl_hash: u64,
 }
 

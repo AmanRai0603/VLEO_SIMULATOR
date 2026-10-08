@@ -117,14 +117,14 @@ This section is deleted on that day, with the `maintainer` branch.
   | change | reviewers |
   |---|---|
   | a method an assistant transcribed | H1b physics, read against its source, by someone other than the person who signed it |
-  | fixtures and filled holes | H2, after the machine checks pass |
+  | fixtures | H2, after the machine checks pass |
   | moving a branch in `layers/` | two |
 
   H1b asks whether the relation, its source and its range are right; H2 whether every
   expected value came from outside this code. The person who wrote the node is
   eligible for none of them.
-- **While it is here, you may not** edit a generated file outside a numbered
-  `HOLE` block, commit an aggregate, add a guard by hand, apply a change to what
+- **While it is here, you may not** edit a generated file, commit an
+  aggregate, add a guard by hand, apply a change to what
   a node computes without its reason, edit a recorded version, edit a sealed
   release, or move a group's results or tolerances to make a test pass.
 

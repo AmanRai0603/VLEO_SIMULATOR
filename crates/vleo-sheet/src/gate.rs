@@ -9,56 +9,9 @@
 //! every edit in about a second; the rest run on demand and in the pipeline.
 
 use crate::emit;
-use crate::load::{read_holes, Tree};
+use crate::load::Tree;
 use crate::model::*;
 use std::collections::{BTreeMap, BTreeSet};
-
-/// Format a candidate the way the generator does before writing it, so the
-/// regeneration check asks "did the content drift" rather than "has the
-/// formatter run".
-///
-/// When `rustfmt` is not on the path, or refuses the candidate, this returns
-/// the text **unchanged**. It must never return anything but valid source: this
-/// value is written to disk as well as compared, and an earlier version
-/// returned a whitespace-collapsed form on failure — which put every generated
-/// module on one line, where the first `//` comment swallowed the rest of the
-/// file. The comparison is allowed to be weaker than the formatting; the
-/// content is not allowed to be wrong.
-pub fn formatted(text: &str) -> String {
-    use std::io::Write;
-    let dir = std::env::temp_dir().join("vleo-gate");
-    let _ = std::fs::create_dir_all(&dir);
-    let p = dir.join(format!("candidate-{}.rs", crate::fnv1a(text)));
-    if let Ok(mut f) = std::fs::File::create(&p) {
-        if f.write_all(text.as_bytes()).is_ok() {
-            drop(f);
-            // `--skip-children` because a generated `mod.rs` declares submodules
-            // that do not exist beside a temporary file, and resolving them is
-            // not what is being asked here.
-            let ok = std::process::Command::new("rustfmt")
-                .args(["--edition", "2021", "--quiet", "--skip-children"])
-                .arg(&p)
-                .stderr(std::process::Stdio::null())
-                .status()
-                .map(|s| s.success())
-                .unwrap_or(false);
-            if ok {
-                if let Ok(out) = std::fs::read_to_string(&p) {
-                    let _ = std::fs::remove_file(&p);
-                    return out;
-                }
-            }
-            let _ = std::fs::remove_file(&p);
-        }
-    }
-    text.to_string()
-}
-
-/// Collapse whitespace. The weaker comparison, used only when `rustfmt` is
-/// absent.
-fn normalise(s: &str) -> String {
-    s.split_whitespace().collect::<Vec<_>>().join(" ")
-}
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Verdict {
@@ -139,8 +92,8 @@ fn versions_check(sh: &Sheet) -> Check {
 /// The method, the author's code and cases, and flight software.
 ///
 /// Nothing here is asked of a row that has none of them: a node without a
-/// method keeps its hand-written holes, and the gap pass lists the method as
-/// still to come. What IS here is refused rather than noted, because each of
+/// method has nothing to run, and the gap pass lists the method as still to
+/// come. What IS here is refused rather than noted, because each of
 /// these is a claim — "this method is the relation", "these cases came from my
 /// code" — and a claim that does not hold must not reach a release.
 fn method_checks(sh: &Sheet) -> Vec<Check> {
@@ -282,134 +235,6 @@ fn method_checks(sh: &Sheet) -> Vec<Check> {
         });
     }
     out
-}
-
-/// Rust source with its comments removed and its string and character
-/// literals emptied, so a check that reads code reads code.
-///
-/// The checks below once searched the raw text, so a hole that mentioned
-/// `Sense::AtLeast` in a comment passed 7e while applying `Sense::AtMost`, and
-/// a string saying ".sin()" failed the maths rule. Lifetimes (`'a`) are kept.
-pub fn code_only(src: &str) -> String {
-    let c: Vec<char> = src.chars().collect();
-    let mut o = String::with_capacity(src.len());
-    let mut i = 0;
-    while i < c.len() {
-        match c[i] {
-            '/' if c.get(i + 1) == Some(&'/') => {
-                while i < c.len() && c[i] != '\n' {
-                    i += 1;
-                }
-            }
-            '/' if c.get(i + 1) == Some(&'*') => {
-                let mut depth = 1;
-                i += 2;
-                while i < c.len() && depth > 0 {
-                    if c[i] == '/' && c.get(i + 1) == Some(&'*') {
-                        depth += 1;
-                        i += 2;
-                    } else if c[i] == '*' && c.get(i + 1) == Some(&'/') {
-                        depth -= 1;
-                        i += 2;
-                    } else {
-                        i += 1;
-                    }
-                }
-                o.push(' ');
-            }
-            'r' if matches!(c.get(i + 1), Some('"' | '#'))
-                && (i == 0 || !(c[i - 1].is_alphanumeric() || c[i - 1] == '_')) =>
-            {
-                // A raw string: r"..." or r#"..."#, with as many hashes.
-                let mut j = i + 1;
-                let mut hashes = 0;
-                while c.get(j) == Some(&'#') {
-                    hashes += 1;
-                    j += 1;
-                }
-                if c.get(j) != Some(&'"') {
-                    o.push(c[i]);
-                    i += 1;
-                    continue;
-                }
-                j += 1;
-                loop {
-                    if j >= c.len() {
-                        break;
-                    }
-                    if c[j] == '"' && (0..hashes).all(|k| c.get(j + 1 + k) == Some(&'#')) {
-                        j += 1 + hashes;
-                        break;
-                    }
-                    j += 1;
-                }
-                o.push_str("\"\"");
-                i = j;
-            }
-            '"' => {
-                i += 1;
-                while i < c.len() && c[i] != '"' {
-                    if c[i] == '\\' {
-                        i += 1;
-                    }
-                    i += 1;
-                }
-                i += 1;
-                o.push_str("\"\"");
-            }
-            '\'' if c.get(i + 1) == Some(&'\\') || c.get(i + 2) == Some(&'\'') => {
-                // A character literal, not a lifetime.
-                i += 1;
-                if c.get(i) == Some(&'\\') {
-                    i += 1;
-                }
-                while i < c.len() && c[i] != '\'' {
-                    i += 1;
-                }
-                i += 1;
-                o.push_str("' '");
-            }
-            ch => {
-                o.push(ch);
-                i += 1;
-            }
-        }
-    }
-    o
-}
-
-/// The platform's transcendental and root functions, by method name.
-const PLATFORM_MATHS: &[&str] = &[
-    "sin", "cos", "tan", "asin", "acos", "atan", "atan2", "sin_cos", "sinh", "cosh", "tanh",
-    "asinh", "acosh", "atanh", "exp", "exp2", "exp_m1", "ln", "ln_1p", "log", "log2", "log10",
-    "powf", "powi", "sqrt", "cbrt", "hypot",
-];
-
-/// Every call into the platform's maths library in `src`: `x.sin()`,
-/// `x . sin ()`, `f64::sin(x)`. Comments and strings are not code and are not
-/// read. `pmath::sin(x)` is the portable route and is not a match.
-pub fn platform_maths(src: &str) -> Vec<String> {
-    let code: String = code_only(src)
-        .chars()
-        .filter(|c| !c.is_whitespace())
-        .collect();
-    let mut found = Vec::new();
-    for name in PLATFORM_MATHS {
-        for (form, shown) in [
-            (format!(".{name}("), format!(".{name}()")),
-            (format!("f64::{name}("), format!("f64::{name}()")),
-            (format!("f32::{name}("), format!("f32::{name}()")),
-        ] {
-            // The dot (or `::`) before the name and the `(` after it keep
-            // `.sin(` from matching `.asin(` or `.sinh(`.
-            if code.contains(&form) {
-                found.push(shown);
-            }
-        }
-    }
-    found.sort();
-    found.dedup();
-    found
 }
 
 /// The per-node checks.
@@ -604,7 +429,6 @@ fn port_checks(sh: &Sheet) -> Vec<Check> {
 
 pub fn gate_node(sh: &Sheet, tree: &Tree) -> Vec<Check> {
     let mut out = Vec::new();
-    let holes = read_holes(&sh.dir);
 
     // A seeded row is checked for the four things a seed is responsible for and
     // nothing else. Everything a person has yet to write is the gap pass's to
@@ -640,7 +464,7 @@ pub fn gate_node(sh: &Sheet, tree: &Tree) -> Vec<Check> {
         out.extend(lesson_check(sh, tree));
         out.extend(behaviour_checks(sh, tree));
         out.extend(port_checks(sh));
-        let gaps = emit::gap_pass(sh, &holes);
+        let gaps = emit::gap_pass(sh);
         out.push(if gaps.is_empty() {
             Check::pass("gap-pass")
         } else {
@@ -711,8 +535,8 @@ pub fn gate_node(sh: &Sheet, tree: &Tree) -> Vec<Check> {
     // The exception to one row, one answer exists for one shape of thing and it
     // is not a licence to publish a bag of numbers. A member with no bounds is a
     // member with no guard, and a member with no reason for its bounds is a
-    // guard the next person deletes; a member with no symbol has no field to
-    // assign in a hole body and no name on a page.
+    // guard the next person deletes; a member with no symbol has no name for
+    // a method to publish it by and no name on a page.
     let mut pub_bad = Vec::new();
     if sh.is_declared() && !sh.publishes.is_empty() {
         pub_bad.push(
@@ -860,40 +684,8 @@ pub fn gate_node(sh: &Sheet, tree: &Tree) -> Vec<Check> {
         )
     });
 
-    // 6 — regenerate and compare. A hand edit outside a hole fails here, which
-    //     is what makes the generated region genuinely owned by the generator.
-    let mut drift = Vec::new();
-    for (name, want) in [
-        ("model.rs", emit::model_rs(sh, &holes)),
-        ("contract.rs", emit::contract_rs(sh)),
-        ("mod.rs", emit::mod_rs(sh)),
-        ("evidence.rs", emit::evidence_rs(sh)),
-    ] {
-        let p = sh.dir.join(name);
-        match std::fs::read_to_string(&p) {
-            // The committed file is formatted; what the generator emits is not
-            // yet. Comparing after normalising whitespace asks the question the
-            // check is actually for — did the *content* drift — rather than
-            // whether the formatter has run.
-            Ok(got) if got == formatted(&want) || normalise(&got) == normalise(&want) => {}
-            Ok(_) => drift.push(name),
-            Err(_) => drift.push(name),
-        }
-    }
-    out.push(if drift.is_empty() {
-        Check::pass("regenerate")
-    } else {
-        Check::fail(
-            "regenerate",
-            format!(
-                "{} differ from what the sheet generates — run `cargo xtask docs`",
-                drift.join(", ")
-            ),
-        )
-    });
-
     // 7 — the gap pass.
-    let gaps = emit::gap_pass(sh, &holes);
+    let gaps = emit::gap_pass(sh);
     out.push(if gaps.is_empty() {
         Check::pass("gap-pass")
     } else {
@@ -901,16 +693,15 @@ pub fn gate_node(sh: &Sheet, tree: &Tree) -> Vec<Check> {
     });
 
     // 7b — criticality, and what it buys. It decides how many people read the
-    //      node and whether the hole is filled twice by different model
-    //      families, so a word nobody recognises would silently choose the
-    //      cheaper answer.
+    //      node, so a word nobody recognises would silently choose the cheaper
+    //      answer.
     let crit = sh.criticality.as_str();
     out.push(if crit == "minor" || crit == "significant" {
         Check::pass("criticality")
     } else {
         Check::fail(
             "criticality",
-            format!("'{crit}' is neither 'minor' nor 'significant' — it decides reviewer count and whether differential fill runs"),
+            format!("'{crit}' is neither 'minor' nor 'significant' — it decides how many people review the row"),
         )
     });
 
@@ -974,8 +765,8 @@ pub fn gate_node(sh: &Sheet, tree: &Tree) -> Vec<Check> {
 
     // 7e — the sense the sheet declares is the sense the code applies.
     //
-    //      The closure's hole says `Sense::AtLeast` or `Sense::AtMost`, and that
-    //      is what actually runs. The requirement row now declares the same
+    //      The closure's method says `margin_at_least` or `margin_at_most`, and
+    //      that is what actually runs. The requirement row now declares the same
     //      thing. Two statements of one fact drift, and this one drifts
     //      silently: the margin still computes, still has a plausible sign, and
     //      is wrong in the direction nobody looks.
@@ -1000,8 +791,7 @@ pub fn gate_node(sh: &Sheet, tree: &Tree) -> Vec<Check> {
         } else {
             "Sense::AtMost"
         };
-        let body: String = code_only(&holes.values().cloned().collect::<Vec<_>>().join("\n"));
-        // A method says it in its own words: `margin_at_most` for `<=`,
+        // The method says it in its own words: `margin_at_most` for `<=`,
         // `margin_at_least` for `>=`, read from its lines and not its comments.
         let method: String = sh
             .method
@@ -1011,12 +801,11 @@ pub fn gate_node(sh: &Sheet, tree: &Tree) -> Vec<Check> {
             .collect::<Vec<_>>()
             .join("\n");
         let says = |sense: &str| {
-            body.contains(sense)
-                || method.contains(if sense == "Sense::AtMost" {
-                    "margin_at_most"
-                } else {
-                    "margin_at_least"
-                })
+            method.contains(if sense == "Sense::AtMost" {
+                "margin_at_most"
+            } else {
+                "margin_at_least"
+            })
         };
         if says(other) && !says(want) {
             disagree.push(format!(
@@ -1059,27 +848,9 @@ pub fn gate_node(sh: &Sheet, tree: &Tree) -> Vec<Check> {
     // Everything else earns its place by producing a number the tree does not
     // already hold.
     let identity = {
-        let body: String = holes.values().cloned().collect::<Vec<_>>().join("\n");
+        // The method's one line of code is `return` of its one input. Read
+        // from its lines, not its comments, as the sense is.
         let mut found = None;
-        for line in body.lines() {
-            let t = line.trim().trim_end_matches(';');
-            if t.starts_with("//") || !t.starts_with("let ") {
-                continue;
-            }
-            // `let <name>: <Type> = <rhs>` with nothing done to the right-hand
-            // side, where the right-hand side is one of this row's own inputs.
-            let Some((_, rhs)) = t.split_once('=') else {
-                continue;
-            };
-            let rhs = rhs.trim();
-            if sh.inputs.iter().any(|i| i.binding == rhs) && sh.inputs.len() == 1 {
-                found = Some(rhs.to_string());
-                break;
-            }
-        }
-        // A method says the same in its own words: its one line of code is
-        // `return` of its one input. Read from its lines, not its comments,
-        // as the sense is; the relation is the method once the code is gone.
         let code: Vec<&str> = sh
             .method
             .text
@@ -1164,21 +935,6 @@ pub fn gate_node(sh: &Sheet, tree: &Tree) -> Vec<Check> {
         Check::pass("domain")
     } else {
         Check::fail("domain", dom.join("; "))
-    });
-
-    // 10 — the portable maths rule. The kernel crates may not reach the
-    //      platform maths library, or cross-face agreement fails on night one
-    //      for a reason that is not a defect.
-    let mut leaks = Vec::new();
-    for (n, body) in &holes {
-        for bad in platform_maths(body) {
-            leaks.push(format!("hole {n} calls {bad} — route it through pmath"));
-        }
-    }
-    out.push(if leaks.is_empty() {
-        Check::pass("portable-maths")
-    } else {
-        Check::fail("portable-maths", leaks.join("; "))
     });
 
     out
@@ -1627,126 +1383,7 @@ pub fn validate_tree(tree: &Tree) -> Vec<Check> {
         )
     });
 
-    // V13 — the browser face offers only rows it can actually answer.
-    //
-    // The demonstration subset is a hand-written list in a crate outside the
-    // workspace, so `cargo test` never sees it and it drifts silently. Every
-    // way it can drift ends the same way: a visitor clicks a node the page
-    // offered and gets an error instead of a number, on the one face chosen
-    // for people who have not installed anything.
-    //
-    // Read as text rather than linked, because linking it would put a
-    // wasm-target crate in the workspace to check a list of sixteen strings.
-    // The parse is deliberately narrow: a list it cannot find is a failure, not
-    // a pass, so a rename cannot turn this check off by accident.
-    //
-    // What this deliberately does not check is whether a listed row has a
-    // fixture. Five of the sixteen do not, which is a real finding and already
-    // a counted gap on each of those rows. Whether the public face should offer
-    // an unevidenced number is a decision about what the face is for — it shows
-    // credibility beside every answer, so the number is not presented as more
-    // than it is — and encoding an answer to that here would be this check
-    // inventing policy rather than enforcing it.
-    out.push(demonstration_subset(tree));
-
     out
-}
-
-/// V13, kept separate because it is the one assembly check that reads a file
-/// outside the tree.
-fn demonstration_subset(tree: &Tree) -> Check {
-    const NAME: &str = "V13 the demonstration subset is answerable";
-    let path = tree.root.join("crates/vleo-wasm/src/lib.rs");
-    let text = match std::fs::read_to_string(&path) {
-        Ok(t) => t,
-        // Not a pass. The face existing and this check not finding it is the
-        // same situation as the face being wrong, from here.
-        Err(e) => return Check::fail(NAME, format!("{}: {e}", path.display())),
-    };
-    let Some(start) = text.find("const DEMONSTRATION: &[&str] = &[") else {
-        return Check::fail(
-            NAME,
-            format!(
-                "{} has no `const DEMONSTRATION: &[&str] = &[` — if the list was renamed, rename \
-                 it here too rather than leaving a check that silently passes",
-                path.display()
-            ),
-        );
-    };
-    let body = &text[start..];
-    let Some(end) = body.find("];") else {
-        return Check::fail(NAME, "the DEMONSTRATION list is not terminated".into());
-    };
-    let listed: Vec<String> = body[..end]
-        .lines()
-        .filter_map(|l| {
-            let l = l.trim();
-            l.strip_prefix('"')
-                .and_then(|l| l.split('"').next())
-                .filter(|_| l.starts_with('"'))
-                .map(str::to_string)
-        })
-        .collect();
-
-    let mut bad = Vec::new();
-    if listed.is_empty() {
-        bad.push("the list is empty or did not parse".to_string());
-    }
-    for id in &listed {
-        match tree.sheets.get(id) {
-            None => bad.push(format!("{id} is offered and is not a row in the tree")),
-            // A seeded row refuses by name when run. That refusal is correct
-            // everywhere else in the tool and wrong here: this face exists to
-            // be clicked by somebody who has installed nothing.
-            Some(sh) if sh.state != "published" => bad.push(format!(
-                "{id} is offered and its state is '{}' — it would refuse rather than answer",
-                sh.state
-            )),
-            Some(_) => {}
-        }
-    }
-
-    // The prose beside the list counts it. A count in a comment is the first
-    // thing to go stale, and this is cheaper than noticing later.
-    let spelled = [
-        (0, "zero"),
-        (1, "one"),
-        (2, "two"),
-        (3, "three"),
-        (4, "four"),
-        (5, "five"),
-        (6, "six"),
-        (7, "seven"),
-        (8, "eight"),
-        (9, "nine"),
-        (10, "ten"),
-        (11, "eleven"),
-        (12, "twelve"),
-        (13, "thirteen"),
-        (14, "fourteen"),
-        (15, "fifteen"),
-        (16, "sixteen"),
-        (17, "seventeen"),
-        (18, "eighteen"),
-        (19, "nineteen"),
-        (20, "twenty"),
-    ];
-    if let Some((_, word)) = spelled.iter().find(|(n, _)| *n == listed.len()) {
-        for (n, other) in spelled.iter() {
-            if *n != listed.len() && text.contains(&format!("{other} of them")) {
-                bad.push(format!(
-                    "the file says '{other} of them' and the list holds {} — write '{word} of them'",
-                    listed.len()
-                ));
-            }
-        }
-    }
-
-    if bad.is_empty() {
-        Check::pass(NAME)
-    } else {
-        Check::fail(NAME, bad.join(", "))
-    }
 }
 
 /// Depth-first search for a cycle that no case declares. Returns the loop it

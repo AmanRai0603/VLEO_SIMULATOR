@@ -1,9 +1,8 @@
-//! The facade — the subsystem crates behind one dependency, and the one `NodeTable`
-//! the resolver walks.
+//! The engine — the design read from its files, and the one `NodeTable` the
+//! resolver walks.
 //!
-//! Every face takes a single dependency on this crate. The compiler still sees
-//! one unit per subsystem, so they build in parallel, and no face can reach a module
-//! directly — which is why adding a face cannot change a result.
+//! Every face takes a single dependency on this crate, and no face reaches a
+//! node any other way — which is why adding a face cannot change a result.
 //!
 //! This crate holds **no formula** and no design. It holds the graph read
 //! from the design's files when a face opens it (`opened`), and the adapter

@@ -4,7 +4,7 @@
 >
 > **Kind:** reference + explanation · **For:** developers
 
-The schema, the nine generators, the gate and the golden corpus.
+The schema, the generators, the gate and the golden corpus.
 
 Applies to `crates/vleo-sheet/**`, `xtask/**`, `tools/**`.
 Maintained by the developers. Until the sheets go, the plan a group release is
@@ -20,17 +20,16 @@ arrives everywhere on the same commit. One heavily reviewed component beats
 `H7` is two reviewers, and the advisory review job says so unprompted when it
 sees a diff here.
 
-## The nine
+## The generators
 
-Six run per node and read nothing but that node's sheet, which is what makes
-1396 rows 1396 independent acts:
+No generator writes code into a node's folder: every relation is the node's
+method, in its sheet, run by the interpreter. Three run per node and read
+nothing but that node's sheet, which is what makes 1396 rows 1396 independent
+acts:
 
 | generator | emits |
 |---|---|
-| model | `model.rs` — the whole file, with numbered `HOLE` blocks |
-| contract | `contract.rs` — outputs, units, guarantees, domain, faults |
-| module | `mod.rs` |
-| evidence | `evidence.rs` — the fixture table, executable |
+| method | the node's method, translated into the kernel (`crates/vleo-core/src/physics/methods/`) until the translation goes (phase E) |
 | page | the node's fragment of the document — rendered from the sheet when it is opened, never written to the folder |
 | metadata | `meta.json` |
 
@@ -60,9 +59,10 @@ A generator whose output depends on iteration order, a clock or a path fails
 the byte-stability check at random, and within a fortnight nobody reads the
 regeneration diff either.
 
-**Formatted before comparison.** Emit text, run it through `gate::formatted`,
-then compare. Writing unformatted text and formatting afterwards makes every
-run report a change.
+**Formatted before comparison.** A translated method is formatted
+(`emit::rustfmt_standalone`) before it is compared with the file on disk.
+Writing unformatted text and formatting afterwards makes every run report a
+change.
 
 **No cross-node reads.** A per-node generator that reads a sibling is an
 assembly generator wearing the wrong name.

@@ -72,13 +72,9 @@ fn unit_after(name: &str) -> String {
 /// the `tab-names` part that says how many there are. The empty states carry
 /// as much weight as the filled ones: most of these are read by somebody about
 /// to fill their first node, and "no data" teaches nothing.
-pub fn fragment(
-    sh: &Sheet,
-    holes: &std::collections::BTreeMap<u32, String>,
-    tree: &Tree,
-) -> String {
+pub fn fragment(sh: &Sheet, tree: &Tree) -> String {
     let mut o = String::new();
-    let gaps = crate::emit::gap_pass(sh, holes);
+    let gaps = crate::emit::gap_pass(sh);
 
     // --- breadcrumb and identity -------------------------------------------
     o.push_str(&f(
@@ -416,20 +412,8 @@ pub fn fragment(
         ));
     });
 
-    // --- 6 generated code ---------------------------------------------------
+    // --- 6 evidence ---------------------------------------------------------
     tab(&mut o, 6, false, |o| {
-        if sh.steps.is_empty() && sh.value.is_none() {
-            empty(o, t("code-none"));
-        } else {
-            o.push_str(&f(
-                "code-gen",
-                &[("code", &h(&crate::emit::model_rs(sh, holes)))],
-            ));
-        }
-    });
-
-    // --- 7 evidence ---------------------------------------------------------
-    tab(&mut o, 7, false, |o| {
         if sh.fixtures.is_empty() {
             empty(o, t("fx-none"));
         } else {
@@ -451,8 +435,8 @@ pub fn fragment(
         o.push_str(&cases_section(sh));
     });
 
-    // --- 8 flags ------------------------------------------------------------
-    tab(&mut o, 8, false, |o| {
+    // --- 7 flags ------------------------------------------------------------
+    tab(&mut o, 7, false, |o| {
         o.push_str(&f(
             "flags",
             &[
@@ -471,8 +455,8 @@ pub fn fragment(
         o.push_str(t("flags-close"));
     });
 
-    // --- 9 credibility ------------------------------------------------------
-    tab(&mut o, 9, false, |o| {
+    // --- 8 credibility ------------------------------------------------------
+    tab(&mut o, 8, false, |o| {
         if sh.tier.is_empty() || sh.tier == "unset" {
             empty(o, t("tier-unset"));
         }
@@ -490,8 +474,8 @@ pub fn fragment(
         ));
     });
 
-    // --- 10 design space ----------------------------------------------------
-    tab(&mut o, 10, false, |o| {
+    // --- 9 design space ----------------------------------------------------
+    tab(&mut o, 9, false, |o| {
         o.push_str(&f(
             "space",
             &[
@@ -930,7 +914,7 @@ pub fn index_json(tree: &Tree) -> String {
     o.push_str(&format!("  \"nodes\": {},\n", sheets.len()));
     o.push_str("  \"rows\": [\n");
     for (i, sh) in sheets.iter().enumerate() {
-        let gaps = crate::emit::gap_pass(sh, &crate::load::read_holes(&sh.dir)).len();
+        let gaps = crate::emit::gap_pass(sh).len();
         o.push_str(&format!(
             "    {{\"i\":{i},\"id\":\"{id}\",\"label\":\"{label}\",\"parent\":\"{par}\",\"sub\":\"{sub}\",\"kind\":\"{kind}\",\"state\":\"{state}\",\"owner\":\"{owner}\",\"tier\":\"{tier}\",\"unit\":\"{unit}\",\"symbol\":\"{sym}\",\"lo\":{lo},\"hi\":{hi},\"value\":{val},\"gaps\":{gaps},\"sheet\":\"{sh_hash}\",\"in\":[{ins}],\"kpi\":[{kpis}]}}{comma}\n",
             i = i,

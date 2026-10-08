@@ -25,7 +25,7 @@ command for it:
 |---|---|---|
 | **the programme manager, the system engineer, each subsystem engineer and each node engineer** | use the tool; a node engineer writes their own node in its file, the subsystem engineer seals the group's work as a release and puts it on the shared drive | [`docs/roles/user.html`](docs/roles/user.html) |
 | **the developer at releases, or their deputy** | builds a node from its method, cuts a release, builds the kits, packs the drive, shares — every step one command | [`docs/roles/maintainer.html`](docs/roles/maintainer.html) |
-| **the developer** | writes what the routine cannot: kernel relations, filled holes, checks, the tool itself | [`docs/roles/developer.html`](docs/roles/developer.html) |
+| **the developer** | writes what the routine cannot: kernel relations, checks, the tool itself | [`docs/roles/developer.html`](docs/roles/developer.html) |
 
     node file ──▶ sealed release ──▶ groups/<group>/releases/ on the drive ──▶ checked ──▶ today's design
                                                                        └─ refused: the group's last good release, and why
@@ -64,7 +64,7 @@ own manual shows the live counts for the copy you are running.
 | of the 320 written | 130 declared values · 172 computed · 12 KPI closures · 1 requirement · 5 achieved |
 | of the 320 written, which answer | 176 answer · 137 do not yet, because the relation is stated and never derived · 7 retired (`xtask active`) |
 | declared edges | 555 derivation · 298 contribution · 179 relation (`xtask graph`) |
-| crates | 32 — 20 node crates, 12 engine, server and face crates |
+| crates | 17 — engine, server and face crates; the node folders are not crates |
 | faces | browser · daemon · command line · C ABI · Python wheel · MATLAB |
 | deepest declared chain | 33 nodes, mission duration to cost per year — declared, not yet runnable end to end |
 | 80-point sweep through the daemon | 36–37 ms, three runs, release build — the sustained solar closure against launch date. A sweep of thrust-to-drag or of cost per year answers none of its points today, and records every refusal |
@@ -246,7 +246,7 @@ moment the row is evaluated.
 
 | folder | what it holds | why it is here |
 |---|---|---|
-| `crates/` | the whole Rust workspace: the four rings, the faces, and **1396 node folders** under `crates/vleo-mod-*/nodes/` | this is the tool. Almost every file in the repository is here, and most of those are the per-node artefacts `xtask docs` writes from a sheet |
+| `crates/` | the whole Rust workspace: the four rings, the faces, and **1396 node folders** under `crates/vleo-mod-*/nodes/` | this is the tool. Almost every file in the repository is here, and most of those are the node folders: each sheet, its fixtures, and the metadata `xtask docs` writes from it |
 | `layers/` | the rows in the tree that are **not** nodes — headings, parents, group edges, subsystem ownership | the decomposition itself. `CODEOWNERS` is generated from it, so moving a branch here moves who reviews what |
 | `tools/` | the Python side: the seeder that built the tree, and every check the pipeline runs that is not `cargo` | the checks that cannot be expressed as a Rust test — screenshots, parity against MATLAB, commit messages, the house rules' own references. Each proves itself with `--selftest` before it is trusted to decide anything |
 | `web/` | the browser face — one `index.html`, one stylesheet, 23 ES modules, the manual among them | how the tool is read. It talks to `vleo-daemon` over HTTP and holds no physics of its own |
@@ -258,7 +258,7 @@ moment the row is evaluated.
 | `sources/` | every citation as an object with an id, not as free text | a fixture references `jacchia1971`, never a sentence. Marking a source superseded then lists every row that depended on it, in one query |
 | `cd06/` | `tree.json` — the CD-06 planning document's own node tree, extracted verbatim | where the 1396 rows came from. `tools/seed_tree.py` reads it, so the tree's shape is traceable to the document rather than asserted |
 | `areas/` | six area files that narrow `AGENTS.md` per area | the nearer file wins, so an area can be stricter than the root without restating it |
-| `xtask/` | the task runner — `build-node`, `publish`, `gate`, `docs`, `assemble`, `fill`, `ready`, `status` and the rest | the one entry point for everything generated or checked. `cargo run -p xtask -- gate && cargo test` is the command that must be green |
+| `xtask/` | the task runner — `build-node`, `publish`, `gate`, `docs`, `assemble`, `ready`, `status` and the rest | the one entry point for everything generated or checked. `cargo run -p xtask -- gate && cargo test` is the command that must be green |
 | `.claude/` | four hooks | what fires on an edit made in an assistant's session — the same regeneration and gate anyone's edit goes through |
 | `.github/` | the pipeline (`gate.yml`, `nightly.yml`), the dependency bot, the PR template | eight jobs, and the regeneration diff that catches a generated file nobody re-ran |
 | `.devcontainer/` | the Codespace definition and its setup scripts | a fresh clone that runs without a person installing anything |
@@ -268,16 +268,16 @@ moment the row is evaluated.
 ### Four rings, depending inward only
 
 ```
-vleo-units  →  vleo-core  →  vleo-bus  →  vleo-mod-*  →  faces
+vleo-units  →  vleo-core  →  vleo-bus  →  vleo-modules  →  faces
 RING 0         RING 1        RING 2       RING 3
-quantities     physics       transport    the nodes     cli, daemon,
-and portable   and the                                  wasm, ffi, py,
-maths          relations                                matlab
+quantities     physics       transport    the engine       cli, daemon,
+and portable   and the                    that runs the    wasm, ffi, py,
+maths          relations                  design's files   matlab
 ```
 
 `vleo-units` and `vleo-core` are `no_std`. Every relation lives in
-`vleo-core::physics` and nowhere else; the gate fails the build if one appears
-in a node.
+`vleo-core::physics` and nowhere else. A node holds no code: its relation is
+its method, which the interpreter runs.
 
 ### Four layers, one crossing each
 
@@ -301,32 +301,27 @@ reach another by a side door.
 crates/vleo-mod-prop/nodes/prop_capture_efficiency/
   node.toml      the sheet — the only file written by hand
   fixtures.toml  known-good values, with where each came from
-  model.rs       generated, except inside numbered HOLE blocks
-  contract.rs    generated — outputs, units, guarantees, domain, faults
-  evidence.rs    generated — the fixture tests and three properties
-  mod.rs         generated
   meta.json      generated
+  parity.csv     optional — the prior implementation's parity grid
 ```
 
-The node's page is not a file in the folder: the engine renders it from the
-sheet when it is opened.
-
-Nine generators: six per node, which read nothing but that node's sheet, and
-three at assembly, which combine and refuse but never decide. A hand edit
-outside a `HOLE` block is discarded by the next regeneration and fails the
-regeneration diff.
+The node's relation is its method, the pseudocode in the sheet's `[method]`
+([`docs/PSEUDOCODE.md`](docs/PSEUDOCODE.md)); the method interpreter runs it
+when the engine runs the design read from `design/`. There is no generated
+code in the folder. The node's page is not a file in the folder either: the
+engine renders it from the sheet when it is opened.
 
 ![One node: its tabs, its answer, the eight credibility factors with the
 lowest governing, and the evidence that executed](docs/img/node.png)
 
-Eleven tabs, under an **Answer first** box, and each says what kind of reading
+Ten tabs, under an **Answer first** box, and each says what kind of reading
 it is — explanation, reference, or something to try. The first reads the row
 the way `docs/EXPLAINING.md` lays out every explanation: said simply, the real
 thing with its source, where the simple version breaks, the common wrong idea,
 try it. **De-risking** says what the row rests on and every version before it.
-Two of the tabs are derived rather than written. **Pseudocode** is
-built from the sheet and not from the Rust, so it states what was specified
-rather than what one compiler made of it. **The relation, moving** animates the
+Two of the tabs are derived rather than written. **Pseudocode** is built from
+the sheet, so it states what was specified rather than what one run made of
+it. **The relation, moving** animates the
 node's own relation across its declared domain, drawing the engine's sweep so a
 picture that disagrees with the node is impossible; the guards appear as the
 walls they are, labelled with what they refuse, and where the engine refuses a
@@ -346,28 +341,32 @@ Nothing here is autonomous, and the line that matters is between the people who
 | | does | cannot |
 |---|---|---|
 | **the programme manager, the system engineer, each subsystem engineer and each node engineer** | set the inputs, run, keep and send results; the node engineer writes their node in its own file, and the subsystem engineer seals the group's work as a release | change the design from the tool. A change reaches the design only in its group's sealed release, signed by who wrote it |
-| **the developer** | builds a node from its method (`xtask build-node`), implements the holes, records evidence, gates, releases the tool | edit a sealed release, or take one into the design by hand — the tool takes each from the drive, checked, or refuses it |
+| **the developer** | builds a node from its method (`xtask build-node`), writes no relation, records evidence, gates, releases the tool | edit a sealed release, or take one into the design by hand — the tool takes each from the drive, checked, or refuses it |
 | **a person** — either side | states the question, the relation, its source, the domain and the reason for each bound; derives the known-good numbers; accepts the node | be replaced at any of it — none of it is checkable by machine |
 | **a generator** | emits every artefact from the sheet, deterministically | decide anything. It combines and refuses; a decision taken during generation is a decision nobody reviewed |
-| **an assistant** | whatever a developer runs it for — a hole body (`fill --by --model` records it), ordinary engineering on the tool | supply a relation: today's design refuses a release whose method or results an assistant supplied, and relation stamping refuses an assistant's name |
+| **an assistant** | whatever a developer runs it for — code for the engine, the library, the application and their tests | supply a relation: today's design refuses a release whose method or results an assistant supplied, and relation stamping refuses an assistant's name |
 
 Two human decisions per node, and everything between them is a command. If a
 node takes materially longer than that, the template has a defect worth finding
 — it will be paid 1396 times.
 
-### The nine generators
+### The generators
 
-Six run per node. Each reads that node's sheet and nothing else, which is what
+Two run per node. Each reads that node's sheet and nothing else, which is what
 makes 1396 rows 1396 independent pieces of work rather than one large one.
 
 | generator | emits | what it is for |
 |---|---|---|
-| model | `model.rs` | the whole implementation, with numbered `HOLE` blocks left open — or, for a node with a method, the call to its method translated into `vleo-core::physics::methods` |
-| contract | `contract.rs` | outputs, units, guarantees, domain, faults — what other nodes may rely on |
-| module | `mod.rs` | wires the node into its crate |
-| evidence | `evidence.rs` | the fixture tests, plus three properties derived from the declared domain |
 | page | — | this node's fragment of the document, rendered from the sheet when it is opened; never written to the folder |
 | metadata | `meta.json` | criticality, reviewer count, open gaps |
+
+Until phase E's next stage, `xtask docs` also translates each node's method
+into `vleo-core::physics::methods`; that translation goes in phase E. What the
+generated tests once asked of one node — each fixture within tolerance, each
+node engineer's case answered or refused as their code did, three properties
+from the declared domain, the prior implementation's parity grid — is asked of
+every node at once by `crates/vleo-cli/tests/every_case_of_the_design_passes.rs`,
+on the design read from `design/` and run in the interpreter.
 
 Three run at assembly, where the whole tree is visible:
 
@@ -377,15 +376,15 @@ Three run at assembly, where the whole tree is visible:
 | document | every page fragment, assembled |
 | graph | the three graph tables — derivation, contribution, relation |
 
-The gap pass is the ninth and the cheapest: it diffs what the sheet promised
+The gap pass is the cheapest: it diffs what the sheet promised
 against what the artefacts contain. It costs nothing because the requirement is
 a schema rather than prose, so it runs on every node on every build.
 
-**What the generators mean in practice.** A sheet of about forty lines produces
-six files and four tests. Structural correctness — units, guards, fault
-construction, ordering, tracing — is inherited by every node at once and is
-tested once, in the generator. What is left to write by hand is two or three
-typed lines per hole, and those are what the five checks below surround.
+**What the generators mean in practice.** A sheet of about forty lines is the
+whole node. Structural correctness — units, guards, fault construction,
+ordering, tracing — is inherited by every node at once and is tested once, in
+the engine and the interpreter. What is left to write is the method, by its
+node engineer, and that is what the five checks below surround.
 
 ### The loop, start to finish
 
@@ -412,7 +411,7 @@ the real thing, where it breaks.
 The steps under it were verified end to end on `main` from the other
 end — a node taken from nothing to "waiting on a person" with `xtask new` and
 `declare`, then removed. `xtask new` still exists for a developer's own row.
-What that run showed, in order:
+What that run showed, in order, before phase E removed the generated code and `fill`:
 
 | stage | what happened |
 |---|---|
@@ -439,15 +438,14 @@ cargo run -p xtask -- gate && cargo test
 ### Assistants
 
 There is no roster of specialised agents. The rules are enforced by the checks —
-the gate, the checks a release passes before today's design takes it, `fill`'s
-splice, the fixture schema — and those apply to an assistant's change exactly as
-to anyone's, so an assistant needs no lane of its own. A developer may use one
-for the holes and for ordinary engineering on the tool.
+the gate, the checks a release passes before today's design takes it, the
+fixture schema — and those apply to an assistant's change exactly as to
+anyone's, so an assistant needs no lane of its own. A developer may use one
+for ordinary engineering on the tool.
 
-Three things hold an assistant out of a person's part mechanically: `fill` is
-the only route into a generated file and refuses a guard, an early return or a
-platform maths call; the fixture schema refuses an expected value whose
-provenance is the code or an assistant; and a relation carries a person's name,
+Two things hold an assistant out of a person's part mechanically: the fixture
+schema refuses an expected value whose provenance is the code or an
+assistant; and a relation carries a person's name,
 which a release's checks and relation stamping both refuse to take from an assistant. What
 remains — whether the formula is right — is H1b's job and will not become a
 machine's.
@@ -565,8 +563,8 @@ a stale number the moment an input below it changed.
 **Transcendentals go through `pmath`, never the standard library.** Sine,
 cosine, exponential and power differ in the last bit between a native build and
 a WebAssembly one. The kernel crates are `no_std`, so `f64::cos` does not exist
-there and the compiler refuses it; in a hole body the splice and then the gate
-refuse it by name. Without this, bit-for-bit agreement across the faces is not
+there and the compiler refuses it; in an interpreted method the interpreter has
+only `pmath`. Without this, bit-for-bit agreement across the faces is not
 achievable and the nightly check becomes one people learn to ignore.
 
 ---
@@ -626,15 +624,12 @@ showing an optimum near 300 km — recorded 15 September 2026](docs/img/sweep.pn
   libraries to adopt on the first node that needs one, and why they are not
   dependencies yet.
 - **Not a multi-user service.** One local daemon, one store, no accounts.
-- **The model-family rule separates models, not vendors.** `fill --by --model`
-  refuses a second body for a hole from the model that wrote the first, which
-  is the weaker rule honestly enforced: two models from one vendor count as
-  two. Closing it is a developer's choice of assistants, not a check.
 - **Signing is absent, not stubbed.** The release workflow builds and gates but
   does not sign, because no certificate exists yet.
-- **Two faces sit outside the workspace.** `vleo-wasm` and `vleo-py` need
-  targets of their own, so `cargo build --workspace` does not reach them. They
-  have their own pipeline job; build them by hand from their own directories.
+- **Four crates sit outside the workspace.** `vleo-kernel-wasm`,
+  `vleo-method-wasm`, `vleo-files-wasm` and `vleo-py` need targets of their
+  own, so `cargo build --workspace` does not reach them. They have their own
+  pipeline job; build them by hand from their own directories.
 
 ## What a fresh clone needs from a person
 

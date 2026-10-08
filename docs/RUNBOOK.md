@@ -58,8 +58,8 @@ release of the tool, reviewed as `CONTRIBUTING.md` says.
 
 A row a developer starts without a release — rare, and usually structural —
 still starts with `cargo run -p xtask -- new <id> --like <sibling>`, then
-`publish`, its numbered `HOLE` blocks through `xtask fill` (by hand or with an
-assistant, recorded with `--by` and `--model`), and the same gate; it is
+`publish`, its method — written by its node engineer — built with `build-node`,
+and the same gate; it is
 reviewed as `CONTRIBUTING.md` says.
 
 ## When the gate refuses
@@ -85,9 +85,11 @@ implementation.
    textbook, the measurement — never from the MATLAB.
 3. Export the MATLAB output over a grid into `parity.csv` beside the node. A
    **second opinion**, never a fixture.
-4. Fill the holes. The gate runs fixtures from the source *and* the parity grid.
+4. Its node engineer writes the method from the same source, and
+   `cargo run -p xtask -- method <node>` runs their cases through it.
+   `cargo test` runs fixtures from the source *and* the parity grid.
    `migrated_from` records the function and line.
-5. A disagreement is a finding. Either the Rust is wrong or the MATLAB was, and
+5. A disagreement is a finding. Either the method is wrong or the MATLAB was, and
    both classes have been found before.
 
 That turns eighteen months of existing work from a liability under the

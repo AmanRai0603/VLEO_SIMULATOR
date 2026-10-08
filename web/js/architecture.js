@@ -276,8 +276,8 @@ function secTree() {
 
   return lead(
     'The hierarchy is the first relation and the matrix draws it on the diagonal. Every box has an ' +
-    'owner, and ownership is a path rule rather than a convention — the crate a node lives in is a ' +
-    'manifest line, so a sibling a crate did not declare will not compile.') +
+    'owner, and ownership is a path rule rather than a convention — the folder a node lives in ' +
+    'names its owner, and a node reads another only through the ports its group declares.') +
 
   '<table class="grid-t tree-t"><thead><tr><th>box</th><th class="num">layer</th><th>owner</th>' +
   '<th class="num">direct</th><th class="num">subtree</th><th>cases</th><th>relates to</th>' +
@@ -309,21 +309,20 @@ function secRings() {
   '<tr><td><b>1</b></td><td><code>vleo-core</code></td>' +
   '<td>every formula, the fault taxonomy, credibility, the resolver</td></tr>' +
   '<tr><td><b>2</b></td><td><code>vleo-bus</code></td><td>the wire contract every face speaks</td></tr>' +
-  '<tr><td><b>3</b></td><td><code>vleo-mod-*</code></td>' +
-  '<td>' + crates.length + ' subsystem crates, one per team, isolated by the compiler</td></tr>' +
+  '<tr><td><b>3</b></td><td><code>vleo-modules</code></td>' +
+  '<td>the engine: the design read from its files, its methods run by the interpreter</td></tr>' +
   '<tr><td><b>face</b></td><td><code>vleo-daemon</code> · <code>vleo-cli</code> · <code>vleo-ffi</code>' +
-  ' · <code>vleo-wasm</code> · <code>vleo-py</code></td>' +
+  ' · <code>vleo-kernel-wasm</code> · <code>vleo-py</code></td>' +
   '<td>browser, command line, C ABI, WebAssembly, Python — each takes one dependency on the facade</td>' +
   '</tr></tbody></table>' +
 
-  h4('ring 3, as it stands') +
-  '<table class="grid-t"><thead><tr><th>crate</th><th class="num">node folders</th></tr></thead><tbody>' +
+  h4('the node folders, as they stand') +
+  '<table class="grid-t"><thead><tr><th>folder</th><th class="num">node folders</th></tr></thead><tbody>' +
   crates.map(c => '<tr><td><code>' + esc(c.name) + '</code></td><td class="num">' + c.nodes +
     '</td></tr>').join('') + '</tbody></table>' +
 
-  note('Separate crates rather than one crate with modules: inside a crate the isolation rule is ' +
-    'unenforced, and a rule the compiler does not check is a rule that is already broken somewhere ' +
-    'nobody has looked. This was found by building it the other way first.');
+  note('No node is code. Each folder holds its rows\' sheets, and every relation is a row\'s method, ' +
+    'run by the interpreter; the folders leave the repository for the shared drive at the switch-over.');
 }
 
 // ---------------------------------------------------------------------------

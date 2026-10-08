@@ -373,11 +373,10 @@ pub(crate) fn commit_edit(
         .filter(|p| p.exists())
         .collect();
     // AND WHAT THEY HELD, BYTE FOR BYTE. Regenerating from the restored sheet is
-    // not a restore: an edit that changes how a row is built — a method, which
-    // replaces the hole — regenerates model.rs without the hole's Rust, and a
-    // regeneration from the old sheet then writes the hole back EMPTY. A
-    // refused method edit once left a published row with its hole blanked under
-    // "nothing changed". So the files themselves are put back.
+    // not a restore: a refused method edit once left a published row with its
+    // hand-written code blanked under "nothing changed", because the
+    // regeneration from the old sheet wrote it back empty. So the files
+    // themselves are put back.
     let held: Vec<(std::path::PathBuf, Vec<u8>)> = existed
         .iter()
         .filter_map(|p| std::fs::read(p).ok().map(|b| (p.clone(), b)))
@@ -405,13 +404,11 @@ pub(crate) fn commit_edit(
     // were held above.
     //
     // AND WHAT THE EDIT GENERATED THAT WAS NOT THERE BEFORE IS REMOVED. A
-    // refused publish showed why: publishing a seeded row makes the generator
-    // write its model, contract, module and evidence for the first time, and
-    // regenerating the restored — still seeded — sheet writes only its page. The
-    // four new files stayed behind under a message saying nothing had changed,
-    // and the next "put these edits on a branch" would have committed them.
-    // Only a generated file the row did not have before is removed; one that
-    // existed gets its own bytes back, holes and all.
+    // refused publish showed why: the files it generated for the first time
+    // stayed behind under a message saying nothing had changed, and the next
+    // "put these edits on a branch" would have committed them. Only a
+    // generated file the row did not have before is removed; one that existed
+    // gets its own bytes back.
     let restore = |e: String| -> Saved {
         let _ = write_atomic(path, before);
         let mut lost = String::new();
@@ -492,15 +489,8 @@ pub(crate) fn commit_edit(
     }
 }
 
-/// Every file the per-row generators write. `regenerate` writes the first four
-/// only for a published row; the last for every row.
-const GENERATED: &[&str] = &[
-    "model.rs",
-    "contract.rs",
-    "mod.rs",
-    "evidence.rs",
-    "meta.json",
-];
+/// Every file the per-row generators write.
+const GENERATED: &[&str] = &["meta.json"];
 
 /// A temporary file then a rename, so a reader never sees half a sheet.
 fn write_atomic(path: &std::path::Path, text: &str) -> Result<(), Error> {
@@ -520,26 +510,10 @@ pub fn regenerate_for_test(
 /// The per-node generators, for one row. The same set `xtask docs` writes;
 /// the row's page is rendered when it is opened, not written here.
 fn regenerate(sh: &crate::model::Sheet, tree: &crate::load::Tree) -> Result<usize, Error> {
-    let holes = crate::load::read_holes(&sh.dir);
-    let gaps = crate::emit::gap_pass(sh, &holes);
-    let artefacts: Vec<(&str, String)> = if sh.is_seeded() {
-        vec![("meta.json", crate::emit::meta_json(sh, &gaps))]
-    } else {
-        vec![
-            ("model.rs", crate::emit::model_rs(sh, &holes)),
-            ("contract.rs", crate::emit::contract_rs(sh)),
-            ("mod.rs", crate::emit::mod_rs(sh)),
-            ("evidence.rs", crate::emit::evidence_rs(sh)),
-            ("meta.json", crate::emit::meta_json(sh, &gaps)),
-        ]
-    };
+    let gaps = crate::emit::gap_pass(sh);
+    let artefacts = [("meta.json", crate::emit::meta_json(sh, &gaps))];
     let mut n = 0;
     for (name, text) in artefacts {
-        let text = if name.ends_with(".rs") {
-            crate::gate::formatted(&text)
-        } else {
-            text
-        };
         let p = sh.dir.join(name);
         let same = std::fs::read_to_string(&p)
             .map(|o| o == text)
@@ -549,8 +523,8 @@ fn regenerate(sh: &crate::model::Sheet, tree: &crate::load::Tree) -> Result<usiz
             n += 1;
         }
     }
-    // The node's method lives in the kernel, not beside the sheet, and the
-    // model this just wrote calls it — so it is written in the same step.
+    // The node's method, translated, lives in the kernel rather than beside
+    // the sheet, and is written in the same step.
     n += crate::emit::sync_methods(tree)?;
     Ok(n)
 }

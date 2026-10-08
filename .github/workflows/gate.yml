@@ -78,10 +78,9 @@ jobs:
       - name: build
         run: cargo build --workspace
 
-      # The regeneration diff. A hand edit outside a numbered HOLE block is
-      # discarded by regeneration and therefore caught here, which is what makes
-      # the generated region genuinely owned by the generator rather than merely
-      # labelled that way.
+      # The regeneration diff. A hand edit to a generated file is discarded by
+      # regeneration and therefore caught here, which is what makes a generated
+      # file genuinely owned by its generator rather than merely labelled so.
       # `variables` as well as `docs`, because it was missing and the register
       # went stale without anything noticing: docs/VARIABLES.md still carried
       # the pre-cycle-analogue prose from six solar sheets that had already
@@ -520,7 +519,6 @@ jobs:
           path: |
             ~/.cargo/registry
             ~/.cargo/git
-            crates/vleo-wasm/target
             crates/vleo-method-wasm/target
             crates/vleo-files-wasm/target
             crates/vleo-kernel-wasm/target
@@ -531,9 +529,6 @@ jobs:
       # --locked, because these two do not share the workspace lockfile and
       # ADOPTION.lock's rule is the same for them: an exact version plus a
       # committed lock, resolved from it rather than fresh on the day.
-      - name: the browser face
-        working-directory: crates/vleo-wasm
-        run: cargo build --locked --target wasm32-unknown-unknown --release
       # The library every design file is read, written and checked by, built
       # for the page: the same signing and checking the installed application
       # runs (docs/OPERATING_1_0.md, section 14). A workspace crate, so it is

@@ -30,13 +30,12 @@ pub(super) fn ring(crate_name: &str) -> Option<(u8, &'static str)> {
         "vleo-kinds" => (2, "beside the bus — every kind of file the tools write"),
         "vleo-bus" => (2, "RING 2 — transport"),
         "vleo-data" => (2, "reference data"),
-        "vleo-modules" => (4, "the facade over every node crate"),
+        "vleo-modules" => (4, "the engine: the design read from its files, run"),
         "vleo-results" => (3, "beside the nodes — saved results, many in one file"),
         "vleo-server" => (5, "the server both the daemon and the Python package start"),
-        "vleo-cli" | "vleo-daemon" | "vleo-ffi" | "vleo-py" | "vleo-wasm" | "vleo-method-wasm"
+        "vleo-cli" | "vleo-daemon" | "vleo-ffi" | "vleo-py" | "vleo-method-wasm"
         | "vleo-kernel-wasm" | "vleo-files-wasm" => (6, "a face"),
         "xtask" => (6, "the task runner"),
-        n if n.starts_with("vleo-mod-") => (3, "RING 3 — the nodes"),
         _ => return None,
     })
 }
@@ -49,6 +48,7 @@ pub(super) fn ring(crate_name: &str) -> Option<(u8, &'static str)> {
 pub(super) fn crate_direction(root: &Path) -> Result<Vec<String>, String> {
     let mut bad = Vec::new();
     let mut seen = 0usize;
+    let mut manifests = 0usize;
     let mut dirs: Vec<PathBuf> = fs::read_dir(root.join("crates"))
         .map_err(|e| format!("crates/: {e}"))?
         .filter_map(|e| e.ok())
@@ -61,6 +61,7 @@ pub(super) fn crate_direction(root: &Path) -> Result<Vec<String>, String> {
         let Ok(text) = fs::read_to_string(&ct) else {
             continue;
         };
+        manifests += 1;
         let Ok(v) = text.parse::<toml::Value>() else {
             continue;
         };
@@ -110,10 +111,11 @@ pub(super) fn crate_direction(root: &Path) -> Result<Vec<String>, String> {
             }
         }
     }
-    // A check that examined nothing must not report success.
-    if seen < 20 {
+    // A check that examined nothing must not report success, and nor must one
+    // that skipped a manifest it found.
+    if seen == 0 || seen < manifests {
         bad.push(format!(
-            "only {seen} crate(s) were checked, which is fewer than this workspace has — \
+            "only {seen} crate(s) were checked of the {manifests} manifest(s) found — \
              the direction check is not reading what it claims to"
         ));
     }

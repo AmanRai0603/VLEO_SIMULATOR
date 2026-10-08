@@ -377,14 +377,11 @@ pub(super) fn fragment(ctx: &Ctx, id: &str) -> (&'static str, &'static str, Vec<
         }
     };
     match tree.sheets.get(def.id) {
-        Some(sh) => {
-            let holes = vleo_sheet::load::read_holes_in(&*ctx.tree, &sh.dir);
-            (
-                "200 OK",
-                "text/html; charset=utf-8",
-                vleo_sheet::page::fragment(sh, &holes, &tree).into_bytes(),
-            )
-        }
+        Some(sh) => (
+            "200 OK",
+            "text/html; charset=utf-8",
+            vleo_sheet::page::fragment(sh, &tree).into_bytes(),
+        ),
         None => (
             "404 Not Found",
             "text/html; charset=utf-8",

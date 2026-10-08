@@ -33,7 +33,7 @@ fn every_rendered_page_has_one_tab_set_and_a_panel_for_each_tab() {
     let mut sets: BTreeMap<Vec<String>, Vec<String>> = BTreeMap::new();
     let mut bad = Vec::new();
     for sh in tree.ordered() {
-        let html = vleo_sheet::page::fragment(sh, &vleo_sheet::load::read_holes(&sh.dir), &tree);
+        let html = vleo_sheet::page::fragment(sh, &tree);
         let (labels, panels) = tabs(&html);
         if labels.is_empty() {
             bad.push(format!("{}: no tabs at all", sh.id));

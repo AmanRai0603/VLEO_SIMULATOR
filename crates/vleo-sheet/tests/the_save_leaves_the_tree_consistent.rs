@@ -29,10 +29,6 @@ fn root() -> PathBuf {
                 );
             }
         }
-        copy(
-            &real.join("crates/vleo-wasm/src"),
-            &to.join("crates/vleo-wasm/src"),
-        );
         for d in ["layers", "cases", "sources", "web"] {
             copy(&real.join(d), &to.join(d));
         }
@@ -402,8 +398,8 @@ fn a_refused_publish_leaves_no_file_behind() {
     // one disagreement the per-save checks of a seeded row do not look for —
     // the lower bound above the upper — and then published. Publishing runs
     // every check, the domain check refuses, and the restore said "nothing
-    // changed" while the model, contract, module and evidence it had just
-    // generated for the first time stayed in the folder.
+    // changed" while the files it had just generated for the first time
+    // stayed in the folder.
     let _serial = serially();
     let root = root();
     let row = "sys_attitude_control_sizing_aerodynamic_trim_angle";
@@ -496,19 +492,18 @@ fn a_refused_publish_leaves_no_file_behind() {
 }
 
 #[test]
-fn a_refused_method_leaves_the_rust_its_hole_held() {
+fn a_refused_method_leaves_the_row_and_the_kernel_as_they_were() {
     // Found taking a group's release in: a method, with its author's cases but
     // not their code, applied to a published row. The gate refused, as it
-    // should — and the restore regenerated model.rs from the restored sheet,
-    // which wrote the hole back EMPTY, because the regeneration from the
-    // edited sheet had already dropped the hole's Rust. Under "nothing changed".
+    // should — and the restore regenerated the row's files from the restored
+    // sheet rather than putting them back, so what the row held before was
+    // lost under "nothing changed".
     use vleo_sheet::template::{self, Derisk, Form};
     let _serial = serially();
     let root = root();
-    // A published row whose hole holds hand-written Rust, and no method of its
-    // own. Every relation of the design is a method now, so the row is put
-    // back, inside the guard, as it was before its relation was transcribed:
-    // its sheet without the method, its code with its Rust in the hole.
+    // A published row with no method of its own. Every relation of the design
+    // is a method now, so the row is put back, inside the guard, as it was
+    // before its relation was transcribed: its sheet without the method.
     let row = "gnc_total_disturbance";
     let dir = vleo_sheet::load::load_all(&root).unwrap().sheets[row]
         .dir
@@ -528,24 +523,16 @@ fn a_refused_method_leaves_the_rust_its_hole_held() {
         .sheets
         .get(row)
         .expect("the published row this test edits");
-    let holes: std::collections::BTreeMap<u32, String> = [(
-        sh.steps[0].number,
-        "    let t: Torque = gnc::total_disturbance_torque(ta, tg, ts, tm);".to_string(),
-    )]
-    .into();
-    for (name, text) in [
-        ("model.rs", vleo_sheet::emit::model_rs(sh, &holes)),
-        ("contract.rs", vleo_sheet::emit::contract_rs(sh)),
-        ("mod.rs", vleo_sheet::emit::mod_rs(sh)),
-        ("evidence.rs", vleo_sheet::emit::evidence_rs(sh)),
-    ] {
-        std::fs::write(dir.join(name), vleo_sheet::emit::rustfmt_standalone(&text)).unwrap();
-    }
-    let model = std::fs::read(dir.join("model.rs")).unwrap();
-    assert!(
-        String::from_utf8_lossy(&model).contains("gnc::total_disturbance_torque"),
-        "this test needs {row}'s hole to hold its Rust"
-    );
+    let folder = |d: &std::path::Path| -> Vec<(std::ffi::OsString, Vec<u8>)> {
+        let mut v: Vec<_> = std::fs::read_dir(d)
+            .unwrap()
+            .flatten()
+            .map(|e| (e.file_name(), std::fs::read(e.path()).unwrap()))
+            .collect();
+        v.sort();
+        v
+    };
+    let row_before = folder(&dir);
     let original = template::content(sh);
     let mut filled = original.clone();
     filled.fields.insert(
@@ -603,7 +590,7 @@ fn a_refused_method_leaves_the_rust_its_hole_held() {
         original,
         filled,
         derisk: Derisk {
-            believed: "the hole was the method".into(),
+            believed: "the code was the method".into(),
             tested: "the cases below".into(),
             learned: "they agree".into(),
             cost: "none".into(),
@@ -644,8 +631,8 @@ fn a_refused_method_leaves_the_rust_its_hole_held() {
         Saved::Stale { current } => panic!("unexpectedly stale, current {current}"),
     }
     assert!(
-        std::fs::read(dir.join("model.rs")).unwrap() == model,
-        "a refused method must leave model.rs byte for byte as it was — its hole's Rust included"
+        folder(&dir) == row_before,
+        "a refused method must leave the row's folder byte for byte as it was"
     );
     assert!(
         kernel(&methods) == kernel_before,

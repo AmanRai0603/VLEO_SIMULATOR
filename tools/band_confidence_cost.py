@@ -17,12 +17,12 @@ The daily half of the same band does use 0.95. So the two halves of one scenario
 are at different confidences and neither is at the label's.
 
 WHAT THIS CAN AND CANNOT MEASURE, STATED FIRST. The multiplier is a LITERAL IN
-FOUR HOLE BODIES and not a declared row — that is the whole of what §30 B2 asks
+FOUR METHODS and not a declared row — that is the whole of what §30 B2 asks
 to fix — so it cannot be moved with a what-if override the way a declared value
 can. `/v1/run?set=` on a computed row is accepted and silently ignored, which is
 worth knowing on its own.
 
-So the downstream figures below were measured by editing those four holes in a
+So the downstream figures below were measured by editing those four rows in a
 working tree, rebuilding, running the whole tree, and reverting. They are
 recorded here as a table and CHECKED against the arithmetic that produces them:
 the four band rows are centre +/- z*sigma and nothing else, so given the engine's
@@ -45,7 +45,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DECISION = "sw_band_confidence"
 REF = os.path.join(ROOT, "matlab/reference/mission_drivers.csv")
 
-#: The multiplier as the four holes carry it, and the one-sided 95 per cent
+#: The multiplier as the four methods carry it, and the one-sided 95 per cent
 #: alternative §30 B2 names. Neither is a recommendation.
 Z_NOW = 1.28
 
@@ -240,21 +240,14 @@ def selftest():
 
     # 4 · THE FOUR ROWS STILL CARRY THE MULTIPLIER, and still say it is declared
     #     in the sheet. Both halves matter: the first is what this row would
-    #     replace, and the second is the claim that is not yet true. A row built
-    #     from its method carries it there — inline, or as a const the spread is
-    #     multiplied by — and the hole is generated from it; a row whose hole
-    #     is written by hand carries it in the hole.
+    #     replace, and the second is the claim that is not yet true. Each row
+    #     carries it in its method — inline, or as a const the spread is
+    #     multiplied by — which is the only place a row's relation is.
     for row, _, _, _ in BAND:
-        p = os.path.join(ROOT, "crates/vleo-mod-solar/nodes", row, "model.rs")
-        try:
-            src = open(p, encoding="utf-8").read()
-            if "spread * %s;" % Z_NOW not in src and not method_multiplies(row):
-                bad += 1
-                print("  FAIL %s no longer multiplies the spread by %s — this file's "
-                      "whole subject has moved" % (row, Z_NOW))
-        except OSError as exc:
+        if not method_multiplies(row):
             bad += 1
-            print("  FAIL could not read %s: %s" % (row, exc))
+            print("  FAIL %s no longer multiplies the spread by %s — this file's "
+                  "whole subject has moved" % (row, Z_NOW))
 
     # 5 · AND THE ROW IS CROSS-REFERENCED FROM WHERE THE NUMBER LIVES, so the
     #     two cannot drift.
