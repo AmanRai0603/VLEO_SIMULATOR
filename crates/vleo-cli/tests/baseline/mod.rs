@@ -249,8 +249,8 @@ fn method_line(
     format!("{id},{},{}\n", bits(t), said.replace('\n', " "))
 }
 
-/// Every method's answer at inputs today's record never reaches, as the
-/// translated code answered it: each of its fixtures, and each input in turn
+/// Every method's answer at inputs today's record never reaches, as it was
+/// recorded: each of its fixtures, and each input in turn
 /// not a number, infinite, far outside every range, zero and negative, the
 /// rest at its first fixture.
 pub fn methods_record(

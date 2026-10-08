@@ -6,9 +6,7 @@
 //! declares, so no input reaches these guards through it. A method a group
 //! writes tomorrow need not, and the guards are what stand between its answer
 //! and the design. So here a row's declared range is narrowed, in memory, until
-//! its own answer falls outside it. The graph is the one that interprets every
-//! method: an edit in memory leaves the sheet's hash as it was, and the graph a
-//! face runs would take the translation the build was made from.
+//! its own answer falls outside it, in the graph that interprets every method.
 
 #![cfg(feature = "std")]
 

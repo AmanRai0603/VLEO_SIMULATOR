@@ -37,8 +37,7 @@ features across a workspace, so one face enabling `std` would hand it to the
 kernel. That is why the no-std job builds a constrained target and never
 `--workspace`.
 
-**In a node's method**, by construction. The interpreter has only `pmath`, and
-the translation of a method into the kernel is `no_std` like the rest of it, so
+**In a node's method**, by construction. The interpreter has only `pmath`, so
 there is no way for a method to reach the platform's maths library.
 
 ## Precision

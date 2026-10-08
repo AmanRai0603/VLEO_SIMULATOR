@@ -96,8 +96,7 @@ fn the_graph_read_at_run_time_is_the_graph_on_record() {
 /// Every method, run by the interpreter, against what it answers on record
 /// (`baseline/methods.csv`), to the bit or the same fault: at its fixtures
 /// and at inputs today's answers never reach. The record is written with
-/// today's answers, by the graph a face runs, which takes each method's
-/// translation while this build has them.
+/// today's answers, by the graph a face runs.
 #[test]
 fn every_method_answers_and_refuses_as_on_record() {
     let g = read();

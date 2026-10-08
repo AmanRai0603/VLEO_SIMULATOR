@@ -381,18 +381,6 @@ pub(crate) fn commit_edit(
         .iter()
         .filter_map(|p| std::fs::read(p).ok().map(|b| (p.clone(), b)))
         .collect();
-    // The kernel's translated methods are regenerated in the same step as the
-    // row's own files, so a restore puts them back too: a refused method once
-    // left its translation, and the module line naming it, in the kernel.
-    let methods = root.join("crates/vleo-core/src/physics/methods");
-    let kernel: Vec<(std::path::PathBuf, Vec<u8>)> = std::fs::read_dir(&methods)
-        .map(|d| {
-            d.filter_map(|e| e.ok().map(|e| e.path()))
-                .filter_map(|p| std::fs::read(&p).ok().map(|b| (p, b)))
-                .collect()
-        })
-        .unwrap_or_default();
-
     if let Err(e) = write_atomic(path, &after) {
         return Saved::Refused(e.into());
     }
@@ -426,20 +414,6 @@ pub(crate) fn commit_edit(
                 None => {}
             }
         }
-        if let Ok(d) = std::fs::read_dir(&methods) {
-            for p in d.filter_map(|e| e.ok().map(|e| e.path())) {
-                if !kernel.iter().any(|(q, _)| *q == p) {
-                    let _ = std::fs::remove_file(&p);
-                }
-            }
-        }
-        for (p, bytes) in &kernel {
-            if std::fs::read(p).ok().as_deref() != Some(bytes.as_slice()) {
-                if let Err(w) = std::fs::write(p, bytes) {
-                    lost = format!(" — AND {} COULD NOT BE PUT BACK: {w}", p.display());
-                }
-            }
-        }
         Saved::Refused(format!(
             "{e} — the sheet was restored, nothing changed{lost}"
         ))
@@ -455,7 +429,7 @@ pub(crate) fn commit_edit(
     // every artefact matches what the sheet generates, so gating a freshly
     // written sheet whose artefacts are still the old ones fails every time —
     // and fails for a reason that has nothing to do with the edit.
-    let n = match regenerate(sh, &tree) {
+    let n = match regenerate(sh) {
         Ok(n) => n,
         Err(e) => return restore(e.into()),
     };
@@ -500,16 +474,13 @@ fn write_atomic(path: &std::path::Path, text: &str) -> Result<(), Error> {
 }
 
 /// `regenerate`, for a test that has to put a row back after editing it.
-pub fn regenerate_for_test(
-    sh: &crate::model::Sheet,
-    tree: &crate::load::Tree,
-) -> Result<usize, Error> {
-    regenerate(sh, tree)
+pub fn regenerate_for_test(sh: &crate::model::Sheet) -> Result<usize, Error> {
+    regenerate(sh)
 }
 
 /// The per-node generators, for one row. The same set `xtask docs` writes;
 /// the row's page is rendered when it is opened, not written here.
-fn regenerate(sh: &crate::model::Sheet, tree: &crate::load::Tree) -> Result<usize, Error> {
+fn regenerate(sh: &crate::model::Sheet) -> Result<usize, Error> {
     let gaps = crate::emit::gap_pass(sh);
     let artefacts = [("meta.json", crate::emit::meta_json(sh, &gaps))];
     let mut n = 0;
@@ -523,8 +494,5 @@ fn regenerate(sh: &crate::model::Sheet, tree: &crate::load::Tree) -> Result<usiz
             n += 1;
         }
     }
-    // The node's method, translated, lives in the kernel rather than beside
-    // the sheet, and is written in the same step.
-    n += crate::emit::sync_methods(tree)?;
     Ok(n)
 }

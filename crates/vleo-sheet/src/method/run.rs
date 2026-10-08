@@ -10,9 +10,9 @@
 //! times, and that walking and looking up was most of what an answer cost.
 //!
 //! What it computes, and in what order, is exactly what the text says: the
-//! same functions on the same values, so the answer is the same to the bit as
-//! the translation's, and every refusal and every fault is the same, with the
-//! same words, raised at the same point — a name with no value, say, only when
+//! same functions on the same values, so the answer is the same to the bit
+//! every time, and every refusal and every fault is the same, with the same
+//! words, raised at the same point — a name with no value, say, only when
 //! the line that reads it runs, and a condition where a number belongs only
 //! once the condition has been worked out.
 
@@ -330,22 +330,22 @@ impl<'p> Reader<'p> {
     fn call(&mut self, name: &str, args: &'p [Expr], line: usize) -> Num {
         let l32 = line as u32;
         match (implementation(name), args.len()) {
-            (Some(Impl::Plain1(f, _)), 1) => {
+            (Some(Impl::Plain1(f)), 1) => {
                 let x = self.opnd(&args[0]);
                 return Box::new(move |m| Ok(f(fetch(&x, m)?)));
             }
-            (Some(Impl::Plain2(f, _)), 2) => {
+            (Some(Impl::Plain2(f)), 2) => {
                 let (x, y) = (self.opnd(&args[0]), self.opnd(&args[1]));
                 return Box::new(move |m| {
                     let p = fetch(&x, m)?;
                     Ok(f(p, fetch(&y, m)?))
                 });
             }
-            (Some(Impl::Checked1(f, _)), 1) => {
+            (Some(Impl::Checked1(f)), 1) => {
                 let x = self.opnd(&args[0]);
                 return Box::new(move |m| f(fetch(&x, m)?, l32).map_err(rt_diag));
             }
-            (Some(Impl::Checked2(f, _)), 2) => {
+            (Some(Impl::Checked2(f)), 2) => {
                 let (x, y) = (self.opnd(&args[0]), self.opnd(&args[1]));
                 return Box::new(move |m| {
                     let p = fetch(&x, m)?;
@@ -359,10 +359,10 @@ impl<'p> Reader<'p> {
         // Any other call: the arguments on the stack when there are few, as
         // there almost always are.
         let apply: Apply = match implementation(name) {
-            Some(Impl::Plain1(f, _)) => Box::new(move |v| Ok(f(v[0]))),
-            Some(Impl::Plain2(f, _)) => Box::new(move |v| Ok(f(v[0], v[1]))),
-            Some(Impl::Checked1(f, _)) => Box::new(move |v| f(v[0], l32).map_err(rt_diag)),
-            Some(Impl::Checked2(f, _)) => Box::new(move |v| f(v[0], v[1], l32).map_err(rt_diag)),
+            Some(Impl::Plain1(f)) => Box::new(move |v| Ok(f(v[0]))),
+            Some(Impl::Plain2(f)) => Box::new(move |v| Ok(f(v[0], v[1]))),
+            Some(Impl::Checked1(f)) => Box::new(move |v| f(v[0], l32).map_err(rt_diag)),
+            Some(Impl::Checked2(f)) => Box::new(move |v| f(v[0], v[1], l32).map_err(rt_diag)),
             None => match kernel_function(name) {
                 Some(k) => Box::new(move |v| {
                     let r = (k.eval)(v);
@@ -647,8 +647,7 @@ impl Compiled {
     /// for a refusal and for a node with one answer).
     pub fn run_all(&self, inputs: &[f64]) -> Result<(Outcome, Vec<(String, f64)>), Diag> {
         // The door: an input that is not a number is refused before the
-        // first line, as the translated method refuses it, never carried into
-        // the arithmetic to fault there.
+        // first line, never carried into the arithmetic to fault there.
         if let Some(k) = inputs.iter().position(|v| !v.is_finite()) {
             return Ok((
                 Outcome::Refused {
@@ -674,7 +673,7 @@ impl Compiled {
     }
 }
 
-/// Why a loop that did not settle refuses — the same words in the translation.
+/// Why a loop that did not settle refuses.
 pub(crate) fn unsettled(line: usize, max: i64) -> String {
     format!("the loop on line {line} did not settle within {max} passes")
 }

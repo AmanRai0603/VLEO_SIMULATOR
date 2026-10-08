@@ -40,11 +40,11 @@ and why one was refused. Nobody takes a release in by hand.
 releases guide covers the developer's: `build-node`, `ship`, `kit` and the
 drive's pack, each `cargo run -p xtask -- <command>`.
 
-**A node's relation arrives three ways, and each checks the other two.** Its
-node engineer's own code — MATLAB, Python, anything — produced their test cases; the
-*method* says the same relation in a small fixed language the tool can check
-for units and run ([`docs/PSEUDOCODE.md`](docs/PSEUDOCODE.md)); and the code the
-tool ships is translated from the method by fixed rules. The node application
+**A node's relation arrives two ways, and each checks the other.** Its
+node engineer's own code — MATLAB, Python, anything — produced their test cases;
+and the *method* says the same relation in a small fixed language the tool can
+check for units and run ([`docs/PSEUDOCODE.md`](docs/PSEUDOCODE.md)), the one
+form the engine runs, in its interpreter. The node application
 checks the method as the node engineer types it — every line, every unit — and
 `build-node` builds each node stage by stage and connects it to the design only
 once every one of their cases agrees.
@@ -360,9 +360,7 @@ makes 1396 rows 1396 independent pieces of work rather than one large one.
 | page | — | this node's fragment of the document, rendered from the sheet when it is opened; never written to the folder |
 | metadata | `meta.json` | criticality, reviewer count, open gaps |
 
-Until phase E's next stage, `xtask docs` also translates each node's method
-into `vleo-core::physics::methods`; that translation goes in phase E. What the
-generated tests once asked of one node — each fixture within tolerance, each
+What the generated tests once asked of one node — each fixture within tolerance, each
 node engineer's case answered or refused as their code did, three properties
 from the declared domain, the prior implementation's parity grid — is asked of
 every node at once by `crates/vleo-cli/tests/every_case_of_the_design_passes.rs`,

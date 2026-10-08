@@ -13,9 +13,9 @@ pub fn reference_md() -> String {
     let _ = writeln!(o, "# The method language, version {LANGUAGE_VERSION}\n");
     o.push_str(
         "> **Answer first.** Every node's relation is written once more as a *method*: a few lines in a\n\
-         > small fixed language that the tool can check, run and translate. The checker refuses a\n\
+         > small fixed language that the tool can check and run. The checker refuses a\n\
          > sum of unlike units, a logarithm of a length, an answer of the wrong quantity, and a path\n\
-         > that ends without an answer or a refusal — before any code exists.\n\
+         > that ends without an answer or a refusal — before the method runs.\n\
          >\n\
          > **Kind:** reference · **For:** node engineers and the developer\n\n",
     );

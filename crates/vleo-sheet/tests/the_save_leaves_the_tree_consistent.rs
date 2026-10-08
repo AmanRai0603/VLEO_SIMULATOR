@@ -253,7 +253,7 @@ impl Drop for Restore {
                 .values()
                 .find(|s| s.dir == self.path.parent().unwrap())
             {
-                let _ = form::regenerate_for_test(sh, &t);
+                let _ = form::regenerate_for_test(sh);
             }
         }
     }
@@ -304,10 +304,10 @@ fn a_good_edit_is_written_regenerated_and_then_put_back() {
         meaning1, meaning0,
         "rewording a bound's reason must not change the node's meaning"
     );
-    assert!(
-        n >= 1,
-        "at least the page and the metadata carry the reason"
-    );
+    // Nor is it in any generated file: the metadata does not carry it, and the
+    // page is rendered from the sheet when it is opened. A save that wrote
+    // something here would be writing a file the edit did not change.
+    assert_eq!(n, 0, "rewording a bound's reason regenerates nothing");
     let after = std::fs::read_to_string(&path).unwrap();
     assert!(after.contains("a rewritten reason"));
     assert_eq!(
@@ -601,24 +601,6 @@ fn a_refused_method_leaves_the_row_and_the_kernel_as_they_were() {
         },
         ..Form::default()
     };
-    // The kernel's translated methods are written in the same step, and must be
-    // put back as well: the refused method once stayed there, named in mod.rs.
-    let methods = root.join("crates/vleo-core/src/physics/methods");
-    let kernel = |d: &std::path::Path| -> Vec<(std::path::PathBuf, Vec<u8>)> {
-        // No folder yet is no methods yet: the copy of the tree starts without one.
-        let mut v: Vec<_> = std::fs::read_dir(d)
-            .into_iter()
-            .flatten()
-            .map(|e| e.unwrap().path())
-            .map(|p| {
-                let b = std::fs::read(&p).unwrap();
-                (p, b)
-            })
-            .collect();
-        v.sort();
-        v
-    };
-    let kernel_before = kernel(&methods);
     let p = template::plan_form(&root, f).unwrap();
     assert!(p.applicable() > 0, "the plan has something to apply");
     match template::apply(&root, &p) {
@@ -633,9 +615,5 @@ fn a_refused_method_leaves_the_row_and_the_kernel_as_they_were() {
     assert!(
         folder(&dir) == row_before,
         "a refused method must leave the row's folder byte for byte as it was"
-    );
-    assert!(
-        kernel(&methods) == kernel_before,
-        "a refused method must leave the kernel's methods as they were — no translation left behind"
     );
 }

@@ -1,12 +1,11 @@
 //! THE METHOD LANGUAGE — the pseudocode a node's engineer writes.
 //!
-//! A node's relation arrives in three independent forms: the author's own
-//! code, which produced their test cases; this method, which says the same
-//! thing in a small fixed language; and the Rust generated from the method,
-//! which is what ships. Each checks the other two, so the language has to be
-//! small enough that every construct has exactly one meaning and one
-//! translation, and strict enough that a unit mistake is caught before any
-//! code exists.
+//! A node's relation arrives in two independent forms: the author's own code,
+//! which produced their test cases, and this method, which says the same thing
+//! in a small fixed language and is what the engine runs. Each checks the
+//! other, so the language has to be small enough that every construct has
+//! exactly one meaning, and strict enough that a unit mistake is caught before
+//! the method runs.
 //!
 //! ```text
 //! # The speed of a circular orbit at altitude h.
@@ -28,7 +27,7 @@
 //! neither returns nor refuses.
 //!
 //! One implementation: the gate, intake, the pages that check a method and
-//! the translator all read this module, so a page and the gate cannot
+//! the engine that runs it all read this module, so a page and the gate cannot
 //! disagree about what a method means. `docs/PSEUDOCODE.md` is written from
 //! [`FUNCTIONS`], [`KERNEL_CONSTANTS`] and [`STATEMENTS`] by `xtask docs`.
 
@@ -116,7 +115,6 @@ mod node;
 mod parse;
 mod reference;
 mod run;
-mod rust;
 mod spec;
 #[cfg(test)]
 mod tests;
@@ -130,6 +128,5 @@ pub use node::*;
 pub use parse::*;
 pub use reference::*;
 pub use run::*;
-pub use rust::*;
 pub use spec::*;
 pub use units::*;

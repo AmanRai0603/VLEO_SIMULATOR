@@ -197,7 +197,7 @@ fn cases_are_judged_against_the_method() {
 }
 
 #[test]
-fn every_function_has_one_implementation_for_both_runner_and_translator() {
+fn every_function_has_one_implementation() {
     for f in FUNCTIONS {
         if f.name == "interp" || f.name == "len" {
             continue;
@@ -516,26 +516,6 @@ fn a_node_publishes_every_member_before_it_answers() {
     let (o, members) = run_all(&p, &[("x".into(), -1.0)]).unwrap();
     assert!(matches!(o, Outcome::Refused { .. }));
     assert!(members.is_empty(), "a refusal publishes nothing");
-
-    // The translation returns the members in the order the sheet declares
-    // them, whatever order the method publishes them in.
-    let swapped = "publish Square = x * x\npublish Twice = 2 * x\nreturn x";
-    let p = compile(swapped, &s).unwrap();
-    let rust = to_rust_publishing(
-        &p,
-        "n",
-        "src",
-        swapped,
-        &["x".into()],
-        &["Twice".into(), "Square".into()],
-    );
-    assert!(
-        rust.contains("-> Result<(f64, [f64; 2]), MethodError>"),
-        "{rust}"
-    );
-    assert!(rust.contains("published[1] = rt::fin("), "{rust}");
-    assert!(rust.contains("// Square"), "{rust}");
-    assert!(rust.contains("return Ok((rt::fin("), "{rust}");
 }
 
 #[test]

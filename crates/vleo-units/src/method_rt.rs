@@ -1,12 +1,10 @@
 //! What a node's method needs at run time, written once.
 //!
-//! A method is run two ways: by the interpreter in `vleo-sheet`, on the
-//! author's cases, and as the Rust it is translated into, which is what ships.
-//! The two must agree to the last bit on every input, so the operations whose
-//! meaning is more than one line of arithmetic — a division that can meet
-//! zero, a square root that can meet a negative, a power whose exponent may be
-//! whole — are these functions, called by both. A second copy in either place
-//! would be two definitions of what a method means.
+//! A method is run by the interpreter in `vleo-sheet`, on the author's cases
+//! and in the engine alike. The operations whose meaning is more than one line
+//! of arithmetic — a division that can meet zero, a square root that can meet
+//! a negative, a power whose exponent may be whole — are these functions, so
+//! there is one definition of what a method means, below the kernel.
 //!
 //! Every value is SI and `f64`; the dimensions were checked before any of this
 //! runs.
@@ -121,8 +119,8 @@ pub fn fmod(a: f64, b: f64, line: u32) -> Result<f64, MethodError> {
 }
 
 /// `a ^ b`: a whole power below 64 by repeated multiplication, anything else
-/// through the logarithm — the same choice every time, so the interpreter and
-/// the translated code take the same path.
+/// through the logarithm — the same choice every time, so a method gives the
+/// same answer to the bit wherever it runs.
 pub fn pow(a: f64, b: f64) -> f64 {
     if pmath::trunc(b) == b && pmath::abs(b) < 64.0 {
         pmath::powi(a, b as i32)

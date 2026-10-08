@@ -150,10 +150,10 @@ pub(crate) fn dispatch(root: &Path, cmd: &str, rest: &[&str]) -> Result<(), Stri
 const HELP: &str = "\
 cargo xtask <command>
 
-  docs [<node>]      the per-node generators that write files — each node's
-                     metadata, from its own sheet, and every method translated
-                     into the kernel. A node's page is rendered from its sheet
-                     when it is opened, and is never written here.
+  docs [<node>]      the per-node generator that writes files — each node's
+                     metadata, from its own sheet. A node's page is rendered
+                     from its sheet when it is opened, and is never written
+                     here.
   assemble           the three assembly generators — the index, the document
                      and the graph tables. They combine and refuse; they never
                      decide, because a decision taken during assembly is a
@@ -286,9 +286,9 @@ cargo xtask <command>
                      directly, MATLAB and Octave through Octave; anything else
                      is kept and read, not rerun.
   build-node <node>  from a node's method to a connected node, in order: the
-                     method on its cases, the translation into the kernel, the
-                     node's tests, the node engineer's code rerun — and only then
-                     the interface.
+                     method on its cases, its metadata, the node engineer's code
+                     rerun — and only then the interface, the design converted
+                     again, every case of the design, and today's answers.
   ship <version> [--no-push] [--no-test]
                      the release branch release/<version> from main: the
                      de-risking narrative, the stamp, regenerate, gate, test,
@@ -538,9 +538,6 @@ fn cmd_docs(root: &Path, args: &[&str]) -> Result<(), String> {
     if touched == 0 {
         return Err(format!("no node matched '{}'", only.unwrap_or("")));
     }
-    // Every node's method, translated into the kernel, whichever node was asked
-    // for: the kernel module list is the whole tree's.
-    written += emit::sync_methods(&tree)?;
     // The method language's reference page, from the tables the checker reads,
     // so the page and the checker cannot describe two languages.
     if only.is_none() {

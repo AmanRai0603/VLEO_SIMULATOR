@@ -308,7 +308,7 @@ pub(super) fn ensure_table(text: &str, table: &str) -> Result<String, Error> {
         })?;
         let head = if table == "method" {
             "# THE METHOD — the relation in the method language (docs/PSEUDOCODE.md). In the\n\
-             # sheet hash: the generated code is translated from it.\n[method]\n\n"
+             # sheet hash: it is what the node computes.\n[method]\n\n"
         } else {
             "# THE AUTHOR'S OWN CODE, which produced the cases below, and the script that ran\n\
              # it. Evidence, outside the sheet hash.\n[author]\n\n"

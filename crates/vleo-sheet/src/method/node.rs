@@ -20,28 +20,12 @@ pub fn node_signature(sh: &crate::model::Sheet) -> Option<Signature> {
     })
 }
 
-/// A node's method, when it has one the tool can generate code from: written,
-/// checking without error, on a row with one computed answer. Anything else
-/// keeps its hand-written holes — and the gate says why.
+/// A node's method, when it has one the engine can run: written, checking
+/// without error, on a row that computes its answer. Anything else answers
+/// nothing until it has one — and the gate says why.
 pub fn node_program(sh: &crate::model::Sheet) -> Option<Program> {
     if sh.method.text.trim().is_empty() || sh.is_declared() {
         return None;
     }
     compile(&sh.method.text, &node_signature(sh)?).ok()
-}
-
-/// The node's kernel function, `vleo_core::physics::methods::<module>`, when
-/// it has a method to translate.
-pub fn node_rust(sh: &crate::model::Sheet) -> Option<String> {
-    let p = node_program(sh)?;
-    let inputs: Vec<String> = sh.inputs.iter().map(|i| i.binding.clone()).collect();
-    let publishes: Vec<String> = sh.publishes.iter().map(|p| p.symbol.clone()).collect();
-    Some(to_rust_publishing(
-        &p,
-        &sh.id,
-        &sh.source,
-        &sh.method.text,
-        &inputs,
-        &publishes,
-    ))
 }

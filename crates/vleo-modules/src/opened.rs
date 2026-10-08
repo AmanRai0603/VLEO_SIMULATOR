@@ -20,8 +20,8 @@
 //!   same portable maths, so it is held to today's answers exactly.
 //!
 //!   The interpreter is the only way a method runs: no translation of it
-//!   compiled into this build runs in its place. docs/PLAN_1_0.md, phase D,
-//!   kept translated code as a fast path only if a sweep proved too slow;
+//!   exists. docs/PLAN_1_0.md, phase D, kept translated code as a fast path
+//!   only if a sweep proved too slow;
 //!   measured, the solar design and closure figures are the same to within
 //!   their timing noise, and the one heavy case — `l3_solar_interface` over
 //!   100 001 points — takes 1.6 times as long, 0.27 ms a point against 0.17.

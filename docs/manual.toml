@@ -588,17 +588,17 @@ who = "maintainer"
 kind = "how-to"
 answer = "build-node does this for one node. Every stage must pass before the next runs, and the node is connected to the rest of the design only at the end."
 body = """
-**M** the method runs on the node engineer's cases. **G1** the method is \
-translated, by fixed rules, into a kernel function in \
-`vleo-core::physics::methods`, until the translation goes in phase E. \
-**T1** the node, guards and all, must reproduce every case; **T2** the \
-translation must give the method's own answer to the last bit, around every \
-case. **T3** the node engineer's own code is run again where it can be. **I1** \
-only then is the \
-node checked in the tree, and the rows that read it are named.
+**M** the method runs on the node engineer's cases. **G1** the node's \
+metadata is written from its sheet. **T3** the node engineer's own code is \
+run again where it can be. **I1** only then is the node checked in the tree, \
+and the rows that read it are named. **T1** the design is converted again, and \
+every case it holds — each fixture, each node engineer's case, the \
+properties from each declared range and each prior implementation's grid — \
+must pass on the engine that reads it. Today's answers are then recorded \
+again, in the same commit.
 
-A case that fails is the node engineer's to settle. A translation test that fails is \
-a translator defect, for a developer. Neither is ever a tolerance to change."""
+A case that fails is the node engineer's to settle. It is never a tolerance to \
+change."""
 
 [[layer.section.step]]
 say = "Rerun every node engineer's code on the cases recorded from it."
@@ -1240,8 +1240,8 @@ who = "developer"
 kind = "how-to"
 answer = "A node the method language cannot express has no relation until the language can say it. It stays open, refused by name if a run reaches it, and what it needs is a request to the developer."
 body = """
-The language is closed on purpose: every construct has one translation, so \
-the translator needs no judgement. A relation it cannot express is not \
+The language is closed on purpose: every construct has one meaning, so the \
+interpreter needs no judgement. A relation it cannot express is not \
 written in code instead: the node stays an open block, refused by name, and \
 its node engineer raises a request with the evidence. The developer answers \
 it by growing the language — and no assistant supplies the relation, the \
@@ -1249,15 +1249,15 @@ method or a case.
 
 When the language grows a construct, it grows in \
 `crates/vleo-sheet/src/method.rs` and the files under `method/` beside it — \
-the grammar (`parse.rs`), the checker (`check.rs`), the interpreter (`run.rs`) \
-and the translation (`rust.rs`) together, one reviewed change, followed by \
-`method-wasm` so every page checks by the new rules."""
+the grammar (`parse.rs`), the checker (`check.rs`) and the interpreter \
+(`run.rs`) together, one reviewed change, followed by `method-wasm` so every \
+page checks by the new rules."""
 
 [[layer.section.step]]
 say = "Build a node from its method by hand, stage by stage."
 run = "cargo run -p xtask -- build-node <node>"
 check = "writes"
-why = "translates, tests, reruns and only then checks the interface; stops at the first stage that fails"
+why = "checks, reruns and only then checks the interface and runs every case of the design; stops at the first stage that fails"
 
 [[layer.section]]
 id = "term-evidence"
@@ -1878,7 +1878,7 @@ effect = "reads"
 tool = "xtask"
 name = "build-node"
 usage = "build-node <node>"
-what = "Builds a node from its method, stage by stage, stopping at the first that fails: the method on its node engineer's cases; the translation into the kernel; the node's tests — the node engineer's cases and the translation against the method; the node engineer's code rerun; and only then the node in the tree."
+what = "Builds a node from its method, stage by stage, stopping at the first that fails: the method on its node engineer's cases; its metadata; the node engineer's code rerun; only then the node in the tree; the design converted again and every case it holds run on the engine that reads it; and today's answers recorded again."
 who = "maintainer"
 effect = "writes"
 
@@ -2358,11 +2358,6 @@ what = "The file `tools/readers_check.py --answers` wrote: every answer the engi
 default = "unset — the comparison is not run"
 
 [[env]]
-name = "VLEO_GOLDEN"
-what = "Set to `write` when running the translator's golden test, to write the golden files again after an intended change to how methods are translated. Unset, the test compares and fails on any difference."
-default = "unset — compare"
-
-[[env]]
 name = "VLEO_LOG"
 what = "Where a crash log is written when the tool hits a bug — one small text file per bug, naming the line of code; the newest 50 are kept. Send the file to whoever maintains the tool. Set but empty counts as unset."
 default = "$HOME/.vleo/log"
@@ -2769,7 +2764,7 @@ answer = "You write what the routine cannot: a new relation in the kernel, a con
 simply = "If releases are the print shop, you build and repair the presses. You do not decide what is printed — that comes from the people who own the design — but you make sure the presses print it exactly, and you check them against pages you did not print yourself: the fixtures."
 does = [
   "Build a node from its method with build-node; for what the method language cannot say, grow the language.",
-  "Keep the method language, its checker and its translator one reviewed change, and rebuild the pages' checker with method-wasm.",
+  "Keep the method language, its checker and its interpreter one reviewed change, and rebuild the pages' checker with method-wasm.",
   "Add a relation to vleo-core::physics when a method needs one — a reviewed change every node reads.",
   "Diagnose a check that fails, with its output.",
   "Improve the tool: its pages and pictures, the routine's commands, the checks, the release pipeline.",

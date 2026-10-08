@@ -812,8 +812,7 @@ fn load_sheet(files: &dyn Files, dir: &Path, crate_name: &str) -> Result<Sheet, 
         canon.push_str(&pb.unit);
         canon.push_str(&format!("{:?}{:?}", pb.lower, pb.upper));
     }
-    // The method is what the generated code is translated from, so it is part
-    // of what the node computes. Absent on every sheet that has not got one, so
+    // The method is what the node computes, so it is part of the hash. Absent on every sheet that has not got one, so
     // no existing hash moves.
     if !sh.method.text.trim().is_empty() {
         canon.push_str("method:");

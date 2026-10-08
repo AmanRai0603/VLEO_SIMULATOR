@@ -13,7 +13,7 @@ toml = { workspace = true }
 toml_edit = { workspace = true }
 vleo-units = { workspace = true }
 # The kernel functions a method may call by name (method/kernel.rs): the
-# interpreter runs the kernel itself, so it and the translation cannot differ.
+# interpreter runs the kernel itself, so a method and the kernel cannot differ.
 vleo-core = { workspace = true }
 
 [lints.rust]

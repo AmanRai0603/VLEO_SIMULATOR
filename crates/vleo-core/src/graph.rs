@@ -37,8 +37,7 @@ pub type VarIdx = u16;
 /// method, a stated value or a lookup.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub enum Behaviour {
-    /// A method its node engineer wrote, run by the interpreter — or by its
-    /// translation, when this build was made from that same method.
+    /// A method its node engineer wrote, run by the interpreter.
     Method,
     /// A relation still in compiled code, found by the row's id until its
     /// group writes a method for it.
