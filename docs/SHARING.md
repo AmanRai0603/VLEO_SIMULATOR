@@ -81,7 +81,7 @@ group's side is in `docs/GROUP_APPS.md`.
 
 ## 3 · Release and share the next kit
 
-    cargo run -p xtask -- ship <version>    # the release branch: narrative, stamp, gate, tests, push
+    cargo run -p xtask -- ship <version>    # the release branch: narrative, version, gate, tests, push
     # merge its pull request, tag v<version>; the pipeline builds the three kits and the package
 
 The engineer replaces their folder with the new one. Their inputs, saved case and results are

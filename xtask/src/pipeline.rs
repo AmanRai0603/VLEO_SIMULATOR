@@ -33,7 +33,7 @@ pub(crate) const STAGES: &[(&str, &str)] = &[
         "gate",
         "the checks every change passes, and what they generate",
     ),
-    ("release", "the stamped release everyone gets"),
+    ("release", "the versioned release everyone gets"),
     (
         "read",
         "reports: what exists, what is open, why a node is what it is",

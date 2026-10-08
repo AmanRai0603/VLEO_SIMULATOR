@@ -446,7 +446,7 @@ for ordinary engineering on the tool.
 Two things hold an assistant out of a person's part mechanically: the fixture
 schema refuses an expected value whose provenance is the code or an
 assistant; and a relation carries a person's name,
-which a release's checks and relation stamping both refuse to take from an assistant. What
+which a release's checks refuse to take from an assistant. What
 remains — whether the formula is right — is H1b's job and will not become a
 machine's.
 

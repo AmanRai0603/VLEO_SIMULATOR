@@ -1,4 +1,4 @@
-//! Releases and what ships: stamping, the kit, guides, CODEOWNERS, bundles.
+//! Releases and what ships: the version, the kit, guides, CODEOWNERS, bundles.
 
 use super::*;
 

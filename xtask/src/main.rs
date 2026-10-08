@@ -250,7 +250,7 @@ cargo xtask <command>
                      is kept and read, not rerun.
   ship <version> [--no-push] [--no-test]
                      the release branch release/<version> from main: the
-                     de-risking narrative, the stamp, regenerate, gate, test,
+                     de-risking narrative, the version, regenerate, gate, test,
                      commit, push — and the tag commands for after the merge.
   release <version> [--check]
                      set the workspace version, and regenerate. It stamps
