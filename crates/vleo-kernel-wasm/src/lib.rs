@@ -319,16 +319,14 @@ fn hex(h: u64) -> String {
 mod tests {
     use super::*;
 
-    /// The design the readers' folder carries — the checkout's sheets,
-    /// converted to their files as `xtask readers` converts them — opened here
-    /// as the page opens it.
+    /// The design the readers' folder carries — the checkout's `design/`, as
+    /// `xtask readers` reads it — opened here as the page opens it.
     fn the_design() -> &'static [u8] {
         static BYTES: std::sync::OnceLock<Vec<u8>> = std::sync::OnceLock::new();
         BYTES.get_or_init(|| {
             let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
-            let tree = vleo_sheet::load::load_all(&root).expect("the checkout's sheets load");
-            let files = vleo_files::convert::convert(&tree, &vleo_sheet::files::Disk, "vleo test")
-                .expect("the sheets convert");
+            let (files, _) = vleo_files::convert::read_folder(&root.join("design"))
+                .expect("the checkout's design/ opens");
             vleo_files::rows::encode_design(&files)
         })
     }

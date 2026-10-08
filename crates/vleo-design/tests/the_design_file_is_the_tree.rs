@@ -49,7 +49,11 @@ fn it_holds_every_file_and_loads_as_the_same_tree() {
         diff.join("\n")
     );
 
-    let folders = vleo_sheet::load_all(&root()).expect("the folders do not load");
+    // What the file was written from: the design's files in design/, read
+    // as the folders they were converted from.
+    let source = vleo_design::source(&root()).expect("the design opens");
+    let folders =
+        vleo_sheet::load::load_all_from(&*source, &root()).expect("the folders do not load");
     let file = vleo_sheet::load::load_all_from(&d, &root()).expect("the file does not load");
     assert_eq!(
         folders.sheets.keys().collect::<Vec<_>>(),
@@ -68,7 +72,11 @@ fn it_holds_every_file_and_loads_as_the_same_tree() {
         // The page a reader opens is rendered from the sheet; from the file
         // it must be the page the folders render, byte for byte.
         assert_eq!(
-            vleo_sheet::page::fragment(a, &vleo_sheet::load::read_holes(&a.dir), &folders),
+            vleo_sheet::page::fragment(
+                a,
+                &vleo_sheet::load::read_holes_in(&*source, &a.dir),
+                &folders
+            ),
             vleo_sheet::page::fragment(b, &vleo_sheet::load::read_holes_in(&d, &b.dir), &file),
             "{id}: a different page"
         );
@@ -128,10 +136,10 @@ fn it_answers_for_its_own_paths_and_nothing_else() {
     assert!(d.read(&r.join("Cargo.toml")).is_err());
     let mut layers = d.entries(&r.join("layers")).unwrap();
     layers.sort();
-    let mut on_disk: Vec<PathBuf> = std::fs::read_dir(r.join("layers"))
+    let mut on_disk: Vec<PathBuf> = vleo_design::source(&r)
         .unwrap()
-        .map(|e| e.unwrap().path())
-        .collect();
+        .entries(&r.join("layers"))
+        .unwrap();
     on_disk.sort();
     assert_eq!(layers, on_disk);
     let _ = std::fs::remove_dir_all(&dir);

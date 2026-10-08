@@ -522,6 +522,23 @@ fn load(root: &Path) -> Result<Tree, String> {
     Ok(load_all(root)?)
 }
 
+/// The design as its files state it (`design/`), read as the folders they
+/// were converted from: what every command that reads the design, and does
+/// not write it, reads.
+fn read(root: &Path) -> Result<Tree, String> {
+    let dir = root.join("design");
+    let (files, _) = vleo_files::convert::read_folder(&dir)
+        .map_err(|e| format!("the design folder {} does not open: {e}", dir.display()))?;
+    let served = vleo_files::convert::Served::new(
+        root,
+        &files,
+        std::sync::Arc::new(vleo_sheet::files::Disk),
+    )
+    .map_err(|e| format!("the design folder {} does not read: {e}", dir.display()))?;
+    vleo_sheet::load::load_all_from(&served, root)
+        .map_err(|e| format!("the design folder {} does not load: {e}", dir.display()))
+}
+
 fn write_if_changed(path: &Path, text: &str) -> Result<bool, String> {
     if let Ok(existing) = fs::read_to_string(path) {
         if existing == text {
@@ -681,7 +698,7 @@ fn cmd_docs(root: &Path, args: &[&str]) -> Result<(), String> {
 }
 
 fn cmd_assemble(root: &Path, args: &[&str]) -> Result<(), String> {
-    let tree = load(root)?;
+    let tree = read(root)?;
     let checks = gate::validate_tree(&tree);
     let failed: Vec<&gate::Check> = checks.iter().filter(|c| c.failed()).collect();
     for c in &checks {
@@ -723,7 +740,7 @@ fn cmd_assemble(root: &Path, args: &[&str]) -> Result<(), String> {
 }
 
 fn cmd_gate(root: &Path, args: &[&str]) -> Result<(), String> {
-    let tree = load(root)?;
+    let tree = read(root)?;
     let only = args.first().copied();
     let mut failures = 0usize;
     let mut nodes = 0usize;

@@ -10,6 +10,8 @@ repository.workspace = true
 
 [dependencies]
 vleo-sheet = { workspace = true }
+# The design as its files (design/), which a design file is written from.
+vleo-files = { path = "../vleo-files" }
 # Every kind of file the tools write, and the one rule a reader takes one by.
 vleo-kinds = { workspace = true }
 # SQLite, compiled in (`bundled`): the same database engine the group

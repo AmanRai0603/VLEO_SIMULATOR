@@ -29,7 +29,19 @@ fn the_server_runs_the_graph_read_from_the_design_s_files() {
         !std::ptr::eq(g, &COMPILED),
         "the server runs the compiled graph"
     );
-    assert_eq!(g.nodes.len(), COMPILED.nodes.len());
+    // The design's files hold every compiled row, and the open blocks they
+    // propose where a breakdown holds none yet.
+    for d in COMPILED.nodes {
+        assert!(g.find(d.id).is_some(), "{} is not in the design", d.id);
+    }
+    for d in g.nodes.iter().filter(|d| COMPILED.find(d.id).is_none()) {
+        assert_eq!(
+            d.behaviour,
+            vleo_modules::core_engine::graph::Behaviour::Open,
+            "{} is not open",
+            d.id
+        );
+    }
     // Every stated value is published by the graph; a method this build was
     // made from runs as its translation, the fast path.
     for (k, d) in g.nodes.iter().enumerate() {

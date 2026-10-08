@@ -3,7 +3,7 @@
 use super::*;
 
 pub(super) fn cmd_status(root: &Path) -> Result<(), String> {
-    let tree = load(root)?;
+    let tree = read(root)?;
     let names = ["", "management", "the system", "subsystem", "the run"];
     let mut by_layer: BTreeMap<u8, [usize; 2]> = BTreeMap::new();
     for sh in tree.ordered() {
@@ -127,7 +127,7 @@ fn evidence_debt(tree: &Tree) {
 }
 
 pub(super) fn cmd_gap(root: &Path) -> Result<(), String> {
-    let tree = load(root)?;
+    let tree = read(root)?;
     let report = emit::gap_report(&tree);
     if report.is_empty() {
         println!("gap pass: nothing the sheets promised is uncovered.");
@@ -332,7 +332,7 @@ pub(super) fn truncate(s: &str, n: usize) -> String {
 ///   3. what criticality demands — a significant node gets a second
 ///      independent check, and a migrated one gets its parity grid
 pub(super) fn cmd_ready(root: &Path, args: &[&str]) -> Result<(), String> {
-    let tree = load(root)?;
+    let tree = read(root)?;
     let only = args.first().copied();
     let mut asked = 0usize;
     let mut ready = 0usize;
@@ -840,7 +840,7 @@ pub(super) fn work_behind(
 /// put five correct rows at the top of a list of findings, and a check that
 /// cries wolf on its own best rows is a check people stop reading.
 pub(super) fn cmd_reach(root: &Path, args: &[&str]) -> Result<(), String> {
-    let tree = load(root)?;
+    let tree = read(root)?;
     let only = args.iter().find(|a| !a.starts_with("--")).copied();
     let verdict = active_verdicts(&tree);
     let answers = |id: &str| matches!(verdict.get(id), Some(Verdict::Active));
@@ -1018,7 +1018,7 @@ pub(super) fn cmd_reach(root: &Path, args: &[&str]) -> Result<(), String> {
 }
 
 pub(super) fn cmd_active(root: &Path, args: &[&str]) -> Result<(), String> {
-    let tree = load(root)?;
+    let tree = read(root)?;
     let only = args.iter().find(|a| !a.starts_with("--")).copied();
     let verdict = active_verdicts(&tree);
     // The rows that answer, one id per line — for a script, or for the list of

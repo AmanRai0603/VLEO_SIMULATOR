@@ -14,15 +14,17 @@ use super::*;
 /// sheet MEANS, and both the generators and the daemon read it. It reads the
 /// kernel because a method may call a kernel function by name, and the method
 /// checker runs that same function — so it sits above the kernel, never in
-/// it. `vleo-data` is reference data and sits at the bus's level.
+/// it. `vleo-data` is reference data and sits at the bus's level. `vleo-files`
+/// sits beside the nodes: it reads only what a sheet means, and the engine
+/// facade and the design file read the design through it.
 pub(super) fn ring(crate_name: &str) -> Option<(u8, &'static str)> {
     Some(match crate_name {
         "vleo-units" => (0, "RING 0 — quantities and portable maths"),
         "vleo-core" => (1, "RING 1 — the kernel: physics and the relations"),
         "vleo-sheet" => (2, "beside the bus — what a sheet means"),
         "vleo-files" => (
-            4,
-            "beside the design — every design file, read, written and checked, its methods by the method language",
+            3,
+            "beside the nodes — every design file, read, written and checked, its methods by the method language",
         ),
         "vleo-kinds" => (2, "beside the bus — every kind of file the tools write"),
         "vleo-bus" => (2, "RING 2 — transport"),
@@ -121,7 +123,7 @@ pub(super) fn crate_direction(root: &Path) -> Result<Vec<String>, String> {
 }
 
 pub(super) fn cmd_graph(root: &Path) -> Result<(), String> {
-    let tree = load(root)?;
+    let tree = read(root)?;
     let derivation: usize = tree.ordered().iter().map(|s| s.inputs.len()).sum();
     let contribution: usize = tree.ordered().iter().map(|s| s.kpis.len()).sum();
     println!("three graphs, never merged:");

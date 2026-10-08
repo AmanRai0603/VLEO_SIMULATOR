@@ -144,19 +144,35 @@ pub fn fingerprint<'a>(hashes: impl IntoIterator<Item = (&'a str, &'a str)>) -> 
     sha256_hex(lines.as_bytes())
 }
 
+/// Where the design under `root` is read from: its files in `design/`, read
+/// as the folders they were converted from, or the folders themselves where
+/// a checkout has no `design/`.
+pub fn source(root: &Path) -> Result<Box<dyn files::Files>, Error> {
+    let dir = root.join("design");
+    if !dir.is_dir() {
+        return Ok(Box::new(files::Disk));
+    }
+    let (held, _) = vleo_files::convert::read_folder(&dir)
+        .map_err(|e| Error::new(ErrorKind::Tree, format!("{}: {e}", dir.display())))?;
+    let served = vleo_files::convert::Served::new(root, &held, std::sync::Arc::new(files::Disk))
+        .map_err(|e| Error::new(ErrorKind::Tree, format!("{}: {e}", dir.display())))?;
+    Ok(Box::new(served))
+}
+
 /// Write the design file for the tree at `root` to `out`.
 ///
 /// The tree must load: a design file of a tree the loader refuses would be a
 /// tool that starts and shows nothing. The file is written beside `out` and
 /// renamed into place, so a reader never meets half of one.
 pub fn write(root: &Path, out: &Path, stamp: &Stamp) -> Result<Written, Error> {
-    let tree = vleo_sheet::load_all(root).map_err(|e| {
+    let source = source(root)?;
+    let tree = vleo_sheet::load::load_all_from(&*source, root).map_err(|e| {
         Error::new(
             ErrorKind::Tree,
             format!("the tree does not load: {}", e.message()),
         )
     })?;
-    let paths = files::design_files(root)
+    let paths = files::design_files_in(&*source, root)
         .map_err(|e| Error::new(ErrorKind::Io, format!("{}: {e}", root.display())))?;
     let part = out.with_extension("vleo.part");
     let _ = std::fs::remove_file(&part);
@@ -178,7 +194,8 @@ pub fn write(root: &Path, out: &Path, stamp: &Stamp) -> Result<Written, Error> {
                 .map_err(|e| Error::db(&part, e))?;
             for rel in &paths {
                 let p = root.join(rel);
-                let b = std::fs::read(&p)
+                let b = source
+                    .read(&p)
                     .map_err(|e| Error::new(ErrorKind::Io, format!("{}: {e}", p.display())))?;
                 let sha = sha256_hex(&b);
                 bytes += b.len() as u64;
@@ -450,7 +467,8 @@ impl Design {
     /// Every way this file and the tree at `root` differ: a file only in one,
     /// or in both with different bytes. Empty when the file is the tree.
     pub fn compare(&self, root: &Path) -> Result<Vec<String>, Error> {
-        let on_disk = files::design_files(root)
+        let source = source(root)?;
+        let on_disk = files::design_files_in(&*source, root)
             .map_err(|e| Error::new(ErrorKind::Io, format!("{}: {e}", root.display())))?;
         let mut out = Vec::new();
         let disk: BTreeSet<&str> = on_disk.iter().map(String::as_str).collect();
@@ -465,7 +483,8 @@ impl Design {
                 continue;
             }
             let held = self.bytes(p)?.unwrap_or_default();
-            let have = std::fs::read(root.join(p))
+            let have = source
+                .read(&root.join(p))
                 .map_err(|e| Error::new(ErrorKind::Io, format!("{p}: {e}")))?;
             if held != have {
                 out.push(format!("{p}: differs"));

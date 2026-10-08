@@ -113,12 +113,12 @@ pub(crate) const PIPELINE: &[Cmd] = &[
     Cmd {
         name: "readers",
         stage: "release",
-        reads: "the tree, generated/fragments, every lesson.toml, web/page.html, web/js, web/app.css and web/fonts, crates/vleo-kernel-wasm",
+        reads: "the design (design/), generated/fragments, every lesson.toml, web/page.html, web/js, web/app.css and web/fonts, crates/vleo-kernel-wasm",
         writes: "the readers' docs folder: target/readers, or --out, with the engine and the design it runs (the tree converted to its files) in assets/kernel.js — rebuilt whole; nothing committed",
         checks: "every lesson passes its check; every link and asset a page names, and every font its stylesheet names, is in the folder; tools/readers_check.py then opens it in a browser",
         undo: "delete the folder",
         code: ("xtask/src/readers.rs", "cmd_readers"),
-        steps: &["build the engine for the browser", "bundle the page script", "convert the design the pages run", "write the pages", "check every page has what it links"],
+        steps: &["build the engine for the browser", "bundle the page script", "read the design the pages run", "write the pages", "check every page has what it links"],
         dry: Dry::Plan,
     },
     Cmd {
@@ -390,7 +390,7 @@ pub(crate) const PIPELINE: &[Cmd] = &[
     Cmd {
         name: "assemble",
         stage: "gate",
-        reads: "every sheet",
+        reads: "the design (design/)",
         writes: "the index, the document and the graph tables",
         checks: "that the tree assembles",
         undo: GIT_UNDO,
@@ -401,7 +401,7 @@ pub(crate) const PIPELINE: &[Cmd] = &[
     Cmd {
         name: "gate",
         stage: "gate",
-        reads: "every sheet and its generated files",
+        reads: "the design (design/), and each row's generated files",
         writes: NOTHING,
         checks: "every node check, in order, and the assembly checks",
         undo: READS_ONLY,
@@ -412,7 +412,7 @@ pub(crate) const PIPELINE: &[Cmd] = &[
     Cmd {
         name: "ready",
         stage: "gate",
-        reads: "the node's sheet, gate and gap",
+        reads: "the node in the design (design/), its gate and gap",
         writes: NOTHING,
         checks: "the gate, the gap pass, what criticality demands",
         undo: READS_ONLY,
@@ -590,7 +590,7 @@ pub(crate) const PIPELINE: &[Cmd] = &[
     Cmd {
         name: "status",
         stage: "read",
-        reads: "every sheet",
+        reads: "the design (design/)",
         writes: NOTHING,
         checks: NOTHING,
         undo: READS_ONLY,
@@ -601,7 +601,7 @@ pub(crate) const PIPELINE: &[Cmd] = &[
     Cmd {
         name: "active",
         stage: "read",
-        reads: "every sheet",
+        reads: "the design (design/)",
         writes: NOTHING,
         checks: NOTHING,
         undo: READS_ONLY,
@@ -612,7 +612,7 @@ pub(crate) const PIPELINE: &[Cmd] = &[
     Cmd {
         name: "catalogue",
         stage: "read",
-        reads: "every sheet",
+        reads: "the design (design/)",
         writes: "with --csv, the catalogue as a table where you say; otherwise nothing",
         checks: NOTHING,
         undo: READS_ONLY,
@@ -623,7 +623,7 @@ pub(crate) const PIPELINE: &[Cmd] = &[
     Cmd {
         name: "impact",
         stage: "read",
-        reads: "every sheet",
+        reads: "the design (design/)",
         writes: NOTHING,
         checks: NOTHING,
         undo: READS_ONLY,
@@ -634,7 +634,7 @@ pub(crate) const PIPELINE: &[Cmd] = &[
     Cmd {
         name: "reach",
         stage: "read",
-        reads: "every sheet",
+        reads: "the design (design/)",
         writes: NOTHING,
         checks: NOTHING,
         undo: READS_ONLY,
@@ -645,7 +645,7 @@ pub(crate) const PIPELINE: &[Cmd] = &[
     Cmd {
         name: "gap",
         stage: "read",
-        reads: "every sheet",
+        reads: "the design (design/)",
         writes: NOTHING,
         checks: NOTHING,
         undo: READS_ONLY,
@@ -656,7 +656,7 @@ pub(crate) const PIPELINE: &[Cmd] = &[
     Cmd {
         name: "graph",
         stage: "read",
-        reads: "every sheet and the crate manifests",
+        reads: "the design (design/) and the crate manifests",
         writes: NOTHING,
         checks: "the crate direction",
         undo: READS_ONLY,
@@ -689,7 +689,7 @@ pub(crate) const PIPELINE: &[Cmd] = &[
     Cmd {
         name: "why",
         stage: "read",
-        reads: "the node's sheet, its git history, approvals, fills and traces",
+        reads: "the node in the design (design/), its git history, approvals, fills and traces",
         writes: NOTHING,
         checks: "the node's gate, run now",
         undo: READS_ONLY,
@@ -1152,7 +1152,7 @@ pub(crate) fn cmd_why(root: &Path, args: &[&str]) -> Result<(), String> {
     let id = *args
         .first()
         .ok_or("usage: cargo run -p xtask -- why <node>")?;
-    let tree = load(root)?;
+    let tree = read(root)?;
     let sh = tree
         .sheets
         .get(id)

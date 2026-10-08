@@ -1113,6 +1113,10 @@ pub fn convert(tree: &Tree, fs: &dyn Files, app: &str) -> Result<Vec<(String, Fi
     }
 
     // ── the blocks a breakdown does not hold yet, as open blocks
+    //
+    // Each takes the first place after its heading's rows that no row of the
+    // design holds: a place is the design's, not the group's (gate V14).
+    let mut taken: BTreeSet<u32> = tree.sheets.values().map(|s| s.order).collect();
     for (group, names) in PROPOSED {
         let interface = tree
             .sheets
@@ -1137,6 +1141,9 @@ pub fn convert(tree: &Tree, fs: &dyn Files, app: &str) -> Result<Vec<(String, Fi
                 )));
             }
             order += 1;
+            while !taken.insert(order) {
+                order += 1;
+            }
             let text = proposed_sheet(
                 &id,
                 name,

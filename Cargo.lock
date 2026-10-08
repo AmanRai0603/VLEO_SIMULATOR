@@ -711,6 +711,7 @@ name = "vleo-design"
 version = "0.4.0"
 dependencies = [
  "rusqlite",
+ "vleo-files",
  "vleo-kinds",
  "vleo-sheet",
 ]
@@ -892,6 +893,7 @@ dependencies = [
  "vleo-bus",
  "vleo-core",
  "vleo-data",
+ "vleo-files",
  "vleo-kinds",
  "vleo-mod-acs",
  "vleo-mod-atthw",

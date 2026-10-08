@@ -164,10 +164,19 @@ function ingest() {
   S.subsys = subsystemLayers()[0] || '';
 }
 
-/** The layer-3 groups, in label order. Each is one subsystem layer. */
+/**
+ * The layer-3 groups no other layer-3 group holds, in label order. Each is one
+ * subsystem layer. A subsystem hangs from the root in the sheets, and from the
+ * system block it mounts on in the design's files; either way nothing of its
+ * own layer is above it.
+ */
 export function subsystemLayers() {
-  return (S.gkids.get('root') || [])
-    .filter(id => S.G.get(id).layer === 3)
+  return [...S.G.keys()]
+    .filter(id => {
+      const g = S.G.get(id);
+      const up = S.G.get(g.parent);
+      return g.layer === 3 && !(up && up.layer === 3);
+    })
     .sort((a, b) => S.G.get(a).label.localeCompare(S.G.get(b).label));
 }
 

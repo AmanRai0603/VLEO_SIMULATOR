@@ -416,7 +416,7 @@ the three assembly generators — the index, the document and the graph tables. 
 
 | | |
 |---|---|
-| reads | every sheet |
+| reads | the design (design/) |
 | writes | the index, the document and the graph tables |
 | checks | that the tree assembles |
 | undo | `git restore <files>` (or `git checkout -- .`) before committing; `git revert` after |
@@ -431,7 +431,7 @@ the checks, in order, stopping at the first failure. Called by the authoring hoo
 
 | | |
 |---|---|
-| reads | every sheet and its generated files |
+| reads | the design (design/), and each row's generated files |
 | writes | nothing |
 | checks | every node check, in order, and the assembly checks |
 | undo | nothing to undo: it writes nothing |
@@ -446,7 +446,7 @@ whether a person should be asked to look yet: the gate, then the gap pass, then 
 
 | | |
 |---|---|
-| reads | the node's sheet, gate and gap |
+| reads | the node in the design (design/), its gate and gap |
 | writes | nothing |
 | checks | the gate, the gap pass, what criticality demands |
 | undo | nothing to undo: it writes nothing |
@@ -571,11 +571,11 @@ the docs folder for readers: every row's page and every lesson, read with no too
 
 | | |
 |---|---|
-| reads | the tree, generated/fragments, every lesson.toml, web/page.html, web/js, web/app.css and web/fonts, crates/vleo-kernel-wasm |
+| reads | the design (design/), generated/fragments, every lesson.toml, web/page.html, web/js, web/app.css and web/fonts, crates/vleo-kernel-wasm |
 | writes | the readers' docs folder: target/readers, or --out, with the engine and the design it runs (the tree converted to its files) in assets/kernel.js — rebuilt whole; nothing committed |
 | checks | every lesson passes its check; every link and asset a page names, and every font its stylesheet names, is in the folder; tools/readers_check.py then opens it in a browser |
 | undo | delete the folder |
-| steps | 1 build the engine for the browser · 2 bundle the page script · 3 convert the design the pages run · 4 write the pages · 5 check every page has what it links |
+| steps | 1 build the engine for the browser · 2 bundle the page script · 3 read the design the pages run · 4 write the pages · 5 check every page has what it links |
 | dry run | --dry-run prints this plan — the steps, what it would write, how to undo it — and touches nothing |
 | code | `xtask/src/readers.rs` — `cmd_readers` |
 
@@ -715,7 +715,7 @@ counts by state and by subsystem, and what is blocking.
 
 | | |
 |---|---|
-| reads | every sheet |
+| reads | the design (design/) |
 | writes | nothing |
 | checks | — |
 | undo | nothing to undo: it writes nothing |
@@ -730,7 +730,7 @@ which rows answer and which do not, and for each one that does not, whether it i
 
 | | |
 |---|---|
-| reads | every sheet |
+| reads | the design (design/) |
 | writes | nothing |
 | checks | — |
 | undo | nothing to undo: it writes nothing |
@@ -745,7 +745,7 @@ what each group publishes to the others: every row another group reads, or that 
 
 | | |
 |---|---|
-| reads | every sheet |
+| reads | the design (design/) |
 | writes | with --csv, the catalogue as a table where you say; otherwise nothing |
 | checks | — |
 | undo | nothing to undo: it writes nothing |
@@ -760,7 +760,7 @@ which other groups a change to these rows reaches: the rows that read them, thei
 
 | | |
 |---|---|
-| reads | every sheet |
+| reads | the design (design/) |
 | writes | nothing |
 | checks | — |
 | undo | nothing to undo: it writes nothing |
@@ -775,7 +775,7 @@ where each answer GOES: how many reach a KPI closure, and which answer and are r
 
 | | |
 |---|---|
-| reads | every sheet |
+| reads | the design (design/) |
 | writes | nothing |
 | checks | — |
 | undo | nothing to undo: it writes nothing |
@@ -790,7 +790,7 @@ what every sheet promised and nothing yet covers.
 
 | | |
 |---|---|
-| reads | every sheet |
+| reads | the design (design/) |
 | writes | nothing |
 | checks | — |
 | undo | nothing to undo: it writes nothing |
@@ -805,7 +805,7 @@ the three graphs, their sizes, and the crate direction check.
 
 | | |
 |---|---|
-| reads | every sheet and the crate manifests |
+| reads | the design (design/) and the crate manifests |
 | writes | nothing |
 | checks | the crate direction |
 | undo | nothing to undo: it writes nothing |
@@ -850,7 +850,7 @@ a node's history in one place: every recorded version and who made it, the commi
 
 | | |
 |---|---|
-| reads | the node's sheet, its git history, approvals, fills and traces |
+| reads | the node in the design (design/), its git history, approvals, fills and traces |
 | writes | nothing |
 | checks | the node's gate, run now |
 | undo | nothing to undo: it writes nothing |
