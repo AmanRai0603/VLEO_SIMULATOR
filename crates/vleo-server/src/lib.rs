@@ -384,12 +384,8 @@ fn open_converted(
             }
         }
     }
-    let served = vleo_files::convert::Served::new(
-        root,
-        &files,
-        std::sync::Arc::new(vleo_sheet::files::Disk),
-    )
-    .map_err(|e| format!("the design folder {} does not read: {e}", dir.display()))?;
+    let served = vleo_files::convert::Served::new(root, &files)
+        .map_err(|e| format!("the design folder {} does not read: {e}", dir.display()))?;
     let tree = vleo_sheet::load::load_all_from(&served, root)
         .map_err(|e| format!("the design folder {} does not load: {e}", dir.display()))?;
     let info = DesignFile {

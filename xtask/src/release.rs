@@ -3,7 +3,7 @@
 use super::*;
 
 pub(super) fn cmd_codeowners(root: &Path) -> Result<(), String> {
-    let tree = load(root)?;
+    let tree = read(root)?;
     let teams = read_teams(root)?;
     let handles = |who: &[String]| who.join(" ");
     let mut o = String::new();
@@ -316,7 +316,7 @@ pub(super) fn cmd_bundle(root: &Path, args: &[&str]) -> Result<(), String> {
 /// The de-risking narrative: every recorded change and every risk, laid out
 /// from the sheets. Two files, one to read and one for a spreadsheet.
 pub(super) fn cmd_derisk(root: &Path, _args: &[&str]) -> Result<(), String> {
-    let tree = load(root)?;
+    let tree = read(root)?;
     let md = vleo_sheet::derisk::narrative_md(&tree);
     let csv = vleo_sheet::derisk::narrative_csv(&tree);
     let a = write_if_changed(&root.join("docs/DERISK_NARRATIVE.md"), &md)?;
@@ -451,7 +451,7 @@ pub(super) fn cmd_kit(root: &Path, args: &[&str]) -> Result<(), String> {
         .map_err(|e| format!("docs/GROUP_FOLDER.md: {e}"))?;
         files += 1;
     }
-    let tree = load(root)?;
+    let tree = read(root)?;
     files += copy_tree(&root.join("design"), &out.join("design"))?;
     let (_, fingerprint) = vleo_files::convert::read_folder(&out.join("design"))
         .map_err(|e| format!("the design the kit carries does not read: {e}"))?;

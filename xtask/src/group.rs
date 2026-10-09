@@ -458,7 +458,7 @@ pub(super) fn cmd_group_export(root: &Path, args: &[&str]) -> Result<(), String>
         .and_then(|i| args.get(i + 1))
         .map(PathBuf::from)
         .unwrap_or_else(|| root.join("target/groups").join(&id));
-    let tree = load_all(root).map_err(|e| e.to_string())?;
+    let tree = crate::read(root)?;
     let files = export(root, &tree, &id)?;
     for (path, body) in &files {
         let p = out.join(path);
@@ -485,7 +485,7 @@ fn export_all(root: &Path, args: &[&str]) -> Result<(), String> {
         .and_then(|i| args.get(i + 1))
         .map(PathBuf::from)
         .unwrap_or_else(|| root.join("target/groups/all"));
-    let tree = load_all(root).map_err(|e| e.to_string())?;
+    let tree = crate::read(root)?;
     let mut index = vec![csv_row(&[
         "group".into(),
         "name".into(),

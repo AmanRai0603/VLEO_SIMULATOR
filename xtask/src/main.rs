@@ -8,7 +8,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
-use vleo_sheet::{emit, gate, load_all, page, Tree};
+use vleo_sheet::{emit, gate, page, Tree};
 
 mod catalogue;
 mod files;
@@ -357,25 +357,13 @@ fn repo_root() -> PathBuf {
     }
 }
 
-fn load(root: &Path) -> Result<Tree, String> {
-    Ok(load_all(root)?)
-}
-
-/// The design as its files state it (`design/`), read as the folders they
-/// were converted from: what every command that reads the design, and does
-/// not write it, reads.
+/// The design as its files state it (`design/`), read by the one reader
+/// (`vleo_files::convert::open`): what every command that reads the design
+/// reads. A sheet left in a node folder is not read.
 fn read(root: &Path) -> Result<Tree, String> {
-    let dir = root.join("design");
-    let (files, _) = vleo_files::convert::read_folder(&dir)
-        .map_err(|e| format!("the design folder {} does not open: {e}", dir.display()))?;
-    let served = vleo_files::convert::Served::new(
-        root,
-        &files,
-        std::sync::Arc::new(vleo_sheet::files::Disk),
-    )
-    .map_err(|e| format!("the design folder {} does not read: {e}", dir.display()))?;
-    vleo_sheet::load::load_all_from(&served, root)
-        .map_err(|e| format!("the design folder {} does not load: {e}", dir.display()))
+    vleo_files::convert::open(root)
+        .map(|(tree, _)| tree)
+        .map_err(|e| e.to_string())
 }
 
 fn write_if_changed(path: &Path, text: &str) -> Result<bool, String> {

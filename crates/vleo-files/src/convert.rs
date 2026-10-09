@@ -56,7 +56,6 @@
 use std::collections::{BTreeMap, BTreeSet};
 use std::io;
 use std::path::{Path, PathBuf};
-use std::sync::Arc;
 
 use toml::value::Table as TomlTable;
 use toml::Value;
@@ -91,10 +90,6 @@ const LOOP: &str = "loop";
 const KEPT: &str = "as converted: ";
 /// The keys a converted sheet's own words add, which the inverse takes out.
 const CONVERTED: &str = "converted";
-
-/// The files in a node folder that are the design's. Everything else in the
-/// folder is the code's: the generated module and the relation still in code.
-const NODE_DESIGN: &[&str] = &["node.toml", "fixtures.toml", "parity.csv"];
 
 /// The blocks a group's breakdown does not hold yet, proposed when the design
 /// is converted, each with why: the next level `docs/SYSTEM_MODEL.md`
@@ -1183,16 +1178,13 @@ pub fn convert(tree: &Tree, fs: &dyn Files, app: &str) -> Result<Vec<(String, Fi
 ///
 /// The loader reads the design through it as it reads a checkout: each node
 /// folder's sheet, cases and parity grid, each layer file, the cases and the
-/// sources, assembled from the files and from nothing else. What a node
-/// folder holds besides is the code's — its generated module and the
-/// relation still in code — and is read from `code`. A design path the files
-/// do not hold is not there: it never falls back to a folder.
+/// sources, assembled from the files and from nothing else. A path the files
+/// do not hold is not there: it never falls back to a folder on disk, so what
+/// is read is the design and only the design.
 pub struct Served {
     root: PathBuf,
     files: BTreeMap<PathBuf, Vec<u8>>,
     dirs: BTreeSet<PathBuf>,
-    node_dirs: BTreeSet<PathBuf>,
-    code: Arc<dyn Files>,
 }
 
 fn text_in<'a>(f: &'a File, scope: &str, kind: &str) -> Option<&'a str> {
@@ -1471,19 +1463,12 @@ fn headings_back(
 }
 
 impl Served {
-    /// The files, served at `root` as the folders they were converted from;
-    /// what a node folder holds besides the design read from `code`.
-    pub fn new(
-        root: &Path,
-        files: &[(String, File)],
-        code: Arc<dyn Files>,
-    ) -> Result<Served, Error> {
+    /// The files, served at `root` as the folders they were converted from.
+    pub fn new(root: &Path, files: &[(String, File)]) -> Result<Served, Error> {
         let mut s = Served {
             root: root.to_path_buf(),
             files: BTreeMap::new(),
             dirs: BTreeSet::new(),
-            node_dirs: BTreeSet::new(),
-            code,
         };
         let mut mount_of: BTreeMap<String, String> = BTreeMap::new();
         for (_, f) in files {
@@ -1522,7 +1507,6 @@ impl Served {
                         .ok_or_else(|| malformed(format!("{path} names no crate for its code")))?;
                     let id = &f.blocks[0].uid;
                     let dir = root.join("crates").join(krate).join("nodes").join(id);
-                    s.node_dirs.insert(dir.clone());
                     s.put(dir.join("node.toml"), sheet.into_bytes());
                     if let Some(fx) = fixtures {
                         s.put(dir.join("fixtures.toml"), fx.into_bytes());
@@ -1558,6 +1542,19 @@ impl Served {
         Ok(s)
     }
 
+    /// One path's bytes replaced, as an edit to that file in the folders
+    /// would replace them, or the path taken away when `bytes` is `None`.
+    /// For a test that shows what the loader refuses, on the design itself
+    /// rather than on a copy of folders that are not the design.
+    pub fn replace(&mut self, p: &Path, bytes: Option<Vec<u8>>) {
+        match bytes {
+            Some(b) => self.put(p.to_path_buf(), b),
+            None => {
+                self.files.remove(p);
+            }
+        }
+    }
+
     /// What a file keeps by its path: a case, the sources.
     fn kept(&mut self, f: &File) {
         for t in &f.texts {
@@ -1584,49 +1581,26 @@ impl Served {
         }
         self.files.insert(p, bytes);
     }
-
-    /// Whether a path is the design's, which only the files answer for.
-    fn is_design(&self, p: &Path) -> bool {
-        let Ok(rel) = p.strip_prefix(&self.root) else {
-            return false;
-        };
-        let parts: Vec<&str> = rel.iter().filter_map(|c| c.to_str()).collect();
-        match parts.as_slice() {
-            ["layers" | "cases" | "sources", ..] => true,
-            ["crates", c, "nodes", ..] if c.starts_with("vleo-mod-") => {
-                parts.len() <= 4 || NODE_DESIGN.contains(&parts[4])
-            }
-            _ => false,
-        }
-    }
 }
 
 impl Files for Served {
     fn read(&self, p: &Path) -> io::Result<Vec<u8>> {
-        if let Some(b) = self.files.get(p) {
-            return Ok(b.clone());
-        }
-        if self.is_design(p) {
-            return Err(io::Error::new(
+        self.files.get(p).cloned().ok_or_else(|| {
+            io::Error::new(
                 io::ErrorKind::NotFound,
                 format!("{} is not in the design's files", p.display()),
-            ));
-        }
-        self.code.read(p)
+            )
+        })
     }
 
     fn entries(&self, p: &Path) -> io::Result<Vec<PathBuf>> {
-        let mut out: BTreeSet<PathBuf> = BTreeSet::new();
-        for k in self.files.keys().chain(self.dirs.iter()) {
-            if k.parent() == Some(p) {
-                out.insert(k.clone());
-            }
-        }
-        if self.node_dirs.contains(p) || !self.is_design(p) {
-            if let Ok(code) = self.code.entries(p) {
-                out.extend(code.into_iter().filter(|c| !self.is_design(c)));
-            }
-        }
+        let out: BTreeSet<PathBuf> = self
+            .files
+            .keys()
+            .chain(self.dirs.iter())
+            .filter(|k| k.parent() == Some(p))
+            .cloned()
+            .collect();
         if out.is_empty() && !self.is_dir(p) {
             return Err(io::Error::new(
                 io::ErrorKind::NotFound,
@@ -1637,12 +1611,37 @@ impl Files for Served {
     }
 
     fn is_dir(&self, p: &Path) -> bool {
-        self.dirs.contains(p) || (!self.is_design(p) && self.code.is_dir(p))
+        self.dirs.contains(p)
     }
 
     fn is_file(&self, p: &Path) -> bool {
-        self.files.contains_key(p) || (!self.is_design(p) && self.code.is_file(p))
+        self.files.contains_key(p)
     }
+}
+
+/// The design under `root`, as everything in the repository reads it: the
+/// files in `root/design/`, served as the folders they were converted from
+/// and loaded by the one loader, with the fingerprint of the files. Nothing
+/// else is read: a sheet left in a node folder is not the design.
+#[cfg(not(target_arch = "wasm32"))]
+pub fn open(root: &Path) -> Result<(vleo_sheet::Tree, String), Error> {
+    let (served, fingerprint) = serve(root)?;
+    let tree = vleo_sheet::load::load_all_from(&served, root).map_err(|e| {
+        malformed(format!(
+            "the design in {} does not load: {e}",
+            root.join("design").display()
+        ))
+    })?;
+    Ok((tree, fingerprint))
+}
+
+/// The files in `root/design/`, served at `root` as the folders they were
+/// converted from, and their fingerprint: what [`open`] loads, for a reader
+/// that reads the folders themselves.
+#[cfg(not(target_arch = "wasm32"))]
+pub fn serve(root: &Path) -> Result<(Served, String), Error> {
+    let (files, fingerprint) = read_folder(&root.join("design"))?;
+    Ok((Served::new(root, &files)?, fingerprint))
 }
 
 /// Every group, node and case file in `dir`, laid out as [`convert`] lays

@@ -12,11 +12,10 @@
 //! engineer; a tolerance is never the thing to change.
 
 use std::path::{Path, PathBuf};
-use std::sync::Arc;
 
 use vleo_modules::core_engine::fault::Fault;
 use vleo_modules::{opened, Graph, MAX_OUTPUTS};
-use vleo_sheet::files::{Disk, Files};
+use vleo_sheet::files::Files;
 use vleo_sheet::load::Tree;
 use vleo_sheet::model::Sheet;
 
@@ -62,8 +61,7 @@ fn every_case_of_the_design_passes() {
     let root = root();
     let (on_disk, _) =
         vleo_files::convert::read_folder(&root.join("design")).expect("design/ reads");
-    let served = vleo_files::convert::Served::new(&root, &on_disk, Arc::new(Disk))
-        .expect("design/ is served");
+    let served = vleo_files::convert::Served::new(&root, &on_disk).expect("design/ is served");
     let tree: Tree = vleo_sheet::load::load_all_from(&served, &root).expect("design/ loads");
     let g = opened::graph(&tree).expect("design/ makes a graph");
 

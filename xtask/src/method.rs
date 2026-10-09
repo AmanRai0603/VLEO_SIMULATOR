@@ -20,7 +20,7 @@ pub fn cmd_method(root: &Path, args: &[&str]) -> Result<(), String> {
         .iter()
         .find(|a| !a.starts_with("--"))
         .ok_or("usage: cargo run -p xtask -- method <node>")?;
-    let tree = vleo_sheet::load_all(root)?;
+    let tree = crate::read(root)?;
     let sh = tree
         .sheets
         .get(*id)
@@ -337,7 +337,7 @@ fn rerun_one(sh: &vleo_sheet::model::Sheet, work: &Path) -> Result<Rerun, String
 /// their cases. `--require` refuses a node whose code could not be run here,
 /// for a pipeline that has installed the runners and means to use them.
 pub fn cmd_rerun(root: &Path, args: &[&str]) -> Result<(), String> {
-    let tree = vleo_sheet::load_all(root)?;
+    let tree = crate::read(root)?;
     let all = args.contains(&"--all");
     let require = args.contains(&"--require");
     let mut not_run = 0usize;

@@ -22,12 +22,7 @@ fn root() -> PathBuf {
 fn design() -> Tree {
     let root = root();
     let (files, _) = vleo_files::convert::read_folder(&root.join("design")).unwrap();
-    let served = vleo_files::convert::Served::new(
-        &root,
-        &files,
-        std::sync::Arc::new(vleo_sheet::files::Disk),
-    )
-    .unwrap();
+    let served = vleo_files::convert::Served::new(&root, &files).unwrap();
     vleo_sheet::load::load_all_from(&served, &root).unwrap()
 }
 

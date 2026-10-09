@@ -20,7 +20,7 @@ pub(super) fn cmd_lesson(root: &Path, args: &[&str]) -> Result<(), String> {
     // `--check` is what `--dry-run` passes: the check, and nothing written.
     let sub = match (sub, args.contains(&"--check")) {
         ("form", true) => {
-            let tree = load(root)?;
+            let tree = read(root)?;
             if !tree.sheets.contains_key(target) {
                 return Err(format!("no row '{target}'"));
             }
@@ -31,7 +31,7 @@ pub(super) fn cmd_lesson(root: &Path, args: &[&str]) -> Result<(), String> {
     };
     match sub {
         "form" => {
-            let tree = load(root)?;
+            let tree = read(root)?;
             let sh = tree
                 .sheets
                 .get(target)
@@ -75,7 +75,7 @@ fn read_lesson(
 ) -> Result<(String, vleo_sheet::lesson::Lesson, Vec<String>), String> {
     let text = fs::read_to_string(file).map_err(|e| format!("{file}: {e}"))?;
     let (node, toml_text) = vleo_sheet::lesson_form::from_file(&text, node)?;
-    let tree = load(root)?;
+    let tree = read(root)?;
     if !tree.sheets.contains_key(&node) {
         return Err(format!("the lesson is for '{node}', which is not a row"));
     }
