@@ -36,8 +36,9 @@ import urllib.error
 import urllib.parse
 import urllib.request
 
+import design_sheet
+
 HOST = os.environ.get("VLEO_DAEMON", "http://localhost:7777")
-ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # The row the decision will live on, and the row whose declared constant carries
 # a Kp into the physics today.
@@ -61,6 +62,13 @@ SCENARIOS = [
     ("the sustained disturbed scenario", "Kp_mean_hotmean", "Kp_peak_hotmean", "F107_hotmean", "F107bar_hotmean"),
     ("the disturbed single day", "Kp_mean_hotday", "Kp_peak_hotday", "F107_hotday", "F107bar_hotday"),
 ]
+
+# The two rows §30 B1 makes the condition of the step: each must name the
+# decision row, so that whoever reads either is sent to it.
+XREFS = (
+    ("sw_kp_slot_bias", DECISION),
+    ("env_exospheric_temperature", DECISION),
+)
 
 # The closures a reader will look for first. Named so the report says whether the
 # choice reaches them rather than leaving it in a list of seventy rows.
@@ -139,13 +147,12 @@ def check(top):
 
     # The decision row must still be the unanswered one this report is evidence
     # for. If it has been answered, this file is reporting on a settled question
-    # and should say so rather than presenting a choice as open.
-    sheet = os.path.join(ROOT, "crates/vleo-mod-solar/nodes", DECISION, "node.toml")
-    if not os.path.exists(sheet):
-        bad.append("%s does not exist; §30 B1 asks for it" % DECISION)
+    # and should say so rather than presenting a choice as open. It exists when
+    # the design holds it; the design is the only place a row is.
+    if not design_sheet.in_design(DECISION):
+        bad.append("%s is not in the design; §30 B1 asks for it" % DECISION)
     else:
-        import tomllib
-        d = tomllib.load(open(sheet, "rb"))
+        d = design_sheet.parsed(DECISION)
         who = (d.get("value") or {}).get("confirmed_by", "")
         if who:
             print("  NOTE %s is now answered, by %s. This report is evidence for a "
@@ -224,14 +231,18 @@ def selftest():
         bad += 1
         print("  FAIL a row moving off zero was not reported: %r" % z)
 
+    # Every sheet this reads, in one call to the design's reader rather than one
+    # per row: the design is read whole each time the command runs.
+    design_sheet.preload([DECISION] + [n for n, _ in XREFS])
+
     # 3 · THE ROW THIS IS EVIDENCE FOR EXISTS AND IS SEEDED. Both halves matter:
     #     without the row the decision has nowhere to live, and if it were
     #     published with a value an agent had supplied, that is the one defect
-    #     nothing else in this repository can catch.
-    sheet = os.path.join(ROOT, "crates/vleo-mod-solar/nodes", DECISION, "node.toml")
+    #     nothing else in this repository can catch. EXISTS now means the design
+    #     holds it: the sheet files are gone, and the design is the only place a
+    #     row is.
     try:
-        import tomllib
-        d = tomllib.load(open(sheet, "rb"))
+        d = design_sheet.parsed(DECISION)
         if not d.get("question", {}).get("text"):
             bad += 1
             print("  FAIL %s states no question, so it names no decision" % DECISION)
@@ -239,23 +250,22 @@ def selftest():
             bad += 1
             print("  FAIL %s is not seeded and carries no confirmation — a value "
                   "nobody signed" % DECISION)
-    except OSError:
+    except design_sheet.NotInDesign:
         bad += 1
-        print("  FAIL %s has no sheet; §30 B1 asks for it" % DECISION)
+        print("  FAIL %s is not in the design; §30 B1 asks for it" % DECISION)
 
     # 4 · the cross-references §30 B1 makes the condition of this step. Both
-    #     directions, because a one-way reference is how the two drift.
-    for path, want in (
-        ("crates/vleo-mod-solar/nodes/sw_kp_slot_bias/node.toml", DECISION),
-        ("crates/vleo-mod-envorbit/nodes/env_exospheric_temperature/node.toml", DECISION),
-    ):
+    #     directions, because a one-way reference is how the two drift. The id is
+    #     a word, so it is found in the design's text of the sheet however that
+    #     text is laid out.
+    for node, want in XREFS:
         try:
-            if want not in open(os.path.join(ROOT, path), encoding="utf-8").read():
+            if want not in design_sheet.sheet(node):
                 bad += 1
-                print("  FAIL %s no longer cross-references %s" % (path, want))
-        except OSError as exc:
+                print("  FAIL %s no longer cross-references %s" % (node, want))
+        except design_sheet.NotInDesign as exc:
             bad += 1
-            print("  FAIL could not read %s: %s" % (path, exc))
+            print("  FAIL could not read %s: %s" % (node, exc))
 
     # 5 · the slot values are read off the engine and not written here, because a
     #     scenario value copied into a tool is §21's stale panel constant again.

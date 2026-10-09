@@ -191,11 +191,10 @@ def check():
     # REQUIRED DOCS. Every hand-written Rust file says what it is in its first
     # line: a file nobody can place is a file nobody reviews, and the two
     # 3,200-line files were split into parts precisely so each could be placed.
-    # A row's generated files are the generator's to head, and they say so.
     for d in ("crates", "xtask"):
         for p in sorted((ROOT / d).rglob("*.rs")):
             rel = p.relative_to(ROOT)
-            if "target" in rel.parts or (rel.parts[1].startswith("vleo-mod-") and "nodes" in rel.parts):
+            if "target" in rel.parts:
                 continue
             if not p.read_text(errors="replace").startswith("//!"):
                 bad.append((rel.as_posix(), "does not open with a `//!` line saying what it is"))
@@ -218,7 +217,7 @@ def check():
     # It went stale the moment a subsystem was added, and nothing said so: the
     # gate was green, the lint was clean, and four files claimed a size the tree
     # no longer had. A number repeated in prose is a number that will be wrong.
-    rows = len([d for d in ROOT.glob("crates/vleo-mod-*/nodes/*") if d.is_dir()])
+    rows = len(list(ROOT.glob("design/groups/*/nodes/*.vnode")))
     if rows:
         stale = set()
         for f in ("README.md", "AGENTS.md", "areas/generators.md"):

@@ -44,7 +44,7 @@ fn repo_bundles() -> PathBuf {
         // A checkout and a kit both have the design's files (design/); a
         // checkout has the tree's folders too. Either marks where the tool's
         // files are.
-        let tree = p.join("design").is_dir() || p.join("layers").is_dir();
+        let tree = p.join("design").is_dir();
         if p.join("bundles").is_dir() && tree {
             return p.join("bundles");
         }

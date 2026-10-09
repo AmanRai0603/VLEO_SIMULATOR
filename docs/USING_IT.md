@@ -38,11 +38,11 @@ in the row of tabs above them. Four layers:
 |---|---|---|---|
 | 1 | management — the programme's own view | 174 | 0 |
 | 2 | the system — what the spacecraft must do | 321 | 7 |
-| 3 | subsystem — sixteen subsystems and two additions | 901 | 313 |
+| 3 | subsystem — sixteen subsystems and two additions | 906 | 313 |
 | 4 | the run — what a single evaluation produced | — | — |
 
 `cargo run -p xtask -- status` prints that table, and a second one by
-subsystem. On 26 September 2026 320 of 1396 rows carry content and 1076 are
+subsystem. On 9 October 2026 320 of 1401 rows carry content and 1081 are
 seeded shape waiting to be filled — which is the state this tool is designed to
 be useful in, not a defect. One subsystem is written all the way through, solar
 weather — 56 of its 65 rows answer, 2 are still seeded and 7 are retired — and
@@ -406,18 +406,18 @@ built from its last good release, and the tool says which release each group's
 part is and why one was refused. The fix goes back to the group, as a new
 sealed release; a release is never fixed up on the way in.
 
-A row is a folder. Every file in it is written by hand, and only one is the
-sheet:
+A row is one file in `design/`, the design as its files:
 
 ```
-crates/vleo-mod-prop/nodes/prop_throat_area/
-  node.toml      ← the sheet.
-  fixtures.toml  the known-good values
-  parity.csv     optional — the prior implementation's numbers
+design/groups/l3_prop/nodes/prop_throat_area.vnode
+  block, ports, wires  the row, what it reads and returns, and from where
+  test cases           the known-good values
+  texts                its method, its explanations, and the sheet it was converted from
 ```
 
-Nothing in this repository writes a node. It arrives in `design/`, the design
-as its files, with its sheet beside it, and a test holds the two equal. A need
+Nothing in this repository writes a node. It arrives in `design/` from its
+group's sealed release; the sheets it was converted from are gone, and a test
+refuses one that comes back. A need
 the code cannot meet comes back as a request (W14), answered with an
 application release.
 

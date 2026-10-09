@@ -408,6 +408,17 @@ pub(crate) const PIPELINE: &[Cmd] = &[
         dry: Dry::Reads,
     },
     Cmd {
+        name: "sheet",
+        stage: "read",
+        reads: "the design (design/)",
+        writes: NOTHING,
+        checks: "that every node named is in the design",
+        undo: READS_ONLY,
+        code: ("xtask/src/report.rs", "cmd_sheet"),
+        steps: &[],
+        dry: Dry::Reads,
+    },
+    Cmd {
         name: "why",
         stage: "read",
         reads: "the node in the design (design/), its git history and traces",

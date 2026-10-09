@@ -208,8 +208,8 @@ no switch without it.
 - **The graph becomes data through the resolver's existing seam**, the node
   table in `crates/vleo-core/src/graph.rs`. The guards generated from each sheet
   today (units, limits, not-finite) move to run time in the same order with the
-  same reasons. The one loop in `layers/cycles.toml` is reproduced with its order,
-  seed and residual.
+  same reasons. The one loop, in `layers/cycles.toml` until the sheets left and
+  in the systems' file since, is reproduced with its order, seed and residual.
 - **The interpreter is measured.** If a sweep is too slow, translated code stays
   as the fast path, held equal to the interpreter. *Measured in E (stage 4), on
   a release build:* the solar design and closure figures take the same time

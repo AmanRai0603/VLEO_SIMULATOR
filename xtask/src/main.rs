@@ -122,6 +122,7 @@ pub(crate) fn dispatch(root: &Path, cmd: &str, rest: &[&str]) -> Result<(), Stri
         "rerun" => method::cmd_rerun(&root, &rest),
         "explain" => pipeline::cmd_explain(&root, &rest),
         "why" => pipeline::cmd_why(&root, &rest),
+        "sheet" => cmd_sheet(&root, &rest),
         "trace" => pipeline::cmd_trace(&root, &rest),
         "pipeline" => pipeline::cmd_pipeline(&root, &rest),
         "help" | "--help" | "-h" => {
@@ -266,6 +267,10 @@ cargo xtask <command>
                      writes and checks, how to undo it, its steps and where its
                      code is — from the one table docs/PIPELINE.md is written
                      from. With no command, the whole journey.
+  sheet <node> ... | --all
+                     each node's sheet as the design holds it, as JSON by id:
+                     the text every reader of a sheet reads, for a tool
+                     outside this program to read through the one reader.
   why <node>         a node's history in one place: every recorded version and
                      who made it, the commits that changed it, how its code
                      came to be, and its gate, run now.
@@ -278,7 +283,7 @@ cargo xtask <command>
 
 Every command that writes also takes --dry-run: its check mode where it has
 one, otherwise the plan — its steps, what it would write, how to undo it —
-with nothing touched. The tree is seeded once, ever, by tools/seed_tree.py.";
+with nothing touched.";
 
 fn help() {
     println!("{HELP}");
@@ -347,7 +352,7 @@ fn known_flags(cmd: &str, rest: &[&str]) -> Result<(), String> {
 fn repo_root() -> PathBuf {
     let mut p = std::env::current_dir().expect("a working directory");
     loop {
-        if p.join("Cargo.toml").is_file() && p.join("crates").is_dir() && p.join("layers").is_dir()
+        if p.join("Cargo.toml").is_file() && p.join("crates").is_dir() && p.join("design").is_dir()
         {
             return p;
         }

@@ -14,7 +14,7 @@ Generated from the one table in `xtask/src/pipeline.rs`; `cargo run -p xtask -- 
 2. **build** — a node built from its method, and its tests shown to test: `method`, `rerun`, `method-wasm`, `files-wasm`
 3. **gate** — the checks every change passes, and what they generate: `group-app`, `docs`, `assemble`, `gate`, `ready`, `codeowners`, `variables`, `guides`, `pipeline`
 4. **release** — the versioned release everyone gets: `readers`, `ship`, `release`, `derisk`, `kit`, `bundle`
-5. **read** — reports: what exists, what is open, why a node is what it is: `status`, `active`, `catalogue`, `impact`, `reach`, `gap`, `graph`, `explain`, `why`, `trace`
+5. **read** — reports: what exists, what is open, why a node is what it is: `status`, `active`, `catalogue`, `impact`, `reach`, `gap`, `graph`, `explain`, `sheet`, `why`, `trace`
 6. **setup** — once per person per clone: `setup`, `help`
 
 ## When a step stops
@@ -484,6 +484,21 @@ where a command sits in a node's journey, what it reads, writes and checks, how 
 | undo | nothing to undo: it writes nothing |
 | dry run | it only reads, so it runs as it is |
 | code | `xtask/src/pipeline.rs` — `cmd_explain` |
+
+#### `sheet`
+
+    cargo run -p xtask -- sheet <node> ... | --all
+
+each node's sheet as the design holds it, as JSON by id: the text every reader of a sheet reads, for a tool outside this program to read through the one reader.
+
+| | |
+|---|---|
+| reads | the design (design/) |
+| writes | nothing |
+| checks | that every node named is in the design |
+| undo | nothing to undo: it writes nothing |
+| dry run | it only reads, so it runs as it is |
+| code | `xtask/src/report.rs` — `cmd_sheet` |
 
 #### `why`
 

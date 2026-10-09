@@ -1,18 +1,13 @@
-//! Where the tree is read from: the repository's folders, or the design's
-//! files.
+//! Where the design is read from: its files, served as the folders they were
+//! converted from (`vleo_files::convert::Served`), or a test's own.
 //!
-//! The loader reads the design through this and nothing else, so the same
-//! reading — every check the loader makes — applies whichever one it is. A
-//! developer's checkout reads the folders it edits; the design's files
-//! (`design/`, `vleo_files::convert::Served`) are read through it too, and a
-//! page served from them is the page served from the folders, byte for byte.
-//!
-//! Paths are the ones the folders have: the tree's root joined with
-//! `crates/vleo-mod-solar/nodes/…`, `layers/…`, `cases/…`, `sources/…`. The
-//! design's files answer for the paths of the design they hold and for nothing
-//! else; they never fall back to a folder, because a page drawn half from them
-//! and half from whatever folder happens to sit beside them is two designs
-//! presented as one.
+//! The loader reads the design through this and nothing else, so every check
+//! the loader makes applies whatever serves it. Paths are the ones the folders
+//! had: the root joined with `crates/vleo-mod-solar/nodes/…`, `layers/…`,
+//! `cases/…`, `sources/…`. The design's files answer for the paths they hold
+//! and for nothing else; they never fall back to a folder on disk, because a
+//! design drawn half from them and half from whatever sits beside them is two
+//! designs presented as one.
 
 use std::io;
 use std::path::{Path, PathBuf};
@@ -31,30 +26,6 @@ pub trait Files: Send + Sync {
     }
     fn read_to_string(&self, p: &Path) -> io::Result<String> {
         String::from_utf8(self.read(p)?).map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))
-    }
-}
-
-/// The folders on disk.
-pub struct Disk;
-
-impl Files for Disk {
-    fn read(&self, p: &Path) -> io::Result<Vec<u8>> {
-        std::fs::read(p)
-    }
-    fn entries(&self, p: &Path) -> io::Result<Vec<PathBuf>> {
-        Ok(std::fs::read_dir(p)?
-            .filter_map(|e| e.ok())
-            .map(|e| e.path())
-            .collect())
-    }
-    fn is_dir(&self, p: &Path) -> bool {
-        p.is_dir()
-    }
-    fn is_file(&self, p: &Path) -> bool {
-        p.is_file()
-    }
-    fn len(&self, p: &Path) -> Option<u64> {
-        std::fs::metadata(p).ok().map(|m| m.len())
     }
 }
 

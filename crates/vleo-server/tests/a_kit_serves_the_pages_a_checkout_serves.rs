@@ -78,23 +78,6 @@ fn a_kit_and_a_checkout_serve_the_same_pages() {
         kit.join("docs/manual.toml"),
     )
     .unwrap();
-    let code = |p: &Path| {
-        let s = p.to_string_lossy().replace('\\', "/");
-        s.contains("/nodes/")
-            && !["node.toml", "fixtures.toml"].contains(&p.file_name().unwrap().to_str().unwrap())
-    };
-    for c in std::fs::read_dir(root().join("crates")).unwrap() {
-        let c = c.unwrap().path();
-        let name = c.file_name().unwrap().to_string_lossy().into_owned();
-        if name.starts_with("vleo-mod-") && c.join("nodes").is_dir() {
-            copy(
-                &c.join("nodes"),
-                &kit.join("crates").join(&name).join("nodes"),
-                &code,
-            );
-        }
-    }
-
     // One server on the checkout, then one on the kit. Each reads where the
     // design is from as it starts, so the variable is set between the two.
     let checkout = vleo_server::serve(Some(root()), 18911, false, true).expect("no server");

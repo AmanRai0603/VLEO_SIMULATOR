@@ -305,8 +305,8 @@ pub fn changed_in_the_design() -> Vec<(String, String)> {
 type Opened = (std::sync::Arc<dyn Files>, Option<DesignFile>, Vec<String>);
 
 /// The design the tool is given: the folder `VLEO_DESIGN` names, or
-/// `design/` where the tool finds it; the sheets' folders only where there is
-/// neither.
+/// `design/` where the tool finds it. Where there is neither, there is no
+/// design, and the tool says so rather than reading anything in its place.
 fn open_base(root: &Path) -> Result<(std::sync::Arc<dyn Files>, Option<DesignFile>), String> {
     let named = std::env::var("VLEO_DESIGN")
         .ok()
@@ -327,7 +327,11 @@ fn open_base(root: &Path) -> Result<(std::sync::Arc<dyn Files>, Option<DesignFil
     if root.join("design").is_dir() {
         return open_converted(root, &root.join("design"));
     }
-    Ok((std::sync::Arc::new(vleo_sheet::files::Disk), None))
+    Err(format!(
+        "there is no design here: {} holds no design/, and VLEO_DESIGN names no folder of \
+         the design's files",
+        root.display()
+    ))
 }
 
 /// Whether an application at version `app` can run what the application at
@@ -464,7 +468,7 @@ fn short(h: u64) -> String {
 /// a double-clicked binary starts wherever the desktop chose.
 fn repo_root() -> PathBuf {
     let holds = |p: &Path| {
-        p.join("web").is_dir() && (p.join("design").is_dir() || p.join("layers").is_dir())
+        p.join("web").is_dir() && p.join("design").is_dir()
     };
     if let Ok(r) = std::env::var("VLEO_ROOT") {
         let r = PathBuf::from(r);

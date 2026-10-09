@@ -61,7 +61,7 @@ pub mod template;
 pub mod text;
 pub mod wiring;
 
-pub use load::{load_all, Tree};
+pub use load::Tree;
 pub use model::{Assumption, Fixture, Sheet, Step, View};
 
 /// FNV-1a, the same function the kernel uses, so a hash written by a generator

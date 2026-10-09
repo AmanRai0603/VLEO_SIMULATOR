@@ -995,3 +995,49 @@ pub(super) fn cmd_active(root: &Path, args: &[&str]) -> Result<(), String> {
     );
     Ok(())
 }
+
+/// `sheet <node> ... | --all` — each node's sheet as the design holds it, the
+/// text every reader of a sheet reads, as one JSON object by id. For a tool
+/// outside this program: it reads the design through the one reader rather
+/// than through a second one of its own.
+pub(super) fn cmd_sheet(root: &Path, args: &[&str]) -> Result<(), String> {
+    let tree = read(root)?;
+    let ids: Vec<&str> = if args.contains(&"--all") {
+        tree.sheets.keys().map(String::as_str).collect()
+    } else {
+        args.iter().copied().filter(|a| !a.starts_with("--")).collect()
+    };
+    if ids.is_empty() {
+        return Err("usage: cargo xtask sheet <node> [<node> ...] | --all".into());
+    }
+    let json = |s: &str| {
+        let mut o = String::from("\"");
+        for c in s.chars() {
+            match c {
+                '"' => o.push_str("\\\""),
+                '\\' => o.push_str("\\\\"),
+                '\n' => o.push_str("\\n"),
+                '\r' => o.push_str("\\r"),
+                '\t' => o.push_str("\\t"),
+                c if (c as u32) < 0x20 => o.push_str(&format!("\\u{:04x}", c as u32)),
+                c => o.push(c),
+            }
+        }
+        o.push('"');
+        o
+    };
+    let mut o = String::from("{");
+    for (i, id) in ids.iter().enumerate() {
+        let sh = tree
+            .sheets
+            .get(*id)
+            .ok_or_else(|| format!("no node '{id}' in the design"))?;
+        if i > 0 {
+            o.push(',');
+        }
+        o.push_str(&format!("\n{}: {}", json(id), json(&sh.text)));
+    }
+    o.push_str("\n}\n");
+    print!("{o}");
+    Ok(())
+}

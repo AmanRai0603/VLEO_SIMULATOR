@@ -1,6 +1,6 @@
 //! Reading the tree off disk.
 
-use crate::files::{Disk, Files};
+use crate::files::Files;
 use crate::fnv1a;
 use crate::model::*;
 use crate::{Error, ErrorKind};
@@ -346,12 +346,8 @@ fn port_of(o: &toml::value::Table) -> crate::model::PortSheet {
     }
 }
 
-pub fn load_all(root: &Path) -> Result<Tree, Error> {
-    load_all_from(&Disk, root)
-}
-
-/// The tree as `files` holds it under `root` — the folders, or the design's files
-/// (`crate::files`). Every check `load_all` makes, made the same way.
+/// The tree as `files` holds it under `root`: the design's files, served as
+/// the folders they were converted from (`vleo_files::convert::Served`).
 pub fn load_all_from(files: &dyn Files, root: &Path) -> Result<Tree, Error> {
     WRONG.with(|w| w.borrow_mut().clear());
     let tree = load_everything(files, root)?;

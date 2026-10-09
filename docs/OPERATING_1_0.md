@@ -79,8 +79,8 @@ Each piece is kept, changed or retired, once. Nothing is laid over the old.
 |---|---|---|
 | "lead", "author", "team", "user" | subsystem engineer, node engineer; everyone uses the application | changed |
 | a group app, a node app and a separate tool | **one application**, with a workspace for each role | changed |
-| each node as `node.toml` in the repository, the source | the node in its group's signed files on the shared drive; the repository holds no design | changed |
-| the tree in `layers/*.toml` in the repository | the programme's and the systems' own files | changed |
+| each node as its file in `design/` in the repository, the source | the node in its group's signed files on the shared drive; the repository holds no design | changed |
+| the tree's headings in the group files in `design/` in the repository | the programme's and the systems' own files | changed |
 | the developer takes a release in with `xtask`, builds, tests and delivers it | the system engineer integrates it in the application, which runs the same checks | changed |
 | a test application per release, accepted by the subsystem engineer | today's design, which every group sees as soon as it seals | changed |
 | `design.vleo` built from the repository by the developer | today's design, rebuilt from the drive on opening; the released design, released by the system engineer | changed |
