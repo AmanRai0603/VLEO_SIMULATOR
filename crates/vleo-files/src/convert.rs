@@ -165,6 +165,7 @@ fn malformed(why: impl Into<String>) -> Error {
     Error::new(ErrorKind::Malformed, why)
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 fn io_error(path: &Path, e: io::Error) -> Error {
     Error::new(ErrorKind::Io, format!("{}: {e}", path.display()))
 }
