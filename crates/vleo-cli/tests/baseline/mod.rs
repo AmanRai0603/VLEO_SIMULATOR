@@ -1,7 +1,8 @@
 //! The record of today's answers, written from any graph the engine is given:
-//! the compiled one (`today_s_answers_are_on_record`) and the one read from
-//! the design's files (`the_design_read_at_run_time_answers_as_today`). One
-//! recording, so the two are compared by the same code.
+//! by the test that writes the record (`today_s_answers_are_on_record`) and
+//! by the parity gate that holds the graph read from the design's files to it
+//! (`the_design_read_at_run_time_answers_as_today`). One recording, so the two
+//! are compared by the same code.
 
 #![allow(dead_code)]
 

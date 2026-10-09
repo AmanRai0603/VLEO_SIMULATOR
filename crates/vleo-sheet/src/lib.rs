@@ -1,23 +1,27 @@
-//! The sheet, and everything derived from it.
+//! What a node's content means, wherever it is read: the sheet.
 //!
-//! One file per node is written by hand — `node.toml` — and eleven artefacts
-//! are printed from it: the implementation scaffold, the contract, the module
-//! wiring, the documentation fragment, the test harness, the metadata, the gap
-//! report, the registry, the graph, the index and the assembled document.
+//! A sheet is one node as the tools read it — its ports, its method, its
+//! cases, its explanation and its de-risking record. Its home is the design's
+//! files, `design/`: `vleo_files::convert` opens them and serves them to the
+//! loader here ([`load`], through [`files::Files`]), so no sheet is written by
+//! hand any more and none is kept on disk.
 //!
-//! This crate is the single implementation of what a sheet *means*. Both the
-//! generators in `xtask` and the build scripts that compile the tables read it,
-//! so a build and a `cargo xtask docs` can never disagree about the graph. Two
-//! implementations of that would be two standards.
+//! This crate is the single implementation of what a sheet *means*: the
+//! model, the per-node checks the gate makes, the method language the
+//! interpreter runs, the node's page, the gap pass, the manual, the guides,
+//! the lessons and the de-risking narrative. The commands in `xtask`, the
+//! server, the command line, the engine's graph (`vleo_modules::opened`) and
+//! the pages' checkers all read it, so no face carries a second copy that
+//! could disagree. Two implementations of that would be two standards.
 //!
-//! # Two rules the generators are held to
+//! # Two rules what is printed from it is held to
 //!
-//! * **The six per-node generators never read another node.** That is what
-//!   makes 250 nodes 250 independent acts: five engineers can add a node on the
-//!   same afternoon and no file is touched twice.
-//! * **The assembly generators never decide anything.** They combine and they
-//!   refuse. A decision taken during assembly is a decision nobody reviewed,
-//!   because assembly has no diff.
+//! * **What is printed for one node never reads another.** A node's page, its
+//!   gap pass and its checks are one node's, so five engineers' nodes change
+//!   on the same afternoon and no output is touched twice.
+//! * **What is assembled never decides anything.** The index and the
+//!   catalogue combine and they refuse. A decision taken during assembly is a
+//!   decision nobody reviewed, because assembly has no diff.
 
 pub mod derisk;
 pub mod emit;

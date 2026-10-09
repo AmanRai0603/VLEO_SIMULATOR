@@ -1,8 +1,8 @@
 //! A name in the design that resolves to nothing stops the graph being built,
 //! and says which.
 //!
-//! The compiled build refused these because it would not compile. Read from
-//! the design's files at run time, the same name would run as the first
+//! When the design was compiled in, a build refused these because it would
+//! not compile. Read from the design's files at run time, the same name would run as the first
 //! variable, or as zero, or be left out — a different question answered
 //! without a word. So the reader asks first (`vleo_sheet::wiring`), and each
 //! wrong name is tried here on the design in `design/`, held in memory.

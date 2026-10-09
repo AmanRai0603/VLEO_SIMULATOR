@@ -39,8 +39,9 @@ pub type VarIdx = u16;
 pub enum Behaviour {
     /// A method its node engineer wrote, run by the interpreter.
     Method,
-    /// A relation still in compiled code, found by the row's id until its
-    /// group writes a method for it.
+    /// A relation kept in code by the row's id until its group writes a
+    /// method for it. No relation of the design is kept in code now, so a
+    /// row named so refuses by name rather than run.
     BuiltIn,
     /// A value a person states, with its source.
     Stated,
