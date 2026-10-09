@@ -14,22 +14,22 @@ their checks move into the library.
 
 ## Why a change here needs two reviewers
 
-There are 1396 rows. A defect in a generator is in all of them at once, and it
+There are 1401 rows. A defect in a generator is in all of them at once, and it
 arrives everywhere on the same commit. One heavily reviewed component beats
-1396 lightly reviewed ones, but only if it is actually treated as one — so
+1401 lightly reviewed ones, but only if it is actually treated as one — so
 `H7` is two reviewers, and the advisory review job says so unprompted when it
 sees a diff here.
 
 ## The generators
 
 No generator writes code: every relation is the node's method, in its sheet,
-run by the interpreter, and nothing in a node's folder is generated. One runs
+run by the interpreter, and nothing in a node's file is generated. One runs
 per node, writes nothing, and reads nothing but that node's sheet, which is
-what makes 1396 rows 1396 independent acts:
+what makes 1401 rows 1401 independent acts:
 
 | generator | emits |
 |---|---|
-| page | the node's fragment of the document — rendered from the sheet when it is opened, never written to the folder |
+| page | the node's fragment of the document — rendered from the sheet when it is opened, never written to the design |
 
 Three run at assembly and may combine and refuse, never decide — a decision
 taken during assembly is a decision nobody reviewed:

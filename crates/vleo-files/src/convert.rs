@@ -1,15 +1,15 @@
-//! The design, from its sheets to its files: the last time it passes through
-//! the code.
+//! The design's files, read as the folders they were converted from.
 //!
-//! docs/PLAN_1_0.md, phase E. Until the switch-over the design is node sheets
-//! and layer files in the repository; from it on, it is files on the shared
-//! drive, in the one schema (`schema.sql`), written by their owners in the
-//! application. [`convert`] makes the second from the first: the programme's
-//! branch, the systems branch and each subsystem group's, each a group file
-//! (`<group>.vgroup`) holding its headings, mounts and loops, with one node
-//! file (`<node>.vnode`) per row; and each case, a case file (`.vcase`).
+//! docs/PLAN_1_0.md, phase E. The design was node sheets and layer files in
+//! the repository, converted once to files in the one schema (`schema.sql`):
+//! the programme's branch, the systems branch and each subsystem group's,
+//! each a group file (`<group>.vgroup`) holding its headings, mounts and
+//! loops, with one node file (`<node>.vnode`) per row; and each case, a case
+//! file (`.vcase`). The files are the design now, in `design/`, and the sheets
+//! are gone. This reads them: [`open`] is the one reader every face, command
+//! and test reads the design through.
 //!
-//! What maps to what:
+//! What maps to what, the sheet's form on the left:
 //!
 //! | today | in the files |
 //! |---|---|
@@ -33,11 +33,9 @@
 //! what it became, as a `text` of kind `as converted: <path>`, read by
 //! nothing: the record of what the conversion was given.
 //!
-//! The conversion has an exact inverse, [`Served`]: the files, read as the
-//! repository's folders, which the loader reads as it reads a checkout. The
-//! proof that nothing was dropped is that the tree read through it is the
-//! tree the conversion was given — except for what the conversion is for,
-//! each named, and nothing else (`tests/the_design_converts_to_its_files.rs`):
+//! [`Served`] serves the files as the folders they were converted from,
+//! which the loader reads as it read a checkout. What the conversion changed
+//! in the design, each by name, stays as it made it:
 //!
 //! 1. each subsystem group hangs from the block it mounts on, not from the
 //!    root (docs/SYSTEM_MODEL.md, section 8, "Where each group mounts");
@@ -45,13 +43,8 @@
 //!    it (section 5);
 //! 3. every stated value is a parameter of the level whose branch states it
 //!    (section 6, "A parameter belongs to the level that decides it");
-//! 4. the five blocks the breakdown does not hold yet are there, as open
-//!    blocks, each with why ([`PROPOSED`]; section 8, "Proposed: one level
-//!    deeper").
-//!
-//! The relations still in code are not design and are not converted: a
-//! row's built-in relation is found in the code by its id
-//! (`vleo-modules`), and the inverse reads it from the code's own folders.
+//! 4. the five blocks the breakdown did not hold are there, as open blocks,
+//!    each with why ([`PROPOSED`]; section 8, "Proposed: one level deeper").
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::io;
@@ -60,12 +53,10 @@ use std::path::{Path, PathBuf};
 use toml::value::Table as TomlTable;
 use toml::Value;
 use vleo_sheet::files::Files;
-use vleo_sheet::load::Tree;
-use vleo_sheet::model::Sheet;
 
 use crate::error::{Error, ErrorKind};
 use crate::meta::Kind;
-use crate::model::{Block, File, Loop, Mount, Port, Tbl, TestCase, Text, Wire};
+use crate::model::{File, Port, TestCase};
 
 /// A group file's extension: the branch, its headings, mounts and loops.
 pub const GROUP_FILE: &str = "vgroup";
@@ -174,6 +165,7 @@ fn malformed(why: impl Into<String>) -> Error {
     Error::new(ErrorKind::Malformed, why)
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 fn io_error(path: &Path, e: io::Error) -> Error {
     Error::new(ErrorKind::Io, format!("{}: {e}", path.display()))
 }
@@ -200,76 +192,10 @@ fn layer_of(perspective: &str) -> Result<i64, Error> {
     }
 }
 
-/// The level a stated value in a branch is a parameter of.
-fn level_of(branch: &str) -> &'static str {
-    match branch {
-        PROGRAMME => "programme",
-        SYSTEMS => "system",
-        _ => "subsystem",
-    }
-}
-
-/// Where a heading's branch is: the programme's, the systems' or a
-/// subsystem group's, by the heading at its top — the first whose parent is
-/// in another layer.
-fn branch_of(tree: &Tree, heading: &str) -> Result<String, Error> {
-    let mut id = heading;
-    loop {
-        let g = tree
-            .groups
-            .get(id)
-            .ok_or_else(|| malformed(format!("{id} is not a heading")))?;
-        if g.parent.is_empty() {
-            return Ok(PROGRAMME.into());
-        }
-        let p = tree
-            .groups
-            .get(&g.parent)
-            .ok_or_else(|| malformed(format!("{id}'s parent {} is not a heading", g.parent)))?;
-        if p.layer != g.layer {
-            return match g.layer {
-                1 => Ok(PROGRAMME.into()),
-                2 => Ok(SYSTEMS.into()),
-                3 => Ok(g.id.clone()),
-                l => Err(malformed(format!("{id} is at layer {l}, in no branch"))),
-            };
-        }
-        id = &g.parent;
-    }
-}
-
-/// The text of a number as the sheet wrote it, exactly: a whole number as
-/// it is, any other by the shortest text that reads back as the same number.
-fn number_text(v: &Value, what: &str) -> Result<String, Error> {
-    match v {
-        Value::Integer(i) => Ok(i.to_string()),
-        Value::Float(x) => Ok(format!("{x:?}")),
-        other => Err(malformed(format!("{what} is {other}, not a number"))),
-    }
-}
-
 fn number_of(text: &str, what: &str) -> Result<Value, Error> {
     text.parse::<f64>()
         .map(Value::Float)
         .map_err(|_| malformed(format!("{what} is {text:?}, not a number")))
-}
-
-fn text_of(v: Option<Value>, what: &str) -> Result<String, Error> {
-    match v {
-        None => Ok(String::new()),
-        Some(Value::String(s)) => Ok(s),
-        Some(other) => Err(malformed(format!("{what} is {other}, not text"))),
-    }
-}
-
-/// Both reasons for a range, in the one column: `lower: …` and `upper: …`,
-/// each on its own, so a reader reads the two.
-fn reasons(lower: &str, upper: &str) -> String {
-    if lower.is_empty() && upper.is_empty() {
-        String::new()
-    } else {
-        format!("lower: {lower}\nupper: {upper}")
-    }
 }
 
 fn reasons_of(text: &str) -> Result<(String, String), Error> {
@@ -283,15 +209,6 @@ fn reasons_of(text: &str) -> Result<(String, String), Error> {
         .split_once("\nupper: ")
         .ok_or_else(|| malformed(format!("a range's reason {text:?} has no upper:")))?;
     Ok((lower.into(), upper.into()))
-}
-
-/// A case's inputs, by name: `name = value; …`, each value as [`number_text`].
-fn inputs_text(t: &TomlTable, what: &str) -> Result<String, Error> {
-    let mut out = Vec::new();
-    for (k, v) in t {
-        out.push(format!("{k} = {}", number_text(v, what)?));
-    }
-    Ok(out.join("; "))
 }
 
 fn inputs_of(text: &str, what: &str) -> Result<TomlTable, Error> {
@@ -310,22 +227,6 @@ fn take_table(t: &mut TomlTable, key: &str, what: &str) -> Result<Option<TomlTab
         None => Ok(None),
         Some(Value::Table(x)) => Ok(Some(x)),
         Some(other) => Err(malformed(format!("{what}: {key} is {other}, not a table"))),
-    }
-}
-
-fn take_array(t: &mut TomlTable, key: &str, what: &str) -> Result<Vec<TomlTable>, Error> {
-    match t.remove(key) {
-        None => Ok(Vec::new()),
-        Some(Value::Array(a)) => a
-            .into_iter()
-            .map(|v| match v {
-                Value::Table(x) => Ok(x),
-                other => Err(malformed(format!(
-                    "{what}: a {key} is {other}, not a table"
-                ))),
-            })
-            .collect(),
-        Some(other) => Err(malformed(format!("{what}: {key} is {other}, not a list"))),
     }
 }
 
@@ -407,18 +308,6 @@ fn toml_table(text: &str, what: &str) -> Result<TomlTable, Error> {
         .map_err(|e| malformed(format!("{what}: {e}")))
 }
 
-fn read_text(fs: &dyn Files, p: &Path) -> Result<String, Error> {
-    fs.read_to_string(p).map_err(|e| io_error(p, e))
-}
-
-fn text_row(scope: &str, kind: &str, body: String) -> Text {
-    Text {
-        scope: scope.into(),
-        kind: kind.into(),
-        body,
-    }
-}
-
 /// What a sheet's content makes its behaviour, read from the sheet as the
 /// inverse writes it: the same reading as `Sheet::behaviour`, so a node file
 /// whose block says one thing and whose content another is refused by name.
@@ -443,61 +332,6 @@ fn behaviour_of_sheet(t: &TomlTable) -> &'static str {
     } else {
         "built-in"
     }
-}
-
-/// One port out, its keys taken from `t`.
-fn port_out(
-    block: &str,
-    name: String,
-    t: &mut TomlTable,
-    derived_state: &str,
-    ord: i64,
-    what: &str,
-) -> Result<(Port, bool), Error> {
-    let mut take = |k: &str| text_of(t.remove(k), &format!("{what}: {k}"));
-    let symbol = take("symbol")?;
-    let unit = take("unit")?;
-    let reason_lower = take("reason_lower")?;
-    let reason_upper = take("reason_upper")?;
-    let state = take("state")?;
-    let maturity = take("maturity")?;
-    let parameter = take("parameter")?;
-    let open_owner = take("open_owner")?;
-    let open_due = take("open_due")?;
-    let mut end = |k: &str| -> Result<String, Error> {
-        t.remove(k)
-            .map(|v| number_text(&v, &format!("{what}: {k}")))
-            .transpose()
-            .map(Option::unwrap_or_default)
-    };
-    let lower = end("lower")?;
-    let upper = end("upper")?;
-    let stated_state = !state.is_empty();
-    Ok((
-        Port {
-            block_uid: block.into(),
-            direction: "out".into(),
-            name,
-            symbol,
-            port_type: "number".into(),
-            unit,
-            lower,
-            upper,
-            range_reason: reasons(&reason_lower, &reason_upper),
-            state: if stated_state {
-                state
-            } else {
-                derived_state.into()
-            },
-            maturity,
-            parameter,
-            open_owner,
-            open_due,
-            ord,
-            ..Port::default()
-        },
-        stated_state,
-    ))
 }
 
 /// A port out, written back into the keys it came from.
@@ -529,49 +363,6 @@ fn port_back(p: &Port, t: &mut TomlTable, write_state: bool) -> Result<(), Error
     Ok(())
 }
 
-/// Where each variable is answered: by its row, in which branch.
-struct Producers {
-    /// Each variable, as a row reads it — the row's id for its answer,
-    /// `<row>.<id>` for what it publishes — by its row, its port there, that
-    /// row's branch, and where its value stands.
-    of: BTreeMap<String, (String, String, String, &'static str)>,
-}
-
-impl Producers {
-    fn new(tree: &Tree, branch: &BTreeMap<String, String>) -> Producers {
-        let mut of = BTreeMap::new();
-        for sh in tree.sheets.values() {
-            let b = branch.get(&sh.id).cloned().unwrap_or_default();
-            let state = sh.port_state(&sh.port);
-            of.insert(
-                sh.id.clone(),
-                (sh.id.clone(), sh.id.clone(), b.clone(), state),
-            );
-            for pb in &sh.publishes {
-                let state = sh.port_state(&pb.port);
-                of.insert(
-                    format!("{}.{}", sh.id, pb.id),
-                    (sh.id.clone(), pb.id.clone(), b.clone(), state),
-                );
-            }
-        }
-        Producers { of }
-    }
-
-    /// The wire's source, as the one schema writes it.
-    fn reference(&self, var: &str, from_branch: &str, what: &str) -> Result<String, Error> {
-        let (row, port, branch, _) = self
-            .of
-            .get(var)
-            .ok_or_else(|| malformed(format!("{what} reads {var}, which no row answers")))?;
-        Ok(if branch == from_branch {
-            format!("{row}.{port}")
-        } else {
-            format!("{branch}.{row}.{port}")
-        })
-    }
-}
-
 /// The variable a wire reads, as a row reads it: the row's answer by its id,
 /// what it publishes as `<row>.<id>`.
 fn var_of(from_ref: &str, what: &str) -> Result<String, Error> {
@@ -588,662 +379,7 @@ fn var_of(from_ref: &str, what: &str) -> Result<String, Error> {
     }
 }
 
-/// One row, as its node file.
-#[allow(clippy::too_many_arguments)]
-fn node_file(
-    sheet: &Sheet,
-    mut raw: TomlTable,
-    raw_text: &str,
-    fixtures: Option<&str>,
-    parity: Option<String>,
-    branch: &str,
-    producers: &Producers,
-    app: &str,
-) -> Result<File, Error> {
-    let id = sheet.id.as_str();
-    let what = format!("{id}'s sheet");
-    let mut f = File::new(Kind::Node, app);
-    if sheet.owner.trim().is_empty() {
-        return Err(malformed(format!("{id} names no owner to write it")));
-    }
-    for (k, v) in [
-        ("group_id", branch),
-        ("block_uid", id),
-        ("revision", "1"),
-        ("contract_version", "1"),
-        ("writer", sheet.owner.as_str()),
-        ("sheet.crate", sheet.crate_name.as_str()),
-    ] {
-        f.meta.insert(k.into(), v.into());
-    }
-    let mut derived: Vec<Value> = Vec::new();
-
-    // ── the block
-    raw.remove("id");
-    let parent = text_of(raw.remove("parent"), &format!("{what}: parent"))?;
-    let ord = match raw.remove("order") {
-        None => 0,
-        Some(Value::Integer(i)) => i,
-        Some(other) => return Err(malformed(format!("{what}: order is {other}"))),
-    };
-    raw.remove("layer");
-    let mut question = String::new();
-    if let Some(Value::Table(q)) = raw.get_mut("question") {
-        question = text_of(q.remove("text"), &format!("{what}: question"))?;
-    }
-    f.blocks.push(Block {
-        uid: id.into(),
-        id: id.into(),
-        parent_uid: parent,
-        question,
-        behaviour: sheet.behaviour().into(),
-        perspective: perspective(sheet.layer)?.into(),
-        ord,
-        archived: (sheet.state == "deprecated") as i64,
-        contract_version: 1,
-        revision: 1,
-    });
-
-    // ── its ports out: the output, its value, then what it publishes
-    let derived_state = sheet.port_state(&sheet.port);
-    let mut output = take_table(&mut raw, "output", &what)?.unwrap_or_default();
-    let (mut port, stated) = port_out(id, id.into(), &mut output, derived_state, 0, &what)?;
-    if !stated {
-        derived.push(Value::String("output.state".into()));
-    }
-    // A stated value is a parameter of the level whose branch states it.
-    if sheet.is_declared() && !sheet.is_seeded() && port.parameter.is_empty() {
-        port.parameter = level_of(branch).into();
-    }
-    if let Some(Value::Table(v)) = raw.get_mut("value") {
-        if let Some(n) = v.remove("number") {
-            port.value = number_text(&n, &format!("{what}: value"))?;
-        }
-    }
-    f.ports.push(port);
-    raw.insert("output".into(), Value::Table(output));
-    let mut publishes = take_array(&mut raw, "publishes", &what)?;
-    for (k, (pb, sh_pb)) in publishes.iter_mut().zip(&sheet.publishes).enumerate() {
-        let name = text_of(pb.remove("id"), &format!("{what}: publishes id"))?;
-        let says = text_of(pb.remove("label"), &format!("{what}: publishes label"))?;
-        let (mut p, stated) = port_out(
-            id,
-            name,
-            pb,
-            sheet.port_state(&sh_pb.port),
-            k as i64 + 1,
-            &what,
-        )?;
-        if !stated {
-            derived.push(Value::String(format!("publishes.{k}.state")));
-        }
-        p.says = says;
-        f.ports.push(p);
-    }
-    if !publishes.is_empty() {
-        raw.insert(
-            "publishes".into(),
-            Value::Array(publishes.into_iter().map(Value::Table).collect()),
-        );
-    }
-
-    // ── its ports in, and the wire into each
-    let mut inputs = take_array(&mut raw, "input", &what)?;
-    for (k, i) in inputs.iter_mut().enumerate() {
-        let binding = text_of(i.remove("binding"), &format!("{what}: input binding"))?;
-        let var = text_of(i.remove("var"), &format!("{what}: input var"))?;
-        // An input stands where the value it reads stands.
-        let state = producers.of.get(&var).map(|p| p.3).unwrap_or("open");
-        f.wires.push(Wire {
-            to_block: id.into(),
-            to_port: binding.clone(),
-            from_ref: producers.reference(&var, branch, &format!("{id}.{binding}"))?,
-        });
-        f.ports.push(Port {
-            block_uid: id.into(),
-            direction: "in".into(),
-            name: binding,
-            port_type: "number".into(),
-            state: state.into(),
-            ord: k as i64,
-            ..Port::default()
-        });
-    }
-    if !inputs.is_empty() {
-        raw.insert(
-            "input".into(),
-            Value::Array(inputs.into_iter().map(Value::Table).collect()),
-        );
-    }
-
-    // ── its method and its explanation
-    if let Some(Value::Table(m)) = raw.get_mut("method") {
-        let text = text_of(m.remove("text"), &format!("{what}: method"))?;
-        if !text.is_empty() {
-            f.texts.push(text_row(id, "method", text));
-        }
-    }
-    if let Some(Value::Table(x)) = raw.get_mut("explain") {
-        for part in ["simply", "breaks", "wrong"] {
-            let text = text_of(x.remove(part), &format!("{what}: explain.{part}"))?;
-            if !text.is_empty() {
-                f.texts.push(text_row(id, &format!("explain.{part}"), text));
-            }
-        }
-    }
-
-    // ── its cases
-    if let Some(text) = fixtures {
-        let fwhat = format!("{id}'s fixtures");
-        let mut fx = toml_table(text, &fwhat)?;
-        let mut rows = take_array(&mut fx, "fixture", &fwhat)?;
-        for (k, r) in rows.iter_mut().enumerate() {
-            let label = text_of(r.remove("label"), &fwhat)?;
-            let provenance = text_of(r.remove("provenance"), &fwhat)?;
-            let source = text_of(r.remove("source"), &fwhat)?;
-            let mut num = |key: &str| -> Result<String, Error> {
-                r.remove(key)
-                    .map(|v| number_text(&v, &format!("{fwhat}: {key}")))
-                    .transpose()
-                    .map(Option::unwrap_or_default)
-            };
-            let expected = num("expect")?;
-            let tolerance = num("tolerance")?;
-            let inputs = match r.remove("inputs") {
-                None => String::new(),
-                Some(Value::Table(t)) => inputs_text(&t, &fwhat)?,
-                Some(other) => return Err(malformed(format!("{fwhat}: inputs is {other}"))),
-            };
-            f.cases.push(TestCase {
-                block_uid: id.into(),
-                name: format!("{} · {label}", k + 1),
-                inputs,
-                expected,
-                tolerance,
-                provenance,
-                source,
-            });
-        }
-        fx.insert(
-            "fixture".into(),
-            Value::Array(rows.into_iter().map(Value::Table).collect()),
-        );
-        f.texts
-            .push(text_row(id, FIXTURES, toml_text(&fx, &fwhat)?));
-        f.texts.push(text_row(
-            id,
-            &format!("{KEPT}fixtures.toml"),
-            text.to_string(),
-        ));
-    }
-    if let Some(csv) = parity {
-        f.tables.push(Tbl {
-            scope: id.into(),
-            path: "parity.csv".into(),
-            csv,
-        });
-    }
-
-    // ── what has no column yet, and the sheet as it stood
-    if !derived.is_empty() {
-        let mut c = TomlTable::new();
-        c.insert("derived".into(), Value::Array(derived));
-        raw.insert(CONVERTED.into(), Value::Table(c));
-    }
-    f.texts.push(text_row(id, SHEET, toml_text(&raw, &what)?));
-    f.texts
-        .push(text_row(id, &format!("{KEPT}node.toml"), raw_text.into()));
-    f.check_meta()?;
-    f.check_values()?;
-    Ok(f)
-}
-
-/// The sheet of an open block the conversion adds, seeded as every row not
-/// decided yet is, with why it was proposed as its question's note.
-fn proposed_sheet(
-    id: &str,
-    name: &str,
-    why: &str,
-    interface: &Sheet,
-    heading: &str,
-    owner: &str,
-    order: u32,
-) -> String {
-    let mut t = TomlTable::new();
-    let s = |v: &str| Value::String(v.into());
-    t.insert("id".into(), s(id));
-    t.insert("label".into(), s(name));
-    t.insert("folder".into(), s(id));
-    t.insert("subsystem".into(), s(&interface.subsystem));
-    t.insert("parent".into(), s(heading));
-    t.insert("kind".into(), s("computed"));
-    t.insert("owner".into(), s(owner));
-    t.insert("tier".into(), s(""));
-    t.insert("layer".into(), Value::Integer(3));
-    t.insert("order".into(), Value::Integer(order as i64));
-    t.insert("state".into(), s("empty"));
-    let mut q = TomlTable::new();
-    q.insert("text".into(), s(""));
-    q.insert("note".into(), s(why));
-    t.insert("question".into(), Value::Table(q));
-    let mut m = TomlTable::new();
-    m.insert("expression".into(), s(""));
-    m.insert("source".into(), s(""));
-    t.insert("maths".into(), Value::Table(m));
-    let mut o = TomlTable::new();
-    for k in ["symbol", "type", "unit", "reason_lower", "reason_upper"] {
-        o.insert(k.into(), s(""));
-    }
-    o.insert("lower".into(), Value::Float(0.0));
-    o.insert("upper".into(), Value::Float(0.0));
-    t.insert("output".into(), Value::Table(o));
-    let mut v = TomlTable::new();
-    v.insert("kind".into(), s("number"));
-    t.insert("view".into(), Value::Table(v));
-    toml::to_string(&t).expect("a seeded sheet is TOML")
-}
-
-/// The smallest heading that holds every row in `members`, in the tree as
-/// the conversion hangs it.
-fn smallest_holding(
-    tree: &Tree,
-    parent_of: &BTreeMap<String, String>,
-    members: &[String],
-) -> Result<String, Error> {
-    let chain = |row: &str| -> Result<Vec<String>, Error> {
-        let sh = tree
-            .sheets
-            .get(row)
-            .ok_or_else(|| malformed(format!("a loop runs through {row}, which is no row")))?;
-        let mut out = vec![sh.parent.clone()];
-        while let Some(p) = parent_of.get(out.last().unwrap()).filter(|p| !p.is_empty()) {
-            out.push(p.clone());
-        }
-        out.reverse();
-        Ok(out)
-    };
-    let mut common: Option<Vec<String>> = None;
-    for m in members {
-        let c = chain(m)?;
-        common = Some(match common {
-            None => c,
-            Some(prev) => prev
-                .into_iter()
-                .zip(c)
-                .take_while(|(a, b)| a == b)
-                .map(|(a, _)| a)
-                .collect(),
-        });
-    }
-    common
-        .and_then(|c| c.last().cloned())
-        .ok_or_else(|| malformed("a loop runs through no row"))
-}
-
-/// The design, as its files, each with the path it has on the drive.
-///
-/// `fs` reads the tree's folders (the loader's `Disk`); `app` is the
-/// application writing them, as `written_by_app` names it.
-pub fn convert(tree: &Tree, fs: &dyn Files, app: &str) -> Result<Vec<(String, File)>, Error> {
-    let root = &tree.root;
-
-    // ── which branch every heading and row is in
-    let mut branch: BTreeMap<String, String> = BTreeMap::new();
-    for id in tree.groups.keys() {
-        branch.insert(id.clone(), branch_of(tree, id)?);
-    }
-    for sh in tree.sheets.values() {
-        let b = branch.get(&sh.parent).cloned().ok_or_else(|| {
-            malformed(format!("{}'s parent {} is not a heading", sh.id, sh.parent))
-        })?;
-        branch.insert(sh.id.clone(), b);
-    }
-    let branches: BTreeSet<String> = tree.groups.keys().map(|g| branch[g].clone()).collect();
-
-    // ── where each branch hangs: a subsystem group on the heading its
-    // crossing row crosses to, any other on its parent
-    let mut parent_of: BTreeMap<String, String> = tree
-        .groups
-        .values()
-        .map(|g| (g.id.clone(), g.parent.clone()))
-        .collect();
-    let mut mounts: Vec<(String, String)> = Vec::new();
-    for g in tree.groups.values() {
-        let Some(p) = tree.groups.get(&g.parent) else {
-            continue;
-        };
-        let b = &branch[&g.id];
-        if p.layer == g.layer || &branch[&p.id] == b {
-            continue;
-        }
-        let on = if g.layer == 3 {
-            let crossings: BTreeSet<&str> = tree
-                .sheets
-                .values()
-                .filter(|s| &branch[&s.id] == b && !s.crosses_to.is_empty())
-                .map(|s| s.crosses_to.as_str())
-                .collect();
-            match crossings.into_iter().collect::<Vec<_>>().as_slice() {
-                [one] if tree.groups.contains_key(*one) => one.to_string(),
-                other => {
-                    return Err(malformed(format!(
-                    "{b} crosses to {other:?}: a group hangs from one heading, its crossing row's"
-                )))
-                }
-            }
-        } else {
-            g.parent.clone()
-        };
-        parent_of.insert(g.id.clone(), on.clone());
-        mounts.push((on, b.clone()));
-    }
-
-    // ── the files
-    let producers = Producers::new(tree, &branch);
-    let mut group_files: BTreeMap<String, File> = BTreeMap::new();
-    for b in &branches {
-        // Its top: the heading whose parent is in no branch, or another's.
-        let top = tree
-            .groups
-            .values()
-            .find(|g| &branch[&g.id] == b && branch.get(&g.parent) != Some(b))
-            .ok_or_else(|| malformed(format!("{b} has no heading at its top")))?;
-        let mut f = File::new(Kind::Group, app);
-        f.meta.insert("group_id".into(), b.clone());
-        f.meta.insert("writer".into(), top.owner.clone());
-        f.meta.insert("based_on".into(), String::new());
-        group_files.insert(b.clone(), f);
-    }
-    for (on, b) in &mounts {
-        group_files
-            .get_mut(&branch[on])
-            .expect("every branch has a file")
-            .mounts
-            .push(Mount {
-                block_uid: on.clone(),
-                group_id: b.clone(),
-                release: String::new(),
-            });
-    }
-
-    // ── the headings, from their layer files, and the loops
-    let mut layer_files: Vec<PathBuf> = fs
-        .entries(&root.join("layers"))
-        .map_err(|e| io_error(&root.join("layers"), e))?
-        .into_iter()
-        .filter(|p| p.extension().is_some_and(|e| e == "toml"))
-        .collect();
-    layer_files.sort();
-    let mut loops: Vec<(TomlTable, String)> = Vec::new();
-    for p in &layer_files {
-        let text = read_text(fs, p)?;
-        let stem = p
-            .file_stem()
-            .and_then(|s| s.to_str())
-            .unwrap_or("")
-            .to_string();
-        let what = format!("layers/{stem}.toml");
-        let mut v = toml_table(&text, &what)?;
-        for it in take_array(&mut v, "iterate", &what)? {
-            loops.push((it, what.clone()));
-        }
-        let groups = take_array(&mut v, "group", &what)?;
-        let relates = v.remove("relates");
-        if !v.is_empty() {
-            return Err(malformed(format!(
-                "{what} holds {:?}, which a layer file has not",
-                v.keys().collect::<Vec<_>>()
-            )));
-        }
-        let kept_in = match groups.as_slice() {
-            [] if relates.is_none() => None,
-            [g] => Some(text_of(g.get("id").cloned(), &what)?),
-            _ => {
-                return Err(malformed(format!(
-                    "{what} holds {} headings: a layer file holds one",
-                    groups.len()
-                )))
-            }
-        };
-        for mut g in groups {
-            let id = text_of(g.remove("id"), &what)?;
-            g.remove("parent");
-            let ord = match g.remove("order") {
-                None => 0,
-                Some(Value::Integer(i)) => i,
-                Some(other) => return Err(malformed(format!("{what}: order is {other}"))),
-            };
-            g.remove("layer");
-            for mut it in take_array(&mut g, "iterate", &what)? {
-                it.insert("on".into(), Value::String(id.clone()));
-                loops.push((it, what.clone()));
-            }
-            let grp = &tree.groups[&id];
-            let b = &branch[&id];
-            let parent = &parent_of[&id];
-            let f = group_files.get_mut(b).expect("every branch has a file");
-            f.blocks.push(Block {
-                uid: id.clone(),
-                id: id.clone(),
-                parent_uid: if branch.get(parent) == Some(b) {
-                    parent.clone()
-                } else {
-                    String::new()
-                },
-                question: String::new(),
-                behaviour: "children".into(),
-                perspective: perspective(grp.layer)?.into(),
-                ord,
-                archived: 0,
-                contract_version: 1,
-                revision: 1,
-            });
-            let mut c = TomlTable::new();
-            c.insert("file".into(), Value::String(stem.clone()));
-            g.insert(CONVERTED.into(), Value::Table(c));
-            if let Some(r) = &relates {
-                g.insert("relates".into(), r.clone());
-            }
-            f.texts.push(text_row(&id, HEADING, toml_text(&g, &what)?));
-        }
-        let keeper = match &kept_in {
-            Some(id) => branch[id].clone(),
-            None => SYSTEMS.to_string(),
-        };
-        group_files
-            .get_mut(&keeper)
-            .expect("every branch has a file")
-            .texts
-            .push(text_row(FILE, &format!("{KEPT}{what}"), text));
-    }
-    for (n, (mut it, what)) in loops.into_iter().enumerate() {
-        let members: Vec<String> = match it.remove("nodes") {
-            Some(Value::Array(a)) => a
-                .into_iter()
-                .map(|v| text_of(Some(v), &what))
-                .collect::<Result<_, _>>()?,
-            _ => Vec::new(),
-        };
-        let on = match it.remove("on") {
-            Some(Value::String(on)) => on,
-            _ => smallest_holding(tree, &parent_of, &members)?,
-        };
-        let settles = text_of(it.remove("converge_on"), &what)?;
-        let tolerance = it
-            .remove("tolerance")
-            .map(|v| number_text(&v, &what))
-            .transpose()?
-            .unwrap_or_default();
-        let max = match it.remove("max_iter") {
-            None => 0,
-            Some(Value::Integer(i)) => i,
-            Some(other) => return Err(malformed(format!("{what}: max_iter is {other}"))),
-        };
-        let uid = format!("loop-{}", n + 1);
-        let f = group_files
-            .get_mut(&branch[&on])
-            .expect("every branch has a file");
-        f.loops.push(Loop {
-            uid: uid.clone(),
-            block_uid: on,
-            members: members.join(","),
-            settles,
-            tolerance,
-            max_iterations: max,
-        });
-        f.texts.push(text_row(&uid, LOOP, toml_text(&it, &what)?));
-    }
-
-    // ── the sources, and the cases, kept as they are by their path
-    let sources = root.join("sources/sources.toml");
-    group_files
-        .get_mut(SYSTEMS)
-        .expect("the systems branch has a file")
-        .texts
-        .push(text_row(
-            FILE,
-            &format!("{KEPT}sources/sources.toml"),
-            read_text(fs, &sources)?,
-        ));
-    let mut out: Vec<(String, File)> = Vec::new();
-    let mut cases: Vec<PathBuf> = fs
-        .entries(&root.join("cases"))
-        .map_err(|e| io_error(&root.join("cases"), e))?;
-    if fs.is_dir(&root.join("cases/examples")) {
-        cases.extend(
-            fs.entries(&root.join("cases/examples"))
-                .map_err(|e| io_error(&root.join("cases/examples"), e))?,
-        );
-    }
-    cases.retain(|p| fs.is_file(p));
-    cases.sort();
-    for p in cases {
-        let rel = p
-            .strip_prefix(root)
-            .map_err(|_| malformed(format!("{} is outside the tree", p.display())))?
-            .to_string_lossy()
-            .replace('\\', "/");
-        let name = p
-            .file_stem()
-            .and_then(|s| s.to_str())
-            .unwrap_or("")
-            .to_string();
-        let mut f = File::new(Kind::Case, app);
-        f.meta.insert("name".into(), name.clone());
-        let body = read_text(fs, &p)?;
-        if rel.ends_with(".toml") {
-            f.texts.push(text_row(FILE, &format!("{KEPT}{rel}"), body));
-        } else {
-            f.tables.push(Tbl {
-                scope: FILE.into(),
-                path: rel.clone(),
-                csv: body,
-            });
-        }
-        f.check_meta()?;
-        let dir = rel.rsplit_once('/').map(|(d, _)| d).unwrap_or("cases");
-        out.push((format!("{dir}/{name}.{CASE_FILE}"), f));
-    }
-
-    // ── every row, as its node file
-    for sh in tree.sheets.values() {
-        let b = &branch[&sh.id];
-        let path = sh.dir.join("node.toml");
-        let raw_text = read_text(fs, &path)?;
-        let raw = toml_table(&raw_text, &path.display().to_string())?;
-        let fx = sh.dir.join("fixtures.toml");
-        let fixtures = if fs.is_file(&fx) {
-            Some(read_text(fs, &fx)?)
-        } else {
-            None
-        };
-        let pc = sh.dir.join("parity.csv");
-        let parity = if fs.is_file(&pc) {
-            Some(read_text(fs, &pc)?)
-        } else {
-            None
-        };
-        let f = node_file(
-            sh,
-            raw,
-            &raw_text,
-            fixtures.as_deref(),
-            parity,
-            b,
-            &producers,
-            app,
-        )?;
-        out.push((format!("groups/{b}/nodes/{}.{NODE_FILE}", sh.id), f));
-    }
-
-    // ── the blocks a breakdown does not hold yet, as open blocks
-    //
-    // Each takes the first place after its heading's rows that no row of the
-    // design holds: a place is the design's, not the group's (gate V14).
-    let mut taken: BTreeSet<u32> = tree.sheets.values().map(|s| s.order).collect();
-    for (group, names) in PROPOSED {
-        let interface = tree
-            .sheets
-            .values()
-            .find(|s| &branch[&s.id] == group && !s.crosses_to.is_empty())
-            .ok_or_else(|| {
-                malformed(format!("{group} has no crossing row to open a level below"))
-            })?;
-        let heading = &tree.groups[*group];
-        let mut order = tree
-            .sheets
-            .values()
-            .filter(|s| s.parent == heading.id)
-            .map(|s| s.order)
-            .max()
-            .unwrap_or(0);
-        for (name, why) in *names {
-            let id = proposed_id(group, name);
-            if tree.sheets.contains_key(&id) || tree.groups.contains_key(&id) {
-                return Err(malformed(format!(
-                    "the proposed block {id} is already in the design"
-                )));
-            }
-            order += 1;
-            while !taken.insert(order) {
-                order += 1;
-            }
-            let text = proposed_sheet(
-                &id,
-                name,
-                why,
-                interface,
-                &heading.id,
-                &heading.owner,
-                order,
-            );
-            let raw = toml_table(&text, &id)?;
-            let sheet = Sheet {
-                id: id.clone(),
-                parent: heading.id.clone(),
-                owner: heading.owner.clone(),
-                state: "empty".into(),
-                kind: "computed".into(),
-                layer: 3,
-                crate_name: interface.crate_name.clone(),
-                ..Sheet::default()
-            };
-            let f = node_file(&sheet, raw, &text, None, None, group, &producers, app)?;
-            out.push((format!("groups/{group}/nodes/{id}.{NODE_FILE}"), f));
-        }
-    }
-
-    for (b, f) in group_files {
-        f.check_meta()?;
-        f.check_values()?;
-        out.push((format!("groups/{b}/{b}.{GROUP_FILE}"), f));
-    }
-    out.sort_by(|a, b| a.0.cmp(&b.0));
-    Ok(out)
-}
-
-/// The design's files, read as the repository's folders: the inverse of
-/// [`convert`].
+/// The design's files, read as the folders they were converted from.
 ///
 /// The loader reads the design through it as it reads a checkout: each node
 /// folder's sheet, cases and parity grid, each layer file, the cases and the
@@ -1713,8 +849,8 @@ pub fn serve(root: &Path) -> Result<(Served, String), Error> {
     Ok((Served::new(root, &files)?, fingerprint))
 }
 
-/// Every group, node and case file in `dir`, laid out as [`convert`] lays
-/// them out, each with its path there, and the fingerprint of all of them: the
+/// Every group, node and case file in `dir`, laid out as `design/` lays them
+/// out, each with its path there, and the fingerprint of all of them: the
 /// SHA-256 of every file's path and bytes, in order. Installed only: a page
 /// has no folder, and is handed the files' rows instead (`crate::rows`).
 #[cfg(not(target_arch = "wasm32"))]

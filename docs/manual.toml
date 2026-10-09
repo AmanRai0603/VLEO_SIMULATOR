@@ -157,7 +157,7 @@ say = "First time? The tool explains its own figure."
 ui = "▸ how to read it"
 
 [[layer.section.step]]
-say = "The pattern every row folder repeats — what is written by hand and what is generated — is under its own tab."
+say = "The pattern every row's file repeats — what is written by hand and what is generated — is under its own tab."
 ui = "⌗ Architecture"
 
 
@@ -170,8 +170,8 @@ answer = "A row's page opens with its answer first, then says it simply, then th
 body = """
 A row's page answers four questions, in order.
 
-**What it is made of** — the files in its folder, which one a person writes \
-(`node.toml`, the sheet) and which ones are generated from it.
+**What it is made of** — what its node file holds, which part a person writes \
+(the sheet, with its method and cases) and what is rendered from it.
 
 **What it is joined to** — the rows it reads, the rows that read it, and which \
 customer targets it feeds.
@@ -187,7 +187,7 @@ the row rests on and why it changed.
 **The picture** — for the rows that have one, the figure the claim is argued \
 from.
 
-A **grey** row is *seeded*: its folder exists and nothing is specified in it \
+A **grey** row is *seeded*: it exists and nothing is specified in it \
 yet. That is the normal state of most of the tree — the decomposition written \
 down before anyone was asked to fill it — not a failure; its node engineer \
 fills it. A row marked **INACTIVE** has a relation but nothing on its sheet \
@@ -1453,7 +1453,7 @@ id = "code-shape"
 title = "The shape of it"
 who = "developer"
 kind = "explanation"
-answer = "One kernel computes every number; everything else is arranged in rings that depend inward only. A row is one folder, and only its node.toml is written by hand."
+answer = "One kernel computes every number; everything else is arranged in rings that depend inward only. A row is one file in design/, and nothing in the repository writes it."
 body = """
 **One kernel computes every number.** Everything else is arranged in rings \
 that depend inward only: quantities and portable maths (`vleo-units`), then the \
@@ -1471,12 +1471,13 @@ system's, layer 3 the subsystems', and layer 4 is a run. Each subsystem reaches 
 the layer above through exactly one interface row, so *where did this number \
 come from* is answered by walking upward without ever leaving the tree.
 
-**One row is one folder**, under `crates/vleo-mod-<subsystem>/nodes/<row>/`:
+**One row is one file**, `design/groups/<group>/nodes/<row>.vnode`:
 
-`node.toml` — the sheet, with the row's method.
-`fixtures.toml` — known-good values from outside this code.
-Nothing in the folder is generated, and no row holds code: its method is run by the interpreter.
-The row's page is not in the folder: the tool renders it from the sheet when it is opened.
+its block, ports and wires — what it asks, reads and returns, and from where.
+its test cases — known-good values from outside this code.
+its texts — the row's method, its explanations, and the sheet it was converted from.
+Nothing in the repository writes it, and no row holds code: its method is run by the interpreter.
+The row's page is not in the file: the tool renders it from the sheet when it is opened.
 
 The rules that do not bend, and the developer's loop, are in `AGENTS.md`; the \
 reasoning behind the architecture is in `docs/ARCHITECTURE.md`."""
@@ -1588,7 +1589,7 @@ who = "user"
 [[cannot]]
 place = "browser"
 what = "Add a new node"
-why = "A new node is a new folder in the tree with an owner, a place among its siblings and interfaces to rows that exist."
+why = "A new node is a new node file in the tree with an owner, a place among its siblings and interfaces to rows that exist."
 instead = "Its subsystem engineer adds it to the group, and it arrives with the group's sealed release."
 who = "user"
 
@@ -1602,8 +1603,8 @@ who = "user"
 [[cannot]]
 place = "browser"
 what = "Move a node, rename it, or change its owner, layer, kind or order"
-why = "These move the tree or change who reviews the row. Its identifier is also its folder and its variable name."
-instead = "Edit node.toml in a checkout, then `cargo run -p xtask -- gate`; the reason for each is under Reference."
+why = "These move the tree or change who reviews the row. Its identifier is also its file and its variable name."
+instead = "Its subsystem engineer changes it in the group's release (docs/GROUP_APPS.md); the reason for each is under Reference."
 who = "developer"
 
 [[cannot]]
@@ -1617,7 +1618,7 @@ who = "user"
 place = "browser"
 what = "Add a known-good value (a fixture)"
 why = "An expected value may never come from the code under test. Only a person records one, with its source."
-instead = "Edit fixtures.toml in the row's folder, with the value's source and provenance."
+instead = "The node engineer adds it to their node's file in their group's application, with the value's source and provenance."
 who = "developer"
 
 [[cannot]]
@@ -1808,6 +1809,14 @@ effect = "reads"
 
 [[command]]
 tool = "xtask"
+name = "sheet"
+usage = "sheet <node> ... | --all"
+what = "Each node's sheet as the design holds it, as JSON by id: the text every reader of a sheet reads, for a tool outside the program to read through the one reader."
+who = "developer"
+effect = "reads"
+
+[[command]]
+tool = "xtask"
 name = "why"
 usage = "why <node>"
 what = "A node's history in one place: every recorded version and who made it, the commits that changed it, how its code came to be, and its gate, run now."
@@ -1883,7 +1892,7 @@ effect = "reads"
 tool = "xtask"
 name = "codeowners"
 usage = "codeowners"
-what = "Regenerate CODEOWNERS from the layer files."
+what = "Regenerate CODEOWNERS from areas/teams.toml, for code paths only."
 who = "developer"
 effect = "writes"
 
@@ -2312,7 +2321,7 @@ default = "found under PLAYWRIGHT_BROWSERS_PATH"
 
 [[folder]]
 name = "crates"
-what = "The whole Rust workspace: the rings, the faces, and every row's folder under crates/vleo-mod-*/nodes/."
+what = "The whole Rust workspace: the rings, the faces, the library that reads every design file, and their tests. It holds no design."
 who = "developer"
 
 [[folder]]
@@ -2326,29 +2335,19 @@ what = "The browser face: one page, one stylesheet and its modules. It holds no 
 who = "developer"
 
 [[folder]]
-name = "layers"
-what = "The rows of the tree that are not calculations: headings, parents, groups and who owns each subsystem. CODEOWNERS is generated from it."
-who = "developer"
-
-[[folder]]
 name = "groups"
 what = "The group folder pattern, groups/SPEC.toml, from which the group and node applications (web/group.html, web/node.html), docs/GROUP_FOLDER.md and the assistant's skill in groups/skill/ are generated; groups/schema.sql, the database format of a group's structure, node and release files; groups/example/, a small illustrative group to read and copy; and groups/solar/, the solar group's whole design as a group would hold it — every node's pseudocode checked against its fixtures, its results, evidence and pictures — which tools/group_db.mjs makes into the group's database files. A group's own files live on its shared drive, not here."
 who = "developer"
 
 [[folder]]
 name = "design"
-what = "The design as its files: each group's file and node files under design/groups/, each case under design/cases/, converted from the node sheets and held equal to them by a test until the sheets leave. Nothing in the repository writes it any more, and it is never edited by hand."
+what = "The design as its files: each group's file and node files under design/groups/, each case under design/cases/, and the sources in the systems' file. The node sheets it was converted from are gone, and a test refuses one that comes back. Nothing in the repository writes it, and it is never edited by hand."
 who = "developer"
 
 [[folder]]
 name = "cases"
-what = "The one case: which inputs are the condition the design flies in, and so which are the customer's. Its values are not kept here — they are saved by the tool outside the repository. `cases/examples/` holds case files to read and copy, one as an older version of the tool wrote it."
+what = "Case files to read and copy, in `cases/examples/`, one as an older version of the tool wrote it. The one case itself — which inputs are the condition the design flies in, and so which are the customer's — is in design/cases/; its values are saved by the tool outside the repository."
 who = "user"
-
-[[folder]]
-name = "sources"
-what = "Every citation, as an entry with an id rather than as free text, so retiring a source finds every row that rested on it."
-who = "developer"
 
 [[folder]]
 name = "bundles"
@@ -2378,11 +2377,6 @@ who = "developer"
 [[folder]]
 name = "matlab"
 what = "A thin MATLAB face and the published output of the study this was ported from."
-who = "developer"
-
-[[folder]]
-name = "cd06"
-what = "The planning document's own tree, extracted verbatim — where the rows came from."
 who = "developer"
 
 [[folder]]
@@ -2443,7 +2437,7 @@ who = "developer"
 
 [[folder]]
 name = "CODEOWNERS"
-what = "Who reviews which rows. Generated from layers/ — never edited by hand."
+what = "Who reviews which code. Generated from areas/teams.toml, for code paths only — never edited by hand."
 who = "developer"
 
 [[folder]]

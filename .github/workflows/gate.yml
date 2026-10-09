@@ -199,14 +199,6 @@ jobs:
         run: |
           python3 tools/docs_lint.py --selftest
           python3 tools/docs_lint.py
-      # Every node is the same files in one directory, and that uniformity is
-      # what makes adding a node a copy rather than a decision. It degrades one
-      # folder at a time, and each individual departure looks harmless — which
-      # is exactly the shape of thing a person will not notice and a check will.
-      - name: no node folder has drifted from the template
-        run: |
-          python3 tools/template_check.py --selftest
-          python3 tools/template_check.py
       # The same port, against the MATLAB tool's own saved run rather than
       # against the study's published CSVs. Its selftest needs no daemon; the
       # comparison itself runs in the panels job, where one is already up.

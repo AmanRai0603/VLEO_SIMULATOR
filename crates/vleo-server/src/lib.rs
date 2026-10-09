@@ -91,7 +91,7 @@ pub fn serve(
     vleo_data::crash::install("vleo-server", env!("CARGO_PKG_VERSION"));
     let root = root.unwrap_or_else(repo_root);
     let (tree, design, today) = open_tree(&root)?;
-    let engine = run_on_the_files(&*tree, &root, design.is_some())?;
+    let engine = run_on_the_files(&*tree, &root)?;
     let (data, data_versions, bundles, data_refused) = resolve_data(&root);
 
     // Try a range and record the port that actually bound. A daemon that fails
@@ -305,8 +305,8 @@ pub fn changed_in_the_design() -> Vec<(String, String)> {
 type Opened = (std::sync::Arc<dyn Files>, Option<DesignFile>, Vec<String>);
 
 /// The design the tool is given: the folder `VLEO_DESIGN` names, or
-/// `design/` where the tool finds it; the sheets' folders only where there is
-/// neither.
+/// `design/` where the tool finds it. Where there is neither, there is no
+/// design, and the tool says so rather than reading anything in its place.
 fn open_base(root: &Path) -> Result<(std::sync::Arc<dyn Files>, Option<DesignFile>), String> {
     let named = std::env::var("VLEO_DESIGN")
         .ok()
@@ -327,7 +327,11 @@ fn open_base(root: &Path) -> Result<(std::sync::Arc<dyn Files>, Option<DesignFil
     if root.join("design").is_dir() {
         return open_converted(root, &root.join("design"));
     }
-    Ok((std::sync::Arc::new(vleo_sheet::files::Disk), None))
+    Err(format!(
+        "no design where the tool looked: {} holds no design/, and VLEO_DESIGN names \
+         none. Open the tool where the design is, or name it with VLEO_DESIGN",
+        root.display()
+    ))
 }
 
 /// Whether an application at version `app` can run what the application at
@@ -407,8 +411,8 @@ fn open_converted(
 /// where the tool looked: the tool holds no design of its own to run instead.
 pub fn run_the_design(root: Option<PathBuf>) -> Result<String, String> {
     let root = root.unwrap_or_else(repo_root);
-    let (tree, design, today) = open_tree(&root)?;
-    let mut said = run_on_the_files(&*tree, &root, design.is_some())?;
+    let (tree, _, today) = open_tree(&root)?;
+    let mut said = run_on_the_files(&*tree, &root)?;
     for line in today {
         said.push_str("\n  ");
         said.push_str(&line);
@@ -417,14 +421,7 @@ pub fn run_the_design(root: Option<PathBuf>) -> Result<String, String> {
 }
 
 /// Run the engine on the graph read from `files`, and say which graph runs.
-fn run_on_the_files(files: &dyn Files, root: &Path, from_a_file: bool) -> Result<String, String> {
-    if !from_a_file && !root.join("layers").is_dir() {
-        return Err(format!(
-            "no design where the tool looked: no design/ folder and no layers/ under {}, and \
-             VLEO_DESIGN names none. Open the tool where the design is, or name it with VLEO_DESIGN",
-            root.display()
-        ));
-    }
+fn run_on_the_files(files: &dyn Files, root: &Path) -> Result<String, String> {
     let tree = vleo_sheet::load::load_all_from(files, root)
         .map_err(|e| format!("the design's files do not load: {e}"))?;
     let graph = vleo_modules::opened::graph(&tree)
@@ -463,9 +460,7 @@ fn short(h: u64) -> String {
 /// then upward from the binary itself — a kit keeps the binary beside them, and
 /// a double-clicked binary starts wherever the desktop chose.
 fn repo_root() -> PathBuf {
-    let holds = |p: &Path| {
-        p.join("web").is_dir() && (p.join("design").is_dir() || p.join("layers").is_dir())
-    };
+    let holds = |p: &Path| p.join("web").is_dir() && p.join("design").is_dir();
     if let Ok(r) = std::env::var("VLEO_ROOT") {
         let r = PathBuf::from(r);
         if holds(&r) {

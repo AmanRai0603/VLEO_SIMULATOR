@@ -1,4 +1,4 @@
-//! The N2 of the converted design, drawn from its files' wires, shows one
+//! The N2 of the design, drawn from its files' wires, shows one
 //! loop, and it is the one the design declares, on the block that holds it
 //! (docs/PLAN_1_0.md, phase E: "its N2 shows the one declared loop";
 //! docs/SYSTEM_MODEL.md, section 5).
@@ -10,7 +10,6 @@ use std::sync::OnceLock;
 use vleo_files::convert;
 use vleo_files::model::File;
 use vleo_files::n2::Design;
-use vleo_sheet::files::Disk;
 
 fn root() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../..")
@@ -19,8 +18,9 @@ fn root() -> PathBuf {
 fn converted() -> &'static [(String, File)] {
     static FILES: OnceLock<Vec<(String, File)>> = OnceLock::new();
     FILES.get_or_init(|| {
-        let tree = vleo_sheet::load::load_all(&root()).expect("the design loads");
-        convert::convert(&tree, &Disk, "vleo test").expect("the design converts")
+        convert::read_folder(&root().join("design"))
+            .expect("design/ reads")
+            .0
     })
 }
 

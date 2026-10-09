@@ -57,14 +57,14 @@ own manual shows the live counts for the copy you are running.
 
 | | |
 |---|---|
-| rows in the tree | 1396 across four layers — 320 written, 1076 seeded (`xtask status`) |
+| rows in the tree | 1401 across four layers — 320 written, 1081 seeded (`xtask status`) |
 | layer 1 · management | 174 rows, from CD-06 |
 | layer 2 · the system | 321 rows, from CD-06 |
-| layer 3 · subsystem | 901 rows in 18 groups — 16 subsystems and 2 additions |
+| layer 3 · subsystem | 906 rows in 18 groups — 16 subsystems and 2 additions |
 | of the 320 written | 130 declared values · 172 computed · 12 KPI closures · 1 requirement · 5 achieved |
 | of the 320 written, which answer | 176 answer · 137 do not yet, because the relation is stated and never derived · 7 retired (`xtask active`) |
 | declared edges | 555 derivation · 298 contribution · 179 relation (`xtask graph`) |
-| crates | 17 — engine, server and face crates; the node folders are not crates |
+| crates | 17 — engine, server and face crates; the design is not a crate, it is the files in `design/` |
 | faces | browser · daemon · command line · C ABI · Python wheel · MATLAB |
 | deepest declared chain | 33 nodes, mission duration to cost per year — declared, not yet runnable end to end |
 | 80-point sweep through the daemon | 36–37 ms, three runs, release build — the sustained solar closure against launch date. A sweep of thrust-to-drag or of cost per year answers none of its points today, and records every refusal |
@@ -246,17 +246,15 @@ moment the row is evaluated.
 
 | folder | what it holds | why it is here |
 |---|---|---|
-| `crates/` | the whole Rust workspace: the four rings, the faces, and **1396 node folders** under `crates/vleo-mod-*/nodes/` | this is the tool. Almost every file in the repository is here, and most of those are the node folders: each sheet and its fixtures, both written by hand |
-| `layers/` | the rows in the tree that are **not** nodes — headings, parents, group edges, subsystem ownership | the decomposition itself. `CODEOWNERS` is generated from it, so moving a branch here moves who reviews what |
-| `tools/` | the Python side: the seeder that built the tree, and every check the pipeline runs that is not `cargo` | the checks that cannot be expressed as a Rust test — screenshots, parity against MATLAB, commit messages, the house rules' own references. Each proves itself with `--selftest` before it is trusted to decide anything |
+| `crates/` | the whole Rust workspace: the four rings, the faces, the library that reads every design file, and their tests | this is the tool. It holds no design: a test refuses a node sheet that comes back here |
+| `design/` | the design as its files: each group's `<group>.vgroup` (its headings, mounts and loops) and one `.vnode` per row, **1401 rows**; `cases/`; and every citation as an entry with an id, in the systems' file | what the engine runs. Nothing in the repository writes it; a group's work arrives as its sealed release in the application (`docs/GROUP_APPS.md`) |
+| `tools/` | the Python side: every check the pipeline runs that is not `cargo` | the checks that cannot be expressed as a Rust test — screenshots, parity against MATLAB, commit messages, the house rules' own references. Each proves itself with `--selftest` before it is trusted to decide anything |
 | `web/` | the browser face — one `index.html`, one stylesheet, 23 ES modules, the manual among them | how the tool is read. It talks to `vleo-daemon` over HTTP and holds no physics of its own |
 | `panels/` | 14 declared panel specs, plus `REVIEW.md` and 16 reference screenshots — light and dark for the 8 panels checked on pixels | a figure nobody checked is a figure that silently goes wrong. The spec says what the panel must show; the references are what it looked like when a person last approved it |
 | `docs/` | 15 prose documents — two of them generated from the sheets, VARIABLES.md and the de-risking narrative — 4 diagrams, `manual.toml` — the source of the manual in the tool — and `examples/`, a saved result and a lesson; indexed under **Reference** below | the written record. `VARIABLES.md` is generated; `MATLAB_PORT_PLAN.md` is the row-by-row account of the port and the longest thing here |
 | `bundles/` | reference data as published sets, each with a manifest, a licence term and a hash | rule 2's external oracle. An expected value may never come from the code under test, so the data it is checked against is versioned and verified rather than fetched |
-| `cases/` | the one case, `multipayload.toml` — which inputs are the condition, and so which are the customer's — and `examples/`, case files to copy — one as an older tool wrote it | what a run is on. Its values are not kept here: a case per customer would grow the tree with the order book, so values are uploaded or typed in the tool and saved outside the repository. Gate check V16 refuses a condition that is not a real, settable input |
+| `cases/` | `examples/`, case files to copy — one as an older tool wrote it. The one case itself — which inputs are the condition, and so which are the customer's — is `design/cases/multipayload.vcase` | what a run is on. Its values are not kept here: a case per customer would grow the tree with the order book, so values are uploaded or typed in the tool and saved outside the repository. Gate check V16 refuses a condition that is not a real, settable input |
 | `matlab/` | a thin MATLAB face (`+vleo`) and the study's own published CSV | the tool this was ported from. Its saved run is what `tools/mat_parity.py` compares against |
-| `sources/` | every citation as an object with an id, not as free text | a fixture references `jacchia1971`, never a sentence. Marking a source superseded then lists every row that depended on it, in one query |
-| `cd06/` | `tree.json` — the CD-06 planning document's own node tree, extracted verbatim | where the 1396 rows came from. `tools/seed_tree.py` reads it, so the tree's shape is traceable to the document rather than asserted |
 | `areas/` | six area files that narrow `AGENTS.md` per area | the nearer file wins, so an area can be stricter than the root without restating it |
 | `xtask/` | the task runner — `gate`, `method`, `ready`, `docs`, `assemble`, `status` and the rest | the one entry point for everything generated or checked. `cargo run -p xtask -- gate && cargo test` is the command that must be green |
 | `.claude/` | four hooks | what fires on an edit made in an assistant's session — the same regeneration and gate anyone's edit goes through |
@@ -285,7 +283,7 @@ its method, which the interpreter runs.
 |---|---|---|
 | 1 management | the programme's own view | 174 |
 | 2 the system | what the spacecraft must do | 321 |
-| 3 subsystem | sixteen subsystems and two additions | 901 |
+| 3 subsystem | sixteen subsystems and two additions | 906 |
 | 4 the run | what a single evaluation produced | — |
 
 Each subsystem reaches the layer above through exactly one `l3_*_interface`
@@ -295,20 +293,23 @@ reach another by a side door.
 
 ![Four layers, with what is specified and what is deliberately not](docs/img/layers.png)
 
-### One node is one folder
+### One node is one file
 
 ```
-crates/vleo-mod-prop/nodes/prop_capture_efficiency/
-  node.toml      the sheet
-  fixtures.toml  known-good values, with where each came from
-  parity.csv     optional — the prior implementation's parity grid
+design/groups/l3_prop/nodes/prop_capture_efficiency.vnode
+  block        the row: its id, its question, how it answers
+  port, wire   what it reads and returns, and where each input comes from
+  test_case    known-good values, with where each came from
+  text         its method, its explanations, and the sheet it was converted from
 ```
 
-The node's relation is its method, the pseudocode in the sheet's `[method]`
+The node's relation is its method, the pseudocode held in the node's file
 ([`docs/PSEUDOCODE.md`](docs/PSEUDOCODE.md)); the method interpreter runs it
-when the engine runs the design read from `design/`. Every file in the folder
-is written by hand, and nothing in it is generated. The node's page is not a file in the folder either: the
-engine renders it from the sheet when it is opened.
+when the engine runs the design read from `design/`. The file is written by
+its node engineer in the application, and nothing in the repository writes it.
+`cargo run -p xtask -- sheet <node>` prints the sheet text it holds. The node's
+page is not in the file either: the engine renders it from the sheet when it is
+opened.
 
 ![One node: its tabs, its answer, the eight credibility factors with the
 lowest governing, and the evidence that executed](docs/img/node.png)
@@ -347,17 +348,17 @@ Nothing here is autonomous, and the line that matters is between the people who
 
 Two human decisions per node, and everything between them is a command. If a
 node takes materially longer than that, the template has a defect worth finding
-— it will be paid 1396 times.
+— it will be paid 1401 times.
 
 ### The generators
 
 One runs per node, and it writes nothing. It reads that node's sheet and
-nothing else, which is what makes 1396 rows 1396 independent pieces of work
+nothing else, which is what makes 1401 rows 1401 independent pieces of work
 rather than one large one.
 
 | generator | emits | what it is for |
 |---|---|---|
-| page | — | this node's fragment of the document, rendered from the sheet when it is opened; never written to the folder |
+| page | — | this node's fragment of the document, rendered from the sheet when it is opened; never written to the design |
 
 What the generated tests once asked of one node — each fixture within tolerance, each
 node engineer's case answered or refused as their code did, three properties
@@ -572,7 +573,7 @@ achievable and the nightly check becomes one people learn to ignore.
 ## Where it stands
 
 The tree is built and mostly empty, which is the state it is designed to be
-useful in. 320 rows of 1396 have content. Of those, 176 answer. 137 are written
+useful in. 320 rows of 1401 have content. Of those, 176 answer. 137 are written
 but do not answer yet: their relation is stated and has never been derived —
 the sheet has no `[theory]` block saying why it is this relation — so they
 return `NotRun` by name with that reason, and `xtask active` lists each one

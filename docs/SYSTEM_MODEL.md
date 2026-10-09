@@ -220,14 +220,15 @@ Browning, 2012), and it is drawn from the wires, never separately.
 - **A loop belongs to the smallest block that contains it.** It is declared
   there, with what must settle and how tightly, and iterated there. An
   undeclared loop is refused by name, never run forever. VLEO declares its one
-  architectural loop today in `layers/cycles.toml`: power becomes heat, heat
+  architectural loop today in the systems' file,
+  `design/groups/systems/systems.vgroup`: power becomes heat, heat
   sets the array temperature, which sets the power available, which throttles
   the thruster. OpenMDAO puts each solver on the group that holds the cycle in
-  the same way (Gray et al., 2019). A group in a layer file declares one as
-  `[[group.iterate]]`, in the same words; the gate refuses one declared on a
-  block too small to hold it, by name, and notes one declared on no block with
-  the block it belongs on. The loop in `layers/cycles.toml` belongs on `root`,
-  and moving it there is its owner's change to the design.
+  the same way (Gray et al., 2019). A group's file declares one as a
+  `loop` of the block it belongs on, in the same words. The conversion put
+  VLEO's on `sys_satellite_subsystems`, the smallest block that holds every row
+  it runs through, and `crates/vleo-files/src/n2.rs` finds every loop the wires
+  make and whether its block declares it.
 - **The matrix advises the breakdown.** Reordered, it exposes clusters of
   blocks that mostly talk to each other: candidates for one block and one
   owner.
@@ -351,7 +352,7 @@ a new requirement is data, and never waits for a developer.
 ## 8 · The spacecraft, broken down
 
 This is the tree as it stands, and where it is proposed to go one level
-deeper. The tree itself is held by the layer files in the repository until
+deeper. The tree itself is held by the group files in `design/` until
 1.0.0, and by the programme and systems groups' files on the shared drive
 after it. This section is a picture of it.
 When the two disagree, the files are right and this page is stale.

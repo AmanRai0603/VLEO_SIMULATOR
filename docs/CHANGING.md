@@ -17,7 +17,7 @@ person approved. Find the place first; the list of what comes with it follows.
 
 | You are changing | It lives in | What comes with it |
 |---|---|---|
-| what a row computes or declares | its sheet, `crates/vleo-mod-<subsystem>/nodes/<id>/node.toml` | its group's sealed release, the generators, fixtures, a de-risking record |
+| what a row computes or declares | its node file, `design/groups/<group>/nodes/<id>.vnode`, written by its node engineer in the application | its group's sealed release, the generators, fixtures, a de-risking record |
 | what the engine answers over HTTP | `crates/vleo-server/src/`, one file per concern | `contract/`, the manual, the mock engine's examples |
 | how something is drawn | `web/js/components.js`, or a panel in `panels/` and `web/js/solar.js` | the panel check, sometimes a reference picture |
 | a new kind of figure | `crates/vleo-modules/src/figure.rs` | a player in `web/js/figures.js`, a sample, the schema |
@@ -127,7 +127,7 @@ its generator would write now.
 | `xtask docs` | the method language's checker, `vleo_sheet::method` | `docs/PSEUDOCODE.md`, the method language's reference — a node's page is rendered when it is opened, never written |
 | `xtask assemble` | every sheet | the index the faces read and every page fragment, in `generated/` |
 | `xtask variables` | every sheet | `docs/VARIABLES.md` |
-| `xtask codeowners` | every sheet's owner | `CODEOWNERS` |
+| `xtask codeowners` | `areas/teams.toml` | `CODEOWNERS`, for code paths only |
 | `xtask derisk` | every `[[version]]` | `docs/DERISK_NARRATIVE.md` |
 | `xtask guides` | `docs/manual.toml` | `docs/roles/*.html` |
 | `xtask pipeline` | the command table in `xtask/src/pipeline.rs` | `docs/PIPELINE.md` |
@@ -137,15 +137,14 @@ its generator would write now.
 **One field, followed through.** `sw_ap_design` declares the lowest answer it
 will give, and why:
 
-    # crates/vleo-mod-solar/nodes/sw_ap_design/node.toml
-    [output]
-    lower = 40.0
-    reason_lower = "the lowest value this relation can return is 48, at G1. …"
+    # design/groups/l3_solar/nodes/sw_ap_design.vnode, its output port
+    lower        = 40.0
+    range_reason = "lower: the lowest value this relation can return is 48, at G1. …"
 
 The engine turns those two lines into a guard that refuses a smaller answer by
 name, with the reason as the refusal's text; the row's page says "Outside
 `40 … 140` the row refuses rather than answers" followed by the same reason.
-Change the bound in the sheet and both move together. That is the whole design
+Change the bound in the node file and both move together. That is the whole design
 in one field: the number and its reason are written once, by a person, and everything
 that repeats them is printed.
 

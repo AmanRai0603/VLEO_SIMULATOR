@@ -38,10 +38,10 @@
 //!   releases, two designs, each row matched by its key and given to its
 //!   block, a block matched by its uid through a rename;
 //!
-//! * [`convert`] — the design itself, from the repository's sheets and layer
-//!   files to its files, once, at the switch-over: each branch's group file,
-//!   a node file per row, each case; and its exact inverse, the files read as
-//!   the folders they were converted from;
+//! * [`convert`] — the design itself: the files in `design/`, each branch's
+//!   group file, a node file per row and each case, read as the folders they
+//!   were converted from, by the one reader every face reads the design
+//!   through ([`convert::open`]);
 //!
 //! * [`n2`] — a block's N2, drawn from the files' wires, and every loop they
 //!   make: the block it belongs on, and whether that block declares it;

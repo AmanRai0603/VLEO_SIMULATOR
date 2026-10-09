@@ -63,7 +63,7 @@ def crate_of(path):
 
 #: A change to any of these reaches every node at once. The work model files
 #: that under H7: two reviewers, because one mistake there is 1361 mistakes.
-WIDE = ("xtask/", "tools/seed_", "tools/nodes/", "tools/crate_skeleton", "crates/vleo-sheet/")
+WIDE = ("xtask/", "crates/vleo-sheet/", "crates/vleo-files/")
 
 
 def review(paths):

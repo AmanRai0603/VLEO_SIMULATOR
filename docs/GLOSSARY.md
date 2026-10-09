@@ -12,18 +12,19 @@ page is right and this one is out of date.
 
 ## The design
 
-**Row** — one small question with one answer: one folder, one sheet, one
-variable whose id is the row's id. The tree has 1396 of them. *Node* means the
+**Row** — one small question with one answer: one node file in `design/`, one
+variable whose id is the row's id. The tree has 1401 of them. *Node* means the
 same thing, from the code's side. → `README.md`
 
 **Layer** — which level of the design a row belongs to: 1 management, 2 the
 system, 3 a subsystem, 4 the run. A layer reads the one below it only through
 a closure. → `AGENTS.md`
 
-**Sheet** — `node.toml`, the row's specification, written by hand beside its
-`fixtures.toml`. Nothing in a row's folder is generated. → `docs/NODE_AUTHORING.md`
+**Sheet** — the row's specification, as text held in its node file in
+`design/`; `cargo run -p xtask -- sheet <node>` prints it. Nothing in the
+repository writes it. → `docs/NODE_AUTHORING.md`
 
-**Seeded / published / deprecated** — a row's `state`. *Seeded*: the folder
+**Seeded / published / deprecated** — a row's `state`. *Seeded*: the row
 exists, and nobody has specified it yet. It cannot run and is reported, not
 failed. *Published*: specified and able to run. *Deprecated*: kept
 so old results still read, and not used. → `docs/NODE_AUTHORING.md`

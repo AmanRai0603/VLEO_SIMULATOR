@@ -40,6 +40,8 @@ import urllib.error
 import urllib.parse
 import urllib.request
 
+import design_sheet
+
 HOST = os.environ.get("VLEO_DAEMON", "http://localhost:7777")
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DECISION = "sw_band_confidence"
@@ -52,13 +54,14 @@ Z_NOW = 1.28
 
 def method_multiplies(row):
     """Whether the row's method multiplies the spread by Z_NOW: `spread * 1.28`,
-    or `const z = 1.28` and `spread * z`. Comments are not the method."""
+    or `const z = 1.28` and `spread * z`. Comments are not the method.
+
+    Read off the design, through its one reader. A row the design does not hold
+    multiplies nothing, which is the answer the check below must see."""
     import re
-    import tomllib
-    sheet = os.path.join(ROOT, "crates/vleo-mod-solar/nodes", row, "node.toml")
     try:
-        text = tomllib.load(open(sheet, "rb")).get("method", {}).get("text", "")
-    except OSError:
+        text = design_sheet.parsed(row).get("method", {}).get("text", "")
+    except design_sheet.NotInDesign:
         return False
     code = "\n".join(l.split("#", 1)[0] for l in text.splitlines())
     z = re.escape(repr(Z_NOW))
@@ -220,13 +223,16 @@ def selftest():
             print("  FAIL %s is the %s edge and the table gives it sign %+d"
                   % (row, "cold" if cold else "hot", sign))
 
+    # Every sheet this reads, in one call to the design's reader rather than one
+    # per row: the design is read whole each time the command runs.
+    design_sheet.preload([DECISION] + [r for r, _, _, _ in BAND])
+
     # 3 · THE ROW THIS IS EVIDENCE FOR EXISTS AND IS SEEDED. If it were published
     #     with a value an agent supplied, that is the one defect nothing else in
-    #     this repository can catch.
-    sheet = os.path.join(ROOT, "crates/vleo-mod-solar/nodes", DECISION, "node.toml")
+    #     this repository can catch. EXISTS now means the design holds it: the
+    #     sheet files are gone, and the design is the only place a row is.
     try:
-        import tomllib
-        d = tomllib.load(open(sheet, "rb"))
+        d = design_sheet.parsed(DECISION)
         if not d.get("question", {}).get("text"):
             bad += 1
             print("  FAIL %s states no question, so it names no decision" % DECISION)
@@ -234,9 +240,9 @@ def selftest():
             bad += 1
             print("  FAIL %s is not seeded and carries no confirmation — a value "
                   "nobody signed" % DECISION)
-    except OSError:
+    except design_sheet.NotInDesign:
         bad += 1
-        print("  FAIL %s has no sheet; §30 B2 asks for it" % DECISION)
+        print("  FAIL %s is not in the design; §30 B2 asks for it" % DECISION)
 
     # 4 · THE FOUR ROWS STILL CARRY THE MULTIPLIER, and still say it is declared
     #     in the sheet. Both halves matter: the first is what this row would
@@ -251,13 +257,14 @@ def selftest():
 
     # 5 · AND THE ROW IS CROSS-REFERENCED FROM WHERE THE NUMBER LIVES, so the
     #     two cannot drift.
+    #     The id is a word, so it is found in the design's text of the sheet
+    #     however that text is laid out.
     for row, _, _, _ in BAND:
-        p = os.path.join(ROOT, "crates/vleo-mod-solar/nodes", row, "node.toml")
         try:
-            if DECISION not in open(p, encoding="utf-8").read():
+            if DECISION not in design_sheet.sheet(row):
                 bad += 1
                 print("  FAIL %s does not cross-reference %s" % (row, DECISION))
-        except OSError as exc:
+        except design_sheet.NotInDesign as exc:
             bad += 1
             print("  FAIL could not read %s's sheet: %s" % (row, exc))
 

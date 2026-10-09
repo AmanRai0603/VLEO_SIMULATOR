@@ -118,7 +118,7 @@ This section is deleted on that day, with the `maintainer` branch.
   |---|---|
   | a method an assistant transcribed | H1b physics, read against its source, by someone other than the person who signed it |
   | fixtures | H2, after the machine checks pass |
-  | moving a branch in `layers/` | two |
+  | moving a branch in a group file in `design/` | two |
 
   H1b asks whether the relation, its source and its range are right; H2 whether every
   expected value came from outside this code. The person who wrote the node is

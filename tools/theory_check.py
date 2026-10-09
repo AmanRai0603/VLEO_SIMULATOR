@@ -56,6 +56,8 @@ import urllib.error
 import urllib.parse
 import urllib.request
 
+import design_sheet
+
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 HOST = os.environ.get("VLEO_DAEMON", "http://localhost:7777")
 BUNDLE = os.path.join(ROOT, "bundles/solar-weather/2026.09.14")
@@ -75,15 +77,23 @@ def flat(s):
     return " ".join(s.split())
 
 
+#: Every sheet this file reads, fetched from the design in one call.
+SHEETS = ("env_exospheric_temperature", "sw_semiannual_amplitude")
+
+
 def sheet(node):
-    """The node's sheet, parsed and raw. The raw text is what claims are found in."""
+    """The node's sheet, parsed and raw. The raw text is what claims are found in.
+
+    Read off the design through its one reader, `xtask sheet`, which serves the
+    text every Rust reader uses. That text is regenerated, so a claim is matched
+    in it flattened — its words and digits, never its line layout."""
     import tomllib
-    for crate in sorted(os.listdir(os.path.join(ROOT, "crates"))):
-        p = os.path.join(ROOT, "crates", crate, "nodes", node, "node.toml")
-        if os.path.exists(p):
-            raw = open(p, encoding="utf-8").read()
-            return tomllib.loads(raw), flat(raw), p
-    raise SystemExit("no sheet for %s" % node)
+    design_sheet.preload(SHEETS)
+    try:
+        raw = design_sheet.sheet(node)
+    except design_sheet.NotInDesign:
+        raise SystemExit("no sheet for %s: the design holds no such node" % node)
+    return tomllib.loads(raw), flat(raw), node
 
 
 def evaluator(expr):
@@ -357,11 +367,13 @@ def check():
 
     # 5 · the semiannual assumption names a row and a figure. Both must exist,
     # because the assumption's force is that the measurement is IN the tree and
-    # does not reach this relation.
+    # does not reach this relation. The row's state is read through the parsed
+    # sheet, not as a substring: the design's text is regenerated, and a quoting
+    # or spacing it happens to use is not what "published" means.
     n += 1
-    amp = os.path.join(ROOT, "crates/vleo-mod-solar/nodes/sw_semiannual_amplitude/node.toml")
+    amp = "sw_semiannual_amplitude"
     face = os.path.join(ROOT, "web/js/solar.js")
-    if not os.path.exists(amp) or 'state = "published"' not in open(amp, encoding="utf-8").read():
+    if not design_sheet.in_design(amp) or design_sheet.parsed(amp).get("state") != "published":
         bad.append("the assumption cites sw_semiannual_amplitude as a measurement "
                    "the tree holds, and it is not a published row")
     eq = open(face, encoding="utf-8").read()
