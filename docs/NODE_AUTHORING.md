@@ -119,7 +119,7 @@ type = "Ratio"
 
 This page once explained two thirds of what the loader reads. The rest was
 found by checking one against the other, and most of what was missing belongs
-to `layers/`, `cases/` or `sources/` rather than to a node. What follows is
+to the group files, the cases or the sources rather than to a node. What follows is
 everything left that is yours.
 
 `tools/docs_lint.py` now holds this list against the loader, so a field added
@@ -167,8 +167,8 @@ noticed.
   refuses a KPI named here that does not exist.
 
 `layer`, `order`, `crosses_to` and `folder` are on the sheet and are **not
-yours**: they are frozen at seed, and the tree's shape is a reviewed change to
-`layers/`, not a field edit.
+yours**: they are frozen at seed, and the tree's shape is a change its branch's owner
+makes to the group's file, not a field edit.
 
 ## Declared values
 

@@ -73,9 +73,9 @@ fn every_branch_every_row_and_every_case_is_a_file_that_holds_together() {
     // A node file for every row, the blocks proposed among them.
     let proposed: usize = PROPOSED.iter().map(|(_, n)| n.len()).sum();
     assert_eq!(of(Kind::Node).count(), t.sheets.len());
-    assert!(PROPOSED
+    assert!(PROPOSED.iter().all(|(g, names)| names
         .iter()
-        .all(|(g, names)| names.iter().all(|(n, _)| t.sheets.contains_key(&proposed_id(g, n)))));
+        .all(|(n, _)| t.sheets.contains_key(&proposed_id(g, n)))));
     assert_eq!(proposed, 5);
     // The one case, and the two kept as CSV beside it.
     assert_eq!(of(Kind::Case).count(), 3);

@@ -211,7 +211,7 @@ whether a person should be asked to look yet: the gate, then the gap pass, then 
 
     cargo run -p xtask -- codeowners
 
-regenerate CODEOWNERS from areas/teams.toml and the owner each sheet names.
+regenerate CODEOWNERS from areas/teams.toml, for the code's paths only.
 
 | | |
 |---|---|

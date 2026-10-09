@@ -182,8 +182,8 @@ td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
     <thead><tr><th>Part</th><th>Folders</th><th>What it must never do</th><th>Its checks</th></tr></thead>
     <tbody>
       <tr><td><b>Frontend</b></td><td><code>web/</code>, <code>panels/</code>, the page template and every page's markup, style and script (<code>web/page.html</code>, <code>web/pages/</code>)</td><td>compute a number — every number comes from the engine; carry its own formula</td><td>panel checks (renders, moves, matches — light and dark), the manual's browser walk</td></tr>
-      <tr><td><b>Backend</b></td><td><code>crates/</code> (engine, server, faces for C and Python), <code>xtask/</code>, <code>layers/</code></td><td>draw anything; hold state a restart would lose; write a person's data other than through <code>vleo-data</code></td><td><code>xtask gate</code>, <code>cargo test</code>, fixtures, mutation tests, the release-profile run</td></tr>
-      <tr><td><b>Data</b></td><td><code>crates/vleo-data</code>, <code>bundles/</code>, <code>sources/</code>, <code>~/.vleo/</code></td><td>change a published bundle; leave a file half written; keep what can be recomputed forever</td><td>bundle hashes, the whole-write test, retention tests</td></tr>
+      <tr><td><b>Backend</b></td><td><code>crates/</code> (engine, server, faces for C and Python), <code>xtask/</code></td><td>draw anything; hold state a restart would lose; write a person's data other than through <code>vleo-data</code></td><td><code>xtask gate</code>, <code>cargo test</code>, fixtures, mutation tests, the release-profile run</td></tr>
+      <tr><td><b>Data</b></td><td><code>crates/vleo-data</code>, <code>bundles/</code>, <code>~/.vleo/</code></td><td>change a published bundle; leave a file half written; keep what can be recomputed forever</td><td>bundle hashes, the whole-write test, retention tests</td></tr>
     </tbody>
   </table></div>
 </section>

@@ -187,10 +187,7 @@ fn read_teams(root: &Path) -> Result<Teams, String> {
         }
         parts.insert(name.clone(), list(Some(who), &format!("[parts] {name}"))?);
     }
-    Ok(Teams {
-        maintainers,
-        parts,
-    })
+    Ok(Teams { maintainers, parts })
 }
 
 pub(super) fn cmd_bundle(root: &Path, args: &[&str]) -> Result<(), String> {

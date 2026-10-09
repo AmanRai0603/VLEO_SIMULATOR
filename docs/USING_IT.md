@@ -152,7 +152,7 @@ There is **one case**, the multipayload design. A customer, or the sky it must
 survive, is a set of input values rather than a folder — so a new customer is
 never a commit, and the tree does not grow with the order book. Its 128 inputs
 come in two halves: the **condition** the design flies in — orbit, environment,
-solar weather, listed in `cases/multipayload.toml` — and everything the
+solar weather, listed in the case, `design/cases/multipayload.vcase` — and everything the
 **customer** chooses. Each defaults to the value declared on its own sheet.
 
 In the browser, the **Inputs** tab lists every one with its value, default and

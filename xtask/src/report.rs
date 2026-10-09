@@ -1005,7 +1005,10 @@ pub(super) fn cmd_sheet(root: &Path, args: &[&str]) -> Result<(), String> {
     let ids: Vec<&str> = if args.contains(&"--all") {
         tree.sheets.keys().map(String::as_str).collect()
     } else {
-        args.iter().copied().filter(|a| !a.starts_with("--")).collect()
+        args.iter()
+            .copied()
+            .filter(|a| !a.starts_with("--"))
+            .collect()
     };
     if ids.is_empty() {
         return Err("usage: cargo xtask sheet <node> [<node> ...] | --all".into());

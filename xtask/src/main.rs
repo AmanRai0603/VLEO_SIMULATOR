@@ -176,8 +176,8 @@ cargo xtask <command>
                      then the gap pass, then what criticality demands. A node
                      with an open gap does not enter H2 — the reviewer accepts,
                      they do not hunt for defects a machine finds free.
-  codeowners         regenerate CODEOWNERS from areas/teams.toml and the owner
-                     each sheet names.
+  codeowners         regenerate CODEOWNERS from areas/teams.toml, for the code's
+                     paths only.
   bundle publish <dir>
                      hash every payload file and write the result into the
                      manifest. Publishing twice from the same input gives the

@@ -467,9 +467,7 @@ fn short(h: u64) -> String {
 /// then upward from the binary itself — a kit keeps the binary beside them, and
 /// a double-clicked binary starts wherever the desktop chose.
 fn repo_root() -> PathBuf {
-    let holds = |p: &Path| {
-        p.join("web").is_dir() && p.join("design").is_dir()
-    };
+    let holds = |p: &Path| p.join("web").is_dir() && p.join("design").is_dir();
     if let Ok(r) = std::env::var("VLEO_ROOT") {
         let r = PathBuf::from(r);
         if holds(&r) {
