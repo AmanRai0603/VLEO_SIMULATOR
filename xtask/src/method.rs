@@ -25,8 +25,8 @@ pub fn cmd_method(root: &Path, args: &[&str]) -> Result<(), String> {
         .sheets
         .get(*id)
         .ok_or_else(|| format!("no node '{id}'"))?;
-    let text = fs::read_to_string(sh.dir.join("node.toml")).map_err(|e| e.to_string())?;
-    let r = vleo_sheet::method::report_toml(&text)?;
+    let text = &sh.text;
+    let r = vleo_sheet::method::report_toml(text)?;
     if sh.method.text.trim().is_empty() {
         println!("{id}: no method yet — the node answers nothing until its owner sends one.");
         return Ok(());
