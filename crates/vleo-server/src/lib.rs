@@ -91,7 +91,7 @@ pub fn serve(
     vleo_data::crash::install("vleo-server", env!("CARGO_PKG_VERSION"));
     let root = root.unwrap_or_else(repo_root);
     let (tree, design, today) = open_tree(&root)?;
-    let engine = run_on_the_files(&*tree, &root, design.is_some())?;
+    let engine = run_on_the_files(&*tree, &root)?;
     let (data, data_versions, bundles, data_refused) = resolve_data(&root);
 
     // Try a range and record the port that actually bound. A daemon that fails
@@ -328,8 +328,8 @@ fn open_base(root: &Path) -> Result<(std::sync::Arc<dyn Files>, Option<DesignFil
         return open_converted(root, &root.join("design"));
     }
     Err(format!(
-        "there is no design here: {} holds no design/, and VLEO_DESIGN names no folder of \
-         the design's files",
+        "no design where the tool looked: {} holds no design/, and VLEO_DESIGN names \
+         none. Open the tool where the design is, or name it with VLEO_DESIGN",
         root.display()
     ))
 }
@@ -411,8 +411,8 @@ fn open_converted(
 /// where the tool looked: the tool holds no design of its own to run instead.
 pub fn run_the_design(root: Option<PathBuf>) -> Result<String, String> {
     let root = root.unwrap_or_else(repo_root);
-    let (tree, design, today) = open_tree(&root)?;
-    let mut said = run_on_the_files(&*tree, &root, design.is_some())?;
+    let (tree, _, today) = open_tree(&root)?;
+    let mut said = run_on_the_files(&*tree, &root)?;
     for line in today {
         said.push_str("\n  ");
         said.push_str(&line);
@@ -421,14 +421,7 @@ pub fn run_the_design(root: Option<PathBuf>) -> Result<String, String> {
 }
 
 /// Run the engine on the graph read from `files`, and say which graph runs.
-fn run_on_the_files(files: &dyn Files, root: &Path, from_a_file: bool) -> Result<String, String> {
-    if !from_a_file && !root.join("layers").is_dir() {
-        return Err(format!(
-            "no design where the tool looked: no design/ folder and no layers/ under {}, and \
-             VLEO_DESIGN names none. Open the tool where the design is, or name it with VLEO_DESIGN",
-            root.display()
-        ));
-    }
+fn run_on_the_files(files: &dyn Files, root: &Path) -> Result<String, String> {
     let tree = vleo_sheet::load::load_all_from(files, root)
         .map_err(|e| format!("the design's files do not load: {e}"))?;
     let graph = vleo_modules::opened::graph(&tree)
