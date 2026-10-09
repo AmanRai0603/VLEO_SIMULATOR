@@ -363,7 +363,7 @@ svg text { font-family: var(--mono); }
     <div class="scroll"><table><thead><tr><th>Command</th><th>Reads</th><th>Writes</th><th>Code</th></tr></thead><tbody>
       <tr><td><code>xtask docs</code></td><td>the method language's tables</td><td><code>docs/PSEUDOCODE.md</code>, the method language's reference</td><td><code>vleo-sheet/src/method/reference.rs</code></td></tr>
       <tr><td><code>xtask assemble</code></td><td>the design (<code>design/</code>)</td><td>the index and the document, in <code>generated/</code>, never committed; it checks that the tree assembles</td><td><code>xtask/src/main.rs</code>, <code>page.rs</code></td></tr>
-      <tr><td><code>xtask variables</code> · <code>codeowners</code></td><td>every sheet</td><td><code>docs/VARIABLES.md</code> · <code>CODEOWNERS</code></td><td><code>xtask/src/release.rs</code></td></tr>
+      <tr><td><code>xtask variables</code> · <code>codeowners</code></td><td>every sheet · <code>areas/teams.toml</code></td><td><code>docs/VARIABLES.md</code> · <code>CODEOWNERS</code>, for code paths only</td><td><code>xtask/src/release.rs</code></td></tr>
       <tr><td><code>xtask guides</code> · <code>pipeline</code></td><td><code>docs/manual.toml</code> · the command table</td><td><code>docs/roles/*.html</code> · <code>docs/PIPELINE.md</code></td><td><code>guide.rs</code> · <code>pipeline.rs</code></td></tr>
       <tr><td><code>xtask method-wasm</code></td><td>the method checker's sources</td><td><code>web/method.wasm.gz</code>, the checker the pages carry</td><td><code>xtask/src/method.rs</code></td></tr>
     </tbody></table></div></div>

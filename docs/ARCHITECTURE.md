@@ -34,9 +34,11 @@ its relation is its method, which the method interpreter runs when the engine
 runs the design read from `design/`. `vleo-modules` holds no formula and no
 row, and the faces take one dependency on it.
 
-The folders under `crates/vleo-mod-*/nodes/` stay until the switch-over, one
-per *owner*, not per discipline: `V12 one crate per owner` fails the assembly
-if any group's rows end up in two of them or any one holds two layers.
+The folders under `crates/vleo-mod-*/nodes/` are gone: the design is
+`design/`, one file per group and one per row, and a test refuses a sheet that
+comes back. The reader still serves each row at the path its folder had, one
+per *owner*, not per discipline, so `V12 one crate per owner` fails the
+assembly if any group's rows end up in two of them or any one holds two layers.
 
 ## The shell is a tree of modules, not a bundle
 

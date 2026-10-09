@@ -1892,7 +1892,7 @@ effect = "reads"
 tool = "xtask"
 name = "codeowners"
 usage = "codeowners"
-what = "Regenerate CODEOWNERS from the layer files."
+what = "Regenerate CODEOWNERS from areas/teams.toml, for code paths only."
 who = "developer"
 effect = "writes"
 
