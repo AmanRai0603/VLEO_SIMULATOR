@@ -193,7 +193,13 @@ fn the_files_read_back_as_the_design_with_only_what_the_conversion_is_for() {
         expected.sheets.keys().collect::<Vec<_>>()
     );
     for (id, sh) in &expected.sheets {
-        assert_eq!(format!("{:?}", back_sheets[id]), format!("{sh:?}"), "{id}");
+        // The sheet's text as it was read is the one thing laid out again:
+        // the conversion writes each sheet afresh, and what the text holds is
+        // every field compared here.
+        let (mut a, mut b) = (back_sheets[id].clone(), sh.clone());
+        a.text.clear();
+        b.text.clear();
+        assert_eq!(format!("{a:?}"), format!("{b:?}"), "{id}");
     }
     assert_eq!(
         format!("{:?}", back.groups),

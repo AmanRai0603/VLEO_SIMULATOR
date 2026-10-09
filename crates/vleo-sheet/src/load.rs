@@ -481,6 +481,15 @@ fn load_sheet(files: &dyn Files, dir: &Path, crate_name: &str) -> Result<Sheet, 
         crosses_to: s(t.get("crosses_to")),
         crate_name: crate_name.to_string(),
         dir: dir.to_path_buf(),
+        has_parity: files.is_file(&dir.join("parity.csv")),
+        lesson: {
+            let p = dir.join(crate::lesson::FILE);
+            if files.is_file(&p) {
+                Some(files.read_to_string(&p).map_err(|e| Error::io(p.display(), e))?)
+            } else {
+                None
+            }
+        },
         ..Default::default()
     };
     if let Some(q) = t.get("question").and_then(|q| q.as_table()) {
@@ -831,6 +840,7 @@ fn load_sheet(files: &dyn Files, dir: &Path, crate_name: &str) -> Result<Sheet, 
     // and the method is in the sheet hash. So this is the hash of nothing, as
     // every row on record has it, and the chain hash does not move.
     sh.impl_hash = fnv1a("");
+    sh.text = text;
     Ok(sh)
 }
 

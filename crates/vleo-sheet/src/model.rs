@@ -500,6 +500,14 @@ pub struct Sheet {
     pub fixtures: Vec<Fixture>,
     pub crate_name: String,
     pub dir: PathBuf,
+    /// The sheet as it was read, through whatever the design was read from.
+    /// What reads the sheet's own text reads this, never `dir` on disk: the
+    /// design's files serve that folder, and nothing else is the design.
+    pub text: String,
+    /// Whether the node holds a prior implementation's grid (`parity.csv`).
+    pub has_parity: bool,
+    /// The node's lesson as it was read, if it has one (`lesson.toml`).
+    pub lesson: Option<String>,
     /// Hash of the sheet's semantic content. A page whose sheet hash differs
     /// from the engine's refuses to run and says so, which makes a stale face
     /// detectable rather than merely wrong.

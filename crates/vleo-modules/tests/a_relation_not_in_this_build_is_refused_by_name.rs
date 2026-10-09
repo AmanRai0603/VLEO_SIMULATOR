@@ -34,7 +34,7 @@ fn a_relation_built_from_another_sheet_is_refused_by_name() {
 }
 
 fn refused_when(moved: impl Fn(&mut vleo_sheet::model::Sheet)) {
-    let mut tree = vleo_sheet::load_all(&root()).unwrap();
+    let mut tree = vleo_files::convert::open(&root()).unwrap().0;
     // A computed row that answers today, on the compiled engine. Every
     // relation of the design is a method now, and a method the build has not
     // seen runs in the interpreter; so the row is taken without its method,

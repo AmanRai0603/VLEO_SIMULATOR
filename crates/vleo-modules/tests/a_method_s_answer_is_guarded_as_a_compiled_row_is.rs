@@ -37,7 +37,7 @@ fn a_method(tree: &vleo_sheet::Tree) -> (String, Vec<f64>) {
 
 #[test]
 fn an_answer_outside_its_declared_range_is_refused_lower_bound_first() {
-    let mut tree = vleo_sheet::load_all(&root()).unwrap();
+    let mut tree = vleo_files::convert::open(&root()).unwrap().0;
     let (id, inputs) = a_method(&tree);
     let answer = {
         let g = opened::graph(&tree).unwrap();

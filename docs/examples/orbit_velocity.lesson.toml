@@ -4,7 +4,7 @@
 # lesson is written by the person who knows the row, sent as a lesson form,
 # and placed beside the row's node.toml (docs/LESSONS.md).
 #
-# `cargo test -p vleo-sheet --test lessons_hold_together` reads it, and the
+# `cargo test -p vleo-files --test lessons_hold_together` reads it, and the
 # browser check places it beside orbit_velocity for as long as it looks.
 
 [lesson]

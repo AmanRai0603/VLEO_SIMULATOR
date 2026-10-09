@@ -67,7 +67,7 @@ impl Check {
 /// real — an input a person picks, an output that computes. `None` for a row
 /// with no lesson, which is most of them and is not a gap.
 fn lesson_check(sh: &Sheet, tree: &Tree) -> Option<Check> {
-    Some(match crate::lesson::load(&sh.dir, &sh.id)? {
+    Some(match crate::lesson::of(sh)? {
         Err(e) => Check::fail("lesson", e.into()),
         Ok(l) => {
             let bad = crate::lesson::problems(&l, tree);
@@ -138,8 +138,7 @@ fn method_checks(sh: &Sheet) -> Vec<Check> {
                     .into(),
             );
         }
-        let text = std::fs::read_to_string(sh.dir.join("node.toml")).unwrap_or_default();
-        match method::report_toml(&text) {
+        match method::report_toml(&sh.text) {
             Err(e) => bad.push(e.into()),
             Ok(r) => {
                 for d in r
@@ -710,7 +709,7 @@ pub fn gate_node(sh: &Sheet, tree: &Tree) -> Vec<Check> {
     //      values. They belong in parity.csv, where a disagreement is a finding
     //      about one of the two rather than a check either has passed.
     let migrated = !sh.migrated_from.trim().is_empty();
-    out.push(if !migrated || sh.dir.join("parity.csv").is_file() {
+    out.push(if !migrated || sh.has_parity {
         Check::pass("parity")
     } else {
         Check::note(

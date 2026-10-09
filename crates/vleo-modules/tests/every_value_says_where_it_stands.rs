@@ -24,7 +24,7 @@ fn root() -> PathBuf {
 }
 
 fn tree() -> Tree {
-    vleo_sheet::load_all(&root()).unwrap()
+    vleo_files::convert::open(&root()).unwrap().0
 }
 
 fn with_data(supply: &[(&str, f64)]) -> Case {
@@ -90,6 +90,9 @@ fn every_value_has_a_state_read_from_its_sheet() {
     let read = opened::graph(&t).unwrap();
     // When a sheet says nothing, its row says it: a stated value is decided,
     // a requirement allocated, a row not decided yet open, the rest achieved.
+    // A stated value is a parameter of the level whose branch states it, as
+    // its file says; no other row is one.
+    let mut parameters = 0;
     for def in read.nodes.iter() {
         let port = read.vars[def.outputs[0] as usize].port;
         let expected = if def.state == State::Empty {
@@ -103,8 +106,24 @@ fn every_value_has_a_state_read_from_its_sheet() {
         };
         assert_eq!(port.state, expected, "{}", def.id);
         assert_eq!(port.maturity, Maturity::Unstated, "{}", def.id);
-        assert_eq!(port.parameter, None, "{}", def.id);
+        let said = &t.sheets[def.id].port.parameter;
+        assert_eq!(
+            port.parameter.map(|l| l.name()),
+            (!said.is_empty()).then_some(said.as_str()),
+            "{}",
+            def.id
+        );
+        if port.parameter.is_some() {
+            assert_eq!(
+                (def.kind, def.state == State::Empty),
+                (Kind::Declared, false),
+                "{} is a parameter and not a stated value",
+                def.id
+            );
+            parameters += 1;
+        }
     }
+    assert!(parameters > 0, "no stated value says whose parameter it is");
 }
 
 #[test]

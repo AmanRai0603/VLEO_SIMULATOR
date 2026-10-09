@@ -26,19 +26,26 @@ fn the_server_runs_the_graph_read_from_the_design_s_files() {
     vleo_server::serve(Some(root()), 18951, false, true).expect("the server did not start");
     let g = engine();
     assert!(!std::ptr::eq(g, &EMPTY), "the server opened no design");
-    // The design's files hold every row the sheets hold, and the open blocks
-    // they propose where a breakdown holds none yet.
-    let sheets = vleo_sheet::load_all(&root()).unwrap();
-    for id in sheets.sheets.keys() {
+    // The graph it runs holds every row the design's files hold and no other,
+    // the open blocks they propose where a breakdown holds none yet among
+    // them.
+    let design = vleo_files::convert::open(&root()).unwrap().0;
+    for id in design.sheets.keys() {
         assert!(g.find(id).is_some(), "{id} is not in the design");
     }
-    for d in g.nodes.iter().filter(|d| !sheets.sheets.contains_key(d.id)) {
-        assert_eq!(
-            d.behaviour,
-            vleo_modules::core_engine::graph::Behaviour::Open,
-            "{} is not open",
-            d.id
-        );
+    assert_eq!(g.nodes.len(), design.sheets.len());
+    for (group, names) in vleo_files::convert::PROPOSED {
+        for (name, _) in *names {
+            let id = vleo_files::convert::proposed_id(group, name);
+            let k = g
+                .find(&id)
+                .unwrap_or_else(|| panic!("{id} is not in the design"));
+            assert_eq!(
+                g.nodes[k as usize].behaviour,
+                vleo_modules::core_engine::graph::Behaviour::Open,
+                "{id} is not open"
+            );
+        }
     }
     // Every stated value is published by the graph, and every method is run
     // by the interpreter: no row runs the code compiled for it.

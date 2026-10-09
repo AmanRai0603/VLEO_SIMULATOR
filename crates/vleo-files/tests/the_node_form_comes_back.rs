@@ -5,59 +5,40 @@
 //! form that does not read back as the node it was made from, a change in the
 //! repository overwritten by a form made before it, a relation an assistant
 //! supplied, a numbered step removed from the middle, a file that is not a form
-//! at all. Each is tried against the real tree, and every edit is made to the
-//! TOML block directly — the way a person with a text editor, or an assistant,
-//! fills it without the page.
+//! at all. Each is tried against the design, read from `design/`, and every
+//! edit is made to the TOML block directly — the way a person with a text
+//! editor, or an assistant, fills it without the page.
 
 use std::path::{Path, PathBuf};
+use vleo_sheet::files::Files;
 use vleo_sheet::form;
-use vleo_sheet::load::load_all;
 use vleo_sheet::template::{self, Verdict};
+use vleo_sheet::Tree;
 
-/// A copy of the tree in a temporary folder, made once for this test binary:
-/// applying a form writes sheets and regenerates folders, and that is done to
-/// the copy, never to the checkout a developer may be editing.
+/// The repository, whose `design/` the tree is read from. Planning a form
+/// writes nothing, so every test reads the design itself.
 fn root() -> PathBuf {
-    static COPY: std::sync::OnceLock<PathBuf> = std::sync::OnceLock::new();
-    COPY.get_or_init(|| {
-        let real = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
-        let to = std::env::temp_dir().join(format!("vleo-form-tree-{}", std::process::id()));
-        let _ = std::fs::remove_dir_all(&to);
-        for e in std::fs::read_dir(real.join("crates")).unwrap().flatten() {
-            let name = e.file_name().to_string_lossy().to_string();
-            if name.starts_with("vleo-mod-") {
-                copy(
-                    &e.path().join("nodes"),
-                    &to.join("crates").join(&name).join("nodes"),
-                );
-            }
-        }
-        for d in ["layers", "cases", "sources", "web"] {
-            copy(&real.join(d), &to.join(d));
-        }
-        to
-    })
-    .clone()
+    Path::new(env!("CARGO_MANIFEST_DIR")).join("../..")
 }
 
-fn copy(from: &Path, to: &Path) {
-    std::fs::create_dir_all(to).unwrap();
-    for e in std::fs::read_dir(from).unwrap().flatten() {
-        let p = e.path();
-        if p.is_dir() {
-            copy(&p, &to.join(e.file_name()));
-        } else {
-            std::fs::copy(&p, to.join(e.file_name())).unwrap();
-        }
-    }
+/// The design, read from `design/` once for this test binary: nothing here
+/// changes it.
+fn design() -> &'static Tree {
+    static DESIGN: std::sync::OnceLock<Tree> = std::sync::OnceLock::new();
+    DESIGN.get_or_init(|| vleo_files::convert::open(&root()).unwrap().0)
+}
+
+/// What a filled form would do, planned against the design.
+fn plan(html: &str) -> Result<template::Plan, vleo_sheet::Error> {
+    template::plan_in(design(), html)
 }
 
 /// A published computed row with a note, four assumptions and a relation.
 const ROW: &str = "sw_ap_design";
 
 fn form_for(id: &str) -> String {
-    let tree = load_all(&root()).unwrap();
-    template::document(tree.sheets.get(id).unwrap(), &tree)
+    let tree = design();
+    template::document(tree.sheets.get(id).unwrap(), tree)
 }
 
 /// Rewrite one of the form's TOML blocks, as a text editor would.
@@ -121,10 +102,10 @@ fn verdict_of(p: &template::Plan, what: &str) -> Verdict {
 
 #[test]
 fn every_node_form_reads_back_as_the_node_it_was_made_from() {
-    let tree = load_all(&root()).unwrap();
+    let tree = design();
     let mut n = 0;
     for sh in tree.sheets.values() {
-        let html = template::document(sh, &tree);
+        let html = template::document(sh, tree);
         let f = template::read(&html).unwrap_or_else(|e| panic!("{}: {e}", sh.id));
         let now = template::content(sh);
         assert_eq!(f.node, sh.id);
@@ -141,7 +122,7 @@ fn every_node_form_reads_back_as_the_node_it_was_made_from() {
 
 #[test]
 fn an_untouched_form_changes_nothing() {
-    let p = template::plan(&root(), &form_for(ROW)).unwrap();
+    let p = plan(&form_for(ROW)).unwrap();
     assert!(p.base_current);
     assert!(p.items.is_empty(), "{:?}", p.items);
     assert!(p.text.is_none());
@@ -152,7 +133,7 @@ fn a_change_is_applied_unless_the_repository_changed_it_too() {
     let html = edit(&form_for(ROW), DATA, |t| {
         set_field(t, "note", "A note from the payload team.")
     });
-    let p = template::plan(&root(), &html).unwrap();
+    let p = plan(&html).unwrap();
     assert_eq!(verdict_of(&p, "note"), Verdict::Apply);
     assert!(p
         .text
@@ -163,7 +144,7 @@ fn a_change_is_applied_unless_the_repository_changed_it_too() {
     // The form was made when the note said something else, and the repository
     // has moved it since: the form must not overwrite that.
     let stale = edit(&html, ORIGINAL, |t| set_field(t, "note", "An older note."));
-    let p = template::plan(&root(), &stale).unwrap();
+    let p = plan(&stale).unwrap();
     assert!(
         matches!(verdict_of(&p, "note"), Verdict::Conflict(_)),
         "{:?}",
@@ -172,13 +153,10 @@ fn a_change_is_applied_unless_the_repository_changed_it_too() {
     assert!(p.text.is_none(), "a conflict was written anyway");
 
     // And a form asking for what the node already says has nothing to do.
-    let tree = load_all(&root()).unwrap();
+    let tree = design();
     let now = form::value(tree.sheets.get(ROW).unwrap(), "note");
     let same = edit(&stale, DATA, |t| set_field(t, "note", &now));
-    assert_eq!(
-        verdict_of(&template::plan(&root(), &same).unwrap(), "note"),
-        Verdict::Already
-    );
+    assert_eq!(verdict_of(&plan(&same).unwrap(), "note"), Verdict::Already);
 }
 
 #[test]
@@ -186,7 +164,7 @@ fn a_relation_an_assistant_supplied_is_refused_and_a_persons_is_applied() {
     let changed = with_record(&edit(&form_for(ROW), DATA, |t| {
         set_field(t, "expression", "Ap_design(G) = a different relation")
     }));
-    let p = template::plan(&root(), &changed).unwrap();
+    let p = plan(&changed).unwrap();
     assert_eq!(verdict_of(&p, "expression"), Verdict::Apply);
     assert!(
         p.relation,
@@ -199,7 +177,7 @@ fn a_relation_an_assistant_supplied_is_refused_and_a_persons_is_applied() {
             .unwrap()
             .insert("ai".into(), toml::Value::String("relation".into()));
     });
-    let p = template::plan(&root(), &assisted).unwrap();
+    let p = plan(&assisted).unwrap();
     assert!(
         matches!(verdict_of(&p, "expression"), Verdict::Refused(ref w) if w.contains("mathematics")),
         "{:?}",
@@ -210,13 +188,13 @@ fn a_relation_an_assistant_supplied_is_refused_and_a_persons_is_applied() {
 
 #[test]
 fn a_numbered_step_removed_from_the_middle_is_refused_and_the_last_is_not() {
-    let tree = load_all(&root()).unwrap();
+    let tree = design();
     let sh = tree
         .ordered()
         .into_iter()
         .find(|s| s.steps.len() >= 2 && s.state == "published")
         .expect("no published row with two algorithm steps");
-    let html = with_record(&template::document(sh, &tree));
+    let html = with_record(&template::document(sh, tree));
     let drop = |at: usize| {
         edit(&html, DATA, |t| {
             t.get_mut("algorithm")
@@ -225,14 +203,14 @@ fn a_numbered_step_removed_from_the_middle_is_refused_and_the_last_is_not() {
                 .remove(at);
         })
     };
-    let middle = template::plan(&root(), &drop(0)).unwrap();
+    let middle = plan(&drop(0)).unwrap();
     assert!(
         matches!(verdict_of(&middle, "algorithm"), Verdict::Refused(ref w) if w.contains("middle")),
         "{}: {:?}",
         sh.id,
         middle.items
     );
-    let last = template::plan(&root(), &drop(sh.steps.len() - 1)).unwrap();
+    let last = plan(&drop(sh.steps.len() - 1)).unwrap();
     let removed = format!("algorithm {} · removed", sh.steps.len());
     assert_eq!(
         verdict_of(&last, &removed),
@@ -258,7 +236,7 @@ fn known_values_are_a_request_and_never_touch_the_node() {
         }
         t.insert("known_value".into(), toml::Value::Array(vec![k.into()]));
     });
-    let p = template::plan(&root(), &html).unwrap();
+    let p = plan(&html).unwrap();
     assert!(p.items.is_empty() && p.text.is_none(), "{:?}", p.items);
     let req = template::fixture_request(&p.form);
     assert!(
@@ -271,8 +249,7 @@ fn known_values_are_a_request_and_never_touch_the_node() {
 
 #[test]
 fn what_is_not_a_form_for_a_node_here_is_refused_by_name() {
-    let r = root();
-    assert!(template::plan(&r, "<html>hello</html>")
+    assert!(plan("<html>hello</html>")
         .unwrap_err()
         .message()
         .contains("not a node form"));
@@ -283,14 +260,14 @@ fn what_is_not_a_form_for_a_node_here_is_refused_by_name() {
             toml::Value::String("vleo-node-form/0".into()),
         );
     });
-    assert!(template::plan(&r, &other_format)
+    assert!(plan(&other_format)
         .unwrap_err()
         .message()
         .contains("vleo-node-form/0"));
     let retargeted = edit(&html, DATA, |t| {
         t.insert("node".into(), toml::Value::String("sw_f107_design".into()));
     });
-    assert!(template::plan(&r, &retargeted)
+    assert!(plan(&retargeted)
         .unwrap_err()
         .message()
         .contains("cannot be trusted"));
@@ -303,7 +280,7 @@ fn what_is_not_a_form_for_a_node_here_is_refused_by_name() {
             t.insert("node".into(), toml::Value::String("no_such_row".into()));
         },
     );
-    assert!(template::plan(&r, &unknown)
+    assert!(plan(&unknown)
         .unwrap_err()
         .message()
         .contains("never adds a node"));
@@ -313,18 +290,15 @@ fn what_is_not_a_form_for_a_node_here_is_refused_by_name() {
             .unwrap()
             .insert("ai".into(), toml::Value::String("a little".into()));
     });
-    assert!(template::plan(&r, &bogus)
-        .unwrap_err()
-        .message()
-        .contains("a little"));
+    assert!(plan(&bogus).unwrap_err().message().contains("a little"));
 }
 
 // ---------------------------------------------------------------------------
 // a node the design does not have yet, and the interfaces a form declares
 
 fn new_form(id: &str, parent: &str, kind: &str, input: Option<(&str, &str)>) -> String {
-    let tree = load_all(&root()).unwrap();
-    let html = template::document_new(&tree);
+    let tree = design();
+    let html = template::document_new(tree);
     edit(&html, DATA, |t| {
         let mut n = toml::Table::new();
         for (k, v) in [("id", id), ("parent", parent), ("kind", kind)] {
@@ -345,19 +319,16 @@ fn new_form(id: &str, parent: &str, kind: &str, input: Option<(&str, &str)>) -> 
 
 #[test]
 fn a_new_nodes_form_is_checked_for_its_place_and_its_interfaces_before_anything_is_built() {
-    let tree = load_all(&root()).unwrap();
+    let tree = design();
     let producer = tree.sheets.get(ROW).unwrap();
     let parent = producer.parent.clone();
 
-    let good = template::plan(
-        &root(),
-        &new_form(
-            "a_brand_new_row",
-            &parent,
-            "computed",
-            Some((ROW, &producer.ty)),
-        ),
-    )
+    let good = plan(&new_form(
+        "a_brand_new_row",
+        &parent,
+        "computed",
+        Some((ROW, &producer.ty)),
+    ))
     .unwrap();
     assert_eq!(good.new.as_ref().unwrap().id, "a_brand_new_row");
     for w in [
@@ -390,36 +361,33 @@ fn a_new_nodes_form_is_checked_for_its_place_and_its_interfaces_before_anything_
     );
 
     // Each way the placement can be wrong is refused by name.
-    let taken = template::plan(&root(), &new_form(ROW, &parent, "computed", None)).unwrap();
+    let taken = plan(&new_form(ROW, &parent, "computed", None)).unwrap();
     assert!(
         matches!(verdict_of(&taken, "new · id"), Verdict::Refused(ref w) if w.contains("already"))
     );
-    let bad_id =
-        template::plan(&root(), &new_form("Not An Id", &parent, "computed", None)).unwrap();
+    let bad_id = plan(&new_form("Not An Id", &parent, "computed", None)).unwrap();
     assert!(matches!(
         verdict_of(&bad_id, "new · id"),
         Verdict::Refused(_)
     ));
-    let nowhere = template::plan(
-        &root(),
-        &new_form("x_row", "no_such_group", "computed", None),
-    )
-    .unwrap();
+    let nowhere = plan(&new_form("x_row", "no_such_group", "computed", None)).unwrap();
     assert!(matches!(
         verdict_of(&nowhere, "new · parent"),
         Verdict::Refused(_)
     ));
-    let odd = template::plan(&root(), &new_form("x_row", &parent, "banana", None)).unwrap();
+    let odd = plan(&new_form("x_row", &parent, "banana", None)).unwrap();
     assert!(matches!(
         verdict_of(&odd, "new · kind"),
         Verdict::Refused(_)
     ));
 
     // An input that names no row, or a row of another quantity, does not connect.
-    let ghost = template::plan(
-        &root(),
-        &new_form("x_row", &parent, "computed", Some(("no_such_row", "Ratio"))),
-    )
+    let ghost = plan(&new_form(
+        "x_row",
+        &parent,
+        "computed",
+        Some(("no_such_row", "Ratio")),
+    ))
     .unwrap();
     assert!(!ghost.interfaces[0].ok() && ghost.interfaces[0].why.contains("no row"));
     assert!(matches!(
@@ -431,11 +399,7 @@ fn a_new_nodes_form_is_checked_for_its_place_and_its_interfaces_before_anything_
     } else {
         "Length"
     };
-    let mismatch = template::plan(
-        &root(),
-        &new_form("x_row", &parent, "computed", Some((ROW, wrong))),
-    )
-    .unwrap();
+    let mismatch = plan(&new_form("x_row", &parent, "computed", Some((ROW, wrong)))).unwrap();
     assert!(
         mismatch.interfaces[0].why.contains(wrong),
         "{:?}",
@@ -453,7 +417,7 @@ fn an_input_changed_to_one_that_does_not_connect_is_refused_and_the_rest_still_a
             .unwrap()
             .insert("var".into(), toml::Value::String("no_such_row".into()));
     });
-    let p = template::plan(&root(), &html).unwrap();
+    let p = plan(&html).unwrap();
     assert!(
         matches!(verdict_of(&p, "input"), Verdict::Refused(_)),
         "{:?}",
@@ -468,13 +432,13 @@ fn an_input_changed_to_one_that_does_not_connect_is_refused_and_the_rest_still_a
 #[test]
 fn a_change_to_what_a_node_computes_says_why_or_only_its_wording_goes_in() {
     // Whatever versions the row already records; the next one follows them.
-    let had = load_all(&root()).unwrap().sheets[ROW].versions.len();
+    let had = design().sheets[ROW].versions.len();
     // A new bound and a new note, with nothing said about why.
     let html = edit(&form_for(ROW), DATA, |t| {
         set_field(t, "upper", "450.0");
         set_field(t, "note", "A reworded note.");
     });
-    let p = template::plan(&root(), &html).unwrap();
+    let p = plan(&html).unwrap();
     assert_eq!(
         verdict_of(&p, "note"),
         Verdict::Apply,
@@ -502,7 +466,7 @@ fn a_change_to_what_a_node_computes_says_why_or_only_its_wording_goes_in() {
     // The same changes with the reason: both go in, and the next version is
     // recorded with what moved, the relation as it now stands, and `next` for a
     // release.
-    let p = template::plan(&root(), &with_record(&html)).unwrap();
+    let p = plan(&with_record(&html)).unwrap();
     assert_eq!(verdict_of(&p, "upper"), Verdict::Apply, "{:?}", p.items);
     assert_eq!(p.version, Some(had as u32 + 1));
     let text = p.text.unwrap();
@@ -528,7 +492,7 @@ fn a_risk_move_must_name_a_registered_risk() {
             .unwrap()
             .insert("risks".into(), toml::Value::String("R-9999 closed".into()));
     });
-    let p = template::plan(&root(), &html).unwrap();
+    let p = plan(&html).unwrap();
     assert!(
         matches!(verdict_of(&p, "de-risking"), Verdict::Refused(ref w) if w.contains("not registered")),
         "{:?}",
@@ -542,9 +506,10 @@ fn a_row_with_no_plain_words_yet_takes_them_from_its_form() {
     // A sheet with no [explain] table yet: the form's first explanatory answer
     // makes one, beside the question. Every published row has one now, so the
     // table is taken off a real sheet's text to see it made again.
-    let tree = load_all(&root()).unwrap();
+    let tree = design();
     let sh = tree.sheets.get(ROW).unwrap();
-    let full = std::fs::read_to_string(sh.dir.join("node.toml")).unwrap();
+    let (served, _) = vleo_files::convert::serve(&root()).unwrap();
+    let full = served.read_to_string(&sh.dir.join("node.toml")).unwrap();
     let mut bare = String::new();
     let mut skip = false;
     for line in full.lines() {
@@ -564,8 +529,11 @@ fn a_row_with_no_plain_words_yet_takes_them_from_its_form() {
         v["explain"]["simply"].as_str(),
         Some("What the row works out.")
     );
+    // The design's files lay a sheet's tables out in their own order, so
+    // beside the question is the next table after it, whichever that was.
+    let question = text.find("[question]").unwrap();
     assert!(
-        text.find("[explain]").unwrap() < text.find("[maths]").unwrap(),
+        text[question..].find("\n[") == text[question..].find("\n[explain]"),
         "the plain words are not beside the question"
     );
 
@@ -585,7 +553,7 @@ fn a_row_with_no_plain_words_yet_takes_them_from_its_form() {
         who.insert("name".into(), toml::Value::String("R. Kumar".into()));
         who.insert("team".into(), toml::Value::String("Solar".into()));
     });
-    let p = template::plan(&root(), &html).unwrap();
+    let p = plan(&html).unwrap();
     assert_eq!(
         verdict_of(&p, "explain_simply"),
         Verdict::Apply,
@@ -604,7 +572,7 @@ fn a_row_with_no_plain_words_yet_takes_them_from_its_form() {
 
 #[test]
 fn a_source_not_listed_yet_is_said_at_the_check_and_does_not_stop_it() {
-    let tree = load_all(&root()).unwrap();
+    let tree = design();
     let listed = tree.sources.keys().next().unwrap().clone();
     for (cited, open) in [
         ("the_book_nobody_listed_2031", true),
@@ -613,7 +581,7 @@ fn a_source_not_listed_yet_is_said_at_the_check_and_does_not_stop_it() {
         let html = with_record(&edit(&form_for(ROW), DATA, |t| {
             set_field(t, "source", cited)
         }));
-        let p = template::plan(&root(), &html).unwrap();
+        let p = plan(&html).unwrap();
         assert_eq!(verdict_of(&p, "source"), Verdict::Apply, "{:?}", p.items);
         assert_eq!(
             p.open
@@ -655,7 +623,7 @@ fn a_known_value_is_requested_in_si_by_binding_as_fixtures_hold_it() {
             t.insert("known_value".into(), toml::Value::Array(vec![k.into()]));
         },
     );
-    let p = template::plan(&root(), &html).unwrap();
+    let p = plan(&html).unwrap();
     let req = template::fixture_request(&p.form);
     let v: toml::Value = req.parse().expect("the request is not TOML");
     let fx = &v["fixture"][0];
@@ -672,7 +640,7 @@ fn a_known_value_is_requested_in_si_by_binding_as_fixtures_hold_it() {
             toml::Value::String("orbit_radius = 6778".into()),
         );
     });
-    let req = template::fixture_request(&template::plan(&root(), &html).unwrap().form);
+    let req = template::fixture_request(&plan(&html).unwrap().form);
     let v: toml::Value = req.parse().unwrap();
     assert!(v["fixture"][0].get("inputs").is_none(), "{req}");
 }
@@ -684,7 +652,7 @@ fn a_method_of_the_forms_own_is_no_longer_a_transcription() {
     // describes the row any more: intake clears both, and names the person.
     // Any row still a transcription will do: which ones are changes as
     // groups send their own methods.
-    let tree = load_all(&root()).unwrap();
+    let tree = design();
     let (id, copied) = tree
         .sheets
         .values()
@@ -704,7 +672,7 @@ fn a_method_of_the_forms_own_is_no_longer_a_transcription() {
             .unwrap()
             .insert("name".into(), toml::Value::String("R. Kumar".into()));
     }));
-    let p = template::plan(&root(), &html).unwrap();
+    let p = plan(&html).unwrap();
     assert_eq!(
         verdict_of(&p, "method_text"),
         Verdict::Apply,

@@ -85,10 +85,11 @@ pub struct Question {
     pub why: String,
 }
 
-/// The lesson in a row's folder: `None` when it has none, and the reason when
-/// the file does not read.
-pub fn load(dir: &Path, node: &str) -> Option<Result<Lesson, Error>> {
-    load_from(&crate::files::Disk, dir, node)
+/// The row's lesson, as the design held it when it was read: `None` when it
+/// has none, and the reason when it does not read.
+pub fn of(sh: &crate::model::Sheet) -> Option<Result<Lesson, Error>> {
+    let t = sh.lesson.as_deref()?;
+    Some(read(t, &sh.id).map_err(|e| e.within(sh.dir.join(FILE).display())))
 }
 
 /// The same, from the folders or the design's files (`crate::files`).

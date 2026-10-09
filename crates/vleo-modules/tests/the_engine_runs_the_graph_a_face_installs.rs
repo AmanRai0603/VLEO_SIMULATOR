@@ -32,14 +32,14 @@ fn the_engine_runs_the_installed_graph_and_names_what_it_answers_from_it() {
     assert!(std::ptr::eq(engine(), &EMPTY), "before a face installs one");
     assert!(vleo_modules::nodes().is_empty());
     assert!(vleo_modules::Vleo::find("sw_ap_design").is_none());
-    let base = opened::graph(&vleo_sheet::load_all(&root()).unwrap()).unwrap();
+    let base = opened::graph(&vleo_files::convert::open(&root()).unwrap().0).unwrap();
     run_on(base);
 
     // A row that answers, held as code by its id, in a design whose copy of it
     // has moved on: the same layout, one relation this build does not have.
     // Every relation of the design is a method now, and a method the build
     // has not seen runs in the interpreter; so the row is taken without it.
-    let mut tree = vleo_sheet::load_all(&root()).unwrap();
+    let mut tree = vleo_files::convert::open(&root()).unwrap().0;
     let id = vleo_modules::nodes()
         .iter()
         .find(|d| {
@@ -77,7 +77,7 @@ fn the_engine_runs_the_installed_graph_and_names_what_it_answers_from_it() {
     // runs, and every list a face reads is the design's, not the build's.
     // The last row nothing reads: a row another reads cannot go, for the
     // design would name a variable it no longer has and is refused.
-    let mut short = vleo_sheet::load_all(&root()).unwrap();
+    let mut short = vleo_files::convert::open(&root()).unwrap().0;
     let last = unread(&short).last().unwrap().clone();
     short.sheets.remove(&last);
     let fewer = opened::graph(&short).unwrap();
@@ -104,7 +104,7 @@ fn the_engine_runs_the_installed_graph_and_names_what_it_answers_from_it() {
             .collect()
     };
     let built = defaults();
-    let mut shifted = vleo_sheet::load_all(&root()).unwrap();
+    let mut shifted = vleo_files::convert::open(&root()).unwrap().0;
     let first = unread(&shifted).first().unwrap().clone();
     shifted.sheets.remove(&first);
     run_on(opened::graph(&shifted).unwrap());
@@ -148,9 +148,9 @@ fn unread(tree: &vleo_sheet::load::Tree) -> Vec<String> {
 #[test]
 fn the_graph_read_from_the_design_carries_its_headings_and_their_relations() {
     // A face draws the tree from the graph that runs, so the graph read from
-    // the design's files carries every heading and relation the sheets hold,
+    // the design's files carries every heading and relation the tree holds,
     // in their order.
-    let tree = vleo_sheet::load_all(&root()).unwrap();
+    let tree = vleo_files::convert::open(&root()).unwrap().0;
     let read = opened::graph(&tree).unwrap();
     assert_eq!(read.groups.len(), tree.groups.len());
     for (g, (id, h)) in read.groups.iter().zip(&tree.groups) {

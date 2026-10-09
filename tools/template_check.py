@@ -35,7 +35,7 @@ ROOT = Path(__file__).resolve().parent.parent
 #: method, in the sheet, run by the interpreter — so Rust in a node folder is a
 #: stray like any other. No folder holds its page either: the engine renders it
 #: from the sheet when it is opened, and one tab set across every rendered page
-#: is held in cargo test (crates/vleo-sheet/tests/every_page_has_one_tab_set.rs).
+#: is held in cargo test (crates/vleo-files/tests/every_page_has_one_tab_set.rs).
 BY_HAND = {"node.toml", "fixtures.toml"}
 #: Beside those, exactly one other file is allowed, and only with a reason.
 OPTIONAL = {"parity.csv"}

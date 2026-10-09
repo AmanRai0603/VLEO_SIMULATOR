@@ -40,7 +40,6 @@
 
 use crate::{Error, ErrorKind};
 use std::collections::BTreeMap;
-use std::path::Path;
 
 use crate::form::{self, jq, Blocks, ARRAYS, FIELDS};
 use crate::load::Tree;
@@ -770,9 +769,7 @@ fn schema(sh: Option<&Sheet>, tree: &Tree) -> String {
 
 /// The whole document for one node.
 pub fn document(sh: &Sheet, tree: &Tree) -> String {
-    let base = std::fs::read_to_string(sh.dir.join("node.toml"))
-        .map(|t| form::file_hash(&t))
-        .unwrap_or_default();
+    let base = form::file_hash(&sh.text);
     let head = f(
         "heading-node",
         &[
@@ -817,9 +814,7 @@ pub fn document_example(sh: &Sheet, tree: &Tree) -> Result<String, Error> {
             ),
         ));
     }
-    let base = std::fs::read_to_string(sh.dir.join("node.toml"))
-        .map(|t| form::file_hash(&t))
-        .unwrap_or_default();
+    let base = form::file_hash(&sh.text);
     let original = content(sh);
     let mut c = original.clone();
     for f in FIELDS {
@@ -1425,62 +1420,6 @@ fn plan_new(tree: &Tree, f: Form, n: NewNode) -> Plan {
     p
 }
 
-/// Plan a new node's form onto the node just built for it: the form's content
-/// against the fresh row, as though the form had been made from it.
-///
-/// The row was built on the shape of `like`, and a blank on the form is not an
-/// answer: where the form says nothing and the row holds its model's value — a
-/// quantity, a unit, a bound — the value is KEPT, and said, so the developer
-/// confirms it rather than finding it later.
-pub fn plan_onto(root: &Path, f: &Form, id: &str, like: &str) -> Result<Plan, Error> {
-    let tree = crate::load::load_all(root).map_err(|e| e.within("the tree does not load"))?;
-    let sh = tree.sheets.get(id).ok_or_else(|| {
-        Error::new(
-            ErrorKind::Malformed,
-            format!("the new node '{id}' is not in the tree"),
-        )
-    })?;
-    let now = content(sh);
-    let mut g = f.clone();
-    g.node = id.to_string();
-    g.new = None;
-    g.base = std::fs::read_to_string(sh.dir.join("node.toml"))
-        .map(|t| form::file_hash(&t))
-        .unwrap_or_default();
-    let mut kept = Vec::new();
-    for (k, v) in now.fields.iter() {
-        let filled = g.filled.fields.entry(k.clone()).or_default();
-        if filled.trim().is_empty() && !v.trim().is_empty() {
-            *filled = v.clone();
-            kept.push(format!(
-                "`{k}` was not on the form; it is «{}», taken from {like} — confirm it or change it",
-                short(v)
-            ));
-        }
-    }
-    // A numbered step keeps the number the new row gives it.
-    for a in ARRAYS {
-        for (i, row) in g
-            .filled
-            .arrays
-            .entry(a.name.to_string())
-            .or_default()
-            .iter_mut()
-            .enumerate()
-        {
-            for c in a.columns.iter().filter(|c| c.managed) {
-                row.insert(c.key.to_string(), (i + 1).to_string());
-            }
-        }
-    }
-    g.filled.view = g.filled.view.clone().or(now.view.clone());
-    g.original = now;
-    let mut p = plan_form_as(root, g, true)?;
-    p.open.extend(kept);
-    p.edges = true;
-    Ok(p)
-}
-
 /// Two field values as the sheet would hold them: a bound of `40` and `40.0`
 /// are the same bound.
 fn same(field: &str, a: &str, b: &str) -> bool {
@@ -1500,16 +1439,6 @@ fn short(v: &str) -> String {
     } else {
         one
     }
-}
-
-/// Work out what a filled form would do to its node. Writes nothing.
-pub fn plan(root: &Path, html: &str) -> Result<Plan, Error> {
-    plan_form(root, read(html)?)
-}
-
-/// The same, for a form already read.
-pub fn plan_form(root: &Path, f: Form) -> Result<Plan, Error> {
-    plan_form_as(root, f, false)
 }
 
 /// Which kind of decision a plan item moves, from what it names: a field, a
@@ -1549,19 +1478,6 @@ pub fn today() -> String {
     )
     .date()
     .to_string()
-}
-
-/// A form, planned; `first` when it is a new node's first version.
-///
-/// EVERY CHANGE TO WHAT A NODE COMPUTES SAYS WHICH BELIEF BROKE. A form whose
-/// changes move a decision — an input, the output, the model, the maths, the
-/// algorithm, how it is drawn — and does not carry a complete de-risking record
-/// has those changes WITHHELD, each named, and only its wording goes in. With a
-/// complete record, the changes go in and a `[[version]]` is appended to the
-/// sheet, numbered, dated, and `next` until a release stamps it.
-fn plan_form_as(root: &Path, f: Form, first: bool) -> Result<Plan, Error> {
-    let tree = crate::load::load_all(root).map_err(|e| e.within("the tree does not load"))?;
-    plan_form_in(&tree, f, first)
 }
 
 /// What a filled form would change, against a tree already loaded — from the
@@ -1726,9 +1642,7 @@ fn plan_form_on(tree: &Tree, f: Form, first: bool) -> Result<Plan, Error> {
             relation: pick("expression", &sh.expression),
             source: pick("source", &sh.source),
         };
-        let base = p.text.clone().unwrap_or_else(|| {
-            std::fs::read_to_string(sh.dir.join("node.toml")).unwrap_or_default()
-        });
+        let base = p.text.clone().unwrap_or_else(|| sh.text.clone());
         p.text = Some(format!("{}{}", base, crate::derisk::version_toml(&v)));
         p.items.push(Item {
             what: format!("de-risking · version {n}"),
@@ -1798,8 +1712,7 @@ fn plan_edits(tree: &Tree, f: Form) -> Result<Plan, Error> {
             ),
         )
     })?;
-    let before = std::fs::read_to_string(sh.dir.join("node.toml"))
-        .map_err(|e| Error::io(sh.dir.display(), e))?;
+    let before = sh.text.clone();
     let now = content(sh);
     let mut p = Plan {
         current_hash: form::file_hash(&before),

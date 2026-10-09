@@ -1,6 +1,7 @@
 //! A lesson reads, or is refused with why; and its checks hold it to the tree.
 //!
-//! What must hold: the example lesson reads and passes against the real tree;
+//! What must hold: the example lesson reads and passes against the design, read
+//! from `design/`;
 //! a misspelt key is refused, not ignored; and each way a lesson can mislead —
 //! a sourced claim with no source, markup in the text, a widget naming a row
 //! that is not there or asking a reader to move a computed one, a check whose
@@ -13,13 +14,18 @@ fn root() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..")
 }
 
+/// The design, read from `design/`.
+fn design() -> vleo_sheet::Tree {
+    vleo_files::convert::open(&root()).unwrap().0
+}
+
 fn example() -> String {
     std::fs::read_to_string(root().join("docs/examples/orbit_velocity.lesson.toml")).unwrap()
 }
 
 #[test]
 fn the_example_lesson_reads_and_passes() {
-    let tree = vleo_sheet::load::load_all(&root()).unwrap();
+    let tree = design();
     let l = read(&example(), "orbit_velocity").unwrap();
     assert_eq!(problems(&l, &tree), Vec::<String>::new());
     assert_eq!(l.stations.len(), 3);
@@ -48,7 +54,7 @@ fn a_misspelt_key_is_refused_not_ignored() {
 
 #[test]
 fn what_would_mislead_a_reader_is_named() {
-    let tree = vleo_sheet::load::load_all(&root()).unwrap();
+    let tree = design();
     for (from, to, says) in [
         (
             "claim = \"sourced\"\nsource = \"vallado2013\"\n\n[[widget]]",
@@ -104,12 +110,8 @@ fn what_would_mislead_a_reader_is_named() {
 
 #[test]
 fn the_gate_reads_a_rows_lesson_and_refuses_a_bad_one() {
-    let tree = vleo_sheet::load::load_all(&root()).unwrap();
+    let tree = design();
     let mut sh = tree.sheets["orbit_velocity"].clone();
-    let d = std::env::temp_dir().join(format!("vleo-lesson-gate-{}", std::process::id()));
-    let _ = std::fs::remove_dir_all(&d);
-    std::fs::create_dir_all(&d).unwrap();
-    sh.dir = d.clone();
     let verdict = |sh: &vleo_sheet::model::Sheet| {
         vleo_sheet::gate::gate_node(sh, &tree)
             .into_iter()
@@ -121,15 +123,10 @@ fn the_gate_reads_a_rows_lesson_and_refuses_a_bad_one() {
         None,
         "a row with no lesson was checked for one"
     );
-    std::fs::write(d.join("lesson.toml"), example()).unwrap();
+    sh.lesson = Some(example());
     assert_eq!(verdict(&sh), Some(false), "the example lesson was refused");
-    std::fs::write(
-        d.join("lesson.toml"),
-        example().replacen("answer = 3", "answer = 9", 1),
-    )
-    .unwrap();
+    sh.lesson = Some(example().replacen("answer = 3", "answer = 9", 1));
     assert_eq!(verdict(&sh), Some(true), "a bad lesson passed the gate");
-    let _ = std::fs::remove_dir_all(&d);
 }
 
 /// The check a lesson form runs in the browser is the gate's own: fed the
@@ -137,7 +134,7 @@ fn the_gate_reads_a_rows_lesson_and_refuses_a_bad_one() {
 /// names exactly the problems the gate names, for a good lesson and a bad one.
 #[test]
 fn the_forms_check_is_the_gates_check() {
-    let tree = vleo_sheet::load::load_all(&root()).unwrap();
+    let tree = design();
     let rows = vleo_sheet::lesson::rows_block(&tree);
     for text in [
         example(),

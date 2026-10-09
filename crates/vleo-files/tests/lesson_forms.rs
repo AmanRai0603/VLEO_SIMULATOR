@@ -1,7 +1,7 @@
 //! A lesson form carries what its check needs and gives back what was written.
 //!
-//! What must hold: the form carries the row it is for, the tree's rows, the
-//! checker, and the lesson as it stands; what a filled form holds is read back
+//! What must hold: the form carries the row it is for, the design's rows (read
+//! from `design/`), the checker, and the lesson as it stands; what a filled form holds is read back
 //! as the TOML the gate reads; a form for one row is refused for another, and
 //! a bare lesson.toml needs its row named; nothing a lesson says can end the
 //! script element it travels in.
@@ -13,9 +13,14 @@ fn root() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..")
 }
 
+/// The design, read from `design/`.
+fn design() -> vleo_sheet::Tree {
+    vleo_files::convert::open(&root()).unwrap().0
+}
+
 #[test]
 fn a_form_carries_its_row_the_rows_the_checker_and_the_lesson() {
-    let tree = vleo_sheet::load::load_all(&root()).unwrap();
+    let tree = design();
     let html = document(&tree.sheets["orbit_velocity"], &tree).unwrap();
     for id in [
         "vleo-lesson-json",
@@ -47,7 +52,7 @@ fn a_form_carries_its_row_the_rows_the_checker_and_the_lesson() {
 
 #[test]
 fn what_a_filled_form_holds_is_read_back_as_the_gate_reads_it() {
-    let tree = vleo_sheet::load::load_all(&root()).unwrap();
+    let tree = design();
     let html = document(&tree.sheets["orbit_velocity"], &tree).unwrap();
     let example =
         std::fs::read_to_string(root().join("docs/examples/orbit_velocity.lesson.toml")).unwrap();
@@ -74,18 +79,12 @@ fn what_a_filled_form_holds_is_read_back_as_the_gate_reads_it() {
 
 #[test]
 fn nothing_a_lesson_says_ends_the_script_it_travels_in() {
-    let tree = vleo_sheet::load::load_all(&root()).unwrap();
-    let sh = tree.sheets["orbit_velocity"].clone();
-    let d = std::env::temp_dir().join(format!("vleo-lesson-form-{}", std::process::id()));
-    let _ = std::fs::remove_dir_all(&d);
-    std::fs::create_dir_all(&d).unwrap();
-    let mut sh = sh;
-    sh.dir = d.clone();
-    std::fs::write(
-        d.join("lesson.toml"),
-        "[lesson]\ntitle = \"a </script><script>alert(1)</script>\"\nby = \"x\"\nanswer = \"y\"\nkind = \"explanation\"\n",
-    )
-    .unwrap();
+    let tree = design();
+    let mut sh = tree.sheets["orbit_velocity"].clone();
+    sh.lesson = Some(
+        "[lesson]\ntitle = \"a </script><script>alert(1)</script>\"\nby = \"x\"\nanswer = \"y\"\nkind = \"explanation\"\n"
+            .to_string(),
+    );
     let html = document(&sh, &tree).unwrap();
     let scripts_opened = html.matches("<script").count();
     assert!(!html.contains("<script><script>"));
@@ -99,5 +98,4 @@ fn nothing_a_lesson_says_ends_the_script_it_travels_in() {
         back.contains("a </script><script>alert(1)</script>"),
         "the text did not come back as written"
     );
-    let _ = std::fs::remove_dir_all(&d);
 }

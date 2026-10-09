@@ -59,9 +59,7 @@ fn by_binding(sh: &Sheet, given: &[(String, f64)]) -> Vec<f64> {
 #[test]
 fn every_case_of_the_design_passes() {
     let root = root();
-    let (on_disk, _) =
-        vleo_files::convert::read_folder(&root.join("design")).expect("design/ reads");
-    let served = vleo_files::convert::Served::new(&root, &on_disk).expect("design/ is served");
+    let (served, _) = vleo_files::convert::serve(&root).expect("design/ is served");
     let tree: Tree = vleo_sheet::load::load_all_from(&served, &root).expect("design/ loads");
     let g = opened::graph(&tree).expect("design/ makes a graph");
 

@@ -20,10 +20,10 @@ fn root() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..")
 }
 
-/// Today's design as the sheets hold it, read once.
+/// Today's design as its files hold it, read once.
 fn today() -> &'static Graph {
     static G: std::sync::OnceLock<&'static Graph> = std::sync::OnceLock::new();
-    G.get_or_init(|| opened::graph(&vleo_sheet::load_all(&root()).unwrap()).unwrap())
+    G.get_or_init(|| opened::graph(&vleo_files::convert::open(&root()).unwrap().0).unwrap())
 }
 
 /// The case with the reference data, verified once for every test here.
@@ -143,7 +143,7 @@ fn without_its_data_a_row_refuses_and_every_row_it_blocks_names_it() {
 /// The design with nodes' methods changed in memory, each `(node, from, to)`,
 /// run in the interpreter: the design on disk is not touched.
 fn broken(edits: &[(&str, &str, &str)]) -> &'static Graph {
-    let mut tree = vleo_sheet::load_all(&root()).unwrap();
+    let mut tree = vleo_files::convert::open(&root()).unwrap().0;
     for (id, from, to) in edits {
         let m = &mut tree.sheets.get_mut(*id).unwrap().method.text;
         assert!(m.contains(from), "{id}'s method has no {from:?}");

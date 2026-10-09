@@ -2,15 +2,15 @@
 //!
 //! The compiled-in tables once guessed: an unknown input became variable 0, an
 //! unknown cycle member was left out, a fixture's missing input was fed 0.0.
-//! Each is tried here on a copy of the real tree held in memory.
+//! Each is tried here on a copy of the design, read from `design/`, held in
+//! memory.
 
 use std::path::Path;
-use vleo_sheet::load::load_all;
 use vleo_sheet::wiring::errors as wiring_errors;
 
 fn tree() -> vleo_sheet::load::Tree {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
-    load_all(&root).unwrap()
+    vleo_files::convert::open(&root).unwrap().0
 }
 
 #[test]

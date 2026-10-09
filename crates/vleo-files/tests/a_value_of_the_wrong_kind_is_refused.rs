@@ -1,55 +1,37 @@
 //! A value of the wrong kind in a sheet stops the load, naming the file.
 //!
 //! The loader used to read `lower = "1e-6"` as a lower bound of 0.0 and a
-//! table where a list of tables belonged as a panic. Each is tried on a one-node
-//! tree in a temporary folder, not on the checkout.
+//! table where a list of tables belonged as a panic. Each is tried on the
+//! design, read from `design/`, with one real node's sheet edited in memory as
+//! the files serve it; nothing on disk is touched.
 
 use std::path::{Path, PathBuf};
-use vleo_sheet::load::load_all;
+use vleo_files::convert::{serve, Served};
+use vleo_sheet::files::Files;
+use vleo_sheet::load::load_all_from;
 
 fn real() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../..")
 }
 
-fn copy(from: &Path, to: &Path) {
-    std::fs::create_dir_all(to).unwrap();
-    for e in std::fs::read_dir(from).unwrap().flatten() {
-        let p = e.path();
-        if p.is_dir() {
-            copy(&p, &to.join(e.file_name()));
-        } else {
-            std::fs::copy(&p, to.join(e.file_name())).unwrap();
-        }
-    }
-}
-
-/// A tree holding one real node and the real layer, case and source files.
-fn one_node_tree(tag: &str, edit: impl Fn(&str) -> String) -> PathBuf {
-    let root = std::env::temp_dir().join(format!("vleo-kind-{tag}-{}", std::process::id()));
-    let _ = std::fs::remove_dir_all(&root);
-    let tree = load_all(&real()).unwrap();
+/// The design's files, with the sheet of one real node edited.
+fn one_node_edited(edit: impl Fn(&str) -> String) -> Served {
+    let (mut served, _) = serve(&real()).unwrap();
+    let tree = load_all_from(&served, &real()).unwrap();
     let sh = tree
         .sheets
         .values()
         .find(|s| s.lower != 0.0 && s.inputs.is_empty())
         .expect("a row with a declared lower bound");
-    let dir = root
-        .join("crates")
-        .join(&sh.crate_name)
-        .join("nodes")
-        .join(&sh.folder);
-    std::fs::create_dir_all(&dir).unwrap();
-    let text = std::fs::read_to_string(sh.dir.join("node.toml")).unwrap();
-    std::fs::write(dir.join("node.toml"), edit(&text)).unwrap();
-    for d in ["layers", "cases", "sources"] {
-        copy(&real().join(d), &root.join(d));
-    }
-    root
+    let sheet = sh.dir.join("node.toml");
+    let text = served.read_to_string(&sheet).unwrap();
+    served.replace(&sheet, Some(edit(&text).into_bytes()));
+    served
 }
 
 #[test]
 fn a_number_written_as_text_is_named_not_read_as_zero() {
-    let root = one_node_tree("text", |t| {
+    let served = one_node_edited(|t| {
         let mut out = String::new();
         let mut done = false;
         for line in t.lines() {
@@ -64,7 +46,7 @@ fn a_number_written_as_text_is_named_not_read_as_zero() {
         assert!(done, "the sheet has no `lower =` line");
         out
     });
-    let Err(err) = load_all(&root) else {
+    let Err(err) = load_all_from(&served, &real()) else {
         panic!("a bound written as text was accepted");
     };
     assert_eq!(err.kind(), vleo_sheet::ErrorKind::Malformed, "{err}");
@@ -72,20 +54,18 @@ fn a_number_written_as_text_is_named_not_read_as_zero() {
         err.message().contains("\"1e-6\"") && err.message().contains("a number"),
         "{err}"
     );
-    let _ = std::fs::remove_dir_all(&root);
 }
 
 #[test]
 fn the_same_tree_untouched_loads() {
-    let root = one_node_tree("clean", str::to_string);
-    load_all(&root).expect("an unedited node did not load on its own");
-    let _ = std::fs::remove_dir_all(&root);
+    let served = one_node_edited(str::to_string);
+    load_all_from(&served, &real()).expect("an unedited node did not load");
 }
 
 #[test]
 fn a_misspelt_key_is_named_with_the_one_it_meant() {
-    let root = one_node_tree("spelling", |t| t.replacen("\nlower =", "\nlowr =", 1));
-    let Err(err) = load_all(&root) else {
+    let served = one_node_edited(|t| t.replacen("\nlower =", "\nlowr =", 1));
+    let Err(err) = load_all_from(&served, &real()) else {
         panic!("a misspelt key was passed over");
     };
     assert_eq!(err.kind(), vleo_sheet::ErrorKind::Malformed, "{err}");
@@ -93,7 +73,6 @@ fn a_misspelt_key_is_named_with_the_one_it_meant() {
         err.message().contains("output.lowr") && err.message().contains("did you mean `lower`"),
         "{err}"
     );
-    let _ = std::fs::remove_dir_all(&root);
 }
 
 #[test]

@@ -26,7 +26,7 @@ use crate::{Error, ErrorKind};
 /// The form for a row's lesson — its lesson as it stands, or an empty one to
 /// start from.
 pub fn document(sh: &Sheet, tree: &Tree) -> Result<String, Error> {
-    let l = match lesson::load(&sh.dir, &sh.id) {
+    let l = match lesson::of(sh) {
         Some(r) => r?,
         None => Lesson {
             node: sh.id.clone(),
@@ -34,7 +34,7 @@ pub fn document(sh: &Sheet, tree: &Tree) -> Result<String, Error> {
             ..Default::default()
         },
     };
-    let toml_text = std::fs::read_to_string(sh.dir.join(lesson::FILE)).unwrap_or_default();
+    let toml_text = sh.lesson.clone().unwrap_or_default();
     Ok(page(sh, tree, &l, &toml_text))
 }
 

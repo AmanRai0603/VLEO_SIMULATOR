@@ -17,10 +17,10 @@ fn root() -> PathBuf {
 }
 
 fn tree() -> vleo_sheet::load::Tree {
-    vleo_sheet::load_all(&root()).unwrap()
+    vleo_files::convert::open(&root()).unwrap().0
 }
 
-/// Today's design as the sheets hold it, read once.
+/// Today's design as its files hold it, read once.
 fn today() -> &'static Graph {
     static G: OnceLock<&'static Graph> = OnceLock::new();
     G.get_or_init(|| opened::graph(&tree()).unwrap())
@@ -60,7 +60,7 @@ fn the_design_read_from_its_files_is_known_by_the_same_fingerprint_each_time() {
             two.answers_fingerprint(&case).unwrap()
         );
     }
-    // The sheets they were converted from, likewise.
+    // Loaded twice by the one reader, likewise.
     assert_eq!(
         today().design_fingerprint(),
         opened::graph(&tree()).unwrap().design_fingerprint()
@@ -114,7 +114,7 @@ fn anything_the_design_runs_moves_its_fingerprint() {
 
 #[test]
 fn an_answer_that_moves_moves_the_answers_fingerprint() {
-    // The same sheets, one method run with its multiplier read from another
+    // The same design, one method run with its multiplier read from another
     // table: what the design is, as its hashes say, has not moved; what it
     // answers has.
     let mut t = tree();

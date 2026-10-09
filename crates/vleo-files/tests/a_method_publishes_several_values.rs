@@ -32,7 +32,7 @@ return kp_from_ap(ap_hotday) + kp_peak_slot_bias(ap_hotday)
 #[test]
 fn sw_kp_scenarios_written_as_a_method_meets_its_own_fixtures() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
-    let tree = vleo_sheet::load_all(&root).expect("the tree loads");
+    let (tree, _) = vleo_files::convert::open(&root).expect("the design loads");
     let sh = &tree.sheets["sw_kp_scenarios"];
     assert_eq!(
         sh.publishes.len(),

@@ -20,10 +20,7 @@ fn root() -> PathBuf {
 
 /// The design as its files hold it, read the way the reader reads it.
 fn design() -> Tree {
-    let root = root();
-    let (files, _) = vleo_files::convert::read_folder(&root.join("design")).unwrap();
-    let served = vleo_files::convert::Served::new(&root, &files).unwrap();
-    vleo_sheet::load::load_all_from(&served, &root).unwrap()
+    vleo_files::convert::open(&root()).unwrap().0
 }
 
 /// What the reader says of a tree it refuses.

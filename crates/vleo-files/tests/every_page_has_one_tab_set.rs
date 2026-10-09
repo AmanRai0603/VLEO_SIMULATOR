@@ -2,8 +2,8 @@
 //! panel.
 //!
 //! A node's page is rendered from its sheet when it is opened; no folder holds
-//! a copy. So the page is checked as it is rendered: every sheet in the tree,
-//! through `page::fragment`, the function the engine calls. One tab set across
+//! a copy. So the page is checked as it is rendered: every node of the design,
+//! read from `design/`, through `page::fragment`, the function the engine calls. One tab set across
 //! the tree means one template; two would mean a page written by a template
 //! that has since moved.
 
@@ -29,7 +29,7 @@ fn tabs(html: &str) -> (Vec<String>, usize) {
 #[test]
 fn every_rendered_page_has_one_tab_set_and_a_panel_for_each_tab() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
-    let tree = vleo_sheet::load_all(&root).expect("the tree loads");
+    let (tree, _) = vleo_files::convert::open(&root).expect("the design loads");
     let mut sets: BTreeMap<Vec<String>, Vec<String>> = BTreeMap::new();
     let mut bad = Vec::new();
     for sh in tree.ordered() {

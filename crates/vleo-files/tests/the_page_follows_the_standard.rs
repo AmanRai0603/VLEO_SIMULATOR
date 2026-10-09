@@ -1,26 +1,25 @@
 //! A node's page follows the explanation standard, docs/EXPLAINING.md.
 //!
 //! The page is generated, so the standard is a property of the generator and
-//! is checked here once for every node: answer first (E1), the station order
-//! (E2), the kind of every claim (E3) and of every tab (E8), the depth marks
-//! (E9, E11) — and the de-risking record, newest version first, with the
-//! register on a risk-register row (docs/DERISKING.md).
+//! is checked here once for every node of the design, read from `design/`:
+//! answer first (E1), the station order (E2), the kind of every claim (E3) and
+//! of every tab (E8), the depth marks (E9, E11) — and the de-risking record,
+//! newest version first, with the register on a risk-register row
+//! (docs/DERISKING.md).
 
-use std::path::{Path, PathBuf};
-use vleo_sheet::load::load_all;
+use std::path::Path;
+use vleo_sheet::load::Tree;
 use vleo_sheet::page::fragment;
 
-fn root() -> PathBuf {
-    Path::new(env!("CARGO_MANIFEST_DIR"))
-        .parent()
+/// The design, read from `design/`.
+fn design() -> Tree {
+    vleo_files::convert::open(&Path::new(env!("CARGO_MANIFEST_DIR")).join("../.."))
         .unwrap()
-        .parent()
-        .unwrap()
-        .to_path_buf()
+        .0
 }
 
 fn page(id: &str) -> String {
-    let tree = load_all(&root()).unwrap();
+    let tree = design();
     let sh = tree.sheets.get(id).unwrap();
     fragment(sh, &tree)
 }
@@ -84,7 +83,7 @@ fn every_claim_and_every_tab_says_what_kind_it_is() {
         assert!(p.contains(&format!("dx dx-{k}")), "E8: no tab is a {k}");
     }
     // A declared row says who declared it, on the value itself.
-    let tree = load_all(&root()).unwrap();
+    let tree = design();
     let declared = tree
         .ordered()
         .into_iter()
@@ -137,7 +136,7 @@ fn a_risk_register_row_holds_its_register_and_asks_for_the_conclusion() {
 
 #[test]
 fn a_seeded_row_says_so_first_rather_than_answering() {
-    let tree = load_all(&root()).unwrap();
+    let tree = design();
     let seeded = tree.ordered().into_iter().find(|s| s.is_seeded()).unwrap();
     let p = page(&seeded.id);
     assert!(at(&p, "Not yet specified") < at(&p, "role=\"tablist\""));

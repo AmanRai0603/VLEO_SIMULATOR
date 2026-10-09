@@ -2,18 +2,18 @@
 //!
 //! The gate is what enforces the rules in AGENTS.md, and until these tests it
 //! had none of its own: a check that stopped firing would have gone on reporting
-//! green. Each test takes a real row (or the real tree), breaks exactly one
-//! thing, and asserts that the named check — and only the named check — fails.
-//! Checks that read a node's files work on a copy of its folder in a temporary
-//! directory; nothing here writes to the checkout.
+//! green. Each test takes a real row (or the design itself, read from
+//! `design/`), breaks exactly one thing in memory, and asserts that the named
+//! check — and only the named check — fails. Nothing here writes to disk.
 
 use std::path::Path;
 use vleo_sheet::gate::{gate_node, validate_tree, Check};
-use vleo_sheet::load::load_all;
 use vleo_sheet::{Sheet, Tree};
 
 fn tree() -> Tree {
-    load_all(&Path::new(env!("CARGO_MANIFEST_DIR")).join("../..")).unwrap()
+    vleo_files::convert::open(&Path::new(env!("CARGO_MANIFEST_DIR")).join("../.."))
+        .unwrap()
+        .0
 }
 
 fn failed(checks: &[Check]) -> Vec<&'static str> {
@@ -47,21 +47,6 @@ fn breaks(t: &Tree, original: &Sheet, broken: &Sheet, check: &str) {
         "{}: breaking {check} should fail {check} alone",
         broken.id
     );
-}
-
-/// A copy of a row's folder in a temporary directory, the row pointed at it.
-fn in_temp(sh: &Sheet, tag: &str) -> Sheet {
-    let dir = std::env::temp_dir().join(format!("vleo-gate-{tag}-{}", std::process::id()));
-    let _ = std::fs::remove_dir_all(&dir);
-    std::fs::create_dir_all(&dir).unwrap();
-    for e in std::fs::read_dir(&sh.dir).unwrap().flatten() {
-        if e.path().is_file() {
-            std::fs::copy(e.path(), dir.join(e.file_name())).unwrap();
-        }
-    }
-    let mut c = sh.clone();
-    c.dir = dir;
-    c
 }
 
 // ---------------------------------------------------------------------------
@@ -202,7 +187,7 @@ fn seeded_rows_are_held_to_what_a_seed_owns() {
 }
 
 // ---------------------------------------------------------------------------
-// the checks that read a node's files
+// the checks that read a node's method
 
 #[test]
 fn sense_applied_reads_the_code_and_not_its_comments() {
@@ -232,7 +217,7 @@ fn sense_applied_reads_the_code_and_not_its_comments() {
         "{} does not apply {want}",
         ok.id
     );
-    let mut bad = in_temp(&ok, "sense");
+    let mut bad = ok.clone();
     // The method applies the opposite; a comment names the right one. The
     // check once read the comment and passed.
     bad.method.text = format!(
@@ -243,7 +228,6 @@ fn sense_applied_reads_the_code_and_not_its_comments() {
     assert!(f.contains(&"sense-applied"), "{f:?}");
     // And the method as it is passes.
     assert!(!failed(&gate_node(&ok, &t)).contains(&"sense-applied"));
-    let _ = std::fs::remove_dir_all(&bad.dir);
 }
 
 // ---------------------------------------------------------------------------

@@ -55,7 +55,7 @@ return AP_AT_G[i]
 #[test]
 fn three_list_reading_rows_written_as_methods_meet_their_own_fixtures() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
-    let tree = vleo_sheet::load_all(&root).expect("the tree loads");
+    let (tree, _) = vleo_files::convert::open(&root).expect("the design loads");
     for (node, src) in [
         ("sw_activity_band", ACTIVITY_BAND),
         ("sw_cycle_number", CYCLE_NUMBER),
