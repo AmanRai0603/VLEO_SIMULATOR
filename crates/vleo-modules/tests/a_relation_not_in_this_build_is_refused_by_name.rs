@@ -1,11 +1,11 @@
 //! A row whose relation this build of the engine does not have is refused by
 //! name, never run as something else.
 //!
-//! The graph read from the design's files finds each row's relation by its id,
-//! and takes the compiled one only when it is that sheet's — its implementation
-//! the one the sheet was built with. A sheet whose implementation has moved on
-//! (an edit the build has not seen), or a row the build has never heard of,
-//! must stop at that row, and everything downstream of it must say so.
+//! The graph read from the design's files runs a row's method, or publishes
+//! its stated value. This build holds no relation of the design as code, so a
+//! row with neither — its method taken away, or a row the build has never
+//! heard of — must stop at that row, and everything downstream of it must say
+//! so.
 
 #![cfg(feature = "std")]
 
@@ -35,10 +35,10 @@ fn a_relation_built_from_another_sheet_is_refused_by_name() {
 
 fn refused_when(moved: impl Fn(&mut vleo_sheet::model::Sheet)) {
     let mut tree = vleo_files::convert::open(&root()).unwrap().0;
-    // A computed row that answers today, on the compiled engine. Every
-    // relation of the design is a method now, and a method the build has not
-    // seen runs in the interpreter; so the row is taken without its method,
-    // as a relation this build holds as code, found by its id …
+    // A computed row that answers today. Every relation of the design is a
+    // method now, and a method the build has not seen runs in the
+    // interpreter; so the row is taken without its method, as a relation
+    // looked for in code, by its id …
     let all = Case {
         target: vleo_modules::nodes()[0].id.to_string(),
         mode: RunMode::All,

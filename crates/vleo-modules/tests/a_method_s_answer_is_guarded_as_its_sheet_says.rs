@@ -1,5 +1,5 @@
-//! A method run by the interpreter has its answer guarded as the compiled row
-//! guards it: below its declared range, then above it, each refused with the
+//! A method run by the interpreter has its answer guarded as its sheet
+//! declares: below its declared range, then above it, each refused with the
 //! sheet's own reason and the bound in SI.
 //!
 //! Every method in the design today refuses on its own at the bounds its row
@@ -75,7 +75,7 @@ fn an_answer_outside_its_declared_range_is_refused_lower_bound_first() {
     }
 
     // Both: the lower bound above the answer too — and the lower is said
-    // first, as the compiled row says it.
+    // first, as every row's guards say it.
     let lower = answer / si + 1.0;
     tree.sheets.get_mut(&id).unwrap().lower = lower;
     let g = opened::graph(&tree).unwrap();

@@ -100,7 +100,7 @@ series and the row it shows, and every refused point with why. A page draws
 it; it never invents its own picture of the numbers.
 → `crates/vleo-modules/src/figure.rs`, `contract/schemas/result.json`
 
-**Lesson** — `lesson.toml` beside a row's `node.toml`: stations of text with a
+**Lesson** — a row's `lesson.toml`: stations of text with a
 claim each, equations with their source, "try it" widgets that name input and
 output rows for the engine to answer, check-yourself questions. Content only;
 the page draws it from its component library. Outside the sheet hash.

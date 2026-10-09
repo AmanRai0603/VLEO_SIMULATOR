@@ -84,8 +84,8 @@ pub struct GroupDef {
 /// its sheet's guards applied.
 pub type NodeFn = fn(&[f64], &mut [f64]) -> Result<(), Fault>;
 
-/// A relation the graph runs itself rather than as compiled code — a node's
-/// method, run by the interpreter — with the same contract as a [`NodeFn`].
+/// A relation the graph runs itself — a node's method, run by the
+/// interpreter, or a stated value — with the same contract as a [`NodeFn`].
 pub type Relation = dyn Fn(&[f64], &mut [f64]) -> Result<(), Fault> + Send + Sync;
 
 /// The graph the engine runs: its nodes, its variables, each node's relation
@@ -279,7 +279,8 @@ impl Graph {
         }
     }
 
-    /// How many nodes the graph runs itself rather than as compiled code.
+    /// How many nodes the graph runs a relation of its own for: every one
+    /// with a method or a stated value.
     pub fn run_by_the_graph(&self) -> usize {
         self.run.iter().filter(|r| r.is_some()).count()
     }

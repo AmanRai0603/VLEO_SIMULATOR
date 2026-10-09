@@ -1,12 +1,12 @@
 //! Every case the design holds passes, run by the engine that reads the
 //! design from its files.
 //!
-//! Each node crate's `evidence.rs` asks this of one node, of its compiled
-//! code: each fixture within its tolerance, each of its author's cases as the
-//! author's code answered or refused it, the three properties from its
-//! declared domain, and the prior implementation's grid. Those crates go
-//! (docs/PLAN_1_0.md, phase E), and the questions must not go with them. So
-//! they are asked here of every node at once, of the graph read from
+//! Each node crate's `evidence.rs` once asked this of one node, of its
+//! compiled code: each fixture within its tolerance, each of its author's
+//! cases as the author's code answered or refused it, the three properties
+//! from its declared domain, and the prior implementation's grid. Those crates
+//! went in phase E (docs/PLAN_1_0.md), and the questions did not go with
+//! them. They are asked here of every node at once, of the graph read from
 //! `design/` and run in the interpreter alone, in the same words and to the
 //! same tolerances. A disagreement is a physics disagreement, for the node's
 //! engineer; a tolerance is never the thing to change.

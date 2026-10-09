@@ -1,6 +1,6 @@
 [package]
 name = "vleo-sheet"
-description = "What a sheet means — read, checked, generated from and edited. One implementation, used by the generators in xtask, by the build scripts, and by the daemon for the declaration form and the manual, so no face carries a second copy that could disagree. Not linked into the engine: a run never reads a sheet."
+description = "What a node's content means — the sheet, read from the design's files, checked, run as a method and printed as its page. One implementation, used by xtask, the server, the command line, the engine's graph and the pages' checkers, so no face carries a second copy that could disagree."
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true

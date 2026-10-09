@@ -37,10 +37,11 @@ explaining itself (`cargo run -p xtask -- explain <command>`):
     cargo run -p xtask -- gate <node> && cargo test
 
 A need the code cannot meet comes back as a request (W14), answered with an
-application release; the developer edits no node. Nothing in a node's folder is
-generated: `node.toml`, `fixtures.toml` (values from outside this code, never
-`self-snapshot`) and, where there is one, `parity.csv` are all written by hand,
-by its node engineer. What a sheet's fields mean is
+application release; the developer edits no node. A node is its file in
+`design/`, written by its node engineer in the group's application; the tools
+read it as its sheet, `node.toml` and `fixtures.toml` (values from outside this
+code, never `self-snapshot`), and nothing in this repository writes it. What a
+sheet's fields mean is
 `docs/NODE_AUTHORING.md`; the method language is `docs/PSEUDOCODE.md`.
 
 A relation is a formula, and a formula lives in `vleo-core::physics` (rule 3).

@@ -360,10 +360,10 @@
   "manifest": {
     "node": "l3_solar_ach_01",
     "mode": "branch",
-    "kernel": "7fec07",
-    "graph": "adb684",
+    "kernel": "807ac9",
+    "graph": "a431fa",
     "case": "cc8aca",
-    "chain": "358a84",
+    "chain": "e3f6d6",
     "endpoint": "local-daemon",
     "ran": 9,
     "blocked": 0,

@@ -51,7 +51,7 @@ A block's **behaviour** is exactly one of:
 | stated | a value a person states, with its source |
 | lookup | a table and how to read it |
 | open | not decided yet: a draft, refused by name if a run reaches it |
-| built-in | a relation still in compiled code, found by the block's id until its group writes a method for it |
+| built-in | a relation kept in code, found by the block's id until its group writes a method for it. Since phase E none is: a block named so refuses by name |
 
 A block stops being broken down when its behaviour is a method, a stated
 value, a lookup, or a wire from another group.
@@ -453,9 +453,9 @@ to confirm, rename, break down or remove.
   that moved, so the change is seen, not assumed away.
 - **Unlimited depth invites over-breaking.** A block that is one formula should
   stay one block. The stop rule in section 2 is the guard.
-- **A block without a method cannot show its curve.** On 1.0.0 the blocks whose
-  relation is still compiled code are marked so, and the plan migrates them
-  group by group (`docs/PLAN_1_0.md`).
+- **A block without a method cannot show its curve.** Phase E moved every
+  relation that was compiled code into the design as a method
+  (`docs/PLAN_1_0.md`); a block left open has no curve, and says so.
 - **One number per row runs deep in the engine.** Choices, lists, tables and
   time series as real ports are engine work, not only a new page.
 

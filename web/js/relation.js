@@ -13,7 +13,7 @@
   symbols knowing what they are supposed to describe.
 
   IT DRAWS THE ENGINE'S OWN ANSWER. The curve is a sweep from /v1/sweep, which
-  runs the same compiled node the run panel runs. Nothing here evaluates the
+  runs the same node, its method in the same interpreter, the run panel runs. Nothing here evaluates the
   relation, so a picture that disagrees with the node is impossible rather than
   unlikely. Where the engine refuses a point, the line breaks and the refusal is
   counted in the caption — a walk that quietly stepped over the refusals would

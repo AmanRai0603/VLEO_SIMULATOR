@@ -1,6 +1,6 @@
 //! The command line runs the graph read from the design's files, says so, and
-//! refuses — rather than runs the graph compiled into it — when the design
-//! does not open.
+//! refuses when the design does not open: it holds no graph of its own to run
+//! in its place.
 
 use std::path::{Path, PathBuf};
 use std::process::Command;
@@ -136,7 +136,7 @@ fn copy(from: &Path, to: &Path) {
 fn a_figure_is_drawn_from_the_design_s_files() {
     // The sustained Ap requirement raised from 48 to 60 in a copy of the
     // design: the closure's figure is drawn from that design, not from the
-    // graph compiled into the program.
+    // design beside the program.
     let s = scratch("figure");
     let design = s.join("design");
     copy(&root().join("design"), &design);

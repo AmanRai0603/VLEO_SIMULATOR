@@ -1,14 +1,14 @@
 {
   "contract": "1",
-  "kernel": "3b1158",
-  "graph": "adb684",
-  "version": "0.3.0",
+  "kernel": "807ac9",
+  "graph": "a431fa",
+  "version": "0.4.0",
   "endpoint": "local-daemon",
   "port": 18731,
-  "nodes": 1396,
+  "nodes": 1401,
   "design": {
-    "from": "folders",
-    "fingerprint": ""
+    "from": "files",
+    "fingerprint": "0fe5f2c4324025fc3ee2964ec86716b0384bd23fa795a44e95602b9e71611d52"
   },
   "data": [
     "solar-drivers@2026.09.04#54784567db11b868",

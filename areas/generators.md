@@ -46,7 +46,7 @@ schema rather than prose.
 
 ## The schema is the contract
 
-A field added to `node.toml` without a reader is a field that rots. A field read
+A field added to the sheet without a reader is a field that rots. A field read
 without being declared in the loader is a field that silently defaults. Change
 both, in the same commit, or neither.
 

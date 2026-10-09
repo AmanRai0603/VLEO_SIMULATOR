@@ -88,10 +88,10 @@
   "manifest": {
     "node": "sw_ap_design",
     "mode": "branch",
-    "kernel": "7fec07",
-    "graph": "adb684",
+    "kernel": "807ac9",
+    "graph": "a431fa",
     "case": "1f25f9",
-    "chain": "075c5d",
+    "chain": "e0dae3",
     "endpoint": "local-daemon",
     "ran": 2,
     "blocked": 0,

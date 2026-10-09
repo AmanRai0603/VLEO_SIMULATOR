@@ -5,16 +5,15 @@
 //! only one: it runs through the one engine — the resolver, the adapter that
 //! moves values to and from a node, the fixtures, the credibility.
 //!
-//! Each node, variable and case is built from the tree in the order and with
-//! the indices the generator once wrote into the compiled tables, the same
-//! units turned to SI and the same fixtures, so today's answers
-//! (`baseline/`) are held to the bit. Every relation is the design's own
+//! Each node, variable and case is built from the tree in the sheets' sorted
+//! order, with every unit turned to SI and the fixtures as written, so today's
+//! answers (`baseline/`) are held to the bit. Every relation is the design's own
 //! (docs/PLAN_1_0.md, phase E):
 //!
 //! - **a method** — a row whose relation is a method runs in the method
 //!   language's interpreter, the same one that checked it against its cases.
-//!   Around it is what the compiled row did, in the same order and the same
-//!   words: the length check, an input that is not a number refused at the
+//!   Around it is the contract its sheet declares, in the same order and the
+//!   same words on every row: the length check, an input that is not a number refused at the
 //!   door, the method's own refusal and its undefined values as the same
 //!   faults, and the guards on every value it publishes. Its arithmetic is the
 //!   same portable maths, so it is held to today's answers exactly.
@@ -25,11 +24,11 @@
 //!   measured, the solar design and closure figures are the same to within
 //!   their timing noise, and the one heavy case — `l3_solar_interface` over
 //!   100 001 points — takes 1.6 times as long, 0.27 ms a point against 0.17.
-//!   No other compiled code runs for any row.
+//!   No relation of the design runs as code of its own.
 //! - **a stated value** — published as written, converted from its unit to
-//!   its type's as the generated row did, and guarded by its declared domain.
+//!   its type's, and guarded by its declared domain.
 //! - **a table, or its children** — read by the engine itself.
-//! - **seeded** — a row nobody has specified refuses, as the compiled one does;
+//! - **seeded** — a row nobody has specified refuses, by its own id;
 //!   anything else refuses by name, rather than running something that is not
 //!   it.
 
@@ -207,7 +206,7 @@ fn view_of(v: &sheet::View) -> View {
 }
 
 /// A row the tree knows about that nobody has specified yet: it refuses by
-/// name, as the compiled table's does.
+/// name.
 fn unspecified(_: &[f64], _: &mut [f64]) -> Result<(), Fault> {
     Err(Fault::NotRun {
         node: "seeded, not yet specified",
@@ -238,7 +237,7 @@ fn said(s: String) -> &'static str {
     k
 }
 
-/// One value a method publishes, and the guards the compiled row puts on it.
+/// One value a method publishes, and the guards its sheet puts on it.
 struct Guarded {
     symbol: &'static str,
     unit: Unit,
@@ -269,7 +268,7 @@ impl Guarded {
         }
     }
 
-    /// The compiled row's guards on one value, in its order: not a number,
+    /// The sheet's guards on one value, in their order: not a number,
     /// then below its lower bound, then above its upper.
     fn check(&self, node: &'static str, v: f64) -> Result<(), Fault> {
         if !v.is_finite() {
@@ -305,8 +304,8 @@ impl Guarded {
     }
 }
 
-/// A row's method, run by the interpreter, with the compiled row's contract
-/// around it.
+/// A row's method, run by the interpreter, with its sheet's contract around
+/// it.
 struct Interpreted {
     node: &'static str,
     /// The method, read once for its inputs: a sweep runs it thousands of
@@ -327,8 +326,8 @@ impl Interpreted {
                 missing: "an input the contract declares",
             });
         }
-        // The door, as the compiled method has it: an input that is not a
-        // number is refused before the first line.
+        // The door: an input that is not a number is refused before the
+        // method's first line.
         if inputs[..self.inputs.len()].iter().any(|v| !v.is_finite()) {
             return Err(Fault::Refused {
                 node,
@@ -423,8 +422,8 @@ fn relation(sh: &sheet::Sheet) -> NodeFn {
 }
 
 /// A stated value, as the row publishes it: converted from the unit it was
-/// written in to its type's, exactly as the generated row did
-/// (`from_unit`), and guarded by its declared domain.
+/// written in to its type's (`from_unit`), and guarded by its declared
+/// domain.
 fn stated(sh: &sheet::Sheet) -> Option<&'static Relation> {
     if !sh.is_declared() || !sh.inputs.is_empty() {
         return None;
@@ -466,8 +465,8 @@ pub fn graph(tree: &Tree) -> Result<&'static Graph, Error> {
 fn build(tree: &Tree) -> Result<&'static Graph, Error> {
     // Every name the design wires by must resolve before anything is built
     // from it. Below, a name that does not would run as the first variable,
-    // or as zero, or be left out; the compiled build refused it at compile
-    // time, and this graph refuses it here, by name (`vleo_sheet::wiring`).
+    // or as zero, or be left out; this graph refuses it here, by name
+    // (`vleo_sheet::wiring`).
     let wrong = vleo_sheet::wiring::errors(tree);
     if !wrong.is_empty() {
         return Err(Error::new(
