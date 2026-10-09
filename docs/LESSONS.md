@@ -1,6 +1,6 @@
 # Lessons
 
-> **Answer first.** A lesson is `lesson.toml` beside a row's `node.toml`: content only — stations of text with a claim each, equations with their source, "try it" widgets that name input and output rows, check-yourself questions, references. The page draws every part from one component library, and a widget computes nothing itself: the engine answers it. The gate refuses a lesson with markup, an untagged claim, or a widget naming a row that is not there.
+> **Answer first.** A lesson is a row's `lesson.toml`: content only — stations of text with a claim each, equations with their source, "try it" widgets that name input and output rows, check-yourself questions, references. The page draws every part from one component library, and a widget computes nothing itself: the engine answers it. The gate refuses a lesson with markup, an untagged claim, or a widget naming a row that is not there. The design's files have no place for a lesson yet, so none reaches the design today.
 >
 > **Kind:** reference · **For:** the node engineers who write lessons, and the developer who keeps the form and its check
 
@@ -68,10 +68,12 @@ none.
 2. **The check.** `cargo run -p xtask -- lesson check <file>` says what the
    filled form holds and every reason it would be refused. It reads a filled
    form or a bare `lesson.toml` (with `--for <node>`), and writes nothing.
-3. **Into the design.** The checked lesson goes into the design with its
-   group's release, as `lesson.toml` beside the row's `node.toml`, and ships
-   in the kit with the row's folder. Nothing in this repository writes it
-   beside the row.
+3. **Into the design — not yet.** A checked lesson is meant to go into the
+   design with its group's release. The design's files (`design/`, read by
+   `vleo_files::convert`) have no place for one yet, so the tool reads no
+   lesson for any row, and nothing in this repository writes one. Giving a
+   lesson its place in a row's file is application work (docs/PLAN_1_0.md,
+   phase F).
 
 The lesson travels in the form escaped, so nothing it says can end or open an
 element of the page.
@@ -88,12 +90,12 @@ or a saved result's key.
   not a saved case, and with no reference data, so a row that reads a data
   bundle refuses there by name.
 - **No row has a lesson yet.** The example is an example: its text is taken
-  from what `orbit_velocity`'s own sheet says, its `by` names nobody, and it is
-  not placed beside the row. And that row does not answer today (its relation
+  from what `orbit_velocity`'s own sheet says, its `by` names nobody, and no
+  row's file can hold it yet. And that row does not answer today (its relation
   is stated, not derived), so a widget on it shows the engine's refusal — which
   is the right thing for it to show.
-- **A group cannot carry a lesson.** A lesson sits beside a row's `node.toml`,
-  and a group — a subsystem such as `l3_prop` — has none. A lesson about a
+- **A group cannot carry a lesson.** A lesson belongs to a row, and a group —
+  a subsystem such as `l3_prop` — is not one. A lesson about a
   whole subsystem hangs on its interface row: the first one planned, on the
   propulsion subsystem, has its form made for `l3_prop_interface` and waits
   on the propulsion owner to write it.

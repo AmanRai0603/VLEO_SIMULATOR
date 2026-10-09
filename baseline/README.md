@@ -6,8 +6,8 @@
 
 ## Why it exists
 
-Phase D of `docs/PLAN_1_0.md` moves the graph out of the compiled code and into
-the design file. Its parity gate asks whether the new engine gives, for every
+Phases D and E of `docs/PLAN_1_0.md` moved the graph out of the compiled code
+and into the design's files. Their parity gate asks whether the new engine gives, for every
 row in every case, the answer this one gives, and refuses where this one
 refuses, for the same reason. That has no answer unless this engine's answers
 were written down first. This is that record.
@@ -54,7 +54,7 @@ The record is never written again to get a build green.
 
 ## The other records
 
-The compiled engine leaves the repository in phase E. Two more records are
+The compiled engine left the repository in phase E. Two more records are
 written with today's answers, by the same command, and the design read from
 its files is held to them too:
 

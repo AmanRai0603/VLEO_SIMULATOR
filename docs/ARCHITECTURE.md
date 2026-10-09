@@ -77,20 +77,26 @@ coverage against the union and a navigation link counts as evidence.
   it.
 - A contribution edge by the *contributing variable*, because a KPI does not
   compute; the variable is the thing that must be traceable.
-- A relation edge by the *layer file*, because neither end is a node.
+- A relation edge by the *group file of the branch that holds both*, a
+  `relates` entry, because neither end is a node.
 
 Everything else — who consumes this, what feeds a KPI, what a change reaches —
 is derived on assembly and never stored, so it cannot go stale.
 
-## The graph is compiled in
+## The graph is read when the engine opens
 
-If the resolver read the graph from a file at run time, the engine and the graph
-could disagree: an engine built on Tuesday walking Wednesday's graph. So the
-tables are generated from the sheets at build time and compiled in. Adding an
-edge is therefore a rebuild, which is correct — it changes what the engine
-computes, so it should go through the gate.
+The engine holds no graph of its own. Each face opens the design's files and
+builds the graph from them (`vleo_modules::opened`), every method run by the
+interpreter, so a change to the design reaches every face without a rebuild,
+and no face can run a graph the design does not hold.
 
-The front end reads the same tables through the daemon, so the picture and the
+What once made compiling it in the safe choice — an engine built on Tuesday
+walking Wednesday's graph — is held another way: the design names the oldest
+application that can run it, and an application refuses one it cannot run
+(docs/PLAN_1_0.md, phase D). Today's answers are on record
+(`baseline/today.csv`), and the graph read from `design/` is held to them.
+
+The front end reads the same graph through the daemon, so the picture and the
 execution cannot diverge.
 
 ## Nodes call nothing
@@ -165,10 +171,11 @@ reads.
 
 **The edit does not touch the repository.** It travels as `set=<id>:<si>` on
 the run, which is `Case::supply`, the mechanism the engine has always had for
-answering a question about a design other than the one on disk. The sheet keeps
-its number and its `confirmed_by` line, and a session of this leaves
-`git status` empty. That is the first of the five rules holding: the sheet is
-the only source, and a face that wrote to it would be a second one.
+answering a question about a design other than the one on disk. The design's
+file keeps its number and its `confirmed_by` line, and a session of this
+leaves `git status` empty. That is the first of the five rules holding: the
+design's files are the only source, and a face that wrote to them would be a
+second one.
 
 Pressing update then runs **three stages, in this order**, because they answer
 three different questions and a single run answers only the last:
@@ -230,14 +237,14 @@ commit an aggregate**. The document was an aggregate hiding in plain sight.
 
 ## What is committed, and what is built
 
-**Committed** — every `node.toml`, every `fixtures.toml`, and `design/`, the
-design as its files. Nothing in a node's folder is generated. `design/` is
-committed deliberately: it is diffable and reviewable, nothing in this
-repository writes it, and a test holds it equal to the sheets.
+**Committed** — `design/`, the design as its files: one file per group and one
+per row. It is committed deliberately until the switch-over: it is reviewable,
+nothing in this repository writes it, and a test refuses a sheet that comes
+back beside it (`the_repository_holds_no_sheet`).
 
-**Never committed** — the assembled document, the index, the graph tables, the
-compiled engine. Every node would touch them, so every merge
-would conflict in generated content nobody is allowed to edit.
+**Never committed** — every node's page, the index, the readers' folder, the
+kit. Every node would touch them, so every merge would conflict in generated
+content nobody is allowed to edit.
 
-One sentence: **per-node files are committed, everything that combines them
-is built.**
+One sentence: **the design's files are committed, everything printed from
+them is built.**
