@@ -9,11 +9,14 @@
 use std::path::Path;
 
 use vleo_sheet::gate::{gate_node, Verdict};
-use vleo_sheet::load::{load_all, Tree};
+use vleo_sheet::load::Tree;
 use vleo_sheet::text::producer_of;
 
+/// The design, read from `design/`.
 fn tree() -> Tree {
-    load_all(&Path::new(env!("CARGO_MANIFEST_DIR")).join("../..")).unwrap()
+    vleo_files::convert::open(&Path::new(env!("CARGO_MANIFEST_DIR")).join("../.."))
+        .unwrap()
+        .0
 }
 
 /// A row that may not relay: not a crossing, not retired, and reading its one

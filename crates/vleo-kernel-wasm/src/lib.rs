@@ -135,11 +135,7 @@ fn graph_of(bytes: &[u8]) -> Result<&'static Graph, String> {
     let files = vleo_files::rows::decode_design(bytes)
         .map_err(|e| format!("the design the page carries does not read: {e}"))?;
     let root = Path::new("/design");
-    let served = vleo_files::convert::Served::new(
-        root,
-        &files,
-        std::sync::Arc::new(vleo_sheet::files::Nowhere),
-    )
+    let served = vleo_files::convert::Served::new(root, &files)
     .map_err(|e| format!("the design the page carries does not read: {e}"))?;
     let tree = vleo_sheet::load::load_all_from(&served, root)
         .map_err(|e| format!("the design the page carries does not load: {e}"))?;

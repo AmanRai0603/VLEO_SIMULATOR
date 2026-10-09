@@ -222,7 +222,9 @@ fn no_source_but_the_template_opens_a_page() {
 
 #[test]
 fn every_page_a_generator_writes_is_the_template_filled() {
-    let tree = vleo_sheet::load::load_all(&root()).expect("the tree loads");
+    let tree = vleo_files::convert::open(&root())
+        .expect("the tree loads")
+        .0;
     let sh = tree.sheets.get("sw_ap_design").expect("sw_ap_design");
     let m = vleo_sheet::manual::load(&root()).expect("the manual loads");
     let mut pages = vec![

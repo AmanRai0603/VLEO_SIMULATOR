@@ -366,7 +366,7 @@ fn write_folder(
                 .join(format!("{}.html", sh.id)),
         )
         .unwrap_or_else(|_| f("no-page", &[("id", &he(&sh.id))]));
-        let lesson = match vleo_sheet::lesson::load(&sh.dir, &sh.id) {
+        let lesson = match vleo_sheet::lesson::of(sh) {
             Some(Ok(l)) if vleo_sheet::lesson::problems(&l, tree).is_empty() => Some(l),
             Some(Ok(_)) | Some(Err(_)) => {
                 return Err(format!(

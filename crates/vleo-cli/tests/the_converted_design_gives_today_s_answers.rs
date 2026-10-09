@@ -12,7 +12,7 @@
 
 mod baseline;
 
-use std::sync::{Arc, OnceLock};
+use std::sync::OnceLock;
 
 use baseline::{record_path, root, today};
 use vleo_files::convert::{self, proposed_id, Served, PROPOSED};
@@ -37,7 +37,7 @@ fn files() -> &'static [(String, File)] {
 
 /// The graph the engine reads from `files`, every method interpreted.
 fn graph_of(files: &[(String, File)]) -> &'static Graph {
-    let served = Served::new(&root(), files, Arc::new(Disk)).expect("the files are served");
+    let served = Served::new(&root(), files).expect("the files are served");
     let tree = vleo_sheet::load::load_all_from(&served, &root()).expect("the files load");
     opened::graph(&tree).expect("the files make a graph")
 }

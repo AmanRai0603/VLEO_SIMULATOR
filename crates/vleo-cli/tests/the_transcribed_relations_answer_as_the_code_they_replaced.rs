@@ -138,7 +138,9 @@ fn the_transcribed_relations_answer_as_the_code_they_replaced() {
     // A row is held to the code it replaced while its method is still that
     // transcription. A method its group writes in its place is its own, held
     // by its own cases and by today's answers on record, not by the code.
-    let tree = vleo_sheet::load::load_all(&root()).expect("the design loads");
+    let tree = vleo_files::convert::open(&root())
+        .expect("the design loads")
+        .0;
     let still = |id: &str| {
         tree.sheets
             .get(id)
@@ -175,7 +177,9 @@ fn the_transcribed_relations_answer_as_the_code_they_replaced() {
 
 #[test]
 fn no_relation_of_the_design_is_left_in_code() {
-    let tree = vleo_sheet::load::load_all(&root()).expect("the design loads");
+    let tree = vleo_files::convert::open(&root())
+        .expect("the design loads")
+        .0;
     let left: Vec<&str> = tree
         .sheets
         .values()

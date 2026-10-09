@@ -79,8 +79,8 @@ fn drive(name: &str, from: &str, to: &str) -> PathBuf {
 }
 
 fn today(d: &Path) -> vleo_server::today::Today {
-    vleo_server::today::build(Arc::new(vleo_sheet::files::Disk), &root(), d)
-        .expect("today's design builds")
+    let (design, _) = vleo_files::convert::serve(&root()).expect("design/ is served");
+    vleo_server::today::build(Arc::new(design), &root(), d).expect("today's design builds")
 }
 
 #[test]
@@ -133,7 +133,7 @@ fn a_method_wrong_where_its_cases_do_not_look_is_traced_by_name_with_its_release
     assert!(trace(g, &case, &map, closure).causes.is_empty());
 
     // What does is that it changed: traced with what changed since the
-    // design's own sheets, it is the cause, by name, with its release, group
+    // design's own files, it is the cause, by name, with its release, group
     // and owner.
     let changed: Vec<(u16, String)> = t
         .changed()

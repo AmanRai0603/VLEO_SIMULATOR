@@ -8,7 +8,7 @@
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::{Path, PathBuf};
-use std::sync::{Arc, OnceLock};
+use std::sync::OnceLock;
 
 use vleo_files::convert::{self, proposed_id, Served, PROGRAMME, PROPOSED, SYSTEMS};
 use vleo_files::meta::Kind;
@@ -32,7 +32,7 @@ fn converted() -> &'static [(String, File)] {
 }
 
 fn served() -> Tree {
-    let s = Served::new(&root(), converted(), Arc::new(Disk)).expect("the files are served");
+    let s = Served::new(&root(), converted()).expect("the files are served");
     load::load_all_from(&s, &root()).expect("the files load as the design")
 }
 
@@ -193,7 +193,13 @@ fn the_files_read_back_as_the_design_with_only_what_the_conversion_is_for() {
         expected.sheets.keys().collect::<Vec<_>>()
     );
     for (id, sh) in &expected.sheets {
-        assert_eq!(format!("{:?}", back_sheets[id]), format!("{sh:?}"), "{id}");
+        // The sheet's text as it was read is the one thing laid out again:
+        // the conversion writes each sheet afresh, and what the text holds is
+        // every field compared here.
+        let (mut a, mut b) = (back_sheets[id].clone(), sh.clone());
+        a.text.clear();
+        b.text.clear();
+        assert_eq!(format!("{a:?}"), format!("{b:?}"), "{id}");
     }
     assert_eq!(
         format!("{:?}", back.groups),
@@ -276,7 +282,7 @@ fn what_a_file_says_is_what_the_design_reads() {
         .find(|(p, _)| p.ends_with("/sw_f107_design_long.vnode"))
         .unwrap();
     g.cases[0].expected = "1.5".into();
-    let s = Served::new(&root(), &files, Arc::new(Disk)).unwrap();
+    let s = Served::new(&root(), &files).unwrap();
     let t = load::load_all_from(&s, &root()).unwrap();
     assert_eq!(t.sheets["sw_mean_band_spread"].upper, 44.5);
     assert_eq!(t.sheets["sw_f107_design_long"].fixtures[0].expect, 1.5);
@@ -289,9 +295,7 @@ fn what_a_file_says_is_what_the_design_reads() {
         .find(|(p, _)| p.ends_with("/sw_f107_design_long.vnode"))
         .unwrap();
     f.texts.retain(|t| t.kind != "method");
-    let e = Served::new(&root(), &files, Arc::new(Disk))
-        .err()
-        .expect("refused");
+    let e = Served::new(&root(), &files).err().expect("refused");
     assert!(
         e.message()
             .contains("its block says it is method, and what it holds makes it built-in"),

@@ -28,7 +28,7 @@ fn root() -> PathBuf {
 }
 
 fn tree() -> Tree {
-    vleo_sheet::load_all(&root()).unwrap()
+    vleo_files::convert::open(&root()).unwrap().0
 }
 
 /// The case with the reference data, verified once for every test here.

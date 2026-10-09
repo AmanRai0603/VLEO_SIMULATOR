@@ -458,7 +458,7 @@ pub(super) fn cmd_group_export(root: &Path, args: &[&str]) -> Result<(), String>
         .and_then(|i| args.get(i + 1))
         .map(PathBuf::from)
         .unwrap_or_else(|| root.join("target/groups").join(&id));
-    let tree = load_all(root).map_err(|e| e.to_string())?;
+    let tree = crate::read(root)?;
     let files = export(root, &tree, &id)?;
     for (path, body) in &files {
         let p = out.join(path);
@@ -485,7 +485,7 @@ fn export_all(root: &Path, args: &[&str]) -> Result<(), String> {
         .and_then(|i| args.get(i + 1))
         .map(PathBuf::from)
         .unwrap_or_else(|| root.join("target/groups/all"));
-    let tree = load_all(root).map_err(|e| e.to_string())?;
+    let tree = crate::read(root)?;
     let mut index = vec![csv_row(&[
         "group".into(),
         "name".into(),
@@ -763,9 +763,10 @@ fn export(root: &Path, tree: &Tree, id: &str) -> Result<Vec<(String, String)>, S
     // developer's code must give — and those taken straight from a published
     // source or another tool are its evidence too.
     let mut fixtures: BTreeMap<String, Vec<Fx>> = BTreeMap::new();
+    let (design, _) = vleo_files::convert::serve(root).map_err(|e| e.to_string())?;
     for s in &sheets {
-        let path = root.join(&s.dir).join("fixtures.toml");
-        let Ok(text) = fs::read_to_string(&path) else {
+        let path = s.dir.join("fixtures.toml");
+        let Ok(text) = vleo_sheet::files::Files::read_to_string(&design, &path) else {
             continue;
         };
         let Ok(v) = text.parse::<toml::Value>() else {

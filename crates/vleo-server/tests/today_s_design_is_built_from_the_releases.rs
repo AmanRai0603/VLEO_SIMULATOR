@@ -36,8 +36,14 @@ fn drive(name: &str, releases: &[(&str, &str)]) -> PathBuf {
     d
 }
 
+/// The design in `design/`, read as everything reads it.
+fn design() -> vleo_sheet::Tree {
+    vleo_files::convert::open(&root()).expect("design/ opens").0
+}
+
 fn today(d: &Path) -> Today {
-    build(Arc::new(vleo_sheet::files::Disk), &root(), d).expect("today's design builds")
+    let (design, _) = vleo_files::convert::serve(&root()).expect("design/ is served");
+    build(Arc::new(design), &root(), d).expect("today's design builds")
 }
 
 fn sql(file: &Path, statement: &str) {
@@ -97,8 +103,8 @@ fn a_group_s_latest_release_that_passes_is_taken_and_said() {
     // The design built answers as the design does: the same graph.
     let tree = vleo_sheet::load::load_all_from(&*t.files, &root()).unwrap();
     let g = vleo_modules::opened::graph(&tree).unwrap();
-    let sheets = vleo_modules::opened::graph(&vleo_sheet::load_all(&root()).unwrap()).unwrap();
-    assert_eq!(g.graph_hash(), sheets.graph_hash());
+    let own = vleo_modules::opened::graph(&design()).unwrap();
+    assert_eq!(g.graph_hash(), own.graph_hash());
 }
 
 #[test]
@@ -253,16 +259,16 @@ fn a_group_s_new_release_changes_today_s_design_and_its_answers_run() {
     assert!(matches!(graph.run.get(k as usize), Some(Some(_))));
     // A comment changes no answer: on each of its fixtures it answers as the
     // design in the repository does.
-    let sheets = vleo_modules::opened::graph(&vleo_sheet::load_all(&root()).unwrap()).unwrap();
-    let c = sheets.find("sw_activity_band").unwrap();
+    let own = vleo_modules::opened::graph(&design()).unwrap();
+    let c = own.find("sw_activity_band").unwrap();
     for f in graph.nodes[k as usize].fixtures {
         assert_eq!(
             graph.probe(k, f.inputs).map(|v| v[0]),
-            sheets.probe(c, f.inputs).map(|v| v[0])
+            own.probe(c, f.inputs).map(|v| v[0])
         );
     }
     // The design on disk is not touched.
-    let on_disk = vleo_sheet::load_all(&root()).unwrap();
+    let on_disk = design();
     assert!(!on_disk.sheets["sw_activity_band"]
         .method
         .text

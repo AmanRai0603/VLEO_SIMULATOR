@@ -22,7 +22,7 @@ pub struct Ask {
 /// The questions, with the current answer's state.
 pub fn asks(sh: &Sheet) -> Vec<Ask> {
     let blocking = unfilled(sh);
-    let text = std::fs::read_to_string(sh.dir.join("node.toml")).unwrap_or_default();
+    let text = &sh.text;
     FIELDS
         .iter()
         .filter(|f| f.asked)
@@ -33,7 +33,7 @@ pub fn asks(sh: &Sheet) -> Vec<Ask> {
             shape: &f.shape,
             group: f.group,
             open: blocking.contains(&f.field),
-            available: f.insert || has_key(&text, f.table, f.key).is_some(),
+            available: f.insert || has_key(text, f.table, f.key).is_some(),
         })
         .collect()
 }
@@ -118,12 +118,7 @@ pub fn json(sh: &Sheet) -> Result<String, Error> {
         jq(&crate::short_hex(sh.sheet_hash))
     ));
     // What a save must send back. See `file_hash`: the sheet hash is not it.
-    o.push_str(&format!(
-        "  \"file_hash\": {},\n",
-        jq(&std::fs::read_to_string(sh.dir.join("node.toml"))
-            .map(|t| file_hash(&t))
-            .unwrap_or_default())
-    ));
+    o.push_str(&format!("  \"file_hash\": {},\n", jq(&file_hash(&sh.text))));
     o.push_str(&format!("  \"criticality\": {},\n", jq(&sh.criticality)));
     // Who a save will be attributed to. Shown, never typed: see `git_identity`.
     match git_identity(&sh.dir) {

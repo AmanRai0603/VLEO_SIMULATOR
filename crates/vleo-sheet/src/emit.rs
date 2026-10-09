@@ -85,24 +85,21 @@ pub fn gap_pass(sh: &Sheet) -> Vec<String> {
                 .into(),
         );
     }
-    if sh.criticality == "significant"
-        && !sh.dir.join("parity.csv").is_file()
-        && sh.fixtures.len() < 2
-    {
+    if sh.criticality == "significant" && !sh.has_parity && sh.fixtures.len() < 2 {
         g.push(
             "significant, and one fixture or none — a significant node is the one that gets a \
              second independent check, which is the whole reason for the word"
                 .into(),
         );
     }
-    if sh.migrated_from.trim().is_empty() && sh.dir.join("parity.csv").is_file() {
+    if sh.migrated_from.trim().is_empty() && sh.has_parity {
         g.push(
             "a parity.csv with no migrated_from — the grid is some other implementation's \
              numbers and nothing says whose, which makes a disagreement unattributable"
                 .into(),
         );
     }
-    if !sh.migrated_from.trim().is_empty() && !sh.dir.join("parity.csv").is_file() {
+    if !sh.migrated_from.trim().is_empty() && !sh.has_parity {
         g.push(format!(
             "migrated from {} and no parity.csv — the prior implementation is a liability until \
              its numbers sit beside this one",

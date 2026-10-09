@@ -69,7 +69,9 @@
 /crates/vleo-mod-fsw/nodes/l3_fsw_ach_01/ @AmanRai0603
 /crates/vleo-mod-fsw/nodes/l3_fsw_ach_02/ @AmanRai0603
 /crates/vleo-mod-fsw/nodes/l3_fsw_ach_03/ @AmanRai0603
+/crates/vleo-mod-fsw/nodes/l3_fsw_fault_detection_and_recovery/ @AmanRai0603
 /crates/vleo-mod-fsw/nodes/l3_fsw_interface/ @AmanRai0603
+/crates/vleo-mod-fsw/nodes/l3_fsw_modes_and_autonomy/ @AmanRai0603
 /crates/vleo-mod-fsw/nodes/l3_fsw_n_01/ @AmanRai0603
 /crates/vleo-mod-fsw/nodes/l3_fsw_n_02/ @AmanRai0603
 /crates/vleo-mod-fsw/nodes/l3_fsw_n_03/ @AmanRai0603
@@ -203,6 +205,7 @@
 /crates/vleo-mod-solar/nodes/l3_solar_req_04/ @AmanRai0603
 /crates/vleo-mod-solar/nodes/l3_solar_req_05/ @AmanRai0603
 /crates/vleo-mod-envorbit/nodes/l3_x_envorbit_interface/ @AmanRai0603
+/crates/vleo-mod-envorbit/nodes/l3_x_envorbit_radiation_environment/ @AmanRai0603
 /crates/vleo-mod-solar/nodes/sw_activity_band/ @AmanRai0603
 /crates/vleo-mod-solar/nodes/sw_alert_threshold/ @AmanRai0603
 /crates/vleo-mod-solar/nodes/sw_ap_central_expectation/ @AmanRai0603
@@ -574,6 +577,8 @@
 /crates/vleo-mod-struct/nodes/l3_struct_ach_03/ @AmanRai0603
 /crates/vleo-mod-struct/nodes/l3_struct_ach_04/ @AmanRai0603
 /crates/vleo-mod-struct/nodes/l3_struct_interface/ @AmanRai0603
+/crates/vleo-mod-struct/nodes/l3_struct_launch_adapter_interface/ @AmanRai0603
+/crates/vleo-mod-struct/nodes/l3_struct_mechanisms_and_deployments/ @AmanRai0603
 /crates/vleo-mod-struct/nodes/l3_struct_n_01/ @AmanRai0603
 /crates/vleo-mod-struct/nodes/l3_struct_n_02/ @AmanRai0603
 /crates/vleo-mod-struct/nodes/l3_struct_n_03/ @AmanRai0603

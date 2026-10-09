@@ -11,7 +11,7 @@ is declared valid, and the reason for each bound. A guard whose reason is not
 written down gets deleted by the next person who finds it awkward, so the
 reasons are part of the register rather than a comment in the code.
 
-**1396 rows** — 663 a person picked, 733 worked out. Two thirds of any design tree is
+**1401 rows** — 663 a person picked, 738 worked out. Two thirds of any design tree is
 the first kind: cheaper than a computed node, and not free, because every margin
 in the design is built out of them.
 
@@ -2895,6 +2895,29 @@ Falls from 26 g/mol at 120 km to near 16 — pure atomic oxygen — by 350 km. E
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
+### `l3_x_envorbit_radiation_environment` — Radiation environment
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | computed |
+| owner | environment |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+Proposed when the design was converted: the group states the atmosphere, its atomic oxygen and the geomagnetic field, and nothing of the radiation the spacecraft receives (trapped protons and electrons, solar energetic particles, the dose behind its shielding), which the space environment standard treats beside them (ECSS-E-ST-10-04C). Open until its owner confirms it or removes it.
+
 
 ## `fsw` — Flight software
 
@@ -2961,6 +2984,29 @@ Falls from 26 g/mol at 120 km to near 16 — pure atomic oxygen — by 350 km. E
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
+### `l3_fsw_fault_detection_and_recovery` — Fault detection and recovery
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | computed |
+| owner | avionics |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+Proposed when the design was converted: nothing in the group says how a fault is detected, isolated and recovered from on board, which a flight software breakdown usually holds as its own branch (ECSS-E-ST-70-11C). Open until its owner confirms it or removes it.
+
 ### `l3_fsw_interface` — Flight software — subsystem interface
 
 > 
@@ -2981,6 +3027,29 @@ Falls from 26 g/mol at 120 km to near 16 — pure atomic oxygen — by 350 km. E
 - **upper bound** — 
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_fsw_modes_and_autonomy` — Modes and autonomy
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | computed |
+| owner | avionics |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+Proposed when the design was converted: the group sizes the computer (processor throughput, memory, clock) and states nothing of the modes the spacecraft runs in, or of what it decides on board between passes, which a flight software breakdown usually holds beside the computer (ECSS-E-ST-70-11C, space segment operability). Open until its owner confirms it or removes it.
 
 ### `l3_fsw_n_01` — Flight software · internal — to be named (1)
 
@@ -21772,6 +21841,52 @@ The companion to sw_central_expectation, and the number a design that must SURVI
 - **upper bound** — 
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_struct_launch_adapter_interface` — Launch adapter interface
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | computed |
+| owner | mass |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+Proposed when the design was converted: nothing in the group states the interface to the launcher's adapter (its ring, its separation system, the loads it carries), usually its own item at this level. Open until its owner confirms it or removes it.
+
+### `l3_struct_mechanisms_and_deployments` — Mechanisms and deployments
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | computed |
+| owner | mass |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+Proposed when the design was converted: the group states the primary structure (its material, panels and dimensions) and nothing of the mechanisms that deploy or hold anything, the array, the antennas, the hold-down and release, which a structure breakdown usually holds as its own branch (ECSS-E-ST-33-01C). Open until its owner confirms it or removes it.
 
 ### `l3_struct_n_01` — Structure · internal — to be named (1)
 

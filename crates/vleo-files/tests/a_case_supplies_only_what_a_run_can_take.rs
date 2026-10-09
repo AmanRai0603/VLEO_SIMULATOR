@@ -4,19 +4,15 @@
 //! on every run of "solar maximum" was the plain design, offered under a
 //! storm's name, and nothing anywhere said so. These hold the check that would
 //! have caught it — and the same check over the Condition list, which decides
-//! which half of every uploaded CSV an input sits in. Both directions: the real
-//! tree passes, and each way of breaking the case fails.
+//! which half of every uploaded CSV an input sits in. Both directions: the
+//! design, read from `design/`, passes, and each way of breaking the case fails.
 
 use vleo_sheet::gate::{validate_tree, Verdict};
-use vleo_sheet::load::{load_all, Tree};
+use vleo_sheet::load::Tree;
 
 fn tree() -> Tree {
-    let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
-        .parent()
-        .unwrap()
-        .parent()
-        .unwrap();
-    load_all(root).unwrap()
+    let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    vleo_files::convert::open(&root).unwrap().0
 }
 
 /// V16's verdict: `None` when it passed, the failure text when it did not.

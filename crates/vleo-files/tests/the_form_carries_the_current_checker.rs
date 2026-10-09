@@ -63,7 +63,7 @@ fn carried(html: &str) -> Vec<u8> {
 
 #[test]
 fn the_form_carries_the_checker_it_finds_beside_the_tree() {
-    let mut tree = vleo_sheet::load::load_all(&root()).unwrap();
+    let (mut tree, _) = vleo_files::convert::open(&root()).unwrap();
     let sh = tree.sheets.values().next().unwrap().clone();
     let gz = std::fs::read(root().join(vleo_sheet::template::CHECKER)).unwrap();
     assert_eq!(carried(&vleo_sheet::template::document(&sh, &tree)), gz);
