@@ -37,7 +37,7 @@ node against the design. A group whose latest release is refused is built from
 its last good release, and the tool says which release each group's part is
 and why one was refused. Nobody takes a release in by hand.
 [`docs/GROUP_APPS.md`](docs/GROUP_APPS.md) is the group's side of it, and the
-releases guide covers the developer's: `build-node`, `ship`, `kit` and the
+releases guide covers the developer's: `ship`, `kit` and the
 drive's pack, each `cargo run -p xtask -- <command>`.
 
 **A node's relation arrives two ways, and each checks the other.** Its
@@ -46,8 +46,8 @@ and the *method* says the same relation in a small fixed language the tool can
 check for units and run ([`docs/PSEUDOCODE.md`](docs/PSEUDOCODE.md)), the one
 form the engine runs, in its interpreter. The node application
 checks the method as the node engineer types it — every line, every unit — and
-`build-node` builds each node stage by stage and connects it to the design only
-once every one of their cases agrees.
+here `cargo run -p xtask -- method <node>` checks it again on every one of
+their cases.
 
 ## Status
 
@@ -129,7 +129,7 @@ to 38 per cent.
 ### In a Codespace, or any devcontainer
 
 **There is nothing to type.** `.devcontainer/` pins the toolchain, fills the
-reference-data store, regenerates the per-node artefacts and builds the daemon
+reference-data store, regenerates the generated documents and builds the daemon
 when the container is created; attaching to it starts the daemon if nothing is
 already serving. Port 7777 is forwarded and opens a preview, so the first tab a
 new Codespace shows you is the tool.
@@ -246,7 +246,7 @@ moment the row is evaluated.
 
 | folder | what it holds | why it is here |
 |---|---|---|
-| `crates/` | the whole Rust workspace: the four rings, the faces, and **1396 node folders** under `crates/vleo-mod-*/nodes/` | this is the tool. Almost every file in the repository is here, and most of those are the node folders: each sheet, its fixtures, and the metadata `xtask docs` writes from it |
+| `crates/` | the whole Rust workspace: the four rings, the faces, and **1396 node folders** under `crates/vleo-mod-*/nodes/` | this is the tool. Almost every file in the repository is here, and most of those are the node folders: each sheet and its fixtures, both written by hand |
 | `layers/` | the rows in the tree that are **not** nodes — headings, parents, group edges, subsystem ownership | the decomposition itself. `CODEOWNERS` is generated from it, so moving a branch here moves who reviews what |
 | `tools/` | the Python side: the seeder that built the tree, and every check the pipeline runs that is not `cargo` | the checks that cannot be expressed as a Rust test — screenshots, parity against MATLAB, commit messages, the house rules' own references. Each proves itself with `--selftest` before it is trusted to decide anything |
 | `web/` | the browser face — one `index.html`, one stylesheet, 23 ES modules, the manual among them | how the tool is read. It talks to `vleo-daemon` over HTTP and holds no physics of its own |
@@ -258,7 +258,7 @@ moment the row is evaluated.
 | `sources/` | every citation as an object with an id, not as free text | a fixture references `jacchia1971`, never a sentence. Marking a source superseded then lists every row that depended on it, in one query |
 | `cd06/` | `tree.json` — the CD-06 planning document's own node tree, extracted verbatim | where the 1396 rows came from. `tools/seed_tree.py` reads it, so the tree's shape is traceable to the document rather than asserted |
 | `areas/` | six area files that narrow `AGENTS.md` per area | the nearer file wins, so an area can be stricter than the root without restating it |
-| `xtask/` | the task runner — `build-node`, `publish`, `gate`, `docs`, `assemble`, `ready`, `status` and the rest | the one entry point for everything generated or checked. `cargo run -p xtask -- gate && cargo test` is the command that must be green |
+| `xtask/` | the task runner — `gate`, `method`, `ready`, `docs`, `assemble`, `status` and the rest | the one entry point for everything generated or checked. `cargo run -p xtask -- gate && cargo test` is the command that must be green |
 | `.claude/` | four hooks | what fires on an edit made in an assistant's session — the same regeneration and gate anyone's edit goes through |
 | `.github/` | the pipeline (`gate.yml`, `nightly.yml`), the dependency bot, the PR template | eight jobs, and the regeneration diff that catches a generated file nobody re-ran |
 | `.devcontainer/` | the Codespace definition and its setup scripts | a fresh clone that runs without a person installing anything |
@@ -299,16 +299,15 @@ reach another by a side door.
 
 ```
 crates/vleo-mod-prop/nodes/prop_capture_efficiency/
-  node.toml      the sheet — the only file written by hand
+  node.toml      the sheet
   fixtures.toml  known-good values, with where each came from
-  meta.json      generated
   parity.csv     optional — the prior implementation's parity grid
 ```
 
 The node's relation is its method, the pseudocode in the sheet's `[method]`
 ([`docs/PSEUDOCODE.md`](docs/PSEUDOCODE.md)); the method interpreter runs it
-when the engine runs the design read from `design/`. There is no generated
-code in the folder. The node's page is not a file in the folder either: the
+when the engine runs the design read from `design/`. Every file in the folder
+is written by hand, and nothing in it is generated. The node's page is not a file in the folder either: the
 engine renders it from the sheet when it is opened.
 
 ![One node: its tabs, its answer, the eight credibility factors with the
@@ -341,10 +340,10 @@ Nothing here is autonomous, and the line that matters is between the people who
 | | does | cannot |
 |---|---|---|
 | **the programme manager, the system engineer, each subsystem engineer and each node engineer** | set the inputs, run, keep and send results; the node engineer writes their node in its own file, and the subsystem engineer seals the group's work as a release | change the design from the tool. A change reaches the design only in its group's sealed release, signed by who wrote it |
-| **the developer** | builds a node from its method (`xtask build-node`), writes no relation, records evidence, gates, releases the tool | edit a sealed release, or take one into the design by hand — the tool takes each from the drive, checked, or refuses it |
+| **the developer** | checks a node's method on its node engineer's cases (`xtask method`), writes no relation, records evidence, gates, releases the tool | edit a sealed release, or take one into the design by hand — the tool takes each from the drive, checked, or refuses it |
 | **a person** — either side | states the question, the relation, its source, the domain and the reason for each bound; derives the known-good numbers; accepts the node | be replaced at any of it — none of it is checkable by machine |
 | **a generator** | emits every artefact from the sheet, deterministically | decide anything. It combines and refuses; a decision taken during generation is a decision nobody reviewed |
-| **an assistant** | whatever a developer runs it for — code for the engine, the library, the application and their tests | supply a relation: today's design refuses a release whose method or results an assistant supplied, and relation stamping refuses an assistant's name |
+| **an assistant** | whatever a developer runs it for — code for the engine, the library, the application and their tests | supply a relation: today's design refuses a release whose method or results an assistant supplied, and the library refuses a signature in an assistant's name |
 
 Two human decisions per node, and everything between them is a command. If a
 node takes materially longer than that, the template has a defect worth finding
@@ -352,13 +351,13 @@ node takes materially longer than that, the template has a defect worth finding
 
 ### The generators
 
-Two run per node. Each reads that node's sheet and nothing else, which is what
-makes 1396 rows 1396 independent pieces of work rather than one large one.
+One runs per node, and it writes nothing. It reads that node's sheet and
+nothing else, which is what makes 1396 rows 1396 independent pieces of work
+rather than one large one.
 
 | generator | emits | what it is for |
 |---|---|---|
 | page | — | this node's fragment of the document, rendered from the sheet when it is opened; never written to the folder |
-| metadata | `meta.json` | criticality, reviewer count, open gaps |
 
 What the generated tests once asked of one node — each fixture within tolerance, each
 node engineer's case answered or refused as their code did, three properties
@@ -396,20 +395,23 @@ the tool             opens on the drive (VLEO_DRIVE) and builds today's design f
                      group's latest sealed release that passes its checks
 ```
 
-The developer's part is the tool: `cargo run -p xtask -- build-node <node>`
-when a node's method is new, then review, merge, and a release —
-`cargo run -p xtask -- release <version>` stamps every node version recorded
-since the last one, and `cargo run -p xtask -- derisk` regenerates the
+The developer's part is the tool. A node arrives in `design/`, written in its
+group's application; here `cargo run -p xtask -- method <node>` checks its
+method on its node engineer's cases, and `gate` and `ready` check it with the
+rest. Then review, merge, and a release — `cargo run -p xtask -- release <version>`
+sets the workspace version, and `cargo run -p xtask -- derisk` regenerates the
 de-risking narrative. A change that moves what a node computes carries its
-reason — which belief broke — and becomes a numbered version of that node; see
+reason — which belief broke — and becomes a numbered version of that node,
+recorded by its node engineer; see
 [`docs/DERISKING.md`](docs/DERISKING.md). Every page, form, result and document
 follows [`docs/EXPLAINING.md`](docs/EXPLAINING.md): answer first, said simply,
 the real thing, where it breaks.
 
-The steps under it were verified end to end on `main` from the other
+The steps under it were once verified end to end on `main` from the other
 end — a node taken from nothing to "waiting on a person" with `xtask new` and
-`declare`, then removed. `xtask new` still exists for a developer's own row.
-What that run showed, in order, before phase E removed the generated code and `fill`:
+`declare`, then removed. Both commands are gone now: a node is written in its
+group's application. What that run showed, in order, before phase E removed the
+generated code and `fill`:
 
 | stage | what happened |
 |---|---|
@@ -444,7 +446,7 @@ for ordinary engineering on the tool.
 Two things hold an assistant out of a person's part mechanically: the fixture
 schema refuses an expected value whose provenance is the code or an
 assistant; and a relation carries a person's name,
-which a release's checks and relation stamping both refuse to take from an assistant. What
+which a release's checks refuse to take from an assistant. What
 remains — whether the formula is right — is H1b's job and will not become a
 machine's.
 

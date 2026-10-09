@@ -29,14 +29,14 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 
-#: The template, the same for a seeded row and a published one: the sheet, its
-#: fixtures and the metadata. No folder holds code — every relation is its
+#: The template, the same for a seeded row and a published one: the sheet and
+#: its fixtures, both by hand. Nothing in a folder is generated any more, so a
+#: `meta.json` left behind is a stray like any other. No folder holds code — every relation is its
 #: method, in the sheet, run by the interpreter — so Rust in a node folder is a
 #: stray like any other. No folder holds its page either: the engine renders it
 #: from the sheet when it is opened, and one tab set across every rendered page
 #: is held in cargo test (crates/vleo-sheet/tests/every_page_has_one_tab_set.rs).
 BY_HAND = {"node.toml", "fixtures.toml"}
-GENERATED = {"meta.json"}
 #: Beside those, exactly one other file is allowed, and only with a reason.
 OPTIONAL = {"parity.csv"}
 
@@ -54,13 +54,11 @@ def node_dirs():
 
 def check_folder(d, names, findings):
     """The files in one node directory, against the template."""
-    strays = names - BY_HAND - GENERATED - OPTIONAL
+    strays = names - BY_HAND - OPTIONAL
     for s in sorted(strays):
         findings.append(f"{d.name}: {s} is not part of the node template")
-    for g in sorted(GENERATED - names):
-        findings.append(f"{d.name}: {g} is missing — the folder was never generated")
     if "node.toml" not in names:
-        findings.append(f"{d.name}: no sheet, so nothing here can be regenerated")
+        findings.append(f"{d.name}: no sheet, so the folder is not a node")
     for sub in (p for p in d.iterdir() if p.is_dir()):
         findings.append(f"{d.name}: {sub.name}/ — a node folder holds files, not directories")
 
@@ -169,10 +167,9 @@ def selftest():
         expect("a stray file in a node folder", "not part of the node template",
                lambda: stray.write_text("left behind\n"), lambda: stray.unlink())
 
-        gone = work / "meta.json"
-        keep = gone.read_text()
-        expect("a generated file missing from a node", "never generated",
-               lambda: gone.unlink(), lambda: gone.write_text(keep))
+        leftover = work / "meta.json"
+        expect("the metadata once generated, left in a node", "meta.json is not part of the node template",
+               lambda: leftover.write_text("{}\n"), lambda: leftover.unlink())
 
         intruder = seed / "model.rs"
         expect("Rust in a node folder", "model.rs is not part of the node template",

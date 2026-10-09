@@ -20,12 +20,12 @@ same thing, from the code's side. → `README.md`
 system, 3 a subsystem, 4 the run. A layer reads the one below it only through
 a closure. → `AGENTS.md`
 
-**Sheet** — `node.toml`, the one hand-written file in a row's folder. Every
-other file in the folder is generated from it. → `docs/NODE_AUTHORING.md`
+**Sheet** — `node.toml`, the row's specification, written by hand beside its
+`fixtures.toml`. Nothing in a row's folder is generated. → `docs/NODE_AUTHORING.md`
 
 **Seeded / published / deprecated** — a row's `state`. *Seeded*: the folder
 exists, and nobody has specified it yet. It cannot run and is reported, not
-failed. *Published*: specified, generated and able to run. *Deprecated*: kept
+failed. *Published*: specified and able to run. *Deprecated*: kept
 so old results still read, and not used. → `docs/NODE_AUTHORING.md`
 
 **Declared / computed** — a declared row holds a value a person picked. A
@@ -107,7 +107,8 @@ the page draws it from its component library. Outside the sheet hash.
 
 **Lesson form** — a row's lesson as one HTML file the node engineer who knows the
 row fills anywhere, checked as they type by the gate's own lesson check, and
-sent back; `xtask lesson apply` writes it beside the row. → `docs/LESSONS.md`
+sent back; `xtask lesson check` checks a filled one, and the lesson goes into the
+design with its group's release. → `docs/LESSONS.md`
 
 **Readers' folder** — every row's page and every lesson as plain pages, built
 by `xtask readers` for a shared drive or an internal web server; the engine
@@ -176,8 +177,8 @@ documentation, not specification, so it is outside the sheet hash.
 them; it is a list, not a verdict. → `docs/NODE_AUTHORING.md`
 
 **Version (de-risking)** — a `[[version]]` record on a sheet: what we believed,
-what we tested, what we now know, what changed. It says `next` until a release
-stamps it. → `docs/DERISKING.md`
+what we tested, what we now know, what changed. It says `next` until the design's
+release that carries it names it. → `docs/DERISKING.md`
 
 **Risk register** — the risks, registered once on the management layer's rows.
 Only versions move them. → `docs/DERISKING.md`

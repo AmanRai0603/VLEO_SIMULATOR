@@ -188,9 +188,9 @@ impl Kind {
     }
 }
 
-/// Where a node is in its life. The state lives in `meta.json`, written by the
-/// gate — a person who can type `verified` can skip it, and then the colour on
-/// the tree is a claim rather than a fact.
+/// Where a node is in its life. The state is the design's, and the gate
+/// checks it — a person who can type `verified` could skip it otherwise, and
+/// then the colour on the tree is a claim rather than a fact.
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Debug)]
 pub enum State {
     /// The folder exists; the required fields are not filled.

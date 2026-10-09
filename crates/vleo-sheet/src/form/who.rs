@@ -82,18 +82,3 @@ pub fn refuse_agent_attribution(root: &std::path::Path, who: &str) -> Result<(),
     }
     Ok(())
 }
-
-/// Today, as the sheets write it.
-fn today() -> String {
-    crate::template::today()
-}
-
-/// Put a name against the relation, replacing whatever was there.
-///
-/// WHEN THE RELATION CHANGES THE ATTRIBUTION MUST MOVE WITH IT. The old name
-/// was against the old mathematics; leaving it on the new attributes work to
-/// somebody who never saw it, which is worse than either having no name or
-/// having the editor's.
-pub(crate) fn stamp_relation(text: &str, who: &str) -> Result<String, Error> {
-    set(text, "confirmed_by", &format!("{who} / {}", today()))
-}

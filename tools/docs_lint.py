@@ -376,12 +376,12 @@ def role_words(root=None):
     return out
 
 
-def _unname_publish(d):
-    """Take `xtask publish` out of every document that names it."""
+def _unname_derisk(d):
+    """Take `xtask derisk` out of every document that names it."""
     for f in ("README.md", "AGENTS.md", "docs/USING_IT.md", "docs/PIPELINE.md"):
         p = d / f
-        p.write_text(p.read_text().replace("xtask -- publish", "xtask -- xxpub")
-                     .replace("xtask publish", "xtask xxpub"))
+        p.write_text(p.read_text().replace("xtask -- derisk", "xtask -- xxderisk")
+                     .replace("xtask derisk", "xtask xxderisk"))
 
 
 def selftest():
@@ -401,7 +401,7 @@ def selftest():
          lambda d: (d / "AGENTS.md").write_text(
              (d / "AGENTS.md").read_text() + "\nRead your lane in agents/lanes.toml.\n"),
          "which was removed"),
-        ("an xtask command no document names", _unname_publish, "`xtask publish` exists"),
+        ("an xtask command no document names", _unname_derisk, "`xtask derisk` exists"),
         ("a document that does not open with its answer",
          lambda d: (d / "docs" / "RUNBOOK.md").write_text(
              (d / "docs" / "RUNBOOK.md").read_text().replace("> **Answer first.**", "> Answer:")),

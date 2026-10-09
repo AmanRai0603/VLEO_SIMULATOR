@@ -418,7 +418,7 @@ td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
       <path d="M220 210 C 250 210, 250 136, 282 136" class="d-a" marker-end="url(#g-ah)"/>
       <rect x="284" y="92" width="170" height="88" rx="6" class="d-out"/>
       <text x="369" y="122" text-anchor="middle" class="d-tb">Generator</text>
-      <text x="369" y="142" text-anchor="middle" class="d-ts">xtask docs</text>
+      <text x="369" y="142" text-anchor="middle" class="d-ts">when the page is opened</text>
       <text x="369" y="160" text-anchor="middle" class="d-ts">checks as it builds</text>
       <rect x="284" y="204" width="170" height="70" rx="6" class="d-teal"/>
       <text x="369" y="228" text-anchor="middle" class="d-tb">Component library</text>
@@ -585,7 +585,7 @@ td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
   <h2>A node's journey, and every script able to explain itself</h2>
   <p class="answer"><b>Answer first.</b> Every command says, in the same way, which step it is on, what it read and wrote, and — if it stops — which step, why, what state the files are in, and the exact command to try again. One table in the code describes every script; the help text and a generated <code>docs/PIPELINE.md</code> come from it, and a test fails if they ever disagree.</p>
   <figure class="fig">
-    <svg viewBox="0 0 880 200" role="img" aria-label="A node's journey: a group's sealed release, put on the shared drive, opened, its seal checked, its content checked, each node checked against the design, taken into today's design; then, for a new method, the developer's build-node with the gate and tests, a pull request into developer, main, release.">
+    <svg viewBox="0 0 880 200" role="img" aria-label="A node's journey: a group's sealed release, put on the shared drive, opened, its seal checked, its content checked, each node checked against the design, taken into today's design; then, for a need the code cannot meet, a request to the developer, a pull request into developer, main, release.">
       <defs><marker id="s-ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" class="d-ah"/></marker></defs>
       <rect x="14" y="30" width="96" height="56" rx="6" class="d-in"/><text x="62" y="54" text-anchor="middle" class="d-tb">Release</text><text x="62" y="72" text-anchor="middle" class="d-ts">group sealed</text>
       <rect x="132" y="30" width="96" height="56" rx="6" class="d-box"/><text x="180" y="54" text-anchor="middle" class="d-tb">drive</text><text x="180" y="72" text-anchor="middle" class="d-ts">its releases/</text>
@@ -596,14 +596,14 @@ td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
       <rect x="722" y="30" width="140" height="56" rx="6" class="d-both"/><text x="792" y="54" text-anchor="middle" class="d-tb">today's design</text><text x="792" y="72" text-anchor="middle" class="d-ts">or last good one</text>
       <path d="M110 58 L130 58" class="d-a" marker-end="url(#s-ah)"/><path d="M228 58 L248 58" class="d-a" marker-end="url(#s-ah)"/><path d="M346 58 L366 58" class="d-a" marker-end="url(#s-ah)"/><path d="M464 58 L484 58" class="d-a" marker-end="url(#s-ah)"/><path d="M582 58 L602 58" class="d-a" marker-end="url(#s-ah)"/><path d="M700 58 L720 58" class="d-a" marker-end="url(#s-ah)"/>
       <path d="M792 86 C 792 112, 760 112, 740 126" class="d-a" marker-end="url(#s-ah)"/>
-      <rect x="604" y="126" width="140" height="56" rx="6" class="d-out"/><text x="674" y="150" text-anchor="middle" class="d-tb">build-node</text><text x="674" y="168" text-anchor="middle" class="d-ts">for a new method</text>
+      <rect x="604" y="126" width="140" height="56" rx="6" class="d-out"/><text x="674" y="150" text-anchor="middle" class="d-tb">request · W14</text><text x="674" y="168" text-anchor="middle" class="d-ts">what the code cannot do</text>
       <rect x="444" y="126" width="138" height="56" rx="6" class="d-in"/><text x="513" y="150" text-anchor="middle" class="d-tb">→ developer</text><text x="513" y="168" text-anchor="middle" class="d-ts">pull request</text>
       <rect x="286" y="126" width="136" height="56" rx="6" class="d-in"/><text x="354" y="150" text-anchor="middle" class="d-tb">→ main</text><text x="354" y="168" text-anchor="middle" class="d-ts">pull request</text>
       <rect x="132" y="126" width="132" height="56" rx="6" class="d-out"/><text x="198" y="150" text-anchor="middle" class="d-tb">ship · release</text><text x="198" y="168" text-anchor="middle" class="d-ts">to everyone</text>
       <path d="M604 154 L584 154" class="d-a" marker-end="url(#s-ah)"/><path d="M444 154 L424 154" class="d-a" marker-end="url(#s-ah)"/><path d="M286 154 L266 154" class="d-a" marker-end="url(#s-ah)"/>
     </svg>
   </figure>
-  <p class="col">What a writing command prints when a step stops — real output of <code>xtask publish</code> on a row that is already published:</p>
+  <p class="col">What a writing command prints when a step stops — real output of <code>xtask publish</code>, a command since removed, on a row that was already published. Every writing command left prints the same shape:</p>
   <div class="term" role="img" aria-label="Terminal output: publish stops at step 2 of 2, with the reason, the state of the files, the retry command, where the code is and the trace.">xtask publish sw_ap_design
   <span class="ok">1/2 · read the sheet</span>
       sw_ap_design — Ap design value

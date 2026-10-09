@@ -127,7 +127,7 @@ macOS and Windows say so to whoever downloads them.
 ## 6 · Releasing
 
 ```
-cargo run -p xtask -- ship 0.4.0      # cuts release/0.4.0: stamped, regenerated, gated, tested, pushed
+cargo run -p xtask -- ship 0.4.0      # cuts release/0.4.0: versioned, regenerated, gated, tested, pushed
 ```
 
 Open the pull request `ship` prints, from `release/0.4.0` into `main`. When it

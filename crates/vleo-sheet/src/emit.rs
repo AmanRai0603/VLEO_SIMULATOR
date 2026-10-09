@@ -1,92 +1,14 @@
-//! The generators.
+//! The gap pass.
 //!
-//! Two per-node generators that never read another node: the metadata the
-//! gate writes and the gap pass. Output is byte-stable: no timestamps, no absolute paths in committed files,
-//! and sorted iteration everywhere — otherwise the regeneration diff fails at
-//! random and within a fortnight nobody reads it.
+//! What each sheet promised and nothing yet covers, per node and for the
+//! tree. It never reads another node, and its output is byte-stable: sorted
+//! iteration everywhere, so two runs on the same design say the same thing.
 
+use crate::load::Tree;
 use crate::model::*;
-use crate::{load::Tree, short_hex};
-
-/// Sheet text as the inside of a Rust string literal.
-///
-/// Line breaks and tabs are written as escapes, so a label with a line break
-/// in it stays one line of generated code.
-fn esc(s: &str) -> String {
-    s.replace('\\', "\\\\")
-        .replace('"', "\\\"")
-        .replace('\n', "\\n")
-        .replace('\r', "\\r")
-        .replace('\t', "\\t")
-}
 
 // ---------------------------------------------------------------------------
-// 1. the metadata the gate writes
-// ---------------------------------------------------------------------------
-
-pub fn meta_json(sh: &Sheet, gaps: &[String]) -> String {
-    let mut o = String::new();
-    o.push_str("{\n");
-    o.push_str(&format!("  \"id\": \"{}\",\n", esc(&sh.id)));
-    o.push_str(&format!("  \"state\": \"{}\",\n", esc(&sh.state)));
-    o.push_str(&format!(
-        "  \"sheet_hash\": \"{}\",\n",
-        short_hex(sh.sheet_hash)
-    ));
-    o.push_str(&format!(
-        "  \"impl_hash\": \"{}\",\n",
-        short_hex(sh.impl_hash)
-    ));
-    o.push_str(&format!("  \"owner\": \"{}\",\n", esc(&sh.owner)));
-    o.push_str(&format!("  \"tier\": \"{}\",\n", esc(&sh.tier)));
-    o.push_str(&format!("  \"fixtures\": {},\n", sh.fixtures.len()));
-    o.push_str(&format!("  \"criticality\": {:?},\n", sh.criticality));
-    o.push_str(&format!(
-        "  \"reviewers\": {},\n",
-        if sh.criticality == "significant" {
-            2
-        } else {
-            1
-        }
-    ));
-    o.push_str(&format!(
-        "  \"differential_fill\": {},\n",
-        sh.criticality == "significant"
-    ));
-    o.push_str(&format!("  \"migrated_from\": {:?},\n", sh.migrated_from));
-    o.push_str(&format!("  \"holes\": {},\n", sh.steps.len()));
-    o.push_str("  \"inputs\": [");
-    o.push_str(
-        &sh.inputs
-            .iter()
-            .map(|i| format!("\"{}\"", esc(&i.var)))
-            .collect::<Vec<_>>()
-            .join(", "),
-    );
-    o.push_str("],\n");
-    o.push_str("  \"contributes\": [");
-    o.push_str(
-        &sh.kpis
-            .iter()
-            .map(|k| format!("\"{}\"", esc(k)))
-            .collect::<Vec<_>>()
-            .join(", "),
-    );
-    o.push_str("],\n");
-    o.push_str("  \"gaps\": [");
-    o.push_str(
-        &gaps
-            .iter()
-            .map(|g| format!("\"{}\"", esc(g)))
-            .collect::<Vec<_>>()
-            .join(", "),
-    );
-    o.push_str("]\n}\n");
-    o
-}
-
-// ---------------------------------------------------------------------------
-// 2. the gap pass
+// the gap pass
 // ---------------------------------------------------------------------------
 
 /// What the sheet promised and nothing yet covers.

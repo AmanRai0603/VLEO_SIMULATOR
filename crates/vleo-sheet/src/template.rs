@@ -42,7 +42,7 @@ use crate::{Error, ErrorKind};
 use std::collections::BTreeMap;
 use std::path::Path;
 
-use crate::form::{self, jq, Blocks, Saved, ARRAYS, FIELDS};
+use crate::form::{self, jq, Blocks, ARRAYS, FIELDS};
 use crate::load::Tree;
 use crate::model::{Sheet, View};
 
@@ -2099,53 +2099,6 @@ fn plan_edits(tree: &Tree, f: Form) -> Result<Plan, Error> {
     }
     p.form = f;
     Ok(p)
-}
-
-/// Apply every change a plan can make, as one edit: write the sheet, regenerate
-/// the row, gate it — and put everything back if anything refuses.
-pub fn apply(root: &Path, p: &Plan) -> Saved {
-    let Some(after) = &p.text else {
-        return Saved::Refused("the form asks for nothing that can be applied".into());
-    };
-    if let Some(why) = form::rustfmt_refusal() {
-        return Saved::Refused(why);
-    }
-    let tree = match crate::load::load_all(root) {
-        Ok(t) => t,
-        Err(e) => return Saved::Refused(format!("the tree does not load: {e}")),
-    };
-    let Some(sh) = tree.sheets.get(&p.form.node) else {
-        return Saved::Refused(format!("no node '{}'", p.form.node));
-    };
-    let path = sh.dir.join("node.toml");
-    let before = match std::fs::read_to_string(&path) {
-        Ok(t) => t,
-        Err(e) => return Saved::Refused(format!("{}: {e}", path.display())),
-    };
-    if form::file_hash(&before) != p.current_hash {
-        return Saved::Stale {
-            current: form::file_hash(&before),
-        };
-    }
-    // THE RELATION CARRIES THE NAME OF WHOEVER APPLIES IT. The form's filler is
-    // recorded in the commit; the sheet names the developer who confirmed the
-    // relation by applying it — and refuses if that identity is an assistant's.
-    let after = if p.relation {
-        let who = match form::git_identity(root) {
-            Ok(w) => w,
-            Err(e) => return Saved::Refused(e.into()),
-        };
-        if let Err(e) = form::refuse_agent_attribution(root, &who) {
-            return Saved::Refused(e.into());
-        }
-        match form::stamp_relation(after, &who) {
-            Ok(t) => t,
-            Err(e) => return Saved::Refused(e.into()),
-        }
-    } else {
-        after.clone()
-    };
-    form::commit_edit(root, &p.form.node, &path, &before, after, p.edges)
 }
 
 /// The known-good values a form supplied, as `[[fixture]]` blocks for the

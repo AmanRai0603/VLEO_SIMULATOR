@@ -2,7 +2,7 @@
 
 # The pipeline
 
-> **Answer first.** Every `xtask` command is a step in a node's journey — its group's folder written, applied, published, built, gated and released. This page says, for each one, what it reads, writes and checks, how to undo it, and where its code is. Every command that writes prints numbered steps, stops by saying why, what state the files are in and how to retry, leaves a trace in `target/xtask-trace/`, and takes `--dry-run`.
+> **Answer first.** Every `xtask` command is a step in a node's journey — its group's folder written, built, gated and released. This page says, for each one, what it reads, writes and checks, how to undo it, and where its code is. Every command that writes prints numbered steps, stops by saying why, what state the files are in and how to retry, leaves a trace in `target/xtask-trace/`, and takes `--dry-run`.
 >
 > **Kind:** reference · **For:** the developer and their deputy
 
@@ -10,14 +10,12 @@ Generated from the one table in `xtask/src/pipeline.rs`; `cargo run -p xtask -- 
 
 ## The journey
 
-1. **form** — a group's folder written from the design, for the group to start from: `group-export`
-2. **apply** — a new row, or a row's lesson, written into the tree — all of it or none: `lesson`, `new`
-3. **publish** — a filled row published, and named by the person who confirms it: `declare`, `publish`, `confirm`
-4. **build** — a node built from its method, and its tests shown to test: `method`, `build-node`, `rerun`, `method-wasm`, `files-wasm`
-5. **gate** — the checks every change passes, and what they generate: `group-app`, `docs`, `assemble`, `gate`, `ready`, `codeowners`, `variables`, `guides`, `pipeline`
-6. **release** — the stamped release everyone gets: `readers`, `ship`, `release`, `derisk`, `kit`, `convert`, `bundle`
-7. **read** — reports: what exists, what is open, why a node is what it is: `status`, `active`, `catalogue`, `impact`, `reach`, `gap`, `graph`, `explain`, `why`, `trace`
-8. **setup** — once per person per clone: `setup`, `help`
+1. **form** — a group's folder, or a row's lesson form, written from the design for its people to fill: `lesson`, `group-export`
+2. **build** — a node built from its method, and its tests shown to test: `method`, `rerun`, `method-wasm`, `files-wasm`
+3. **gate** — the checks every change passes, and what they generate: `group-app`, `docs`, `assemble`, `gate`, `ready`, `codeowners`, `variables`, `guides`, `pipeline`
+4. **release** — the versioned release everyone gets: `readers`, `ship`, `release`, `derisk`, `kit`, `bundle`
+5. **read** — reports: what exists, what is open, why a node is what it is: `status`, `active`, `catalogue`, `impact`, `reach`, `gap`, `graph`, `explain`, `why`, `trace`
+6. **setup** — once per person per clone: `setup`, `help`
 
 ## When a step stops
 
@@ -36,7 +34,23 @@ Every command that writes prints its steps as `n/total · name`. A step that sto
 
 ## Every command
 
-### form — a group's folder written from the design, for the group to start from
+### form — a group's folder, or a row's lesson form, written from the design for its people to fill
+
+#### `lesson`
+
+    cargo run -p xtask -- lesson form <node> [--out <file.html>] [--check]
+    cargo run -p xtask -- lesson check <file> [--for <node>]
+
+a row's lesson form: one HTML file the node engineer who knows the row fills anywhere, checked as they type by the gate's own lesson check, saved as a filled copy. --check (what --dry-run runs) writes nothing. what a filled lesson form (or a bare lesson.toml, with --for) holds, and every reason it would be refused. Writes nothing.
+
+| | |
+|---|---|
+| reads | the row in the design (design/), the tree's rows, web/method.wasm.gz; a filled lesson form |
+| writes | form: <node>.lesson-form.html, or --out |
+| checks | check: the lesson, as the gate checks it — every key known, every claim tagged, no markup, every row a widget names real |
+| undo | delete the form it wrote |
+| dry run | --dry-run runs lesson form <node> --check: whether the row has a form to write, nothing written |
+| code | `xtask/src/forms.rs` — `cmd_lesson` |
 
 #### `group-export`
 
@@ -54,90 +68,6 @@ a group's folder in the pattern, written from every sheet in the group, for the 
 | dry run | it only reads, so it runs as it is |
 | code | `xtask/src/group.rs` — `cmd_group_export` |
 
-### apply — a new row, or a row's lesson, written into the tree — all of it or none
-
-#### `lesson`
-
-    cargo run -p xtask -- lesson form <node> [--out <file.html>]
-    cargo run -p xtask -- lesson check <file> [--for <node>]
-    cargo run -p xtask -- lesson apply <file> [--for <node>] [--check]
-
-a row's lesson form: one HTML file the node engineer who knows the row fills anywhere, checked as they type by the gate's own lesson check, saved as a filled copy. what a filled lesson form (or a bare lesson.toml, with --for) holds, and every reason it would be refused. Writes nothing. check it, write it as lesson.toml beside the row's node.toml, and gate the row — or put the row back. --check (what --dry-run runs) only checks.
-
-| | |
-|---|---|
-| reads | the row's sheet and lesson.toml, the tree's rows, web/method.wasm.gz; a filled lesson form |
-| writes | form: <node>.lesson-form.html, or --out; apply: lesson.toml beside the row's node.toml |
-| checks | the lesson, as the gate checks it: every key known, every claim tagged, no markup, every row a widget names real; apply gates the row |
-| undo | `git restore` (or delete) the row's lesson.toml; a refused apply puts it back itself |
-| steps | 1 check the lesson · 2 write it beside the row · 3 gate the row |
-| dry run | --dry-run runs lesson check <file>: every reason it would be refused, nothing written |
-| code | `xtask/src/forms.rs` — `cmd_lesson` |
-
-#### `new`
-
-    cargo run -p xtask -- new <id> --like <sibling>
-
-clone the shape of a sibling and blank what must be re-decided. Not a copy: a real copy drags a stale source citation through thirty nodes.
-
-| | |
-|---|---|
-| reads | the sibling's sheet |
-| writes | a new node folder, its sheet cloned with what must be re-decided blanked |
-| checks | that the id is free and the sibling exists |
-| undo | delete the new folder |
-| dry run | --dry-run prints this plan — the steps, what it would write, how to undo it — and touches nothing |
-| code | `xtask/src/forms.rs` — `cmd_new` |
-
-### publish — a filled row published, and named by the person who confirms it
-
-#### `declare`
-
-    cargo run -p xtask -- declare <node>
-
-the completion questions, in order, with what each one is for. A gap left open is not a warning: generation refuses until every one is answered. Add --source <path> to record where the drafting started; --json prints the questions for a tool to read.
-
-| | |
-|---|---|
-| reads | the node's sheet |
-| writes | with --source: the sheet's source line |
-| checks | which completion questions are still open |
-| undo | `git restore <files>` (or `git checkout -- .`) before committing; `git revert` after |
-| dry run | --dry-run prints this plan — the steps, what it would write, how to undo it — and touches nothing |
-| code | `xtask/src/report.rs` — `cmd_declare` |
-
-#### `publish`
-
-    cargo run -p xtask -- publish <node>
-
-move a filled, seeded row to published, write its metadata and gate the tree. Refuses, naming every reason, while it is not ready.
-
-| | |
-|---|---|
-| reads | the node's sheet |
-| writes | node.toml's state, and the node's metadata |
-| checks | every completion question answered; the whole tree's gate |
-| undo | `git restore <files>` (or `git checkout -- .`) before committing; `git revert` after |
-| steps | 1 read the sheet · 2 publish, generate and gate |
-| dry run | --dry-run prints this plan — the steps, what it would write, how to undo it — and touches nothing |
-| code | `xtask/src/main.rs` — `cmd_publish` |
-
-#### `confirm`
-
-    cargo run -p xtask -- confirm --list [<subsystem>]
-    cargo run -p xtask -- confirm <node> --by "<name>"
-
-the relations with nobody's name against them, grouped by the owner who has to supply one. put a person's name against one relation, after printing the relation and its source so the act is informed. There is no flag that does many at once, and that is deliberate.
-
-| | |
-|---|---|
-| reads | the sheets |
-| writes | with <node> --by: that node's confirmation |
-| checks | that the relation and its source are printed first |
-| undo | `git restore <files>` (or `git checkout -- .`) before committing; `git revert` after |
-| dry run | --dry-run prints this plan — the steps, what it would write, how to undo it — and touches nothing |
-| code | `xtask/src/confirm.rs` — `cmd_confirm` |
-
 ### build — a node built from its method, and its tests shown to test
 
 #### `method`
@@ -154,22 +84,6 @@ the node's method, checked, and each of its node engineer's test cases run throu
 | undo | nothing to undo: it writes nothing |
 | dry run | it only reads, so it runs as it is |
 | code | `xtask/src/method.rs` — `cmd_method` |
-
-#### `build-node`
-
-    cargo run -p xtask -- build-node <node>  from a node's method to a connected node, in order: the
-
-method on its cases, its metadata, the node engineer's code rerun — and only then the interface, the design converted again, every case of the design, and today's answers.
-
-| | |
-|---|---|
-| reads | the node's method, cases and node engineer's code |
-| writes | the node's metadata, design/ converted again, baseline/ recorded again |
-| checks | the method on its cases; the node engineer's code rerun; the tree assembles; every case of the design passes |
-| undo | `git restore <files>` (or `git checkout -- .`) before committing; `git revert` after |
-| steps | 1 the method, against the node engineer's cases · 2 regenerate the node · 3 the node engineer's own code, run again on their cases · 4 only now, the interface: the node in the tree · 5 the design's files, converted again · 6 every case of the design, on the engine that reads it · 7 today's answers, recorded again |
-| dry run | --dry-run prints this plan — the steps, what it would write, how to undo it — and touches nothing |
-| code | `xtask/src/method.rs` — `cmd_build_node` |
 
 #### `rerun`
 
@@ -235,16 +149,16 @@ web/node.html — offline pages a group keeps its database files in (docs/GROUP_
 
 #### `docs`
 
-    cargo run -p xtask -- docs [<node>]
+    cargo run -p xtask -- docs
 
-the per-node generator that writes files — each node's metadata, from its own sheet. A node's page is rendered from its sheet when it is opened, and is never written here.
+write docs/PSEUDOCODE.md, the method language's reference page, from the tables the checker reads. A node's page is rendered when it is opened, and is never written here.
 
 | | |
 |---|---|
-| reads | every sheet |
-| writes | each node's metadata, and docs/PSEUDOCODE.md; a page.html left in a node folder from before is removed |
-| checks | that each sheet generates |
-| undo | `git restore <files>` (or `git checkout -- .`) before committing; `git revert` after |
+| reads | the method language's tables |
+| writes | docs/PSEUDOCODE.md |
+| checks | — |
+| undo | `git restore docs/PSEUDOCODE.md` |
 | dry run | --dry-run prints this plan — the steps, what it would write, how to undo it — and touches nothing |
 | code | `xtask/src/main.rs` — `cmd_docs` |
 
@@ -353,7 +267,7 @@ only says whether it is current.
 | dry run | --dry-run runs pipeline --check: whether docs/PIPELINE.md is current, nothing written |
 | code | `xtask/src/pipeline.rs` — `cmd_pipeline` |
 
-### release — the stamped release everyone gets
+### release — the versioned release everyone gets
 
 #### `readers`
 
@@ -375,15 +289,15 @@ the docs folder for readers: every row's page and every lesson, read with no too
 
     cargo run -p xtask -- ship <version> [--no-push] [--no-test]
 
-the release branch release/<version> from main: the de-risking narrative, the stamp, regenerate, gate, test, commit, push — and the tag commands for after the merge.
+the release branch release/<version> from main: the de-risking narrative, the version, regenerate, gate, test, commit, push — and the tag commands for after the merge.
 
 | | |
 |---|---|
 | reads | main, every sheet |
-| writes | a branch release/<version>: the narrative, the stamp, regenerated files, a commit, a push |
+| writes | a branch release/<version>: the narrative, the version, regenerated files, a commit, a push |
 | checks | the release rules; the gate; cargo test |
 | undo | delete the branch (`git branch -D release/<version>`, and on the remote) |
-| steps | 1 the branch · 2 the de-risking narrative · 3 stamp the release · 4 regenerate · 5 gate · 6 tests (cargo test --workspace) · 7 commit and push |
+| steps | 1 the branch · 2 the de-risking narrative · 3 the workspace version · 4 regenerate · 5 gate · 6 tests (cargo test --workspace) · 7 commit and push |
 | dry run | --dry-run prints this plan — the steps, what it would write, how to undo it — and touches nothing |
 | code | `xtask/src/flow.rs` — `cmd_ship` |
 
@@ -391,16 +305,16 @@ the release branch release/<version> from main: the de-risking narrative, the st
 
     cargo run -p xtask -- release <version> [--check]
 
-stamp every node version still marked `next` with this release, set the workspace version, and regenerate. The node's record then says which release carried each belief. --check refuses while anything is unstamped or newer.
+set the workspace version, and regenerate. It stamps nothing in the design: a node's record is its node engineer's. --check refuses while the workspace says another version.
 
 | | |
 |---|---|
-| reads | every sheet's versions, Cargo.toml |
-| writes | every `next` version stamped, the workspace version, Cargo.lock files, regenerated docs and narrative |
-| checks | a release only moves forward; no version names a later one; with --check, that nothing is unstamped |
+| reads | Cargo.toml |
+| writes | the workspace version, Cargo.lock files, regenerated docs and narrative |
+| checks | a release only moves forward; with --check, that the workspace says the version |
 | undo | `git restore <files>` (or `git checkout -- .`) before committing; `git revert` after |
-| steps | 1 check the versions · 2 stamp the versions · 3 set the workspace version · 4 regenerate |
-| dry run | --dry-run runs release <version> --check: whether the release is stamped, nothing written |
+| steps | 1 set the workspace version · 2 regenerate |
+| dry run | --dry-run runs release <version> --check: whether the workspace says it, nothing written |
 | code | `xtask/src/release.rs` — `cmd_release` |
 
 #### `derisk`
@@ -432,21 +346,6 @@ the tool as each person gets it: the two programs and the files they read (the w
 | undo | delete dist/vleo-<version>/ |
 | dry run | --dry-run prints this plan — the steps, what it would write, how to undo it — and touches nothing |
 | code | `xtask/src/release.rs` — `cmd_kit` |
-
-#### `convert`
-
-    cargo run -p xtask -- convert [--out <dir>]
-
-the design as its files (docs/PLAN_1_0.md, phase E): each branch's group file and node files, each case, as the shared drive holds them, read back to show they are the tree. To target/converted/, or an empty --out.
-
-| | |
-|---|---|
-| reads | every file of the tree the loader reads: the node folders, the layers, the cases and the source list |
-| writes | target/converted/, or an empty --out: groups/<group>/<group>.vgroup, groups/<group>/nodes/<node>.vnode, cases/<case>.vcase |
-| checks | that the tree loads, converts, and loads again from the files it was converted to |
-| undo | delete the folder it wrote; nothing in the repository changes |
-| dry run | --dry-run prints this plan — the steps, what it would write, how to undo it — and touches nothing |
-| code | `xtask/src/convert.rs` — `cmd_convert` |
 
 #### `bundle`
 

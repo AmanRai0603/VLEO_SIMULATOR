@@ -726,7 +726,7 @@ fn a_malformed_manual_is_refused_by_name() {
         (format!("{ok}[[layer.section.step]]\nsay=\"x\"\nrun=\"cargo xtask status\"\n"), "no `check`"),
         // A command with a placeholder, claiming to be runnable.
         (
-            format!("{ok}[[layer.section.step]]\nsay=\"x\"\nrun=\"cargo xtask declare <row>\"\ncheck=\"exits\"\n"),
+            format!("{ok}[[layer.section.step]]\nsay=\"x\"\nrun=\"cargo xtask method <row>\"\ncheck=\"exits\"\n"),
             "placeholder",
         ),
         // A command that writes, with nothing said about what.

@@ -2,7 +2,7 @@
 //! every command that writes reports what it is doing.
 //!
 //! A command is a step in a node's journey — its group's folder written,
-//! applied, published, built, gated and released. For each one the
+//! built, gated and released. For each one the
 //! table says where in that journey it sits, what it reads, what it writes,
 //! what it checks, how to undo it, and which function in which file does it.
 //! `explain`, `--dry-run` and `docs/PIPELINE.md` are read from the table, and a
@@ -23,15 +23,7 @@ use std::io::Write as _;
 pub(crate) const STAGES: &[(&str, &str)] = &[
     (
         "form",
-        "a group's folder written from the design, for the group to start from",
-    ),
-    (
-        "apply",
-        "a new row, or a row's lesson, written into the tree — all of it or none",
-    ),
-    (
-        "publish",
-        "a filled row published, and named by the person who confirms it",
+        "a group's folder, or a row's lesson form, written from the design for its people to fill",
     ),
     (
         "build",
@@ -41,7 +33,7 @@ pub(crate) const STAGES: &[(&str, &str)] = &[
         "gate",
         "the checks every change passes, and what they generate",
     ),
-    ("release", "the stamped release everyone gets"),
+    ("release", "the versioned release everyone gets"),
     (
         "read",
         "reports: what exists, what is open, why a node is what it is",
@@ -87,14 +79,14 @@ const GIT_UNDO: &str =
 pub(crate) const PIPELINE: &[Cmd] = &[
     Cmd {
         name: "lesson",
-        stage: "apply",
-        reads: "the row's sheet and lesson.toml, the tree's rows, web/method.wasm.gz; a filled lesson form",
-        writes: "form: <node>.lesson-form.html, or --out; apply: lesson.toml beside the row's node.toml",
-        checks: "the lesson, as the gate checks it: every key known, every claim tagged, no markup, every row a widget names real; apply gates the row",
-        undo: "`git restore` (or delete) the row's lesson.toml; a refused apply puts it back itself",
+        stage: "form",
+        reads: "the row in the design (design/), the tree's rows, web/method.wasm.gz; a filled lesson form",
+        writes: "form: <node>.lesson-form.html, or --out",
+        checks: "check: the lesson, as the gate checks it — every key known, every claim tagged, no markup, every row a widget names real",
+        undo: "delete the form it wrote",
         code: ("xtask/src/forms.rs", "cmd_lesson"),
-        steps: &["check the lesson", "write it beside the row", "gate the row"],
-        dry: Dry::Check("lesson check <file>: every reason it would be refused, nothing written"),
+        steps: &[],
+        dry: Dry::Check("lesson form <node> --check: whether the row has a form to write, nothing written"),
     },
     Cmd {
         name: "readers",
@@ -108,50 +100,6 @@ pub(crate) const PIPELINE: &[Cmd] = &[
         dry: Dry::Plan,
     },
     Cmd {
-        name: "new",
-        stage: "apply",
-        reads: "the sibling's sheet",
-        writes: "a new node folder, its sheet cloned with what must be re-decided blanked",
-        checks: "that the id is free and the sibling exists",
-        undo: "delete the new folder",
-        code: ("xtask/src/forms.rs", "cmd_new"),
-        steps: &[],
-        dry: Dry::Plan,
-    },
-    Cmd {
-        name: "declare",
-        stage: "publish",
-        reads: "the node's sheet",
-        writes: "with --source: the sheet's source line",
-        checks: "which completion questions are still open",
-        undo: GIT_UNDO,
-        code: ("xtask/src/report.rs", "cmd_declare"),
-        steps: &[],
-        dry: Dry::Plan,
-    },
-    Cmd {
-        name: "publish",
-        stage: "publish",
-        reads: "the node's sheet",
-        writes: "node.toml's state, and the node's metadata",
-        checks: "every completion question answered; the whole tree's gate",
-        undo: GIT_UNDO,
-        code: ("xtask/src/main.rs", "cmd_publish"),
-        steps: &["read the sheet", "publish, generate and gate"],
-        dry: Dry::Plan,
-    },
-    Cmd {
-        name: "confirm",
-        stage: "publish",
-        reads: "the sheets",
-        writes: "with <node> --by: that node's confirmation",
-        checks: "that the relation and its source are printed first",
-        undo: GIT_UNDO,
-        code: ("xtask/src/confirm.rs", "cmd_confirm"),
-        steps: &[],
-        dry: Dry::Plan,
-    },
-    Cmd {
         name: "method",
         stage: "build",
         reads: "the node's method and its node engineer's cases",
@@ -161,25 +109,6 @@ pub(crate) const PIPELINE: &[Cmd] = &[
         code: ("xtask/src/method.rs", "cmd_method"),
         steps: &[],
         dry: Dry::Reads,
-    },
-    Cmd {
-        name: "build-node",
-        stage: "build",
-        reads: "the node's method, cases and node engineer's code",
-        writes: "the node's metadata, design/ converted again, baseline/ recorded again",
-        checks: "the method on its cases; the node engineer's code rerun; the tree assembles; every case of the design passes",
-        undo: GIT_UNDO,
-        code: ("xtask/src/method.rs", "cmd_build_node"),
-        steps: &[
-            "the method, against the node engineer's cases",
-            "regenerate the node",
-            "the node engineer's own code, run again on their cases",
-            "only now, the interface: the node in the tree",
-            "the design's files, converted again",
-            "every case of the design, on the engine that reads it",
-            "today's answers, recorded again",
-        ],
-        dry: Dry::Plan,
     },
     Cmd {
         name: "rerun",
@@ -239,10 +168,10 @@ pub(crate) const PIPELINE: &[Cmd] = &[
     Cmd {
         name: "docs",
         stage: "gate",
-        reads: "every sheet",
-        writes: "each node's metadata, and docs/PSEUDOCODE.md; a page.html left in a node folder from before is removed",
-        checks: "that each sheet generates",
-        undo: GIT_UNDO,
+        reads: "the method language's tables",
+        writes: "docs/PSEUDOCODE.md",
+        checks: NOTHING,
+        undo: "`git restore docs/PSEUDOCODE.md`",
         code: ("xtask/src/main.rs", "cmd_docs"),
         steps: &[],
         dry: Dry::Plan,
@@ -328,14 +257,14 @@ pub(crate) const PIPELINE: &[Cmd] = &[
         name: "ship",
         stage: "release",
         reads: "main, every sheet",
-        writes: "a branch release/<version>: the narrative, the stamp, regenerated files, a commit, a push",
+        writes: "a branch release/<version>: the narrative, the version, regenerated files, a commit, a push",
         checks: "the release rules; the gate; cargo test",
         undo: "delete the branch (`git branch -D release/<version>`, and on the remote)",
         code: ("xtask/src/flow.rs", "cmd_ship"),
         steps: &[
             "the branch",
             "the de-risking narrative",
-            "stamp the release",
+            "the workspace version",
             "regenerate",
             "gate",
             "tests (cargo test --workspace)",
@@ -346,18 +275,16 @@ pub(crate) const PIPELINE: &[Cmd] = &[
     Cmd {
         name: "release",
         stage: "release",
-        reads: "every sheet's versions, Cargo.toml",
-        writes: "every `next` version stamped, the workspace version, Cargo.lock files, regenerated docs and narrative",
-        checks: "a release only moves forward; no version names a later one; with --check, that nothing is unstamped",
+        reads: "Cargo.toml",
+        writes: "the workspace version, Cargo.lock files, regenerated docs and narrative",
+        checks: "a release only moves forward; with --check, that the workspace says the version",
         undo: GIT_UNDO,
         code: ("xtask/src/release.rs", "cmd_release"),
         steps: &[
-            "check the versions",
-            "stamp the versions",
             "set the workspace version",
             "regenerate",
         ],
-        dry: Dry::Check("release <version> --check: whether the release is stamped, nothing written"),
+        dry: Dry::Check("release <version> --check: whether the workspace says it, nothing written"),
     },
     Cmd {
         name: "derisk",
@@ -378,17 +305,6 @@ pub(crate) const PIPELINE: &[Cmd] = &[
         checks: "that the programs are there",
         undo: "delete dist/vleo-<version>/",
         code: ("xtask/src/release.rs", "cmd_kit"),
-        steps: &[],
-        dry: Dry::Plan,
-    },
-    Cmd {
-        name: "convert",
-        stage: "release",
-        reads: "every file of the tree the loader reads: the node folders, the layers, the cases and the source list",
-        writes: "target/converted/, or an empty --out: groups/<group>/<group>.vgroup, groups/<group>/nodes/<node>.vnode, cases/<case>.vcase",
-        checks: "that the tree loads, converts, and loads again from the files it was converted to",
-        undo: "delete the folder it wrote; nothing in the repository changes",
-        code: ("xtask/src/convert.rs", "cmd_convert"),
         steps: &[],
         dry: Dry::Plan,
     },
@@ -1092,7 +1008,7 @@ pub(crate) fn pipeline_md() -> String {
     o.push_str("# The pipeline\n\n");
     o.push_str(
         "> **Answer first.** Every `xtask` command is a step in a node's journey — its group's \
-         folder written, applied, published, built, gated and released. This page says, \
+         folder written, built, gated and released. This page says, \
          for each one, what it reads, writes and checks, how to undo it, and where its code is. \
          Every command that writes prints numbered steps, stops by saying why, what state the files \
          are in and how to retry, leaves a trace in `target/xtask-trace/`, and takes `--dry-run`.\n>\n\
@@ -1297,23 +1213,25 @@ mod the_table_is_true {
         let dir = std::env::temp_dir().join(format!("xtask-run-{}", std::process::id()));
         let _ = fs::remove_dir_all(&dir);
         fs::create_dir_all(&dir).unwrap();
-        let mut run = Run::start(&dir, "publish", &["x"], 2);
+        let mut run = Run::start(&dir, "release", &["x"], 2);
         let first: u32 = run
-            .step("read the sheet", OnStop::new("unchanged", "again"), || {
-                Ok((7, "read".into()))
-            })
+            .step(
+                "check the version",
+                OnStop::new("unchanged", "again"),
+                || Ok((7, "read".into())),
+            )
             .unwrap();
         assert_eq!(first, 7);
         let err = run
             .step::<()>(
-                "publish, generate and gate",
-                OnStop::new("put back as they were", "cargo run -p xtask -- publish x"),
+                "set the workspace version",
+                OnStop::new("put back as they were", "cargo run -p xtask -- release x"),
                 || Err("the gate refused".into()),
             )
             .unwrap_err();
         assert!(
             err.contains("2/2")
-                && err.contains("publish, generate and gate")
+                && err.contains("set the workspace version")
                 && err.contains("the gate refused"),
             "{err}"
         );
@@ -1321,13 +1239,13 @@ mod the_table_is_true {
         assert_eq!(t.len(), 1, "one run, one trace");
         let text = fs::read_to_string(&t[0]).unwrap();
         for want in [
-            "xtask publish x",
-            "1/2 · read the sheet",
+            "xtask release x",
+            "1/2 · check the version",
             "done  read",
             "why       the gate refused",
             "files     put back as they were",
-            "retry     cargo run -p xtask -- publish x",
-            "code      xtask/src/main.rs — the step \"publish, generate and gate\" in cmd_publish",
+            "retry     cargo run -p xtask -- release x",
+            "code      xtask/src/release.rs — the step \"set the workspace version\" in cmd_release",
             "stopped after",
         ] {
             assert!(

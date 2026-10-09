@@ -58,11 +58,11 @@ is taken into today's design, and the node's sheet there carries the new `[[vers
 ### D3 · A version is a record, and a release names it
 
 Versions count 1, 2, 3 and are never edited. Each keeps the relation and source it stated, so an
-earlier version can be read after the sheet has moved on. A version is `release = "next"` until a
-release is cut: `cargo run -p xtask -- release <x.y.z>` stamps every unreleased version with the
-release that ships it and sets the tool's version to match, and the release pipeline refuses to
-ship while any version is unstamped. So a node's page says, for each belief, which release first
-carried it.
+earlier version can be read after the sheet has moved on. A version is `release = "next"` until
+the design's release that carries it names it. That record is its node engineer's, so it is
+written in the group's application, never here: `cargo run -p xtask -- release <x.y.z>` sets the
+tool's version and stamps no node, because the developer never edits the design. So a node's page
+says, for each belief, which release first carried it, once the design's release has said so.
 
 ### D4 · A risk is registered once, and moved only by work
 
@@ -138,5 +138,5 @@ break it.
 **As a developer.**
 
     cargo run -p xtask -- derisk                      # the narrative, regenerated
-    cargo run -p xtask -- release 0.2.0               # stamps `next`, sets the version
-    cargo run -p xtask -- release 0.2.0 --check       # what the release pipeline runs
+    cargo run -p xtask -- release 0.2.0               # sets the tool's version; stamps no node
+    cargo run -p xtask -- release 0.2.0 --check       # what the release pipeline runs: the workspace says 0.2.0

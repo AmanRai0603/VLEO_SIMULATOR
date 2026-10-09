@@ -583,19 +583,16 @@ why = "prints each case with what the node engineer's code gave and what the met
 
 [[layer.section]]
 id = "maint-build"
-title = "Build a node from its method"
+title = "Check a node against its cases"
 who = "maintainer"
 kind = "how-to"
-answer = "build-node does this for one node. Every stage must pass before the next runs, and the node is connected to the rest of the design only at the end."
+answer = "A node is built from its method in its group's application, and arrives in the group's sealed release. Here, method checks one node's method on its node engineer's cases, and rerun runs the node engineer's own code on them again."
 body = """
-**M** the method runs on the node engineer's cases. **G1** the node's \
-metadata is written from its sheet. **T3** the node engineer's own code is \
-run again where it can be. **I1** only then is the node checked in the tree, \
-and the rows that read it are named. **T1** the design is converted again, and \
-every case it holds — each fixture, each node engineer's case, the \
-properties from each declared range and each prior implementation's grid — \
-must pass on the engine that reads it. Today's answers are then recorded \
-again, in the same commit.
+Nothing here writes a node. Its group writes it, checks it and seals it in \
+the application (`docs/GROUP_APPS.md`); what the repository holds is \
+`design/`, the design as its files, and every case it holds must pass on the \
+engine that reads it — each fixture, each node engineer's case, the \
+properties from each declared range and each prior implementation's grid.
 
 A case that fails is the node engineer's to settle. It is never a tolerance to \
 change."""
@@ -903,51 +900,27 @@ expect = "M_f107_long = 0.376314"
 
 [[layer.section]]
 id = "term-fill"
-title = "Implement a node — the developer's loop"
+title = "Check a node — the developer's reading of it"
 who = "developer"
 kind = "how-to"
-answer = "After a row's sheet changes: publish the row, check its method against its node engineer's cases, build it, add evidence from outside this code, and check it. Every step names exactly what is still open."
+answer = "The developer never writes a node. To see where one stands: check its method against its node engineer's cases, gate it, and ask whether a person should look yet. Every step names exactly what is still open."
 body = """
-A row is a folder, and **only `node.toml` in it is written by hand** — by a \
-developer, in their editor. Beside it are its fixtures and the metadata \
-generated from it, and no code: the row's relation is its **method**, in the \
-sheet, run by the interpreter.
+A node is written, checked and sealed by its group, in the application, and \
+reaches this repository only in `design/` (`docs/GROUP_APPS.md`). Its relation \
+is its **method**, run by the interpreter; there is no code to write for it.
 
-The loop after a row's sheet changes: publish the row, check its method \
-against its node engineer's cases, build it, give it evidence from outside \
-this code, check it, and ask whether a person should look yet. Every step \
-names exactly what is still open, so there is never a guess about what is \
-next.
+What the developer can do is read it: check its method on its cases, run the \
+gate on it, and ask whether a person should look yet. Something the code \
+cannot yet do comes back as a **request** (W14), and is answered with an \
+application release.
 
 **No assistant may supply the relation.** The method comes from its node \
-engineer, and a person's name goes against it. Commit naming the node \
-engineer it came from."""
-
-[[layer.section.step]]
-say = "Ask what is still open, and what goes wrong without each answer."
-run = "cargo run -p xtask -- declare sw_ap_design"
-check = "exits"
-expect = "ready to generate"
-
-[[layer.section.step]]
-say = "Publish a filled seeded row. It refuses, naming every reason, while the row is not ready."
-run = "cargo run -p xtask -- publish <row>"
-check = "writes"
-why = "moves the row to published and writes its metadata"
+engineer, and a person's name goes against it."""
 
 [[layer.section.step]]
 say = "Check the row's method, every line and every unit, and run it on each of its node engineer's cases."
 run = "cargo run -p xtask -- method sw_ap_design"
 check = "exits"
-
-[[layer.section.step]]
-say = "Add evidence to `fixtures.toml`: values from a paper, a measurement or a trusted tool — including the known values a node engineer supplied. An expected value may never come from the code under test, and the checks refuse one marked as if it did."
-
-[[layer.section.step]]
-say = "Generate the row's other files from its sheet. On a row that is already up to date, nothing is written."
-run = "cargo run -p xtask -- docs sw_ap_design"
-check = "exits"
-expect = "0 artefact(s) written"
 
 [[layer.section.step]]
 say = "Check it. Every failure names the field and the rule."
@@ -960,43 +933,31 @@ say = "Ask whether a person should look yet. It stops at the first thing a machi
 run = "cargo run -p xtask -- ready sw_ap_design"
 check = "exits"
 
-[[layer.section.step]]
-say = "List the relations nobody has put their name against yet, grouped by who owns them."
-run = "cargo run -p xtask -- confirm --list solar"
-check = "exits"
-
-[[layer.section.step]]
-say = "Put your name against one relation, after reading it against its source. There is deliberately no way to do many at once."
-run = "cargo run -p xtask -- confirm <row> --by \"Your Name\""
-check = "writes"
-why = "writes your name and today's date against the relation on the row's sheet"
-
 
 [[layer.section]]
 id = "term-derisk"
 title = "Record why it changed, and cut a release"
 who = "developer"
 kind = "how-to"
-answer = "Every applied change appends a version to its node; the narrative is regenerated from all of them; and a release stamps every unreleased version with the release that ships it."
+answer = "Every change to what a node computes appends a version to its node; the narrative is regenerated from all of them; and an application release sets the application's version, never the design's."
 body = """
 A change that moves what a node computes carries its reason — what we \
 believed, what we tested, what we now know, what changed, and what the node \
-rests on now. Intake checks the record with everything else: without it, only \
-the change's wording is applied and every decision is **withheld**, by name; \
-with it, the changes go in and a `[[version]]` is appended to the sheet, \
-numbered and marked `next`. The kinds of decision it moved are read off what \
-the change moved, never asked. A risk move names a risk registered on a risk-register row, or the \
-record is refused.
+rests on now. The node engineer writes that record in the application, with \
+the change, and the library refuses a change to what a node computes that \
+carries none. A risk move names a risk registered on a risk-register row, or \
+the record is refused.
 
 The narrative is generated from every node's record: \
 `docs/DERISK_NARRATIVE.md` to read and `docs/derisking.csv` for a spreadsheet, \
 in the columns of the quarterly de-risking narrative. The pipeline regenerates \
 both and fails on a difference.
 
-A release names the beliefs it ships. `xtask release <version>` stamps every \
-`next` with the release, sets the workspace version and regenerates; the \
-release pipeline runs `release <version> --check` and refuses while any version \
-is unstamped. Why, and the rules, are in `docs/DERISKING.md`."""
+An application release names its own version. `xtask release <version>` sets \
+the workspace version and regenerates; the release pipeline runs \
+`release <version> --check` and refuses while the workspace says another. It \
+stamps nothing in the design: which release carried a belief is said by the \
+design's own release. Why, and the rules, are in `docs/DERISKING.md`."""
 
 [[layer.section.step]]
 say = "Regenerate the narrative. On a tree whose narrative is committed, nothing is written."
@@ -1011,10 +972,10 @@ check = "exits"
 expect = "a saved result"
 
 [[layer.section.step]]
-say = "Cut a release: every unreleased version stamped, the workspace version set, everything regenerated. Then gate, commit and tag."
+say = "Cut a release: the workspace version set, everything regenerated. Then gate, commit and tag."
 run = "cargo run -p xtask -- release <version>"
 check = "writes"
-why = "stamps `release` on every unreleased node version, sets the version in Cargo.toml and Cargo.lock, and regenerates"
+why = "sets the version in Cargo.toml and Cargo.lock, and regenerates"
 
 
 [[layer.section]]
@@ -1030,7 +991,7 @@ prints it for one command, or the whole journey with none; \
 `xtask pipeline`; and a test fails when the table, `help` and the code \
 disagree.
 
-**A command that writes runs as numbered steps** — `publish`, `build-node`, `release` and `ship`. Each step prints \
+**A command that writes runs as numbered steps** — `release` and `ship`. Each step prints \
 `n/total · name` as it starts and what it found when it ends. A step that \
 stops prints **why**, the state the **files** are in, the exact command to \
 **retry**, and the **code**: the file, and the step's name — a string in that \
@@ -1063,7 +1024,7 @@ expect = "undo"
 
 [[layer.section.step]]
 say = "What a command would do, doing nothing."
-run = "cargo run -p xtask -- publish sw_ap_design --dry-run"
+run = "cargo run -p xtask -- derisk --dry-run"
 check = "exits"
 expect = "nothing was read or written"
 
@@ -1123,10 +1084,10 @@ why = "rewrites contract/examples/ from the real engine, and drafts a schema for
 
 [[layer.section]]
 id = "term-lesson"
-title = "Take a lesson in, from its form"
+title = "A lesson's form, and its check"
 who = "developer"
 kind = "how-to"
-answer = "A lesson arrives as a form: the node engineer who knows the row fills its lesson form anywhere, checked as they type by the gate's own check, and sends it back; lesson apply checks it again, writes lesson.toml beside the row's node.toml and gates the row — or puts it back."
+answer = "A lesson arrives as a form: the node engineer who knows the row fills its lesson form anywhere, checked as they type by the gate's own check, and sends it back; lesson check checks it again and says every reason it would be refused."
 body = """
 The node engineer writes the lesson; nobody writes HTML for it and nobody writes a \
 formula for the page to compute. `docs/LESSONS.md` is the file, table by \
@@ -1137,8 +1098,8 @@ form* on the row's page. It carries the method checker the pages carry, which \
 holds the lesson check the gate runs, and a table of the tree's rows, so a \
 widget naming a row that is not there is refused while the node engineer types. \
 **lesson check** says what a filled one holds and every reason it would be \
-refused; **lesson apply** writes it and gates the row, and puts the row back if \
-the gate refuses. A lesson is outside the sheet hash, so it never changes an \
+refused. Nothing here writes it into the design: the design is its group's, \
+and a lesson goes in with the group's release. A lesson never changes an \
 answer."""
 
 [[layer.section.step]]
@@ -1152,12 +1113,6 @@ say = "What a filled form — or a bare lesson.toml, with --for — holds, and e
 run = "cargo run -p xtask -- lesson check docs/examples/orbit_velocity.lesson.toml --for orbit_velocity"
 check = "exits"
 expect = "passes the check the gate runs"
-
-[[layer.section.step]]
-say = "Write it beside the row and gate the row; a refusal puts it back."
-run = "cargo run -p xtask -- lesson apply <file>"
-check = "writes"
-why = "writes the row's lesson.toml"
 
 [[layer.section.step]]
 say = "Every row's page and every lesson as plain pages, for people who read without the tool — the engine runs in the page to answer the widgets."
@@ -1252,12 +1207,6 @@ When the language grows a construct, it grows in \
 the grammar (`parse.rs`), the checker (`check.rs`) and the interpreter \
 (`run.rs`) together, one reviewed change, followed by `method-wasm` so every \
 page checks by the new rules."""
-
-[[layer.section.step]]
-say = "Build a node from its method by hand, stage by stage."
-run = "cargo run -p xtask -- build-node <node>"
-check = "writes"
-why = "checks, reruns and only then checks the interface and runs every case of the design; stops at the first stage that fails"
 
 [[layer.section]]
 id = "term-evidence"
@@ -1524,9 +1473,9 @@ come from* is answered by walking upward without ever leaving the tree.
 
 **One row is one folder**, under `crates/vleo-mod-<subsystem>/nodes/<row>/`:
 
-`node.toml` — the sheet, with the row's method. The only file written by hand, by a developer.
+`node.toml` — the sheet, with the row's method.
 `fixtures.toml` — known-good values from outside this code.
-`meta.json` — generated. No row holds code: its method is run by the interpreter.
+Nothing in the folder is generated, and no row holds code: its method is run by the interpreter.
 The row's page is not in the folder: the tool renders it from the sheet when it is opened.
 
 The rules that do not bend, and the developer's loop, are in `AGENTS.md`; the \
@@ -1675,7 +1624,7 @@ who = "developer"
 place = "browser"
 what = "Put your name against a relation"
 why = "Signing is an act of reading the relation against its source, done by the person who owns it."
-instead = "cargo run -p xtask -- confirm <row> --by \"Your Name\""
+instead = "The node engineer signs their node's file in their group's application (docs/GROUP_APPS.md)."
 who = "developer"
 
 [[cannot]]
@@ -1707,8 +1656,8 @@ who = "user"
 [[command]]
 tool = "xtask"
 name = "docs"
-usage = "docs [<node>]"
-what = "Generate each row's files from its sheet. Never reads another row."
+usage = "docs"
+what = "Write docs/PSEUDOCODE.md, the method language's reference page, from the tables the checker reads."
 who = "developer"
 effect = "writes"
 
@@ -1786,34 +1735,9 @@ effect = "reads"
 
 [[command]]
 tool = "xtask"
-name = "new"
-usage = "new <id> --like <sibling>"
-what = "Start a row from a sibling's shape, with everything that must be re-decided blanked."
-who = "developer"
-effect = "writes"
-
-[[command]]
-tool = "xtask"
-name = "declare"
-usage = "declare <node>"
-what = "The questions a sheet still has open, and what goes wrong without each."
-who = "everyone"
-effect = "reads"
-
-
-[[command]]
-tool = "xtask"
 name = "lesson"
-usage = "lesson apply <file> [--for <node>] [--check]"
-what = "A row's lesson: `lesson form <node>` writes its form, one HTML file the node engineer fills anywhere, checked as they type by the gate's own lesson check; `lesson check <file>` says what a filled one holds and every reason it would be refused; `lesson apply` writes it as lesson.toml beside the row and gates the row, or puts it back."
-who = "developer"
-effect = "writes"
-
-[[command]]
-tool = "xtask"
-name = "publish"
-usage = "publish <node>"
-what = "Move a filled, seeded row to published, so its code is generated and its slots can be written. Refuses, naming every reason, while it is not ready."
+usage = "lesson form <node> [--out <file.html>] [--check]"
+what = "A row's lesson: `lesson form <node>` writes its form, one HTML file the node engineer fills anywhere, checked as they type by the gate's own lesson check; `lesson check <file>` says what a filled one holds and every reason it would be refused."
 who = "developer"
 effect = "writes"
 
@@ -1876,15 +1800,6 @@ effect = "reads"
 
 [[command]]
 tool = "xtask"
-name = "build-node"
-usage = "build-node <node>"
-what = "Builds a node from its method, stage by stage, stopping at the first that fails: the method on its node engineer's cases; its metadata; the node engineer's code rerun; only then the node in the tree; the design converted again and every case it holds run on the engine that reads it; and today's answers recorded again."
-who = "maintainer"
-effect = "writes"
-
-
-[[command]]
-tool = "xtask"
 name = "explain"
 usage = "explain [<command>]"
 what = "Where a command sits in a node's journey, what it reads, writes and checks, how to undo it, its steps and where its code is — from the one table docs/PIPELINE.md is written from. With no command, the whole journey."
@@ -1934,14 +1849,6 @@ effect = "writes"
 
 [[command]]
 tool = "xtask"
-name = "convert"
-usage = "convert [--out <dir>]"
-what = "The design as its files, for the switch-over (docs/PLAN_1_0.md, phase E): the programme's, the systems' and each subsystem group's group file, a node file for every row and for each open block proposed where its group's breakdown holds none yet, and each case, laid out as the shared drive holds them. Before anything is written they are read back as the folders and loaded as the design. Default target/converted/, or an empty --out; nothing in the repository changes."
-who = "developer"
-effect = "writes"
-
-[[command]]
-tool = "xtask"
 name = "kit"
 usage = "kit [--bin <dir>] [--out <dir>] [--files-only]"
 what = "The tool as each person gets it: the two release-built programs beside exactly the files they read — the design among them as its files, design/ — with START_HERE.md and VERSION (and start.sh off Windows, where the daemon ships as Start VLEO.exe), in dist/vleo-<version>/. Zip it and share it; see docs/SHARING.md. --files-only leaves the programs out: the files the Python package carries."
@@ -1960,15 +1867,7 @@ effect = "writes"
 tool = "xtask"
 name = "release"
 usage = "release <version> [--check]"
-what = "Stamp every node version still marked `next` with this release, set the workspace version and regenerate. `--check` refuses while anything is unstamped — the release pipeline runs it."
-who = "developer"
-effect = "writes"
-
-[[command]]
-tool = "xtask"
-name = "confirm"
-usage = "confirm <node> --by \"<name>\""
-what = "Put a person's name against a relation, after printing it and its source. `confirm --list` shows the ones with no name yet."
+what = "Set the workspace version and regenerate. `--check` refuses while the workspace says another version — the release pipeline runs it."
 who = "developer"
 effect = "writes"
 
@@ -2225,7 +2124,7 @@ what = "Remove the saved case: every input back to its default."
 [[route]]
 method = "GET"
 path = "/v1/lesson-form/<id>"
-what = "A row's lesson form, as one self-contained HTML file to fill anywhere, checked as it is typed by the gate's own lesson check. Writes nothing — a filled one is applied by a developer with `xtask lesson apply`."
+what = "A row's lesson form, as one self-contained HTML file to fill anywhere, checked as it is typed by the gate's own lesson check. Writes nothing — a filled one is checked with `xtask lesson check`, and goes into the design with its group's release."
 
 
 [[route]]
@@ -2379,7 +2278,7 @@ default = "found"
 
 [[env]]
 name = "VLEO_DESIGN"
-what = "A folder of the design's files for the daemon to read the design from, in place of design/ beside it (`cargo run -p xtask -- convert` writes one): its group, node and case files, read as the folders they came from. A name that is not a folder, a folder that does not open, and a file in it written by a newer application than the daemon each stop the daemon, naming why: it never falls back to whatever sits beside it."
+what = "A folder of the design's files for the daemon to read the design from, in place of design/ beside it: its group, node and case files, read as the folders they came from. A name that is not a folder, a folder that does not open, and a file in it written by a newer application than the daemon each stop the daemon, naming why: it never falls back to whatever sits beside it."
 default = "design/ beside the tool, else the folders"
 
 [[env]]
@@ -2438,7 +2337,7 @@ who = "developer"
 
 [[folder]]
 name = "design"
-what = "The design as its files: each group's file and node files under design/groups/, each case under design/cases/, converted from the node sheets and held equal to them by a test until the sheets leave. Written by `cargo run -p xtask -- convert --out design`, and again by build-node whenever it writes a sheet; never edited by hand."
+what = "The design as its files: each group's file and node files under design/groups/, each case under design/cases/, converted from the node sheets and held equal to them by a test until the sheets leave. Nothing in the repository writes it any more, and it is never edited by hand."
 who = "developer"
 
 [[folder]]
@@ -2738,10 +2637,9 @@ reveal = "No. A refused release is never taken in part: the numbers are your las
 [[role]]
 id = "maintainer"
 title = "Releases"
-answer = "Until the switch-over, the developer — or their deputy — moves the tool to everyone: build a node from its method, cut a release, build the kits, pack the drive, share. Every step is one command — build-node, ship, kit, the drive's pack — and each does its whole step or nothing and says what to do next. No code is written here."
+answer = "Until the switch-over, the developer — or their deputy — moves the tool to everyone: cut a release, build the kits, pack the drive, share. Every step is one command — ship, kit, the drive's pack — and each does its whole step or nothing and says what to do next. No code is written here, and no node: a node comes from its group, sealed."
 simply = "This is the print shop. The pages come from the people who own them, filed on the shared drive; the shop prints the book that reads them — a release — and sends it to everyone."
 does = [
-  "Build a node from its method with build-node when its method is new.",
   "Merge each pull request once every check is green.",
   "Release with ship; publish and share the four files.",
   "Pack the drive from the release, and share it.",
@@ -2763,7 +2661,7 @@ title = "Developer"
 answer = "You write what the routine cannot: a new relation in the kernel, a construct the method language lacks, a diagnosis of a failing check — and you improve the tool itself: its checks, generators, pages and pictures. Everything goes through the gate and a pull request reviewed by the number of people CONTRIBUTING sets."
 simply = "If releases are the print shop, you build and repair the presses. You do not decide what is printed — that comes from the people who own the design — but you make sure the presses print it exactly, and you check them against pages you did not print yourself: the fixtures."
 does = [
-  "Build a node from its method with build-node; for what the method language cannot say, grow the language.",
+  "Check a node's method on its node engineer's cases with method; for what the method language cannot say, grow the language.",
   "Keep the method language, its checker and its interpreter one reviewed change, and rebuild the pages' checker with method-wasm.",
   "Add a relation to vleo-core::physics when a method needs one — a reviewed change every node reads.",
   "Diagnose a check that fails, with its output.",
