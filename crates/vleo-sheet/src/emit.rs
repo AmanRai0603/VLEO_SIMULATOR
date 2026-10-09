@@ -85,10 +85,7 @@ pub fn gap_pass(sh: &Sheet) -> Vec<String> {
                 .into(),
         );
     }
-    if sh.criticality == "significant"
-        && !sh.has_parity
-        && sh.fixtures.len() < 2
-    {
+    if sh.criticality == "significant" && !sh.has_parity && sh.fixtures.len() < 2 {
         g.push(
             "significant, and one fixture or none — a significant node is the one that gets a \
              second independent check, which is the whole reason for the word"

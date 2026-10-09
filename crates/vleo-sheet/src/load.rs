@@ -485,7 +485,11 @@ fn load_sheet(files: &dyn Files, dir: &Path, crate_name: &str) -> Result<Sheet, 
         lesson: {
             let p = dir.join(crate::lesson::FILE);
             if files.is_file(&p) {
-                Some(files.read_to_string(&p).map_err(|e| Error::io(p.display(), e))?)
+                Some(
+                    files
+                        .read_to_string(&p)
+                        .map_err(|e| Error::io(p.display(), e))?,
+                )
             } else {
                 None
             }

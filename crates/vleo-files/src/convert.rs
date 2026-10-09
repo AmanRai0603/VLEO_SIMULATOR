@@ -329,6 +329,75 @@ fn take_array(t: &mut TomlTable, key: &str, what: &str) -> Result<Vec<TomlTable>
     }
 }
 
+/// A table inside an element of an array of tables, written on its element as
+/// an inline table, as the sheets write one: `inputs = { a = 1, b = 2 }` on
+/// the `[[case]]` it belongs to, not a `[case.inputs]` header after it. The
+/// two read alike; but what edits a sheet's text knows the one form, and a
+/// case edited where its inputs stood under their own header came out with
+/// the key twice.
+fn inline_element_tables(text: &str) -> String {
+    // The array whose element the lines so far are in: its last header.
+    fn array_name(out: &[String]) -> String {
+        out.iter()
+            .rev()
+            .find_map(|l| l.trim().strip_prefix("[[")?.strip_suffix("]]"))
+            .unwrap_or_default()
+            .to_string()
+    }
+    let mut out: Vec<String> = Vec::new();
+    let mut array: Option<String> = None;
+    let mut folding: Option<(String, Vec<String>)> = None;
+    let flush = |out: &mut Vec<String>, f: &mut Option<(String, Vec<String>)>| {
+        if let Some((key, pairs)) = f.take() {
+            // A value over several lines cannot be one line: left as written.
+            if pairs
+                .iter()
+                .any(|p| p.contains("\"\"\"") || p.contains("'''"))
+            {
+                out.push(format!("[{}.{key}]", array_name(out)));
+                out.extend(pairs);
+                out.push(String::new());
+                return;
+            }
+            // On the element, before the blank line that ends it.
+            let at = out
+                .iter()
+                .rposition(|l| !l.trim().is_empty())
+                .map_or(out.len(), |i| i + 1);
+            out.insert(at, format!("{key} = {{ {} }}", pairs.join(", ")));
+        }
+    };
+    for line in text.lines() {
+        let l = line.trim();
+        if let Some(name) = l.strip_prefix("[[").and_then(|x| x.strip_suffix("]]")) {
+            flush(&mut out, &mut folding);
+            array = Some(name.to_string());
+        } else if let Some(name) = l.strip_prefix('[').and_then(|x| x.strip_suffix(']')) {
+            flush(&mut out, &mut folding);
+            match array
+                .as_deref()
+                .and_then(|a| name.strip_prefix(&format!("{a}.")))
+            {
+                Some(key) if !key.contains('.') => {
+                    folding = Some((key.to_string(), Vec::new()));
+                    continue;
+                }
+                _ => array = None,
+            }
+        } else if let Some((_, pairs)) = folding.as_mut() {
+            if !l.is_empty() {
+                pairs.push(line.to_string());
+            }
+            continue;
+        }
+        out.push(line.to_string());
+    }
+    flush(&mut out, &mut folding);
+    let mut text = out.join("\n");
+    text.push('\n');
+    text
+}
+
 fn toml_text(t: &TomlTable, what: &str) -> Result<String, Error> {
     toml::to_string(t).map_err(|e| malformed(format!("{what}: {e}")))
 }
@@ -1334,7 +1403,7 @@ fn node_back(f: &File) -> Result<(String, Option<String>, Option<String>), Error
             b.behaviour
         )));
     }
-    let sheet = toml_text(&t, &what)?;
+    let sheet = inline_element_tables(&toml_text(&t, &what)?);
 
     // ── its cases
     let fixtures = match text_in(f, id, FIXTURES) {

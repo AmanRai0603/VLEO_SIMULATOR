@@ -1432,6 +1432,32 @@ fn same(field: &str, a: &str, b: &str) -> bool {
     }
 }
 
+/// Two cells of a repeated block as the sheet holds them: `1e-12` and
+/// `0.000000000001` are the same tolerance, and an inline table is the same
+/// whatever order its keys are written in. The text a sheet is read as is
+/// laid out by whoever wrote it; a block is changed by its values, never by
+/// how they were written.
+fn same_cell(a: &str, b: &str) -> bool {
+    if a == b {
+        return true;
+    }
+    let value = |v: &str| format!("v = {v}").parse::<toml::Table>().ok();
+    match (value(a), value(b)) {
+        (Some(x), Some(y)) => x == y,
+        _ => false,
+    }
+}
+
+/// Two lists of blocks the same, cell by cell, as [`same_cell`] reads one.
+fn same_rows(a: &[BTreeMap<String, String>], b: &[BTreeMap<String, String>]) -> bool {
+    a.len() == b.len()
+        && a.iter().zip(b).all(|(x, y)| {
+            x.len() == y.len()
+                && x.iter()
+                    .all(|(k, v)| y.get(k).is_some_and(|w| same_cell(v, w)))
+        })
+}
+
 fn short(v: &str) -> String {
     let one = v.split_whitespace().collect::<Vec<_>>().join(" ");
     if one.chars().count() > 90 {
@@ -1785,12 +1811,12 @@ fn plan_edits(tree: &Tree, f: Form) -> Result<Plan, Error> {
         let empty = Vec::new();
         let o = f.original.arrays.get(a.name).unwrap_or(&empty);
         let n = f.filled.arrays.get(a.name).unwrap_or(&empty);
-        if o == n {
+        if same_rows(o, n) {
             continue;
         }
         let c = now.arrays.get(a.name).unwrap_or(&empty);
         let label = |i: usize| format!("{} {}", a.name, i + 1);
-        if c == n {
+        if same_rows(c, n) {
             p.items.push(Item {
                 what: a.name.to_string(),
                 from: format!("{} block(s)", c.len()),
@@ -1799,7 +1825,7 @@ fn plan_edits(tree: &Tree, f: Form) -> Result<Plan, Error> {
             });
             continue;
         }
-        if c != o {
+        if !same_rows(c, o) {
             p.items.push(Item {
                 what: a.name.to_string(),
                 from: format!("{} block(s)", c.len()),
@@ -1875,7 +1901,7 @@ fn plan_edits(tree: &Tree, f: Form) -> Result<Plan, Error> {
             for col in a.columns.iter().filter(|col| !col.managed) {
                 let ov = o[i].get(col.key).cloned().unwrap_or_default();
                 let nv = n[i].get(col.key).cloned().unwrap_or_default();
-                if ov == nv {
+                if same_cell(&ov, &nv) {
                     continue;
                 }
                 let verdict = if refused_rest {
