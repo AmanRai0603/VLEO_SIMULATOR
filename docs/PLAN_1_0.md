@@ -34,13 +34,13 @@ runs at every valve.
 
 ## While it is built
 
-- **Nothing changes for anyone until the switch-over.** Today's apps, tool and
-  loop stay in use as documented now (`docs/GROUP_APPS.md`). A group may keep
-  sealing on them. What it seals is upgraded on the day, and checked against
-  today's answers.
-- **The new application is built beside the old, not patched into it.** The old
-  ones retire on the switch-over day, so nobody has two of anything to choose
-  between.
+- **Today's pages are not kept for use (your word, 10 October 2026).** The
+  design has been frozen since the end of E, so no group seals on the old group
+  and node pages while F is built; each old page is removed as the workspace
+  that supersedes it lands.
+- **The new application replaces the old as it is built (your word, 10 October
+  2026).** Each old page is removed in the stage that supersedes it, so nobody
+  has two of anything to choose between (`docs/PLAN_F.md`, decision 1).
 - **No trial before 1.0.0, by your choice.** Everything planned is built and
   proved in CI, the design is switched over, and 1.0.0 ships. You use it after
   the release, in every role, round the whole cycle, and what you find comes
@@ -56,7 +56,7 @@ runs at every valve.
 | C · Files, versions and keys | B | one schema, every file kind, versions, signatures, the one library with every check | developer | large | 3 |
 | D · The engine runs the design | C | today's answers recorded; the graph read from the design file; today's design; the health map; the parity gate | developer | large | 4 |
 | E · The design leaves the repository | D | the programme, systems and 18 groups as files; every relation in code moved into its node's method | developer | medium-large | 2 |
-| F · The application | C, D, then E | one application, installed and as a page, with its five workspaces, doing W1 to W16, each proved end to end in CI | developer | the largest | 5 |
+| F · The application | C, D, then E | one application, an installed program, with its five workspaces, doing W1 to W16, each proved end to end in CI | developer | the largest | 5 |
 | G · The drive and the people | E, F | the drive's layout and sharing, keys, one guide per role, START HERE | developer, programme manager | small-medium | 1 |
 | H · Switch-over and release | G | the design converted for the last time, the new drive, the first released design; then 1.0.0 | developer, you | one day |
 
@@ -286,7 +286,8 @@ methods.
 
 ### F · The application
 
-One application, installed and as a page from the drive, with the same screens.
+One application: an installed program that opens the database folder, runs the
+engine and shows its screens in a browser window (your word, 10 October 2026).
 It knows each person by their key, and opens on My work.
 
 Staged in `docs/PLAN_F.md`: nine stages, what each builds on, and the scenario
@@ -320,17 +321,19 @@ time, and every branch shows what is still open.
   as they are. Units are written naturally, and a range or a spread as typed. A
   PDF beside the node, and *start from a similar node*.
 - **Made easy to use** by the eight points in section 8 of the operating model.
-- Today's group and node apps, the single-node form and today's intake and
-  delivery commands are removed at the switch-over.
+- Today's tool page, the group and node apps, the single-node form and the
+  readers' folder are removed as the workspaces supersede them, not kept
+  beside them (your word, 10 October 2026; `docs/PLAN_F.md`, decision 1).
 
 **From the audit:**
 - **There are four fronts today, not one:** the tool's page, the group and node
-  pages, the single-node form and the readers' folder. The readers' folder
-  becomes the Explore workspace's read-only export.
-- **One engine for both.** The engine runs in the page in both, and the installed
-  application is a local shell serving the same page, so the screens cannot
-  differ. The local server's routes stay for Python and the command line, and
-  the contract tests and mock engine follow them.
+  pages, the single-node form and the readers' folder. One application
+  replaces all four.
+- **One engine, in the installed program.** The engine, the library and the
+  checks run natively in the program, which serves its screens to the browser
+  on the same computer, as the local server does today. Its routes also serve
+  Python and the command line, and the contract tests and mock engine follow
+  them.
 - **New ways in are new code:** a table pasted from a spreadsheet (tab-separated
   or as the spreadsheet copies it), a typed range or ±, natural units checked by
   the engine's own unit parser, and *start from a similar node*. None exists
@@ -338,8 +341,8 @@ time, and every branch shows what is still open.
 - **No workflow is driven end to end in a browser today.** The CI below is about
   thirteen scenarios, each with more than one person.
 
-**Done when** CI drives every workflow on the example group, installed and as a
-page, with no developer step in W1 to W13. That includes:
+**Done when** CI drives every workflow on the example group with the installed
+program, with no developer step in W1 to W13. That includes:
 - a second writer stopped in W3;
 - a sealed release appearing in today's design for a second person;
 - a refused release replaced by its last good one, and marked;
@@ -356,7 +359,7 @@ page, with no developer step in W1 to W13. That includes:
 ### G · The drive and the people
 
 - `tools/drive.py` packs only what the developer owns: `apps/` with the
-  application, installed and as a page, its checksums and notes, and `guides/`.
+  application, one installer for each computer, its checksums and notes, and `guides/`.
   Everything else is written by the application.
 - START HERE, with the daily rhythm and the programme manager's key fingerprint.
 - The sharing table, as a checklist for the programme manager.

@@ -97,11 +97,13 @@ Each piece is kept, changed or retired, once. Nothing is laid over the old.
 engine and one way of working. What a person can change is what they own;
 everything else they can see, run and question, but not change.
 
-**Two ways to open it, one application:**
-- **installed:** the full engine, fast on large runs. It reads and writes the
-  drive's folder directly, in any browser.
-- **from the drive:** the same screens as a single page, opened in Chrome or
-  Edge, for anyone who cannot install. It works offline and saves in place.
+**One installed program.** It is the engine: it opens the database folder,
+reads every file there, builds today's design, runs it, and makes every check
+and signature, on the computer it is installed on. Its screens open in a
+browser window on that computer, and the browser only draws what it answers.
+The database folder is the one beside the program by default, or any folder it
+is pointed at, such as the shared drive (section 15), read and written
+directly. There is no page that runs on its own.
 
 **Who you are** is your key: open it once on each computer, with your
 passphrase. From the programme file and the group files the application knows
@@ -267,8 +269,9 @@ is vetted into the application, the way SQLite is today (`web/vendor/`).
    shown, not fingerprints.
 7. **Pictures first, examples always.** A template for each kind of node, a
    worked example beside every step, the guide for the screen one click away.
-8. **It works where people are.** Installed or from the drive, online or not. It
-   says plainly when a browser cannot save in place, and what to do.
+8. **It works where people are.** On the shared drive or a folder on the
+   computer, online or not. It says plainly when the folder cannot be reached
+   or a file in it cannot be saved, and what to do.
 
 These follow Nielsen's usability heuristics, and the ideals of local-first
 software: the data is the organisation's, on its own machines, usable offline,
@@ -494,7 +497,7 @@ application or the engine.
    case and give the same answers. One that changes the design's answers does not
    ship.
 2. A release from `main`, tagged `v<version>`.
-3. The application, installed and as a page, goes into `apps/` with its
+3. The application goes into `apps/`, one installer for each computer, with its
    checksums, and `apps/NOTES.md` says what changed and whether anyone must act.
 
 ### W16 · Something goes wrong
@@ -656,8 +659,8 @@ Vleo Database/
   keeps the old one beside it.
 - **An older application refuses a newer file by name,** and says which version
   it needs.
-- **The page in `apps/` and the installed application are one release.**
-  Replacing them is the update; each shows its version.
+- **An application release is the installers in `apps/`.** Installing the new
+  one is the update; it shows its version.
 - **A design names the oldest application that can run it.**
 - **An application release never changes anyone's files.**
 - **Cases and results saved on a computer before 1.0** open and upgrade the same
@@ -669,7 +672,7 @@ The repository holds the code and nothing of the design:
 - the kernel and its toolbox;
 - the method interpreter and the engine;
 - the one library that reads, writes and checks every file;
-- the application, installed and as a page;
+- the application, one installed program with its screens;
 - the tests.
 
 The tests run on the example group, and on a copy of the current released design
