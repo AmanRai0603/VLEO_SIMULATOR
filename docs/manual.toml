@@ -2538,6 +2538,10 @@ path = "docs/PLAN_1_0.md"
 what = "The eight phases to 1.0.0, what each delivers and must prove, how the design leaves the repository, the switch-over and the release, and the use that comes after it."
 
 [[doc]]
+path = "docs/PLAN_F.md"
+what = "Phase F, the application, in nine stages: what each builds on, what it shows, the workflows it carries and the browser scenario that proves it, and the decisions it waits on."
+
+[[doc]]
 path = "docs/OPERATING_1_0.md"
 what = "How 1.0.0 operates: one application and one shared drive for everyone, the valves from the programme through the system engineer to every subsystem and node, the daily rhythm and today's design, the workspaces, the health map that shows where anything breaks, how data comes in, every file and its version, each step, and who hears what."
 
