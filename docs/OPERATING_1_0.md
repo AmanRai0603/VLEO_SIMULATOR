@@ -101,9 +101,11 @@ everything else they can see, run and question, but not change.
 reads every file there, builds today's design, runs it, and makes every check
 and signature, on the computer it is installed on. Its screens open in a
 browser window on that computer, and the browser only draws what it answers.
-The database folder is the one beside the program by default, or any folder it
-is pointed at, such as the shared drive (section 15), read and written
-directly. There is no page that runs on its own.
+The database lives on the shared drive (section 15). Each person copies the
+latest into the folder beside the program and works on that copy; when they
+sign, seal or answer, the program puts that file, and only their own, back on
+the drive, never over one that changed there since their copy. There is no
+page that runs on its own.
 
 **Who you are** is your key: open it once on each computer, with your
 passphrase. From the programme file and the group files the application knows

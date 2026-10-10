@@ -1,6 +1,6 @@
 # Phase F, stage by stage
 
-> **Answer first.** Phase F builds the one application in nine stages, in the order the plan fixes: the shell and the key, Explore, Node, the breakdown, System at a subsystem's valve, System at the system engineer's, Programme, the ways of bringing data in, and the whole cycle. The application is one installed program: it opens the database folder (beside it by default, or any folder it is pointed at, such as the shared drive), runs the engine, makes every check and signature, and shows its screens in a browser window on the same computer. It replaces today's pages as each workspace supersedes them. Each stage is a few pull requests into `developer`, each proved by a browser scenario in CI driving the installed program. It starts lower than the plan assumed: no front end can make or use a key today, no design file registers a person, and today's design, the health map and comparison have no route a screen can call. About ten working days of building, not the five the plan gave.
+> **Answer first.** Phase F builds the one application in nine stages, in the order the plan fixes: the shell and the key, Explore, Node, the breakdown, System at a subsystem's valve, System at the system engineer's, Programme, the ways of bringing data in, and the whole cycle. The application is one installed program: the database lives on the shared drive, each person copies the latest beside the program, and the program runs the engine on it, makes every check and signature, shows its screens in a browser window on the same computer, and puts the person's own signed work back on the drive. It replaces today's pages as each workspace supersedes them. Each stage is a few pull requests into `developer`, each proved by a browser scenario in CI driving the installed program. It starts lower than the plan assumed: no front end can make or use a key today, no design file registers a person, and today's design, the health map and comparison have no route a screen can call. About ten working days of building, not the five the plan gave.
 >
 > **Kind:** explanation + reference · **For:** the developer, and you, who approve each stage
 
@@ -32,9 +32,9 @@ it gets.
 **One program does everything.** The installed application (`Start VLEO.exe`
 on Windows, `vleo-daemon` elsewhere) is the engine. When it starts, it:
 
-1. opens the database folder: the folder beside the program by default, or any
-   folder it has been pointed at, such as the shared drive (a network drive, or
-   a Google Drive folder kept on the computer);
+1. opens the database folder beside it. The database itself lives on the
+   shared drive; each person copies the latest from there into the folder
+   beside the program, and works on that copy;
 2. reads every file there: the programme's, the systems' and every group's,
    their nodes, methods, cases and releases;
 3. builds today's design from them, runs the physics engine, and makes every
@@ -46,8 +46,19 @@ on Windows, `vleo-daemon` elsewhere) is the engine. When it starts, it:
 A save is the program writing the file into the folder, whole, through the one
 library that reads and checks every file; it refuses to save over a file that
 changed in the folder since it was opened (`docs/OPERATING_1_0.md`, section
-15). Everyone on the same shared folder therefore builds the same today's
-design from the same files.
+15). When a person signs a node, seals a release or answers, the program also
+puts that file, and only their own, back into the drive folder it was copied
+from, and says that it did; a file on the drive that changed since their copy
+is never overwritten, both are shown and the person keeps one. Everyone who
+copies the same drive therefore builds the same today's design from the same
+files.
+
+**What runs is the method.** Each node's method, written in the method
+language (`docs/PSEUDOCODE.md`), is read once when the design opens, wired
+from the engine's ready-made, compiled pieces, and run on each input. No
+compiler or other language is needed on the computer. A node engineer's own
+MATLAB, Python or C is kept beside the method as the record it came from; its
+results are the cases the method must reproduce.
 
 This is how the tool already runs today (`vleo-daemon` serving `web/`), so
 phase F grows that program and its screens rather than building a second one.
@@ -90,9 +101,12 @@ pieces, and the old pages are removed as the new workspaces supersede them.
    screens are served to a browser window on the same computer. There is no
    page that runs on its own from the drive, so nothing is compiled for the
    browser for the application.
-3. **The database is a folder.** Beside the program by default; any folder the
-   person points it at otherwise, chosen in the application and remembered on
-   that computer. Read and written directly; no browser file interface.
+3. **The database lives on the shared drive; the program works on a copy
+   beside it.** Each person copies the latest from the drive into the folder
+   beside the program. The program puts back, into the drive folder it was
+   copied from, only the files that person signed, sealed or answered, and
+   never over a file that changed on the drive since their copy. Read and
+   written directly; no browser file interface.
 4. **Files are written by the program through the library,** whole, checked
    before they are written, and never over a file that changed in the folder
    since it was opened.
@@ -112,6 +126,28 @@ pieces, and the old pages are removed as the new workspaces supersede them.
 8. **No Excel reader in 1.0.** A table comes in by pasting from any spreadsheet,
    and results as CSV. A reader for `.xlsx` files is a later request, vetted
    the way SQLite was (`docs/OPERATING_1_0.md`, section 7).
+9. **Only methods compute the design.** A node's own MATLAB, Python or C is the
+   record, never the design's answer. On a computer that has the language
+   (Python, a C compiler, Octave), the Node workspace can run it again on the
+   node's cases and say whether it still agrees with the method, as a check
+   only (F3). Nothing about the design depends on it.
+10. **Flight software brings its measurements.** The flight-software group's own
+    harness, on the host or in the loop with the hardware, writes a results
+    file: each case's output, and its time, cycles, stack and memory. The
+    application takes it in: outputs as cases against the method, performance
+    as values the design's budgets close on (CPU load, loop time, memory), so
+    the health map shows flight code that does not fit (F8). Building or
+    running the embedded code in the application is a later decision.
+11. **Rich visualisation is decided later, by you.** In phase F a node shows
+    the views it declares (a number, a line, a heatmap, a bar) and every
+    workspace's health map, runs and sweeps. How a group defines its own richer
+    pictures, drawn by the engine, is outside phase F. Every number stays in
+    the engine, never in the screens, so that can be added without rewriting
+    anything.
+12. **Methods are interpreted, and a faster path waits on a measurement.** The
+    interpreter runs today's heaviest sweep at 1.6 times hand-written code. A
+    compiler built into the program (a JIT) is added only if a sweep the
+    design needs is measured too slow, and only proved equal to the bit.
 
 ## The stages
 
@@ -120,7 +156,8 @@ workflows it carries, and the scenarios that prove it.
 
 ### F1 · The shell, the database folder and the key
 
-- **The program:** the database folder (beside it, or chosen and remembered);
+- **The program:** the database folder beside it, and the drive folder it was
+  copied from, so the person's own signed files go back (decision 3);
   keys made, locked by passphrase, opened and used to sign; *who is this key*:
   the person registered with it in the programme's and the groups' files,
   their roles, the groups they own and the nodes they are assigned; files
@@ -136,6 +173,9 @@ workflows it carries, and the scenarios that prove it.
   folder and finds their role in My work; a wrong passphrase refused in plain
   words; a key nobody registered opens nothing and says why; the folder beside
   the program and a folder chosen elsewhere both open.
+- **Also:** `docs/PSEUDOCODE.md` still says the shipped Rust is generated from
+  the method; that stopped being true in phase E, and its source sentence is
+  corrected.
 - **Size:** three pull requests.
 
 ### F2 · Explore
@@ -164,7 +204,8 @@ workflows it carries, and the scenarios that prove it.
 - **On screen:** the Node workspace (section 4): the parts on the left, the live
   node page in the centre (answer, curve, cases on the curve, the method running
   line by line), the source on the right; signing the day's work; asking for a
-  contract change or a breakdown.
+  contract change or a breakdown; *run my code again* where the computer has
+  its language (decision 9).
 - **Workflows:** W3, and the node engineer's half of W4 and W13.
 - **Proved by:** a node engineer writes a node and signs it; a second writer
   stopped; the signed revision in today's view of the group for its subsystem
@@ -233,7 +274,9 @@ workflows it carries, and the scenarios that prove it.
 - **The program:** a formula typed as written, made a method, its inputs found
   and its units asked; units as people write them, through the engine's own
   unit parser; a range or a spread as typed; a pasted table as a lookup or as
-  cases; CSV results as cases; *start from a similar node*.
+  cases; CSV results as cases; a flight-software harness's results file, its
+  outputs as cases and its measurements as budget values (decision 10);
+  *start from a similar node*.
 - **On screen:** each way in, in the Node workspace and the System workspace's
   sheet, each with an example beside it and its error in plain words as it is
   typed (section 8, point 3); a PDF dropped beside a node as its source.
@@ -283,6 +326,8 @@ cycle.
 
 - **No real person is registered.** Real keys are made and registered on the
   switch-over day (phase H); phase F proves it on invented people.
+- **Rich, team-defined visualisation** (decision 11), **running embedded code**
+  (decision 10) and **a JIT** (decision 12): each later, each by your word.
 - **The guides are phase G.** The screens carry their own help; the role guides
   are written from them after.
 - **Opening the application without installing it.** Not planned (decision 2).
@@ -298,10 +343,10 @@ cycle.
 - **The folder dialog is not tested by CI.** CI starts the program on a folder
   it names; the dialog that chooses one is first clicked by a person after
   1.0.0.
-- **A shared folder is only as current as its copy on the computer.** On a
-  synced Google Drive folder, a file another person saved a minute ago may not
-  have arrived yet. The application says which releases it used and when
-  (section 5), and refuses to save over a file that changed, but it cannot see
-  a file that has not arrived.
+- **A copy is only as current as when it was taken.** Today's design is built
+  from the copy beside the program, so work put on the drive after it was
+  taken is not in it until the person copies again. The application says which
+  releases it used and when (section 5), and never puts a file back over one
+  that changed on the drive, but it cannot see what was not copied.
 - **Everyone must be able to install it.** With no page that runs on its own,
   a computer that cannot run the program cannot open the application.
