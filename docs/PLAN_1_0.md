@@ -289,6 +289,9 @@ methods.
 One application, installed and as a page from the drive, with the same screens.
 It knows each person by their key, and opens on My work.
 
+Staged in `docs/PLAN_F.md`: nine stages, what each builds on, and the scenario
+that proves each.
+
 **Built in this order (your word),** each workflow proved end to end in CI as it
 lands, and all of it in 1.0.0: the shell and the key; Explore; Node, with the
 breakdown itself edited there; System at the subsystem's valve, then the
