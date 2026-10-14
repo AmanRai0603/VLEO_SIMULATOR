@@ -158,6 +158,9 @@ pub fn reference_md() -> String {
            \x20 whole number, or falls outside the list, stops the method with a fault — it never\n\
            \x20 reads the nearest entry instead. Guard it with `if`, or go through the list with\n\
            \x20 `for … in`.\n\
+         - **`@` is reserved.** `drag_force@2(...)` will name the version of a law once laws live\n\
+           \x20 in the design as versioned library blocks. Until then the checker refuses `@`, by what\n\
+           \x20 it is: call a function by its name alone.\n\
          - **Tables are written out.** A list holds what your source tabulates, a few dozen entries;\n\
            \x20 a lookup into a large data file is a reference-data bundle, not a method.\n",
     );

@@ -114,6 +114,26 @@ fn lex(src: &str) -> Result<Vec<Token>, Diag> {
                     continue;
                 }
             }
+            if c == '@' {
+                // Kept for a law named by its version, `drag_force@2(...)`,
+                // once laws live in the design as versioned library blocks.
+                // Refused by what it is, so `@` means nothing else first.
+                let named = match out.last() {
+                    Some(Token {
+                        tok: Tok::Ident(n),
+                        line: l,
+                    }) if *l == line => format!("«{n}@…» names"),
+                    _ => "«@» is kept to name".to_string(),
+                };
+                return Err(Diag::err(
+                    line,
+                    format!(
+                        "{named} a version of a law, which is reserved: versioned laws are \
+                         not part of the method language yet. Call the function by its \
+                         name alone"
+                    ),
+                ));
+            }
             let Some(sym) = SYMBOLS.iter().find(|s| text[p..].starts_with(**s)) else {
                 return Err(Diag::err(
                     line,

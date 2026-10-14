@@ -308,5 +308,8 @@ end
   whole number, or falls outside the list, stops the method with a fault — it never
   reads the nearest entry instead. Guard it with `if`, or go through the list with
   `for … in`.
+- **`@` is reserved.** `drag_force@2(...)` will name the version of a law once laws live
+  in the design as versioned library blocks. Until then the checker refuses `@`, by what
+  it is: call a function by its name alone.
 - **Tables are written out.** A list holds what your source tabulates, a few dozen entries;
   a lookup into a large data file is a reference-data bundle, not a method.
