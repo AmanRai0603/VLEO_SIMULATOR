@@ -369,6 +369,36 @@ jobs:
       - name: a node's declaration, judged as the rule says
         run: node tools/declaration_check.mjs
 
+  # THE INSTALLED PROGRAM, AS PEOPLE USE IT (docs/PLAN_F.md, decisions 5
+  # and 6). Nobody tries 1.0.0 before it ships, so every workflow is proved
+  # here: each scenario starts the release build on a fresh copy of the test
+  # drive, once for each person in it, and drives its page in a real browser.
+  # The runner first proves it goes red on a scenario whose claim is false.
+  scenarios:
+    name: the program, driven on the test drive
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock', 'rust-toolchain.toml') }}
+          restore-keys: ${{ runner.os }}-cargo-
+      - name: the browser
+        run: |
+          pip install --quiet playwright
+          python3 -m playwright install --with-deps chromium
+      - name: the program, as it ships
+        run: cargo build --release -p vleo-daemon -p xtask
+      - name: the runner checks itself first
+        run: python3 tools/scenarios.py --selftest
+      - name: every scenario
+        run: python3 tools/scenarios.py
+
   # THE READERS' FOLDER, AS A READER OPENS IT. `xtask readers` builds the pages
   # a team reads with no tool running, and the engine they carry; its own last
   # step proves every link is in the folder. This proves the pages WORK: opened
