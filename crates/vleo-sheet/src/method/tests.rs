@@ -689,3 +689,26 @@ fn a_list_misread_is_said_by_line() {
         );
     }
 }
+
+#[test]
+fn a_law_named_by_its_version_is_reserved_and_said_so() {
+    // `name@version` is kept for laws that live in the design as versioned
+    // library blocks (the relay page, "Physics into the database"): a node
+    // will call `drag_force@2(...)`. Until then the checker refuses it by what
+    // it is, so nobody writes `@` to mean something else first.
+    let s = sig(&[("h", "Length")], "Length");
+    for (src, line) in [
+        ("return h@2\n", 1),
+        ("let r = h\nreturn drag_force@2(r)\n", 2),
+    ] {
+        let e = compile(src, &s).unwrap_err();
+        let said = format!("{e:?}");
+        assert!(
+            said.contains("reserved") && said.contains("version of a law"),
+            "{src}: {said}"
+        );
+        assert!(e.iter().any(|d| d.line == line), "{src}: {said}");
+    }
+    let e = compile("return h @ 2\n", &s).unwrap_err();
+    assert!(format!("{e:?}").contains("reserved"), "{e:?}");
+}
