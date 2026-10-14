@@ -1,0 +1,71 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "parts",
+  "$comment": "GET /v1/parts/<id> — crates/vleo-server/src/node_ws.rs, from vleo_sheet::parts",
+  "type": "object",
+  "properties": {
+    "ok": {
+      "type": "boolean"
+    },
+    "node": {
+      "type": "string"
+    },
+    "behaviour": {
+      "type": "string",
+      "enum": [
+        "open",
+        "lookup",
+        "children",
+        "stated",
+        "method",
+        "built-in"
+      ]
+    },
+    "parts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "enum": [
+              "identity",
+              "ports",
+              "behaviour",
+              "evidence",
+              "explanation",
+              "history"
+            ]
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "done",
+              "missing",
+              "failing"
+            ]
+          },
+          "why": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "name",
+          "state",
+          "why"
+        ]
+      }
+    },
+    "message": {
+      "type": "string",
+      "description": "On a refusal: why, in a sentence."
+    }
+  },
+  "required": [
+    "ok",
+    "node"
+  ]
+}

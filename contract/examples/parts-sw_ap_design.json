@@ -1,0 +1,37 @@
+{
+  "ok": true,
+  "node": "sw_ap_design",
+  "behaviour": "method",
+  "parts": [
+    {
+      "name": "identity",
+      "state": "done",
+      "why": []
+    },
+    {
+      "name": "ports",
+      "state": "done",
+      "why": []
+    },
+    {
+      "name": "behaviour",
+      "state": "done",
+      "why": []
+    },
+    {
+      "name": "evidence",
+      "state": "done",
+      "why": []
+    },
+    {
+      "name": "explanation",
+      "state": "done",
+      "why": []
+    },
+    {
+      "name": "history",
+      "state": "done",
+      "why": []
+    }
+  ]
+}
