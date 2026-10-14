@@ -17,9 +17,9 @@ S0 ended Thursday 15 October, 08:00. Nothing is merged yet: each PR waits on Ama
 
 - **Open, for review:**
   - PR 163, Explore: the today, health, trace and compare routes and the Explore tab. This is F2 without keys, so A's F2 is now the chain check on screen, then results.
-  - `claude/b-setup`: CLAUDE.md, this file, the reviewer and test-runner agents, and the deny rules.
-  - `claude/b-test-drive`: `xtask test-drive`, the drive every scenario starts from. It has invented "Test …" people with fixed-seed keys, three groups from `design/`, and sealed Solar 1.1 and 1.2 beside the drive.
-  - `claude/b-scenarios`, stacked on test-drive: `tools/scenarios.py` and a CI job. It starts the program once per person on a copy of the drive. Three scenarios pass (opens, two-people, refused-release), and its self-test goes red on a false claim.
+  - PR 164, setup: CLAUDE.md, this file, the reviewer and test-runner agents, and the deny rules.
+  - PR 165, `xtask test-drive`, the drive every scenario starts from. It has invented "Test …" people with fixed-seed keys, three groups from `design/`, and sealed Solar 1.1 and 1.2 beside the drive.
+  - PR 166, stacked on 165 (merge 165 first): `tools/scenarios.py` and a CI job. It starts the program once per person on a copy of the drive. Three scenarios pass (opens, two-people, refused-release), and its self-test goes red on a false claim.
 - **For A's F1 (decide in it):**
   - `chain::owner_of` reads group mounts from the programme's file, but `design/` mounts the groups in the systems' file. The test drive follows the library for now.
   - `chain::open_group` admits only a subsystem engineer, so the systems' file, owned by the system engineer, cannot open.
