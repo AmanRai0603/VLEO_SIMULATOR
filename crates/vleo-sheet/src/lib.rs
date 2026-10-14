@@ -60,6 +60,7 @@ pub mod gate;
 pub mod load;
 pub mod model;
 pub mod page;
+pub mod parts;
 pub mod shell;
 pub mod template;
 pub mod text;
