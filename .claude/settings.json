@@ -9,13 +9,47 @@
     "branch protection, required checks, CODEOWNERS, the merge queue. The hooks",
     "exist to fail fast and to teach; the branch rules exist to be true. Both",
     "are needed, and there is one gate binary so the two can never disagree",
-    "about what passing means."
+    "about what passing means.",
+    "",
+    "The deny rules are the same idea, one step earlier: what nobody edits by hand",
+    "(the design's files, what a command generates, the recorded answers) and",
+    "what an assistant never does (force a push, push to a branch a pull request",
+    "owns). The reads denied are build output and data, which cost a session",
+    "much and tell it nothing."
   ],
+  "permissions": {
+    "deny": [
+      "Read(./target/debug/**)",
+      "Read(./target/release/**)",
+      "Read(./bundles/**)",
+      "Edit(./design/**)",
+      "Write(./design/**)",
+      "Edit(./baseline/**)",
+      "Write(./baseline/**)",
+      "Edit(./web/group.html)",
+      "Write(./web/group.html)",
+      "Edit(./web/node.html)",
+      "Write(./web/node.html)",
+      "Edit(./docs/roles/**)",
+      "Write(./docs/roles/**)",
+      "Edit(./CODEOWNERS)",
+      "Write(./CODEOWNERS)",
+      "Bash(git push --force:*)",
+      "Bash(git push -f:*)",
+      "Bash(git push origin main:*)",
+      "Bash(git push origin developer:*)",
+      "Bash(git push origin maintainer:*)"
+    ]
+  },
   "hooks": {
     "SessionStart": [
       {
         "hooks": [
-          { "type": "command", "command": ".claude/hooks/session-start.sh", "timeout": 300 }
+          {
+            "type": "command",
+            "command": ".claude/hooks/session-start.sh",
+            "timeout": 300
+          }
         ]
       }
     ],
@@ -23,7 +57,11 @@
       {
         "matcher": "Write|Edit|NotebookEdit",
         "hooks": [
-          { "type": "command", "command": ".claude/hooks/path-guard.sh", "timeout": 20 }
+          {
+            "type": "command",
+            "command": ".claude/hooks/path-guard.sh",
+            "timeout": 20
+          }
         ]
       }
     ],
@@ -31,14 +69,22 @@
       {
         "matcher": "Write|Edit",
         "hooks": [
-          { "type": "command", "command": ".claude/hooks/post-edit.sh", "timeout": 180 }
+          {
+            "type": "command",
+            "command": ".claude/hooks/post-edit.sh",
+            "timeout": 180
+          }
         ]
       }
     ],
     "Stop": [
       {
         "hooks": [
-          { "type": "command", "command": ".claude/hooks/evidence-guard.sh", "timeout": 300 }
+          {
+            "type": "command",
+            "command": ".claude/hooks/evidence-guard.sh",
+            "timeout": 300
+          }
         ]
       }
     ]
