@@ -1778,7 +1778,7 @@ effect = "writes"
 tool = "xtask"
 name = "test-drive"
 usage = "test-drive [--out <dir>]"
-what = "Writes the shared drive every browser scenario starts from, into target/test-drive or the folder --out names: the drive laid out as a real one, with a programme of invented people — every name starts with Test, every key is made from a fixed seed — and three groups from design/, their files and node files; beside it, each person's key locked by the passphrase people.toml gives, and Solar's release 1.1 with a 1.2 sealed over the same relations, for a scenario to put on the drive. The same bytes every time; a folder that is not a test drive is refused, never emptied."
+what = "Writes the shared drive every browser scenario starts from, into target/test-drive or the folder --out names: the drive laid out as a real one, with a programme of invented people — every name starts with Test, every key is made from a fixed seed — and three groups from design/, their files and node files; beside it, each person's key locked by the passphrase people.toml gives, and Solar's release 1.1 with a 1.2 sealed over the same relations, for a scenario to put on the drive; tools/scenarios.py starts the program on a fresh copy of it for each person in a scenario and drives its page. The same bytes every time; a folder that is not a test drive is refused, never emptied."
 who = "developer"
 effect = "writes"
 
