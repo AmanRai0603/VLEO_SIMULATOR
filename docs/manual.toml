@@ -2080,6 +2080,11 @@ path = "/v1/fragment/<id>"
 what = "A row's generated page."
 
 [[route]]
+method = "POST"
+path = "/v1/rerun/<id>"
+what = "Run my code again: the node engineer's own code, Python here or MATLAB and Octave through Octave, run on this computer on each case recorded from it, and compared with what was recorded — agrees, differs (each case named, with what the code now gives), or not run and why. A check only: the design's answer is always the method's. A POST, so it runs only when a person asks; it works in a scratch folder of its own."
+
+[[route]]
 method = "GET"
 path = "/v1/parts/<id>"
 what = "A node's six parts — identity, ports, behaviour, evidence, explanation, history — each done, missing or failing, with every reason: a part fails when one of the gate's own checks of it fails, in the gate's words, and is missing when the node holds nothing of it yet."

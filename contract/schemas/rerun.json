@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "rerun",
+  "$comment": "POST /v1/rerun/<id> — crates/vleo-server/src/rerun.rs, from vleo_sheet::rerun",
+  "type": "object",
+  "properties": {
+    "ok": {
+      "type": "boolean"
+    },
+    "node": {
+      "type": "string"
+    },
+    "language": {
+      "type": "string"
+    },
+    "cases": {
+      "type": "number"
+    },
+    "verdict": {
+      "type": "string",
+      "enum": [
+        "agrees",
+        "differs",
+        "not-run"
+      ]
+    },
+    "said": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Each case that differs, with what the code now gives; or why it was not run."
+    },
+    "message": {
+      "type": "string",
+      "description": "On a refusal: why, in a sentence."
+    }
+  },
+  "required": [
+    "ok",
+    "node"
+  ]
+}
