@@ -25,4 +25,9 @@ S0 ended Thursday 15 October, 08:00. Nothing is merged yet: each PR waits on Ama
   - `chain::open_group` admits only a subsystem engineer, so the systems' file, owned by the system engineer, cannot open.
 - **For A's F1 and F2 proofs:** add a scenario to `SCENARIOS` in `tools/scenarios.py`. `world.person(name)` starts one program instance; `world.release(name)` puts a sealed release on the drive.
 - **Blocked on Aman:** merging PR 162, and the reviews and merges above.
-- **Next for B (S2):** F3 Node, from A's Opus plan.
+- **S2, F3 Node, started early (Wednesday night), without A's plan or F1:**
+  - PR 167: `name@version` is reserved in the method language.
+  - PR 168: `/v1/parts/<id>`, a node's six parts, each done, missing or failing, as the gate says.
+  - F3c, `claude/b-f3-rerun`: *run my code again*, `POST /v1/rerun/<id>`, one library for it and xtask. **High risk:** it runs code from a design file.
+  - F3d, `claude/b-f3-node-screen`, stacked on 168 and F3c: the node page opens on its parts and the button.
+  - Not done: signing through the chain (waits on F1 and an Opus review); saving a revision in place (waits on F1's identity and the drive copy).
