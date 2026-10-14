@@ -10,6 +10,7 @@ Target 1.0.0 on Monday 19 October; Tuesday to Thursday are the buffer.
 ## Person A · day
 
 - Not started. S1 begins with the nine stage briefs, then F1 (keys, people, My work, `base_version`).
+- **The rest of F3 is now A's** (Aman, 14 October: B's seat is over budget): signing a node through the chain and saving a revision in place, after F1. See B's notes below.
 
 ## Person B · night
 
@@ -24,7 +25,7 @@ Handed over Wednesday 14 October, 23:20 IST. Nothing is merged: each PR waits on
 - **For A's F1 to decide:**
   - Group ownership: `chain::owner_of` reads the programme's mounts, but `design/` mounts groups in the systems' file.
   - `chain::open_group` admits only a subsystem engineer, so the systems' file cannot open.
-- **F3 left for after F1:** signing a node through the chain (needs an Opus review); saving a revision in place, refused if the file moved (needs identity and the drive copy). Both should start from the six parts (168) and the test drive (165).
+- **F3 moved to A, after F1:** signing a node through the chain (needs an Opus review); saving a revision in place, refused if the file moved (needs identity and the drive copy). Both should start from the six parts (168) and the test drive (165).
 - **Proving F1 and F2:** add a scenario to `SCENARIOS` in `tools/scenarios.py`. `world.person(name)` starts one program; `world.release(name)` puts a sealed release on the drive.
 - **Blocked on Aman:** merging PR 162 and the reviews above.
-- **Next for B (S2):** finish F3 (signing, save) from A's Opus plan once F1 merges.
+- **Next for B:** no build work planned while B's seat is over budget; B answers review comments on 163–170 if asked.
