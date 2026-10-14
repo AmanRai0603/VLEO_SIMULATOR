@@ -2391,7 +2391,7 @@ who = "developer"
 
 [[folder]]
 name = ".claude"
-what = "The hooks that run on an edit in a checkout — the regeneration and gate an assistant's edit goes through, the same as anyone's."
+what = "The hooks that run on an edit in a checkout — the regeneration and gate an assistant's edit goes through, the same as anyone's — the deny rules for what nobody edits by hand, and the reviewer and test-runner agents a session hands a pull request to."
 who = "developer"
 
 [[folder]]
@@ -2424,6 +2424,16 @@ who = "developer"
 name = "AGENTS.md"
 what = "The rules that do not bend, and the developer's loop: a request in, the code changed, gated, reviewed, released."
 who = "everyone"
+
+[[folder]]
+name = "CLAUDE.md"
+what = "How the developer's assistant sessions run while 1.0.0 is built: STATE.md first, one branch per pull request, a reviewer session on each, two worktrees. It adds nothing to AGENTS.md's rules and relaxes none."
+who = "developer"
+
+[[folder]]
+name = "STATE.md"
+what = "Where the relay to 1.0.0 stands at the end of the last shift: merged, open, blocked and on whom, and the next step. Each of the two people building it writes their own half."
+who = "developer"
 
 [[folder]]
 name = "README.md"
