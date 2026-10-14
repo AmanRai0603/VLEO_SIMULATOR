@@ -195,6 +195,14 @@ saying where the relation came from, so it does not answer until its node \
 engineer supplies that."""
 
 [[layer.section.step]]
+say = "First, its six parts — identity, ports, behaviour, evidence, explanation, history — each done, missing or failing, as the gate says."
+ui = "its parts — what is done, missing or failing"
+
+[[layer.section.step]]
+say = "Run the node engineer's own code again on each case recorded from it: a check only, and only when you press it."
+ui = "run my code again"
+
+[[layer.section.step]]
 say = "The four parts of a row's page, top to bottom."
 ui = "assembly — what this node is made of"
 

@@ -44,8 +44,15 @@ fn which(cmd: &str) -> bool {
 pub fn rerun(sh: &Sheet, work: &Path) -> Result<Rerun, String> {
     let lang = sh.author.language.trim();
     let entry = sh.author.entry.trim();
-    if sh.cases.is_empty() || sh.author.code.trim().is_empty() {
-        return Ok(Rerun::NotRun("no cases or no code".into()));
+    if sh.cases.is_empty() {
+        return Ok(Rerun::NotRun(
+            "no case was recorded from the node engineer's code".into(),
+        ));
+    }
+    if sh.author.code.trim().is_empty() {
+        return Ok(Rerun::NotRun(
+            "the node engineer's code is not kept with this node".into(),
+        ));
     }
     if entry.is_empty() {
         return Ok(Rerun::NotRun("the entry function is not named".into()));

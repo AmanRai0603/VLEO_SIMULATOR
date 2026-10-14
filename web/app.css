@@ -1093,3 +1093,22 @@ table.risks td { vertical-align: top; }
 .fig-ctl:empty { display: none; }
 .fig-ctl .fig-scrub { flex: 1 1 12rem; min-width: 8rem; }
 .fig-canvas { max-width: 100%; }
+
+/* A node's six parts (web/js/nodeparts.js): each done, missing or failing, by
+   a mark and a word as well as a colour, so the list survives a printer. */
+.np-sum { margin: 0 0 4px; }
+.np-parts { list-style: none; margin: 0 0 8px; padding: 0; display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 4px 12px; }
+.np-part { padding: 3px 6px; border-left: 3px solid var(--rule); }
+.np-part ul { margin: 2px 0 0; padding-left: 16px; font-size: 11px; color: var(--ink-2); }
+.np-state { color: var(--ink-3); font-size: 11px; }
+.np-done { border-left-color: var(--both); }
+.np-done .np-mark { color: var(--both); }
+.np-missing { border-left-style: dashed; }
+.np-failing { border-left-color: #a4262c; }
+.np-failing .np-mark, .np-rerun-differs { color: #a4262c; }
+.np-rerun-agrees { color: var(--both); }
+@media (prefers-color-scheme: dark) {
+  .np-failing { border-left-color: #e88a8a; }
+  .np-failing .np-mark, .np-rerun-differs { color: #e88a8a; }
+}

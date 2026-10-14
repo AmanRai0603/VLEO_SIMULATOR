@@ -97,6 +97,9 @@ schema = "rerun"
 [[route.example]]
 name = "rerun-sw_kp_scenarios"
 path = "/v1/rerun/sw_kp_scenarios"
+[[route.example]]
+name = "rerun-sw_ap_design"
+path = "/v1/rerun/sw_ap_design"
 
 [[route]]
 method = "GET"
