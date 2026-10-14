@@ -1,0 +1,177 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "health",
+  "$comment": "GET /v1/health — crates/vleo-server/src/explore.rs, from vleo_modules::health",
+  "type": "object",
+  "properties": {
+    "ok": {
+      "type": "boolean"
+    },
+    "spacecraft": {
+      "type": "string",
+      "enum": [
+        "fails",
+        "refused",
+        "blocked",
+        "unproven",
+        "open",
+        "tight",
+        "closes"
+      ]
+    },
+    "counts": {
+      "type": "object",
+      "properties": {
+        "fails": {
+          "type": "number"
+        },
+        "refused": {
+          "type": "number"
+        },
+        "blocked": {
+          "type": "number"
+        },
+        "unproven": {
+          "type": "number"
+        },
+        "open": {
+          "type": "number"
+        },
+        "tight": {
+          "type": "number"
+        },
+        "closes": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "fails",
+        "refused",
+        "blocked",
+        "unproven",
+        "open",
+        "tight",
+        "closes"
+      ]
+    },
+    "groups": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "parent": {
+            "type": "string"
+          },
+          "owner": {
+            "type": "string"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "fails",
+              "refused",
+              "blocked",
+              "unproven",
+              "open",
+              "tight",
+              "closes"
+            ]
+          },
+          "worst": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "label",
+          "parent",
+          "owner",
+          "state",
+          "worst"
+        ]
+      }
+    },
+    "nodes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "parent": {
+            "type": "string"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "fails",
+              "refused",
+              "blocked",
+              "unproven",
+              "open",
+              "tight",
+              "closes"
+            ]
+          },
+          "why": {
+            "type": "string"
+          },
+          "closure": {
+            "type": "boolean"
+          },
+          "blocked_by": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "margin": {
+            "type": [
+              "number",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "parent",
+          "state",
+          "why",
+          "closure",
+          "blocked_by",
+          "margin"
+        ]
+      }
+    },
+    "notes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "node": {
+      "type": "string",
+      "description": "On a refusal: what was refused."
+    },
+    "message": {
+      "type": "string",
+      "description": "On a refusal: why, in a sentence."
+    },
+    "fault": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "ok"
+  ]
+}

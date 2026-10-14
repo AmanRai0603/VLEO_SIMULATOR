@@ -1,0 +1,12 @@
+{
+  "ok": true,
+  "today": false,
+  "design": {
+    "from": "/home/user/VLEO_SIMULATOR/crates/vleo-server/../../design",
+    "rows": 1401,
+    "fingerprint": "0fe5f2c4324025fc3ee2964ec86716b0384bd23fa795a44e95602b9e71611d52"
+  },
+  "drive": "",
+  "groups": [],
+  "ignored": []
+}

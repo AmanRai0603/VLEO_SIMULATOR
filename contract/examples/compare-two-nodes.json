@@ -1,0 +1,87 @@
+{
+  "ok": true,
+  "a": "design:groups/l3_solar/nodes/sw_ap_design.vnode",
+  "b": "design:groups/l3_solar/nodes/sw_ap_mean_band_spread.vnode",
+  "summary": "0 block(s) changed, 1 added, 1 removed, 0 the same; 1 difference(s) in the file itself",
+  "same_content": false,
+  "same": 0,
+  "file": [
+    "meta block_uid: value “sw_ap_design” → “sw_ap_mean_band_spread”"
+  ],
+  "blocks": [
+    {
+      "uid": "sw_ap_design",
+      "id": "sw_ap_design",
+      "before": "sw_ap_design",
+      "after": null,
+      "status": "removed",
+      "differences": [
+        "block: removed",
+        "port in g_level: removed",
+        "port out sw_ap_design: removed",
+        "wire g_level: removed",
+        "test_case 1 · G2 moderate — Kp 6 — daily Ap bounded at 80: removed",
+        "test_case 2 · G1 minor — Kp 5 — daily Ap bounded at 48: removed",
+        "test_case 3 · G3 strong — Kp 7 — daily Ap bounded at 132, the declared default: removed",
+        "text as converted: fixtures.toml: removed",
+        "text as converted: node.toml: removed",
+        "text explain.breaks: removed",
+        "text explain.simply: removed",
+        "text explain.wrong: removed",
+        "text fixtures: removed",
+        "text method: removed",
+        "text sheet: removed"
+      ]
+    },
+    {
+      "uid": "sw_ap_mean_band_spread",
+      "id": "sw_ap_mean_band_spread",
+      "before": null,
+      "after": "sw_ap_mean_band_spread",
+      "status": "added",
+      "differences": [
+        "block: added",
+        "port out sw_ap_mean_band_spread: added",
+        "text as converted: fixtures.toml: added",
+        "text as converted: node.toml: added",
+        "text explain.breaks: added",
+        "text explain.simply: added",
+        "text fixtures: added",
+        "text sheet: added",
+        "tbl parity.csv: added"
+      ]
+    }
+  ],
+  "history": [
+    {
+      "table": "signature",
+      "only_first": 0,
+      "only_second": 0
+    },
+    {
+      "table": "change",
+      "only_first": 0,
+      "only_second": 0
+    },
+    {
+      "table": "request",
+      "only_first": 0,
+      "only_second": 0
+    },
+    {
+      "table": "issue",
+      "only_first": 0,
+      "only_second": 0
+    },
+    {
+      "table": "comment",
+      "only_first": 0,
+      "only_second": 0
+    },
+    {
+      "table": "locked_key",
+      "only_first": 0,
+      "only_second": 0
+    }
+  ]
+}
