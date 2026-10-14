@@ -28,6 +28,6 @@ S0 ended Thursday 15 October, 08:00. Nothing is merged yet: each PR waits on Ama
 - **S2, F3 Node, started early (Wednesday night), without A's plan or F1:**
   - PR 167: `name@version` is reserved in the method language.
   - PR 168: `/v1/parts/<id>`, a node's six parts, each done, missing or failing, as the gate says.
-  - F3c, `claude/b-f3-rerun`: *run my code again*, `POST /v1/rerun/<id>`, one library for it and xtask. **High risk:** it runs code from a design file.
-  - F3d, `claude/b-f3-node-screen`, stacked on 168 and F3c: the node page opens on its parts and the button.
+  - PR 169: *run my code again*, `POST /v1/rerun/<id>`, one library for it and xtask. **High risk:** it runs code from a design file.
+  - PR 170, stacked on 168 and 169: the node page opens on its parts and the button.
   - Not done: signing through the chain (waits on F1 and an Opus review); saving a revision in place (waits on F1's identity and the drive copy).
