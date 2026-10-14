@@ -2228,6 +2228,26 @@ what = "The largest fully-published branches a row is part of: `node`."
 
 [[route]]
 method = "GET"
+path = "/v1/today"
+what = "Which design is open and what built it: the design's folder and fingerprint, and, when it is today's design, the drive, each group's release taken, every newer release refused and why, and what on the drive was not taken. `today` is false when the design is not today's."
+
+[[route]]
+method = "GET"
+path = "/v1/health"
+what = "The health map on the case the request carries (`inputs=defaults` and `set=` as for a run): every node's state and why, the node a blocked one waits on, each closure's margin, each group as bad as its worst node, and the spacecraft as bad as its worst group."
+
+[[route]]
+method = "GET"
+path = "/v1/health/trace"
+what = "One closure walked down to what causes it: `closure`. The nodes that cause it, nearest first, each with its group and owner and the release that changed it; the declared inputs that move its margin, most first, with where each would make it close; and its verdict over the values still open. A row that is not a closure is refused by name."
+
+[[route]]
+method = "GET"
+path = "/v1/compare"
+what = "Two files of the design compared block by block: `a` and `b`, each `design:<path>` in the design open or `drive:<path>` on the drive today's design was built from. Nothing else on the computer is opened."
+
+[[route]]
+method = "GET"
 path = "/v1/bundle/<name>"
 what = "A reference-data set's published files."
 

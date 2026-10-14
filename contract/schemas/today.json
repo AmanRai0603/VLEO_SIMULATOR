@@ -1,0 +1,134 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "today",
+  "$comment": "GET /v1/today — crates/vleo-server/src/explore.rs",
+  "type": "object",
+  "properties": {
+    "ok": {
+      "type": "boolean"
+    },
+    "today": {
+      "type": "boolean",
+      "description": "Whether the design open is today's design, built from a drive. False: the design's own files."
+    },
+    "design": {
+      "type": "object",
+      "properties": {
+        "from": {
+          "type": "string"
+        },
+        "rows": {
+          "type": "number"
+        },
+        "fingerprint": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "from",
+        "rows",
+        "fingerprint"
+      ]
+    },
+    "drive": {
+      "type": "string",
+      "description": "The drive today's design was built from; empty when it is not today's."
+    },
+    "groups": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "said": {
+            "type": "string"
+          },
+          "taken": {
+            "anyOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "version": {
+                    "type": "string"
+                  },
+                  "sealed": {
+                    "type": "string"
+                  },
+                  "sealed_by": {
+                    "type": "string"
+                  },
+                  "fingerprint": {
+                    "type": "string"
+                  },
+                  "changes": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "notes": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "required": [
+                  "version",
+                  "sealed",
+                  "sealed_by",
+                  "fingerprint",
+                  "changes",
+                  "notes"
+                ]
+              }
+            ]
+          },
+          "refused": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "version": {
+                  "type": "string"
+                },
+                "why": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "version",
+                "why"
+              ]
+            }
+          }
+        },
+        "required": [
+          "id",
+          "said",
+          "taken",
+          "refused"
+        ]
+      }
+    },
+    "ignored": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "required": [
+    "ok",
+    "today",
+    "design",
+    "drive",
+    "groups",
+    "ignored"
+  ]
+}

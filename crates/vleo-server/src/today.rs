@@ -53,7 +53,17 @@ pub struct Today {
     pub ignored: Vec<String>,
 }
 
+/// What today's design was built from, kept for the screens to say it: the
+/// drive, every group with a release on it, and what was not taken.
+#[derive(Clone, Debug)]
+pub struct Report {
+    pub drive: String,
+    pub groups: Vec<Group>,
+    pub ignored: Vec<String>,
+}
+
 /// One group, and the release its part of today's design is.
+#[derive(Clone, Debug)]
 pub struct Group {
     pub id: String,
     /// The release taken, when one passes.
@@ -63,6 +73,7 @@ pub struct Group {
 }
 
 /// The release a group's part of today's design is.
+#[derive(Clone, Debug)]
 pub struct Taken {
     pub version: String,
     pub sealed: String,
