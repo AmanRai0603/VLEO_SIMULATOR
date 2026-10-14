@@ -15,6 +15,9 @@ vleo-units = { workspace = true }
 vleo-data = { workspace = true }
 vleo-files = { path = "../crates/vleo-files" }
 toml = { workspace = true }
+# The test drive's sealed releases: a release file opened as SQLite, its
+# version and record changed, and its seal written again over what it holds.
+rusqlite = { workspace = true }
 toml_edit = { workspace = true }
 
 [lints.rust]

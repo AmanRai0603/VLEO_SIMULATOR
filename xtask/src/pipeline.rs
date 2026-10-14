@@ -133,6 +133,17 @@ pub(crate) const PIPELINE: &[Cmd] = &[
         dry: Dry::Check("method-wasm --check: whether it is current, nothing built"),
     },
     Cmd {
+        name: "test-drive",
+        stage: "build",
+        reads: "design/: the programme's and the systems' files, and three groups' files and node files",
+        writes: "target/test-drive, or --out: drive/ laid out as a shared drive, keys/ and people.toml beside it, and releases/ with Solar 1.1 and a 1.2 sealed again — written again whole; nothing committed",
+        checks: "a folder that is not a test drive is refused, never emptied; the programme's file checks through its anchor and each group's through it",
+        undo: "delete the folder",
+        code: ("xtask/src/test_drive.rs", "cmd_test_drive"),
+        steps: &[],
+        dry: Dry::Plan,
+    },
+    Cmd {
         name: "files-wasm",
         stage: "build",
         reads: "crates/vleo-files and crates/vleo-files-wasm",
