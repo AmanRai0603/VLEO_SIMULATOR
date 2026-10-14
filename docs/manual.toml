@@ -456,6 +456,49 @@ ui = "pin"
 
 
 [[layer.section]]
+id = "browser-explore"
+title = "Which design this is, where it breaks, and what differs"
+who = "user"
+kind = "how-to"
+answer = "The Explore page says first which design you are looking at: today's design, built from every group's latest sealed release on the drive, or the design's own files. Then it shows where the design breaks, node by node, traces any closure to the node that causes it, and compares two files of the design block by block."
+body = """
+**Which design.** Today's design is built when the tool starts, from the \
+drive `VLEO_DRIVE` names: each group's latest sealed release that passes its \
+checks, or its last good one, with why any newer one was refused. With no \
+drive it is the design's own files, and the page says that instead. Never \
+take one for the other: a decision rests on a released design.
+
+**Where it breaks.** The health map gives every node one of seven states, \
+worst first: fails, refused, blocked, unproven, open, tight, closes. A group \
+is as bad as its worst node, and the spacecraft as bad as its worst group. \
+Branches that fail, refuse or wait open by themselves; click any group to \
+open or close it. It runs on the saved case, with any what-if set in this \
+browser, as a run does.
+
+**Trace a closure.** The trace names the nodes that cause it, nearest first, \
+each with its group and owner and the release that changed it; then the \
+declared inputs that move its margin, most first, with where each would make \
+it close. It ranks; it cannot say which node is wrong. That is the engineers' \
+judgement.
+
+**Compare two files.** Name each as `design:<path>` in the design open, or \
+`drive:<path>` on the drive, such as two releases of one group. Every block \
+that differs is listed, in the words the library uses everywhere."""
+
+[[layer.section.step]]
+say = "Open Explore. Its first line says which design it shows."
+ui = "Explore"
+
+[[layer.section.step]]
+say = "Pick a closure that fails and trace it to the node that causes it."
+ui = "trace"
+
+[[layer.section.step]]
+say = "Name two files, such as two releases of one group, and compare them."
+ui = "compare"
+
+
+[[layer.section]]
 id = "browser-forms"
 title = "What comes in from outside, and what does not"
 who = "user"

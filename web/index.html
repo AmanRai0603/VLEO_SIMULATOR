@@ -32,6 +32,7 @@
   <div class="tabrow">
     <button class="nudge" id="prev" title="the layer above">←</button>
     <button class="nudge" id="next" title="the layer below">→</button>
+    <button class="tab explore-tab" id="explore-tab" title="which design is open and what built it, where it breaks, and what differs between two files">Explore</button>
     <button class="tab arch-tab" id="arch-tab" title="the pattern every folder repeats">⌗ Architecture</button>
     <button class="tab forms-tab" id="forms-tab" title="every way something reaches this tool: the inputs, results, and node forms">Forms</button>
     <button class="tab results-tab" id="results-tab" title="what runs returned, kept on this machine and shown without running">Results</button>
@@ -158,6 +159,12 @@
   <!-- Saved results: shown as they were, without running. -->
   <div id="resultsview" hidden>
     <div id="results-body"></div>
+  </div>
+
+  <!-- Explore: which design is open, where it breaks, what differs. Every
+       state on it is the engine's (/v1/today, /v1/health, /v1/compare). -->
+  <div id="exploreview" hidden>
+    <div id="explore-body"></div>
   </div>
 
   <!-- The forms: the inputs, results, and node forms, each with its owner. -->

@@ -1093,3 +1093,38 @@ table.risks td { vertical-align: top; }
 .fig-ctl:empty { display: none; }
 .fig-ctl .fig-scrub { flex: 1 1 12rem; min-width: 8rem; }
 .fig-canvas { max-width: 100%; }
+
+/* Explore: which design, where it breaks, what differs. The seven health
+   states keep one colour each wherever they appear, worst first: red for what
+   fails or refuses, amber for what waits or is not proven, grey for what is
+   not decided, green for what closes. Each also carries its name in words, so
+   the map survives a black-and-white printer. */
+#exploreview { padding: 12px 18px 40px; max-width: 1200px; }
+.ex-sec { margin: 18px 0; }
+.ex-sec h3 { font-size: 13px; margin: 0 0 6px; }
+.ex-kv { display: grid; grid-template-columns: max-content 1fr; gap: 2px 12px; margin: 0 0 8px; }
+.ex-kv dt { color: var(--ink-3); }
+.ex-kv dd { margin: 0; overflow-wrap: anywhere; }
+.ex-tbl { border-collapse: collapse; width: 100%; margin: 4px 0 8px; }
+.ex-tbl th, .ex-tbl td { text-align: left; vertical-align: top; padding: 3px 8px;
+  border-bottom: 1px solid var(--rule-2); }
+.ex-tbl ul { margin: 0; padding-left: 16px; }
+.ex-refused { color: #a4262c; }
+.ex-tree, .ex-tree ul { list-style: none; padding-left: 14px; margin: 2px 0; }
+.ex-tree > li { margin: 2px 0; }
+.ex-grp { font: inherit; background: none; border: 0; padding: 1px 2px; cursor: pointer; color: var(--ink); }
+.ex-grp:hover { text-decoration: underline; }
+.ex-nodes { margin-left: 14px; width: calc(100% - 14px); }
+.ex-blk { margin: 6px 0; }
+.ex-blk ul { margin: 2px 0 0; }
+.hm { display: inline-block; min-width: 64px; padding: 0 5px; border: 1px solid; border-radius: 2px;
+  font-size: 10.5px; text-align: center; }
+.hm-fails, .hm-refused { color: #a4262c; background: #fdf5f4; border-color: #e3b7b4; font-weight: 600; }
+.hm-blocked, .hm-unproven, .hm-tight { color: #8a5a12; background: #fbf3e4; border-color: #e6cfa4; }
+.hm-open { color: var(--ink-3); background: transparent; border-color: var(--rule); border-style: dashed; }
+.hm-closes { color: var(--both); background: var(--both-pale); border-color: var(--both); }
+@media (prefers-color-scheme: dark) {
+  .ex-refused { color: #e88a8a; }
+  .hm-fails, .hm-refused { color: #e88a8a; background: #2c1a19; border-color: #4a2a28; }
+  .hm-blocked, .hm-unproven, .hm-tight { color: #e0b469; background: #2e2412; border-color: #5a4520; }
+}
