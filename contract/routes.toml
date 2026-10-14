@@ -90,6 +90,27 @@ name = "fragment-sw_ap_design"
 path = "/v1/fragment/sw_ap_design"
 
 [[route]]
+method = "POST"
+path = "/v1/rerun/<id>"
+answer = "json"
+schema = "rerun"
+[[route.example]]
+name = "rerun-sw_kp_scenarios"
+path = "/v1/rerun/sw_kp_scenarios"
+[[route.example]]
+name = "rerun-sw_ap_design"
+path = "/v1/rerun/sw_ap_design"
+
+[[route]]
+method = "GET"
+path = "/v1/parts/<id>"
+answer = "json"
+schema = "parts"
+[[route.example]]
+name = "parts-sw_ap_design"
+path = "/v1/parts/sw_ap_design"
+
+[[route]]
 method = "GET"
 path = "/v1/node/<id>"
 answer = "json"

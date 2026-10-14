@@ -27,7 +27,9 @@
 mod http;
 mod inputs;
 mod json;
+mod node_ws;
 mod pages;
+mod rerun;
 mod results;
 pub mod results_file;
 pub mod today;
@@ -579,6 +581,12 @@ fn route(
         }
         ("GET", p) if p.starts_with("/v1/lesson/") => {
             ok_json(lesson_json(ctx, p.trim_start_matches("/v1/lesson/")))
+        }
+        ("GET", p) if p.starts_with("/v1/parts/") => {
+            ok_json(node_ws::parts_json(ctx, p.trim_start_matches("/v1/parts/")))
+        }
+        ("POST", p) if p.starts_with("/v1/rerun/") => {
+            ok_json(rerun::rerun_json(ctx, p.trim_start_matches("/v1/rerun/")))
         }
         ("GET", p) if p.starts_with("/v1/node/") => {
             let id = p.trim_start_matches("/v1/node/");
