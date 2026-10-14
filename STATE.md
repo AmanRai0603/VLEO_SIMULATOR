@@ -13,21 +13,18 @@ Target 1.0.0 on Monday 19 October; Tuesday to Thursday are the buffer.
 
 ## Person B · night
 
-S0 ended Thursday 15 October, 08:00. Nothing is merged yet: each PR waits on Aman.
+Handed over Wednesday 14 October, 23:20 IST. Nothing is merged: each PR waits on Aman. CI is green where finished.
 
-- **Open, for review:**
-  - PR 163, Explore: the today, health, trace and compare routes and the Explore tab. This is F2 without keys, so A's F2 is now the chain check on screen, then results.
-  - PR 164, setup: CLAUDE.md, this file, the reviewer and test-runner agents, and the deny rules.
-  - PR 165, `xtask test-drive`, the drive every scenario starts from. It has invented "Test …" people with fixed-seed keys, three groups from `design/`, and sealed Solar 1.1 and 1.2 beside the drive.
-  - PR 166, stacked on 165 (merge 165 first): `tools/scenarios.py` and a CI job. It starts the program once per person on a copy of the drive. Three scenarios pass (opens, two-people, refused-release), and its self-test goes red on a false claim.
-- **For A's F1 (decide in it):**
-  - `chain::owner_of` reads group mounts from the programme's file, but `design/` mounts the groups in the systems' file. The test drive follows the library for now.
-  - `chain::open_group` admits only a subsystem engineer, so the systems' file, owned by the system engineer, cannot open.
-- **For A's F1 and F2 proofs:** add a scenario to `SCENARIOS` in `tools/scenarios.py`. `world.person(name)` starts one program instance; `world.release(name)` puts a sealed release on the drive.
-- **Blocked on Aman:** merging PR 162, and the reviews and merges above.
-- **S2, F3 Node, started early (Wednesday night), without A's plan or F1:**
-  - PR 167: `name@version` is reserved in the method language.
-  - PR 168: `/v1/parts/<id>`, a node's six parts, each done, missing or failing, as the gate says.
-  - PR 169: *run my code again*, `POST /v1/rerun/<id>`, one library for it and xtask. **High risk:** it runs code from a design file.
-  - PR 170, stacked on 168 and 169: the node page opens on its parts and the button.
-  - Not done: signing through the chain (waits on F1 and an Opus review); saving a revision in place (waits on F1's identity and the drive copy).
+- **Merge order:** 165 before 166; 168 and 169 before 170. PRs 163, 168 and 169 each add 3 lines to the route table in `vleo-server/src/lib.rs`; the second to merge fixes a small conflict.
+- **Open:**
+  - 163 Explore (F2 without keys): routes for today, health, trace and compare, and the Explore tab. A's F2 is now the chain check on screen, then results.
+  - 164 setup (CLAUDE.md, this file, agents, deny rules) · 165 `xtask test-drive` · 166 `tools/scenarios.py` and its CI job, green on its first CI run.
+  - 167 `name@version` reserved · 168 `/v1/parts/<id>`, six parts as the gate says · 170 the node page shows them, with the button.
+  - **169 run my code again: high risk.** It runs code from a design file. Aman decides whether F1 limits it to your own nodes, or asks first.
+- **For A's F1 to decide:**
+  - Group ownership: `chain::owner_of` reads the programme's mounts, but `design/` mounts groups in the systems' file.
+  - `chain::open_group` admits only a subsystem engineer, so the systems' file cannot open.
+- **F3 left for after F1:** signing a node through the chain (needs an Opus review); saving a revision in place, refused if the file moved (needs identity and the drive copy). Both should start from the six parts (168) and the test drive (165).
+- **Proving F1 and F2:** add a scenario to `SCENARIOS` in `tools/scenarios.py`. `world.person(name)` starts one program; `world.release(name)` puts a sealed release on the drive.
+- **Blocked on Aman:** merging PR 162 and the reviews above.
+- **Next for B (S2):** finish F3 (signing, save) from A's Opus plan once F1 merges.
