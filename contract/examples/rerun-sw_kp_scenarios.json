@@ -1,0 +1,10 @@
+{
+  "ok": true,
+  "node": "sw_kp_scenarios",
+  "language": "Rust",
+  "cases": 5,
+  "verdict": "not-run",
+  "said": [
+    "Rust code is kept and read, not rerun — Python is run again, and MATLAB or Octave through Octave"
+  ]
+}
