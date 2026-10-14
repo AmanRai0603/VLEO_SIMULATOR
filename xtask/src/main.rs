@@ -22,6 +22,7 @@ mod pipeline;
 mod readers;
 mod release;
 mod report;
+mod test_drive;
 use forms::*;
 use graph::*;
 use hooks::*;
@@ -119,6 +120,7 @@ pub(crate) fn dispatch(root: &Path, cmd: &str, rest: &[&str]) -> Result<(), Stri
         "files-wasm" => files::cmd_files_wasm(&root, &rest),
         "group-app" => group::cmd_group_app(&root, &rest),
         "group-export" => group::cmd_group_export(&root, &rest),
+        "test-drive" => test_drive::cmd_test_drive(&root, &rest),
         "rerun" => method::cmd_rerun(&root, &rest),
         "explain" => pipeline::cmd_explain(&root, &rest),
         "why" => pipeline::cmd_why(&root, &rest),
@@ -231,6 +233,11 @@ cargo xtask <command>
                      rebuild web/files.wasm.gz, the design-file library the
                      pages carry, from vleo_files; --check only says whether
                      the committed one is current.
+  test-drive [--out <dir>]
+                     the shared drive every browser scenario starts from, in
+                     target/test-drive or --out: invented people with keys
+                     from fixed seeds, and three groups from design/, the same
+                     bytes every time (docs/PLAN_F.md, decision 5).
   group-app [--check] the group and node applications, web/group.html and
                      web/node.html — offline pages a group keeps its database
                      files in (docs/GROUP_APPS.md) — and docs/GROUP_FOLDER.md

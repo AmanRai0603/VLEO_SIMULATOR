@@ -11,7 +11,7 @@ Generated from the one table in `xtask/src/pipeline.rs`; `cargo run -p xtask -- 
 ## The journey
 
 1. **form** — a group's folder, or a row's lesson form, written from the design for its people to fill: `lesson`, `group-export`
-2. **build** — a node built from its method, and its tests shown to test: `method`, `rerun`, `method-wasm`, `files-wasm`
+2. **build** — a node built from its method, and its tests shown to test: `method`, `rerun`, `method-wasm`, `test-drive`, `files-wasm`
 3. **gate** — the checks every change passes, and what they generate: `group-app`, `docs`, `assemble`, `gate`, `ready`, `codeowners`, `variables`, `guides`, `pipeline`
 4. **release** — the versioned release everyone gets: `readers`, `ship`, `release`, `derisk`, `kit`, `bundle`
 5. **read** — reports: what exists, what is open, why a node is what it is: `status`, `active`, `catalogue`, `impact`, `reach`, `gap`, `graph`, `explain`, `sheet`, `why`, `trace`
@@ -114,6 +114,21 @@ rebuild web/method.wasm.gz, the checker the pages carry, from vleo_sheet::method
 | undo | `git restore web/method.wasm.gz web/method.wasm.stamp` |
 | dry run | --dry-run runs method-wasm --check: whether it is current, nothing built |
 | code | `xtask/src/method.rs` — `cmd_method_wasm` |
+
+#### `test-drive`
+
+    cargo run -p xtask -- test-drive [--out <dir>]
+
+the shared drive every browser scenario starts from, in target/test-drive or --out: invented people with keys from fixed seeds, and three groups from design/, the same bytes every time (docs/PLAN_F.md, decision 5).
+
+| | |
+|---|---|
+| reads | design/: the programme's and the systems' files, and three groups' files and node files |
+| writes | target/test-drive, or --out: drive/ laid out as a shared drive, keys/ and people.toml beside it, and releases/ with Solar 1.1 and a 1.2 sealed again — written again whole; nothing committed |
+| checks | a folder that is not a test drive is refused, never emptied; the programme's file checks through its anchor and each group's through it |
+| undo | delete the folder |
+| dry run | --dry-run prints this plan — the steps, what it would write, how to undo it — and touches nothing |
+| code | `xtask/src/test_drive.rs` — `cmd_test_drive` |
 
 #### `files-wasm`
 
