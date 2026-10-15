@@ -111,7 +111,7 @@ fn explore_answers_from_the_drive_s_releases() {
     assert!(solar.contains("\"version\":\"1.2\""), "{today}");
     assert!(solar.contains("sw_f107_design_long"), "{today}");
     assert!(
-        solar.contains("not yet checked through the chain"),
+        solar.contains("not checked through the chain: the drive has no programme's file"),
         "{today}"
     );
 

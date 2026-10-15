@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "today",
-  "$comment": "GET /v1/today — crates/vleo-server/src/explore.rs",
+  "$comment": "GET /v1/today \u2014 crates/vleo-server/src/explore.rs",
   "type": "object",
   "properties": {
     "ok": {
@@ -76,6 +76,23 @@
                     "items": {
                       "type": "string"
                     }
+                  },
+                  "chain": {
+                    "type": "string",
+                    "description": "How its seal was checked: through the chain, and from which anchor, or why it could not be."
+                  },
+                  "based_on": {
+                    "type": "string"
+                  },
+                  "base_version": {
+                    "anyOf": [
+                      {
+                        "type": "number"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
                   }
                 },
                 "required": [
@@ -84,7 +101,10 @@
                   "sealed_by",
                   "fingerprint",
                   "changes",
-                  "notes"
+                  "notes",
+                  "chain",
+                  "based_on",
+                  "base_version"
                 ]
               }
             ]

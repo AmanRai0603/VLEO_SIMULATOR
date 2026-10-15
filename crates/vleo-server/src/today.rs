@@ -27,16 +27,22 @@
 //! written: the releases are applied to the design in memory, sheet by sheet,
 //! and the tree is read again through every check the loader makes.
 //!
-//! What this does not yet check: the signatures through the chain from the
-//! programme manager's anchor (`vleo_files::chain`). The drive has no
-//! programme release to anchor them until the switch-over (docs/PLAN_1_0.md,
-//! phases G and H), and each release says so rather than being taken as if it
-//! had been checked.
+//! And, when the drive has a programme's file, each release's seal is checked
+//! through the chain from the anchor its START HERE names (`vleo_files::chain`,
+//! docs/briefs/F2.md): the programme's file opened under that anchor, the
+//! systems' file through it, and the release through whichever of the two
+//! mounts its group. A release from before 1.0 checks by the programme
+//! manager's anchor of its fingerprint. A seal that does not check is
+//! refused like any other reason, and the group's last good release taken in
+//! its place. Whether this computer has accepted that anchor yet is said
+//! beside each release taken. A drive with no programme's file says so for
+//! every release: nothing is taken as if it had been checked.
 
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
+use vleo_files::chain::{self, Registry};
 use vleo_files::intake::{self, Release};
 use vleo_files::meta::ReleaseVersion;
 use vleo_sheet::files::Files;
@@ -82,9 +88,130 @@ pub struct Taken {
     /// The nodes it changes in the design.
     pub changes: Vec<String>,
     /// What a person should know about it: nodes not in the design, a
-    /// transcription taken as an assistant's relation, its signatures not yet
-    /// checked through the chain.
+    /// transcription taken as an assistant's relation.
     pub notes: Vec<String>,
+    /// How its seal was checked: through the chain, and from which anchor, or
+    /// why it could not be.
+    pub chain: String,
+    /// The released design it was based on, by name and by count
+    /// (`base_version`); empty and none for a release from before they were
+    /// kept.
+    pub based_on: String,
+    pub base_version: Option<u64>,
+}
+
+/// The chain the drive's releases are checked through. One is made for a
+/// build, so its largest variant's size is no cost worth a box.
+#[allow(clippy::large_enum_variant)]
+enum Chain {
+    /// The drive has no programme's file: nothing is checked, and each
+    /// release says why.
+    Absent(String),
+    /// The drive has one, and it does not open: no release is taken.
+    Broken(String),
+    Open {
+        programme: Registry,
+        systems: Option<Registry>,
+        accepted: bool,
+    },
+}
+
+/// The chain `drive` holds, read once for a build.
+fn chain_of(drive: &Path) -> Chain {
+    let file = drive.join("groups/programme/programme.vgroup");
+    if !file.is_file() {
+        return Chain::Absent(
+            "the drive has no programme's file, so there is no anchor to check them from".into(),
+        );
+    }
+    let (anchor, accepted) = match crate::me::drive_anchor(drive) {
+        Ok(a) => a,
+        Err(why) => return Chain::Broken(why),
+    };
+    let programme = match vleo_files::sqlite::read(&file)
+        .map_err(|e| e.message().to_string())
+        .and_then(|f| chain::open_programme(f, &anchor).map_err(|e| e.message().to_string()))
+    {
+        Ok(p) => p,
+        Err(why) => {
+            return Chain::Broken(format!(
+                "the programme's file does not open under the anchor START HERE names: {why}"
+            ))
+        }
+    };
+    let systems = vleo_files::sqlite::read(&drive.join("groups/systems/systems.vgroup"))
+        .ok()
+        .and_then(|f| chain::open_systems(&f, &programme).ok());
+    Chain::Open {
+        programme,
+        systems,
+        accepted,
+    }
+}
+
+impl Chain {
+    /// How `release`, of group `id`, checks through the chain: what to say of
+    /// it when it does, or why it is refused.
+    fn check(
+        &self,
+        id: &str,
+        release: &vleo_files::model::File,
+        sealed_by: &str,
+    ) -> Result<String, String> {
+        match self {
+            Chain::Absent(why) => Ok(format!("its seal is not checked through the chain: {why}")),
+            Chain::Broken(why) => Err(format!(
+                "its seal cannot be checked through the chain: {why}"
+            )),
+            Chain::Open {
+                programme,
+                systems,
+                accepted,
+            } => {
+                let before_1_0 = release
+                    .meta
+                    .get("upgraded_from")
+                    .is_some_and(|v| v == vleo_files::upgrade::FROM_FORMAT_1);
+                let checked = if before_1_0 {
+                    // Checked by the programme manager's anchor of its
+                    // fingerprint; no mount is read.
+                    chain::check_release_in(release, programme, programme)
+                } else {
+                    let parents: Vec<&Registry> =
+                        std::iter::once(programme).chain(systems.iter()).collect();
+                    let (parent, _) = chain::mounted_by(id, &parents).map_err(|e| {
+                        format!(
+                            "its seal cannot be checked through the chain: {}",
+                            e.message()
+                        )
+                    })?;
+                    chain::check_release_in(release, parent, programme)
+                }
+                .map_err(|e| {
+                    format!("its seal does not check through the chain: {}", e.message())
+                })?;
+                if !checked.holds() {
+                    return Err(format!(
+                        "its seal does not check through the chain: {}",
+                        checked.refused.join("; ")
+                    ));
+                }
+                let how = if before_1_0 {
+                    "a release from before 1.0, anchored by the programme manager"
+                } else {
+                    "checked through the chain"
+                };
+                Ok(format!(
+                    "sealed by {sealed_by}: {how}, from the anchor START HERE names{}",
+                    if *accepted {
+                        ""
+                    } else {
+                        "; this computer has not accepted that anchor yet: open a key on this drive and compare it"
+                    }
+                ))
+            }
+        }
+    }
 }
 
 impl Today {
@@ -171,6 +298,7 @@ pub fn build(base: Arc<dyn Files>, root: &Path, drive: &Path) -> Result<Today, S
         }
     }
 
+    let chain = chain_of(drive);
     let mut taken: BTreeMap<PathBuf, Vec<u8>> = BTreeMap::new();
     let mut groups = Vec::new();
     for (id, files) in found {
@@ -203,10 +331,10 @@ pub fn build(base: Arc<dyn Files>, root: &Path, drive: &Path) -> Result<Today, S
                 if version.is_none() {
                     return Err(format!("'{said}' is not a release's version"));
                 }
-                take(&base, &taken, root, &id, &path, &r).map(|t| (r, t))
+                take(&base, &taken, root, &id, &path, &r, &chain).map(|t| (r, t))
             });
             match tried {
-                Ok((r, (edits, changes, notes))) => {
+                Ok((r, (edits, changes, notes, how))) => {
                     taken.extend(edits);
                     group.taken = Some(Taken {
                         version: r.version,
@@ -215,6 +343,9 @@ pub fn build(base: Arc<dyn Files>, root: &Path, drive: &Path) -> Result<Today, S
                         fingerprint: r.fingerprint,
                         changes,
                         notes,
+                        chain: how.said,
+                        based_on: how.based_on,
+                        base_version: how.base_version,
                     });
                     break;
                 }
@@ -247,8 +378,21 @@ type Candidate = (
 );
 
 /// The sheets one release writes into the design as it stands, the nodes it
-/// changes, and what a person should know of it — or why it is refused.
-type Edits = (BTreeMap<PathBuf, Vec<u8>>, Vec<String>, Vec<String>);
+/// changes, what a person should know of it, and how its seal checked — or
+/// why it is refused.
+type Edits = (
+    BTreeMap<PathBuf, Vec<u8>>,
+    Vec<String>,
+    Vec<String>,
+    Checked,
+);
+
+/// How a release's seal checked, and the design it was based on.
+struct Checked {
+    said: String,
+    based_on: String,
+    base_version: Option<u64>,
+}
 
 fn take(
     base: &Arc<dyn Files>,
@@ -257,6 +401,7 @@ fn take(
     id: &str,
     path: &Path,
     r: &Release,
+    chain: &Chain,
 ) -> Result<Edits, String> {
     if r.group != id {
         return Err(format!(
@@ -270,7 +415,13 @@ fn take(
     }
     r.check_seal()
         .map_err(|e| format!("its files are not the ones sealed: {e}"))?;
-    let findings = vleo_files::checks::check_release(&upgraded(path, r)?);
+    let file = upgraded(path, r)?;
+    let how = Checked {
+        said: chain.check(id, &file, &r.sealed_by)?,
+        based_on: file.meta.get("based_on").cloned().unwrap_or_default(),
+        base_version: file.base_version(),
+    };
+    let findings = vleo_files::checks::check_release(&file);
     if !findings.holds() {
         let errors: Vec<String> = findings
             .0
@@ -288,10 +439,7 @@ fn take(
         .map_err(|e| format!("the design does not load to take it into: {e}"))?;
     let derisk = r.latest_version();
     let (mut edits, mut changes) = (BTreeMap::new(), Vec::new());
-    let mut notes = vec![
-        "its signatures are not yet checked through the chain: the drive has no programme release to anchor them"
-            .to_string(),
-    ];
+    let mut notes = Vec::new();
     let mut refused = Vec::new();
     for n in r.records("nodes.csv")? {
         let node = n.get("id").cloned().unwrap_or_default();
@@ -334,7 +482,7 @@ fn take(
     if !refused.is_empty() {
         return Err(refused.join("; "));
     }
-    Ok((edits, changes, notes))
+    Ok((edits, changes, notes, how))
 }
 
 /// A release as the one schema holds it, for the checks of its content: a

@@ -62,6 +62,12 @@ pub(super) fn today_json(ctx: &Ctx) -> String {
                 j.str_field("fingerprint", &t.fingerprint);
                 strings(&mut j, "changes", &t.changes);
                 strings(&mut j, "notes", &t.notes);
+                j.str_field("chain", &t.chain);
+                j.str_field("based_on", &t.based_on);
+                match t.base_version {
+                    Some(n) => j.num_field("base_version", n as f64),
+                    None => j.key("base_version").raw("null"),
+                };
                 j.close_obj();
             }
             None => {

@@ -307,6 +307,17 @@ fn drive_name(database: &Path, copy: &Path) -> Result<String, String> {
 /// it accepted for each drive, and refuses a different one: a changed anchor
 /// comes with a note signed by the old key, which is not read here yet
 /// (section 14).
+/// The anchor START HERE in `drive` names, and whether this computer has
+/// accepted it for that drive: what today's design checks its releases'
+/// seals through (`today::build`). A changed anchor is refused, as opening a
+/// key refuses it.
+pub(crate) fn drive_anchor(drive: &Path) -> Result<(String, bool), String> {
+    match anchor(drive, Path::new(""))? {
+        Anchor::Accepted(n) => Ok((n, true)),
+        Anchor::FirstUse(n) => Ok((n, false)),
+    }
+}
+
 fn anchor(database: &Path, copy: &Path) -> Result<Anchor, String> {
     let start = ["START HERE.md", "START HERE", "START_HERE.md"]
         .iter()
