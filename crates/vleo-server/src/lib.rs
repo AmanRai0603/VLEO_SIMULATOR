@@ -25,8 +25,10 @@
 //! which also avoids a firewall prompt on first run.
 
 mod copy;
+mod explore;
 mod http;
 mod inputs;
+mod issues;
 mod json;
 mod me;
 mod my_work;
@@ -36,6 +38,7 @@ mod results;
 pub mod results_file;
 pub mod today;
 
+use explore::*;
 use http::*;
 use inputs::*;
 use json::Json;
@@ -278,6 +281,7 @@ fn open_tree(root: &Path) -> Result<Opened, String> {
         .map(PathBuf::from)
     else {
         *CHANGED.write().unwrap_or_else(|e| e.into_inner()) = Vec::new();
+        *BUILT_FROM.write().unwrap_or_else(|e| e.into_inner()) = None;
         return Ok((files, design, Vec::new()));
     };
     // Today's design: every group's latest sealed release on the drive that
@@ -296,6 +300,7 @@ fn open_tree(root: &Path) -> Result<Opened, String> {
     for g in &t.groups {
         said.push(format!("  {}", g.said()));
         if let Some(k) = &g.taken {
+            said.push(format!("    {}", k.chain_said(&drive)));
             for n in &k.notes {
                 said.push(format!("    {n}"));
             }
@@ -305,6 +310,19 @@ fn open_tree(root: &Path) -> Result<Opened, String> {
         said.push(format!("  ignored: {i}"));
     }
     *CHANGED.write().unwrap_or_else(|e| e.into_inner()) = t.changed();
+    let fingerprint = t.fingerprint(design.as_ref().map_or("", |d| d.fingerprint.as_str()));
+    said.push(format!(
+        "  its fingerprint {}…; {}",
+        fingerprint.chars().take(16).collect::<String>(),
+        t.base.said
+    ));
+    *BUILT_FROM.write().unwrap_or_else(|e| e.into_inner()) = Some(today::Report {
+        drive: drive.display().to_string(),
+        fingerprint,
+        base: t.base.clone(),
+        groups: t.groups.clone(),
+        ignored: t.ignored.clone(),
+    });
     Ok((t.files, design, said))
 }
 
@@ -312,6 +330,36 @@ fn open_tree(root: &Path) -> Result<Opened, String> {
 /// by node, with which release (`today::Today::changed`); empty when the
 /// design is not today's.
 static CHANGED: std::sync::RwLock<Vec<(String, String)>> = std::sync::RwLock::new(Vec::new());
+
+/// What the design the tool opened last was built from, when it is today's
+/// design: the drive, each group's release and why any newer one was refused.
+/// `None` when the design is not today's. The screens say it
+/// (`GET /v1/today`), so no screen shows today's design as if it were another.
+static BUILT_FROM: std::sync::RwLock<Option<today::Report>> = std::sync::RwLock::new(None);
+
+/// The design that is open, in words and by its fingerprint: today's design
+/// and the drive it was built from, or the design's own files. What a result
+/// kept records, so it always says which design it belongs to.
+pub(crate) fn open_design(ctx: &Ctx) -> (String, String) {
+    match built_from() {
+        Some(r) => (
+            format!("today's design, built from the drive {}", r.drive),
+            r.fingerprint,
+        ),
+        None => (
+            "the design's own files".to_string(),
+            ctx.design
+                .as_ref()
+                .map(|d| d.fingerprint.clone())
+                .unwrap_or_default(),
+        ),
+    }
+}
+
+/// What the design the tool opened last was built from (`BUILT_FROM`).
+pub fn built_from() -> Option<today::Report> {
+    BUILT_FROM.read().unwrap_or_else(|e| e.into_inner()).clone()
+}
 
 /// Every node a release taken into the open design changes, and which
 /// release: what a closure is traced against when it held before and does
@@ -568,6 +616,8 @@ fn route(
         ("POST", "/v1/copy") => ok_json(copy::take(params, ctx)),
         ("GET", "/v1/people") => ok_json(people::list(params, ctx)),
         ("POST", "/v1/people/register") => ok_json(people::change("register", params, ctx)),
+        // An issue raised from a red mark, into the copy's issues/ (W11).
+        ("POST", "/v1/issues/raise") => ok_json(issues::raise(params, ctx)),
         ("POST", "/v1/people/replace") => ok_json(people::change("replace", params, ctx)),
         ("POST", "/v1/people/revoke") => ok_json(people::change("revoke", params, ctx)),
         // The manual, with what is true of this running copy right now.
@@ -626,6 +676,10 @@ fn route(
         ("GET", "/v1/probe") => ok_json(probe_json(params)),
         ("GET", "/v1/levers") => ok_json(levers_json(params, ctx)),
         ("GET", "/v1/branches") => ok_json(branches_json(params)),
+        ("GET", "/v1/today") => ok_json(today_json(ctx)),
+        ("GET", "/v1/health") => ok_json(health_json(params, ctx)),
+        ("GET", "/v1/health/trace") => ok_json(trace_json(params, ctx)),
+        ("GET", "/v1/compare") => ok_json(compare_json(params, ctx)),
         // The reference data itself, so a face can draw the record rather than
         // only the answers computed from it.
         ("GET", p) if p.starts_with("/v1/bundle/") => {

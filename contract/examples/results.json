@@ -1,19 +1,20 @@
 {
   "ok": true,
-  "path": "/tmp/vleo-contract-2530/results",
+  "path": "/tmp/vleo-contract-31873/results",
   "results": [
     {
-      "file": "2026-10-09T06-34-07Z_sw_ap_design_7127cf0a53cd3e26",
+      "file": "2026-10-15T17-03-20Z_sw_ap_design_c8279ca1ebd9dacd",
       "target": "sw_ap_design",
       "pinned": false,
       "thinned": "",
-      "name": "the contract",
-      "saved": "2026-10-09T06:34:07Z",
+      "name": "the contract, swept",
+      "saved": "2026-10-15T17:03:20Z",
       "mode": "branch",
       "chain": "e0dae3",
-      "kernel": "807ac9",
+      "kernel": "a227fb",
       "graph": "a431fa",
       "design": "0fe5f2c4324025fc3ee2964ec86716b0384bd23fa795a44e95602b9e71611d52",
+      "which": "the design's own files",
       "engine_current": true,
       "template": "48afb0100e92",
       "template_current": true,
@@ -21,8 +22,12 @@
       "ran": 2,
       "blocked": 0,
       "changed": 0,
-      "question": "7127cf0a53cd3e26",
-      "sweep": null,
+      "question": "c8279ca1ebd9dacd",
+      "sweep": {
+        "over": "sw_storm_design_level",
+        "points": 3,
+        "refused": 0
+      },
       "versions": [
         {
           "node": "sw_storm_design_level",
@@ -42,17 +47,18 @@
       }
     },
     {
-      "file": "2026-10-09T06-34-07Z_sw_ap_design_34a74933dffefa01",
+      "file": "2026-10-15T17-03-20Z_sw_ap_design_8871ebf507333922",
       "target": "sw_ap_design",
       "pinned": false,
       "thinned": "",
-      "name": "the contract, swept",
-      "saved": "2026-10-09T06:34:07Z",
+      "name": "the contract",
+      "saved": "2026-10-15T17:03:20Z",
       "mode": "branch",
       "chain": "e0dae3",
-      "kernel": "807ac9",
+      "kernel": "a227fb",
       "graph": "a431fa",
       "design": "0fe5f2c4324025fc3ee2964ec86716b0384bd23fa795a44e95602b9e71611d52",
+      "which": "the design's own files",
       "engine_current": true,
       "template": "48afb0100e92",
       "template_current": true,
@@ -60,12 +66,8 @@
       "ran": 2,
       "blocked": 0,
       "changed": 0,
-      "question": "34a74933dffefa01",
-      "sweep": {
-        "over": "sw_storm_design_level",
-        "points": 3,
-        "refused": 0
-      },
+      "question": "8871ebf507333922",
+      "sweep": null,
       "versions": [
         {
           "node": "sw_storm_design_level",

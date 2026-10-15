@@ -53,7 +53,10 @@ export function openResult(file) { PAGE.open = file; PAGE.compare = ''; }
 
 export async function renderResults(host) {
   if (!host) return;
-  const list = await get('/v1/results');
+  const [list, today] = await Promise.all([get('/v1/results'), get('/v1/today')]);
+  // Which design each result belongs to, beside the one open now: a result
+  // from another design is never read as this one's.
+  const open = today.ok ? today.design.fingerprint : '';
   if (!list.ok) {
     host.innerHTML = '<div class="blocked"><b>no answer</b><div>' + esc(list.message || '') + '</div></div>';
     return;
@@ -75,7 +78,7 @@ export async function renderResults(host) {
       'press <b>save this result</b>.</p>';
   } else {
     h += '<div class="ri-wrap"><table class="fx res-list"><thead><tr><th>saved</th><th>row</th><th>answer</th>' +
-      '<th>inputs</th><th>ran</th><th></th></tr></thead><tbody>' + list.results.map(r =>
+      '<th>inputs</th><th>ran</th><th>design · engine</th><th></th></tr></thead><tbody>' + list.results.map(r =>
         '<tr class="res-row' + (r.file === PAGE.open ? ' sel' : '') + '" data-file="' + esc(r.file) + '">' +
         '<td>' + esc(r.saved) + (r.name ? '<div class="muted">' + esc(r.name) + '</div>' : '') + '</td>' +
         '<td><code>' + esc(r.target) + '</code>' + (r.sweep ? '<span class="res-kind" title="a sweep over ' +
@@ -84,6 +87,7 @@ export async function renderResults(host) {
           (r.thinned ? '<span class="res-kind" title="thinned to its summary">summary</span>' : '') + '</td><td><b>' +
           esc(answerText(r)) + '</b></td>' +
         '<td>' + r.changed + ' changed</td><td>' + r.ran + ' · ' + r.blocked + ' blocked</td>' +
+        '<td class="res-design">' + designOf(r, open) + '</td>' +
         '<td><button class="ctl res-open" data-file="' + esc(r.file) + '">open</button></td></tr>').join('') +
       '</tbody></table></div>';
   }
@@ -141,6 +145,21 @@ export async function renderResults(host) {
   }
 }
 
+/** Which design a result ran on, by its words and its fingerprint, whether it
+ *  is the one open, and the engine that made it. */
+function designOf(r, open) {
+  const fp = r.design ? '<code title="' + esc(r.design) + '">' + esc(r.design.slice(0, 12)) + '…</code>' : '<i>no fingerprint</i>';
+  // A result kept before it said which design it ran on recorded the design's
+  // own files even when today's design was open: its fingerprint cannot say
+  // it is this design, so it is never called this one.
+  const here = !r.which ? ' <span class="res-kind" title="kept before results said which design they ran on">which design is not recorded</span>'
+    : r.design && r.design === open ? ' <span class="res-kind" title="the design open now">this design</span>'
+    : ' <span class="res-kind" title="not the design open now">another design</span>';
+  return esc(r.which || 'a design it does not name') + ' · ' + fp + here +
+    '<div class="muted">kernel ' + esc(r.kernel) + ' · graph ' + esc(r.graph) +
+    (r.engine_current === false ? ' · another engine' : '') + '</div>';
+}
+
 /** The bytes of a file as base64, in pieces small enough for the call stack. */
 function base64(buf) {
   const b = new Uint8Array(buf);
@@ -161,6 +180,8 @@ async function view(el, host, all) {
       esc(r.mode) + ' · <b>' + plural(r.changed, 'input') + ' changed</b> from the defaults</p>' +
     '<p class="chainline muted">chain <b>' + esc(r.chain) + '</b> · kernel ' + esc(r.kernel) + ' · graph ' +
       esc(r.graph) + (r.data ? ' · data ' + esc(r.data) : '') + '</p>' +
+    '<p class="res-on">on ' + esc(r.which || 'a design it does not name') + ', fingerprint <code>' +
+      esc(r.design || '—') + '</code></p>' +
     // KEPT IN TIERS. Every value for a time, the summary for good: an
     // unpinned result older than the keep period keeps its inputs, its answer
     // and what could not run. The rest is one run away, and it says so.

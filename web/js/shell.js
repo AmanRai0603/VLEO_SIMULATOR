@@ -5,7 +5,9 @@
   My work holds, for now, what F1 can know: the copy of the database, the key
   and who it says you are, what needs you (a node of yours unsigned, a group of
   yours with nothing sealed, a file below you the chain refuses), and People,
-  for whoever holds a valve. The other four workspaces say which stage brings
+  for whoever holds a valve. Explore (F2) holds today's design, its runs, its
+  inputs and the results kept, loaded the first time it is opened
+  (workspace_explore.js). The other three workspaces say which stage brings
   them.
 
   The launch's word arrives in the address's fragment, is kept in this tab's
@@ -30,7 +32,7 @@ const WORKSPACES = [
   ['node', 'Node', 'one node, edited in its live page, signed when it is ready', 'F3'],
   ['system', 'System', 'your branch: its valves, today\'s view of it, and its release', 'F4 to F6'],
   ['programme', 'Programme', 'mission health, gates, risks, the organisation and decisions', 'F7'],
-  ['explore', 'Explore', 'today\'s design or any released one: run, sweep, compare, trace to cause', 'F2'],
+  ['explore', 'Explore', 'today\'s design or any released one: run, sweep, compare, trace to cause', ''],
 ];
 
 const S = {
@@ -111,16 +113,43 @@ function draw() {
     esc(name) + '</button>').join('');
   const n = S.notice;
   $('#sh-notice').innerHTML = n ? '<p class="' + (n.ok ? 'sh-said' : 'sh-refused') + '">' + esc(n.text) + '</p>' : '';
-  $('#sh-main').innerHTML = S.ws === 'my-work' ? myWork() : empty(S.ws);
+  if (S.ws !== 'explore') {
+    $('#sh-main').innerHTML = S.ws === 'my-work' ? myWork() : empty(S.ws);
+  } else if (!$('#sh-explore')) {
+    // Drawn once on the way in, and left alone by every later draw: Explore
+    // keeps its own state, and asking the engine again on each notice would
+    // lose it.
+    $('#sh-main').innerHTML = '<div id="sh-explore"></div>';
+    openExplore($('#sh-explore'));
+  }
   document.body.dataset.drawn = String(++S.drawn);
 }
 
 function empty(id) {
   const [, name, holds, stage] = WORKSPACES.find(w => w[0] === id);
-  const today = id === 'explore'
-    ? '<p>Until it does, <a href="/">today\'s tool</a> holds the design, its runs and its results.</p>' : '';
   return answerFirst('The ' + esc(name) + ' workspace arrives in ' + esc(stage) + '.',
-    ['It will hold ' + esc(holds) + '.'], 'reference') + today;
+    ['It will hold ' + esc(holds) + '.'], 'reference');
+}
+
+/** The Explore workspace, loaded the first time it is opened. */
+async function openExplore(host) {
+  try {
+    const { mountExplore } = await import('./workspace_explore.js');
+    await mountExplore(host, raiseIssue);
+  } catch (e) {
+    host.innerHTML = '<p class="sh-refused">Explore did not load: ' + esc(String(e)) + '</p>';
+  }
+}
+
+/** Ask the program to write an issue: the one request Explore makes that
+ *  carries the launch's word. */
+async function raiseIssue(params) {
+  params.set('session', word());
+  try {
+    return await (await fetch('/v1/issues/raise', { ...POST, body: params.toString() })).json();
+  } catch (e) {
+    return { ok: false, message: 'the program did not answer: ' + e };
+  }
 }
 
 function myWork() {
@@ -223,7 +252,7 @@ function peopleCard() {
   const roles = S.pfile === 'programme'
     ? ['system engineer', 'subsystem engineer', 'programme manager'] : ['node engineer'];
   return '<section class="sh-card" id="sh-people"><h2>People ' + kind('how-to') + '</h2>' +
-    '<p>Whom a file registers is changed here, in your copy, signed with your key; it goes to the drive when your work goes back.</p>' +
+    '<p>Whom a file registers is changed here, in your copy, signed with your key; it stays in your copy until putting work back on the drive comes to the application.</p>' +
     '<p><label>File <select id="sh-pfile" class="ctl">' + files.map(f =>
       '<option' + (f === S.pfile ? ' selected' : '') + '>' + esc(f) + '</option>').join('') + '</select></label></p>' +
     (p.ok === false ? '<p class="sh-refused">' + esc(p.message) + '</p>' : '') +

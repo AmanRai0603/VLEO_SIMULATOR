@@ -456,6 +456,68 @@ ui = "pin"
 
 
 [[layer.section]]
+id = "browser-explore"
+title = "Which design this is, where it breaks, and what differs"
+who = "user"
+kind = "how-to"
+answer = "Explore says first which design you are looking at, by its fingerprint: today's design, built from every group's latest sealed release on the drive whose seal checks through the chain, or the design's own files. Then it shows where the design breaks, node by node, traces any closure to the node that causes it, raises an issue from any mark that needs a person, and compares two files of the design block by block."
+body = """
+**Which design.** Today's design is built when the tool starts, from the \
+drive `VLEO_DRIVE` names: each group's latest sealed release that passes its \
+checks, or its last good one, marked, with why any newer one was refused. \
+Each release's seal is checked through the chain from the anchor START HERE \
+names, and each release taken says who sealed it, how its seal checked and \
+the released design it was based on. The design's own fingerprint is shown: \
+two copies of the tool on one drive show the same one. With no drive it is \
+the design's own files, and the page says that instead. Never take one for \
+the other: a decision rests on a released design.
+
+**Where it breaks.** The health map gives every node one of seven states, \
+worst first: fails, refused, blocked, unproven, open, tight, closes. A group \
+is as bad as its worst node, and the spacecraft as bad as its worst group. \
+Branches that fail, refuse or wait open by themselves; click any group to \
+open or close it. It runs on the saved case, with any what-if set in this \
+browser, as a run does.
+
+**Trace a closure.** The trace names the nodes that cause it, nearest first, \
+each with its group and owner and the release that changed it; then the \
+declared inputs that move its margin, most first, with where each would make \
+it close. It ranks; it cannot say which node is wrong. That is the engineers' \
+judgement.
+
+**Raise an issue.** In the application, any mark that fails, refuses, waits \
+or is not proven has *raise issue*. Say what is wrong, and the issue is \
+written into your copy's `issues/`, numbered, addressed to the node's group \
+and the node, with what the engine says of it on the same case and the \
+design's fingerprint, signed with your key. It stays in your copy: putting \
+work back on the drive is not in the application yet.
+
+**Results kept.** A run kept from Explore names the design it ran on, by its \
+fingerprint, and the engine that made it; the list says whether that is the \
+design open now.
+
+**Compare two files.** Name each as `design:<path>` in the design open, or \
+`drive:<path>` on the drive, such as two releases of one group. Every block \
+that differs is listed, in the words the library uses everywhere."""
+
+[[layer.section.step]]
+say = "Open Explore. Its first line says which design it shows."
+ui = "Explore"
+
+[[layer.section.step]]
+say = "Pick a closure that fails and trace it to the node that causes it."
+ui = "trace"
+
+[[layer.section.step]]
+say = "On a mark that needs a person, raise an issue and say what is wrong."
+ui = "raise issue"
+
+[[layer.section.step]]
+say = "Name two files, such as two releases of one group, and compare them."
+ui = "compare"
+
+
+[[layer.section]]
 id = "browser-forms"
 title = "What comes in from outside, and what does not"
 who = "user"
@@ -2135,6 +2197,11 @@ path = "/v1/people/revoke"
 what = "One key of a registered person revoked from the day from, signed with the open key, in the working copy. Carries session."
 
 [[route]]
+method = "POST"
+path = "/v1/issues/raise"
+what = "An issue raised on the node named by node, with what, the person's words: written into the working copy's issues/ as <number>-<group>.vissue, addressed to the node's group and the node, with the engine's evidence on the case the request carries, signed with the open key. Carries session."
+
+[[route]]
 method = "GET"
 path = "/v1/index"
 what = "Every row and group, with what the tree needs to draw itself."
@@ -2290,6 +2357,26 @@ what = "Which declared decisions actually move a row's answer, and by how much: 
 method = "GET"
 path = "/v1/branches"
 what = "The largest fully-published branches a row is part of: `node`."
+
+[[route]]
+method = "GET"
+path = "/v1/today"
+what = "Which design is open and what built it: the design's folder and fingerprint, and, when it is today's design, the drive, each group's release taken, every newer release refused and why, and what on the drive was not taken. `today` is false when the design is not today's."
+
+[[route]]
+method = "GET"
+path = "/v1/health"
+what = "The health map on the case the request carries (`inputs=defaults` and `set=` as for a run): every node's state and why, the node a blocked one waits on, each closure's margin, each group as bad as its worst node, and the spacecraft as bad as its worst group."
+
+[[route]]
+method = "GET"
+path = "/v1/health/trace"
+what = "One closure walked down to what causes it: `closure`. The nodes that cause it, nearest first, each with its group and owner and the release that changed it; the declared inputs that move its margin, most first, with where each would make it close; and its verdict over the values still open. A row that is not a closure is refused by name."
+
+[[route]]
+method = "GET"
+path = "/v1/compare"
+what = "Two files of the design compared block by block: `a` and `b`, each `design:<path>` in the design open or `drive:<path>` on the drive today's design was built from. Nothing else on the computer is opened."
 
 [[route]]
 method = "GET"

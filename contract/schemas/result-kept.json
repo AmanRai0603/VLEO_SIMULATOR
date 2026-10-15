@@ -45,6 +45,10 @@
       "type": "string",
       "description": "The fingerprint of the design file the run read; empty when it read the folders of a checkout."
     },
+    "which": {
+      "type": "string",
+      "description": "Which design the result ran on, in words: today's design and the drive it was built from, or the design's own files. Empty in a result saved before it was kept."
+    },
     "engine_current": {
       "type": "boolean",
       "description": "Whether the engine that made the result is the one answering now. False: the result is shown as it was, and running its inputs again gives this engine's answer."
@@ -147,6 +151,7 @@
     "kernel",
     "graph",
     "design",
+    "which",
     "engine_current",
     "template",
     "template_current",

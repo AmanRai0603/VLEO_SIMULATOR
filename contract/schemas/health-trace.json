@@ -1,0 +1,241 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "health-trace",
+  "$comment": "GET /v1/health/trace — crates/vleo-server/src/explore.rs, from vleo_modules::health::{trace_since, range}",
+  "type": "object",
+  "properties": {
+    "ok": {
+      "type": "boolean"
+    },
+    "closure": {
+      "type": "string"
+    },
+    "state": {
+      "type": "string",
+      "enum": [
+        "fails",
+        "refused",
+        "blocked",
+        "unproven",
+        "open",
+        "tight",
+        "closes"
+      ]
+    },
+    "why": {
+      "type": "string"
+    },
+    "margin": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "causes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "fails",
+              "refused",
+              "blocked",
+              "unproven",
+              "open",
+              "tight",
+              "closes"
+            ]
+          },
+          "why": {
+            "type": "string"
+          },
+          "group": {
+            "type": "string"
+          },
+          "owner": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "state",
+          "why",
+          "group",
+          "owner"
+        ]
+      }
+    },
+    "levers": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "unit": {
+            "type": "string"
+          },
+          "factor": {
+            "type": "number"
+          },
+          "lower": {
+            "type": "number"
+          },
+          "upper": {
+            "type": "number"
+          },
+          "at_lower": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "at_upper": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "closes_at": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "group": {
+            "type": "string"
+          },
+          "owner": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "unit",
+          "factor",
+          "lower",
+          "upper",
+          "at_lower",
+          "at_upper",
+          "closes_at",
+          "group",
+          "owner"
+        ],
+        "description": "A declared input and its closure's margin at each end of its declared range (null where the run refuses there), and where in the range the closure begins to close, when it does."
+      }
+    },
+    "range": {
+      "type": "object",
+      "properties": {
+        "verdict": {
+          "type": "string",
+          "enum": [
+            "no-open-value",
+            "closes-for-all",
+            "closes-for-part",
+            "fails-for-all"
+          ]
+        },
+        "said": {
+          "type": "string"
+        },
+        "tornado": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "unit": {
+                "type": "string"
+              },
+              "factor": {
+                "type": "number"
+              },
+              "lower": {
+                "type": "number"
+              },
+              "upper": {
+                "type": "number"
+              },
+              "at_lower": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "at_upper": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "closes_at": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "group": {
+                "type": "string"
+              },
+              "owner": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "unit",
+              "factor",
+              "lower",
+              "upper",
+              "at_lower",
+              "at_upper",
+              "closes_at",
+              "group",
+              "owner"
+            ],
+            "description": "A declared input and its closure's margin at each end of its declared range (null where the run refuses there), and where in the range the closure begins to close, when it does."
+          }
+        },
+        "least_mature": {
+          "type": "string"
+        },
+        "least_mature_rows": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "verdict",
+        "said",
+        "tornado",
+        "least_mature",
+        "least_mature_rows"
+      ]
+    },
+    "node": {
+      "type": "string",
+      "description": "On a refusal: what was refused."
+    },
+    "message": {
+      "type": "string",
+      "description": "On a refusal: why, in a sentence."
+    },
+    "fault": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "ok"
+  ]
+}
