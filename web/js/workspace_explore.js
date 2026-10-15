@@ -17,7 +17,10 @@
   are loaded the first time Explore is opened, never with My work.
 
   An issue is signed with the open key: the shell hands this module the one
-  function that carries the launch's word, and nothing else here sees it.
+  function that asks the program to write it, carrying the launch's word.
+  The word itself is in this tab's session storage, where any script on the
+  page could read it, so everything this page draws from the engine goes
+  through esc() before it is markup.
 */
 'use strict';
 

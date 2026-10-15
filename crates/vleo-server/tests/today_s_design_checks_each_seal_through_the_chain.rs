@@ -33,6 +33,12 @@ fn pat() -> SigningKey {
     SigningKey::from_seed([81; 32])
 }
 
+/// The system engineer, whom the programme's file registers and mounts the
+/// systems' branch for.
+fn sam() -> SigningKey {
+    SigningKey::from_seed([83; 32])
+}
+
 fn sql(file: &Path, statement: &str) {
     let db = rusqlite::Connection::open(file).unwrap();
     assert!(db.execute(statement, []).unwrap() > 0, "{statement}");
@@ -106,6 +112,34 @@ fn drive(name: &str, anchored: &[&str], start_here: &str) -> PathBuf {
         registered_at: s("2026-01-01"),
         registered_by: s("Test Pat"),
         revoked_from: s(""),
+    });
+    programme.people.push(Person {
+        name: s("Test Sam"),
+        role: s("system engineer"),
+        deputy_for: s(""),
+    });
+    programme.keys.push(PersonKey {
+        person: s("Test Sam"),
+        public_key: sam().public().to_hex(),
+        registered_at: s("2026-01-01"),
+        registered_by: s("Test Pat"),
+        revoked_from: s(""),
+    });
+    programme.blocks.push(Block {
+        uid: s("root"),
+        id: s("root"),
+        behaviour: s("children"),
+        ..Block::default()
+    });
+    programme.mounts.push(Mount {
+        block_uid: s("root"),
+        group_id: s("systems"),
+        release: s(""),
+    });
+    programme.assignments.push(Assignment {
+        block_uid: s("root"),
+        person: s("Test Sam"),
+        contract_version: 1,
     });
     // The anchors are part of what the programme manager signs: they go in
     // first, then the file is signed as a whole.
@@ -256,6 +290,26 @@ fn two_instances_on_one_drive_build_the_same_design_by_fingerprint() {
     }
 }
 
+/// The systems' file, naming its base, and signed by the system engineer
+/// when `signed`.
+fn systems(d: &Path, based_on: &str, base_version: &str, signed: bool) {
+    let mut f = File::new(Kind::Group, APP);
+    for (k, v) in [
+        ("group_id", "systems"),
+        ("writer", "Test Sam"),
+        ("based_on", based_on),
+        ("base_version", base_version),
+    ] {
+        f.meta.insert(s(k), s(v));
+    }
+    if signed {
+        let row = chain::sign(&f, FILE, "Test Sam", &sam(), "2026-10-08", "ok", "").unwrap();
+        f.signatures.push(row);
+    }
+    std::fs::create_dir_all(d.join("groups/systems")).unwrap();
+    vleo_files::sqlite::write(&f, &d.join("groups/systems/systems.vgroup")).unwrap();
+}
+
 #[test]
 fn the_design_s_base_is_the_one_the_systems_file_names() {
     keys();
@@ -264,17 +318,16 @@ fn the_design_s_base_is_the_one_the_systems_file_names() {
     assert!(t.base.said.contains("no systems' file"), "{}", t.base.said);
     assert_eq!(t.base.base_version, None);
 
-    let mut systems = File::new(Kind::Group, APP);
-    for (k, v) in [
-        ("group_id", "systems"),
-        ("writer", "Test Sam"),
-        ("based_on", "design-2026-09"),
-        ("base_version", "2"),
-    ] {
-        systems.meta.insert(s(k), s(v));
-    }
-    std::fs::create_dir_all(d.join("groups/systems")).unwrap();
-    vleo_files::sqlite::write(&systems, &d.join("groups/systems/systems.vgroup")).unwrap();
+    // A systems' file the chain does not admit names no base.
+    systems(&d, "design-2026-09", "2", false);
+    let (t, _) = today_at(&root(), &d);
+    assert!(
+        t.base.said.contains("does not check through the chain") && t.base.base_version.is_none(),
+        "{:?}",
+        t.base
+    );
+
+    systems(&d, "design-2026-09", "2", true);
     let (t, _) = today_at(&root(), &d);
     assert_eq!(t.base.based_on, "design-2026-09");
     assert_eq!(t.base.base_version, Some(2));
@@ -288,6 +341,84 @@ fn the_design_s_base_is_the_one_the_systems_file_names() {
         (k.based_on.as_str(), k.base_version),
         ("", None),
         "1.1 is from before they were kept"
+    );
+
+    // A base that does not say one thing is said as such, never as a base.
+    for (on, n, says) in [
+        ("design-2026-09", "two", "not a whole number"),
+        ("", "3", "names none"),
+        ("design-2026-09", "0", "counts none before it"),
+    ] {
+        systems(&d, on, n, true);
+        let (t, _) = today_at(&root(), &d);
+        assert!(t.base.said.contains(says), "{on:?} {n:?}: {}", t.base.said);
+    }
+    let _ = std::fs::remove_dir_all(&d);
+}
+
+#[test]
+fn a_drive_with_an_anchor_and_no_programme_s_file_admits_nothing() {
+    keys();
+    let d = drive(
+        "no-programme",
+        &["1.1", "1.2"],
+        &pat().public().fingerprint(),
+    );
+    std::fs::remove_file(d.join("groups/programme/programme.vgroup")).unwrap();
+    let t = today(&d);
+    let g = &t.groups[0];
+    assert!(g.taken.is_none(), "{:?}", g.taken);
+    assert!(
+        g.refused
+            .iter()
+            .all(|(_, why)| why.contains("has an anchor and no programme's file")),
+        "{:?}",
+        g.refused
+    );
+    let _ = std::fs::remove_dir_all(&d);
+}
+
+#[test]
+fn accepting_another_anchor_later_does_not_vouch_for_seals_checked_from_this_one() {
+    keys();
+    let d = drive("other-anchor", &["1.1"], &pat().public().fingerprint());
+    let t = today(&d);
+    let k = t.groups[0].taken.as_ref().unwrap();
+    let anchors = Path::new(&std::env::var("VLEO_KEYS").unwrap()).join("anchors");
+    let before = std::fs::read_to_string(&anchors).unwrap_or_default();
+    let other = SigningKey::from_seed([82; 32]).public().fingerprint();
+    std::fs::write(
+        &anchors,
+        format!(
+            "{before}{other} {}\n",
+            std::fs::canonicalize(&d).unwrap().display()
+        ),
+    )
+    .unwrap();
+    let said = k.chain_said(&d);
+    assert!(said.contains("accepted another anchor"), "{said}");
+    std::fs::write(&anchors, before).unwrap();
+    let _ = std::fs::remove_dir_all(&d);
+}
+
+#[test]
+fn a_release_in_the_one_schema_is_refused_by_name() {
+    keys();
+    let d = drive("schema", &["1.1"], &pat().public().fingerprint());
+    let mut f = File::new(Kind::GroupRelease, APP);
+    for (k, v) in [("group_id", "l3_solar"), ("version", "2.0")] {
+        f.meta.insert(s(k), s(v));
+    }
+    vleo_files::sqlite::write(&f, &d.join("groups/l3_solar/releases/l3_solar-2.0.vleo")).unwrap();
+    let t = today(&d);
+    let g = &t.groups[0];
+    assert_eq!(g.taken.as_ref().map(|k| k.version.as_str()), Some("1.1"));
+    assert!(
+        g.refused
+            .iter()
+            .any(|(v, why)| v == "l3_solar-2.0" && why.contains("not format 1")),
+        "{:?}",
+        g.refused
     );
     let _ = std::fs::remove_dir_all(&d);
 }

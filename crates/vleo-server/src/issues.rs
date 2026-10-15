@@ -11,9 +11,12 @@
 //! say what is wrong.
 //!
 //! A file is never written over: the number is one more than the highest in
-//! the copy's `issues/`, chosen with the copy held, and a file already at that
-//! name stops the write. Closing an issue is not here (F5: by the release that
-//! names it).
+//! the copy's `issues/` and the drive's it was copied from, chosen with the
+//! copy held, and a file already at that name stops the write. Two people
+//! raising issues in two copies at once can still choose the same number;
+//! what holds them apart is the drive, when work goes back to it, which is not
+//! in the application yet. Closing an issue is not here either (F5: by the
+//! release that names it).
 
 use super::*;
 use vleo_files::chain::{self, FILE};
@@ -37,7 +40,7 @@ pub(super) fn raise(params: &str, ctx: &Ctx) -> String {
                 "message",
                 &format!(
                     "issue {number} is raised on {group}, addressed to {addressed_to}, in your copy as {file}. \
-                     It goes to the drive when you put your work back."
+                     It is in your copy only: putting work back on the drive is not in the application yet."
                 ),
             );
             j.raw("}");
@@ -132,6 +135,16 @@ fn evidence(params: &str, ctx: &Ctx, node: &str) -> Result<(String, &'static str
     // drive for a node of the subsystem layer, the system's or the
     // management's group above it.
     let group = def.parent;
+    // The group names the file: a name a folder can hold, never a path.
+    if group.is_empty()
+        || !group
+            .bytes()
+            .all(|c| c.is_ascii_alphanumeric() || c == b'_')
+    {
+        return Err(format!(
+            "{node} is in no group an issue can be addressed to ({group:?})"
+        ));
+    }
     let owner = if def.owner.is_empty() {
         g.groups
             .iter()
@@ -156,19 +169,19 @@ fn raised(params: &str, ctx: &Ctx) -> Result<(String, u64, String, String), Stri
         return Err("say what is wrong: an issue with no words is one nobody can act on".into());
     }
     let copy = copy::dir(ctx);
-    if copy::record(&copy)?.is_none() {
+    let Some(copied) = copy::record(&copy)? else {
         return Err(
             "an issue is written into your copy of the database: copy it from the drive first"
                 .into(),
         );
-    }
+    };
     let (evidence, group, addressed_to) = evidence(params, ctx, &node)?;
     // One program at a time writes the copy, and the number is chosen with it
     // held, so two issues raised here never take the same one.
     let _held = copy::lock(&copy)?;
     let dir = copy.join("issues");
     std::fs::create_dir_all(&dir).map_err(|e| format!("{}: {e}", dir.display()))?;
-    let number = highest(&dir) + 1;
+    let number = highest(&dir).max(highest(&Path::new(&copied.drive).join("issues"))) + 1;
     let name = format!("{number}-{group}.vissue");
     let path = dir.join(&name);
     if path.exists() {

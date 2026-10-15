@@ -313,6 +313,28 @@ pub(crate) fn drive_anchor(drive: &Path) -> Result<(String, bool), String> {
     }
 }
 
+/// The anchor this computer accepted for `drive`, whatever its START HERE
+/// names now; none when it has accepted none. What a seal checked from one
+/// anchor is said against: accepting another one later does not make it the
+/// anchor those seals were checked from.
+pub(crate) fn accepted_anchor(drive: &Path) -> Result<Option<String>, String> {
+    let kept = match std::fs::read_to_string(anchors_file()) {
+        Ok(t) => t,
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => return Ok(None),
+        Err(e) => {
+            return Err(format!(
+                "{}: {e}: the anchors this computer accepted cannot be read",
+                anchors_file().display()
+            ))
+        }
+    };
+    let name = drive_name(drive, Path::new(""))?;
+    Ok(kept.lines().find_map(|l| {
+        let (fingerprint, d) = l.split_once(' ')?;
+        (d == name).then(|| fingerprint.to_string())
+    }))
+}
+
 /// The anchor: the programme manager's key fingerprint START HERE names, the
 /// first word of 64 hexadecimal digits in it. This computer remembers the one
 /// it accepted for each drive, and refuses a different one: a changed anchor
