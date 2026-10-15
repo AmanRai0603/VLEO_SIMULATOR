@@ -10,9 +10,7 @@
 use std::path::Path;
 
 fn main() {
-    let out = std::env::args()
-        .nth(1)
-        .expect("usage: design_rows <file>");
+    let out = std::env::args().nth(1).expect("usage: design_rows <file>");
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
     let (files, _) = vleo_files::convert::read_folder(&root.join("design"))
         .unwrap_or_else(|e| panic!("the design folder does not open: {e}"));
