@@ -22,6 +22,8 @@
 #            "@saved" is the `file` of the last result saved or uploaded;
 #            "@get:<path>" is the text of that GET, made first;
 #            "@vleor" is the last result saved, as a results file, base64.
+#            "@session" is this launch's word, which a POST that opens or uses
+#            a key, or writes the person's copy, carries.
 
 # --- the page ---------------------------------------------------------------
 
@@ -98,7 +100,7 @@ answer = "json"
 schema = "me"
 [[route.example]]
 name = "key-open-refused"
-params = [["file", "test-contract.vkey"], ["passphrase", "not the passphrase"]]
+params = [["session", "@session"], ["file", "test-contract.vkey"], ["passphrase", "not the passphrase"]]
 
 [[route]]
 method = "POST"
@@ -107,6 +109,61 @@ answer = "json"
 schema = "ok"
 [[route.example]]
 name = "key-close"
+
+# The person's copy of the database, and whom its files register.
+
+[[route]]
+method = "GET"
+path = "/v1/copy"
+answer = "json"
+schema = "copy"
+[[route.example]]
+name = "copy-none"
+
+[[route]]
+method = "POST"
+path = "/v1/copy"
+answer = "json"
+schema = "copy-taken"
+[[route.example]]
+name = "copy-refused"
+params = [["session", "@session"], ["drive", "/nowhere/at/all"]]
+
+[[route]]
+method = "GET"
+path = "/v1/people"
+answer = "json"
+schema = "people"
+[[route.example]]
+name = "people-programme"
+params = [["file", "programme"]]
+
+[[route]]
+method = "POST"
+path = "/v1/people/register"
+answer = "json"
+schema = "people-changed"
+[[route.example]]
+name = "people-register-refused"
+params = [["session", "@session"], ["file", "programme"], ["name", "Test Contract"], ["role", "subsystem engineer"]]
+
+[[route]]
+method = "POST"
+path = "/v1/people/replace"
+answer = "json"
+schema = "people-changed"
+[[route.example]]
+name = "people-replace-refused"
+params = [["session", "@session"], ["file", "programme"], ["name", "Test Contract"]]
+
+[[route]]
+method = "POST"
+path = "/v1/people/revoke"
+answer = "json"
+schema = "people-changed"
+[[route.example]]
+name = "people-revoke-refused"
+params = [["session", "@session"], ["file", "programme"], ["name", "Test Contract"], ["from", "2026-10-01"]]
 
 [[route]]
 method = "GET"

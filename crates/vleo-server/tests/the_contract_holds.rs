@@ -774,6 +774,8 @@ fn every_route_answers_as_the_contract_says() {
     std::env::set_var("VLEO_DATA", scratch.join("data"));
     // The keys too: a key is made here, and a person's own are never listed.
     std::env::set_var("VLEO_KEYS", scratch.join("keys"));
+    // And the working copy: nothing here copies over a person's own.
+    std::env::set_var("VLEO_COPY", scratch.join("copy"));
     let port =
         vleo_server::serve(Some(root()), 18731, false, true).expect("the server did not start");
 
@@ -834,6 +836,7 @@ fn every_route_answers_as_the_contract_says() {
                 .iter()
                 .map(|(k, v)| {
                     let v = v.replace("@saved", &saved);
+                    let v = v.replace("@session", &vleo_server::session());
                     let v = if v == "@vleor" {
                         vleor_of(&scratch, &saved)
                     } else {

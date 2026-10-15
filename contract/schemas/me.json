@@ -76,6 +76,20 @@
     "anchor": {
       "type": "string",
       "description": "The first time this computer opens a drive: the fingerprint START HERE names, to be compared and accepted with accept_anchor."
+    },
+    "drive": {
+      "type": "string",
+      "description": "The first time: the drive the anchor would be kept for."
+    },
+    "drive_newer": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Group files the drive holds newer than the working copy the key was opened on."
+    },
+    "warning": {
+      "type": "string"
     }
   },
   "required": [

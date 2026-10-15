@@ -27,3 +27,7 @@ __pycache__
 # /v1/fragment route, `xtask assemble` for the readers' folder). A page.html
 # left in a node folder from before is read by nothing; `xtask docs` removes it.
 crates/*/nodes/*/page.html
+
+# The person's working copy of the database, copied from the drive by the
+# program (VLEO_COPY). It is the design's owners' work, never committed here.
+/database/

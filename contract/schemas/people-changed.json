@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "people-changed",
+  "description": "A register, replace or revoke made in the working copy and signed with the open key, or why not.",
+  "type": "object",
+  "properties": {
+    "ok": {
+      "type": "boolean"
+    },
+    "file": {
+      "type": "string"
+    },
+    "message": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "ok",
+    "message"
+  ]
+}

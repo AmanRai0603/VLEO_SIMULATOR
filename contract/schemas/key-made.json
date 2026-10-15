@@ -21,6 +21,9 @@
     },
     "message": {
       "type": "string"
+    },
+    "proof": {
+      "type": "string"
     }
   },
   "required": [

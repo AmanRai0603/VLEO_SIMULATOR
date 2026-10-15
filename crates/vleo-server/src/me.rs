@@ -22,6 +22,7 @@ use vleo_files::keys::{LockedKey, SigningKey};
 use vleo_files::meta::Kind as FileKind;
 use vleo_files::model::File;
 use vleo_files::sqlite;
+use vleo_files::{copied, people};
 
 /// The key opened in this program, and who it says they are.
 struct Opened {
@@ -35,6 +36,50 @@ static OPEN: Mutex<Option<Opened>> = Mutex::new(None);
 /// The shortest passphrase a key is locked with.
 const SHORTEST: usize = 10;
 
+/// Wrong passphrases for one key file before `open` makes it wait, and how
+/// long: a person mistypes a few times; a program guessing does not stop.
+const TRIES: u32 = 5;
+const PAUSE: std::time::Duration = std::time::Duration::from_secs(30);
+
+/// Each key file's wrong passphrases in a row, and when the last was.
+static WRONG: Mutex<std::collections::BTreeMap<String, (u32, std::time::Instant)>> =
+    Mutex::new(std::collections::BTreeMap::new());
+
+/// The word this launch gives the page it opens, in the address's fragment,
+/// which a browser never sends. A request that opens or uses a key, or writes
+/// the person's copy, carries it back as `session`: the page the program
+/// opened can, and another person's program on the same computer, which can
+/// reach the loopback port too, cannot.
+static SESSION: std::sync::OnceLock<String> = std::sync::OnceLock::new();
+
+/// This launch's word (`SESSION`), made the first time it is asked for.
+pub fn session() -> &'static str {
+    SESSION.get_or_init(|| {
+        vleo_files::keys::random_bytes::<16>()
+            .map(|b| vleo_files::keys::hex(&b))
+            .unwrap_or_else(|_| {
+                // No randomness from the system: no word, so no request can
+                // carry it and nothing that needs it is done.
+                String::new()
+            })
+    })
+}
+
+/// Whether the request carries this launch's word.
+pub(super) fn carries_session(params: &str) -> Result<(), String> {
+    let given = param(params, "session").map(decode).unwrap_or_default();
+    let word = session();
+    // Compared in time that does not depend on where the first difference is.
+    let differs = given
+        .bytes()
+        .zip(word.bytes())
+        .fold(0u8, |acc, (a, b)| acc | (a ^ b));
+    if word.is_empty() || given.len() != word.len() || differs != 0 {
+        return Err("this request does not carry the word this launch gave its page: a key is opened or used, and the copy written, only from the page the program opened".into());
+    }
+    Ok(())
+}
+
 /// Where this computer keeps its people's keys, and the anchors it accepted,
 /// one for each drive.
 pub(super) fn keys_dir() -> PathBuf {
@@ -46,9 +91,14 @@ pub(super) fn keys_dir() -> PathBuf {
     }
 }
 
-/// The folder the people and groups are read from: the drive the program was
-/// started on, or the design beside it.
-fn database(ctx: &Ctx) -> PathBuf {
+/// The folder the people and groups are read from: the person's working copy
+/// when there is one, else the drive the program was started on, else the
+/// design beside it.
+pub(super) fn database(ctx: &Ctx) -> PathBuf {
+    let copy = copy::dir(ctx);
+    if copy.join(copied::FILE_NAME).is_file() {
+        return copy;
+    }
     match std::env::var_os("VLEO_DRIVE").filter(|v| !v.is_empty()) {
         Some(d) => PathBuf::from(d),
         None => ctx.root.join("design"),
@@ -94,7 +144,7 @@ fn private(path: &Path, mode: u32) {
     let _ = (path, mode);
 }
 
-fn refusal(message: &str) -> String {
+pub(super) fn refusal(message: &str) -> String {
     let mut j = Json::new();
     j.raw("{");
     j.bool_field("ok", false);
@@ -127,7 +177,7 @@ pub(super) fn make(params: &str) -> String {
             path.display()
         ));
     }
-    let made = (|| -> Result<(String, String), vleo_files::Error> {
+    let made = (|| -> Result<(String, String, String), vleo_files::Error> {
         let key = SigningKey::generate()?;
         let salt = vleo_files::keys::random_bytes::<16>()?;
         let nonce = vleo_files::keys::random_bytes::<12>()?;
@@ -141,10 +191,14 @@ pub(super) fn make(params: &str) -> String {
         private(&dir, 0o700);
         sqlite::write(&f, &path)?;
         private(&path, 0o600);
-        Ok((key.public().to_hex(), key.public().fingerprint()))
+        Ok((
+            key.public().to_hex(),
+            key.public().fingerprint(),
+            people::proof(&key, name),
+        ))
     })();
     match made {
-        Ok((public, fingerprint)) => {
+        Ok((public, fingerprint, proof)) => {
             let mut j = Json::new();
             j.raw("{");
             j.bool_field("ok", true);
@@ -152,9 +206,10 @@ pub(super) fn make(params: &str) -> String {
             j.str_field("file", &path.display().to_string());
             j.str_field("public_key", &public);
             j.str_field("fingerprint", &fingerprint);
+            j.str_field("proof", &proof);
             j.str_field(
                 "message",
-                "Your key is made and locked. Give the public key to whoever registers you: the programme manager, or your subsystem engineer.",
+                "Your key is made and locked. Give the public key and its proof to whoever registers you: the programme manager, or your subsystem engineer.",
             );
             j.raw("}");
             j.0
@@ -212,8 +267,9 @@ enum Anchor {
 
 /// Why the files could not be read: this computer has not accepted the
 /// drive's anchor yet, or anything else.
-enum NotRead {
-    FirstUse(String),
+pub(super) enum NotRead {
+    /// The fingerprint START HERE names, and the drive it would be kept for.
+    FirstUse(String, String),
     Why(String),
 }
 
@@ -224,11 +280,26 @@ fn anchors_file() -> PathBuf {
 }
 
 /// The drive as this computer names it, so each drive keeps its own anchor.
-fn drive_name(database: &Path) -> String {
-    std::fs::canonicalize(database)
-        .unwrap_or_else(|_| database.to_path_buf())
+/// A working copy is named by the drive it was copied from, so copying again
+/// asks nobody to accept the same anchor twice.
+/// A record beside the folder that does not read is refused, never taken for
+/// a folder of its own. The record is read only beside `copy`, the working
+/// copy the program took: one found on a drive opened as it is says nothing,
+/// for anyone who can write to that drive could have put it there.
+fn drive_name(database: &Path, copy: &Path) -> Result<String, String> {
+    let record = if database == copy {
+        copy::record(database)?
+    } else {
+        None
+    };
+    let at = match record {
+        Some(c) => PathBuf::from(c.drive),
+        None => database.to_path_buf(),
+    };
+    Ok(std::fs::canonicalize(&at)
+        .unwrap_or(at)
         .display()
-        .to_string()
+        .to_string())
 }
 
 /// The anchor: the programme manager's key fingerprint START HERE names, the
@@ -236,7 +307,7 @@ fn drive_name(database: &Path) -> String {
 /// it accepted for each drive, and refuses a different one: a changed anchor
 /// comes with a note signed by the old key, which is not read here yet
 /// (section 14).
-fn anchor(database: &Path) -> Result<Anchor, String> {
+fn anchor(database: &Path, copy: &Path) -> Result<Anchor, String> {
     let start = ["START HERE.md", "START HERE", "START_HERE.md"]
         .iter()
         .map(|n| database.join(n))
@@ -263,7 +334,7 @@ fn anchor(database: &Path) -> Result<Anchor, String> {
         ))
         }
     };
-    let drive = drive_name(database);
+    let drive = drive_name(database, copy)?;
     let before = kept.lines().find_map(|l| {
         let (fingerprint, d) = l.split_once(' ')?;
         (d == drive).then(|| fingerprint.to_string())
@@ -280,7 +351,8 @@ fn anchor(database: &Path) -> Result<Anchor, String> {
 }
 
 /// `fingerprint` remembered as this drive's anchor.
-fn accept(database: &Path, fingerprint: &str) -> Result<(), String> {
+fn accept(database: &Path, copy: &Path, fingerprint: &str) -> Result<(), String> {
+    let drive = drive_name(database, copy)?;
     use std::io::Write as _;
     let at = anchors_file();
     std::fs::create_dir_all(keys_dir())
@@ -290,16 +362,18 @@ fn accept(database: &Path, fingerprint: &str) -> Result<(), String> {
                 .append(true)
                 .open(&at)
         })
-        .and_then(|mut f| writeln!(f, "{fingerprint} {}", drive_name(database)))
+        .and_then(|mut f| writeln!(f, "{fingerprint} {drive}"))
         .map_err(|e| format!("{}: {e}", at.display()))
 }
 
 /// The files of a drive, opened through the chain.
-struct Chain {
-    programme: Registry,
-    systems: Option<Registry>,
-    groups: Vec<Registry>,
-    left_out: Vec<String>,
+pub(super) struct Chain {
+    /// The fingerprint the programme's file opened under.
+    pub(super) anchor: String,
+    pub(super) programme: Registry,
+    pub(super) systems: Option<Registry>,
+    pub(super) groups: Vec<Registry>,
+    pub(super) left_out: Vec<String>,
 }
 
 /// The programme's, the systems' and every group's files in `database`, opened
@@ -307,8 +381,12 @@ struct Chain {
 /// The first time this computer opens the drive, the anchor is remembered only
 /// once the programme's file opens under it and the person has accepted it
 /// (`accept_anchor`, the fingerprint they compared).
-fn registries(database: &Path, accept_anchor: &str) -> Result<Chain, NotRead> {
-    let (named, first) = match anchor(database).map_err(NotRead::Why)? {
+pub(super) fn registries(
+    database: &Path,
+    copy: &Path,
+    accept_anchor: &str,
+) -> Result<Chain, NotRead> {
+    let (named, first) = match anchor(database, copy).map_err(NotRead::Why)? {
         Anchor::Accepted(n) => (n, false),
         Anchor::FirstUse(n) => (n, true),
     };
@@ -330,9 +408,12 @@ fn registries(database: &Path, accept_anchor: &str) -> Result<Chain, NotRead> {
         .map_err(NotRead::Why)?;
     if first {
         if accept_anchor.trim().to_ascii_lowercase() != named {
-            return Err(NotRead::FirstUse(named));
+            return Err(NotRead::FirstUse(
+                named,
+                drive_name(database, copy).map_err(NotRead::Why)?,
+            ));
         }
-        accept(database, &named).map_err(NotRead::Why)?;
+        accept(database, copy, &named).map_err(NotRead::Why)?;
     }
     let mut left_out = Vec::new();
     let systems = match read("systems")
@@ -368,6 +449,7 @@ fn registries(database: &Path, accept_anchor: &str) -> Result<Chain, NotRead> {
         }
     }
     Ok(Chain {
+        anchor: named,
         programme,
         systems,
         groups: opened,
@@ -377,26 +459,52 @@ fn registries(database: &Path, accept_anchor: &str) -> Result<Chain, NotRead> {
 
 /// The first time this computer opens a drive: the anchor shown, to be
 /// compared and accepted.
-fn first_use(fingerprint: &str) -> String {
+fn first_use(fingerprint: &str, drive: &str) -> String {
     let mut j = Json::new();
     j.raw("{");
     j.bool_field("ok", false);
     j.str_field("anchor", fingerprint);
+    j.str_field("drive", drive);
     j.str_field(
         "message",
         &format!(
-            "This computer has not opened this drive before. START HERE names the programme manager's key {fingerprint}. Compare it, every digit, with the one the programme manager gave you; if they agree, accept it, and this computer remembers it for this drive."
+            "This computer has not opened the drive {drive} before. Its START HERE names the programme manager's key {fingerprint}. Compare it, every digit, with the one the programme manager gave you; if they agree, accept it, and this computer remembers it for that drive."
         ),
     );
     j.raw("}");
     j.0
 }
 
-fn me_json(open: Option<&Opened>, left_out: &[String]) -> String {
+fn me_json(
+    open: Option<&Opened>,
+    left_out: &[String],
+    newer: &Result<Vec<String>, String>,
+) -> String {
     let mut j = Json::new();
     j.raw("{");
     j.bool_field("ok", true);
     j.bool_field("open", open.is_some());
+    if let Err(why) = newer {
+        j.str_field(
+            "warning",
+            &format!("The drive could not be checked for group files newer than your copy: {why}"),
+        );
+    }
+    let newer: &[String] = newer.as_deref().unwrap_or(&[]);
+    if !newer.is_empty() {
+        j.key("drive_newer").raw("[");
+        for (i, x) in newer.iter().enumerate() {
+            if i > 0 {
+                j.raw(",");
+            }
+            j.raw(&json::string(x));
+        }
+        j.raw("]");
+        j.str_field(
+            "warning",
+            "The drive holds newer group files than your copy, a revocation among them perhaps: who your key belongs to is read from your copy. Copy again once your work is back.",
+        );
+    }
     if let Some(o) = open {
         j.str_field("name", &o.me.name);
         j.str_field("fingerprint", &o.fingerprint);
@@ -451,10 +559,48 @@ fn me_json(open: Option<&Opened>, left_out: &[String]) -> String {
     j.0
 }
 
+/// The group files the drive holds newer than the working copy, when
+/// `database` is that copy; or why the drive could not be checked. Only the
+/// group files are read, not the whole drive.
+fn newer_on_drive(database: &Path, copy: &Path) -> Result<Vec<String>, String> {
+    if database != copy {
+        return Ok(Vec::new());
+    }
+    let Some(r) = copy::record(database)? else {
+        return Ok(Vec::new());
+    };
+    let mut was = r.clone();
+    was.files.retain(|p, _| p.ends_with(".vgroup"));
+    Ok(was.changed(&copy::group_files(Path::new(&r.drive))?))
+}
+
+/// The page the program opens: a file only this person can read, in their
+/// keys folder, that takes the browser to the address with this launch's word.
+/// The word never goes in a program's arguments, which anyone on the computer
+/// can read.
+pub(super) fn launch_page(port: u16) -> Result<PathBuf, String> {
+    let dir = keys_dir();
+    std::fs::create_dir_all(&dir).map_err(|e| format!("{}: {e}", dir.display()))?;
+    private(&dir, 0o700);
+    let at = dir.join("open.html");
+    let address = format!("http://127.0.0.1:{port}/#session={}", session());
+    let page = format!(
+        "<!doctype html>\n<meta charset=\"utf-8\">\n<title>VLEO</title>\n<script>location.replace({});</script>\n<p>Opening <a href=\"http://127.0.0.1:{port}/\">the program</a>.</p>\n",
+        json::string(&address)
+    );
+    let _ = std::fs::remove_file(&at);
+    std::fs::write(&at, page).map_err(|e| format!("{}: {e}", at.display()))?;
+    private(&at, 0o600);
+    Ok(at)
+}
+
 /// `POST /v1/key/open`: the key in `file` (a name in the keys folder),
 /// unlocked by `passphrase`, and the person the files register with it. It is
 /// held only if both hold.
 pub(super) fn open(params: &str, ctx: &Ctx) -> String {
+    if let Err(why) = carries_session(params) {
+        return refusal(&why);
+    }
     // Whatever happens next, nobody's key stays open from before.
     *OPEN.lock().unwrap_or_else(|p| p.into_inner()) = None;
     let file = param(params, "file").map(decode).unwrap_or_default();
@@ -469,7 +615,19 @@ pub(super) fn open(params: &str, ctx: &Ctx) -> String {
         Ok(_) => return refusal(&format!("{file} is not a key file")),
         Err(e) => return refusal(&format!("{file}: {}", e.message())),
     };
-    let key = match f
+    {
+        let wrong = WRONG.lock().unwrap_or_else(|p| p.into_inner());
+        if let Some((n, last)) = wrong.get(&file) {
+            let waited = last.elapsed();
+            if *n >= TRIES && waited < PAUSE {
+                return refusal(&format!(
+                    "{n} wrong passphrases in a row for {file}: try again in {} seconds",
+                    (PAUSE - waited).as_secs() + 1
+                ));
+            }
+        }
+    }
+    let unlocked = f
         .locked_keys
         .first()
         .ok_or_else(|| {
@@ -479,17 +637,27 @@ pub(super) fn open(params: &str, ctx: &Ctx) -> String {
             )
         })
         .and_then(LockedKey::from_row)
-        .and_then(|k| k.unlock(&passphrase))
-    {
-        Ok(k) => k,
-        Err(e) => return refusal(e.message()),
+        .and_then(|k| k.unlock(&passphrase));
+    let key = {
+        let mut wrong = WRONG.lock().unwrap_or_else(|p| p.into_inner());
+        match unlocked {
+            Ok(k) => {
+                wrong.remove(&file);
+                k
+            }
+            Err(e) => {
+                let n = wrong.get(&file).map_or(0, |(n, _)| *n) + 1;
+                wrong.insert(file.clone(), (n, std::time::Instant::now()));
+                return refusal(e.message());
+            }
+        }
     };
     let accept_anchor = param(params, "accept_anchor")
         .map(decode)
         .unwrap_or_default();
-    let c = match registries(&database(ctx), &accept_anchor) {
+    let c = match registries(&database(ctx), &copy::dir(ctx), &accept_anchor) {
         Ok(c) => c,
-        Err(NotRead::FirstUse(fingerprint)) => return first_use(&fingerprint),
+        Err(NotRead::FirstUse(fingerprint, drive)) => return first_use(&fingerprint, &drive),
         Err(NotRead::Why(why)) => {
             return refusal(&format!(
                 "Your key opened, but who it belongs to cannot be read: {why}"
@@ -511,7 +679,8 @@ pub(super) fn open(params: &str, ctx: &Ctx) -> String {
                 key,
                 me,
             };
-            let out = me_json(Some(&opened), &left_out);
+            let newer = newer_on_drive(&database(ctx), &copy::dir(ctx));
+            let out = me_json(Some(&opened), &left_out, &newer);
             *OPEN.lock().unwrap_or_else(|p| p.into_inner()) = Some(opened);
             out
         }
@@ -531,11 +700,11 @@ pub(super) fn close() -> String {
 /// `GET /v1/me`: who is using the program, or that no key is open.
 pub(super) fn me() -> String {
     let open = OPEN.lock().unwrap_or_else(|p| p.into_inner());
-    me_json(open.as_ref(), &[])
+    me_json(open.as_ref(), &[], &Ok(Vec::new()))
 }
 
-/// The open key, for the signing that F3 and F5 add. Nothing signs yet.
-#[allow(dead_code)]
+/// The open key and who it is, for whatever signs with it: a change to whom a
+/// file registers (`people.rs`), and the signing F3 and F5 add.
 pub(super) fn with_key<T>(f: impl FnOnce(&SigningKey, &Me) -> T) -> Option<T> {
     let open = OPEN.lock().unwrap_or_else(|p| p.into_inner());
     open.as_ref().map(|o| f(&o.key, &o.me))
