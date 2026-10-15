@@ -16,6 +16,7 @@
 //! - a node engineer whose name is made of what a page must escape;
 //! - beside solar, Ola owns power, which has a release sealed, and thermal,
 //!   whose file is signed by someone who does not own it, so it is refused;
+//! - structure, mounted for Ola, whose folder holds no group file;
 //! - and a folder under groups/ that is not a group.
 //! - Test Stranger, whom no file registers.
 //!
@@ -139,6 +140,9 @@ fn main() {
     mount(&mut systems, "sys_power", "l3_power", "Test Ola");
     mount(&mut systems, "sys_thermal", "l3_thermal", "Test Ola");
     mount(&mut systems, "sys_propulsion", "l3_prop", "Test Ivo");
+    // Mounted, but its folder holds no group file: refused, not passed over.
+    mount(&mut systems, "sys_structure", "l3_struct", "Test Ola");
+    std::fs::create_dir_all(drive.join("groups/l3_struct")).unwrap();
     write(
         &signed(systems, "Test Sam", &sam),
         &drive.join("groups/systems/systems.vgroup"),

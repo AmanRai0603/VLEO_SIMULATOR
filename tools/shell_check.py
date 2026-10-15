@@ -14,8 +14,8 @@ as people would:
   person types the fingerprint they were given;
 - a wrong passphrase is refused in plain words;
 - the programme manager registers a subsystem engineer from what he handed
-  over, who then finds his role, and his group with nothing sealed, in My
-  work; the system engineer finds his;
+  over, who then finds his role in My work, and his group, which has no file
+  yet; the system engineer finds his;
 - the node engineer finds her unsigned node and not her signed one; the
   subsystem engineer her group with nothing sealed and not the sealed one,
   and her refused group, which the system engineer sees too and the
@@ -192,7 +192,7 @@ def check():
             open_key('test-ivo.vkey')
             step('who opens the application on the same folder and finds his role in My work',
                  'Test Ivo' in who() and 'subsystem engineer' in who()
-                 and any('l3_prop' in x for x in items('nothing sealed')), main())
+                 and any('l3_prop' in x and 'holds no' in x for x in items('refused')), main())
 
             close_key()
             open_key('test-sam.vkey')
@@ -213,6 +213,8 @@ def check():
                  len(sealed) == 1 and 'l3_solar' in sealed[0], main())
             step('a file in releases that is not a release seals nothing', 'l3_solar' in ' '.join(sealed))
             step('and her own group refused', any('l3_thermal' in x for x in items('refused')), main())
+            step('and a mounted group whose file is missing, said, not passed over',
+                 any('l3_struct' in x and 'holds no' in x for x in items('refused')), main())
             act(lambda: p.select_option('#sh-pfile', 'l3_solar'))
             people = p.inner_text('#sh-people')
             step('a name is shown as it is, never read as the page\'s own',

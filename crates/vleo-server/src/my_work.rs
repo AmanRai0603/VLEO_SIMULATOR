@@ -134,13 +134,15 @@ fn items(me: &chain::Me, c: &me::Chain, database: &Path) -> Vec<Item> {
             .any(|s| s.file.mounts.iter().any(|m| m.group_id == g))
     };
     // The files below this person that the chain refuses: theirs if they own
-    // the group, have nodes in it, or own the file that mounts it. The
-    // systems' file is mounted by the programme's, so it is its manager's.
+    // the group, have nodes in it, or own the file that mounts it: the
+    // programme's file is its manager's (the systems' file among what it
+    // mounts), and the systems' file its system engineer's.
     for why in &c.left_out {
         let (group, says) = why.split_once(": ").unwrap_or(("", why.as_str()));
+        let mounted_by_programme = c.programme.file.mounts.iter().any(|m| m.group_id == group);
         let mine = me.owns.iter().any(|g| g == group)
             || me.nodes.iter().any(|(g, _)| g == group)
-            || (group == "systems" && manages)
+            || (mounted_by_programme && manages)
             || (me.owns.iter().any(|g| g == "systems") && mounted_by_systems(group));
         if mine {
             out.push(Item {

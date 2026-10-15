@@ -340,11 +340,13 @@ async function change(e) {
 takeWord();
 document.addEventListener('click', click);
 document.addEventListener('change', change);
-// A tab left behind holds no passphrase.
-document.addEventListener('visibilitychange', () => {
-  if (document.hidden && S.pending) { dropPending(); draw(); }
-});
+// The passphrase is held two minutes at most: long enough to find the
+// fingerprint one was given, in another tab or on paper, and no longer.
 setInterval(() => {
-  if (S.pending && Date.now() - S.pending.at > PENDING_MS) { dropPending(); draw(); }
+  if (S.pending && Date.now() - S.pending.at > PENDING_MS) {
+    dropPending();
+    S.notice = { ok: false, text: 'Two minutes passed, so the passphrase is no longer held: open your key again to accept the anchor.' };
+    draw();
+  }
 }, 10000);
 refresh();

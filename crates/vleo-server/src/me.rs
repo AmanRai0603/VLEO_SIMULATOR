@@ -393,6 +393,12 @@ pub(super) fn registries(
     let groups = database.join("groups");
     let read = |id: &str| -> Result<File, String> {
         let p = groups.join(id).join(format!("{id}.vgroup"));
+        if !p.is_file() {
+            return Err(format!(
+                "{id} is mounted, but {} holds no {id}.vgroup",
+                groups.join(id).display()
+            ));
+        }
         let f = sqlite::read(&p).map_err(|e| format!("{}: {}", p.display(), e.message()))?;
         match f.meta.get("group_id") {
             Some(g) if g == id => Ok(f),
@@ -435,6 +441,18 @@ pub(super) fn registries(
         // A folder that holds no group file of its own name is not a group.
         .filter(|id| groups.join(id).join(format!("{id}.vgroup")).is_file())
         .collect();
+    // A group a file mounts is read whether or not its folder holds its file:
+    // one gone missing is refused and said, never passed over.
+    for m in programme
+        .file
+        .mounts
+        .iter()
+        .chain(systems.iter().flat_map(|s| s.file.mounts.iter()))
+    {
+        if m.group_id != "systems" && !ids.contains(&m.group_id) {
+            ids.push(m.group_id.clone());
+        }
+    }
     ids.sort();
     // Only the programme's and the systems' files mount.
     let parents: Vec<&Registry> = std::iter::once(&programme).chain(systems.iter()).collect();
@@ -692,8 +710,9 @@ pub(super) fn open(params: &str, ctx: &Ctx) -> String {
                 .chain(c.systems.iter())
                 .chain(c.groups.iter())
                 .any(|r| r.file.keys.iter().any(|k| k.public_key == public));
-            // The refused files that list this key: read only to say which,
-            // never to count it.
+            // The refused files that list this key: read without checking,
+            // only to say which, never to count it. A file planted there can at
+            // worst withhold the handover, never give one.
             let db = database(ctx);
             let in_refused: Vec<&String> = left_out
                 .iter()
