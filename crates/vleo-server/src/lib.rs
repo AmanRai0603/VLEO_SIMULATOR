@@ -630,6 +630,14 @@ fn route(
                 ctx,
             ),
         ),
+        // The node signed as the day's work (F3-b).
+        ("POST", p) if p.starts_with("/v1/node/") && p.ends_with("/sign") => ok_json(
+            node_file::sign_route(
+                p.trim_start_matches("/v1/node/").trim_end_matches("/sign"),
+                params,
+                ctx,
+            ),
+        ),
         ("GET", p) if p.starts_with("/v1/node/") => {
             let id = p.trim_start_matches("/v1/node/");
             node_endpoint(ctx, id)

@@ -233,6 +233,16 @@ path = "/v1/node/sw_ap_design/save"
 params = [["session", "@session"], ["opened", "0"], ["file", ""]]
 
 [[route]]
+method = "POST"
+path = "/v1/node/<id>/sign"
+answer = "json"
+schema = "node-signed"
+[[route.example]]
+name = "node-sign-refused"
+path = "/v1/node/sw_ap_design/sign"
+params = [["session", "@session"], ["opened", "0"]]
+
+[[route]]
 method = "GET"
 path = "/v1/lesson/<id>"
 answer = "json"

@@ -138,9 +138,82 @@ pub fn is_assistant(who: &str) -> bool {
         && !who.trim().is_empty()
 }
 
-/// Every check of a release's content, with every finding.
+/// Every check of a release's content, with every finding: each node's, and
+/// the release's own (its requirements, and the record of what changed).
 pub fn check_release(f: &File) -> Findings {
     let mut out = Findings::default();
+    blocks(f, &mut out);
+    signers(f, &mut out);
+    requirements(f, &mut out);
+    derisking(f, &mut out);
+    out
+}
+
+/// Every check of a node file's content: each of its blocks — where its inputs
+/// come from, who made its method, that its method reproduces its cases — that
+/// no case's expected value came from the code under test, and that no
+/// assistant signed it. What a node is held to before it is signed; the
+/// release's own checks (`check_release`) ask for what only a release has.
+///
+/// A node is signed for what it decides or computes, so one that holds
+/// nothing a check can read is refused here by name, never signed unread: an
+/// archived block, an open one, a stated one that states no number, and one
+/// whose behaviour nothing checks yet.
+pub fn check_node(f: &File) -> Findings {
+    let mut out = Findings::default();
+    for b in &f.blocks {
+        if b.archived != 0 {
+            out.error(&b.id, "is archived: an archived node is not signed");
+            continue;
+        }
+        match b.behaviour.as_str() {
+            "method" => {}
+            "stated" => {
+                let states = f.ports.iter().any(|p| {
+                    p.block_uid == b.uid && p.direction == "out" && number(&p.value).is_some()
+                });
+                if !states {
+                    out.error(
+                        &b.id,
+                        "states no value that is a number: a stated node is signed for the value it states",
+                    );
+                }
+            }
+            "open" => out.error(
+                &b.id,
+                "is open: nothing in it is decided or computed yet, so there is nothing to sign",
+            ),
+            other => out.error(
+                &b.id,
+                format!("is a {other} node, and nothing checks a {other} node yet: it is not signed until something does"),
+            ),
+        }
+    }
+    blocks(f, &mut out);
+    cases(f, &mut out);
+    signers(f, &mut out);
+    out
+}
+
+/// No case's expected value comes from the code under test (AGENTS.md, rule
+/// 4): a case whose provenance is `self-snapshot` or `agent-generated` is
+/// refused, by name.
+fn cases(f: &File, out: &mut Findings) {
+    for c in &f.cases {
+        if matches!(c.provenance.as_str(), "self-snapshot" | "agent-generated") {
+            out.error(
+                &place_of(f, &c.block_uid),
+                format!(
+                    "its case {:?} says its expected value is {}: an expected value never comes from the code under test",
+                    c.name, c.provenance
+                ),
+            );
+        }
+    }
+}
+
+/// The checks of each live block.
+fn blocks(f: &File, out: &mut Findings) {
     let live: Vec<&Block> = f.blocks.iter().filter(|b| b.archived == 0).collect();
     for b in &live {
         let ports: Vec<&Port> = f.ports.iter().filter(|p| p.block_uid == b.uid).collect();
@@ -150,10 +223,10 @@ pub fn check_release(f: &File) -> Findings {
             .filter(|p| p.direction == "in")
             .collect();
         let out_port = ports.iter().copied().find(|p| p.direction == "out");
-        inputs(f, b, &ins, &mut out);
+        inputs(f, b, &ins, out);
         match b.behaviour.as_str() {
             "method" => {
-                declaration(f, b, &mut out);
+                declaration(f, b, out);
                 if !f.texts.iter().any(|t| {
                     t.scope == b.uid && t.kind == "pseudocode" && !t.body.trim().is_empty()
                 }) {
@@ -162,8 +235,8 @@ pub fn check_release(f: &File) -> Findings {
                         "has no method: a computed node is its method in the method language",
                     );
                 }
-                results(f, b, &ins, out_port, &mut out);
-                method(f, b, &ins, out_port, &mut out);
+                results(f, b, &ins, out_port, out);
+                method(f, b, &ins, out_port, out);
             }
             "stated" => {
                 if let Some(p) = out_port {
@@ -183,10 +256,6 @@ pub fn check_release(f: &File) -> Findings {
             _ => {}
         }
     }
-    signers(f, &mut out);
-    requirements(f, &mut out);
-    derisking(f, &mut out);
-    out
 }
 
 /// Each input says where it comes from, and that place exists; its default is
