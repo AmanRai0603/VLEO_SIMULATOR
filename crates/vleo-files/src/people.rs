@@ -11,13 +11,22 @@
 //!   them replaces it. The programme manager's is the anchor, and changes with
 //!   a note signed by the old key, not here.
 //!
+//! - **A key is its person's.** A key is registered only with a proof, made
+//!   with that key, that its holder offers it for that name ([`proof`]), so
+//!   nobody registers a key someone else holds.
+//! - **The programme has one programme manager and one system engineer.**
+//!   Anyone else in those roles is their deputy, and a deputy stands in for
+//!   the holder, never for another deputy.
+//! - **Only a group file changes.** A release is never edited.
+//!
 //! A change gives the file back re-signed by whoever made it, and checked
 //! through the chain as it will be read. A change that would leave the file
 //! refused when it is next opened is refused now, and nothing is given back.
 
 use crate::chain::{self, Registry, FILE};
 use crate::error::{Error, ErrorKind};
-use crate::keys::{PublicKey, SigningKey};
+use crate::keys::{PublicKey, Signature, SigningKey};
+use crate::meta::Kind;
 use crate::model::{File, Person, PersonKey};
 
 fn refused(message: impl Into<String>) -> Error {
@@ -40,16 +49,44 @@ pub enum Valve<'a> {
     },
 }
 
-/// One change to the people a file registers.
+/// One change to the people a file registers. `proof` is [`proof`], made
+/// with the key being registered.
 pub enum Change {
     /// A person not yet registered here, with their first key.
-    Register { person: Person, public_key: String },
+    Register {
+        person: Person,
+        public_key: String,
+        proof: String,
+    },
     /// A registered person's key: their current one revoked from the change,
     /// and this one counted from it.
-    Replace { person: String, public_key: String },
-    /// One key of a registered person, revoked from the change: a signature
-    /// made with it from then does not check; one made before still does.
-    Revoke { person: String, public_key: String },
+    Replace {
+        person: String,
+        public_key: String,
+        proof: String,
+    },
+    /// One key of a registered person, revoked from `from`, the day it may
+    /// have been in someone else's hands, no later than the change: a
+    /// signature made with it from then does not check; one made before
+    /// still does.
+    Revoke {
+        person: String,
+        public_key: String,
+        from: String,
+    },
+}
+
+/// What a key signs to show it is offered by its holder for `person`.
+fn proof_message(person: &str, public_key: &str) -> Vec<u8> {
+    format!("vleo: this key is mine, {person}, {public_key}").into_bytes()
+}
+
+/// A key's proof that its holder offers it for `person`: made on the
+/// person's own computer, and given with the public key to whoever
+/// registers them.
+pub fn proof(key: &SigningKey, person: &str) -> String {
+    key.sign(&proof_message(person, &key.public().to_hex()))
+        .to_hex()
 }
 
 impl Valve<'_> {
@@ -78,15 +115,27 @@ pub fn change(
     change: &Change,
 ) -> Result<File, Error> {
     let when = chain::instant(at, "the moment of the change")?;
+    let kind = file.kind()?;
+    if kind != Kind::Group {
+        return Err(Error::new(
+            ErrorKind::WrongKind,
+            format!("only a group file's people are changed: a {kind} is never edited"),
+        ));
+    }
     let now = valve.open(file)?;
     let mine = key.public().to_hex();
     let (roles, holder) = match valve {
-        Valve::Programme { .. } => {
+        Valve::Programme { anchor } => {
             now.key(by, &mine, at)?;
             if !now.acts_as(by, "programme manager") {
                 return Err(refused(format!(
                     "{by} may not change whom the programme's file registers: the programme manager does"
                 )));
+            }
+            if key.public().fingerprint() != *anchor {
+                return Err(refused(
+                    "the programme's file is changed with the key START HERE anchors, the programme manager's",
+                ));
             }
             (IN_THE_PROGRAMME, "the programme manager")
         }
@@ -96,7 +145,12 @@ pub fn change(
         } => {
             let id = file.meta.get("group_id").cloned().unwrap_or_default();
             programme.key(by, &mine, at)?;
-            let owner = chain::owner_of(mounted_by, &id).unwrap_or_default();
+            let owner = chain::owner_of(mounted_by, &id).ok_or_else(|| {
+                refused(format!(
+                    "{} mounts no group {id:?}, so nobody changes whom it registers",
+                    mounted_by.from
+                ))
+            })?;
             if !programme.acts_for(by, owner) {
                 return Err(refused(format!(
                     "{by} may not change whom {id}'s group file registers: its owner {owner}, or their deputy, does"
@@ -115,7 +169,11 @@ pub fn change(
     };
     let mut out = file.clone();
     match change {
-        Change::Register { person, public_key } => {
+        Change::Register {
+            person,
+            public_key,
+            proof,
+        } => {
             if person.name.trim().is_empty() {
                 return Err(refused("a person is registered by their name"));
             }
@@ -133,18 +191,31 @@ pub fn change(
                     person.role
                 )));
             }
-            if !person.deputy_for.is_empty()
-                && !out
+            let one_holder =
+                ["programme manager", "system engineer"].contains(&person.role.as_str());
+            if one_holder
+                && person.deputy_for.is_empty()
+                && out
                     .people
                     .iter()
-                    .any(|p| p.name == person.deputy_for && p.role == person.role)
+                    .any(|p| p.role == person.role && p.deputy_for.is_empty())
             {
                 return Err(refused(format!(
-                    "{} is registered as deputy for {}, who is not a {} in {}: a deputy holds the role of whom they stand in for",
+                    "the programme has one {}: {} is registered as their deputy, or not at all",
+                    person.role, person.name
+                )));
+            }
+            if !person.deputy_for.is_empty()
+                && !out.people.iter().any(|p| {
+                    p.name == person.deputy_for && p.role == person.role && p.deputy_for.is_empty()
+                })
+            {
+                return Err(refused(format!(
+                    "{} is registered as deputy for {}, who is not a {} in {}, or is a deputy: a deputy holds the role of whom they stand in for, and stands in for the holder",
                     person.name, person.deputy_for, person.role, now.from
                 )));
             }
-            new_key(&out, &person.name, public_key, &now.from)?;
+            new_key(&out, &person.name, public_key, proof, &now.from)?;
             out.people.push(person.clone());
             out.keys.push(PersonKey {
                 person: person.name.clone(),
@@ -154,10 +225,14 @@ pub fn change(
                 revoked_from: String::new(),
             });
         }
-        Change::Replace { person, public_key } => {
+        Change::Replace {
+            person,
+            public_key,
+            proof,
+        } => {
             not_mine(person, by, holder)?;
             registered(&out, person, &now.from)?;
-            new_key(&out, person, public_key, &now.from)?;
+            new_key(&out, person, public_key, proof, &now.from)?;
             for k in out.keys.iter_mut().filter(|k| &k.person == person) {
                 if !chain::revoked_by(k, when)? {
                     k.revoked_from = at.to_string();
@@ -171,9 +246,19 @@ pub fn change(
                 revoked_from: String::new(),
             });
         }
-        Change::Revoke { person, public_key } => {
+        Change::Revoke {
+            person,
+            public_key,
+            from,
+        } => {
             not_mine(person, by, holder)?;
             registered(&out, person, &now.from)?;
+            let from_t = chain::instant(from, "the day a key is revoked from")?;
+            if from_t > when {
+                return Err(refused(format!(
+                    "{person}'s key is revoked from {from}, after the change: a revocation is made on or after the day it counts from"
+                )));
+            }
             let k = out
                 .keys
                 .iter_mut()
@@ -181,18 +266,20 @@ pub fn change(
                 .ok_or_else(|| {
                     refused(format!("{} registers no such key for {person}", now.from))
                 })?;
-            if chain::revoked_by(k, when)? {
+            if chain::revoked_by(k, from_t)? {
                 return Err(refused(format!(
                     "{person}'s key is revoked from {} already",
                     k.revoked_from
                 )));
             }
-            k.revoked_from = at.to_string();
+            k.revoked_from = from.to_string();
         }
     }
     // The file's signatures were made over what it was; the change is signed
     // afresh by whoever made it, and the file must open as it will be read.
-    out.signatures.retain(|s| s.scope != FILE);
+    // A "changes" verdict and its note are kept: they say what someone asked.
+    out.signatures
+        .retain(|s| s.scope != FILE || s.verdict != "ok");
     let row = chain::sign(&out, FILE, by, key, at, "ok", "")?;
     out.signatures.push(row);
     valve.open(&out).map_err(|e| {
@@ -222,10 +309,17 @@ fn registered(f: &File, person: &str, from: &str) -> Result<(), Error> {
     }
 }
 
-/// A key that may be registered for `person`: a public key, and nobody's here
-/// already. One key says one person.
-fn new_key(f: &File, person: &str, public_key: &str, from: &str) -> Result<(), Error> {
-    PublicKey::from_hex(public_key)?;
+/// A key that may be registered for `person`: a public key, offered by its
+/// holder for that name, and nobody's here already. One key says one person.
+fn new_key(f: &File, person: &str, public_key: &str, proof: &str, from: &str) -> Result<(), Error> {
+    let k = PublicKey::from_hex(public_key)?;
+    Signature::from_hex(proof)
+        .and_then(|s| k.check(&proof_message(person, public_key), &s))
+        .map_err(|_| {
+            refused(format!(
+                "the key offered for {person} carries no proof, made with it, that its holder offers it for that name: nobody registers a key that is not theirs"
+            ))
+        })?;
     if let Some(k) = f.keys.iter().find(|k| k.public_key == public_key) {
         return Err(refused(format!(
             "this key is registered in {from} for {} already: one key says one person, so {person} brings their own",

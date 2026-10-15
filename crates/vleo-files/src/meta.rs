@@ -319,7 +319,6 @@ impl File {
         })
     }
 
-    /// Everything the meta must say for this kind, each by its rule.
     /// The released design a file was based on, counted: 0 before the first
     /// release, then one more with each. It stands beside `based_on`, the
     /// release's name, in a file that carries one; a file from before it was
@@ -349,6 +348,7 @@ impl File {
         }
     }
 
+    /// Everything the meta must say for this kind, each by its rule.
     pub fn check_meta(&self) -> Result<Kind, Error> {
         let kind = self.kind()?;
         let mut wrong = Vec::new();

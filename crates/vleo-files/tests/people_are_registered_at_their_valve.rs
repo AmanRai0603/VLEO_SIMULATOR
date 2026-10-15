@@ -132,6 +132,15 @@ fn register_change(name: &str, role: &str, deputy_for: &str, k: &SigningKey) -> 
     Change::Register {
         person: person(name, role, deputy_for),
         public_key: k.public().to_hex(),
+        proof: people::proof(k, name),
+    }
+}
+
+fn replace_change(name: &str, k: &SigningKey) -> Change {
+    Change::Replace {
+        person: s(name),
+        public_key: k.public().to_hex(),
+        proof: people::proof(k, name),
     }
 }
 
@@ -254,10 +263,7 @@ fn a_replaced_key_is_revoked_from_the_change_and_the_old_signatures_stand() {
         "Pat Morgan",
         &key(11),
         "2026-03-01",
-        &Change::Replace {
-            person: s("Ivo Thrust"),
-            public_key: key(30).public().to_hex(),
-        },
+        &replace_change("Ivo Thrust", &key(30)),
     )
     .unwrap();
     let pr = opened(f);
@@ -287,6 +293,7 @@ fn a_key_is_revoked_once_and_never_by_its_own_person() {
     let revoke = |who: &str| Change::Revoke {
         person: s(who),
         public_key: key(15).public().to_hex(),
+        from: s("2026-03-01"),
     };
     let f = people::change(
         &programme_file(),
@@ -321,6 +328,7 @@ fn a_key_is_revoked_once_and_never_by_its_own_person() {
             &Change::Revoke {
                 person: s("Pat Morgan"),
                 public_key: key(11).public().to_hex(),
+                from: s("2026-03-01"),
             },
         )
         .unwrap_err(),
@@ -436,7 +444,7 @@ fn a_change_that_would_not_open_is_not_made() {
         .unwrap_err(),
     );
     assert!(
-        e.contains("would leave the programme's file refused when it is next opened"),
+        e.contains("is changed with the key START HERE anchors"),
         "{e}"
     );
 }
@@ -458,6 +466,13 @@ fn base_version_counts_the_released_design_a_file_is_based_on() {
     assert_eq!(f.base_version(), Some(7));
 
     f.meta.insert(s("based_on"), s(""));
+    f.meta.insert(s("base_version"), s("1"));
+    let e = message(f.check_meta().unwrap_err());
+    assert!(e.contains("base_version is 1"), "{e}");
+    f.meta.insert(s("based_on"), s("2026.11.2"));
+    f.meta.insert(s("base_version"), s("7"));
+
+    f.meta.insert(s("based_on"), s(""));
     let e = message(f.check_meta().unwrap_err());
     assert!(e.contains("based_on names no released design"), "{e}");
     for v in ["07", "-1", "seven", ""] {
@@ -465,4 +480,152 @@ fn base_version_counts_the_released_design_a_file_is_based_on() {
         let e = message(f.check_meta().unwrap_err());
         assert!(e.contains("not a whole number from 0"), "{v:?}: {e}");
     }
+}
+
+#[test]
+fn the_programme_has_one_programme_manager_and_one_system_engineer() {
+    let a = anchor();
+    let valve = Valve::Programme { anchor: &a };
+    let made = |c: &Change| {
+        people::change(
+            &programme_file(),
+            &valve,
+            "Pat Morgan",
+            &key(11),
+            "2026-03-01",
+            c,
+        )
+    };
+    for role in ["system engineer", "programme manager"] {
+        let e = message(made(&register_change("Mal Lory", role, "", &key(30))).unwrap_err());
+        assert!(e.contains(&format!("the programme has one {role}")), "{e}");
+    }
+    made(&register_change(
+        "Sid Standin",
+        "system engineer",
+        "Sam Engel",
+        &key(30),
+    ))
+    .expect("the system engineer's deputy");
+    // A deputy stands in for the holder, never for another deputy.
+    let e = message(
+        made(&register_change(
+            "Dee Two",
+            "subsystem engineer",
+            "Dee Puty",
+            &key(30),
+        ))
+        .unwrap_err(),
+    );
+    assert!(e.contains("or is a deputy"), "{e}");
+}
+
+#[test]
+fn a_key_is_registered_only_with_its_holders_proof() {
+    let a = anchor();
+    let valve = Valve::Programme { anchor: &a };
+    // Dee offers, as Ivo's "new key", Nia's public key, which anyone can read.
+    let stolen = Change::Replace {
+        person: s("Ivo Thrust"),
+        public_key: key(16).public().to_hex(),
+        proof: people::proof(&key(14), "Ivo Thrust"),
+    };
+    let e = message(
+        people::change(
+            &programme_file(),
+            &valve,
+            "Pat Morgan",
+            &key(11),
+            "2026-03-01",
+            &stolen,
+        )
+        .unwrap_err(),
+    );
+    assert!(
+        e.contains("nobody registers a key that is not theirs"),
+        "{e}"
+    );
+    // A proof made for another name does not carry over.
+    let renamed = Change::Register {
+        person: person("Tom Thermal", "subsystem engineer", ""),
+        public_key: key(30).public().to_hex(),
+        proof: people::proof(&key(30), "Somebody Else"),
+    };
+    let e = message(
+        people::change(
+            &programme_file(),
+            &valve,
+            "Pat Morgan",
+            &key(11),
+            "2026-03-01",
+            &renamed,
+        )
+        .unwrap_err(),
+    );
+    assert!(
+        e.contains("nobody registers a key that is not theirs"),
+        "{e}"
+    );
+}
+
+#[test]
+fn a_release_is_never_edited() {
+    let pr = opened(programme_file());
+    let sys = systems(&pr);
+    let mut r = solar_file();
+    r.meta.insert(s("file_kind"), s(Kind::GroupRelease.name()));
+    let e = people::change(
+        &r,
+        &Valve::Group {
+            mounted_by: &sys,
+            programme: &pr,
+        },
+        "Ola Sun",
+        &key(13),
+        "2026-03-01",
+        &register_change("Nina Two", "node engineer", "", &key(30)),
+    )
+    .unwrap_err();
+    let e = message(e);
+    assert!(e.contains("is never edited"), "{e}");
+}
+
+#[test]
+fn a_revocation_counts_from_its_day_and_a_later_change_keeps_it() {
+    let a = anchor();
+    let valve = Valve::Programme { anchor: &a };
+    let change =
+        |f: &File, at: &str, c: &Change| people::change(f, &valve, "Pat Morgan", &key(11), at, c);
+    // Found on 10 March that Ivo's key was copied on 1 March.
+    let f = change(
+        &programme_file(),
+        "2026-03-10",
+        &Change::Revoke {
+            person: s("Ivo Thrust"),
+            public_key: key(15).public().to_hex(),
+            from: s("2026-03-01"),
+        },
+    )
+    .unwrap();
+    // A new key on 12 March leaves the old one revoked from 1 March.
+    let f = change(&f, "2026-03-12", &replace_change("Ivo Thrust", &key(30))).unwrap();
+    let pr = opened(f);
+    let e = message(
+        chain::whoami(&key(15).public().to_hex(), "2026-03-05", &pr, None, &[]).unwrap_err(),
+    );
+    assert!(e.contains("revoked from 2026-03-01"), "{e}");
+
+    let e = message(
+        change(
+            &programme_file(),
+            "2026-03-10",
+            &Change::Revoke {
+                person: s("Ivo Thrust"),
+                public_key: key(15).public().to_hex(),
+                from: s("2026-04-01"),
+            },
+        )
+        .unwrap_err(),
+    );
+    assert!(e.contains("after the change"), "{e}");
 }
