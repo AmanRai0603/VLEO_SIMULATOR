@@ -432,6 +432,11 @@ jobs:
         run: python3 tools/panel_check.py --selftest
       - name: every declared panel
         run: python3 tools/panel_check.py
+      # The application's shell on the real program, as people use it: the
+      # database copied, keys opened, the anchor accepted by the person, a
+      # registration, and each one's My work (docs/briefs/F1.md, PR 3).
+      - name: the shell and My work, in the browser
+        run: python3 tools/shell_check.py
       # The manual in the browser tells people what to paste and what they will
       # see. `cargo test` already holds every name in it to the code; this holds
       # every command to what it DOES — run exactly as written, its output

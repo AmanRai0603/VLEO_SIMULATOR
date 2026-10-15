@@ -393,6 +393,19 @@ pub(super) fn registries(
     let groups = database.join("groups");
     let read = |id: &str| -> Result<File, String> {
         let p = groups.join(id).join(format!("{id}.vgroup"));
+        if !p.is_file() {
+            return Err(if id == "programme" {
+                format!(
+                    "{} holds no programme.vgroup: the database has no programme's file",
+                    groups.join(id).display()
+                )
+            } else {
+                format!(
+                    "{id} is mounted, but {} holds no {id}.vgroup",
+                    groups.join(id).display()
+                )
+            });
+        }
         let f = sqlite::read(&p).map_err(|e| format!("{}: {}", p.display(), e.message()))?;
         match f.meta.get("group_id") {
             Some(g) if g == id => Ok(f),
@@ -432,7 +445,35 @@ pub(super) fn registries(
         .filter(|e| e.path().is_dir())
         .map(|e| e.file_name().to_string_lossy().into_owned())
         .filter(|id| id != "programme" && id != "systems")
+        // A folder that holds no group file of its own name is not a group.
+        .filter(|id| groups.join(id).join(format!("{id}.vgroup")).is_file())
         .collect();
+    // A group a file mounts is read whether or not its folder holds its file:
+    // one gone missing is refused and said, never passed over.
+    for m in programme
+        .file
+        .mounts
+        .iter()
+        .chain(systems.iter().flat_map(|s| s.file.mounts.iter()))
+    {
+        if m.group_id == "systems" || ids.contains(&m.group_id) {
+            continue;
+        }
+        // A group's id is a folder's name: letters, digits and `_`, never a path.
+        if m.group_id.is_empty()
+            || !m
+                .group_id
+                .bytes()
+                .all(|c| c.is_ascii_alphanumeric() || c == b'_')
+        {
+            left_out.push(format!(
+                "{}: a mount names it, but a group's id is letters, digits and _ only",
+                m.group_id
+            ));
+            continue;
+        }
+        ids.push(m.group_id.clone());
+    }
     ids.sort();
     // Only the programme's and the systems' files mount.
     let parents: Vec<&Registry> = std::iter::once(&programme).chain(systems.iter()).collect();
@@ -583,9 +624,9 @@ pub(super) fn launch_page(port: u16) -> Result<PathBuf, String> {
     std::fs::create_dir_all(&dir).map_err(|e| format!("{}: {e}", dir.display()))?;
     private(&dir, 0o700);
     let at = dir.join("open.html");
-    let address = format!("http://127.0.0.1:{port}/#session={}", session());
+    let address = format!("http://127.0.0.1:{port}/app#session={}", session());
     let page = format!(
-        "<!doctype html>\n<meta charset=\"utf-8\">\n<title>VLEO</title>\n<script>location.replace({});</script>\n<p>Opening <a href=\"http://127.0.0.1:{port}/\">the program</a>.</p>\n",
+        "<!doctype html>\n<meta charset=\"utf-8\">\n<title>VLEO</title>\n<script>location.replace({});</script>\n<p>Opening <a href=\"http://127.0.0.1:{port}/app\">the program</a>.</p>\n",
         json::string(&address)
     );
     let _ = std::fs::remove_file(&at);
@@ -684,10 +725,66 @@ pub(super) fn open(params: &str, ctx: &Ctx) -> String {
             *OPEN.lock().unwrap_or_else(|p| p.into_inner()) = Some(opened);
             out
         }
-        Err(e) => refusal(&format!(
-            "Your key opened, but it opens nothing here: {}",
-            e.message()
-        )),
+        Err(e) => {
+            let public = key.public().to_hex();
+            let known = std::iter::once(&c.programme)
+                .chain(c.systems.iter())
+                .chain(c.groups.iter())
+                .any(|r| r.file.keys.iter().any(|k| k.public_key == public));
+            // The refused files that list this key: read without checking,
+            // only to say which, never to count it. A file planted there can at
+            // worst withhold the handover, never give one.
+            let db = database(ctx);
+            let in_refused: Vec<&String> = left_out
+                .iter()
+                .filter(|why| {
+                    let id = why.split(':').next().unwrap_or("");
+                    sqlite::read(&db.join("groups").join(id).join(format!("{id}.vgroup")))
+                        .is_ok_and(|f| f.keys.iter().any(|k| k.public_key == public))
+                })
+                .collect();
+            let refused = if in_refused.is_empty() {
+                String::new()
+            } else {
+                format!(
+                    " Your key is in a file that is refused, so who it registers is not read: {}.",
+                    in_refused
+                        .iter()
+                        .map(|s| s.as_str())
+                        .collect::<Vec<_>>()
+                        .join("; ")
+                )
+            };
+            let mut j = Json::new();
+            j.raw("{");
+            j.bool_field("ok", false);
+            // Only a key no file lists, refused or not, is one to hand over: a
+            // revoked key, one registered twice, or one whose group's file is
+            // refused is not fixed by registering it again.
+            if !known && in_refused.is_empty() {
+                let person = f.meta.get("person").cloned().unwrap_or_default();
+                j.str_field("person", &person);
+                j.str_field("public_key", &public);
+                j.str_field("proof", &people::proof(&key, &person));
+                j.str_field(
+                    "message",
+                    &format!(
+                        "Your key opened, but it opens nothing here: {}. Give whoever registers you its public key and proof, below, for the name {person}.",
+                        e.message()
+                    ),
+                );
+            } else {
+                j.str_field(
+                    "message",
+                    &format!(
+                        "Your key opened, but it opens nothing here: {}.{refused}",
+                        e.message()
+                    ),
+                );
+            }
+            j.raw("}");
+            j.0
+        }
     }
 }
 

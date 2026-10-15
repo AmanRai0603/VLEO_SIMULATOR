@@ -29,6 +29,7 @@ mod http;
 mod inputs;
 mod json;
 mod me;
+mod my_work;
 mod pages;
 mod people;
 mod results;
@@ -544,6 +545,8 @@ fn route(
 ) -> (&'static str, &'static str, Vec<u8>) {
     match (method, path) {
         ("GET", "/") => file(ctx, "index.html", "text/html; charset=utf-8"),
+        // The application: its shell, the five workspaces and My work (F1).
+        ("GET", "/app") => file(ctx, "app.html", "text/html; charset=utf-8"),
         ("GET", "/app.css") => file(ctx, "app.css", "text/css; charset=utf-8"),
         // The shell is one module per concern. They are served individually
         // rather than bundled: a bundler is a build step between the source and
@@ -555,6 +558,7 @@ fn route(
         ("GET", "/v1/version") => ok_json(version_json(ctx)),
         // Who is using the program: their key, made and opened here (me.rs).
         ("GET", "/v1/me") => ok_json(me::me()),
+        ("GET", "/v1/my-work") => ok_json(my_work::list(ctx)),
         ("GET", "/v1/keys") => ok_json(me::list()),
         ("POST", "/v1/key/make") => ok_json(me::make(params)),
         ("POST", "/v1/key/open") => ok_json(me::open(params, ctx)),

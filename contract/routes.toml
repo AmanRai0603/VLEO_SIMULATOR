@@ -35,6 +35,12 @@ contains = "<script"
 
 [[route]]
 method = "GET"
+path = "/app"
+answer = "html"
+contains = "/js/shell.js"
+
+[[route]]
+method = "GET"
 path = "/app.css"
 answer = "css"
 contains = ":root"
@@ -75,6 +81,14 @@ answer = "json"
 schema = "me"
 [[route.example]]
 name = "me-closed"
+
+[[route]]
+method = "GET"
+path = "/v1/my-work"
+answer = "json"
+schema = "my-work"
+[[route.example]]
+name = "my-work-closed"
 
 [[route]]
 method = "POST"
