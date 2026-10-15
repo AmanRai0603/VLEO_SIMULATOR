@@ -480,6 +480,7 @@ pub fn open_group(group: &File, programme: &Registry) -> Result<Registry, Error>
             format!("the programme's file mounts no group {id:?}, so nobody may sign it"),
         )
     })?;
+    registers_only_its_own(group, &id, programme)?;
     let (ok, why) = counted(group, FILE, programme, |name| {
         programme.acts_as(name, "subsystem engineer") && programme.acts_for(name, owner)
     });

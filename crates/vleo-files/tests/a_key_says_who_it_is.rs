@@ -565,3 +565,46 @@ fn a_stamp_is_a_day_or_a_moment() {
     let e = message(chain::whoami(&ivo, "2026-04-01", &pr, None, &[]).unwrap_err());
     assert!(e.contains("neither a day"), "{e}");
 }
+
+/// The page checks a release through the programme's file, by the old opener;
+/// it holds the group file to the same rule as the program does.
+#[test]
+fn the_page_holds_a_released_group_file_to_the_same_rule() {
+    let p = people();
+    let mut f = programme_unsigned(&p, "Sam Engel");
+    mount(&mut f, "m-solar", "l3_solar", "Ola Sun");
+    let programme = signed(f, "Pat Morgan", &p.pm);
+    let mut r = File::new(Kind::GroupRelease, APP);
+    for (k, v) in [
+        ("group_id", "l3_solar"),
+        ("version", "1.2"),
+        ("previous", "1.1"),
+        ("based_on", ""),
+    ] {
+        r.meta.insert(s(k), s(v));
+    }
+    // Solar's owner registers herself as a node engineer, with another key.
+    register(
+        &mut r,
+        "Ola Sun",
+        "node engineer",
+        "",
+        &p.stranger,
+        "Ola Sun",
+    );
+    let r = signed(r, "Ola Sun", &p.sub);
+    let mut request = Vec::new();
+    let mut put = |b: &[u8]| {
+        request.extend_from_slice(&(b.len() as u32).to_le_bytes());
+        request.extend_from_slice(b);
+    };
+    put(p.pm.public().fingerprint().as_bytes());
+    put(&vleo_files::rows::encode(&programme.to_tables()));
+    put(&vleo_files::rows::encode(&r.to_tables()));
+    let answer = vleo_files::page::check_release(&request);
+    assert!(
+        answer.contains("\"holds\":false")
+            && answer.contains("whom the programme's file registers"),
+        "{answer}"
+    );
+}
