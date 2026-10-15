@@ -130,11 +130,7 @@ fn push(root: &Path, branch: &str, args: &[&str]) -> Result<(), String> {
 /// rewrites only the entries that changed — the workspace's own crates — and
 /// upgrades nothing else.
 fn refresh_locks(root: &Path) -> Result<(), String> {
-    for manifest in [
-        "Cargo.toml",
-        "crates/vleo-py/Cargo.toml",
-        "crates/vleo-kernel-wasm/Cargo.toml",
-    ] {
+    for manifest in ["Cargo.toml", "crates/vleo-py/Cargo.toml"] {
         let ok = Command::new("cargo")
             .args([
                 "metadata",

@@ -4,8 +4,8 @@
 The frontend is developed against the contract, not against a build of the
 engine (contract/README.md). This holds that promise: it starts
 tools/mock_engine.py, opens the page in a real browser, and walks what a
-frontend developer would — the tree, a node's page, a run, the Results page,
-Explore —
+frontend developer would — the rows, a node's page and a run in it, Explore,
+and the application's Explore with its results kept —
 failing on any page error, on a banner that does not say the numbers are
 recorded examples, and on a run panel that does not show the recorded answer.
 
@@ -50,23 +50,18 @@ def check():
         step("the page says its answers are recorded examples", bar.count() == 1,
              bar.inner_text()[:60] if bar.count() else "no #mock-bar")
         step("no contract mismatch is reported", p.locator("#contract-bar").count() == 0)
-        p.click('button.tab[data-layer="3"]')
-        p.wait_for_timeout(300)
-        cells = p.locator("#matrix-cells .mcell").count()
-        step("the tree is drawn from the recorded index", cells > 20, f"{cells} cells on layer 3")
+        listed = p.locator("#rows-body .rows-list .xref").count()
+        step("the rows are listed from the recorded index", listed > 20, f"{listed} rows")
 
-        p.click('button.tab[data-layer="4"]')
-        p.select_option(".run-target", "sw_ap_design")
-        p.wait_for_timeout(300)
-        p.click(".run-go")
-        p.wait_for_selector(".run-out .answer", timeout=15000)
-        ans = p.inner_text(".run-out .answer")
+        # A row's page, opened from the list, and run in its run panel.
+        p.fill("#rows-body .rows-find", "sw_ap_design")
+        p.click('#rows-body .xref[data-goto="sw_ap_design"]')
+        p.wait_for_selector("#run-panel .run-go:not([disabled])", timeout=15000)
+        p.click("#run-panel .run-go")
+        p.wait_for_selector("#run-panel .run-out .answer", timeout=15000)
+        ans = p.inner_text("#run-panel .run-out .answer")
         step("the run panel shows the recorded answer", "Ap" in ans, ans)
-
-        p.click("#results-tab")
-        p.wait_for_selector(".res-list, .empty", timeout=15000)
-        rows = p.locator(".res-row").count()
-        step("the Results page lists the recorded results", rows >= 1, f"{rows} row(s)")
+        p.click("#back")
 
         # Every kind of figure the engine can describe, drawn from its samples.
         p.locator("#tabs .tab", has_text="Architecture").first.click()
@@ -101,6 +96,15 @@ def check():
         p.wait_for_selector("#explore-body .ex-compare-out b", timeout=15000)
         compared = p.inner_text("#explore-body .ex-compare-out")
         step("two files are compared", "block(s)" in compared, compared[:60])
+
+        # The application's Explore, and the results kept there.
+        a = b.new_page(viewport={"width": 1300, "height": 950})
+        a.on("pageerror", lambda e: errors.append(str(e)))
+        a.goto(url + "/app#explore/results")
+        a.wait_for_selector(".res-list, .empty", timeout=30000)
+        kept = a.locator(".res-row").count()
+        step("the application's Explore lists the recorded results kept", kept >= 1, f"{kept} row(s)")
+        a.close()
 
         step("no page error", not errors, "; ".join(errors[:3]))
 

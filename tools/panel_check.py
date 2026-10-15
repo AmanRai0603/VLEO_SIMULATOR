@@ -2,7 +2,7 @@
 """The three checks a declared panel has to pass.
 
     tools/panel_check.py                 # every panel in panels/
-    tools/panel_check.py --panel tree
+    tools/panel_check.py --panel density
     tools/panel_check.py --record        # store reference images
     tools/panel_check.py --selftest
 
@@ -997,7 +997,8 @@ def _asks_and_ignores(d):
 def selftest():
     """A panel wired to nothing must fail check two, and a blank one check one.
 
-    Six cases: both failures on a DOM panel, both on a canvas panel, and the two
+    Six cases: both failures on a DOM panel (the rows list, a fixture of the
+    selftest's own), both on a canvas panel, and the two
     only 2b and its failed-state probe can see. All
     four are built by breaking a real panel, because a checker demonstrated on a
     fixture is a checker demonstrated on a fixture — and the canvas pair exists
@@ -1012,19 +1013,19 @@ def selftest():
     real_root, real_panels, real_ref = ROOT, PANELS, REFERENCE
     bad = 0
     cases = [
+        # The markup path, on the rows list (tools/selftest_panels/rows.toml):
+        # every declared panel is a canvas since the layer figure went.
         ("a panel that draws nothing",
-         lambda d: (d / "web" / "js" / "tree.js").write_text(
-             "export function drawTree() { document.querySelector('#tree').innerHTML = ''; }\n"),
+         lambda d: (d / "web" / "js" / "rows.js").write_text(
+             (d / "web" / "js" / "rows.js").read_text().replace(
+                 "  $('.rows-list', host).innerHTML = html || ",
+                 "  $('.rows-list', host).innerHTML = '' && ")),
          "1 renders"),
         ("a panel wired to nothing",
-         lambda d: (d / "web" / "js" / "tree.js").write_text(
-             (d / "web" / "js" / "tree.js").read_text().replace(
-                 "export function drawTree(disp, rel) {",
-                 "let __once = null;\nexport function drawTree(disp, rel) {\n"
-                 "  if (__once) { document.querySelector('#tree').innerHTML = __once; return; }\n"
-                 "  const __r = __drawTree(disp, rel);\n"
-                 "  __once = document.querySelector('#tree').innerHTML;\n  return __r;\n}\n"
-                 "function __drawTree(disp, rel) {")),
+         lambda d: (d / "web" / "js" / "rows.js").write_text(
+             (d / "web" / "js" / "rows.js").read_text().replace(
+                 "  const f = PAGE.filter.trim().toLowerCase();",
+                 "  const f = '';")),
          "2 moves"),
         # The same two failures on a CANVAS panel, because the first two cases
         # only exercise the innerHTML path. A canvas reports empty innerHTML
@@ -1109,6 +1110,9 @@ def selftest():
             if "canvas" in label:
                 shutil.copy(real_root / "tools" / "selftest_panels" / "sweep.toml",
                             work / "panels" / "sweep.toml")
+            if label in ("a panel that draws nothing", "a panel wired to nothing"):
+                shutil.copy(real_root / "tools" / "selftest_panels" / "rows.toml",
+                            work / "panels" / "rows.toml")
             before_tree = _tree_sig(work)
             break_it(work)
             if _tree_sig(work) == before_tree:
@@ -1122,7 +1126,7 @@ def selftest():
                          else "pattern" if "zoom" in label or "brush" in label
                          else "density" if "figure" in label
                          else "design" if "engine" in label or "throws" in label
-                         else "tree")
+                         else "rows")
                 found = check_all(ids={which})
             finally:
                 ROOT, PANELS, REFERENCE = real_root, real_panels, real_ref

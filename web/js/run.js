@@ -11,7 +11,7 @@
   once landed in a hidden panel and the visible one stayed blank.
 
   WHAT THE RUN IS ON COMES FIRST. There is one case, and a run is always on
-  its saved inputs — the ones set on the Inputs page or uploaded there as a
+  its saved inputs — the ones set under Inputs or uploaded there as a
   CSV — with whatever the reader typed over them. The panel says so, and lists
   every input the answer depends on with the value it will run at and where
   that value came from: the default, the saved case, or an edit. An edit here
@@ -460,7 +460,7 @@ export function renderResult(host, r, res) {
       : 'every input at its default') +
     (edits ? ', with <b>' + edits + ' input' + (edits === 1 ? '' : 's') + ' edited by you</b>' : '') +
     (inp.set_aside ? ' · <b>' + inp.set_aside + ' saved value' + (inp.set_aside === 1 ? '' : 's') +
-      ' set aside</b> when the case was carried over to this version — see the Inputs page' : '') +
+      ' set aside</b> when the case was carried over to this version — see Inputs' : '') +
     '</p>';
   if (v) {
     h += credBars(v) +
@@ -512,7 +512,7 @@ export function renderResult(host, r, res) {
     (res.manifest.data.length ? ' · data ' + esc(res.manifest.data.join(' ')) : ' · no data bundle') +
     '</div>';
   // KEEP IT. The run as it stands — these inputs, this engine — saved as a
-  // result the Results page shows again without running, and that can be sent
+  // result Results kept shows again without running, and that can be sent
   // as a CSV or a report.
   h += fs ? '' : '<div class="runbar res-save-bar"><input class="ctl res-name" placeholder="a name for it (optional)" ' +
     'aria-label="a name for the result"><button class="ctl res-save">save this result</button>' +
@@ -762,7 +762,7 @@ function sweepParams(host, r, d) {
  * Under a sweep: where it came from, and keeping it. A sweep read back from a
  * saved result says which one, and offers a fresh sweep; one run now can be
  * saved — the run at the case and the line across the range, kept together,
- * and drawn again on the Results page without running.
+ * and drawn again under Results kept without running.
  */
 function keepBar(host, r, last, sweepNow) {
   const note = $('.sw-note', host);

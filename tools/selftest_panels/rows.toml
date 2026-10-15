@@ -1,0 +1,33 @@
+# NOT A DECLARED PANEL. This lives outside panels/ on purpose.
+#
+# tools/panel_check.py --selftest copies it into a throwaway tree so the two
+# DOM cases have a panel drawn as markup to break, as sweep.toml gives the
+# canvas cases a canvas. Every declared panel is a canvas since the layer
+# figure went (docs/PLAN_F.md, F2), and a checker whose markup path is never
+# broken on purpose is a checker nobody knows still works there.
+
+id = "rows"
+label = "Every row, to open its page"
+module = "web/js/rows.js"
+mount = ".rows-list"
+draws = """
+Every row of the design, by its group, each a link to its page; a filter
+narrows the list by id or label.
+"""
+correct = """
+One section per group with rows, each row's id and label; the filter shows
+only the rows whose id or label holds what was typed.
+"""
+pixel_reference = false
+pixel_reference_why = """it lists the index, which the contract tests hold"""
+
+[[input]]
+name = "filter"
+drive = """
+(() => {
+  const i = document.querySelector('.rows-find');
+  i.value = 'sw_ap_design';
+  i.dispatchEvent(new Event('input'));
+})()
+"""
+why = "a filter that does not narrow the list is a list wired to nothing"

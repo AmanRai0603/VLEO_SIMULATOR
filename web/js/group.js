@@ -496,7 +496,7 @@ function issuePage() {
   return '<h1 class="gh1">Raise an issue</h1><p>Something wrong, missing or unclear — in this folder, or in the design as the tool shows it. ' +
     'It is written into the folder\'s <code>issues/</code>, where the developer reads it.</p>' +
     '<p><label>Your name <input id="gi-by" value="' + esc(me) + '"></label></p>' +
-    '<p><label>Where <input id="gi-where" class="gnote" placeholder="e.g. node sw_f107_design, Results tab; or the test app, Run page"></label></p>' +
+    '<p><label>Where <input id="gi-where" class="gnote" placeholder="e.g. node sw_f107_design, Results kept; or the test app, Run page"></label></p>' +
     '<p><textarea id="gi-text" rows="6" class="gnote" placeholder="What you saw, and what you expected"></textarea></p>' +
     '<button class="ctl gbtn" id="gi-go" type="button">Write the issue</button><p id="gi-out" class="gout" aria-live="polite"></p>';
 }

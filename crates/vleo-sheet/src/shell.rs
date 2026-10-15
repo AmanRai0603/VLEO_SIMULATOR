@@ -1,11 +1,11 @@
 //! The one page template, `web/page.html`, and the one way to fill it.
 //!
 //! Every page the tool writes as a file — a node form, a lesson form, a role
-//! guide, a row's page, a saved result, each page of the readers' folder — is
-//! that template with its four slots filled. What each page puts in it is its
-//! own parts file in `web/pages` ([`Parts`]): every word and tag, by name, so
-//! a generator decides only which part, how often and with what. The markup
-//! lives with the frontend, and a test refuses a generator that writes any.
+//! guide, a row's page, a saved result — is that template with its four slots
+//! filled. What each page puts in it is its own parts file in `web/pages`
+//! ([`Parts`]): every word and tag, by name, so a generator decides only which
+//! part, how often and with what. The markup lives with the frontend, and a
+//! test refuses a generator that writes any.
 
 use crate::{Error, ErrorKind};
 

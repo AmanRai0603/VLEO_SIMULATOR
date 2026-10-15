@@ -11,15 +11,13 @@
 'use strict';
 
 import { $, $$ } from './dom.js';
-import { S, SIZES, HOWTO, load, layerRoot, subsystemLayers, subtreeAll,
-         theCase, loadSaved, onCaseChange } from './state.js';
-import { drawFigure, drawCaptions, drawStepper, drawStatus, drawFoot } from './figure.js';
+import { S, load, theCase, loadSaved, onCaseChange } from './state.js';
+import { drawStatus, drawFoot } from './status.js';
+import { renderRows } from './rows.js';
 import { openNode } from './node.js';
-import { renderRun } from './run.js';
 import { drawArchitecture } from './architecture.js';
 import { renderManual } from './manual.js';
-import { renderCase, preview, saveOverridesToCase, savableOverrides } from './case.js';
-import { renderResults, openResult } from './results.js';
+import { saveOverridesToCase, savableOverrides } from './case.js';
 import { renderForms } from './forms.js';
 import { renderExplore } from './explore.js';
 import { showContract, showMock } from './banners.js';
@@ -38,7 +36,6 @@ async function boot() {
     $('#status').textContent = 'the engine did not answer — reload';
     return;
   }
-  fillSubsys();
   // A page in doubt says so on every view, before anything else is drawn.
   showContract();
   showMock();
@@ -54,14 +51,16 @@ async function boot() {
   // appeared on the next navigation would be missing at the one moment it has
   // something to say.
   onOverrideChange(() => drawOverrideBar());
-  $('#howto-steps').innerHTML = HOWTO.map(t => '<li>' + t + '</li>').join('');
   wire();
-  setLayer(1);
+  setRows();
   // A link to the manual opens it — `#manual`, or `#manual/<section>` to land
-  // on the one step somebody was sent to read.
+  // on the one step somebody was sent to read — and `#row/<id>` opens a row's
+  // page.
   const openFromHash = () => {
     const h = location.hash.match(/^#manual(?:\/([\w-]+))?$/);
-    if (h) setManual(h[1]);
+    if (h) return setManual(h[1]);
+    const r = location.hash.match(/^#row\/([\w-]+)$/);
+    if (r && S.byId.has(r[1])) open(r[1]);
   };
   openFromHash();
   // AND WHEN ONLY THE HASH CHANGES. A manual link pasted into a tab that already
@@ -71,70 +70,31 @@ async function boot() {
   window.addEventListener('hashchange', openFromHash);
 }
 
-function fillSubsys() {
-  const kids = subsystemLayers();
-  $('#subsys').innerHTML = kids.map(id =>
-    '<option value="' + id + '">' + S.G.get(id).label + ' · ' + subtreeAll(id).length +
-    '</option>').join('');
-  $('#subsys').value = S.subsys;
-}
-
 // ---------------------------------------------------------------------------
-// one draw, four views
+// one draw
 
 export function draw() {
-  document.documentElement.style.setProperty('--cell', SIZES[S.size] + 'px');
-
   const v = S.view;
-  $('#figure').hidden   = v !== 'layer';
+  $('#rowsview').hidden = v !== 'rows';
   $('#nodeview').hidden = v !== 'node';
-  $('#runview').hidden  = v !== 'run';
   $('#archview').hidden = v !== 'arch';
   $('#manualview').hidden = v !== 'manual';
-  $('#inputsview').hidden = v !== 'inputs';
-  $('#resultsview').hidden = v !== 'results';
   $('#formsview').hidden = v !== 'forms';
   $('#exploreview').hidden = v !== 'explore';
-  // The pages that are not the tree: no caption about the tree above them.
-  const page = v === 'node' || v === 'arch' || v === 'manual' || v === 'inputs' ||
-    v === 'results' || v === 'forms' || v === 'explore';
-  $('#caption-a').hidden = page;
-  // The stepper walks a person through reading the TREE; on the manual it
-  // would be a second set of instructions beside the first.
-  $('#stepper').hidden = v === 'manual' || v === 'inputs' || v === 'results' || v === 'forms' ||
-    v === 'explore';
-  $('#controls').style.display = v === 'layer' && S.layer !== 4 ? '' : 'none';
   // The case bar everywhere a number is shown: which inputs every run is on
   // is the first thing a reader of any number needs.
-  $('#caserow').style.display =
-    v === 'arch' || v === 'manual' || v === 'inputs' || v === 'results' || v === 'forms' ? 'none' : '';
-  $('#subsys-grp').style.display = S.layer === 3 ? '' : 'none';
-  $('#concept-grp').style.display = S.layer === 1 ? '' : 'none';
+  $('#caserow').style.display = v === 'arch' || v === 'manual' || v === 'forms' ? 'none' : '';
 
+  $('#rows-tab').classList.toggle('sel', v === 'rows');
   $('#arch-tab').classList.toggle('sel', v === 'arch');
   $('#manual-tab').classList.toggle('sel', v === 'manual');
-  $('#inputs-tab').classList.toggle('sel', v === 'inputs');
-  $('#results-tab').classList.toggle('sel', v === 'results');
   $('#forms-tab').classList.toggle('sel', v === 'forms');
   $('#explore-tab').classList.toggle('sel', v === 'explore');
-  $$('.tab[data-layer]').forEach(b =>
-    b.classList.toggle('sel', !page && v !== 'arch' && +b.dataset.layer === S.layer));
-  $$('.ctl.sz').forEach(b => b.classList.toggle('sel', b.dataset.size === S.size));
   drawCaseBar();
-  $$('.ctl.cpt').forEach(b => b.classList.toggle('sel', b.dataset.concept === S.concept));
-  $('#concept-tag').textContent = S.concept === 'single' ? 'Single satellite' : 'Constellation';
-
   drawOverrideBar();
-  drawCaptions();
-  drawStepper();
   drawFoot();
-
-  if (v === 'arch') { drawArchitecture(); drawStatus([]); return; }
-  if (v === 'manual') { drawStatus([]); return; }
-  if (v === 'inputs' || v === 'results' || v === 'forms' || v === 'explore') { drawStatus([]); return; }
-  if (v === 'run')  { drawRunView(); drawStatus([]); return; }
-  if (v === 'node') { drawStatus(S.disp); return; }
-  drawStatus(drawFigure());
+  drawStatus();
+  if (v === 'arch') drawArchitecture();
 }
 
 /**
@@ -144,8 +104,8 @@ export function draw() {
  * There is one case. This bar once held a button per customer and a menu of
  * conditions, each a file under cases/ — and a customer that needed a file and
  * a commit to exist was a tree that grew with every customer. What varies now
- * is the inputs, set on the Inputs page or uploaded as a CSV and saved by the
- * daemon outside the repository.
+ * is the inputs, set in the application's Explore or uploaded as a CSV there,
+ * and saved by the daemon outside the repository.
  */
 function drawCaseBar() {
   const c = theCase();
@@ -157,15 +117,25 @@ function drawCaseBar() {
       (d.upgrade ? ' · carried over to this version' + (d.upgrade.set_aside.length
         ? ', ' + d.upgrade.set_aside.length + ' value' + (d.upgrade.set_aside.length === 1 ? '' : 's') +
           ' set aside' : '') : '');
-  $('#inputs-tab').textContent = 'Inputs' + (d && d.stored && d.changed ? ' · ' + d.changed : '');
 }
 
-/** Open the Results page, at one result when one is named. */
-async function setResults(file) {
-  if (file) openResult(file);
-  S.view = 'results';
+/** The rows of a group: its own, or, for a group that holds groups, the
+ *  first group under it that holds rows. The filter is cleared, so the
+ *  group is in the list to be found. */
+function openGroup(gid) {
+  setRows(gid);
+  const under = new Set();
+  const walk = g => { under.add(g); (S.gkids.get(g) || []).forEach(walk); };
+  walk(gid);
+  const at = [...document.querySelectorAll('#rows-body .rows-grp')].find(s => under.has(s.dataset.groupId));
+  if (at) at.scrollIntoView();
+}
+
+/** Every row, to open its page. */
+function setRows(cleared) {
+  S.view = 'rows';
   draw();
-  await renderResults($('#results-body'));
+  renderRows($('#rows-body'), cleared !== undefined);
 }
 
 /** Open the Explore page: which design, where it breaks, what differs. */
@@ -182,11 +152,10 @@ function setForms() {
   renderForms($('#forms-body'));
 }
 
-/** Open the Inputs page. Rendered once per visit, like the manual. */
-async function setInputs() {
-  S.view = 'inputs';
-  draw();
-  await renderCase($('#inputs-body'));
+/** The application's Explore, at its inputs or a result kept: they are kept
+ *  there now, not on this page. */
+function toExplore(view, file) {
+  location.href = '/app#explore/' + view + (file ? '/' + encodeURIComponent(file) : '');
 }
 
 /**
@@ -264,39 +233,8 @@ function drawOverrideBar() {
 /** Six significant figures, as the rest of the face writes a number. */
 const fmtNum = v => (v == null || !isFinite(v)) ? '—' : String(Number(v.toPrecision(6)));
 
-function drawRunView() {
-  const id = S.runTarget || (S.byId.has('prop_thrust_to_drag') ? 'prop_thrust_to_drag' : S.rows[0].id);
-  S.runTarget = id;
-  renderRun($('#run-body'), S.byId.get(id), true);
-}
-
 // ---------------------------------------------------------------------------
 // navigation
-
-function select(id) {
-  if (!S.dispIndex.has(id) && !S.byId.has(id)) return;
-  S.selected = id;
-  S.view = 'layer';
-  draw();
-  const el = $('#matrix-cells .mcell.diag.sel');
-  if (el) el.scrollIntoView({ block: 'nearest', inline: 'nearest' });
-}
-
-function toggle(id) {
-  if (S.expanded.has(id)) S.expanded.delete(id); else S.expanded.add(id);
-  S.selected = id;
-  S.view = 'layer';
-  draw();
-}
-
-function setLayer(n) {
-  S.layer = n;
-  S.view = n === 4 ? 'run' : 'layer';
-  S.expanded = new Set([layerRoot()]);
-  S.selected = null;
-  resetScroll();
-  draw();
-}
 
 /**
  * Open the manual — at a layer or a section when one is named.
@@ -316,49 +254,6 @@ function setArch(section) {
   draw();
 }
 
-function resetScroll() {
-  const g = $('.grid');
-  if (g) { g.scrollTop = 0; g.scrollLeft = 0; }
-}
-
-/** A node the current layer does not show is still reachable. Following a
-    cross-reference moves the layer to wherever that node lives. */
-function goTo(id) {
-  const r = S.byId.get(id);
-  if (!r) return;
-  if (r.layer !== S.layer) { S.layer = r.layer; S.expanded = new Set(); }
-  if (r.layer === 3) {
-    let g = S.G.get(r.parent);
-    while (g && g.parent !== 'root') g = S.G.get(g.parent);
-    if (g) { S.subsys = g.id; $('#subsys').value = g.id; }
-  }
-  S.expanded.add(layerRoot());
-  let g = S.G.get(r.parent);
-  while (g) { S.expanded.add(g.id); g = S.G.get(g.parent); }
-  S.selected = id;
-  S.view = 'layer';
-  resetScroll();
-  draw();
-}
-
-function goToGroup(gid) {
-  const g = S.G.get(gid);
-  if (!g) return;
-  if (g.layer && g.layer !== S.layer) { S.layer = g.layer; S.expanded = new Set(); }
-  if (g.layer === 3) {
-    let t = g;
-    while (t && t.parent !== 'root') t = S.G.get(t.parent);
-    if (t) { S.subsys = t.id; $('#subsys').value = t.id; }
-  }
-  S.expanded.add(layerRoot());
-  let t = S.G.get(gid);
-  while (t) { S.expanded.add(t.id); t = S.G.get(t.parent); }
-  S.selected = gid;
-  S.view = 'layer';
-  resetScroll();
-  draw();
-}
-
 async function open(id) {
   S.selected = id;
   S.runTarget = id;
@@ -371,133 +266,48 @@ async function open(id) {
 // every listener in the tool
 
 function wire() {
+  $('#rows-tab').onclick = () => setRows();
   $('#arch-tab').onclick = () => setArch();
   $('#manual-tab').onclick = () => { history.replaceState(null, '', '#manual'); setManual(); };
-  $$('.tab[data-layer]').forEach(b => b.onclick = () => setLayer(+b.dataset.layer));
-  $('#prev').onclick = () => setLayer(Math.max(1, S.layer - 1));
-  $('#next').onclick = () => setLayer(Math.min(4, S.layer + 1));
-
-  $('#expand-all').onclick = () => {
-    const add = gid => { S.expanded.add(gid); (S.gkids.get(gid) || []).forEach(add); };
-    add(layerRoot());
-    draw();
-  };
-  $('#collapse-all').onclick = () => { S.expanded = new Set([layerRoot()]); resetScroll(); draw(); };
-  // Retired rows, on demand. The count is drawn on the button rather than left
-  // to be discovered, because the useful fact is how many there are: a
-  // subsystem with nine retired rows has a history, one with none does not.
-  {
-    const b = $('#show-retired');
-    const paint = () => {
-      const n = S.rows.filter(r => r.state === 'deprecated').length;
-      b.textContent = (S.showRetired ? '▾ ' : '▸ ') + n + ' retired row' + (n === 1 ? '' : 's');
-      b.classList.toggle('sel', S.showRetired);
-    };
-    b.onclick = () => { S.showRetired = !S.showRetired; paint(); resetScroll(); draw(); };
-    paint();
-  }
-  $('#howto').onclick = () => { $('#howto-panel').hidden = !$('#howto-panel').hidden; };
-  $('#howto-close').onclick = () => { $('#howto-panel').hidden = true; };
-
-  $$('.ctl.sz').forEach(b => b.onclick = () => { S.size = b.dataset.size; draw(); });
-  $$('.ctl.cpt').forEach(b => b.onclick = () => { S.concept = b.dataset.concept; draw(); });
-  $('#inputs-tab').onclick = () => setInputs();
-  $('#results-tab').onclick = () => setResults();
   $('#forms-tab').onclick = () => setForms();
   $('#explore-tab').onclick = () => setExplore();
-  $('#case-inputs').onclick = () => setInputs();
-  // An upload from the bar opens the Inputs page and reads the file there, so
-  // what it would change is shown before anything is saved.
-  $('#case-upload').onchange = async e => {
-    const file = e.target.files && e.target.files[0];
-    e.target.value = '';
-    if (!file) return;
-    await setInputs();
-    await preview($('#inputs-body'), file.name, await file.text());
-  };
+  $('#case-inputs').onclick = () => toExplore('inputs');
   // Whoever changed the saved case, every number on screen was for the old
   // inputs. The node page is re-opened rather than patched: its input fields,
   // its figures and its run panel all read the case, and re-opening is the one
-  // path that is already known to draw all of them from nothing. The Inputs
-  // page redraws itself.
+  // path that is already known to draw all of them from nothing.
   onCaseChange(() => {
-    if (S.view === 'inputs' || S.view === 'results') { drawCaseBar(); drawStatus([]); return; }
     if (S.view === 'node' && S.selected) { draw(); openNode(S.selected); return; }
     draw();
   });
-  $('#subsys').onchange = e => { S.subsys = e.target.value; setLayer(3); };
-  $('#back').onclick = () => { S.view = 'layer'; draw(); };
+  $('#back').onclick = () => setRows();
 
   $('#arch-nav').addEventListener('click', e => {
     const b = e.target.closest('[data-arch]');
     if (b) setArch(b.dataset.arch);
   });
 
-  $('#tree').addEventListener('click', e => {
-    const row = e.target.closest('.trow');
-    if (!row) return;
-    const d = S.disp[+row.dataset.i];
-    if (!d) return;
-    if (d.kind === 'group' && d.hasKids && (d.id === S.selected || e.target.closest('.tri'))) toggle(d.id);
-    else select(d.id);
-  });
-  $('#tree').addEventListener('dblclick', e => {
-    const row = e.target.closest('.trow');
-    if (!row) return;
-    const d = S.disp[+row.dataset.i];
-    if (d && d.kind === 'node') open(d.id);
-    else if (d) toggle(d.id);
-  });
-  $('#paths-dots').addEventListener('click', e => {
-    const dot = e.target.closest('.pdot');
-    if (!dot) return;
-    const i = Array.prototype.indexOf.call(dot.parentNode.children, dot);
-    if (S.disp[i]) select(S.disp[i].id);
-  });
-  $('#matrix-cells').addEventListener('click', e => {
-    const c = e.target.closest('.mcell.diag');
-    if (!c) return;
-    const d = S.disp[+c.dataset.i];
-    if (!d) return;
-    if (d.kind === 'node') open(d.id); else toggle(d.id);
-  });
-
-  // Cross-references, wherever they appear. One rule, one place.
+  // Cross-references, wherever they appear. One rule, one place: a row opens
+  // its page; a group, the rows in it; the inputs and the results kept, the
+  // application's Explore.
   document.addEventListener('click', e => {
     const x = e.target.closest('.xref');
     if (!x) return;
     e.preventDefault();
-    if (x.dataset.goto) goTo(x.dataset.goto);
-    else if (x.dataset.group) goToGroup(x.dataset.group);
-    else if (x.dataset.inputs !== undefined) setInputs();
-    else if (x.dataset.results !== undefined) setResults(x.dataset.results || null);
+    if (x.dataset.goto) { if (S.byId.has(x.dataset.goto)) open(x.dataset.goto); }
+    else if (x.dataset.group) openGroup(x.dataset.group);
+    else if (x.dataset.inputs !== undefined) toExplore('inputs');
+    else if (x.dataset.results !== undefined) toExplore('results', x.dataset.results || '');
   });
 
   document.addEventListener('keydown', e => {
-    if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
-    if (S.view !== 'layer') {
-      if (e.key === 'Escape') { S.view = 'layer'; draw(); }
-      return;
-    }
-    const i = S.dispIndex.get(S.selected);
-    if (i == null) return;
-    if (e.key === 'ArrowDown' && i + 1 < S.disp.length) { e.preventDefault(); select(S.disp[i + 1].id); }
-    if (e.key === 'ArrowUp' && i > 0) { e.preventDefault(); select(S.disp[i - 1].id); }
-    if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
-      const d = S.disp[i];
-      if (d.kind === 'group' && d.hasKids) { e.preventDefault(); toggle(d.id); }
-    }
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      const d = S.disp[i];
-      if (d.kind === 'node') open(d.id); else toggle(d.id);
-    }
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.tagName === 'TEXTAREA') return;
+    if (S.view !== 'rows' && e.key === 'Escape') setRows();
   });
 }
 
 // The tool is opened by a person, so a hand on the console is a person too.
 window.S = S;
-window.select = select;
 window.openNode = open;
 window.draw = draw;
 

@@ -281,7 +281,7 @@ fn every_page_s_markup_style_and_script_lives_in_web() {
 }
 
 /// Every page generator, and the parts file it writes its page from.
-const GENERATORS: [(&str, &str); 6] = [
+const GENERATORS: [(&str, &str); 5] = [
     ("crates/vleo-sheet/src/page.rs", "web/pages/row.html"),
     ("crates/vleo-sheet/src/guide.rs", "web/pages/guide.html"),
     (
@@ -296,7 +296,6 @@ const GENERATORS: [(&str, &str); 6] = [
         "crates/vleo-modules/src/results.rs",
         "web/pages/report.html",
     ),
-    ("xtask/src/readers.rs", "web/pages/readers.html"),
 ];
 
 /// Strings with a tag in them that a generator may hold because it READS a
@@ -385,7 +384,7 @@ fn page_code_left_in_rust_is_named() {
     let files = vec![
         (
             "xtask/src/fine.rs".to_string(),
-            "include_str!(\"../../web/pages/readers.css\")".to_string(),
+            "include_str!(\"../../web/pages/report.css\")".to_string(),
         ),
         (
             "xtask/src/css.rs".to_string(),

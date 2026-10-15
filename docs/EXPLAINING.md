@@ -42,7 +42,7 @@ detail. Busy readers read top-down; a page that builds up to its answer is read 
 needed it. *(Minto, the pyramid principle.)*
 
 **Where:** the *Answer first* box on every node page · the first lines of a result, in the
-Results view and the HTML report · the answer line at the top of every manual section · the
+Results kept and the HTML report · the answer line at the top of every manual section · the
 first block of every document under `docs/` and at the top of the repository · the live answer
 under each figure's question.
 **Checked by:** the page generator's test (`the_page_follows_the_standard`), the result test
@@ -200,8 +200,8 @@ Feynman, "Cargo Cult Science".)*
 |---|---|---|---|---|---|---|---|---|---|
 | node page | Answer first box | first tab | on the claims | breaks + assumptions | if written | tab kinds | yes | evidence tab | Learn |
 | `docs/HOW_IT_WORKS.html` | "In short" box per chapter | plain words, how it works, limits | claim tags | "where this picture stops being true" | "a common misreading" | — | yes | "work it yourself" | "guess first" |
-| the views — the four layers, Architecture, Inputs, Forms, Results | Answer first box | — | — | — | — | kind on the box | — | — | — |
-| run panel and Results | answer, then points | — | — | blocked, weakest factor, broken beliefs | — | — | — | — | — |
+| the views — Rows, Architecture, Forms, Explore's Inputs and Results kept | Answer first box | — | — | — | — | kind on the box | — | — | — |
+| run panel and Results kept | answer, then points | — | — | blocked, weakest factor, broken beliefs | — | — | — | — | — |
 | result report (HTML) | first block | Said simply · Where it breaks | derived / declared | Where it breaks | — | section kinds | — | — | — |
 | the manual | answer line | — | — | *cannot* table | *when something goes wrong* | section kind | who-filter | examples run | — |
 | `docs/*.md`, top-level docs | first block | — | — | — | — | Kind line | — | — | — |

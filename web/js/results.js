@@ -74,7 +74,7 @@ export async function renderResults(host) {
     '</code> — outside the repository.</span>' +
     '<span class="why res-said"></span></div>';
   if (!list.results.length) {
-    h += '<p class="empty">No result is saved yet. Run a row — on its page, or on <b>4 The run</b> — and ' +
+    h += '<p class="empty">No result is saved yet. Run a row — on its page, or under <b>Run</b> — and ' +
       'press <b>save this result</b>.</p>';
   } else {
     h += '<div class="ri-wrap"><table class="fx res-list"><thead><tr><th>saved</th><th>row</th><th>answer</th>' +

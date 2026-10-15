@@ -13,7 +13,7 @@ Generated from the one table in `xtask/src/pipeline.rs`; `cargo run -p xtask -- 
 1. **form** — a group's folder, or a row's lesson form, written from the design for its people to fill: `lesson`, `group-export`
 2. **build** — a node built from its method, and its tests shown to test: `method`, `rerun`, `method-wasm`, `files-wasm`
 3. **gate** — the checks every change passes, and what they generate: `group-app`, `docs`, `assemble`, `gate`, `ready`, `codeowners`, `variables`, `guides`, `pipeline`
-4. **release** — the versioned release everyone gets: `readers`, `ship`, `release`, `derisk`, `kit`, `bundle`
+4. **release** — the versioned release everyone gets: `ship`, `release`, `derisk`, `kit`, `bundle`
 5. **read** — reports: what exists, what is open, why a node is what it is: `status`, `active`, `catalogue`, `impact`, `reach`, `gap`, `graph`, `explain`, `sheet`, `why`, `trace`
 6. **setup** — once per person per clone: `setup`, `help`
 
@@ -268,22 +268,6 @@ only says whether it is current.
 | code | `xtask/src/pipeline.rs` — `cmd_pipeline` |
 
 ### release — the versioned release everyone gets
-
-#### `readers`
-
-    cargo run -p xtask -- readers [--out <dir>]
-
-the docs folder for readers: every row's page and every lesson, read with no tool running — from a shared drive or an internal web server. A lesson's widgets are answered by the engine compiled for the browser. Default target/readers.
-
-| | |
-|---|---|
-| reads | the design (design/), generated/fragments, every lesson.toml, web/page.html, web/js, web/app.css and web/fonts, crates/vleo-kernel-wasm |
-| writes | the readers' docs folder: target/readers, or --out, with the engine and the design it runs (the tree converted to its files) in assets/kernel.js — rebuilt whole; nothing committed |
-| checks | every lesson passes its check; every link and asset a page names, and every font its stylesheet names, is in the folder; tools/readers_check.py then opens it in a browser |
-| undo | delete the folder |
-| steps | 1 build the engine for the browser · 2 bundle the page script · 3 read the design the pages run · 4 write the pages · 5 check every page has what it links |
-| dry run | --dry-run prints this plan — the steps, what it would write, how to undo it — and touches nothing |
-| code | `xtask/src/readers.rs` — `cmd_readers` |
 
 #### `ship`
 
