@@ -90,6 +90,14 @@
     },
     "warning": {
       "type": "string"
+    },
+    "public_key": {
+      "type": "string",
+      "description": "A key that opened but is registered for nobody: its public half, to hand over."
+    },
+    "proof": {
+      "type": "string",
+      "description": "And the proof made with it, for that name."
     }
   },
   "required": [

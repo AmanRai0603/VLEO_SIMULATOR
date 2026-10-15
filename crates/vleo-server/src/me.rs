@@ -583,9 +583,9 @@ pub(super) fn launch_page(port: u16) -> Result<PathBuf, String> {
     std::fs::create_dir_all(&dir).map_err(|e| format!("{}: {e}", dir.display()))?;
     private(&dir, 0o700);
     let at = dir.join("open.html");
-    let address = format!("http://127.0.0.1:{port}/#session={}", session());
+    let address = format!("http://127.0.0.1:{port}/app#session={}", session());
     let page = format!(
-        "<!doctype html>\n<meta charset=\"utf-8\">\n<title>VLEO</title>\n<script>location.replace({});</script>\n<p>Opening <a href=\"http://127.0.0.1:{port}/\">the program</a>.</p>\n",
+        "<!doctype html>\n<meta charset=\"utf-8\">\n<title>VLEO</title>\n<script>location.replace({});</script>\n<p>Opening <a href=\"http://127.0.0.1:{port}/app\">the program</a>.</p>\n",
         json::string(&address)
     );
     let _ = std::fs::remove_file(&at);
@@ -684,10 +684,27 @@ pub(super) fn open(params: &str, ctx: &Ctx) -> String {
             *OPEN.lock().unwrap_or_else(|p| p.into_inner()) = Some(opened);
             out
         }
-        Err(e) => refusal(&format!(
-            "Your key opened, but it opens nothing here: {}",
-            e.message()
-        )),
+        // The key is unlocked, so what its holder hands over to be registered
+        // can be given here: the public key and the proof made with it.
+        Err(e) => {
+            let mut j = Json::new();
+            j.raw("{");
+            j.bool_field("ok", false);
+            j.str_field("public_key", &key.public().to_hex());
+            j.str_field(
+                "proof",
+                &people::proof(&key, &f.meta.get("person").cloned().unwrap_or_default()),
+            );
+            j.str_field(
+                "message",
+                &format!(
+                    "Your key opened, but it opens nothing here: {}. Give whoever registers you its public key and proof, below.",
+                    e.message()
+                ),
+            );
+            j.raw("}");
+            j.0
+        }
     }
 }
 

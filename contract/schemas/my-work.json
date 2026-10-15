@@ -1,0 +1,74 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "my-work",
+  "description": "What needs the person whose key is open, now: a node of theirs unsigned, a group of theirs with nothing sealed, a file below them the chain refuses.",
+  "type": "object",
+  "properties": {
+    "ok": {
+      "type": "boolean"
+    },
+    "open": {
+      "type": "boolean"
+    },
+    "name": {
+      "type": "string"
+    },
+    "roles": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "role": {
+            "type": "string"
+          },
+          "in": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "role",
+          "in"
+        ]
+      }
+    },
+    "items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "unsigned",
+              "no file",
+              "nothing sealed",
+              "refused"
+            ]
+          },
+          "group": {
+            "type": "string"
+          },
+          "node": {
+            "type": "string"
+          },
+          "says": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "group",
+          "node",
+          "says"
+        ]
+      }
+    },
+    "message": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "ok",
+    "open"
+  ]
+}

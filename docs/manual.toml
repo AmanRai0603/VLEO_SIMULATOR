@@ -2051,6 +2051,11 @@ what = "This page."
 
 [[route]]
 method = "GET"
+path = "/app"
+what = "The application: its shell, the five workspaces, and My work, which it opens on. The program opens it from open.html in the keys folder, with this launch's word."
+
+[[route]]
+method = "GET"
 path = "/app.css"
 what = "The page's stylesheet."
 
@@ -2068,6 +2073,11 @@ what = "The page's type, bundled with the tool (web/fonts, IBM Plex Mono under t
 method = "GET"
 path = "/v1/version"
 what = "The engine's identity: the contract version it speaks, kernel, graph, row count and data versions."
+
+[[route]]
+method = "GET"
+path = "/v1/my-work"
+what = "What needs the person whose key is open, now: a node of theirs unsigned, a group of theirs with nothing sealed, a file below them the chain refuses."
 
 [[route]]
 method = "GET"

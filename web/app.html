@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VLEO</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%231a1a1a'/%3E%3Ctext x='8' y='12' font-size='11' fill='%23fbfaf7' text-anchor='middle' font-family='monospace'%3EV%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="/app.css">
+<style>
+/* The shell's own, kept here so the group and node pages that inline
+   app.css do not carry it. */
+body.sh { max-width: 64rem; margin: 0 auto; padding: 0 1.5rem 3rem; }
+#sh-head { display: flex; align-items: baseline; gap: 1rem; padding: 1rem 0 .4rem; }
+#sh-head h1 { font: 600 15px var(--mono); margin: 0; }
+.sh-who { color: var(--ink-2); font: 11px var(--mono); margin-left: auto; }
+.sh-notice p { margin: .4rem 0; padding: .35rem .6rem; border-radius: 3px; font-size: 13px; }
+.sh-said { background: var(--both-pale); color: var(--both); }
+.sh-refused { background: var(--out-pale); color: var(--out); }
+.sh-card { background: var(--card); border: 1px solid var(--rule); border-radius: 4px;
+  padding: .6rem 1rem; margin: .8rem 0; }
+.sh-card h2 { font: 600 12px var(--mono); text-transform: uppercase; letter-spacing: .08em;
+  color: var(--ink-2); margin: .2rem 0 .5rem; }
+.sh-card h3 { font: 600 12px var(--mono); margin: .8rem 0 .2rem; }
+.sh-card label { font-size: 12px; color: var(--ink-2); }
+.sh-card input { font: 12px var(--mono); padding: .2rem .35rem; border: 1px solid var(--rule); border-radius: 3px; }
+.sh-wide { width: 34rem; max-width: 100%; }
+.sh-fp code, .sh-handover code { word-break: break-all; }
+.sh-anchor, .sh-handover { border-left: 3px solid var(--in); background: var(--in-pale);
+  padding: .3rem .8rem; margin: .5rem 0; }
+.sh-item { margin: .3rem 0; font-size: 13px; }
+.sh-table { border-collapse: collapse; font-size: 12px; }
+.sh-table th, .sh-table td { border-bottom: 1px solid var(--rule-2); padding: .2rem .6rem .2rem 0; text-align: left; }
+.sh-loading { color: var(--ink-3); }
+</style>
+</head>
+<body class="sh">
+<!--
+  The application (docs/OPERATING_1_0.md, section 4): one shell, five
+  workspaces, and it opens on My work. Who you are is your key, opened here
+  with its passphrase; what the screens show is read from your copy of the
+  database. The other four workspaces fill as their stages arrive (F2 to F7);
+  until Explore does, today's tool is at /.
+-->
+<header id="sh-head">
+  <h1>VLEO</h1>
+  <span id="sh-who" class="sh-who">no key open</span>
+</header>
+<nav id="sh-nav" class="tabrow" aria-label="workspaces"></nav>
+<div id="sh-notice" class="sh-notice" role="status" aria-live="polite"></div>
+<main id="sh-main"><p class="sh-loading">Reading the program…</p></main>
+<script type="module" src="/js/shell.js"></script>
+</body>
+</html>
