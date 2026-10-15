@@ -1,0 +1,113 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "compare",
+  "$comment": "GET /v1/compare — crates/vleo-server/src/explore.rs, from vleo_files::compare, in the words the group page uses",
+  "type": "object",
+  "properties": {
+    "ok": {
+      "type": "boolean"
+    },
+    "a": {
+      "type": "string"
+    },
+    "b": {
+      "type": "string"
+    },
+    "summary": {
+      "type": "string"
+    },
+    "same_content": {
+      "type": "boolean"
+    },
+    "same": {
+      "type": "number"
+    },
+    "file": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "blocks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "uid": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "before": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "after": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "added",
+              "removed",
+              "changed"
+            ]
+          },
+          "differences": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "uid",
+          "id",
+          "before",
+          "after",
+          "status",
+          "differences"
+        ]
+      }
+    },
+    "history": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "table": {
+            "type": "string"
+          },
+          "only_first": {
+            "type": "number"
+          },
+          "only_second": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "table",
+          "only_first",
+          "only_second"
+        ]
+      }
+    },
+    "node": {
+      "type": "string",
+      "description": "On a refusal: what was refused."
+    },
+    "message": {
+      "type": "string",
+      "description": "On a refusal: why, in a sentence."
+    }
+  },
+  "required": [
+    "ok"
+  ]
+}

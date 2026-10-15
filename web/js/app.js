@@ -21,6 +21,7 @@ import { renderManual } from './manual.js';
 import { renderCase, preview, saveOverridesToCase, savableOverrides } from './case.js';
 import { renderResults, openResult } from './results.js';
 import { renderForms } from './forms.js';
+import { renderExplore } from './explore.js';
 import { showContract, showMock } from './banners.js';
 import { initDepth } from './depth.js';
 import { loadOverrides, overrideCount, clearAllOverrides, clearOverride,
@@ -93,13 +94,15 @@ export function draw() {
   $('#inputsview').hidden = v !== 'inputs';
   $('#resultsview').hidden = v !== 'results';
   $('#formsview').hidden = v !== 'forms';
+  $('#exploreview').hidden = v !== 'explore';
   // The pages that are not the tree: no caption about the tree above them.
   const page = v === 'node' || v === 'arch' || v === 'manual' || v === 'inputs' ||
-    v === 'results' || v === 'forms';
+    v === 'results' || v === 'forms' || v === 'explore';
   $('#caption-a').hidden = page;
   // The stepper walks a person through reading the TREE; on the manual it
   // would be a second set of instructions beside the first.
-  $('#stepper').hidden = v === 'manual' || v === 'inputs' || v === 'results' || v === 'forms';
+  $('#stepper').hidden = v === 'manual' || v === 'inputs' || v === 'results' || v === 'forms' ||
+    v === 'explore';
   $('#controls').style.display = v === 'layer' && S.layer !== 4 ? '' : 'none';
   // The case bar everywhere a number is shown: which inputs every run is on
   // is the first thing a reader of any number needs.
@@ -113,6 +116,7 @@ export function draw() {
   $('#inputs-tab').classList.toggle('sel', v === 'inputs');
   $('#results-tab').classList.toggle('sel', v === 'results');
   $('#forms-tab').classList.toggle('sel', v === 'forms');
+  $('#explore-tab').classList.toggle('sel', v === 'explore');
   $$('.tab[data-layer]').forEach(b =>
     b.classList.toggle('sel', !page && v !== 'arch' && +b.dataset.layer === S.layer));
   $$('.ctl.sz').forEach(b => b.classList.toggle('sel', b.dataset.size === S.size));
@@ -127,7 +131,7 @@ export function draw() {
 
   if (v === 'arch') { drawArchitecture(); drawStatus([]); return; }
   if (v === 'manual') { drawStatus([]); return; }
-  if (v === 'inputs' || v === 'results' || v === 'forms') { drawStatus([]); return; }
+  if (v === 'inputs' || v === 'results' || v === 'forms' || v === 'explore') { drawStatus([]); return; }
   if (v === 'run')  { drawRunView(); drawStatus([]); return; }
   if (v === 'node') { drawStatus(S.disp); return; }
   drawStatus(drawFigure());
@@ -162,6 +166,13 @@ async function setResults(file) {
   S.view = 'results';
   draw();
   await renderResults($('#results-body'));
+}
+
+/** Open the Explore page: which design, where it breaks, what differs. */
+async function setExplore() {
+  S.view = 'explore';
+  draw();
+  await renderExplore($('#explore-body'));
 }
 
 /** Open the Forms page. */
@@ -393,6 +404,7 @@ function wire() {
   $('#inputs-tab').onclick = () => setInputs();
   $('#results-tab').onclick = () => setResults();
   $('#forms-tab').onclick = () => setForms();
+  $('#explore-tab').onclick = () => setExplore();
   $('#case-inputs').onclick = () => setInputs();
   // An upload from the bar opens the Inputs page and reads the file there, so
   // what it would change is shown before anything is saved.
