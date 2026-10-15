@@ -9,7 +9,7 @@ Target 1.0.0 on Monday 19 October; Tuesday to Thursday are the buffer.
 
 ## Person A · day
 
-Handed over Thursday 15 October (S1, then F2 the same day). Nothing is merged: everything waits on Aman.
+Handed over Thursday 15 October (S1, then F2 and F3-a and F3-b the same day). Nothing is merged: everything waits on Aman.
 
 - **Open, in merge order:**
   - **162 the plan.** It now carries the nine briefs and F3's Plan (`docs/briefs/F3.md`).
@@ -30,14 +30,33 @@ Handed over Thursday 15 October (S1, then F2 the same day). Nothing is merged: e
     - Today's page loses the layer figure, the run view and the Inputs and Results tabs.
     - **Rows** lists every row to open its page, and links to the inputs or results open `/app#explore/<view>`.
     - The readers' folder and `xtask readers` go. The bundler moves to `xtask/src/bundle.rs`.
-    - `vleo-kernel-wasm` is kept, held to the native engine by `tools/kernel_check.mjs` in a new `kernel-wasm` job.
+    - `crates/vleo-kernel-wasm` and its check go too (Aman's call, 7158a36f): nothing is compiled for the browser for the application. Lost on purpose: the check that `pmath` answers the same built for WebAssembly.
 
-    Its Opus review is running. Not run locally: `panel_check.py` and its self-test (disk); the panels job runs them.
+    Its Opus review's findings are fixed in 7158a36f; CI is green on it. Not run locally: `panel_check.py` and its self-test (disk); the panels job runs them.
+  - **178 F3-a a revision saved in place.** Stacked on 175 (it needs nothing from F2).
+    - `vleo_files::save::save` writes a node file in the copy as its next revision, by its assigned writer or their deputy, under the copy's lock.
+    - A second writer is stopped by the bytes' SHA-256, with both versions answered.
+    - A save changes the node's own rows and nothing else: no signature, block, mount or person rides in.
+    - Routes: `GET /v1/node/<id>/file`, `POST /v1/node/<id>/save`; the scenario is `tools/save_check.py` in the panels job.
+
+    The Opus review found 11 issues; all are fixed in 02bba1a6, each with a test shown red, except a test of the key checked at the moment of the save. CI was green on the first commit; the fixes' run is pending.
+  - **179 F3-b signing the day's work: high risk.** Stacked on 178.
+    - `chain::sign_node` refuses the wrong key and anyone neither assigned nor the assignee's deputy, then holds the signed file to `chain::check_node`.
+    - `checks::check_node` is a node file's own checks, factored out of `check_release`.
+    - `save::sign_in_place` signs the node in the copy only when it is the file opened, and refuses while its cases disagree, naming each check.
+    - Route: `POST /v1/node/<id>/sign`. It refuses on the library's checks, not `/v1/parts` (that is B's 168, not under this stack).
+
+    Its Opus review is running.
 - **What 171 decides, which B's PRs must follow:**
   - **Ownership follows the mount.** Only the programme's file (mounting `systems`) and the systems' file (mounting each `l3_*`) mount anything.
   - **A group file registers only node engineers.** It holds nobody the programme's file registers, and no key it registers. `open_group_in` refuses anything else, by name.
   - **The test drive (165) must change.** It mounts the l3 groups in the programme's file, so they read as mounted twice. It should assign the mounting blocks in the systems' file instead, and register only node engineers in group files.
   - **The anchor** is accepted once per drive, with `accept_anchor` on `POST /v1/key/open`. A scenario that opens a key passes it once, and since 174 also `session`, read from `<keys>/open.html`. A face must make the person compare the fingerprint, never fill it in from the answer.
+- **What 178 and 179 decide:**
+  - **The copy's lock is the library's** (`vleo_files::save::lock`). Anything that writes the copy takes it, and holds it from its first read to its rename.
+  - **A node file is one block,** kept as `groups/<group_id>/nodes/<block id>.vnode`. A save or a signing refuses any other.
+  - **`acts_for` holds for nobody when the holder is empty**, everywhere in the chain.
+  - **Only the node engineer, or their deputy, signs a node.** The brief's scenario names Ola's deputy; that is put to Aman on 179.
 - **What 176 decides:**
   - **Today's design takes releases from before 1.0 only** (`intake::Release::open` reads format 1). A release of the one schema is refused by name, and the chain's mount path waits for F5's intake.
   - **A drive that names an anchor and has no programme's file admits nothing.**
@@ -49,10 +68,11 @@ Handed over Thursday 15 October (S1, then F2 the same day). Nothing is merged: e
 - **Not done:**
   - Run my code again (169) is still not limited to the person's own nodes. Aman decides.
   - Closing an issue (F5), and an issue in My work.
-- **Lockfiles:** `crates/vleo-kernel-wasm` and `crates/vleo-py` keep their own, built `--locked` in CI. A new dependency of `vleo-files` or `vleo-server` needs both refreshed, as 171 does.
+- **Lockfiles:** `crates/vleo-py` keeps its own, built `--locked` in CI, and so does `crates/vleo-kernel-wasm` until 177 removes it. A new dependency of `vleo-files` or `vleo-server` needs them refreshed, as 171 does.
 - **Disk:** the container's allowance filled once on S1. Old worktrees' `target/` folders and `target/*/incremental` were deleted to make room.
 - **Next for A:**
-  - F3-a, a revision saved in place, on `claude/a-f3a-save` stacked on 175 (`docs/briefs/F3.md`, *Plan*).
+  - The findings of 179's Opus review.
+  - F3-c, putting work back on the drive (`docs/briefs/F3.md`), stacked on 179.
   - The key's proof kept in its row and checked on open (the review of 172).
 
 ## Person B · night
