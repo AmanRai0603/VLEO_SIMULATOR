@@ -394,10 +394,17 @@ pub(super) fn registries(
     let read = |id: &str| -> Result<File, String> {
         let p = groups.join(id).join(format!("{id}.vgroup"));
         if !p.is_file() {
-            return Err(format!(
-                "{id} is mounted, but {} holds no {id}.vgroup",
-                groups.join(id).display()
-            ));
+            return Err(if id == "programme" {
+                format!(
+                    "{} holds no programme.vgroup: the database has no programme's file",
+                    groups.join(id).display()
+                )
+            } else {
+                format!(
+                    "{id} is mounted, but {} holds no {id}.vgroup",
+                    groups.join(id).display()
+                )
+            });
         }
         let f = sqlite::read(&p).map_err(|e| format!("{}: {}", p.display(), e.message()))?;
         match f.meta.get("group_id") {
@@ -449,9 +456,23 @@ pub(super) fn registries(
         .iter()
         .chain(systems.iter().flat_map(|s| s.file.mounts.iter()))
     {
-        if m.group_id != "systems" && !ids.contains(&m.group_id) {
-            ids.push(m.group_id.clone());
+        if m.group_id == "systems" || ids.contains(&m.group_id) {
+            continue;
         }
+        // A group's id is a folder's name: letters, digits and `_`, never a path.
+        if m.group_id.is_empty()
+            || !m
+                .group_id
+                .bytes()
+                .all(|c| c.is_ascii_alphanumeric() || c == b'_')
+        {
+            left_out.push(format!(
+                "{}: a mount names it, but a group's id is letters, digits and _ only",
+                m.group_id
+            ));
+            continue;
+        }
+        ids.push(m.group_id.clone());
     }
     ids.sort();
     // Only the programme's and the systems' files mount.
