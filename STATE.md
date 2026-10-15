@@ -24,7 +24,6 @@ Handed over Thursday 15 October (S1). Nothing is merged: everything waits on Ama
   - **The anchor** is accepted once per drive, with `accept_anchor` on `POST /v1/key/open`. A scenario that opens a key passes it once, and since 174 also `session`, read from `<keys>/open.html`. A face must make the person compare the fingerprint, never fill it in from the answer.
 - **Deferred, on purpose:**
   - F3-c's put-back checks signatures against the drive's current files, never the copy's (the review of 174).
-  - The page (F1 PR 3) strips the word from the address with `history.replaceState`, and never fills `accept_anchor` from an answer.
   - The race between `exists()` and the write when a key is made.
 - **Not done on S1:**
   - F2.
