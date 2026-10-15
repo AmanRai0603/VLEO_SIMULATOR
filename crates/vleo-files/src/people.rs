@@ -277,9 +277,10 @@ pub fn change(
     }
     // The file's signatures were made over what it was; the change is signed
     // afresh by whoever made it, and the file must open as it will be read.
-    // A "changes" verdict and its note are kept: they say what someone asked.
-    out.signatures
-        .retain(|s| s.scope != FILE || s.verdict != "ok");
+    // Every verdict on the file, a "changes" among them, was given on what it
+    // was. None is signed content, and kept beside the new content one would
+    // read as current, so all go.
+    out.signatures.retain(|s| s.scope != FILE);
     let row = chain::sign(&out, FILE, by, key, at, "ok", "")?;
     out.signatures.push(row);
     valve.open(&out).map_err(|e| {
