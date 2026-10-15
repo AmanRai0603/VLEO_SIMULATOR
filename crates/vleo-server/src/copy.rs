@@ -182,37 +182,11 @@ pub(super) fn take(params: &str, ctx: &Ctx) -> String {
     }
 }
 
-/// The lock beside the copy: held while one program copies the database or
-/// writes the copy, and let go when dropped.
-pub(super) struct Lock(PathBuf);
-
-impl Drop for Lock {
-    fn drop(&mut self) {
-        let _ = std::fs::remove_file(&self.0);
-    }
-}
-
-/// The copy's lock, taken, or why not: another program holds it.
-pub(super) fn lock(copy: &Path) -> Result<Lock, String> {
-    let (parent, name) = beside(copy)?;
-    std::fs::create_dir_all(&parent).map_err(|e| format!("{}: {e}", parent.display()))?;
-    let at = parent.join(format!(".{name}.lock"));
-    match std::fs::OpenOptions::new()
-        .write(true)
-        .create_new(true)
-        .open(&at)
-    {
-        Ok(mut f) => {
-            use std::io::Write as _;
-            let _ = writeln!(f, "{}", std::process::id());
-            Ok(Lock(at))
-        }
-        Err(e) if e.kind() == std::io::ErrorKind::AlreadyExists => Err(format!(
-            "another program is copying the database or writing your copy ({} is there): wait for it, or remove that file if no other program is running",
-            at.display()
-        )),
-        Err(e) => Err(format!("{}: {e}", at.display())),
-    }
+/// The copy's lock, taken, or why not: another program holds it. It is the
+/// library's (`vleo_files::save::lock`), so a save through it and a copy here
+/// never write the copy at once.
+pub(super) fn lock(copy: &Path) -> Result<vleo_files::save::Lock, String> {
+    vleo_files::save::lock(copy).map_err(|e| e.message().to_string())
 }
 
 /// The folder the copy lives in, and the copy's own name.

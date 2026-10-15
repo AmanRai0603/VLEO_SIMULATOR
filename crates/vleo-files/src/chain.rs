@@ -359,7 +359,11 @@ impl Registry {
     }
 
     /// Whether `name` may act for `holder`: it is them, or their deputy.
+    /// Nobody acts for nobody: an empty holder is held by no one.
     pub(crate) fn acts_for(&self, name: &str, holder: &str) -> bool {
+        if holder.is_empty() {
+            return false;
+        }
         name == holder
             || self
                 .file

@@ -73,6 +73,9 @@ pub mod n2;
 pub mod page;
 pub mod people;
 pub mod rows;
+// A save writes the copy: never in the page, which writes no file.
+#[cfg(not(target_arch = "wasm32"))]
+pub mod save;
 pub mod seal;
 #[cfg(not(target_arch = "wasm32"))]
 pub mod sqlite;

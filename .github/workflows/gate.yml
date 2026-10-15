@@ -437,6 +437,11 @@ jobs:
       # registration, and each one's My work (docs/briefs/F1.md, PR 3).
       - name: the shell and My work, in the browser
         run: python3 tools/shell_check.py
+      # Two instances of the program on one copy: a node saved by one, and the
+      # other's save from what it opened before stopped, with both versions
+      # and nothing written (docs/briefs/F3.md, F3-a).
+      - name: a node saved in place, and a second writer stopped
+        run: python3 tools/save_check.py
       # The manual in the browser tells people what to paste and what they will
       # see. `cargo test` already holds every name in it to the code; this holds
       # every command to what it DOES — run exactly as written, its output
