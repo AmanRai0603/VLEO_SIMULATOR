@@ -80,7 +80,7 @@ pub(super) fn digests(folder: &Path) -> Result<BTreeMap<String, String>, String>
                     "{shown} is neither a folder nor a file: a database holds only those"
                 ));
             }
-            if name.ends_with(".vkey") {
+            if name.to_ascii_lowercase().ends_with(".vkey") {
                 return Err(format!(
                     "{shown} is a key: a key lives on its person's own computer, never in a database"
                 ));
@@ -269,7 +269,8 @@ fn copy_whole(drive: &Path, copy: &Path) -> Result<Copied, String> {
     let (parent, name) = beside(copy)?;
     let incoming = parent.join(format!(".{name}.incoming-{}", std::process::id()));
     let previous = parent.join(format!(".{name}.previous-{}", std::process::id()));
-    let before = parent.join(format!(".{name}.before"));
+    let before =
+        |stamp: &str| parent.join(format!(".{name}.before-{}", stamp.replace([':', '-'], "")));
     let drive_root =
         std::fs::canonicalize(drive).map_err(|e| format!("{}: {e}", drive.display()))?;
     let _ = std::fs::remove_dir_all(&incoming);
@@ -337,10 +338,20 @@ fn copy_whole(drive: &Path, copy: &Path) -> Result<Copied, String> {
         return Err(format!("{}: {e}", copy.display()));
     }
     if previous.exists() {
-        // Kept, never deleted: the last copy before this one, checked to hold
-        // nothing that had not gone back.
-        let _ = std::fs::remove_dir_all(&before);
-        let _ = std::fs::rename(&previous, &before);
+        // Kept, never deleted: each copy before this one, checked to hold
+        // nothing that had not gone back, under the moment it was taken.
+        let stamp = record(&previous)
+            .ok()
+            .flatten()
+            .map_or_else(results::now_utc, |old| old.copied_at);
+        // Two copies in the same second keep both: the second gets a number.
+        let mut kept = before(&stamp);
+        let mut n = 1;
+        while kept.exists() {
+            n += 1;
+            kept = PathBuf::from(format!("{}-{n}", before(&stamp).display()));
+        }
+        let _ = std::fs::rename(&previous, kept);
     }
     Ok(r)
 }
@@ -387,17 +398,15 @@ pub(super) fn state(ctx: &Ctx) -> String {
     };
     j.bool_field("copied", true);
     j.str_field("drive", &r.drive);
+    let mut notes: Vec<String> = Vec::new();
     if let Some(started) = std::env::var_os("VLEO_DRIVE").filter(|v| !v.is_empty()) {
         let started = std::fs::canonicalize(&started).unwrap_or_else(|_| PathBuf::from(&started));
         if started != Path::new(&r.drive) {
-            j.str_field(
-                "message",
-                &format!(
-                    "This copy came from {}, but the program was started on the drive {}.",
-                    r.drive,
-                    started.display()
-                ),
-            );
+            notes.push(format!(
+                "This copy came from {}, but the program was started on the drive {}.",
+                r.drive,
+                started.display()
+            ));
         }
     }
     j.str_field("copied_at", &r.copied_at);
@@ -415,7 +424,7 @@ pub(super) fn state(ctx: &Ctx) -> String {
         Ok(now) => list(&mut j, "changed_here", &r.changed(&now)),
         Err(why) => {
             list(&mut j, "changed_here", &[]);
-            j.str_field("message", &why);
+            notes.push(why);
         }
     }
     match digests(Path::new(&r.drive)) {
@@ -428,6 +437,36 @@ pub(super) fn state(ctx: &Ctx) -> String {
             list(&mut j, "changed_on_drive", &[]);
         }
     }
+    if !notes.is_empty() {
+        j.str_field("message", &notes.join(" "));
+    }
     j.raw("}");
     j.0
+}
+
+/// Each group's file in `folder`, `groups/<id>/<id>.vgroup` and any other
+/// `.vgroup` beside it, by its path inside the database, with the SHA-256 of
+/// its bytes: what is read to tell whether the drive holds newer group files
+/// than a copy, without reading the whole drive.
+pub(super) fn group_files(folder: &Path) -> Result<BTreeMap<String, String>, String> {
+    let groups = folder.join("groups");
+    let mut out = BTreeMap::new();
+    for g in std::fs::read_dir(&groups).map_err(|e| format!("{}: {e}", groups.display()))? {
+        let g = g.map_err(|e| format!("{}: {e}", groups.display()))?;
+        if !g.file_type().is_ok_and(|t| t.is_dir()) {
+            continue;
+        }
+        let id = g.file_name().to_string_lossy().into_owned();
+        for f in std::fs::read_dir(g.path()).map_err(|e| format!("{}: {e}", g.path().display()))? {
+            let f = f.map_err(|e| format!("{}: {e}", g.path().display()))?;
+            let name = f.file_name().to_string_lossy().into_owned();
+            if !name.ends_with(".vgroup") || !f.file_type().is_ok_and(|t| t.is_file()) {
+                continue;
+            }
+            let bytes =
+                std::fs::read(f.path()).map_err(|e| format!("{}: {e}", f.path().display()))?;
+            out.insert(format!("groups/{id}/{name}"), copied::digest(&bytes));
+        }
+    }
+    Ok(out)
 }

@@ -548,9 +548,38 @@ fn people_change_in_the_copy_at_their_valve() {
     ask(port, "POST", "/v1/key/close", &[]);
 
     // Copied again, cleanly: the copy before is kept beside, never deleted.
+    for _ in 0..2 {
+        let took = ask(port, "POST", "/v1/copy", &[("drive", &drive_text)]);
+        assert_eq!(field(&took, "ok"), Some("true"), "{took}");
+    }
+    let kept: Vec<_> = std::fs::read_dir(&scratch)
+        .unwrap()
+        .flatten()
+        .filter(|e| {
+            e.file_name()
+                .to_string_lossy()
+                .starts_with(".copy2.before-")
+        })
+        .collect();
+    assert_eq!(kept.len(), 2, "each copy before is kept, under its date");
+    assert!(kept[0].path().join("copied.toml").is_file());
+    // A copy kept under the same moment is never written over: the next gets
+    // a number.
+    let record = vleo_files::copied::Copied::from_toml(
+        &std::fs::read_to_string(copy2.join("copied.toml")).unwrap(),
+    )
+    .unwrap();
+    let stamp = record.copied_at.replace([':', '-'], "");
+    let clash = scratch.join(format!(".copy2.before-{stamp}"));
+    std::fs::create_dir_all(&clash).unwrap();
+    std::fs::write(clash.join("someone's"), "kept").unwrap();
     let took = ask(port, "POST", "/v1/copy", &[("drive", &drive_text)]);
     assert_eq!(field(&took, "ok"), Some("true"), "{took}");
-    assert!(scratch.join(".copy2.before").join("copied.toml").is_file());
+    assert!(clash.join("someone's").is_file());
+    assert!(scratch
+        .join(format!(".copy2.before-{stamp}-2"))
+        .join("copied.toml")
+        .is_file());
 
     // A record that does not read is refused, never taken for a drive of its own.
     std::fs::write(copy2.join("copied.toml"), "not a record").unwrap();
@@ -577,6 +606,11 @@ fn people_change_in_the_copy_at_their_valve() {
     std::env::set_var("VLEO_COPY", &copy);
     let ola = open(port, "test-ola.vkey");
     assert!(!ola.contains("try again in"), "{ola}");
+
+    // A drive out of reach is said, not passed over in silence.
+    std::fs::rename(&drv, scratch.join("drive-moved")).unwrap();
+    let ola = open(port, "test-ola.vkey");
+    assert!(ola.contains("could not be checked"), "{ola}");
 
     let _ = std::fs::remove_dir_all(&scratch);
 }

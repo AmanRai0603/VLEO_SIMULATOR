@@ -380,6 +380,23 @@ fn a_key_opens_only_for_whom_it_is_registered() {
         "{me}"
     );
 
+    // A record planted on the drive names another drive: it says nothing, for
+    // only the program's own copy has a record that counts.
+    let planted = vleo_files::copied::Copied {
+        drive: s("/somewhere/else/entirely"),
+        copied_at: s("2026-10-15T08:00:00Z"),
+        files: Default::default(),
+    };
+    std::fs::write(drv.join("copied.toml"), planted.to_toml()).unwrap();
+    let again = ask(
+        port,
+        "POST",
+        "/v1/key/open",
+        "file=test-nia.vkey&passphrase=the%20node%20engineer%27s%20passphrase",
+    );
+    assert_eq!(field(&again, "name"), Some("Test Nia"), "{again}");
+    std::fs::remove_file(drv.join("copied.toml")).unwrap();
+
     // Closed, it is gone; and a failed open leaves nobody's key open.
     ask(port, "POST", "/v1/key/close", "");
     assert_eq!(

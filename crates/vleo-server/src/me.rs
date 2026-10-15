@@ -283,9 +283,16 @@ fn anchors_file() -> PathBuf {
 /// A working copy is named by the drive it was copied from, so copying again
 /// asks nobody to accept the same anchor twice.
 /// A record beside the folder that does not read is refused, never taken for
-/// a folder of its own.
-fn drive_name(database: &Path) -> Result<String, String> {
-    let at = match copy::record(database)? {
+/// a folder of its own. The record is read only beside `copy`, the working
+/// copy the program took: one found on a drive opened as it is says nothing,
+/// for anyone who can write to that drive could have put it there.
+fn drive_name(database: &Path, copy: &Path) -> Result<String, String> {
+    let record = if database == copy {
+        copy::record(database)?
+    } else {
+        None
+    };
+    let at = match record {
         Some(c) => PathBuf::from(c.drive),
         None => database.to_path_buf(),
     };
@@ -300,7 +307,7 @@ fn drive_name(database: &Path) -> Result<String, String> {
 /// it accepted for each drive, and refuses a different one: a changed anchor
 /// comes with a note signed by the old key, which is not read here yet
 /// (section 14).
-fn anchor(database: &Path) -> Result<Anchor, String> {
+fn anchor(database: &Path, copy: &Path) -> Result<Anchor, String> {
     let start = ["START HERE.md", "START HERE", "START_HERE.md"]
         .iter()
         .map(|n| database.join(n))
@@ -327,7 +334,7 @@ fn anchor(database: &Path) -> Result<Anchor, String> {
         ))
         }
     };
-    let drive = drive_name(database)?;
+    let drive = drive_name(database, copy)?;
     let before = kept.lines().find_map(|l| {
         let (fingerprint, d) = l.split_once(' ')?;
         (d == drive).then(|| fingerprint.to_string())
@@ -344,8 +351,8 @@ fn anchor(database: &Path) -> Result<Anchor, String> {
 }
 
 /// `fingerprint` remembered as this drive's anchor.
-fn accept(database: &Path, fingerprint: &str) -> Result<(), String> {
-    let drive = drive_name(database)?;
+fn accept(database: &Path, copy: &Path, fingerprint: &str) -> Result<(), String> {
+    let drive = drive_name(database, copy)?;
     use std::io::Write as _;
     let at = anchors_file();
     std::fs::create_dir_all(keys_dir())
@@ -374,8 +381,12 @@ pub(super) struct Chain {
 /// The first time this computer opens the drive, the anchor is remembered only
 /// once the programme's file opens under it and the person has accepted it
 /// (`accept_anchor`, the fingerprint they compared).
-pub(super) fn registries(database: &Path, accept_anchor: &str) -> Result<Chain, NotRead> {
-    let (named, first) = match anchor(database).map_err(NotRead::Why)? {
+pub(super) fn registries(
+    database: &Path,
+    copy: &Path,
+    accept_anchor: &str,
+) -> Result<Chain, NotRead> {
+    let (named, first) = match anchor(database, copy).map_err(NotRead::Why)? {
         Anchor::Accepted(n) => (n, false),
         Anchor::FirstUse(n) => (n, true),
     };
@@ -399,10 +410,10 @@ pub(super) fn registries(database: &Path, accept_anchor: &str) -> Result<Chain, 
         if accept_anchor.trim().to_ascii_lowercase() != named {
             return Err(NotRead::FirstUse(
                 named,
-                drive_name(database).map_err(NotRead::Why)?,
+                drive_name(database, copy).map_err(NotRead::Why)?,
             ));
         }
-        accept(database, &named).map_err(NotRead::Why)?;
+        accept(database, copy, &named).map_err(NotRead::Why)?;
     }
     let mut left_out = Vec::new();
     let systems = match read("systems")
@@ -464,11 +475,22 @@ fn first_use(fingerprint: &str, drive: &str) -> String {
     j.0
 }
 
-fn me_json(open: Option<&Opened>, left_out: &[String], newer: &[String]) -> String {
+fn me_json(
+    open: Option<&Opened>,
+    left_out: &[String],
+    newer: &Result<Vec<String>, String>,
+) -> String {
     let mut j = Json::new();
     j.raw("{");
     j.bool_field("ok", true);
     j.bool_field("open", open.is_some());
+    if let Err(why) = newer {
+        j.str_field(
+            "warning",
+            &format!("The drive could not be checked for group files newer than your copy: {why}"),
+        );
+    }
+    let newer: &[String] = newer.as_deref().unwrap_or(&[]);
     if !newer.is_empty() {
         j.key("drive_newer").raw("[");
         for (i, x) in newer.iter().enumerate() {
@@ -537,20 +559,19 @@ fn me_json(open: Option<&Opened>, left_out: &[String], newer: &[String]) -> Stri
     j.0
 }
 
-/// The group files the drive holds newer than the copy `database`, when it is
-/// a copy and the drive is reached.
-fn newer_on_drive(database: &Path) -> Vec<String> {
-    let Ok(Some(r)) = copy::record(database) else {
-        return Vec::new();
+/// The group files the drive holds newer than the working copy, when
+/// `database` is that copy; or why the drive could not be checked. Only the
+/// group files are read, not the whole drive.
+fn newer_on_drive(database: &Path, copy: &Path) -> Result<Vec<String>, String> {
+    if database != copy {
+        return Ok(Vec::new());
+    }
+    let Some(r) = copy::record(database)? else {
+        return Ok(Vec::new());
     };
-    copy::digests(Path::new(&r.drive))
-        .map(|there| {
-            r.changed(&there)
-                .into_iter()
-                .filter(|p| p.ends_with(".vgroup"))
-                .collect()
-        })
-        .unwrap_or_default()
+    let mut was = r.clone();
+    was.files.retain(|p, _| p.ends_with(".vgroup"));
+    Ok(was.changed(&copy::group_files(Path::new(&r.drive))?))
 }
 
 /// The page the program opens: a file only this person can read, in their
@@ -634,7 +655,7 @@ pub(super) fn open(params: &str, ctx: &Ctx) -> String {
     let accept_anchor = param(params, "accept_anchor")
         .map(decode)
         .unwrap_or_default();
-    let c = match registries(&database(ctx), &accept_anchor) {
+    let c = match registries(&database(ctx), &copy::dir(ctx), &accept_anchor) {
         Ok(c) => c,
         Err(NotRead::FirstUse(fingerprint, drive)) => return first_use(&fingerprint, &drive),
         Err(NotRead::Why(why)) => {
@@ -658,7 +679,8 @@ pub(super) fn open(params: &str, ctx: &Ctx) -> String {
                 key,
                 me,
             };
-            let out = me_json(Some(&opened), &left_out, &newer_on_drive(&database(ctx)));
+            let newer = newer_on_drive(&database(ctx), &copy::dir(ctx));
+            let out = me_json(Some(&opened), &left_out, &newer);
             *OPEN.lock().unwrap_or_else(|p| p.into_inner()) = Some(opened);
             out
         }
@@ -678,7 +700,7 @@ pub(super) fn close() -> String {
 /// `GET /v1/me`: who is using the program, or that no key is open.
 pub(super) fn me() -> String {
     let open = OPEN.lock().unwrap_or_else(|p| p.into_inner());
-    me_json(open.as_ref(), &[], &[])
+    me_json(open.as_ref(), &[], &Ok(Vec::new()))
 }
 
 /// The open key and who it is, for whatever signs with it: a change to whom a
