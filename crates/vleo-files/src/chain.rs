@@ -358,6 +358,16 @@ impl Registry {
             .any(|p| p.name == name && p.role == role)
     }
 
+    /// Whether `name` may sign, and write, the node `block_uid`: this group
+    /// file assigns it to them, or to someone they are the deputy of. The one
+    /// rule of who may sign a node, wherever it is asked.
+    pub fn may_sign_node(&self, name: &str, block_uid: &str) -> bool {
+        self.file
+            .assignments
+            .iter()
+            .any(|a| a.block_uid == block_uid && self.acts_for(name, &a.person))
+    }
+
     /// Whether `name` may act for `holder`: it is them, or their deputy.
     /// Nobody acts for nobody: an empty holder is held by no one.
     pub(crate) fn acts_for(&self, name: &str, holder: &str) -> bool {
@@ -390,6 +400,20 @@ fn counted<'a>(
         .filter(|s| s.scope == scope && s.verdict == "ok")
     {
         let r = check_row(f, row)
+            .and_then(|_| {
+                // A signature is a person's (AGENTS.md, rule 6): one under an
+                // assistant's name never counts, whatever key made it.
+                if crate::checks::is_assistant(&row.signer) {
+                    return Err(refused(
+                        ErrorKind::Signature,
+                        format!(
+                            "{:?} is an assistant's name, and a signature is a person's",
+                            row.signer
+                        ),
+                    ));
+                }
+                Ok(())
+            })
             .and_then(|_| {
                 registry
                     .key(&row.signer, &row.public_key, &row.signed_at)
@@ -811,14 +835,9 @@ pub fn check_node(f: &File, block_uid: &str, group: &Registry) -> Result<(), Err
         .find(|b| b.uid == block_uid)
         .map(|b| b.id.clone())
         .unwrap_or_else(|| block_uid.to_string());
-    let assigned = |name: &str| {
-        group
-            .file
-            .assignments
-            .iter()
-            .any(|a| a.block_uid == block_uid && group.acts_for(name, &a.person))
-    };
-    let (ok, why) = counted(f, block_uid, group, assigned);
+    let (ok, why) = counted(f, block_uid, group, |name| {
+        group.may_sign_node(name, block_uid)
+    });
     if ok.is_empty() {
         return Err(none_counts(&id, &why));
     }
@@ -826,11 +845,14 @@ pub fn check_node(f: &File, block_uid: &str, group: &Registry) -> Result<(), Err
 }
 
 /// `f` with the node `block_uid` signed `ok` by `by`, as the day's work
-/// (docs/briefs/F3.md, F3-b) — or why not. Refused before signing when `key`
-/// is not a key `group` registers for `by` and counts at `at`, and when `by`
-/// is neither assigned the block nor the deputy of whoever is. The signed
-/// file is then held to [`check_node`], so the rule of who may sign a node is
-/// kept once, there, and this refuses whatever it refuses.
+/// (docs/briefs/F3.md, F3-b), and what its checks found — or why not.
+/// Refused before signing when `key` is not a key `group` registers for `by`
+/// and counts at `at`, and when `by` may not sign the node
+/// ([`Registry::may_sign_node`]). Then the signed file is held to the node's
+/// own checks (`checks::check_node`: its cases agree with its method, it
+/// holds something to sign, no assistant signs it), every failing one named,
+/// and its new signature, by itself, to [`check_node`]: what this signs
+/// counts through the chain, or nothing is signed.
 pub fn sign_node(
     f: &File,
     block_uid: &str,
@@ -838,7 +860,7 @@ pub fn sign_node(
     key: &SigningKey,
     at: &str,
     group: &Registry,
-) -> Result<File, Error> {
+) -> Result<(File, crate::checks::Findings), Error> {
     let id = f
         .blocks
         .iter()
@@ -851,12 +873,7 @@ pub fn sign_node(
             )
         })?;
     group.key(by, &key.public().to_hex(), at)?;
-    let assigned = group
-        .file
-        .assignments
-        .iter()
-        .any(|a| a.block_uid == block_uid && group.acts_for(by, &a.person));
-    if !assigned {
+    if !group.may_sign_node(by, block_uid) {
         return Err(refused(
             ErrorKind::Signature,
             format!(
@@ -865,11 +882,28 @@ pub fn sign_node(
             ),
         ));
     }
+    let row = sign(f, block_uid, by, key, at, "ok", "")?;
     let mut out = f.clone();
-    out.signatures
-        .push(sign(f, block_uid, by, key, at, "ok", "")?);
-    check_node(&out, block_uid, group)?;
-    Ok(out)
+    out.signatures.push(row.clone());
+    let found = crate::checks::check_node(&out);
+    let refusing: Vec<String> = found
+        .errors()
+        .map(|e| format!("{}: {}", e.place, e.what))
+        .collect();
+    if !refusing.is_empty() {
+        return Err(refused(
+            ErrorKind::Malformed,
+            format!(
+                "{id} is not signed: its checks refuse it ({}) — {}",
+                refusing.len(),
+                refusing.join("; ")
+            ),
+        ));
+    }
+    let mut only = out.clone();
+    only.signatures = vec![row];
+    check_node(&only, block_uid, group)?;
+    Ok((out, found))
 }
 
 /// What checking a release found: every node, and the seal.

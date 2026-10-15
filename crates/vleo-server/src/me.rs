@@ -603,7 +603,7 @@ fn me_json(
 /// The group files the drive holds newer than the working copy, when
 /// `database` is that copy; or why the drive could not be checked. Only the
 /// group files are read, not the whole drive.
-fn newer_on_drive(database: &Path, copy: &Path) -> Result<Vec<String>, String> {
+pub(super) fn newer_on_drive(database: &Path, copy: &Path) -> Result<Vec<String>, String> {
     if database != copy {
         return Ok(Vec::new());
     }

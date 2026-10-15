@@ -58,6 +58,8 @@ fn node() -> File {
     }
     let b = rel.blocks.iter().find(|b| b.uid == UID).unwrap().clone();
     n.blocks = vec![b];
+    // One revision: the file's and its block's.
+    n.blocks[0].revision = 1;
     n.ports = rel
         .ports
         .iter()
@@ -147,7 +149,9 @@ fn the_node_engineer_signs_and_the_signature_checks_through_the_chain() {
         vleo_files::checks::check_node(&node()).holds(),
         "the fixture's node holds its checks"
     );
-    let signed = chain::sign_node(&node(), UID, "Test Nia", &key(74), AT, &g).unwrap();
+    let signed = chain::sign_node(&node(), UID, "Test Nia", &key(74), AT, &g)
+        .unwrap()
+        .0;
     chain::check_node(&signed, UID, &g).expect("it checks through the chain");
     let row = signed.signatures.last().unwrap();
     assert_eq!(
@@ -179,9 +183,17 @@ fn only_the_assigned_node_engineer_or_their_deputy_signs() {
     ] {
         let e = chain::sign_node(&node(), UID, who, &k, AT, &g).unwrap_err();
         assert!(e.message().contains(says), "{who}: {}", e.message());
+        // Refused before signing, not by the chain's check after it.
+        assert!(
+            !e.message().contains("no signature that counts"),
+            "{who}: {}",
+            e.message()
+        );
     }
     // Her deputy signs for her, and it counts.
-    let signed = chain::sign_node(&node(), UID, "Test Dee", &key(76), AT, &g).unwrap();
+    let signed = chain::sign_node(&node(), UID, "Test Dee", &key(76), AT, &g)
+        .unwrap()
+        .0;
     chain::check_node(&signed, UID, &g).expect("the deputy's signature counts");
 }
 
@@ -189,7 +201,11 @@ fn only_the_assigned_node_engineer_or_their_deputy_signs() {
 fn a_key_revoked_before_the_signing_signs_nothing() {
     let g = group("2026-10-01T00:00:00Z");
     let e = chain::sign_node(&node(), UID, "Test Nia", &key(74), AT, &g).unwrap_err();
-    assert!(e.message().contains("revoked"), "{}", e.message());
+    assert!(
+        e.message().contains("revoked") && !e.message().contains("no signature that counts"),
+        "{}",
+        e.message()
+    );
 }
 
 #[test]
@@ -217,8 +233,9 @@ fn a_node_whose_case_disagrees_is_not_signed_and_nothing_is_written() {
     )
     .unwrap_err();
     assert!(
-        e.message().contains("sw_activity_band is not signed")
-            && e.message().contains("of its checks refuse"),
+        e.message()
+            .contains("sw_activity_band is not signed: its checks refuse it")
+            && e.message().contains("does not reproduce"),
         "{}",
         e.message()
     );
@@ -324,6 +341,149 @@ fn a_signature_under_an_assistant_s_name_is_not_made() {
     let e = sign_in_place(&c, NODE, &opened(&c), "Claude", &key(79), AT, APP, &g).unwrap_err();
     assert!(
         e.message().contains("an assistant's name"),
+        "{}",
+        e.message()
+    );
+    assert_eq!(std::fs::read(c.join(NODE)).unwrap(), before);
+    let _ = std::fs::remove_dir_all(&c);
+}
+
+/// The node with its quietest case, 64 sfu, saying band 2: it disagrees.
+fn disagreeing() -> File {
+    let mut bad = node();
+    let t = bad
+        .tables
+        .iter_mut()
+        .find(|t| t.path == "results/isolation.csv")
+        .unwrap();
+    t.csv = t.csv.replacen("\n64,1,", "\n64,2,", 1);
+    bad
+}
+
+#[test]
+fn the_library_s_signing_holds_the_node_to_its_checks_whoever_calls_it() {
+    let e =
+        chain::sign_node(&disagreeing(), UID, "Test Nia", &key(74), AT, &group("")).unwrap_err();
+    assert!(
+        e.message().contains("is not signed: its checks refuse it")
+            && e.message().contains("does not reproduce"),
+        "{}",
+        e.message()
+    );
+}
+
+#[test]
+fn a_node_with_nothing_a_check_reads_is_not_signed() {
+    let g = group("");
+    type Change = fn(&mut File);
+    let cases: [(&str, Change, &str); 5] = [
+        (
+            "archived",
+            |f| f.blocks[0].archived = 1,
+            "is archived: an archived node is not signed",
+        ),
+        (
+            "open",
+            |f| f.blocks[0].behaviour = s("open"),
+            "is open: nothing in it is decided or computed yet",
+        ),
+        (
+            "lookup",
+            |f| f.blocks[0].behaviour = s("lookup"),
+            "nothing checks a lookup node yet",
+        ),
+        (
+            "stated with no value",
+            |f| {
+                f.blocks[0].behaviour = s("stated");
+                for p in f.ports.iter_mut() {
+                    p.value = s("");
+                }
+            },
+            "states no value that is a number",
+        ),
+        (
+            "a case from the code under test",
+            |f| {
+                f.cases.push(TestCase {
+                    block_uid: s(UID),
+                    name: s("snapshot"),
+                    inputs: s("f107=100"),
+                    expected: s("2"),
+                    tolerance: s("0"),
+                    provenance: s("agent-generated"),
+                    source: s(""),
+                })
+            },
+            "an expected value never comes from the code under test",
+        ),
+    ];
+    for (what, change, says) in cases {
+        let mut f = node();
+        change(&mut f);
+        let c = copy(&what.replace(' ', "-"), &f);
+        let before = std::fs::read(c.join(NODE)).unwrap();
+        let e =
+            sign_in_place(&c, NODE, &opened(&c), "Test Nia", &key(74), AT, APP, &g).unwrap_err();
+        assert!(e.message().contains(says), "{what}: {}", e.message());
+        assert_eq!(std::fs::read(c.join(NODE)).unwrap(), before, "{what}");
+        let _ = std::fs::remove_dir_all(&c);
+    }
+}
+
+#[test]
+fn a_signature_under_an_assistant_s_name_never_counts_whatever_made_it() {
+    let mut g = group("");
+    person(&mut g.file, "Claude", "", &key(79), "");
+    g.file.assignments[0].person = s("Claude");
+    let mut f = node();
+    let row = chain::sign(&f, UID, "Claude", &key(79), AT, "ok", "").unwrap();
+    f.signatures.push(row);
+    let e = chain::check_node(&f, UID, &g).unwrap_err();
+    assert!(
+        e.message().contains("an assistant's name"),
+        "{}",
+        e.message()
+    );
+}
+
+#[test]
+fn a_node_is_signed_only_against_its_own_group_s_file() {
+    let mut other = group("");
+    other.file.meta.insert(s("group_id"), s("l3_power"));
+    let c = copy("other-group", &node());
+    let e =
+        sign_in_place(&c, NODE, &opened(&c), "Test Nia", &key(74), AT, APP, &other).unwrap_err();
+    assert!(
+        e.message().contains("the group file given is l3_power's"),
+        "{}",
+        e.message()
+    );
+    let _ = std::fs::remove_dir_all(&c);
+}
+
+#[test]
+fn the_revision_said_is_the_one_its_signature_names() {
+    let g = group("");
+    let mut f = node();
+    f.blocks[0].revision = 4;
+    f.meta.insert(s("revision"), s("4"));
+    let c = copy("revision", &f);
+    match sign_in_place(&c, NODE, &opened(&c), "Test Nia", &key(74), AT, APP, &g).unwrap() {
+        Saved::Written { revision, .. } => assert_eq!(revision, 4),
+        other => panic!("not signed: {other:?}"),
+    }
+    let now = sqlite::read(&c.join(NODE)).unwrap();
+    assert_eq!(now.signatures.last().unwrap().revision, "4");
+    let _ = std::fs::remove_dir_all(&c);
+    // The file says one revision and its block another: not signed.
+    f.blocks[0].revision = 3;
+    let c = copy("two-revisions", &f);
+    let before = std::fs::read(c.join(NODE)).unwrap();
+    let e = sign_in_place(&c, NODE, &opened(&c), "Test Nia", &key(74), AT, APP, &g).unwrap_err();
+    assert!(
+        e.message()
+            .contains("says it is revision 4, and its block says 3"),
         "{}",
         e.message()
     );

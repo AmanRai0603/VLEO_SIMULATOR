@@ -150,14 +150,66 @@ pub fn check_release(f: &File) -> Findings {
 }
 
 /// Every check of a node file's content: each of its blocks — where its inputs
-/// come from, who made its method, that its method reproduces its cases — and
-/// that no assistant signed it. What a node is held to before it is signed;
-/// the release's own checks (`check_release`) ask for what only a release has.
+/// come from, who made its method, that its method reproduces its cases — that
+/// no case's expected value came from the code under test, and that no
+/// assistant signed it. What a node is held to before it is signed; the
+/// release's own checks (`check_release`) ask for what only a release has.
+///
+/// A node is signed for what it decides or computes, so one that holds
+/// nothing a check can read is refused here by name, never signed unread: an
+/// archived block, an open one, a stated one that states no number, and one
+/// whose behaviour nothing checks yet.
 pub fn check_node(f: &File) -> Findings {
     let mut out = Findings::default();
+    for b in &f.blocks {
+        if b.archived != 0 {
+            out.error(&b.id, "is archived: an archived node is not signed");
+            continue;
+        }
+        match b.behaviour.as_str() {
+            "method" => {}
+            "stated" => {
+                let states = f.ports.iter().any(|p| {
+                    p.block_uid == b.uid && p.direction == "out" && number(&p.value).is_some()
+                });
+                if !states {
+                    out.error(
+                        &b.id,
+                        "states no value that is a number: a stated node is signed for the value it states",
+                    );
+                }
+            }
+            "open" => out.error(
+                &b.id,
+                "is open: nothing in it is decided or computed yet, so there is nothing to sign",
+            ),
+            other => out.error(
+                &b.id,
+                format!("is a {other} node, and nothing checks a {other} node yet: it is not signed until something does"),
+            ),
+        }
+    }
     blocks(f, &mut out);
+    cases(f, &mut out);
     signers(f, &mut out);
     out
+}
+
+/// No case's expected value comes from the code under test (AGENTS.md, rule
+/// 4): a case whose provenance is `self-snapshot` or `agent-generated` is
+/// refused, by name.
+fn cases(f: &File, out: &mut Findings) {
+    for c in &f.cases {
+        if matches!(c.provenance.as_str(), "self-snapshot" | "agent-generated") {
+            out.error(
+                &place_of(f, &c.block_uid),
+                format!(
+                    "its case {:?} says its expected value is {}: an expected value never comes from the code under test",
+                    c.name, c.provenance
+                ),
+            );
+        }
+    }
 }
 
 /// The checks of each live block.

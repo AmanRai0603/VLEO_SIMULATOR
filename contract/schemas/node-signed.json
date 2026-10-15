@@ -31,6 +31,36 @@
     "signed_at": {
       "type": "string"
     },
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "level": {
+            "type": "string"
+          },
+          "place": {
+            "type": "string"
+          },
+          "what": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "level",
+          "place",
+          "what"
+        ]
+      },
+      "description": "What the node's checks found that does not refuse it: its warnings."
+    },
+    "newer_on_drive": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Group files changed on the drive since the copy was made: what they say is checked again when the work is put back."
+    },
     "writer": {
       "type": "string",
       "description": "On a conflict, who wrote the file as it now is."

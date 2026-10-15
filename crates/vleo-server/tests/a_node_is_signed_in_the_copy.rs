@@ -182,6 +182,8 @@ fn node() -> File {
         n.meta.insert(s(k), s(v));
     }
     n.blocks = vec![rel.blocks.iter().find(|b| b.uid == UID).unwrap().clone()];
+    // One revision: the file's and its block's.
+    n.blocks[0].revision = 1;
     n.ports = rel
         .ports
         .iter()
@@ -232,6 +234,17 @@ fn with_band(copy: &Path, band: &str) -> String {
     let out = b64(&std::fs::read(&at).unwrap());
     let _ = std::fs::remove_file(&at);
     out
+}
+
+/// Now, as the program writes a moment (`results::now_utc`).
+fn now() -> String {
+    vleo_units::calendar::Civil::from_unix(
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_secs() as i64,
+    )
+    .to_string()
 }
 
 /// Solar's group file in the copy, as the chain reads it for this test.
@@ -395,12 +408,22 @@ fn a_node_is_signed_by_its_engineer_or_their_deputy_and_by_no_one_else() {
 
     // Nia signs what she opened, and it checks through the chain.
     assert!(open_key(port, "test-nia.vkey").contains("\"open\":true"));
-    let r = post(port, SIGN, &[("opened", &first)]);
+    let (before, r, after) = (now(), post(port, SIGN, &[("opened", &first)]), now());
     assert!(r.contains("\"ok\":true"), "{r}");
     assert_eq!(field(&r, "signed_by"), "Test Nia");
     assert!(r.contains("\"revision\":1"), "{r}");
-    let now = sqlite::read(&copy.join(NODE)).unwrap();
-    chain::check_node(&now, UID, &solar(&copy)).expect("her signature counts");
+    assert!(r.contains("\"newer_on_drive\":[]"), "{r}");
+    let signed = sqlite::read(&copy.join(NODE)).unwrap();
+    chain::check_node(&signed, UID, &solar(&copy)).expect("her signature counts");
+    // Signed at this moment, by the program's clock, as the row records it.
+    let at = field(&r, "signed_at").to_string();
+    assert!(before <= at && at <= after, "{before} {at} {after}");
+    assert_eq!(signed.signatures.last().unwrap().signed_at, at);
+    // What the next action is held to is the file as it now is.
+    assert_eq!(
+        field(&r, "opened"),
+        vleo_files::copied::digest(&std::fs::read(copy.join(NODE)).unwrap())
+    );
     // What she opened before her signing is not what is there now.
     let stale = post(port, SIGN, &[("opened", &first)]);
     assert!(stale.contains("\"conflict\":true"), "{stale}");
@@ -416,12 +439,18 @@ fn a_node_is_signed_by_its_engineer_or_their_deputy_and_by_no_one_else() {
     let before = std::fs::read(copy.join(NODE)).unwrap();
     let r = post(port, SIGN, &[("opened", &opened(port))]);
     assert!(
-        r.contains("sw_activity_band is not signed: 1 of its checks refuse")
+        r.contains("sw_activity_band is not signed: its checks refuse it")
             && r.contains("does not reproduce"),
         "{r}"
     );
     assert_eq!(std::fs::read(copy.join(NODE)).unwrap(), before);
     post(port, "/v1/key/close", &[]);
+
+    // A group file changed on the drive since the copy is said beside it.
+    let solar_on_drive = drv.join("groups/l3_solar/l3_solar.vgroup");
+    let mut changed = std::fs::read(&solar_on_drive).unwrap();
+    changed.extend_from_slice(b"changed on the drive");
+    std::fs::write(&solar_on_drive, changed).unwrap();
 
     // Dee, her deputy, puts it right and signs it for her.
     assert!(open_key(port, "test-dee.vkey").contains("\"open\":true"));
@@ -434,8 +463,12 @@ fn a_node_is_signed_by_its_engineer_or_their_deputy_and_by_no_one_else() {
     let r = post(port, SIGN, &[("opened", &opened(port))]);
     assert!(r.contains("\"ok\":true"), "{r}");
     assert_eq!(field(&r, "signed_by"), "Test Dee");
-    let now = sqlite::read(&copy.join(NODE)).unwrap();
-    chain::check_node(&now, UID, &solar(&copy)).expect("the deputy's signature counts");
+    assert!(
+        r.contains("\"newer_on_drive\":[\"groups/l3_solar/l3_solar.vgroup\"]"),
+        "{r}"
+    );
+    let signed = sqlite::read(&copy.join(NODE)).unwrap();
+    chain::check_node(&signed, UID, &solar(&copy)).expect("the deputy's signature counts");
     assert_eq!(
         std::fs::read(drv.join(NODE)).unwrap(),
         on_drive,

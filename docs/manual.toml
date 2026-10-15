@@ -2162,7 +2162,7 @@ what = "A node's file saved in the working copy as its next revision, written by
 [[route]]
 method = "POST"
 path = "/v1/node/<id>/sign"
-what = "A node signed as the day's work, with whoever's key is open, at this moment: opened, the digest of the file as it was opened. Refused while any of the node's checks fails or its cases disagree with its method, each one named; refused unless the key is the one its group file registers for them and they are assigned the node, or are the deputy of whoever is. The signature is checked through the chain at once, and the signed file is written in the working copy as a save is; the revision does not rise. A file changed since it was opened is not signed. Carries session."
+what = "A node signed as the day's work, with whoever's key is open, at this moment: opened, the digest of the file as it was opened. Refused unless the key is the one its group file registers for them and they are assigned the node, or are the deputy of whoever is. Refused while any of the node's checks fails or its cases disagree with its method, each one named; a node with nothing a check reads (archived, open, a stated one with no value, a behaviour nothing checks yet) and a case whose expected value came from the code under test are refused too. The signature is checked through the chain at once, and the signed file is written in the working copy as a save is; the revision does not rise. A file changed since it was opened is not signed, and group files changed on the drive since the copy are named beside it. Carries session."
 
 [[route]]
 method = "GET"

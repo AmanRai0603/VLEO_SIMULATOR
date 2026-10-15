@@ -271,12 +271,7 @@ pub fn save(
                 .map_or("no group", String::as_str)
         )));
     }
-    let assigned = group
-        .file
-        .assignments
-        .iter()
-        .any(|a| a.block_uid == block.uid && group.acts_for(by, &a.person));
-    if !assigned {
+    if !group.may_sign_node(by, &block.uid) {
         return Err(Error::new(
             ErrorKind::Signature,
             format!(
@@ -328,13 +323,13 @@ pub fn save(
 
 /// Sign the node at `path` inside the copy as `by`, as the day's work
 /// (docs/briefs/F3.md, F3-b), when its bytes are still the ones whose SHA-256
-/// is `opened`: what the person signs is exactly what they saw. Refused, with
-/// nothing written, by `chain::sign_node` unless `key` is `by`'s, counted at
-/// `at`, and `by` is assigned the block or their deputy; then while any of
-/// the signed file's own checks fails or its cases disagree with its method
-/// (`checks::check_node`, which refuses an assistant's name), each one named. The revision does not rise: a
-/// signature is of the revision as it is. Written as a save is, by `app`,
-/// under the copy's lock, and a second writer is stopped the same way.
+/// is `opened`: what the person signs is exactly what they saw, read from
+/// those bytes. Refused, with nothing written, by `chain::sign_node`: unless
+/// `key` is `by`'s, counted at `at`, and `by` may sign the node; then while
+/// any of the signed file's own checks fails, its cases disagree with its
+/// method, or it holds nothing to sign, each one named. The revision does not
+/// rise: a signature is of the revision as it is. Written as a save is, by
+/// `app`, under the copy's lock, and a second writer is stopped the same way.
 #[allow(clippy::too_many_arguments)]
 pub fn sign_in_place(
     copy: &Path,
@@ -358,8 +353,10 @@ pub fn sign_in_place(
     if copied::digest(&bytes) != opened {
         return second(&at_path, bytes);
     }
-    let now = crate::sqlite::read(&at_path)?;
-    let id = the_node(&now, path)?;
+    // What is signed is read from the bytes compared, not from the path
+    // again: what the person saw, and nothing that came between.
+    let now = parsed(&bytes)?;
+    the_node(&now, path)?;
     let group_id = now.meta.get("group_id").cloned().unwrap_or_default();
     if group.file.meta.get("group_id") != Some(&group_id) {
         return Err(refused(format!(
@@ -371,22 +368,19 @@ pub fn sign_in_place(
                 .map_or("no group", String::as_str)
         )));
     }
-    // Who signs first, then what: the file as signed, its new signature
-    // with it, held to the node's checks (an assistant's name among them).
-    let block = now.blocks[0].uid.clone();
-    let mut signed = crate::chain::sign_node(&now, &block, by, key, at, group)?;
-    let found = checks::check_node(&signed);
-    let refusing: Vec<String> = found
-        .errors()
-        .map(|f| format!("{}: {}", f.place, f.what))
-        .collect();
-    if !refusing.is_empty() {
+    // A node file is one revision: the file's and its block's say the same,
+    // or what a signature names is not what the file says it is.
+    let revision = revision_of(&now, path)?;
+    if now.blocks[0].revision != revision as i64 {
         return Err(refused(format!(
-            "{id} is not signed: {} of its checks refuse — {}",
-            refusing.len(),
-            refusing.join("; ")
+            "{path} says it is revision {revision}, and its block says {}: it is one revision, and it is not signed until the two agree",
+            now.blocks[0].revision
         )));
     }
+    // Who signs first, then what: `sign_node` holds the signed file to the
+    // node's checks, and its new signature to the chain.
+    let block = now.blocks[0].uid.clone();
+    let (mut signed, found) = crate::chain::sign_node(&now, &block, by, key, at, group)?;
     signed.meta.insert("written_by_app".into(), app.to_string());
     // As a save: the one late comparison before the write.
     let again = std::fs::read(&at_path).map_err(|e| unreadable(&at_path, e))?;
@@ -395,8 +389,34 @@ pub fn sign_in_place(
     }
     let written = crate::sqlite::written(&signed, &at_path)?;
     Ok(Saved::Written {
-        revision: revision_of(&signed, path)?,
+        revision,
         digest: copied::digest(&written),
         findings: found,
     })
+}
+
+/// The file `bytes` are, read through a private file of its own in the
+/// system's temporary folder, made new and gone once read: the bytes alone,
+/// with nothing beside them (no journal) that they do not hold.
+fn parsed(bytes: &[u8]) -> Result<File, Error> {
+    use std::io::Write as _;
+    static NEXT: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+    let nanos = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map_or(0, |d| d.as_nanos());
+    let at = std::env::temp_dir().join(format!(
+        "vleo-signing-{}-{nanos}-{}.vnode",
+        std::process::id(),
+        NEXT.fetch_add(1, std::sync::atomic::Ordering::Relaxed)
+    ));
+    let mut f = std::fs::OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .open(&at)
+        .map_err(|e| unreadable(&at, e))?;
+    let wrote = f.write_all(bytes).map_err(|e| unreadable(&at, e));
+    drop(f);
+    let read = wrote.and_then(|_| crate::sqlite::read(&at));
+    let _ = std::fs::remove_file(&at);
+    read
 }

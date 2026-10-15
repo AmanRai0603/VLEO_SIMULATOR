@@ -161,12 +161,39 @@ fn group_of(copy: &Path, path: &str) -> Result<vleo_files::chain::Registry, Stri
             Err(me::NotRead::Why(why)) => return Err(why),
         };
     let group_id = path.split('/').nth(1).unwrap_or_default().to_string();
+    let why = c
+        .left_out
+        .iter()
+        .find(|w| w.starts_with(&format!("{group_id}: ")))
+        .map_or(String::new(), |w| format!(": {w}"));
     c.groups
         .into_iter()
         .find(|g| g.file.meta.get("group_id") == Some(&group_id))
         .ok_or_else(|| {
-            format!("{group_id}'s group file does not check through the chain, so nobody is assigned its nodes")
+            format!("{group_id}'s group file does not check through the chain, so nobody is assigned its nodes{why}")
         })
+}
+
+/// `findings`, each with its level, place and what it says.
+fn findings_field(j: &mut Json, findings: &vleo_files::checks::Findings) {
+    j.key("findings").raw("[");
+    for (i, f) in findings.0.iter().enumerate() {
+        if i > 0 {
+            j.raw(",");
+        }
+        j.raw("{");
+        j.str_field(
+            "level",
+            match f.level {
+                vleo_files::checks::Level::Error => "error",
+                vleo_files::checks::Level::Warning => "warning",
+            },
+        );
+        j.str_field("place", &f.place);
+        j.str_field("what", &f.what);
+        j.raw("}");
+    }
+    j.raw("]");
 }
 
 /// `POST /v1/node/<id>/save`.
@@ -220,24 +247,7 @@ fn saved(id: &str, params: &str, ctx: &Ctx) -> Result<String, String> {
             j.str_field("path", &path);
             j.num_field("revision", revision as f64);
             j.str_field("opened", &digest);
-            j.key("findings").raw("[");
-            for (i, f) in findings.0.iter().enumerate() {
-                if i > 0 {
-                    j.raw(",");
-                }
-                j.raw("{");
-                j.str_field(
-                    "level",
-                    match f.level {
-                        vleo_files::checks::Level::Error => "error",
-                        vleo_files::checks::Level::Warning => "warning",
-                    },
-                );
-                j.str_field("place", &f.place);
-                j.str_field("what", &f.what);
-                j.raw("}");
-            }
-            j.raw("]");
+            findings_field(&mut j, &findings);
             j.str_field(
                 "message",
                 &format!(
@@ -300,6 +310,10 @@ fn signed(id: &str, params: &str, ctx: &Ctx) -> Result<String, String> {
     let path = find(&copy, id)?;
     let group = group_of(&copy, &path)?;
     let at = results::now_utc();
+    // A group file changed on the drive since the copy may revoke what the
+    // copy's still counts: said beside the signing, and checked again when
+    // the work is put back (F3-c).
+    let newer = me::newer_on_drive(&copy, &copy)?;
     let done = me::with_key(|key, me| {
         sign_in_place(&copy, &path, &opened, &me.name, key, &at, APP, &group)
             .map(|s| (s, me.name.clone()))
@@ -311,7 +325,9 @@ fn signed(id: &str, params: &str, ctx: &Ctx) -> Result<String, String> {
     match done {
         (
             Saved::Written {
-                revision, digest, ..
+                revision,
+                digest,
+                findings,
             },
             by,
         ) => {
@@ -322,6 +338,15 @@ fn signed(id: &str, params: &str, ctx: &Ctx) -> Result<String, String> {
             j.str_field("opened", &digest);
             j.str_field("signed_by", &by);
             j.str_field("signed_at", &at);
+            findings_field(&mut j, &findings);
+            j.key("newer_on_drive").raw("[");
+            for (i, f) in newer.iter().enumerate() {
+                if i > 0 {
+                    j.raw(",");
+                }
+                j.raw(&json::string(f));
+            }
+            j.raw("]");
             j.str_field(
                 "message",
                 &format!(
