@@ -9,8 +9,26 @@ Target 1.0.0 on Monday 19 October; Tuesday to Thursday are the buffer.
 
 ## Person A · day
 
-- Not started. S1 begins with the nine stage briefs, then F1 (keys, people, My work, `base_version`).
-- **The rest of F3 is now A's** (Aman, 14 October: B's seat is over budget): signing a node through the chain and saving a revision in place, after F1. See B's notes below.
+Handed over Thursday 15 October (S1). Nothing is merged: everything waits on Aman.
+
+- **Open, in merge order:**
+  - **162 the plan.** It now carries the nine briefs and F3's Plan (`docs/briefs/F3.md`).
+  - **171 F1 keys and identity: high risk.** The Opus review ran four rounds; nothing blocks. Aman approves. The summary is in its last comment.
+  - **172 F1 people and `base_version`, library only: high risk.** Stacked on 171, so it retargets to `developer` when 171 merges. Its Opus review is in its comments.
+- **What 171 decides, which B's PRs must follow:**
+  - **Ownership follows the mount.** Only the programme's file (mounting `systems`) and the systems' file (mounting each `l3_*`) mount anything.
+  - **A group file registers only node engineers.** It holds nobody the programme's file registers, and no key it registers. `open_group_in` refuses anything else, by name.
+  - **The test drive (165) must change.** It mounts the l3 groups in the programme's file, so they read as mounted twice. It should assign the mounting blocks in the systems' file instead, and register only node engineers in group files.
+  - **The anchor** is accepted once per drive, with `accept_anchor` on `POST /v1/key/open`. A scenario that opens a key passes it once. A face must make the person compare the fingerprint, never fill it in from the answer.
+- **Deferred, on purpose:**
+  - The per-launch token and the pause after wrong passphrases land in F3-b, before anything signs. Until then `me::with_key` must stay uncalled.
+  - The race between `exists()` and the write when a key is made.
+- **Not done on S1:**
+  - F1's program side of people: the register, replace and revoke routes, and `copied.toml` (the drive folder and every file's SHA-256 as copied).
+  - F1 PR 3, the shell and My work, and its scenarios.
+  - F2.
+  - Run my code again (169) is still not limited to the person's own nodes. Aman decides.
+- **Next for A (S2):** F1's program side of people with `copied.toml`, then F1 PR 3, then F2 on the chain check, then F3-a.
 
 ## Person B · night
 
