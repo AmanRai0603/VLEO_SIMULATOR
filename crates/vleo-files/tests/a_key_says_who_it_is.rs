@@ -325,8 +325,15 @@ fn every_key_says_who_it_is() {
     let sys = chain::open_systems(&systems(&p), &pr).unwrap();
     let solar =
         chain::open_group_in(&signed(solar_unsigned(&p), "Ola Sun", &p.sub), &sys, &pr).unwrap();
-    let groups = [&sys, &solar];
-    let who = |k: &SigningKey| chain::whoami(&k.public().to_hex(), "2026-04-01", &pr, &groups);
+    let who = |k: &SigningKey| {
+        chain::whoami(
+            &k.public().to_hex(),
+            "2026-04-01",
+            &pr,
+            Some(&sys),
+            &[&solar],
+        )
+    };
 
     let pm = who(&p.pm).unwrap();
     assert_eq!(pm.name, "Pat Morgan");
@@ -390,15 +397,159 @@ fn a_revoked_or_shared_key_says_nobody() {
     let pr = chain::open_programme(signed(f, "Pat Morgan", &p.pm), &p.pm.public().fingerprint())
         .unwrap();
 
-    let before = chain::whoami(&p.other_sub.public().to_hex(), "2026-02-15", &pr, &[]).unwrap();
+    let before =
+        chain::whoami(&p.other_sub.public().to_hex(), "2026-02-15", &pr, None, &[]).unwrap();
     assert_eq!(before.name, "Ivo Thrust");
-    let e =
-        message(chain::whoami(&p.other_sub.public().to_hex(), "2026-04-01", &pr, &[]).unwrap_err());
+    let e = message(
+        chain::whoami(&p.other_sub.public().to_hex(), "2026-04-01", &pr, None, &[]).unwrap_err(),
+    );
     assert!(e.contains("revoked from 2026-03-01"), "{e}");
 
-    let e = message(chain::whoami(&p.sub.public().to_hex(), "2026-04-01", &pr, &[]).unwrap_err());
+    let e =
+        message(chain::whoami(&p.sub.public().to_hex(), "2026-04-01", &pr, None, &[]).unwrap_err());
     assert!(
         e.contains("more than one person") && e.contains("Ola Again"),
         "{e}"
     );
+}
+
+#[test]
+fn a_group_file_registers_only_its_own_node_engineers() {
+    let p = people();
+    let pr = programme(&p);
+    let sys = chain::open_systems(&systems(&p), &pr).unwrap();
+    // Ola registers, in her own signed group file, the system engineer's name
+    // with a key she made, and a "system engineer" of her own.
+    let mut f = solar_unsigned(&p);
+    register(
+        &mut f,
+        "Sam Engel",
+        "node engineer",
+        "",
+        &p.stranger,
+        "Ola Sun",
+    );
+    let made_up = SigningKey::from_seed([18; 32]);
+    register(
+        &mut f,
+        "Mal Lory",
+        "system engineer",
+        "",
+        &made_up,
+        "Ola Sun",
+    );
+    let solar = chain::open_group_in(&signed(f, "Ola Sun", &p.sub), &sys, &pr).unwrap();
+    let who = |k: &SigningKey| {
+        chain::whoami(
+            &k.public().to_hex(),
+            "2026-04-01",
+            &pr,
+            Some(&sys),
+            &[&solar],
+        )
+    };
+
+    let e = message(who(&p.stranger).unwrap_err());
+    assert!(e.contains("whom the programme's file registers"), "{e}");
+    let e = message(who(&made_up).unwrap_err());
+    assert!(e.contains("other than a node engineer"), "{e}");
+    // The node engineer she registered is still herself.
+    assert_eq!(who(&p.ne).unwrap().name, "Nia Node");
+}
+
+#[test]
+fn a_revocation_in_any_file_wins() {
+    let p = people();
+    let pr = programme(&p);
+    let mut sys = systems_unsigned();
+    mount(&mut sys, "sys_thermal", "l3_thermal", "Ola Sun");
+    let sys = chain::open_systems(&signed(sys, "Sam Engel", &p.se), &pr).unwrap();
+    // Nia works in two groups; solar revokes her key, thermal does not.
+    let mut solar = solar_unsigned(&p);
+    solar.keys[0].revoked_from = s("2026-03-01");
+    let solar = chain::open_group_in(&signed(solar, "Ola Sun", &p.sub), &sys, &pr).unwrap();
+    let mut thermal = group_file("l3_thermal");
+    register(
+        &mut thermal,
+        "Nia Node",
+        "node engineer",
+        "",
+        &p.ne,
+        "Ola Sun",
+    );
+    let thermal = chain::open_group_in(&signed(thermal, "Ola Sun", &p.sub), &sys, &pr).unwrap();
+
+    let ne = p.ne.public().to_hex();
+    let before = chain::whoami(&ne, "2026-02-15", &pr, Some(&sys), &[&solar, &thermal]).unwrap();
+    assert_eq!(before.roles.len(), 2, "{before:?}");
+    for order in [[&solar, &thermal], [&thermal, &solar]] {
+        let e = message(chain::whoami(&ne, "2026-04-01", &pr, Some(&sys), &order).unwrap_err());
+        assert!(
+            e.contains("revoked from 2026-03-01 in l3_solar's group file"),
+            "{e}"
+        );
+    }
+}
+
+#[test]
+fn an_owner_is_an_engineer_and_a_deputy_stands_in_for_one_person() {
+    let p = people();
+    // The stranger, registered as Ivo's deputy: they may act for Ivo, not Ola.
+    let mut f = programme_unsigned(&p, "Sam Engel");
+    register(
+        &mut f,
+        "Ivy Standin",
+        "subsystem engineer",
+        "Ivo Thrust",
+        &p.stranger,
+        "Pat Morgan",
+    );
+    let pr = chain::open_programme(signed(f, "Pat Morgan", &p.pm), &p.pm.public().fingerprint())
+        .unwrap();
+    let sys = chain::open_systems(&systems(&p), &pr).unwrap();
+    let e = message(
+        chain::open_group_in(
+            &signed(solar_unsigned(&p), "Ivy Standin", &p.stranger),
+            &sys,
+            &pr,
+        )
+        .unwrap_err(),
+    );
+    assert!(e.contains("Ivy Standin may not sign"), "{e}");
+
+    // A group mounted on a block assigned to the programme manager.
+    let mut odd = systems_unsigned();
+    mount(&mut odd, "sys_thermal", "l3_thermal", "Pat Morgan");
+    let odd = chain::open_systems(&signed(odd, "Sam Engel", &p.se), &pr).unwrap();
+    let thermal = signed(group_file("l3_thermal"), "Pat Morgan", &p.pm);
+    let e = message(chain::open_group_in(&thermal, &odd, &pr).unwrap_err());
+    assert!(
+        e.contains("neither a system engineer nor a subsystem engineer"),
+        "{e}"
+    );
+}
+
+#[test]
+fn a_stamp_is_a_day_or_a_moment() {
+    let p = people();
+    let mut f = programme_unsigned(&p, "Sam Engel");
+    for k in f.keys.iter_mut().filter(|k| k.person == "Ivo Thrust") {
+        // Read as text, "2026-3-1" sorts after "2026-10-15" and the
+        // revocation would never come.
+        k.revoked_from = s("2026-3-1");
+    }
+    let pr = chain::open_programme(signed(f, "Pat Morgan", &p.pm), &p.pm.public().fingerprint())
+        .unwrap();
+    let ivo = p.other_sub.public().to_hex();
+    let e = message(chain::whoami(&ivo, "2026-10-15T09:00:00Z", &pr, None, &[]).unwrap_err());
+    assert!(e.contains("revoked from 2026-3-1"), "{e}");
+
+    let mut f = programme_unsigned(&p, "Sam Engel");
+    for k in f.keys.iter_mut().filter(|k| k.person == "Ivo Thrust") {
+        k.revoked_from = s("first of March");
+    }
+    let pr = chain::open_programme(signed(f, "Pat Morgan", &p.pm), &p.pm.public().fingerprint())
+        .unwrap();
+    let e = message(chain::whoami(&ivo, "2026-04-01", &pr, None, &[]).unwrap_err());
+    assert!(e.contains("neither a day"), "{e}");
 }

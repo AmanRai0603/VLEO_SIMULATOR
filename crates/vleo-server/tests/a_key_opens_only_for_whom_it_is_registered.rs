@@ -106,7 +106,7 @@ fn drive(at: &Path, keys: &Path) {
     let se = SigningKey::from_seed([22; 32]);
     let sub = SigningKey::from_seed([23; 32]);
     let ne = SigningKey::from_seed([24; 32]);
-    for g in ["programme", "systems", "l3_solar"] {
+    for g in ["programme", "systems", "l3_solar", "l3_thermal", "l3_copy"] {
         std::fs::create_dir_all(at.join("groups").join(g)).unwrap();
     }
     let mut programme = group("programme");
@@ -152,8 +152,16 @@ fn drive(at: &Path, keys: &Path) {
         person: s("Test Nia"),
         contract_version: 1,
     });
+    // Solar's owner mounts thermal in her own file, and signs thermal herself:
+    // only the programme's and the systems' files mount, so it is not hers.
+    mount(&mut solar, "b-thermal", "l3_thermal", "Test Ola");
     sign_whole(&mut solar, "Test Ola", &sub);
     sqlite::write(&solar, &at.join("groups/l3_solar/l3_solar.vgroup")).unwrap();
+    let mut thermal = group("l3_thermal");
+    sign_whole(&mut thermal, "Test Ola", &sub);
+    sqlite::write(&thermal, &at.join("groups/l3_thermal/l3_thermal.vgroup")).unwrap();
+    // Solar's file again, in another group's folder.
+    sqlite::write(&solar, &at.join("groups/l3_copy/l3_copy.vgroup")).unwrap();
 
     std::fs::write(
         at.join("START HERE.md"),
@@ -231,13 +239,62 @@ fn a_key_opens_only_for_whom_it_is_registered() {
         "{listed}"
     );
 
-    // The stranger's key opens, but the drive registers nobody with it.
-    let stranger = ask(
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        let mode = std::fs::metadata(keys.join("test-stranger.vkey"))
+            .unwrap()
+            .permissions()
+            .mode();
+        assert_eq!(mode & 0o777, 0o600, "a key file is its person's alone");
+    }
+    let wide = ask(
+        port,
+        "POST",
+        "/v1/key/make",
+        "name=%E6%9D%8E%E6%98%8E&passphrase=a%20long%20enough%20passphrase",
+    );
+    let wide_file = field(&wide, "file").unwrap_or("").to_string();
+    assert!(
+        field(&wide, "ok") == Some("true") && !wide_file.ends_with("/.vkey"),
+        "{wide}"
+    );
+
+    // The first time this computer opens the drive, the anchor is shown, and
+    // nothing is remembered until it is accepted.
+    let pm = SigningKey::from_seed([21; 32]).public().fingerprint();
+    let first = ask(
         port,
         "POST",
         "/v1/key/open",
         "file=test-stranger.vkey&passphrase=a%20long%20enough%20passphrase",
     );
+    assert_eq!(field(&first, "anchor"), Some(pm.as_str()), "{first}");
+    assert!(!keys.join("anchors").exists());
+    let other = SigningKey::from_seed([98; 32]).public().fingerprint();
+    let wrong_anchor = ask(
+        port,
+        "POST",
+        "/v1/key/open",
+        &format!("file=test-stranger.vkey&passphrase=a%20long%20enough%20passphrase&accept_anchor={other}"),
+    );
+    assert_eq!(
+        field(&wrong_anchor, "anchor"),
+        Some(pm.as_str()),
+        "{wrong_anchor}"
+    );
+    assert!(!keys.join("anchors").exists());
+
+    // The stranger's key opens, but the drive registers nobody with it.
+    let stranger = ask(
+        port,
+        "POST",
+        "/v1/key/open",
+        &format!(
+            "file=test-stranger.vkey&passphrase=a%20long%20enough%20passphrase&accept_anchor={pm}"
+        ),
+    );
+    assert!(keys.join("anchors").is_file());
     assert!(
         stranger.contains("opens nothing here") && stranger.contains("no file registers this key"),
         "{stranger}"
@@ -267,6 +324,12 @@ fn a_key_opens_only_for_whom_it_is_registered() {
     );
     assert_eq!(field(&nia, "name"), Some("Test Nia"), "{nia}");
     assert!(
+        nia.contains("l3_thermal: no file mounts the group")
+            && nia.contains("l3_copy: ")
+            && nia.contains("says it is the group \\\"l3_solar\\\""),
+        "{nia}"
+    );
+    assert!(
         nia.contains("\"role\":\"node engineer\"") && nia.contains("\"block\":\"b-ap\""),
         "{nia}"
     );
@@ -277,21 +340,45 @@ fn a_key_opens_only_for_whom_it_is_registered() {
         "{me}"
     );
 
-    // Closed, it is gone.
+    // Closed, it is gone; and a failed open leaves nobody's key open.
     ask(port, "POST", "/v1/key/close", "");
     assert_eq!(
         field(&ask(port, "GET", "/v1/me", ""), "open"),
         Some("false")
     );
-
-    // A key outside the keys folder is not reached for.
-    let out = ask(
+    ask(
         port,
         "POST",
         "/v1/key/open",
-        "file=..%2Fdrive%2Fx.vkey&passphrase=whatever%20it%20is",
+        "file=test-nia.vkey&passphrase=the%20node%20engineer%27s%20passphrase",
     );
-    assert!(out.contains("name the key by its file"), "{out}");
+    ask(
+        port,
+        "POST",
+        "/v1/key/open",
+        "file=test-nia.vkey&passphrase=not%20it%20at%20all",
+    );
+    assert_eq!(
+        field(&ask(port, "GET", "/v1/me", ""), "open"),
+        Some("false")
+    );
+
+    // Only a key the folder lists is reached for.
+    std::fs::write(drv.join("x.vkey"), b"not a key").unwrap();
+    for file in [
+        "..%2Fdrive%2Fx.vkey",
+        "..%5Cdrive%5Cx.vkey",
+        "C%3Ax.vkey",
+        ".vkey",
+    ] {
+        let out = ask(
+            port,
+            "POST",
+            "/v1/key/open",
+            &format!("file={file}&passphrase=whatever%20it%20is"),
+        );
+        assert!(out.contains("name the key by its file"), "{file}: {out}");
+    }
 
     // START HERE names another key: this computer accepted the first one.
     let other = SigningKey::from_seed([99; 32]).public().fingerprint();

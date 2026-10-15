@@ -618,6 +618,7 @@ dependencies = [
  "toml",
  "vleo-kinds",
  "vleo-sheet",
+ "vleo-units",
  "zeroize",
 ]
 

@@ -29,7 +29,7 @@
 use crate::error::{Error, ErrorKind};
 use crate::keys::{hex, sha256, PublicKey, Signature, SigningKey};
 use crate::meta::Kind;
-use crate::model::{Cell, File, Person, SignatureRow, Table};
+use crate::model::{Cell, File, Person, PersonKey, SignatureRow, Table};
 use crate::upgrade;
 
 /// The scope that is the file as a whole.
@@ -262,6 +262,34 @@ pub fn check_row(f: &File, row: &SignatureRow) -> Result<(), Error> {
         })
 }
 
+/// A stamp, a day (YYYY-MM-DD) or a moment (YYYY-MM-DDTHH:MM:SSZ), as seconds:
+/// a registration, a revocation and a signature are compared as instants,
+/// never as text, and a stamp that is neither is refused by name rather than
+/// ordered by its letters.
+pub fn instant(stamp: &str, what: &str) -> Result<i64, Error> {
+    vleo_units::calendar::Civil::parse(stamp)
+        .map(|c| c.to_unix())
+        .ok_or_else(|| {
+            refused(
+                ErrorKind::Malformed,
+                format!(
+                    "{what} is {stamp:?}, which is neither a day (YYYY-MM-DD) nor a moment (YYYY-MM-DDTHH:MM:SSZ)"
+                ),
+            )
+        })
+}
+
+/// Whether key `k` is revoked by `when`: it has a revocation, and it is
+/// from `when` or before.
+pub fn revoked_by(k: &PersonKey, when: i64) -> Result<bool, Error> {
+    Ok(!k.revoked_from.is_empty()
+        && when
+            >= instant(
+                &k.revoked_from,
+                &format!("{}'s key's revoked_from", k.person),
+            )?)
+}
+
 /// The people a file registers and their keys: who may sign what it governs.
 #[derive(Clone, Debug)]
 pub struct Registry {
@@ -299,7 +327,8 @@ impl Registry {
                     ),
                 )
             })?;
-        if at < k.registered_at.as_str() {
+        let when = instant(at, "the moment it was signed")?;
+        if when < instant(&k.registered_at, &format!("{name}'s key's registered_at"))? {
             return Err(refused(
                 ErrorKind::Signature,
                 format!(
@@ -308,7 +337,7 @@ impl Registry {
                 ),
             ));
         }
-        if !k.revoked_from.is_empty() && at >= k.revoked_from.as_str() {
+        if revoked_by(k, when)? {
             return Err(refused(
                 ErrorKind::Signature,
                 format!(
@@ -597,27 +626,81 @@ pub struct Me {
     pub nodes: Vec<(String, String)>,
 }
 
-/// The person `public_key` belongs to at `at`, read from the programme's file
-/// and the group files (`groups`, the systems' among them). A key counts where
-/// it is registered and not revoked by then. A key nobody registers, or one
-/// registered for two people, opens nothing, and says why.
+/// The person `public_key` belongs to at `at`, read from the programme's
+/// file, the systems' file and the subsystems' group files (`groups`).
+///
+/// A key counts only in the file that may register its person: the
+/// programme's file registers the programme manager, the system engineer,
+/// every subsystem engineer and every deputy; a group file registers node
+/// engineers, and nobody the programme's file registers. A revocation in any
+/// file wins over every other. A key nobody registers, one registered for two
+/// people, or one revoked by `at` opens nothing, and says why. Roles come from
+/// the files where the key counted; the groups owned from the two files that
+/// mount, the programme's and the systems'.
 pub fn whoami(
     public_key: &str,
     at: &str,
     programme: &Registry,
+    systems: Option<&Registry>,
     groups: &[&Registry],
 ) -> Result<Me, Error> {
+    let when = instant(at, "now")?;
+    let below: Vec<&Registry> = systems.into_iter().chain(groups.iter().copied()).collect();
     let all: Vec<&Registry> = std::iter::once(programme)
-        .chain(groups.iter().copied())
+        .chain(below.iter().copied())
         .collect();
-    let mut names: Vec<&str> = Vec::new();
-    let mut why = Vec::new();
     for r in &all {
         for k in r.file.keys.iter().filter(|k| k.public_key == public_key) {
-            match r.key(&k.person, public_key, at) {
-                Ok(p) if !names.contains(&p.name.as_str()) => names.push(&p.name),
-                Ok(_) => {}
-                Err(e) => why.push(e.message().to_string()),
+            if revoked_by(k, when)? {
+                return Err(refused(
+                    ErrorKind::Signature,
+                    format!(
+                        "this key is revoked from {} in {}, for {}: from then it says nobody, whatever another file says",
+                        k.revoked_from, r.from, k.person
+                    ),
+                ));
+            }
+        }
+    }
+    let in_programme = |name: &str| programme.file.people.iter().any(|p| p.name == name);
+    let mut names: Vec<&str> = Vec::new();
+    let mut counted_in: Vec<&Registry> = Vec::new();
+    let mut why = Vec::new();
+    for (i, r) in all.iter().enumerate() {
+        for k in r.file.keys.iter().filter(|k| k.public_key == public_key) {
+            let may = if i == 0 {
+                Ok(())
+            } else if in_programme(&k.person) {
+                Err(format!(
+                    "{} registers {}, whom the programme's file registers: a group file registers only its node engineers",
+                    r.from, k.person
+                ))
+            } else if !r
+                .file
+                .people
+                .iter()
+                .any(|p| p.name == k.person && p.role == "node engineer")
+            {
+                Err(format!(
+                    "{} registers {} as other than a node engineer: a group file registers only its node engineers",
+                    r.from, k.person
+                ))
+            } else {
+                Ok(())
+            };
+            match may.and_then(|_| {
+                r.key(&k.person, public_key, at)
+                    .map_err(|e| e.message().to_string())
+            }) {
+                Ok(p) => {
+                    if !names.contains(&p.name.as_str()) {
+                        names.push(&p.name);
+                    }
+                    if !counted_in.iter().any(|c| std::ptr::eq(*c, *r)) {
+                        counted_in.push(r);
+                    }
+                }
+                Err(e) => why.push(e),
             }
         }
     }
@@ -641,7 +724,7 @@ pub fn whoami(
         name: name.clone(),
         ..Me::default()
     };
-    for r in &all {
+    for r in &counted_in {
         for p in r.file.people.iter().filter(|p| p.name == name) {
             let role = (p.role.clone(), r.from.clone());
             if !me.roles.contains(&role) {
@@ -651,13 +734,15 @@ pub fn whoami(
                 me.deputy_for.push(p.deputy_for.clone());
             }
         }
+    }
+    for r in std::iter::once(programme).chain(systems) {
         for m in &r.file.mounts {
             if owner_of(r, &m.group_id) == Some(name.as_str()) && !me.owns.contains(&m.group_id) {
                 me.owns.push(m.group_id.clone());
             }
         }
     }
-    for g in groups {
+    for g in counted_in.iter().filter(|r| !std::ptr::eq(**r, programme)) {
         let id = g.file.meta.get("group_id").cloned().unwrap_or_default();
         let mounts: Vec<&str> = g.file.mounts.iter().map(|m| m.block_uid.as_str()).collect();
         for a in g

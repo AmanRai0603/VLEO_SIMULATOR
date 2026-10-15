@@ -7,8 +7,10 @@
 //! held in this program's memory only, and dropped when it is closed or the
 //! program ends. Who the key belongs to is read from the files, through the
 //! chain: the programme's file, checked against the anchor START HERE names,
-//! then the systems' file, then each group file through whichever file mounts
-//! it. A key nobody registers opens nothing, and says why.
+//! then the systems' file, then each subsystem's group file through the
+//! systems' file that mounts it. Only those two files mount: a group file
+//! that mounts another is not read as its parent. A key nobody registers
+//! opens nothing, and says why.
 //!
 //! The passphrase arrives in a POST body on the loopback connection, is used
 //! once to unlock the key, and is never stored, logged or echoed.
@@ -33,7 +35,8 @@ static OPEN: Mutex<Option<Opened>> = Mutex::new(None);
 /// The shortest passphrase a key is locked with.
 const SHORTEST: usize = 10;
 
-/// Where this computer keeps its people's keys, and the anchor it accepted.
+/// Where this computer keeps its people's keys, and the anchors it accepted,
+/// one for each drive.
 pub(super) fn keys_dir() -> PathBuf {
     match std::env::var_os("VLEO_KEYS").filter(|v| !v.is_empty()) {
         Some(d) => PathBuf::from(d),
@@ -53,7 +56,8 @@ fn database(ctx: &Ctx) -> PathBuf {
 }
 
 /// A file name for a person's key: their name in lower case, its letters and
-/// digits kept and every run of anything else made one hyphen.
+/// digits kept and every run of anything else made one hyphen, with a short
+/// digest of the name when it has letters outside ASCII.
 fn file_name(person: &str) -> String {
     let mut out = String::new();
     for c in person.chars() {
@@ -63,7 +67,28 @@ fn file_name(person: &str) -> String {
             out.push('-');
         }
     }
-    format!("{}.vkey", out.trim_end_matches('-'))
+    let mut out = out.trim_end_matches('-').to_string();
+    // A name with letters outside ASCII keeps what it can, and a short digest
+    // of the whole name, so two such names never share a file.
+    if out.is_empty() || !person.is_ascii() {
+        let d = vleo_files::keys::hex(&vleo_files::keys::sha256(person.as_bytes()));
+        if !out.is_empty() {
+            out.push('-');
+        }
+        out.push_str(&d[..12]);
+    }
+    format!("{out}.vkey")
+}
+
+/// A key file readable by its person alone, where the system says who that is.
+fn private(path: &Path) {
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        let _ = std::fs::set_permissions(path, std::fs::Permissions::from_mode(0o600));
+    }
+    #[cfg(not(unix))]
+    let _ = path;
 }
 
 fn refusal(message: &str) -> String {
@@ -111,6 +136,7 @@ pub(super) fn make(params: &str) -> String {
             vleo_files::Error::new(vleo_files::ErrorKind::Io, format!("{}: {e}", dir.display()))
         })?;
         sqlite::write(&f, &path)?;
+        private(&path);
         Ok((key.public().to_hex(), key.public().fingerprint()))
     })();
     match made {
@@ -134,9 +160,10 @@ pub(super) fn make(params: &str) -> String {
 }
 
 /// `GET /v1/keys`: the keys this computer holds, by file and person.
-pub(super) fn list() -> String {
-    let dir = keys_dir();
-    let mut found: Vec<(String, String)> = std::fs::read_dir(&dir)
+/// The key files in the keys folder, and whose each is: the only files
+/// `open` reaches for.
+fn keys_here() -> Vec<(String, String)> {
+    let mut found: Vec<(String, String)> = std::fs::read_dir(keys_dir())
         .into_iter()
         .flatten()
         .flatten()
@@ -148,10 +175,16 @@ pub(super) fn list() -> String {
         })
         .collect();
     found.sort();
+    found
+}
+
+/// `GET /v1/keys`: the keys on this computer.
+pub(super) fn list() -> String {
+    let found = keys_here();
     let mut j = Json::new();
     j.raw("{");
     j.bool_field("ok", true);
-    j.str_field("folder", &dir.display().to_string());
+    j.str_field("folder", &keys_dir().display().to_string());
     j.key("keys").raw("[");
     for (i, (file, person)) in found.iter().enumerate() {
         if i > 0 {
@@ -166,11 +199,40 @@ pub(super) fn list() -> String {
     j.0
 }
 
+/// What START HERE names, and whether this computer accepted it for this
+/// drive before.
+enum Anchor {
+    Accepted(String),
+    FirstUse(String),
+}
+
+/// Why the files could not be read: this computer has not accepted the
+/// drive's anchor yet, or anything else.
+enum NotRead {
+    FirstUse(String),
+    Why(String),
+}
+
+/// The anchors this computer accepted, one line each: the fingerprint, then
+/// the drive it was accepted for.
+fn anchors_file() -> PathBuf {
+    keys_dir().join("anchors")
+}
+
+/// The drive as this computer names it, so each drive keeps its own anchor.
+fn drive_name(database: &Path) -> String {
+    std::fs::canonicalize(database)
+        .unwrap_or_else(|_| database.to_path_buf())
+        .display()
+        .to_string()
+}
+
 /// The anchor: the programme manager's key fingerprint START HERE names, the
 /// first word of 64 hexadecimal digits in it. This computer remembers the one
-/// it first accepted, and refuses a different one: a changed anchor comes with
-/// a note signed by the old key, which is not read here yet (section 14).
-fn anchor(database: &Path) -> Result<String, String> {
+/// it accepted for each drive, and refuses a different one: a changed anchor
+/// comes with a note signed by the old key, which is not read here yet
+/// (section 14).
+fn anchor(database: &Path) -> Result<Anchor, String> {
     let start = ["START HERE.md", "START HERE", "START_HERE.md"]
         .iter()
         .map(|n| database.join(n))
@@ -187,42 +249,97 @@ fn anchor(database: &Path) -> Result<String, String> {
         .find(|w| w.len() == 64)
         .map(str::to_ascii_lowercase)
         .ok_or_else(|| format!("{} names no key fingerprint", start.display()))?;
-    let kept = keys_dir().join("anchor");
-    match std::fs::read_to_string(&kept) {
-        Ok(before) if before.trim() == named => Ok(named),
-        Ok(before) => Err(format!(
-            "START HERE names the programme manager's key {}…, but this computer accepted {}… before: a changed anchor comes with a note signed by the old key. Ask the programme manager",
-            &named[..12],
-            before.trim().get(..12).unwrap_or("")
-        )),
-        Err(_) => {
-            let _ = std::fs::create_dir_all(keys_dir());
-            std::fs::write(&kept, format!("{named}\n"))
-                .map_err(|e| format!("{}: {e}", kept.display()))?;
-            Ok(named)
+    let kept = match std::fs::read_to_string(anchors_file()) {
+        Ok(t) => t,
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => String::new(),
+        Err(e) => {
+            return Err(format!(
+            "{}: {e}: the anchors this computer accepted cannot be read, so none is taken afresh",
+            anchors_file().display()
+        ))
         }
+    };
+    let drive = drive_name(database);
+    let before = kept.lines().find_map(|l| {
+        let (fingerprint, d) = l.split_once(' ')?;
+        (d == drive).then(|| fingerprint.to_string())
+    });
+    match before {
+        Some(b) if b == named => Ok(Anchor::Accepted(named)),
+        Some(b) => Err(format!(
+            "START HERE names the programme manager's key {}…, but this computer accepted {}… for this drive before: a changed anchor comes with a note signed by the old key. Ask the programme manager",
+            &named[..12],
+            b.get(..12).unwrap_or("")
+        )),
+        None => Ok(Anchor::FirstUse(named)),
     }
+}
+
+/// `fingerprint` remembered as this drive's anchor.
+fn accept(database: &Path, fingerprint: &str) -> Result<(), String> {
+    use std::io::Write as _;
+    let at = anchors_file();
+    std::fs::create_dir_all(keys_dir())
+        .and_then(|_| {
+            std::fs::OpenOptions::new()
+                .create(true)
+                .append(true)
+                .open(&at)
+        })
+        .and_then(|mut f| writeln!(f, "{fingerprint} {}", drive_name(database)))
+        .map_err(|e| format!("{}: {e}", at.display()))
+}
+
+/// The files of a drive, opened through the chain.
+struct Chain {
+    programme: Registry,
+    systems: Option<Registry>,
+    groups: Vec<Registry>,
+    left_out: Vec<String>,
 }
 
 /// The programme's, the systems' and every group's files in `database`, opened
 /// through the chain. A group file that does not open is left out, with why.
-fn registries(database: &Path) -> Result<(Registry, Vec<Registry>, Vec<String>), String> {
-    let anchor = anchor(database)?;
+/// The first time this computer opens the drive, the anchor is remembered only
+/// once the programme's file opens under it and the person has accepted it
+/// (`accept_anchor`, the fingerprint they compared).
+fn registries(database: &Path, accept_anchor: &str) -> Result<Chain, NotRead> {
+    let (named, first) = match anchor(database).map_err(NotRead::Why)? {
+        Anchor::Accepted(n) => (n, false),
+        Anchor::FirstUse(n) => (n, true),
+    };
     let groups = database.join("groups");
     let read = |id: &str| -> Result<File, String> {
         let p = groups.join(id).join(format!("{id}.vgroup"));
-        sqlite::read(&p).map_err(|e| format!("{}: {}", p.display(), e.message()))
+        let f = sqlite::read(&p).map_err(|e| format!("{}: {}", p.display(), e.message()))?;
+        match f.meta.get("group_id") {
+            Some(g) if g == id => Ok(f),
+            g => Err(format!(
+                "{} says it is the group {:?}: a group's file lives in its own group's folder",
+                p.display(),
+                g.map_or("", String::as_str)
+            )),
+        }
     };
-    let programme =
-        chain::open_programme(read("programme")?, &anchor).map_err(|e| e.message().to_string())?;
-    let mut opened = Vec::new();
+    let programme = read("programme")
+        .and_then(|f| chain::open_programme(f, &named).map_err(|e| e.message().to_string()))
+        .map_err(NotRead::Why)?;
+    if first {
+        if accept_anchor.trim().to_ascii_lowercase() != named {
+            return Err(NotRead::FirstUse(named));
+        }
+        accept(database, &named).map_err(NotRead::Why)?;
+    }
     let mut left_out = Vec::new();
-    match read("systems")
+    let systems = match read("systems")
         .and_then(|f| chain::open_systems(&f, &programme).map_err(|e| e.message().to_string()))
     {
-        Ok(s) => opened.push(s),
-        Err(why) => left_out.push(format!("systems: {why}")),
-    }
+        Ok(s) => Some(s),
+        Err(why) => {
+            left_out.push(format!("systems: {why}"));
+            None
+        }
+    };
     let mut ids: Vec<String> = std::fs::read_dir(&groups)
         .into_iter()
         .flatten()
@@ -232,10 +349,11 @@ fn registries(database: &Path) -> Result<(Registry, Vec<Registry>, Vec<String>),
         .filter(|id| id != "programme" && id != "systems")
         .collect();
     ids.sort();
+    // Only the programme's and the systems' files mount.
+    let parents: Vec<&Registry> = std::iter::once(&programme).chain(systems.iter()).collect();
+    let mut opened = Vec::new();
     for id in ids {
         let opened_one = read(&id).and_then(|f| {
-            let parents: Vec<&Registry> =
-                std::iter::once(&programme).chain(opened.iter()).collect();
             let (parent, _) =
                 chain::mounted_by(&id, &parents).map_err(|e| e.message().to_string())?;
             chain::open_group_in(&f, parent, &programme).map_err(|e| e.message().to_string())
@@ -245,7 +363,29 @@ fn registries(database: &Path) -> Result<(Registry, Vec<Registry>, Vec<String>),
             Err(why) => left_out.push(format!("{id}: {why}")),
         }
     }
-    Ok((programme, opened, left_out))
+    Ok(Chain {
+        programme,
+        systems,
+        groups: opened,
+        left_out,
+    })
+}
+
+/// The first time this computer opens a drive: the anchor shown, to be
+/// compared and accepted.
+fn first_use(fingerprint: &str) -> String {
+    let mut j = Json::new();
+    j.raw("{");
+    j.bool_field("ok", false);
+    j.str_field("anchor", fingerprint);
+    j.str_field(
+        "message",
+        &format!(
+            "This computer has not opened this drive before. START HERE names the programme manager's key {fingerprint}. Compare it, every digit, with the one the programme manager gave you; if they agree, accept it, and this computer remembers it for this drive."
+        ),
+    );
+    j.raw("}");
+    j.0
 }
 
 fn me_json(open: Option<&Opened>, left_out: &[String]) -> String {
@@ -311,10 +451,12 @@ fn me_json(open: Option<&Opened>, left_out: &[String]) -> String {
 /// unlocked by `passphrase`, and the person the files register with it. It is
 /// held only if both hold.
 pub(super) fn open(params: &str, ctx: &Ctx) -> String {
+    // Whatever happens next, nobody's key stays open from before.
+    *OPEN.lock().unwrap_or_else(|p| p.into_inner()) = None;
     let file = param(params, "file").map(decode).unwrap_or_default();
     let passphrase =
         zeroize::Zeroizing::new(param(params, "passphrase").map(decode).unwrap_or_default());
-    if file.is_empty() || file.contains('/') || file.contains('\\') || file.starts_with('.') {
+    if !keys_here().iter().any(|(f, _)| *f == file) {
         return refusal("name the key by its file in the keys folder, as /v1/keys lists it");
     }
     let path = keys_dir().join(&file);
@@ -338,19 +480,25 @@ pub(super) fn open(params: &str, ctx: &Ctx) -> String {
         Ok(k) => k,
         Err(e) => return refusal(e.message()),
     };
-    let (programme, groups, left_out) = match registries(&database(ctx)) {
-        Ok(r) => r,
-        Err(why) => {
+    let accept_anchor = param(params, "accept_anchor")
+        .map(decode)
+        .unwrap_or_default();
+    let c = match registries(&database(ctx), &accept_anchor) {
+        Ok(c) => c,
+        Err(NotRead::FirstUse(fingerprint)) => return first_use(&fingerprint),
+        Err(NotRead::Why(why)) => {
             return refusal(&format!(
                 "Your key opened, but who it belongs to cannot be read: {why}"
             ))
         }
     };
-    let refs: Vec<&Registry> = groups.iter().collect();
+    let refs: Vec<&Registry> = c.groups.iter().collect();
+    let left_out = c.left_out;
     match chain::whoami(
         &key.public().to_hex(),
         &results::now_utc(),
-        &programme,
+        &c.programme,
+        c.systems.as_ref(),
         &refs,
     ) {
         Ok(me) => {

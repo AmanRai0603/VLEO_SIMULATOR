@@ -72,6 +72,10 @@
     },
     "message": {
       "type": "string"
+    },
+    "anchor": {
+      "type": "string",
+      "description": "The first time this computer opens a drive: the fingerprint START HERE names, to be compared and accepted with accept_anchor."
     }
   },
   "required": [
