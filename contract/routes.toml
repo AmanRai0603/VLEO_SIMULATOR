@@ -180,6 +180,15 @@ name = "people-revoke-refused"
 params = [["session", "@session"], ["file", "programme"], ["name", "Test Contract"], ["from", "2026-10-01"]]
 
 [[route]]
+method = "POST"
+path = "/v1/issues/raise"
+answer = "json"
+schema = "issue-raised"
+[[route.example]]
+name = "issues-raise-refused"
+params = [["session", "@session"], ["node", "l3_solar_ach_01"], ["what", "the first solar closure fails"]]
+
+[[route]]
 method = "GET"
 path = "/v1/index"
 answer = "json"

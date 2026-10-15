@@ -28,6 +28,7 @@ mod copy;
 mod explore;
 mod http;
 mod inputs;
+mod issues;
 mod json;
 mod me;
 mod my_work;
@@ -614,6 +615,8 @@ fn route(
         ("POST", "/v1/copy") => ok_json(copy::take(params, ctx)),
         ("GET", "/v1/people") => ok_json(people::list(params, ctx)),
         ("POST", "/v1/people/register") => ok_json(people::change("register", params, ctx)),
+        // An issue raised from a red mark, into the copy's issues/ (W11).
+        ("POST", "/v1/issues/raise") => ok_json(issues::raise(params, ctx)),
         ("POST", "/v1/people/replace") => ok_json(people::change("replace", params, ctx)),
         ("POST", "/v1/people/revoke") => ok_json(people::change("revoke", params, ctx)),
         // The manual, with what is true of this running copy right now.
