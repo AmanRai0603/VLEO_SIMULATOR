@@ -37,11 +37,21 @@ const S = {
   ws: 'my-work',
   me: null, copy: null, keys: null, work: null, people: null, pfile: '',
   anchor: null,   // { fingerprint, drive } while a first use waits to be accepted
-  pending: null,  // { file, passphrase } held only until the anchor is accepted or dropped
-  handover: null, // { public_key, proof } of a key that opened but is registered for nobody
+  pending: null,  // { file, passphrase, at } held only until the anchor is accepted or dropped, two minutes at most
+  handover: null, // { person, public_key, proof } of a key that opened but is registered for nobody
   made: null,     // the key just made
   notice: null,   // { ok, text }
+  drawn: 0,       // how many times the page was drawn, for a check to wait on
 };
+
+/** How long a passphrase is held while a first use waits to be accepted. */
+const PENDING_MS = 2 * 60 * 1000;
+
+/** The passphrase dropped, and the first use with it. */
+function dropPending() {
+  S.pending = null;
+  S.anchor = null;
+}
 
 // ---------------------------------------------------------------------------
 // the launch's word, and asking the program
@@ -102,6 +112,7 @@ function draw() {
   const n = S.notice;
   $('#sh-notice').innerHTML = n ? '<p class="' + (n.ok ? 'sh-said' : 'sh-refused') + '">' + esc(n.text) + '</p>' : '';
   $('#sh-main').innerHTML = S.ws === 'my-work' ? myWork() : empty(S.ws);
+  document.body.dataset.drawn = String(++S.drawn);
 }
 
 function empty(id) {
@@ -109,27 +120,34 @@ function empty(id) {
   const today = id === 'explore'
     ? '<p>Until it does, <a href="/">today\'s tool</a> holds the design, its runs and its results.</p>' : '';
   return answerFirst('The ' + esc(name) + ' workspace arrives in ' + esc(stage) + '.',
-    ['It will hold ' + esc(holds) + '.'], 'status') + today;
+    ['It will hold ' + esc(holds) + '.'], 'reference') + today;
 }
 
 function myWork() {
   const copied = S.copy && S.copy.copied;
   const open = S.me && S.me.open;
   const items = (S.work && S.work.items) || [];
-  const answer = !copied
+  // An answer is given only from what was read: a list that could not be read
+  // is never told as an empty one.
+  const unread = open && (!S.work || S.work.ok === false || S.work.message);
+  const answer = S.copy && S.copy.unreadable
+    ? 'Your copy of the database cannot be read, so what needs you cannot be read either: ' + esc(S.copy.message)
+    : !copied
     ? 'Copy the database from the drive to start: you work on that copy, and your own signed work goes back.'
     : !open
       ? 'Open your key: who you are, and what needs you, is read from the database\'s files.'
-      : items.length ? plural(items.length, 'thing needs', 'things need') + ' you now.' : 'Nothing needs you now.';
-  return answerFirst(answer, [], 'status') +
+      : unread
+        ? esc((S.work && S.work.message) || 'What needs you cannot be read: the program did not answer.') +
+          (items.length ? ' What could be read is below.' : '')
+        : items.length ? plural(items.length, 'thing needs', 'things need') + ' you now.' : 'Nothing needs you now.';
+  return answerFirst(answer, [], 'reference') +
     (open ? workList(items) : '') +
     keyCard() + copyCard() + (open ? peopleCard() : '');
 }
 
 function workList(items) {
-  const said = S.work && S.work.message ? '<p class="sh-refused">' + esc(S.work.message) + '</p>' : '';
-  if (!items.length) return said;
-  return '<section class="sh-card"><h2>What needs you</h2>' + said + '<ul id="sh-items">' +
+  if (!items.length) return '';
+  return '<section class="sh-card"><h2>What needs you ' + kind('reference') + '</h2><ul id="sh-items">' +
     items.map(it => '<li class="sh-item" data-kind="' + esc(it.kind) + '"><span class="tag">' + esc(it.kind) +
       '</span> ' + esc(it.says) + '</li>').join('') + '</ul></section>';
 }
@@ -141,7 +159,7 @@ function copyCard() {
       esc(c.copied_at) + '.</p><p>' + plural((c.changed_here || []).length, 'file') + ' changed here since; ' +
       (c.drive_reached ? plural((c.changed_on_drive || []).length, 'file') + ' changed on the drive.' : 'the drive is not reached.') + '</p>'
     : '<p>' + esc(c.message || 'No copy of the database yet.') + '</p>';
-  return '<section class="sh-card" id="sh-copy-card"><h2>The database</h2>' + state +
+  return '<section class="sh-card" id="sh-copy-card"><h2>The database ' + kind('how-to') + '</h2>' + state +
     '<p><label>The drive folder <input id="sh-drive" class="sh-wide" placeholder="the database folder on the shared drive" value="' +
     esc(c.drive || '') + '"></label> <button class="ctl" id="sh-copy">Copy from the drive</button></p></section>';
 }
@@ -149,7 +167,7 @@ function copyCard() {
 function keyCard() {
   const me = S.me || {};
   if (me.open) {
-    return '<section class="sh-card" id="sh-key-card"><h2>Your key</h2><p>Open: <b>' + esc(me.name) + '</b>, ' +
+    return '<section class="sh-card" id="sh-key-card"><h2>Your key ' + kind('reference') + '</h2><p>Open: <b>' + esc(me.name) + '</b>, ' +
       esc((me.roles || []).map(r => r.role + ' in ' + r.in).join('; ')) + '.</p>' +
       '<p class="sh-fp">Fingerprint <code>' + esc(me.fingerprint) + '</code></p>' +
       (me.warning ? '<p class="sh-refused">' + esc(me.warning) + '</p>' : '') +
@@ -158,13 +176,15 @@ function keyCard() {
   const keys = (S.keys && S.keys.keys) || [];
   const anchor = S.anchor
     ? '<div class="sh-anchor" id="sh-anchor-ask"><p>This computer has not opened the drive <code>' + esc(S.anchor.drive) +
-      '</code> before. Its START HERE names the programme manager\'s key</p><p class="sh-fp"><code>' +
-      esc(S.anchor.fingerprint) + '</code></p><p>Type the fingerprint the programme manager gave you. If the two agree, ' +
+      '</code> before. Its START HERE names a programme manager\'s key whose fingerprint starts</p><p class="sh-fp"><code>' +
+      esc(S.anchor.fingerprint.slice(0, 8)) + '…</code></p><p>Type the whole fingerprint the programme manager gave you: ' +
+      'it is not shown here, so what is compared is what you were given. If the two agree, ' +
       'this computer remembers it for that drive.</p><p><input id="sh-anchor" class="sh-wide" autocomplete="off" spellcheck="false"> ' +
       '<button class="ctl" id="sh-accept">Accept</button> <button class="ctl" id="sh-drop">Not now</button></p></div>'
     : '';
   const handover = S.handover
-    ? '<div class="sh-handover" id="sh-handover"><p>Give these to whoever registers you: the programme manager, or your subsystem engineer.</p>' +
+    ? '<div class="sh-handover" id="sh-handover"><p>Give these to whoever registers you, the programme manager or your subsystem engineer, ' +
+      'with your name exactly as it is here: <b id="sh-person">' + esc(S.handover.person) + '</b>.</p>' +
       '<p>Public key <code id="sh-pub">' + esc(S.handover.public_key) + '</code></p><p>Proof <code id="sh-proof">' +
       esc(S.handover.proof) + '</code></p></div>'
     : '';
@@ -172,7 +192,7 @@ function keyCard() {
     ? '<div class="sh-handover" id="sh-made"><p>' + esc(S.made.message) + '</p><p>Public key <code>' + esc(S.made.public_key) +
       '</code></p><p>Proof <code>' + esc(S.made.proof) + '</code></p></div>'
     : '';
-  return '<section class="sh-card" id="sh-key-card"><h2>Your key</h2>' +
+  return '<section class="sh-card" id="sh-key-card"><h2>Your key ' + kind('how-to') + '</h2>' +
     (keys.length
       ? '<p><label>Key <select id="sh-keyfile" class="ctl">' + keys.map(k =>
           '<option value="' + esc(k.file) + '">' + esc(k.person) + ' · ' + esc(k.file) + '</option>').join('') +
@@ -202,7 +222,7 @@ function peopleCard() {
       '</td></tr>').join('')).join('');
   const roles = S.pfile === 'programme'
     ? ['system engineer', 'subsystem engineer', 'programme manager'] : ['node engineer'];
-  return '<section class="sh-card" id="sh-people"><h2>People</h2>' +
+  return '<section class="sh-card" id="sh-people"><h2>People ' + kind('how-to') + '</h2>' +
     '<p>Whom a file registers is changed here, in your copy, signed with your key; it goes to the drive when your work goes back.</p>' +
     '<p><label>File <select id="sh-pfile" class="ctl">' + files.map(f =>
       '<option' + (f === S.pfile ? ' selected' : '') + '>' + esc(f) + '</option>').join('') + '</select></label></p>' +
@@ -218,6 +238,11 @@ function peopleCard() {
     '</section>';
 }
 
+/** The kind of reading a block is (docs/EXPLAINING.md, E8). */
+function kind(k) {
+  return '<span class="dx dx-' + esc(k) + '">' + esc(k) + '</span>';
+}
+
 // ---------------------------------------------------------------------------
 // what a click does
 
@@ -231,17 +256,17 @@ async function openKey(file, passphrase, acceptAnchor) {
   const r = await post('/v1/key/open', fields);
   S.handover = null;
   if (r.ok) {
-    S.anchor = null; S.pending = null;
+    dropPending();
     say({ ok: true, message: 'Your key is open: ' + r.name + '.' });
   } else if (r.anchor) {
     S.anchor = { fingerprint: r.anchor, drive: r.drive || '' };
-    S.pending = { file, passphrase };
+    S.pending = { file, passphrase, at: Date.now() };
     S.notice = acceptAnchor
       ? { ok: false, text: 'What you typed is not the fingerprint START HERE names: nothing is accepted. Ask the programme manager.' }
       : null;
   } else {
-    S.anchor = null; S.pending = null;
-    if (r.public_key) S.handover = { public_key: r.public_key, proof: r.proof };
+    dropPending();
+    if (r.public_key) S.handover = { person: r.person || '', public_key: r.public_key, proof: r.proof };
     say(r, 'the key did not open');
   }
   await refresh();
@@ -250,7 +275,7 @@ async function openKey(file, passphrase, acceptAnchor) {
 async function click(e) {
   const t = e.target.closest('button');
   if (!t) return;
-  if (t.dataset.ws) { S.ws = t.dataset.ws; S.notice = null; draw(); return; }
+  if (t.dataset.ws) { S.ws = t.dataset.ws; S.notice = null; dropPending(); draw(); return; }
   switch (t.id) {
     case 'sh-copy': {
       const r = await post('/v1/copy', { drive: $('#sh-drive').value.trim() });
@@ -262,11 +287,15 @@ async function click(e) {
     case 'sh-accept': {
       // What the person typed, never what the program showed.
       const typed = $('#sh-anchor').value.replace(/\s+/g, '').toLowerCase();
-      if (!S.pending) return;
+      if (!S.pending || Date.now() - S.pending.at > PENDING_MS) {
+        dropPending();
+        S.notice = { ok: false, text: 'The passphrase is no longer held: open your key again.' };
+        return draw();
+      }
       return openKey(S.pending.file, S.pending.passphrase, typed || 'nothing typed');
     }
     case 'sh-drop':
-      S.anchor = null; S.pending = null; S.notice = null;
+      dropPending(); S.notice = null;
       return draw();
     case 'sh-close':
       await post('/v1/key/close', {});
@@ -293,6 +322,8 @@ async function click(e) {
   }
   if (t.dataset.revoke) {
     const today = new Date().toISOString().slice(0, 10);
+    if (!window.confirm('Revoke ' + t.dataset.revoke + '\'s key from ' + today +
+        '? Signatures made with it from today stop counting.')) return;
     const r = await post('/v1/people/revoke', { file: S.pfile, name: t.dataset.revoke, public_key: t.dataset.key, from: today });
     say(r, 'nothing was revoked');
     return refresh();
@@ -309,4 +340,11 @@ async function change(e) {
 takeWord();
 document.addEventListener('click', click);
 document.addEventListener('change', change);
+// A tab left behind holds no passphrase.
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden && S.pending) { dropPending(); draw(); }
+});
+setInterval(() => {
+  if (S.pending && Date.now() - S.pending.at > PENDING_MS) { dropPending(); draw(); }
+}, 10000);
 refresh();

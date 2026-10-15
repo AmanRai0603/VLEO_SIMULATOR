@@ -11,7 +11,12 @@
 //! - Test Sam, the system engineer, registered, who owns the systems' branch;
 //! - Test Ivo, the subsystem engineer the systems' file assigns propulsion to,
 //!   not registered yet: the programme manager registers him;
-//! - Test Nia, solar's node engineer, with one node assigned and unsigned;
+//! - Test Nia, solar's node engineer, with two nodes assigned: one unsigned
+//!   and one signed;
+//! - a node engineer whose name is made of what a page must escape;
+//! - beside solar, Ola owns power, which has a release sealed, and thermal,
+//!   whose file is signed by someone who does not own it, so it is refused;
+//! - and a folder under groups/ that is not a group.
 //! - Test Stranger, whom no file registers.
 //!
 //! Every key is locked with the passphrase "a long enough passphrase".
@@ -131,6 +136,8 @@ fn main() {
         "l3_solar",
         "Test Ola",
     );
+    mount(&mut systems, "sys_power", "l3_power", "Test Ola");
+    mount(&mut systems, "sys_thermal", "l3_thermal", "Test Ola");
     mount(&mut systems, "sys_propulsion", "l3_prop", "Test Ivo");
     write(
         &signed(systems, "Test Sam", &sam),
@@ -139,11 +146,20 @@ fn main() {
 
     let mut solar = group("l3_solar", "Test Ola");
     register(&mut solar, "Test Nia", "node engineer", &nia, "Test Ola");
-    solar.assignments.push(Assignment {
-        block_uid: s("b-ap"),
-        person: s("Test Nia"),
-        contract_version: 1,
-    });
+    register(
+        &mut solar,
+        "Test <b>Nell</b> & \"Co\"",
+        "node engineer",
+        &key(67),
+        "Test Ola",
+    );
+    for block in ["b-ap", "b-f107"] {
+        solar.assignments.push(Assignment {
+            block_uid: s(block),
+            person: s("Test Nia"),
+            contract_version: 1,
+        });
+    }
     write(
         &signed(solar, "Test Ola", &ola),
         &drive.join("groups/l3_solar/l3_solar.vgroup"),
@@ -170,6 +186,54 @@ fn main() {
         &node,
         &drive.join("groups/l3_solar/nodes/sw_ap_design.vnode"),
     );
+    // Her second node, signed as it is.
+    let mut signed_node = node.clone();
+    signed_node.meta.insert(s("block_uid"), s("b-f107"));
+    signed_node.blocks[0].uid = s("b-f107");
+    signed_node.blocks[0].id = s("sw_f107_observed");
+    let row = chain::sign(
+        &signed_node,
+        "b-f107",
+        "Test Nia",
+        &nia,
+        "2026-03-01",
+        "ok",
+        "",
+    )
+    .unwrap();
+    signed_node.signatures.push(row);
+    write(
+        &signed_node,
+        &drive.join("groups/l3_solar/nodes/sw_f107_observed.vnode"),
+    );
+    // Something in solar's releases that is not a release.
+    std::fs::create_dir_all(drive.join("groups/l3_solar/releases")).unwrap();
+    std::fs::write(
+        drive.join("groups/l3_solar/releases/notes.txt"),
+        "not a release",
+    )
+    .unwrap();
+
+    // Power, with a release sealed (its bytes are not read here, only that one is there).
+    write(
+        &signed(group("l3_power", "Test Ola"), "Test Ola", &ola),
+        &drive.join("groups/l3_power/l3_power.vgroup"),
+    );
+    std::fs::create_dir_all(drive.join("groups/l3_power/releases")).unwrap();
+    std::fs::write(
+        drive.join("groups/l3_power/releases/l3_power-1.0.vleo"),
+        "sealed",
+    )
+    .unwrap();
+
+    // Thermal, signed by its node engineer rather than its owner: refused.
+    write(
+        &signed(group("l3_thermal", "Test Ola"), "Test Nia", &nia),
+        &drive.join("groups/l3_thermal/l3_thermal.vgroup"),
+    );
+    // A folder under groups/ that is not a group.
+    std::fs::create_dir_all(drive.join("groups/archive")).unwrap();
+    std::fs::write(drive.join("groups/archive/old.txt"), "old").unwrap();
 
     std::fs::write(
         drive.join("START HERE.md"),

@@ -432,6 +432,8 @@ pub(super) fn registries(
         .filter(|e| e.path().is_dir())
         .map(|e| e.file_name().to_string_lossy().into_owned())
         .filter(|id| id != "programme" && id != "systems")
+        // A folder that holds no group file of its own name is not a group.
+        .filter(|id| groups.join(id).join(format!("{id}.vgroup")).is_file())
         .collect();
     ids.sort();
     // Only the programme's and the systems' files mount.
@@ -684,24 +686,62 @@ pub(super) fn open(params: &str, ctx: &Ctx) -> String {
             *OPEN.lock().unwrap_or_else(|p| p.into_inner()) = Some(opened);
             out
         }
-        // The key is unlocked, so what its holder hands over to be registered
-        // can be given here: the public key and the proof made with it.
         Err(e) => {
+            let public = key.public().to_hex();
+            let known = std::iter::once(&c.programme)
+                .chain(c.systems.iter())
+                .chain(c.groups.iter())
+                .any(|r| r.file.keys.iter().any(|k| k.public_key == public));
+            // The refused files that list this key: read only to say which,
+            // never to count it.
+            let db = database(ctx);
+            let in_refused: Vec<&String> = left_out
+                .iter()
+                .filter(|why| {
+                    let id = why.split(':').next().unwrap_or("");
+                    sqlite::read(&db.join("groups").join(id).join(format!("{id}.vgroup")))
+                        .is_ok_and(|f| f.keys.iter().any(|k| k.public_key == public))
+                })
+                .collect();
+            let refused = if in_refused.is_empty() {
+                String::new()
+            } else {
+                format!(
+                    " Your key is in a file that is refused, so who it registers is not read: {}.",
+                    in_refused
+                        .iter()
+                        .map(|s| s.as_str())
+                        .collect::<Vec<_>>()
+                        .join("; ")
+                )
+            };
             let mut j = Json::new();
             j.raw("{");
             j.bool_field("ok", false);
-            j.str_field("public_key", &key.public().to_hex());
-            j.str_field(
-                "proof",
-                &people::proof(&key, &f.meta.get("person").cloned().unwrap_or_default()),
-            );
-            j.str_field(
-                "message",
-                &format!(
-                    "Your key opened, but it opens nothing here: {}. Give whoever registers you its public key and proof, below.",
-                    e.message()
-                ),
-            );
+            // Only a key no file lists, refused or not, is one to hand over: a
+            // revoked key, one registered twice, or one whose group's file is
+            // refused is not fixed by registering it again.
+            if !known && in_refused.is_empty() {
+                let person = f.meta.get("person").cloned().unwrap_or_default();
+                j.str_field("person", &person);
+                j.str_field("public_key", &public);
+                j.str_field("proof", &people::proof(&key, &person));
+                j.str_field(
+                    "message",
+                    &format!(
+                        "Your key opened, but it opens nothing here: {}. Give whoever registers you its public key and proof, below, for the name {person}.",
+                        e.message()
+                    ),
+                );
+            } else {
+                j.str_field(
+                    "message",
+                    &format!(
+                        "Your key opened, but it opens nothing here: {}.{refused}",
+                        e.message()
+                    ),
+                );
+            }
             j.raw("}");
             j.0
         }

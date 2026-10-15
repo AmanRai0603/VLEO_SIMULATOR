@@ -391,6 +391,7 @@ pub(super) fn state(ctx: &Ctx) -> String {
         }
         Err(why) => {
             j.bool_field("copied", false);
+            j.bool_field("unreadable", true);
             j.str_field("message", &why);
             j.raw("}");
             return j.0;
