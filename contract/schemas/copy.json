@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "copy",
+  "description": "The person's working copy of the database: where it is, where it came from and when, and what changed since, here and on the drive.",
+  "type": "object",
+  "properties": {
+    "ok": {
+      "type": "boolean"
+    },
+    "copy": {
+      "type": "string"
+    },
+    "copied": {
+      "type": "boolean"
+    },
+    "drive": {
+      "type": "string"
+    },
+    "copied_at": {
+      "type": "string"
+    },
+    "changed_here": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "drive_reached": {
+      "type": "boolean"
+    },
+    "changed_on_drive": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "message": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "ok",
+    "copy",
+    "copied"
+  ]
+}

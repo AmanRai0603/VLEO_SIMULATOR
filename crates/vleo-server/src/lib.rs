@@ -24,11 +24,13 @@
 //! Loopback by default. Exposing it to a network is an explicit, separate act,
 //! which also avoids a firewall prompt on first run.
 
+mod copy;
 mod http;
 mod inputs;
 mod json;
 mod me;
 mod pages;
+mod people;
 mod results;
 pub mod results_file;
 pub mod today;
@@ -144,12 +146,20 @@ pub fn serve(
         None => println!("  design read from the folders of this checkout"),
     }
     println!("  serving the interface and the engine from one origin:");
-    println!("  \x1b[1mhttp://127.0.0.1:{port}\x1b[0m");
+    // The address carries this launch's word in its fragment, which the
+    // browser keeps to the page and never sends (me::session).
+    println!(
+        "  \x1b[1mhttp://127.0.0.1:{port}/#session={}\x1b[0m",
+        me::session()
+    );
     println!("  loopback only. Exposing this to a network is a separate, explicit act.");
     // Opened by the tool, because only the tool knows which port it got — 7777
     // may be taken, and a script that guesses opens somebody else's page.
     if open {
-        open_browser(&format!("http://127.0.0.1:{port}"));
+        open_browser(&format!(
+            "http://127.0.0.1:{port}/#session={}",
+            me::session()
+        ));
     }
 
     results::thin_at_start();
@@ -168,6 +178,13 @@ pub fn serve(
         accept(listener, ctx);
     }
     Ok(port)
+}
+
+/// This launch's word: what a request that opens or uses a key, or writes the
+/// person's copy, carries as `session`. The page has it from the address the
+/// program opened; a test in the same process asks here.
+pub fn session() -> String {
+    me::session().to_string()
 }
 
 /// One figure of the solar-weather record, without a server: the JSON
@@ -540,6 +557,13 @@ fn route(
         ("POST", "/v1/key/make") => ok_json(me::make(params)),
         ("POST", "/v1/key/open") => ok_json(me::open(params, ctx)),
         ("POST", "/v1/key/close") => ok_json(me::close()),
+        // The person's copy of the database, and whom its files register.
+        ("GET", "/v1/copy") => ok_json(copy::state(ctx)),
+        ("POST", "/v1/copy") => ok_json(copy::take(params, ctx)),
+        ("GET", "/v1/people") => ok_json(people::list(params, ctx)),
+        ("POST", "/v1/people/register") => ok_json(people::change("register", params, ctx)),
+        ("POST", "/v1/people/replace") => ok_json(people::change("replace", params, ctx)),
+        ("POST", "/v1/people/revoke") => ok_json(people::change("revoke", params, ctx)),
         // The manual, with what is true of this running copy right now.
         ("GET", "/v1/manual") => manual_endpoint(ctx),
         ("GET", "/v1/index") => ok_json(index_json()),

@@ -2087,12 +2087,42 @@ what = "A new key for name, locked by passphrase and written in the keys folder.
 [[route]]
 method = "POST"
 path = "/v1/key/open"
-what = "The key in file (one /v1/keys lists), unlocked by passphrase, held in memory only if the drive's files register it for one person. The first time this computer opens a drive it answers with the anchor START HERE names, remembered for that drive once accept_anchor repeats it."
+what = "Carries session. The key in file (one /v1/keys lists), unlocked by passphrase, held in memory only if the drive's files register it for one person. The first time this computer opens a drive it answers with the anchor START HERE names, remembered for that drive once accept_anchor repeats it."
 
 [[route]]
 method = "POST"
 path = "/v1/key/close"
 what = "The open key forgotten."
+
+[[route]]
+method = "GET"
+path = "/v1/copy"
+what = "The person's working copy of the database: where it is, the drive it came from and when, and what changed since, in the copy and on the drive."
+
+[[route]]
+method = "POST"
+path = "/v1/copy"
+what = "The database on the drive (drive, else VLEO_DRIVE) copied whole into the working copy, with copied.toml beside it; never over work in the copy that has not gone back. Carries session."
+
+[[route]]
+method = "GET"
+path = "/v1/people"
+what = "The people the group file named by file registers, each with their keys."
+
+[[route]]
+method = "POST"
+path = "/v1/people/register"
+what = "A person registered in the group file named by file, with their first key and its proof, at the valve that owns the file, signed with the open key, in the working copy. Carries session."
+
+[[route]]
+method = "POST"
+path = "/v1/people/replace"
+what = "A registered person's key replaced with a new one and its proof, signed with the open key, in the working copy. Carries session."
+
+[[route]]
+method = "POST"
+path = "/v1/people/revoke"
+what = "One key of a registered person revoked from the day from, signed with the open key, in the working copy. Carries session."
 
 [[route]]
 method = "GET"
@@ -2329,6 +2359,11 @@ default = "7777"
 name = "VLEO_DATA"
 what = "Where the local reference-data store lives."
 default = "$HOME/.vleo/data"
+
+[[env]]
+name = "VLEO_COPY"
+what = "Where the person's working copy of the database lives: copied from the drive by the program, with copied.toml beside it, and the folder the people and groups are read from once it is there."
+default = "database/ beside the program"
 
 [[env]]
 name = "VLEO_KEYS"

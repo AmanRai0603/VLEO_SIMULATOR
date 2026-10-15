@@ -21,6 +21,9 @@
 //!   before 1.0 anchored by the programme manager, by its fingerprint;
 //! * [`chain`] — section 14: what a signature signs, and the chain it checks
 //!   through, from the anchored programme manager to every node;
+//! * [`copied`] — decision 3 of phase F: where a working copy came from and
+//!   every file as it was copied, so the person's own work and everyone
+//!   else's are told apart;
 //! * [`people`] — section 14: whom a file registers, changed at the valve
 //!   that owns them, re-signed and checked before it is given back;
 //! * [`rows`] and [`page`] — a file's rows as bytes, and everything the page
@@ -57,6 +60,7 @@ pub mod chain;
 pub mod checks;
 pub mod compare;
 pub mod convert;
+pub mod copied;
 pub mod csv;
 pub mod error;
 pub mod folder;

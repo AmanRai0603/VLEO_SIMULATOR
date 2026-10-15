@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "copy-taken",
+  "description": "The database copied from the drive into the working copy, or why not.",
+  "type": "object",
+  "properties": {
+    "ok": {
+      "type": "boolean"
+    },
+    "drive": {
+      "type": "string"
+    },
+    "copy": {
+      "type": "string"
+    },
+    "copied_at": {
+      "type": "string"
+    },
+    "files": {
+      "type": "number"
+    },
+    "message": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "ok",
+    "message"
+  ]
+}

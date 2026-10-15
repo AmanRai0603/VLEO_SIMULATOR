@@ -22,6 +22,7 @@ use vleo_files::keys::{LockedKey, SigningKey};
 use vleo_files::meta::Kind as FileKind;
 use vleo_files::model::File;
 use vleo_files::sqlite;
+use vleo_files::{copied, people};
 
 /// The key opened in this program, and who it says they are.
 struct Opened {
@@ -35,6 +36,45 @@ static OPEN: Mutex<Option<Opened>> = Mutex::new(None);
 /// The shortest passphrase a key is locked with.
 const SHORTEST: usize = 10;
 
+/// Wrong passphrases for one key file before `open` makes it wait, and how
+/// long: a person mistypes a few times; a program guessing does not stop.
+const TRIES: u32 = 5;
+const PAUSE: std::time::Duration = std::time::Duration::from_secs(30);
+
+/// Each key file's wrong passphrases in a row, and when the last was.
+static WRONG: Mutex<std::collections::BTreeMap<String, (u32, std::time::Instant)>> =
+    Mutex::new(std::collections::BTreeMap::new());
+
+/// The word this launch gives the page it opens, in the address's fragment,
+/// which a browser never sends. A request that opens or uses a key, or writes
+/// the person's copy, carries it back as `session`: the page the program
+/// opened can, and another person's program on the same computer, which can
+/// reach the loopback port too, cannot.
+static SESSION: std::sync::OnceLock<String> = std::sync::OnceLock::new();
+
+/// This launch's word (`SESSION`), made the first time it is asked for.
+pub fn session() -> &'static str {
+    SESSION.get_or_init(|| {
+        vleo_files::keys::random_bytes::<16>()
+            .map(|b| vleo_files::keys::hex(&b))
+            .unwrap_or_else(|_| {
+                // No randomness from the system: no word, so no request can
+                // carry it and nothing that needs it is done.
+                String::new()
+            })
+    })
+}
+
+/// Whether the request carries this launch's word.
+pub(super) fn carries_session(params: &str) -> Result<(), String> {
+    let given = param(params, "session").map(decode).unwrap_or_default();
+    let word = session();
+    if word.is_empty() || given.len() != word.len() || given.as_bytes() != word.as_bytes() {
+        return Err("this request does not carry the word this launch gave its page: a key is opened or used, and the copy written, only from the page the program opened".into());
+    }
+    Ok(())
+}
+
 /// Where this computer keeps its people's keys, and the anchors it accepted,
 /// one for each drive.
 pub(super) fn keys_dir() -> PathBuf {
@@ -46,9 +86,14 @@ pub(super) fn keys_dir() -> PathBuf {
     }
 }
 
-/// The folder the people and groups are read from: the drive the program was
-/// started on, or the design beside it.
-fn database(ctx: &Ctx) -> PathBuf {
+/// The folder the people and groups are read from: the person's working copy
+/// when there is one, else the drive the program was started on, else the
+/// design beside it.
+pub(super) fn database(ctx: &Ctx) -> PathBuf {
+    let copy = copy::dir(ctx);
+    if copy.join(copied::FILE_NAME).is_file() {
+        return copy;
+    }
     match std::env::var_os("VLEO_DRIVE").filter(|v| !v.is_empty()) {
         Some(d) => PathBuf::from(d),
         None => ctx.root.join("design"),
@@ -94,7 +139,7 @@ fn private(path: &Path, mode: u32) {
     let _ = (path, mode);
 }
 
-fn refusal(message: &str) -> String {
+pub(super) fn refusal(message: &str) -> String {
     let mut j = Json::new();
     j.raw("{");
     j.bool_field("ok", false);
@@ -127,7 +172,7 @@ pub(super) fn make(params: &str) -> String {
             path.display()
         ));
     }
-    let made = (|| -> Result<(String, String), vleo_files::Error> {
+    let made = (|| -> Result<(String, String, String), vleo_files::Error> {
         let key = SigningKey::generate()?;
         let salt = vleo_files::keys::random_bytes::<16>()?;
         let nonce = vleo_files::keys::random_bytes::<12>()?;
@@ -141,10 +186,14 @@ pub(super) fn make(params: &str) -> String {
         private(&dir, 0o700);
         sqlite::write(&f, &path)?;
         private(&path, 0o600);
-        Ok((key.public().to_hex(), key.public().fingerprint()))
+        Ok((
+            key.public().to_hex(),
+            key.public().fingerprint(),
+            people::proof(&key, name),
+        ))
     })();
     match made {
-        Ok((public, fingerprint)) => {
+        Ok((public, fingerprint, proof)) => {
             let mut j = Json::new();
             j.raw("{");
             j.bool_field("ok", true);
@@ -152,9 +201,10 @@ pub(super) fn make(params: &str) -> String {
             j.str_field("file", &path.display().to_string());
             j.str_field("public_key", &public);
             j.str_field("fingerprint", &fingerprint);
+            j.str_field("proof", &proof);
             j.str_field(
                 "message",
-                "Your key is made and locked. Give the public key to whoever registers you: the programme manager, or your subsystem engineer.",
+                "Your key is made and locked. Give the public key and its proof to whoever registers you: the programme manager, or your subsystem engineer.",
             );
             j.raw("}");
             j.0
@@ -212,7 +262,7 @@ enum Anchor {
 
 /// Why the files could not be read: this computer has not accepted the
 /// drive's anchor yet, or anything else.
-enum NotRead {
+pub(super) enum NotRead {
     FirstUse(String),
     Why(String),
 }
@@ -224,9 +274,15 @@ fn anchors_file() -> PathBuf {
 }
 
 /// The drive as this computer names it, so each drive keeps its own anchor.
+/// A working copy is named by the drive it was copied from, so copying again
+/// asks nobody to accept the same anchor twice.
 fn drive_name(database: &Path) -> String {
-    std::fs::canonicalize(database)
-        .unwrap_or_else(|_| database.to_path_buf())
+    let at = std::fs::read_to_string(database.join(copied::FILE_NAME))
+        .ok()
+        .and_then(|t| copied::Copied::from_toml(&t).ok())
+        .map_or_else(|| database.to_path_buf(), |c| PathBuf::from(c.drive));
+    std::fs::canonicalize(&at)
+        .unwrap_or(at)
         .display()
         .to_string()
 }
@@ -295,11 +351,13 @@ fn accept(database: &Path, fingerprint: &str) -> Result<(), String> {
 }
 
 /// The files of a drive, opened through the chain.
-struct Chain {
-    programme: Registry,
-    systems: Option<Registry>,
-    groups: Vec<Registry>,
-    left_out: Vec<String>,
+pub(super) struct Chain {
+    /// The fingerprint the programme's file opened under.
+    pub(super) anchor: String,
+    pub(super) programme: Registry,
+    pub(super) systems: Option<Registry>,
+    pub(super) groups: Vec<Registry>,
+    pub(super) left_out: Vec<String>,
 }
 
 /// The programme's, the systems' and every group's files in `database`, opened
@@ -307,7 +365,7 @@ struct Chain {
 /// The first time this computer opens the drive, the anchor is remembered only
 /// once the programme's file opens under it and the person has accepted it
 /// (`accept_anchor`, the fingerprint they compared).
-fn registries(database: &Path, accept_anchor: &str) -> Result<Chain, NotRead> {
+pub(super) fn registries(database: &Path, accept_anchor: &str) -> Result<Chain, NotRead> {
     let (named, first) = match anchor(database).map_err(NotRead::Why)? {
         Anchor::Accepted(n) => (n, false),
         Anchor::FirstUse(n) => (n, true),
@@ -368,6 +426,7 @@ fn registries(database: &Path, accept_anchor: &str) -> Result<Chain, NotRead> {
         }
     }
     Ok(Chain {
+        anchor: named,
         programme,
         systems,
         groups: opened,
@@ -455,6 +514,9 @@ fn me_json(open: Option<&Opened>, left_out: &[String]) -> String {
 /// unlocked by `passphrase`, and the person the files register with it. It is
 /// held only if both hold.
 pub(super) fn open(params: &str, ctx: &Ctx) -> String {
+    if let Err(why) = carries_session(params) {
+        return refusal(&why);
+    }
     // Whatever happens next, nobody's key stays open from before.
     *OPEN.lock().unwrap_or_else(|p| p.into_inner()) = None;
     let file = param(params, "file").map(decode).unwrap_or_default();
@@ -469,7 +531,19 @@ pub(super) fn open(params: &str, ctx: &Ctx) -> String {
         Ok(_) => return refusal(&format!("{file} is not a key file")),
         Err(e) => return refusal(&format!("{file}: {}", e.message())),
     };
-    let key = match f
+    {
+        let wrong = WRONG.lock().unwrap_or_else(|p| p.into_inner());
+        if let Some((n, last)) = wrong.get(&file) {
+            let waited = last.elapsed();
+            if *n >= TRIES && waited < PAUSE {
+                return refusal(&format!(
+                    "{n} wrong passphrases in a row for {file}: try again in {} seconds",
+                    (PAUSE - waited).as_secs() + 1
+                ));
+            }
+        }
+    }
+    let unlocked = f
         .locked_keys
         .first()
         .ok_or_else(|| {
@@ -479,10 +553,20 @@ pub(super) fn open(params: &str, ctx: &Ctx) -> String {
             )
         })
         .and_then(LockedKey::from_row)
-        .and_then(|k| k.unlock(&passphrase))
-    {
-        Ok(k) => k,
-        Err(e) => return refusal(e.message()),
+        .and_then(|k| k.unlock(&passphrase));
+    let key = {
+        let mut wrong = WRONG.lock().unwrap_or_else(|p| p.into_inner());
+        match unlocked {
+            Ok(k) => {
+                wrong.remove(&file);
+                k
+            }
+            Err(e) => {
+                let n = wrong.get(&file).map_or(0, |(n, _)| *n) + 1;
+                wrong.insert(file.clone(), (n, std::time::Instant::now()));
+                return refusal(e.message());
+            }
+        }
     };
     let accept_anchor = param(params, "accept_anchor")
         .map(decode)
@@ -534,8 +618,8 @@ pub(super) fn me() -> String {
     me_json(open.as_ref(), &[])
 }
 
-/// The open key, for the signing that F3 and F5 add. Nothing signs yet.
-#[allow(dead_code)]
+/// The open key and who it is, for whatever signs with it: a change to whom a
+/// file registers (`people.rs`), and the signing F3 and F5 add.
 pub(super) fn with_key<T>(f: impl FnOnce(&SigningKey, &Me) -> T) -> Option<T> {
     let open = OPEN.lock().unwrap_or_else(|p| p.into_inner());
     open.as_ref().map(|o| f(&o.key, &o.me))

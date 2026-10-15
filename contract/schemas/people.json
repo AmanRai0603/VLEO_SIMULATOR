@@ -1,0 +1,73 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "people",
+  "description": "The people a group file registers, each with their keys.",
+  "type": "object",
+  "properties": {
+    "ok": {
+      "type": "boolean"
+    },
+    "file": {
+      "type": "string"
+    },
+    "message": {
+      "type": "string"
+    },
+    "people": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string"
+          },
+          "deputy_for": {
+            "type": "string"
+          },
+          "keys": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "public_key": {
+                  "type": "string"
+                },
+                "fingerprint": {
+                  "type": "string"
+                },
+                "registered_at": {
+                  "type": "string"
+                },
+                "registered_by": {
+                  "type": "string"
+                },
+                "revoked_from": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "public_key",
+                "fingerprint",
+                "registered_at",
+                "registered_by",
+                "revoked_from"
+              ]
+            }
+          }
+        },
+        "required": [
+          "name",
+          "role",
+          "deputy_for",
+          "keys"
+        ]
+      }
+    }
+  },
+  "required": [
+    "ok"
+  ]
+}

@@ -24,7 +24,17 @@ fn root() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../..")
 }
 
+/// A request as the page makes it: a POST carries this launch's word.
 fn ask(port: u16, method: &str, path: &str, body: &str) -> String {
+    if method == "POST" {
+        let body = format!("session={}&{body}", vleo_server::session());
+        return ask_bare(port, method, path, &body);
+    }
+    ask_bare(port, method, path, body)
+}
+
+/// A request as another program on the same computer makes it.
+fn ask_bare(port: u16, method: &str, path: &str, body: &str) -> String {
     let mut s = TcpStream::connect(("127.0.0.1", port)).expect("the server did not accept");
     write!(
         s,
@@ -210,6 +220,18 @@ fn a_key_opens_only_for_whom_it_is_registered() {
     let me = ask(port, "GET", "/v1/me", "");
     assert_eq!(field(&me, "open"), Some("false"), "{me}");
 
+    // A key is opened only from the page the program opened.
+    for body in [
+        s("file=test-nia.vkey&passphrase=the%20node%20engineer%27s%20passphrase"),
+        s("session=guessed&file=test-nia.vkey&passphrase=the%20node%20engineer%27s%20passphrase"),
+    ] {
+        let bare = ask_bare(port, "POST", "/v1/key/open", &body);
+        assert!(
+            bare.contains("does not carry the word this launch gave its page"),
+            "{bare}"
+        );
+    }
+
     // A key made, and refused when it would be weak or written over.
     let short = ask(
         port,
@@ -225,6 +247,18 @@ fn a_key_opens_only_for_whom_it_is_registered() {
         "name=Test%20Stranger&passphrase=a%20long%20enough%20passphrase",
     );
     assert_eq!(field(&made, "ok"), Some("true"), "{made}");
+    // With the proof its holder hands over with the public key.
+    let public =
+        vleo_files::keys::PublicKey::from_hex(field(&made, "public_key").unwrap()).unwrap();
+    assert_eq!(
+        vleo_files::keys::Signature::from_hex(field(&made, "proof").unwrap_or(""))
+            .and_then(|p| public.check(
+                format!("vleo: this key is mine, Test Stranger, {}", public.to_hex()).as_bytes(),
+                &p
+            ))
+            .map_err(|e| e.message().to_string()),
+        Ok(())
+    );
     assert!(keys.join("test-stranger.vkey").is_file());
     let again = ask(
         port,
