@@ -364,7 +364,7 @@ fn an_issue_is_raised_from_a_red_mark() {
     assert_eq!(issues(&copy), ["1-l3_solar.vissue"]);
     assert!(
         !drv.join("issues").exists(),
-        "the drive is never written: the issue goes back with the person's work"
+        "the drive is never written: the issue is in the person's copy"
     );
     let f = sqlite::read(&copy.join("issues/1-l3_solar.vissue")).unwrap();
     assert_eq!(f.kind().unwrap(), Kind::Issue);
@@ -407,6 +407,17 @@ fn an_issue_is_raised_from_a_red_mark() {
     ]);
     assert_eq!(field(&r, "file"), "issues/2-l3_solar.vissue", "{r}");
     assert_eq!(issues(&copy), ["1-l3_solar.vissue", "2-l3_solar.vissue"]);
+
+    // An issue already on the drive is counted too: the next number is past
+    // it, in whichever group.
+    std::fs::create_dir_all(drv.join("issues")).unwrap();
+    std::fs::write(
+        drv.join("issues/6-l3_power.vissue"),
+        "an issue someone raised",
+    )
+    .unwrap();
+    let r = raise(&[("node", "sw_f107_design_long"), ("what", "Again.")]);
+    assert_eq!(field(&r, "file"), "issues/7-l3_solar.vissue", "{r}");
 
     post(port, "/v1/key/close", &[]);
     let _ = std::fs::remove_dir_all(&scratch);

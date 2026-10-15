@@ -484,8 +484,8 @@ judgement.
 or is not proven has *raise issue*. Say what is wrong, and the issue is \
 written into your copy's `issues/`, numbered, addressed to the node's group \
 and the node, with what the engine says of it on the same case and the \
-design's fingerprint, signed with your key. It goes to the drive when you \
-put your work back.
+design's fingerprint, signed with your key. It stays in your copy: putting \
+work back on the drive is not in the application yet.
 
 **Results kept.** A run kept from Explore names the design it ran on, by its \
 fingerprint, and the engine that made it; the list says whether that is the \

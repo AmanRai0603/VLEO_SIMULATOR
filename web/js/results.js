@@ -149,7 +149,11 @@ export async function renderResults(host) {
  *  is the one open, and the engine that made it. */
 function designOf(r, open) {
   const fp = r.design ? '<code title="' + esc(r.design) + '">' + esc(r.design.slice(0, 12)) + '…</code>' : '<i>no fingerprint</i>';
-  const here = r.design && r.design === open ? ' <span class="res-kind" title="the design open now">this design</span>'
+  // A result kept before it said which design it ran on recorded the design's
+  // own files even when today's design was open: its fingerprint cannot say
+  // it is this design, so it is never called this one.
+  const here = !r.which ? ' <span class="res-kind" title="kept before results said which design they ran on">which design is not recorded</span>'
+    : r.design && r.design === open ? ' <span class="res-kind" title="the design open now">this design</span>'
     : ' <span class="res-kind" title="not the design open now">another design</span>';
   return esc(r.which || 'a design it does not name') + ' · ' + fp + here +
     '<div class="muted">kernel ' + esc(r.kernel) + ' · graph ' + esc(r.graph) +

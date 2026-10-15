@@ -300,6 +300,7 @@ fn open_tree(root: &Path) -> Result<Opened, String> {
     for g in &t.groups {
         said.push(format!("  {}", g.said()));
         if let Some(k) = &g.taken {
+            said.push(format!("    {}", k.chain_said(&drive)));
             for n in &k.notes {
                 said.push(format!("    {n}"));
             }
