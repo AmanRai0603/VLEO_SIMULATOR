@@ -302,11 +302,6 @@ fn drive_name(database: &Path, copy: &Path) -> Result<String, String> {
         .to_string())
 }
 
-/// The anchor: the programme manager's key fingerprint START HERE names, the
-/// first word of 64 hexadecimal digits in it. This computer remembers the one
-/// it accepted for each drive, and refuses a different one: a changed anchor
-/// comes with a note signed by the old key, which is not read here yet
-/// (section 14).
 /// The anchor START HERE in `drive` names, and whether this computer has
 /// accepted it for that drive: what today's design checks its releases'
 /// seals through (`today::build`). A changed anchor is refused, as opening a
@@ -318,6 +313,11 @@ pub(crate) fn drive_anchor(drive: &Path) -> Result<(String, bool), String> {
     }
 }
 
+/// The anchor: the programme manager's key fingerprint START HERE names, the
+/// first word of 64 hexadecimal digits in it. This computer remembers the one
+/// it accepted for each drive, and refuses a different one: a changed anchor
+/// comes with a note signed by the old key, which is not read here yet
+/// (section 14).
 fn anchor(database: &Path, copy: &Path) -> Result<Anchor, String> {
     let start = ["START HERE.md", "START HERE", "START_HERE.md"]
         .iter()

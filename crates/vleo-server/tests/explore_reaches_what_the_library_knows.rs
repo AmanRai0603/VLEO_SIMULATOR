@@ -35,6 +35,32 @@ fn get(port: u16, path: &str) -> String {
         .unwrap_or(out)
 }
 
+fn post(port: u16, path: &str, body: &str) -> String {
+    let mut s = TcpStream::connect(("127.0.0.1", port)).unwrap();
+    write!(
+        s,
+        "POST {path} HTTP/1.1\r\nHost: 127.0.0.1:{port}\r\nContent-Type: application/x-www-form-urlencoded\r\n\
+         Content-Length: {}\r\nConnection: close\r\n\r\n{body}",
+        body.len()
+    )
+    .unwrap();
+    let mut out = String::new();
+    s.read_to_string(&mut out).unwrap();
+    out.split_once("\r\n\r\n")
+        .map(|(_, body)| body.to_string())
+        .unwrap_or(out)
+}
+
+/// The string `key` holds in `body`, the first time it is said.
+fn field<'a>(body: &'a str, key: &str) -> &'a str {
+    let k = format!("\"{key}\":\"");
+    let at = body
+        .find(&k)
+        .unwrap_or_else(|| panic!("no {key} in {body}"))
+        + k.len();
+    &body[at..at + body[at..].find('"').unwrap()]
+}
+
 /// The text of the object in `body` that starts at the first `"id":"<id>"`.
 fn object_of<'a>(body: &'a str, id: &str) -> &'a str {
     let at = body
@@ -91,6 +117,9 @@ fn explore_answers_from_the_drive_s_releases() {
     let today = get(port, "/v1/today");
     assert!(today.contains("\"today\":false"), "{today}");
     assert!(today.contains("\"groups\":[]"), "{today}");
+    assert_eq!(field(&today, "which"), "the design's own files");
+    let own = field(&today, "fingerprint").to_string();
+    assert_eq!(field(&today, "files_fingerprint"), own);
     let refused = get(
         port,
         "/v1/compare?a=drive:groups/l3_solar/releases/l3_solar-1.1.vleo&b=drive:x",
@@ -107,6 +136,30 @@ fn explore_answers_from_the_drive_s_releases() {
 
     let today = get(port, "/v1/today");
     assert!(today.contains("\"today\":true"), "{today}");
+    // Today's design is not the design's own files, and says which it is.
+    assert!(
+        field(&today, "which").starts_with("today's design, built from the drive"),
+        "{today}"
+    );
+    let todays = field(&today, "fingerprint").to_string();
+    assert_eq!(field(&today, "files_fingerprint"), own);
+    assert_ne!(todays, own, "{today}");
+    assert!(
+        field(&today, "base").contains("no systems' file"),
+        "{today}"
+    );
+    // A result kept from it names it, by its words and its fingerprint.
+    let kept = post(
+        port,
+        "/v1/results/save",
+        "node=l3_solar_ach_01&mode=branch&inputs=defaults",
+    );
+    assert!(kept.contains("\"ok\":true"), "{kept}");
+    assert_eq!(field(&kept, "design"), todays, "{kept}");
+    assert!(
+        field(&kept, "which").starts_with("today's design, built from the drive"),
+        "{kept}"
+    );
     let solar = &today[today.find("\"id\":\"l3_solar\"").expect(&today)..];
     assert!(solar.contains("\"version\":\"1.2\""), "{today}");
     assert!(solar.contains("sw_f107_design_long"), "{today}");

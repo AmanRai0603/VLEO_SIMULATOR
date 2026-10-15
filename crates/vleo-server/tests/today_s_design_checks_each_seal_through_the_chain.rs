@@ -38,7 +38,9 @@ fn sql(file: &Path, statement: &str) {
     assert!(db.execute(statement, []).unwrap() > 0, "{statement}");
 }
 
-/// 1.1 made into its 1.2 and sealed again, as its group would.
+/// 1.1 made into its 1.2 and sealed again, as its group would: one node's
+/// method said again with a line of its own, so 1.2 writes into the design
+/// where 1.1, already taken into it, writes nothing.
 fn as_1_2(file: &Path) {
     sql(file, "UPDATE meta SET value = '1.2' WHERE key = 'version'");
     sql(
@@ -50,6 +52,11 @@ fn as_1_2(file: &Path) {
          A first line saying what the method does.,,,\
          the four NOAA SWPC activity levels,a correction to those levels\\n' \
          WHERE scope = 'group' AND path = 'versions.csv'",
+    );
+    sql(
+        file,
+        "UPDATE doc SET body = '# 1.2: the same four bands, said again.\n' || body \
+         WHERE kind = 'pseudocode' AND scope = 'sw_activity_band'",
     );
     let r = vleo_files::intake::Release::open(file).unwrap();
     let fp = vleo_files::seal::fingerprint_of(&r.folder, "group");
@@ -151,11 +158,25 @@ fn a_release_the_chain_does_not_admit_is_refused_and_the_last_good_one_taken() {
         g.refused[0].1
     );
     assert!(
-        k.chain.contains("anchored by the programme manager")
-            && k.chain.contains("has not accepted that anchor yet"),
+        k.chain.contains("anchored by the programme manager"),
         "{}",
         k.chain
     );
+    // Whether this computer has accepted the anchor is read when it is said:
+    // not yet, and then, once accepted as opening a key accepts it, so.
+    let said = k.chain_said(&d);
+    assert!(said.contains("has not accepted that anchor yet"), "{said}");
+    let anchors = Path::new(&std::env::var("VLEO_KEYS").unwrap()).join("anchors");
+    let line = format!(
+        "{} {}\n",
+        pat().public().fingerprint(),
+        std::fs::canonicalize(&d).unwrap().display()
+    );
+    let before = std::fs::read_to_string(&anchors).unwrap_or_default();
+    std::fs::write(&anchors, format!("{before}{line}")).unwrap();
+    let said = k.chain_said(&d);
+    assert!(!said.contains("not accepted"), "{said}");
+    assert!(said.contains("anchored by the programme manager"), "{said}");
     assert!(g.said().contains("1.2, is refused"), "{}", g.said());
     let _ = std::fs::remove_dir_all(&d);
 }
@@ -191,6 +212,82 @@ fn a_programme_s_file_that_does_not_open_admits_nothing() {
             .all(|(_, why)| why.contains("cannot be checked through the chain")),
         "{:?}",
         g.refused
+    );
+    let _ = std::fs::remove_dir_all(&d);
+}
+
+/// Today's design at `root`, and the fingerprint of the design's own files.
+fn today_at(root: &Path, d: &Path) -> (Today, String) {
+    let (design, fp) = vleo_files::convert::serve(root).expect("design/ is served");
+    let t = build(Arc::new(design), root, d).expect("today's design builds");
+    (t, fp)
+}
+
+#[test]
+fn two_instances_on_one_drive_build_the_same_design_by_fingerprint() {
+    keys();
+    let d = drive("twice", &["1.1", "1.2"], &pat().public().fingerprint());
+    // A second copy of the tool, in another folder, on the same design.
+    let other = std::env::temp_dir().join(format!("vleo-today-chain-other-{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&other);
+    std::fs::create_dir_all(&other).unwrap();
+    std::os::unix::fs::symlink(root().join("design"), other.join("design")).unwrap();
+    let (one, fp) = today_at(&root(), &d);
+    let (two, fp_two) = today_at(&other, &d);
+    assert_eq!(fp, fp_two, "the same design's own files");
+    assert_eq!(one.groups[0].taken.as_ref().unwrap().version, "1.2");
+    assert!(!one.written.is_empty(), "1.2 writes into the design");
+    assert_eq!(one.fingerprint(&fp), two.fingerprint(&fp_two));
+    assert_ne!(
+        one.fingerprint(&fp),
+        fp,
+        "today's design is not the design's own files"
+    );
+
+    // Another release taken is another design; 1.1, already in the design's
+    // own files, is that design.
+    let older = drive("twice-older", &["1.1"], &pat().public().fingerprint());
+    let (then, _) = today_at(&root(), &older);
+    assert_eq!(then.groups[0].taken.as_ref().unwrap().version, "1.1");
+    assert_ne!(then.fingerprint(&fp), one.fingerprint(&fp));
+    assert_eq!(then.fingerprint(&fp), fp);
+    for x in [&d, &older, &other] {
+        let _ = std::fs::remove_dir_all(x);
+    }
+}
+
+#[test]
+fn the_design_s_base_is_the_one_the_systems_file_names() {
+    keys();
+    let d = drive("base", &["1.1"], &pat().public().fingerprint());
+    let (t, _) = today_at(&root(), &d);
+    assert!(t.base.said.contains("no systems' file"), "{}", t.base.said);
+    assert_eq!(t.base.base_version, None);
+
+    let mut systems = File::new(Kind::Group, APP);
+    for (k, v) in [
+        ("group_id", "systems"),
+        ("writer", "Test Sam"),
+        ("based_on", "design-2026-09"),
+        ("base_version", "2"),
+    ] {
+        systems.meta.insert(s(k), s(v));
+    }
+    std::fs::create_dir_all(d.join("groups/systems")).unwrap();
+    vleo_files::sqlite::write(&systems, &d.join("groups/systems/systems.vgroup")).unwrap();
+    let (t, _) = today_at(&root(), &d);
+    assert_eq!(t.base.based_on, "design-2026-09");
+    assert_eq!(t.base.base_version, Some(2));
+    assert!(
+        t.base.said.contains("design-2026-09, the 2nd"),
+        "{}",
+        t.base.said
+    );
+    let k = t.groups[0].taken.as_ref().unwrap();
+    assert_eq!(
+        (k.based_on.as_str(), k.base_version),
+        ("", None),
+        "1.1 is from before they were kept"
     );
     let _ = std::fs::remove_dir_all(&d);
 }

@@ -35,7 +35,7 @@
 //! manager's anchor of its fingerprint. A seal that does not check is
 //! refused like any other reason, and the group's last good release taken in
 //! its place. Whether this computer has accepted that anchor yet is said
-//! beside each release taken. A drive with no programme's file says so for
+//! beside each release taken, read when it is said (`Taken::chain_said`). A drive with no programme's file says so for
 //! every release: nothing is taken as if it had been checked.
 
 use std::collections::BTreeMap;
@@ -57,6 +57,73 @@ pub struct Today {
     /// `releases/` folder that is not a release, two files where there should
     /// be one.
     pub ignored: Vec<String>,
+    /// What the releases taken wrote into the design, as one digest: every
+    /// sheet replaced, by its path under the design's root and the hash of
+    /// its bytes. Empty when none was taken. See [`Today::fingerprint`].
+    pub written: String,
+    /// The released design today's design is based on, as the systems' file
+    /// names it (`based_on`, `base_version`), or why none is named.
+    pub base: Base,
+}
+
+/// The released design a design is based on: by name and by count, and the
+/// sentence that says it.
+#[derive(Clone, Debug, Default)]
+pub struct Base {
+    pub based_on: String,
+    pub base_version: Option<u64>,
+    pub said: String,
+}
+
+/// The released design the systems' file on `drive` names as the one it is
+/// based on. The systems' file is the main valve: what it is based on is what
+/// today's design is based on.
+fn base_of(drive: &Path) -> Base {
+    let path = drive.join("groups/systems/systems.vgroup");
+    if !path.is_file() {
+        return Base {
+            said: "the drive has no systems' file, so no released design is named as its base"
+                .into(),
+            ..Base::default()
+        };
+    }
+    match vleo_files::sqlite::read(&path) {
+        Err(e) => Base {
+            said: format!(
+                "the systems' file does not read, so its base is not known: {}",
+                e.message()
+            ),
+            ..Base::default()
+        },
+        Ok(f) => {
+            let based_on = f.meta.get("based_on").cloned().unwrap_or_default();
+            let base_version = f.base_version();
+            let said = match (based_on.is_empty(), base_version) {
+                (true, Some(0) | None) => "based on no released design: none has been released yet".to_string(),
+                (_, Some(n)) => format!("based on the released design {based_on}, the {}", nth(n)),
+                (false, None) => format!(
+                    "based on the released design {based_on}; its count is not kept in the systems' file"
+                ),
+            };
+            Base {
+                based_on,
+                base_version,
+                said,
+            }
+        }
+    }
+}
+
+/// 1st, 2nd, 3rd, 4th, … 11th, 12th, 13th, 21st.
+fn nth(n: u64) -> String {
+    let suffix = match (n % 10, n % 100) {
+        (_, 11..=13) => "th",
+        (1, _) => "st",
+        (2, _) => "nd",
+        (3, _) => "rd",
+        _ => "th",
+    };
+    format!("{n}{suffix}")
 }
 
 /// What today's design was built from, kept for the screens to say it: the
@@ -64,6 +131,10 @@ pub struct Today {
 #[derive(Clone, Debug)]
 pub struct Report {
     pub drive: String,
+    /// The fingerprint of today's design (`Today::fingerprint`).
+    pub fingerprint: String,
+    /// The released design it is based on.
+    pub base: Base,
     pub groups: Vec<Group>,
     pub ignored: Vec<String>,
 }
@@ -91,8 +162,11 @@ pub struct Taken {
     /// transcription taken as an assistant's relation.
     pub notes: Vec<String>,
     /// How its seal was checked: through the chain, and from which anchor, or
-    /// why it could not be.
+    /// why it could not be. Said with whether this computer has accepted
+    /// that anchor by [`Taken::chain_said`].
     pub chain: String,
+    /// Whether it was checked from the anchor START HERE names.
+    pub anchored: bool,
     /// The released design it was based on, by name and by count
     /// (`base_version`); empty and none for a release from before they were
     /// kept.
@@ -112,7 +186,6 @@ enum Chain {
     Open {
         programme: Registry,
         systems: Option<Registry>,
-        accepted: bool,
     },
 }
 
@@ -124,7 +197,7 @@ fn chain_of(drive: &Path) -> Chain {
             "the drive has no programme's file, so there is no anchor to check them from".into(),
         );
     }
-    let (anchor, accepted) = match crate::me::drive_anchor(drive) {
+    let (anchor, _) = match crate::me::drive_anchor(drive) {
         Ok(a) => a,
         Err(why) => return Chain::Broken(why),
     };
@@ -142,11 +215,7 @@ fn chain_of(drive: &Path) -> Chain {
     let systems = vleo_files::sqlite::read(&drive.join("groups/systems/systems.vgroup"))
         .ok()
         .and_then(|f| chain::open_systems(&f, &programme).ok());
-    Chain::Open {
-        programme,
-        systems,
-        accepted,
-    }
+    Chain::Open { programme, systems }
 }
 
 impl Chain {
@@ -163,11 +232,7 @@ impl Chain {
             Chain::Broken(why) => Err(format!(
                 "its seal cannot be checked through the chain: {why}"
             )),
-            Chain::Open {
-                programme,
-                systems,
-                accepted,
-            } => {
+            Chain::Open { programme, systems } => {
                 let before_1_0 = release
                     .meta
                     .get("upgraded_from")
@@ -202,19 +267,45 @@ impl Chain {
                     "checked through the chain"
                 };
                 Ok(format!(
-                    "sealed by {sealed_by}: {how}, from the anchor START HERE names{}",
-                    if *accepted {
-                        ""
-                    } else {
-                        "; this computer has not accepted that anchor yet: open a key on this drive and compare it"
-                    }
+                    "sealed by {sealed_by}: {how}, from the anchor START HERE names"
                 ))
             }
         }
     }
 }
 
+impl Taken {
+    /// How its seal checked, as said now: whether this computer has accepted
+    /// the anchor is read when it is said, not when the design was built, so
+    /// a person who accepts it on opening their key sees it accepted.
+    pub fn chain_said(&self, drive: &Path) -> String {
+        if !self.anchored {
+            return self.chain.clone();
+        }
+        match crate::me::drive_anchor(drive) {
+            Ok((_, true)) => self.chain.clone(),
+            Ok((_, false)) => format!(
+                "{}; this computer has not accepted that anchor yet: open a key on this drive and compare it",
+                self.chain
+            ),
+            Err(why) => format!(
+                "{}; whether this computer accepted that anchor cannot be read: {why}",
+                self.chain
+            ),
+        }
+    }
+}
+
 impl Today {
+    /// The fingerprint of today's design: the design's own files it was built
+    /// on (`base`, their fingerprint), and every sheet the releases taken
+    /// wrote. Two instances on one drive, on the same design, give the same
+    /// one (W6); with nothing taken it is the design's own fingerprint, since
+    /// today's design is then the design's own files.
+    pub fn fingerprint(&self, base: &str) -> String {
+        fingerprint(base, &self.written)
+    }
+
     /// Every node a taken release changes in the design, with which release:
     /// what changed since the design's own sheets, for tracing a closure that
     /// held before and does not now (`vleo_modules::health::trace_since`).
@@ -343,6 +434,7 @@ pub fn build(base: Arc<dyn Files>, root: &Path, drive: &Path) -> Result<Today, S
                         fingerprint: r.fingerprint,
                         changes,
                         notes,
+                        anchored: matches!(chain, Chain::Open { .. }),
                         chain: how.said,
                         based_on: how.based_on,
                         base_version: how.base_version,
@@ -354,6 +446,7 @@ pub fn build(base: Arc<dyn Files>, root: &Path, drive: &Path) -> Result<Today, S
         }
         groups.push(group);
     }
+    let written = digest(root, &taken);
     let files: Arc<dyn Files> = Arc::new(Overlay {
         base,
         replaced: taken,
@@ -365,7 +458,35 @@ pub fn build(base: Arc<dyn Files>, root: &Path, drive: &Path) -> Result<Today, S
         files,
         groups,
         ignored,
+        written,
+        base: base_of(drive),
     })
+}
+
+/// Every sheet replaced, by its path under `root` and the hash of its bytes,
+/// as one digest; empty when none is. The path is the one under the root, so
+/// two copies of the tool in two folders agree.
+fn digest(root: &Path, taken: &BTreeMap<PathBuf, Vec<u8>>) -> String {
+    if taken.is_empty() {
+        return String::new();
+    }
+    let mut all = Vec::new();
+    for (path, bytes) in taken {
+        let under = path.strip_prefix(root).unwrap_or(path);
+        all.extend_from_slice(under.to_string_lossy().replace('\\', "/").as_bytes());
+        all.push(0);
+        all.extend_from_slice(&vleo_files::keys::sha256(bytes));
+    }
+    vleo_files::keys::hex(&vleo_files::keys::sha256(&all))
+}
+
+/// The fingerprint of a design built on `base` with `written` taken into it.
+pub fn fingerprint(base: &str, written: &str) -> String {
+    if written.is_empty() {
+        return base.to_string();
+    }
+    let all = format!("today's design\0{base}\0{written}");
+    vleo_files::keys::hex(&vleo_files::keys::sha256(all.as_bytes()))
 }
 
 /// A release found on the drive: the version it says it is, as said and as

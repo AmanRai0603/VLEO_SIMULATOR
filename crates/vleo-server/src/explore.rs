@@ -30,24 +30,49 @@ pub(super) fn today_json(ctx: &Ctx) -> String {
     j.bool_field("ok", true);
     let built = super::built_from();
     j.bool_field("today", built.is_some());
+    // The design open, by its fingerprint: today's design's when it is
+    // today's, which two instances on one drive agree on (W6), and the
+    // fingerprint of the design's own files it was built on beside it.
+    let (which, fingerprint) = super::open_design(ctx);
     j.key("design").raw("{");
+    j.str_field("which", &which);
+    j.str_field("fingerprint", &fingerprint);
     match &ctx.design {
         Some(d) => {
             j.str_field("from", &d.file);
             j.num_field("rows", d.rows.parse().unwrap_or(0.0));
-            j.str_field("fingerprint", &d.fingerprint);
+            j.str_field("files_fingerprint", &d.fingerprint);
         }
         None => {
             j.str_field("from", "");
             j.num_field("rows", 0.0);
-            j.str_field("fingerprint", "");
+            j.str_field("files_fingerprint", "");
         }
     }
+    // The released design it is based on: the systems' file's, for today's
+    // design; none named for the design's own files.
+    let base = built
+        .as_ref()
+        .map(|r| r.base.clone())
+        .unwrap_or_else(|| super::today::Base {
+            said: "the design's own files are not based on a released design".into(),
+            ..Default::default()
+        });
+    j.str_field("based_on", &base.based_on);
+    match base.base_version {
+        Some(n) => j.num_field("base_version", n as f64),
+        None => j.key("base_version").raw("null"),
+    };
+    j.str_field("base", &base.said);
     j.close_obj();
     match &built {
         Some(r) => j.str_field("drive", &r.drive),
         None => j.str_field("drive", ""),
     };
+    let drive = built
+        .as_ref()
+        .map(|r| PathBuf::from(&r.drive))
+        .unwrap_or_default();
     j.key("groups").open_arr();
     for g in built.iter().flat_map(|r| r.groups.iter()) {
         j.open_obj();
@@ -62,7 +87,7 @@ pub(super) fn today_json(ctx: &Ctx) -> String {
                 j.str_field("fingerprint", &t.fingerprint);
                 strings(&mut j, "changes", &t.changes);
                 strings(&mut j, "notes", &t.notes);
-                j.str_field("chain", &t.chain);
+                j.str_field("chain", &t.chain_said(&drive));
                 j.str_field("based_on", &t.based_on);
                 match t.base_version {
                     Some(n) => j.num_field("base_version", n as f64),

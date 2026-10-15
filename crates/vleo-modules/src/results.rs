@@ -96,6 +96,10 @@ pub struct Saved {
     /// The fingerprint of the design's files the run read, or empty when it read
     /// the folders of a checkout. Says which design the answer belongs to.
     pub design: String,
+    /// Which design that is, in words: today's design and the drive it was
+    /// built from, or the design's own files. Empty in a result saved before
+    /// it was kept.
+    pub which: String,
     pub case: String,
     pub data: Vec<String>,
     /// The inputs template it ran against — see `inputs::template`.
@@ -544,6 +548,7 @@ pub fn csv(s: &Saved) -> String {
         ("kernel", s.kernel.as_str()),
         ("graph", s.graph.as_str()),
         ("design", s.design.as_str()),
+        ("which", s.which.as_str()),
         ("case", s.case.as_str()),
         ("template", s.template.as_str()),
     ] {
@@ -642,6 +647,7 @@ pub fn read(text: &str) -> Result<Saved, Error> {
                 "kernel" => s.kernel = v,
                 "graph" => s.graph = v,
                 "design" => s.design = v,
+                "which" => s.which = v,
                 "case" => s.case = v,
                 "template" => s.template = v,
                 "data" => s.data = v.split_whitespace().map(str::to_string).collect(),

@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "today",
-  "$comment": "GET /v1/today \u2014 crates/vleo-server/src/explore.rs",
+  "$comment": "GET /v1/today — crates/vleo-server/src/explore.rs",
   "type": "object",
   "properties": {
     "ok": {
@@ -14,20 +14,53 @@
     "design": {
       "type": "object",
       "properties": {
+        "which": {
+          "type": "string",
+          "description": "The design open, in words: today's design and the drive it was built from, or the design's own files."
+        },
+        "fingerprint": {
+          "type": "string",
+          "description": "The fingerprint of the design open: today's design's when it is today's, the same on every instance built from one drive on one design."
+        },
         "from": {
           "type": "string"
         },
         "rows": {
           "type": "number"
         },
-        "fingerprint": {
-          "type": "string"
+        "files_fingerprint": {
+          "type": "string",
+          "description": "The fingerprint of the design's own files it was built on."
+        },
+        "based_on": {
+          "type": "string",
+          "description": "The released design it is based on, by name; empty when none is named."
+        },
+        "base_version": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "The released design it is based on, by count; null when none is kept."
+        },
+        "base": {
+          "type": "string",
+          "description": "Which released design it is based on, said, or why none is named."
         }
       },
       "required": [
+        "which",
+        "fingerprint",
         "from",
         "rows",
-        "fingerprint"
+        "files_fingerprint",
+        "based_on",
+        "base_version",
+        "base"
       ]
     },
     "drive": {

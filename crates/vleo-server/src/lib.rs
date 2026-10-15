@@ -308,8 +308,16 @@ fn open_tree(root: &Path) -> Result<Opened, String> {
         said.push(format!("  ignored: {i}"));
     }
     *CHANGED.write().unwrap_or_else(|e| e.into_inner()) = t.changed();
+    let fingerprint = t.fingerprint(design.as_ref().map_or("", |d| d.fingerprint.as_str()));
+    said.push(format!(
+        "  its fingerprint {}…; {}",
+        fingerprint.chars().take(16).collect::<String>(),
+        t.base.said
+    ));
     *BUILT_FROM.write().unwrap_or_else(|e| e.into_inner()) = Some(today::Report {
         drive: drive.display().to_string(),
+        fingerprint,
+        base: t.base.clone(),
         groups: t.groups.clone(),
         ignored: t.ignored.clone(),
     });
@@ -326,6 +334,25 @@ static CHANGED: std::sync::RwLock<Vec<(String, String)>> = std::sync::RwLock::ne
 /// `None` when the design is not today's. The screens say it
 /// (`GET /v1/today`), so no screen shows today's design as if it were another.
 static BUILT_FROM: std::sync::RwLock<Option<today::Report>> = std::sync::RwLock::new(None);
+
+/// The design that is open, in words and by its fingerprint: today's design
+/// and the drive it was built from, or the design's own files. What a result
+/// kept records, so it always says which design it belongs to.
+pub(crate) fn open_design(ctx: &Ctx) -> (String, String) {
+    match built_from() {
+        Some(r) => (
+            format!("today's design, built from the drive {}", r.drive),
+            r.fingerprint,
+        ),
+        None => (
+            "the design's own files".to_string(),
+            ctx.design
+                .as_ref()
+                .map(|d| d.fingerprint.clone())
+                .unwrap_or_default(),
+        ),
+    }
+}
 
 /// What the design the tool opened last was built from (`BUILT_FROM`).
 pub fn built_from() -> Option<today::Report> {
