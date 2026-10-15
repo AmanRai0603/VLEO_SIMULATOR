@@ -151,6 +151,10 @@ pieces, and the old pages are removed as the new workspaces supersede them.
 
 ## The stages
 
+Each stage has a brief, `docs/briefs/F1.md` to `docs/briefs/F9.md`: what it
+starts from, what it decides, what it builds and how it is proved, for the
+person whose shift it is.
+
 Each stage lists what the program gains, what appears on screen, which
 workflows it carries, and the scenarios that prove it.
 
