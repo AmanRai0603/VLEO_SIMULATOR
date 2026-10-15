@@ -46,7 +46,7 @@ Handed over Thursday 15 October (S1, then F2 and F3-a and F3-b the same day). No
     - `save::sign_in_place` signs the node in the copy only when it is the file opened, and refuses while its cases disagree, naming each check.
     - Route: `POST /v1/node/<id>/sign`. It refuses on the library's checks, not `/v1/parts` (that is B's 168, not under this stack).
 
-    Its Opus review is running.
+    The Opus review found most nodes could be signed unchecked (open, archived, empty stated) and an `agent-generated` case was never refused; all fixed in 3ebd978c, each with a test shown red. Four questions for Aman are in its body.
 - **What 171 decides, which B's PRs must follow:**
   - **Ownership follows the mount.** Only the programme's file (mounting `systems`) and the systems' file (mounting each `l3_*`) mount anything.
   - **A group file registers only node engineers.** It holds nobody the programme's file registers, and no key it registers. `open_group_in` refuses anything else, by name.
@@ -71,7 +71,6 @@ Handed over Thursday 15 October (S1, then F2 and F3-a and F3-b the same day). No
 - **Lockfiles:** `crates/vleo-py` keeps its own, built `--locked` in CI, and so does `crates/vleo-kernel-wasm` until 177 removes it. A new dependency of `vleo-files` or `vleo-server` needs them refreshed, as 171 does.
 - **Disk:** the container's allowance filled once on S1. Old worktrees' `target/` folders and `target/*/incremental` were deleted to make room.
 - **Next for A:**
-  - The findings of 179's Opus review.
   - F3-c, putting work back on the drive (`docs/briefs/F3.md`), stacked on 179.
   - The key's proof kept in its row and checked on open (the review of 172).
 
