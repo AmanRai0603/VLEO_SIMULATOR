@@ -185,9 +185,9 @@ sw_ap_design — Ap design value
 
 **There is one case, and what changes is its inputs.** A customer, or the sky
 a design must survive, is a set of input values — not a folder, and never a
-commit. The **Inputs** page lists all 128 in two halves: the **condition** the
-design flies in (orbit, environment, solar weather) and everything the
-**customer** chooses. Set them there or upload a CSV; the tool checks every row
+commit. **Explore → Inputs**, in the application (`/app`), lists all 128 in
+two halves: the **condition** the design flies in (orbit, environment, solar
+weather) and everything the **customer** chooses. Set them there or upload a CSV; the tool checks every row
 against its declared range, refuses a file with any bad row whole, and saves
 the case **outside the repository** (`~/.vleo/case/`, or `VLEO_CASE`), so git
 never sees it. Every run, sweep and figure is then on that case. From a terminal
@@ -200,7 +200,7 @@ re-ranges an input, an older case is carried over rather than refused: values
 that still apply are kept, new inputs take their defaults, and anything that can
 no longer be used is set aside by name, with its value, in the file itself. The
 saved case is carried over the first time the updated tool reads it, with the
-old file kept beside it, and the Inputs page says what changed.
+old file kept beside it, and Explore → Inputs says what changed.
 
 **Two things go out to people who do not have a checkout, and come back.**
 The **Forms** tab has both in one place.
@@ -208,7 +208,7 @@ The **Forms** tab has both in one place.
 | form | who fills it | what it changes | applied by |
 |---|---|---|---|
 | the case CSV — *Inputs* | anyone using the tool | the values a run is on | the tool itself, on upload; never git |
-| a result — its folder, its CSV, or its HTML report | saved from a run or a sweep | nothing: it is a record of what a run returned and the inputs it ran on | the tool, on the *Results* tab — shown without running |
+| a result — its folder, its CSV, or its HTML report | saved from a run or a sweep | nothing: it is a record of what a run returned and the inputs it ran on | the application, under Explore → *Results kept* — shown without running |
 
 **A result is kept, sent and seen again without running.** Save one after a run
 or a sweep (*save this result* or *save this sweep* in the browser, `vleo run …
@@ -216,9 +216,9 @@ or a sweep (*save this result* or *save this sweep* in the browser, `vleo run �
 row blocked, every input it ran on, the sweep's points, and a report page — in
 `~/.vleo/results/` or wherever `VLEO_RESULTS` points. **A question already kept
 is not run again:** the same row, inputs, engine and data is shown from its saved
-result, which the page names, and saved once. The *Results* tab lists them,
-shows any of them as it was — sweeps drawn again from their points — compares
-two, downloads the report page that reads without the tool and uploads back
+result, which the page names, and saved once. *Results kept*, in the
+application's Explore, lists them, shows any of them as it was — sweeps drawn
+again from their points — compares two, downloads the report page that reads without the tool and uploads back
 whole, and can make a result's inputs the case again. `vleo result <folder>` does
 the same from a terminal.
 
@@ -249,8 +249,8 @@ moment the row is evaluated.
 | `crates/` | the whole Rust workspace: the four rings, the faces, the library that reads every design file, and their tests | this is the tool. It holds no design: a test refuses a node sheet that comes back here |
 | `design/` | the design as its files: each group's `<group>.vgroup` (its headings, mounts and loops) and one `.vnode` per row, **1401 rows**; `cases/`; and every citation as an entry with an id, in the systems' file | what the engine runs. Nothing in the repository writes it; a group's work arrives as its sealed release in the application (`docs/GROUP_APPS.md`) |
 | `tools/` | the Python side: every check the pipeline runs that is not `cargo` | the checks that cannot be expressed as a Rust test — screenshots, parity against MATLAB, commit messages, the house rules' own references. Each proves itself with `--selftest` before it is trusted to decide anything |
-| `web/` | the browser face — one `index.html`, one stylesheet, 23 ES modules, the manual among them | how the tool is read. It talks to `vleo-daemon` over HTTP and holds no physics of its own |
-| `panels/` | 14 declared panel specs, plus `REVIEW.md` and 16 reference screenshots — light and dark for the 8 panels checked on pixels | a figure nobody checked is a figure that silently goes wrong. The spec says what the panel must show; the references are what it looked like when a person last approved it |
+| `web/` | the browser face — today's tool page (`index.html`), the application (`app.html`), the group and node applications (`group.html`, `node.html`, built by `xtask group-app`), the one page template (`page.html`) and the parts each page is built from (`pages/`), one stylesheet, 43 ES modules, the manual among them | how the tool is read. It talks to `vleo-daemon` over HTTP and holds no physics of its own |
+| `panels/` | 11 declared panel specs, plus `REVIEW.md` and 16 reference screenshots — light and dark for the 8 panels checked on pixels | a figure nobody checked is a figure that silently goes wrong. The spec says what the panel must show; the references are what it looked like when a person last approved it |
 | `docs/` | 15 prose documents — two of them generated from the sheets, VARIABLES.md and the de-risking narrative — 4 diagrams, `manual.toml` — the source of the manual in the tool — and `examples/`, a saved result and a lesson; indexed under **Reference** below | the written record. `VARIABLES.md` is generated; `MATLAB_PORT_PLAN.md` is the row-by-row account of the port and the longest thing here |
 | `bundles/` | reference data as published sets, each with a manifest, a licence term and a hash | rule 2's external oracle. An expected value may never come from the code under test, so the data it is checked against is versioned and verified rather than fetched |
 | `cases/` | `examples/`, case files to copy — one as an older tool wrote it. The one case itself — which inputs are the condition, and so which are the customer's — is `design/cases/multipayload.vcase` | what a run is on. Its values are not kept here: a case per customer would grow the tree with the order book, so values are uploaded or typed in the tool and saved outside the repository. Gate check V16 refuses a condition that is not a real, settable input |
@@ -630,7 +630,9 @@ showing an optimum near 300 km — recorded 15 September 2026](docs/img/sweep.pn
 - **Four crates sit outside the workspace.** `vleo-kernel-wasm`,
   `vleo-method-wasm`, `vleo-files-wasm` and `vleo-py` need targets of their
   own, so `cargo build --workspace` does not reach them. They have their own
-  pipeline job; build them by hand from their own directories.
+  pipeline job; build them by hand from their own directories. No page carries
+  `vleo-kernel-wasm` now; a second job, `kernel-wasm`, holds its answers to the
+  native engine's, byte for byte.
 
 ## What a fresh clone needs from a person
 

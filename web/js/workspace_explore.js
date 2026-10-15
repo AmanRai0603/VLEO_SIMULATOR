@@ -52,6 +52,14 @@ function ready() {
   return W.loaded;
 }
 
+/** Open at one of the four views, and at a result kept when one is named:
+ *  what `/app#explore/<view>[/<result>]` asks for. A view it does not hold is
+ *  ignored, and Explore opens where it was. */
+export function openAt(view, file) {
+  if (VIEWS.some(([id]) => id === view)) W.view = view;
+  if (file) openResult(file);
+}
+
 /** Draw the workspace into `host`. `raise(params)` writes an issue. */
 export async function mountExplore(host, raise) {
   host.innerHTML = '<nav class="tabrow sub ex-ws-nav" aria-label="explore">' + VIEWS.map(([id, name, holds]) =>

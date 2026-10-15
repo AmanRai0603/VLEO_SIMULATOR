@@ -1,6 +1,6 @@
 [package]
 name = "vleo-kernel-wasm"
-description = "FACE — the engine for a page read without the engine. The whole kernel, compiled to WebAssembly for the readers' docs folder, run on the design the page carries, so a lesson's try-it widgets are answered by the same relations the tool runs. No bindings crate: raw exports and a buffer, like the form checker."
+description = "FACE — the engine for a page read without the engine. The whole kernel, compiled to WebAssembly, run on the design the page carries, answering with the same relations the tool runs. No bindings crate: raw exports and a buffer, like the form checker."
 version = "0.1.0"
 edition = "2021"
 rust-version = "1.94"
@@ -9,8 +9,9 @@ authors = ["Orbitt Space"]
 repository = "https://github.com/AmanRai0603/VLEO_SIMULATOR"
 
 # Excluded from the workspace, like vleo-wasm and vleo-method-wasm: it needs
-# the wasm32 target. `cargo run -p xtask -- readers` builds it into the docs
-# folder; nothing built from it is committed.
+# the wasm32 target. The pipeline's kernel-wasm job builds it and holds its
+# answers to the native engine's (tools/kernel_check.mjs); nothing built from
+# it is committed.
 
 [lib]
 crate-type = ["cdylib"]

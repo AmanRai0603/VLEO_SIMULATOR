@@ -1,11 +1,12 @@
 //! The engine, for a page read without the engine.
 //!
-//! The readers' docs folder (`xtask readers`) is a set of pages a team opens
-//! from a shared drive or an internal web server, with no tool running. A
-//! lesson's try-it widgets there are answered by this: the whole kernel,
-//! compiled to WebAssembly — the same relations, the same refusals, the same
-//! sweep and the same figure description as the local engine. A widget still
-//! computes nothing itself.
+//! The whole kernel, compiled to WebAssembly: the same relations, the same
+//! refusals, the same sweep and the same figure description as the local
+//! engine, for a page opened with no tool running. No page carries it yet
+//! (the readers' folder that did is gone, docs/PLAN_F.md, decision 1); it is
+//! kept built and held to the native engine (`tools/kernel_check.mjs`) so
+//! the kernel's maths stays portable and the engine can be put in a page
+//! again when one needs it.
 //!
 //! It runs the design the page carries, not a graph compiled into it: the
 //! page hands it the design's files with `vleo_open`, as the rows the page's
@@ -315,8 +316,8 @@ fn hex(h: u64) -> String {
 mod tests {
     use super::*;
 
-    /// The design the readers' folder carries — the checkout's `design/`, as
-    /// `xtask readers` reads it — opened here as the page opens it.
+    /// The checkout's `design/`, as a page would carry it
+    /// (`vleo-files --example design_rows`), opened here as a page opens it.
     fn the_design() -> &'static [u8] {
         static BYTES: std::sync::OnceLock<Vec<u8>> = std::sync::OnceLock::new();
         BYTES.get_or_init(|| {
@@ -386,19 +387,18 @@ mod tests {
         assert!(short.contains("between 2 and 400"), "{short}");
     }
 
-    /// THE PAGE'S NUMBERS ARE THE TOOL'S. `tools/readers_check.py --answers`
-    /// asks the engine the readers' folder carries — compiled to WebAssembly,
-    /// loaded in Chromium from a file — every question it asks, and writes each
-    /// answer down. The same engine built here natively is asked the same
+    /// THE PAGE'S NUMBERS ARE THE TOOL'S. `tools/kernel_check.mjs --answers`
+    /// asks this engine compiled to WebAssembly, loaded as a page loads it,
+    /// every question it asks, and writes each answer down. The same engine built here natively is asked the same
     /// questions, and every answer must be the same text: the same values to
     /// the last bit (they print as the shortest text that reads back as the
     /// same f64), the same refusals, the same sweep. The kernel's maths is
     /// portable (`vleo_core::units::pmath`) precisely so this holds.
     #[test]
-    #[ignore = "needs VLEO_BROWSER_ANSWERS, written by tools/readers_check.py --answers"]
+    #[ignore = "needs VLEO_BROWSER_ANSWERS, written by tools/kernel_check.mjs --answers"]
     fn the_page_answers_every_question_as_the_tool_does() {
         let path = std::env::var("VLEO_BROWSER_ANSWERS")
-            .expect("VLEO_BROWSER_ANSWERS: the file tools/readers_check.py --answers wrote");
+            .expect("VLEO_BROWSER_ANSWERS: the file tools/kernel_check.mjs --answers wrote");
         opened();
         let text = std::fs::read_to_string(&path).unwrap_or_else(|e| panic!("{path}: {e}"));
         let mut asked = 0;

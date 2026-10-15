@@ -32,13 +32,8 @@ export const S = {
   gnodes: new Map(),   // group id -> [node index]
 
   // what is on screen
-  view: 'layer',       // arch | layer | node | run
+  view: 'rows',        // rows | node | arch | manual | forms | explore
   arch: 'node',        // which architecture section
-  layer: 1,
-  subsys: '',
-  concept: 'constellation',
-  size: 'M',
-  expanded: new Set(),
   selected: null,
 
   // The inputs a reader has moved: node id -> value in SI. A what-if, held in
@@ -64,63 +59,7 @@ export const S = {
   mode: 'branch',
   lastRun: null,
   runTarget: null,
-
-  // the last walk, so a click can name what it hit
-  disp: [],
-  dispIndex: new Map(),
-  matrixStats: { marks: 0, crossing: 0, below: 0, boxes: 0 },
 };
-
-export const SIZES = { S: 18, M: 24, L: 32 };
-/** The five pixels the row height adds to the cell, so a mark has a gutter. */
-export const PAD = 5;
-export const cell = () => SIZES[S.size] + PAD;
-
-/* The four layers. A layer's root is the group the engine reports at that layer
-   directly under the tree's root — found, never hard-coded, because a group id
-   written down here is a second place the tree is defined and it goes stale the
-   first time the tree is reseeded. */
-export const LAYERS = {
-  1: { root: '', name: 'Management layer' },
-  2: { root: '', name: 'The system' },
-  3: { root: '', name: 'Subsystem' },
-  4: { root: '', name: 'The run' },
-};
-
-function findRoots() {
-  for (const n of [1, 2]) {
-    const g = (S.gkids.get('root') || []).find(id => S.G.get(id).layer === n);
-    LAYERS[n].root = g || '';
-  }
-}
-
-// Each layer's answer first, then what to hold on to while reading it, and the
-// kind of reading it is (docs/EXPLAINING.md, E1 and E8).
-export const CAPTIONS = {
-  1: ['The programme\'s own view: who wants what, what it costs, and what the programme has promised.',
-      ['One architecture, one case. A customer changes its inputs, never the tree.',
-       'Open a box to see its rows; click a row to read it.'], 'reference'],
-  2: ['The system: what the spacecraft is made of, and which part reads which.',
-      ['Its row is what a node feeds. Its column is what feeds it.',
-       'Select a row: amber is what it feeds, violet what feeds it.'], 'reference'],
-  3: ['One subsystem, broken down until every row is a question one person can answer.',
-      ['Exactly one row in each layer crosses upward. That row is the whole interface.',
-       'Pick the subsystem in the <b>layer</b> list above.'], 'reference'],
-  4: ['The run: pick a row, run it on your case, and read its answer with every row it needed.',
-      ['One case, one chain hash, one set of numbers.',
-       'A refusal is shown by name, never swapped for a number.',
-       'Save the result to keep it with the inputs it ran on.'], 'how-to'],
-};
-
-export const HOWTO = [
-  '<b>Pick a layer.</b> Four of them: management, the system, a subsystem, the run. The layer decides what the figure is about; nothing else changes.',
-  '<b>Open a branch.</b> Click a box to expand it. A closed box is one row, and every edge inside it rolls up onto that row — so a closed branch never hides a dependency, it only summarises one.',
-  '<b>Select a row.</b> The colours are relative to the selection: amber is what it feeds, violet is what feeds it, green is both. Solid is one hop; pale is further down the chain.',
-  '<b>Read the matrix.</b> A row is what that node feeds. A column is what feeds it. A mark inside a box is coupling the branch owns; a mark outside one crosses a boundary and needs an interface.',
-  '<b>Open the node.</b> Click the numbered square on the diagonal — or press <code>Enter</code>. Eight tabs: question, interface, algorithm, generated code, evidence, flags, credibility, design space.',
-  '<b>Run it.</b> Alone, the branch, or everything. The button says what is missing rather than going grey without a reason.',
-  '<b>Read the architecture</b> if you are going to add to it. The first tab is the pattern every one of the 1333 folders repeats.',
-];
 
 // ---------------------------------------------------------------------------
 
@@ -156,12 +95,10 @@ function ingest() {
   for (const r of S.rows) {
     if (S.gnodes.has(r.parent)) S.gnodes.get(r.parent).push(r.i);
   }
-  findRoots();
   // The one case. The engine runs it when none is named, so this is only ever
   // a name to show.
   const first = (S.index.cases || [])[0];
   S.engineCase = first ? first.id : '';
-  S.subsys = subsystemLayers()[0] || '';
 }
 
 /**
@@ -181,7 +118,6 @@ export function subsystemLayers() {
 }
 
 /** A group is in scope unless it names cases and the one case is not among them. */
-export const caseOk = g => !g || !g.cases.length || g.cases.indexOf(S.engineCase) >= 0;
 
 /** The one case, as the index describes it. */
 export const theCase = () => (S.index.cases || [])[0] || null;
@@ -210,7 +146,7 @@ export function caseTag() {
   return !S.saved || !S.saved.stored ? 'defaults' : n + ' input' + (n === 1 ? '' : 's') + ' changed';
 }
 
-// Who else needs telling when the saved case changes. The Inputs page saves
+// Who else needs telling when the saved case changes. Inputs saves
 // and resets it; everything showing a number for the old inputs has to be
 // redrawn for the new ones.
 const caseListeners = [];
@@ -225,14 +161,6 @@ export async function caseChanged() {
   for (const f of caseListeners) f();
 }
 
-export function subtreeNodes(gid) {
-  const g = S.G.get(gid);
-  if (!g || !caseOk(g)) return [];
-  let out = (S.gnodes.get(gid) || []).slice();
-  for (const k of (S.gkids.get(gid) || [])) out = out.concat(subtreeNodes(k));
-  return out;
-}
-
 /**
  * The subtree, ignoring the case filter.
  *
@@ -244,10 +172,6 @@ export function subtreeAll(gid) {
   let out = (S.gnodes.get(gid) || []).slice();
   for (const k of (S.gkids.get(gid) || [])) out = out.concat(subtreeAll(k));
   return out;
-}
-
-export function layerRoot() {
-  return S.layer === 3 ? S.subsys : LAYERS[S.layer].root;
 }
 
 /** Everything reachable from `seed` along one of the two derivation directions. */
@@ -314,6 +238,3 @@ export const answers = r =>
 export const isConclusion = r => !!(r && (r.kind === 'achieved' || r.kind === 'kpi'));
 export const isUnread = r => !!(answers(r) && !isConclusion(r) && !r.kpi_reach);
 
-// Whether the tree lists retired rows. Off by default: a reader opening a
-// subsystem should see the work that is live in it.
-S.showRetired = false;

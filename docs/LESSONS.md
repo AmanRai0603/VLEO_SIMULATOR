@@ -43,12 +43,9 @@ request; a lesson that fails is refused with its reasons, never drawn half-right
 
 ## Where it is read
 
-In the tool, on the row's page. And in **the readers' folder** —
-`cargo run -p xtask -- readers` — every row's page and every lesson as plain
-pages for a shared drive or an internal web server, drawn by the same
-components, with the engine running in the page to answer the widgets —
-the same numbers as the tool's, which the pipeline proves on every push
-(`tools/readers_check.py`, then `cargo test` in `crates/vleo-kernel-wasm`).
+In the tool, on the row's page, and nowhere else. The readers' folder, which
+carried every row's page and lesson as plain pages with the engine running in
+the page, was removed in phase F2 (docs/PLAN_F.md, decision 1).
 
 ## How one arrives
 
@@ -84,11 +81,9 @@ or a saved result's key.
 
 ## Where this breaks
 
-- **Read without the tool, a widget runs on the declared values only.** The
-  readers' folder (`xtask readers`, docs/SHARING.md) carries the engine
-  compiled for the browser, so its widgets answer — on the declared values,
-  not a saved case, and with no reference data, so a row that reads a data
-  bundle refuses there by name.
+- **A lesson cannot be read without the tool.** The readers' folder that
+  carried one off the disk was removed in phase F2 (docs/SHARING.md, section
+  4); the engine compiled for the browser is kept, but no page carries it.
 - **No row has a lesson yet.** The example is an example: its text is taken
   from what `orbit_velocity`'s own sheet says, its `by` names nobody, and no
   row's file can hold it yet. And that row does not answer today (its relation

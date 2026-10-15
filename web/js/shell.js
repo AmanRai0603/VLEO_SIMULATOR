@@ -131,10 +131,14 @@ function empty(id) {
     ['It will hold ' + esc(holds) + '.'], 'reference');
 }
 
+/** Where `#explore/<view>[/<result>]` asked Explore to open, until it does. */
+let exploreAt = null;
+
 /** The Explore workspace, loaded the first time it is opened. */
 async function openExplore(host) {
   try {
-    const { mountExplore } = await import('./workspace_explore.js');
+    const { mountExplore, openAt } = await import('./workspace_explore.js');
+    if (exploreAt) { openAt(exploreAt.view, exploreAt.file); exploreAt = null; }
     await mountExplore(host, raiseIssue);
   } catch (e) {
     host.innerHTML = '<p class="sh-refused">Explore did not load: ' + esc(String(e)) + '</p>';
@@ -367,6 +371,15 @@ async function change(e) {
 // boot
 
 takeWord();
+// Today's tool page sends its inputs and its results kept here.
+{
+  const m = location.hash.match(/^#explore\/(\w+)(?:\/(.+))?$/);
+  if (m) {
+    S.ws = 'explore';
+    exploreAt = { view: m[1], file: m[2] ? decodeURIComponent(m[2]) : '' };
+    history.replaceState(null, '', location.pathname + location.search);
+  }
+}
 document.addEventListener('click', click);
 document.addEventListener('change', change);
 // The passphrase is held two minutes at most: long enough to find the

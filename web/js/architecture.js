@@ -127,7 +127,7 @@ function secNode() {
   'the ceiling an external surface survives, and the geolocation error sits below the floor any ' +
   'time-difference system in this design reaches — with one KPI correctly blocked behind the second. ' +
   'Widening either bound would turn the tool green and delete the finding, which is the one thing the ' +
-  'guards exist to prevent. This page does not state how many: run <b>everything</b> on the run tab ' +
+  'guards exist to prevent. This page does not state how many: run <b>everything</b> under Run in the application\'s Explore ' +
   'and read the count off that run, because a number printed here would be a claim about the last ' +
   'time somebody looked.</p>' +
   '<p class="prose">The other ' + seeded + ' rows are seeded on purpose. The structure is the ' +
@@ -204,8 +204,8 @@ function secLayers() {
   });
 
   return lead(
-    'Four layers, one architecture. The layer decides what the figure is about and nothing else ' +
-    'changes: the same tree, the same matrix, the same node page, the same run.') +
+    'Four layers, one architecture: the same tree, the same node page, the same run, whichever ' +
+    'layer a row is in.') +
 
   '<table class="grid-t"><thead><tr><th>layer</th><th>what it answers</th><th class="num">rows</th>' +
   '<th class="num">specified</th><th class="num">seeded</th><th class="num">boxes</th></tr></thead><tbody>' +

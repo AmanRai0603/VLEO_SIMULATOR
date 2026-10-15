@@ -117,6 +117,8 @@ def static(path):
     """A file the engine serves from disk, for a path — or None."""
     if path == "/":
         return os.path.join(ROOT, "web", "index.html")
+    if path == "/app":
+        return os.path.join(ROOT, "web", "app.html")
     if path == "/app.css":
         return os.path.join(ROOT, "web", "app.css")
     if path.startswith("/js/") and plain(path[4:]):

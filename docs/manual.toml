@@ -123,38 +123,32 @@ id = "browser-find"
 title = "Find your way around"
 who = "user"
 kind = "tutorial"
-answer = "The design is a tree of rows in four layers, drawn with its connections on one grid. Pick a layer, open a group, click a row to open its page."
+answer = "The design is a tree of rows, each with its own page. Today's tool lists them by group: find one and open its page. The design's runs, inputs, results kept and health map are in the application's Explore."
 body = """
-The design is a tree of rows in four layers. Each row asks one small question \
-and has one answer. The tabs across the top are the layers, plus the \
-architecture every row repeats.
+The design is a tree of rows. Each row asks one small question and has one \
+answer, and each has a page of its own. **Rows**, the first tab of today's \
+tool, lists every row by the group it is in; type part of a row's id or label \
+to narrow the list, and click a row to open its page.
 
-The big figure shows two things on one grid. The **tree** runs down the \
-diagonal: a group is a box, a row is a cell. The **connections** are the marks: \
-a row's own row of the grid is what it feeds, its column is what feeds it. \
-Click anything and its inputs light up one colour and what it feeds another."""
-
-[[layer.section.step]]
-say = "Pick a layer from the tabs."
-ui = "1 Management layer"
+The rest of what the design does is in **the application** (`/app`): its \
+**Explore** workspace says which design is open, shows where it breaks, runs \
+any row, holds the case's inputs and every result kept. Today's tool page \
+keeps a row's page until the application's Node workspace holds it, and the \
+architecture every row repeats."""
 
 [[layer.section.step]]
-say = "On layer 3 there are many subsystems; choose one from the **layer** menu under the tabs."
-ui = "3 Subsystem"
+say = "Every row of the design, by its group."
+ui = "Rows"
 
 [[layer.section.step]]
-say = "Click a group's cell on the diagonal to open it, and again to close it. Or open everything at once."
-ui = "expand all"
+say = "Type part of a row's id or label to narrow the list."
+ui = "find a row"
 
 [[layer.section.step]]
-say = "Click a row's cell to open that row's own page."
+say = "Click a row to open its own page. A link to `#row/<id>` opens it too."
 
 [[layer.section.step]]
-say = "From the keyboard: the **up** and **down** arrows move the selection, **left** and **right** open and close a group, **Esc** goes back to the layer."
-
-[[layer.section.step]]
-say = "First time? The tool explains its own figure."
-ui = "▸ how to read it"
+say = "From the keyboard: **Esc** goes back to the rows."
 
 [[layer.section.step]]
 say = "The pattern every row's file repeats — what is written by hand and what is generated — is under its own tab."
@@ -207,8 +201,8 @@ say = "The sheet, as its node engineer wrote it."
 ui = "the sheet — what it says"
 
 [[layer.section.step]]
-say = "Back to the tree."
-ui = "↑ back to the layer"
+say = "Back to the rows."
+ui = "↑ back to the rows"
 
 
 [[layer.section]]
@@ -216,14 +210,14 @@ id = "browser-inputs"
 title = "Set the inputs — the case"
 who = "user"
 kind = "how-to"
-answer = "Every run is on one case: its inputs, set on the Inputs page or uploaded as a CSV and saved outside the repository. A file is shown before it is saved, refused whole if any row is bad, and carried over when the tool is updated."
+answer = "Every run is on one case: its inputs, set in the application's Explore or uploaded as a CSV there, and saved outside the repository. A file is shown before it is saved, refused whole if any row is bad, and carried over when the tool is updated."
 body = """
 There is **one case**, the multipayload design, and every run, sweep and figure \
 in the tool is for it. What changes from one customer to the next, or from one \
 sky to the next, is its **inputs** — never the tree. A customer is a set of \
 values, not a folder, so a new customer is never a change to the design.
 
-The **Inputs** tab lists all of them in two halves. **Condition** is what the \
+**Inputs**, in the application's Explore, lists all of them in two halves. **Condition** is what the \
 design flies in: the orbit, the environment and the solar weather it is sized \
 for. **Customer** is everything else — the payloads, the vehicle, the service \
 and what it must deliver. Each shows the value it runs at, its default — the \
@@ -239,8 +233,8 @@ A blank value means the default, so a file only has to name what it changes.
 The saved case is kept by the tool **outside the repository** — beside the \
 reference data, in `~/.vleo/case/`, or wherever `VLEO_CASE` points — so git \
 never sees it. To keep a copy, or hand one to someone, download it; to put it \
-back, upload it. The bar across the top always says how many inputs the saved \
-case changes.
+back, upload it. The case bar across today's tool page always says how many \
+inputs the saved case changes.
 
 **When the tool is updated, a case carries over.** Every CSV the tool writes \
 names the set of inputs it was written for, in a `#! template` line — keep it. \
@@ -249,12 +243,12 @@ refused: every value that still applies is carried, every new input runs at \
 its default, and any value that can no longer be used — its input retired, or \
 now outside its range — is **set aside** by name, with its value and why, \
 rather than dropped. The saved case is carried over on its own the first time \
-the updated tool reads it, and the file as it was is kept beside it; the \
-Inputs page says what the update did until you keep the result. An old file \
+the updated tool reads it, and the file as it was is kept beside it; \
+Inputs says what the update did until you keep the result. An old file \
 you upload is carried over the same way, and shown before it is saved."""
 
 [[layer.section.step]]
-say = "Open every input of the case. The bar across the top has the same way in."
+say = "In the application's Explore, open every input of the case. The case bar on today's tool page has the same way in."
 ui = "Inputs"
 
 [[layer.section.step]]
@@ -297,8 +291,8 @@ who = "user"
 kind = "how-to"
 answer = "Run any computed row on the case, or change an input first to ask what if. A run always says how many rows ran and names every one that was blocked."
 body = """
-Every computed row can be evaluated on the spot, on its own page or from the \
-**4 The run** tab.
+Every computed row can be evaluated on the spot, on its own page or under \
+**Run** in the application's Explore.
 
 **A run is on the case** — its saved inputs, see *Set the inputs*. The panel \
 says so in a sentence, and under it lists every input the answer depends on, \
@@ -337,8 +331,8 @@ say = "With the inputs as you want them, run."
 ui = "run"
 
 [[layer.section.step]]
-say = "Or open the run tab and pick any row that has something in it as the target."
-ui = "4 The run"
+say = "Or open Run in the application's Explore and pick any row that has something in it as the target."
+ui = "Run"
 
 [[layer.section.step]]
 say = "Open the inputs, change one, and run with it. **reset** puts that one back."
@@ -389,12 +383,13 @@ runs it fresh. Saving the same question twice keeps it once. With \
 answered. A change to the engine's code or to the tree is a different key, so \
 an answer from before a correction is never shown for the corrected tool.
 
-The **Results** tab lists every saved result and shows any of them as it was \
+**Results kept**, in the application's Explore, lists every saved result and \
+shows any of them as it was \
 — **nothing runs**, so a result saved before a release reads exactly the same \
 after it. Two results can be compared value by value, and the inputs that \
 differ between them are listed first, because that is usually the answer.
 
-A saved **sweep** is drawn again on the Results page from its saved points, \
+A saved **sweep** is drawn again under Results kept from its saved points, \
 with the same chart the run panel uses — hover, zoom and copy the numbers — \
 and nothing runs.
 
@@ -423,8 +418,8 @@ say = "After a run, give the result a name if you like, then keep it."
 ui = "save this result"
 
 [[layer.section.step]]
-say = "Every result kept on this machine. Open one to see it; nothing runs."
-ui = "Results"
+say = "In the application's Explore, every result kept on this machine, each naming the design it ran on and the engine. Open one to see it; nothing runs."
+ui = "Results kept"
 
 [[layer.section.step]]
 say = "Put two side by side: what moved, and the inputs that differ."
@@ -524,9 +519,10 @@ who = "user"
 kind = "how-to"
 answer = "Two things reach the tool from outside: your inputs, and a result you kept. Neither changes the design. A node changes only in its own file, written by its node engineer and sealed in its group's release."
 body = """
-The **Forms** page lists both, with where each is set: the inputs on the \
-Inputs page, as a CSV or one value at a time, and results on the Results \
-page, shown without running. Both are yours, kept on this machine.
+The **Forms** page lists both, with where each is set: the inputs under \
+Inputs in the application's Explore, as a CSV or one value at a time, and \
+results under Results kept there, shown without running. Both are yours, kept \
+on this machine.
 
 **A node is not among them.** What a node asks, how it computes and what it \
 reads is the design, and the design is written by the people who own it, \
@@ -1175,17 +1171,6 @@ say = "What a filled form — or a bare lesson.toml, with --for — holds, and e
 run = "cargo run -p xtask -- lesson check docs/examples/orbit_velocity.lesson.toml --for orbit_velocity"
 check = "exits"
 expect = "passes the check the gate runs"
-
-[[layer.section.step]]
-say = "Every row's page and every lesson as plain pages, for people who read without the tool — the engine runs in the page to answer the widgets."
-run = "cargo run -p xtask -- readers"
-check = "writes"
-why = "writes target/readers"
-
-[[layer.section.step]]
-say = "Open that folder as a reader does — from a file, in a browser: the pages load, the engine in the page runs nothing until it opens the design the folder carries, then answers, refuses and sweeps, and a widget moves. With --answers it writes every answer down, and cargo test in crates/vleo-kernel-wasm, given the file in VLEO_BROWSER_ANSWERS, holds each one to the engine built natively."
-run = "python3 tools/readers_check.py"
-check = "ci"
 
 [[layer.section]]
 id = "term-kit"
@@ -1912,14 +1897,6 @@ effect = "writes"
 
 [[command]]
 tool = "xtask"
-name = "readers"
-usage = "readers [--out <dir>]"
-what = "The docs folder for readers: every row's page — the tool's own generated page — and every lesson, read with no tool running, from a shared drive or an internal web server. A lesson's widgets are answered by the engine compiled for the browser (crates/vleo-kernel-wasm), run on the design the folder carries — the tree converted to its files, opened by the page before its first run — on the declared values; a row that reads reference data refuses there by name. Written to target/readers, or --out; nothing committed."
-who = "developer"
-effect = "writes"
-
-[[command]]
-tool = "xtask"
 name = "kit"
 usage = "kit [--bin <dir>] [--out <dir>] [--files-only]"
 what = "The tool as each person gets it: the two release-built programs beside exactly the files they read — the design among them as its files, design/ — with START_HERE.md and VERSION (and start.sh off Windows, where the daemon ships as Start VLEO.exe), in dist/vleo-<version>/. Zip it and share it; see docs/SHARING.md. --files-only leaves the programs out: the files the Python package carries."
@@ -2414,7 +2391,7 @@ default = "unset — compare"
 
 [[env]]
 name = "VLEO_BROWSER_ANSWERS"
-what = "The file `tools/readers_check.py --answers` wrote: every answer the engine in a readers' page gave. Set when running `cargo test -- --include-ignored` in crates/vleo-kernel-wasm, it holds each of those answers to the same engine built natively, byte for byte. Unset, that one test refuses to run and says why; the pipeline's readers job sets it."
+what = "The file `tools/kernel_check.mjs --answers` wrote: every answer the engine built for the browser gave. Set when running `cargo test -- --include-ignored` in crates/vleo-kernel-wasm, it holds each of those answers to the same engine built natively, byte for byte. Unset, that one test refuses to run and says why; the pipeline's kernel-wasm job sets it."
 default = "unset — the comparison is not run"
 
 [[env]]

@@ -133,7 +133,7 @@ its generator would write now.
 | `xtask guides` | `docs/manual.toml` | `docs/roles/*.html` |
 | `xtask pipeline` | the command table in `xtask/src/pipeline.rs` | `docs/PIPELINE.md` |
 | `xtask method-wasm` | `vleo_sheet::method::CHECKER_SOURCES` | `web/method.wasm.gz`, the checker the pages carry |
-| `xtask readers` | the tree and the lessons | the readers' folder, opened from a file |
+| `xtask group-app` | `groups/SPEC.toml`, and the face's modules in `web/js`, bundled | `web/group.html` and `web/node.html`, the group and node pages, and `docs/GROUP_FOLDER.md` |
 
 **One field, followed through.** `sw_ap_design` declares the lowest answer it
 will give, and why:

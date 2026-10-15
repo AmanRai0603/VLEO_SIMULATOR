@@ -142,7 +142,7 @@ td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
       <!-- frontend -->
       <rect x="20" y="36" width="560" height="96" rx="6" class="d-teal"/>
       <text x="36" y="60" class="d-tb">Frontend — what people see and touch</text>
-      <text x="36" y="80" class="d-ts">web/ — app shell, panels, charts (canvas), manual view · 24 modules</text>
+      <text x="36" y="80" class="d-ts">web/ — app shell, panels, charts (canvas), manual view · 43 modules</text>
       <text x="36" y="97" class="d-ts">one page template (web/page.html), forms, fonts</text>
       <text x="36" y="114" class="d-ts">later here: animation player, 3D viewer, component library</text>
       <rect x="600" y="36" width="262" height="96" rx="6" class="d-box"/>
@@ -158,7 +158,7 @@ td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
       <text x="36" y="240" class="d-tb">Backend — the engine</text>
       <text x="36" y="260" class="d-ts">crates/vleo-units → vleo-core → vleo-bus → vleo-modules (the engine)</text>
       <text x="36" y="277" class="d-ts">the design read from design/ (1,396 rows) · vleo-server (the /v1 routes)</text>
-      <text x="36" y="294" class="d-ts">vleo-cli · vleo-ffi (C) · vleo-py (Python) · vleo-kernel-wasm (a page)</text>
+      <text x="36" y="294" class="d-ts">vleo-cli · vleo-ffi (C) · vleo-py (Python) · vleo-kernel-wasm (no page)</text>
       <text x="36" y="311" class="d-ts">xtask and vleo-sheet: generators, gate, forms</text>
       <rect x="600" y="216" width="262" height="112" rx="6" class="d-box"/>
       <text x="614" y="240" class="d-tb">Rust · numerics · physics</text>
@@ -244,7 +244,7 @@ td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
       <tr><td>Mock engine</td><td><code>python3 tools/mock_engine.py</code> serves <code>web/</code> and the recorded answers with no Rust; <code>tools/mock_check.py</code> walks the page on it in a browser, in a pipeline job with no Rust toolchain. The full panel checks still run against the real engine.</td><td><span class="tag t-now">exists</span></td></tr>
       <tr><td>The versioning rule</td><td>Within <code>/v1</code>: add routes and fields only. Remove or re-mean anything: <code>/v2</code> beside <code>/v1</code> for one release. The page reads <code>contract</code> from <code>/v1/version</code> and names a mismatch instead of misbehaving.</td><td><span class="tag t-now">exists</span></td></tr>
       <tr><td>Ownership</td><td>CODEOWNERS names a frontend team (<code>web/</code>, <code>panels/</code>, their checks, the mock engine), a backend team (engine, server, generators) and a data team (<code>vleo-data</code>, <code>bundles/</code>); <code>contract/</code> names both sides, and its formats all three. GitHub asks any one owner, so a reviewer from each side is a rule in <code>CONTRIBUTING.md</code>.</td><td><span class="tag t-now">exists</span></td></tr>
-      <tr><td>Markup owned by the frontend</td><td>Every page the tool writes as a file — node and lesson forms, a saved result, the role guides, a row's page, the readers' pages — is one template, <code>web/page.html</code>, with four slots, and what each puts in it is a parts file in <code>web/pages/</code>: every word and tag, by name, with its style and its script (<code>vleo_sheet::shell</code>). A generator decides only which part, how often and with what. A test refuses a generator that writes a tag, a part nothing uses, style or script in Rust, and a page of its own; every page came out byte for byte what it was, the 1,396 committed row pages and the three guides among them. The face's type is bundled in <code>web/fonts</code>. Lessons work the same way: content in <code>lesson.toml</code>, every part drawn by <code>web/js/components.js</code>.</td><td><span class="tag t-done">done, 9d–9g</span></td></tr>
+      <tr><td>Markup owned by the frontend</td><td>Every page the tool writes as a file — node and lesson forms, a saved result, the role guides, a row's page — is one template, <code>web/page.html</code>, with four slots, and what each puts in it is a parts file in <code>web/pages/</code>: every word and tag, by name, with its style and its script (<code>vleo_sheet::shell</code>). A generator decides only which part, how often and with what. A test refuses a generator that writes a tag, a part nothing uses, style or script in Rust, and a page of its own; every page came out byte for byte what it was, the 1,396 committed row pages and the three guides among them. The face's type is bundled in <code>web/fonts</code>. Lessons work the same way: content in <code>lesson.toml</code>, every part drawn by <code>web/js/components.js</code>.</td><td><span class="tag t-done">done, 9d–9g</span></td></tr>
     </tbody>
   </table></div>
   <div class="grid2">
@@ -278,7 +278,6 @@ td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
       <rect x="292" y="112" width="120" height="84" rx="6" class="d-box"/>
       <text x="352" y="146" text-anchor="middle" class="d-tb">Release</text>
       <text x="352" y="166" text-anchor="middle" class="d-ts">kit · wheel</text>
-      <text x="352" y="182" text-anchor="middle" class="d-ts">docs folder</text>
       <path d="M250 100 C 272 100, 272 140, 290 140" class="d-a" marker-end="url(#w-ah)"/>
       <path d="M250 224 C 272 224, 272 170, 290 170" class="d-a" marker-end="url(#w-ah)"/>
       <text x="452" y="26" class="d-tm">EACH PERSON'S COMPUTER</text>
@@ -520,9 +519,9 @@ td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
 <section id="access">
   <p class="sec-n">7 · ACCESS, SYNC AND MAINTENANCE</p>
   <h2>Who reaches what, and how it stays in step</h2>
-  <p class="answer"><b>Answer first.</b> Everyone gets the tool from one place — a release — and nobody has to install anything just to read. The design reaches people from the shared drive, as today's design built from each group's sealed releases, and the tool as a new version; results reach people through a shared folder or as a single file; pages and reports open in any browser.</p>
+  <p class="answer"><b>Answer first.</b> Everyone gets the tool from one place — a release — and a saved result's report reads without it. The design reaches people from the shared drive, as today's design built from each group's sealed releases, and the tool as a new version; results reach people through a shared folder or as a single file; reports open in any browser.</p>
   <figure class="fig">
-    <svg viewBox="0 0 880 330" role="img" aria-label="The developer and maintainer branches merge into main; main produces a release; the release reaches everyone's laptops, which share a results folder, a docs folder for readers, and result files anyone can open. Node engineers reach today's design through their group's sealed release on the shared drive.">
+    <svg viewBox="0 0 880 330" role="img" aria-label="The developer and maintainer branches merge into main; main produces a release; the release reaches everyone's laptops, which share a results folder, and result files anyone can open. Node engineers reach today's design through their group's sealed release on the shared drive.">
       <defs><marker id="a-ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="d-ah"/></marker></defs>
       <text x="20" y="22" class="d-tm">THE REPOSITORY</text>
       <rect x="20" y="34" width="270" height="176" rx="8" class="d-band"/>
@@ -554,9 +553,9 @@ td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
       <text x="576" y="121" class="d-tb">Shared results folder</text>
       <text x="576" y="139" class="d-ts">every laptop reads and adds to it</text>
       <rect x="520" y="168" width="342" height="62" rx="6" class="d-teal"/>
-      <text x="536" y="191" class="d-tb">Readers — the docs folder</text>
-      <text x="536" y="208" class="d-ts">every node page and lesson as plain HTML</text>
-      <text x="536" y="223" class="d-ts">from a shared drive; no install</text>
+      <text x="536" y="191" class="d-tb">Readers — the tool, like everyone</text>
+      <text x="536" y="208" class="d-ts">the readers' docs folder was removed in F2;</text>
+      <text x="536" y="223" class="d-ts">someone who only reads installs the tool</text>
       <rect x="520" y="248" width="342" height="62" rx="6" class="d-slate"/>
       <text x="536" y="271" class="d-tb">Anyone — a result file</text>
       <text x="536" y="288" class="d-ts">.vleo to reopen; report.html to read,</text>
@@ -566,7 +565,7 @@ td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
       <text x="36" y="278" class="d-ts">on the shared drive, checked there;</text>
       <text x="36" y="294" class="d-ts">today's design is built from them</text>
     </svg>
-    <figcaption>The deployment is laptops plus a shared results folder (see Decisions). GitHub Pages could host the docs folder, but for a private repository it needs a paid plan; a shared drive or any internal web server works on any plan.</figcaption>
+    <figcaption>The deployment is laptops plus a shared results folder (see Decisions). The readers' docs folder that once went beside it was removed in phase F2 (docs/PLAN_F.md, decision 1).</figcaption>
   </figure>
   <div class="tbl"><table>
     <thead><tr><th>What</th><th>How it stays in step</th><th>Who maintains it</th></tr></thead>
@@ -666,8 +665,8 @@ td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
       <tr><td class="num">8</td><td>Storage and outputs: the figure description — line, scatter, bar, heatmap, <b>animation, 3D scene</b> — in the engine and the contract, the saved sweep drawn from it; tiers: pin, and thinning to the summary after 30 days; the index, so finding a kept question does not read every result; PNG and CSV export of every chart. Waiting for a reason: a zipped <code>.vleo</code> (one report page still carries every result) and input dedupe (a result's inputs are 9 KB)</td><td>data · backend</td><td><span class="tag t-done">done</span></td></tr>
       <tr><td class="num">9</td><td>Frontend, first part: <b>the figure player</b> — heatmap, animation and 3D view drawn from the figure description, every kind with PNG and CSV, a gallery of samples (<code>/v1/figures/samples</code>); <b>lessons</b> — <code>lesson.toml</code> with its reader and gate check, <code>/v1/lesson/&lt;id&gt;</code>; <b>the component library</b> (<code>web/js/components.js</code>) and the lesson drawn from it on the row's page, with try-it widgets the engine answers</td><td>frontend</td><td><span class="tag t-done">done</span></td></tr>
       <tr><td class="num">9b</td><td>The lesson form: one HTML file a node engineer fills anywhere, checked as it is typed by the gate's own lesson check (compiled into the checker every form carries); <code>xtask lesson form|check|apply</code>; <i>write a lesson — its form</i> on every row's page</td><td>frontend · backend</td><td><span class="tag t-done">done</span></td></tr>
-      <tr><td class="num">9c</td><td>The readers' folder (<code>xtask readers</code>): every row's page and every lesson as plain pages for a shared drive or an internal web server, drawn by the tool's own components (bundled into one script); the whole engine compiled for the browser (<code>crates/vleo-kernel-wasm</code>) answers a lesson's widgets there; the sweep one loop, the engine's, for every face</td><td>frontend · backend</td><td><span class="tag t-done">done</span></td></tr>
-      <tr><td class="num">9d</td><td>Frontend, the rest: every page the tool writes filled from one template, <code>web/page.html</code>; the face's own type bundled (IBM Plex Mono, <code>web/fonts</code>), served at <code>/fonts/</code> and carried into the readers' folder; the readers' folder built in the pipeline and opened there from a file (<code>tools/readers_check.py</code>), with every answer its engine gives held to the engine built natively, byte for byte</td><td>frontend</td><td><span class="tag t-done">done</span></td></tr>
+      <tr><td class="num">9c</td><td>The readers' folder (<code>xtask readers</code>): every row's page and every lesson as plain pages for a shared drive or an internal web server, drawn by the tool's own components (bundled into one script); the whole engine compiled for the browser (<code>crates/vleo-kernel-wasm</code>) answers a lesson's widgets there; the sweep one loop, the engine's, for every face. <em>The folder was removed in F2 (docs/PLAN_F.md, decision 1); the engine compiled for the browser is kept, and the pipeline's <code>kernel-wasm</code> job holds it to the engine built natively.</em></td><td>frontend · backend</td><td><span class="tag t-done">done</span></td></tr>
+      <tr><td class="num">9d</td><td>Frontend, the rest: every page the tool writes filled from one template, <code>web/page.html</code>; the face's own type bundled (IBM Plex Mono, <code>web/fonts</code>), served at <code>/fonts/</code> and carried into the readers' folder; the readers' folder built in the pipeline and opened there from a file (<code>tools/readers_check.py</code>), with every answer its engine gives held to the engine built natively, byte for byte. <em>The folder and its check were removed in F2; <code>tools/kernel_check.mjs</code> holds the engine to the same answers.</em></td><td>frontend</td><td><span class="tag t-done">done</span></td></tr>
       <tr><td class="num">9e</td><td>Every page's fixed markup, style and script moved out of the generators into <code>web/pages/</code> — the node and lesson forms, the role guides, the saved result, the readers' pages — each a template with named slots; every page the tool writes is byte for byte what it was. The readers' folder refuses to build without the generated pages rather than writing 1,396 empty ones</td><td>frontend</td><td><span class="tag t-done">done</span></td></tr>
       <tr><td class="num">—</td><td>The first real lesson, written by its node engineer: its form is made (<code>xtask lesson form l3_prop_interface</code>) and waits on the propulsion owner. Not an assistant's to write</td><td>design</td><td><span class="tag t-new">waiting on its node engineer</span></td></tr>
       <tr><td class="num">9f</td><td>The row pages: every word and tag of a row's page moved from <code>vleo-sheet/src/page.rs</code> into <code>web/pages/row.html</code>, as named parts the generator chooses and fills; all 1,396 committed pages byte for byte what they were, and a test refusing a tag written back into the generator or a part nothing uses</td><td>frontend</td><td><span class="tag t-done">done</span></td></tr>

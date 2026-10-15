@@ -37,8 +37,9 @@ settle_ms = 8000
 
 # The sweep does not exist until somebody asks for one: the canvas is created
 # hidden and blank, so at the state the page opens in there is nothing to check.
-# This drives the run view to a node whose view is a line, picks the axis worth
-# looking at, and runs it.
+# This opens the page of a node whose sweep is a line, runs it in the page's
+# run panel (the run view of the old page is gone; the panel is the same
+# renderRun), picks the axis worth looking at, and sweeps it.
 #
 # The mission duration rather than the default: the control defaults to the
 # first declared row alphabetically, which for this node is env_f107, and
@@ -61,13 +62,13 @@ settle_ms = 8000
 # the re-order would land after the choice and quietly undo it.
 ready = """
 (async () => {
-  S.runTarget = 'sw_f107_design';
-  S.view = 'run';
-  draw();
-  const until = async f => { for (let i = 0; i < 100 && !f(); i++) await new Promise(r => setTimeout(r, 50)); };
+  await openNode('sw_f107_design');
+  const until = async f => { for (let i = 0; i < 200 && !f(); i++) await new Promise(r => setTimeout(r, 50)); };
+  await until(() => document.querySelector('#run-panel .run-go:not([disabled])'));
+  document.querySelector('#run-panel .run-go').click();
   await until(() => /moves this answer/.test((document.querySelector('.sw-over') || {}).textContent || ''));
   const o = document.querySelector('.sw-over');
-  if (!o) throw new Error('the run view has no sweep control');
+  if (!o) throw new Error('the run panel has no sweep control');
   o.value = 'sys_mission_requirements_mission_duration';
   o.dispatchEvent(new Event('change'));
   document.querySelector('.sw-go').click();

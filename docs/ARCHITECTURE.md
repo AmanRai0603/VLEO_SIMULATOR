@@ -42,10 +42,10 @@ assembly if any group's rows end up in two of them or any one holds two layers.
 
 ## The shell is a tree of modules, not a bundle
 
-    dom.js  ← state.js ← display.js ← tree.js  ┐
-                      ↖ figure.js ← paths.js   ├─ app.js
-                      ↖ node.js  ← run.js      ┘
-                      ↖ architecture.js
+    dom.js  ← state.js ← rows.js               ┐
+                      ↖ status.js              ├─ app.js
+                      ↖ node.js  ← run.js      │
+                      ↖ architecture.js        ┘
 
 Every module depends inward and nothing depends on `app.js`. A view that could
 navigate would have to import the router that imports it, and a cycle in a
@@ -242,8 +242,7 @@ per row. It is committed deliberately until the switch-over: it is reviewable,
 nothing in this repository writes it, and a test refuses a sheet that comes
 back beside it (`the_repository_holds_no_sheet`).
 
-**Never committed** — every node's page, the index, the readers' folder, the
-kit. Every node would touch them, so every merge would conflict in generated
+**Never committed** — every node's page, the index, the kit. Every node would touch them, so every merge would conflict in generated
 content nobody is allowed to edit.
 
 One sentence: **the design's files are committed, everything printed from

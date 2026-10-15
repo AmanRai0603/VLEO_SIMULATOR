@@ -340,7 +340,6 @@ WALK_DECLARED = "sw_storm_design_level"
 # holding the risk its versions moved.
 WALK_RECORD = "sw_central_expectation"
 WALK_REGISTER = "mgt_risk_register_technical_risk"
-WALK_SUBSYS = "l3_solar"
 
 
 def browser_walk():
@@ -403,11 +402,17 @@ def browser_walk():
 
             def open_row(row):
                 home()
-                tab(U("browser-find", 2))
-                page.select_option("#subsys", WALK_SUBSYS)
-                page.wait_for_timeout(400)
-                page.locator(f'.mcell.diag[data-open="{row}"]').first.click()
+                tab(U("browser-find", 1))
+                page.fill("#rows-body .rows-find", row)
+                page.locator(f'#rows-body .xref[data-goto="{row}"]').first.click()
                 page.wait_for_selector("#nodeview:not([hidden]) .sheet-tabs")
+
+            def explore(view):
+                """The application's Explore, at one of its views, by the
+                label the manual gives it."""
+                page.goto(base + "app", wait_until="networkidle")
+                page.locator("#sh-nav .tab", has_text="Explore").first.click()
+                page.locator("#sh-explore .ex-ws", has_text=view).first.click()
 
             def button(scope, text):
                 return page.locator(f"{scope} button", has_text=text).first
@@ -466,7 +471,6 @@ def browser_walk():
                         page.wait_for_selector(".man-live")
                         wide = page.evaluate("document.documentElement.scrollWidth")
                         assert wide <= 390, f"{where} is {wide}px wide on a 390px screen"
-                        assert not page.locator("#stepper").is_visible(), "the tree's stepper shows over the manual"
                         box = page.locator(".man-cmd-box").first.bounding_box()
                         btn = page.locator(".man-copy").first.bounding_box()
                         assert btn["y"] + btn["height"] <= box["y"] + box["height"] + 1, \
@@ -477,30 +481,23 @@ def browser_walk():
 
             print("\nfind your way around")
 
-            def layers():
+            def rows_list():
                 home()
                 tab(U("browser-find", 1))
-                assert page.locator("#figure").is_visible(), "the layer did not open"
-                tab(U("browser-find", 2))
-                assert page.locator("#subsys").is_visible(), "no subsystem menu on layer 3"
-                # Expanding is shown where there is something to expand: the
-                # system layer opens with its groups closed. A flat subsystem
-                # has nothing to open, and "nothing changed" there is correct.
-                tab("2 The system")
-                before = page.locator(".mcell.diag").count()
-                button("#controls", U("browser-find", 3)).click()
-                page.wait_for_timeout(300)
-                after = page.locator(".mcell.diag").count()
-                assert after > before, f"expand all opened nothing ({before} -> {after} cells)"
-            ok("pick a layer, choose a subsystem, expand everything", layers)
+                assert page.locator("#rowsview").is_visible(), "the rows did not open"
+                every = page.locator("#rows-body .rows-list .xref").count()
+                assert U("browser-find", 2) in page.locator("#rows-body").inner_text(), \
+                    "the rows have no way to find one by the manual's label"
+                page.fill("#rows-body .rows-find", WALK_COMPUTED)
+                page.wait_for_timeout(200)
+                found = page.locator("#rows-body .rows-list .xref").count()
+                assert 0 < found < every, f"finding a row did not narrow the list ({every} -> {found})"
+            ok("every row is listed, and finding one narrows the list", rows_list)
 
-            def howto_and_arch():
-                button("#controls", U("browser-find", 6)).click()
-                assert page.locator("#howto-panel").is_visible(), "the explanation did not open"
-                page.locator("#howto-close").click()
-                tab(U("browser-find", 7))
+            def arch_tab():
+                tab(U("browser-find", 5))
                 assert page.locator("#archview").is_visible(), "the architecture view did not open"
-            ok("the tool explains its own figure, and the architecture tab opens", howto_and_arch)
+            ok("the architecture tab opens", arch_tab)
 
             print("\nread a row")
 
@@ -512,7 +509,7 @@ def browser_walk():
                 # Back, by the label the manual gives it.
                 page.locator("#nodeview button", has_text=U("browser-read", 4)).first.click()
                 page.wait_for_timeout(300)
-                assert page.locator("#figure").is_visible(), "back did not return to the layer"
+                assert page.locator("#rowsview").is_visible(), "back did not return to the rows"
             ok("a row's page has the parts the manual names, and back returns", read_a_row)
 
             print("\nrun a row")
@@ -529,10 +526,9 @@ def browser_walk():
             ok("a run says how many rows ran and how many were blocked", run_a_row)
 
             def run_tab():
-                home()
-                tab(U("browser-run", 5))
-                assert page.locator("#runview").is_visible(), "the run tab did not open"
-            ok("the run tab opens", run_tab)
+                explore(U("browser-run", 5))
+                page.wait_for_selector("#sh-explore .run-target")
+            ok("Run opens in the application's Explore", run_tab)
 
             # THE CASE IS SET ON THE INPUTS PAGE, AND GIT NEVER SEES IT. The
             # page lists every input in its two halves; a value saved there is
@@ -542,16 +538,15 @@ def browser_walk():
             # at VLEO_CASE — a scratch path for this walk — and not in the
             # repository.
             def open_inputs():
-                home()
-                page.locator("#tabs .tab", has_text=U("browser-inputs", 1)).first.click()
-                page.wait_for_selector("#inputsview:not([hidden]) .case-table tr.ci")
+                explore(U("browser-inputs", 1))
+                page.wait_for_selector("#sh-explore .case-table tr.ci")
 
             def case_state():
                 return page.locator(".case-state").inner_text()
 
             def case_saved_on_page():
                 open_inputs()
-                total = page.evaluate("S.saved.inputs.length")
+                total = len(json.loads(get(base + "v1/inputs")[1])["inputs"])
                 shown = 0
                 for g in ("Customer", U("browser-inputs", 2)):
                     page.locator(".case-tab", has_text=g).first.click()
@@ -578,7 +573,7 @@ def browser_walk():
                 answer = page.locator(panel + " .answer").inner_text()
                 assert "80" in answer, f"the run did not use the saved case: {answer}"
                 assert "1 input changed" in page.locator(panel + " .run-for").inner_text()
-            ok("a value saved on the Inputs page is what the next run uses, and git sees nothing",
+            ok("a value saved under Inputs is what the next run uses, and git sees nothing",
                case_saved_on_page)
 
             def case_upload():
@@ -709,7 +704,7 @@ def browser_walk():
                 csv = kept[0] / "result.csv" if kept[0].is_dir() else kept[0]
                 assert "#! result vleo-result/1" in csv.read_text(), "the saved file is not a result"
                 untouched("saving a result")
-                tab(U("browser-results", 2))
+                explore(U("browser-results", 2))
                 page.wait_for_selector(".res-row")
                 page.locator(".res-open").first.click()
                 page.wait_for_selector(".res-one .answer")
@@ -799,8 +794,7 @@ def browser_walk():
                 assert "Rests on" in said and said.index("v3") < said.index("v1"), \
                     f"the record is not newest first: {said[:200]}"
                 panel.locator("a.xref", has_text="R-01").first.click()
-                page.wait_for_timeout(500)
-                page.locator(f'.mcell.diag[data-open="{WALK_REGISTER}"]').first.click()
+                page.wait_for_function(f"() => window.S && S.selected === '{WALK_REGISTER}'")
                 page.wait_for_selector("#nodeview:not([hidden]) .sheet-tabs")
                 page.locator("#node-body .tabs .tab", has_text="de-risking").click()
                 page.wait_for_selector(".derisk-rollup table.risks")
