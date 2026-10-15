@@ -351,7 +351,7 @@ impl Registry {
 
     /// Whether `name` holds `role` here, or is registered as the deputy of
     /// someone who does.
-    fn acts_as(&self, name: &str, role: &str) -> bool {
+    pub(crate) fn acts_as(&self, name: &str, role: &str) -> bool {
         self.file
             .people
             .iter()
@@ -359,7 +359,7 @@ impl Registry {
     }
 
     /// Whether `name` may act for `holder`: it is them, or their deputy.
-    fn acts_for(&self, name: &str, holder: &str) -> bool {
+    pub(crate) fn acts_for(&self, name: &str, holder: &str) -> bool {
         name == holder
             || self
                 .file
