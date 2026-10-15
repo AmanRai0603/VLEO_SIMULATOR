@@ -1,0 +1,10 @@
+{
+  "ok": true,
+  "folder": "/tmp/vleo-contract-4964/keys",
+  "keys": [
+    {
+      "file": "test-contract.vkey",
+      "person": "Test Contract"
+    }
+  ]
+}

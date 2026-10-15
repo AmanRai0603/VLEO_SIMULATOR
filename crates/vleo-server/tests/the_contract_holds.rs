@@ -772,6 +772,8 @@ fn every_route_answers_as_the_contract_says() {
     std::env::set_var("VLEO_RESULTS", scratch.join("results"));
     std::env::set_var("VLEO_LOG", scratch.join("log"));
     std::env::set_var("VLEO_DATA", scratch.join("data"));
+    // The keys too: a key is made here, and a person's own are never listed.
+    std::env::set_var("VLEO_KEYS", scratch.join("keys"));
     let port =
         vleo_server::serve(Some(root()), 18731, false, true).expect("the server did not start");
 

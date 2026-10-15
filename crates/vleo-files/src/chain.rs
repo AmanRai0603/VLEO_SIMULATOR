@@ -29,7 +29,7 @@
 use crate::error::{Error, ErrorKind};
 use crate::keys::{hex, sha256, PublicKey, Signature, SigningKey};
 use crate::meta::Kind;
-use crate::model::{Cell, File, Person, SignatureRow, Table};
+use crate::model::{Cell, File, Person, PersonKey, SignatureRow, Table};
 use crate::upgrade;
 
 /// The scope that is the file as a whole.
@@ -262,6 +262,34 @@ pub fn check_row(f: &File, row: &SignatureRow) -> Result<(), Error> {
         })
 }
 
+/// A stamp, a day (YYYY-MM-DD) or a moment (YYYY-MM-DDTHH:MM:SSZ), as seconds:
+/// a registration, a revocation and a signature are compared as instants,
+/// never as text, and a stamp that is neither is refused by name rather than
+/// ordered by its letters.
+pub fn instant(stamp: &str, what: &str) -> Result<i64, Error> {
+    vleo_units::calendar::Civil::parse(stamp)
+        .map(|c| c.to_unix())
+        .ok_or_else(|| {
+            refused(
+                ErrorKind::Malformed,
+                format!(
+                    "{what} is {stamp:?}, which is neither a day (YYYY-MM-DD) nor a moment (YYYY-MM-DDTHH:MM:SSZ)"
+                ),
+            )
+        })
+}
+
+/// Whether key `k` is revoked by `when`: it has a revocation, and it is
+/// from `when` or before.
+pub fn revoked_by(k: &PersonKey, when: i64) -> Result<bool, Error> {
+    Ok(!k.revoked_from.is_empty()
+        && when
+            >= instant(
+                &k.revoked_from,
+                &format!("{}'s key's revoked_from", k.person),
+            )?)
+}
+
 /// The people a file registers and their keys: who may sign what it governs.
 #[derive(Clone, Debug)]
 pub struct Registry {
@@ -299,7 +327,8 @@ impl Registry {
                     ),
                 )
             })?;
-        if at < k.registered_at.as_str() {
+        let when = instant(at, "the moment it was signed")?;
+        if when < instant(&k.registered_at, &format!("{name}'s key's registered_at"))? {
             return Err(refused(
                 ErrorKind::Signature,
                 format!(
@@ -308,7 +337,7 @@ impl Registry {
                 ),
             ));
         }
-        if !k.revoked_from.is_empty() && at >= k.revoked_from.as_str() {
+        if revoked_by(k, when)? {
             return Err(refused(
                 ErrorKind::Signature,
                 format!(
@@ -451,6 +480,7 @@ pub fn open_group(group: &File, programme: &Registry) -> Result<Registry, Error>
             format!("the programme's file mounts no group {id:?}, so nobody may sign it"),
         )
     })?;
+    registers_only_its_own(group, &id, programme)?;
     let (ok, why) = counted(group, FILE, programme, |name| {
         programme.acts_as(name, "subsystem engineer") && programme.acts_for(name, owner)
     });
@@ -464,6 +494,307 @@ pub fn open_group(group: &File, programme: &Registry) -> Result<Registry, Error>
         from: format!("{id}'s group file"),
         file: group.clone(),
     })
+}
+
+/// The file among `files` that mounts `group`, and the group's owner there: the
+/// person assigned the block it mounts on. The programme's file mounts the
+/// systems' branch, and the systems' file mounts each subsystem's group, so a
+/// group's owner is read from whichever file mounts it. A group has one
+/// parent: one mounted twice, by no file, or on a block nobody is assigned is
+/// refused by name.
+pub fn mounted_by<'a>(
+    group: &str,
+    files: &[&'a Registry],
+) -> Result<(&'a Registry, &'a str), Error> {
+    let mut found = files.iter().flat_map(|r| {
+        r.file
+            .mounts
+            .iter()
+            .filter(move |m| m.group_id == group)
+            .map(move |m| (*r, m))
+    });
+    let (registry, mount) = found.next().ok_or_else(|| {
+        refused(
+            ErrorKind::Signature,
+            format!("no file mounts the group {group:?}, so nobody may sign it"),
+        )
+    })?;
+    if let Some((other, _)) = found.next() {
+        return Err(refused(
+            ErrorKind::Signature,
+            format!(
+                "the group {group:?} is mounted twice, in {} and in {}: a group has one parent",
+                registry.from, other.from
+            ),
+        ));
+    }
+    let owner = registry
+        .file
+        .assignments
+        .iter()
+        .find(|a| a.block_uid == mount.block_uid)
+        .map(|a| a.person.as_str())
+        .ok_or_else(|| {
+            refused(
+                ErrorKind::Signature,
+                format!(
+                    "{} mounts {group:?} on a block assigned to nobody, so nobody may sign it",
+                    registry.from
+                ),
+            )
+        })?;
+    Ok((registry, owner))
+}
+
+/// A group file checked through the file that mounts it: signed, as it is
+/// now, by the owner that file assigns, or their deputy, with a key the
+/// programme's file registers. The owner is a system engineer or a subsystem
+/// engineer there: every owner of a branch is the system engineer of that
+/// branch.
+pub fn open_group_in(
+    group: &File,
+    mounted_by: &Registry,
+    programme: &Registry,
+) -> Result<Registry, Error> {
+    let id = group.meta.get("group_id").cloned().unwrap_or_default();
+    let owner = owner_of(mounted_by, &id).ok_or_else(|| {
+        refused(
+            ErrorKind::Signature,
+            format!(
+                "{} mounts no group {id:?}, so nobody may sign it",
+                mounted_by.from
+            ),
+        )
+    })?;
+    if !programme.acts_as(owner, "system engineer")
+        && !programme.acts_as(owner, "subsystem engineer")
+    {
+        return Err(refused(
+            ErrorKind::Signature,
+            format!(
+                "{owner} owns {id} in {}, but the programme's file registers them as neither a system engineer nor a subsystem engineer",
+                mounted_by.from
+            ),
+        ));
+    }
+    registers_only_its_own(group, &id, programme)?;
+    let (ok, why) = counted(group, FILE, programme, |name| {
+        programme.acts_for(name, owner)
+    });
+    if ok.is_empty() {
+        return Err(none_counts(&format!("{id}, by its owner {owner},"), &why));
+    }
+    Ok(Registry {
+        from: format!("{id}'s group file"),
+        file: group.clone(),
+    })
+}
+
+/// A group file registers its node engineers and nobody else: no other role,
+/// nobody the programme's file registers, and no key it registers. One key
+/// says one person, and nobody is registered twice, so a group file can
+/// neither speak for a person the programme registers nor lock them out.
+fn registers_only_its_own(group: &File, id: &str, programme: &Registry) -> Result<(), Error> {
+    for p in &group.people {
+        if p.role != "node engineer" {
+            return Err(refused(
+                ErrorKind::Signature,
+                format!(
+                    "{id}'s group file registers {} as a {}: a group file registers only its node engineers",
+                    p.name, p.role
+                ),
+            ));
+        }
+        if programme.file.people.iter().any(|q| q.name == p.name) {
+            return Err(refused(
+                ErrorKind::Signature,
+                format!(
+                    "{id}'s group file registers {}, whom the programme's file registers: nobody is registered twice",
+                    p.name
+                ),
+            ));
+        }
+    }
+    if let Some(k) = group.keys.iter().find(|k| {
+        programme
+            .file
+            .keys
+            .iter()
+            .any(|q| q.public_key == k.public_key)
+    }) {
+        return Err(refused(
+            ErrorKind::Signature,
+            format!(
+                "{id}'s group file registers for {} a key the programme's file registers: one key says one person",
+                k.person
+            ),
+        ));
+    }
+    Ok(())
+}
+
+/// The systems' file, checked through the programme's: it mounts the systems'
+/// branch, and the branch is signed by the system engineer the programme's
+/// file assigns, or their deputy.
+pub fn open_systems(systems: &File, programme: &Registry) -> Result<Registry, Error> {
+    let id = systems.meta.get("group_id").cloned().unwrap_or_default();
+    let owner = owner_of(programme, &id).ok_or_else(|| {
+        refused(
+            ErrorKind::Signature,
+            format!("the programme's file mounts no group {id:?}, so nobody may sign it"),
+        )
+    })?;
+    if !programme.acts_as(owner, "system engineer") {
+        return Err(refused(
+            ErrorKind::Signature,
+            format!(
+                "{owner} owns {id} in the programme's file, but is not registered as its system engineer"
+            ),
+        ));
+    }
+    open_group_in(systems, programme, programme)
+}
+
+/// Who a key belongs to, as the files register them: their name, the roles
+/// they hold and where, whom they stand in for, the groups they own and the
+/// nodes assigned to them.
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct Me {
+    pub name: String,
+    /// Each role and the file that registers it.
+    pub roles: Vec<(String, String)>,
+    /// Whose deputy they are.
+    pub deputy_for: Vec<String>,
+    /// The groups whose mount is assigned to them.
+    pub owns: Vec<String>,
+    /// The nodes assigned to them: each group and the block's uid.
+    pub nodes: Vec<(String, String)>,
+}
+
+/// The person `public_key` belongs to at `at`, read from the programme's
+/// file, the systems' file and the subsystems' group files (`groups`).
+///
+/// A key counts only in the file that may register its person: the
+/// programme's file registers the programme manager, the system engineer,
+/// every subsystem engineer and every deputy; a group file registers node
+/// engineers, and nobody the programme's file registers (an opened group file
+/// holds no other, [`open_group_in`]). A revocation counts in the file that
+/// made it: a node engineer revoked by one group still counts in another that
+/// has not revoked them, and that group's owner revokes them there. A key
+/// nobody registers, one registered for two people, or one revoked everywhere
+/// it counted opens nothing, and says why.
+///
+/// Not closed: the owner of one group can register another group's node
+/// engineer's key under a second name, and that key then says nobody until
+/// one of the two registrations goes. The signature of that group file names
+/// who did it. Roles come from
+/// the files where the key counted; the groups owned from the two files that
+/// mount, the programme's and the systems'.
+pub fn whoami(
+    public_key: &str,
+    at: &str,
+    programme: &Registry,
+    systems: Option<&Registry>,
+    groups: &[&Registry],
+) -> Result<Me, Error> {
+    instant(at, "now")?;
+    let below: Vec<&Registry> = systems.into_iter().chain(groups.iter().copied()).collect();
+    let all: Vec<&Registry> = std::iter::once(programme)
+        .chain(below.iter().copied())
+        .collect();
+    let in_programme = |name: &str| programme.file.people.iter().any(|p| p.name == name);
+    let mut names: Vec<&str> = Vec::new();
+    let mut counted_in: Vec<&Registry> = Vec::new();
+    let mut why = Vec::new();
+    for (i, r) in all.iter().enumerate() {
+        for k in r.file.keys.iter().filter(|k| k.public_key == public_key) {
+            let may = if i == 0 {
+                Ok(())
+            } else if in_programme(&k.person) {
+                Err(format!(
+                    "{} registers {}, whom the programme's file registers: a group file registers only its node engineers",
+                    r.from, k.person
+                ))
+            } else if !r
+                .file
+                .people
+                .iter()
+                .any(|p| p.name == k.person && p.role == "node engineer")
+            {
+                Err(format!(
+                    "{} registers {} as other than a node engineer: a group file registers only its node engineers",
+                    r.from, k.person
+                ))
+            } else {
+                Ok(())
+            };
+            match may.and_then(|_| {
+                r.key(&k.person, public_key, at)
+                    .map_err(|e| e.message().to_string())
+            }) {
+                Ok(p) => {
+                    if !names.contains(&p.name.as_str()) {
+                        names.push(&p.name);
+                    }
+                    if !counted_in.iter().any(|c| std::ptr::eq(*c, *r)) {
+                        counted_in.push(r);
+                    }
+                }
+                Err(e) => why.push(e),
+            }
+        }
+    }
+    let name = match names.as_slice() {
+        [one] => one.to_string(),
+        [] if why.is_empty() => {
+            return Err(refused(
+                ErrorKind::Signature,
+                "no file registers this key: whoever registers you (the programme manager, or your subsystem engineer) registers it first",
+            ))
+        }
+        [] => return Err(refused(ErrorKind::Signature, why.join("; "))),
+        many => {
+            return Err(refused(
+                ErrorKind::Signature,
+                format!("this key is registered for more than one person ({}), so it says nobody", many.join(", ")),
+            ))
+        }
+    };
+    let mut me = Me {
+        name: name.clone(),
+        ..Me::default()
+    };
+    for r in &counted_in {
+        for p in r.file.people.iter().filter(|p| p.name == name) {
+            let role = (p.role.clone(), r.from.clone());
+            if !me.roles.contains(&role) {
+                me.roles.push(role);
+            }
+            if !p.deputy_for.is_empty() && !me.deputy_for.contains(&p.deputy_for) {
+                me.deputy_for.push(p.deputy_for.clone());
+            }
+        }
+    }
+    for r in std::iter::once(programme).chain(systems) {
+        for m in &r.file.mounts {
+            if owner_of(r, &m.group_id) == Some(name.as_str()) && !me.owns.contains(&m.group_id) {
+                me.owns.push(m.group_id.clone());
+            }
+        }
+    }
+    for g in counted_in.iter().filter(|r| !std::ptr::eq(**r, programme)) {
+        let id = g.file.meta.get("group_id").cloned().unwrap_or_default();
+        let mounts: Vec<&str> = g.file.mounts.iter().map(|m| m.block_uid.as_str()).collect();
+        for a in g
+            .file
+            .assignments
+            .iter()
+            .filter(|a| a.person == name && !mounts.contains(&a.block_uid.as_str()))
+        {
+            me.nodes.push((id.clone(), a.block_uid.clone()));
+        }
+    }
+    Ok(me)
 }
 
 /// A node's signature, checked against its group: a current `ok` by the node
@@ -512,6 +843,27 @@ impl Checked {
 /// fingerprint signed by the programme manager, kept in the programme's file
 /// and covered by the programme manager's signature of it.
 pub fn check_release(release: &File, programme: &Registry) -> Result<Checked, Error> {
+    checked_release(release, programme, || open_group(release, programme))
+}
+
+/// A group's release checked as [`check_release`] does, with its seal checked
+/// through the file that mounts the group, `mounted_by`, rather than the
+/// programme's: in the design, the systems' file mounts each subsystem's group.
+pub fn check_release_in(
+    release: &File,
+    mounted_by: &Registry,
+    programme: &Registry,
+) -> Result<Checked, Error> {
+    checked_release(release, programme, || {
+        open_group_in(release, mounted_by, programme)
+    })
+}
+
+fn checked_release(
+    release: &File,
+    programme: &Registry,
+    open: impl FnOnce() -> Result<Registry, Error>,
+) -> Result<Checked, Error> {
     if release.kind()? != Kind::GroupRelease {
         return Err(refused(
             ErrorKind::WrongKind,
@@ -550,7 +902,7 @@ pub fn check_release(release: &File, programme: &Registry) -> Result<Checked, Er
         });
         return Ok(out);
     }
-    let group = match open_group(release, programme) {
+    let group = match open() {
         Ok(g) => g,
         Err(e) => {
             out.refused.push(format!("the seal: {}", e.message()));

@@ -729,6 +729,7 @@ dependencies = [
  "toml 0.8.23",
  "vleo-kinds",
  "vleo-sheet",
+ "vleo-units",
  "zeroize",
 ]
 
@@ -772,6 +773,7 @@ dependencies = [
  "vleo-results",
  "vleo-sheet",
  "vleo-units",
+ "zeroize",
 ]
 
 [[package]]

@@ -23,6 +23,9 @@ zeroize = "1"
 # intake refuses it for — a method that does not reproduce its cases, a name
 # that is an assistant's — by the one implementation of each.
 vleo-sheet = { workspace = true }
+# The calendar every stamp is read by: a registration, a revocation and a
+# signature are compared as instants, never as text.
+vleo-units = { workspace = true }
 # The group folder pattern, groups/SPEC.toml, read as the page reads it.
 toml = { workspace = true }
 

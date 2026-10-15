@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "key-made",
+  "description": "A key made and locked on this computer, or why not. Making a key registers nobody.",
+  "type": "object",
+  "properties": {
+    "ok": {
+      "type": "boolean"
+    },
+    "person": {
+      "type": "string"
+    },
+    "file": {
+      "type": "string"
+    },
+    "public_key": {
+      "type": "string"
+    },
+    "fingerprint": {
+      "type": "string"
+    },
+    "message": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "ok",
+    "message"
+  ]
+}

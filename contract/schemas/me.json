@@ -1,0 +1,84 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "me",
+  "description": "Who is using the program: the person the drive's files register with the open key, or that none is open. A refused open answers ok false and a message.",
+  "type": "object",
+  "properties": {
+    "ok": {
+      "type": "boolean"
+    },
+    "open": {
+      "type": "boolean"
+    },
+    "name": {
+      "type": "string"
+    },
+    "fingerprint": {
+      "type": "string"
+    },
+    "roles": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "role": {
+            "type": "string"
+          },
+          "in": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "role",
+          "in"
+        ]
+      }
+    },
+    "owns": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "deputy_for": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "nodes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "group": {
+            "type": "string"
+          },
+          "block": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "group",
+          "block"
+        ]
+      }
+    },
+    "left_out": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "message": {
+      "type": "string"
+    },
+    "anchor": {
+      "type": "string",
+      "description": "The first time this computer opens a drive: the fingerprint START HERE names, to be compared and accepted with accept_anchor."
+    }
+  },
+  "required": [
+    "ok"
+  ]
+}
