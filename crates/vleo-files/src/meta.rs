@@ -319,6 +319,35 @@ impl File {
         })
     }
 
+    /// The released design a file was based on, counted: 0 before the first
+    /// release, then one more with each. It stands beside `based_on`, the
+    /// release's name, in a file that carries one; a file from before it was
+    /// kept has none.
+    pub fn base_version(&self) -> Option<u64> {
+        self.meta.get("base_version").and_then(|v| number(v))
+    }
+
+    /// Why `base_version` is wrong, if it is: not a whole number, or not
+    /// agreeing with `based_on` (0 exactly when there is no released design).
+    fn base_version_wrong(&self) -> Option<String> {
+        let v = self.meta.get("base_version")?;
+        let Some(n) = number(v) else {
+            return Some(format!(
+                "base_version is {v:?}, which is not a whole number from 0"
+            ));
+        };
+        let based_on = self.meta.get("based_on").map_or("", String::as_str);
+        match (n, based_on.is_empty()) {
+            (0, false) => Some(format!(
+                "base_version is 0, but the file is based on the released design {based_on}: 0 is before the first"
+            )),
+            (n, true) if n > 0 => Some(format!(
+                "base_version is {n}, but based_on names no released design: {n} counts the design it was based on"
+            )),
+            _ => None,
+        }
+    }
+
     /// Everything the meta must say for this kind, each by its rule.
     pub fn check_meta(&self) -> Result<Kind, Error> {
         let kind = self.kind()?;
@@ -337,6 +366,9 @@ impl File {
                 }
                 Some(_) => {}
             }
+        }
+        if let Some(why) = self.base_version_wrong() {
+            wrong.push(why);
         }
         if wrong.is_empty() {
             Ok(kind)

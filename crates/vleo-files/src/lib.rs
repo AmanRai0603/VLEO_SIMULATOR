@@ -21,6 +21,8 @@
 //!   before 1.0 anchored by the programme manager, by its fingerprint;
 //! * [`chain`] — section 14: what a signature signs, and the chain it checks
 //!   through, from the anchored programme manager to every node;
+//! * [`people`] — section 14: whom a file registers, changed at the valve
+//!   that owns them, re-signed and checked before it is given back;
 //! * [`rows`] and [`page`] — a file's rows as bytes, and everything the page
 //!   asks the library, answered by the same functions the native tests run;
 //! * [`csv`] — the group folder's CSV, written byte for byte as the page
@@ -65,6 +67,7 @@ pub mod meta;
 pub mod model;
 pub mod n2;
 pub mod page;
+pub mod people;
 pub mod rows;
 pub mod seal;
 #[cfg(not(target_arch = "wasm32"))]
