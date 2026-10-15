@@ -1,0 +1,70 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "node-saved",
+  "description": "A node's revision saved in the working copy; a second writer stopped, with both versions; or why not.",
+  "type": "object",
+  "properties": {
+    "ok": {
+      "type": "boolean"
+    },
+    "conflict": {
+      "type": "boolean",
+      "description": "The file changed since it was opened: nothing is written."
+    },
+    "node": {
+      "type": "string"
+    },
+    "path": {
+      "type": "string"
+    },
+    "revision": {
+      "type": "number"
+    },
+    "opened": {
+      "type": "string",
+      "description": "The SHA-256 of the file as it now is: what the next save is held to."
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "level": {
+            "type": "string"
+          },
+          "place": {
+            "type": "string"
+          },
+          "what": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "level",
+          "place",
+          "what"
+        ]
+      },
+      "description": "What its content still lacks, by the release checks; saving does not wait on them."
+    },
+    "writer": {
+      "type": "string",
+      "description": "On a conflict, who wrote the file as it now is."
+    },
+    "theirs": {
+      "type": "string",
+      "description": "On a conflict, the file as it now is, as base64."
+    },
+    "yours": {
+      "type": "string",
+      "description": "On a conflict, the edit sent, as base64."
+    },
+    "message": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "ok",
+    "message"
+  ]
+}

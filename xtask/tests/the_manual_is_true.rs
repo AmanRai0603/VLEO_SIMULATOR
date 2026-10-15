@@ -96,7 +96,8 @@ fn routed(src: &str) -> BTreeSet<String> {
     let mut out = BTreeSet::new();
     let body = &src[start..end];
     let mut rest = body;
-    // Every `("GET", "/x")` and every `("GET", p) if p.starts_with("/x/")`.
+    // Every `("GET", "/x")`, every `("GET", p) if p.starts_with("/x/")`, and
+    // every one of those that also says `&& p.ends_with("/y")`.
     while let Some(i) = rest.find("(\"") {
         rest = &rest[i + 2..];
         let Some(q) = rest.find('"') else { break };
@@ -121,7 +122,16 @@ fn routed(src: &str) -> BTreeSet<String> {
             } else {
                 "<id>"
             };
-            out.insert(format!("{method} {prefix}{tail}"));
+            // `&& p.ends_with("/x")` in the same guard names what follows the id.
+            let guard = &p[..p.find("=>").unwrap_or(p.len())];
+            let suffix = guard
+                .find("ends_with(\"")
+                .map(|k| {
+                    let s = &guard[k + "ends_with(\"".len()..];
+                    &s[..s.find('"').unwrap()]
+                })
+                .unwrap_or("");
+            out.insert(format!("{method} {prefix}{tail}{suffix}"));
         }
     }
     out

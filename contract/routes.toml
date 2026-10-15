@@ -215,6 +215,25 @@ path = "/v1/node/sw_ap_design"
 
 [[route]]
 method = "GET"
+path = "/v1/node/<id>/file"
+answer = "json"
+schema = "node-file"
+[[route.example]]
+name = "node-file-no-copy"
+path = "/v1/node/sw_ap_design/file"
+
+[[route]]
+method = "POST"
+path = "/v1/node/<id>/save"
+answer = "json"
+schema = "node-saved"
+[[route.example]]
+name = "node-save-refused"
+path = "/v1/node/sw_ap_design/save"
+params = [["session", "@session"], ["opened", "0"], ["file", ""]]
+
+[[route]]
+method = "GET"
 path = "/v1/lesson/<id>"
 answer = "json"
 schema = "lesson"

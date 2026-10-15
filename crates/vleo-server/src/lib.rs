@@ -30,6 +30,7 @@ mod inputs;
 mod json;
 mod me;
 mod my_work;
+mod node_file;
 mod pages;
 mod people;
 mod results;
@@ -617,6 +618,18 @@ fn route(
         ("GET", p) if p.starts_with("/v1/lesson/") => {
             ok_json(lesson_json(ctx, p.trim_start_matches("/v1/lesson/")))
         }
+        // A node's file in the working copy, and its next revision saved
+        // there (F3-a).
+        ("GET", p) if p.starts_with("/v1/node/") && p.ends_with("/file") => ok_json(
+            node_file::file(p.trim_start_matches("/v1/node/").trim_end_matches("/file"), ctx),
+        ),
+        ("POST", p) if p.starts_with("/v1/node/") && p.ends_with("/save") => ok_json(
+            node_file::save_route(
+                p.trim_start_matches("/v1/node/").trim_end_matches("/save"),
+                params,
+                ctx,
+            ),
+        ),
         ("GET", p) if p.starts_with("/v1/node/") => {
             let id = p.trim_start_matches("/v1/node/");
             node_endpoint(ctx, id)
