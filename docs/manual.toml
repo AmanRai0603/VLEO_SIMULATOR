@@ -868,7 +868,7 @@ fixed: each row's declared value, then the case's, then `--set`.
 be overwritten the moment it was evaluated — and it never writes the sheet.
 
 `--save` writes the run as a **result** file where you say; `--keep` keeps it \
-in the results folder the browser's Results page shows, once. A question \
+in the results folder Results kept shows, in the application's Explore, once. A question \
 already kept there is shown from its saved result instead of run — the first \
 line says so — and `--again` runs it anyway. `vleo result` shows a result \
 again, from its folder, its CSV or its report, without running anything.
@@ -2371,7 +2371,7 @@ what = "The published output of the tool this was ported from, for comparison."
 
 [[env]]
 name = "VLEO_CASE"
-what = "Where the saved case is kept — the CSV the Inputs page and `vleo run` read. Outside the repository, so git never sees it. A copy made before a carry-over sits beside it."
+what = "Where the saved case is kept — the CSV Inputs, in the application's Explore, and `vleo run` read. Outside the repository, so git never sees it. A copy made before a carry-over sits beside it."
 default = "$HOME/.vleo/case/inputs.csv"
 
 [[env]]
@@ -2390,18 +2390,13 @@ what = "Set to `write` when running the tests of crates/vleo-kinds, to write the
 default = "unset — compare"
 
 [[env]]
-name = "VLEO_BROWSER_ANSWERS"
-what = "The file `tools/kernel_check.mjs --answers` wrote: every answer the engine built for the browser gave. Set when running `cargo test -- --include-ignored` in crates/vleo-kernel-wasm, it holds each of those answers to the same engine built natively, byte for byte. Unset, that one test refuses to run and says why; the pipeline's kernel-wasm job sets it."
-default = "unset — the comparison is not run"
-
-[[env]]
 name = "VLEO_LOG"
 what = "Where a crash log is written when the tool hits a bug — one small text file per bug, naming the line of code; the newest 50 are kept. Send the file to whoever maintains the tool. Set but empty counts as unset."
 default = "$HOME/.vleo/log"
 
 [[env]]
 name = "VLEO_RESULTS"
-what = "Where saved results are kept, one folder each — the Results page and `vleo run --keep`. Outside the repository. Point it at a shared or synced folder and everyone keeps one archive: each question is kept once, a question a colleague answered is shown rather than run again, and every result is written whole. Set but empty counts as unset."
+what = "Where saved results are kept, one folder each — Results kept, in the application's Explore, and `vleo run --keep`. Outside the repository. Point it at a shared or synced folder and everyone keeps one archive: each question is kept once, a question a colleague answered is shown rather than run again, and every result is written whole. Set but empty counts as unset."
 default = "$HOME/.vleo/results"
 
 [[env]]

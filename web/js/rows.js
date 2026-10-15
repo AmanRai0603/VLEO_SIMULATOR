@@ -14,9 +14,10 @@ import { S } from './state.js';
 
 const PAGE = { filter: '' };
 
-/** Draw the list into `host`. */
-export function renderRows(host) {
+/** Draw the list into `host`; with `clear`, every row, the filter cleared. */
+export function renderRows(host, clear) {
   if (!host) return;
+  if (clear) PAGE.filter = '';
   host.innerHTML = answerFirst('Open any row of the design: its page holds its question, its interface, ' +
     'its method, its evidence and a run.',
     ['Type part of a row\'s id or label to narrow the list. ' + plural(S.rows.length, 'row') + ', by group.',

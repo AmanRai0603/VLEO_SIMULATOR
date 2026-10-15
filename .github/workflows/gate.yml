@@ -371,41 +371,6 @@ jobs:
       - name: a node's declaration, judged as the rule says
         run: node tools/declaration_check.mjs
 
-  # THE ENGINE BUILT FOR THE BROWSER ANSWERS AS THE TOOL DOES. The whole
-  # kernel compiled to WebAssembly (crates/vleo-kernel-wasm), loaded as a page
-  # loads it, asking its host for nothing: it runs nothing before a design is
-  # open, opens the design's files, answers, refuses and sweeps
-  # (tools/kernel_check.mjs). Then the same engine built natively is asked
-  # every question the wasm build was asked, and each answer must be the same
-  # text: the maths is portable (pmath), so it must not move between builds.
-  kernel-wasm:
-    name: the engine built for the browser answers as the tool does
-    runs-on: ubuntu-latest
-    timeout-minutes: 45
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            target
-            crates/vleo-kernel-wasm/target
-          key: ${{ runner.os }}-kernel-wasm-${{ hashFiles('**/Cargo.lock', 'rust-toolchain.toml') }}
-          restore-keys: ${{ runner.os }}-kernel-wasm-
-      - run: rustup target add wasm32-unknown-unknown
-      # generated/index.json says which rows compute.
-      - name: the engine, and the design it runs
-        run: |
-          cargo run -p xtask -- assemble
-          cargo build --locked --release --target wasm32-unknown-unknown --manifest-path crates/vleo-kernel-wasm/Cargo.toml
-          cargo run --locked -q -p vleo-files --example design_rows -- "$RUNNER_TEMP/design.rows"
-      - name: it answers, refuses and sweeps, asking its host for nothing
-        run: node tools/kernel_check.mjs "$RUNNER_TEMP/design.rows" --answers "$RUNNER_TEMP/answers.tsv"
-      - name: its answers are the tool's
-        working-directory: crates/vleo-kernel-wasm
-        run: VLEO_BROWSER_ANSWERS="$RUNNER_TEMP/answers.tsv" cargo test --locked -- --include-ignored
-
   panels:
     name: the panels render, move and match
     runs-on: ubuntu-latest
@@ -514,7 +479,6 @@ jobs:
             ~/.cargo/git
             crates/vleo-method-wasm/target
             crates/vleo-files-wasm/target
-            crates/vleo-kernel-wasm/target
             crates/vleo-py/target
           key: ${{ runner.os }}-excluded-${{ hashFiles('**/Cargo.lock', 'rust-toolchain.toml') }}
           restore-keys: ${{ runner.os }}-excluded-
@@ -545,11 +509,6 @@ jobs:
       # sources still build at all.
       - name: the method checker the pages carry
         working-directory: crates/vleo-method-wasm
-        run: cargo build --locked --target wasm32-unknown-unknown --release
-      # The whole kernel, built for the browser (tools/kernel_check.mjs
-      # holds its answers to the tool's).
-      - name: the engine built for the browser
-        working-directory: crates/vleo-kernel-wasm
         run: cargo build --locked --target wasm32-unknown-unknown --release
       - name: the Python face
         working-directory: crates/vleo-py

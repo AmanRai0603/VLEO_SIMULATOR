@@ -119,11 +119,23 @@ function drawCaseBar() {
           ' set aside' : '') : '');
 }
 
+/** The rows of a group: its own, or, for a group that holds groups, the
+ *  first group under it that holds rows. The filter is cleared, so the
+ *  group is in the list to be found. */
+function openGroup(gid) {
+  setRows(gid);
+  const under = new Set();
+  const walk = g => { under.add(g); (S.gkids.get(g) || []).forEach(walk); };
+  walk(gid);
+  const at = [...document.querySelectorAll('#rows-body .rows-grp')].find(s => under.has(s.dataset.groupId));
+  if (at) at.scrollIntoView();
+}
+
 /** Every row, to open its page. */
-function setRows() {
+function setRows(cleared) {
   S.view = 'rows';
   draw();
-  renderRows($('#rows-body'));
+  renderRows($('#rows-body'), cleared !== undefined);
 }
 
 /** Open the Explore page: which design, where it breaks, what differs. */
@@ -283,7 +295,7 @@ function wire() {
     if (!x) return;
     e.preventDefault();
     if (x.dataset.goto) { if (S.byId.has(x.dataset.goto)) open(x.dataset.goto); }
-    else if (x.dataset.group) { setRows(); const g = $('[data-group-id="' + CSS.escape(x.dataset.group) + '"]'); if (g) g.scrollIntoView(); }
+    else if (x.dataset.group) openGroup(x.dataset.group);
     else if (x.dataset.inputs !== undefined) toExplore('inputs');
     else if (x.dataset.results !== undefined) toExplore('results', x.dataset.results || '');
   });

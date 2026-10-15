@@ -83,7 +83,7 @@ or a saved result's key.
 
 - **A lesson cannot be read without the tool.** The readers' folder that
   carried one off the disk was removed in phase F2 (docs/SHARING.md, section
-  4); the engine compiled for the browser is kept, but no page carries it.
+  4), and the engine compiled for the browser went with it.
 - **No row has a lesson yet.** The example is an example: its text is taken
   from what `orbit_velocity`'s own sheet says, its `by` names nobody, and no
   row's file can hold it yet. And that row does not answer today (its relation

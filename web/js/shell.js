@@ -376,7 +376,11 @@ takeWord();
   const m = location.hash.match(/^#explore\/(\w+)(?:\/(.+))?$/);
   if (m) {
     S.ws = 'explore';
-    exploreAt = { view: m[1], file: m[2] ? decodeURIComponent(m[2]) : '' };
+    // A name that does not decode opens Explore at its view, at no result:
+    // never a page that does not start.
+    let file = '';
+    try { file = m[2] ? decodeURIComponent(m[2]) : ''; } catch (e) { file = ''; }
+    exploreAt = { view: m[1], file };
     history.replaceState(null, '', location.pathname + location.search);
   }
 }

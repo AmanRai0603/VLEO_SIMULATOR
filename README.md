@@ -627,12 +627,10 @@ showing an optimum near 300 km — recorded 15 September 2026](docs/img/sweep.pn
 - **Not a multi-user service.** One local daemon, one store, no accounts.
 - **Signing is absent, not stubbed.** The release workflow builds and gates but
   does not sign, because no certificate exists yet.
-- **Four crates sit outside the workspace.** `vleo-kernel-wasm`,
-  `vleo-method-wasm`, `vleo-files-wasm` and `vleo-py` need targets of their
-  own, so `cargo build --workspace` does not reach them. They have their own
-  pipeline job; build them by hand from their own directories. No page carries
-  `vleo-kernel-wasm` now; a second job, `kernel-wasm`, holds its answers to the
-  native engine's, byte for byte.
+- **Three crates sit outside the workspace.** `vleo-method-wasm`,
+  `vleo-files-wasm` and `vleo-py` need targets of their own, so `cargo build
+  --workspace` does not reach them. They have their own pipeline job; build
+  them by hand from their own directories.
 
 ## What a fresh clone needs from a person
 

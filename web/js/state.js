@@ -117,8 +117,6 @@ export function subsystemLayers() {
     .sort((a, b) => S.G.get(a).label.localeCompare(S.G.get(b).label));
 }
 
-/** A group is in scope unless it names cases and the one case is not among them. */
-
 /** The one case, as the index describes it. */
 export const theCase = () => (S.index.cases || [])[0] || null;
 

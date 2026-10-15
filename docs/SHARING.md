@@ -95,11 +95,9 @@ phase F2 (docs/PLAN_F.md, decision 1): the application replaces today's pages, a
 kept beside it. Someone who only reads gets the tool like everyone else, from a kit or the
 package, and opens the design in it.
 
-The engine compiled for the browser (`crates/vleo-kernel-wasm`) is kept, though no page carries
-it. The pipeline builds it, opens the design in it and asks it to answer, refuse and sweep
-(`tools/kernel_check.mjs`), and every answer it gave is asked again of the engine built natively
-and must be the same, byte for byte. Opening the application without installing it is not
-planned; somebody who needs it raises a request (W14).
+The engine compiled for the browser, which the folder's pages carried (`crates/vleo-kernel-wasm`),
+went with it (decision 2: nothing is compiled for the browser for the application). Opening the
+application without installing it is not planned; somebody who needs it raises a request (W14).
 
 ## Where the simple version breaks
 
