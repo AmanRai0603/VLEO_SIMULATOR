@@ -28,7 +28,10 @@ Handed over Thursday 15 October (S1). Nothing is merged: everything waits on Ama
   - F1 PR 3, the shell and My work, and its scenarios.
   - F2.
   - Run my code again (169) is still not limited to the person's own nodes. Aman decides.
-- **Next for A (S2):** F1's program side of people with `copied.toml`, then F1 PR 3, then F2 on the chain check, then F3-a.
+- **Lockfiles:** `crates/vleo-kernel-wasm` and `crates/vleo-py` keep their own, built `--locked` in CI. A new dependency of `vleo-files` or `vleo-server` needs both refreshed, as 171 does.
+- **Next for A (S2):**
+  - F1's program side of people: the routes, `copied.toml`, and the key's proof kept in its row and checked on open (the review of 172).
+  - Then F1 PR 3, then F2 on the chain check, then F3-a.
 
 ## Person B · night
 
