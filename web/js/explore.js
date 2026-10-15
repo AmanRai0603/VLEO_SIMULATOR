@@ -15,6 +15,11 @@
   * WHAT DIFFERS. Two files of the design, block by block, in the same words
     the library uses everywhere else.
 
+  * RAISE AN ISSUE. Any mark that needs a person can be raised, addressed to
+    its group and its node (W11). Only where the page is the application's:
+    the issue is signed with the open key, so the host hands this module the
+    one function that asks the program to write it.
+
   NOTHING HERE DECIDES A STATE. Every state, cause, margin and difference is
   the engine's (`/v1/today`, `/v1/health`, `/v1/health/trace`,
   `/v1/compare`); this module only lays them out. A colour the page chose for
@@ -25,7 +30,7 @@
 import { $, $$, esc, fmt, plural, answerFirst } from './dom.js';
 import { withOverrides, overrideCount } from './inputs.js';
 
-const PAGE = { open: null, trace: null, a: '', b: '' };
+const PAGE = { open: null, trace: null, a: '', b: '', raise: null };
 
 /** Worst first, as the engine orders them (vleo_modules::health::State). */
 const ORDER = ['fails', 'refused', 'blocked', 'unproven', 'open', 'tight', 'closes'];
@@ -45,11 +50,14 @@ const onTheCase = () => withOverrides(new URLSearchParams()).toString();
 
 const chip = s => '<span class="hm hm-' + esc(s) + '">' + esc(s) + '</span>';
 const pct = m => m == null ? '—' : (m >= 0 ? '+' : '') + (m * 100).toFixed(1) + '%';
+const short = fp => fp ? fp.slice(0, 16) + '…' : '—';
 const goto = id => '<a class="xref" href="#" data-goto="' + esc(id) + '">' + esc(id) + '</a>';
 
-/** Draw the Explore page into `host`. */
-export async function renderExplore(host) {
+/** Draw the Explore page into `host`. `opts.raise(params)`, when given, asks
+ *  the program to write an issue and answers what it said. */
+export async function renderExplore(host, opts = {}) {
   if (!host) return;
+  PAGE.raise = opts.raise || null;
   host.innerHTML = '<p class="hint-inline">asking the engine…</p>';
   const [today, map] = await Promise.all([get('/v1/today'), get('/v1/health?' + onTheCase())]);
   if (!today.ok || !map.ok) {
@@ -70,7 +78,7 @@ function opening(today, map) {
   const which = today.today
     ? 'This is <b>today’s design</b>, built from ' +
       plural(today.groups.filter(g => g.taken).length, 'group release') +
-      ' on the drive ' + esc(today.drive) + '.'
+      ' on the drive ' + esc(today.drive) + ', fingerprint <code>' + esc(short(today.design.fingerprint)) + '</code>.'
     : 'This is <b>the design’s own files</b>, not today’s design: no drive was named when the tool started.';
   const counts = Object.entries(map.counts).filter(([, n]) => n > 0)
     .map(([s, n]) => n + ' ' + s).join(' · ');
@@ -85,21 +93,31 @@ function opening(today, map) {
     'reference');
 }
 
+/** A release's or a design's base: the released design it was built on. */
+const baseOf = (on, n) => on ? esc(on) + (n == null ? '' : ' (the ' + n + nth(n) + ')') : (n === 0 ? 'none released yet' : '—');
+const nth = n => (n % 100 >= 11 && n % 100 <= 13) ? 'th' : ({ 1: 'st', 2: 'nd', 3: 'rd' }[n % 10] || 'th');
+
 function whichDesign(t) {
-  const fp = t.design.fingerprint ? esc(t.design.fingerprint.slice(0, 16)) + '…' : '—';
+  const d = t.design;
   let h = '<h3>Which design</h3><dl class="ex-kv">' +
-    '<dt>shown</dt><dd>' + (t.today ? 'today’s design' : 'the design’s own files') + '</dd>' +
-    '<dt>from</dt><dd>' + esc(t.design.from) + '</dd>' +
-    '<dt>rows</dt><dd>' + fmt(t.design.rows) + '</dd>' +
-    '<dt>fingerprint</dt><dd title="' + esc(t.design.fingerprint) + '">' + fp + '</dd></dl>';
+    '<dt>shown</dt><dd class="ex-which">' + esc(d.which) + '</dd>' +
+    '<dt>fingerprint</dt><dd class="ex-fp" title="' + esc(d.fingerprint) + '"><code>' + esc(short(d.fingerprint)) + '</code></dd>' +
+    '<dt>its base</dt><dd class="ex-base">' + esc(d.base) + '</dd>' +
+    '<dt>from</dt><dd>' + esc(d.from) + '</dd>' +
+    '<dt>rows</dt><dd>' + fmt(d.rows) + '</dd>' +
+    (t.today ? '<dt>its own files</dt><dd title="' + esc(d.files_fingerprint) + '"><code>' +
+      esc(short(d.files_fingerprint)) + '</code>, with each release below taken into them</dd>' : '') + '</dl>';
   if (!t.today) return h;
-  h += '<table class="ex-tbl"><thead><tr><th>group</th><th>release</th><th>sealed</th><th>what to know</th></tr></thead><tbody>';
+  h += '<table class="ex-tbl ex-releases"><thead><tr><th>group</th><th>release</th><th>sealed</th><th>its seal</th>' +
+    '<th>based on</th><th>what to know</th></tr></thead><tbody>';
   for (const g of t.groups) {
-    const notes = (g.taken ? g.taken.notes : []).map(n => '<li>' + esc(n) + '</li>');
+    const k = g.taken;
+    const notes = (k ? k.notes : []).map(n => '<li>' + esc(n) + '</li>');
     const refused = g.refused.map(r => '<li class="ex-refused">' + esc(r.version) + ' refused: ' + esc(r.why) + '</li>');
-    h += '<tr' + (g.refused.length ? ' class="ex-row-refused"' : '') + '><td>' + esc(g.id) + '</td><td>' +
-      (g.taken ? esc(g.taken.version) : '<i>none passes</i>') + '</td><td>' +
-      (g.taken ? esc(g.taken.sealed) + ' by ' + esc(g.taken.sealed_by) : '—') + '</td><td><ul>' +
+    h += '<tr data-group="' + esc(g.id) + '"' + (g.refused.length ? ' class="ex-row-refused"' : '') + '><td>' + esc(g.id) + '</td><td>' +
+      (k ? esc(k.version) + (g.refused.length ? ' <span class="ex-mark">its last good one</span>' : '') : '<i>none passes</i>') + '</td><td>' +
+      (k ? esc(k.sealed) + ' by <b>' + esc(k.sealed_by) + '</b>' : '—') + '</td><td class="ex-chain">' +
+      (k ? esc(k.chain) : '—') + '</td><td>' + (k ? baseOf(k.based_on, k.base_version) : '—') + '</td><td><ul>' +
       refused.join('') + notes.join('') + '</ul></td></tr>';
   }
   h += '</tbody></table>';
@@ -142,7 +160,8 @@ function nodesOf(map, group) {
   return '<table class="ex-tbl ex-nodes"><tbody>' + rows.map(n =>
     '<tr><td>' + chip(n.state) + '</td><td>' + goto(n.id) + '</td><td>' +
     (n.closure ? pct(n.margin) + ' ' : '') + esc(n.why) +
-    (n.blocked_by ? ' — waits on ' + goto(n.blocked_by) : '') + '</td></tr>').join('') +
+    (n.blocked_by ? ' — waits on ' + goto(n.blocked_by) : '') + '</td><td>' + raiseButton(n.id, n.state) +
+    '</td></tr>').join('') +
     '</tbody></table>';
 }
 
@@ -174,7 +193,8 @@ async function trace(el, id) {
     '</td><td>' + (l.closes_at == null ? 'the same side across its range'
       : 'closes from ' + fmt(l.closes_at / l.factor) + (l.unit && l.unit !== '-' ? ' ' + esc(l.unit) : '')) +
     '</td><td>' + esc(l.group) + ' · ' + esc(l.owner) + '</td></tr>';
-  el.innerHTML = '<h4>' + esc(t.closure) + ' ' + chip(t.state) + ' ' + pct(t.margin) + '</h4>' +
+  el.innerHTML = '<h4>' + esc(t.closure) + ' ' + chip(t.state) + ' ' + pct(t.margin) + ' ' +
+    raiseButton(t.closure, t.state) + '</h4>' +
     (t.why ? '<p>' + esc(t.why) + '</p>' : '') +
     (t.causes.length
       ? '<p><b>caused by, nearest first</b></p><table class="ex-tbl"><tbody>' + t.causes.map(c =>
@@ -188,6 +208,41 @@ async function trace(el, id) {
     (t.range.least_mature_rows.length > 3 ? ' and ' + (t.range.least_mature_rows.length - 3) + ' more' : '') + '</p>' +
     (t.levers.length ? '<p><b>what moves its margin, most first, each across its declared range</b></p>' +
       '<table class="ex-tbl"><tbody>' + t.levers.map(lever).join('') + '</tbody></table>' : '');
+}
+
+/** *raise issue*, where the page can write one and the mark needs a person. */
+function raiseButton(id, state) {
+  if (!PAGE.raise || !needsLook(state)) return '';
+  return '<button class="ctl ex-raise" data-node="' + esc(id) + '">raise issue</button>';
+}
+
+/** The form under a mark: the person's words, and the issue raised with the
+ *  engine's evidence on the same case as the map. */
+function raiseForm(button) {
+  const id = button.dataset.node;
+  const at = button.closest('tr') || button.closest('h4');
+  const next = at.nextElementSibling;
+  if (next && next.classList.contains('ex-raising')) { next.remove(); return; }
+  const form = document.createElement(at.tagName === 'TR' ? 'tr' : 'div');
+  form.className = 'ex-raising';
+  form.innerHTML = (at.tagName === 'TR' ? '<td colspan="4">' : '') +
+    '<label>what is wrong with <b>' + esc(id) + '</b> <textarea class="ex-what" rows="2" cols="60"></textarea></label> ' +
+    '<button class="ctl ex-raise-go">raise</button> <span class="ex-raise-said"></span>' +
+    '<p class="hint-inline">Written into your copy\'s issues/, addressed to its group and to ' + esc(id) +
+    ', with what the engine says of it on this case, signed with your key.</p>' +
+    (at.tagName === 'TR' ? '</td>' : '');
+  at.after(form);
+  form.querySelector('.ex-raise-go').onclick = async () => {
+    const p = new URLSearchParams(onTheCase());
+    p.set('node', id);
+    p.set('what', form.querySelector('.ex-what').value);
+    const said = form.querySelector('.ex-raise-said');
+    said.textContent = 'raising…';
+    const r = await PAGE.raise(p);
+    said.className = 'ex-raise-said ' + (r.ok ? 'ex-raised' : 'ex-raise-refused');
+    said.textContent = r.message || (r.ok ? 'raised' : 'not raised');
+    if (r.ok) form.dataset.file = r.file;
+  };
 }
 
 function compareForm(t) {
@@ -235,4 +290,12 @@ function wire(host, map) {
   $('.ex-compare-go', host).onclick = () =>
     compare($('.ex-compare-out', host), $('.ex-a', host).value.trim(), $('.ex-b', host).value.trim());
   if (PAGE.trace && !out.innerHTML) trace(out, PAGE.trace);
+  // One listener for every raise button, those a trace draws later included.
+  if (!host.dataset.raising) {
+    host.dataset.raising = '1';
+    host.addEventListener('click', e => {
+      const b = e.target.closest('.ex-raise');
+      if (b && host.contains(b)) raiseForm(b);
+    });
+  }
 }
