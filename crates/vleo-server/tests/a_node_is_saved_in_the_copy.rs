@@ -339,6 +339,25 @@ fn a_node_is_saved_in_the_copy_and_a_second_writer_stopped() {
     assert!(open_key(port, "test-nia.vkey").contains("\"open\":true"));
     let junk = save(&[("opened", &first), ("file", "bm90IGEgbm9kZQ==")]);
     assert!(junk.contains("the edit is not a node file"), "{junk}");
+    // No `opened`: refused as that, never told as a writer who saved since.
+    let blind = save(&[("file", &mine)]);
+    assert!(
+        blind.contains("is not the SHA-256 of the node as it was opened")
+            && !blind.contains("conflict"),
+        "{blind}"
+    );
+    // A file of the same name in a second group's folder: neither is opened.
+    let twin = copy.join("groups/l3_twin/nodes/sw_ap_design.vnode");
+    std::fs::create_dir_all(twin.parent().unwrap()).unwrap();
+    std::fs::copy(copy.join(NODE), &twin).unwrap();
+    for r in [
+        ask(port, "GET", "/v1/node/sw_ap_design/file", &[], false),
+        save(&[("opened", &first), ("file", &mine)]),
+    ] {
+        assert!(r.contains("has a file in more than one group"), "{r}");
+    }
+    std::fs::remove_dir_all(copy.join("groups/l3_twin")).unwrap();
+    let on_drive = std::fs::read(drv.join(NODE)).ok();
     let r = save(&[("opened", &first), ("file", &mine)]);
     assert!(r.contains("\"ok\":true"), "{r}");
     assert!(r.contains("\"revision\":2"), "{r}");
@@ -349,9 +368,9 @@ fn a_node_is_saved_in_the_copy_and_a_second_writer_stopped() {
     let now = sqlite::read(&copy.join(NODE)).unwrap();
     assert_eq!(now.meta.get("revision").map(String::as_str), Some("2"));
     assert_eq!(now.meta.get("writer").map(String::as_str), Some("Test Nia"));
-    assert!(
-        !drv.join(NODE).exists()
-            || std::fs::read(drv.join(NODE)).unwrap() != std::fs::read(copy.join(NODE)).unwrap(),
+    assert_eq!(
+        std::fs::read(drv.join(NODE)).ok(),
+        on_drive,
         "the drive is never written"
     );
 

@@ -24,15 +24,18 @@ fn node_id(id: &str) -> Result<&str, String> {
 /// Where the node's file is in the copy, as a path inside it: the one
 /// `groups/<group>/nodes/<id>.vnode` there is. Two are refused, by name.
 fn find(copy: &Path, id: &str) -> Result<String, String> {
-    let mut found: Vec<String> = std::fs::read_dir(copy.join("groups"))
-        .map_err(|e| format!("{}: {e}", copy.join("groups").display()))?
-        .flatten()
-        .filter_map(|g| {
-            let group = g.file_name().to_string_lossy().into_owned();
-            let rel = format!("groups/{group}/nodes/{id}.vnode");
-            copy.join(&rel).is_file().then_some(rel)
-        })
-        .collect();
+    let groups = copy.join("groups");
+    let mut found = Vec::new();
+    for g in std::fs::read_dir(&groups).map_err(|e| format!("{}: {e}", groups.display()))? {
+        let g = g.map_err(|e| format!("{}: {e}", groups.display()))?;
+        let rel = format!(
+            "groups/{}/nodes/{id}.vnode",
+            g.file_name().to_string_lossy()
+        );
+        if copy.join(&rel).is_file() {
+            found.push(rel);
+        }
+    }
     found.sort();
     match found.len() {
         0 => Err(format!(
@@ -65,6 +68,34 @@ fn base64(bytes: &[u8]) -> String {
     out
 }
 
+/// The program, as `written_by_app` names it in what it writes.
+const APP: &str = concat!("vleo ", env!("CARGO_PKG_VERSION"));
+
+/// The edit sent, read as a file. It is held in the system's temporary folder
+/// under a name of its own, made new, never inside the copy, and gone once
+/// read.
+fn held(bytes: &[u8]) -> Result<vleo_files::model::File, String> {
+    use std::io::Write as _;
+    let nanos = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map_or(0, |d| d.as_nanos());
+    let at = std::env::temp_dir().join(format!("vleo-edit-{}-{nanos}.vnode", std::process::id()));
+    let mut f = std::fs::OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .open(&at)
+        .map_err(|e| format!("the edit could not be held: {e}"))?;
+    let wrote = f.write_all(bytes);
+    drop(f);
+    let edit = wrote
+        .map_err(|e| format!("the edit could not be held: {e}"))
+        .and_then(|_| {
+            sqlite::read(&at).map_err(|e| format!("the edit is not a node file: {}", e.message()))
+        });
+    let _ = std::fs::remove_file(&at);
+    edit
+}
+
 /// The copy the program reads, once it is one.
 fn the_copy(ctx: &Ctx) -> Result<PathBuf, String> {
     let copy = copy::dir(ctx);
@@ -76,14 +107,28 @@ fn the_copy(ctx: &Ctx) -> Result<PathBuf, String> {
     Ok(copy)
 }
 
+/// The node file at `path`, read from its bytes: the bytes, and the file they
+/// are. Read twice and compared, so what is answered is one file, not a
+/// file and the one written over it between.
+fn read_once(copy: &Path, path: &str) -> Result<(Vec<u8>, vleo_files::model::File), String> {
+    let at = copy.join(path);
+    let bytes = std::fs::read(&at).map_err(|e| format!("{path}: {e}"))?;
+    let f = sqlite::read(&at).map_err(|e| format!("{path}: {}", e.message()))?;
+    if std::fs::read(&at).map_err(|e| format!("{path}: {e}"))? != bytes {
+        return Err(format!(
+            "{path} was written while it was opened: open it again"
+        ));
+    }
+    Ok((bytes, f))
+}
+
 /// `GET /v1/node/<id>/file`.
 pub(super) fn file(id: &str, ctx: &Ctx) -> String {
     let answer = || -> Result<String, String> {
         let id = node_id(id)?;
         let copy = the_copy(ctx)?;
         let path = find(&copy, id)?;
-        let bytes = std::fs::read(copy.join(&path)).map_err(|e| format!("{path}: {e}"))?;
-        let f = sqlite::read(&copy.join(&path)).map_err(|e| format!("{path}: {}", e.message()))?;
+        let (bytes, f) = read_once(&copy, &path)?;
         let mut j = Json::new();
         j.raw("{");
         j.bool_field("ok", true);
@@ -123,20 +168,8 @@ fn saved(id: &str, params: &str, ctx: &Ctx) -> Result<String, String> {
     let sent = param(params, "file").map(decode).unwrap_or_default();
     let bytes = results_file::unbase64(&sent)
         .ok_or("the edit is not a node file, as base64: nothing is saved")?;
-    // One program at a time writes the copy, and none copies over it meanwhile.
-    let _held = copy::lock(&copy)?;
     let path = find(&copy, id)?;
-    // The edit is read as a file beside the copy's own, never inside it.
-    let held = copy.with_file_name(format!(
-        ".{}.edit-{}",
-        copy.file_name()
-            .map_or("copy".into(), |n| n.to_string_lossy()),
-        std::process::id()
-    ));
-    std::fs::write(&held, &bytes).map_err(|e| format!("the edit could not be held: {e}"))?;
-    let edit = sqlite::read(&held);
-    let _ = std::fs::remove_file(&held);
-    let edit = edit.map_err(|e| format!("the edit is not a node file: {}", e.message()))?;
+    let edit = held(&bytes)?;
     let c =
         match me::registries(&copy, &copy, "") {
             Ok(c) => c,
@@ -146,7 +179,9 @@ fn saved(id: &str, params: &str, ctx: &Ctx) -> Result<String, String> {
             ),
             Err(me::NotRead::Why(why)) => return Err(why),
         };
-    let group_id = edit.meta.get("group_id").cloned().unwrap_or_default();
+    // The group is the folder the file is in: the library holds the file to
+    // it, so an edit that names another group is refused there, by name.
+    let group_id = path.split('/').nth(1).unwrap_or_default().to_string();
     let group = c
         .groups
         .iter()
@@ -154,8 +189,12 @@ fn saved(id: &str, params: &str, ctx: &Ctx) -> Result<String, String> {
         .ok_or_else(|| {
             format!("{group_id}'s group file does not check through the chain, so nobody is assigned its nodes")
         })?;
-    let done = me::with_key(|_, me| {
-        save(&copy, &path, &edit, &opened, &me.name, group)
+    let done = me::with_key(|key, me| {
+        // The key is the one the group file registers for them, now.
+        group
+            .key(&me.name, &key.public().to_hex(), &results::now_utc())
+            .map_err(|e| e.message().to_string())?;
+        save(&copy, &path, &edit, &opened, &me.name, APP, group)
             .map(|s| (s, me.name.clone()))
             .map_err(|e| e.message().to_string())
     })
@@ -203,14 +242,14 @@ fn saved(id: &str, params: &str, ctx: &Ctx) -> Result<String, String> {
         }
         (
             Saved::SecondWriter {
-                now,
+                bytes: theirs,
                 writer,
                 revision,
                 digest,
+                ..
             },
             _,
         ) => {
-            let theirs = std::fs::read(copy.join(&path)).map_err(|e| format!("{path}: {e}"))?;
             j.bool_field("ok", false);
             j.bool_field("conflict", true);
             j.str_field("node", id);
@@ -225,7 +264,6 @@ fn saved(id: &str, params: &str, ctx: &Ctx) -> Result<String, String> {
             j.str_field("opened", &digest);
             j.str_field("theirs", &base64(&theirs));
             j.str_field("yours", &sent);
-            let _ = now;
         }
     }
     j.raw("}");

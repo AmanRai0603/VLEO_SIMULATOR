@@ -4,8 +4,8 @@
 docs/briefs/F3.md, F3-a. A small drive of invented people is written
 (`cargo run -p vleo-server --example a_small_drive`), and two instances of the
 program are started on one working copy, each with its own keys folder, as
-two windows or two computers on a synced folder would be. Test Nia opens her
-key in both, and both open her node. Then:
+two programs on one computer would be. Test Nia opens her key in both, and
+both open her node. Then:
 
 - the second instance saves first, as revision 2;
 - the first instance's save, from what it opened before that, is refused as a
@@ -13,6 +13,9 @@ key in both, and both open her node. Then:
 - the file in the copy is the second instance's, byte for byte;
 - the first instance opens the node again, and its save then goes in, as
   revision 3.
+
+What this does not cover: two computers on a folder a sync client keeps in
+step. The copy's lock and the comparison are of one computer's files.
 
     python3 tools/save_check.py
 
@@ -27,6 +30,7 @@ import sqlite3
 import subprocess
 import sys
 import tempfile
+import threading
 import time
 import urllib.parse
 import urllib.request
@@ -61,6 +65,11 @@ def start(scratch, keys, port):
         m = URL.search(line)
         if m:
             served = m.group(1)
+    if served is None:
+        program.kill()
+        raise SystemExit(f'the program on {port} did not say where it serves within ten minutes')
+    # What it prints after is read and dropped, so a full pipe never stops it.
+    threading.Thread(target=lambda: [None for _ in program.stdout], daemon=True).start()
     for _ in range(120):
         try:
             urllib.request.urlopen(f'http://127.0.0.1:{served}/v1/version', timeout=2)
@@ -108,14 +117,14 @@ def check():
             fails.append(what)
 
     scratch = tempfile.mkdtemp(prefix='vleo-save-')
-    made = subprocess.run(
-        ['cargo', 'run', '-q', '-p', 'vleo-server', '--example', 'a_small_drive', '--', scratch],
-        cwd=ROOT, capture_output=True, text=True, check=True)
-    anchor = made.stdout.strip().splitlines()[-1]
-    one_keys, two_keys = os.path.join(scratch, 'keys'), os.path.join(scratch, 'keys-two')
-    shutil.copytree(one_keys, two_keys)
     programs = []
     try:
+        made = subprocess.run(
+            ['cargo', 'run', '-q', '-p', 'vleo-server', '--example', 'a_small_drive', '--', scratch],
+            cwd=ROOT, capture_output=True, text=True, check=True)
+        anchor = made.stdout.strip().splitlines()[-1]
+        one_keys, two_keys = os.path.join(scratch, 'keys'), os.path.join(scratch, 'keys-two')
+        shutil.copytree(one_keys, two_keys)
         one, p1, w1 = start(scratch, one_keys, 7861)
         programs.append(one)
         r = ask(p1, '/v1/copy', {'drive': os.path.join(scratch, 'drive')}, w1)

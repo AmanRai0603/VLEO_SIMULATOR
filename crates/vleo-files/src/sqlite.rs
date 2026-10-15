@@ -35,11 +35,30 @@ fn io(path: &Path, what: &str, e: impl std::fmt::Display) -> Error {
 /// ([`kept_copy`]), so saving an upgraded file never loses the one it was
 /// upgraded from. An older copy already there is never written over.
 pub fn write(file: &File, path: &Path) -> Result<(), Error> {
+    write_whole(file, path, false).map(|_| ())
+}
+
+/// Write `file` as [`write`] does, and give back the bytes moved into place,
+/// read before the move: what was written, whatever happens to the file after.
+pub fn written(file: &File, path: &Path) -> Result<Vec<u8>, Error> {
+    write_whole(file, path, true)
+}
+
+fn write_whole(file: &File, path: &Path, give_back: bool) -> Result<Vec<u8>, Error> {
+    static NEXT: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
     file.check_values()?;
     keep_older(path)?;
-    let tmp = path.with_extension("partial");
-    let _ = std::fs::remove_file(&tmp);
-    {
+    // A name of this write's own: two writers beside one file never share
+    // the file the other is building.
+    let nanos = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map_or(0, |d| d.as_nanos());
+    let tmp = path.with_extension(format!(
+        "partial-{}-{nanos}-{}",
+        std::process::id(),
+        NEXT.fetch_add(1, std::sync::atomic::Ordering::Relaxed)
+    ));
+    let made = (|| -> Result<Vec<u8>, Error> {
         let db = Connection::open(&tmp).map_err(|e| io(&tmp, "could not be made", e))?;
         // Small pages: a file holds every table of the one schema, and most
         // of a node's are empty. At SQLite's usual 4 KB each empty table and
@@ -57,8 +76,21 @@ pub fn write(file: &File, path: &Path) -> Result<(), Error> {
         }
         tx.commit()
             .map_err(|e| io(&tmp, "could not be written", e))?;
+        // Closed before it is read back or moved, as it was before.
+        drop(db);
+        let bytes = if give_back {
+            std::fs::read(&tmp).map_err(|e| io(&tmp, "could not be read back", e))?
+        } else {
+            Vec::new()
+        };
+        std::fs::rename(&tmp, path).map_err(|e| io(path, "could not be replaced", e))?;
+        Ok(bytes)
+    })();
+    if made.is_err() {
+        // What was begun and not moved into place is not left beside it.
+        let _ = std::fs::remove_file(&tmp);
     }
-    std::fs::rename(&tmp, path).map_err(|e| io(path, "could not be replaced", e))
+    made
 }
 
 fn keep_older(path: &Path) -> Result<(), Error> {
