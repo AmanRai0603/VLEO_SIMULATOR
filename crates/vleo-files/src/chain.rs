@@ -576,6 +576,7 @@ pub fn open_group_in(
             ),
         ));
     }
+    registers_only_its_own(group, &id, programme)?;
     let (ok, why) = counted(group, FILE, programme, |name| {
         programme.acts_for(name, owner)
     });
@@ -586,6 +587,49 @@ pub fn open_group_in(
         from: format!("{id}'s group file"),
         file: group.clone(),
     })
+}
+
+/// A group file registers its node engineers and nobody else: no other role,
+/// nobody the programme's file registers, and no key it registers. One key
+/// says one person, and nobody is registered twice, so a group file can
+/// neither speak for a person the programme registers nor lock them out.
+fn registers_only_its_own(group: &File, id: &str, programme: &Registry) -> Result<(), Error> {
+    for p in &group.people {
+        if p.role != "node engineer" {
+            return Err(refused(
+                ErrorKind::Signature,
+                format!(
+                    "{id}'s group file registers {} as a {}: a group file registers only its node engineers",
+                    p.name, p.role
+                ),
+            ));
+        }
+        if programme.file.people.iter().any(|q| q.name == p.name) {
+            return Err(refused(
+                ErrorKind::Signature,
+                format!(
+                    "{id}'s group file registers {}, whom the programme's file registers: nobody is registered twice",
+                    p.name
+                ),
+            ));
+        }
+    }
+    if let Some(k) = group.keys.iter().find(|k| {
+        programme
+            .file
+            .keys
+            .iter()
+            .any(|q| q.public_key == k.public_key)
+    }) {
+        return Err(refused(
+            ErrorKind::Signature,
+            format!(
+                "{id}'s group file registers for {} a key the programme's file registers: one key says one person",
+                k.person
+            ),
+        ));
+    }
+    Ok(())
 }
 
 /// The systems' file, checked through the programme's: it mounts the systems'
@@ -632,9 +676,17 @@ pub struct Me {
 /// A key counts only in the file that may register its person: the
 /// programme's file registers the programme manager, the system engineer,
 /// every subsystem engineer and every deputy; a group file registers node
-/// engineers, and nobody the programme's file registers. A revocation in any
-/// file wins over every other. A key nobody registers, one registered for two
-/// people, or one revoked by `at` opens nothing, and says why. Roles come from
+/// engineers, and nobody the programme's file registers (an opened group file
+/// holds no other, [`open_group_in`]). A revocation counts in the file that
+/// made it: a node engineer revoked by one group still counts in another that
+/// has not revoked them, and that group's owner revokes them there. A key
+/// nobody registers, one registered for two people, or one revoked everywhere
+/// it counted opens nothing, and says why.
+///
+/// Not closed: the owner of one group can register another group's node
+/// engineer's key under a second name, and that key then says nobody until
+/// one of the two registrations goes. The signature of that group file names
+/// who did it. Roles come from
 /// the files where the key counted; the groups owned from the two files that
 /// mount, the programme's and the systems'.
 pub fn whoami(
@@ -644,24 +696,11 @@ pub fn whoami(
     systems: Option<&Registry>,
     groups: &[&Registry],
 ) -> Result<Me, Error> {
-    let when = instant(at, "now")?;
+    instant(at, "now")?;
     let below: Vec<&Registry> = systems.into_iter().chain(groups.iter().copied()).collect();
     let all: Vec<&Registry> = std::iter::once(programme)
         .chain(below.iter().copied())
         .collect();
-    for r in &all {
-        for k in r.file.keys.iter().filter(|k| k.public_key == public_key) {
-            if revoked_by(k, when)? {
-                return Err(refused(
-                    ErrorKind::Signature,
-                    format!(
-                        "this key is revoked from {} in {}, for {}: from then it says nobody, whatever another file says",
-                        k.revoked_from, r.from, k.person
-                    ),
-                ));
-            }
-        }
-    }
     let in_programme = |name: &str| programme.file.people.iter().any(|p| p.name == name);
     let mut names: Vec<&str> = Vec::new();
     let mut counted_in: Vec<&Registry> = Vec::new();

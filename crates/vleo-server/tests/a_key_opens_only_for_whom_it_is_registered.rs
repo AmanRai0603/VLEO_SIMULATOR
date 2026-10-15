@@ -247,6 +247,12 @@ fn a_key_opens_only_for_whom_it_is_registered() {
             .permissions()
             .mode();
         assert_eq!(mode & 0o777, 0o600, "a key file is its person's alone");
+        let folder = std::fs::metadata(&keys).unwrap().permissions().mode();
+        assert_eq!(
+            folder & 0o777,
+            0o700,
+            "and so is the folder it is written in"
+        );
     }
     let wide = ask(
         port,

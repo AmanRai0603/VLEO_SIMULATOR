@@ -418,8 +418,11 @@ fn a_group_file_registers_only_its_own_node_engineers() {
     let p = people();
     let pr = programme(&p);
     let sys = chain::open_systems(&systems(&p), &pr).unwrap();
+    let opens =
+        |f: File| chain::open_group_in(&signed(f, "Ola Sun", &p.sub), &sys, &pr).map(|_| ());
     // Ola registers, in her own signed group file, the system engineer's name
-    // with a key she made, and a "system engineer" of her own.
+    // with a key she made; a "system engineer" of her own; and the system
+    // engineer's key, revoked, under another name, to lock him out.
     let mut f = solar_unsigned(&p);
     register(
         &mut f,
@@ -429,36 +432,33 @@ fn a_group_file_registers_only_its_own_node_engineers() {
         &p.stranger,
         "Ola Sun",
     );
-    let made_up = SigningKey::from_seed([18; 32]);
+    let e = message(opens(f).unwrap_err());
+    assert!(e.contains("whom the programme's file registers"), "{e}");
+
+    let mut f = solar_unsigned(&p);
     register(
         &mut f,
         "Mal Lory",
         "system engineer",
         "",
-        &made_up,
+        &p.stranger,
         "Ola Sun",
     );
-    let solar = chain::open_group_in(&signed(f, "Ola Sun", &p.sub), &sys, &pr).unwrap();
-    let who = |k: &SigningKey| {
-        chain::whoami(
-            &k.public().to_hex(),
-            "2026-04-01",
-            &pr,
-            Some(&sys),
-            &[&solar],
-        )
-    };
+    let e = message(opens(f).unwrap_err());
+    assert!(e.contains("registers only its node engineers"), "{e}");
 
-    let e = message(who(&p.stranger).unwrap_err());
-    assert!(e.contains("whom the programme's file registers"), "{e}");
-    let e = message(who(&made_up).unwrap_err());
-    assert!(e.contains("other than a node engineer"), "{e}");
-    // The node engineer she registered is still herself.
-    assert_eq!(who(&p.ne).unwrap().name, "Nia Node");
+    let mut f = solar_unsigned(&p);
+    register(&mut f, "Not Sam", "node engineer", "", &p.se, "Ola Sun");
+    f.keys.last_mut().unwrap().revoked_from = s("2026-01-02");
+    let e = message(opens(f).unwrap_err());
+    assert!(e.contains("a key the programme's file registers"), "{e}");
+    // The system engineer is still himself.
+    let se = chain::whoami(&p.se.public().to_hex(), "2026-04-01", &pr, Some(&sys), &[]).unwrap();
+    assert_eq!(se.name, "Sam Engel");
 }
 
 #[test]
-fn a_revocation_in_any_file_wins() {
+fn a_revocation_counts_in_the_file_that_made_it() {
     let p = people();
     let pr = programme(&p);
     let mut sys = systems_unsigned();
@@ -477,18 +477,30 @@ fn a_revocation_in_any_file_wins() {
         &p.ne,
         "Ola Sun",
     );
+    thermal.assignments.push(Assignment {
+        block_uid: s("b-radiator"),
+        person: s("Nia Node"),
+        contract_version: 1,
+    });
     let thermal = chain::open_group_in(&signed(thermal, "Ola Sun", &p.sub), &sys, &pr).unwrap();
 
     let ne = p.ne.public().to_hex();
     let before = chain::whoami(&ne, "2026-02-15", &pr, Some(&sys), &[&solar, &thermal]).unwrap();
     assert_eq!(before.roles.len(), 2, "{before:?}");
+    assert_eq!(before.nodes.len(), 3, "{before:?}");
     for order in [[&solar, &thermal], [&thermal, &solar]] {
-        let e = message(chain::whoami(&ne, "2026-04-01", &pr, Some(&sys), &order).unwrap_err());
-        assert!(
-            e.contains("revoked from 2026-03-01 in l3_solar's group file"),
-            "{e}"
+        let after = chain::whoami(&ne, "2026-04-01", &pr, Some(&sys), &order).unwrap();
+        assert_eq!(
+            (after.roles.clone(), after.nodes.clone()),
+            (
+                vec![(s("node engineer"), s("l3_thermal's group file"))],
+                vec![(s("l3_thermal"), s("b-radiator"))]
+            ),
+            "solar's revocation counts in solar"
         );
     }
+    let e = message(chain::whoami(&ne, "2026-04-01", &pr, Some(&sys), &[&solar]).unwrap_err());
+    assert!(e.contains("revoked from 2026-03-01"), "{e}");
 }
 
 #[test]

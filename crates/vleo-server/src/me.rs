@@ -80,15 +80,18 @@ fn file_name(person: &str) -> String {
     format!("{out}.vkey")
 }
 
-/// A key file readable by its person alone, where the system says who that is.
-fn private(path: &Path) {
+/// A key file, or the keys folder (`mode` 0o700), readable by its person
+/// alone, where the system says who that is. The folder is closed before a
+/// key is written into it, so the key is never readable by another while it
+/// is being written either.
+fn private(path: &Path, mode: u32) {
     #[cfg(unix)]
     {
         use std::os::unix::fs::PermissionsExt;
-        let _ = std::fs::set_permissions(path, std::fs::Permissions::from_mode(0o600));
+        let _ = std::fs::set_permissions(path, std::fs::Permissions::from_mode(mode));
     }
     #[cfg(not(unix))]
-    let _ = path;
+    let _ = (path, mode);
 }
 
 fn refusal(message: &str) -> String {
@@ -135,8 +138,9 @@ pub(super) fn make(params: &str) -> String {
         std::fs::create_dir_all(&dir).map_err(|e| {
             vleo_files::Error::new(vleo_files::ErrorKind::Io, format!("{}: {e}", dir.display()))
         })?;
+        private(&dir, 0o700);
         sqlite::write(&f, &path)?;
-        private(&path);
+        private(&path, 0o600);
         Ok((key.public().to_hex(), key.public().fingerprint()))
     })();
     match made {
