@@ -825,6 +825,53 @@ pub fn check_node(f: &File, block_uid: &str, group: &Registry) -> Result<(), Err
     Ok(())
 }
 
+/// `f` with the node `block_uid` signed `ok` by `by`, as the day's work
+/// (docs/briefs/F3.md, F3-b) — or why not. Refused before signing when `key`
+/// is not a key `group` registers for `by` and counts at `at`, and when `by`
+/// is neither assigned the block nor the deputy of whoever is. The signed
+/// file is then held to [`check_node`], so the rule of who may sign a node is
+/// kept once, there, and this refuses whatever it refuses.
+pub fn sign_node(
+    f: &File,
+    block_uid: &str,
+    by: &str,
+    key: &SigningKey,
+    at: &str,
+    group: &Registry,
+) -> Result<File, Error> {
+    let id = f
+        .blocks
+        .iter()
+        .find(|b| b.uid == block_uid)
+        .map(|b| b.id.clone())
+        .ok_or_else(|| {
+            refused(
+                ErrorKind::Malformed,
+                format!("the file holds no block {block_uid}, so it cannot be signed"),
+            )
+        })?;
+    group.key(by, &key.public().to_hex(), at)?;
+    let assigned = group
+        .file
+        .assignments
+        .iter()
+        .any(|a| a.block_uid == block_uid && group.acts_for(by, &a.person));
+    if !assigned {
+        return Err(refused(
+            ErrorKind::Signature,
+            format!(
+                "{by} is not assigned {id} in {}, nor the deputy of whoever is: only its node engineer, or their deputy, signs it",
+                group.from
+            ),
+        ));
+    }
+    let mut out = f.clone();
+    out.signatures
+        .push(sign(f, block_uid, by, key, at, "ok", "")?);
+    check_node(&out, block_uid, group)?;
+    Ok(out)
+}
+
 /// What checking a release found: every node, and the seal.
 #[derive(Debug, Default)]
 pub struct Checked {

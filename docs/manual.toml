@@ -2160,6 +2160,11 @@ path = "/v1/node/<id>/save"
 what = "A node's file saved in the working copy as its next revision, written by whoever's key is open when the group file assigns them the node, or they are the deputy of whoever it does: file, the edited node file as base64, and opened, the digest it was edited from. A file changed since is not written over: both versions are answered, and the person keeps one. A save changes the node's own rows and nothing else in its file — never its place, its contract's version or its signatures — and waits for no other program: while one is writing the copy, it is refused. Not signed; what its content still lacks is listed. Carries session."
 
 [[route]]
+method = "POST"
+path = "/v1/node/<id>/sign"
+what = "A node signed as the day's work, with whoever's key is open, at this moment: opened, the digest of the file as it was opened. Refused while any of the node's checks fails or its cases disagree with its method, each one named; refused unless the key is the one its group file registers for them and they are assigned the node, or are the deputy of whoever is. The signature is checked through the chain at once, and the signed file is written in the working copy as a save is; the revision does not rise. A file changed since it was opened is not signed. Carries session."
+
+[[route]]
 method = "GET"
 path = "/v1/lesson/<id>"
 what = "A row's lesson — its `lesson.toml`, checked as the gate checks it — or `lesson: null` for a row with none. A lesson that fails its check is refused with the reasons."

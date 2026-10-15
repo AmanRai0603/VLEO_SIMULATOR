@@ -325,3 +325,78 @@ pub fn save(
         findings,
     })
 }
+
+/// Sign the node at `path` inside the copy as `by`, as the day's work
+/// (docs/briefs/F3.md, F3-b), when its bytes are still the ones whose SHA-256
+/// is `opened`: what the person signs is exactly what they saw. Refused, with
+/// nothing written, by `chain::sign_node` unless `key` is `by`'s, counted at
+/// `at`, and `by` is assigned the block or their deputy; then while any of
+/// the signed file's own checks fails or its cases disagree with its method
+/// (`checks::check_node`, which refuses an assistant's name), each one named. The revision does not rise: a
+/// signature is of the revision as it is. Written as a save is, by `app`,
+/// under the copy's lock, and a second writer is stopped the same way.
+#[allow(clippy::too_many_arguments)]
+pub fn sign_in_place(
+    copy: &Path,
+    path: &str,
+    opened: &str,
+    by: &str,
+    key: &crate::keys::SigningKey,
+    at: &str,
+    app: &str,
+    group: &Registry,
+) -> Result<Saved, Error> {
+    if !copied::path_ok(path) {
+        return Err(refused(format!("{path:?} is not a path inside the copy")));
+    }
+    opened_ok(opened)?;
+    let _held = lock(copy)?;
+    let at_path = copy.join(path);
+    let bytes = std::fs::read(&at_path).map_err(|e| unreadable(&at_path, e))?;
+    // What changed since it was seen is a second writer before anything
+    // else: its checks are not the person's to be told.
+    if copied::digest(&bytes) != opened {
+        return second(&at_path, bytes);
+    }
+    let now = crate::sqlite::read(&at_path)?;
+    let id = the_node(&now, path)?;
+    let group_id = now.meta.get("group_id").cloned().unwrap_or_default();
+    if group.file.meta.get("group_id") != Some(&group_id) {
+        return Err(refused(format!(
+            "the node is {group_id}'s, and the group file given is {}'s",
+            group
+                .file
+                .meta
+                .get("group_id")
+                .map_or("no group", String::as_str)
+        )));
+    }
+    // Who signs first, then what: the file as signed, its new signature
+    // with it, held to the node's checks (an assistant's name among them).
+    let block = now.blocks[0].uid.clone();
+    let mut signed = crate::chain::sign_node(&now, &block, by, key, at, group)?;
+    let found = checks::check_node(&signed);
+    let refusing: Vec<String> = found
+        .errors()
+        .map(|f| format!("{}: {}", f.place, f.what))
+        .collect();
+    if !refusing.is_empty() {
+        return Err(refused(format!(
+            "{id} is not signed: {} of its checks refuse — {}",
+            refusing.len(),
+            refusing.join("; ")
+        )));
+    }
+    signed.meta.insert("written_by_app".into(), app.to_string());
+    // As a save: the one late comparison before the write.
+    let again = std::fs::read(&at_path).map_err(|e| unreadable(&at_path, e))?;
+    if copied::digest(&again) != opened {
+        return second(&at_path, again);
+    }
+    let written = crate::sqlite::written(&signed, &at_path)?;
+    Ok(Saved::Written {
+        revision: revision_of(&signed, path)?,
+        digest: copied::digest(&written),
+        findings: found,
+    })
+}

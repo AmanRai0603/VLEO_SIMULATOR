@@ -10,7 +10,7 @@
 //! key and the launch's word, but no signature; the drive is never written.
 
 use super::*;
-use vleo_files::save::{save, Saved};
+use vleo_files::save::{save, sign_in_place, Saved};
 use vleo_files::sqlite;
 
 /// A node's id as its file is named: letters, digits and `_`.
@@ -147,6 +147,28 @@ pub(super) fn file(id: &str, ctx: &Ctx) -> String {
     answer().unwrap_or_else(|why| me::refusal(&why))
 }
 
+/// The group file of the node at `path`, as the chain opens it from the copy.
+/// The group is the folder the file is in: the library holds the file to it,
+/// so an edit that names another group is refused there, by name.
+fn group_of(copy: &Path, path: &str) -> Result<vleo_files::chain::Registry, String> {
+    let c =
+        match me::registries(copy, copy, "") {
+            Ok(c) => c,
+            Err(me::NotRead::FirstUse(..)) => return Err(
+                "this computer has not accepted this database's anchor: open your key on it first"
+                    .into(),
+            ),
+            Err(me::NotRead::Why(why)) => return Err(why),
+        };
+    let group_id = path.split('/').nth(1).unwrap_or_default().to_string();
+    c.groups
+        .into_iter()
+        .find(|g| g.file.meta.get("group_id") == Some(&group_id))
+        .ok_or_else(|| {
+            format!("{group_id}'s group file does not check through the chain, so nobody is assigned its nodes")
+        })
+}
+
 /// `POST /v1/node/<id>/save`.
 pub(super) fn save_route(id: &str, params: &str, ctx: &Ctx) -> String {
     match saved(id, params, ctx) {
@@ -170,25 +192,8 @@ fn saved(id: &str, params: &str, ctx: &Ctx) -> Result<String, String> {
         .ok_or("the edit is not a node file, as base64: nothing is saved")?;
     let path = find(&copy, id)?;
     let edit = held(&bytes)?;
-    let c =
-        match me::registries(&copy, &copy, "") {
-            Ok(c) => c,
-            Err(me::NotRead::FirstUse(..)) => return Err(
-                "this computer has not accepted this database's anchor: open your key on it first"
-                    .into(),
-            ),
-            Err(me::NotRead::Why(why)) => return Err(why),
-        };
-    // The group is the folder the file is in: the library holds the file to
-    // it, so an edit that names another group is refused there, by name.
-    let group_id = path.split('/').nth(1).unwrap_or_default().to_string();
-    let group = c
-        .groups
-        .iter()
-        .find(|g| g.file.meta.get("group_id") == Some(&group_id))
-        .ok_or_else(|| {
-            format!("{group_id}'s group file does not check through the chain, so nobody is assigned its nodes")
-        })?;
+    let group = group_of(&copy, &path)?;
+    let group = &group;
     let done = me::with_key(|key, me| {
         // The key is the one the group file registers for them, now.
         group
@@ -264,6 +269,89 @@ fn saved(id: &str, params: &str, ctx: &Ctx) -> Result<String, String> {
             j.str_field("opened", &digest);
             j.str_field("theirs", &base64(&theirs));
             j.str_field("yours", &sent);
+        }
+    }
+    j.raw("}");
+    Ok(j.0)
+}
+
+/// `POST /v1/node/<id>/sign`: the node signed as the day's work by whoever's
+/// key is open, at this moment, when its file is still the one opened
+/// (docs/briefs/F3.md, F3-b). Refused while any of its checks fails or its
+/// cases disagree with its method, each one named; refused unless the open
+/// key is the one its group file registers for them, and they are assigned
+/// the node or are the deputy of whoever is. The signed file is written in
+/// the copy as a save is; the drive is never written.
+pub(super) fn sign_route(id: &str, params: &str, ctx: &Ctx) -> String {
+    match signed(id, params, ctx) {
+        Ok(j) => j,
+        Err(why) => me::refusal(&why),
+    }
+}
+
+fn signed(id: &str, params: &str, ctx: &Ctx) -> Result<String, String> {
+    me::carries_session(params)?;
+    if me::with_key(|_, _| ()).is_none() {
+        return Err("no key is open: open yours, and the node is signed with it".into());
+    }
+    let id = node_id(id)?;
+    let copy = the_copy(ctx)?;
+    let opened = param(params, "opened").map(decode).unwrap_or_default();
+    let path = find(&copy, id)?;
+    let group = group_of(&copy, &path)?;
+    let at = results::now_utc();
+    let done = me::with_key(|key, me| {
+        sign_in_place(&copy, &path, &opened, &me.name, key, &at, APP, &group)
+            .map(|s| (s, me.name.clone()))
+            .map_err(|e| e.message().to_string())
+    })
+    .ok_or("no key is open: open yours, and the node is signed with it")??;
+    let mut j = Json::new();
+    j.raw("{");
+    match done {
+        (
+            Saved::Written {
+                revision, digest, ..
+            },
+            by,
+        ) => {
+            j.bool_field("ok", true);
+            j.str_field("node", id);
+            j.str_field("path", &path);
+            j.num_field("revision", revision as f64);
+            j.str_field("opened", &digest);
+            j.str_field("signed_by", &by);
+            j.str_field("signed_at", &at);
+            j.str_field(
+                "message",
+                &format!(
+                    "{id} is signed by {by} as revision {revision}, in your copy. It goes to the drive when your work is put back."
+                ),
+            );
+        }
+        (
+            Saved::SecondWriter {
+                bytes: theirs,
+                writer,
+                revision,
+                digest,
+                ..
+            },
+            _,
+        ) => {
+            j.bool_field("ok", false);
+            j.bool_field("conflict", true);
+            j.str_field("node", id);
+            j.str_field(
+                "message",
+                &format!(
+                    "{id} changed in your copy since you opened it: {writer} saved revision {revision}. Nothing is signed: open it again, and sign what you see."
+                ),
+            );
+            j.str_field("writer", &writer);
+            j.num_field("revision", revision as f64);
+            j.str_field("opened", &digest);
+            j.str_field("theirs", &base64(&theirs));
         }
     }
     j.raw("}");

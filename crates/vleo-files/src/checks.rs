@@ -138,9 +138,30 @@ pub fn is_assistant(who: &str) -> bool {
         && !who.trim().is_empty()
 }
 
-/// Every check of a release's content, with every finding.
+/// Every check of a release's content, with every finding: each node's, and
+/// the release's own (its requirements, and the record of what changed).
 pub fn check_release(f: &File) -> Findings {
     let mut out = Findings::default();
+    blocks(f, &mut out);
+    signers(f, &mut out);
+    requirements(f, &mut out);
+    derisking(f, &mut out);
+    out
+}
+
+/// Every check of a node file's content: each of its blocks — where its inputs
+/// come from, who made its method, that its method reproduces its cases — and
+/// that no assistant signed it. What a node is held to before it is signed;
+/// the release's own checks (`check_release`) ask for what only a release has.
+pub fn check_node(f: &File) -> Findings {
+    let mut out = Findings::default();
+    blocks(f, &mut out);
+    signers(f, &mut out);
+    out
+}
+
+/// The checks of each live block.
+fn blocks(f: &File, out: &mut Findings) {
     let live: Vec<&Block> = f.blocks.iter().filter(|b| b.archived == 0).collect();
     for b in &live {
         let ports: Vec<&Port> = f.ports.iter().filter(|p| p.block_uid == b.uid).collect();
@@ -150,10 +171,10 @@ pub fn check_release(f: &File) -> Findings {
             .filter(|p| p.direction == "in")
             .collect();
         let out_port = ports.iter().copied().find(|p| p.direction == "out");
-        inputs(f, b, &ins, &mut out);
+        inputs(f, b, &ins, out);
         match b.behaviour.as_str() {
             "method" => {
-                declaration(f, b, &mut out);
+                declaration(f, b, out);
                 if !f.texts.iter().any(|t| {
                     t.scope == b.uid && t.kind == "pseudocode" && !t.body.trim().is_empty()
                 }) {
@@ -162,8 +183,8 @@ pub fn check_release(f: &File) -> Findings {
                         "has no method: a computed node is its method in the method language",
                     );
                 }
-                results(f, b, &ins, out_port, &mut out);
-                method(f, b, &ins, out_port, &mut out);
+                results(f, b, &ins, out_port, out);
+                method(f, b, &ins, out_port, out);
             }
             "stated" => {
                 if let Some(p) = out_port {
@@ -183,10 +204,6 @@ pub fn check_release(f: &File) -> Findings {
             _ => {}
         }
     }
-    signers(f, &mut out);
-    requirements(f, &mut out);
-    derisking(f, &mut out);
-    out
 }
 
 /// Each input says where it comes from, and that place exists; its default is
