@@ -15,23 +15,24 @@ Handed over Thursday 15 October (S1). Nothing is merged: everything waits on Ama
   - **162 the plan.** It now carries the nine briefs and F3's Plan (`docs/briefs/F3.md`).
   - **171 F1 keys and identity: high risk.** The Opus review ran four rounds; nothing blocks. Aman approves. The summary is in its last comment.
   - **172 F1 people and `base_version`, library only: high risk.** Stacked on 171, so it retargets to `developer` when 171 merges. Its Opus review is in its comments.
+  - **174 F1 the copy and People's routes: high risk.** Stacked on 172. It adds `POST/GET /v1/copy` (`copied.toml`), `GET /v1/people`, `POST /v1/people/register|replace|revoke`, the launch's word (`session`, from `<keys>/open.html`) and the passphrase pause. Its Opus review ran three rounds; nothing blocks.
 - **What 171 decides, which B's PRs must follow:**
   - **Ownership follows the mount.** Only the programme's file (mounting `systems`) and the systems' file (mounting each `l3_*`) mount anything.
   - **A group file registers only node engineers.** It holds nobody the programme's file registers, and no key it registers. `open_group_in` refuses anything else, by name.
   - **The test drive (165) must change.** It mounts the l3 groups in the programme's file, so they read as mounted twice. It should assign the mounting blocks in the systems' file instead, and register only node engineers in group files.
-  - **The anchor** is accepted once per drive, with `accept_anchor` on `POST /v1/key/open`. A scenario that opens a key passes it once. A face must make the person compare the fingerprint, never fill it in from the answer.
+  - **The anchor** is accepted once per drive, with `accept_anchor` on `POST /v1/key/open`. A scenario that opens a key passes it once, and since 174 also `session`, read from `<keys>/open.html`. A face must make the person compare the fingerprint, never fill it in from the answer.
 - **Deferred, on purpose:**
-  - The per-launch token and the pause after wrong passphrases land in F3-b, before anything signs. Until then `me::with_key` must stay uncalled.
+  - F3-c's put-back checks signatures against the drive's current files, never the copy's (the review of 174).
+  - The page (F1 PR 3) strips the word from the address with `history.replaceState`, and never fills `accept_anchor` from an answer.
   - The race between `exists()` and the write when a key is made.
 - **Not done on S1:**
-  - F1's program side of people: the register, replace and revoke routes, and `copied.toml` (the drive folder and every file's SHA-256 as copied).
   - F1 PR 3, the shell and My work, and its scenarios.
   - F2.
   - Run my code again (169) is still not limited to the person's own nodes. Aman decides.
 - **Lockfiles:** `crates/vleo-kernel-wasm` and `crates/vleo-py` keep their own, built `--locked` in CI. A new dependency of `vleo-files` or `vleo-server` needs both refreshed, as 171 does.
 - **Next for A (S2):**
-  - F1's program side of people: the routes, `copied.toml`, and the key's proof kept in its row and checked on open (the review of 172).
-  - Then F1 PR 3, then F2 on the chain check, then F3-a.
+  - The key's proof kept in its row and checked on open (the review of 172).
+  - F1 PR 3, the shell and My work; then F2 on the chain check; then F3-a.
 
 ## Person B · night
 
