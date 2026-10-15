@@ -137,10 +137,12 @@ fn changed(kind: &str, params: &str, ctx: &Ctx) -> Result<(String, String), Stri
     }
     let id = group_id(params)?;
     let change = asked(kind, params)?;
+    // One program at a time writes the copy, and none copies over it meanwhile.
+    let _held = copy::lock(&copy)?;
     let c =
         match me::registries(&copy, "") {
             Ok(c) => c,
-            Err(me::NotRead::FirstUse(_)) => return Err(
+            Err(me::NotRead::FirstUse(..)) => return Err(
                 "this computer has not accepted this database's anchor: open your key on it first"
                     .into(),
             ),

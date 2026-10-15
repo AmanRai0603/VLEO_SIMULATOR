@@ -37,11 +37,20 @@ fn enc(v: &str) -> String {
 
 /// A request as the page makes it: a POST carries this launch's word.
 fn ask(port: u16, method: &str, path: &str, pairs: &[(&str, &str)]) -> String {
+    ask_as(port, method, path, pairs, true)
+}
+
+/// A request as another program on the same computer makes it: no word.
+fn ask_bare(port: u16, method: &str, path: &str, pairs: &[(&str, &str)]) -> String {
+    ask_as(port, method, path, pairs, false)
+}
+
+fn ask_as(port: u16, method: &str, path: &str, pairs: &[(&str, &str)], with_word: bool) -> String {
     let mut body: Vec<String> = pairs
         .iter()
         .map(|(k, v)| format!("{k}={}", enc(v)))
         .collect();
-    if method == "POST" {
+    if method == "POST" && with_word {
         body.insert(0, format!("session={}", vleo_server::session()));
     }
     let body = body.join("&");
@@ -208,6 +217,29 @@ fn as_pairs(v: &[(String, String)]) -> Vec<(&str, &str)> {
     v.iter().map(|(a, b)| (a.as_str(), b.as_str())).collect()
 }
 
+/// A database with one thing in it that is not an ordinary file or folder.
+fn bad_drive(at: &Path, what: &str) {
+    std::fs::create_dir_all(at.join("groups/l3_solar")).unwrap();
+    std::fs::write(at.join("START HERE.md"), "# START HERE\n").unwrap();
+    let thing = at.join("groups/l3_solar");
+    match what {
+        "link" => {
+            #[cfg(unix)]
+            std::os::unix::fs::symlink(std::env::temp_dir(), thing.join("elsewhere")).unwrap();
+        }
+        "key" => std::fs::write(thing.join("someone.vkey"), b"a key").unwrap(),
+        _ => {
+            let made = std::process::Command::new("mkfifo")
+                .arg(thing.join("a-pipe"))
+                .status();
+            assert!(
+                made.is_ok_and(|s| s.success()),
+                "mkfifo is there to make a pipe"
+            );
+        }
+    }
+}
+
 fn field<'a>(json: &'a str, key: &str) -> Option<&'a str> {
     let at = json.find(&format!("\"{key}\":"))? + key.len() + 3;
     let rest = &json[at..];
@@ -261,11 +293,55 @@ fn people_change_in_the_copy_at_their_valve() {
         &[("file", "programme"), ("name", "Test Tom")],
     );
     assert!(early.contains("copy it from the drive first"), "{early}");
+    let drive_text = drv.display().to_string();
+    for (path, pairs) in [
+        ("/v1/copy", vec![("drive", drive_text.as_str())]),
+        (
+            "/v1/people/register",
+            vec![("file", "programme"), ("name", "Test Tom")],
+        ),
+    ] {
+        let bare = ask_bare(port, "POST", path, &pairs);
+        assert!(
+            bare.contains("does not carry the word this launch gave its page"),
+            "{path}: {bare}"
+        );
+    }
+    // Only folders and ordinary files are copied, and never a key.
+    for (what, says) in [
+        ("link", "is a link"),
+        ("key", "is a key"),
+        ("pipe", "neither a folder nor a file"),
+    ] {
+        let bad = scratch.join(format!("bad-{what}"));
+        bad_drive(&bad, what);
+        let e = ask(
+            port,
+            "POST",
+            "/v1/copy",
+            &[("drive", &bad.display().to_string())],
+        );
+        assert!(e.contains(says), "{what}: {e}");
+        assert!(!copy.exists(), "{what}: nothing is copied");
+    }
+    // A folder the program did not fill is never copied over.
+    let foreign = scratch.join("foreign");
+    std::fs::create_dir_all(&foreign).unwrap();
+    std::fs::write(foreign.join("mine.txt"), "someone's own").unwrap();
+    std::env::set_var("VLEO_COPY", &foreign);
+    let e = ask(port, "POST", "/v1/copy", &[("drive", &drive_text)]);
+    assert!(e.contains("holds files the program did not copy"), "{e}");
+    std::env::set_var("VLEO_COPY", &copy);
+    // Nor while another program holds the copy's lock.
+    let lock = scratch.join(".copy.lock");
+    std::fs::write(&lock, "1").unwrap();
+    let e = ask(port, "POST", "/v1/copy", &[("drive", &drive_text)]);
+    assert!(e.contains("another program is copying"), "{e}");
+    std::fs::remove_file(&lock).unwrap();
     let nowhere = ask(port, "POST", "/v1/copy", &[("drive", "/nowhere/at/all")]);
     assert!(nowhere.contains("is not a database"), "{nowhere}");
 
     // The copy, and its record.
-    let drive_text = drv.display().to_string();
     let took = ask(port, "POST", "/v1/copy", &[("drive", &drive_text)]);
     assert_eq!(
         (field(&took, "ok"), field(&took, "files")),
@@ -279,6 +355,32 @@ fn people_change_in_the_copy_at_their_valve() {
             && state.contains("\"changed_on_drive\":[]"),
         "{state}"
     );
+
+    // The page the program opens carries the word, and only this person reads it.
+    let page = std::fs::read_to_string(keys.join("open.html")).unwrap();
+    assert!(page.contains(&vleo_server::session()), "{page}");
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        let mode = std::fs::metadata(keys.join("open.html"))
+            .unwrap()
+            .permissions()
+            .mode();
+        assert_eq!(mode & 0o777, 0o600);
+    }
+
+    // The first open names the drive the anchor will be kept for.
+    let first = ask(
+        port,
+        "POST",
+        "/v1/key/open",
+        &[
+            ("file", "test-pat.vkey"),
+            ("passphrase", "a long enough passphrase"),
+        ],
+    );
+    let real_drive = std::fs::canonicalize(&drv).unwrap().display().to_string();
+    assert_eq!(field(&first, "drive"), Some(real_drive.as_str()), "{first}");
 
     // The programme manager registers a subsystem engineer, with the key's proof.
     let pat = open(port, "test-pat.vkey");
@@ -408,7 +510,52 @@ fn people_change_in_the_copy_at_their_valve() {
         ],
     );
     assert_eq!(field(&ola, "name"), Some("Test Ola"), "{ola}");
+    assert!(!ola.contains("drive_newer"), "{ola}");
     ask(port, "POST", "/v1/key/close", &[]);
+
+    // Someone signs a newer solar on the drive: opening on the older copy
+    // says so, for the copy may not hold a revocation made since.
+    let mut solar = group("l3_solar");
+    register(
+        &mut solar,
+        "Test Nia",
+        "node engineer",
+        &key(44),
+        "Test Ola",
+    );
+    register(
+        &mut solar,
+        "Test Nell",
+        "node engineer",
+        &key(47),
+        "Test Ola",
+    );
+    let solar = signed(solar, "Test Ola", &key(43));
+    sqlite::write(&solar, &drv.join("groups/l3_solar/l3_solar.vgroup")).unwrap();
+    let ola = ask(
+        port,
+        "POST",
+        "/v1/key/open",
+        &[
+            ("file", "test-ola.vkey"),
+            ("passphrase", "a long enough passphrase"),
+        ],
+    );
+    assert!(
+        ola.contains("\"drive_newer\":[\"groups/l3_solar/l3_solar.vgroup\"]"),
+        "{ola}"
+    );
+    ask(port, "POST", "/v1/key/close", &[]);
+
+    // Copied again, cleanly: the copy before is kept beside, never deleted.
+    let took = ask(port, "POST", "/v1/copy", &[("drive", &drive_text)]);
+    assert_eq!(field(&took, "ok"), Some("true"), "{took}");
+    assert!(scratch.join(".copy2.before").join("copied.toml").is_file());
+
+    // A record that does not read is refused, never taken for a drive of its own.
+    std::fs::write(copy2.join("copied.toml"), "not a record").unwrap();
+    let e = open(port, "test-ola.vkey");
+    assert!(e.contains("copied.toml"), "{e}");
 
     // Five wrong passphrases, and the key waits, even for the right one.
     for _ in 0..5 {
@@ -425,6 +572,11 @@ fn people_change_in_the_copy_at_their_valve() {
     }
     let paused = open(port, "test-nia.vkey");
     assert!(paused.contains("try again in"), "{paused}");
+    // That key, not every key.
+    std::fs::write(copy2.join("copied.toml"), "").unwrap();
+    std::env::set_var("VLEO_COPY", &copy);
+    let ola = open(port, "test-ola.vkey");
+    assert!(!ola.contains("try again in"), "{ola}");
 
     let _ = std::fs::remove_dir_all(&scratch);
 }

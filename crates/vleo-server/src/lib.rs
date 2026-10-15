@@ -146,20 +146,22 @@ pub fn serve(
         None => println!("  design read from the folders of this checkout"),
     }
     println!("  serving the interface and the engine from one origin:");
-    // The address carries this launch's word in its fragment, which the
-    // browser keeps to the page and never sends (me::session).
-    println!(
-        "  \x1b[1mhttp://127.0.0.1:{port}/#session={}\x1b[0m",
-        me::session()
-    );
+    println!("  \x1b[1mhttp://127.0.0.1:{port}\x1b[0m");
+    // This launch's word (me::session) is in a page only this person can read,
+    // never in a printed line or a program's arguments.
+    let launch = me::launch_page(port);
+    match &launch {
+        Ok(page) => println!("  open with your key from {}", page.display()),
+        Err(why) => println!("  \x1b[33mno page to open with a key: {why}\x1b[0m"),
+    }
     println!("  loopback only. Exposing this to a network is a separate, explicit act.");
     // Opened by the tool, because only the tool knows which port it got — 7777
     // may be taken, and a script that guesses opens somebody else's page.
     if open {
-        open_browser(&format!(
-            "http://127.0.0.1:{port}/#session={}",
-            me::session()
-        ));
+        match &launch {
+            Ok(page) => open_browser(&page.display().to_string()),
+            Err(_) => open_browser(&format!("http://127.0.0.1:{port}")),
+        }
     }
 
     results::thin_at_start();

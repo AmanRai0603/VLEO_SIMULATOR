@@ -9,7 +9,16 @@
 //! the drive is F3's (docs/briefs/F3.md, F3-c), and reads the same record.
 //!
 //! The copy is taken whole into a folder beside the old one, then swapped in,
-//! so a copy cut short leaves the old copy as it was.
+//! so a copy cut short leaves the old copy as it was. The old copy is checked
+//! again once it is moved aside, and put back if anything wrote into it
+//! meanwhile; it is kept beside the new one as `.<copy>.before`, never
+//! deleted. One program at a time copies or writes the copy: a lock file
+//! beside it says which is.
+//!
+//! Only folders and ordinary files are copied. A link, a device or a pipe on
+//! the drive is refused by name, and so is a key: a key never lives on the
+//! drive. Each file is opened and checked to be the one that was listed, and
+//! inside the drive, before its bytes are taken.
 
 use super::*;
 use std::collections::BTreeMap;
@@ -66,6 +75,16 @@ pub(super) fn digests(folder: &Path) -> Result<BTreeMap<String, String>, String>
                     "{shown} is a link: a database holds files, and a link is never followed"
                 ));
             }
+            if !kind.is_dir() && !kind.is_file() {
+                return Err(format!(
+                    "{shown} is neither a folder nor a file: a database holds only those"
+                ));
+            }
+            if name.ends_with(".vkey") {
+                return Err(format!(
+                    "{shown} is a key: a key lives on its person's own computer, never in a database"
+                ));
+            }
             if !copied::path_ok(&shown) {
                 return Err(format!("{shown:?} is not a name the database can hold"));
             }
@@ -113,6 +132,10 @@ pub(super) fn take(params: &str, ctx: &Ctx) -> String {
         ));
     }
     let copy = dir(ctx);
+    let _held = match lock(&copy) {
+        Ok(l) => l,
+        Err(why) => return me::refusal(&why),
+    };
     match record(&copy) {
         Ok(Some(r)) => match digests(&copy) {
             Ok(now) => {
@@ -159,30 +182,106 @@ pub(super) fn take(params: &str, ctx: &Ctx) -> String {
     }
 }
 
-/// The drive's files into a fresh folder beside the copy, the record beside
-/// them, then swapped in for the old copy.
-fn copy_whole(drive: &Path, copy: &Path) -> Result<Copied, String> {
+/// The lock beside the copy: held while one program copies the database or
+/// writes the copy, and let go when dropped.
+pub(super) struct Lock(PathBuf);
+
+impl Drop for Lock {
+    fn drop(&mut self) {
+        let _ = std::fs::remove_file(&self.0);
+    }
+}
+
+/// The copy's lock, taken, or why not: another program holds it.
+pub(super) fn lock(copy: &Path) -> Result<Lock, String> {
+    let (parent, name) = beside(copy)?;
+    std::fs::create_dir_all(&parent).map_err(|e| format!("{}: {e}", parent.display()))?;
+    let at = parent.join(format!(".{name}.lock"));
+    match std::fs::OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .open(&at)
+    {
+        Ok(mut f) => {
+            use std::io::Write as _;
+            let _ = writeln!(f, "{}", std::process::id());
+            Ok(Lock(at))
+        }
+        Err(e) if e.kind() == std::io::ErrorKind::AlreadyExists => Err(format!(
+            "another program is copying the database or writing your copy ({} is there): wait for it, or remove that file if no other program is running",
+            at.display()
+        )),
+        Err(e) => Err(format!("{}: {e}", at.display())),
+    }
+}
+
+/// The folder the copy lives in, and the copy's own name.
+fn beside(copy: &Path) -> Result<(PathBuf, String), String> {
     let parent = copy
         .parent()
-        .ok_or_else(|| format!("{} has no folder above it", copy.display()))?;
-    std::fs::create_dir_all(parent).map_err(|e| format!("{}: {e}", parent.display()))?;
+        .ok_or_else(|| format!("{} has no folder above it", copy.display()))?
+        .to_path_buf();
     let name = copy
         .file_name()
         .map(|n| n.to_string_lossy().into_owned())
         .unwrap_or_else(|| "database".into());
+    Ok((parent, name))
+}
+
+/// The bytes of the file `path` names inside `drive`, if it is the file that
+/// was listed there: an ordinary file, opened without leaving the drive. A
+/// folder swapped for a link after it was listed is caught here.
+fn take_file(drive_root: &Path, drive: &Path, path: &str) -> Result<Vec<u8>, String> {
+    use std::io::Read as _;
+    let at = drive.join(path);
+    let moved = || format!("{path} changed on the drive while it was copied: copy again");
+    let listed = std::fs::symlink_metadata(&at).map_err(|e| format!("{}: {e}", at.display()))?;
+    if !listed.file_type().is_file() {
+        return Err(moved());
+    }
+    let real = std::fs::canonicalize(&at).map_err(|e| format!("{}: {e}", at.display()))?;
+    if !real.starts_with(drive_root) {
+        return Err(format!(
+            "{path} leads outside the drive: a database holds files, and a link is never followed"
+        ));
+    }
+    let mut f = std::fs::File::open(&real).map_err(|e| format!("{}: {e}", at.display()))?;
+    let opened = f.metadata().map_err(|e| format!("{}: {e}", at.display()))?;
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::MetadataExt;
+        if (opened.dev(), opened.ino()) != (listed.dev(), listed.ino()) {
+            return Err(moved());
+        }
+    }
+    if !opened.is_file() {
+        return Err(moved());
+    }
+    let mut bytes = Vec::new();
+    f.read_to_end(&mut bytes)
+        .map_err(|e| format!("{}: {e}", at.display()))?;
+    Ok(bytes)
+}
+
+/// The drive's files into a fresh folder beside the copy, the record beside
+/// them, then swapped in for the old copy, which is checked again and kept.
+fn copy_whole(drive: &Path, copy: &Path) -> Result<Copied, String> {
+    let (parent, name) = beside(copy)?;
     let incoming = parent.join(format!(".{name}.incoming-{}", std::process::id()));
     let previous = parent.join(format!(".{name}.previous-{}", std::process::id()));
+    let before = parent.join(format!(".{name}.before"));
+    let drive_root =
+        std::fs::canonicalize(drive).map_err(|e| format!("{}: {e}", drive.display()))?;
     let _ = std::fs::remove_dir_all(&incoming);
     let result = (|| -> Result<Copied, String> {
         let files = digests(drive)?;
         let mut taken = BTreeMap::new();
         for path in files.keys() {
-            let from = drive.join(path);
+            let bytes = take_file(&drive_root, drive, path)?;
             let to = incoming.join(path);
             if let Some(p) = to.parent() {
                 std::fs::create_dir_all(p).map_err(|e| format!("{}: {e}", p.display()))?;
             }
-            let bytes = std::fs::read(&from).map_err(|e| format!("{}: {e}", from.display()))?;
             std::fs::write(&to, &bytes).map_err(|e| format!("{}: {e}", to.display()))?;
             // The digest of what was written, not of what was listed: a file
             // that changed on the drive while it was copied is recorded as
@@ -190,10 +289,7 @@ fn copy_whole(drive: &Path, copy: &Path) -> Result<Copied, String> {
             taken.insert(path.clone(), copied::digest(&bytes));
         }
         let r = Copied {
-            drive: std::fs::canonicalize(drive)
-                .unwrap_or_else(|_| drive.to_path_buf())
-                .display()
-                .to_string(),
+            drive: drive_root.display().to_string(),
             copied_at: results::now_utc(),
             files: taken,
         };
@@ -213,6 +309,26 @@ fn copy_whole(drive: &Path, copy: &Path) -> Result<Copied, String> {
             let _ = std::fs::remove_dir_all(&incoming);
             format!("{}: {e}", copy.display())
         })?;
+        // Checked again where nothing reaches it: work written into the old
+        // copy since it was first checked puts it back, and nothing is taken.
+        let still = match record(&previous) {
+            Ok(Some(old)) => digests(&previous).map(|now| old.changed(&now)),
+            Ok(None) => Ok(Vec::new()),
+            Err(why) => Err(why),
+        };
+        let refused = match still {
+            Ok(changed) if changed.is_empty() => None,
+            Ok(changed) => Some(format!(
+                "work was written into the copy while it was being copied, so the old copy is kept as it was: {}",
+                shortlist(&changed)
+            )),
+            Err(why) => Some(why),
+        };
+        if let Some(why) = refused {
+            let _ = std::fs::rename(&previous, copy);
+            let _ = std::fs::remove_dir_all(&incoming);
+            return Err(why);
+        }
     }
     if let Err(e) = std::fs::rename(&incoming, copy) {
         // Put the old copy back where it was.
@@ -220,10 +336,14 @@ fn copy_whole(drive: &Path, copy: &Path) -> Result<Copied, String> {
         let _ = std::fs::remove_dir_all(&incoming);
         return Err(format!("{}: {e}", copy.display()));
     }
-    let _ = std::fs::remove_dir_all(&previous);
+    if previous.exists() {
+        // Kept, never deleted: the last copy before this one, checked to hold
+        // nothing that had not gone back.
+        let _ = std::fs::remove_dir_all(&before);
+        let _ = std::fs::rename(&previous, &before);
+    }
     Ok(r)
 }
-
 /// The first few of `paths`, and how many more.
 fn shortlist(paths: &[String]) -> String {
     let shown: Vec<&str> = paths.iter().take(8).map(String::as_str).collect();
@@ -267,6 +387,19 @@ pub(super) fn state(ctx: &Ctx) -> String {
     };
     j.bool_field("copied", true);
     j.str_field("drive", &r.drive);
+    if let Some(started) = std::env::var_os("VLEO_DRIVE").filter(|v| !v.is_empty()) {
+        let started = std::fs::canonicalize(&started).unwrap_or_else(|_| PathBuf::from(&started));
+        if started != Path::new(&r.drive) {
+            j.str_field(
+                "message",
+                &format!(
+                    "This copy came from {}, but the program was started on the drive {}.",
+                    r.drive,
+                    started.display()
+                ),
+            );
+        }
+    }
     j.str_field("copied_at", &r.copied_at);
     let list = |j: &mut Json, k: &str, v: &[String]| {
         j.key(k).raw("[");

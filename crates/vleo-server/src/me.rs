@@ -69,7 +69,12 @@ pub fn session() -> &'static str {
 pub(super) fn carries_session(params: &str) -> Result<(), String> {
     let given = param(params, "session").map(decode).unwrap_or_default();
     let word = session();
-    if word.is_empty() || given.len() != word.len() || given.as_bytes() != word.as_bytes() {
+    // Compared in time that does not depend on where the first difference is.
+    let differs = given
+        .bytes()
+        .zip(word.bytes())
+        .fold(0u8, |acc, (a, b)| acc | (a ^ b));
+    if word.is_empty() || given.len() != word.len() || differs != 0 {
         return Err("this request does not carry the word this launch gave its page: a key is opened or used, and the copy written, only from the page the program opened".into());
     }
     Ok(())
@@ -263,7 +268,8 @@ enum Anchor {
 /// Why the files could not be read: this computer has not accepted the
 /// drive's anchor yet, or anything else.
 pub(super) enum NotRead {
-    FirstUse(String),
+    /// The fingerprint START HERE names, and the drive it would be kept for.
+    FirstUse(String, String),
     Why(String),
 }
 
@@ -276,15 +282,17 @@ fn anchors_file() -> PathBuf {
 /// The drive as this computer names it, so each drive keeps its own anchor.
 /// A working copy is named by the drive it was copied from, so copying again
 /// asks nobody to accept the same anchor twice.
-fn drive_name(database: &Path) -> String {
-    let at = std::fs::read_to_string(database.join(copied::FILE_NAME))
-        .ok()
-        .and_then(|t| copied::Copied::from_toml(&t).ok())
-        .map_or_else(|| database.to_path_buf(), |c| PathBuf::from(c.drive));
-    std::fs::canonicalize(&at)
+/// A record beside the folder that does not read is refused, never taken for
+/// a folder of its own.
+fn drive_name(database: &Path) -> Result<String, String> {
+    let at = match copy::record(database)? {
+        Some(c) => PathBuf::from(c.drive),
+        None => database.to_path_buf(),
+    };
+    Ok(std::fs::canonicalize(&at)
         .unwrap_or(at)
         .display()
-        .to_string()
+        .to_string())
 }
 
 /// The anchor: the programme manager's key fingerprint START HERE names, the
@@ -319,7 +327,7 @@ fn anchor(database: &Path) -> Result<Anchor, String> {
         ))
         }
     };
-    let drive = drive_name(database);
+    let drive = drive_name(database)?;
     let before = kept.lines().find_map(|l| {
         let (fingerprint, d) = l.split_once(' ')?;
         (d == drive).then(|| fingerprint.to_string())
@@ -337,6 +345,7 @@ fn anchor(database: &Path) -> Result<Anchor, String> {
 
 /// `fingerprint` remembered as this drive's anchor.
 fn accept(database: &Path, fingerprint: &str) -> Result<(), String> {
+    let drive = drive_name(database)?;
     use std::io::Write as _;
     let at = anchors_file();
     std::fs::create_dir_all(keys_dir())
@@ -346,7 +355,7 @@ fn accept(database: &Path, fingerprint: &str) -> Result<(), String> {
                 .append(true)
                 .open(&at)
         })
-        .and_then(|mut f| writeln!(f, "{fingerprint} {}", drive_name(database)))
+        .and_then(|mut f| writeln!(f, "{fingerprint} {drive}"))
         .map_err(|e| format!("{}: {e}", at.display()))
 }
 
@@ -388,7 +397,10 @@ pub(super) fn registries(database: &Path, accept_anchor: &str) -> Result<Chain, 
         .map_err(NotRead::Why)?;
     if first {
         if accept_anchor.trim().to_ascii_lowercase() != named {
-            return Err(NotRead::FirstUse(named));
+            return Err(NotRead::FirstUse(
+                named,
+                drive_name(database).map_err(NotRead::Why)?,
+            ));
         }
         accept(database, &named).map_err(NotRead::Why)?;
     }
@@ -436,26 +448,41 @@ pub(super) fn registries(database: &Path, accept_anchor: &str) -> Result<Chain, 
 
 /// The first time this computer opens a drive: the anchor shown, to be
 /// compared and accepted.
-fn first_use(fingerprint: &str) -> String {
+fn first_use(fingerprint: &str, drive: &str) -> String {
     let mut j = Json::new();
     j.raw("{");
     j.bool_field("ok", false);
     j.str_field("anchor", fingerprint);
+    j.str_field("drive", drive);
     j.str_field(
         "message",
         &format!(
-            "This computer has not opened this drive before. START HERE names the programme manager's key {fingerprint}. Compare it, every digit, with the one the programme manager gave you; if they agree, accept it, and this computer remembers it for this drive."
+            "This computer has not opened the drive {drive} before. Its START HERE names the programme manager's key {fingerprint}. Compare it, every digit, with the one the programme manager gave you; if they agree, accept it, and this computer remembers it for that drive."
         ),
     );
     j.raw("}");
     j.0
 }
 
-fn me_json(open: Option<&Opened>, left_out: &[String]) -> String {
+fn me_json(open: Option<&Opened>, left_out: &[String], newer: &[String]) -> String {
     let mut j = Json::new();
     j.raw("{");
     j.bool_field("ok", true);
     j.bool_field("open", open.is_some());
+    if !newer.is_empty() {
+        j.key("drive_newer").raw("[");
+        for (i, x) in newer.iter().enumerate() {
+            if i > 0 {
+                j.raw(",");
+            }
+            j.raw(&json::string(x));
+        }
+        j.raw("]");
+        j.str_field(
+            "warning",
+            "The drive holds newer group files than your copy, a revocation among them perhaps: who your key belongs to is read from your copy. Copy again once your work is back.",
+        );
+    }
     if let Some(o) = open {
         j.str_field("name", &o.me.name);
         j.str_field("fingerprint", &o.fingerprint);
@@ -508,6 +535,42 @@ fn me_json(open: Option<&Opened>, left_out: &[String]) -> String {
     }
     j.raw("]}");
     j.0
+}
+
+/// The group files the drive holds newer than the copy `database`, when it is
+/// a copy and the drive is reached.
+fn newer_on_drive(database: &Path) -> Vec<String> {
+    let Ok(Some(r)) = copy::record(database) else {
+        return Vec::new();
+    };
+    copy::digests(Path::new(&r.drive))
+        .map(|there| {
+            r.changed(&there)
+                .into_iter()
+                .filter(|p| p.ends_with(".vgroup"))
+                .collect()
+        })
+        .unwrap_or_default()
+}
+
+/// The page the program opens: a file only this person can read, in their
+/// keys folder, that takes the browser to the address with this launch's word.
+/// The word never goes in a program's arguments, which anyone on the computer
+/// can read.
+pub(super) fn launch_page(port: u16) -> Result<PathBuf, String> {
+    let dir = keys_dir();
+    std::fs::create_dir_all(&dir).map_err(|e| format!("{}: {e}", dir.display()))?;
+    private(&dir, 0o700);
+    let at = dir.join("open.html");
+    let address = format!("http://127.0.0.1:{port}/#session={}", session());
+    let page = format!(
+        "<!doctype html>\n<meta charset=\"utf-8\">\n<title>VLEO</title>\n<script>location.replace({});</script>\n<p>Opening <a href=\"http://127.0.0.1:{port}/\">the program</a>.</p>\n",
+        json::string(&address)
+    );
+    let _ = std::fs::remove_file(&at);
+    std::fs::write(&at, page).map_err(|e| format!("{}: {e}", at.display()))?;
+    private(&at, 0o600);
+    Ok(at)
 }
 
 /// `POST /v1/key/open`: the key in `file` (a name in the keys folder),
@@ -573,7 +636,7 @@ pub(super) fn open(params: &str, ctx: &Ctx) -> String {
         .unwrap_or_default();
     let c = match registries(&database(ctx), &accept_anchor) {
         Ok(c) => c,
-        Err(NotRead::FirstUse(fingerprint)) => return first_use(&fingerprint),
+        Err(NotRead::FirstUse(fingerprint, drive)) => return first_use(&fingerprint, &drive),
         Err(NotRead::Why(why)) => {
             return refusal(&format!(
                 "Your key opened, but who it belongs to cannot be read: {why}"
@@ -595,7 +658,7 @@ pub(super) fn open(params: &str, ctx: &Ctx) -> String {
                 key,
                 me,
             };
-            let out = me_json(Some(&opened), &left_out);
+            let out = me_json(Some(&opened), &left_out, &newer_on_drive(&database(ctx)));
             *OPEN.lock().unwrap_or_else(|p| p.into_inner()) = Some(opened);
             out
         }
@@ -615,7 +678,7 @@ pub(super) fn close() -> String {
 /// `GET /v1/me`: who is using the program, or that no key is open.
 pub(super) fn me() -> String {
     let open = OPEN.lock().unwrap_or_else(|p| p.into_inner());
-    me_json(open.as_ref(), &[])
+    me_json(open.as_ref(), &[], &[])
 }
 
 /// The open key and who it is, for whatever signs with it: a change to whom a

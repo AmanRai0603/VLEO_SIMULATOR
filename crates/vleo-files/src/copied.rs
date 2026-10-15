@@ -111,7 +111,7 @@ impl Copied {
             }
             if out
                 .files
-                .insert(path.to_string(), sha.to_string())
+                .insert(path.to_string(), sha.to_ascii_lowercase())
                 .is_some()
             {
                 return Err(malformed(format!("{FILE_NAME} names {path} twice")));

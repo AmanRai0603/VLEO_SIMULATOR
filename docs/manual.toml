@@ -2367,7 +2367,7 @@ default = "database/ beside the program"
 
 [[env]]
 name = "VLEO_KEYS"
-what = "Where the keys made on this computer live, each locked by its person's passphrase, and the anchors this computer accepted from START HERE, one for each drive. Never on the drive."
+what = "Where the keys made on this computer live, each locked by its person's passphrase, and the anchors this computer accepted from START HERE, one for each drive; and open.html, the page the program opens, which carries this launch's word. Never on the drive."
 default = "$HOME/.vleo/keys"
 
 [[env]]
