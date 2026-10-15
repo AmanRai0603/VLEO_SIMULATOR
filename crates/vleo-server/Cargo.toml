@@ -22,6 +22,7 @@ vleo-sheet = { workspace = true }
 # Today's design is built from the groups' sealed releases, read, sealed and
 # checked by the one library every design file goes through.
 vleo-files = { path = "../vleo-files" }
+zeroize = "1"
 # Saved results, many in one file (results.vleor), which the page imports.
 vleo-results = { workspace = true }
 

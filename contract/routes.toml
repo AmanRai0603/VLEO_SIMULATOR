@@ -64,6 +64,50 @@ schema = "version"
 [[route.example]]
 name = "version"
 
+# Who is using the program: their key, made and opened on this computer.
+
+[[route]]
+method = "GET"
+path = "/v1/me"
+answer = "json"
+schema = "me"
+[[route.example]]
+name = "me-closed"
+
+[[route]]
+method = "POST"
+path = "/v1/key/make"
+answer = "json"
+schema = "key-made"
+[[route.example]]
+name = "key-made"
+params = [["name", "Test Contract"], ["passphrase", "the contract's own passphrase"]]
+
+[[route]]
+method = "GET"
+path = "/v1/keys"
+answer = "json"
+schema = "keys"
+[[route.example]]
+name = "keys"
+
+[[route]]
+method = "POST"
+path = "/v1/key/open"
+answer = "json"
+schema = "me"
+[[route.example]]
+name = "key-open-refused"
+params = [["file", "test-contract.vkey"], ["passphrase", "not the passphrase"]]
+
+[[route]]
+method = "POST"
+path = "/v1/key/close"
+answer = "json"
+schema = "ok"
+[[route.example]]
+name = "key-close"
+
 [[route]]
 method = "GET"
 path = "/v1/index"

@@ -772,6 +772,7 @@ dependencies = [
  "vleo-results",
  "vleo-sheet",
  "vleo-units",
+ "zeroize",
 ]
 
 [[package]]

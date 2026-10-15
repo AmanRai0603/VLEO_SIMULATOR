@@ -27,6 +27,7 @@
 mod http;
 mod inputs;
 mod json;
+mod me;
 mod pages;
 mod results;
 pub mod results_file;
@@ -533,6 +534,12 @@ fn route(
         // The face's type, bundled beside the stylesheet (web/fonts).
         ("GET", p) if p.starts_with("/fonts/") => font(ctx, p.trim_start_matches("/fonts/")),
         ("GET", "/v1/version") => ok_json(version_json(ctx)),
+        // Who is using the program: their key, made and opened here (me.rs).
+        ("GET", "/v1/me") => ok_json(me::me()),
+        ("GET", "/v1/keys") => ok_json(me::list()),
+        ("POST", "/v1/key/make") => ok_json(me::make(params)),
+        ("POST", "/v1/key/open") => ok_json(me::open(params, ctx)),
+        ("POST", "/v1/key/close") => ok_json(me::close()),
         // The manual, with what is true of this running copy right now.
         ("GET", "/v1/manual") => manual_endpoint(ctx),
         ("GET", "/v1/index") => ok_json(index_json()),

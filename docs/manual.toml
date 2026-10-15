@@ -2071,6 +2071,31 @@ what = "The engine's identity: the contract version it speaks, kernel, graph, ro
 
 [[route]]
 method = "GET"
+path = "/v1/me"
+what = "Who is using the program: the person the drive's files register with the open key, their roles, the branches they own and their nodes; or that no key is open."
+
+[[route]]
+method = "GET"
+path = "/v1/keys"
+what = "The keys on this computer, in the keys folder (VLEO_KEYS, else ~/.vleo/keys), and whose each is."
+
+[[route]]
+method = "POST"
+path = "/v1/key/make"
+what = "A new key for name, locked by passphrase and written in the keys folder. It registers nobody, and never writes over a key."
+
+[[route]]
+method = "POST"
+path = "/v1/key/open"
+what = "The key in file, unlocked by passphrase, held in memory only if the drive's files register it for one person."
+
+[[route]]
+method = "POST"
+path = "/v1/key/close"
+what = "The open key forgotten."
+
+[[route]]
+method = "GET"
 path = "/v1/index"
 what = "Every row and group, with what the tree needs to draw itself."
 
@@ -2304,6 +2329,11 @@ default = "7777"
 name = "VLEO_DATA"
 what = "Where the local reference-data store lives."
 default = "$HOME/.vleo/data"
+
+[[env]]
+name = "VLEO_KEYS"
+what = "Where the keys made on this computer live, each locked by its person's passphrase, and the anchor this computer accepted from START HERE. Never on the drive."
+default = "$HOME/.vleo/keys"
 
 [[env]]
 name = "VLEO_DAEMON"

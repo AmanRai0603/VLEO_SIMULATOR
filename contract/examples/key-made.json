@@ -1,0 +1,8 @@
+{
+  "ok": true,
+  "person": "Test Contract",
+  "file": "/tmp/vleo-contract-4964/keys/test-contract.vkey",
+  "public_key": "74d82f82492176e4fbfc8788cfefe03838f0522bf2d054dc307e9af1ed5ddc6f",
+  "fingerprint": "0d49b3f9537eefe7f87e2917bdeeee9df4185cba4a00da92d23b9e4a1b1c081f",
+  "message": "Your key is made and locked. Give the public key to whoever registers you: the programme manager, or your subsystem engineer."
+}
