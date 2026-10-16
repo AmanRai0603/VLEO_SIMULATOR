@@ -4,8 +4,8 @@
 
   My work holds, for now, what F1 can know: the copy of the database, the key
   and who it says you are, what needs you (a node of yours unsigned, a group of
-  yours with nothing sealed, a file below you the chain refuses), and People,
-  for whoever holds a valve. The other four workspaces say which stage brings
+  yours with nothing sealed, a file below you the chain refuses, a request on a
+  node of a group of yours), and People, for whoever holds a valve. The other four workspaces say which stage brings
   them.
 
   The launch's word arrives in the address's fragment, is kept in this tab's

@@ -15,10 +15,17 @@
 //!   held, `save`), keeps every signature the drive's file holds and adds
 //!   only the person's own, is one revision with its block, is not older than
 //!   the drive's (and at the same revision differs from it only by that
-//!   signature), says a writer who may write it, and its own checks hold;
+//!   signature and the person's requests), says a writer who may write it,
+//!   and its own checks hold;
 //! - it carries a signature by the person that counts through the chain as
 //!   the **drive** holds it now, made with a key the drive's files still
 //!   count for them at the moment it goes back.
+//!
+//! Or it is the drive's file, at the same revision with the same signatures
+//! of its node, and only asks (F3-d): it adds requests on the node, each the
+//! person's own, open and signed by them as the drive counts it now. A node
+//! that cannot be signed yet still asks. In either case every request the
+//! drive's file holds, and every signature of one, is kept as it is.
 //!
 //! A group's file does not go back yet: what may change in it at its valve
 //! is not yet checked against the drive's file, so a change of its people
@@ -406,10 +413,17 @@ fn node_verdict(
             theirs.signer
         ));
     }
+    // The requests: every one the drive's file holds is kept as it is, with
+    // its signatures, and the only ones added are `me`'s own, asked and
+    // signed by them (F3-d).
+    let asked = requests_verdict(&f, &drive_file, &mine.uid, &mine.id, me, at, registry)?;
     // Everything else outside the node's rows is as the drive holds it.
     let unsigned = |x: &File| {
         let mut x = x.clone();
-        x.signatures.retain(|r| r.scope != mine.uid);
+        x.signatures.retain(|r| {
+            r.scope != mine.uid && !asked.iter().any(|u| r.scope == chain::request_scope(u))
+        });
+        x.requests.retain(|r| !asked.contains(&r.uid));
         x
     };
     let changed = save::changed_outside(&unsigned(&f), &unsigned(&drive_file), &mine.uid);
@@ -443,7 +457,20 @@ fn node_verdict(
         };
         if bare(&f) != bare(&drive_file) {
             return Err(format!(
-                "it is revision {revision}, as the drive's file is, and differs from it in more than {me}'s signature: a changed node goes back as a later revision"
+                "it is revision {revision}, as the drive's file is, and differs from it in more than {me}'s signature and requests: a changed node goes back as a later revision"
+            ));
+        }
+        // Only asked: the node is the drive's own, as its signatures are, so
+        // nothing of it is `me`'s to sign. The requests go back by themselves.
+        if !asked.is_empty() && now_rows == was_rows {
+            return Ok(format!(
+                "goes back: {} on the node {}, asked and signed by {me}",
+                if asked.len() == 1 {
+                    "a request".to_string()
+                } else {
+                    format!("{} requests", asked.len())
+                },
+                mine.id
             ));
         }
     }
@@ -462,10 +489,19 @@ fn node_verdict(
         &mine.uid,
         registry,
     ) {
+        // Requests go back by themselves only on the drive's own revision:
+        // on a later one they go back with it, signed.
+        let requests = if asked.is_empty() {
+            String::new()
+        } else {
+            format!(
+                " Its requests go back by themselves only while the node is the drive's revision {drive_revision}: sign revision {revision}, and they go back with it"
+            )
+        };
         return Err(
             match chain::check_node(&only_by(&f, &mine.uid, me), &mine.uid, registry) {
                 Err(e) => format!(
-                    "it carries no current signature by {me} that counts on the drive: {}",
+                    "it carries no current signature by {me} that counts on the drive: {}.{requests}",
                     e.message()
                 ),
                 Ok(()) => format!(
@@ -488,6 +524,124 @@ fn node_verdict(
         ));
     }
     Ok(format!("goes back: the node {}, signed by {me}", mine.id))
+}
+
+/// The requests `f` adds to `drive_file`'s on the node `uid` (`id`), when each
+/// is `me`'s own, open, unanswered and signed by them with a key that counts
+/// now; or why not. Every request the drive's file holds must be in `f` as it
+/// is, and every signature of one: a request is kept as it was asked.
+fn requests_verdict(
+    f: &File,
+    drive_file: &File,
+    uid: &str,
+    id: &str,
+    me: &str,
+    at: &str,
+    registry: &Registry,
+) -> Result<Vec<String>, String> {
+    // A uid is a request's whole name: two rows that share one are refused,
+    // never read as the first of them.
+    for (k, r) in f.requests.iter().enumerate() {
+        if f.requests[..k].iter().any(|o| o.uid == r.uid) {
+            return Err(format!(
+                "it holds more than one request {:?}: a request's uid is its own",
+                r.uid
+            ));
+        }
+    }
+    for r in &drive_file.requests {
+        if !f.requests.contains(r) {
+            return Err(format!(
+                "it changes or leaves out the request {} by {} that the drive's file holds: a request is kept as it was asked",
+                r.uid, r.raised_by
+            ));
+        }
+        let scope = chain::request_scope(&r.uid);
+        if let Some(gone) = drive_file
+            .signatures
+            .iter()
+            .find(|s| s.scope == scope && !f.signatures.contains(s))
+        {
+            return Err(format!(
+                "it leaves out {}'s signature of the request {}: a signature is never taken away",
+                gone.signer, r.uid
+            ));
+        }
+        if let Some(added) = f
+            .signatures
+            .iter()
+            .find(|s| s.scope == scope && !drive_file.signatures.contains(s))
+        {
+            return Err(format!(
+                "it brings a signature by {} of the request {}, which the drive's file holds already: a request is signed once, when it is asked",
+                added.signer, r.uid
+            ));
+        }
+    }
+    let mut asked = Vec::new();
+    for r in f
+        .requests
+        .iter()
+        .filter(|r| !drive_file.requests.iter().any(|d| d.uid == r.uid))
+    {
+        if r.scope != uid {
+            return Err(format!(
+                "it brings the request {}, on {:?}: a node's file asks of its own node",
+                r.uid, r.scope
+            ));
+        }
+        if r.raised_by != me {
+            return Err(format!(
+                "it brings the request {} by {}: only {me}'s own goes back with {me}'s work",
+                r.uid, r.raised_by
+            ));
+        }
+        if r.status != "open" || !r.answer.is_empty() {
+            return Err(format!(
+                "it brings the request {} already answered ({}): a request is answered by its group, not by whoever asked",
+                r.uid, r.status
+            ));
+        }
+        let scope = chain::request_scope(&r.uid);
+        if let Some(old) = drive_file.signatures.iter().find(|s| s.scope == scope) {
+            return Err(format!(
+                "it brings the request {}, and the drive's file holds a signature by {} of a request of that name it does not hold: a signature is never taken away",
+                r.uid, old.signer
+            ));
+        }
+        if let Some(theirs) = f
+            .signatures
+            .iter()
+            .find(|s| s.scope == scope && s.signer != me)
+        {
+            return Err(format!(
+                "it brings a signature by {} of {me}'s request {}: only {me}'s own goes back with {me}'s work",
+                theirs.signer, r.uid
+            ));
+        }
+        if let Err(now) = chain::check_request(
+            &only_counting_now(f, &scope, me, at, registry),
+            &r.uid,
+            registry,
+        ) {
+            return Err(
+                match chain::check_request(&only_by(f, &scope, me), &r.uid, registry) {
+                    Err(e) => format!(
+                        "its request {} on {id} does not count on the drive: {}",
+                        r.uid,
+                        e.message()
+                    ),
+                    Ok(()) => format!(
+                        "the key {me} signed the request {} with does not count for them at {at}, when it would go back: {}",
+                        r.uid,
+                        now.message()
+                    ),
+                },
+            );
+        }
+        asked.push(r.uid.clone());
+    }
+    Ok(asked)
 }
 
 /// Whether the changed file at `path` goes back as `me`'s work: why it does,

@@ -6,6 +6,8 @@
 //! assigned solar's `sw_activity_band`; Test Ivo (75), a node engineer of
 //! solar assigned nothing. The node is the one solar's 1.1 release holds.
 //! The copy is the drive's files, taken whole, with its record beside them.
+//!
+//! A request asked in a node's file (F3-d) goes back with it, or by itself.
 
 use std::path::{Path, PathBuf};
 use vleo_files::chain::{self, Registry, FILE};
@@ -15,7 +17,7 @@ use vleo_files::meta::Kind;
 use vleo_files::model::*;
 use vleo_files::people::{self, Change, Valve};
 use vleo_files::put_back::{digests, put_back, Chain, Report};
-use vleo_files::save::{save, sign_in_place, Saved};
+use vleo_files::save::{ask_in_place, save, sign_in_place, Asked, Saved};
 use vleo_files::sqlite;
 
 const APP: &str = "vleo 1.0.0 (test)";
@@ -1070,7 +1072,9 @@ fn at_the_drive_s_revision_nothing_but_the_person_s_signature_goes_back() {
                     answer: s(""),
                 })
             },
-            "differs from it in more than Test Nia's signature",
+            // Someone else's request: refused by name before the file is
+            // compared (F3-d).
+            "it brings the request r1 by Test Ola: only Test Nia's own",
         ),
         (
             "another writer",
@@ -1283,6 +1287,488 @@ fn only_the_program_s_files_at_the_top_are_left_out_and_one_being_written_is_sai
             .contains("is a file being put back on the drive"),
         "{}",
         e.message()
+    );
+    let _ = std::fs::remove_dir_all(drive.parent().unwrap());
+}
+
+const ASK: &str = "The band's floor reads F10.7 as daily: it needs the 81-day mean.";
+const HAND: &str = "sw_activity_band-r1";
+
+/// Nia asks, in her node's file in the copy, for a contract change: the
+/// request's uid.
+fn nia_asks(copy: &Path) -> String {
+    let g = opened(copy).groups.remove(0);
+    let seen = opened_digest(&copy.join(NODE));
+    match ask_in_place(
+        copy,
+        NODE,
+        &seen,
+        "Test Nia",
+        &key(74),
+        AT,
+        "contract",
+        ASK,
+        APP,
+        &g,
+    )
+    .unwrap()
+    {
+        Asked::Written { uid, .. } => uid,
+        other => panic!("not asked: {other:?}"),
+    }
+}
+
+#[test]
+fn a_request_goes_back_by_itself_before_its_node_is_signed() {
+    let (drive, copy) = world("asked");
+    let uid = nia_asks(&copy);
+    let r = pb(&copy, &drive, "Test Nia", None).unwrap();
+    assert_eq!(r.back(), [NODE], "{:?}", r.lines);
+    assert!(
+        line(&r, NODE)
+            .why
+            .contains("a request on the node sw_activity_band, asked and signed by Test Nia"),
+        "{:?}",
+        r.lines
+    );
+    let r = pb(&copy, &drive, "Test Nia", Some(vec![named(&copy, NODE)])).unwrap();
+    assert!(r.written);
+    // A copy taken again holds her request, and it counts there; the node is
+    // still unsigned.
+    let second = drive.parent().unwrap().join("second");
+    take_copy(&drive, &second);
+    let f = sqlite::read(&second.join(NODE)).unwrap();
+    let g = opened(&second).groups.remove(0);
+    chain::check_request(&f, &uid, &g).expect("the request counts on the drive");
+    assert!(
+        chain::check_node(&f, UID, &g).is_err(),
+        "the node is not signed"
+    );
+    let _ = std::fs::remove_dir_all(drive.parent().unwrap());
+}
+
+#[test]
+fn a_request_and_a_signature_go_back_together() {
+    let (drive, copy) = world("asked-and-signed");
+    let uid = nia_asks(&copy);
+    nia_signs(&copy);
+    let r = pb(&copy, &drive, "Test Nia", Some(vec![named(&copy, NODE)])).unwrap();
+    assert!(r.written, "{:?}", r.lines);
+    assert!(
+        line(&r, NODE).why.contains("signed by Test Nia"),
+        "{:?}",
+        r.lines
+    );
+    let f = sqlite::read(&drive.join(NODE)).unwrap();
+    let g = opened(&drive).groups.remove(0);
+    chain::check_request(&f, &uid, &g).unwrap();
+    chain::check_node(&f, UID, &g).unwrap();
+    let _ = std::fs::remove_dir_all(drive.parent().unwrap());
+}
+
+/// `f` with a request on `scope` by `who`, of `kind`, in state `status`,
+/// signed by `signer` when one is given: written by hand, named as asking
+/// names one (`HAND`).
+fn by_hand(
+    mut f: File,
+    scope: &str,
+    who: &str,
+    kind: &str,
+    status: &str,
+    signer: Option<(&str, &SigningKey)>,
+) -> File {
+    f.requests.push(Request {
+        uid: s(HAND),
+        kind: s(kind),
+        scope: s(scope),
+        raised_by: s(who),
+        at: s(AT),
+        body: s(ASK),
+        status: s(status),
+        answer: s(""),
+    });
+    if let Some((name, k)) = signer {
+        let row = chain::sign(&f, &chain::request_scope(HAND), name, k, AT, "ok", "").unwrap();
+        f.signatures.push(row);
+    }
+    f
+}
+
+#[test]
+fn a_request_goes_back_only_as_its_asker_s_own_signed_work() {
+    type Make = fn(File) -> File;
+    let nia = key(74);
+    let _ = &nia;
+    let cases: [(&str, Make, &str, &str); 5] = [
+        (
+            "unsigned",
+            |f| by_hand(f, UID, "Test Nia", "contract", "open", None),
+            "Test Nia",
+            "does not count on the drive: the request sw_activity_band-r1 by Test Nia has no signature",
+        ),
+        (
+            "of the code",
+            |f| {
+                by_hand(
+                    f,
+                    UID,
+                    "Test Nia",
+                    "code",
+                    "open",
+                    Some(("Test Nia", &key(74))),
+                )
+            },
+            "Test Nia",
+            "of \"code\"",
+        ),
+        (
+            "answered",
+            |f| {
+                by_hand(
+                    f,
+                    UID,
+                    "Test Nia",
+                    "contract",
+                    "accepted",
+                    Some(("Test Nia", &key(74))),
+                )
+            },
+            "Test Nia",
+            "already answered (accepted)",
+        ),
+        (
+            "of another node",
+            |f| {
+                by_hand(
+                    f,
+                    "ivo_uid",
+                    "Test Nia",
+                    "contract",
+                    "open",
+                    Some(("Test Nia", &key(74))),
+                )
+            },
+            "Test Nia",
+            "a node's file asks of its own node",
+        ),
+        (
+            "someone else's",
+            |f| {
+                by_hand(
+                    f,
+                    UID,
+                    "Test Nia",
+                    "contract",
+                    "open",
+                    Some(("Test Nia", &key(74))),
+                )
+            },
+            "Test Ivo",
+            "it brings the request sw_activity_band-r1 by Test Nia: only Test Ivo's own",
+        ),
+    ];
+    for (what, make, me, says) in cases {
+        let (drive, copy) = world(&format!("request-{}", what.replace(' ', "-")));
+        let f = make(sqlite::read(&copy.join(NODE)).unwrap());
+        sqlite::write(&f, &copy.join(NODE)).unwrap();
+        let r = pb(&copy, &drive, me, None).unwrap();
+        let l = line(&r, NODE);
+        assert!(!l.back && l.why.contains(says), "{what}: {l:?}");
+        let before = std::fs::read(drive.join(NODE)).unwrap();
+        assert!(
+            pb(&copy, &drive, me, Some(vec![named(&copy, NODE)])).is_err(),
+            "{what}"
+        );
+        assert_eq!(std::fs::read(drive.join(NODE)).unwrap(), before, "{what}");
+        let _ = std::fs::remove_dir_all(drive.parent().unwrap());
+    }
+    // A request signed by someone else for the asker: not theirs.
+    let (drive, copy) = world("request-signed-by-another");
+    let f = by_hand(
+        sqlite::read(&copy.join(NODE)).unwrap(),
+        UID,
+        "Test Nia",
+        "contract",
+        "open",
+        Some(("Test Ivo", &key(75))),
+    );
+    sqlite::write(&f, &copy.join(NODE)).unwrap();
+    let l = pb(&copy, &drive, "Test Nia", None).unwrap();
+    let l = line(&l, NODE);
+    assert!(
+        !l.back
+            && l.why
+                .contains("it brings a signature by Test Ivo of Test Nia's request"),
+        "{l:?}"
+    );
+    let _ = std::fs::remove_dir_all(drive.parent().unwrap());
+}
+
+#[test]
+fn a_request_whose_key_is_revoked_on_the_drive_since_does_not_go_back() {
+    let (drive, copy) = world("request-revoked");
+    nia_asks(&copy);
+    // On the drive, Ola revokes Nia's key from after she asked, before it
+    // goes back.
+    let o = opened(&drive);
+    let (parent, _) = chain::mounted_by("l3_solar", &[&o.programme, &o.systems]).unwrap();
+    let valve = Valve::Group {
+        mounted_by: parent,
+        programme: &o.programme,
+    };
+    let revoked = people::change(
+        &sqlite::read(&drive.join(SOLAR)).unwrap(),
+        &valve,
+        "Test Ola",
+        &key(73),
+        "2026-10-16T00:00:00Z",
+        &Change::Revoke {
+            person: s("Test Nia"),
+            public_key: key(74).public().to_hex(),
+            from: s("2026-10-16T00:00:00Z"),
+        },
+    )
+    .unwrap();
+    sqlite::write(&revoked, &drive.join(SOLAR)).unwrap();
+    let r = pb(&copy, &drive, "Test Nia", None).unwrap();
+    let l = line(&r, NODE);
+    assert!(
+        !l.back
+            && l.why
+                .contains("does not count for them at 2026-10-16T09:00:00Z"),
+        "{l:?}"
+    );
+    let _ = std::fs::remove_dir_all(drive.parent().unwrap());
+}
+
+#[test]
+fn a_request_on_the_drive_is_kept_as_it_was_asked() {
+    type Change = fn(&mut File, &str);
+    let cases: [(&str, Change, &str); 5] = [
+        (
+            "dropped",
+            |f, _| f.requests.clear(),
+            "changes or leaves out the request sw_activity_band-r1 by Test Nia",
+        ),
+        (
+            "reworded",
+            |f, _| f.requests[0].body.push('!'),
+            "changes or leaves out the request sw_activity_band-r1 by Test Nia",
+        ),
+        (
+            "answered by its asker",
+            |f, _| f.requests[0].status = s("accepted"),
+            "changes or leaves out the request sw_activity_band-r1 by Test Nia",
+        ),
+        (
+            "unsigned",
+            |f, uid| {
+                f.signatures
+                    .retain(|r| r.scope != chain::request_scope(uid))
+            },
+            "leaves out Test Nia's signature of the request sw_activity_band-r1",
+        ),
+        (
+            "signed again",
+            |f, uid| {
+                let row = chain::sign(
+                    f,
+                    &chain::request_scope(uid),
+                    "Test Nia",
+                    &key(74),
+                    NOW,
+                    "ok",
+                    "",
+                )
+                .unwrap();
+                f.signatures.push(row)
+            },
+            "is signed once, when it is asked",
+        ),
+    ];
+    for (what, change, says) in cases {
+        let (drive, copy) = world(&format!("kept-{}", what.replace(' ', "-")));
+        let uid = nia_asks(&copy);
+        assert!(
+            pb(&copy, &drive, "Test Nia", Some(vec![named(&copy, NODE)]))
+                .unwrap()
+                .written
+        );
+        // The drive holds her request; she signs her node, and then changes
+        // the request by hand.
+        nia_signs(&copy);
+        let mut f = sqlite::read(&copy.join(NODE)).unwrap();
+        change(&mut f, &uid);
+        sqlite::write(&f, &copy.join(NODE)).unwrap();
+        let r = pb(&copy, &drive, "Test Nia", None).unwrap();
+        let l = line(&r, NODE);
+        assert!(!l.back && l.why.contains(says), "{what}: {l:?}");
+        let _ = std::fs::remove_dir_all(drive.parent().unwrap());
+    }
+    // Saved as a later revision and signed, the request is kept, and it goes
+    // back.
+    let (drive, copy) = world("kept-revision");
+    let uid = nia_asks(&copy);
+    assert!(
+        pb(&copy, &drive, "Test Nia", Some(vec![named(&copy, NODE)]))
+            .unwrap()
+            .written
+    );
+    let g = opened(&copy).groups.remove(0);
+    let mut edit = sqlite::read(&copy.join(NODE)).unwrap();
+    edit.texts.push(Text {
+        scope: s(UID),
+        kind: s("note"),
+        body: s("A line of Test Nia's own."),
+    });
+    let seen = opened_digest(&copy.join(NODE));
+    save(&copy, NODE, &edit, &seen, "Test Nia", APP, &g).unwrap();
+    nia_signs(&copy);
+    let r = pb(&copy, &drive, "Test Nia", Some(vec![named(&copy, NODE)])).unwrap();
+    assert!(r.written, "{:?}", r.lines);
+    let f = sqlite::read(&drive.join(NODE)).unwrap();
+    chain::check_request(&f, &uid, &opened(&drive).groups[0]).unwrap();
+    assert_eq!(f.meta.get("revision").map(String::as_str), Some("2"));
+    let _ = std::fs::remove_dir_all(drive.parent().unwrap());
+}
+
+#[test]
+fn a_request_carries_nothing_back_but_itself() {
+    type Change = fn(&mut File);
+    let cases: [(&str, Change, &str); 3] = [
+        (
+            "a text of the node",
+            |f| {
+                f.texts.push(Text {
+                    scope: s(UID),
+                    kind: s("note"),
+                    body: s("A line nobody signed."),
+                })
+            },
+            "differs from it in more than Test Nia's signature and requests",
+        ),
+        (
+            "another writer",
+            |f| {
+                f.meta.insert(s("writer"), s("Test Ivo"));
+            },
+            "differs from it in more than Test Nia's signature and requests",
+        ),
+        (
+            "a request not named as asking names one",
+            |f| {
+                let old = chain::request_scope(&f.requests[0].uid);
+                f.requests[0].uid = s("r1");
+                for row in f.signatures.iter_mut().filter(|r| r.scope == old) {
+                    row.scope = chain::request_scope("r1");
+                }
+            },
+            "is not named for the node it is on",
+        ),
+    ];
+    for (what, change, says) in cases {
+        let (drive, copy) = world(&format!("only-{}", what.replace(' ', "-")));
+        nia_asks(&copy);
+        let mut f = sqlite::read(&copy.join(NODE)).unwrap();
+        change(&mut f);
+        sqlite::write(&f, &copy.join(NODE)).unwrap();
+        let r = pb(&copy, &drive, "Test Nia", None).unwrap();
+        let l = line(&r, NODE);
+        assert!(!l.back && l.why.contains(says), "{what}: {l:?}");
+        let _ = std::fs::remove_dir_all(drive.parent().unwrap());
+    }
+}
+
+#[test]
+fn a_drive_signature_of_a_request_it_does_not_hold_is_never_dropped() {
+    let (drive, copy) = world("orphan-signature");
+    // The drive's file holds Nia's signature of a request, and not the
+    // request: a copy taken now, in which she asks, would bring a request of
+    // that name and lose the signature there.
+    let g = opened(&drive).groups.remove(0);
+    let (asked, uid) =
+        chain::ask(&node(), UID, "contract", ASK, "Test Nia", &key(74), AT, &g).unwrap();
+    let mut on_drive = sqlite::read(&drive.join(NODE)).unwrap();
+    on_drive.signatures.extend(
+        asked
+            .signatures
+            .iter()
+            .filter(|r| r.scope == chain::request_scope(&uid))
+            .cloned(),
+    );
+    sqlite::write(&on_drive, &drive.join(NODE)).unwrap();
+    std::fs::remove_dir_all(&copy).unwrap();
+    take_copy(&drive, &copy);
+    assert_eq!(nia_asks(&copy), uid);
+    let r = pb(&copy, &drive, "Test Nia", None).unwrap();
+    let l = line(&r, NODE);
+    assert!(
+        !l.back
+            && l.why.contains(
+                "holds a signature by Test Nia of a request of that name it does not hold"
+            ),
+        "{l:?}"
+    );
+    let _ = std::fs::remove_dir_all(drive.parent().unwrap());
+}
+
+#[test]
+fn a_request_on_a_later_revision_goes_back_with_it_signed_and_says_so() {
+    let (drive, copy) = world("later-unsigned");
+    let g = opened(&copy).groups.remove(0);
+    let mut edit = sqlite::read(&copy.join(NODE)).unwrap();
+    edit.texts.push(Text {
+        scope: s(UID),
+        kind: s("note"),
+        body: s("A line of Test Nia's own."),
+    });
+    let seen = opened_digest(&copy.join(NODE));
+    save(&copy, NODE, &edit, &seen, "Test Nia", APP, &g).unwrap();
+    nia_asks(&copy);
+    let r = pb(&copy, &drive, "Test Nia", None).unwrap();
+    let l = line(&r, NODE);
+    assert!(
+        !l.back
+            && l.why.contains("carries no current signature by Test Nia")
+            && l.why.contains("Its requests go back by themselves only while the node is the drive's revision 1: sign revision 2"),
+        "{l:?}"
+    );
+    let _ = std::fs::remove_dir_all(drive.parent().unwrap());
+}
+
+#[test]
+fn a_request_s_uid_is_its_own_whatever_the_file_s_table_allows() {
+    let (drive, copy) = world("twice");
+    let uid = nia_asks(&copy);
+    // The file's table rebuilt by hand without its key, and a second row of
+    // her signed request's name saying something she never asked.
+    {
+        let db = rusqlite::Connection::open(copy.join(NODE)).unwrap();
+        db.execute_batch(&format!(
+            "CREATE TABLE r2 AS SELECT * FROM request;
+             DROP TABLE request;
+             ALTER TABLE r2 RENAME TO request;
+             INSERT INTO request SELECT uid, kind, scope, raised_by, at,
+               'Something else entirely.', status, answer FROM request WHERE uid = '{uid}';"
+        ))
+        .unwrap();
+    }
+    let f = sqlite::read(&copy.join(NODE)).unwrap();
+    assert_eq!(f.requests.len(), 2, "the reader takes both rows");
+    let g = opened(&copy).groups.remove(0);
+    let e = chain::check_request(&f, &uid, &g).unwrap_err();
+    assert!(
+        e.message().contains("more than one request"),
+        "{}",
+        e.message()
+    );
+    let r = pb(&copy, &drive, "Test Nia", None).unwrap();
+    let l = line(&r, NODE);
+    assert!(
+        !l.back
+            && l.why
+                .contains("it holds more than one request \"sw_activity_band-r1\""),
+        "{l:?}"
     );
     let _ = std::fs::remove_dir_all(drive.parent().unwrap());
 }

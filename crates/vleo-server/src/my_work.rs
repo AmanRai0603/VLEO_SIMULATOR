@@ -9,8 +9,13 @@
 //! - a file below them the chain refuses, with why (a group that does not open
 //!   stops its people's work as surely as a failing node).
 //!
-//! Nodes failing their checks, requests, issues, previews and decisions join
-//! as the stages that make them arrive (F3 to F7).
+//! - a request on a node of a group they own, or own as its owner's deputy,
+//!   for a contract change or a breakdown, signed by whoever may write the
+//!   node (F3-d); one that does not count, or says it is answered while no
+//!   answer is signed, is named as refused.
+//!
+//! Nodes failing their checks, issues, previews and decisions join as the
+//! stages that make them arrive (F3 to F7).
 
 use super::*;
 use std::collections::BTreeMap;
@@ -216,6 +221,79 @@ fn items(me: &chain::Me, c: &me::Chain, database: &Path) -> Vec<Item> {
                     "{group} has nothing sealed yet: its first release is yours to seal, once its nodes are signed"
                 ),
             });
+        }
+    }
+    // The requests on the nodes of a group this person owns, or owns as the
+    // owner's deputy (F3-d): every one, whatever it says of itself. One asked
+    // and signed by whoever may write its node, and open, is a request; any
+    // other is said as refused, with why, never left out: its status is not
+    // signed by anyone yet, so a request said to be answered is not taken as
+    // answered.
+    let mut answers: Vec<String> = me.owns.clone();
+    for r in std::iter::once(&c.programme).chain(c.systems.iter()) {
+        for m in &r.file.mounts {
+            let deputising = chain::owner_of(r, &m.group_id)
+                .is_some_and(|owner| me.deputy_for.iter().any(|d| d == owner));
+            if deputising && !answers.contains(&m.group_id) {
+                answers.push(m.group_id.clone());
+            }
+        }
+    }
+    for group in answers.iter().filter(|g| !refused.contains(&g.as_str())) {
+        let Some(reg) = group_of(group) else { continue };
+        let files = indexed
+            .entry(group.clone())
+            .or_insert_with(|| node_files(database, group));
+        for (block, held) in files.iter() {
+            let [f] = held.as_slice() else {
+                if held.iter().any(|f| !f.requests.is_empty()) {
+                    out.push(Item {
+                        kind: "request refused",
+                        group: group.clone(),
+                        node: block.clone(),
+                        says: format!(
+                            "{block} in {group} has more than one file, so the requests in them are not read: a node has one file. Keep one"
+                        ),
+                    });
+                }
+                continue;
+            };
+            for r in &f.requests {
+                let id = f
+                    .blocks
+                    .iter()
+                    .find(|b| b.uid == r.scope)
+                    .map_or_else(|| r.scope.clone(), |b| b.id.clone());
+                let asked = match r.kind.as_str() {
+                    "breakdown" => "a breakdown",
+                    "contract" => "a contract change",
+                    other => other,
+                };
+                let refusal = |why: String| Item {
+                    kind: "request refused",
+                    group: group.clone(),
+                    node: id.clone(),
+                    says: format!(
+                        "a request on {id} in {group} does not count, so it is not one: {why}"
+                    ),
+                };
+                out.push(match chain::check_request(f, &r.uid, reg) {
+                    Err(e) => refusal(e.message().to_string()),
+                    Ok(()) if r.status != "open" || !r.answer.is_empty() => refusal(format!(
+                        "{}'s request {} says it is {}, and no answer to it is signed yet",
+                        r.raised_by, r.uid, r.status
+                    )),
+                    Ok(()) => Item {
+                        kind: "request",
+                        group: group.clone(),
+                        node: id.clone(),
+                        says: format!(
+                            "{} asks for {asked} of {id}, on {}: {}",
+                            r.raised_by, r.at, r.body
+                        ),
+                    },
+                });
+            }
         }
     }
     out

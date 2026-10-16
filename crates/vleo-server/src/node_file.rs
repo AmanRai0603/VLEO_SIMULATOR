@@ -8,9 +8,13 @@
 //! second writer it answers both: the file as it now is, and the edit sent,
 //! so the screen shows them and the person keeps one. Saving needs the open
 //! key and the launch's word, but no signature; the drive is never written.
+//!
+//! `POST /v1/node/<id>/sign` signs it as the day's work (F3-b), and
+//! `POST /v1/node/<id>/ask` writes a request in it, for a contract change or
+//! a breakdown, signed by whoever asks (F3-d).
 
 use super::*;
-use vleo_files::save::{save, sign_in_place, Saved};
+use vleo_files::save::{ask_in_place, save, sign_in_place, Asked, Saved};
 use vleo_files::sqlite;
 
 /// A node's id as its file is named: letters, digits and `_`.
@@ -371,6 +375,95 @@ fn signed(id: &str, params: &str, ctx: &Ctx) -> Result<String, String> {
                 "message",
                 &format!(
                     "{id} changed in your copy since you opened it: {writer} saved revision {revision}. Nothing is signed: open it again, and sign what you see."
+                ),
+            );
+            j.str_field("writer", &writer);
+            j.num_field("revision", revision as f64);
+            j.str_field("opened", &digest);
+            j.str_field("theirs", &base64(&theirs));
+        }
+    }
+    j.raw("}");
+    Ok(j.0)
+}
+
+/// `POST /v1/node/<id>/ask`: a request for a contract change (W4) or a
+/// breakdown (W13), `kind` `contract` or `breakdown`, saying `body`, written
+/// in the node's file and signed by whoever's key is open, at this moment,
+/// when its file is still the one opened (docs/briefs/F3.md, F3-d). Refused
+/// unless the open key is the one its group file registers for them, and
+/// they are assigned the node or are the deputy of whoever is. The node is
+/// not touched, so it asks whether or not it can be signed yet. Written in
+/// the copy as a save is; the drive is never written.
+pub(super) fn ask_route(id: &str, params: &str, ctx: &Ctx) -> String {
+    match asked(id, params, ctx) {
+        Ok(j) => j,
+        Err(why) => me::refusal(&why),
+    }
+}
+
+fn asked(id: &str, params: &str, ctx: &Ctx) -> Result<String, String> {
+    me::carries_session(params)?;
+    if me::with_key(|_, _| ()).is_none() {
+        return Err("no key is open: open yours, and the request is signed with it".into());
+    }
+    let id = node_id(id)?;
+    let copy = the_copy(ctx)?;
+    let opened = param(params, "opened").map(decode).unwrap_or_default();
+    let kind = param(params, "kind").map(decode).unwrap_or_default();
+    let body = param(params, "body").map(decode).unwrap_or_default();
+    let path = find(&copy, id)?;
+    let group = group_of(&copy, &path)?;
+    let at = results::now_utc();
+    let done = me::with_key(|key, me| {
+        ask_in_place(
+            &copy, &path, &opened, &me.name, key, &at, &kind, &body, APP, &group,
+        )
+        .map(|s| (s, me.name.clone()))
+        .map_err(|e| e.message().to_string())
+    })
+    .ok_or("no key is open: open yours, and the request is signed with it")??;
+    let mut j = Json::new();
+    j.raw("{");
+    match done {
+        (Asked::Written { uid, digest }, by) => {
+            j.bool_field("ok", true);
+            j.str_field("node", id);
+            j.str_field("path", &path);
+            j.str_field("request", &uid);
+            j.str_field("kind", &kind);
+            j.str_field("opened", &digest);
+            j.str_field("asked_by", &by);
+            j.str_field("asked_at", &at);
+            j.str_field(
+                "message",
+                &format!(
+                    "{by} asks, in {id}'s file, for {}, signed, in your copy. It goes back to the drive when your work is put back: by itself while {id} is the drive's revision, or with a later revision once you sign it. {id}'s subsystem engineer finds it in My work when they copy the drive again.",
+                    if kind == "breakdown" {
+                        "a breakdown"
+                    } else {
+                        "a contract change"
+                    }
+                ),
+            );
+        }
+        (
+            Asked::SecondWriter {
+                bytes: theirs,
+                writer,
+                revision,
+                digest,
+                ..
+            },
+            _,
+        ) => {
+            j.bool_field("ok", false);
+            j.bool_field("conflict", true);
+            j.str_field("node", id);
+            j.str_field(
+                "message",
+                &format!(
+                    "{id} changed in your copy since you opened it: {writer} saved revision {revision}. Nothing is asked: open it again, and ask of what you see."
                 ),
             );
             j.str_field("writer", &writer);
