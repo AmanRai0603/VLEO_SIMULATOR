@@ -112,7 +112,8 @@ fn full_file() -> File {
         registered_at: s("2026-10-06"),
         registered_by: s("Aman Rai"),
         revoked_from: s(""),
-        proof: s(""),
+        // Kept as it is written, whatever it proves.
+        proof: s("5e1f00ab"),
     });
     f.assignments.push(Assignment {
         block_uid: s("b-1"),

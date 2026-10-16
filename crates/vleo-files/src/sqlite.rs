@@ -31,9 +31,10 @@ fn io(path: &Path, what: &str, e: impl std::fmt::Display) -> Error {
 /// Write `file` to `path`, whole: to a new file beside it first, then moved
 /// over the old one, so a failure part-way leaves the old file as it was.
 ///
-/// A file in an older format at `path` is kept beside it first
-/// ([`kept_copy`]), so saving an upgraded file never loses the one it was
-/// upgraded from. An older copy already there is never written over.
+/// A file in an older format at `path` (format 1 or 2) is kept beside it
+/// first ([`kept_copy`]), so saving an upgraded file never loses the one it
+/// was upgraded from, nor the signatures made over it. An older copy already
+/// there is never written over.
 pub fn write(file: &File, path: &Path) -> Result<(), Error> {
     write_whole(file, path, false).map(|_| ())
 }
@@ -107,9 +108,10 @@ fn keep_older(path: &Path) -> Result<(), Error> {
             Err(_) => return Ok(()),
         }
     };
-    // Only a file whose upgrade could lose something is kept: format 1.
-    // Format 2 becomes this one by a column added, empty.
-    if format > format_1::FORMAT {
+    // Every older format is kept: format 1, whose upgrade can lose something,
+    // and format 2, whose signatures over the whole file the new format no
+    // longer checks (`meta::FORMAT_2`).
+    if format >= FORMAT {
         return Ok(());
     }
     let copy = kept_copy(path, format);
@@ -157,13 +159,14 @@ fn insert(db: &Connection, t: &Table) -> rusqlite::Result<()> {
 }
 
 /// The file at `path`, read whole. Refused, by name, if it is not a VLEO file,
-/// if it is in a newer format than this library knows, or if it is in an
-/// older one ([`open`] upgrades that).
+/// if it is in a newer format than this library knows, or if it is format 1
+/// ([`open`] upgrades that). Format 2 is read as this format, each key's
+/// proof empty (`meta::FORMAT_2`).
 pub fn read(path: &Path) -> Result<File, Error> {
     let (format, tables) = raw(path)?;
-    // Format 2 differs only by the key's proof, which reading adds, empty
+    // Format 2 differs by the key's proof, which reading adds, empty
     // (`File::from_tables`): it is read as this format, never refused.
-    if format < FORMAT && format != FORMAT - 1 {
+    if format < FORMAT && format != crate::meta::FORMAT_2 {
         return Err(Error::new(
             ErrorKind::Format,
             format!(
@@ -199,11 +202,12 @@ pub struct Opened {
 
 /// The file at `path`, opened by the application: a file in this format as it
 /// is, one in an older format upgraded with nothing dropped
-/// (`crate::upgrade`). The file on disk is not touched; it becomes this format
-/// when it is saved, and [`write`] keeps the old one beside it.
+/// (`crate::upgrade`), and format 2 read as this one (`meta::FORMAT_2`). The
+/// file on disk is not touched; it becomes this format when it is saved, and
+/// [`write`] keeps the old one beside it.
 pub fn open(path: &Path, how: &Upgrade) -> Result<Opened, Error> {
     let (format, tables) = raw(path)?;
-    if format == FORMAT || format == FORMAT - 1 {
+    if format == FORMAT || format == crate::meta::FORMAT_2 {
         return Ok(Opened {
             file: File::from_tables(tables)?,
             format,

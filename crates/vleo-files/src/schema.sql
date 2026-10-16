@@ -18,7 +18,9 @@
 -- application_id is every VLEO file's, as format 1 had it; user_version is this
 -- format's number: a file newer than the reader is refused by name, and an
 -- older one is upgraded: format 1 with a copy kept of it as it was (phase C4),
--- format 2 read as this one with every key's proof empty, nothing lost (its
+-- format 2 read as this one with every key's proof empty, and a copy kept: the
+-- digest of a whole file covers its format and its columns, so its signatures
+-- over the whole file, and every key without a proof, stop counting (its
 -- requests are contracts or code; format 3 adds a breakdown).
 
 PRAGMA application_id = 1447838031;

@@ -737,10 +737,19 @@ pub(super) fn open(params: &str, ctx: &Ctx) -> String {
         }
         Err(e) => {
             let public = key.public().to_hex();
-            let known = std::iter::once(&c.programme)
+            let rows: Vec<&vleo_files::model::PersonKey> = std::iter::once(&c.programme)
                 .chain(c.systems.iter())
                 .chain(c.groups.iter())
-                .any(|r| r.file.keys.iter().any(|k| k.public_key == public));
+                .flat_map(|r| r.file.keys.iter().filter(|k| k.public_key == public))
+                .collect();
+            let known = !rows.is_empty();
+            // Listed, but never with the proof its holder made of it: from
+            // before the proof was kept, or written by hand. Registering it
+            // again does not mend it; a new key, replacing it, does.
+            let unproved = known
+                && rows
+                    .iter()
+                    .all(|k| !people::proof_holds(&k.person, &k.public_key, &k.proof));
             // The refused files that list this key: read without checking,
             // only to say which, never to count it. A file planted there can at
             // worst withhold the handover, never give one.
@@ -780,6 +789,14 @@ pub(super) fn open(params: &str, ctx: &Ctx) -> String {
                     "message",
                     &format!(
                         "Your key opened, but it opens nothing here: {}. Give whoever registers you its public key and proof, below, for the name {person}.",
+                        e.message()
+                    ),
+                );
+            } else if unproved {
+                j.str_field(
+                    "message",
+                    &format!(
+                        "Your key opened, but it opens nothing here: {}. It is registered without the proof that you offered it, and a key without one signs nothing. Make a new key, and give whoever registers you its public key and proof, for them to replace this one.{refused}",
                         e.message()
                     ),
                 );

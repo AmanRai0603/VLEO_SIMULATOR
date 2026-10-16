@@ -15,6 +15,13 @@ use crate::model::File;
 /// This format's number: `user_version` in every file.
 pub const FORMAT: i64 = 3;
 
+/// The format before a key carried its proof. It is read as this one, each
+/// key's proof empty, and kept beside the file when it is written again: the
+/// digest of the whole file covers its format and its columns, so every
+/// signature of a whole format-2 file stops counting once it is read, as every
+/// key in it without a proof does.
+pub const FORMAT_2: i64 = 2;
+
 /// The kinds of file, as section 10 lists them.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Kind {

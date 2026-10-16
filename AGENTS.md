@@ -103,6 +103,7 @@ takes the table for a list of what is checked now.
 |---|---|
 | one writer per file | a file is signed by anyone but its assigned writer |
 | a signature checks through the chain | it does not check against the key its parent file registered |
+| a key counts only with its holder's proof | the proof in its row does not check against the key and its person's name |
 | an expected value never comes from the code under test | rule 4 above |
 | no relation supplied by an assistant | rule 6 above |
 | every requirement says which way it binds | a requirement, or any row a closure reads as its bound, has no `sense` |

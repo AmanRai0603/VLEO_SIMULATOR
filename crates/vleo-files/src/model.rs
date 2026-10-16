@@ -372,9 +372,6 @@ fn table_of<R: Record>(rows: &[R]) -> Table {
     }
 }
 
-/// The format before a key carried its proof, read as this one.
-pub const FORMAT_2: &str = "2";
-
 fn rows_of<R: Record>(tables: &mut BTreeMap<String, Table>) -> Result<Vec<R>, Error> {
     let Some(t) = tables.remove(R::TABLE) else {
         return Ok(Vec::new());
@@ -463,9 +460,11 @@ impl File {
             }
         }
         // Format 2 is format 3 before a key carried its proof: read as format
-        // 3, each key's proof empty. Only a column is added, so nothing is
-        // lost, and the file says format 3 once it is written again.
-        if meta.get("format").map(String::as_str) == Some(FORMAT_2) {
+        // 3, each key's proof empty, and so signing nothing (`meta::FORMAT_2`
+        // says what else stops counting). No row is dropped.
+        if meta.get("format").map(String::as_str)
+            == Some(crate::meta::FORMAT_2.to_string().as_str())
+        {
             if let Some(t) = by_name.get_mut(PersonKey::TABLE) {
                 if t.columns
                     .iter()

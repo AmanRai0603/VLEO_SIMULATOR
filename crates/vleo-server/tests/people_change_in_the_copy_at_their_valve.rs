@@ -405,6 +405,11 @@ fn people_change_in_the_copy_at_their_valve() {
         listed.contains("\"name\":\"Test Tom\"") && listed.contains(&tom.public().fingerprint()),
         "{listed}"
     );
+    // Registered with the proof he made: it holds, and the listing says so.
+    assert!(
+        listed.contains("\"proof_holds\":true") && !listed.contains("\"proof_holds\":false"),
+        "{listed}"
+    );
     // Written in the copy, signed by Pat; the drive is not touched.
     let in_copy = sqlite::read(&copy.join("groups/programme/programme.vgroup")).unwrap();
     let pr = chain::open_programme(in_copy, &key(41).public().fingerprint()).unwrap();

@@ -165,7 +165,8 @@ pub const KINDS: &[Kind] = &[
     db("results", 3, "a results .vleo", Reader::Files, None, "saved results"),
     db("key", 3, "a key's .vleo", Reader::Files, None, "a person's key, locked by their passphrase"),
     // The one schema before a key carried its proof: format 2, read as format
-    // 3 with every key's proof empty. Nothing is lost, so no copy is kept.
+    // 3 with every key's proof empty, and kept beside it when it is written
+    // again: its signatures over the whole file, and its keys, stop counting.
     db("node", 2, "a node's .vleo", Reader::Files, Some(("node", 3)), "one node's file, before a key carried its proof"),
     db("group", 2, "a group's .vleo", Reader::Files, Some(("group", 3)), "a group's file, before a key carried its proof"),
     db("group release", 2, "a group's sealed .vleo", Reader::Files, Some(("group release", 3)), "a group's sealed release, before a key carried its proof"),

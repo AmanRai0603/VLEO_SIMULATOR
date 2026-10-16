@@ -158,6 +158,11 @@ fn drive(at: &Path, keys: &Path) {
 
     let mut solar = group("l3_solar");
     register(&mut solar, "Test Nia", "node engineer", &ne, "Test Ola");
+    // Test Uma's key row carries no proof: written by hand, or from before
+    // the proof was kept.
+    let uma = SigningKey::from_seed([25; 32]);
+    register(&mut solar, "Test Uma", "node engineer", &uma, "Test Ola");
+    solar.keys.last_mut().unwrap().proof = s("");
     solar.assignments.push(Assignment {
         block_uid: s("b-ap"),
         person: s("Test Nia"),
@@ -189,6 +194,13 @@ fn drive(at: &Path, keys: &Path) {
         "Test Nia",
         &ne,
         "the node engineer's passphrase",
+    );
+    write_key(
+        keys,
+        "test-uma.vkey",
+        "Test Uma",
+        &uma,
+        "the other engineer's passphrase",
     );
 }
 
@@ -343,6 +355,22 @@ fn a_key_opens_only_for_whom_it_is_registered() {
     assert_eq!(
         field(&ask(port, "GET", "/v1/me", ""), "open"),
         Some("false")
+    );
+
+    // A key registered without its proof opens nothing, and its holder is
+    // told to make a new one: registering it again would not mend it.
+    let uma = ask(
+        port,
+        "POST",
+        "/v1/key/open",
+        "file=test-uma.vkey&passphrase=the%20other%20engineer%27s%20passphrase",
+    );
+    assert!(
+        uma.contains("opens nothing here")
+            && uma.contains("registered without the proof")
+            && uma.contains("Make a new key")
+            && field(&uma, "proof").is_none(),
+        "{uma}"
     );
 
     // The node engineer: a wrong passphrase refused, the right one opened.

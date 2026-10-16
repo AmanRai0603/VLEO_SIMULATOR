@@ -55,38 +55,41 @@ fn want<'a>(reader: Reader, names: &'a [&'a str], called: &'a str) -> Want<'a> {
 
 #[test]
 fn today_s_design_is_never_taken_for_a_released_one() {
-    // A group's file of today's design, opened as a released design …
-    let e = identify(
-        APPLICATION_ID,
-        2,
-        Some("group"),
-        want(Reader::Files, &["released design"], "a released design"),
-    )
-    .unwrap_err();
-    assert!(matches!(e, Refusal::OtherKind { .. }));
-    assert!(e
-        .says("x")
-        .contains("a group file, not a released design — a group's file"));
-    // … and a released design opened as one group's file.
-    let e = identify(
-        APPLICATION_ID,
-        2,
-        Some("released design"),
-        want(Reader::Files, &["group"], "a group's file"),
-    )
-    .unwrap_err();
-    assert!(e
-        .says("x")
-        .contains("a released design file, not a group's file"));
-    // Each is taken as itself.
-    for name in ["group", "released design"] {
-        assert!(identify(
+    // In this format, and in the one before a key carried its proof.
+    for format in [3, 2] {
+        // A group's file of today's design, opened as a released design …
+        let e = identify(
             APPLICATION_ID,
-            2,
-            Some(name),
-            want(Reader::Files, &[name], "")
+            format,
+            Some("group"),
+            want(Reader::Files, &["released design"], "a released design"),
         )
-        .is_ok());
+        .unwrap_err();
+        assert!(matches!(e, Refusal::OtherKind { .. }), "{format}");
+        assert!(e
+            .says("x")
+            .contains("a group file, not a released design — a group's file"));
+        // … and a released design opened as one group's file.
+        let e = identify(
+            APPLICATION_ID,
+            format,
+            Some("released design"),
+            want(Reader::Files, &["group"], "a group's file"),
+        )
+        .unwrap_err();
+        assert!(e
+            .says("x")
+            .contains("a released design file, not a group's file"));
+        // Each is taken as itself.
+        for name in ["group", "released design"] {
+            assert!(identify(
+                APPLICATION_ID,
+                format,
+                Some(name),
+                want(Reader::Files, &[name], "")
+            )
+            .is_ok());
+        }
     }
 }
 

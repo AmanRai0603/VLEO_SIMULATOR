@@ -505,6 +505,38 @@ fn a_release_from_before_1_0_checks_by_its_anchor() {
     assert!(!chain::check_release(&solar, &anchored(wrong))
         .unwrap()
         .holds());
+    // A programme manager's deputy anchors it with their key only while that
+    // key counts: with its holder's proof, and not without it.
+    let pia = SigningKey::from_seed([91; 32]);
+    let by_the_deputy = |proof: bool| {
+        let mut f = programme_unsigned(&p);
+        register(
+            &mut f,
+            "Pia Deputy",
+            "programme manager",
+            "Pat Morgan",
+            &pia,
+            "Pat Morgan",
+        );
+        if !proof {
+            f.keys.last_mut().unwrap().proof = s("");
+        }
+        f.signatures
+            .push(upgrade::anchor(&solar, "Pia Deputy", &pia, "2026-12-01").unwrap());
+        let sig = chain::sign(&f, FILE, "Pat Morgan", &p.pm, "2026-12-01", "ok", "").unwrap();
+        f.signatures.push(sig);
+        chain::open_programme(f, &p.pm.public().fingerprint()).unwrap()
+    };
+    let r = chain::check_release(&solar, &by_the_deputy(true)).unwrap();
+    assert!(r.holds(), "{:?}", r.refused);
+    let r = chain::check_release(&solar, &by_the_deputy(false)).unwrap();
+    assert!(!r.holds());
+    assert!(
+        r.refused[0].contains("Pia Deputy's anchor does not count")
+            && r.refused[0].contains("carries no proof"),
+        "{:?}",
+        r.refused
+    );
     // An anchor slipped into the programme's file after it was signed breaks
     // the programme's file itself.
     let mut f = programme(&p);

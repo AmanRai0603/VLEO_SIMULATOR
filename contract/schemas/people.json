@@ -46,6 +46,10 @@
                 },
                 "revoked_from": {
                   "type": "string"
+                },
+                "proof_holds": {
+                  "type": "boolean",
+                  "description": "Whether the key's row carries the proof its holder made of it for this person: a key without one signs nothing."
                 }
               },
               "required": [
@@ -53,7 +57,8 @@
                 "fingerprint",
                 "registered_at",
                 "registered_by",
-                "revoked_from"
+                "revoked_from",
+                "proof_holds"
               ]
             }
           }

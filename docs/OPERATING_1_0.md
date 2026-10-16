@@ -583,6 +583,12 @@ Each person makes a key once, in the application, and keeps the private half as
   - A node signature checks against its group file, a group seal against the
     programme file, and a released design against the system engineer's key
     there.
+- **A key is registered with its holder's proof.** The person hands over their
+  public key with a proof made with it, for their name. The file keeps the
+  proof in the key's row, and a key whose row carries none, or one that does
+  not check, signs nothing. A file from before the proof was kept is read with
+  every proof empty, and its own signatures stop counting: each person makes a
+  new key, which replaces the old one, and the file is signed afresh.
 - **A lost key** is replaced the way it was registered. Old signatures still
   check against the old public key, which stays in the file's history.
 - **A key someone else may have** is revoked from a date by whoever registered
