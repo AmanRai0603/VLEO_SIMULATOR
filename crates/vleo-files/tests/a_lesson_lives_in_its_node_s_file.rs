@@ -147,3 +147,71 @@ fn a_lesson_is_signed_with_its_node() {
     assert_ne!(d(&files), d(&changed), "a changed lesson is a changed node");
     assert_ne!(d(&files), d(&none), "and so is one taken out");
 }
+
+#[test]
+fn a_lesson_belongs_to_a_row_in_its_node_file() {
+    let placed = |f: &File| -> Vec<String> {
+        checks::check_release(f)
+            .errors()
+            .filter(|e| e.what.contains("a lesson belongs to a row"))
+            .map(|e| e.what.clone())
+            .collect()
+    };
+    let (files, uid) = with_lesson(Some(&example()));
+    assert_eq!(placed(node_file(&files)), Vec::<String>::new());
+    // On the file itself, or on a block the file does not hold: refused.
+    for scope in ["file", "no_such_block"] {
+        let mut f = node_file(&files).clone();
+        for t in f.texts.iter_mut().filter(|t| t.kind == LESSON) {
+            t.scope = scope.to_string();
+        }
+        assert_eq!(placed(&f).len(), 1, "{scope}");
+    }
+    // On a group file's heading: a group is not a row.
+    let mut g = files
+        .iter()
+        .find(|(_, f)| f.kind().ok() == Some(vleo_files::meta::Kind::Group) && !f.blocks.is_empty())
+        .unwrap()
+        .1
+        .clone();
+    let heading = g.blocks[0].uid.clone();
+    g.texts.push(Text {
+        scope: heading,
+        kind: LESSON.to_string(),
+        body: example(),
+    });
+    assert_eq!(placed(&g).len(), 1);
+    assert!(!uid.is_empty());
+}
+
+#[test]
+fn the_design_refuses_a_lesson_naming_a_row_that_is_not_there() {
+    let (files, _) = with_lesson(Some(
+        &example()
+            .replacen(
+                "inputs = [\"orbit_altitude\"]",
+                "inputs = [\"no_such_row\"]",
+                1,
+            )
+            .replacen("sweep = \"orbit_altitude\"", "sweep = \"no_such_row\"", 1),
+    ));
+    // The node's own checks cannot see the design's rows, and pass it ...
+    let found: Vec<String> = checks::check_release(node_file(&files))
+        .errors()
+        .filter(|e| e.what.contains("lesson"))
+        .map(|e| e.what.clone())
+        .collect();
+    assert_eq!(found, Vec::<String>::new());
+    // ... and the design, read from the files, refuses it by name.
+    let tree =
+        vleo_sheet::load::load_all_from(&Served::new(&root(), &files).unwrap(), &root()).unwrap();
+    let l = vleo_sheet::lesson::of(&tree.sheets["orbit_velocity"])
+        .unwrap()
+        .unwrap();
+    let bad = vleo_sheet::lesson::problems(&l, &tree);
+    assert!(
+        bad.iter()
+            .any(|p| p.contains("input 'no_such_row' is not a row")),
+        "{bad:?}"
+    );
+}

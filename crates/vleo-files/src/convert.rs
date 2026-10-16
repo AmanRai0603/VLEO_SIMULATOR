@@ -20,7 +20,7 @@
 //! | `[value]` | the output's value |
 //! | `[method]`, `[explain]` | `text`: `method`, `explain.simply`, `explain.breaks`, `explain.wrong` |
 //! | `fixtures.toml` | `test_case`s, each with its provenance |
-//! | `lesson.toml` | `text`: `lesson`, as it was written |
+//! | `lesson.toml` | `text`: `lesson`, as it was written (none was converted; one written since lives there) |
 //! | `parity.csv` | a `tbl` |
 //! | a group's crossing row | the `mount` its group hangs from, in the branch above |
 //! | `[[iterate]]` | a `loop`, on the smallest block that holds every row it runs through |

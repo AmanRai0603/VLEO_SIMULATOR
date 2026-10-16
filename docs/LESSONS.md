@@ -74,7 +74,9 @@ none.
    checks it, against the design the program reads, and refused with every
    reason; otherwise it is saved as the node's next revision, like any save.
    It lives there as a `text` of kind `lesson` on the node's block, word for
-   word as it was written (docs/briefs/F3.md, F3-e).
+   word as it was written (docs/briefs/F3.md, F3-e). No screen sends it yet:
+   the node page's own *write a lesson* is the Node workspace's. A lesson is
+   taken out by saving the node's file without it; the route only writes one.
 4. **Signed with the node, and into the design with its group's release.**
    The node's signature covers its texts, so the lesson is signed with the
    node as the day's work, and a lesson changed after is not signed. The
@@ -82,7 +84,14 @@ none.
    names. Read from the design's files, the lesson is served to the loader as
    the `lesson.toml` its folder held (`vleo_files::convert::Served`), so the
    row's page, the gate and the form read it as they read one in a checkout.
-   Nothing in this repository writes one into `design/`.
+   Nothing in this repository writes one into `design/`. A plain save and a
+   signing hold it to the design's rows too, as the lesson route does.
+5. **Not yet into today's design.** Today's design takes from a group's
+   release only its rows' sheets (a release from before 1.0), so a lesson in
+   a release does not reach it yet: that is F5's intake. A lesson that does
+   not pass its check refuses its node, and so its release, which then keeps
+   its group's last good one: a lesson never changes an answer, but a broken
+   one can hold a release back.
 
 The lesson travels in the form escaped, so nothing it says can end or open an
 element of the page.
@@ -100,9 +109,9 @@ or a saved result's key.
   bundle refuses there by name.
 - **No row has a lesson yet.** The example is an example: its text is taken
   from what `orbit_velocity`'s own sheet says, and its `by` names nobody. A
-  row's file can hold one now, and none does. And that row does not answer today (its relation
-  is stated, not derived), so a widget on it shows the engine's refusal — which
-  is the right thing for it to show.
+  row's file can hold one now, and none does. And that row does not answer
+  today (its relation is stated, not derived), so a widget on it shows the
+  engine's refusal — which is the right thing for it to show.
 - **A group cannot carry a lesson.** A lesson belongs to a row, and a group —
   a subsystem such as `l3_prop` — is not one. A lesson about a
   whole subsystem hangs on its interface row: the first one planned, on the

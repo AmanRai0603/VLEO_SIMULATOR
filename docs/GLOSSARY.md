@@ -109,9 +109,9 @@ the row's node file, as a `text` of kind `lesson`, and signed with the node.
 
 **Lesson form** — a row's lesson as one HTML file the node engineer who knows the
 row fills anywhere, checked as they type by the gate's own lesson check, and
-sent back; `xtask lesson check` checks a filled one, the node engineer saves it in
-the node's file (`POST /v1/node/<id>/lesson`), and it goes into the design with
-its group's release. → `docs/LESSONS.md`
+sent back; `xtask lesson check` checks a filled one, and the node engineer saves
+it in the node's file (`POST /v1/node/<id>/lesson`), where it is signed with the
+node. → `docs/LESSONS.md`
 
 **Readers' folder** — every row's page and every lesson as plain pages, built
 by `xtask readers` for a shared drive or an internal web server; the engine

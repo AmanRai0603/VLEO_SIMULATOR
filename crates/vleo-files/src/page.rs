@@ -316,6 +316,8 @@ pub const WASM_SOURCES: &[&str] = &[
     "crates/vleo-files-wasm/Cargo.toml",
     "crates/vleo-files-wasm/Cargo.lock",
     "crates/vleo-files-wasm/src",
+    // The lesson check a node's own checks run (`checks::lesson`).
+    "crates/vleo-sheet/src/lesson.rs",
 ];
 
 /// The fingerprint of [`WASM_SOURCES`] as they are under `root`: every file,

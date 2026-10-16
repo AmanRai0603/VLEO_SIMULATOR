@@ -472,14 +472,14 @@ each in their own file. A group's work reaches this tool as its sealed \
 release, on the shared drive. The browser never writes a node.
 
 **A lesson is the one thing still filled here**: a row's lesson form, filled \
-anywhere and checked as you type, sent back to the developer."""
+anywhere and checked as you type, saved by the node engineer in the row's node file."""
 
 [[layer.section.step]]
 say = "Where the inputs and the results come in."
 ui = "Forms"
 
 [[layer.section.step]]
-say = "A lesson is written as a form: filled anywhere, checked as you type, sent back."
+say = "A lesson is written as a form: filled anywhere, checked as you type, then saved in the row's node file."
 ui = "write a lesson — its form"
 
 
@@ -1087,7 +1087,7 @@ id = "term-lesson"
 title = "A lesson's form, and its check"
 who = "developer"
 kind = "how-to"
-answer = "A lesson arrives as a form: the node engineer who knows the row fills its lesson form anywhere, checked as they type by the gate's own check, and sends it back; lesson check checks it again and says every reason it would be refused."
+answer = "A lesson arrives as a form: the node engineer who knows the row fills its lesson form anywhere, checked as they type by the gate's own check, and saves it in the row's node file; lesson check checks it again and says every reason it would be refused."
 body = """
 The node engineer writes the lesson; nobody writes HTML for it and nobody writes a \
 formula for the page to compute. `docs/LESSONS.md` is the file, table by \
@@ -1098,9 +1098,9 @@ form* on the row's page. It carries the method checker the pages carry, which \
 holds the lesson check the gate runs, and a table of the tree's rows, so a \
 widget naming a row that is not there is refused while the node engineer types. \
 **lesson check** says what a filled one holds and every reason it would be \
-refused. Nothing here writes it into the design: the design is its group's, \
-and a lesson goes in with the group's release. A lesson never changes an \
-answer."""
+refused. The node engineer saves it in the row's node file \
+(`POST /v1/node/<id>/lesson`), where it is signed with the node; nothing here \
+writes it into `design/`. A lesson never changes an answer."""
 
 [[layer.section.step]]
 say = "A row's lesson form, to send to whoever knows the row."
@@ -2228,7 +2228,7 @@ what = "Remove the saved case: every input back to its default."
 [[route]]
 method = "GET"
 path = "/v1/lesson-form/<id>"
-what = "A row's lesson form, as one self-contained HTML file to fill anywhere, checked as it is typed by the gate's own lesson check. Writes nothing — a filled one is checked with `xtask lesson check`, and goes into the design with its group's release."
+what = "A row's lesson form, as one self-contained HTML file to fill anywhere, checked as it is typed by the gate's own lesson check. Writes nothing — a filled one is checked with `xtask lesson check`, and saved in the row's node file with `POST /v1/node/<id>/lesson`."
 
 
 [[route]]

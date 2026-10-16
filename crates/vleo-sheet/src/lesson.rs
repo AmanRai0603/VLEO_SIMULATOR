@@ -1,6 +1,7 @@
 //! A lesson: a row's `lesson.toml`, written by the expert who knows the row,
-//! and drawn by the page from the component library. The design's files hold
-//! no lesson yet (docs/LESSONS.md), so the loader finds none for any row.
+//! and drawn by the page from the component library. In the design's files it
+//! is its node file's `lesson` text, served as the folder held it
+//! (docs/LESSONS.md); no row has one yet, so the loader finds none.
 //!
 //! NOBODY WRITES HTML FOR A PAGE (docs/ARCHITECTURE.html, section 5). A lesson
 //! is content — stations of text with a claim tag each, equations with their

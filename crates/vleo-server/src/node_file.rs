@@ -224,6 +224,7 @@ fn saved(id: &str, params: &str, ctx: &Ctx) -> Result<String, String> {
         .ok_or("the edit is not a node file, as base64: nothing is saved")?;
     let path = find(&copy, id)?;
     let edit = held(&bytes)?;
+    lesson_holds(ctx, id, &edit).map_err(|why| format!("{why}. Nothing is saved."))?;
     let group = group_of(&copy, &path)?;
     let group = &group;
     let done = me::with_key(|key, me| {
@@ -313,6 +314,8 @@ fn signed(id: &str, params: &str, ctx: &Ctx) -> Result<String, String> {
     let copy = the_copy(ctx)?;
     let opened = param(params, "opened").map(decode).unwrap_or_default();
     let path = find(&copy, id)?;
+    let (_, now) = read_once(&copy, &path)?;
+    lesson_holds(ctx, id, &now).map_err(|why| format!("{why}. Nothing is signed."))?;
     let group = group_of(&copy, &path)?;
     let at = results::now_utc();
     // A group file changed on the drive since the copy may revoke what the
@@ -477,6 +480,39 @@ fn asked(id: &str, params: &str, ctx: &Ctx) -> Result<String, String> {
     Ok(j.0)
 }
 
+/// The row's lesson in `f`, if it holds one, held to all the gate checks of
+/// it against the design this program reads: what it names there too, which
+/// a node's own checks cannot see (`checks::lesson`). So a lesson naming a
+/// row that is not there is never saved or signed, by whichever route.
+fn lesson_holds(ctx: &Ctx, id: &str, f: &vleo_files::model::File) -> Result<(), String> {
+    let uid = f.meta.get("block_uid").map_or("", String::as_str);
+    let Some(t) = f
+        .texts
+        .iter()
+        .find(|t| t.scope == uid && t.kind == vleo_files::convert::LESSON)
+    else {
+        return Ok(());
+    };
+    let lesson = vleo_sheet::lesson::read(&t.body, id).map_err(|e| {
+        format!(
+            "{id}'s lesson does not read: {}",
+            e.message().trim_end().trim_end_matches('.')
+        )
+    })?;
+    let tree = ctx.load().map_err(|e| {
+        format!("the design does not load, so {id}'s lesson cannot be checked against it: {e}")
+    })?;
+    let bad = vleo_sheet::lesson::problems(&lesson, &tree);
+    if bad.is_empty() {
+        Ok(())
+    } else {
+        Err(format!(
+            "{id}'s lesson does not pass its check: {}",
+            bad.join("; ")
+        ))
+    }
+}
+
 /// `POST /v1/node/<id>/lesson`: the row's lesson (docs/LESSONS.md), from a
 /// filled lesson form or a bare `lesson.toml` (`lesson`), saved in the node's
 /// file in the copy as its next revision, when its file is still the one
@@ -502,24 +538,12 @@ fn lesson_saved(id: &str, params: &str, ctx: &Ctx) -> Result<String, String> {
     let opened = param(params, "opened").map(decode).unwrap_or_default();
     let sent = param(params, "lesson").map(decode).unwrap_or_default();
     // A form made for another row is refused by the reader, by name.
-    let (_, text) = vleo_sheet::lesson_form::from_file(&sent, Some(id))
-        .map_err(|e| format!("{}. Nothing is saved.", e.message().trim_end_matches('.')))?;
-    let lesson = vleo_sheet::lesson::read(&text, id).map_err(|e| {
+    let (_, text) = vleo_sheet::lesson_form::from_file(&sent, Some(id)).map_err(|e| {
         format!(
-            "{id}'s lesson does not read: {}. Nothing is saved.",
-            e.message()
+            "{}. Nothing is saved.",
+            e.message().trim_end().trim_end_matches('.')
         )
     })?;
-    let tree = ctx.load().map_err(|e| {
-        format!("the design does not load, so the lesson cannot be checked against it: {e}")
-    })?;
-    let bad = vleo_sheet::lesson::problems(&lesson, &tree);
-    if !bad.is_empty() {
-        return Err(format!(
-            "{id}'s lesson does not pass its check, and nothing is saved: {}",
-            bad.join("; ")
-        ));
-    }
     let path = find(&copy, id)?;
     let (_, now) = read_once(&copy, &path)?;
     let uid = now
@@ -530,11 +554,15 @@ fn lesson_saved(id: &str, params: &str, ctx: &Ctx) -> Result<String, String> {
     let mut edit = now.clone();
     edit.texts
         .retain(|t| !(t.scope == uid && t.kind == vleo_files::convert::LESSON));
+    let title = vleo_sheet::lesson::read(&text, id)
+        .map(|l| l.title)
+        .unwrap_or_default();
     edit.texts.push(vleo_files::model::Text {
         scope: uid,
         kind: vleo_files::convert::LESSON.to_string(),
         body: text,
     });
+    lesson_holds(ctx, id, &edit).map_err(|why| format!("{why}. Nothing is saved."))?;
     let group = group_of(&copy, &path)?;
     let group = &group;
     let done = me::with_key(|key, me| {
@@ -562,7 +590,7 @@ fn lesson_saved(id: &str, params: &str, ctx: &Ctx) -> Result<String, String> {
             j.str_field("path", &path);
             j.num_field("revision", revision as f64);
             j.str_field("opened", &digest);
-            j.str_field("title", &lesson.title);
+            j.str_field("title", &title);
             findings_field(&mut j, &findings);
             j.str_field(
                 "message",

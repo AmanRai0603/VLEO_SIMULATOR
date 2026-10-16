@@ -143,6 +143,7 @@ pub fn is_assistant(who: &str) -> bool {
 pub fn check_release(f: &File) -> Findings {
     let mut out = Findings::default();
     blocks(f, &mut out);
+    lessons_placed(f, &mut out);
     signers(f, &mut out);
     requirements(f, &mut out);
     derisking(f, &mut out);
@@ -190,6 +191,7 @@ pub fn check_node(f: &File) -> Findings {
         }
     }
     blocks(f, &mut out);
+    lessons_placed(f, &mut out);
     cases(f, &mut out);
     signers(f, &mut out);
     out
@@ -650,6 +652,31 @@ fn method(f: &File, b: &Block, ins: &[&Port], out_port: Option<&Port>, out: &mut
             out.error(
                 &b.id,
                 format!("its method does not reproduce «{}»: {}", c.label, v.text(c)),
+            );
+        }
+    }
+}
+
+/// A lesson belongs to a row (docs/LESSONS.md): in a node file, on its own
+/// block; in a release, on one of its nodes. One on a group file, on the file
+/// itself or on a block the file does not hold is refused by name, never
+/// passed and left unread.
+fn lessons_placed(f: &File, out: &mut Findings) {
+    let kind = f.kind().ok();
+    for t in f.texts.iter().filter(|t| t.kind == crate::convert::LESSON) {
+        let block = f.blocks.iter().find(|b| b.uid == t.scope);
+        let placed = match (kind, block) {
+            (Some(crate::meta::Kind::Node), Some(b)) => f.meta.get("block_uid") == Some(&b.uid),
+            (Some(crate::meta::Kind::GroupRelease), Some(b)) => b.behaviour != "children",
+            _ => false,
+        };
+        if !placed {
+            out.error(
+                &place_of(f, &t.scope),
+                format!(
+                    "holds a lesson on {:?}: a lesson belongs to a row, in its node file",
+                    t.scope
+                ),
             );
         }
     }

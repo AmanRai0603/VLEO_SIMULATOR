@@ -85,6 +85,39 @@ fn field<'a>(json: &'a str, key: &str) -> &'a str {
     &json[at..at + json[at..].find('"').unwrap()]
 }
 
+/// Standard base64, as the program reads a file sent to it.
+fn b64(bytes: &[u8]) -> String {
+    const A: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+    let mut out = String::new();
+    for c in bytes.chunks(3) {
+        let n = (c[0] as u32) << 16
+            | (*c.get(1).unwrap_or(&0) as u32) << 8
+            | *c.get(2).unwrap_or(&0) as u32;
+        for k in 0..4 {
+            if k <= c.len() {
+                out.push(A[(n >> (18 - 6 * k) & 63) as usize] as char);
+            } else {
+                out.push('=');
+            }
+        }
+    }
+    out
+}
+
+/// `lesson` as a filled form carries it: escaped, in the form's textarea.
+fn filled(form: &str, lesson: &str) -> String {
+    let open = "id=\"vleo-lesson\">";
+    let a = form.find(open).unwrap() + open.len();
+    let b = form[a..].find("</textarea>").unwrap() + a;
+    let escaped = lesson
+        .replace('&', "&amp;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;")
+        .replace('"', "&quot;")
+        .replace('\'', "&#39;");
+    format!("{}{escaped}{}", &form[..a], &form[b..])
+}
+
 fn register(f: &mut File, name: &str, role: &str, k: &SigningKey, by: &str) {
     f.people.push(Person {
         name: s(name),
@@ -414,9 +447,47 @@ fn a_row_s_lesson_is_saved_in_its_node_file_and_signed_with_it() {
     );
     assert_eq!(std::fs::read(copy.join(NODE)).unwrap(), before);
 
-    // Nia's lesson is saved as the node's next revision.
+    // Nor is one that names a row that is not there saved by the plain save,
+    // or signed, written in the file by hand.
+    let mut bad = sqlite::read(&copy.join(NODE)).unwrap();
+    bad.texts.push(Text {
+        scope: s(UID),
+        kind: s(vleo_files::convert::LESSON),
+        body: example().replacen(
+            "inputs = [\"orbit_altitude\"]",
+            "inputs = [\"no_such_row\"]",
+            1,
+        ),
+    });
+    let at = std::env::temp_dir().join(format!("vleo-lesson-bad-{}.vnode", std::process::id()));
+    sqlite::write(&bad, &at).unwrap();
+    let r = post(
+        port,
+        "/v1/node/sw_activity_band/save",
+        &[
+            ("opened", &opened(port)),
+            ("file", &b64(&std::fs::read(&at).unwrap())),
+        ],
+    );
+    assert!(
+        r.contains("input 'no_such_row' is not a row") && r.contains("Nothing is saved."),
+        "{r}"
+    );
+    assert_eq!(std::fs::read(copy.join(NODE)).unwrap(), before);
+    sqlite::write(&bad, &copy.join(NODE)).unwrap();
+    let r = post(port, SIGN, &[("opened", &opened(port))]);
+    assert!(
+        r.contains("input 'no_such_row' is not a row") && r.contains("Nothing is signed."),
+        "{r}"
+    );
+    std::fs::write(copy.join(NODE), &before).unwrap();
+    let _ = std::fs::remove_file(&at);
+
+    // Nia's lesson, sent as a filled form, is saved word for word as the
+    // node's next revision.
+    let form = ask(port, "GET", "/v1/lesson-form/sw_activity_band", &[], false);
     let first = opened(port);
-    let r = saving(port, &first, &example());
+    let r = saving(port, &first, &filled(&form, &example()));
     assert!(r.contains("\"ok\":true"), "{r}");
     assert!(r.contains("\"revision\":2"), "{r}");
     assert_eq!(field(&r, "title"), "How fast a very low orbit goes");
@@ -459,7 +530,15 @@ fn a_row_s_lesson_is_saved_in_its_node_file_and_signed_with_it() {
         t.body.push('\n');
     }
     assert!(chain::check_node(&edited, UID, &solar(&copy)).is_err());
+    post(port, "/v1/key/close", &[]);
 
+    // Dee, her deputy, saves one for her.
+    assert!(open_key(port, "test-dee.vkey").contains("\"open\":true"));
+    let r = saving(port, &opened(port), &example());
+    assert!(
+        r.contains("\"ok\":true") && r.contains("written by Test Dee"),
+        "{r}"
+    );
     post(port, "/v1/key/close", &[]);
     let _ = std::fs::remove_dir_all(&scratch);
 }
