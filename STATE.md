@@ -74,12 +74,22 @@ Handed over Friday 16 October (S1 and S2: F1 to F3-e, and the key's proof). Noth
     - It is signed with the node, and checked with it: the node's own checks run the gate's lesson check but for the rows it names, which the lesson route, the plain save and the signing check against the design.
     - Route: `POST /v1/node/<id>/lesson`, a filled form or a bare `lesson.toml`, saved as the node's next revision.
 
-    The Opus review found nothing blocking and 7 points to fix; all fixed in 60af1199, each with a test shown red. `vleo-sheet`'s `lesson.rs` is now one of the page library's sources, so both page libraries and the group pages were rebuilt. CI was green on the first commit; the fixes' run is pending.
+    The Opus review found nothing blocking and 7 points to fix; all fixed in 60af1199, each with a test shown red. `vleo-sheet`'s `lesson.rs` is now one of the page library's sources, so both page libraries and the group pages were rebuilt. CI is green.
+  - **184 F3-f the removals, part one.** Stacked on 183.
+    - The single-node form is gone: its pages, the half of `vleo_sheet::template` that wrote and read it, and the new-node and known-value paths only its reader filled. The plan rules today's design holds a release's nodes to stay, with their tests rewritten against `Form` values (`a_node_s_change_is_held_to_the_plan_rules.rs`).
+    - How an assistant helped is now checked by the plan rules, not the form's reader: `none`, `wording`, `relation` or `transcribed`, and an empty answer is refused.
+    - **The node view stays** until `/app`'s Node workspace replaces it (PLAN_F, decision 1).
+
+    The Opus review found nothing blocking and 6 points to fix, with 3 nits; all fixed in df052a0a but the role guides' loop picture (phase G), each new test shown red. CI was green on the first commit; the fixes' run is pending.
 - **What 171 decides, which B's PRs must follow:**
   - **Ownership follows the mount.** Only the programme's file (mounting `systems`) and the systems' file (mounting each `l3_*`) mount anything.
   - **A group file registers only node engineers.** It holds nobody the programme's file registers, and no key it registers. `open_group_in` refuses anything else, by name.
   - **The test drive (165) must change.** It mounts the l3 groups in the programme's file, so they read as mounted twice. It should assign the mounting blocks in the systems' file instead, and register only node engineers in group files.
   - **The anchor** is accepted once per drive, with `accept_anchor` on `POST /v1/key/open`. A scenario that opens a key passes it once, and since 174 also `session`, read from `<keys>/open.html`. A face must make the person compare the fingerprint, never fill it in from the answer.
+- **What 184 decides:**
+  - **A change says how an assistant helped, or nothing is planned.** Anything that builds a `template::Form` (F4's breakdown, F5's intake) sets `ai` from the node's declaration, as `intake::declared_help` does.
+  - **A transcription taken from a release loses its record when its method changes**: the plan names the release's author and clears what it was copied from. Older than 184; put to Aman on 184, for a pull request of its own.
+  - **Nothing adds a node from a change.** A new node is its group's, in F4.
 - **What 183 decides:**
   - **A lesson is its node's, signed with it**: a lesson changed after signing needs the node signed again. Put to Aman on 183.
   - **A release does not carry a lesson into today's design yet**: today's design takes a release's sheets only, until F5's intake.
@@ -118,8 +128,8 @@ Handed over Friday 16 October (S1 and S2: F1 to F3-e, and the key's proof). Noth
 - **Lockfiles:** `crates/vleo-py` keeps its own, built `--locked` in CI, and so does `crates/vleo-kernel-wasm` until 177 removes it. A new dependency of `vleo-files` or `vleo-server` needs them refreshed, as 171 does.
 - **Disk:** the container's allowance filled on S1 and again on S2. `xtask files-wasm` and the scenarios leave a `target/` of 10 GB or more inside the worktree they run in; delete it after a push. Old worktrees' `target/` folders and `target/*/incremental` were deleted to make room.
 - **Next for A, in order:**
-  - **F3-f, the removals** (the brief's item 6). The single-node form goes now: nothing makes or reads one but three tests, and the plan rules today's design uses keep their tests, rewritten. **The node view stays** until `/app`'s Node workspace replaces it (PLAN_F, decision 1): it is the only screen for a row's page, figures, panel checks and lesson, and B's 170 builds into it. Planned in `docs/briefs/F3.md`, then built on `claude/a-f3f-removals`, stacked on 183, with its Opus review.
-  - Then, for Aman: the Node workspace in `/app`, and where today's page's Rows, Architecture, Forms and manual go, before the node view is removed.
+  - **For Aman first** (184, and the brief's questions 7 and 8): the Node workspace in `/app`, on a branch holding both 177 and the F3 stack, and where today's page's Rows, Architecture, Forms and manual go.
+  - **Then the node view's removal**, the rest of the brief's item 6, once that workspace replaces it: it is the only screen for a row's page, figures, panel checks and lesson, and B's 170 builds into it.
 
 ## Person B · night
 
