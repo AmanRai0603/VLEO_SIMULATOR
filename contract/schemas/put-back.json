@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "put-back",
+  "description": "What in the working copy goes back to the drive as the open key's person's work, file by file, and why or why not; or, asked with the files the report named, those written on the drive.",
+  "type": "object",
+  "properties": {
+    "ok": {
+      "type": "boolean"
+    },
+    "written": {
+      "type": "boolean",
+      "description": "Whether the files that go back were written on the drive: only when they were named, and were exactly the ones the report gave."
+    },
+    "recorded": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Files already on the drive as the copy holds them, which the copy's record now says so of."
+    },
+    "by": {
+      "type": "string",
+      "description": "Whose work goes back: the open key's person."
+    },
+    "drive": {
+      "type": "string",
+      "description": "The drive the copy came from, the only one work goes back to."
+    },
+    "files": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string"
+          },
+          "back": {
+            "type": "boolean"
+          },
+          "why": {
+            "type": "string"
+          },
+          "digest": {
+            "type": "string",
+            "description": "The SHA-256 of the file's bytes in the copy, as it is named to put it back; empty when it is gone from the copy."
+          }
+        },
+        "required": [
+          "path",
+          "back",
+          "why",
+          "digest"
+        ]
+      },
+      "description": "Every file changed in the copy since it was taken, whether it goes back, and why or why not."
+    },
+    "back": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "The paths that go back: what to name to write them."
+    },
+    "message": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "ok",
+    "message"
+  ]
+}

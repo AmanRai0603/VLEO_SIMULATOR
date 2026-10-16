@@ -2115,6 +2115,11 @@ path = "/v1/copy"
 what = "The database on the drive (drive, else VLEO_DRIVE) copied whole into the working copy, with copied.toml beside it; never over work in the copy that has not gone back. Carries session."
 
 [[route]]
+method = "POST"
+path = "/v1/put-back"
+what = "The person's own work back on the drive the copy came from. Asked first, it answers the report and writes nothing: every file changed in the copy, whether it goes back, why or why not, and its digest. A node's file goes back only when the drive holds a file at its path, still as copied.toml says it was copied, holding the same node; when it changes only the node's own rows, keeps every signature the drive's file holds and adds only the person's own, is one revision with its block, is not older than the drive's (and at the same revision differs from it only by that signature), says a writer who may write it, and its checks hold; and when it carries a signature by the open key's person that counts through the chain as the drive holds it now, made with a key that still counts for them at that moment. A group's file does not go back yet. Asked again with files, each file the report gave as its digest, a space and its path, one to a line, and exactly those, they are judged again under the drive's lock and written whole, and copied.toml says so; any other list is refused and nothing is written. Nothing on the drive is ever deleted, made, written through a link, or written over a change someone else made. Carries session."
+
+[[route]]
 method = "GET"
 path = "/v1/people"
 what = "The people the group file named by file registers, each with their keys."

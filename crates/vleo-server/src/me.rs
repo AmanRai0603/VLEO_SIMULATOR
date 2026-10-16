@@ -393,6 +393,16 @@ pub(super) fn registries(
     let groups = database.join("groups");
     let read = |id: &str| -> Result<File, String> {
         let p = groups.join(id).join(format!("{id}.vgroup"));
+        // A group's file reached through a link is never read: what the chain
+        // opens is the file in the database's own folder.
+        let linked =
+            |at: &Path| std::fs::symlink_metadata(at).is_ok_and(|m| m.file_type().is_symlink());
+        if linked(&groups.join(id)) || linked(&p) {
+            return Err(format!(
+                "{} is reached through a link: a group's file is read where the database holds it, never through one",
+                p.display()
+            ));
+        }
         if !p.is_file() {
             return Err(if id == "programme" {
                 format!(

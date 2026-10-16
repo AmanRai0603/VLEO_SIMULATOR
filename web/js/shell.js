@@ -223,7 +223,7 @@ function peopleCard() {
   const roles = S.pfile === 'programme'
     ? ['system engineer', 'subsystem engineer', 'programme manager'] : ['node engineer'];
   return '<section class="sh-card" id="sh-people"><h2>People ' + kind('how-to') + '</h2>' +
-    '<p>Whom a file registers is changed here, in your copy, signed with your key; it goes to the drive when your work goes back.</p>' +
+    '<p>Whom a file registers is changed here, in your copy, signed with your key. It stays in your copy for now: a group\'s file does not go back to the drive yet.</p>' +
     '<p><label>File <select id="sh-pfile" class="ctl">' + files.map(f =>
       '<option' + (f === S.pfile ? ' selected' : '') + '>' + esc(f) + '</option>').join('') + '</select></label></p>' +
     (p.ok === false ? '<p class="sh-refused">' + esc(p.message) + '</p>' : '') +
