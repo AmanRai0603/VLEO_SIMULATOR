@@ -86,7 +86,7 @@ Handed over Friday 16 October (S1 and S2: F1 to F3-f, the key's proof, and F3-g1
     - Sign, ask and a lesson form on screen; a second writer shown with nothing written. My work lists your nodes and puts signed work back, report first.
     - `GET /v1/node/<id>/file` and `GET /v1/my-work` gain fields, additive. Proved by `tools/node_check.py` (panels job) and a program test.
 
-    The Opus review found one blocking point (an empty assignment made a node everyone's: the screen had re-derived who may write it) and eight more; all fixed in a088a3ce, each shown red but four named untested. CI's panels job then failed on `manual_check.py`, which B's 170 left numbering a row's page as before; fixed there too. CI on a088a3ce is pending.
+    The Opus review found one blocking point (an empty assignment made a node everyone's: the screen had re-derived who may write it) and eight more; all fixed in a088a3ce, each shown red but four named untested. CI's panels job then failed on `manual_check.py`, which B's 170 left numbering a row's page as before; fixed there too. CI is green on a088a3ce.
 - **What 171 decides, which B's PRs must follow:**
   - **Ownership follows the mount.** Only the programme's file (mounting `systems`) and the systems' file (mounting each `l3_*`) mount anything.
   - **A group file registers only node engineers.** It holds nobody the programme's file registers, and no key it registers. `open_group_in` refuses anything else, by name.
