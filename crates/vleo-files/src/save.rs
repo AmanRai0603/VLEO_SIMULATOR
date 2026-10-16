@@ -32,7 +32,7 @@
 //! over each other. A folder kept in step by a sync client is not covered: the
 //! lock and the comparison are of this computer's copy.
 //!
-//! The drive is never written here: putting work back is F3-c.
+//! The drive is never written here: work goes back by `put_back` (F3-c).
 
 use std::path::{Path, PathBuf};
 
@@ -154,7 +154,7 @@ pub fn opened_ok(opened: &str) -> Result<(), Error> {
 /// The node file at `path`: its kind, its one block, and its place. A node
 /// file is `groups/<group_id>/nodes/<block id>.vnode`, and holds one block,
 /// the one its `block_uid` names. Its block's id, or the refusal.
-fn the_node(f: &File, path: &str) -> Result<String, Error> {
+pub(crate) fn the_node(f: &File, path: &str) -> Result<String, Error> {
     if f.kind()? != Kind::Node {
         return Err(refused(format!("{path} is not a node file")));
     }
@@ -398,7 +398,7 @@ pub fn sign_in_place(
 /// The file `bytes` are, read through a private file of its own in the
 /// system's temporary folder, made new and gone once read: the bytes alone,
 /// with nothing beside them (no journal) that they do not hold.
-fn parsed(bytes: &[u8]) -> Result<File, Error> {
+pub(crate) fn parsed(bytes: &[u8]) -> Result<File, Error> {
     use std::io::Write as _;
     static NEXT: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
     let nanos = std::time::SystemTime::now()

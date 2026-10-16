@@ -442,6 +442,11 @@ jobs:
       # and nothing written (docs/briefs/F3.md, F3-a).
       - name: a node saved in place, and a second writer stopped
         run: python3 tools/save_check.py
+      # Two instances of the program on two copies of one drive: a node signed
+      # by one and put back, the report shown before anything is written, and
+      # the other, copying again, finding it signed (docs/briefs/F3.md, F3-c).
+      - name: signed work put back on the drive, and found by another
+        run: python3 tools/put_back_check.py
       # The manual in the browser tells people what to paste and what they will
       # see. `cargo test` already holds every name in it to the code; this holds
       # every command to what it DOES — run exactly as written, its output

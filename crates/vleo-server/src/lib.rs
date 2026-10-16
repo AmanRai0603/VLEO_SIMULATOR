@@ -33,6 +33,7 @@ mod my_work;
 mod node_file;
 mod pages;
 mod people;
+mod put_back;
 mod results;
 pub mod results_file;
 pub mod today;
@@ -567,6 +568,8 @@ fn route(
         // The person's copy of the database, and whom its files register.
         ("GET", "/v1/copy") => ok_json(copy::state(ctx)),
         ("POST", "/v1/copy") => ok_json(copy::take(params, ctx)),
+        // The person's own work back on the drive (F3-c).
+        ("POST", "/v1/put-back") => ok_json(put_back::route(params, ctx)),
         ("GET", "/v1/people") => ok_json(people::list(params, ctx)),
         ("POST", "/v1/people/register") => ok_json(people::change("register", params, ctx)),
         ("POST", "/v1/people/replace") => ok_json(people::change("replace", params, ctx)),

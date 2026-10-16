@@ -144,6 +144,15 @@ name = "copy-refused"
 params = [["session", "@session"], ["drive", "/nowhere/at/all"]]
 
 [[route]]
+method = "POST"
+path = "/v1/put-back"
+answer = "json"
+schema = "put-back"
+[[route.example]]
+name = "put-back-refused"
+params = [["session", "@session"]]
+
+[[route]]
 method = "GET"
 path = "/v1/people"
 answer = "json"

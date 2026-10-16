@@ -6,7 +6,7 @@
 //! file's SHA-256 as copied (`vleo_files::copied`). A copy is never taken over
 //! work in the old copy that has not gone back: the files whose bytes are not
 //! what was copied are named, and nothing is written. Putting files back on
-//! the drive is F3's (docs/briefs/F3.md, F3-c), and reads the same record.
+//! the drive reads the same record (`vleo_files::put_back`, F3-c).
 //!
 //! The copy is taken whole into a folder beside the old one, then swapped in,
 //! so a copy cut short leaves the old copy as it was. The old copy is checked
@@ -46,58 +46,13 @@ pub(super) fn record(copy: &Path) -> Result<Option<Copied>, String> {
 }
 
 /// Every file under `folder`, by its path inside it, with `/` between parts,
-/// and the SHA-256 of its bytes. The record itself is not among them. A link,
-/// or a name the record could not hold, is refused by name rather than
-/// followed or skipped.
+/// and the SHA-256 of its bytes: the library's walk (`put_back::digests`), so
+/// a copy, its state and a put-back read a folder the same way. The record,
+/// and the program's own lock and files being written on a drive, are not
+/// among them; a link, a key, or a name the record could not hold is refused
+/// by name rather than followed or skipped.
 pub(super) fn digests(folder: &Path) -> Result<BTreeMap<String, String>, String> {
-    let mut out = BTreeMap::new();
-    let mut todo = vec![PathBuf::new()];
-    while let Some(rel) = todo.pop() {
-        let here = folder.join(&rel);
-        let entries = std::fs::read_dir(&here).map_err(|e| format!("{}: {e}", here.display()))?;
-        for e in entries {
-            let e = e.map_err(|e| format!("{}: {e}", here.display()))?;
-            let name = e.file_name().to_string_lossy().into_owned();
-            let path = rel.join(&name);
-            let shown = path
-                .components()
-                .map(|c| c.as_os_str().to_string_lossy().into_owned())
-                .collect::<Vec<_>>()
-                .join("/");
-            if shown == copied::FILE_NAME {
-                continue;
-            }
-            let kind = e
-                .file_type()
-                .map_err(|e| format!("{}: {e}", folder.join(&path).display()))?;
-            if kind.is_symlink() {
-                return Err(format!(
-                    "{shown} is a link: a database holds files, and a link is never followed"
-                ));
-            }
-            if !kind.is_dir() && !kind.is_file() {
-                return Err(format!(
-                    "{shown} is neither a folder nor a file: a database holds only those"
-                ));
-            }
-            if name.to_ascii_lowercase().ends_with(".vkey") {
-                return Err(format!(
-                    "{shown} is a key: a key lives on its person's own computer, never in a database"
-                ));
-            }
-            if !copied::path_ok(&shown) {
-                return Err(format!("{shown:?} is not a name the database can hold"));
-            }
-            if kind.is_dir() {
-                todo.push(path);
-            } else {
-                let bytes = std::fs::read(folder.join(&path))
-                    .map_err(|e| format!("{}: {e}", folder.join(&path).display()))?;
-                out.insert(shown, copied::digest(&bytes));
-            }
-        }
-    }
-    Ok(out)
+    vleo_files::put_back::digests(folder).map_err(|e| e.message().to_string())
 }
 
 /// What START HERE is called, as `me::anchor` looks for it.

@@ -13,6 +13,9 @@
 //!   not registered yet: the programme manager registers him;
 //! - Test Nia, solar's node engineer, with two nodes assigned: one unsigned
 //!   and one signed;
+//! - Test Pia, solar's other node engineer, assigned `sw_activity_band` as
+//!   solar's 1.1 release holds it: a node whose checks hold, unsigned, for
+//!   the put-back's check (tools/put_back_check.py);
 //! - a node engineer whose name is made of what a page must escape;
 //! - beside solar, Ola owns power, which has a release sealed, and thermal,
 //!   whose file is signed by someone who does not own it, so it is refused;
@@ -93,6 +96,60 @@ fn write(f: &File, at: &Path) {
     sqlite::write(f, at).unwrap();
 }
 
+/// Solar's `sw_activity_band` as its 1.1 release holds it: its block, ports,
+/// wires, texts and tables, in a node file of its own, revision 1.
+fn activity_band() -> File {
+    const UID: &str = "sw_activity_band";
+    let how = vleo_files::upgrade::Upgrade {
+        app: APP,
+        at: "2026-10-01",
+    };
+    let rel = sqlite::open(
+        &Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../vleo-files/tests/fixtures/l3_solar-1.1.vleo"),
+        &how,
+    )
+    .unwrap()
+    .file;
+    let mut n = File::new(Kind::Node, APP);
+    for (k, v) in [
+        ("group_id", "l3_solar"),
+        ("block_uid", UID),
+        ("revision", "1"),
+        ("contract_version", "1"),
+        ("writer", "Test Pia"),
+    ] {
+        n.meta.insert(s(k), s(v));
+    }
+    n.blocks = vec![rel.blocks.iter().find(|b| b.uid == UID).unwrap().clone()];
+    n.blocks[0].revision = 1;
+    n.ports = rel
+        .ports
+        .iter()
+        .filter(|p| p.block_uid == UID)
+        .cloned()
+        .collect();
+    n.wires = rel
+        .wires
+        .iter()
+        .filter(|w| w.to_block == UID)
+        .cloned()
+        .collect();
+    n.texts = rel
+        .texts
+        .iter()
+        .filter(|t| t.scope == UID)
+        .cloned()
+        .collect();
+    n.tables = rel
+        .tables
+        .iter()
+        .filter(|t| t.scope == UID)
+        .cloned()
+        .collect();
+    n
+}
+
 fn main() {
     let out = std::env::args()
         .nth(1)
@@ -157,10 +214,16 @@ fn main() {
         &key(67),
         "Test Ola",
     );
-    for block in ["b-ap", "b-f107"] {
+    let pia = key(68);
+    register(&mut solar, "Test Pia", "node engineer", &pia, "Test Ola");
+    for (block, who) in [
+        ("b-ap", "Test Nia"),
+        ("b-f107", "Test Nia"),
+        ("sw_activity_band", "Test Pia"),
+    ] {
         solar.assignments.push(Assignment {
             block_uid: s(block),
-            person: s("Test Nia"),
+            person: s(who),
             contract_version: 1,
         });
     }
@@ -210,6 +273,11 @@ fn main() {
         &signed_node,
         &drive.join("groups/l3_solar/nodes/sw_f107_observed.vnode"),
     );
+    // Pia's node, as solar's 1.1 release holds it, in a file of its own.
+    write(
+        &activity_band(),
+        &drive.join("groups/l3_solar/nodes/sw_activity_band.vnode"),
+    );
     // Something in solar's releases that is not a release.
     std::fs::create_dir_all(drive.join("groups/l3_solar/releases")).unwrap();
     std::fs::write(
@@ -256,6 +324,7 @@ fn main() {
         ("test-nia.vkey", "Test Nia", &nia),
         ("test-stranger.vkey", "Test Stranger", &stranger),
         ("test-ivo.vkey", "Test Ivo", &ivo),
+        ("test-pia.vkey", "Test Pia", &pia),
     ] {
         let locked = k
             .lock(person, PASSPHRASE, [7; 16], [7; 12], MIN_ITERATIONS)
