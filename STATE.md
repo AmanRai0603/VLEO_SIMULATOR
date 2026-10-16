@@ -9,7 +9,7 @@ Target 1.0.0 on Monday 19 October; Tuesday to Thursday are the buffer.
 
 ## Person A · day
 
-Handed over Thursday 15 October (S1, then F2 and F3-a and F3-b the same day). Nothing is merged: everything waits on Aman.
+Handed over Friday 16 October (S1 and S2: F1 to F3-c). Nothing is merged: everything waits on Aman.
 
 - **Open, in merge order:**
   - **162 the plan.** It now carries the nine briefs and F3's Plan (`docs/briefs/F3.md`).
@@ -46,12 +46,29 @@ Handed over Thursday 15 October (S1, then F2 and F3-a and F3-b the same day). No
     - `save::sign_in_place` signs the node in the copy only when it is the file opened, and refuses while its cases disagree, naming each check.
     - Route: `POST /v1/node/<id>/sign`. It refuses on the library's checks, not `/v1/parts` (that is B's 168, not under this stack).
 
-    The Opus review found most nodes could be signed unchecked (open, archived, empty stated) and an `agent-generated` case was never refused; all fixed in 3ebd978c, each with a test shown red. Four questions for Aman are in its body.
+    The Opus review found most nodes could be signed unchecked (open, archived, empty stated) and an `agent-generated` case was never refused; all fixed in 3ebd978c, each with a test shown red. Four questions for Aman are in its body. CI is green.
+  - **180 F3-c putting work back on the drive: high risk.** Stacked on 179.
+    - `put_back::put_back` reports every file changed in the copy. **Only a node's file** goes back, and only over the drive's own file for the same node, and only when the drive's file is still as `copied.toml` recorded it.
+    - The file must change only the node's own rows. It must keep the drive's signatures and add only the person's. It must not be older than the drive's revision, and at the same revision it may differ only by that signature.
+    - It must carry the person's signature, counting through the drive's chain, made with a key that still counts at the moment it goes back.
+    - It is written only on a second request naming exactly the report's files with their digests, under the drive's lock (`.vleo-put-back.lock`), with the chain read again under it.
+    - Route: `POST /v1/put-back`. The scenario is `tools/put_back_check.py` in the panels job: two instances, one puts back, the other copies again and finds it signed.
+
+    Two Opus review rounds, all fixed (1cb9cc87, 48d1cabc), each with a test shown red. Four questions for Aman are in its body. CI on the last push is pending.
 - **What 171 decides, which B's PRs must follow:**
   - **Ownership follows the mount.** Only the programme's file (mounting `systems`) and the systems' file (mounting each `l3_*`) mount anything.
   - **A group file registers only node engineers.** It holds nobody the programme's file registers, and no key it registers. `open_group_in` refuses anything else, by name.
   - **The test drive (165) must change.** It mounts the l3 groups in the programme's file, so they read as mounted twice. It should assign the mounting blocks in the systems' file instead, and register only node engineers in group files.
   - **The anchor** is accepted once per drive, with `accept_anchor` on `POST /v1/key/open`. A scenario that opens a key passes it once, and since 174 also `session`, read from `<keys>/open.html`. A face must make the person compare the fingerprint, never fill it in from the answer.
+- **What 180 decides:**
+  - **A group's file does not go back yet.** What a valve may change in it is not checked against the drive's file. So People's changes (F1) stay in the copy, and their messages say so. For Aman: a PR of its own in F3, or F5.
+  - **The one walk of a folder is `vleo_files::put_back::digests`**, which the copy, its state and a put-back share.
+    - It refuses links and keys.
+    - It says a `.vleo-incoming-…` file, which is a put-back in progress or cut short.
+    - It leaves out only the record, the drive's lock and the record being written, at the top.
+  - **The chain never opens a group's file through a link** (`me::registries`).
+  - **The small drive** (`examples/a_small_drive.rs`) gains Test Pia (key seed 68), assigned solar's `sw_activity_band`, a node whose checks hold. A scenario that counts solar's people or nodes must allow for her.
+  - **Today's view shows a node put back only once its group seals it (F5)**: today's design reads releases, not loose node files.
 - **What 178 and 179 decide:**
   - **The copy's lock is the library's** (`vleo_files::save::lock`). Anything that writes the copy takes it, and holds it from its first read to its rename.
   - **A node file is one block,** kept as `groups/<group_id>/nodes/<block id>.vnode`. A save or a signing refuses any other.
@@ -70,9 +87,11 @@ Handed over Thursday 15 October (S1, then F2 and F3-a and F3-b the same day). No
   - Closing an issue (F5), and an issue in My work.
 - **Lockfiles:** `crates/vleo-py` keeps its own, built `--locked` in CI, and so does `crates/vleo-kernel-wasm` until 177 removes it. A new dependency of `vleo-files` or `vleo-server` needs them refreshed, as 171 does.
 - **Disk:** the container's allowance filled once on S1. Old worktrees' `target/` folders and `target/*/incremental` were deleted to make room.
-- **Next for A:**
-  - F3-c, putting work back on the drive (`docs/briefs/F3.md`), stacked on 179.
-  - The key's proof kept in its row and checked on open (the review of 172).
+- **Next for A, in order:**
+  - **The key's proof kept in its row** (the review of 172), stacked on 180, with Aman's two answers:
+    - **FORMAT goes to 3,** with an upgrade from format 2 that keeps a copy, as format 1 is upgraded today.
+    - **A key row without a valid proof counts for nothing.** **For B:** every test drive and key row B writes, 165's among them, must then store a proof (`people::proof`).
+  - **F3-d** (the brief's item 4, asking: a contract change or a breakdown as a request in the node file), then **F3-e** (item 5, a lesson's place in the node's file). Neither is planned in the brief yet; each starts with its plan.
 
 ## Person B · night
 
