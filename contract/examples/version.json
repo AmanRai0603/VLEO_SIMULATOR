@@ -1,6 +1,6 @@
 {
   "contract": "1",
-  "kernel": "807ac9",
+  "kernel": "a227fb",
   "graph": "a431fa",
   "version": "0.4.0",
   "endpoint": "local-daemon",
@@ -8,7 +8,7 @@
   "nodes": 1401,
   "design": {
     "from": "files",
-    "fingerprint": "0fe5f2c4324025fc3ee2964ec86716b0384bd23fa795a44e95602b9e71611d52"
+    "fingerprint": "3c2f209e57b0b2d29f7696dc3d96eae1071972082255c6bf0f50ad1c795fd653"
   },
   "data": [
     "solar-drivers@2026.09.04#54784567db11b868",

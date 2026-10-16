@@ -17,8 +17,13 @@
 //!   solar's 1.1 release holds it: a node whose checks hold, unsigned, for
 //!   the put-back's check (tools/put_back_check.py);
 //! - a node engineer whose name is made of what a page must escape;
-//! - beside solar, Ola owns power, which has a release sealed, and thermal,
-//!   whose file is signed by someone who does not own it, so it is refused;
+//! - solar's releases: 1.1, as the design already holds it; 1.2, whose hot
+//!   edge of the sustained F10.7 band breaks the first solar closure; and
+//!   1.3, which the programme manager has not anchored, so the chain does not
+//!   admit it. Today's design takes 1.2, its last good one, and marks it;
+//! - beside solar, Ola owns power, whose releases folder holds something that
+//!   is not a release and nothing sealed, and thermal, whose file is signed by
+//!   someone who does not own it, so it is refused;
 //! - structure, mounted for Ola, whose folder holds no group file;
 //! - and a folder under groups/ that is not a group.
 //! - Test Stranger, whom no file registers.
@@ -31,6 +36,47 @@ use vleo_files::keys::{SigningKey, MIN_ITERATIONS};
 use vleo_files::meta::Kind;
 use vleo_files::model::*;
 use vleo_files::sqlite;
+
+fn sql(file: &Path, statement: &str) {
+    let db = rusqlite::Connection::open(file).unwrap();
+    assert!(db.execute(statement, []).unwrap() > 0, "{statement}");
+}
+
+/// A copy of solar's 1.1 made into `version` as its group would: the version,
+/// its record, any change, and sealed again.
+fn solar_release(at: &Path, version: &str, change: Option<&str>) {
+    let fixture = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../vleo-files/tests/fixtures/l3_solar-1.1.vleo");
+    std::fs::copy(&fixture, at).unwrap();
+    if version == "1.1" {
+        return;
+    }
+    sql(
+        at,
+        &format!("UPDATE meta SET value = '{version}' WHERE key = 'version'"),
+    );
+    sql(
+        at,
+        &format!(
+            "UPDATE tbl SET csv = csv || '{version},2026-10-06,Test Ola,\
+             The band needed a wider margin when the cycle is low.,\
+             The multiplier was read again.,\
+             A wider band is safer.,\
+             The multiplier of the hot edge.,,,\
+             the one-sided 90th percentile,a multiplier from another table\n' \
+             WHERE scope = 'group' AND path = 'versions.csv'"
+        ),
+    );
+    if let Some(change) = change {
+        sql(at, change);
+    }
+    let r = vleo_files::intake::Release::open(at).unwrap();
+    let fp = vleo_files::seal::fingerprint_of(&r.folder, "group");
+    sql(
+        at,
+        &format!("UPDATE meta SET value = '{fp}' WHERE key = 'fingerprint'"),
+    );
+}
 
 const APP: &str = "vleo 1.0.0 (example)";
 const PASSPHRASE: &str = "a long enough passphrase";
@@ -183,6 +229,28 @@ fn main() {
         "Test Pat",
     );
     mount(&mut programme, "root", "systems", "Test Sam");
+    // Solar's releases, from before 1.0: the programme manager anchors 1.1
+    // and 1.2, and not 1.3. The anchors are part of what he signs.
+    let releases = drive.join("groups/l3_solar/releases");
+    std::fs::create_dir_all(&releases).unwrap();
+    let breaks = "UPDATE doc SET body = replace(body, 'return sustained', \
+         'if central < 95 then\n  return central + spread * 14\nend\nreturn sustained') \
+         WHERE kind = 'pseudocode' AND scope = 'sw_f107_design_long'";
+    for (v, change) in [("1.1", None), ("1.2", Some(breaks)), ("1.3", Some(breaks))] {
+        solar_release(&releases.join(format!("l3_solar-{v}.vleo")), v, change);
+    }
+    let how = vleo_files::upgrade::Upgrade {
+        app: APP,
+        at: "2026-10-01",
+    };
+    for v in ["1.1", "1.2"] {
+        let r = sqlite::open(&releases.join(format!("l3_solar-{v}.vleo")), &how)
+            .unwrap()
+            .file;
+        programme
+            .signatures
+            .push(vleo_files::upgrade::anchor(&r, "Test Pat", &pat, "2026-10-07").unwrap());
+    }
     write(
         &signed(programme, "Test Pat", &pat),
         &drive.join("groups/programme/programme.vgroup"),
@@ -279,23 +347,17 @@ fn main() {
         &activity_band(),
         &drive.join("groups/l3_solar/nodes/sw_activity_band.vnode"),
     );
-    // Something in solar's releases that is not a release.
-    std::fs::create_dir_all(drive.join("groups/l3_solar/releases")).unwrap();
-    std::fs::write(
-        drive.join("groups/l3_solar/releases/notes.txt"),
-        "not a release",
-    )
-    .unwrap();
 
-    // Power, with a release sealed (its bytes are not read here, only that one is there).
+    // Power, with nothing sealed: its releases folder holds something that is
+    // not a release.
     write(
         &signed(group("l3_power", "Test Ola"), "Test Ola", &ola),
         &drive.join("groups/l3_power/l3_power.vgroup"),
     );
     std::fs::create_dir_all(drive.join("groups/l3_power/releases")).unwrap();
     std::fs::write(
-        drive.join("groups/l3_power/releases/l3_power-1.0.vleo"),
-        "sealed",
+        drive.join("groups/l3_power/releases/notes.txt"),
+        "not a release",
     )
     .unwrap();
 

@@ -10,6 +10,7 @@ use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 use vleo_sheet::{emit, gate, page, Tree};
 
+mod bundle;
 mod catalogue;
 mod files;
 mod flow;
@@ -19,7 +20,6 @@ mod group;
 mod hooks;
 mod method;
 mod pipeline;
-mod readers;
 mod release;
 mod report;
 use forms::*;
@@ -108,7 +108,6 @@ pub(crate) fn dispatch(root: &Path, cmd: &str, rest: &[&str]) -> Result<(), Stri
         "variables" => cmd_variables(&root),
         "setup" => cmd_setup(&root),
         "lesson" => cmd_lesson(&root, &rest),
-        "readers" => readers::cmd_readers(&root, &rest),
         "derisk" => cmd_derisk(&root, &rest),
         "release" => cmd_release(&root, &rest),
         "kit" => cmd_kit(&root, &rest),
@@ -210,11 +209,6 @@ cargo xtask <command>
                      release-built programs are (default target/release);
                      --files-only leaves the programs out, for the Python
                      package (tools/build_wheel.py).
-  readers [--out <dir>]
-                     the docs folder for readers: every row's page and every
-                     lesson, read with no tool running — from a shared drive or
-                     an internal web server. A lesson's widgets are answered by
-                     the engine compiled for the browser. Default target/readers.
   guides             the three role guides, docs/roles/user.html,
                      maintainer.html and developer.html, rendered from
                      docs/manual.toml. Never

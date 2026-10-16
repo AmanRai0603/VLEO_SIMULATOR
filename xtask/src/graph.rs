@@ -34,7 +34,7 @@ pub(super) fn ring(crate_name: &str) -> Option<(u8, &'static str)> {
         "vleo-results" => (3, "beside the nodes — saved results, many in one file"),
         "vleo-server" => (5, "the server both the daemon and the Python package start"),
         "vleo-cli" | "vleo-daemon" | "vleo-ffi" | "vleo-py" | "vleo-method-wasm"
-        | "vleo-kernel-wasm" | "vleo-files-wasm" => (6, "a face"),
+        | "vleo-files-wasm" => (6, "a face"),
         "xtask" => (6, "the task runner"),
         _ => return None,
     })

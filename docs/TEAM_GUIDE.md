@@ -60,17 +60,18 @@ on your machine — nobody else can reach it. To stop it, close that window or p
 
 ## 2 · Use it
 
-- **The four layers** across the top are the design, from the programme down to the run. Click
-  any row to open its page. Every page starts with the answer, then says it simply, then shows the
-  real relation and where it comes from, then where the simple version stops being true.
+- **Rows** lists every row of the design, by its group; type part of an id or label to find one.
+  Click any row to open its page. Every page starts with the answer, then says it simply, then
+  shows the real relation and where it comes from, then where the simple version stops being true.
 - **Learn · Read · Expert** at the top right sets how much each page explains.
-- **Inputs** is your case: every number you can set, with its default. Change them on the page, or
-  download the CSV, edit it and upload it back.
+- **Inputs**, under **Explore** in the application (`/app`), is your case: every number you can
+  set, with its default. Change them on the page, or download the CSV, edit it and upload it back.
 - **Run** a row from its page. **save this result** keeps what it returned, with the inputs it ran
   on — and **save this sweep** keeps a sweep. A question already kept is not run again: the tool
-  shows the saved answer and says which it is (**run again anyway** runs it fresh). **Results**
-  lists what you kept, draws saved sweeps again, and each can be downloaded as a report page to
-  send to someone — uploaded, it comes back whole.
+  shows the saved answer and says which it is (**run again anyway** runs it fresh). **Results
+  kept**, beside Inputs in the application's Explore, lists what you kept, draws saved sweeps
+  again, and each can be downloaded as a report page to send to someone — uploaded, it comes back
+  whole.
 - **? Manual** answers "how do I…" for everything above.
 
 ## 3 · Change the design
@@ -108,7 +109,7 @@ Your inputs, saved case and results are kept under `~/.vleo/` (your home folder 
 you can switch between them. (Kits before 0.1.2 kept them inside the kit folder on Windows: copy
 its hidden `.vleo` folder into your home folder before you delete the old one.) If an input no
 longer exists, the tool says so by name; if a result you kept rested on a belief that has since
-changed, the Results page says which one.
+changed, Results kept says which one.
 
 ## 5 · What you cannot do here, and why
 

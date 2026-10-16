@@ -113,13 +113,15 @@ sent back; `xtask lesson check` checks a filled one, and the node engineer saves
 it in the node's file (`POST /v1/node/<id>/lesson`), where it is signed with the
 node. → `docs/LESSONS.md`
 
-**Readers' folder** — every row's page and every lesson as plain pages, built
-by `xtask readers` for a shared drive or an internal web server; the engine
-runs in the page to answer a lesson's widgets. → `docs/SHARING.md`, section 4
+**Readers' folder** — removed in phase F2: every row's page and every lesson
+as plain pages, built by `xtask readers` for a shared drive, with the engine
+running in the page. The application replaces it; the engine built for the
+browser is kept and held to the native engine's answers. → `docs/SHARING.md`,
+section 4
 
 **Page template** — `web/page.html`: the one page every file the tool writes
-is filled from — forms, a saved result, the role guides, a row's page, the
-readers' pages — with four slots. What each page puts in it is its parts file
+is filled from — forms, a saved result, the role guides, a row's page — with
+four slots. What each page puts in it is its parts file
 in `web/pages/`: every word and tag, by name, which the generator chooses and
 fills; a test refuses a generator that writes a tag of its own.
 → `crates/vleo-sheet/src/shell.rs`

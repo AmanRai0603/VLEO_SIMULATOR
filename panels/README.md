@@ -20,17 +20,22 @@ the one that already worked everywhere else: declare it, generate it, check it.
 One `panels/<id>.toml` per panel:
 
 ```toml
-id = "tree"
-label = "The layer tree"
-draws = "every row at the selected layer, as nested boxes, seeded ones hatched"
-module = "web/js/tree.js"
-mount = "#tree"
-reads = ["layer", "selected"]
-correct = "one box per row, nested by parent, in document order, none overlapping"
+id = "repeatability"
+label = "Repeatability — the mean cycle against every cycle"
+module = "web/js/solar.js"
+mount = "canvas.sw-panel"
+draws = "every cycle the record holds, stacked on cycle phase, the mean drawn heavier"
+correct = "cycle 25 dashed and stopping part way; the mean of the complete cycles only"
+
+[[input]]
+name = "view"
+drive = "(() => { /* set the view control to 'storm' and fire its change */ })()"
+why = "the two views draw different quantities entirely"
 ```
 
-`mount` is the element the panel owns. `reads` names the state it claims to
-depend on — and that claim is what check two tests.
+`mount` is the element the panel owns. Each `[[input]]` names a control it
+claims to depend on, and how to move it — and that claim is what check two
+tests.
 
 ## The three checks
 
@@ -53,9 +58,10 @@ and agrees with it; a reference nobody looked at is a snapshot of a bug.
 `confirmed_by = "Name / date"` on the spec is who that person was. Nothing
 enforces it — the check cannot tell a reference somebody studied from one a
 machine drew unattended, which is the whole reason the name has to be written
-down by hand. The eight solar panels carry it. The three older specs predate
-the field and it has deliberately not been backfilled, because nobody now
-remembers who looked and a guessed attestation is worse than none.
+down by hand. The eight solar panels carry it. The three older specs predated
+the field and it was deliberately not backfilled, because nobody remembered who
+looked and a guessed attestation is worse than none; they went with the layer
+figure (docs/PLAN_F.md, F2).
 
 ## A canvas needs different eyes
 

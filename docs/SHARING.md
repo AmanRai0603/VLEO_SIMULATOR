@@ -86,28 +86,18 @@ group's side is in `docs/GROUP_APPS.md`.
 
 The engineer replaces their folder with the new one. Their inputs, saved case and results are
 under `~/.vleo/`, outside the folder, so they carry over; an input that no longer exists is set
-aside by name, and a kept result whose belief has changed says so on the Results page.
+aside by name, and a kept result whose belief has changed says so under Results kept.
 
-## 4 · The readers' folder — for people who only read
+## 4 · For people who only read
 
-    cargo run -p xtask -- readers               # → target/readers/
+There is no separate folder for them now. The readers' folder (`xtask readers`) was removed in
+phase F2 (docs/PLAN_F.md, decision 1): the application replaces today's pages, and nothing is
+kept beside it. Someone who only reads gets the tool like everyone else, from a kit or the
+package, and opens the design in it.
 
-A folder of plain pages for anyone who wants to read the design without running the tool:
-`index.html`, every row's page (the tool's own generated page) and every lesson. Put it on a
-shared drive — the pages open from a file — or on any internal web server. Nothing contacts a
-network, and nothing in it is committed.
-
-A lesson's try-it widgets work there too: the folder carries the engine compiled for the browser
-(`crates/vleo-kernel-wasm`, about 300 KB compressed), which answers them with the same relations
-the tool runs, on the declared values. It carries no reference data, so a row that reads a data
-bundle refuses in the page and says to open it in the tool. Rebuild the folder with each release.
-
-The pages look as the tool does: they are the one page template (`web/page.html`) with the tool's
-stylesheet, and the tool's type (IBM Plex Mono, `web/fonts`, with its licence) travels in
-`assets/fonts`. The pipeline builds the folder on every push and opens it from a file in a
-browser (`tools/readers_check.py`): the pages load, the engine answers, refuses and sweeps, a
-widget moves — and every answer the page's engine gave is asked again of the engine built
-natively, and must be the same, byte for byte.
+The engine compiled for the browser, which the folder's pages carried (`crates/vleo-kernel-wasm`),
+went with it (decision 2: nothing is compiled for the browser for the application). Opening the
+application without installing it is not planned; somebody who needs it raises a request (W14).
 
 ## Where the simple version breaks
 

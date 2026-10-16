@@ -31,6 +31,12 @@ body.sh { max-width: 64rem; margin: 0 auto; padding: 0 1.5rem 3rem; }
 .sh-table { border-collapse: collapse; font-size: 12px; }
 .sh-table th, .sh-table td { border-bottom: 1px solid var(--rule-2); padding: .2rem .6rem .2rem 0; text-align: left; }
 .sh-loading { color: var(--ink-3); }
+.ex-ws-nav { margin: .6rem 0; gap: .3rem; }
+.ex-ws.sel { background: var(--ink); color: var(--paper); }
+.ex-raising textarea { font: 12px var(--mono); vertical-align: top; }
+.ex-raised { color: var(--both); }
+.ex-raise-refused { color: var(--out); }
+.ex-mark { font-size: 11px; color: var(--out); }
 </style>
 </head>
 <body class="sh">
@@ -38,8 +44,9 @@ body.sh { max-width: 64rem; margin: 0 auto; padding: 0 1.5rem 3rem; }
   The application (docs/OPERATING_1_0.md, section 4): one shell, five
   workspaces, and it opens on My work. Who you are is your key, opened here
   with its passphrase; what the screens show is read from your copy of the
-  database. The other four workspaces fill as their stages arrive (F2 to F7);
-  until Explore does, today's tool is at /.
+  database. Explore holds today's design, its runs, its inputs and the
+  results kept; the other three workspaces fill as their stages arrive (F3 to
+  F7).
 -->
 <header id="sh-head">
   <h1>VLEO</h1>

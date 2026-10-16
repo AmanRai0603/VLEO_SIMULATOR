@@ -31,8 +31,10 @@ Where the two differ on a name or a flag, the manual is the one that is checked.
 cargo run --release -p vleo-daemon        # the tool, at http://127.0.0.1:7777
 ```
 
-Open it. You get the tree on the left and a panel on the right, and **? Manual**
-in the row of tabs above them. Four layers:
+Open it. You get **Rows** — every row of the design, by its group, with a
+filter to find one — and **? Manual** in the row of tabs above it; click a row
+to open its page. The run, the inputs and the results kept are in the
+application at `/app`, under **Explore**. The design has four layers:
 
 | layer | what it holds | rows | of those, written |
 |---|---|---|---|
@@ -155,9 +157,9 @@ come in two halves: the **condition** the design flies in — orbit, environment
 solar weather, listed in the case, `design/cases/multipayload.vcase` — and everything the
 **customer** chooses. Each defaults to the value declared on its own sheet.
 
-In the browser, the **Inputs** tab lists every one with its value, default and
-range. Change them there, or upload a CSV: the file is shown before anything is
-saved, and a file with any row that cannot be applied — not an input, the wrong
+In the browser, **Explore → Inputs** in the application (`/app`) lists every
+one with its value, default and range. Change them there, or upload a CSV: the
+file is shown before anything is saved, and a file with any row that cannot be applied — not an input, the wrong
 unit, outside its range — is refused whole with each bad row named. The saved
 case is kept **outside the repository**, in `~/.vleo/case/inputs.csv` or
 wherever `VLEO_CASE` points, so git never sees it; download it to keep a copy.
@@ -197,7 +199,7 @@ $ vleo inputs --inputs old.csv > new.csv    # the same file, in today's template
 
 The saved case is carried over by itself the first time an updated tool reads
 it: the old file is kept beside it as `inputs.before-<template>.csv`, the new
-one records every value it set aside, and `vleo cases` and the Inputs page say
+one records every value it set aside, and `vleo cases` and Explore → Inputs say
 what happened until the case is saved again.
 
 Compare the defaults, the saved case and any case files against a row, or check
@@ -239,11 +241,11 @@ so it reads the same after any release. `--html <file>` writes it as a report
 page to send to somebody without the tool; the report carries the CSV inside
 it, and uploading either gives the result back whole.
 
-In the browser the same thing is **save this result** under any run, and the
-**Results** tab: every result kept on this machine — under `~/.vleo/results/`,
-or wherever `VLEO_RESULTS` points, never in the checkout — shown as it was,
-compared two at a time with the inputs that differ listed first, downloaded as
-CSV or report, or made the case again with **use its inputs as the case**.
+In the browser the same thing is **save this result** under any run, and
+**Explore → Results kept** in the application: every result kept on this
+machine — under `~/.vleo/results/`, or wherever `VLEO_RESULTS` points, never
+in the checkout — shown as it was, compared two at a time with the inputs that
+differ listed first, downloaded as CSV or report, or made the case again with **use its inputs as the case**.
 
 **Many results in one file.** To send a set of results, or keep a study's
 results together, put them in one file and back:
@@ -256,8 +258,8 @@ vleo results import study.vleor                 # into this machine's folder
 ```
 
 Each result goes out whole and comes back exactly as it was; a question already
-kept is kept once. In the browser, **upload a result…** on the **Results** tab
-takes the same file and keeps every result in it, the same way. The file is SQLite, so Python reads it without the engine —
+kept is kept once. In the browser, **upload a result…** under **Explore →
+Results kept** takes the same file and keeps every result in it, the same way. The file is SQLite, so Python reads it without the engine —
 `vleo.results("study.vleor")` gives every result with its values in SI.
 
 ---
@@ -370,7 +372,7 @@ the bundle:
 - **Repeatability** — every cycle stacked on phase, with cycle 25 dashed
   because it is still running.
 
-Open any solar row from the tree and its node page carries the same argument in
+Open any solar row from **Rows** and its node page carries the same argument in
 ten tabs, including **the relation, moving** and **de-risking**: the input crosses its declared
 domain, the answer moves, and the guards are drawn as the walls they are. That
 animation is the engine's own sweep, so a picture that disagrees with the row

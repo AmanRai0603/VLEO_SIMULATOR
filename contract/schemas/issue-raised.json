@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "issue-raised",
+  "description": "An issue written into the working copy's issues/ and signed with the open key, or why not.",
+  "type": "object",
+  "properties": {
+    "ok": {
+      "type": "boolean"
+    },
+    "file": {
+      "type": "string",
+      "description": "Where it is written, under the copy: issues/<number>-<group>.vissue."
+    },
+    "number": {
+      "type": "number"
+    },
+    "group": {
+      "type": "string",
+      "description": "The group it is addressed to."
+    },
+    "addressed_to": {
+      "type": "string",
+      "description": "The group, its owner when the design names one, and the node."
+    },
+    "message": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "ok",
+    "message"
+  ]
+}

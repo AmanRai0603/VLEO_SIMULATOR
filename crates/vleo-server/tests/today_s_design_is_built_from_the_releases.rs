@@ -96,10 +96,12 @@ fn a_group_s_latest_release_that_passes_is_taken_and_said() {
     // changes no sheet: today's design from the drive is the design.
     assert!(k.changes.is_empty(), "{:?}", k.changes);
     // What is not yet checked is said, not passed over.
-    assert!(k
-        .notes
-        .iter()
-        .any(|n| n.contains("not yet checked through the chain")));
+    assert!(
+        k.chain
+            .contains("not checked through the chain: the drive has no programme's file"),
+        "{}",
+        k.chain
+    );
     // The design built answers as the design does: the same graph.
     let tree = vleo_sheet::load::load_all_from(&*t.files, &root()).unwrap();
     let g = vleo_modules::opened::graph(&tree).unwrap();

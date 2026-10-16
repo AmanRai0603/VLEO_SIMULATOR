@@ -1,0 +1,187 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "today",
+  "$comment": "GET /v1/today — crates/vleo-server/src/explore.rs",
+  "type": "object",
+  "properties": {
+    "ok": {
+      "type": "boolean"
+    },
+    "today": {
+      "type": "boolean",
+      "description": "Whether the design open is today's design, built from a drive. False: the design's own files."
+    },
+    "design": {
+      "type": "object",
+      "properties": {
+        "which": {
+          "type": "string",
+          "description": "The design open, in words: today's design and the drive it was built from, or the design's own files."
+        },
+        "fingerprint": {
+          "type": "string",
+          "description": "The fingerprint of the design open: today's design's when it is today's, the same on every instance built from one drive on one design."
+        },
+        "from": {
+          "type": "string"
+        },
+        "rows": {
+          "type": "number"
+        },
+        "files_fingerprint": {
+          "type": "string",
+          "description": "The fingerprint of the design's own files it was built on."
+        },
+        "based_on": {
+          "type": "string",
+          "description": "The released design it is based on, by name; empty when none is named."
+        },
+        "base_version": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "The released design it is based on, by count; null when none is kept."
+        },
+        "base": {
+          "type": "string",
+          "description": "Which released design it is based on, said, or why none is named."
+        }
+      },
+      "required": [
+        "which",
+        "fingerprint",
+        "from",
+        "rows",
+        "files_fingerprint",
+        "based_on",
+        "base_version",
+        "base"
+      ]
+    },
+    "drive": {
+      "type": "string",
+      "description": "The drive today's design was built from; empty when it is not today's."
+    },
+    "groups": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "said": {
+            "type": "string"
+          },
+          "taken": {
+            "anyOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "version": {
+                    "type": "string"
+                  },
+                  "sealed": {
+                    "type": "string"
+                  },
+                  "sealed_by": {
+                    "type": "string"
+                  },
+                  "fingerprint": {
+                    "type": "string"
+                  },
+                  "changes": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "notes": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "chain": {
+                    "type": "string",
+                    "description": "How its seal was checked: through the chain, and from which anchor, or why it could not be."
+                  },
+                  "based_on": {
+                    "type": "string"
+                  },
+                  "base_version": {
+                    "anyOf": [
+                      {
+                        "type": "number"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "version",
+                  "sealed",
+                  "sealed_by",
+                  "fingerprint",
+                  "changes",
+                  "notes",
+                  "chain",
+                  "based_on",
+                  "base_version"
+                ]
+              }
+            ]
+          },
+          "refused": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "version": {
+                  "type": "string"
+                },
+                "why": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "version",
+                "why"
+              ]
+            }
+          }
+        },
+        "required": [
+          "id",
+          "said",
+          "taken",
+          "refused"
+        ]
+      }
+    },
+    "ignored": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "required": [
+    "ok",
+    "today",
+    "design",
+    "drive",
+    "groups",
+    "ignored"
+  ]
+}
