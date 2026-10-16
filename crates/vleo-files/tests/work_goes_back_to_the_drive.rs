@@ -280,7 +280,9 @@ fn world(name: &str) -> (PathBuf, PathBuf) {
         &drive.join(IVO),
     )
     .unwrap();
-    sqlite::write(&renamed(node(), "systems", "sys_node"), &drive.join(SYS)).unwrap();
+    let mut sys = renamed(node(), "systems", "sys_node");
+    sys.meta.insert(s("writer"), s("Test Uma"));
+    sqlite::write(&sys, &drive.join(SYS)).unwrap();
     // A file in the programme's nodes for the block systems hangs from.
     sqlite::write(
         &bare("programme", "root", "root", "Test Sam"),
@@ -486,7 +488,7 @@ fn a_file_its_person_did_not_sign_does_not_go_back() {
     let r = pb(&copy, &drive, "Test Ivo", None).unwrap();
     let l = line(&r, NODE);
     assert!(
-        !l.back && l.why.contains("carries no current signature by Test Ivo"),
+        !l.back && l.why.contains("it brings a signature by Test Nia"),
         "{l:?}"
     );
     let before = std::fs::read(drive.join(NODE)).unwrap();
@@ -532,7 +534,7 @@ fn a_key_revoked_on_the_drive_since_the_copy_puts_nothing_back() {
 }
 
 #[test]
-fn a_group_file_changed_at_its_valve_goes_back_as_its_owner_s() {
+fn a_group_file_does_not_go_back_yet_whoever_changed_it() {
     let (drive, copy) = world("group");
     let o = opened(&copy);
     let (parent, _) = chain::mounted_by("l3_solar", &[&o.programme, &o.systems]).unwrap();
@@ -558,21 +560,22 @@ fn a_group_file_changed_at_its_valve_goes_back_as_its_owner_s() {
     )
     .unwrap();
     sqlite::write(&changed, &copy.join(SOLAR)).unwrap();
-    let r = pb(&copy, &drive, "Test Ola", None).unwrap();
-    assert_eq!(r.back(), [SOLAR], "{:?}", r.lines);
-    let r = pb(&copy, &drive, "Test Nia", None).unwrap();
-    let l = line(&r, SOLAR);
+    let before = std::fs::read(drive.join(SOLAR)).unwrap();
+    for who in ["Test Ola", "Test Nia"] {
+        let r = pb(&copy, &drive, who, None).unwrap();
+        let l = line(&r, SOLAR);
+        assert!(
+            !l.back && l.why.contains("l3_solar's group file does not go back yet"),
+            "{who}: {l:?}"
+        );
+    }
+    let e = pb(&copy, &drive, "Test Ola", Some(vec![named(&copy, SOLAR)])).unwrap_err();
     assert!(
-        !l.back && l.why.contains("carries no current signature by Test Nia"),
-        "{l:?}"
+        e.message().contains("nothing in your copy goes back"),
+        "{}",
+        e.message()
     );
-    let r = pb(&copy, &drive, "Test Ola", Some(vec![named(&copy, SOLAR)])).unwrap();
-    assert!(r.written);
-    assert!(opened(&drive).groups[0]
-        .file
-        .people
-        .iter()
-        .any(|p| p.name == "Test Kai"));
+    assert_eq!(std::fs::read(drive.join(SOLAR)).unwrap(), before);
     let _ = std::fs::remove_dir_all(drive.parent().unwrap());
 }
 
@@ -821,7 +824,12 @@ fn an_older_revision_or_another_of_the_same_never_goes_back() {
     .unwrap();
     let r = pb(&copy, &drive, "Test Nia", None).unwrap();
     let l = line(&r, NODE);
-    assert!(!l.back && l.why.contains("with other content"), "{l:?}");
+    assert!(
+        !l.back
+            && l.why
+                .contains("differs from it in more than Test Nia's signature"),
+        "{l:?}"
+    );
     let _ = std::fs::remove_dir_all(drive.parent().unwrap());
 }
 
@@ -957,6 +965,7 @@ fn a_file_already_on_the_drive_is_the_record_s_once_put_back() {
     std::fs::copy(copy.join(NODE), drive.join(NODE)).unwrap();
     let r = pb(&copy, &drive, "Test Nia", Some(vec![])).unwrap();
     assert!(!r.written);
+    assert_eq!(r.recorded, [NODE]);
     let again = pb(&copy, &drive, "Test Nia", None).unwrap();
     assert!(again.lines.is_empty(), "{:?}", again.lines);
     let _ = std::fs::remove_dir_all(drive.parent().unwrap());
@@ -1019,55 +1028,258 @@ fn a_new_node_s_file_is_not_made_on_the_drive() {
     let _ = std::fs::remove_dir_all(drive.parent().unwrap());
 }
 
+/// Nia's signed node put back, so the drive's file carries her signature.
+fn nia_signed_on_the_drive(name: &str) -> (PathBuf, PathBuf) {
+    let (drive, copy) = world(name);
+    nia_signs(&copy);
+    pb(&copy, &drive, "Test Nia", Some(vec![named(&copy, NODE)])).unwrap();
+    (drive, copy)
+}
+
 #[test]
-fn a_group_file_goes_back_only_while_its_signer_s_key_counts() {
-    let (drive, copy) = world("group-key");
-    let o = opened(&copy);
+fn at_the_drive_s_revision_nothing_but_the_person_s_signature_goes_back() {
+    type Change = fn(&mut File);
+    let cases: [(&str, Change, &str); 4] = [
+        (
+            "a comment",
+            |f| {
+                f.comments.push(Comment {
+                    scope: s(UID),
+                    section: s(""),
+                    author: s("Test Ola"),
+                    at: s(AT),
+                    body: s("approved"),
+                    resolved: 0,
+                })
+            },
+            "differs from it in more than Test Nia's signature",
+        ),
+        (
+            "a request",
+            |f| {
+                f.requests.push(Request {
+                    uid: s("r1"),
+                    kind: s("contract"),
+                    scope: s(UID),
+                    raised_by: s("Test Ola"),
+                    at: s(AT),
+                    body: s("more inputs"),
+                    status: s("open"),
+                    answer: s(""),
+                })
+            },
+            "differs from it in more than Test Nia's signature",
+        ),
+        (
+            "another writer",
+            |f| {
+                f.meta.insert(s("writer"), s("Test Ivo"));
+            },
+            "differs from it in more than Test Nia's signature",
+        ),
+        (
+            "someone else's signature",
+            |f| {
+                let row = chain::sign(f, UID, "Test Ola", &key(73), AT, "ok", "").unwrap();
+                f.signatures.push(row);
+            },
+            "it brings a signature by Test Ola",
+        ),
+    ];
+    for (what, change, says) in cases {
+        let (drive, copy) = nia_signed_on_the_drive(&format!("same-{}", what.replace(' ', "-")));
+        let mut f = sqlite::read(&copy.join(NODE)).unwrap();
+        change(&mut f);
+        sqlite::write(&f, &copy.join(NODE)).unwrap();
+        let r = pb(&copy, &drive, "Test Nia", None).unwrap();
+        let l = line(&r, NODE);
+        assert!(!l.back && l.why.contains(says), "{what}: {l:?}");
+        let _ = std::fs::remove_dir_all(drive.parent().unwrap());
+    }
+}
+
+#[test]
+fn a_signature_the_drive_holds_is_never_taken_away() {
+    let (drive, copy) = nia_signed_on_the_drive("taken-away");
+    // Her revision 2, saved and signed, without her signature of revision 1.
+    let g = opened(&copy).groups.remove(0);
+    let mut edit = sqlite::read(&copy.join(NODE)).unwrap();
+    edit.texts.retain(|t| !(t.scope == UID && t.kind == "note"));
+    edit.texts.push(Text {
+        scope: s(UID),
+        kind: s("note"),
+        body: s("revision 2"),
+    });
+    save(
+        &copy,
+        NODE,
+        &edit,
+        &opened_digest(&copy.join(NODE)),
+        "Test Nia",
+        APP,
+        &g,
+    )
+    .unwrap();
+    nia_signs(&copy);
+    let mut f = sqlite::read(&copy.join(NODE)).unwrap();
+    f.signatures.retain(|r| r.revision != "1");
+    sqlite::write(&f, &copy.join(NODE)).unwrap();
+    let r = pb(&copy, &drive, "Test Nia", None).unwrap();
+    let l = line(&r, NODE);
+    assert!(
+        !l.back
+            && l.why
+                .contains("leaves out a signature by Test Nia that the drive's file holds"),
+        "{l:?}"
+    );
+    let _ = std::fs::remove_dir_all(drive.parent().unwrap());
+}
+
+#[test]
+fn a_node_whose_writer_may_not_write_it_does_not_go_back() {
+    let (drive, copy) = world("writer");
+    let mut f = node();
+    f.meta.insert(s("revision"), s("2"));
+    f.meta.insert(s("writer"), s("Test Ivo"));
+    f.blocks[0].revision = 2;
+    sqlite::write(&signed_raw(f, UID, "Test Nia", &key(74)), &copy.join(NODE)).unwrap();
+    let r = pb(&copy, &drive, "Test Nia", None).unwrap();
+    let l = line(&r, NODE);
+    assert!(
+        !l.back && l.why.contains("\"Test Ivo\" wrote it, who may not write"),
+        "{l:?}"
+    );
+    let _ = std::fs::remove_dir_all(drive.parent().unwrap());
+}
+
+#[test]
+fn one_signature_must_both_count_as_made_and_be_made_with_a_key_that_counts_now() {
+    let (drive, copy) = world("two-keys");
+    // Nia has a second key in solar, on the drive and so in the copy.
+    let mut solar = sqlite::read(&drive.join(SOLAR)).unwrap();
+    solar.keys.push(PersonKey {
+        person: s("Test Nia"),
+        public_key: key(78).public().to_hex(),
+        registered_at: s("2026-01-01"),
+        registered_by: s("Test Ola"),
+        revoked_from: s(""),
+    });
+    solar.signatures.clear();
+    sqlite::write(&signed(solar, "Test Ola", &key(73)), &drive.join(SOLAR)).unwrap();
+    let _ = std::fs::remove_dir_all(&copy);
+    take_copy(&drive, &copy);
+    // She signs with key 74; a stale row by key 78, of other content, rides
+    // along.
+    nia_signs(&copy);
+    let mut f = sqlite::read(&copy.join(NODE)).unwrap();
+    let mut other = node();
+    other.texts.push(Text {
+        scope: s(UID),
+        kind: s("note"),
+        body: s("other content"),
+    });
+    let stale = chain::sign(&other, UID, "Test Nia", &key(78), AT, "ok", "").unwrap();
+    f.signatures.push(stale);
+    sqlite::write(&f, &copy.join(NODE)).unwrap();
+    // On the drive, key 74 is revoked from the day after the signing.
+    let o = opened(&drive);
     let (parent, _) = chain::mounted_by("l3_solar", &[&o.programme, &o.systems]).unwrap();
     let valve = Valve::Group {
         mounted_by: parent,
         programme: &o.programme,
     };
-    let changed = people::change(
-        &sqlite::read(&copy.join(SOLAR)).unwrap(),
+    let revoked = people::change(
+        &sqlite::read(&drive.join(SOLAR)).unwrap(),
         &valve,
         "Test Ola",
         &key(73),
-        AT,
-        &Change::Register {
-            person: Person {
-                name: s("Test Kai"),
-                role: s("node engineer"),
-                deputy_for: s(""),
-            },
-            public_key: key(76).public().to_hex(),
-            proof: people::proof(&key(76), "Test Kai"),
-        },
-    )
-    .unwrap();
-    sqlite::write(&changed, &copy.join(SOLAR)).unwrap();
-    // On the drive, the programme manager revokes Ola's key from the day
-    // after her change.
-    let anchor = key(71).public().fingerprint();
-    let revoked = people::change(
-        &sqlite::read(&drive.join("groups/programme/programme.vgroup")).unwrap(),
-        &Valve::Programme { anchor: &anchor },
-        "Test Pat",
-        &key(71),
         "2026-10-16T08:00:00Z",
         &Change::Revoke {
-            person: s("Test Ola"),
-            public_key: key(73).public().to_hex(),
+            person: s("Test Nia"),
+            public_key: key(74).public().to_hex(),
             from: s("2026-10-16"),
         },
     )
     .unwrap();
-    sqlite::write(&revoked, &drive.join("groups/programme/programme.vgroup")).unwrap();
-    let r = pb(&copy, &drive, "Test Ola", None).unwrap();
-    let l = line(&r, SOLAR);
+    sqlite::write(&revoked, &drive.join(SOLAR)).unwrap();
+    let r = pb(&copy, &drive, "Test Nia", None).unwrap();
+    let l = line(&r, NODE);
     assert!(
         !l.back && l.why.contains("does not count for them at"),
         "{l:?}"
+    );
+    let _ = std::fs::remove_dir_all(drive.parent().unwrap());
+}
+
+#[test]
+fn the_drive_s_lock_is_taken_before_its_chain_is_read_and_kept_if_not_its_own() {
+    let (drive, copy) = world("lock-order");
+    nia_signs(&copy);
+    let lock = drive.join(".vleo-put-back.lock");
+    let seen = std::cell::Cell::new(None);
+    let open = || {
+        seen.set(Some(lock.exists()));
+        let o = opened(&drive);
+        Ok(Chain {
+            anchor: o.anchor,
+            programme: o.programme,
+            systems: Some(o.systems),
+            groups: o.groups,
+            left_out: Vec::new(),
+        })
+    };
+    put_back(&copy, &drive, "Test Nia", NOW, &open, None).unwrap();
+    assert_eq!(
+        seen.get(),
+        Some(false),
+        "a report takes no lock on the drive"
+    );
+    // Someone else's word put in the lock while it is held: it is left there.
+    let open_and_overwrite = || {
+        seen.set(Some(lock.exists()));
+        std::fs::write(&lock, "someone else's").unwrap();
+        open()
+    };
+    let named = vec![named(&copy, NODE)];
+    put_back(
+        &copy,
+        &drive,
+        "Test Nia",
+        NOW,
+        &open_and_overwrite,
+        Some(&named),
+    )
+    .unwrap();
+    assert_eq!(
+        seen.get(),
+        Some(true),
+        "the lock is held when the chain is read"
+    );
+    assert!(lock.exists(), "a lock that is not its own is never removed");
+    let _ = std::fs::remove_dir_all(drive.parent().unwrap());
+}
+
+#[test]
+fn only_the_program_s_files_at_the_top_are_left_out_and_one_being_written_is_said() {
+    let (drive, _copy) = world("skips");
+    std::fs::write(drive.join("groups/l3_solar/.vleo-record-1"), "x").unwrap();
+    std::fs::write(drive.join("groups/l3_solar/.vleo-put-back.lock"), "x").unwrap();
+    std::fs::write(drive.join(".vleo-put-back.lock"), "x").unwrap();
+    let d = digests(&drive).unwrap();
+    assert!(d.contains_key("groups/l3_solar/.vleo-record-1"));
+    assert!(d.contains_key("groups/l3_solar/.vleo-put-back.lock"));
+    assert!(!d.contains_key(".vleo-put-back.lock"));
+    std::fs::write(
+        drive.join("groups/l3_solar/nodes/.vleo-incoming-1-0-x.vnode"),
+        "x",
+    )
+    .unwrap();
+    let e = digests(&drive).unwrap_err();
+    assert!(
+        e.message()
+            .contains("is a file being put back on the drive"),
+        "{}",
+        e.message()
     );
     let _ = std::fs::remove_dir_all(drive.parent().unwrap());
 }

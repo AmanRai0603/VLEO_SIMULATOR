@@ -9,16 +9,20 @@
 //!   put-back changes the files there are, never makes or deletes one;
 //! - the drive's bytes are still the ones the record holds: a file someone
 //!   else changed on the drive since the copy is never written over;
-//! - it is the same file as the drive's, changed only as its writer may
-//!   change it:
-//!   - a node's file holds the same node as the drive's file at that path,
-//!     changes nothing outside the node's own rows (as a save is held,
-//!     `save`), is one revision with its block, and is not older than the
-//!     drive's; its own checks hold;
-//!   - or a group's file, changed at its valve;
+//! - it is a node's file, the same file as the drive's, changed only as its
+//!   writer may change it: it holds the same node as the drive's file at
+//!   that path, changes nothing outside the node's own rows (as a save is
+//!   held, `save`), keeps every signature the drive's file holds and adds
+//!   only the person's own, is one revision with its block, is not older than
+//!   the drive's (and at the same revision differs from it only by that
+//!   signature), says a writer who may write it, and its own checks hold;
 //! - it carries a signature by the person that counts through the chain as
-//!   the **drive** holds it now, by a key the drive's files still count for
-//!   them at the moment it goes back.
+//!   the **drive** holds it now, made with a key the drive's files still
+//!   count for them at the moment it goes back.
+//!
+//! A group's file does not go back yet: what may change in it at its valve
+//! is not yet checked against the drive's file, so a change of its people
+//! stays in the copy.
 //!
 //! Every other changed file is named, with the reason. Nothing is deleted on
 //! the drive, and a file gone from the copy is said, not followed.
@@ -40,11 +44,10 @@
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
-use crate::chain::{self, Registry, FILE};
+use crate::chain::{self, Registry};
 use crate::checks;
 use crate::copied::{self, Copied};
 use crate::error::{Error, ErrorKind};
-use crate::meta::Kind;
 use crate::model::File;
 use crate::save;
 
@@ -69,11 +72,14 @@ pub struct Line {
     pub digest: String,
 }
 
-/// What a put-back found, file by file, and whether it wrote.
+/// What a put-back found, file by file, whether it wrote, and the files
+/// already on the drive as the copy holds them that the copy's record now
+/// says so of.
 #[derive(Debug, Default)]
 pub struct Report {
     pub lines: Vec<Line>,
     pub written: bool,
+    pub recorded: Vec<String>,
 }
 
 /// The line of a file already on the drive as the copy holds it.
@@ -197,11 +203,15 @@ pub fn digests(folder: &Path) -> Result<BTreeMap<String, String>, Error> {
                     "{shown} is a key: a key lives on its person's own computer, never in a database"
                 )));
             }
+            if kind.is_file() && name.starts_with(INCOMING) {
+                return Err(refused(format!(
+                    "{shown} is a file being put back on the drive: someone is putting work back, or a put-back was cut short. Try again once it is done, or remove it if nobody is putting work back"
+                )));
+            }
             let top = rel.as_os_str().is_empty();
             let own = kind.is_file()
-                && ((top
-                    && (name == copied::FILE_NAME || name == LOCK || name.starts_with(RECORD)))
-                    || name.starts_with(INCOMING));
+                && top
+                && (name == copied::FILE_NAME || name == LOCK || name.starts_with(RECORD));
             if own {
                 continue;
             }
@@ -279,31 +289,16 @@ fn only_by(f: &File, scope: &str, me: &str) -> File {
     only
 }
 
-/// Whether one of `me`'s `ok` signatures of `scope` in `f` is made with a key
-/// `registry` still counts for them at `at`, the moment the work goes back: a
-/// key revoked since, from whatever day, puts nothing back.
-fn key_counts_now(
-    f: &File,
-    scope: &str,
-    me: &str,
-    at: &str,
-    registry: &Registry,
-) -> Result<(), String> {
-    let mut why = Vec::new();
-    for s in f
-        .signatures
-        .iter()
-        .filter(|s| s.scope == scope && s.signer == me && s.verdict == "ok")
-    {
-        match registry.key(me, &s.public_key, at) {
-            Ok(_) => return Ok(()),
-            Err(e) => why.push(e.message().to_string()),
-        }
-    }
-    Err(format!(
-        "the key {me} signed it with does not count for them at {at}, when it would go back: {}",
-        why.join("; ")
-    ))
+/// `f` with only `me`'s signatures of `scope` made with a key `registry`
+/// still counts for them at `at`, the moment the work goes back, and every
+/// other row as it is: a key revoked since, from whatever day, signs nothing
+/// that goes back.
+fn only_counting_now(f: &File, scope: &str, me: &str, at: &str, registry: &Registry) -> File {
+    let mut only = f.clone();
+    only.signatures.retain(|s| {
+        s.scope != scope || (s.signer == me && registry.key(me, &s.public_key, at).is_ok())
+    });
+    only
 }
 
 /// The registry the node files in `group`'s folder are read against: the
@@ -378,8 +373,40 @@ fn node_verdict(
                 .into(),
         );
     }
-    // The node's own signatures are what a put-back brings; everything else
-    // outside its rows is as the drive holds it, other signatures among them.
+    let registry = registry_of(chain, group)?;
+    if registry.file.mounts.iter().any(|m| m.block_uid == mine.uid) {
+        return Err(format!(
+            "{} is where a group hangs in {}, not a node: no node's file is put back for it",
+            mine.id, registry.from
+        ));
+    }
+    f.check_meta().map_err(said)?;
+    // The node's signatures: every one the drive's file holds is kept, and
+    // the only ones added are `me`'s own.
+    let rows = |x: &File| -> Vec<crate::model::SignatureRow> {
+        x.signatures
+            .iter()
+            .filter(|r| r.scope == mine.uid)
+            .cloned()
+            .collect()
+    };
+    let (now_rows, was_rows) = (rows(&f), rows(&drive_file));
+    if let Some(gone) = was_rows.iter().find(|r| !now_rows.contains(r)) {
+        return Err(format!(
+            "it leaves out a signature by {} that the drive's file holds: a signature is never taken away",
+            gone.signer
+        ));
+    }
+    if let Some(theirs) = now_rows
+        .iter()
+        .find(|r| !was_rows.contains(r) && r.signer != me)
+    {
+        return Err(format!(
+            "it brings a signature by {}: only {me}'s own goes back with {me}'s work",
+            theirs.signer
+        ));
+    }
+    // Everything else outside the node's rows is as the drive holds it.
     let unsigned = |x: &File| {
         let mut x = x.clone();
         x.signatures.retain(|r| r.scope != mine.uid);
@@ -401,28 +428,53 @@ fn node_verdict(
         ));
     }
     let drive_revision = save::revision_of(&drive_file, path).map_err(said)?;
-    let same_content = chain::digest(&f, &mine.uid).map_err(said)?
-        == chain::digest(&drive_file, &mine.uid).map_err(said)?;
-    if revision < drive_revision || (revision == drive_revision && !same_content) {
+    if revision < drive_revision {
         return Err(format!(
-            "it is revision {revision}, and the drive holds revision {drive_revision}{}: a node's file goes back as a later revision, or as the same one signed",
-            if revision == drive_revision { " with other content" } else { "" }
+            "it is revision {revision}, and the drive holds revision {drive_revision}: a node's file goes back as a later revision, or as the same one signed"
         ));
     }
-    let registry = registry_of(chain, group)?;
-    if registry.file.mounts.iter().any(|m| m.block_uid == mine.uid) {
+    if revision == drive_revision {
+        // The same revision: the drive's file, and nothing more than `me`'s
+        // signature and the program that wrote it.
+        let bare = |x: &File| {
+            let mut x = unsigned(x);
+            x.meta.remove("written_by_app");
+            x
+        };
+        if bare(&f) != bare(&drive_file) {
+            return Err(format!(
+                "it is revision {revision}, as the drive's file is, and differs from it in more than {me}'s signature: a changed node goes back as a later revision"
+            ));
+        }
+    }
+    let writer = f.meta.get("writer").map_or("", String::as_str);
+    if !registry.may_sign_node(writer, &mine.uid) {
         return Err(format!(
-            "{} is where a group hangs in {}, not a node: no node's file is put back for it",
+            "it says {writer:?} wrote it, who may not write {} in {}",
             mine.id, registry.from
         ));
     }
-    chain::check_node(&only_by(&f, &mine.uid, me), &mine.uid, registry).map_err(|e| {
-        format!(
-            "it carries no current signature by {me} that counts on the drive: {}",
-            e.message()
-        )
-    })?;
-    key_counts_now(&f, &mine.uid, me, at, registry)?;
+    // One signature by `me` both counts as it was made and is made with a key
+    // that still counts now: the chain is read on only those. Why not is said
+    // as which of the two fails.
+    if let Err(now) = chain::check_node(
+        &only_counting_now(&f, &mine.uid, me, at, registry),
+        &mine.uid,
+        registry,
+    ) {
+        return Err(
+            match chain::check_node(&only_by(&f, &mine.uid, me), &mine.uid, registry) {
+                Err(e) => format!(
+                    "it carries no current signature by {me} that counts on the drive: {}",
+                    e.message()
+                ),
+                Ok(()) => format!(
+                    "the key {me} signed it with does not count for them at {at}, when it would go back: {}",
+                    now.message()
+                ),
+            },
+        );
+    }
     let found = checks::check_node(&f);
     let refusing: Vec<String> = found
         .errors()
@@ -436,55 +488,6 @@ fn node_verdict(
         ));
     }
     Ok(format!("goes back: the node {}, signed by {me}", mine.id))
-}
-
-/// Whether the changed group file at `path` goes back as `me`'s work: a file
-/// the drive holds, changed at its valve and signed by `me` there.
-fn group_verdict(
-    group: &str,
-    bytes: &[u8],
-    theirs: Option<&[u8]>,
-    me: &str,
-    at: &str,
-    chain: &Chain,
-) -> Result<String, String> {
-    if theirs.is_none() {
-        return Err(
-            "the drive holds no group file at this path: a put-back changes the group files there are, and a new group comes from the file that mounts it"
-                .into(),
-        );
-    }
-    let f = save::parsed(bytes).map_err(|e| format!("it does not read: {}", e.message()))?;
-    if f.kind().map_err(|e| e.message().to_string())? != Kind::Group
-        || f.meta.get("group_id").map(String::as_str) != Some(group)
-    {
-        return Err(format!(
-            "it is not {group}'s group file: a group's file lives in its own group's folder"
-        ));
-    }
-    let mine = only_by(&f, FILE, me);
-    let opened = match group {
-        "programme" => chain::open_programme(mine, &chain.anchor).map(|_| ()),
-        "systems" => chain::open_systems(&mine, &chain.programme).map(|_| ()),
-        _ => {
-            let parents: Vec<&Registry> = std::iter::once(&chain.programme)
-                .chain(chain.systems.as_ref())
-                .collect();
-            chain::mounted_by(group, &parents).and_then(|(parent, _)| {
-                chain::open_group_in(&mine, parent, &chain.programme).map(|_| ())
-            })
-        }
-    };
-    opened.map_err(|e| {
-        format!(
-            "it carries no current signature by {me} that counts on the drive: {}",
-            e.message()
-        )
-    })?;
-    // Whoever signs a group's file at its valve is registered in the
-    // programme's file, as the drive holds it.
-    key_counts_now(&f, FILE, me, at, &chain.programme)?;
-    Ok(format!("goes back: {group}'s group file, signed by {me}"))
 }
 
 /// Whether the changed file at `path` goes back as `me`'s work: why it does,
@@ -502,13 +505,10 @@ fn verdict(
         ["groups", g, "nodes", name] if name.ends_with(".vnode") => {
             node_verdict(path, g, bytes, theirs, me, at, chain)
         }
-        ["groups", g, name] if *name == format!("{g}.vgroup") => {
-            group_verdict(g, bytes, theirs, me, at, chain)
-        }
-        _ => Err(
-            "it is not a file the application puts back yet: a node's file, or a group's file changed at its valve"
-                .into(),
-        ),
+        ["groups", g, name] if *name == format!("{g}.vgroup") => Err(format!(
+            "{g}'s group file does not go back yet: what may change in a group's file is not yet checked against the drive's, so a change of its people stays in your copy"
+        )),
+        _ => Err("it is not a file the application puts back yet: a node's file goes back".into()),
     }
 }
 
@@ -667,11 +667,17 @@ pub fn put_back(
     } else {
         done.join(", ")
     };
+    let failed_too = failed.as_ref().map_or(String::new(), |(path, e)| {
+        format!(
+            " {path} could not be written on the drive ({}), and the files after it were not",
+            e.message()
+        )
+    });
     if let Err(e) = write_record(copy, &record) {
         return Err(Error::new(
             ErrorKind::Io,
             format!(
-                "{went} went back to the drive, but your copy's record could not say so: {}. Copy the database again only once this is put right",
+                "{went} went back to the drive, but your copy's record could not say so: {}.{failed_too} Copy the database again only once this is put right",
                 e.message()
             ),
         ));
@@ -685,6 +691,7 @@ pub fn put_back(
             ),
         ));
     }
+    report.recorded = already.iter().map(|(p, _)| p.clone()).collect();
     report.written = !done.is_empty();
     Ok(report)
 }
@@ -732,4 +739,29 @@ fn write_record(copy: &Path, record: &Copied) -> Result<(), Error> {
         let _ = std::fs::remove_file(&tmp);
         io(&at, e)
     })
+}
+
+#[cfg(all(test, unix))]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn nothing_is_written_through_a_link_even_when_one_appears_after_the_report() {
+        let at = std::env::temp_dir().join(format!("vleo-write-link-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&at);
+        let (drive, outside) = (at.join("drive"), at.join("outside"));
+        std::fs::create_dir_all(drive.join("groups/g")).unwrap();
+        std::fs::create_dir_all(&outside).unwrap();
+        std::fs::write(outside.join("f.vnode"), "theirs").unwrap();
+        std::os::unix::fs::symlink(&outside, drive.join("groups/g/nodes")).unwrap();
+        let e = write_on_drive(&drive, "groups/g/nodes/f.vnode", b"mine", 0).unwrap_err();
+        assert!(
+            e.message().contains("reached through a link"),
+            "{}",
+            e.message()
+        );
+        assert_eq!(std::fs::read(outside.join("f.vnode")).unwrap(), b"theirs");
+        assert_eq!(std::fs::read_dir(&outside).unwrap().count(), 1);
+        let _ = std::fs::remove_dir_all(&at);
+    }
 }

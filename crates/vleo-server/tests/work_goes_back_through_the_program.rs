@@ -529,6 +529,17 @@ fn signed_work_goes_back_to_the_drive_and_nothing_else_does() {
     let r = post(port, "/v1/put-back", &[]);
     assert!(r.contains("\"back\":[]") && r.contains("revoked"), "{r}");
 
+    // Solar's file on the drive swapped for a link to one elsewhere: the chain
+    // never reads a group's file through a link, and says so.
+    #[cfg(unix)]
+    {
+        let elsewhere = scratch.join("elsewhere.vgroup");
+        std::fs::rename(drv.join(SOLAR), &elsewhere).unwrap();
+        std::os::unix::fs::symlink(&elsewhere, drv.join(SOLAR)).unwrap();
+        let r = post(port, "/v1/put-back", &[]);
+        assert!(r.contains("is reached through a link"), "{r}");
+    }
+
     post(port, "/v1/key/close", &[]);
     let _ = std::fs::remove_dir_all(&scratch);
 }

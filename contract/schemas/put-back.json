@@ -11,6 +11,13 @@
       "type": "boolean",
       "description": "Whether the files that go back were written on the drive: only when they were named, and were exactly the ones the report gave."
     },
+    "recorded": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Files already on the drive as the copy holds them, which the copy's record now says so of."
+    },
     "by": {
       "type": "string",
       "description": "Whose work goes back: the open key's person."

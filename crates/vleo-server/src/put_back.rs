@@ -87,6 +87,14 @@ fn answer(params: &str, ctx: &Ctx) -> Result<String, String> {
     j.raw("{");
     j.bool_field("ok", true);
     j.bool_field("written", report.written);
+    j.key("recorded").raw("[");
+    for (i, p) in report.recorded.iter().enumerate() {
+        if i > 0 {
+            j.raw(",");
+        }
+        j.raw(&json::string(p));
+    }
+    j.raw("]");
     j.str_field("by", &by);
     j.str_field("drive", &record.drive);
     j.key("files").raw("[");
@@ -118,6 +126,11 @@ fn answer(params: &str, ctx: &Ctx) -> Result<String, String> {
                 "{} back on the drive as {by}'s: {}.",
                 count(back.len(), "file is", "files are"),
                 back.join(", ")
+            )
+        } else if !report.recorded.is_empty() {
+            format!(
+                "{} already on the drive as your copy holds it: your copy's record now says so. Nothing else is written.",
+                count(report.recorded.len(), "file is", "files are")
             )
         } else if report.lines.is_empty() {
             "Nothing in your copy has changed since it was taken: nothing goes back.".to_string()
