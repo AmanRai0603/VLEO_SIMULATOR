@@ -1,6 +1,6 @@
 # Lessons
 
-> **Answer first.** A lesson is a row's `lesson.toml`: content only — stations of text with a claim each, equations with their source, "try it" widgets that name input and output rows, check-yourself questions, references. The page draws every part from one component library, and a widget computes nothing itself: the engine answers it. The gate refuses a lesson with markup, an untagged claim, or a widget naming a row that is not there. The design's files have no place for a lesson yet, so none reaches the design today.
+> **Answer first.** A lesson is a row's `lesson.toml`: content only — stations of text with a claim each, equations with their source, "try it" widgets that name input and output rows, check-yourself questions, references. The page draws every part from one component library, and a widget computes nothing itself: the engine answers it. The gate refuses a lesson with markup, an untagged claim, or a widget naming a row that is not there. Its place is the row's node file, where it is signed with the node; no row has one yet.
 >
 > **Kind:** reference · **For:** the node engineers who write lessons, and the developer who keeps the form and its check
 
@@ -68,12 +68,21 @@ none.
 2. **The check.** `cargo run -p xtask -- lesson check <file>` says what the
    filled form holds and every reason it would be refused. It reads a filled
    form or a bare `lesson.toml` (with `--for <node>`), and writes nothing.
-3. **Into the design — not yet.** A checked lesson is meant to go into the
-   design with its group's release. The design's files (`design/`, read by
-   `vleo_files::convert`) have no place for one yet, so the tool reads no
-   lesson for any row, and nothing in this repository writes one. Giving a
-   lesson its place in a row's file is application work (docs/PLAN_1_0.md,
-   phase F).
+3. **Into the node's file.** The node engineer saves the lesson in the
+   row's node file in their working copy (`POST /v1/node/<id>/lesson`, with
+   the filled form or the bare `lesson.toml`). It is checked first as the gate
+   checks it, against the design the program reads, and refused with every
+   reason; otherwise it is saved as the node's next revision, like any save.
+   It lives there as a `text` of kind `lesson` on the node's block, word for
+   word as it was written (docs/briefs/F3.md, F3-e).
+4. **Signed with the node, and into the design with its group's release.**
+   The node's signature covers its texts, so the lesson is signed with the
+   node as the day's work, and a lesson changed after is not signed. The
+   node's own checks hold it to everything the gate checks but the rows it
+   names. Read from the design's files, the lesson is served to the loader as
+   the `lesson.toml` its folder held (`vleo_files::convert::Served`), so the
+   row's page, the gate and the form read it as they read one in a checkout.
+   Nothing in this repository writes one into `design/`.
 
 The lesson travels in the form escaped, so nothing it says can end or open an
 element of the page.
@@ -90,8 +99,8 @@ or a saved result's key.
   not a saved case, and with no reference data, so a row that reads a data
   bundle refuses there by name.
 - **No row has a lesson yet.** The example is an example: its text is taken
-  from what `orbit_velocity`'s own sheet says, its `by` names nobody, and no
-  row's file can hold it yet. And that row does not answer today (its relation
+  from what `orbit_velocity`'s own sheet says, and its `by` names nobody. A
+  row's file can hold one now, and none does. And that row does not answer today (its relation
   is stated, not derived), so a widget on it shows the engine's refusal — which
   is the right thing for it to show.
 - **A group cannot carry a lesson.** A lesson belongs to a row, and a group —

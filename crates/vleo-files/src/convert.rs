@@ -20,6 +20,7 @@
 //! | `[value]` | the output's value |
 //! | `[method]`, `[explain]` | `text`: `method`, `explain.simply`, `explain.breaks`, `explain.wrong` |
 //! | `fixtures.toml` | `test_case`s, each with its provenance |
+//! | `lesson.toml` | `text`: `lesson`, as it was written |
 //! | `parity.csv` | a `tbl` |
 //! | a group's crossing row | the `mount` its group hangs from, in the branch above |
 //! | `[[iterate]]` | a `loop`, on the smallest block that holds every row it runs through |
@@ -76,6 +77,10 @@ const FILE: &str = "file";
 const SHEET: &str = "sheet";
 const HEADING: &str = "heading";
 const FIXTURES: &str = "fixtures";
+/// A row's lesson (docs/LESSONS.md): the `lesson.toml` its folder held, as it
+/// was written, in a `text` of this kind on its block (docs/briefs/F3.md,
+/// F3-e).
+pub const LESSON: &str = "lesson";
 const LOOP: &str = "loop";
 /// A text kept as it was, by its path.
 const KEPT: &str = "as converted: ";
@@ -718,6 +723,9 @@ impl Served {
                     }
                     if let Some(pc) = parity {
                         s.put(dir.join("parity.csv"), pc.into_bytes());
+                    }
+                    if let Some(l) = text_in(f, id, LESSON) {
+                        s.put(dir.join(vleo_sheet::lesson::FILE), l.as_bytes().to_vec());
                     }
                 }
                 Kind::Group => {

@@ -224,6 +224,7 @@ fn blocks(f: &File, out: &mut Findings) {
             .collect();
         let out_port = ports.iter().copied().find(|p| p.direction == "out");
         inputs(f, b, &ins, out);
+        lesson(f, b, out);
         match b.behaviour.as_str() {
             "method" => {
                 declaration(f, b, out);
@@ -650,6 +651,36 @@ fn method(f: &File, b: &Block, ins: &[&Port], out_port: Option<&Port>, out: &mut
                 &b.id,
                 format!("its method does not reproduce «{}»: {}", c.label, v.text(c)),
             );
+        }
+    }
+}
+
+/// A block's lesson (docs/LESSONS.md), held to the check the gate runs on
+/// it, all but what it names in the rest of the design: a key the reader does
+/// not know, markup, a claim not tagged or a sourced one with no source, a
+/// check whose answer is not an option. Whether a widget's rows are there and
+/// may be moved is the design's to say, and the gate checks it once the design
+/// holds the lesson, as the program does when it is written.
+fn lesson(f: &File, b: &Block, out: &mut Findings) {
+    let Some(t) = f
+        .texts
+        .iter()
+        .find(|t| t.scope == b.uid && t.kind == crate::convert::LESSON)
+    else {
+        return;
+    };
+    match vleo_sheet::lesson::read(&t.body, &b.id) {
+        Err(e) => out.error(&b.id, format!("its lesson does not read: {}", e.message())),
+        Ok(l) => {
+            let any_row = |_: &str| {
+                Some(vleo_sheet::lesson::RowKind {
+                    declared: true,
+                    seeded: false,
+                })
+            };
+            for p in vleo_sheet::lesson::problems_with(&l, &any_row) {
+                out.error(&b.id, format!("its lesson: {p}"));
+            }
         }
     }
 }
