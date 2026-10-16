@@ -286,6 +286,15 @@ fn drive(at: &Path, keys: &Path) {
         &key(73),
         "Test Pat",
     );
+    // Test Sue (77), Ola's deputy.
+    register(
+        &mut programme,
+        "Test Sue",
+        "subsystem engineer",
+        &key(77),
+        "Test Pat",
+    );
+    programme.people.last_mut().unwrap().deputy_for = s("Test Ola");
     mount(&mut programme, "root", "systems", "Test Sam");
     std::fs::create_dir_all(at.join("groups/programme")).unwrap();
     sqlite::write(
@@ -354,6 +363,7 @@ fn drive(at: &Path, keys: &Path) {
     write_key(keys, "test-ivo.vkey", "Test Ivo", &key(75));
     write_key(keys, "test-dee.vkey", "Test Dee", &key(76));
     write_key(keys, "test-ola.vkey", "Test Ola", &key(73));
+    write_key(keys, "test-sue.vkey", "Test Sue", &key(77));
 }
 
 fn open_key(port: u16, file: &str) -> String {
@@ -498,13 +508,33 @@ fn a_node_engineer_asks_in_the_node_s_file_and_its_subsystem_engineer_sees_it() 
     );
     assert!(
         work.contains("\"kind\":\"request refused\"")
-            && work.contains("the request by-hand by Test Nia has no signature"),
+            && work.contains("the request \\\"by-hand\\\" is not named for the node"),
         "{work}"
     );
     assert_eq!(
         work.matches("\"kind\":\"request\"").count(),
         1,
         "the forged one is not listed as asked: {work}"
+    );
+    post(port, "/v1/key/close", &[]);
+    // Sue, Ola's deputy, finds it too.
+    assert!(open_key(port, "test-sue.vkey").contains("\"open\":true"));
+    let work = ask(port, "GET", "/v1/my-work", &[], false);
+    assert_eq!(work.matches("\"kind\":\"request\"").count(), 1, "{work}");
+    post(port, "/v1/key/close", &[]);
+    // Said to be declined by hand, Nia's request is not taken as answered:
+    // no answer to it is signed, so it is said as refused, not left out.
+    let mut said = sqlite::read(&copy.join(NODE)).unwrap();
+    for r in said.requests.iter_mut().filter(|r| r.uid == uid) {
+        r.status = s("declined");
+    }
+    sqlite::write(&said, &copy.join(NODE)).unwrap();
+    assert!(open_key(port, "test-ola.vkey").contains("\"open\":true"));
+    let work = ask(port, "GET", "/v1/my-work", &[], false);
+    assert!(
+        !work.contains("\"kind\":\"request\"")
+            && work.contains("says it is declined, and no answer to it is signed yet"),
+        "{work}"
     );
     post(port, "/v1/key/close", &[]);
     // Nia is not solar's owner: her My work holds no request.

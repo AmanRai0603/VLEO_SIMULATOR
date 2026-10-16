@@ -438,7 +438,7 @@ fn asked(id: &str, params: &str, ctx: &Ctx) -> Result<String, String> {
             j.str_field(
                 "message",
                 &format!(
-                    "{by} asks, in {id}'s file, for {}, signed, in your copy. It reaches {id}'s subsystem engineer when your work is put back.",
+                    "{by} asks, in {id}'s file, for {}, signed, in your copy. It goes back to the drive when your work is put back: by itself while {id} is the drive's revision, or with a later revision once you sign it. {id}'s subsystem engineer finds it in My work when they copy the drive again.",
                     if kind == "breakdown" {
                         "a breakdown"
                     } else {

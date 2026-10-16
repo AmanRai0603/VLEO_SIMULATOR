@@ -24,7 +24,9 @@
 //! What a file records about itself is not content and is not signed: its
 //! comments, issues, requests and changes, a key file's key, and the
 //! signatures of the file as a whole. The signatures of its blocks are: a
-//! seal covers the node signatures it seals.
+//! seal covers the node signatures it seals. A request is signed on its own,
+//! by whoever asked ([`REQUEST`]): a seal covers that signature, and the
+//! request row is the request's own to sign.
 
 use crate::error::{Error, ErrorKind};
 use crate::keys::{hex, sha256, PublicKey, Signature, SigningKey};
@@ -129,12 +131,15 @@ pub fn digest(f: &File, scope: &str) -> Result<String, Error> {
     let mut out = b"vleo content 1\0".to_vec();
     put_cell(&mut out, &Cell::Text(scope.to_string()));
     if let Some(uid) = scope.strip_prefix(REQUEST) {
-        let r = f.requests.iter().find(|r| r.uid == uid).ok_or_else(|| {
-            refused(
+        let r = the_request(f, uid)?;
+        if f.blocks.iter().any(|b| b.uid == scope) {
+            return Err(refused(
                 ErrorKind::Malformed,
-                format!("there is no request {uid:?} in this file to sign"),
-            )
-        })?;
+                format!(
+                    "{scope:?} names a block and a request: a block's uid never begins {REQUEST:?}"
+                ),
+            ));
+        }
         for part in [&r.uid, &r.kind, &r.scope, &r.raised_by, &r.at, &r.body] {
             put_cell(&mut out, &Cell::Text(part.clone()));
         }
@@ -193,6 +198,24 @@ pub fn message(row: &SignatureRow) -> Vec<u8> {
         m.push(0);
     }
     m
+}
+
+/// The one request `uid` names in `f`, or why not: none, or more than one. A
+/// uid is a request's whole name, so two rows that share one are refused,
+/// never read as the first of them.
+fn the_request<'a>(f: &'a File, uid: &str) -> Result<&'a crate::model::Request, Error> {
+    let mut found = f.requests.iter().filter(|r| r.uid == uid);
+    match (found.next(), found.next()) {
+        (Some(r), None) => Ok(r),
+        (None, _) => Err(refused(
+            ErrorKind::Malformed,
+            format!("there is no request {uid:?} in this file"),
+        )),
+        (Some(_), Some(_)) => Err(refused(
+            ErrorKind::Malformed,
+            format!("more than one request in this file is {uid:?}: a request's uid is its own"),
+        )),
+    }
 }
 
 /// The revision a scope is at: a block's own, or the file's. A request is
@@ -952,17 +975,47 @@ pub fn sign_node(
 /// breakdown (W13). A request of the code is made in My work (W14).
 pub const ASKED_IN_A_NODE: &[&str] = &["contract", "breakdown"];
 
-/// A request's signature, checked against its node's group: a current `ok`
-/// by the person who asked, with a key the group counts for them, when they
-/// may write the node it is on (its node engineer, or their deputy). One
-/// writer per file: nobody else's request counts in it.
+/// The one rule of a request asked in a node's file: what [`ask`] writes, and
+/// all a put-back and My work take. It is the only one of its uid, and its uid
+/// is its node's followed by `-r` and a count from 1, as [`ask`] makes it;
+/// it is of a contract or a breakdown ([`ASKED_IN_A_NODE`]) and says
+/// something; it is on a block the file holds; and it carries a current `ok`
+/// signature by the person who asked, made at the moment it says it was
+/// asked, with a key the group counts for them, when they may write the node
+/// (its node engineer, or their deputy). One writer per file: nobody else's
+/// request counts in it. Whether it is still open is its answerer's to say.
 pub fn check_request(f: &File, uid: &str, group: &Registry) -> Result<(), Error> {
-    let r = f.requests.iter().find(|r| r.uid == uid).ok_or_else(|| {
-        refused(
+    let r = the_request(f, uid)?;
+    let own = uid
+        .strip_prefix(&r.scope)
+        .and_then(|n| n.strip_prefix("-r"))
+        .and_then(|n| n.parse::<u64>().ok())
+        .is_some_and(|n| n >= 1 && uid == format!("{}-r{n}", r.scope));
+    if !own {
+        return Err(refused(
             ErrorKind::Malformed,
-            format!("there is no request {uid:?} in this file"),
-        )
-    })?;
+            format!(
+                "the request {uid:?} is not named for the node it is on ({}-r1, -r2 …): a request is named as asking names it",
+                r.scope
+            ),
+        ));
+    }
+    if !ASKED_IN_A_NODE.contains(&r.kind.as_str()) {
+        return Err(refused(
+            ErrorKind::Malformed,
+            format!(
+                "the request {uid} is of {:?}: a node's file asks for a contract change or a breakdown",
+                r.kind
+            ),
+        ));
+    }
+    if r.body.trim().is_empty() {
+        return Err(refused(
+            ErrorKind::Malformed,
+            format!("the request {uid} says nothing"),
+        ));
+    }
+    instant(&r.at, &format!("the moment the request {uid} was asked"))?;
     if !f.blocks.iter().any(|b| b.uid == r.scope) {
         return Err(refused(
             ErrorKind::Malformed,
@@ -979,6 +1032,15 @@ pub fn check_request(f: &File, uid: &str, group: &Registry) -> Result<(), Error>
         return Err(none_counts(
             &format!("the request {uid} by {}", r.raised_by),
             &why,
+        ));
+    }
+    if !ok.iter().any(|s| s.signed_at == r.at) {
+        return Err(refused(
+            ErrorKind::Signature,
+            format!(
+                "the request {uid} says it was asked at {}, and {} signed it at another moment: a request is signed as it is asked",
+                r.at, r.raised_by
+            ),
         ));
     }
     Ok(())
@@ -1003,17 +1065,32 @@ pub fn ask(
     at: &str,
     group: &Registry,
 ) -> Result<(File, String), Error> {
-    let id = f
+    let block = f
         .blocks
         .iter()
         .find(|b| b.uid == block_uid)
-        .map(|b| b.id.clone())
         .ok_or_else(|| {
             refused(
                 ErrorKind::Malformed,
                 format!("the file holds no block {block_uid}, so nothing is asked of it"),
             )
         })?;
+    let id = block.id.clone();
+    if block.archived != 0 {
+        return Err(refused(
+            ErrorKind::Malformed,
+            format!("{id} is archived: nothing is asked of an archived node"),
+        ));
+    }
+    if group.file.mounts.iter().any(|m| m.block_uid == block_uid) {
+        return Err(refused(
+            ErrorKind::Malformed,
+            format!(
+                "{id} is where a group hangs in {}, not a node: a change to a mount is asked of the system engineer (W4)",
+                group.from
+            ),
+        ));
+    }
     if !ASKED_IN_A_NODE.contains(&kind) {
         return Err(refused(
             ErrorKind::Malformed,

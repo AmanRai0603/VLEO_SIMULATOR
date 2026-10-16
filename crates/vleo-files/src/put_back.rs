@@ -489,10 +489,19 @@ fn node_verdict(
         &mine.uid,
         registry,
     ) {
+        // Requests go back by themselves only on the drive's own revision:
+        // on a later one they go back with it, signed.
+        let requests = if asked.is_empty() {
+            String::new()
+        } else {
+            format!(
+                " Its requests go back by themselves only while the node is the drive's revision {drive_revision}: sign revision {revision}, and they go back with it"
+            )
+        };
         return Err(
             match chain::check_node(&only_by(&f, &mine.uid, me), &mine.uid, registry) {
                 Err(e) => format!(
-                    "it carries no current signature by {me} that counts on the drive: {}",
+                    "it carries no current signature by {me} that counts on the drive: {}.{requests}",
                     e.message()
                 ),
                 Ok(()) => format!(
@@ -530,6 +539,16 @@ fn requests_verdict(
     at: &str,
     registry: &Registry,
 ) -> Result<Vec<String>, String> {
+    // A uid is a request's whole name: two rows that share one are refused,
+    // never read as the first of them.
+    for (k, r) in f.requests.iter().enumerate() {
+        if f.requests[..k].iter().any(|o| o.uid == r.uid) {
+            return Err(format!(
+                "it holds more than one request {:?}: a request's uid is its own",
+                r.uid
+            ));
+        }
+    }
     for r in &drive_file.requests {
         if !f.requests.contains(r) {
             return Err(format!(
@@ -577,19 +596,19 @@ fn requests_verdict(
                 r.uid, r.raised_by
             ));
         }
-        if !chain::ASKED_IN_A_NODE.contains(&r.kind.as_str()) {
-            return Err(format!(
-                "it brings the request {}, of {:?}: a node's file asks for a contract change or a breakdown",
-                r.uid, r.kind
-            ));
-        }
         if r.status != "open" || !r.answer.is_empty() {
             return Err(format!(
-                "it brings the request {} already {}: a request is answered by its group, not by whoever asked",
+                "it brings the request {} already answered ({}): a request is answered by its group, not by whoever asked",
                 r.uid, r.status
             ));
         }
         let scope = chain::request_scope(&r.uid);
+        if let Some(old) = drive_file.signatures.iter().find(|s| s.scope == scope) {
+            return Err(format!(
+                "it brings the request {}, and the drive's file holds a signature by {} of a request of that name it does not hold: a signature is never taken away",
+                r.uid, old.signer
+            ));
+        }
         if let Some(theirs) = f
             .signatures
             .iter()
@@ -608,7 +627,7 @@ fn requests_verdict(
             return Err(
                 match chain::check_request(&only_by(f, &scope, me), &r.uid, registry) {
                     Err(e) => format!(
-                        "its request {} on {id} carries no signature by {me} that counts on the drive: {}",
+                        "its request {} on {id} does not count on the drive: {}",
                         r.uid,
                         e.message()
                     ),

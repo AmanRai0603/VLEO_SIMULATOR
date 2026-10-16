@@ -477,6 +477,15 @@ pub fn ask_in_place(
                 .map_or("no group", String::as_str)
         )));
     }
+    // One revision, as a signing holds it: a request asked of a file whose
+    // two revisions disagree could never go back.
+    let revision = revision_of(&now, path)?;
+    if now.blocks[0].revision != revision as i64 {
+        return Err(refused(format!(
+            "{path} says it is revision {revision}, and its block says {}: it is one revision, and nothing is asked of it until the two agree",
+            now.blocks[0].revision
+        )));
+    }
     let block = now.blocks[0].uid.clone();
     let (mut asked, uid) = crate::chain::ask(&now, &block, kind, body, by, key, at, group)?;
     asked.meta.insert("written_by_app".into(), app.to_string());

@@ -122,6 +122,12 @@ fn group(nia_revoked: &str) -> Registry {
         person: s("Test Nia"),
         contract_version: 1,
     });
+    // A second node of hers, for a request moved from one node to another.
+    g.assignments.push(Assignment {
+        block_uid: s("b-two"),
+        person: s("Test Nia"),
+        contract_version: 1,
+    });
     Registry {
         from: s("l3_solar's group file"),
         file: g,
@@ -458,5 +464,218 @@ fn a_save_keeps_every_request_as_it_was_asked() {
         body: s("A line of Test Nia's own."),
     });
     save(&c, NODE, &edit, &opened(&c), "Test Nia", APP, &g).unwrap();
+    let _ = std::fs::remove_dir_all(&c);
+}
+
+/// `f` with a request written by hand, `uid` on `scope`, signed by Nia at
+/// `signed_at`.
+fn by_hand(
+    f: &File,
+    uid: &str,
+    scope: &str,
+    kind: &str,
+    body: &str,
+    at: &str,
+    signed_at: &str,
+) -> File {
+    let mut f = f.clone();
+    f.requests.push(Request {
+        uid: s(uid),
+        kind: s(kind),
+        scope: s(scope),
+        raised_by: s("Test Nia"),
+        at: s(at),
+        body: s(body),
+        status: s("open"),
+        answer: s(""),
+    });
+    let row = chain::sign(
+        &f,
+        &chain::request_scope(uid),
+        "Test Nia",
+        &key(74),
+        signed_at,
+        "ok",
+        "",
+    )
+    .unwrap();
+    f.signatures.push(row);
+    f
+}
+
+#[test]
+fn a_request_is_the_only_one_of_its_name_and_named_for_its_node() {
+    let g = group("");
+    let (f, uid) = asked(&node(), "Test Nia", &key(74));
+    // Two rows of one name: refused, never read as the first.
+    let mut twice = f.clone();
+    let mut again = twice.requests[0].clone();
+    again.body = s("Something she never asked.");
+    twice.requests.push(again);
+    for e in [
+        chain::check_request(&twice, &uid, &g).unwrap_err(),
+        chain::digest(&twice, &chain::request_scope(&uid)).unwrap_err(),
+    ] {
+        assert!(
+            e.message().contains("more than one request"),
+            "{}",
+            e.message()
+        );
+    }
+    // Named otherwise than asking names one, signed as it is: refused.
+    for name in [
+        "r1",
+        "sw_activity_band-r0",
+        "sw_activity_band-r01",
+        "sw_activity_band-rx",
+        "elsewhere-r1",
+    ] {
+        let f = by_hand(&node(), name, UID, "contract", ASK, AT, AT);
+        let e = chain::check_request(&f, name, &g).unwrap_err();
+        assert!(
+            e.message().contains("is not named for the node it is on"),
+            "{name}: {}",
+            e.message()
+        );
+    }
+    let named = by_hand(&node(), "sw_activity_band-r7", UID, "contract", ASK, AT, AT);
+    chain::check_request(&named, "sw_activity_band-r7", &g).expect("named as asking names one");
+    // A block whose uid is a request's scope: neither is signed as the other.
+    let mut odd = node();
+    let mut b = odd.blocks[0].clone();
+    b.uid = s("request:x");
+    odd.blocks.push(b);
+    odd.requests.push(Request {
+        uid: s("x"),
+        kind: s("contract"),
+        scope: s(UID),
+        raised_by: s("Test Nia"),
+        at: s(AT),
+        body: s(ASK),
+        status: s("open"),
+        answer: s(""),
+    });
+    let e = chain::digest(&odd, "request:x").unwrap_err();
+    assert!(
+        e.message().contains("names a block and a request"),
+        "{}",
+        e.message()
+    );
+}
+
+#[test]
+fn a_request_counts_only_as_it_was_asked() {
+    let g = group("");
+    for (what, f, uid, says) in [
+        (
+            "of the code",
+            by_hand(&node(), "sw_activity_band-r1", UID, "code", ASK, AT, AT),
+            "sw_activity_band-r1",
+            "is of \"code\"",
+        ),
+        (
+            "saying nothing",
+            by_hand(&node(), "sw_activity_band-r1", UID, "contract", " ", AT, AT),
+            "sw_activity_band-r1",
+            "says nothing",
+        ),
+        (
+            "at no moment",
+            by_hand(
+                &node(),
+                "sw_activity_band-r1",
+                UID,
+                "contract",
+                ASK,
+                "yesterday",
+                AT,
+            ),
+            "sw_activity_band-r1",
+            "neither a day",
+        ),
+        (
+            "signed at another moment",
+            by_hand(
+                &node(),
+                "sw_activity_band-r1",
+                UID,
+                "contract",
+                ASK,
+                AT,
+                "2026-10-15T12:00:01Z",
+            ),
+            "sw_activity_band-r1",
+            "signed it at another moment",
+        ),
+    ] {
+        let e = chain::check_request(&f, uid, &g).unwrap_err();
+        assert!(e.message().contains(says), "{what}: {}", e.message());
+    }
+    // Moved to another node of hers, it is not named for it: a request's
+    // name is its node's.
+    let mut two = node();
+    let mut b = two.blocks[0].clone();
+    b.uid = s("b-two");
+    b.id = s("two");
+    two.blocks.push(b);
+    let (mut f, uid) =
+        chain::ask(&two, UID, "contract", ASK, "Test Nia", &key(74), AT, &g).unwrap();
+    chain::check_request(&f, &uid, &g).unwrap();
+    f.requests[0].scope = s("b-two");
+    let e = chain::check_request(&f, &uid, &g).unwrap_err();
+    assert!(
+        e.message().contains("is not named for the node it is on"),
+        "{}",
+        e.message()
+    );
+}
+
+#[test]
+fn nothing_is_asked_of_an_archived_node_a_mount_or_a_file_of_two_revisions() {
+    let mut archived = node();
+    archived.blocks[0].archived = 1;
+    let e = chain::ask(
+        &archived,
+        UID,
+        "contract",
+        ASK,
+        "Test Nia",
+        &key(74),
+        AT,
+        &group(""),
+    )
+    .unwrap_err();
+    assert!(e.message().contains("is archived"), "{}", e.message());
+    let mut g = group("");
+    g.file.mounts.push(Mount {
+        block_uid: s(UID),
+        group_id: s("l3_other"),
+        ..Mount::default()
+    });
+    let e = chain::ask(&node(), UID, "contract", ASK, "Test Nia", &key(74), AT, &g).unwrap_err();
+    assert!(
+        e.message().contains("is where a group hangs"),
+        "{}",
+        e.message()
+    );
+    let mut two = node();
+    two.meta.insert(s("revision"), s("2"));
+    let c = copy("two-revisions", &two);
+    let before = std::fs::read(c.join(NODE)).unwrap();
+    let e = ask_in_place(
+        &c,
+        NODE,
+        &opened(&c),
+        "Test Nia",
+        &key(74),
+        AT,
+        "contract",
+        ASK,
+        APP,
+        &group(""),
+    )
+    .unwrap_err();
+    assert!(e.message().contains("its block says 1"), "{}", e.message());
+    assert_eq!(std::fs::read(c.join(NODE)).unwrap(), before);
     let _ = std::fs::remove_dir_all(&c);
 }
