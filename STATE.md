@@ -9,7 +9,7 @@ Target 1.0.0 on Monday 19 October; Tuesday to Thursday are the buffer.
 
 ## Person A · day
 
-Handed over Friday 16 October (S1 and S2: F1 to F3-c). Nothing is merged: everything waits on Aman.
+Handed over Friday 16 October (S1 and S2: F1 to F3-c, and the key's proof). Nothing is merged: everything waits on Aman.
 
 - **Open, in merge order:**
   - **162 the plan.** It now carries the nine briefs and F3's Plan (`docs/briefs/F3.md`).
@@ -54,12 +54,23 @@ Handed over Friday 16 October (S1 and S2: F1 to F3-c). Nothing is merged: everyt
     - It is written only on a second request naming exactly the report's files with their digests, under the drive's lock (`.vleo-put-back.lock`), with the chain read again under it.
     - Route: `POST /v1/put-back`. The scenario is `tools/put_back_check.py` in the panels job: two instances, one puts back, the other copies again and finds it signed.
 
-    Two Opus review rounds, all fixed (1cb9cc87, 48d1cabc), each with a test shown red. Four questions for Aman are in its body. CI on the last push is pending.
+    Two Opus review rounds, all fixed (1cb9cc87, 48d1cabc), each with a test shown red. Four questions for Aman are in its body. CI is green.
+  - **181 the key's proof kept in its row: high risk.** Stacked on 180.
+    - `person_key` gains `proof`. `Registry::key` refuses a key whose proof does not check, so it signs nothing anywhere the chain counts.
+    - **FORMAT is 3.** A format-2 file is read as format 3 with every proof empty, and **a copy is kept** when it is written again. This reverses Aman's "no copy": the review found that a whole file's signatures go stale when it is read, because its digest covers the format and the columns.
+    - `design/`'s 1424 files are converted to format 3; no answer moves. `request.kind` gains `breakdown`, for F3-d, so `design/` is converted once.
+    - The pre-1.0 anchor counts only a programme manager's key that counts. `GET /v1/people` says `proof_holds` for each key.
+
+    The Opus review found 10 points; nine are fixed in 9d22363e, each with a test shown red. The tenth (a proof is not bound to its file) and two more questions are for Aman in its body. CI's first run failed on `tools/files_check.mjs`, which still expected format 2; fixed in the same commit. CI on it is pending.
 - **What 171 decides, which B's PRs must follow:**
   - **Ownership follows the mount.** Only the programme's file (mounting `systems`) and the systems' file (mounting each `l3_*`) mount anything.
   - **A group file registers only node engineers.** It holds nobody the programme's file registers, and no key it registers. `open_group_in` refuses anything else, by name.
   - **The test drive (165) must change.** It mounts the l3 groups in the programme's file, so they read as mounted twice. It should assign the mounting blocks in the systems' file instead, and register only node engineers in group files.
   - **The anchor** is accepted once per drive, with `accept_anchor` on `POST /v1/key/open`. A scenario that opens a key passes it once, and since 174 also `session`, read from `<keys>/open.html`. A face must make the person compare the fingerprint, never fill it in from the answer.
+- **What 181 decides:**
+  - **Every file is format 3.** A format-2 file is read with every key's proof empty, so nothing in it counts, and it is kept beside the file when written again.
+  - **For B:** every test drive and key row B writes, 165's among them, stores a proof (`people::proof`). A drive written as format 2 is made again from the programme's file down.
+  - **A key without its proof is replaced by a new key.** No route adds a proof to a key already registered; the program tells its holder so.
 - **What 180 decides:**
   - **A group's file does not go back yet.** What a valve may change in it is not checked against the drive's file. So People's changes (F1) stay in the copy, and their messages say so. For Aman: a PR of its own in F3, or F5.
   - **The one walk of a folder is `vleo_files::put_back::digests`**, which the copy, its state and a put-back share.
@@ -88,10 +99,8 @@ Handed over Friday 16 October (S1 and S2: F1 to F3-c). Nothing is merged: everyt
 - **Lockfiles:** `crates/vleo-py` keeps its own, built `--locked` in CI, and so does `crates/vleo-kernel-wasm` until 177 removes it. A new dependency of `vleo-files` or `vleo-server` needs them refreshed, as 171 does.
 - **Disk:** the container's allowance filled once on S1. Old worktrees' `target/` folders and `target/*/incremental` were deleted to make room.
 - **Next for A, in order:**
-  - **The key's proof kept in its row** (the review of 172), stacked on 180, with Aman's two answers:
-    - **FORMAT goes to 3,** with an upgrade from format 2 that keeps a copy, as format 1 is upgraded today.
-    - **A key row without a valid proof counts for nothing.** **For B:** every test drive and key row B writes, 165's among them, must then store a proof (`people::proof`).
-  - **F3-d** (the brief's item 4, asking: a contract change or a breakdown as a request in the node file), then **F3-e** (item 5, a lesson's place in the node's file). Neither is planned in the brief yet; each starts with its plan.
+  - **F3-d, asking** (the brief's item 4): a contract change or a breakdown, written as a request in the node file and signed on its own, so a node that cannot be signed yet still asks. Planned in `docs/briefs/F3.md` (b1e476e7, on 162), with two questions for Aman. Being built on `claude/a-f3d-ask`, stacked on 181; high risk, since it adds a scope to the chain and a path to put-back.
+  - **F3-e** (item 5, a lesson's place in the node's file). Not planned yet; it starts with its plan.
 
 ## Person B · night
 
