@@ -16,8 +16,9 @@
 //!    fingerprint it was sealed with (`vleo_files::seal`);
 //! 4. its content holds: every check today's intake makes of a release
 //!    (`vleo_files::checks::check_release`), each error named;
-//! 5. each of its computed nodes, as the node form its node engineer would
-//!    have filled, plans against the design without a conflict or a refusal
+//! 5. each of its computed nodes, as the change its node engineer would have
+//!    made (`vleo_sheet::template::Form`), plans against the design without a
+//!    conflict or a refusal
 //!    (`vleo_sheet::template`) — a method or results an assistant supplied, a
 //!    change with no de-risking record, a case that is not in SI.
 //!

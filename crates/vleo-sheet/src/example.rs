@@ -1,4 +1,4 @@
-//! THE WORKED EXAMPLE every node form can show, station by station.
+//! THE WORKED EXAMPLE of a node filled in, station by station.
 //!
 //! One node filled in completely: the speed of a circular orbit. It is
 //! ILLUSTRATIVE — a teaching example of what a good answer to each question
@@ -6,9 +6,9 @@
 //! come from the textbook relation it states, and a test runs its method on its
 //! cases so the example can never show something the checker would refuse.
 //!
-//! Read by the node form ("Show the example" beside each question), by
-//! `docs/PSEUDOCODE.md` and by the role guides, so all three show the same
-//! example.
+//! Read by the method reference (`docs/PSEUDOCODE.md`) and by the role
+//! guides, so both show the same example. (The node form showed it too, until
+//! it was retired in F3-f.)
 
 /// The node the example is about, as the form names it.
 pub const TITLE: &str = "Circular orbital speed (illustrative)";

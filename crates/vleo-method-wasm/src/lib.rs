@@ -1,5 +1,5 @@
-//! The method checker, for a node form opened from a file — and the lesson
-//! checker, for a lesson form.
+//! The method checker, for the group pages opened from a file — and the
+//! lesson checker, for a lesson form.
 //!
 //! A form is a single HTML file that works with no server and no network, so
 //! the check it runs while the author types has to travel inside it. Writing

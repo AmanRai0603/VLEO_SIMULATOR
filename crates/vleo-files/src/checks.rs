@@ -531,7 +531,7 @@ fn case_value(v: &str) -> Option<f64> {
 }
 
 /// The method, read and run by the method language — `vleo_sheet::method`, the
-/// one implementation the node form, the gate and intake read it by: every
+/// one implementation the group pages, the gate and intake read it by: every
 /// line parses, every unit agrees, every path ends, and every case comes out
 /// as the node engineer's own code gave it. The release's units are its
 /// contract; every value is taken to SI by them, as intake takes it.

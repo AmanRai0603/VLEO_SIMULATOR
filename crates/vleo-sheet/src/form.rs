@@ -1,7 +1,8 @@
 //! The declaration form — what a sheet still needs, and why each answer matters.
 //!
-//! Nine questions, in the order a person is asked them. The node form asks
-//! them, and the daemon serves them to the web face, from this one list. A
+//! Nine questions, in the order a person is asked them. The daemon serves
+//! them to the web face, and the plan rules read them (`crate::template`),
+//! from this one list. A
 //! second copy of it in JavaScript would drift the first week somebody added
 //! a field, and the drift would be invisible: both forms would look complete.
 //!

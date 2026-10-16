@@ -312,7 +312,7 @@ pub(super) fn workspace_version(root: &Path) -> Result<String, String> {
 /// The daemon reads its web face, the tree and every node's page at run time,
 /// so the two programs alone do not run. A kit is those programs beside exactly
 /// the files they read — nothing else: no git history, no generators, no
-/// kernel source. The team uses it and sends back node forms; nothing in it is
+/// kernel source. The team uses it, and nothing in it is
 /// ever edited, and their case and results live under `~/.vleo/`, outside it,
 /// so the next kit replaces this one without losing either.
 pub(super) fn cmd_kit(root: &Path, args: &[&str]) -> Result<(), String> {

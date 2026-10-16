@@ -227,17 +227,10 @@ fn every_page_a_generator_writes_is_the_template_filled() {
         .0;
     let sh = tree.sheets.get("sw_ap_design").expect("sw_ap_design");
     let m = vleo_sheet::manual::load(&root()).expect("the manual loads");
-    let mut pages = vec![
-        ("the node form", vleo_sheet::template::document(sh, &tree)),
-        (
-            "the new-node form",
-            vleo_sheet::template::document_new(&tree),
-        ),
-        (
-            "the lesson form",
-            vleo_sheet::lesson_form::document(sh, &tree).expect("lesson form"),
-        ),
-    ];
+    let mut pages = vec![(
+        "the lesson form",
+        vleo_sheet::lesson_form::document(sh, &tree).expect("lesson form"),
+    )];
     for role in vleo_sheet::manual::ROLES {
         pages.push((
             "a role guide",
@@ -281,13 +274,9 @@ fn every_page_s_markup_style_and_script_lives_in_web() {
 }
 
 /// Every page generator, and the parts file it writes its page from.
-const GENERATORS: [(&str, &str); 6] = [
+const GENERATORS: [(&str, &str); 5] = [
     ("crates/vleo-sheet/src/page.rs", "web/pages/row.html"),
     ("crates/vleo-sheet/src/guide.rs", "web/pages/guide.html"),
-    (
-        "crates/vleo-sheet/src/template.rs",
-        "web/pages/node-form.html",
-    ),
     (
         "crates/vleo-sheet/src/lesson_form.rs",
         "web/pages/lesson-form.html",

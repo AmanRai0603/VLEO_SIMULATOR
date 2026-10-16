@@ -3,7 +3,7 @@
 
   The checker is vleo_sheet::method compiled to WebAssembly (web/method.wasm.gz,
   `cargo run -p xtask -- method-wasm`) — the same reading the developer's tools
-  and every node form make, never a second one written here. The page carries
+  and the lesson form make, never a second one written here. The page carries
   it (window.VLEO_METHOD_WASM, inlined by `xtask group-app`).
 
   Only the reading is asked for: does each line parse, does every unit agree,

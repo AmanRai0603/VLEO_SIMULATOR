@@ -1,8 +1,9 @@
-//! Every node form carries the method checker inside it, as `web/method.wasm.gz`,
-//! and checks an author's method with it before anything is sent. If the
-//! checker's sources move on and the file is not rebuilt, a form checks by the
-//! old rules while intake and the gate check by the new ones — the one
-//! disagreement a single implementation exists to prevent.
+//! Every form carries the method checker inside it, as `web/method.wasm.gz`,
+//! and checks with it before anything is sent: the lesson form its lesson, the
+//! group pages a node's method. If the checker's sources move on and the file
+//! is not rebuilt, a form checks by the old rules while the gate checks by the
+//! new ones — the one disagreement a single implementation exists to prevent.
+//! (The node form carried it too, until it was retired in F3-f.)
 //!
 //! The form reads the checker from the tree when it is made; no program carries
 //! it built in. A program holding compressed WebAssembly beside the script that
@@ -66,12 +67,12 @@ fn the_form_carries_the_checker_it_finds_beside_the_tree() {
     let (mut tree, _) = vleo_files::convert::open(&root()).unwrap();
     let sh = tree.sheets.values().next().unwrap().clone();
     let gz = std::fs::read(root().join(vleo_sheet::template::CHECKER)).unwrap();
-    assert_eq!(carried(&vleo_sheet::template::document(&sh, &tree)), gz);
-    assert_eq!(carried(&vleo_sheet::template::document_new(&tree)), gz);
+    let form = |tree: &vleo_sheet::Tree| vleo_sheet::lesson_form::document(&sh, tree).unwrap();
+    assert_eq!(carried(&form(&tree)), gz);
     // A tree without the file makes a form without a checker, which says so
     // on its check; it never carries one from anywhere else.
     tree.root = std::env::temp_dir().join("vleo-no-checker-here");
-    assert!(carried(&vleo_sheet::template::document(&sh, &tree)).is_empty());
+    assert!(carried(&form(&tree)).is_empty());
 }
 
 /// The checker is compiled with the kernel functions a method may call, so the
