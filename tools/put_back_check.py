@@ -131,7 +131,8 @@ def check():
         step('the report names the node, and nothing is written yet',
              r.get('back') == [PATH] and r.get('written') is False
              and open(os.path.join(drive, PATH), 'rb').read() == on_drive, r)
-        r = ask(p1, '/v1/put-back', {'files': PATH}, w1)
+        named = '\n'.join(f"{f['digest']} {f['path']}" for f in r.get('files', []) if f.get('back'))
+        r = ask(p1, '/v1/put-back', {'files': named}, w1)
         step('asked with the files it named, the first writes them on the drive', r.get('written'), r)
         mine = open(os.path.join(scratch, 'copy-one', PATH), 'rb').read()
         step('the drive holds the node as the first signed it',

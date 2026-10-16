@@ -5,23 +5,32 @@
 //! was taken. A file whose bytes in the copy are not that is the person's own
 //! work, and it goes back only when all of these hold:
 //!
-//! - it differs from the drive;
+//! - it differs from the drive, and the drive holds a file at that path: a
+//!   put-back changes the files there are, never makes or deletes one;
 //! - the drive's bytes are still the ones the record holds: a file someone
 //!   else changed on the drive since the copy is never written over;
-//! - it carries a current signature, or seal, by the person, which counts
-//!   through the chain as the **drive** holds it now: a key revoked there
-//!   since the copy is seen;
-//! - it is a kind of file the application puts back: a node's file, whose
-//!   own checks hold, or a group's file the person changed at their valve.
+//! - it is the same file as the drive's, changed only as its writer may
+//!   change it:
+//!   - a node's file holds the same node as the drive's file at that path,
+//!     changes nothing outside the node's own rows (as a save is held,
+//!     `save`), is one revision with its block, and is not older than the
+//!     drive's; its own checks hold;
+//!   - or a group's file, changed at its valve;
+//! - it carries a signature by the person that counts through the chain as
+//!   the **drive** holds it now, by a key the drive's files still count for
+//!   them at the moment it goes back.
 //!
 //! Every other changed file is named, with the reason. Nothing is deleted on
 //! the drive, and a file gone from the copy is said, not followed.
 //!
 //! [`put_back`] answers the report and writes nothing, until it is given the
-//! files to put back, and those are exactly the ones the report says go back
-//! as it is made again. Each file is written to a temporary name beside its
-//! place on the drive, then renamed over it, while the drive's lock is held;
-//! the copy's record then says the file is as the drive holds it.
+//! files to put back, each with the digest the report gave it, and those
+//! exactly the ones the report gives as it is made again. That second report
+//! is made under the drive's lock, from the chain opened again under it, so
+//! what is written is judged against the drive as it is when it is written.
+//! Each file is written to a name of the program's own beside its place, then
+//! renamed over it; the copy's record then says the file is as the drive
+//! holds it. A link anywhere on the way to a file on the drive is refused.
 //!
 //! The locks are of files: the copy's beside it ([`crate::save::lock`]), the
 //! drive's in its own folder. Two programs that put back through this
@@ -37,25 +46,27 @@ use crate::copied::{self, Copied};
 use crate::error::{Error, ErrorKind};
 use crate::meta::Kind;
 use crate::model::File;
+use crate::save;
 
-/// The drive's chain as the caller opened it, from the drive's own files:
-/// the anchor START HERE names, the programme's file it opened, the systems'
-/// file and every group's file that opened through it, and why each other
-/// was left out.
-pub struct Drive<'a> {
-    pub anchor: &'a str,
-    pub programme: &'a Registry,
-    pub systems: Option<&'a Registry>,
-    pub groups: &'a [Registry],
-    pub left_out: &'a [String],
+/// The drive's chain, opened from the drive's own files: the anchor START
+/// HERE names, the programme's file it opened, the systems' file and every
+/// group's file that opened through it, and why each other was left out.
+pub struct Chain {
+    pub anchor: String,
+    pub programme: Registry,
+    pub systems: Option<Registry>,
+    pub groups: Vec<Registry>,
+    pub left_out: Vec<String>,
 }
 
-/// One changed file: whether it goes back, and why, or why not.
+/// One changed file: whether it goes back, and why, or why not, with the
+/// SHA-256 of its bytes in the copy (empty when it is gone from the copy).
 #[derive(Clone, Debug, PartialEq)]
 pub struct Line {
     pub path: String,
     pub back: bool,
     pub why: String,
+    pub digest: String,
 }
 
 /// What a put-back found, file by file, and whether it wrote.
@@ -65,6 +76,9 @@ pub struct Report {
     pub written: bool,
 }
 
+/// The line of a file already on the drive as the copy holds it.
+const ALREADY: &str = "already on the drive as it is in your copy";
+
 impl Report {
     /// The paths that go back, in order.
     pub fn back(&self) -> Vec<String> {
@@ -72,6 +86,16 @@ impl Report {
             .iter()
             .filter(|l| l.back)
             .map(|l| l.path.clone())
+            .collect()
+    }
+
+    /// The files that go back, each with its digest: what to name to write
+    /// them.
+    pub fn named(&self) -> Vec<(String, String)> {
+        self.lines
+            .iter()
+            .filter(|l| l.back)
+            .map(|l| (l.path.clone(), l.digest.clone()))
             .collect()
     }
 }
@@ -85,21 +109,35 @@ fn io(at: &Path, e: std::io::Error) -> Error {
 }
 
 /// The drive's lock, `.vleo-put-back.lock` in its own folder: held while one
-/// program writes the drive, and let go when dropped.
-struct DriveLock(PathBuf);
+/// program writes the drive, and let go when dropped, only if it is still
+/// the one this program made.
+struct DriveLock(PathBuf, String);
 
 impl Drop for DriveLock {
     fn drop(&mut self) {
-        let _ = std::fs::remove_file(&self.0);
+        if std::fs::read_to_string(&self.0).is_ok_and(|t| t.trim() == self.1) {
+            let _ = std::fs::remove_file(&self.0);
+        }
     }
 }
 
-/// The name the drive's lock and every file being written there begin with:
-/// the program's own, never a file of the database's.
-const OWN: &str = ".vleo-";
+/// The names the program's own files carry: the drive's lock in its folder,
+/// a file being written beside its place, and the copy's record being
+/// written beside it.
+const LOCK: &str = ".vleo-put-back.lock";
+const INCOMING: &str = ".vleo-incoming-";
+const RECORD: &str = ".vleo-record-";
+
+/// A word of this program's own: its process and the moment.
+fn token() -> String {
+    let nanos = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map_or(0, |d| d.as_nanos());
+    format!("{}-{nanos}", std::process::id())
+}
 
 fn drive_lock(drive: &Path) -> Result<DriveLock, Error> {
-    let at = drive.join(format!("{OWN}put-back.lock"));
+    let at = drive.join(LOCK);
     match std::fs::OpenOptions::new()
         .write(true)
         .create_new(true)
@@ -107,8 +145,9 @@ fn drive_lock(drive: &Path) -> Result<DriveLock, Error> {
     {
         Ok(mut f) => {
             use std::io::Write as _;
-            let _ = writeln!(f, "{}", std::process::id());
-            Ok(DriveLock(at))
+            let mine = token();
+            writeln!(f, "{mine}").map_err(|e| io(&at, e))?;
+            Ok(DriveLock(at, mine))
         }
         Err(e) if e.kind() == std::io::ErrorKind::AlreadyExists => Err(Error::new(
             ErrorKind::Io,
@@ -122,10 +161,12 @@ fn drive_lock(drive: &Path) -> Result<DriveLock, Error> {
 }
 
 /// Every file under `folder`, by its path inside it with `/` between parts,
-/// and the SHA-256 of its bytes. The record itself, and the program's own
-/// lock and files being written on a drive (`.vleo-…`), are not among them.
-/// A link, a key, anything but a folder or a file, or a name the record could
-/// not hold is refused by name, never followed or skipped.
+/// and the SHA-256 of its bytes. A link, a key, anything but a folder or a
+/// file, or a name the record could not hold is refused by name, never
+/// followed or skipped. Left out: the record itself, and the program's own
+/// files, each only as an ordinary file and only where the program puts it
+/// (the drive's lock and the record being written at the top, a file being
+/// written beside its place).
 pub fn digests(folder: &Path) -> Result<BTreeMap<String, String>, Error> {
     let mut out = BTreeMap::new();
     let mut todo = vec![PathBuf::new()];
@@ -140,9 +181,6 @@ pub fn digests(folder: &Path) -> Result<BTreeMap<String, String>, Error> {
                 .map(|c| c.as_os_str().to_string_lossy().into_owned())
                 .collect::<Vec<_>>()
                 .join("/");
-            if shown == copied::FILE_NAME || name.starts_with(OWN) {
-                continue;
-            }
             let kind = e.file_type().map_err(|e| io(&folder.join(&path), e))?;
             if kind.is_symlink() {
                 return Err(refused(format!(
@@ -158,6 +196,14 @@ pub fn digests(folder: &Path) -> Result<BTreeMap<String, String>, Error> {
                 return Err(refused(format!(
                     "{shown} is a key: a key lives on its person's own computer, never in a database"
                 )));
+            }
+            let top = rel.as_os_str().is_empty();
+            let own = kind.is_file()
+                && ((top
+                    && (name == copied::FILE_NAME || name == LOCK || name.starts_with(RECORD)))
+                    || name.starts_with(INCOMING));
+            if own {
+                continue;
             }
             if !copied::path_ok(&shown) {
                 return Err(refused(format!(
@@ -188,9 +234,31 @@ fn record_of(copy: &Path) -> Result<Copied, Error> {
     }
 }
 
+/// Refused when any folder on the way to `path` on the drive, or the file
+/// itself, is a link: what is read or written there is inside the drive.
+fn no_link_on_the_way(drive: &Path, path: &str) -> Result<(), Error> {
+    let mut at = drive.to_path_buf();
+    for part in path.split('/') {
+        at.push(part);
+        match std::fs::symlink_metadata(&at) {
+            Ok(m) if m.file_type().is_symlink() => {
+                return Err(refused(format!(
+                    "{path} on the drive is reached through a link, {}: a link is never followed, and nothing is written through one",
+                    at.display()
+                )))
+            }
+            Ok(_) => {}
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => return Ok(()),
+            Err(e) => return Err(io(&at, e)),
+        }
+    }
+    Ok(())
+}
+
 /// The bytes of the file `path` names on the drive, if there is one: an
-/// ordinary file, never a link. `None` when the drive holds no such file.
+/// ordinary file, reached through no link. `None` when the drive holds none.
 fn on_drive(drive: &Path, path: &str) -> Result<Option<Vec<u8>>, Error> {
+    no_link_on_the_way(drive, path)?;
     let at = drive.join(path);
     match std::fs::symlink_metadata(&at) {
         Ok(m) if m.file_type().is_file() => std::fs::read(&at).map(Some).map_err(|e| io(&at, e)),
@@ -211,78 +279,231 @@ fn only_by(f: &File, scope: &str, me: &str) -> File {
     only
 }
 
+/// Whether one of `me`'s `ok` signatures of `scope` in `f` is made with a key
+/// `registry` still counts for them at `at`, the moment the work goes back: a
+/// key revoked since, from whatever day, puts nothing back.
+fn key_counts_now(
+    f: &File,
+    scope: &str,
+    me: &str,
+    at: &str,
+    registry: &Registry,
+) -> Result<(), String> {
+    let mut why = Vec::new();
+    for s in f
+        .signatures
+        .iter()
+        .filter(|s| s.scope == scope && s.signer == me && s.verdict == "ok")
+    {
+        match registry.key(me, &s.public_key, at) {
+            Ok(_) => return Ok(()),
+            Err(e) => why.push(e.message().to_string()),
+        }
+    }
+    Err(format!(
+        "the key {me} signed it with does not count for them at {at}, when it would go back: {}",
+        why.join("; ")
+    ))
+}
+
+/// The registry the node files in `group`'s folder are read against: the
+/// programme's, the systems' or the group's own, as the drive's chain opened
+/// it, or why none is.
+fn registry_of<'a>(chain: &'a Chain, group: &str) -> Result<&'a Registry, String> {
+    let found = match group {
+        "programme" => Some(&chain.programme),
+        "systems" => chain.systems.as_ref(),
+        _ => chain
+            .groups
+            .iter()
+            .find(|r| r.file.meta.get("group_id").map(String::as_str) == Some(group)),
+    };
+    found.ok_or_else(|| {
+        let why = chain
+            .left_out
+            .iter()
+            .find(|w| w.starts_with(&format!("{group}: ")))
+            .map_or(String::new(), |w| format!(": {w}"));
+        format!("{group}'s file on the drive does not check through the chain, so no signature in its folder counts{why}")
+    })
+}
+
+/// Whether the changed node file at `path`, `bytes` in the copy, goes back as
+/// `me`'s work over `theirs`, the drive's file at that path.
+fn node_verdict(
+    path: &str,
+    group: &str,
+    bytes: &[u8],
+    theirs: Option<&[u8]>,
+    me: &str,
+    at: &str,
+    chain: &Chain,
+) -> Result<String, String> {
+    let said = |e: Error| e.message().to_string();
+    let f = save::parsed(bytes).map_err(|e| format!("it does not read: {}", e.message()))?;
+    save::the_node(&f, path).map_err(said)?;
+    let Some(theirs) = theirs else {
+        return Err(
+            "the drive holds no node file at this path: a put-back changes the node files there are, and a new node's file comes from its group"
+                .into(),
+        );
+    };
+    let drive_file = save::parsed(theirs).map_err(|e| {
+        format!(
+            "the drive's file at this path does not read: {}",
+            e.message()
+        )
+    })?;
+    save::the_node(&drive_file, path).map_err(|e| {
+        format!(
+            "the drive's file at this path is not a node's: {}",
+            e.message()
+        )
+    })?;
+    let (mine, was) = (&f.blocks[0], &drive_file.blocks[0]);
+    for key in ["file_kind", "group_id", "block_uid"] {
+        if f.meta.get(key) != drive_file.meta.get(key) {
+            return Err(format!(
+                "it says it is {key} {:?}, and the drive's file at this path is {:?}: a put-back does not put one node's file in another's place",
+                f.meta.get(key).map_or("", String::as_str),
+                drive_file.meta.get(key).map_or("", String::as_str)
+            ));
+        }
+    }
+    if (&mine.id, &mine.parent_uid, mine.contract_version)
+        != (&was.id, &was.parent_uid, was.contract_version)
+    {
+        return Err(
+            "it changes the node's id, the block it hangs from or its contract's version: a node is not moved, and a contract changes by a request"
+                .into(),
+        );
+    }
+    // The node's own signatures are what a put-back brings; everything else
+    // outside its rows is as the drive holds it, other signatures among them.
+    let unsigned = |x: &File| {
+        let mut x = x.clone();
+        x.signatures.retain(|r| r.scope != mine.uid);
+        x
+    };
+    let changed = save::changed_outside(&unsigned(&f), &unsigned(&drive_file), &mine.uid);
+    if !changed.is_empty() {
+        return Err(format!(
+            "it changes what is not {}'s own to change ({}): a node's file changes the node's own rows, and nothing else",
+            mine.id,
+            changed.join(", ")
+        ));
+    }
+    let revision = save::revision_of(&f, path).map_err(said)?;
+    if mine.revision != revision as i64 {
+        return Err(format!(
+            "it says it is revision {revision}, and its block says {}: it is one revision",
+            mine.revision
+        ));
+    }
+    let drive_revision = save::revision_of(&drive_file, path).map_err(said)?;
+    let same_content = chain::digest(&f, &mine.uid).map_err(said)?
+        == chain::digest(&drive_file, &mine.uid).map_err(said)?;
+    if revision < drive_revision || (revision == drive_revision && !same_content) {
+        return Err(format!(
+            "it is revision {revision}, and the drive holds revision {drive_revision}{}: a node's file goes back as a later revision, or as the same one signed",
+            if revision == drive_revision { " with other content" } else { "" }
+        ));
+    }
+    let registry = registry_of(chain, group)?;
+    if registry.file.mounts.iter().any(|m| m.block_uid == mine.uid) {
+        return Err(format!(
+            "{} is where a group hangs in {}, not a node: no node's file is put back for it",
+            mine.id, registry.from
+        ));
+    }
+    chain::check_node(&only_by(&f, &mine.uid, me), &mine.uid, registry).map_err(|e| {
+        format!(
+            "it carries no current signature by {me} that counts on the drive: {}",
+            e.message()
+        )
+    })?;
+    key_counts_now(&f, &mine.uid, me, at, registry)?;
+    let found = checks::check_node(&f);
+    let refusing: Vec<String> = found
+        .errors()
+        .map(|e| format!("{}: {}", e.place, e.what))
+        .collect();
+    if !refusing.is_empty() {
+        return Err(format!(
+            "its checks refuse it ({}) — {}",
+            refusing.len(),
+            refusing.join("; ")
+        ));
+    }
+    Ok(format!("goes back: the node {}, signed by {me}", mine.id))
+}
+
+/// Whether the changed group file at `path` goes back as `me`'s work: a file
+/// the drive holds, changed at its valve and signed by `me` there.
+fn group_verdict(
+    group: &str,
+    bytes: &[u8],
+    theirs: Option<&[u8]>,
+    me: &str,
+    at: &str,
+    chain: &Chain,
+) -> Result<String, String> {
+    if theirs.is_none() {
+        return Err(
+            "the drive holds no group file at this path: a put-back changes the group files there are, and a new group comes from the file that mounts it"
+                .into(),
+        );
+    }
+    let f = save::parsed(bytes).map_err(|e| format!("it does not read: {}", e.message()))?;
+    if f.kind().map_err(|e| e.message().to_string())? != Kind::Group
+        || f.meta.get("group_id").map(String::as_str) != Some(group)
+    {
+        return Err(format!(
+            "it is not {group}'s group file: a group's file lives in its own group's folder"
+        ));
+    }
+    let mine = only_by(&f, FILE, me);
+    let opened = match group {
+        "programme" => chain::open_programme(mine, &chain.anchor).map(|_| ()),
+        "systems" => chain::open_systems(&mine, &chain.programme).map(|_| ()),
+        _ => {
+            let parents: Vec<&Registry> = std::iter::once(&chain.programme)
+                .chain(chain.systems.as_ref())
+                .collect();
+            chain::mounted_by(group, &parents).and_then(|(parent, _)| {
+                chain::open_group_in(&mine, parent, &chain.programme).map(|_| ())
+            })
+        }
+    };
+    opened.map_err(|e| {
+        format!(
+            "it carries no current signature by {me} that counts on the drive: {}",
+            e.message()
+        )
+    })?;
+    // Whoever signs a group's file at its valve is registered in the
+    // programme's file, as the drive holds it.
+    key_counts_now(&f, FILE, me, at, &chain.programme)?;
+    Ok(format!("goes back: {group}'s group file, signed by {me}"))
+}
+
 /// Whether the changed file at `path` goes back as `me`'s work: why it does,
-/// or why not. `bytes` are the file's bytes in the copy.
-fn verdict(path: &str, bytes: &[u8], me: &str, drive: &Drive) -> Result<String, String> {
+/// or why not.
+fn verdict(
+    path: &str,
+    bytes: &[u8],
+    theirs: Option<&[u8]>,
+    me: &str,
+    at: &str,
+    chain: &Chain,
+) -> Result<String, String> {
     let parts: Vec<&str> = path.split('/').collect();
-    let read =
-        || crate::save::parsed(bytes).map_err(|e| format!("it does not read: {}", e.message()));
     match parts.as_slice() {
         ["groups", g, "nodes", name] if name.ends_with(".vnode") => {
-            let f = read()?;
-            crate::save::the_node(&f, path).map_err(|e| e.message().to_string())?;
-            let uid = f.blocks[0].uid.clone();
-            let group = drive
-                .groups
-                .iter()
-                .find(|r| r.file.meta.get("group_id").map(String::as_str) == Some(*g))
-                .ok_or_else(|| {
-                    let why = drive
-                        .left_out
-                        .iter()
-                        .find(|w| w.starts_with(&format!("{g}: ")))
-                        .map_or(String::new(), |w| format!(": {w}"));
-                    format!("{g}'s group file on the drive does not check through the chain, so no signature in it counts{why}")
-                })?;
-            chain::check_node(&only_by(&f, &uid, me), &uid, group).map_err(|e| {
-                format!(
-                    "it carries no current signature by {me} that counts on the drive: {}",
-                    e.message()
-                )
-            })?;
-            let found = checks::check_node(&f);
-            let refusing: Vec<String> = found
-                .errors()
-                .map(|e| format!("{}: {}", e.place, e.what))
-                .collect();
-            if !refusing.is_empty() {
-                return Err(format!(
-                    "its checks refuse it ({}) — {}",
-                    refusing.len(),
-                    refusing.join("; ")
-                ));
-            }
-            Ok(format!("goes back: the node {}, signed by {me}", f.blocks[0].id))
+            node_verdict(path, g, bytes, theirs, me, at, chain)
         }
         ["groups", g, name] if *name == format!("{g}.vgroup") => {
-            let f = read()?;
-            if f.kind().map_err(|e| e.message().to_string())? != Kind::Group
-                || f.meta.get("group_id").map(String::as_str) != Some(*g)
-            {
-                return Err(format!(
-                    "it is not {g}'s group file: a group's file lives in its own group's folder"
-                ));
-            }
-            let mine = only_by(&f, FILE, me);
-            let opened = match *g {
-                "programme" => chain::open_programme(mine, drive.anchor).map(|_| ()),
-                "systems" => chain::open_systems(&mine, drive.programme).map(|_| ()),
-                _ => {
-                    let parents: Vec<&Registry> = std::iter::once(drive.programme)
-                        .chain(drive.systems)
-                        .collect();
-                    chain::mounted_by(g, &parents).and_then(|(parent, _)| {
-                        chain::open_group_in(&mine, parent, drive.programme).map(|_| ())
-                    })
-                }
-            };
-            opened.map_err(|e| {
-                format!(
-                    "it carries no current signature by {me} that counts on the drive: {}",
-                    e.message()
-                )
-            })?;
-            Ok(format!("goes back: {g}'s group file, signed by {me}"))
+            group_verdict(g, bytes, theirs, me, at, chain)
         }
         _ => Err(
             "it is not a file the application puts back yet: a node's file, or a group's file changed at its valve"
@@ -292,19 +513,22 @@ fn verdict(path: &str, bytes: &[u8], me: &str, drive: &Drive) -> Result<String, 
 }
 
 /// The report of what in the working copy at `copy` would go back to the
-/// drive at `drive` as `me`'s work, checked through `chain`, the drive's own.
-/// With `write` naming the files, and those exactly the ones that go back as
-/// the report is made now, they are written on the drive, and the copy's
-/// record says so; otherwise nothing is written, and a list that differs is
-/// refused with the report's own.
+/// drive at `drive` as `me`'s work at the moment `at`, checked through the
+/// chain `open` opens from the drive's own files. With `write` naming the
+/// files, each with the digest the report gave it, and those exactly the
+/// ones that go back as the report is made again under the drive's lock,
+/// they are written on the drive, and the copy's record says so; otherwise
+/// nothing is written, and a list that differs is refused with the report's
+/// own.
 pub fn put_back(
     copy: &Path,
     drive: &Path,
     me: &str,
-    chain: &Drive,
-    write: Option<&[String]>,
+    at: &str,
+    open: &dyn Fn() -> Result<Chain, Error>,
+    write: Option<&[(String, String)]>,
 ) -> Result<Report, Error> {
-    let _held = crate::save::lock(copy)?;
+    let _held = save::lock(copy)?;
     let mut record = record_of(copy)?;
     let drive_root = std::fs::canonicalize(drive).map_err(|e| io(drive, e))?;
     if Path::new(&record.drive) != drive_root {
@@ -314,28 +538,42 @@ pub fn put_back(
             drive_root.display()
         )));
     }
+    // To write, the drive's lock is taken first, and the chain is opened under
+    // it: what goes back is judged against the drive as it is when it goes.
+    let _drive_held = match write {
+        Some(_) => Some(drive_lock(&drive_root)?),
+        None => None,
+    };
+    let chain = open()?;
     let now = digests(copy)?;
     let mut report = Report::default();
     for path in record.changed(&now) {
-        let line = |back: bool, why: String| Line {
+        let line = |back: bool, why: String, digest: &str| Line {
             path: path.clone(),
             back,
             why,
+            digest: digest.to_string(),
         };
         let Some(mine) = now.get(&path) else {
             report.lines.push(line(
                 false,
                 "gone from your copy: nothing is deleted on the drive".into(),
+                "",
             ));
             continue;
         };
-        let there = on_drive(&drive_root, &path)?;
+        let there = match on_drive(&drive_root, &path) {
+            Ok(t) => t,
+            Err(e) => {
+                report
+                    .lines
+                    .push(line(false, e.message().to_string(), mine));
+                continue;
+            }
+        };
         let there_digest = there.as_deref().map(copied::digest);
         if there_digest.as_ref() == Some(mine) {
-            report.lines.push(line(
-                false,
-                "already on the drive as it is in your copy".into(),
-            ));
+            report.lines.push(line(false, ALREADY.into(), mine));
             continue;
         }
         if there_digest.as_ref() != record.files.get(&path) {
@@ -345,51 +583,61 @@ pub fn put_back(
                     "changed on the drive since your copy was taken, so it is never written over: keep yours aside, copy the database again, and make your change on what is there now ({})",
                     if there.is_none() { "it is gone from the drive" } else { "someone else wrote it" }
                 ),
+                mine,
             ));
             continue;
         }
-        let at = copy.join(&path);
-        let bytes = std::fs::read(&at).map_err(|e| io(&at, e))?;
+        let at_copy = copy.join(&path);
+        let bytes = std::fs::read(&at_copy).map_err(|e| io(&at_copy, e))?;
         if copied::digest(&bytes) != *mine {
             return Err(refused(format!(
                 "{path} changed in your copy while it was being read: look again"
             )));
         }
-        match verdict(&path, &bytes, me, chain) {
-            Ok(why) => report.lines.push(line(true, why)),
-            Err(why) => report.lines.push(line(false, why)),
+        match verdict(&path, &bytes, there.as_deref(), me, at, &chain) {
+            Ok(why) => report.lines.push(line(true, why, mine)),
+            Err(why) => report.lines.push(line(false, why, mine)),
         }
     }
     let Some(named) = write else {
         return Ok(report);
     };
-    let mut named: Vec<String> = named.to_vec();
+    let mut named: Vec<(String, String)> = named.to_vec();
     named.sort();
     named.dedup();
-    let back = report.back();
-    if back.is_empty() {
+    let back = report.named();
+    let already: Vec<(String, String)> = report
+        .lines
+        .iter()
+        .filter(|l| l.why == ALREADY)
+        .map(|l| (l.path.clone(), l.digest.clone()))
+        .collect();
+    if back.is_empty() && already.is_empty() {
         return Err(refused("nothing in your copy goes back to the drive now"));
     }
     if named != back {
         return Err(refused(format!(
-            "the files named are not the ones that go back now ({}), so nothing is written: look at the report again",
-            back.join(", ")
+            "the files named are not the ones that go back now, as your copy holds them ({}), so nothing is written: look at the report again",
+            if back.is_empty() {
+                "none".to_string()
+            } else {
+                back.iter().map(|(p, _)| p.as_str()).collect::<Vec<_>>().join(", ")
+            }
         )));
     }
-    let _drive_held = drive_lock(&drive_root)?;
-    // Under the drive's lock, each file once more as the record holds it, and
-    // as the copy held it when it was checked, before anything is written.
+    // Once more, just before anything is written: each file on the drive as
+    // the record holds it, and in the copy as the report gave it.
     let mut bytes_of = Vec::new();
-    for path in &back {
+    for (path, digest) in &back {
         let there = on_drive(&drive_root, path)?.map(|b| copied::digest(&b));
         if there.as_ref() != record.files.get(path) {
             return Err(refused(format!(
                 "{path} changed on the drive while it was being put back, so nothing is written: look at the report again"
             )));
         }
-        let at = copy.join(path);
-        let bytes = std::fs::read(&at).map_err(|e| io(&at, e))?;
-        if Some(&copied::digest(&bytes)) != now.get(path) {
+        let at_copy = copy.join(path);
+        let bytes = std::fs::read(&at_copy).map_err(|e| io(&at_copy, e))?;
+        if copied::digest(&bytes) != *digest {
             return Err(refused(format!(
                 "{path} changed in your copy while it was being put back, so nothing is written: look at the report again"
             )));
@@ -410,36 +658,52 @@ pub fn put_back(
             }
         }
     }
-    // The record says what went back, whatever did not.
-    write_record(copy, &record)?;
+    // A file already on the drive as the copy holds it is the drive's now too.
+    for (path, digest) in &already {
+        record.files.insert(path.clone(), digest.clone());
+    }
+    let went = if done.is_empty() {
+        "Nothing".to_string()
+    } else {
+        done.join(", ")
+    };
+    if let Err(e) = write_record(copy, &record) {
+        return Err(Error::new(
+            ErrorKind::Io,
+            format!(
+                "{went} went back to the drive, but your copy's record could not say so: {}. Copy the database again only once this is put right",
+                e.message()
+            ),
+        ));
+    }
     if let Some((path, e)) = failed {
         return Err(Error::new(
             ErrorKind::Io,
             format!(
-                "{path} could not be written on the drive: {}. {} went back before it; the rest did not, and nothing on the drive was written over",
-                e.message(),
-                if done.is_empty() { "Nothing".to_string() } else { done.join(", ") }
+                "{path} could not be written on the drive: {}. {went} went back before it, and the rest did not; nothing someone else changed was written over",
+                e.message()
             ),
         ));
     }
-    report.written = true;
+    report.written = !done.is_empty();
     Ok(report)
 }
 
 /// `bytes` written whole at `path` on the drive: to a name of the program's
 /// own beside it, then renamed over it, so a write cut short leaves the
-/// drive's file as it was.
+/// drive's file as it was. Never through a link, and never into a folder the
+/// drive does not hold.
 fn write_on_drive(drive: &Path, path: &str, bytes: &[u8], n: usize) -> Result<(), Error> {
     use std::io::Write as _;
+    no_link_on_the_way(drive, path)?;
     let to = drive.join(path);
     let dir = to
         .parent()
         .ok_or_else(|| refused(format!("{path} has no folder on the drive")))?;
-    std::fs::create_dir_all(dir).map_err(|e| io(dir, e))?;
     let name = to
         .file_name()
         .map_or_else(String::new, |n| n.to_string_lossy().into_owned());
-    let tmp = dir.join(format!("{OWN}incoming-{}-{n}-{name}", std::process::id()));
+    let tmp = dir.join(format!("{INCOMING}{}-{n}-{name}", token()));
     let made = (|| -> Result<(), Error> {
         let mut f = std::fs::OpenOptions::new()
             .write(true)
@@ -449,6 +713,7 @@ fn write_on_drive(drive: &Path, path: &str, bytes: &[u8], n: usize) -> Result<()
         f.write_all(bytes).map_err(|e| io(&tmp, e))?;
         f.sync_all().map_err(|e| io(&tmp, e))?;
         drop(f);
+        no_link_on_the_way(drive, path)?;
         std::fs::rename(&tmp, &to).map_err(|e| io(&to, e))
     })();
     if made.is_err() {
@@ -457,14 +722,11 @@ fn write_on_drive(drive: &Path, path: &str, bytes: &[u8], n: usize) -> Result<()
     made
 }
 
-/// The copy's record written whole: beside itself first, then renamed.
+/// The copy's record written whole: beside itself first, under a name of the
+/// program's own, then renamed.
 fn write_record(copy: &Path, record: &Copied) -> Result<(), Error> {
     let at = copy.join(copied::FILE_NAME);
-    let tmp = copy.join(format!(
-        "{}.partial-{}",
-        copied::FILE_NAME,
-        std::process::id()
-    ));
+    let tmp = copy.join(format!("{RECORD}{}", token()));
     std::fs::write(&tmp, record.to_toml()).map_err(|e| io(&tmp, e))?;
     std::fs::rename(&tmp, &at).map_err(|e| {
         let _ = std::fs::remove_file(&tmp);

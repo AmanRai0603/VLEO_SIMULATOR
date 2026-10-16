@@ -125,7 +125,7 @@ fn count(f: &File, key: &str) -> u64 {
 
 /// The file's revision, 1 or more, or the refusal: a revision that is not a
 /// count is never read as none.
-fn revision_of(f: &File, path: &str) -> Result<u64, Error> {
+pub(crate) fn revision_of(f: &File, path: &str) -> Result<u64, Error> {
     let v = f.meta.get("revision").map_or("", String::as_str);
     match v.trim().parse::<u64>() {
         Ok(n) if n >= 1 => Ok(n),
@@ -205,7 +205,7 @@ fn outside(f: &File, uid: &str) -> File {
 
 /// The tables of `edit` outside the node `uid` that are not as `now` holds
 /// them, by name.
-fn changed_outside(edit: &File, now: &File, uid: &str) -> Vec<String> {
+pub(crate) fn changed_outside(edit: &File, now: &File, uid: &str) -> Vec<String> {
     outside(edit, uid)
         .to_tables()
         .into_iter()

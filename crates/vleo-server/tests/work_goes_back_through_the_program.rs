@@ -373,6 +373,15 @@ fn opened(port: u16) -> String {
     field(&r, "opened").to_string()
 }
 
+/// `path` in `copy` named as the report gives it: its digest, a space, its
+/// path.
+fn named(copy: &Path, path: &str) -> String {
+    format!(
+        "{} {path}",
+        vleo_files::copied::digest(&std::fs::read(copy.join(path)).unwrap())
+    )
+}
+
 /// On the drive, Ola revokes Nia's key from the day before the signing.
 fn revoke_nia_on(drv: &Path) {
     let read = |p: &str| sqlite::read(&drv.join(p)).unwrap();
@@ -466,16 +475,25 @@ fn signed_work_goes_back_to_the_drive_and_nothing_else_does() {
     std::fs::write(drv.join(NODE), &theirs).unwrap();
     let r = post(port, "/v1/put-back", &[]);
     assert!(r.contains("changed on the drive since your copy"), "{r}");
-    let r = post(port, "/v1/put-back", &[("files", NODE)]);
+    let r = post(port, "/v1/put-back", &[("files", &named(&copy, NODE))]);
     assert!(r.contains("nothing in your copy goes back"), "{r}");
     assert_eq!(std::fs::read(drv.join(NODE)).unwrap(), theirs);
     std::fs::write(drv.join(NODE), &on_drive).unwrap();
 
     // Only the files the report names are written.
-    let r = post(port, "/v1/put-back", &[("files", "START HERE.md")]);
+    let r = post(
+        port,
+        "/v1/put-back",
+        &[("files", &named(&copy, "START HERE.md"))],
+    );
     assert!(r.contains("not the ones that go back now"), "{r}");
-    assert_eq!(std::fs::read(drv.join(NODE)).unwrap(), on_drive);
     let r = post(port, "/v1/put-back", &[("files", NODE)]);
+    assert!(
+        r.contains("does not name a file as the report gave it"),
+        "{r}"
+    );
+    assert_eq!(std::fs::read(drv.join(NODE)).unwrap(), on_drive);
+    let r = post(port, "/v1/put-back", &[("files", &named(&copy, NODE))]);
     assert!(r.contains("\"written\":true"), "{r}");
     assert_eq!(
         std::fs::read(drv.join(NODE)).unwrap(),
