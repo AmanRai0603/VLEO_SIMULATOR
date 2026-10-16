@@ -17,6 +17,7 @@ import { mountTheory } from './theory.js';
 import { figuresForRow, drawRowFigure } from './solar.js';
 import { isInput, inputControl, mountInput } from './inputs.js';
 import { renderLesson } from './components.js';
+import { mountParts } from './nodeparts.js';
 
 export async function openNode(id) {
   const r = S.byId.get(id);
@@ -47,6 +48,10 @@ export async function openNode(id) {
     // a thing a reader can move, and that is a different kind of statement. It
     // is drawn only where it can do something — see isInput.
     (isInput(r) ? '<section class="seg ovr-panel"></section>' : '') +
+    // ITS SIX PARTS, each done, missing or failing, as the gate says, before
+    // anything about what it is made of: what is left to do comes first.
+    '<section class="seg np-host" data-seg="parts"><h3 class="seg-h">' +
+      'its parts — what is done, missing or failing</h3><div class="np-body"></div></section>' +
     '<section class="seg" data-seg="assembly"><h3 class="seg-h">' +
       '<span class="seg-n">1</span>assembly — what this node is made of</h3>' +
       assemblyHtml(r, meta) + '</section>' +
@@ -95,6 +100,7 @@ export async function openNode(id) {
   if (hasLesson && lesson.ok) renderLesson($('.row-lesson', body), lesson.lesson);
 
   if (isInput(r)) mountInput($('.ovr-panel', body), r);
+  mountParts($('.np-body', body), id);
 
   if (figs.length) {
     const hostFig = $('.row-figure', body);

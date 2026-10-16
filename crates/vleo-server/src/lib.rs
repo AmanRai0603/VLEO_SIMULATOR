@@ -33,9 +33,11 @@ mod json;
 mod me;
 mod my_work;
 mod node_file;
+mod node_ws;
 mod pages;
 mod people;
 mod put_back;
+mod rerun;
 mod results;
 pub mod results_file;
 pub mod today;
@@ -707,6 +709,12 @@ fn route(
                 ctx,
             ),
         ),
+        ("GET", p) if p.starts_with("/v1/parts/") => {
+            ok_json(node_ws::parts_json(ctx, p.trim_start_matches("/v1/parts/")))
+        }
+        ("POST", p) if p.starts_with("/v1/rerun/") => {
+            ok_json(rerun::rerun_json(ctx, p.trim_start_matches("/v1/rerun/")))
+        }
         ("GET", p) if p.starts_with("/v1/node/") => {
             let id = p.trim_start_matches("/v1/node/");
             node_endpoint(ctx, id)

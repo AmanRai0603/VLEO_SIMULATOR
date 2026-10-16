@@ -105,6 +105,14 @@ def check():
         kept = a.locator(".res-row").count()
         step("the application's Explore lists the recorded results kept", kept >= 1, f"{kept} row(s)")
         a.close()
+        # A node's six parts, and its node engineer's code run again.
+        p.evaluate("id => window.openNode(id)", "sw_ap_design")
+        p.wait_for_selector("#node-body .np-parts", timeout=15000)
+        parts = p.locator("#node-body .np-part").count()
+        step("a node's six parts are drawn", parts == 6, f"{parts} part(s)")
+        p.click("#node-body .np-rerun")
+        p.wait_for_selector("#node-body .np-rerun-out b", timeout=15000)
+        step("run my code again answers", "not run here" in p.inner_text("#node-body .np-rerun-out"))
 
         step("no page error", not errors, "; ".join(errors[:3]))
 
