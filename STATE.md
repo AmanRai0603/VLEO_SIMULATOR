@@ -80,7 +80,7 @@ Handed over Friday 16 October (S1 and S2: F1 to F3-e, and the key's proof). Noth
     - How an assistant helped is now checked by the plan rules, not the form's reader: `none`, `wording`, `relation` or `transcribed`, and an empty answer is refused.
     - **The node view stays** until `/app`'s Node workspace replaces it (PLAN_F, decision 1).
 
-    The Opus review found nothing blocking and 6 points to fix, with 3 nits; all fixed in df052a0a but the role guides' loop picture (phase G), each new test shown red. CI was green on the first commit; the fixes' run is pending.
+    The Opus review found nothing blocking and 6 points to fix, with 3 nits; all fixed in df052a0a but the role guides' loop picture (phase G), each new test shown red. CI is green.
 - **What 171 decides, which B's PRs must follow:**
   - **Ownership follows the mount.** Only the programme's file (mounting `systems`) and the systems' file (mounting each `l3_*`) mount anything.
   - **A group file registers only node engineers.** It holds nobody the programme's file registers, and no key it registers. `open_group_in` refuses anything else, by name.
