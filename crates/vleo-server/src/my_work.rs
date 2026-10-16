@@ -16,6 +16,10 @@
 //!
 //! Nodes failing their checks, issues, previews and decisions join as the
 //! stages that make them arrive (F3 to F7).
+//!
+//! Beside the items, `nodes` lists every node file that is the person's to
+//! write, or their deputy's, signed or not, for the Node workspace to open
+//! (F3-g1).
 
 use super::*;
 use std::collections::BTreeMap;
@@ -90,8 +94,12 @@ pub(super) fn list(ctx: &Ctx) -> String {
     }
     j.raw("]");
     let database = me::database(ctx);
+    let mut yours = Vec::new();
     let items = match me::registries(&database, &copy::dir(ctx), "") {
-        Ok(c) => items(&me, &c, &database),
+        Ok(c) => {
+            yours = nodes(&me, &c, &database);
+            items(&me, &c, &database)
+        }
         Err(me::NotRead::Why(why)) => {
             j.str_field("message", &format!("What needs you cannot be read: {why}"));
             Vec::new()
@@ -116,8 +124,91 @@ pub(super) fn list(ctx: &Ctx) -> String {
         j.str_field("says", &it.says);
         j.raw("}");
     }
+    j.raw("]");
+    j.key("nodes").raw("[");
+    for (i, n) in yours.iter().enumerate() {
+        if i > 0 {
+            j.raw(",");
+        }
+        j.raw("{");
+        j.str_field("group", &n.group);
+        j.str_field("block", &n.block);
+        j.str_field("id", &n.id);
+        j.str_field("revision", &n.revision);
+        j.str_field("deputy_for", &n.deputy_for);
+        j.bool_field("signed", n.signed);
+        j.raw("}");
+    }
     j.raw("]}");
     j.0
+}
+
+/// A node that is the person's to write, as the Node workspace opens it.
+struct Yours {
+    group: String,
+    block: String,
+    id: String,
+    revision: String,
+    /// Whose deputy they write it as, or empty when it is assigned to them.
+    deputy_for: String,
+    signed: bool,
+}
+
+/// Every node file in the database that is this person's to write: assigned
+/// to them, or to someone whose deputy they are, by a group file that opens
+/// through the chain, with one file. The Node workspace opens it from here;
+/// a node with no file or two is in the items, with why.
+fn nodes(me: &chain::Me, c: &me::Chain, database: &Path) -> Vec<Yours> {
+    let mut out = Vec::new();
+    for reg in c.systems.iter().chain(c.groups.iter()) {
+        let Some(group) = reg.file.meta.get("group_id") else {
+            continue;
+        };
+        let mounts: Vec<&str> = reg
+            .file
+            .mounts
+            .iter()
+            .map(|m| m.block_uid.as_str())
+            .collect();
+        let deputises = |person: &str| {
+            reg.file
+                .people
+                .iter()
+                .any(|p| p.name == me.name && p.deputy_for == person)
+        };
+        let mut files = None;
+        for a in reg
+            .file
+            .assignments
+            .iter()
+            .filter(|a| !mounts.contains(&a.block_uid.as_str()))
+        {
+            let deputy_for = if a.person == me.name {
+                String::new()
+            } else if deputises(&a.person) {
+                a.person.clone()
+            } else {
+                continue;
+            };
+            let files = files.get_or_insert_with(|| node_files(database, group));
+            let [f] = files.get(&a.block_uid).map(Vec::as_slice).unwrap_or(&[]) else {
+                continue;
+            };
+            out.push(Yours {
+                group: group.clone(),
+                block: a.block_uid.clone(),
+                id: f
+                    .blocks
+                    .iter()
+                    .find(|b| b.uid == a.block_uid)
+                    .map_or_else(|| a.block_uid.clone(), |b| b.id.clone()),
+                revision: f.meta.get("revision").cloned().unwrap_or_default(),
+                deputy_for,
+                signed: chain::check_node(f, &a.block_uid, reg).is_ok(),
+            });
+        }
+    }
+    out
 }
 
 fn items(me: &chain::Me, c: &me::Chain, database: &Path) -> Vec<Item> {

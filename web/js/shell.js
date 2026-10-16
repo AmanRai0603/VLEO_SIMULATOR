@@ -5,11 +5,12 @@
   My work holds, for now, what F1 can know: the copy of the database, the key
   and who it says you are, what needs you (a node of yours unsigned, a group of
   yours with nothing sealed, a file below you the chain refuses, a request on a
-  node of a group of yours), and People, for whoever holds a valve. Explore
-  (F2) holds today's design, its runs, its inputs and the results kept, loaded
-  the first time it is opened (workspace_explore.js). The other three
-  workspaces say which stage brings
-  them.
+  node of a group of yours), every node that is yours to write, putting your
+  signed work back on the drive, and People, for whoever holds a valve.
+  Explore (F2) holds today's design, its runs, its inputs and the results
+  kept, and Node (F3) one node, its file in your copy and the day's work on
+  it; each is loaded the first time it is opened (workspace_explore.js,
+  workspace_node.js). The other two workspaces say which stage brings them.
 
   The launch's word arrives in the address's fragment, is kept in this tab's
   session storage and taken out of the address at once, so it is never in the
@@ -30,7 +31,7 @@ const WORD = 'vleo-session';
 /** The workspaces, in the order the shell shows them, and the stage that fills each. */
 const WORKSPACES = [
   ['my-work', 'My work', 'everything that needs you now', ''],
-  ['node', 'Node', 'one node, edited in its live page, signed when it is ready', 'F3'],
+  ['node', 'Node', 'one node: its parts, its page, its file in your copy, signed when it is ready', ''],
   ['system', 'System', 'your branch: its valves, today\'s view of it, and its release', 'F4 to F6'],
   ['programme', 'Programme', 'mission health, gates, risks, the organisation and decisions', 'F7'],
   ['explore', 'Explore', 'today\'s design or any released one: run, sweep, compare, trace to cause', ''],
@@ -44,6 +45,7 @@ const S = {
   handover: null, // { person, public_key, proof } of a key that opened but is registered for nobody
   made: null,     // the key just made
   notice: null,   // { ok, text }
+  putBack: null,  // the put-back report, until it is confirmed or dropped
   drawn: 0,       // how many times the page was drawn, for a check to wait on
 };
 
@@ -114,7 +116,14 @@ function draw() {
     esc(name) + '</button>').join('');
   const n = S.notice;
   $('#sh-notice').innerHTML = n ? '<p class="' + (n.ok ? 'sh-said' : 'sh-refused') + '">' + esc(n.text) + '</p>' : '';
-  if (S.ws !== 'explore') {
+  if (S.ws === 'node') {
+    // Drawn on the way in, as Explore is: the workspace keeps which node is
+    // open, and draws it again from the copy each time it is entered.
+    if (!$('#sh-node')) {
+      $('#sh-main').innerHTML = '<div id="sh-node"></div>';
+      openNodeWs($('#sh-node'));
+    }
+  } else if (S.ws !== 'explore') {
     $('#sh-main').innerHTML = S.ws === 'my-work' ? myWork() : empty(S.ws);
   } else if (!$('#sh-explore')) {
     // Drawn once on the way in, and left alone by every later draw: Explore
@@ -146,6 +155,29 @@ async function openExplore(host) {
   }
 }
 
+/** Where `#node/<id>` or My work asked the Node workspace to open, until it does. */
+let nodeAt = '';
+
+/** The Node workspace, loaded the first time it is opened. */
+async function openNodeWs(host) {
+  try {
+    const { mountNode, openAt } = await import('./workspace_node.js');
+    if (nodeAt) { openAt(nodeAt); nodeAt = ''; }
+    await mountNode(host, post, (S.work && S.work.nodes) || []);
+  } catch (e) {
+    host.innerHTML = '<p class="sh-refused">The Node workspace did not load: ' + esc(String(e)) + '</p>';
+  }
+}
+
+/** Open the Node workspace at node `id`. */
+function toNode(id) {
+  nodeAt = id;
+  S.ws = 'node'; S.notice = null; dropPending();
+  // Drawn again even when the workspace is already open, so it opens there.
+  $('#sh-main').innerHTML = '';
+  draw();
+}
+
 /** Ask the program to write an issue: the one request Explore makes that
  *  carries the launch's word. */
 async function raiseIssue(params) {
@@ -175,15 +207,49 @@ function myWork() {
           (items.length ? ' What could be read is below.' : '')
         : items.length ? plural(items.length, 'thing needs', 'things need') + ' you now.' : 'Nothing needs you now.';
   return answerFirst(answer, [], 'reference') +
-    (open ? workList(items) : '') +
+    (open ? workList(items) + nodesCard() + putBackCard() : '') +
     keyCard() + copyCard() + (open ? peopleCard() : '');
+}
+
+/** Every node that is yours to write, each opened in the Node workspace. */
+function nodesCard() {
+  const nodes = (S.work && S.work.nodes) || [];
+  return '<section class="sh-card" id="sh-nodes"><h2>Your nodes ' + kind('reference') + '</h2>' +
+    (nodes.length
+      ? '<ul>' + nodes.map(n => '<li class="sh-item"><button class="ctl" data-open-node="' + esc(n.id) + '">' + esc(n.id) +
+          '</button> in ' + esc(n.group) + ', revision ' + esc(n.revision) + ', ' +
+          (n.signed ? 'signed as it is now' : 'not signed as it is now') +
+          (n.deputy_for ? ', as deputy for ' + esc(n.deputy_for) : '') + '</li>').join('') + '</ul>'
+      : '<p>No node file in your copy is yours to write.</p>') + '</section>';
+}
+
+/** Your signed work put back on the drive: named first, written only when you confirm. */
+function putBackCard() {
+  const r = S.putBack;
+  const report = r
+    ? '<div id="sh-put-back-report"><p>' + esc(r.message) + '</p><table class="sh-table"><tbody>' +
+      (r.files || []).map(f => '<tr><td><code>' + esc(f.path) + '</code></td><td>' + (f.back ? 'goes back' : 'stays') +
+        '</td><td>' + esc(f.why) + '</td></tr>').join('') + '</tbody></table>' +
+      ((r.back || []).length
+        ? '<p><button class="ctl" id="sh-put-back-confirm">Put ' + esc(plural(r.back.length, 'file')) +
+          ' back</button> <button class="ctl" id="sh-put-back-drop">Not now</button></p>'
+        : '') + '</div>'
+    : '';
+  return '<section class="sh-card" id="sh-put-back-card"><h2>Put your work back ' + kind('how-to') + '</h2>' +
+    '<p>What you signed in your copy goes back to the drive as yours, and nothing else does. Each file is named first, ' +
+    'with why it goes or stays; nothing is written until you confirm.</p>' +
+    '<p><button class="ctl" id="sh-put-back">See what goes back</button></p>' + report + '</section>';
 }
 
 function workList(items) {
   if (!items.length) return '';
+  const nodes = new Set(((S.work && S.work.nodes) || []).map(n => n.id));
   return '<section class="sh-card"><h2>What needs you ' + kind('reference') + '</h2><ul id="sh-items">' +
     items.map(it => '<li class="sh-item" data-kind="' + esc(it.kind) + '"><span class="tag">' + esc(it.kind) +
-      '</span> ' + esc(it.says) + '</li>').join('') + '</ul></section>';
+      '</span> ' + esc(it.says) +
+      (it.node && (nodes.has(it.node) || it.kind.startsWith('request'))
+        ? ' <button class="ctl" data-open-node="' + esc(it.node) + '">open in Node</button>' : '') +
+      '</li>').join('') + '</ul></section>';
 }
 
 function copyCard() {
@@ -311,6 +377,8 @@ async function click(e) {
   const t = e.target.closest('button');
   if (!t) return;
   if (t.dataset.ws) { S.ws = t.dataset.ws; S.notice = null; dropPending(); draw(); return; }
+  // `data-open-node`, not `data-node`: Explore's marks name their node too.
+  if (t.dataset.openNode) return toNode(t.dataset.openNode);
   switch (t.id) {
     case 'sh-copy': {
       const r = await post('/v1/copy', { drive: $('#sh-drive').value.trim() });
@@ -346,6 +414,22 @@ async function click(e) {
       say(r, 'the key was not made');
       return refresh();
     }
+    case 'sh-put-back': {
+      const r = await post('/v1/put-back', {});
+      S.putBack = r.ok ? r : null;
+      say(r, 'what goes back could not be read');
+      return draw();
+    }
+    case 'sh-put-back-confirm': {
+      const files = ((S.putBack && S.putBack.files) || []).filter(f => f.back).map(f => f.digest + ' ' + f.path).join('\n');
+      const r = await post('/v1/put-back', { files });
+      S.putBack = null;
+      say(r, 'nothing was put back');
+      return refresh();
+    }
+    case 'sh-put-back-drop':
+      S.putBack = null; S.notice = null;
+      return draw();
     case 'sh-register': {
       const r = await post('/v1/people/register', {
         file: S.pfile, name: $('#sh-rname').value.trim(), role: $('#sh-rrole').value,
@@ -372,9 +456,24 @@ async function change(e) {
 // ---------------------------------------------------------------------------
 // boot
 
+/** `#node/<id>` opens the Node workspace at that node: at the start, or
+ *  whenever the address is given one while the page is open. Whether a node
+ *  was asked for is answered. */
+function nodeLink() {
+  const n = location.hash.match(/^#node\/(.+)$/);
+  if (!n) return false;
+  // A name that does not decode is still opened, as it was given: the
+  // program says it is not a node's id.
+  try { nodeAt = decodeURIComponent(n[1]); } catch (e) { nodeAt = n[1]; }
+  S.ws = 'node';
+  history.replaceState(null, '', location.pathname + location.search);
+  return true;
+}
+
 takeWord();
 // Today's tool page sends its inputs and its results kept here.
 {
+  nodeLink();
   const m = location.hash.match(/^#explore\/(\w+)(?:\/(.+))?$/);
   if (m) {
     S.ws = 'explore';
@@ -387,6 +486,7 @@ takeWord();
   }
 }
 document.addEventListener('click', click);
+window.addEventListener('hashchange', () => { if (nodeLink()) toNode(nodeAt); });
 document.addEventListener('change', change);
 // The passphrase is held two minutes at most: long enough to find the
 // fingerprint one was given, in another tab or on paper, and no longer.

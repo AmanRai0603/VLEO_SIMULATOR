@@ -37,6 +37,24 @@ body.sh { max-width: 64rem; margin: 0 auto; padding: 0 1.5rem 3rem; }
 .ex-raised { color: var(--both); }
 .ex-raise-refused { color: var(--out); }
 .ex-mark { font-size: 11px; color: var(--out); }
+/* The Node workspace: its parts, its page, its file in your copy. Wider than
+   the rest of the shell, since its page is today's node view. */
+body.sh:has(#sh-node) { max-width: 100rem; }
+.nw-pick { margin: .6rem 0; display: flex; flex-wrap: wrap; gap: .3rem; align-items: center; font-size: 12px; }
+.nw-pick-k { font: 600 11px var(--mono); text-transform: uppercase; letter-spacing: .08em; color: var(--ink-2); }
+.nw-mine.sel { background: var(--ink); color: var(--paper); }
+.nw-grid { display: grid; grid-template-columns: 15rem minmax(0, 1fr) 19rem; gap: 1rem; align-items: start; }
+@media (max-width: 70rem) { .nw-grid { grid-template-columns: minmax(0, 1fr); } }
+.nw-left .np-parts { grid-template-columns: minmax(0, 1fr); }
+.nw-right h4 { font: 600 11px var(--mono); margin: .9rem 0 .2rem; }
+.nw-kv { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 2px 10px; font-size: 12px; margin: 0; }
+.nw-kv dd { margin: 0; overflow-wrap: anywhere; }
+.nw-list { font-size: 12px; padding-left: 16px; margin: .2rem 0; }
+.nw-error, .nw-not { color: var(--out); }
+.nw-ok { color: var(--both); }
+.nw-wide { width: 100%; font: 12px var(--mono); }
+.nw-next { font-weight: 600; }
+.nw-stale { margin: .5rem 0; }
 </style>
 </head>
 <body class="sh">
@@ -45,8 +63,8 @@ body.sh { max-width: 64rem; margin: 0 auto; padding: 0 1.5rem 3rem; }
   workspaces, and it opens on My work. Who you are is your key, opened here
   with its passphrase; what the screens show is read from your copy of the
   database. Explore holds today's design, its runs, its inputs and the
-  results kept; the other three workspaces fill as their stages arrive (F3 to
-  F7).
+  results kept, and Node one node and its file in your copy; the other two
+  workspaces fill as their stages arrive (F4 to F7).
 -->
 <header id="sh-head">
   <h1>VLEO</h1>

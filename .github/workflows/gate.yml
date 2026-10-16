@@ -414,6 +414,13 @@ jobs:
       # request in My work (docs/briefs/F3.md, F3-d).
       - name: a request asked in a node's file, and found by its group's owner
         run: python3 tools/ask_check.py
+      # The Node workspace in a browser, on two instances sharing a drive: a
+      # node opened from My work with its parts, its page and its file in the
+      # copy; a signing stopped as a second writer, then made; a breakdown
+      # asked; put back from My work; and found signed by its group's owner
+      # on the other (docs/briefs/F3.md, F3-g1).
+      - name: the Node workspace, from My work to the drive
+        run: python3 tools/node_check.py
       # The manual in the browser tells people what to paste and what they will
       # see. `cargo test` already holds every name in it to the code; this holds
       # every command to what it DOES — run exactly as written, its output

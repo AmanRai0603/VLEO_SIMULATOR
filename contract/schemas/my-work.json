@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "my-work",
-  "description": "What needs the person whose key is open, now: a node of theirs unsigned, a group of theirs with nothing sealed, a file below them the chain refuses.",
+  "description": "What needs the person whose key is open, now: a node of theirs unsigned, a group of theirs with nothing sealed, a file below them the chain refuses; and every node that is theirs to write.",
   "type": "object",
   "properties": {
     "ok": {
@@ -63,6 +63,42 @@
           "group",
           "node",
           "says"
+        ]
+      }
+    },
+    "nodes": {
+      "type": "array",
+      "description": "Every node file that is theirs to write, or their deputy's, with one file, signed or not: what the Node workspace opens.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "group": {
+            "type": "string"
+          },
+          "block": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "revision": {
+            "type": "string"
+          },
+          "deputy_for": {
+            "type": "string",
+            "description": "Whose deputy they write it as, or empty."
+          },
+          "signed": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "group",
+          "block",
+          "id",
+          "revision",
+          "deputy_for",
+          "signed"
         ]
       }
     },
