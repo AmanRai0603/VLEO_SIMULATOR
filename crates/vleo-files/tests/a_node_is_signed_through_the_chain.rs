@@ -99,6 +99,7 @@ fn person(f: &mut File, name: &str, deputy_for: &str, k: &SigningKey, revoked_fr
         registered_at: s("2026-01-01"),
         registered_by: s("Test Ola"),
         revoked_from: s(revoked_from),
+        proof: vleo_files::people::proof(k, name),
     });
 }
 

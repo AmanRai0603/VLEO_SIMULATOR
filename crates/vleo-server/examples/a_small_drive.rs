@@ -55,6 +55,7 @@ fn register(f: &mut File, name: &str, role: &str, k: &SigningKey, by: &str) {
         registered_at: s("2026-01-01"),
         registered_by: s(by),
         revoked_from: s(""),
+        proof: vleo_files::people::proof(k, name),
     });
 }
 

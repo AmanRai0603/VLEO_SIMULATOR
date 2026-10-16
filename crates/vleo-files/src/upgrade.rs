@@ -2,16 +2,16 @@
 //!
 //! docs/OPERATING_1_0.md, section 16, and docs/PLAN_1_0.md, phase C. A group's
 //! file from before 1.0 (format 1, `crate::format_1`) opens in the 1.0
-//! application and becomes a format-2 file. Nothing a group wrote is left
-//! behind: every row lands in a format-2 table, and what format 2 has no column
-//! for is kept in the file's meta under `format_1.`. So the upgrade has an
+//! application and becomes a file in this format. Nothing a group wrote is
+//! left behind: every row lands in a table of this format, and what it has no
+//! column for is kept in the file's meta under `format_1.`. So the upgrade has an
 //! exact inverse, [`to_format_1`], and the proof that nothing was dropped is
 //! that the inverse gives back every row of the file that was upgraded, and the
 //! folder those rows hold gives the fingerprint the people signed.
 //!
 //! What maps to what:
 //!
-//! | format 1 | format 2 |
+//! | format 1 | this format |
 //! |---|---|
 //! | `member` | `person`: an owner is the group's subsystem engineer, an author or a reviewer a node engineer |
 //! | `node` | `block`, with one output `port`; its author an `assignment` |
@@ -42,7 +42,7 @@ use crate::model::{
 /// What the meta of an upgraded file says it came from.
 pub const FROM_FORMAT_1: &str = "format 1";
 
-/// The scope format 2 gives the file as a whole, where format 1 said `group`.
+/// The scope this format gives the file as a whole, where format 1 said `group`.
 pub const FILE: &str = "file";
 
 /// Who upgraded a file, and when. The page has no clock or name of its own to
@@ -161,9 +161,9 @@ fn kept(what: &str, of: &str) -> String {
 }
 
 /// A format-1 file, given as its tables, upgraded. Refused, by name, if it is
-/// not a format-1 file there is, if a node's uid is `file` (the scope format 2
+/// not a format-1 file there is, if a node's uid is `file` (the scope this format
 /// gives the file itself), if an input names a node of this file followed by
-/// a dot (format 2 would read it as one of this file's ports), or if it is a
+/// a dot (this format would read it as one of this file's ports), or if it is a
 /// sealed release whose files do not give the fingerprint it was sealed with.
 pub fn from_format_1(tables: Vec<Table>, how: &Upgrade) -> Result<Upgraded, Error> {
     let old = Old::from_tables(tables)?;
@@ -205,7 +205,7 @@ pub fn from_format_1(tables: Vec<Table>, how: &Upgrade) -> Result<Upgraded, Erro
     let uids: Vec<&str> = old.nodes.iter().map(|n| n.uid.as_str()).collect();
     if uids.contains(&FILE) {
         return Err(malformed(format!(
-            "a node's uid is {FILE:?}, which format 2 keeps for the file itself"
+            "a node's uid is {FILE:?}, which this format keeps for the file itself"
         )));
     }
     let output_of: BTreeMap<&str, &str> = old
@@ -214,7 +214,7 @@ pub fn from_format_1(tables: Vec<Table>, how: &Upgrade) -> Result<Upgraded, Erro
         .map(|n| (n.uid.as_str(), n.output.as_str()))
         .collect();
 
-    // ── meta: every key kept; what format 2 gives a new value is kept beside it
+    // ── meta: every key kept; what this format gives a new value is kept beside it
     let mut f = File {
         meta: old.meta.clone(),
         ..File::default()
@@ -245,7 +245,7 @@ pub fn from_format_1(tables: Vec<Table>, how: &Upgrade) -> Result<Upgraded, Erro
             let uid = old.meta.get("node_uid").cloned().unwrap_or_default();
             let node = old.nodes.iter().find(|n| n.uid == uid);
             set.push(("block_uid", uid.clone()));
-            // Format 1 counted a node's revisions from 0, as issued; format 2
+            // Format 1 counted a node's revisions from 0, as issued; this format
             // counts them from 1.
             set.push(("revision", node.map_or(1, |n| n.revision + 1).to_string()));
             set.push((
@@ -343,7 +343,7 @@ pub fn from_format_1(tables: Vec<Table>, how: &Upgrade) -> Result<Upgraded, Erro
             if let Some((head, _)) = i.source.split_once('.') {
                 if uids.contains(&head) {
                     return Err(malformed(format!(
-                        "an input of {} comes from {:?}, which format 2 would read as a port of this file's node {head}",
+                        "an input of {} comes from {:?}, which this format would read as a port of this file's node {head}",
                         i.node_uid, i.source
                     )));
                 }

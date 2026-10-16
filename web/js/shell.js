@@ -217,8 +217,9 @@ function peopleCard() {
       '<tr><td>' + esc(person.name) + '</td><td>' + esc(person.role) + (person.deputy_for ? ', deputy for ' + esc(person.deputy_for) : '') +
       '</td><td><code>' + esc((k.fingerprint || '').slice(0, 16)) + '</code></td><td>' + esc(k.registered_at) + '</td><td>' +
       (k.revoked_from ? 'revoked from ' + esc(k.revoked_from)
-        : k.public_key && person.name !== S.me.name
-          ? '<button class="ctl" data-revoke="' + esc(person.name) + '" data-key="' + esc(k.public_key) + '">Revoke from today</button>' : '') +
+        : (k.public_key && k.proof_holds === false ? 'no proof: it signs nothing; replace it with a new key. ' : '') +
+          (k.public_key && person.name !== S.me.name
+            ? '<button class="ctl" data-revoke="' + esc(person.name) + '" data-key="' + esc(k.public_key) + '">Revoke from today</button>' : '')) +
       '</td></tr>').join('')).join('');
   const roles = S.pfile === 'programme'
     ? ['system engineer', 'subsystem engineer', 'programme manager'] : ['node engineer'];

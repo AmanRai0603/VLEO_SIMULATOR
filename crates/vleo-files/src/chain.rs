@@ -300,7 +300,8 @@ pub struct Registry {
 
 impl Registry {
     /// The person `name`, if `public_key` is registered for them here and
-    /// counted at `at`: registered by then, and not revoked by then.
+    /// counted at `at`: registered by then, with the proof its holder made of
+    /// it for them (`people::proof_holds`), and not revoked by then.
     pub fn key(&self, name: &str, public_key: &str, at: &str) -> Result<&Person, Error> {
         let person = self
             .file
@@ -327,6 +328,17 @@ impl Registry {
                     ),
                 )
             })?;
+        // A key counts only with the proof, made with it, that its holder
+        // offered it for this person: a key row written by hand signs nothing.
+        if !crate::people::proof_holds(name, public_key, &k.proof) {
+            return Err(refused(
+                ErrorKind::Signature,
+                format!(
+                    "the key {name} signed with carries no proof in {} that its holder offered it for them: a key without one signs nothing",
+                    self.from
+                ),
+            ));
+        }
         let when = instant(at, "the moment it was signed")?;
         if when < instant(&k.registered_at, &format!("{name}'s key's registered_at"))? {
             return Err(refused(
@@ -712,10 +724,10 @@ pub struct Me {
 /// nobody registers, one registered for two people, or one revoked everywhere
 /// it counted opens nothing, and says why.
 ///
-/// Not closed: the owner of one group can register another group's node
-/// engineer's key under a second name, and that key then says nobody until
-/// one of the two registrations goes. The signature of that group file names
-/// who did it. Roles come from
+/// A key counts for a name only with its holder's proof for that name
+/// ([`Registry::key`]), so no group's owner registers someone else's key under
+/// a second name: a row written without the proof counts for nothing here,
+/// and the key still says who it is. Roles come from
 /// the files where the key counted; the groups owned from the two files that
 /// mount, the programme's and the systems'.
 pub fn whoami(
@@ -957,6 +969,7 @@ fn checked_release(
     }
     let mut out = Checked::default();
     if release.meta.get("upgraded_from").map(String::as_str) == Some(upgrade::FROM_FORMAT_1) {
+        let scope = upgrade::anchor_scope(release.meta.get("group_id").map_or("", String::as_str));
         let pm = programme
             .file
             .people
@@ -968,14 +981,38 @@ fn checked_release(
                     .keys
                     .iter()
                     .filter(move |k| k.person == p.name)
-            })
-            .filter_map(|k| PublicKey::from_hex(&k.public_key).ok());
+            });
         let mut why = Vec::new();
-        for key in pm {
+        for k in pm {
+            let Ok(key) = PublicKey::from_hex(&k.public_key) else {
+                continue;
+            };
             match upgrade::check_anchor(release, &programme.file.signatures, &key) {
                 Ok(()) => {
-                    out.signed = release.blocks.iter().map(|b| b.id.clone()).collect();
-                    return Ok(out);
+                    // A programme manager's key anchors only as any signature
+                    // of theirs counts ([`Registry::key`]): registered, with
+                    // its holder's proof, and not revoked, when it signed.
+                    let tried: Vec<Result<&Person, Error>> = programme
+                        .file
+                        .signatures
+                        .iter()
+                        .filter(|a| a.scope == scope && a.public_key == k.public_key)
+                        .map(|a| programme.key(&k.person, &k.public_key, &a.signed_at))
+                        .collect();
+                    if tried.iter().any(Result::is_ok) {
+                        out.signed = release.blocks.iter().map(|b| b.id.clone()).collect();
+                        return Ok(out);
+                    }
+                    let said: Vec<String> = tried
+                        .into_iter()
+                        .filter_map(Result::err)
+                        .map(|e| e.message().to_string())
+                        .collect();
+                    why.push(format!(
+                        "{}'s anchor does not count: {}",
+                        k.person,
+                        said.join("; ")
+                    ));
                 }
                 Err(e) => why.push(e.message().to_string()),
             }

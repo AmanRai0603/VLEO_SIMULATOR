@@ -89,6 +89,16 @@ pub fn proof(key: &SigningKey, person: &str) -> String {
         .to_hex()
 }
 
+/// Whether `proof` is the proof, made with the key `public_key` itself, that
+/// its holder offers it for `person`.
+pub fn proof_holds(person: &str, public_key: &str, proof: &str) -> bool {
+    PublicKey::from_hex(public_key)
+        .and_then(|k| {
+            Signature::from_hex(proof).and_then(|s| k.check(&proof_message(person, public_key), &s))
+        })
+        .is_ok()
+}
+
 impl Valve<'_> {
     /// `file` opened as the chain reads it.
     fn open(&self, file: &File) -> Result<Registry, Error> {
@@ -223,6 +233,7 @@ pub fn change(
                 registered_at: at.to_string(),
                 registered_by: by.to_string(),
                 revoked_from: String::new(),
+                proof: proof.clone(),
             });
         }
         Change::Replace {
@@ -244,6 +255,7 @@ pub fn change(
                 registered_at: at.to_string(),
                 registered_by: by.to_string(),
                 revoked_from: String::new(),
+                proof: proof.clone(),
             });
         }
         Change::Revoke {
@@ -313,14 +325,12 @@ fn registered(f: &File, person: &str, from: &str) -> Result<(), Error> {
 /// A key that may be registered for `person`: a public key, offered by its
 /// holder for that name, and nobody's here already. One key says one person.
 fn new_key(f: &File, person: &str, public_key: &str, proof: &str, from: &str) -> Result<(), Error> {
-    let k = PublicKey::from_hex(public_key)?;
-    Signature::from_hex(proof)
-        .and_then(|s| k.check(&proof_message(person, public_key), &s))
-        .map_err(|_| {
-            refused(format!(
-                "the key offered for {person} carries no proof, made with it, that its holder offers it for that name: nobody registers a key that is not theirs"
-            ))
-        })?;
+    PublicKey::from_hex(public_key)?;
+    if !proof_holds(person, public_key, proof) {
+        return Err(refused(format!(
+            "the key offered for {person} carries no proof, made with it, that its holder offers it for that name: nobody registers a key that is not theirs"
+        )));
+    }
     if let Some(k) = f.keys.iter().find(|k| k.public_key == public_key) {
         return Err(refused(format!(
             "this key is registered in {from} for {} already: one key says one person, so {person} brings their own",

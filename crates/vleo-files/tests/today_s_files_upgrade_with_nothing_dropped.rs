@@ -354,12 +354,12 @@ fn a_file_in_this_format_opens_as_it_is_and_is_not_given_back_as_format_1() {
     let out = dir.join("daily.vleo");
     sqlite::write(&plain, &out).unwrap();
     let opened = sqlite::open(&out, &HOW).unwrap();
-    assert_eq!(opened.format, 2);
+    assert_eq!(opened.format, vleo_files::meta::FORMAT);
     assert!(opened.said.is_empty());
     assert_eq!(opened.file, plain);
     let e = upgrade::to_format_1(&plain).err().unwrap();
     assert_eq!(e.kind(), ErrorKind::WrongKind);
-    // A format-2 file read as format 1 is refused by name.
+    // A file in this format read as format 1 is refused by name.
     sqlite::write(&f, &out).unwrap();
     assert_eq!(
         sqlite::read_format_1(&out).err().unwrap().kind(),

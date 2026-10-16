@@ -74,6 +74,12 @@ pub(super) fn list(params: &str, ctx: &Ctx) -> String {
             j.str_field("registered_at", &k.registered_at);
             j.str_field("registered_by", &k.registered_by);
             j.str_field("revoked_from", &k.revoked_from);
+            // A key without its holder's proof signs nothing: said, so the
+            // valve's holder sees it is one to replace.
+            j.bool_field(
+                "proof_holds",
+                vleo_files::people::proof_holds(&k.person, &k.public_key, &k.proof),
+            );
             j.raw("}");
         }
         j.raw("]}");

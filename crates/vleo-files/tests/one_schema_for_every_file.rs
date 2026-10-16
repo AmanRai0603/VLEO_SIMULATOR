@@ -112,6 +112,8 @@ fn full_file() -> File {
         registered_at: s("2026-10-06"),
         registered_by: s("Aman Rai"),
         revoked_from: s(""),
+        // Kept as it is written, whatever it proves.
+        proof: s("5e1f00ab"),
     });
     f.assignments.push(Assignment {
         block_uid: s("b-1"),
@@ -391,7 +393,11 @@ fn a_file_newer_than_the_library_or_not_a_vleo_file_is_refused() {
     let newer = dir.join("newer.vleo");
     let db = Connection::open(&newer).unwrap();
     db.execute_batch(SCHEMA).unwrap();
-    db.execute_batch("PRAGMA user_version = 3;").unwrap();
+    db.execute_batch(&format!(
+        "PRAGMA user_version = {};",
+        vleo_files::meta::FORMAT + 1
+    ))
+    .unwrap();
     drop(db);
     let e = sqlite::read(&newer).err().unwrap();
     assert_eq!(e.kind(), ErrorKind::Format);

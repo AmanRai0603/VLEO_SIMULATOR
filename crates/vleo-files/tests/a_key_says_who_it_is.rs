@@ -53,6 +53,7 @@ fn register(f: &mut File, name: &str, role: &str, deputy_for: &str, key: &Signin
         registered_at: s("2026-01-01"),
         registered_by: s(by),
         revoked_from: s(""),
+        proof: vleo_files::people::proof(key, name),
     });
 }
 
@@ -393,6 +394,7 @@ fn a_revoked_or_shared_key_says_nobody() {
         registered_at: s("2026-01-01"),
         registered_by: s("Pat Morgan"),
         revoked_from: s(""),
+        proof: vleo_files::people::proof(&p.sub, "Ola Again"),
     });
     let pr = chain::open_programme(signed(f, "Pat Morgan", &p.pm), &p.pm.public().fingerprint())
         .unwrap();
@@ -411,6 +413,40 @@ fn a_revoked_or_shared_key_says_nobody() {
         e.contains("more than one person") && e.contains("Ola Again"),
         "{e}"
     );
+
+    // Registered under a second name by hand, without its holder's proof for
+    // that name, the row counts for nothing, and the key still says who it is.
+    let mut f = programme_unsigned(&p, "Sam Engel");
+    let ola = chain::whoami(
+        &p.sub.public().to_hex(),
+        "2026-04-01",
+        &chain::open_programme(
+            signed(f.clone(), "Pat Morgan", &p.pm),
+            &p.pm.public().fingerprint(),
+        )
+        .unwrap(),
+        None,
+        &[],
+    )
+    .unwrap()
+    .name;
+    f.people.push(Person {
+        name: s("Ola Hand"),
+        role: s("subsystem engineer"),
+        deputy_for: s(""),
+    });
+    f.keys.push(PersonKey {
+        person: s("Ola Hand"),
+        public_key: p.sub.public().to_hex(),
+        registered_at: s("2026-01-01"),
+        registered_by: s("Pat Morgan"),
+        revoked_from: s(""),
+        proof: s(""),
+    });
+    let pr = chain::open_programme(signed(f, "Pat Morgan", &p.pm), &p.pm.public().fingerprint())
+        .unwrap();
+    let me = chain::whoami(&p.sub.public().to_hex(), "2026-04-01", &pr, None, &[]).unwrap();
+    assert_eq!(me.name, ola);
 }
 
 #[test]

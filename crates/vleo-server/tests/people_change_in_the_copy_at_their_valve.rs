@@ -95,6 +95,7 @@ fn register(f: &mut File, name: &str, role: &str, k: &SigningKey, by: &str) {
         registered_at: s("2026-01-01"),
         registered_by: s(by),
         revoked_from: s(""),
+        proof: vleo_files::people::proof(k, name),
     });
 }
 
@@ -402,6 +403,11 @@ fn people_change_in_the_copy_at_their_valve() {
     let listed = ask(port, "GET", "/v1/people", &[("file", "programme")]);
     assert!(
         listed.contains("\"name\":\"Test Tom\"") && listed.contains(&tom.public().fingerprint()),
+        "{listed}"
+    );
+    // Registered with the proof he made: it holds, and the listing says so.
+    assert!(
+        listed.contains("\"proof_holds\":true") && !listed.contains("\"proof_holds\":false"),
         "{listed}"
     );
     // Written in the copy, signed by Pat; the drive is not touched.

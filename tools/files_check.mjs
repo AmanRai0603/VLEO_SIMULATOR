@@ -66,7 +66,7 @@ async function changed(bytes, sql) {
   return out;
 }
 
-check('the page carries format ' + lib.format + ', the format the files are in', lib.format === 2, 'format ' + lib.format);
+check('the page carries format ' + lib.format + ', the format the files are in', lib.format === 3, 'format ' + lib.format);
 
 const answer = lib.checkRelease(anchor, await files.rowsOf(programme), await files.rowsOf(release));
 check('the release signed afresh checks through the chain in the page',
