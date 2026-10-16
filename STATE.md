@@ -9,7 +9,7 @@ Target 1.0.0 on Monday 19 October; Tuesday to Thursday are the buffer.
 
 ## Person A · day
 
-Handed over Friday 16 October (S1 and S2: F1 to F3-d, and the key's proof). Nothing is merged: everything waits on Aman.
+Handed over Friday 16 October (S1 and S2: F1 to F3-e, and the key's proof). Nothing is merged: everything waits on Aman.
 
 - **Open, in merge order:**
   - **162 the plan.** It now carries the nine briefs and F3's Plan (`docs/briefs/F3.md`).
@@ -68,12 +68,21 @@ Handed over Friday 16 October (S1 and S2: F1 to F3-d, and the key's proof). Noth
     - Put-back takes a file whose only change is the person's own signed requests, at the drive's revision. On a later revision they go back with it, signed.
     - Route: `POST /v1/node/<id>/ask`. My work lists every request to the group's owner and their deputy; one said to be answered is refused, since no answer is signed yet. The scenario is `tools/ask_check.py` in the panels job.
 
-    The Opus review found 11 points, one blocking (two rows of one uid let an unsigned request count); all fixed in 51e21f13, each with a test shown red, except what its body names. Two questions for Aman are in its body. CI was green on the first commit; the fixes' run is pending.
+    The Opus review found 11 points, one blocking (two rows of one uid let an unsigned request count); all fixed in 51e21f13, each with a test shown red, except what its body names. Two questions for Aman are in its body. CI is green.
+  - **183 F3-e a lesson's place in the node's file.** Stacked on 182.
+    - A lesson is a `text` of kind `lesson` on the node's block, served to the loader as the `lesson.toml` its folder held, so the lesson route, the gate and the form read it unchanged. No schema change; no file in `design/` has one.
+    - It is signed with the node, and checked with it: the node's own checks run the gate's lesson check but for the rows it names, which the lesson route, the plain save and the signing check against the design.
+    - Route: `POST /v1/node/<id>/lesson`, a filled form or a bare `lesson.toml`, saved as the node's next revision.
+
+    The Opus review found nothing blocking and 7 points to fix; all fixed in 60af1199, each with a test shown red. `vleo-sheet`'s `lesson.rs` is now one of the page library's sources, so both page libraries and the group pages were rebuilt. CI was green on the first commit; the fixes' run is pending.
 - **What 171 decides, which B's PRs must follow:**
   - **Ownership follows the mount.** Only the programme's file (mounting `systems`) and the systems' file (mounting each `l3_*`) mount anything.
   - **A group file registers only node engineers.** It holds nobody the programme's file registers, and no key it registers. `open_group_in` refuses anything else, by name.
   - **The test drive (165) must change.** It mounts the l3 groups in the programme's file, so they read as mounted twice. It should assign the mounting blocks in the systems' file instead, and register only node engineers in group files.
   - **The anchor** is accepted once per drive, with `accept_anchor` on `POST /v1/key/open`. A scenario that opens a key passes it once, and since 174 also `session`, read from `<keys>/open.html`. A face must make the person compare the fingerprint, never fill it in from the answer.
+- **What 183 decides:**
+  - **A lesson is its node's, signed with it**: a lesson changed after signing needs the node signed again. Put to Aman on 183.
+  - **A release does not carry a lesson into today's design yet**: today's design takes a release's sheets only, until F5's intake.
 - **What 182 decides:**
   - **A request's name is its node's**, `<node>-r<n>`, and its status and answer are signed by nobody yet: F4, answering, signs an answer of its own.
   - **Only the node's writer or their deputy asks in a node file**; anyone else asks through an issue (W11), until Aman decides otherwise.
@@ -109,8 +118,8 @@ Handed over Friday 16 October (S1 and S2: F1 to F3-d, and the key's proof). Noth
 - **Lockfiles:** `crates/vleo-py` keeps its own, built `--locked` in CI, and so does `crates/vleo-kernel-wasm` until 177 removes it. A new dependency of `vleo-files` or `vleo-server` needs them refreshed, as 171 does.
 - **Disk:** the container's allowance filled on S1 and again on S2. `xtask files-wasm` and the scenarios leave a `target/` of 10 GB or more inside the worktree they run in; delete it after a push. Old worktrees' `target/` folders and `target/*/incremental` were deleted to make room.
 - **Next for A, in order:**
-  - **F3-e, a lesson's place in the node's file** (the brief's item 5). Planned in `docs/briefs/F3.md` (6b7c8cbd, on 162), with one question for Aman. Being built on `claude/a-f3e-lesson`, stacked on 182: a lesson is a `text` of kind `lesson` in the node's file, served to the loader as its `lesson.toml`, checked with the node and signed with it, and written by `POST /v1/node/<id>/lesson`.
-  - Then item 6 of the brief (the removals), not planned yet.
+  - **F3-f, the removals** (the brief's item 6). The single-node form goes now: nothing makes or reads one but three tests, and the plan rules today's design uses keep their tests, rewritten. **The node view stays** until `/app`'s Node workspace replaces it (PLAN_F, decision 1): it is the only screen for a row's page, figures, panel checks and lesson, and B's 170 builds into it. Planned in `docs/briefs/F3.md`, then built on `claude/a-f3f-removals`, stacked on 183, with its Opus review.
+  - Then, for Aman: the Node workspace in `/app`, and where today's page's Rows, Architecture, Forms and manual go, before the node view is removed.
 
 ## Person B · night
 
