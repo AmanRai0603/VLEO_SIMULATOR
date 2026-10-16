@@ -73,13 +73,14 @@ before adding a panel:
 ## The depth filter
 
 The tree reads in the order the source wrote it, not alphabetically. `order` is
-a field on every row and the display sorts by it. `Achievable lifetime` before
+a field on every row, and a view that lays rows out by their place in the
+design sorts by it. `Achievable lifetime` before
 `Specific impulse` reverses what the source said, and the order is part of what
 the source said.
 
 ## One module per concern
 
-`web/js/` is split by what a file is about — dom, state, display, tree, paths,
-matrix, figure, node, run, architecture, app. A change to how the matrix is
-drawn touches `matrix.js` and nothing else. If it touches four files, the split
+`web/js/` is split by what a file is about — dom, state, rows, node, run,
+results, architecture, manual, app. A change to how a row's run is drawn
+touches `run.js` and nothing else. If it touches four files, the split
 is wrong and that is worth fixing before the change.

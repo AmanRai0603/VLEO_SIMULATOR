@@ -127,7 +127,7 @@ function secNode() {
   'the ceiling an external surface survives, and the geolocation error sits below the floor any ' +
   'time-difference system in this design reaches — with one KPI correctly blocked behind the second. ' +
   'Widening either bound would turn the tool green and delete the finding, which is the one thing the ' +
-  'guards exist to prevent. This page does not state how many: run <b>everything</b> on the run tab ' +
+  'guards exist to prevent. This page does not state how many: run <b>everything</b> under Run in the application\'s Explore ' +
   'and read the count off that run, because a number printed here would be a claim about the last ' +
   'time somebody looked.</p>' +
   '<p class="prose">The other ' + seeded + ' rows are seeded on purpose. The structure is the ' +
@@ -204,8 +204,8 @@ function secLayers() {
   });
 
   return lead(
-    'Four layers, one architecture. The layer decides what the figure is about and nothing else ' +
-    'changes: the same tree, the same matrix, the same node page, the same run.') +
+    'Four layers, one architecture: the same tree, the same node page, the same run, whichever ' +
+    'layer a row is in.') +
 
   '<table class="grid-t"><thead><tr><th>layer</th><th>what it answers</th><th class="num">rows</th>' +
   '<th class="num">specified</th><th class="num">seeded</th><th class="num">boxes</th></tr></thead><tbody>' +
@@ -270,7 +270,7 @@ function secTree() {
   subsystemLayers().forEach(r => walk(r, 0));
 
   return lead(
-    'The hierarchy is the first relation and the matrix draws it on the diagonal. Every box has an ' +
+    'The hierarchy is the first relation: every row sits in one group, and every group in one above it. Every box has an ' +
     'owner, and ownership is a path rule rather than a convention — the folder a node lives in ' +
     'names its owner, and a node reads another only through the ports its group declares.') +
 
@@ -307,8 +307,8 @@ function secRings() {
   '<tr><td><b>3</b></td><td><code>vleo-modules</code></td>' +
   '<td>the engine: the design read from its files, its methods run by the interpreter</td></tr>' +
   '<tr><td><b>face</b></td><td><code>vleo-daemon</code> · <code>vleo-cli</code> · <code>vleo-ffi</code>' +
-  ' · <code>vleo-kernel-wasm</code> · <code>vleo-py</code></td>' +
-  '<td>browser, command line, C ABI, WebAssembly, Python — each takes one dependency on the facade</td>' +
+  ' · <code>vleo-py</code></td>' +
+  '<td>browser, command line, C ABI, Python — each takes one dependency on the facade</td>' +
   '</tr></tbody></table>' +
 
   h4('the node folders, as they stand') +

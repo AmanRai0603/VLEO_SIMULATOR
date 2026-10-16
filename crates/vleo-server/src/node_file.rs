@@ -2,7 +2,10 @@
 //! next revision (docs/briefs/F3.md, F3-a; `vleo_files::save`).
 //!
 //! `GET /v1/node/<id>/file` gives the node file's bytes, base64, with the
-//! SHA-256 of those bytes (`opened`), its revision and its writer.
+//! SHA-256 of those bytes (`opened`), its revision and its writer, and what
+//! the Node workspace shows of it, which a page cannot read from the bytes:
+//! who it is assigned to, whether it is signed as it is now, each signature
+//! and request, what its checks find, and the next step (F3-g1).
 //! `POST /v1/node/<id>/save` takes the edited file the same way, with the
 //! `opened` it was edited from, and saves it as whoever's key is open. On a
 //! second writer it answers both: the file as it now is, and the edit sent,
@@ -146,10 +149,200 @@ pub(super) fn file(id: &str, ctx: &Ctx) -> String {
         );
         j.str_field("writer", f.meta.get("writer").map_or("", String::as_str));
         j.str_field("file", &base64(&bytes));
+        state_fields(&mut j, &f, &bytes, &path, &copy, ctx);
         j.raw("}");
         Ok(j.0)
     };
     answer().unwrap_or_else(|why| me::refusal(&why))
+}
+
+/// What the Node workspace shows of a node's file beside its bytes, as the
+/// program reads it (docs/briefs/F3.md, F3-g1): its group and who the group
+/// file assigns it, whether it is the open key's person's to write, whether
+/// it is signed as it is now, each signature and request, what its own checks
+/// find, and the one next step. A page cannot read the file's bytes, so
+/// everything it shows of the file is said here.
+fn state_fields(
+    j: &mut Json,
+    f: &vleo_files::model::File,
+    bytes: &[u8],
+    path: &str,
+    copy: &Path,
+    ctx: &Ctx,
+) {
+    let block = f.meta.get("block_uid").cloned().unwrap_or_default();
+    let group_id = path.split('/').nth(1).unwrap_or_default().to_string();
+    j.str_field("group", &group_id);
+    j.str_field("block", &block);
+    let group = group_of(copy, path);
+    // Everyone the group file assigns it to: a block may have more than one
+    // writer, and an empty name is nobody.
+    let assignees: Vec<String> = group.as_ref().map_or_else(
+        |_| Vec::new(),
+        |g| {
+            g.file
+                .assignments
+                .iter()
+                .filter(|a| a.block_uid == block && !a.person.is_empty())
+                .map(|a| a.person.clone())
+                .collect()
+        },
+    );
+    j.str_field("assigned", &assignees.join(", "));
+    // Theirs to write as the library holds it: `Registry::may_sign_node`, the
+    // one rule of who may write and sign a node, with a key the group file
+    // counts for them now. The program decides again at each step; this says
+    // which steps to offer, and why not.
+    let now = results::now_utc();
+    let me = me::with_key(|key, me| (me.clone(), key.public().to_hex()));
+    let mut key_refused = None;
+    let yours = match (&me, &group) {
+        (Some((me, public)), Ok(g)) if g.may_sign_node(&me.name, &block) => {
+            match g.key(&me.name, public, &now) {
+                Ok(_) => true,
+                Err(e) => {
+                    key_refused = Some(e.message().to_string());
+                    false
+                }
+            }
+        }
+        _ => false,
+    };
+    j.bool_field("yours", yours);
+    // Whose deputy they write it as, when no assignment names them.
+    let deputy_for = match (&me, &group) {
+        (Some((me, _)), Ok(g)) if yours && !assignees.contains(&me.name) => g
+            .file
+            .people
+            .iter()
+            .find(|p| p.name == me.name && assignees.contains(&p.deputy_for))
+            .map(|p| p.deputy_for.clone()),
+        _ => None,
+    };
+    j.str_field("deputy_for", deputy_for.as_deref().unwrap_or(""));
+    let signed = match &group {
+        Ok(g) => vleo_files::chain::check_node(f, &block, g).map_err(|e| e.message().to_string()),
+        Err(why) => Err(why.clone()),
+    };
+    j.key("signed").raw("{");
+    j.bool_field("ok", signed.is_ok());
+    j.str_field(
+        "says",
+        &match &signed {
+            Ok(()) => format!(
+                "revision {} is signed as it is now",
+                f.meta.get("revision").map_or("", String::as_str)
+            ),
+            Err(why) => why.clone(),
+        },
+    );
+    j.raw("}");
+    j.key("signatures").raw("[");
+    for (i, s) in f.signatures.iter().enumerate() {
+        if i > 0 {
+            j.raw(",");
+        }
+        j.raw("{");
+        j.str_field("scope", &s.scope);
+        j.str_field("revision", &s.revision);
+        j.str_field("signer", &s.signer);
+        j.str_field("signed_at", &s.signed_at);
+        j.str_field("verdict", &s.verdict);
+        j.raw("}");
+    }
+    j.raw("]");
+    j.key("requests").raw("[");
+    for (i, r) in f.requests.iter().enumerate() {
+        if i > 0 {
+            j.raw(",");
+        }
+        let counts = match &group {
+            Ok(g) => {
+                vleo_files::chain::check_request(f, &r.uid, g).map_err(|e| e.message().to_string())
+            }
+            Err(why) => Err(why.clone()),
+        };
+        j.raw("{");
+        j.str_field("uid", &r.uid);
+        j.str_field("kind", &r.kind);
+        j.str_field("status", &r.status);
+        j.str_field("raised_by", &r.raised_by);
+        j.str_field("at", &r.at);
+        j.str_field("body", &r.body);
+        j.bool_field("counts", counts.is_ok());
+        j.str_field("why", counts.err().as_deref().unwrap_or(""));
+        j.raw("}");
+    }
+    j.raw("]");
+    // What a signing is held to, said before anyone signs: the node's own
+    // checks, and its lesson against the design this program reads.
+    let mut findings = vleo_files::checks::check_node(f);
+    let id = f
+        .blocks
+        .iter()
+        .find(|b| b.uid == block)
+        .map_or(block.clone(), |b| b.id.clone());
+    if let Err(why) = lesson_holds(ctx, &id, f) {
+        findings.0.push(vleo_files::checks::Finding {
+            level: vleo_files::checks::Level::Error,
+            place: id.clone(),
+            what: why,
+        });
+    }
+    findings_field(j, &findings);
+    let here = vleo_files::copied::digest(bytes);
+    let changed_here = copy::record(copy)
+        .ok()
+        .flatten()
+        .is_some_and(|r| r.files.get(path) != Some(&here));
+    j.bool_field("changed_here", changed_here);
+    let revision = f.meta.get("revision").map_or("", String::as_str);
+    let first_error = findings.errors().next();
+    // Signing tried without writing anything, as the library would sign it
+    // now: what the checks above cannot see (the key, the block, the file's
+    // revision against its block's) refuses here in the library's words.
+    let would_sign = match (&group, yours, first_error, &signed) {
+        (Ok(g), true, None, Err(_)) => me::with_key(|key, me| {
+            vleo_files::chain::sign_node(f, &block, &me.name, key, &now, g)
+                .map(|_| ())
+                .map_err(|e| e.message().to_string())
+        })
+        .unwrap_or(Ok(())),
+        _ => Ok(()),
+    };
+    let next = match (&group, me.is_some(), yours, first_error, &signed) {
+        (Err(why), ..) => format!("Nothing yet: {why}"),
+        (_, false, ..) => {
+            "Open your key: whether it is yours to write is read from its group file".to_string()
+        }
+        (_, _, false, ..) if key_refused.is_some() => format!(
+            "Nothing: your key does not count for {id} here: {}",
+            key_refused.as_deref().unwrap_or("")
+        ),
+        (_, _, false, ..) => format!(
+            "Nothing: {id} is {}'s to write. Read it here; ask them, or raise an issue",
+            if assignees.is_empty() {
+                "nobody".to_string()
+            } else {
+                assignees.join(" and ")
+            }
+        ),
+        (_, _, _, Some(e), Err(_)) => format!(
+            "Fix what its checks find, then sign: {}: {}",
+            e.place, e.what
+        ),
+        (_, _, _, None, Err(_)) => match &would_sign {
+            Ok(()) => format!("Sign revision {revision}"),
+            Err(why) => format!("Nothing yet: signing it is refused: {why}"),
+        },
+        (_, _, _, _, Ok(())) if changed_here => {
+            "Put your work back on the drive, from My work".to_string()
+        }
+        (_, _, _, _, Ok(())) => format!(
+            "Nothing: revision {revision} is signed, as it was when your copy was taken from the drive"
+        ),
+    };
+    j.str_field("next", &next);
 }
 
 /// The group file of the node at `path`, as the chain opens it from the copy.
@@ -171,8 +364,9 @@ fn group_of(copy: &Path, path: &str) -> Result<vleo_files::chain::Registry, Stri
         .iter()
         .find(|w| w.starts_with(&format!("{group_id}: ")))
         .map_or(String::new(), |w| format!(": {w}"));
-    c.groups
+    c.systems
         .into_iter()
+        .chain(c.groups)
         .find(|g| g.file.meta.get("group_id") == Some(&group_id))
         .ok_or_else(|| {
             format!("{group_id}'s group file does not check through the chain, so nobody is assigned its nodes{why}")

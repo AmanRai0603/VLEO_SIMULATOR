@@ -323,8 +323,10 @@ time, and every branch shows what is still open.
 
 **From the audit:**
 - **There are four fronts today, not one:** the tool's page, the group and node
-  pages, the single-node form (retired in F3) and the readers' folder. The readers' folder
-  becomes the Explore workspace's read-only export.
+  pages, the single-node form (retired in F3) and the readers' folder. The
+  readers' folder becomes the Explore workspace's read-only export. *(Since:
+  the readers' folder was removed in phase F2, with no export in its place —
+  docs/PLAN_F.md, decision 1.)*
 - **One engine for both.** The engine runs in the page in both, and the installed
   application is a local shell serving the same page, so the screens cannot
   differ. The local server's routes stay for Python and the command line, and

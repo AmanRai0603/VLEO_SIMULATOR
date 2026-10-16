@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""The application's shell, and My work, in a real browser on the real program.
+"""The application's shell, My work and Explore, in a real browser on the real program.
 
-docs/briefs/F1.md, PR 3. A small drive of invented people is written
+docs/briefs/F1.md, PR 3, and docs/briefs/F2.md. A small drive of invented people is written
 (`cargo run -p vleo-server --example a_small_drive`), the program is started
 on it with a keys folder and a copy folder of its own, and the page it opens
 (`<keys>/open.html`) is opened the way a person's browser would open it. Then,
@@ -22,6 +22,16 @@ as people would:
   programme manager does not;
 - a name made of what a page must escape is shown as it is;
 - what cannot be read is said, never shown as nothing to do;
+- Explore says which design is open, by its fingerprint; a release the chain
+  does not admit is refused on screen, and its group's last good one taken
+  and marked, with who sealed it and how its seal checked;
+- a failing closure is traced to the node the release taken changed, and
+  raised as an issue: the file is in the copy's issues/, addressed to its
+  group and its node, signed by whoever raised it;
+- a run on today's design is kept, and the result names the design it ran
+  on, by its fingerprint, and the engine;
+- a second instance on the same drive builds the same today's design, by
+  fingerprint;
 - each other workspace says which stage brings it.
 
     python3 tools/shell_check.py
@@ -30,7 +40,9 @@ Exit 0 when every step held; 1 with the steps that did not.
 """
 import os
 import re
+import json
 import shutil
+import sqlite3
 import subprocess
 import sys
 import tempfile
@@ -50,22 +62,29 @@ def chromium_path():
     return p()
 
 
-def start(scratch):
-    """The drive written, and the program started on it. Returns (program, port, anchor)."""
-    made = subprocess.run(
-        ['cargo', 'run', '-q', '-p', 'vleo-server', '--example', 'a_small_drive', '--', scratch],
-        cwd=ROOT, capture_output=True, text=True, check=True)
-    anchor = made.stdout.strip().splitlines()[-1]
+def start(scratch, second=''):
+    """The drive written, and the program started on it, today's design built
+    from it. Returns (program, port, anchor). `second` starts another instance
+    on the same drive, with folders of its own."""
+    if not second:
+        made = subprocess.run(
+            ['cargo', 'run', '-q', '-p', 'vleo-server', '--example', 'a_small_drive', '--', scratch],
+            cwd=ROOT, capture_output=True, text=True, check=True)
+        anchor = made.stdout.strip().splitlines()[-1]
+    else:
+        anchor = ''
     env = dict(os.environ)
-    for k in ['VLEO_DRIVE', 'VLEO_DESIGN']:
-        env.pop(k, None)
+    env.pop('VLEO_DESIGN', None)
+    own = os.path.join(scratch, second) if second else scratch
+    os.makedirs(own, exist_ok=True)
     env.update({
-        'VLEO_KEYS': os.path.join(scratch, 'keys'),
-        'VLEO_COPY': os.path.join(scratch, 'copy'),
-        'VLEO_CASE': os.path.join(scratch, 'case.csv'),
-        'VLEO_RESULTS': os.path.join(scratch, 'results'),
-        'VLEO_LOG': os.path.join(scratch, 'log'),
-        'VLEO_PORT': '7841',
+        'VLEO_DRIVE': os.path.join(scratch, 'drive'),
+        'VLEO_KEYS': os.path.join(own, 'keys'),
+        'VLEO_COPY': os.path.join(own, 'copy'),
+        'VLEO_CASE': os.path.join(own, 'case.csv'),
+        'VLEO_RESULTS': os.path.join(own, 'results'),
+        'VLEO_LOG': os.path.join(own, 'log'),
+        'VLEO_PORT': '7842' if second else '7841',
     })
     program = subprocess.Popen(['cargo', 'run', '-q', '-p', 'vleo-daemon'], cwd=ROOT, env=env,
                                stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
@@ -85,6 +104,85 @@ def start(scratch):
         except OSError:
             time.sleep(0.5)
     return program, port, anchor
+
+
+def explore(p, step, scratch, port):
+    """Explore, as Test Ola, whose key is open: F2's proofs on screen."""
+    p.click('#sh-nav .tab:text-is("Explore")')
+    p.wait_for_selector('.ex-releases', timeout=120000)
+    which = p.inner_text('.ex-which')
+    fp = p.get_attribute('.ex-fp', 'title') or ''
+    step('Explore says which design is open, by its fingerprint',
+         which.startswith("today's design, built from the drive") and len(fp) == 64, which + ' ' + fp)
+    step('and the released design it is based on', 'none has been released yet' in p.inner_text('.ex-base'))
+    row = p.inner_text('.ex-releases tr[data-group="l3_solar"]')
+    step('a release the chain does not admit is refused on screen',
+         '1.3 refused' in row and 'does not check through the chain' in row, row)
+    step('its group\'s last good one is taken, and marked', '1.2' in row and 'its last good one' in row, row)
+    step('with who sealed it, and how its seal checked',
+         ' by ' in row and 'anchored by the programme manager' in row, row)
+    step('and the anchor this computer accepted when a key was opened is said as accepted',
+         'has not accepted' not in row, row)
+
+    # The closure 1.2 breaks, traced and raised.
+    p.click('.ex-trace[data-closure="l3_solar_ach_01"]')
+    p.wait_for_selector('.ex-trace-out h4', timeout=60000)
+    traced = p.inner_text('.ex-trace-out')
+    step('a failing closure is traced to the node the release taken changed',
+         'fails' in traced and 'sw_f107_design_long' in traced and 'changed by l3_solar 1.2' in traced, traced)
+    p.click('.ex-trace-out h4 .ex-raise')
+    p.fill('.ex-raising .ex-what', 'The first solar closure fails since solar 1.2.')
+    p.click('.ex-raising .ex-raise-go')
+    p.wait_for_selector('.ex-raised, .ex-raise-refused', timeout=30000)
+    said = p.inner_text('.ex-raising')
+    step('and raised as an issue', p.locator('.ex-raised').count() == 1 and 'issue 1 is raised on l3_solar' in said, said)
+    issue = os.path.join(scratch, 'copy', 'issues', '1-l3_solar.vissue')
+    held = {}
+    if os.path.isfile(issue):
+        db = sqlite3.connect(issue)
+        held = dict(db.execute('SELECT key, value FROM meta').fetchall())
+        held['row'] = db.execute('SELECT group_id, place, raised_by, evidence FROM issue').fetchone()
+        held['signer'] = db.execute("SELECT signer FROM signature WHERE scope = 'file'").fetchone()
+        db.close()
+    row = held.get('row') or ('', '', '', '')
+    step('the issue file is in the copy, addressed to its group and its node, with the evidence',
+         row[0] == 'l3_solar' and row[1] == 'l3_solar_ach_01' and 'caused by sw_f107_design_long' in row[3]
+         and fp in row[3], str(held)[:300])
+    step('signed by whoever raised it',
+         row[2] == 'Test Ola' and held.get('writer') == 'Test Ola' and held.get('signer') == ('Test Ola',), str(held)[:300])
+    step('and not on the drive until the work goes back',
+         not os.path.exists(os.path.join(scratch, 'drive', 'issues')))
+
+    # A run on today's design, kept, and listed with its design and engine.
+    p.click('.ex-ws[data-view="run"]')
+    p.wait_for_selector('.run-target', timeout=60000)
+    p.select_option('.run-target', 'l3_solar_ach_01')
+    p.wait_for_selector('.run-go:not([disabled])', timeout=30000)
+    p.click('.run-go')
+    p.wait_for_selector('.res-save', timeout=120000)
+    p.click('.res-save')
+    p.wait_for_selector('.res-saved [data-results]', timeout=60000)
+    p.click('.res-saved [data-results]')
+    p.wait_for_selector('.res-list', timeout=60000)
+    listed = p.inner_text('.res-list')
+    step('a run on today\'s design is kept, naming the design and the engine',
+         "today's design, built from the drive" in listed and 'this design' in listed and 'kernel' in listed, listed)
+    p.wait_for_selector('.res-on', timeout=30000)
+    step('and the result says the design by its whole fingerprint', fp in p.inner_text('.res-on'))
+
+    # Another instance on the same drive builds the same design.
+    second, port2, _ = start(scratch, second='second')
+    try:
+        there = json.load(urllib.request.urlopen(f'http://127.0.0.1:{port2}/v1/today', timeout=60))
+        here = json.load(urllib.request.urlopen(f'http://127.0.0.1:{port}/v1/today', timeout=60))
+        step('a second instance on the same drive builds the same today\'s design, by fingerprint',
+             there['design']['fingerprint'] == here['design']['fingerprint'] == fp, there['design']['fingerprint'])
+    finally:
+        second.terminate()
+        try:
+            second.wait(timeout=10)
+        except subprocess.TimeoutExpired:
+            second.kill()
 
 
 def check():
@@ -210,8 +308,8 @@ def check():
             open_key('test-ola.vkey')
             sealed = items('nothing sealed')
             step('the subsystem engineer finds her group with nothing sealed, and not the one sealed',
-                 len(sealed) == 1 and 'l3_solar' in sealed[0], main())
-            step('a file in releases that is not a release seals nothing', 'l3_solar' in ' '.join(sealed))
+                 len(sealed) == 1 and 'l3_power' in sealed[0], main())
+            step('a file in releases that is not a release seals nothing', 'l3_power' in ' '.join(sealed))
             step('and her own group refused', any('l3_thermal' in x for x in items('refused')), main())
             step('and a mounted group whose file is missing, said, not passed over',
                  any('l3_struct' in x and 'holds no' in x for x in items('refused')), main())
@@ -236,16 +334,23 @@ def check():
                  'What needs you cannot be read' in said and 'Nothing needs you' not in main(), said)
             with open(start_here, 'w') as f:
                 f.write(kept)
-            with open(os.path.join(scratch, 'copy', 'copied.toml'), 'w') as f:
+            record = os.path.join(scratch, 'copy', 'copied.toml')
+            kept_record = open(record).read()
+            with open(record, 'w') as f:
                 f.write('not a record')
             said = reread()
             step('and a copy that cannot be read is said, never shown as no copy',
                  'copy of the database cannot be read' in said, said)
+            with open(record, 'w') as f:
+                f.write(kept_record)
+            reread()
 
-            for name, stage in [('Node', 'F3'), ('System', 'F4 to F6'), ('Programme', 'F7'), ('Explore', 'F2')]:
+            explore(p, step, scratch, port)
+
+            # The Node workspace is tools/node_check.py's.
+            for name, stage in [('System', 'F4 to F6'), ('Programme', 'F7')]:
                 act(lambda: p.click(f'#sh-nav .tab:text-is("{name}")'))
                 step(f'the {name} workspace says which stage brings it', f'arrives in {stage}' in main(), main())
-            step('Explore points at today\'s tool until it arrives', p.locator('#sh-main a[href="/"]').count() == 1)
             b.close()
     finally:
         program.terminate()

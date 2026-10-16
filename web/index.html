@@ -9,17 +9,16 @@
 </head>
 <body>
 <!--
-  One figure, two relations.
-
-  The nested boxes on the diagonal are the tree. The marks are the dependency.
-  Neither is beside the other — they share the same grid, because a side-car
-  tree drifts out of alignment as branches open, and a tree alone cannot show
-  the second relation at all.
+  Today's tool page, while the application takes over from it
+  (docs/PLAN_F.md, decision 1). The layer figure, the run, the inputs and the
+  results kept are the application's Explore now (/app); what is left here is
+  every row's page, until the Node workspace holds it (F3), and the
+  architecture, the forms and the manual.
 -->
 
 <header id="masthead">
   <h1>VLEO Multipayload design tool</h1>
-  <p class="tagline">Orbitt Space · four layers · one architecture, one case</p>
+  <p class="tagline">Orbitt Space · one architecture, one case · runs, inputs and results in <a href="/app">the application</a></p>
   <span class="grp" id="depth" role="group" aria-label="how deep the page goes"
     title="Learn keeps every step and asks you to predict first · Read shows the answer, the plain words and the real thing · Expert keeps the answer, the relation, the limits and the reference"><span class="lbl">depth</span>
     <button class="ctl dp" data-depth="learn">Learn</button
@@ -30,55 +29,25 @@
 
 <nav id="tabs">
   <div class="tabrow">
-    <button class="nudge" id="prev" title="the layer above">←</button>
-    <button class="nudge" id="next" title="the layer below">→</button>
+    <button class="tab rows-tab sel" id="rows-tab" title="every row of the design, to open its page">Rows</button>
+    <button class="tab explore-tab" id="explore-tab" title="which design is open and what built it, where it breaks, and what differs between two files">Explore</button>
     <button class="tab arch-tab" id="arch-tab" title="the pattern every folder repeats">⌗ Architecture</button>
     <button class="tab forms-tab" id="forms-tab" title="every way something reaches this tool: the inputs and results">Forms</button>
-    <button class="tab results-tab" id="results-tab" title="what runs returned, kept on this machine and shown without running">Results</button>
-    <button class="tab inputs-tab" id="inputs-tab" title="the one case: every input, its default and the value it runs at — edit, upload or download as CSV">Inputs</button>
     <button class="tab manual-tab" id="manual-tab" title="how to use this tool — in the browser and in a terminal, as an engineer and as the developer">? Manual</button>
-    <button class="tab sel" data-layer="1">1 Management layer</button>
-    <button class="tab" data-layer="2">2 The system — tree, connectivity, one node</button>
-    <button class="tab" data-layer="3">3 Subsystem</button>
-    <button class="tab" data-layer="4">4 The run</button>
     <span class="status" id="status"></span>
   </div>
 
-  <div class="tabrow sub" id="controls">
-    <button class="ctl" id="expand-all">expand all</button>
-    <button class="ctl" id="collapse-all">collapse all</button>
-    <button class="ctl" id="show-retired" title="Retired rows still answer and still have a page. They are out of the tree by default because they are not live work.">▸ retired rows</button>
-    <button class="ctl" id="howto">▸ how to read it</button>
-    <span class="grp"><span class="lbl">size</span>
-      <button class="ctl sz" data-size="S">S</button
-      ><button class="ctl sz sel" data-size="M">M</button
-      ><button class="ctl sz" data-size="L">L</button>
-    </span>
-    <span class="grp" id="concept-grp">
-      <button class="ctl cpt" data-concept="single">Single satellite</button
-      ><button class="ctl cpt sel" data-concept="constellation">Constellation</button>
-    </span>
-    <span class="grp" id="subsys-grp"><span class="lbl">layer</span>
-      <select id="subsys" class="ctl"></select>
-    </span>
-  </div>
 
   <div class="tabrow sub" id="caserow">
-    <span class="tag" id="concept-tag">Constellation</span>
     <span class="lbl">case</span>
     <b id="case-name"></b>
     <span class="hint-inline" id="case-state"></span>
-    <button class="ctl" id="case-inputs" title="every input of the case, grouped customer and condition">inputs…</button>
-    <label class="ctl" id="case-upload-l" title="a CSV in the template's format: it is checked and shown before anything is saved">upload CSV<input type="file" id="case-upload" accept=".csv,text/csv" hidden></label>
+    <button class="ctl" id="case-inputs" title="every input of the case, in the application's Explore">inputs…</button>
     <a class="ctl" id="case-download" href="/v1/inputs.csv" download="vleo-case.csv" title="the saved case, one row per input">download CSV</a>
     <span class="hint-inline" id="caserow-note"></span>
   </div>
 </nav>
 
-<section id="howto-panel" hidden>
-  <ol id="howto-steps"></ol>
-  <button class="ctl" id="howto-close">close</button>
-</section>
 
 <main>
   <!-- A what-if must never be mistaken for the design. This bar is hidden when
@@ -86,52 +55,17 @@
        every number on every view below it is then a number about a design that
        is not the one in the repository. -->
   <div id="ovrbar" hidden></div>
-  <div id="stepper"></div>
-  <div id="caption-a"></div>
 
-  <div id="figure">
-    <div class="colheads">
-      <span class="colhead out">→ each row — what that node feeds</span>
-      <span class="colhead in">↓ each column — what that node reads</span>
-    </div>
-
-    <div class="grid">
-      <div id="tree" class="pane"></div>
-      <div id="paths" class="pane">
-        <div class="paths-label">paths</div>
-        <svg id="paths-svg" aria-hidden="true"></svg>
-        <div id="paths-dots"></div>
-      </div>
-      <div id="matrix" class="pane">
-        <div id="matrix-scroll">
-          <div id="matrix-inner">
-            <div id="matrix-cells"></div>
-            <svg id="matrix-svg" aria-hidden="true"></svg>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div id="legend">
-      <p class="rule">its row is what it feeds · its column is what feeds it</p>
-      <p class="keys">
-        <span class="key"><i class="sw in"></i>input — every node that feeds the selected one</span>
-        <span class="key"><i class="sw out"></i>output — every node it feeds</span>
-        <span class="key"><i class="sw both"></i>both ways</span>
-      </p>
-      <p class="rule">solid = one hop away · pale = further down the chain</p>
-      <p class="rule">the lit branch is the path from the root to what you selected</p>
-    </div>
-
-    <p id="reach" class="reach"></p>
-    <dl id="notes"></dl>
+  <!-- Every row, to open its page: the way into a row's page now the layer
+       figure is gone. -->
+  <div id="rowsview">
+    <div id="rows-body"></div>
   </div>
 
   <!--
-    Four views, one state. The architecture view comes first in the tab bar
-    because it is what has to be understood before anything is added: the node
-    and its assembly, then how nodes connect, then how the connections stack
-    into layers, then the hierarchy those layers hang on.
+    The architecture: what has to be understood before anything is added. The
+    node and its assembly, then how nodes connect, then how the connections
+    stack into layers, then the hierarchy those layers hang on.
   -->
   <div id="archview" hidden>
     <div id="arch-nav" class="arch-nav"></div>
@@ -147,17 +81,11 @@
     <div id="manual-body"></div>
   </div>
 
-  <!--
-    The case: every input of the one design, grouped customer and condition,
-    and the values it runs at. Saved by the daemon outside the repository.
-  -->
-  <div id="inputsview" hidden>
-    <div id="inputs-body"></div>
-  </div>
 
-  <!-- Saved results: shown as they were, without running. -->
-  <div id="resultsview" hidden>
-    <div id="results-body"></div>
+  <!-- Explore: which design is open, where it breaks, what differs. Every
+       state on it is the engine's (/v1/today, /v1/health, /v1/compare). -->
+  <div id="exploreview" hidden>
+    <div id="explore-body"></div>
   </div>
 
   <!-- The forms: the inputs and results, each with its owner. -->
@@ -166,15 +94,12 @@
   </div>
 
   <div id="nodeview" hidden>
-    <button class="ctl" id="back">↑ back to the layer</button>
+    <button class="ctl" id="back">↑ back to the rows</button>
     <div id="node-body"></div>
     <div id="run-panel"></div>
   </div>
 
 
-  <div id="runview" hidden>
-    <div id="run-body"></div>
-  </div>
 </main>
 
 <footer>

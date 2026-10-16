@@ -91,16 +91,13 @@ export function widget(w, i) {
 const POST = { method: 'POST', headers: { 'content-type': 'application/x-www-form-urlencoded' } };
 
 /**
- * WHERE A WIDGET'S ANSWERS COME FROM. The running engine, by default; a page
- * read without it — the readers' docs folder — sets the engine compiled for
- * the browser (`xtask readers`, crates/vleo-kernel-wasm). Either way the
- * answer is the engine's, in the shape `/v1/run` and `/v1/sweep` give it.
+ * WHERE A WIDGET'S ANSWERS COME FROM: the running engine, in the shape
+ * `/v1/run` and `/v1/sweep` give them.
  */
-let ENGINE = {
+const ENGINE = {
   run: async p => (await fetch('/v1/run', { ...POST, body: p.toString() })).json(),
   sweep: async q => (await fetch('/v1/sweep?' + q.toString())).json(),
 };
-export function useEngine(e) { ENGINE = e; }
 
 /**
  * Make a widget live: a slider per input row, in the row's own unit and range,

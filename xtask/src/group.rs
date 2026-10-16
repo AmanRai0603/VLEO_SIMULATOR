@@ -87,7 +87,7 @@ fn fill(root: &Path, spec: &toml::Value, shell: &str, entry: &str) -> Result<Str
         .map_err(|e| format!("web/pages/group.css: {e}"))?;
     let css = format!("{}\n{}", inline_fonts(root, &app)?, own);
     // Nothing the page carries may end its own script element early.
-    let script = readers::bundle(root, entry)?.replace("</script", "<\\/script");
+    let script = bundle::bundle(root, entry)?.replace("</script", "<\\/script");
     let json = json(spec).replace("</", "<\\/");
     let (engine, wasm) = sqlite(root)?;
     // The method checker the lesson form carries too, so the pseudocode is read

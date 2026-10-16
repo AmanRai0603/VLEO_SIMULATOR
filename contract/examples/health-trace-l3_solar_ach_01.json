@@ -1,0 +1,87 @@
+{
+  "ok": true,
+  "closure": "l3_solar_ach_01",
+  "state": "closes",
+  "why": "",
+  "margin": 0.5997256390348324,
+  "causes": [],
+  "levers": [
+    {
+      "id": "l3_solar_req_01",
+      "unit": "-",
+      "factor": 1,
+      "lower": 60,
+      "upper": 400,
+      "at_lower": -0.7345222308490598,
+      "at_upper": 0.739821665372641,
+      "closes_at": 104.07133385094454,
+      "group": "l3_solar",
+      "owner": "environment"
+    },
+    {
+      "id": "sw_mean_band_spread",
+      "unit": "-",
+      "factor": 1,
+      "lower": 0,
+      "upper": 45,
+      "at_lower": 0.6659625965732938,
+      "at_upper": 0.4444241350348323,
+      "closes_at": null,
+      "group": "l3_solar",
+      "owner": "environment"
+    },
+    {
+      "id": "sys_mission_requirements_mission_epoch",
+      "unit": "d",
+      "factor": 86400,
+      "lower": 568080000,
+      "upper": 1262304000,
+      "at_lower": 0.4913066805064563,
+      "at_upper": 0.5927189824783756,
+      "closes_at": null,
+      "group": "sys_mission_requirements",
+      "owner": "systems"
+    },
+    {
+      "id": "sys_mission_requirements_mission_duration",
+      "unit": "yr",
+      "factor": 31557600,
+      "lower": 15778800,
+      "upper": 473364000,
+      "at_lower": 0.5278146583542673,
+      "at_upper": 0.5271212310469827,
+      "closes_at": null,
+      "group": "sys_mission_requirements",
+      "owner": "systems"
+    },
+    {
+      "id": "sw_f107_observed",
+      "unit": "-",
+      "factor": 1,
+      "lower": 60,
+      "upper": 400,
+      "at_lower": 0.5997256390348324,
+      "at_upper": 0.5997256390348324,
+      "closes_at": null,
+      "group": "l3_solar",
+      "owner": "environment"
+    }
+  ],
+  "range": {
+    "verdict": "no-open-value",
+    "said": "no value it rests on is open",
+    "tornado": [],
+    "least_mature": "unstated",
+    "least_mature_rows": [
+      "l3_solar_ach_01",
+      "l3_solar_req_01",
+      "sw_f107_design_long",
+      "sw_central_expectation",
+      "sw_mean_band_spread",
+      "orbit_mission_duration",
+      "sw_f107_observed",
+      "sys_mission_requirements_mission_epoch",
+      "sys_mission_requirements_mission_duration"
+    ]
+  }
+}

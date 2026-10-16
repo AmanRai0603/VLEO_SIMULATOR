@@ -9,7 +9,7 @@
 #           vleo-results  results.vleor: saved results, many in one file
 #           vleo-kinds    every kind of file the tools write, and how a reader takes it
 #           vleo-server   the local server both the daemon and the Python package start
-#   FACES   vleo-cli · vleo-daemon · vleo-kernel-wasm · vleo-ffi · vleo-py
+#   FACES   vleo-cli · vleo-daemon · vleo-ffi · vleo-py
 [workspace]
 resolver = "2"
 members = [
@@ -28,7 +28,7 @@ members = [
     "crates/vleo-ffi",
     "xtask",
 ]
-exclude = ["crates/vleo-py", "crates/vleo-method-wasm", "crates/vleo-kernel-wasm", "crates/vleo-files-wasm"]
+exclude = ["crates/vleo-py", "crates/vleo-method-wasm", "crates/vleo-files-wasm"]
 
 [workspace.package]
 version = "0.4.0"

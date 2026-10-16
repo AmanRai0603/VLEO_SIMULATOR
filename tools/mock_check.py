@@ -4,7 +4,8 @@
 The frontend is developed against the contract, not against a build of the
 engine (contract/README.md). This holds that promise: it starts
 tools/mock_engine.py, opens the page in a real browser, and walks what a
-frontend developer would — the tree, a node's page, a run, the Results page —
+frontend developer would — the rows, a node's page and a run in it, Explore,
+and the application's Explore with its results kept —
 failing on any page error, on a banner that does not say the numbers are
 recorded examples, and on a run panel that does not show the recorded answer.
 
@@ -49,23 +50,18 @@ def check():
         step("the page says its answers are recorded examples", bar.count() == 1,
              bar.inner_text()[:60] if bar.count() else "no #mock-bar")
         step("no contract mismatch is reported", p.locator("#contract-bar").count() == 0)
-        p.click('button.tab[data-layer="3"]')
-        p.wait_for_timeout(300)
-        cells = p.locator("#matrix-cells .mcell").count()
-        step("the tree is drawn from the recorded index", cells > 20, f"{cells} cells on layer 3")
+        listed = p.locator("#rows-body .rows-list .xref").count()
+        step("the rows are listed from the recorded index", listed > 20, f"{listed} rows")
 
-        p.click('button.tab[data-layer="4"]')
-        p.select_option(".run-target", "sw_ap_design")
-        p.wait_for_timeout(300)
-        p.click(".run-go")
-        p.wait_for_selector(".run-out .answer", timeout=15000)
-        ans = p.inner_text(".run-out .answer")
+        # A row's page, opened from the list, and run in its run panel.
+        p.fill("#rows-body .rows-find", "sw_ap_design")
+        p.click('#rows-body .xref[data-goto="sw_ap_design"]')
+        p.wait_for_selector("#run-panel .run-go:not([disabled])", timeout=15000)
+        p.click("#run-panel .run-go")
+        p.wait_for_selector("#run-panel .run-out .answer", timeout=15000)
+        ans = p.inner_text("#run-panel .run-out .answer")
         step("the run panel shows the recorded answer", "Ap" in ans, ans)
-
-        p.click("#results-tab")
-        p.wait_for_selector(".res-list, .empty", timeout=15000)
-        rows = p.locator(".res-row").count()
-        step("the Results page lists the recorded results", rows >= 1, f"{rows} row(s)")
+        p.click("#back")
 
         # Every kind of figure the engine can describe, drawn from its samples.
         p.locator("#tabs .tab", has_text="Architecture").first.click()
@@ -75,6 +71,48 @@ def check():
         drawn = p.locator(".fig-sample canvas").count()
         step("every kind of figure is drawn from its sample", drawn == 6 and "scene3d" in kinds,
              f"{drawn} drawn: {', '.join(kinds)}")
+
+        # Explore: which design, where it breaks, a closure traced, two files
+        # compared, each drawn from the engine's recorded answers.
+        p.click("#explore-tab")
+        p.wait_for_selector("#explore-body .answer-first", timeout=15000)
+        opening = p.inner_text("#explore-body .answer-first")
+        step("Explore says which design it shows", "own files" in opening, opening[:80])
+        shut = p.locator('#explore-body .ex-grp[aria-expanded="false"]')
+        before = p.locator("#explore-body .ex-grp").count()
+        if shut.count():
+            shut.first.click()
+            p.wait_for_timeout(200)
+        after = p.locator("#explore-body .ex-grp").count()
+        step("Explore draws the health map, and a branch opens on a click", 0 < before < after,
+             f"{before} group(s), then {after}")
+        p.locator("#explore-body .ex-trace").first.click()
+        p.wait_for_selector("#explore-body .ex-trace-out h4", timeout=15000)
+        traced = p.inner_text("#explore-body .ex-trace-out")
+        step("a closure is traced", "over its open values" in traced, traced[:60])
+        p.fill("#explore-body .ex-a", "design:groups/l3_solar/nodes/sw_ap_design.vnode")
+        p.fill("#explore-body .ex-b", "design:groups/l3_solar/nodes/sw_ap_mean_band_spread.vnode")
+        p.click("#explore-body .ex-compare-go")
+        p.wait_for_selector("#explore-body .ex-compare-out b", timeout=15000)
+        compared = p.inner_text("#explore-body .ex-compare-out")
+        step("two files are compared", "block(s)" in compared, compared[:60])
+
+        # The application's Explore, and the results kept there.
+        a = b.new_page(viewport={"width": 1300, "height": 950})
+        a.on("pageerror", lambda e: errors.append(str(e)))
+        a.goto(url + "/app#explore/results")
+        a.wait_for_selector(".res-list, .empty", timeout=30000)
+        kept = a.locator(".res-row").count()
+        step("the application's Explore lists the recorded results kept", kept >= 1, f"{kept} row(s)")
+        a.close()
+        # A node's six parts, and its node engineer's code run again.
+        p.evaluate("id => window.openNode(id)", "sw_ap_design")
+        p.wait_for_selector("#node-body .np-parts", timeout=15000)
+        parts = p.locator("#node-body .np-part").count()
+        step("a node's six parts are drawn", parts == 6, f"{parts} part(s)")
+        p.click("#node-body .np-rerun")
+        p.wait_for_selector("#node-body .np-rerun-out b", timeout=15000)
+        step("run my code again answers", "not run here" in p.inner_text("#node-body .np-rerun-out"))
 
         step("no page error", not errors, "; ".join(errors[:3]))
 

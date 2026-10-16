@@ -4,7 +4,7 @@
 
 # Signing the panel references
 
-14 panels, each with a light and a dark rendering, and **a machine drew
+11 panels, each with a light and a dark rendering, and **a machine drew
 every one of them.** `panels/README.md` says why that matters: the check cannot
 tell a reference somebody studied from one a machine drew unattended, which is
 the whole reason the name is written by hand.
@@ -15,10 +15,10 @@ reading aid; the boxes are for keeping your place.
 
 ## What a machine has already established
 
-- All 14 pass `tools/panel_check.py`: they render, they read the rows they
+- All 11 pass `tools/panel_check.py`: they render, they read the rows they
   declare, and each matches its own stored reference in both schemes.
 - 11 of them are `interactive` and are also driven — brushed, and their legend
-  entries clicked — to check the picture actually changes. `matrix`, `paths`, `tree` are not, so
+  entries clicked — to check the picture actually changes.  are not, so
   nothing mechanical has moved them: what you see is the whole of it.
 - Every number printed inside a figure is computed from the arrays that figure
   is drawn from. None is typed. That makes them self-consistent; it does not
@@ -53,11 +53,7 @@ tools/panel_review.py --sheets /tmp/sheets
 
 ---
 
-**11 of 14 panels are UNCONFIRMED.**
-
-`matrix`, `paths`, `tree` carry no `confirmed_by` field at all. They predate the field and they were
-deliberately never backfilled, because nobody now remembers who looked and a
-guessed attestation is worse than none.
+**11 of 11 panels are UNCONFIRMED.**
 
 ---
 
@@ -471,69 +467,6 @@ Current: `UNCONFIRMED / re-recorded 2026-09-19, §34 moves 1–9; awaiting a loo
 
 ---
 
-## `matrix` — The coupling matrix
-
-- **no pixel reference, declared.** it is a layout of the tree, and the tree's shape is checked by xtask graph and assembly validations V12 to V15
-
-  Checks 1, 2, 2b and 4 still run on it. There is no picture to
-  look at here, so look at the panel itself in the running tool.
-
-<details><summary>what it must show (<code>correct</code>)</summary>
-
-```
-A DARK RENDERING IS RECORDED BESIDE THE LIGHT ONE and both have to be looked at.
-The canvas gets none of CSS's help: its palette is a second table in
-web/js/chart.js, chosen and validated against the dark surface separately, so
-it can be wrong in ways the light one is not. What to check is the same in both
-— every claim above — plus one thing only the dark picture can show: nothing in
-the frame should be a light block. A literal light fill that never followed the
-scheme reads as a hole burned in the page.
-
-
-A mark inside a diagonal box is coupling that subtree owns. A mark outside one
-crosses a boundary and needs an interface. The diagonal is continuous — a gap
-in it means a row was dropped between the tree and the matrix.
-```
-
-</details>
-
-Current: `(no confirmed_by field)`
-
----
-
-## `paths` — The path ribbon
-
-- **no pixel reference, declared.** it draws edges the graph tables already assert; xtask reach checks where every answer goes
-
-  Checks 1, 2, 2b and 4 still run on it. There is no picture to
-  look at here, so look at the panel itself in the running tool.
-
-<details><summary>what it must show (<code>correct</code>)</summary>
-
-```
-A DARK RENDERING IS RECORDED BESIDE THE LIGHT ONE and both have to be looked at.
-The canvas gets none of CSS's help: its palette is a second table in
-web/js/chart.js, chosen and validated against the dark surface separately, so
-it can be wrong in ways the light one is not. What to check is the same in both
-— every claim above — plus one thing only the dark picture can show: nothing in
-the frame should be a light block. A literal light fill that never followed the
-scheme reads as a hole burned in the page.
-
-
-Exactly as many markers as there are rows on the display list, numbered from
-one, with the selected row's marker emphasised. An arc exists only where the
-derivation graph declares an edge to or from the selection — an arc drawn from
-proximity rather than from an edge is the failure this panel could have. With
-no row selected there are no arcs, which is correct and is why the reference
-below selects one.
-```
-
-</details>
-
-Current: `(no confirmed_by field)`
-
----
-
 ## `pattern` — Pattern — recurrence at the solar rotation
 
 - [ ] light — `panels/reference/pattern.png`
@@ -825,36 +758,6 @@ the engine at the exact Kp.
 </details>
 
 Current: `UNCONFIRMED / re-recorded 2026-09-19, §34 moves 1–9; awaiting a look at BOTH pictures. Every figure gained an answer line above the chart, a finding line inside it, and a second rendering in the dark scheme — see `correct` above for what to check in each`
-
----
-
-## `tree` — The layer tree
-
-- **no pixel reference, declared.** it is a layout of the tree, and the tree's shape is checked by xtask graph and assembly validations V12 to V15
-
-  Checks 1, 2, 2b and 4 still run on it. There is no picture to
-  look at here, so look at the panel itself in the running tool.
-
-<details><summary>what it must show (<code>correct</code>)</summary>
-
-```
-A DARK RENDERING IS RECORDED BESIDE THE LIGHT ONE and both have to be looked at.
-The canvas gets none of CSS's help: its palette is a second table in
-web/js/chart.js, chosen and validated against the dark surface separately, so
-it can be wrong in ways the light one is not. What to check is the same in both
-— every claim above — plus one thing only the dark picture can show: nothing in
-the frame should be a light block. A literal light fill that never followed the
-scheme reads as a hole burned in the page.
-
-
-One box per visible row. Children sit inside their parent's box and never
-overlap it. The order down the pane is the order the source wrote, not
-alphabetical. Hatching appears on exactly the rows the engine calls seeded.
-```
-
-</details>
-
-Current: `(no confirmed_by field)`
 
 ---
 

@@ -6,6 +6,11 @@
   what it *says*. The third of those is the generated page; the first two are
   computed here from the folder on disk and from the graph, so neither can
   claim something the repository does not hold.
+
+  ONE DRAWING, TWO PAGES. drawNode draws it into any host; today's tool page
+  opens it in its node view (openNode), and the application's Node workspace
+  in its centre (workspace_node.js), with the parts down its own side. So the
+  two cannot drift while both exist.
 */
 'use strict';
 
@@ -17,11 +22,18 @@ import { mountTheory } from './theory.js';
 import { figuresForRow, drawRowFigure } from './solar.js';
 import { isInput, inputControl, mountInput } from './inputs.js';
 import { renderLesson } from './components.js';
+import { mountParts } from './nodeparts.js';
 
 export async function openNode(id) {
+  return drawNode($('#node-body'), $('#run-panel'), id);
+}
+
+/** Draw node `id` into `body`, and its run into `runHost`. `opts.parts`
+ *  false leaves its six parts to whoever draws them beside it. */
+export async function drawNode(body, runHost, id, opts = {}) {
   const r = S.byId.get(id);
-  if (!r) return;
-  const body = $('#node-body');
+  if (!r || !body) return;
+  const withParts = opts.parts !== false;
   body.innerHTML = '<p class="muted">loading the node…</p>';
   const figs = figuresForRow(id);
 
@@ -47,6 +59,10 @@ export async function openNode(id) {
     // a thing a reader can move, and that is a different kind of statement. It
     // is drawn only where it can do something — see isInput.
     (isInput(r) ? '<section class="seg ovr-panel"></section>' : '') +
+    // ITS SIX PARTS, each done, missing or failing, as the gate says, before
+    // anything about what it is made of: what is left to do comes first.
+    (withParts ? '<section class="seg np-host" data-seg="parts"><h3 class="seg-h">' +
+      'its parts — what is done, missing or failing</h3><div class="np-body"></div></section>' : '') +
     '<section class="seg" data-seg="assembly"><h3 class="seg-h">' +
       '<span class="seg-n">1</span>assembly — what this node is made of</h3>' +
       assemblyHtml(r, meta) + '</section>' +
@@ -95,6 +111,7 @@ export async function openNode(id) {
   if (hasLesson && lesson.ok) renderLesson($('.row-lesson', body), lesson.lesson);
 
   if (isInput(r)) mountInput($('.ovr-panel', body), r);
+  if (withParts) mountParts($('.np-body', body), id);
 
   if (figs.length) {
     const hostFig = $('.row-figure', body);
@@ -136,7 +153,7 @@ export async function openNode(id) {
     };
   });
 
-  renderRun($('#run-panel'), r);
+  renderRun(runHost, r);
 }
 
 /**

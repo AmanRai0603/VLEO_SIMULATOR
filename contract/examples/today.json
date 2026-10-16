@@ -1,0 +1,17 @@
+{
+  "ok": true,
+  "today": false,
+  "design": {
+    "which": "the design's own files",
+    "fingerprint": "3c2f209e57b0b2d29f7696dc3d96eae1071972082255c6bf0f50ad1c795fd653",
+    "from": "/home/user/VLEO_SIMULATOR/crates/vleo-server/../../design",
+    "rows": 1401,
+    "files_fingerprint": "3c2f209e57b0b2d29f7696dc3d96eae1071972082255c6bf0f50ad1c795fd653",
+    "based_on": "",
+    "base_version": null,
+    "base": "the design's own files are not based on a released design"
+  },
+  "drive": "",
+  "groups": [],
+  "ignored": []
+}
