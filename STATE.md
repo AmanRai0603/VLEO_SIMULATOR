@@ -9,7 +9,7 @@ Target 1.0.0 on Monday 19 October; Tuesday to Thursday are the buffer.
 
 ## Person A · day
 
-Handed over Friday 16 October (S1 and S2: F1 to F3-e, and the key's proof). Nothing is merged: everything waits on Aman.
+Handed over Friday 16 October (S1 and S2: F1 to F3-f, the key's proof, and F3-g1, the Node workspace). Nothing is merged: everything waits on Aman.
 
 - **Open, in merge order:**
   - **162 the plan.** It now carries the nine briefs and F3's Plan (`docs/briefs/F3.md`).
@@ -81,11 +81,22 @@ Handed over Friday 16 October (S1 and S2: F1 to F3-e, and the key's proof). Noth
     - **The node view stays** until `/app`'s Node workspace replaces it (PLAN_F, decision 1).
 
     The Opus review found nothing blocking and 6 points to fix, with 3 nits; all fixed in df052a0a but the role guides' loop picture (phase G), each new test shown red. CI is green.
+  - **185 F3-g1 the Node workspace in /app.** Stacked on 184, on `claude/a-f3g-node`, which merges 177 and B's 168 to 170 into the stack (846d3d21, 4249c4fd), all checks green on the merges first.
+    - `/app#node/<id>` and My work open one node: its six parts (B's drawing), its page as today's design holds it (`node.js` `drawNode`, the node view's own drawing), and its file in your copy: whose it is by `Registry::may_sign_node` with a key that counts, whether it is signed as it is now, signatures, requests, findings and one next step.
+    - Sign, ask and a lesson form on screen; a second writer shown with nothing written. My work lists your nodes and puts signed work back, report first.
+    - `GET /v1/node/<id>/file` and `GET /v1/my-work` gain fields, additive. Proved by `tools/node_check.py` (panels job) and a program test.
+
+    The Opus review found one blocking point (an empty assignment made a node everyone's: the screen had re-derived who may write it) and eight more; all fixed in a088a3ce, each shown red but four named untested. CI's panels job then failed on `manual_check.py`, which B's 170 left numbering a row's page as before; fixed there too. CI on a088a3ce is pending.
 - **What 171 decides, which B's PRs must follow:**
   - **Ownership follows the mount.** Only the programme's file (mounting `systems`) and the systems' file (mounting each `l3_*`) mount anything.
   - **A group file registers only node engineers.** It holds nobody the programme's file registers, and no key it registers. `open_group_in` refuses anything else, by name.
   - **The test drive (165) must change.** It mounts the l3 groups in the programme's file, so they read as mounted twice. It should assign the mounting blocks in the systems' file instead, and register only node engineers in group files.
   - **The anchor** is accepted once per drive, with `accept_anchor` on `POST /v1/key/open`. A scenario that opens a key passes it once, and since 174 also `session`, read from `<keys>/open.html`. A face must make the person compare the fingerprint, never fill it in from the answer.
+- **What 185 decides:**
+  - **Who may write a node is asked of the library, never worked out again on a screen** (`Registry::may_sign_node`, with `Registry::key`). The review found a second copy of the rule had lost its guard.
+  - **A page never reads a node file's bytes.** What a screen shows of a file, the program says as JSON; writing a node from a page (F3-g2) goes through the library in the program.
+  - **No node of `design/` can be signed yet**: `check_node` wants a release's shape. Which shape is the one is the brief's question 9 for Aman, before F3-g0.
+  - **For B:** `tools/manual_check.py` reads a row's page by the manual's step numbers; a step added to the manual moves them.
 - **What 184 decides:**
   - **A change says how an assistant helped, or nothing is planned.** Anything that builds a `template::Form` (F4's breakdown, F5's intake) sets `ai` from the node's declaration, as `intake::declared_help` does.
   - **A transcription taken from a release loses its record when its method changes**: the plan names the release's author and clears what it was copied from. Older than 184; put to Aman on 184, for a pull request of its own.
@@ -128,8 +139,9 @@ Handed over Friday 16 October (S1 and S2: F1 to F3-e, and the key's proof). Noth
 - **Lockfiles:** `crates/vleo-py` keeps its own, built `--locked` in CI, and so does `crates/vleo-kernel-wasm` until 177 removes it. A new dependency of `vleo-files` or `vleo-server` needs them refreshed, as 171 does.
 - **Disk:** the container's allowance filled on S1 and again on S2. `xtask files-wasm` and the scenarios leave a `target/` of 10 GB or more inside the worktree they run in; delete it after a push. Old worktrees' `target/` folders and `target/*/incremental` were deleted to make room.
 - **Next for A, in order:**
-  - **For Aman first** (184, and the brief's questions 7 and 8): the Node workspace in `/app`, on a branch holding both 177 and the F3 stack, and where today's page's Rows, Architecture, Forms and manual go.
-  - **Then the node view's removal**, the rest of the brief's item 6, once that workspace replaces it: it is the only screen for a row's page, figures, panel checks and lesson, and B's 170 builds into it.
+  - **F3-g2, writing the node** (the brief, F3-g): the question, the explanation, the method and the cases through the library (`POST /v1/node/<id>/edit`, with a dry run for checked-as-you-type), and the live page of your copy's revision laid over today's design. High risk; Opus review.
+  - **For Aman:** the brief's questions 9 (one node shape, F3-g0) and 10 (ports), and 7 and 8 (where today's page's Rows, Architecture, Forms and manual go).
+  - **Then F3-h, the node view's removal**, once F3-g2 covers what it shows, with the panel checks moved to `/app`.
 
 ## Person B · night
 
