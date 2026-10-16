@@ -143,6 +143,7 @@ pub fn is_assistant(who: &str) -> bool {
 pub fn check_release(f: &File) -> Findings {
     let mut out = Findings::default();
     blocks(f, &mut out);
+    lessons_placed(f, &mut out);
     signers(f, &mut out);
     requirements(f, &mut out);
     derisking(f, &mut out);
@@ -190,6 +191,7 @@ pub fn check_node(f: &File) -> Findings {
         }
     }
     blocks(f, &mut out);
+    lessons_placed(f, &mut out);
     cases(f, &mut out);
     signers(f, &mut out);
     out
@@ -224,6 +226,7 @@ fn blocks(f: &File, out: &mut Findings) {
             .collect();
         let out_port = ports.iter().copied().find(|p| p.direction == "out");
         inputs(f, b, &ins, out);
+        lesson(f, b, out);
         match b.behaviour.as_str() {
             "method" => {
                 declaration(f, b, out);
@@ -650,6 +653,61 @@ fn method(f: &File, b: &Block, ins: &[&Port], out_port: Option<&Port>, out: &mut
                 &b.id,
                 format!("its method does not reproduce «{}»: {}", c.label, v.text(c)),
             );
+        }
+    }
+}
+
+/// A lesson belongs to a row (docs/LESSONS.md): in a node file, on its own
+/// block; in a release, on one of its nodes. One on a group file, on the file
+/// itself or on a block the file does not hold is refused by name, never
+/// passed and left unread.
+fn lessons_placed(f: &File, out: &mut Findings) {
+    let kind = f.kind().ok();
+    for t in f.texts.iter().filter(|t| t.kind == crate::convert::LESSON) {
+        let block = f.blocks.iter().find(|b| b.uid == t.scope);
+        let placed = match (kind, block) {
+            (Some(crate::meta::Kind::Node), Some(b)) => f.meta.get("block_uid") == Some(&b.uid),
+            (Some(crate::meta::Kind::GroupRelease), Some(b)) => b.behaviour != "children",
+            _ => false,
+        };
+        if !placed {
+            out.error(
+                &place_of(f, &t.scope),
+                format!(
+                    "holds a lesson on {:?}: a lesson belongs to a row, in its node file",
+                    t.scope
+                ),
+            );
+        }
+    }
+}
+
+/// A block's lesson (docs/LESSONS.md), held to the check the gate runs on
+/// it, all but what it names in the rest of the design: a key the reader does
+/// not know, markup, a claim not tagged or a sourced one with no source, a
+/// check whose answer is not an option. Whether a widget's rows are there and
+/// may be moved is the design's to say, and the gate checks it once the design
+/// holds the lesson, as the program does when it is written.
+fn lesson(f: &File, b: &Block, out: &mut Findings) {
+    let Some(t) = f
+        .texts
+        .iter()
+        .find(|t| t.scope == b.uid && t.kind == crate::convert::LESSON)
+    else {
+        return;
+    };
+    match vleo_sheet::lesson::read(&t.body, &b.id) {
+        Err(e) => out.error(&b.id, format!("its lesson does not read: {}", e.message())),
+        Ok(l) => {
+            let any_row = |_: &str| {
+                Some(vleo_sheet::lesson::RowKind {
+                    declared: true,
+                    seeded: false,
+                })
+            };
+            for p in vleo_sheet::lesson::problems_with(&l, &any_row) {
+                out.error(&b.id, format!("its lesson: {p}"));
+            }
         }
     }
 }

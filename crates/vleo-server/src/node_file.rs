@@ -9,9 +9,10 @@
 //! so the screen shows them and the person keeps one. Saving needs the open
 //! key and the launch's word, but no signature; the drive is never written.
 //!
-//! `POST /v1/node/<id>/sign` signs it as the day's work (F3-b), and
+//! `POST /v1/node/<id>/sign` signs it as the day's work (F3-b),
 //! `POST /v1/node/<id>/ask` writes a request in it, for a contract change or
-//! a breakdown, signed by whoever asks (F3-d).
+//! a breakdown, signed by whoever asks (F3-d), and
+//! `POST /v1/node/<id>/lesson` saves the row's lesson in it (F3-e).
 
 use super::*;
 use vleo_files::save::{ask_in_place, save, sign_in_place, Asked, Saved};
@@ -223,6 +224,7 @@ fn saved(id: &str, params: &str, ctx: &Ctx) -> Result<String, String> {
         .ok_or("the edit is not a node file, as base64: nothing is saved")?;
     let path = find(&copy, id)?;
     let edit = held(&bytes)?;
+    lesson_holds(ctx, id, &edit).map_err(|why| format!("{why}. Nothing is saved."))?;
     let group = group_of(&copy, &path)?;
     let group = &group;
     let done = me::with_key(|key, me| {
@@ -312,6 +314,8 @@ fn signed(id: &str, params: &str, ctx: &Ctx) -> Result<String, String> {
     let copy = the_copy(ctx)?;
     let opened = param(params, "opened").map(decode).unwrap_or_default();
     let path = find(&copy, id)?;
+    let (_, now) = read_once(&copy, &path)?;
+    lesson_holds(ctx, id, &now).map_err(|why| format!("{why}. Nothing is signed."))?;
     let group = group_of(&copy, &path)?;
     let at = results::now_utc();
     // A group file changed on the drive since the copy may revoke what the
@@ -464,6 +468,154 @@ fn asked(id: &str, params: &str, ctx: &Ctx) -> Result<String, String> {
                 "message",
                 &format!(
                     "{id} changed in your copy since you opened it: {writer} saved revision {revision}. Nothing is asked: open it again, and ask of what you see."
+                ),
+            );
+            j.str_field("writer", &writer);
+            j.num_field("revision", revision as f64);
+            j.str_field("opened", &digest);
+            j.str_field("theirs", &base64(&theirs));
+        }
+    }
+    j.raw("}");
+    Ok(j.0)
+}
+
+/// The row's lesson in `f`, if it holds one, held to all the gate checks of
+/// it against the design this program reads: what it names there too, which
+/// a node's own checks cannot see (`checks::lesson`). So a lesson naming a
+/// row that is not there is never saved or signed, by whichever route.
+fn lesson_holds(ctx: &Ctx, id: &str, f: &vleo_files::model::File) -> Result<(), String> {
+    let uid = f.meta.get("block_uid").map_or("", String::as_str);
+    let Some(t) = f
+        .texts
+        .iter()
+        .find(|t| t.scope == uid && t.kind == vleo_files::convert::LESSON)
+    else {
+        return Ok(());
+    };
+    let lesson = vleo_sheet::lesson::read(&t.body, id).map_err(|e| {
+        format!(
+            "{id}'s lesson does not read: {}",
+            e.message().trim_end().trim_end_matches('.')
+        )
+    })?;
+    let tree = ctx.load().map_err(|e| {
+        format!("the design does not load, so {id}'s lesson cannot be checked against it: {e}")
+    })?;
+    let bad = vleo_sheet::lesson::problems(&lesson, &tree);
+    if bad.is_empty() {
+        Ok(())
+    } else {
+        Err(format!(
+            "{id}'s lesson does not pass its check: {}",
+            bad.join("; ")
+        ))
+    }
+}
+
+/// `POST /v1/node/<id>/lesson`: the row's lesson (docs/LESSONS.md), from a
+/// filled lesson form or a bare `lesson.toml` (`lesson`), saved in the node's
+/// file in the copy as its next revision, when its file is still the one
+/// opened (docs/briefs/F3.md, F3-e). Checked first as the gate checks it,
+/// against the design this program reads, and refused with every reason, with
+/// nothing written. Saved as any save is: by whoever's key is open, only when
+/// they are assigned the node or are the deputy of whoever is. Not signed: the
+/// lesson is signed with the node, as the day's work.
+pub(super) fn lesson_route(id: &str, params: &str, ctx: &Ctx) -> String {
+    match lesson_saved(id, params, ctx) {
+        Ok(j) => j,
+        Err(why) => me::refusal(&why),
+    }
+}
+
+fn lesson_saved(id: &str, params: &str, ctx: &Ctx) -> Result<String, String> {
+    me::carries_session(params)?;
+    if me::with_key(|_, _| ()).is_none() {
+        return Err("no key is open: open yours, and the lesson is saved as you".into());
+    }
+    let id = node_id(id)?;
+    let copy = the_copy(ctx)?;
+    let opened = param(params, "opened").map(decode).unwrap_or_default();
+    let sent = param(params, "lesson").map(decode).unwrap_or_default();
+    // A form made for another row is refused by the reader, by name.
+    let (_, text) = vleo_sheet::lesson_form::from_file(&sent, Some(id)).map_err(|e| {
+        format!(
+            "{}. Nothing is saved.",
+            e.message().trim_end().trim_end_matches('.')
+        )
+    })?;
+    let path = find(&copy, id)?;
+    let (_, now) = read_once(&copy, &path)?;
+    let uid = now
+        .meta
+        .get("block_uid")
+        .cloned()
+        .ok_or_else(|| format!("{path} names no block"))?;
+    let mut edit = now.clone();
+    edit.texts
+        .retain(|t| !(t.scope == uid && t.kind == vleo_files::convert::LESSON));
+    let title = vleo_sheet::lesson::read(&text, id)
+        .map(|l| l.title)
+        .unwrap_or_default();
+    edit.texts.push(vleo_files::model::Text {
+        scope: uid,
+        kind: vleo_files::convert::LESSON.to_string(),
+        body: text,
+    });
+    lesson_holds(ctx, id, &edit).map_err(|why| format!("{why}. Nothing is saved."))?;
+    let group = group_of(&copy, &path)?;
+    let group = &group;
+    let done = me::with_key(|key, me| {
+        group
+            .key(&me.name, &key.public().to_hex(), &results::now_utc())
+            .map_err(|e| e.message().to_string())?;
+        save(&copy, &path, &edit, &opened, &me.name, APP, group)
+            .map(|s| (s, me.name.clone()))
+            .map_err(|e| e.message().to_string())
+    })
+    .ok_or("no key is open: open yours, and the lesson is saved as you")??;
+    let mut j = Json::new();
+    j.raw("{");
+    match done {
+        (
+            Saved::Written {
+                revision,
+                digest,
+                findings,
+            },
+            by,
+        ) => {
+            j.bool_field("ok", true);
+            j.str_field("node", id);
+            j.str_field("path", &path);
+            j.num_field("revision", revision as f64);
+            j.str_field("opened", &digest);
+            j.str_field("title", &title);
+            findings_field(&mut j, &findings);
+            j.str_field(
+                "message",
+                &format!(
+                    "{id}'s lesson is saved as revision {revision}, written by {by}, in your copy. Not signed: it is signed with the node, as the day's work."
+                ),
+            );
+        }
+        (
+            Saved::SecondWriter {
+                bytes: theirs,
+                writer,
+                revision,
+                digest,
+                ..
+            },
+            _,
+        ) => {
+            j.bool_field("ok", false);
+            j.bool_field("conflict", true);
+            j.str_field("node", id);
+            j.str_field(
+                "message",
+                &format!(
+                    "{id} changed in your copy since you opened it: {writer} saved revision {revision}. Nothing is saved: open it again, and save the lesson to what you see."
                 ),
             );
             j.str_field("writer", &writer);

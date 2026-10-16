@@ -472,14 +472,14 @@ each in their own file. A group's work reaches this tool as its sealed \
 release, on the shared drive. The browser never writes a node.
 
 **A lesson is the one thing still filled here**: a row's lesson form, filled \
-anywhere and checked as you type, sent back to the developer."""
+anywhere and checked as you type, saved by the node engineer in the row's node file."""
 
 [[layer.section.step]]
 say = "Where the inputs and the results come in."
 ui = "Forms"
 
 [[layer.section.step]]
-say = "A lesson is written as a form: filled anywhere, checked as you type, sent back."
+say = "A lesson is written as a form: filled anywhere, checked as you type, then saved in the row's node file."
 ui = "write a lesson — its form"
 
 
@@ -1087,7 +1087,7 @@ id = "term-lesson"
 title = "A lesson's form, and its check"
 who = "developer"
 kind = "how-to"
-answer = "A lesson arrives as a form: the node engineer who knows the row fills its lesson form anywhere, checked as they type by the gate's own check, and sends it back; lesson check checks it again and says every reason it would be refused."
+answer = "A lesson arrives as a form: the node engineer who knows the row fills its lesson form anywhere, checked as they type by the gate's own check, and saves it in the row's node file; lesson check checks it again and says every reason it would be refused."
 body = """
 The node engineer writes the lesson; nobody writes HTML for it and nobody writes a \
 formula for the page to compute. `docs/LESSONS.md` is the file, table by \
@@ -1098,9 +1098,9 @@ form* on the row's page. It carries the method checker the pages carry, which \
 holds the lesson check the gate runs, and a table of the tree's rows, so a \
 widget naming a row that is not there is refused while the node engineer types. \
 **lesson check** says what a filled one holds and every reason it would be \
-refused. Nothing here writes it into the design: the design is its group's, \
-and a lesson goes in with the group's release. A lesson never changes an \
-answer."""
+refused. The node engineer saves it in the row's node file \
+(`POST /v1/node/<id>/lesson`), where it is signed with the node; nothing here \
+writes it into `design/`. A lesson never changes an answer."""
 
 [[layer.section.step]]
 say = "A row's lesson form, to send to whoever knows the row."
@@ -2175,6 +2175,11 @@ path = "/v1/node/<id>/ask"
 what = "A request written in the node's file, for a contract change (kind contract) or a breakdown (kind breakdown), saying body, signed by whoever's key is open, at this moment: opened, the digest of the file as it was opened. Refused unless the key is the one its group file registers for them and they are assigned the node, or are the deputy of whoever is, and refused when it says nothing. The node is not touched, its revision and signatures are as they were, so a node that cannot be signed yet still asks. Refused too for an archived node, a mount, and a file whose two revisions disagree. Written in the working copy as a save is. It goes back to the drive by itself while the node is the drive's revision, or with a later revision once that is signed; the group's subsystem engineer, or their deputy, finds it in My work once they copy the drive again. A file changed since it was opened is not written. Carries session."
 
 [[route]]
+method = "POST"
+path = "/v1/node/<id>/lesson"
+what = "The row's lesson saved in its node file in the working copy, as the node's next revision: lesson, a filled lesson form or a bare lesson.toml; opened, the digest of the file as it was opened. Checked first as the gate checks it, against the design the program reads, and refused with every reason, with nothing written. Saved as any save is, by whoever's key is open, only when they are assigned the node or are the deputy of whoever is. Not signed: the lesson is signed with the node, as the day's work. A file changed since it was opened is not written. Carries session."
+
+[[route]]
 method = "GET"
 path = "/v1/lesson/<id>"
 what = "A row's lesson — its `lesson.toml`, checked as the gate checks it — or `lesson: null` for a row with none. A lesson that fails its check is refused with the reasons."
@@ -2223,7 +2228,7 @@ what = "Remove the saved case: every input back to its default."
 [[route]]
 method = "GET"
 path = "/v1/lesson-form/<id>"
-what = "A row's lesson form, as one self-contained HTML file to fill anywhere, checked as it is typed by the gate's own lesson check. Writes nothing — a filled one is checked with `xtask lesson check`, and goes into the design with its group's release."
+what = "A row's lesson form, as one self-contained HTML file to fill anywhere, checked as it is typed by the gate's own lesson check. Writes nothing — a filled one is checked with `xtask lesson check`, and saved in the row's node file with `POST /v1/node/<id>/lesson`."
 
 
 [[route]]

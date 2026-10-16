@@ -103,13 +103,15 @@ it; it never invents its own picture of the numbers.
 **Lesson** — a row's `lesson.toml`: stations of text with a
 claim each, equations with their source, "try it" widgets that name input and
 output rows for the engine to answer, check-yourself questions. Content only;
-the page draws it from its component library. Outside the sheet hash.
+the page draws it from its component library. Outside the sheet hash. Kept in
+the row's node file, as a `text` of kind `lesson`, and signed with the node.
 → `docs/LESSONS.md`
 
 **Lesson form** — a row's lesson as one HTML file the node engineer who knows the
 row fills anywhere, checked as they type by the gate's own lesson check, and
-sent back; `xtask lesson check` checks a filled one, and the lesson goes into the
-design with its group's release. → `docs/LESSONS.md`
+sent back; `xtask lesson check` checks a filled one, and the node engineer saves
+it in the node's file (`POST /v1/node/<id>/lesson`), where it is signed with the
+node. → `docs/LESSONS.md`
 
 **Readers' folder** — every row's page and every lesson as plain pages, built
 by `xtask readers` for a shared drive or an internal web server; the engine

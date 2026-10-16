@@ -416,7 +416,8 @@ pub(super) fn lesson_json(ctx: &Ctx, id: &str) -> String {
 
 /// A row's lesson form: one HTML file to fill anywhere, as `xtask lesson form`
 /// writes it. Reading it writes nothing; a filled one is checked with
-/// `xtask lesson check`, and goes into the design with its group's release.
+/// `xtask lesson check`, and saved in the row's node file by
+/// `POST /v1/node/<id>/lesson` (`node_file`).
 pub(super) fn lesson_form_file(ctx: &Ctx, id: &str) -> (&'static str, &'static str, Vec<u8>) {
     let id = decode(id);
     let text = |status, body: String| (status, "text/plain; charset=utf-8", body.into_bytes());
