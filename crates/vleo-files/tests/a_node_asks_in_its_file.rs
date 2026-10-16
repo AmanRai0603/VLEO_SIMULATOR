@@ -1,0 +1,462 @@
+//! A node engineer asks, in their node's file, for a contract change (W4) or
+//! a breakdown (W13): a request signed on its own, so asking does not wait for
+//! the node to pass its checks (docs/briefs/F3.md, F3-d).
+//!
+//! The node and the group are the signing tests' (`a_node_is_signed_through_
+//! the_chain.rs`): solar's `sw_activity_band`, Test Nia assigned it and Test
+//! Dee her deputy; Test Ivo is assigned nothing, and Test Zed is Ivo's deputy.
+
+use std::path::{Path, PathBuf};
+use vleo_files::chain::{self, Registry};
+use vleo_files::copied::digest;
+use vleo_files::keys::SigningKey;
+use vleo_files::meta::Kind;
+use vleo_files::model::*;
+use vleo_files::save::{ask_in_place, save, Asked};
+use vleo_files::sqlite;
+
+const NODE: &str = "groups/l3_solar/nodes/sw_activity_band.vnode";
+const UID: &str = "sw_activity_band";
+const AT: &str = "2026-10-15T12:00:00Z";
+const APP: &str = "vleo 1.0.0 (asking)";
+
+fn s(v: &str) -> String {
+    v.to_string()
+}
+
+fn key(seed: u8) -> SigningKey {
+    SigningKey::from_seed([seed; 32])
+}
+
+fn root() -> PathBuf {
+    Path::new(env!("CARGO_MANIFEST_DIR")).join("../..")
+}
+
+/// The node as its group's release holds it, in a node file of its own.
+fn node() -> File {
+    let how = vleo_files::upgrade::Upgrade {
+        app: "vleo 1.0.0 (test)",
+        at: "2026-10-01",
+    };
+    let rel = sqlite::open(
+        &root().join("crates/vleo-files/tests/fixtures/l3_solar-1.1.vleo"),
+        &how,
+    )
+    .unwrap()
+    .file;
+    let mut n = File::new(Kind::Node, "vleo 1.0.0 (test)");
+    for (k, v) in [
+        ("group_id", "l3_solar"),
+        ("block_uid", UID),
+        ("revision", "1"),
+        ("contract_version", "1"),
+        ("writer", "Test Nia"),
+    ] {
+        n.meta.insert(s(k), s(v));
+    }
+    let b = rel.blocks.iter().find(|b| b.uid == UID).unwrap().clone();
+    n.blocks = vec![b];
+    // One revision: the file's and its block's.
+    n.blocks[0].revision = 1;
+    n.ports = rel
+        .ports
+        .iter()
+        .filter(|p| p.block_uid == UID)
+        .cloned()
+        .collect();
+    n.wires = rel
+        .wires
+        .iter()
+        .filter(|w| w.to_block == UID)
+        .cloned()
+        .collect();
+    n.texts = rel
+        .texts
+        .iter()
+        .filter(|t| t.scope == UID)
+        .cloned()
+        .collect();
+    n.tables = rel
+        .tables
+        .iter()
+        .filter(|t| t.scope == UID)
+        .cloned()
+        .collect();
+    n
+}
+
+fn person(f: &mut File, name: &str, deputy_for: &str, k: &SigningKey, revoked_from: &str) {
+    f.people.push(Person {
+        name: s(name),
+        role: s("node engineer"),
+        deputy_for: s(deputy_for),
+    });
+    f.keys.push(PersonKey {
+        person: s(name),
+        public_key: k.public().to_hex(),
+        registered_at: s("2026-01-01"),
+        registered_by: s("Test Ola"),
+        revoked_from: s(revoked_from),
+        proof: vleo_files::people::proof(k, name),
+    });
+}
+
+/// Solar's group file: Nia (74) assigned the node, Dee (76) her deputy, Ivo
+/// (75) assigned nothing, Zed (77) Ivo's deputy. Nia's key is revoked from
+/// `nia_revoked`, when it is not empty.
+fn group(nia_revoked: &str) -> Registry {
+    let mut g = File::new(Kind::Group, "vleo 1.0.0 (test)");
+    for (k, v) in [
+        ("group_id", "l3_solar"),
+        ("writer", "Test Ola"),
+        ("based_on", ""),
+    ] {
+        g.meta.insert(s(k), s(v));
+    }
+    person(&mut g, "Test Nia", "", &key(74), nia_revoked);
+    person(&mut g, "Test Dee", "Test Nia", &key(76), "");
+    person(&mut g, "Test Ivo", "", &key(75), "");
+    person(&mut g, "Test Zed", "Test Ivo", &key(77), "");
+    g.assignments.push(Assignment {
+        block_uid: s(UID),
+        person: s("Test Nia"),
+        contract_version: 1,
+    });
+    Registry {
+        from: s("l3_solar's group file"),
+        file: g,
+    }
+}
+
+/// A copy holding `f` as the node's file.
+fn copy(name: &str, f: &File) -> PathBuf {
+    let c = std::env::temp_dir().join(format!("vleo-ask-{name}-{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&c);
+    std::fs::create_dir_all(c.join("groups/l3_solar/nodes")).unwrap();
+    sqlite::write(f, &c.join(NODE)).unwrap();
+    c
+}
+
+fn opened(c: &Path) -> String {
+    digest(&std::fs::read(c.join(NODE)).unwrap())
+}
+
+const ASK: &str = "The band's floor reads F10.7 as daily: it needs the 81-day mean.";
+
+fn asked(f: &File, who: &str, k: &SigningKey) -> (File, String) {
+    chain::ask(f, UID, "contract", ASK, who, k, AT, &group("")).unwrap()
+}
+
+#[test]
+fn a_request_asked_is_kept_signed_and_the_node_is_not_touched() {
+    let g = group("");
+    let signed = chain::sign_node(&node(), UID, "Test Nia", &key(74), AT, &g)
+        .unwrap()
+        .0;
+    let (f, uid) =
+        chain::ask(&signed, UID, "breakdown", ASK, "Test Nia", &key(74), AT, &g).unwrap();
+    assert_eq!(
+        f.requests,
+        [Request {
+            uid: uid.clone(),
+            kind: s("breakdown"),
+            scope: s(UID),
+            raised_by: s("Test Nia"),
+            at: s(AT),
+            body: s(ASK),
+            status: s("open"),
+            answer: s(""),
+        }]
+    );
+    chain::check_request(&f, &uid, &g).expect("the request counts");
+    // The node is as it was: its revision, its content, and its signature.
+    assert_eq!(f.blocks, signed.blocks);
+    assert_eq!(f.meta, signed.meta);
+    assert_eq!(
+        chain::digest(&f, UID).unwrap(),
+        chain::digest(&signed, UID).unwrap()
+    );
+    chain::check_node(&f, UID, &g).expect("the node's signature still holds");
+    // A second request is a request of its own.
+    let (two, second) = chain::ask(
+        &f,
+        UID,
+        "contract",
+        "And its ceiling.",
+        "Test Nia",
+        &key(74),
+        AT,
+        &g,
+    )
+    .unwrap();
+    assert_ne!(second, uid);
+    chain::check_request(&two, &uid, &g).unwrap();
+    chain::check_request(&two, &second, &g).unwrap();
+    // Read and written again, it is the same.
+    let at = std::env::temp_dir().join(format!("vleo-ask-rw-{}.vnode", std::process::id()));
+    sqlite::write(&two, &at).unwrap();
+    let back = sqlite::read(&at).unwrap();
+    chain::check_request(&back, &second, &g).unwrap();
+    let _ = std::fs::remove_file(&at);
+}
+
+#[test]
+fn a_node_that_cannot_be_signed_yet_still_asks() {
+    let g = group("");
+    let mut open = node();
+    open.blocks[0].behaviour = s("open");
+    let e = chain::sign_node(&open, UID, "Test Nia", &key(74), AT, &g).unwrap_err();
+    assert!(e.message().contains("is open"), "{}", e.message());
+    let (f, uid) = chain::ask(&open, UID, "breakdown", ASK, "Test Nia", &key(74), AT, &g).unwrap();
+    chain::check_request(&f, &uid, &g).expect("asked, though it is open");
+}
+
+#[test]
+fn only_its_node_engineer_or_their_deputy_asks_in_its_file() {
+    let g = group("");
+    for (who, k, says) in [
+        (
+            "Test Ivo",
+            key(75),
+            "Test Ivo is not assigned sw_activity_band",
+        ),
+        (
+            "Test Zed",
+            key(77),
+            "Test Zed is not assigned sw_activity_band",
+        ),
+        (
+            "Test Nia",
+            key(75),
+            "not one l3_solar's group file registers for them",
+        ),
+        ("Test Stranger", key(78), "Test Stranger is not registered"),
+    ] {
+        let e = chain::ask(&node(), UID, "contract", ASK, who, &k, AT, &g).unwrap_err();
+        assert!(e.message().contains(says), "{who}: {}", e.message());
+    }
+    // A key revoked before the moment it asks asks nothing.
+    let e = chain::ask(
+        &node(),
+        UID,
+        "contract",
+        ASK,
+        "Test Nia",
+        &key(74),
+        AT,
+        &group("2026-10-01"),
+    )
+    .unwrap_err();
+    assert!(e.message().contains("revoked"), "{}", e.message());
+    // Her deputy asks for her, and it counts.
+    let (f, uid) = asked(&node(), "Test Dee", &key(76));
+    chain::check_request(&f, &uid, &g).expect("the deputy's request counts");
+}
+
+#[test]
+fn a_request_says_what_it_asks_and_is_of_the_contract_or_a_breakdown() {
+    let g = group("");
+    for (kind, body, says) in [
+        ("contract", "", "says nothing"),
+        ("breakdown", "  \n ", "says nothing"),
+        ("code", ASK, "a request of the code is made in My work"),
+        ("wish", ASK, "\"wish\" is neither"),
+    ] {
+        let e = chain::ask(&node(), UID, kind, body, "Test Nia", &key(74), AT, &g).unwrap_err();
+        assert!(
+            e.message().contains(says),
+            "{kind} {body:?}: {}",
+            e.message()
+        );
+    }
+}
+
+#[test]
+fn a_request_changed_after_it_was_asked_does_not_count() {
+    let g = group("");
+    let (f, uid) = asked(&node(), "Test Nia", &key(74));
+    type Change = fn(&mut Request);
+    let cases: [(&str, Change); 5] = [
+        ("its words", |r| r.body.push('!')),
+        ("its kind", |r| r.kind = s("breakdown")),
+        ("its moment", |r| r.at = s("2026-10-15T12:00:01Z")),
+        ("its node", |r| r.scope = s("elsewhere")),
+        ("who asked", |r| r.raised_by = s("Test Dee")),
+    ];
+    for (what, change) in cases {
+        let mut g2 = f.clone();
+        change(&mut g2.requests[0]);
+        assert!(
+            chain::check_request(&g2, &uid, &g).is_err(),
+            "{what} changed, and it still counts"
+        );
+    }
+    // Its answer is its group's, and not what was signed.
+    let mut answered = f.clone();
+    answered.requests[0].status = s("accepted");
+    answered.requests[0].answer = s("Contract 2 reads the 81-day mean.");
+    chain::check_request(&answered, &uid, &g).expect("an answer does not undo the asking");
+    // Signed by someone else as theirs, it is not the asker's.
+    let mut other = f.clone();
+    other
+        .signatures
+        .retain(|r| r.scope != chain::request_scope(&uid));
+    let row = chain::sign(
+        &other,
+        &chain::request_scope(&uid),
+        "Test Dee",
+        &key(76),
+        AT,
+        "ok",
+        "",
+    )
+    .unwrap();
+    other.signatures.push(row);
+    let e = chain::check_request(&other, &uid, &g).unwrap_err();
+    assert!(
+        e.message().contains("Test Dee may not sign"),
+        "{}",
+        e.message()
+    );
+}
+
+#[test]
+fn asked_in_the_copy_the_request_is_written_and_a_second_writer_stops_it() {
+    let g = group("");
+    let c = copy("in-place", &node());
+    let seen = opened(&c);
+    let before = std::fs::read(c.join(NODE)).unwrap();
+    match ask_in_place(
+        &c,
+        NODE,
+        &seen,
+        "Test Nia",
+        &key(74),
+        AT,
+        "contract",
+        ASK,
+        APP,
+        &g,
+    )
+    .unwrap()
+    {
+        Asked::Written { uid, digest: d } => {
+            assert_eq!(d, opened(&c));
+            let f = sqlite::read(&c.join(NODE)).unwrap();
+            chain::check_request(&f, &uid, &g).unwrap();
+            assert_eq!(f.meta.get("written_by_app").map(String::as_str), Some(APP));
+            assert_eq!(f.meta.get("revision").map(String::as_str), Some("1"));
+            assert_eq!(f.meta.get("writer").map(String::as_str), Some("Test Nia"));
+        }
+        other => panic!("not asked: {other:?}"),
+    }
+    assert_ne!(std::fs::read(c.join(NODE)).unwrap(), before);
+    // Asked again from what was first seen: someone wrote it since.
+    let now = std::fs::read(c.join(NODE)).unwrap();
+    match ask_in_place(
+        &c,
+        NODE,
+        &seen,
+        "Test Nia",
+        &key(74),
+        AT,
+        "contract",
+        ASK,
+        APP,
+        &g,
+    )
+    .unwrap()
+    {
+        Asked::SecondWriter {
+            writer, revision, ..
+        } => {
+            assert_eq!((writer.as_str(), revision), ("Test Nia", 1));
+        }
+        other => panic!("not stopped: {other:?}"),
+    }
+    assert_eq!(
+        std::fs::read(c.join(NODE)).unwrap(),
+        now,
+        "nothing is written"
+    );
+    // What changed since it was seen is said before anything else: not
+    // what is wrong with the asking.
+    assert!(matches!(
+        ask_in_place(
+            &c,
+            NODE,
+            &seen,
+            "Test Ivo",
+            &key(75),
+            AT,
+            "wish",
+            "",
+            APP,
+            &g
+        )
+        .unwrap(),
+        Asked::SecondWriter { .. }
+    ));
+    // Refused, nothing is written either.
+    let seen = opened(&c);
+    let e = ask_in_place(
+        &c,
+        NODE,
+        &seen,
+        "Test Ivo",
+        &key(75),
+        AT,
+        "contract",
+        ASK,
+        APP,
+        &g,
+    )
+    .unwrap_err();
+    assert!(
+        e.message().contains("Test Ivo is not assigned"),
+        "{}",
+        e.message()
+    );
+    assert_eq!(std::fs::read(c.join(NODE)).unwrap(), now);
+    let _ = std::fs::remove_dir_all(&c);
+}
+
+#[test]
+fn a_save_keeps_every_request_as_it_was_asked() {
+    let g = group("");
+    let (f, _) = asked(&node(), "Test Nia", &key(74));
+    type Change = fn(&mut File);
+    let cases: [(&str, Change); 3] = [
+        ("dropped", |f| f.requests.clear()),
+        ("changed", |f| f.requests[0].body.push('!')),
+        ("added", |f| {
+            let mut r = f.requests[0].clone();
+            r.uid = s("by-hand");
+            f.requests.push(r)
+        }),
+    ];
+    for (what, change) in cases {
+        let c = copy(&format!("save-{what}"), &f);
+        let mut edit = sqlite::read(&c.join(NODE)).unwrap();
+        change(&mut edit);
+        let before = std::fs::read(c.join(NODE)).unwrap();
+        let e = save(&c, NODE, &edit, &opened(&c), "Test Nia", APP, &g).unwrap_err();
+        assert!(
+            e.message().contains("a request is kept as it was asked"),
+            "{what}: {}",
+            e.message()
+        );
+        assert_eq!(std::fs::read(c.join(NODE)).unwrap(), before, "{what}");
+        let _ = std::fs::remove_dir_all(&c);
+    }
+    // An edit that keeps them is saved.
+    let c = copy("save-kept", &f);
+    let mut edit = sqlite::read(&c.join(NODE)).unwrap();
+    edit.texts.push(Text {
+        scope: s(UID),
+        kind: s("note"),
+        body: s("A line of Test Nia's own."),
+    });
+    save(&c, NODE, &edit, &opened(&c), "Test Nia", APP, &g).unwrap();
+    let _ = std::fs::remove_dir_all(&c);
+}

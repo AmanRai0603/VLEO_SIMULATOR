@@ -641,6 +641,14 @@ fn route(
                 ctx,
             ),
         ),
+        // A request written in the node's file, signed by whoever asks (F3-d).
+        ("POST", p) if p.starts_with("/v1/node/") && p.ends_with("/ask") => ok_json(
+            node_file::ask_route(
+                p.trim_start_matches("/v1/node/").trim_end_matches("/ask"),
+                params,
+                ctx,
+            ),
+        ),
         ("GET", p) if p.starts_with("/v1/node/") => {
             let id = p.trim_start_matches("/v1/node/");
             node_endpoint(ctx, id)

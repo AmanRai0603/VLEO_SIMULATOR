@@ -1,0 +1,61 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "node-asked",
+  "description": "A request for a contract change or a breakdown written in a node's file in the working copy, signed by whoever asked; a file changed since it was opened, stopped; or why not.",
+  "type": "object",
+  "properties": {
+    "ok": {
+      "type": "boolean"
+    },
+    "conflict": {
+      "type": "boolean",
+      "description": "The file changed since it was opened: nothing is asked."
+    },
+    "node": {
+      "type": "string"
+    },
+    "path": {
+      "type": "string"
+    },
+    "request": {
+      "type": "string",
+      "description": "The new request's uid."
+    },
+    "kind": {
+      "type": "string",
+      "enum": [
+        "contract",
+        "breakdown"
+      ]
+    },
+    "opened": {
+      "type": "string",
+      "description": "The SHA-256 of the file as it now is."
+    },
+    "asked_by": {
+      "type": "string"
+    },
+    "asked_at": {
+      "type": "string"
+    },
+    "writer": {
+      "type": "string",
+      "description": "On a conflict, who wrote the file as it now is."
+    },
+    "revision": {
+      "type": "number",
+      "description": "On a conflict, the revision the file now is."
+    },
+    "theirs": {
+      "type": "string",
+      "description": "On a conflict, the file as it now is, as base64."
+    },
+    "message": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "ok",
+    "message"
+  ]
+}

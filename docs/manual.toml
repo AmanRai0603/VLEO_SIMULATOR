@@ -2170,6 +2170,11 @@ path = "/v1/node/<id>/sign"
 what = "A node signed as the day's work, with whoever's key is open, at this moment: opened, the digest of the file as it was opened. Refused unless the key is the one its group file registers for them and they are assigned the node, or are the deputy of whoever is. Refused while any of the node's checks fails or its cases disagree with its method, each one named; a node with nothing a check reads (archived, open, a stated one with no value, a behaviour nothing checks yet) and a case whose expected value came from the code under test are refused too. The signature is checked through the chain at once, and the signed file is written in the working copy as a save is; the revision does not rise. A file changed since it was opened is not signed, and group files changed on the drive since the copy are named beside it. Carries session."
 
 [[route]]
+method = "POST"
+path = "/v1/node/<id>/ask"
+what = "A request written in the node's file, for a contract change (kind contract) or a breakdown (kind breakdown), saying body, signed by whoever's key is open, at this moment: opened, the digest of the file as it was opened. Refused unless the key is the one its group file registers for them and they are assigned the node, or are the deputy of whoever is, and refused when it says nothing. The node is not touched, its revision and signatures are as they were, so a node that cannot be signed yet still asks. Written in the working copy as a save is; it reaches the group's subsystem engineer, in My work, when the work is put back. A file changed since it was opened is not written. Carries session."
+
+[[route]]
 method = "GET"
 path = "/v1/lesson/<id>"
 what = "A row's lesson — its `lesson.toml`, checked as the gate checks it — or `lesson: null` for a row with none. A lesson that fails its check is refused with the reasons."

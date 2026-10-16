@@ -447,6 +447,12 @@ jobs:
       # the other, copying again, finding it signed (docs/briefs/F3.md, F3-c).
       - name: signed work put back on the drive, and found by another
         run: python3 tools/put_back_check.py
+      # Two instances on two copies of one drive: a node that cannot be signed
+      # asks for a breakdown in its file and is put back, someone not assigned
+      # it is refused, and its subsystem engineer, copying again, finds the
+      # request in My work (docs/briefs/F3.md, F3-d).
+      - name: a request asked in a node's file, and found by its group's owner
+        run: python3 tools/ask_check.py
       # The manual in the browser tells people what to paste and what they will
       # see. `cargo test` already holds every name in it to the code; this holds
       # every command to what it DOES — run exactly as written, its output

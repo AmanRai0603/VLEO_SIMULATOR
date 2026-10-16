@@ -9,8 +9,12 @@
 //! - a file below them the chain refuses, with why (a group that does not open
 //!   stops its people's work as surely as a failing node).
 //!
-//! Nodes failing their checks, requests, issues, previews and decisions join
-//! as the stages that make them arrive (F3 to F7).
+//! - a request on a node of a group they own, for a contract change or a
+//!   breakdown, signed by whoever may write the node (F3-d); one whose
+//!   signature does not count is named as refused.
+//!
+//! Nodes failing their checks, issues, previews and decisions join as the
+//! stages that make them arrive (F3 to F7).
 
 use super::*;
 use std::collections::BTreeMap;
@@ -216,6 +220,49 @@ fn items(me: &chain::Me, c: &me::Chain, database: &Path) -> Vec<Item> {
                     "{group} has nothing sealed yet: its first release is yours to seal, once its nodes are signed"
                 ),
             });
+        }
+    }
+    // The requests on the nodes of a group this person owns (F3-d): each open
+    // one asked and signed by whoever may write its node. One whose signature
+    // does not count is said as refused, never as asked.
+    for group in me.owns.iter().filter(|g| !refused.contains(&g.as_str())) {
+        let Some(reg) = group_of(group) else { continue };
+        let files = indexed
+            .entry(group.clone())
+            .or_insert_with(|| node_files(database, group));
+        for f in files.values().flatten() {
+            for r in f.requests.iter().filter(|r| r.status == "open") {
+                let id = f
+                    .blocks
+                    .iter()
+                    .find(|b| b.uid == r.scope)
+                    .map_or_else(|| r.scope.clone(), |b| b.id.clone());
+                let asked = match r.kind.as_str() {
+                    "breakdown" => "a breakdown",
+                    "contract" => "a contract change",
+                    other => other,
+                };
+                out.push(match chain::check_request(f, &r.uid, reg) {
+                    Ok(()) => Item {
+                        kind: "request",
+                        group: group.clone(),
+                        node: id.clone(),
+                        says: format!(
+                            "{} asks for {asked} of {id}, on {}: {}",
+                            r.raised_by, r.at, r.body
+                        ),
+                    },
+                    Err(e) => Item {
+                        kind: "request refused",
+                        group: group.clone(),
+                        node: id.clone(),
+                        says: format!(
+                            "a request on {id} in {group} does not count, so it is not one: {}",
+                            e.message()
+                        ),
+                    },
+                });
+            }
         }
     }
     out

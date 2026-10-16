@@ -43,7 +43,9 @@
               "no file",
               "nothing sealed",
               "refused",
-              "two files"
+              "two files",
+              "request",
+              "request refused"
             ]
           },
           "group": {

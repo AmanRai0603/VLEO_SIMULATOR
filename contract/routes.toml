@@ -252,6 +252,16 @@ path = "/v1/node/sw_ap_design/sign"
 params = [["session", "@session"], ["opened", "0"]]
 
 [[route]]
+method = "POST"
+path = "/v1/node/<id>/ask"
+answer = "json"
+schema = "node-asked"
+[[route.example]]
+name = "node-ask-refused"
+path = "/v1/node/sw_ap_design/ask"
+params = [["session", "@session"], ["opened", "0"], ["kind", "contract"], ["body", "x"]]
+
+[[route]]
 method = "GET"
 path = "/v1/lesson/<id>"
 answer = "json"

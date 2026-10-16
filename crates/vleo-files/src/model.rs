@@ -235,7 +235,7 @@ record!(
     }
 );
 record!(
-    /// A request: of a contract, or of the code.
+    /// A request: of a contract, a breakdown, or the code.
     Request = "request" {
         uid: String, kind: String, scope: String, raised_by: String, at: String,
         body: String, status: String, answer: String,

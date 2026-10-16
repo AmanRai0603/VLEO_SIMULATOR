@@ -669,10 +669,16 @@ fn signers(f: &File, out: &mut Findings) {
     }
 }
 
+/// Where a signature of `scope` is: its block, the node a request is on, or
+/// the file.
 fn place_of(f: &File, scope: &str) -> String {
+    let block = scope
+        .strip_prefix(crate::chain::REQUEST)
+        .and_then(|uid| f.requests.iter().find(|r| r.uid == uid))
+        .map_or(scope, |r| r.scope.as_str());
     f.blocks
         .iter()
-        .find(|b| b.uid == scope)
+        .find(|b| b.uid == block)
         .map_or(FILE.to_string(), |b| b.id.clone())
 }
 

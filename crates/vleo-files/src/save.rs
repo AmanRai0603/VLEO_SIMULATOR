@@ -15,10 +15,13 @@
 //!   block, or they are the deputy of whoever it does.
 //! - **Not this node's to change.** A save changes the node's own rows: its
 //!   block, ports, wires, cases, closures, loops, texts, tables, media,
-//!   comments, changes and requests. Everything else in the file is as it was:
-//!   its group, its kind, its place, its signatures, and every row of anyone
-//!   or anything else. A node file holds one block, in its group's folder,
-//!   under its id.
+//!   comments and changes. Everything else in the file is as it was: its
+//!   group, its kind, its place, its signatures, its requests, and every row
+//!   of anyone or anything else. A node file holds one block, in its group's
+//!   folder, under its id.
+//! - **A request is kept as it was asked.** A request is added only by
+//!   asking ([`ask_in_place`], F3-d), signed by whoever asked, and no save
+//!   changes or drops one.
 //!
 //! Otherwise the file is checked as a file (its meta and its values, as every
 //! write checks them), its revision rises by one and its writer is the
@@ -199,7 +202,6 @@ fn outside(f: &File, uid: &str) -> File {
     o.media.retain(|m| m.scope != uid);
     o.comments.retain(|c| c.scope != uid);
     o.changes.retain(|c| c.scope != uid);
-    o.requests.retain(|r| r.scope != uid);
     o
 }
 
@@ -219,6 +221,18 @@ pub(crate) fn changed_outside(edit: &File, now: &File, uid: &str) -> Vec<String>
 fn second(at: &Path, bytes: Vec<u8>) -> Result<Saved, Error> {
     let now = crate::sqlite::read(at)?;
     Ok(Saved::SecondWriter {
+        writer: now.meta.get("writer").cloned().unwrap_or_default(),
+        revision: count(&now, "revision"),
+        digest: copied::digest(&bytes),
+        bytes,
+        now: Box::new(now),
+    })
+}
+
+/// The second writer asking is stopped by, as a save is.
+fn second_asked(at: &Path, bytes: Vec<u8>) -> Result<Asked, Error> {
+    let now = crate::sqlite::read(at)?;
+    Ok(Asked::SecondWriter {
         writer: now.meta.get("writer").cloned().unwrap_or_default(),
         revision: count(&now, "revision"),
         digest: copied::digest(&bytes),
@@ -279,6 +293,11 @@ pub fn save(
                 group.from
             ),
         ));
+    }
+    if edit.requests != now.requests {
+        return Err(refused(format!(
+            "the edit changes the requests in {id}'s file: a request is kept as it was asked, and one is added only by asking"
+        )));
     }
     let changed = changed_outside(edit, &now, &block.uid);
     if !changed.is_empty() {
@@ -392,6 +411,84 @@ pub fn sign_in_place(
         revision,
         digest: copied::digest(&written),
         findings: found,
+    })
+}
+
+/// What asking did, or why it did nothing.
+#[derive(Debug)]
+pub enum Asked {
+    /// The request `uid` is written, signed; the file's bytes are now
+    /// `digest`.
+    Written { uid: String, digest: String },
+    /// The file changed in the copy since it was opened: nothing is written.
+    /// It is as `now` holds it, last written by `writer` as `revision`.
+    SecondWriter {
+        now: Box<File>,
+        bytes: Vec<u8>,
+        writer: String,
+        revision: u64,
+        digest: String,
+    },
+}
+
+/// Ask, as `by`, for a contract change or a breakdown of the node at `path`
+/// inside the copy (docs/briefs/F3.md, F3-d; W4, W13), when its bytes are
+/// still the ones whose SHA-256 is `opened`. The request is written in the
+/// node's file and signed on its own by `chain::ask`, which refuses, with
+/// nothing written, unless `key` is `by`'s, counted at `at`, and `by` may
+/// write the node. The node is not touched: its revision and content, and
+/// every signature of it, are as they were, so a node that cannot yet be
+/// signed can still ask. Written as a save is, by `app`, under the copy's
+/// lock, and a second writer is stopped the same way.
+#[allow(clippy::too_many_arguments)]
+pub fn ask_in_place(
+    copy: &Path,
+    path: &str,
+    opened: &str,
+    by: &str,
+    key: &crate::keys::SigningKey,
+    at: &str,
+    kind: &str,
+    body: &str,
+    app: &str,
+    group: &Registry,
+) -> Result<Asked, Error> {
+    if !copied::path_ok(path) {
+        return Err(refused(format!("{path:?} is not a path inside the copy")));
+    }
+    opened_ok(opened)?;
+    let _held = lock(copy)?;
+    let at_path = copy.join(path);
+    let bytes = std::fs::read(&at_path).map_err(|e| unreadable(&at_path, e))?;
+    if copied::digest(&bytes) != opened {
+        return second_asked(&at_path, bytes);
+    }
+    // What is asked of is read from the bytes compared: what the person saw.
+    let now = parsed(&bytes)?;
+    the_node(&now, path)?;
+    let group_id = now.meta.get("group_id").cloned().unwrap_or_default();
+    if group.file.meta.get("group_id") != Some(&group_id) {
+        return Err(refused(format!(
+            "the node is {group_id}'s, and the group file given is {}'s",
+            group
+                .file
+                .meta
+                .get("group_id")
+                .map_or("no group", String::as_str)
+        )));
+    }
+    let block = now.blocks[0].uid.clone();
+    let (mut asked, uid) = crate::chain::ask(&now, &block, kind, body, by, key, at, group)?;
+    asked.meta.insert("written_by_app".into(), app.to_string());
+    asked.check_meta()?;
+    let again = std::fs::read(&at_path).map_err(|e| unreadable(&at_path, e))?;
+    if copied::digest(&again) != opened {
+        return second_asked(&at_path, again);
+    }
+    let written = crate::sqlite::written(&asked, &at_path)?;
+    Ok(Asked::Written {
+        uid,
+        digest: copied::digest(&written),
     })
 }
 
