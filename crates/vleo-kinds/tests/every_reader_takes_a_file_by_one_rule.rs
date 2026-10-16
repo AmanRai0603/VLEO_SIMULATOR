@@ -119,7 +119,7 @@ fn a_group_s_file_from_before_1_0_is_taken_as_what_it_becomes() {
         want(Reader::Files, &["group release"], "a group release"),
     )
     .unwrap();
-    assert_eq!(k.becomes, Some(("group release", 2)));
+    assert_eq!(k.becomes, Some(("group release", 3)));
 }
 
 /// One file as a reader meets it: (application id, format, kind, reader,

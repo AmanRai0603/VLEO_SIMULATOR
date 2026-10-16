@@ -327,6 +327,17 @@ impl Registry {
                     ),
                 )
             })?;
+        // A key counts only with the proof, made with it, that its holder
+        // offered it for this person: a key row written by hand signs nothing.
+        if !crate::people::proof_holds(name, public_key, &k.proof) {
+            return Err(refused(
+                ErrorKind::Signature,
+                format!(
+                    "the key {name} signed with carries no proof in {} that its holder offered it for them: a key without one signs nothing",
+                    self.from
+                ),
+            ));
+        }
         let when = instant(at, "the moment it was signed")?;
         if when < instant(&k.registered_at, &format!("{name}'s key's registered_at"))? {
             return Err(refused(

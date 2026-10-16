@@ -1,4 +1,4 @@
--- THE DESIGN FILE, format 2: one schema for every kind of file.
+-- THE DESIGN FILE, format 3: one schema for every kind of file.
 --
 -- docs/OPERATING_1_0.md, section 10. Every file a person keeps is one SQLite
 -- database in this schema: a node, a group, a group's release, a preview and
@@ -17,10 +17,12 @@
 -- Read and written only by crates/vleo-files, installed and in the page.
 -- application_id is every VLEO file's, as format 1 had it; user_version is this
 -- format's number: a file newer than the reader is refused by name, and an
--- older one is upgraded with a copy kept of it as it was (phase C4).
+-- older one is upgraded: format 1 with a copy kept of it as it was (phase C4),
+-- format 2 read as this one with every key's proof empty, nothing lost (its
+-- requests are contracts or code; format 3 adds a breakdown).
 
 PRAGMA application_id = 1447838031;
-PRAGMA user_version = 2;
+PRAGMA user_version = 3;
 
 -- What this file is. Every file: file_kind, format, written_by_app. The keys
 -- each kind must have, and the versions they hold, are in src/meta.rs.
@@ -45,6 +47,10 @@ CREATE TABLE person_key (
   registered_at  TEXT NOT NULL,
   registered_by  TEXT NOT NULL,
   revoked_from   TEXT NOT NULL DEFAULT '',
+  -- The key's holder offering it for the person: a signature, with the key
+  -- itself, of the person's name and the key (people::proof). A key whose
+  -- proof does not check signs nothing.
+  proof          TEXT NOT NULL DEFAULT '',
   PRIMARY KEY (person, public_key)
 );
 
@@ -212,11 +218,12 @@ CREATE TABLE change (
   after   TEXT
 );
 
--- A request: a node engineer asking for their contract to change, or anyone
--- asking the developer for something the code cannot do yet (W14).
+-- A request: a node engineer asking for their contract to change (W4) or their
+-- node to be broken down further (W13), or anyone asking the developer for
+-- something the code cannot do yet (W14).
 CREATE TABLE request (
   uid        TEXT PRIMARY KEY,
-  kind       TEXT NOT NULL CHECK (kind IN ('contract', 'code')),
+  kind       TEXT NOT NULL CHECK (kind IN ('contract', 'breakdown', 'code')),
   scope      TEXT NOT NULL,
   raised_by  TEXT NOT NULL,
   at         TEXT NOT NULL,

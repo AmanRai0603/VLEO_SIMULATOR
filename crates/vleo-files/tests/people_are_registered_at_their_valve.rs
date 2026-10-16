@@ -40,6 +40,7 @@ fn register(f: &mut File, name: &str, role: &str, deputy_for: &str, k: &SigningK
         registered_at: s("2026-01-01"),
         registered_by: s("Pat Morgan"),
         revoked_from: s(""),
+        proof: vleo_files::people::proof(k, name),
     });
 }
 
@@ -120,6 +121,7 @@ fn solar_file() -> File {
         registered_at: s("2026-01-01"),
         registered_by: s("Ola Sun"),
         revoked_from: s(""),
+        proof: vleo_files::people::proof(&key(16), "Nia Node"),
     });
     signed(f, "Ola Sun", &key(13))
 }

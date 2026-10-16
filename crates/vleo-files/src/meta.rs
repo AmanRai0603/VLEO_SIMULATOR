@@ -13,7 +13,7 @@ use crate::error::{Error, ErrorKind};
 use crate::model::File;
 
 /// This format's number: `user_version` in every file.
-pub const FORMAT: i64 = 2;
+pub const FORMAT: i64 = 3;
 
 /// The kinds of file, as section 10 lists them.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

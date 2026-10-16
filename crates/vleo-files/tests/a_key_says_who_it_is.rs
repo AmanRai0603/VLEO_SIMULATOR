@@ -53,6 +53,7 @@ fn register(f: &mut File, name: &str, role: &str, deputy_for: &str, key: &Signin
         registered_at: s("2026-01-01"),
         registered_by: s(by),
         revoked_from: s(""),
+        proof: vleo_files::people::proof(key, name),
     });
 }
 
@@ -393,6 +394,7 @@ fn a_revoked_or_shared_key_says_nobody() {
         registered_at: s("2026-01-01"),
         registered_by: s("Pat Morgan"),
         revoked_from: s(""),
+        proof: vleo_files::people::proof(&p.sub, "Ola Again"),
     });
     let pr = chain::open_programme(signed(f, "Pat Morgan", &p.pm), &p.pm.public().fingerprint())
         .unwrap();

@@ -149,10 +149,11 @@ record!(
 );
 record!(
     /// A public key registered for a person, from a date, and from when it
-    /// stopped counting if it was revoked.
+    /// stopped counting if it was revoked, with the proof that its holder
+    /// offered it for that person (`people::proof`).
     PersonKey = "person_key" {
         person: String, public_key: String, registered_at: String,
-        registered_by: String, revoked_from: String,
+        registered_by: String, revoked_from: String, proof: String,
     }
 );
 record!(
@@ -334,7 +335,7 @@ pub const ALLOWED: &[(&str, &str, &[&str])] = &[
         ],
     ),
     ("signature", "verdict", &["ok", "changes"]),
-    ("request", "kind", &["contract", "code"]),
+    ("request", "kind", &["contract", "breakdown", "code"]),
     ("request", "status", &["open", "accepted", "declined"]),
 ];
 
@@ -370,6 +371,9 @@ fn table_of<R: Record>(rows: &[R]) -> Table {
         rows: rows.iter().map(Record::to_row).collect(),
     }
 }
+
+/// The format before a key carried its proof, read as this one.
+pub const FORMAT_2: &str = "2";
 
 fn rows_of<R: Record>(tables: &mut BTreeMap<String, Table>) -> Result<Vec<R>, Error> {
     let Some(t) = tables.remove(R::TABLE) else {
@@ -457,6 +461,24 @@ impl File {
                     }
                 }
             }
+        }
+        // Format 2 is format 3 before a key carried its proof: read as format
+        // 3, each key's proof empty. Only a column is added, so nothing is
+        // lost, and the file says format 3 once it is written again.
+        if meta.get("format").map(String::as_str) == Some(FORMAT_2) {
+            if let Some(t) = by_name.get_mut(PersonKey::TABLE) {
+                if t.columns
+                    .iter()
+                    .map(String::as_str)
+                    .eq(PersonKey::COLUMNS[..5].iter().copied())
+                {
+                    t.columns.push(PersonKey::COLUMNS[5].to_string());
+                    for row in t.rows.iter_mut() {
+                        row.push(Cell::Text(String::new()));
+                    }
+                }
+            }
+            meta.insert("format".into(), crate::meta::FORMAT.to_string());
         }
         let f = File {
             meta,

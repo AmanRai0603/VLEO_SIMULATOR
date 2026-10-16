@@ -51,6 +51,7 @@ fn register(f: &mut File, name: &str, role: &str, k: &SigningKey, by: &str) {
         registered_at: s("2026-01-01"),
         registered_by: s(by),
         revoked_from: s(""),
+        proof: vleo_files::people::proof(k, name),
     });
 }
 
@@ -754,6 +755,7 @@ fn a_node_s_file_goes_back_changed_only_in_the_node_s_own_rows() {
                     registered_at: s("2026-01-01"),
                     registered_by: s("Test Nia"),
                     revoked_from: s(""),
+                    proof: s(""),
                 })
             },
             "person_key",
@@ -1163,6 +1165,7 @@ fn one_signature_must_both_count_as_made_and_be_made_with_a_key_that_counts_now(
         registered_at: s("2026-01-01"),
         registered_by: s("Test Ola"),
         revoked_from: s(""),
+        proof: vleo_files::people::proof(&key(78), "Test Nia"),
     });
     solar.signatures.clear();
     sqlite::write(&signed(solar, "Test Ola", &key(73)), &drive.join(SOLAR)).unwrap();

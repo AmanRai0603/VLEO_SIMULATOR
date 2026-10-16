@@ -107,7 +107,9 @@ fn keep_older(path: &Path) -> Result<(), Error> {
             Err(_) => return Ok(()),
         }
     };
-    if format >= FORMAT {
+    // Only a file whose upgrade could lose something is kept: format 1.
+    // Format 2 becomes this one by a column added, empty.
+    if format > format_1::FORMAT {
         return Ok(());
     }
     let copy = kept_copy(path, format);
@@ -159,7 +161,9 @@ fn insert(db: &Connection, t: &Table) -> rusqlite::Result<()> {
 /// older one ([`open`] upgrades that).
 pub fn read(path: &Path) -> Result<File, Error> {
     let (format, tables) = raw(path)?;
-    if format < FORMAT {
+    // Format 2 differs only by the key's proof, which reading adds, empty
+    // (`File::from_tables`): it is read as this format, never refused.
+    if format < FORMAT && format != FORMAT - 1 {
         return Err(Error::new(
             ErrorKind::Format,
             format!(
@@ -199,7 +203,7 @@ pub struct Opened {
 /// when it is saved, and [`write`] keeps the old one beside it.
 pub fn open(path: &Path, how: &Upgrade) -> Result<Opened, Error> {
     let (format, tables) = raw(path)?;
-    if format == FORMAT {
+    if format == FORMAT || format == FORMAT - 1 {
         return Ok(Opened {
             file: File::from_tables(tables)?,
             format,
