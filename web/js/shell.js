@@ -220,7 +220,7 @@ function nodesCard() {
           '</button> in ' + esc(n.group) + ', revision ' + esc(n.revision) + ', ' +
           (n.signed ? 'signed as it is now' : 'not signed as it is now') +
           (n.deputy_for ? ', as deputy for ' + esc(n.deputy_for) : '') + '</li>').join('') + '</ul>'
-      : '<p>No node file in your copy is yours to write.</p>') + '</section>';
+      : '<p>No node file in the database read here is yours to write.</p>') + '</section>';
 }
 
 /** Your signed work put back on the drive: named first, written only when you confirm. */
@@ -247,7 +247,7 @@ function workList(items) {
   return '<section class="sh-card"><h2>What needs you ' + kind('reference') + '</h2><ul id="sh-items">' +
     items.map(it => '<li class="sh-item" data-kind="' + esc(it.kind) + '"><span class="tag">' + esc(it.kind) +
       '</span> ' + esc(it.says) +
-      (it.node && (nodes.has(it.node) || it.kind.startsWith('request'))
+      (it.node && (nodes.has(it.node) || it.kind === 'request')
         ? ' <button class="ctl" data-open-node="' + esc(it.node) + '">open in Node</button>' : '') +
       '</li>').join('') + '</ul></section>';
 }
@@ -376,7 +376,7 @@ async function openKey(file, passphrase, acceptAnchor) {
 async function click(e) {
   const t = e.target.closest('button');
   if (!t) return;
-  if (t.dataset.ws) { S.ws = t.dataset.ws; S.notice = null; dropPending(); draw(); return; }
+  if (t.dataset.ws) { S.ws = t.dataset.ws; S.notice = null; S.putBack = null; dropPending(); draw(); return; }
   // `data-open-node`, not `data-node`: Explore's marks name their node too.
   if (t.dataset.openNode) return toNode(t.dataset.openNode);
   switch (t.id) {

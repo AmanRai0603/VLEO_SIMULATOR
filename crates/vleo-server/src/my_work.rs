@@ -71,7 +71,7 @@ pub(super) fn list(ctx: &Ctx) -> String {
     let mut j = Json::new();
     j.raw("{");
     j.bool_field("ok", true);
-    let Some(me) = me::with_key(|_, me| me.clone()) else {
+    let Some((me, public)) = me::with_key(|key, me| (me.clone(), key.public().to_hex())) else {
         j.bool_field("open", false);
         j.str_field(
             "message",
@@ -97,7 +97,7 @@ pub(super) fn list(ctx: &Ctx) -> String {
     let mut yours = Vec::new();
     let items = match me::registries(&database, &copy::dir(ctx), "") {
         Ok(c) => {
-            yours = nodes(&me, &c, &database);
+            yours = nodes(&me, &public, &c, &database);
             items(&me, &c, &database)
         }
         Err(me::NotRead::Why(why)) => {
@@ -154,57 +154,74 @@ struct Yours {
     signed: bool,
 }
 
-/// Every node file in the database that is this person's to write: assigned
-/// to them, or to someone whose deputy they are, by a group file that opens
-/// through the chain, with one file. The Node workspace opens it from here;
-/// a node with no file or two is in the items, with why.
-fn nodes(me: &chain::Me, c: &me::Chain, database: &Path) -> Vec<Yours> {
+/// Every node file in the database that is this person's to write, as the
+/// library holds it (`Registry::may_sign_node`: assigned to them, or to
+/// someone whose deputy they are), in a file of the chain that counts their
+/// key now, with one file. The Node workspace opens it from here; a node with
+/// no file or two is in the items, with why.
+fn nodes(me: &chain::Me, public: &str, c: &me::Chain, database: &Path) -> Vec<Yours> {
+    let now = results::now_utc();
     let mut out = Vec::new();
     for reg in c.systems.iter().chain(c.groups.iter()) {
         let Some(group) = reg.file.meta.get("group_id") else {
             continue;
         };
+        if reg.key(&me.name, public, &now).is_err() {
+            continue;
+        }
         let mounts: Vec<&str> = reg
             .file
             .mounts
             .iter()
             .map(|m| m.block_uid.as_str())
             .collect();
-        let deputises = |person: &str| {
-            reg.file
-                .people
-                .iter()
-                .any(|p| p.name == me.name && p.deputy_for == person)
-        };
-        let mut files = None;
-        for a in reg
+        let mut blocks: Vec<&str> = reg
             .file
             .assignments
             .iter()
-            .filter(|a| !mounts.contains(&a.block_uid.as_str()))
-        {
-            let deputy_for = if a.person == me.name {
-                String::new()
-            } else if deputises(&a.person) {
-                a.person.clone()
-            } else {
+            .map(|a| a.block_uid.as_str())
+            .filter(|b| !mounts.contains(b) && reg.may_sign_node(&me.name, b))
+            .collect();
+        blocks.sort_unstable();
+        blocks.dedup();
+        let mut files = None;
+        for block in blocks {
+            let files = files.get_or_insert_with(|| node_files(database, group));
+            let [f] = files.get(block).map(Vec::as_slice).unwrap_or(&[]) else {
                 continue;
             };
-            let files = files.get_or_insert_with(|| node_files(database, group));
-            let [f] = files.get(&a.block_uid).map(Vec::as_slice).unwrap_or(&[]) else {
-                continue;
+            let named = reg
+                .file
+                .assignments
+                .iter()
+                .any(|a| a.block_uid == block && a.person == me.name);
+            let deputy_for = if named {
+                String::new()
+            } else {
+                reg.file
+                    .people
+                    .iter()
+                    .find(|p| {
+                        p.name == me.name
+                            && reg.file.assignments.iter().any(|a| {
+                                a.block_uid == block
+                                    && !a.person.is_empty()
+                                    && a.person == p.deputy_for
+                            })
+                    })
+                    .map_or_else(String::new, |p| p.deputy_for.clone())
             };
             out.push(Yours {
                 group: group.clone(),
-                block: a.block_uid.clone(),
+                block: block.to_string(),
                 id: f
                     .blocks
                     .iter()
-                    .find(|b| b.uid == a.block_uid)
-                    .map_or_else(|| a.block_uid.clone(), |b| b.id.clone()),
+                    .find(|b| b.uid == block)
+                    .map_or_else(|| block.to_string(), |b| b.id.clone()),
                 revision: f.meta.get("revision").cloned().unwrap_or_default(),
                 deputy_for,
-                signed: chain::check_node(f, &a.block_uid, reg).is_ok(),
+                signed: chain::check_node(f, block, reg).is_ok(),
             });
         }
     }

@@ -100,9 +100,9 @@ def check():
         drive = os.path.join(scratch, 'drive')
         one_keys, two_keys = os.path.join(scratch, 'keys'), os.path.join(scratch, 'keys-two')
         shutil.copytree(one_keys, two_keys)
-        one, p1, w1 = start(scratch, one_keys, os.path.join(scratch, 'copy-one'), 7865)
+        one, p1, w1 = start(scratch, one_keys, os.path.join(scratch, 'copy-one'), 7867)
         programs.append(one)
-        two, p2, w2 = start(scratch, two_keys, os.path.join(scratch, 'copy-two'), 7866)
+        two, p2, w2 = start(scratch, two_keys, os.path.join(scratch, 'copy-two'), 7868)
         programs.append(two)
         errors = []
         with sync_playwright() as pw:
@@ -129,7 +129,8 @@ def check():
                  p.locator('.nw-centre .np-part, .nw-centre .np-host').count() == 0)
             right = p.inner_text('.nw-right')
             step('its file in her copy: revision 1, hers to write, not signed',
-                 'yours to write' in right and 'Sign revision 1' in right, right[:300])
+                 'revision\n1, written by Test Pia' in right and 'yours to write' in right
+                 and 'has no signature' in right and 'Sign revision 1' in right, right[:300])
             nxt = p.inner_text('.nw-next')
             step('the one next step is named', nxt == 'Next: Sign revision 1', nxt)
 
@@ -163,10 +164,23 @@ def check():
                  'signed as it is now' in p.inner_text('.nw-right')
                  and 'Put your work back' in p.inner_text('.nw-next'), p.inner_text('.nw-next'))
 
+            # A request asked from what she opened before is a second writer:
+            # refused, and what she typed is kept.
+            opened = ask(p1, f'/v1/node/{NODE}/file')['opened']
+            r = ask(p1, f'/v1/node/{NODE}/ask', {'opened': opened, 'kind': 'contract',
+                                                 'body': 'Meanwhile, from another tab.'}, w1)
             p.select_option('#nw-ask-kind', 'breakdown')
             p.fill('#nw-ask-body', 'The band is two relations: break it in two.')
             p.click('#nw-ask')
-            asked = said_after(p, notice)
+            stopped = said_after(p, notice)
+            step('a request from what she opened before is stopped, and what she typed is kept',
+                 'Nothing is asked' in stopped
+                 and p.input_value('#nw-ask-body') == 'The band is two relations: break it in two.'
+                 and p.input_value('#nw-ask-kind') == 'breakdown', stopped)
+            p.click('#nw-reopen')
+            workspace(p)
+            p.click('#nw-ask')
+            asked = said_after(p, '')
             step('she asks for a breakdown, signed', 'asks, in' in asked and 'a breakdown' in asked, asked)
             step('and it is listed in the file', 'break it in two' in p.inner_text('.nw-right'))
 
@@ -183,6 +197,11 @@ def check():
             mine = open(os.path.join(scratch, 'copy-one', PATH), 'rb').read()
             step('confirmed, it is on the drive as she signed it',
                  open(os.path.join(drive, PATH), 'rb').read() == mine, p.inner_text('#sh-notice'))
+            p.click(f'#sh-nodes [data-open-node="{NODE}"]')
+            workspace(p)
+            nxt = p.inner_text('.nw-next')
+            step('then nothing is left to do, and the old notice is not said again',
+                 nxt.startswith('Next: Nothing: revision 1 is signed') and not p.locator('.nw-notice').count(), nxt)
 
             # A node today's design does not hold, and an id that is not one.
             p.goto(f'http://127.0.0.1:{p1}/app#node/no_such_node')
@@ -191,7 +210,7 @@ def check():
                  'holds no node' in p.inner_text('.nw-centre')
                  and 'no node file no_such_node.vnode' in p.inner_text('.nw-right'), p.inner_text('.nw-centre')[:200])
             p.goto(f'http://127.0.0.1:{p1}/app#node/not%20an%20id')
-            workspace(p)
+            p.wait_for_selector('.nw-right:has-text("is not a node\'s id")', timeout=60000)
             step('an id that is not one is said', "is not a node's id" in p.inner_text('.nw-right'),
                  p.inner_text('.nw-right')[:200] + ' | ' + p.inner_text('.answer-first'))
 
@@ -207,7 +226,8 @@ def check():
             right = q.inner_text('.nw-right')
             step("on Ola's copy the node is signed as it is now, and not his to write",
                  'signed as it is now' in right and 'Not yours to write' in right, right[:300])
-            step('both requests are there', 'upper edge' in right and 'break it in two' in right)
+            step('every request is there',
+                 'upper edge' in right and 'Meanwhile, from another tab' in right and 'break it in two' in right)
             step('no page error', not errors, '; '.join(errors[:3]))
             b.close()
     finally:

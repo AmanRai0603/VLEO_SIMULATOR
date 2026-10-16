@@ -2124,7 +2124,7 @@ what = "The engine's identity: the contract version it speaks, kernel, graph, ro
 [[route]]
 method = "GET"
 path = "/v1/my-work"
-what = "What needs the person whose key is open, now: a node of theirs unsigned, a group of theirs with nothing sealed, a file below them the chain refuses."
+what = "What needs the person whose key is open, now: a node of theirs unsigned, a group of theirs with nothing sealed, a file below them the chain refuses. And nodes: every node file that is theirs to write, or theirs as a deputy, in a file of the chain that counts their key, signed or not, which the Node workspace opens."
 
 [[route]]
 method = "GET"
@@ -2219,7 +2219,7 @@ what = "A row, as the engine holds it."
 [[route]]
 method = "GET"
 path = "/v1/node/<id>/file"
-what = "A node's file in the working copy: its bytes as base64, the SHA-256 of those bytes (opened), its revision and its writer."
+what = "A node's file in the working copy: its bytes as base64, the SHA-256 of those bytes (opened), its revision and its writer. And what the Node workspace shows of it, which a page cannot read from the bytes: who its group file assigns it to; whether it is the open key's person's to write, by the same rule signing holds them to, and as whose deputy; whether it is signed as it is now; each signature and request, and whether each request counts; what its checks find; whether it changed since the copy was taken; and the next step."
 
 [[route]]
 method = "POST"

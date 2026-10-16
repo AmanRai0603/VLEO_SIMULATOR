@@ -16,7 +16,13 @@
 //!   hand, signed by nobody, listed as not counting, with why;
 //! - signed, it says so, and the next step is to put it back;
 //! - My work lists the node for Nia and for Dee, as her deputy, signed or not,
-//!   and not for Ivo.
+//!   and not for Ivo;
+//! - put back, nothing is left to do, said as of when the copy was taken;
+//! - its second writer, Test Pip, is offered it too, and listed once; an
+//!   assignment naming nobody makes nobody its writer, so Ivo is still not;
+//!   Ola, assigned it and registered only by the programme's file, is not
+//!   offered it, since no key of hers counts there, and is told so; and Sue,
+//!   Ola's deputy in the programme's file, is not offered it.
 
 use std::io::{Read, Write};
 use std::net::TcpStream;
@@ -330,6 +336,23 @@ fn drive(at: &Path, keys: &Path) {
         person: s("Test Nia"),
         contract_version: 1,
     });
+    // A second writer of the same block; an assignment that names nobody,
+    // which makes nobody its writer; and Ola, whom only the programme's file
+    // registers, so no key of hers counts here.
+    register(
+        &mut solar,
+        "Test Pip",
+        "node engineer",
+        &key(78),
+        "Test Ola",
+    );
+    for person in ["Test Pip", "", "Test Ola"] {
+        solar.assignments.push(Assignment {
+            block_uid: s(UID),
+            person: s(person),
+            contract_version: 1,
+        });
+    }
     std::fs::create_dir_all(at.join("groups/l3_solar/nodes")).unwrap();
     sqlite::write(
         &signed(solar, "Test Ola", &key(73)),
@@ -351,6 +374,7 @@ fn drive(at: &Path, keys: &Path) {
     write_key(keys, "test-dee.vkey", "Test Dee", &key(76));
     write_key(keys, "test-ola.vkey", "Test Ola", &key(73));
     write_key(keys, "test-sue.vkey", "Test Sue", &key(77));
+    write_key(keys, "test-pip.vkey", "Test Pip", &key(78));
 }
 
 fn open_key(port: u16, file: &str) -> String {
@@ -413,7 +437,7 @@ fn the_node_workspace_is_told_what_a_node_s_file_holds() {
     );
     assert!(r.contains("\"signed\":{\"ok\":false"), "{r}");
     assert_eq!(field(&r, "next"), "Sign revision 1", "{r}");
-    assert_eq!(field(&r, "assigned"), "Test Nia");
+    assert_eq!(field(&r, "assigned"), "Test Nia, Test Pip, Test Ola");
     let work = mine();
     assert!(
         work.contains("\"nodes\":[{\"group\":\"l3_solar\",\"block\":\"sw_activity_band\",\"id\":\"sw_activity_band\",\"revision\":\"1\",\"deputy_for\":\"\",\"signed\":false}]"),
@@ -477,6 +501,20 @@ fn the_node_workspace_is_told_what_a_node_s_file_holds() {
         "Put your work back on the drive, from My work"
     );
     assert!(mine().contains("\"revision\":\"3\",\"deputy_for\":\"\",\"signed\":true"));
+    // Put back, the drive holds it as her copy does: nothing is left to do.
+    let report = post(port, "/v1/put-back", &[]);
+    let named = format!(
+        "{} {NODE}",
+        field(report.split("\"files\":").nth(1).unwrap(), "digest")
+    );
+    let r = post(port, "/v1/put-back", &[("files", &named)]);
+    assert!(r.contains("\"written\":true"), "{r}");
+    let r = file();
+    assert!(r.contains("\"changed_here\":false"), "{r}");
+    assert_eq!(
+        field(&r, "next"),
+        "Nothing: revision 3 is signed, as it was when your copy was taken from the drive"
+    );
     post(port, "/v1/key/close", &[]);
     // No key open, the anchor accepted: the next step is to open one.
     let r = file();
@@ -518,10 +556,43 @@ fn the_node_workspace_is_told_what_a_node_s_file_holds() {
     let r = file();
     assert!(r.contains("\"yours\":false"), "{r}");
     assert!(
-        field(&r, "next").starts_with("Nothing: sw_activity_band is Test Nia's to write"),
+        field(&r, "next").starts_with(
+            "Nothing: sw_activity_band is Test Nia and Test Pip and Test Ola's to write"
+        ),
         "{r}"
     );
     assert!(mine().contains("\"nodes\":[]"));
+    post(port, "/v1/key/close", &[]);
+
+    // Pip, its second writer: his too, listed once.
+    assert!(open_key(port, "test-pip.vkey").contains("\"open\":true"));
+    let r = file();
+    assert!(
+        r.contains("\"yours\":true") && r.contains("\"deputy_for\":\"\""),
+        "{r}"
+    );
+    assert_eq!(mine().matches("\"id\":\"sw_activity_band\"").count(), 1);
+    post(port, "/v1/key/close", &[]);
+
+    // Ola is assigned it, and solar's file does not register her: no key of
+    // hers counts there, so it is not offered, and the next step says why.
+    assert!(open_key(port, "test-ola.vkey").contains("\"open\":true"));
+    let r = file();
+    assert!(r.contains("\"yours\":false"), "{r}");
+    assert!(
+        field(&r, "next")
+            .starts_with("Nothing: your key does not count for sw_activity_band here: "),
+        "{r}"
+    );
+    assert!(mine().contains("\"nodes\":[]"), "{}", mine());
+    post(port, "/v1/key/close", &[]);
+
+    // Sue is Ola's deputy in the programme's file: not a writer of solar's
+    // nodes, so not offered it.
+    assert!(open_key(port, "test-sue.vkey").contains("\"open\":true"));
+    let r = file();
+    assert!(r.contains("\"yours\":false"), "{r}");
+    assert!(mine().contains("\"nodes\":[]"), "{}", mine());
     post(port, "/v1/key/close", &[]);
     let _ = std::fs::remove_dir_all(&scratch);
 }

@@ -503,11 +503,16 @@ def browser_walk():
 
             def read_a_row():
                 open_row(WALK_COMPUTED)
+                # Its parts are asked of the engine after the page is drawn:
+                # read once they are there, or once they say why not.
+                page.wait_for_selector("#node-body .np-body > *")
                 text = page.locator("#node-body").inner_text()
-                for n in (1, 2, 3):
+                # Its parts and running its code again (F3, 170), then the
+                # page's own three segments, as the manual names them.
+                for n in (1, 2, 3, 4, 5):
                     assert U("browser-read", n).lower() in text.lower(), f"no '{U('browser-read', n)}' on the page"
                 # Back, by the label the manual gives it.
-                page.locator("#nodeview button", has_text=U("browser-read", 4)).first.click()
+                page.locator("#nodeview button", has_text=U("browser-read", 6)).first.click()
                 page.wait_for_timeout(300)
                 assert page.locator("#rowsview").is_visible(), "back did not return to the rows"
             ok("a row's page has the parts the manual names, and back returns", read_a_row)

@@ -32,7 +32,7 @@ import { loadOverrides } from './inputs.js';
 import { drawNode } from './node.js';
 import { mountParts } from './nodeparts.js';
 
-const W = { id: '', file: null, notice: null, stale: null, loaded: null, host: null, post: null, nodes: [] };
+const W = { id: '', file: null, notice: null, stale: null, loaded: null, unread: '', host: null, post: null, nodes: [], asking: null };
 
 /** The index and the case, read once, as Explore reads them. */
 function ready() {
@@ -47,19 +47,27 @@ function ready() {
   return W.loaded;
 }
 
+/** Today's design read, or why it could not be: never taken for a design
+ *  that does not hold the node. */
+async function readDesign() {
+  try { await ready(); W.unread = ''; } catch (e) { W.unread = String(e); }
+}
+
 async function get(path) {
   try { return await (await fetch(path)).json(); } catch (e) { return { ok: false, message: 'the program did not answer: ' + e }; }
 }
 
 /** Open the workspace at node `id`, the next time it is drawn. */
 export function openAt(id) {
-  if (id && id !== W.id) { W.id = id; W.file = null; W.notice = null; W.stale = null; }
+  if (id && id !== W.id) { W.id = id; W.file = null; W.notice = null; W.stale = null; W.asking = null; }
 }
 
 /** Draw the workspace into `host`. `post(path, fields)` writes with the launch's word;
  *  `nodes` are the person's own, as My work lists them. */
 export async function mountNode(host, post, nodes) {
   W.host = host; W.post = post; W.nodes = nodes || [];
+  // What was said before the workspace was left is not said again.
+  W.notice = null; W.stale = null;
   if (!W.id && W.nodes.length) W.id = W.nodes[0].id;
   if (!host.dataset.wired) {
     host.dataset.wired = '1';
@@ -81,7 +89,7 @@ async function draw(keep) {
     return;
   }
   const id = W.id;
-  await ready().catch(() => {});
+  await readDesign();
   const file = keep && W.file ? W.file : await get('/v1/node/' + encodeURIComponent(id) + '/file');
   if (id !== W.id) return;
   W.file = file;
@@ -92,8 +100,11 @@ async function draw(keep) {
       '<aside class="nw-left"><h3 class="seg-h">its parts</h3><div class="nw-parts"></div></aside>' +
       '<section class="nw-centre"><h3 class="seg-h">its page, as today\'s design holds it</h3>' +
         (row ? '<div class="nw-page"></div><div class="nw-run"></div>'
-          : '<p class="empty">Today\'s design holds no node <code>' + esc(id) + '</code>, so no page is drawn: ' +
-            'a node joins it when its group seals a release that holds it.</p>') +
+          : W.unread
+            ? '<div class="blocked"><b>today\'s design could not be read</b><div>' + esc(W.unread) +
+              ' — so whether it holds <code>' + esc(id) + '</code> is not known.</div></div>'
+            : '<p class="empty">Today\'s design holds no node <code>' + esc(id) + '</code>, so no page is drawn: ' +
+              'a node joins it when its group seals a release that holds it.</p>') +
       '</section>' +
       '<aside class="nw-right">' + yourFile(id, file) + '</aside>' +
     '</div>';
@@ -101,7 +112,8 @@ async function draw(keep) {
     mountParts($('.nw-parts', host), id);
     await drawNode($('.nw-page', host), $('.nw-run', host), id, { parts: false });
   } else {
-    $('.nw-parts', host).innerHTML = '<p class="empty">No parts: today\'s design does not hold it.</p>';
+    $('.nw-parts', host).innerHTML = '<p class="empty">' + (W.unread
+      ? 'No parts: today\'s design could not be read.' : 'No parts: today\'s design does not hold it.') + '</p>';
   }
 }
 
@@ -165,9 +177,12 @@ function yourFile(id, f) {
         '<p><button class="ctl" id="nw-sign"' + (errors.length ? ' title="its checks find ' +
           esc(plural(errors.length, 'error')) + ': the program will refuse, and say each"' : '') + '>Sign revision ' +
           esc(f.revision) + '</button></p>' +
-        '<h4>ask</h4><p><label>for <select id="nw-ask-kind" class="ctl"><option value="contract">a contract change</option>' +
-          '<option value="breakdown">a breakdown</option></select></label></p>' +
-        '<p><textarea id="nw-ask-body" rows="3" class="nw-wide" placeholder="what you ask for, and why"></textarea></p>' +
+        '<h4>ask</h4><p><label>for <select id="nw-ask-kind" class="ctl">' +
+          [['contract', 'a contract change'], ['breakdown', 'a breakdown']].map(([v, l]) =>
+            '<option value="' + v + '"' + (W.asking && W.asking.kind === v ? ' selected' : '') + '>' + l + '</option>').join('') +
+          '</select></label></p>' +
+        '<p><textarea id="nw-ask-body" rows="3" class="nw-wide" placeholder="what you ask for, and why">' +
+          esc((W.asking && W.asking.body) || '') + '</textarea></p>' +
         '<p><button class="ctl" id="nw-ask">Ask, signed</button></p>' +
         '<h4>its lesson</h4><p><a class="ctl" href="/v1/lesson-form/' + encodeURIComponent(id) + '" download="' +
           esc(id) + '.lesson-form.html">the lesson form</a> — fill it anywhere, then save it here: ' +
@@ -182,7 +197,10 @@ function yourFile(id, f) {
 
 /** The program's answer to a step, said, and drawn: a second writer keeps the
  *  file as it was opened on screen, and offers it again. */
-function said(r, fallback) {
+function said(id, r, fallback) {
+  // An answer to a step on another node, while this one was opened, is not
+  // this node's to show.
+  if (id !== W.id) return;
   W.notice = { ok: !!(r && r.ok), text: (r && r.message) || fallback };
   W.stale = r && r.conflict ? { writer: r.writer || 'someone', revision: r.revision } : null;
   return draw(!!W.stale);
@@ -210,14 +228,18 @@ async function click(e) {
       return;
     }
     case 'nw-sign': {
-      const r = await W.post('/v1/node/' + encodeURIComponent(W.id) + '/sign', { opened });
-      return said(r, 'the node was not signed');
+      const id = W.id;
+      const r = await W.post('/v1/node/' + encodeURIComponent(id) + '/sign', { opened });
+      return said(id, r, 'the node was not signed');
     }
     case 'nw-ask': {
-      const r = await W.post('/v1/node/' + encodeURIComponent(W.id) + '/ask', {
-        opened, kind: $('#nw-ask-kind', W.host).value, body: $('#nw-ask-body', W.host).value,
-      });
-      return said(r, 'nothing was asked');
+      const id = W.id;
+      // Kept until the program takes it: a refusal or a second writer never
+      // loses what was typed.
+      W.asking = { kind: $('#nw-ask-kind', W.host).value, body: $('#nw-ask-body', W.host).value };
+      const r = await W.post('/v1/node/' + encodeURIComponent(id) + '/ask', { opened, ...W.asking });
+      if (r && r.ok && id === W.id) W.asking = null;
+      return said(id, r, 'nothing was asked');
     }
   }
 }
@@ -225,7 +247,8 @@ async function click(e) {
 /** A filled lesson form, read from the file the person picked, and saved. */
 async function changed(e) {
   if (!W.host || e.target.id !== 'nw-lesson' || !e.target.files.length) return;
+  const id = W.id;
   const text = await e.target.files[0].text();
-  const r = await W.post('/v1/node/' + encodeURIComponent(W.id) + '/lesson', { opened: W.file && W.file.opened, lesson: text });
-  return said(r, 'the lesson was not saved');
+  const r = await W.post('/v1/node/' + encodeURIComponent(id) + '/lesson', { opened: W.file && W.file.opened, lesson: text });
+  return said(id, r, 'the lesson was not saved');
 }

@@ -175,30 +175,50 @@ fn state_fields(
     j.str_field("group", &group_id);
     j.str_field("block", &block);
     let group = group_of(copy, path);
-    let assigned = group.as_ref().ok().and_then(|g| {
-        g.file
-            .assignments
-            .iter()
-            .find(|a| a.block_uid == block)
-            .map(|a| a.person.clone())
-    });
-    j.str_field("assigned", assigned.as_deref().unwrap_or(""));
-    // Theirs to write: assigned to them, or to someone whose deputy they are,
-    // as the group file registers them. The program decides again at each
-    // step; this only says which steps to offer.
-    let me = me::with_key(|_, me| me.clone());
-    let deputy_for = match (&me, &assigned, &group) {
-        (Some(me), Some(a), Ok(g)) if a != &me.name => g
+    // Everyone the group file assigns it to: a block may have more than one
+    // writer, and an empty name is nobody.
+    let assignees: Vec<String> = group.as_ref().map_or_else(
+        |_| Vec::new(),
+        |g| {
+            g.file
+                .assignments
+                .iter()
+                .filter(|a| a.block_uid == block && !a.person.is_empty())
+                .map(|a| a.person.clone())
+                .collect()
+        },
+    );
+    j.str_field("assigned", &assignees.join(", "));
+    // Theirs to write as the library holds it: `Registry::may_sign_node`, the
+    // one rule of who may write and sign a node, with a key the group file
+    // counts for them now. The program decides again at each step; this says
+    // which steps to offer, and why not.
+    let now = results::now_utc();
+    let me = me::with_key(|key, me| (me.clone(), key.public().to_hex()));
+    let mut key_refused = None;
+    let yours = match (&me, &group) {
+        (Some((me, public)), Ok(g)) if g.may_sign_node(&me.name, &block) => {
+            match g.key(&me.name, public, &now) {
+                Ok(_) => true,
+                Err(e) => {
+                    key_refused = Some(e.message().to_string());
+                    false
+                }
+            }
+        }
+        _ => false,
+    };
+    j.bool_field("yours", yours);
+    // Whose deputy they write it as, when no assignment names them.
+    let deputy_for = match (&me, &group) {
+        (Some((me, _)), Ok(g)) if yours && !assignees.contains(&me.name) => g
             .file
             .people
             .iter()
-            .any(|p| p.name == me.name && &p.deputy_for == a)
-            .then(|| a.clone()),
+            .find(|p| p.name == me.name && assignees.contains(&p.deputy_for))
+            .map(|p| p.deputy_for.clone()),
         _ => None,
     };
-    let yours =
-        matches!((&me, &assigned), (Some(me), Some(a)) if a == &me.name) || deputy_for.is_some();
-    j.bool_field("yours", yours);
     j.str_field("deputy_for", deputy_for.as_deref().unwrap_or(""));
     let signed = match &group {
         Ok(g) => vleo_files::chain::check_node(f, &block, g).map_err(|e| e.message().to_string()),
@@ -278,25 +298,48 @@ fn state_fields(
     j.bool_field("changed_here", changed_here);
     let revision = f.meta.get("revision").map_or("", String::as_str);
     let first_error = findings.errors().next();
+    // Signing tried without writing anything, as the library would sign it
+    // now: what the checks above cannot see (the key, the block, the file's
+    // revision against its block's) refuses here in the library's words.
+    let would_sign = match (&group, yours, first_error, &signed) {
+        (Ok(g), true, None, Err(_)) => me::with_key(|key, me| {
+            vleo_files::chain::sign_node(f, &block, &me.name, key, &now, g)
+                .map(|_| ())
+                .map_err(|e| e.message().to_string())
+        })
+        .unwrap_or(Ok(())),
+        _ => Ok(()),
+    };
     let next = match (&group, me.is_some(), yours, first_error, &signed) {
         (Err(why), ..) => format!("Nothing yet: {why}"),
         (_, false, ..) => {
             "Open your key: whether it is yours to write is read from its group file".to_string()
         }
+        (_, _, false, ..) if key_refused.is_some() => format!(
+            "Nothing: your key does not count for {id} here: {}",
+            key_refused.as_deref().unwrap_or("")
+        ),
         (_, _, false, ..) => format!(
             "Nothing: {id} is {}'s to write. Read it here; ask them, or raise an issue",
-            assigned.as_deref().unwrap_or("nobody")
+            if assignees.is_empty() {
+                "nobody".to_string()
+            } else {
+                assignees.join(" and ")
+            }
         ),
         (_, _, _, Some(e), Err(_)) => format!(
             "Fix what its checks find, then sign: {}: {}",
             e.place, e.what
         ),
-        (_, _, _, None, Err(_)) => format!("Sign revision {revision}"),
+        (_, _, _, None, Err(_)) => match &would_sign {
+            Ok(()) => format!("Sign revision {revision}"),
+            Err(why) => format!("Nothing yet: signing it is refused: {why}"),
+        },
         (_, _, _, _, Ok(())) if changed_here => {
             "Put your work back on the drive, from My work".to_string()
         }
         (_, _, _, _, Ok(())) => format!(
-            "Nothing: revision {revision} is signed, and the drive holds it as your copy does"
+            "Nothing: revision {revision} is signed, as it was when your copy was taken from the drive"
         ),
     };
     j.str_field("next", &next);
@@ -321,8 +364,9 @@ fn group_of(copy: &Path, path: &str) -> Result<vleo_files::chain::Registry, Stri
         .iter()
         .find(|w| w.starts_with(&format!("{group_id}: ")))
         .map_or(String::new(), |w| format!(": {w}"));
-    c.groups
+    c.systems
         .into_iter()
+        .chain(c.groups)
         .find(|g| g.file.meta.get("group_id") == Some(&group_id))
         .ok_or_else(|| {
             format!("{group_id}'s group file does not check through the chain, so nobody is assigned its nodes{why}")
