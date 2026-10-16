@@ -9,7 +9,7 @@ Target 1.0.0 on Monday 19 October; Tuesday to Thursday are the buffer.
 
 ## Person A · day
 
-Handed over Friday 16 October (S1 and S2: F1 to F3-c, and the key's proof). Nothing is merged: everything waits on Aman.
+Handed over Friday 16 October (S1 and S2: F1 to F3-d, and the key's proof). Nothing is merged: everything waits on Aman.
 
 - **Open, in merge order:**
   - **162 the plan.** It now carries the nine briefs and F3's Plan (`docs/briefs/F3.md`).
@@ -61,12 +61,22 @@ Handed over Friday 16 October (S1 and S2: F1 to F3-c, and the key's proof). Noth
     - `design/`'s 1424 files are converted to format 3; no answer moves. `request.kind` gains `breakdown`, for F3-d, so `design/` is converted once.
     - The pre-1.0 anchor counts only a programme manager's key that counts. `GET /v1/people` says `proof_holds` for each key.
 
-    The Opus review found 10 points; nine are fixed in 9d22363e, each with a test shown red. The tenth (a proof is not bound to its file) and two more questions are for Aman in its body. CI's first run failed on `tools/files_check.mjs`, which still expected format 2; fixed in the same commit. CI on it is pending.
+    The Opus review found 10 points; nine are fixed in 9d22363e, each with a test shown red. The tenth (a proof is not bound to its file) and two more questions are for Aman in its body. CI's first run failed on `tools/files_check.mjs`, which still expected format 2; fixed in the same commit. CI is green.
+  - **182 F3-d asking: high risk.** Stacked on 181.
+    - A node engineer, or their deputy, asks for a contract change or a breakdown: a `request` row in the node's file, signed on its own under the scope `request:<uid>`. The node is not touched, so a node that cannot be signed yet still asks.
+    - `chain::check_request` is the one rule of a request: one of its uid, named `<node>-r<n>`, of a contract or a breakdown, saying something, signed by its asker at the moment it says.
+    - Put-back takes a file whose only change is the person's own signed requests, at the drive's revision. On a later revision they go back with it, signed.
+    - Route: `POST /v1/node/<id>/ask`. My work lists every request to the group's owner and their deputy; one said to be answered is refused, since no answer is signed yet. The scenario is `tools/ask_check.py` in the panels job.
+
+    The Opus review found 11 points, one blocking (two rows of one uid let an unsigned request count); all fixed in 51e21f13, each with a test shown red, except what its body names. Two questions for Aman are in its body. CI was green on the first commit; the fixes' run is pending.
 - **What 171 decides, which B's PRs must follow:**
   - **Ownership follows the mount.** Only the programme's file (mounting `systems`) and the systems' file (mounting each `l3_*`) mount anything.
   - **A group file registers only node engineers.** It holds nobody the programme's file registers, and no key it registers. `open_group_in` refuses anything else, by name.
   - **The test drive (165) must change.** It mounts the l3 groups in the programme's file, so they read as mounted twice. It should assign the mounting blocks in the systems' file instead, and register only node engineers in group files.
   - **The anchor** is accepted once per drive, with `accept_anchor` on `POST /v1/key/open`. A scenario that opens a key passes it once, and since 174 also `session`, read from `<keys>/open.html`. A face must make the person compare the fingerprint, never fill it in from the answer.
+- **What 182 decides:**
+  - **A request's name is its node's**, `<node>-r<n>`, and its status and answer are signed by nobody yet: F4, answering, signs an answer of its own.
+  - **Only the node's writer or their deputy asks in a node file**; anyone else asks through an issue (W11), until Aman decides otherwise.
 - **What 181 decides:**
   - **Every file is format 3.** A format-2 file is read with every key's proof empty, so nothing in it counts, and it is kept beside the file when written again.
   - **For B:** every test drive and key row B writes, 165's among them, stores a proof (`people::proof`). A drive written as format 2 is made again from the programme's file down.
@@ -97,10 +107,10 @@ Handed over Friday 16 October (S1 and S2: F1 to F3-c, and the key's proof). Noth
   - Run my code again (169) is still not limited to the person's own nodes. Aman decides.
   - Closing an issue (F5), and an issue in My work.
 - **Lockfiles:** `crates/vleo-py` keeps its own, built `--locked` in CI, and so does `crates/vleo-kernel-wasm` until 177 removes it. A new dependency of `vleo-files` or `vleo-server` needs them refreshed, as 171 does.
-- **Disk:** the container's allowance filled once on S1. Old worktrees' `target/` folders and `target/*/incremental` were deleted to make room.
+- **Disk:** the container's allowance filled on S1 and again on S2. `xtask files-wasm` and the scenarios leave a `target/` of 10 GB or more inside the worktree they run in; delete it after a push. Old worktrees' `target/` folders and `target/*/incremental` were deleted to make room.
 - **Next for A, in order:**
-  - **F3-d, asking** (the brief's item 4): a contract change or a breakdown, written as a request in the node file and signed on its own, so a node that cannot be signed yet still asks. Planned in `docs/briefs/F3.md` (b1e476e7, on 162), with two questions for Aman. Being built on `claude/a-f3d-ask`, stacked on 181; high risk, since it adds a scope to the chain and a path to put-back.
-  - **F3-e** (item 5, a lesson's place in the node's file). Not planned yet; it starts with its plan.
+  - **F3-e, a lesson's place in the node's file** (the brief's item 5). Planned in `docs/briefs/F3.md` (6b7c8cbd, on 162), with one question for Aman. Being built on `claude/a-f3e-lesson`, stacked on 182: a lesson is a `text` of kind `lesson` in the node's file, served to the loader as its `lesson.toml`, checked with the node and signed with it, and written by `POST /v1/node/<id>/lesson`.
+  - Then item 6 of the brief (the removals), not planned yet.
 
 ## Person B · night
 
