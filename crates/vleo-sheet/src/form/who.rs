@@ -5,7 +5,8 @@ use super::*;
 /// Every name that is an assistant, not a person, lowercased.
 ///
 /// A relation is confirmed by a person who has read it against its source — the
-/// developer who applies a node form, or who writes the relation in. An
+/// node engineer who writes it, or who reads an assistant's transcription
+/// against it. An
 /// assistant may implement a relation a person supplied; it may never be the one
 /// who supplied it. These are the names an assistant arrives under.
 pub fn agent_identities(_root: &std::path::Path) -> Vec<String> {

@@ -52,9 +52,9 @@ the same numbers as the tool's, which the pipeline proves on every push
 
 ## How one arrives
 
-Like a change to a node: through a form, filled by the node engineer who knows
-the row, and into the design with its group's release. The developer applies
-none.
+Like a change to a node: written by the node engineer who knows the row, in
+the row's node file, and into the design with its group's release. The
+developer applies none.
 
 1. **The form.** `cargo run -p xtask -- lesson form <node> --out <file>`, or
    *write a lesson — its form* on the row's page. One HTML file that works

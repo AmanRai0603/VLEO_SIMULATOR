@@ -1130,7 +1130,7 @@ id = "term-kit"
 title = "Share the tool with everyone"
 who = "developer"
 kind = "how-to"
-answer = "Everyone gets the tool, not the repository: one Python package for every laptop, or a kit per platform — the programs beside exactly the files they read, with START_HERE.md on top. They use it and send back node forms; you apply them, release, and share the next version."
+answer = "Everyone gets the tool, not the repository: one Python package for every laptop, or a kit per platform — the programs beside exactly the files they read, with START_HERE.md on top. They use it, and their work reaches the design as their own signed files; you release, and share the next version."
 body = """
 The daemon reads the web face, the tree and every node's page at run time, so \
 the programs alone do not run. `xtask kit` puts them beside exactly those files \

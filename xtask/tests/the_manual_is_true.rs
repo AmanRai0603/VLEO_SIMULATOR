@@ -473,8 +473,8 @@ fn every_route_is_documented_and_nothing_else() {
 
 #[test]
 fn no_route_writes_the_repository() {
-    // The browser never changes the design: a node changes through its form,
-    // applied by a developer. So no route may be marked as writing, and the
+    // The browser never changes the design in the repository: a node changes
+    // in its owner's own file. So no route may be marked as writing, and the
     // daemon may not grow the switch that once allowed it — a route that wrote
     // a sheet again would come back with that switch, and fail here.
     let src = read("crates/vleo-server/src/lib.rs");

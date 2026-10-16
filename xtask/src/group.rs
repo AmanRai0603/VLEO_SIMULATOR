@@ -90,7 +90,7 @@ fn fill(root: &Path, spec: &toml::Value, shell: &str, entry: &str) -> Result<Str
     let script = readers::bundle(root, entry)?.replace("</script", "<\\/script");
     let json = json(spec).replace("</", "<\\/");
     let (engine, wasm) = sqlite(root)?;
-    // The method checker every node form carries, so the pseudocode is read
+    // The method checker the lesson form carries too, so the pseudocode is read
     // here exactly as the developer's tools read it.
     let method = fs::read(root.join("web/method.wasm.gz"))
         .map_err(|e| format!("web/method.wasm.gz: {e}"))?;

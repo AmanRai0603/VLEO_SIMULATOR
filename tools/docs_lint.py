@@ -130,8 +130,8 @@ def check():
                     "points at %s, which does not exist and which no code names" % token,
                 ))
 
-    # The agent roster was removed: every change to the design now arrives as
-    # a node form and is applied by a developer. A rule that still points at a
+    # The agent roster was removed: every change to the design is now its
+    # owner's, in their own file. A rule that still points at a
     # lane or a definition reads as a control that no longer exists.
     readers = files() + [ROOT / f for f in ("README.md", "docs/USING_IT.md",
                                            "docs/NODE_AUTHORING.md", "docs/RUNBOOK.md")

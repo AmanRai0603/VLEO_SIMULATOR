@@ -1,4 +1,4 @@
-//! THE WORKED EXAMPLE every node form can show, station by station.
+//! THE WORKED EXAMPLE of a node filled in, station by station.
 //!
 //! One node filled in completely: the speed of a circular orbit. It is
 //! ILLUSTRATIVE — a teaching example of what a good answer to each question
@@ -6,9 +6,8 @@
 //! come from the textbook relation it states, and a test runs its method on its
 //! cases so the example can never show something the checker would refuse.
 //!
-//! Read by the node form ("Show the example" beside each question), by
-//! `docs/PSEUDOCODE.md` and by the role guides, so all three show the same
-//! example.
+//! Read by the method reference (`docs/PSEUDOCODE.md`). (The node form showed
+//! it too, until it was retired in F3-f.)
 
 /// The node the example is about, as the form names it.
 pub const TITLE: &str = "Circular orbital speed (illustrative)";
@@ -97,51 +96,38 @@ catch err
     fprintf('6000000.0  refused: %s\\n', err.message);
 end";
 
-const FLIGHT_CODE: &str = "\
-#include <math.h>
-#define MU_EARTH 3.986004418e14
-#define R_EARTH  6378137.0
-/* The circular speed in m/s, or -1.0 when r is inside the Earth. */
-double orbit_speed(double r)
-{
-    if (r <= R_EARTH) { return -1.0; }
-    return sqrt(MU_EARTH / r);
-}";
-
-const FLIGHT_TEST: &str = "\
-#include <assert.h>
-#include <math.h>
-double orbit_speed(double r);
-int main(void)
-{
-    assert(fabs(orbit_speed(6628137.0) - 7754.84549737) < 1e-6);
-    assert(orbit_speed(6000000.0) < 0.0);
-    return 0;
-}";
-
-/// The example's blocks for one repeated section of the form, by name: each
-/// block as its keys and values.
+/// The example's blocks for one repeated section, by name: each block as its
+/// keys and values. Only its cases are read now (`sheet_text`).
 pub fn blocks(name: &str) -> Vec<Vec<(&'static str, &'static str)>> {
     match name {
-        "input" => vec![vec![("binding", "r"), ("var", "orbit_radius"), ("type", "Length")]],
-        "assumption" => vec![vec![
-            ("text", "Two bodies, and a circular orbit"),
-            ("fails_when", "the orbit is noticeably elliptical: at e = 0.05 the speed varies by 5% around the orbit"),
-        ]],
         "case" => vec![
-            vec![("label", "250 km"), ("refuse", "no"), ("expect", "7754.84549737"), ("tolerance", "1e-6"), ("inputs", "{ r = 6628137.0 }")],
-            vec![("label", "400 km"), ("refuse", "no"), ("expect", "7668.55817541"), ("tolerance", "1e-6"), ("inputs", "{ r = 6778137.0 }")],
-            vec![("label", "1000 km — the top of the band"), ("refuse", "no"), ("expect", "7350.13862961"), ("tolerance", "1e-6"), ("inputs", "{ r = 7378137.0 }")],
-            vec![("label", "inside the Earth"), ("refuse", "yes"), ("inputs", "{ r = 6000000.0 }")],
+            vec![
+                ("label", "250 km"),
+                ("refuse", "no"),
+                ("expect", "7754.84549737"),
+                ("tolerance", "1e-6"),
+                ("inputs", "{ r = 6628137.0 }"),
+            ],
+            vec![
+                ("label", "400 km"),
+                ("refuse", "no"),
+                ("expect", "7668.55817541"),
+                ("tolerance", "1e-6"),
+                ("inputs", "{ r = 6778137.0 }"),
+            ],
+            vec![
+                ("label", "1000 km — the top of the band"),
+                ("refuse", "no"),
+                ("expect", "7350.13862961"),
+                ("tolerance", "1e-6"),
+                ("inputs", "{ r = 7378137.0 }"),
+            ],
+            vec![
+                ("label", "inside the Earth"),
+                ("refuse", "yes"),
+                ("inputs", "{ r = 6000000.0 }"),
+            ],
         ],
-        "flight" => vec![vec![
-            ("name", "orbit_speed.c"),
-            ("language", "C"),
-            ("purpose", "The on-board estimate of the orbital speed, used by the drag model between ground updates."),
-            ("code", FLIGHT_CODE),
-            ("test_code", FLIGHT_TEST),
-            ("test_result", "passed, gcc 12 host build, 2026-09-21"),
-        ]],
         _ => Vec::new(),
     }
 }

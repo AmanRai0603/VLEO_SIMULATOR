@@ -1,9 +1,10 @@
 //! A lesson's form: one HTML file the expert who knows a row opens anywhere,
-//! fills, checks as they type, and sends back — the lesson's counterpart of a
-//! node form (see [`crate::template`]).
+//! fills, checks as they type, and saves as a filled copy, which the program
+//! saves into the row's node file (`POST /v1/node/<id>/lesson`,
+//! docs/LESSONS.md).
 //!
-//! THE CHECK IN THE PAGE IS THE GATE'S. The form carries the checker every node
-//! form carries (`web/method.wasm.gz`), which holds [`crate::lesson::report`],
+//! THE CHECK IN THE PAGE IS THE GATE'S. The form carries the method checker the
+//! pages carry (`web/method.wasm.gz`), which holds [`crate::lesson::report`],
 //! and a table of the tree's rows, so a widget naming a row that is not there
 //! is refused while the author types, by the same function the gate runs.
 //!
@@ -119,7 +120,7 @@ fn page(sh: &Sheet, tree: &Tree, l: &Lesson, toml_text: &str) -> String {
     );
     crate::shell::fill(&crate::shell::Page {
         title: &f("title", &[("label", &sh.label)]),
-        head: &f("head", &[("css", PAGE_CSS), ("lesson_css", LESSON_CSS)]),
+        head: &f("head", &[("css", LESSON_CSS)]),
         body: &body,
         ..Default::default()
     })
@@ -156,8 +157,7 @@ fn parts() -> &'static crate::shell::Parts {
 fn f(name: &str, slots: &[(&str, &str)]) -> String {
     parts().fill(name, slots)
 }
-/// The node form's look, so the two forms read as one family.
-const PAGE_CSS: &str = include_str!("../../../web/pages/node-form.css");
+/// The form's look.
 const LESSON_CSS: &str = include_str!("../../../web/pages/lesson-form.css");
 /// The page's behaviour: draw the lesson as fields, check it with the gate's
 /// own check, and save a copy with its blocks rewritten. No network.

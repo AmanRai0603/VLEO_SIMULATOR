@@ -1,6 +1,6 @@
 //! Small text rules every generator shares, written once.
 //!
-//! The page, the guides and the node form each had their own HTML escaper, and
+//! The page, the guides and the node form (since retired) each had their own HTML escaper, and
 //! three modules had their own way to name the row behind `node.member`. Two
 //! copies of a rule drift; these are the one copy.
 

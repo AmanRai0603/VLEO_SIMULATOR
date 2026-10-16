@@ -153,8 +153,8 @@ pub(super) fn font(ctx: &Ctx, name: &str) -> (&'static str, &'static str, Vec<u8
 /// case lives, how far that case is from the defaults, and how many rows there
 /// are — and a manual that wrote any of those down would be wrong the day
 /// after. So they are added here, from the same functions that decide them,
-/// with the node form's own tables for what a form asks and what it cannot
-/// change.
+/// with the declaration form's own tables (`vleo_sheet::form`) for what a
+/// change asks and what it cannot change.
 pub(super) fn manual_endpoint(ctx: &Ctx) -> (&'static str, &'static str, Vec<u8>) {
     const JSON: &str = "application/json; charset=utf-8";
     let m = match vleo_sheet::manual::load(&ctx.root) {

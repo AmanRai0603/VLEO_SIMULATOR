@@ -1,4 +1,39 @@
-/* The lesson form: the node form's look, and the few parts only a lesson has. */
+/* The lesson form's look: the part of the node form's style it uses (the node
+   form was retired in F3-f), then the few parts only a lesson has. */
+:root { --paper:#faf9f5; --card:#ffffff; --ink:#1f1e1b; --ink2:#55524a; --ink3:#8a867b;
+  --rule:#dedbd2; --accent:#6b3fa0; --accent-pale:#efe8f7; --warn:#a4262c; --warn-pale:#fbeeee;
+  --ok:#2f6b3a; --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+@media (prefers-color-scheme: dark) { :root { --paper:#1b1a18; --card:#23221f; --ink:#ecebe6;
+  --ink2:#c4c1b8; --ink3:#8f8b80; --rule:#3a3833; --accent:#b99ae0; --accent-pale:#2e2638;
+  --warn:#ef8a8a; --warn-pale:#3a2323; --ok:#8fcf99; } }
+* { box-sizing: border-box; }
+body { margin: 0; padding: 0 16px 64px; background: var(--paper); color: var(--ink);
+  font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+.nf-head, main { max-width: 920px; margin: 0 auto; }
+.nf-kicker { font: 12px var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--accent);
+  margin: 28px 0 4px; }
+h1 { font-size: 26px; margin: 0 0 4px; }
+h2 { font-size: 18px; margin: 32px 0 6px; border-bottom: 1px solid var(--rule); padding-bottom: 4px; }
+code, .nf-id { font-family: var(--mono); font-size: 13px; }
+.nf-id { color: var(--ink2); margin: 0 0 12px; }
+.nf-intro { background: var(--card); border: 1px solid var(--rule); border-radius: 6px; padding: 8px 18px; }
+.nf-intro li { margin: 4px 0; }
+.nf-muted { color: var(--ink3); font-size: 13px; }
+.nf-warn { color: var(--warn); background: var(--warn-pale); padding: 10px 14px; border-radius: 6px; }
+.nf-bar { position: sticky; top: 0; z-index: 5; background: var(--paper); border-bottom: 1px solid var(--rule);
+  padding: 10px 0; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+button { font: 13px var(--mono); padding: 6px 12px; border: 1px solid var(--rule); border-radius: 4px;
+  background: var(--card); color: var(--ink); cursor: pointer; }
+button:hover { border-color: var(--ink3); }
+button.nf-primary { background: var(--accent); color: var(--paper); border-color: var(--accent); }
+button:disabled { opacity: .45; cursor: default; }
+.nf-count { font: 13px var(--mono); color: var(--ink2); }
+input, textarea, select { width: 100%; font: 14px var(--mono); color: var(--ink); background: var(--paper);
+  border: 1px solid var(--rule); border-radius: 4px; padding: 6px 8px; }
+textarea { min-height: 70px; resize: vertical; }
+@media print { .nf-bar { display: none; } }
+
+/* Only a lesson has these. */
 .ls-block { background: var(--card); border: 1px solid var(--rule); border-radius: 6px; padding: 10px 14px; margin: 10px 0; }
 .ls-block label { display: block; font-size: 13px; color: var(--ink2); margin: 8px 0 2px; }
 .ls-block input[type=text], .ls-block input[type=number], .ls-block select, .ls-block textarea {

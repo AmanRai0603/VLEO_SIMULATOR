@@ -317,12 +317,13 @@ time, and every branch shows what is still open.
   as they are. Units are written naturally, and a range or a spread as typed. A
   PDF beside the node, and *start from a similar node*.
 - **Made easy to use** by the eight points in section 8 of the operating model.
-- Today's group and node apps, the single-node form and today's intake and
-  delivery commands are removed at the switch-over.
+- Today's group and node apps and today's intake and delivery commands are
+  removed at the switch-over. The single-node form went before it, in F3
+  (docs/briefs/F3.md, F3-f).
 
 **From the audit:**
 - **There are four fronts today, not one:** the tool's page, the group and node
-  pages, the single-node form and the readers' folder. The readers' folder
+  pages, the single-node form (retired in F3) and the readers' folder. The readers' folder
   becomes the Explore workspace's read-only export.
 - **One engine for both.** The engine runs in the page in both, and the installed
   application is a local shell serving the same page, so the screens cannot

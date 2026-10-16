@@ -113,8 +113,9 @@ fn u(v: Option<&toml::Value>) -> u32 {
 /// THE SHEET'S SHAPE, WRITTEN DOWN ONCE. The loader used to read the keys it
 /// knew and pass over the rest, so `lowr = 5.0` was a sheet with no lower
 /// bound and nothing said so. A key not listed here is now named, with the
-/// nearest one that is. A test holds this list to the node form's own fields,
-/// so the form can never write a key the loader refuses.
+/// nearest one that is. A test holds this list to the declaration form's own
+/// fields (`crate::form`), so a change can never write a key the loader
+/// refuses.
 pub const SCHEMA: &[(&str, &[&str])] = &[
     (
         "",

@@ -1,6 +1,6 @@
 [package]
 name = "vleo-method-wasm"
-description = "FACE — the method checker inside a node form. The same function intake and the gate call (vleo_sheet::method::report_toml), compiled to WebAssembly so a form opened from a file can check an author's method against their own cases before it is sent. No bindings crate: two exported functions and a buffer."
+description = "FACE — the method checker inside the lesson form and the group pages. The same function intake and the gate call (vleo_sheet::method::report_toml), compiled to WebAssembly so a page opened from a file can check an author's method against their own cases before it is sent. No bindings crate: two exported functions and a buffer."
 version = "0.1.0"
 edition = "2021"
 rust-version = "1.94"

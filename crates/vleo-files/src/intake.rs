@@ -9,11 +9,11 @@
 //!   SHA-256, recomputed, must give the fingerprint the release was sealed
 //!   with, so a file changed after the people signed is refused before
 //!   anything is read from it;
-//! - each computed node becomes the node form its author would have filled
-//!   ([`node_form`]) — its pseudocode as the method, its isolation results,
-//!   brought back to SI, as its test cases, its author and their declaration
-//!   of any assistant's help — for the same plan, check and apply as any form
-//!   (`vleo_sheet::template`).
+//! - each computed node becomes a change to the design's node, as its author
+//!   would have made it ([`node_form`], a `vleo_sheet::template::Form`) — its
+//!   pseudocode as the method, its isolation results, brought back to SI, as
+//!   its test cases, its author and their declaration of any assistant's help
+//!   — held to the plan rules every change is (`vleo_sheet::template`).
 //!
 //! What the release holds beyond the method and its cases — its words, its
 //! pictures, its evidence — stays in the release, which is what the group
@@ -105,7 +105,7 @@ impl Release {
     }
 }
 
-/// One node of the release as a node form: its sheet as it is now on one side,
+/// One node of the release as a change (`template::Form`): its sheet as it is now on one side,
 /// what the release holds on the other. `base` is the hash of the sheet's
 /// `node.toml` as the design holds it now (`vleo_sheet::form::file_hash`).
 /// Also returns, for a transcription not taken, why.
@@ -213,7 +213,6 @@ pub fn node_form(
     }
     let form = Form {
         node: sh.id.clone(),
-        new: None,
         base,
         name: decl.get("author").cloned().unwrap_or_default(),
         team: release.group.clone(),
@@ -225,7 +224,6 @@ pub fn node_form(
         ),
         original,
         filled,
-        known: Vec::new(),
         derisk,
     };
     Ok((form, help.not_taken))

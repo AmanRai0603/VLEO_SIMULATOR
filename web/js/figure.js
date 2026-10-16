@@ -105,7 +105,7 @@ export function drawStatus(disp) {
   if (S.view === 'results' || S.view === 'forms') {
     $('#status').textContent = S.view === 'results'
       ? 'Results · what runs returned, shown without running'
-      : 'Forms · the inputs, results, and node forms';
+      : 'Forms · the inputs and results';
     $('#caserow-note').textContent = '';
     return;
   }

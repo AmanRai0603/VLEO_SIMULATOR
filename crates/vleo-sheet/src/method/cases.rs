@@ -258,7 +258,7 @@ impl Report {
 }
 
 /// A JSON string. Its own copy rather than the form module's, so the checker
-/// the node form carries is built from this file and the units alone — see
+/// the pages carry is built from this file and the units alone — see
 /// [`CHECKER_SOURCES`].
 fn jstr(v: &str) -> String {
     let mut o = String::with_capacity(v.len() + 2);
@@ -280,10 +280,10 @@ fn jstr(v: &str) -> String {
     o
 }
 
-/// The files the node form's checker is compiled from. `web/method.wasm.gz` is
-/// built from these by `cargo run -p xtask -- method-wasm`, which records
+/// The files the pages' method checker is compiled from. `web/method.wasm.gz`
+/// is built from these by `cargo run -p xtask -- method-wasm`, which records
 /// their fingerprint beside it; a test refuses a checkout whose sources have
-/// moved on from the checker every form carries.
+/// moved on from the checker every page carries.
 pub const CHECKER_SOURCES: &[&str] = &[
     "crates/vleo-sheet/src/method.rs",
     "crates/vleo-sheet/src/method/ast.rs",
@@ -386,9 +386,9 @@ pub fn report(src: &str, sig: &Signature, cases: &[Case]) -> Report {
 }
 
 /// The same, from a sheet's own text: `[method] text`, `[output] type`, every
-/// `[[input]]` and every `[[case]]`. This is what the node form sends from the
-/// browser, through WebAssembly, and what intake and the gate read from the
-/// file — one function, so the three cannot disagree.
+/// `[[input]]` and every `[[case]]`. This is what intake and the gate read
+/// from the file, and what the pages' checker runs on in the browser, through
+/// WebAssembly — one function, so the three cannot disagree.
 pub fn report_toml(text: &str) -> Result<Report, Error> {
     let v: toml::Value = text
         .parse()
@@ -455,8 +455,8 @@ pub fn report_toml(text: &str) -> Result<Report, Error> {
     ))
 }
 
-/// The same report from the plain form the node form's checker is handed —
-/// no TOML parser, so the WebAssembly every form carries does not need one.
+/// The same report from the plain form the pages' checker is handed — no
+/// TOML parser, so the WebAssembly every page carries does not need one.
 ///
 /// ```text
 /// output Velocity
