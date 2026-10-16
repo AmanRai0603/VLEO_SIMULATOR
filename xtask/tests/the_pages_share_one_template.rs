@@ -291,12 +291,9 @@ const GENERATORS: [(&str, &str); 5] = [
 /// Strings with a tag in them that a generator may hold because it READS a
 /// page or ESCAPES text for one, never because it writes markup: finding the
 /// end of a block a filled form carries, and keeping text from closing it.
-/// (`<u0021` is how this reader sees `"<\\u0021"`, the escape that keeps `<!`
-/// out of JSON a page carries.) And one message that names a command's
-/// argument the way usage lines do.
-const READ_NOT_WRITTEN: [&str; 5] = [
+/// And one message that names a command's argument the way usage lines do.
+const READ_NOT_WRITTEN: [&str; 4] = [
     "</",
-    "<u0021",
     "</script>",
     "</textarea>",
     "this is not a lesson form; for a bare lesson.toml, name its row with --for <node>",

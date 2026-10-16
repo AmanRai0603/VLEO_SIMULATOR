@@ -1,9 +1,10 @@
 //! A lesson's form: one HTML file the expert who knows a row opens anywhere,
-//! fills, checks as they type, and saves in the row's node file
-//! (docs/LESSONS.md).
+//! fills, checks as they type, and saves as a filled copy, which the program
+//! saves into the row's node file (`POST /v1/node/<id>/lesson`,
+//! docs/LESSONS.md).
 //!
-//! THE CHECK IN THE PAGE IS THE GATE'S. The form carries the checker every node
-//! form carries (`web/method.wasm.gz`), which holds [`crate::lesson::report`],
+//! THE CHECK IN THE PAGE IS THE GATE'S. The form carries the method checker the
+//! pages carry (`web/method.wasm.gz`), which holds [`crate::lesson::report`],
 //! and a table of the tree's rows, so a widget naming a row that is not there
 //! is refused while the author types, by the same function the gate runs.
 //!

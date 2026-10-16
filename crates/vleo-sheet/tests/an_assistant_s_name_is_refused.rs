@@ -1,8 +1,8 @@
 //! An assistant's name never stands against a relation (AGENTS.md, rule 6).
 //!
 //! The check is `form::refuse_agent_attribution`, which the library's intake
-//! and the node form's method both call. It was tested beside the save that
-//! once wrote sheets; the save is gone, and the rule is not.
+//! and the plan rules a change is held to both call. It was tested beside the
+//! save that once wrote sheets; the save is gone, and the rule is not.
 
 use vleo_sheet::form;
 

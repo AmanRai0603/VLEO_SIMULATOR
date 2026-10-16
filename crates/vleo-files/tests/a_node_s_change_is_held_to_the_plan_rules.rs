@@ -9,15 +9,14 @@
 //! wrong is tried against the design, read from `design/`: a change to what
 //! the design changed too, a relation an assistant supplied, a numbered step
 //! removed from the middle, a change to what a node computes with no reason,
-//! a risk moved that nobody registered, a new node in the wrong place.
+//! a risk moved that nobody registered, an input that does not connect.
 //!
 //! These were the node form's tests, before the form was retired (F3-f).
 
-use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use vleo_sheet::files::Files;
 use vleo_sheet::form;
-use vleo_sheet::template::{self, Content, Derisk, Form, Known, NewNode, Verdict};
+use vleo_sheet::template::{self, Content, Derisk, Form, Verdict};
 use vleo_sheet::Tree;
 
 /// The repository, whose `design/` the tree is read from. Planning a change
@@ -48,7 +47,6 @@ fn form_for(id: &str) -> Form {
     let now = template::content(sh);
     Form {
         node: id.to_string(),
-        new: None,
         base: form::file_hash(&sh.text),
         ai: "none".into(),
         original: now.clone(),
@@ -157,8 +155,13 @@ fn how_an_assistant_helped_is_said_or_nothing_is_planned() {
     f.ai = "a little".into();
     let e = plan(f.clone()).unwrap_err();
     assert!(e.message().contains("\"a little\" is not one of"), "{e}");
-    // Each answer intake gives is taken.
-    for ai in template::AI_HELP {
+    // Silence is not "none": a change that says nothing is refused too.
+    f.ai = String::new();
+    let e = plan(f.clone()).unwrap_err();
+    assert!(e.message().contains("\"\" is not one of"), "{e}");
+    // Each answer intake gives (`vleo_files::intake::declared_help`) is taken,
+    // named here and not read from the list under test.
+    for ai in ["none", "wording", "relation", "transcribed"] {
         f.ai = ai.to_string();
         plan(f.clone()).unwrap_or_else(|e| panic!("{ai}: {e}"));
     }
@@ -201,179 +204,6 @@ fn a_numbered_step_removed_from_the_middle_is_refused_and_the_last_is_not() {
     );
 }
 
-fn known(
-    label: &str,
-    inputs: &str,
-    expected: &str,
-    tolerance: &str,
-    provenance: &str,
-    source: &str,
-) -> Known {
-    Known {
-        label: label.into(),
-        inputs: inputs.into(),
-        expected: expected.into(),
-        tolerance: tolerance.into(),
-        provenance: provenance.into(),
-        source: source.into(),
-    }
-}
-
-#[test]
-fn known_values_are_a_request_and_never_touch_the_node() {
-    let mut f = form_for(ROW);
-    f.known = vec![known(
-        "G2",
-        "sw_storm_design_level = 2",
-        "80",
-        "",
-        "published-source",
-        "NOAA G scale",
-    )];
-    let p = plan(f).unwrap();
-    assert!(p.items.is_empty() && p.text.is_none(), "{:?}", p.items);
-    let req = template::fixture_request(&p.form);
-    assert!(
-        req.contains("[[fixture]]") && req.contains("expect = 80"),
-        "{req}"
-    );
-    let parsed: toml::Value = req.parse().expect("the request is not TOML");
-    assert!(parsed.get("fixture").is_some());
-}
-
-// ---------------------------------------------------------------------------
-// a node the design does not have yet, and the interfaces a change declares
-
-/// Nothing yet: every field asked and empty, every block empty.
-fn blank() -> Content {
-    let mut c = Content::default();
-    for f in form::FIELDS.iter().filter(|f| f.asked) {
-        c.fields.insert(f.field.to_string(), String::new());
-    }
-    for a in form::ARRAYS {
-        c.arrays.insert(a.name.to_string(), Vec::new());
-    }
-    c.view = Some(("number".into(), String::new(), "0".into()));
-    c
-}
-
-fn new_form(id: &str, parent: &str, kind: &str, input: Option<(&str, &str)>) -> Form {
-    let mut filled = blank();
-    set(&mut filled, "label", "A new row");
-    set(&mut filled, "question", "What does the new row answer?");
-    if let Some((var, ty)) = input {
-        filled.arrays.insert(
-            "input".into(),
-            vec![BTreeMap::from([
-                ("binding".to_string(), "x".to_string()),
-                ("var".to_string(), var.to_string()),
-                ("type".to_string(), ty.to_string()),
-            ])],
-        );
-    }
-    Form {
-        new: Some(NewNode {
-            id: id.into(),
-            parent: parent.into(),
-            kind: kind.into(),
-        }),
-        ai: "none".into(),
-        original: blank(),
-        filled,
-        ..Form::default()
-    }
-}
-
-#[test]
-fn a_new_node_is_checked_for_its_place_and_its_interfaces_before_anything_is_built() {
-    let tree = design();
-    let producer = tree.sheets.get(ROW).unwrap();
-    let parent = producer.parent.clone();
-
-    let good = plan(new_form(
-        "a_brand_new_row",
-        &parent,
-        "computed",
-        Some((ROW, &producer.ty)),
-    ))
-    .unwrap();
-    assert_eq!(good.new.as_ref().unwrap().id, "a_brand_new_row");
-    for w in [
-        "new · id",
-        "new · parent",
-        "new · kind",
-        "label",
-        "input 1 · added",
-    ] {
-        assert_eq!(
-            verdict_of(&good, w),
-            Verdict::Apply,
-            "{w}: {:?}",
-            good.items
-        );
-    }
-    assert!(
-        good.interfaces.len() == 1 && good.interfaces[0].ok(),
-        "{:?}",
-        good.interfaces
-    );
-    assert!(
-        good.text.is_none(),
-        "a new node's plan must not claim a sheet text"
-    );
-    assert!(
-        good.open.iter().any(|o| o.contains("expression")),
-        "{:?}",
-        good.open
-    );
-
-    // Each way the placement can be wrong is refused by name.
-    let taken = plan(new_form(ROW, &parent, "computed", None)).unwrap();
-    assert!(
-        matches!(verdict_of(&taken, "new · id"), Verdict::Refused(ref w) if w.contains("already"))
-    );
-    let bad_id = plan(new_form("Not An Id", &parent, "computed", None)).unwrap();
-    assert!(matches!(
-        verdict_of(&bad_id, "new · id"),
-        Verdict::Refused(_)
-    ));
-    let nowhere = plan(new_form("x_row", "no_such_group", "computed", None)).unwrap();
-    assert!(matches!(
-        verdict_of(&nowhere, "new · parent"),
-        Verdict::Refused(_)
-    ));
-    let odd = plan(new_form("x_row", &parent, "banana", None)).unwrap();
-    assert!(matches!(
-        verdict_of(&odd, "new · kind"),
-        Verdict::Refused(_)
-    ));
-
-    // An input that names no row, or a row of another quantity, does not connect.
-    let ghost = plan(new_form(
-        "x_row",
-        &parent,
-        "computed",
-        Some(("no_such_row", "Ratio")),
-    ))
-    .unwrap();
-    assert!(!ghost.interfaces[0].ok() && ghost.interfaces[0].why.contains("no row"));
-    assert!(matches!(
-        verdict_of(&ghost, "input 1 · added"),
-        Verdict::Refused(_)
-    ));
-    let wrong = if producer.ty == "Length" {
-        "Time"
-    } else {
-        "Length"
-    };
-    let mismatch = plan(new_form("x_row", &parent, "computed", Some((ROW, wrong)))).unwrap();
-    assert!(
-        mismatch.interfaces[0].why.contains(wrong),
-        "{:?}",
-        mismatch.interfaces
-    );
-}
-
 #[test]
 fn an_input_changed_to_one_that_does_not_connect_is_refused_and_the_rest_still_applies() {
     let mut f = form_for(ROW);
@@ -386,9 +216,38 @@ fn an_input_changed_to_one_that_does_not_connect_is_refused_and_the_rest_still_a
         p.items
     );
     assert_eq!(verdict_of(&p, "note"), Verdict::Apply);
-    assert!(p.interfaces.iter().any(|i| !i.ok()));
+    assert!(
+        p.interfaces
+            .iter()
+            .any(|i| !i.ok() && i.why.contains("no row")),
+        "{:?}",
+        p.interfaces
+    );
     let text = p.text.expect("the note should still apply");
     assert!(text.contains("Still applies.") && !text.contains("no_such_row"));
+
+    // A row of another quantity does not connect either, and says so.
+    let mut f = form_for(ROW);
+    let input = &mut f.filled.arrays.get_mut("input").unwrap()[0];
+    let wrong = if input.get("type").map(String::as_str) == Some("Length") {
+        "Time"
+    } else {
+        "Length"
+    };
+    input.insert("type".into(), wrong.into());
+    let p = plan(f).unwrap();
+    assert!(
+        matches!(verdict_of(&p, "input"), Verdict::Refused(_)),
+        "{:?}",
+        p.items
+    );
+    assert!(
+        p.interfaces
+            .iter()
+            .any(|i| !i.ok() && i.why.contains(wrong)),
+        "{:?}",
+        p.interfaces
+    );
 }
 
 #[test]
@@ -545,40 +404,6 @@ fn a_source_not_listed_yet_is_said_at_the_check_and_does_not_stop_it() {
             p.open
         );
     }
-}
-
-#[test]
-fn a_known_value_is_requested_in_si_by_binding_as_fixtures_hold_it() {
-    // A change gives the answer in the node's unit and the inputs as a person
-    // writes them; fixtures.toml holds SI, by binding. Pasted as typed, 70.2
-    // degrees was 70.2 radians.
-    let mut f = new_form(
-        "orbit_new_angle",
-        "l3_x_envorbit",
-        "computed",
-        Some(("orbit_radius", "Length")),
-    );
-    set(&mut f.filled, "unit", "Degree");
-    f.known = vec![known(
-        "400 km",
-        "orbit_radius = 6778.137 km",
-        "70.2179",
-        "1e-4",
-        "independent-derivation",
-        "larson_wertz",
-    )];
-    let p = plan(f.clone()).unwrap();
-    let req = template::fixture_request(&p.form);
-    let v: toml::Value = req.parse().expect("the request is not TOML");
-    let fx = &v["fixture"][0];
-    let expect = fx["expect"].as_float().unwrap();
-    assert!((expect - 70.2179f64.to_radians()).abs() < 1e-9, "{req}");
-    assert_eq!(fx["inputs"]["x"].as_float(), Some(6_778_137.0), "{req}");
-    // Unreadable inputs are left for the person, never half-converted.
-    f.known[0].inputs = "orbit_radius = 6778".into();
-    let req = template::fixture_request(&plan(f).unwrap().form);
-    let v: toml::Value = req.parse().unwrap();
-    assert!(v["fixture"][0].get("inputs").is_none(), "{req}");
 }
 
 #[test]

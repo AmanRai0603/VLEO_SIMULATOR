@@ -58,8 +58,8 @@ export async function openNode(id) {
       // READ IT HERE. The generated page is what the sheet says. Nothing in
       // this tool writes a node: its owner writes it, in their own file.
       '<div class="tabrow sub sheet-tabs">' +
-        // A LESSON IS WRITTEN THE SAME WAY: a form the node engineer fills anywhere and
-        // sends back, applied by a developer. Downloading it writes nothing.
+        // A LESSON IS WRITTEN IN ITS FORM: one the node engineer fills anywhere and
+        // saves into the row's node file (docs/LESSONS.md). Downloading it writes nothing.
         '<a class="ctl lesson-form-dl" href="/v1/lesson-form/' + encodeURIComponent(id) + '" download="' +
           esc(id) + '.lesson-form.html">' + (lesson && lesson.lesson ? 'the lesson form' : 'write a lesson — its form') +
           '</a>' +

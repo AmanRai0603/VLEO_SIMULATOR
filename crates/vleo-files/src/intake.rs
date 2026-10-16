@@ -213,7 +213,6 @@ pub fn node_form(
     }
     let form = Form {
         node: sh.id.clone(),
-        new: None,
         base,
         name: decl.get("author").cloned().unwrap_or_default(),
         team: release.group.clone(),
@@ -225,7 +224,6 @@ pub fn node_form(
         ),
         original,
         filled,
-        known: Vec::new(),
         derisk,
     };
     Ok((form, help.not_taken))

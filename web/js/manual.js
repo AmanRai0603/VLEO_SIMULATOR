@@ -181,11 +181,11 @@ function liveHtml(L) {
       'you save is kept at <code>' + esc(L.case_path) + '</code>, outside the repository.</div>';
   return '<div class="man-live">' +
     '<div class="man-live-h">This copy of the tool, right now</div>' +
-    '<div class="man-live-row">Nothing here changes a node. A node is changed by its form, ' +
-      'applied by a developer; the inputs and the results are yours, and stay on this machine.</div>' +
+    '<div class="man-live-row">Nothing here changes a node: its owner changes it, in its own ' +
+      'file, in the application. The inputs and the results are yours, and stay on this machine.</div>' +
     kase +
     '<div class="man-live-row muted">' + L.rows + ' rows · ' + L.published +
-      ' published · ' + L.seeded + ' seeded and waiting for a form · serving on port ' +
+      ' published · ' + L.seeded + ' seeded · serving on port ' +
       L.port + '</div>' +
     '</div>';
 }

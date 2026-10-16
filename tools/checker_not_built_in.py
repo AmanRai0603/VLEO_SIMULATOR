@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""No shipped program carries the node form's checker built in.
+"""No shipped program carries the method checker built in.
 
 > **Answer first.** Reads every file under the folders it is given and fails if
 > any holds the method checker's bytes, other than the checker file itself.
@@ -7,10 +7,10 @@
 >
 > **Kind:** reference · **For:** the pipeline
 
-The checker is compressed WebAssembly, and the node form carries it with the
+The checker is compressed WebAssembly, and the pages carry it with the
 script that unpacks and runs it. Inside a program, that pair is the shape
 browsers and antivirus block: Chrome blocked the first 0.3.0 Windows kit for
-it. Forms now read the checker from `web/method.wasm.gz` beside the tree when
+it. Pages now read the checker from `web/method.wasm.gz` beside the tree when
 they are made, and this check makes sure no build puts it back inside.
 
     python3 tools/checker_not_built_in.py <web/method.wasm.gz> <folder>...
@@ -61,7 +61,7 @@ def main(argv):
         return 2
     found = carriers(argv[1], argv[2:])
     for p in found:
-        print(f"::error::{p} carries the node form's checker built in. Forms read it from "
+        print(f"::error::{p} carries the method checker built in. Pages read it from "
               f"{argv[1]} when they are made; a program holding it is what Chrome blocks.")
     if not found:
         print(f"no program under {', '.join(argv[2:])} carries the checker built in")

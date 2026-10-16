@@ -18,9 +18,7 @@
 //! AN ASSISTANT MAY NEVER SUPPLY MATHEMATICS, at any face. A form says whether
 //! an assistant helped, and how. Where it helped with the relation, every
 //! change to the relation, its steps and its derivation is refused and
-//! reported. Known-good values are never written at all: a fixture is recorded
-//! by a person with its provenance, so the ones a form supplies come out as a
-//! request, ready for that person ([`fixture_request`]).
+//! reported.
 
 use crate::{Error, ErrorKind};
 use std::collections::BTreeMap;
@@ -30,9 +28,11 @@ use crate::load::Tree;
 use crate::model::{Sheet, View};
 
 /// How an assistant was involved, as the change declares it: not at all, with
-/// the wording, or with the relation; or a method a person transcribed from
-/// its source and another read against it (AGENTS.md, rule 6), as intake
-/// declares a node whose declaration says so.
+/// the wording, or with the relation; or `transcribed`, a method an assistant
+/// copied from a person's source and a person read against it (AGENTS.md,
+/// rule 6). Intake gives `transcribed` only when the declaration names both
+/// (`vleo_files::intake::declared_help`); the plan rules take the caller's word
+/// for it. Saying nothing is not one of them.
 pub const AI_HELP: &[&str] = &["none", "wording", "relation", "transcribed"];
 
 /// The arrays that ARE the relation, with the scalar fields that are. An
@@ -108,31 +108,6 @@ pub struct Content {
     pub view: Option<(String, String, String)>,
 }
 
-/// A known-good value the filler supplied. Never written to the sheet.
-#[derive(Clone, Debug, Default, PartialEq)]
-pub struct Known {
-    pub label: String,
-    /// The inputs it holds at, as the filler wrote them.
-    pub inputs: String,
-    pub expected: String,
-    pub tolerance: String,
-    pub provenance: String,
-    pub source: String,
-}
-
-/// Where a new node goes, as its form asks it.
-#[derive(Clone, Debug, Default, PartialEq)]
-pub struct NewNode {
-    pub id: String,
-    /// The group in the tree it hangs under.
-    pub parent: String,
-    pub kind: String,
-}
-
-/// The kinds a new node may be. Each is built on the shape of an existing row
-/// of the same kind, so a kind the tree does not hold yet cannot be asked for.
-pub const KINDS: &[&str] = &["computed", "declared", "required", "achieved", "kpi"];
-
 /// Why a node is changing: the de-risking record the form carries, one row of
 /// the narrative. See `crate::derisk`.
 #[derive(Clone, Debug, Default, PartialEq)]
@@ -171,46 +146,38 @@ impl Derisk {
             .map(str::to_string)
             .collect()
     }
-    /// What the record is missing: everything on a change; only what the node
-    /// rests on and what would break it on a node's first version.
-    pub fn missing(&self, first: bool) -> Vec<&'static str> {
-        let need: &[&str] = if first {
-            &["rests_on", "breaks_if"]
-        } else {
-            &[
-                "believed",
-                "tested",
-                "learned",
-                "changed",
-                "rests_on",
-                "breaks_if",
-            ]
-        };
-        need.iter()
-            .copied()
-            .filter(|k| self.get(k).trim().is_empty())
-            .collect()
+    /// What the record is missing.
+    pub fn missing(&self) -> Vec<&'static str> {
+        [
+            "believed",
+            "tested",
+            "learned",
+            "changed",
+            "rests_on",
+            "breaks_if",
+        ]
+        .iter()
+        .copied()
+        .filter(|k| self.get(k).trim().is_empty())
+        .collect()
     }
 }
 
 /// A filled form, read back.
 #[derive(Clone, Debug, Default)]
 pub struct Form {
-    /// The node it is for; empty on a form for a node that does not exist yet.
+    /// The node it is for. A change never adds a node.
     pub node: String,
-    /// Set on a form for a new node.
-    pub new: Option<NewNode>,
     /// The file hash of `node.toml` the form was made from.
     pub base: String,
     pub name: String,
     pub team: String,
     pub date: String,
-    /// `none`, `wording` or `relation`.
+    /// How an assistant helped: one of [`AI_HELP`].
     pub ai: String,
     pub notes: String,
     pub original: Content,
     pub filled: Content,
-    pub known: Vec<Known>,
     /// Why the node is changing.
     pub derisk: Derisk,
 }
@@ -262,37 +229,6 @@ fn view_of(v: &View) -> Option<(String, String, String)> {
         // what it cannot write back.
         View::Heatmap { .. } => None,
     }
-}
-
-// ---------------------------------------------------------------------------
-// writing TOML — for a fixture request
-
-/// A TOML string. One line where the value is one line; a multi-line basic
-/// string where it is not, so a paragraph reads as a paragraph in the file.
-/// `</` and `<!` are written as `<` so nothing in a value can close the
-/// script element the block sits in.
-fn tq(v: &str) -> String {
-    let multi = v.contains('\n');
-    let mut o = String::with_capacity(v.len() + 8);
-    o.push_str(if multi { "\"\"\"\n" } else { "\"" });
-    let mut chars = v.chars().peekable();
-    while let Some(c) = chars.next() {
-        match c {
-            '\\' => o.push_str("\\\\"),
-            '"' => o.push_str("\\\""),
-            '\n' if multi => o.push('\n'),
-            '\n' => o.push_str("\\n"),
-            '\t' => o.push_str("\\t"),
-            '\r' => o.push_str("\\r"),
-            '<' if matches!(chars.peek(), Some('/') | Some('!')) => o.push_str("\\u003C"),
-            c if (c as u32) < 0x20 || c as u32 == 0x7f => {
-                o.push_str(&format!("\\u{:04X}", c as u32))
-            }
-            c => o.push(c),
-        }
-    }
-    o.push_str(if multi { "\"\"\"" } else { "\"" });
-    o
 }
 
 // ---------------------------------------------------------------------------
@@ -415,10 +351,8 @@ pub struct Plan {
     /// Every input the form declares, checked against the tree — when the form
     /// declares or changes any.
     pub interfaces: Vec<Interface>,
-    /// Set on a new node's form: where it goes.
-    pub new: Option<NewNode>,
-    /// What a new node is still missing, or took from the row it was built on
-    /// rather than from the form. Reported, for the developer to settle.
+    /// What the change leaves to be settled that does not stop it: a source it
+    /// cites that `sources/` does not list yet.
     pub open: Vec<String>,
     /// The version this form would record, when it changes what the node
     /// computes and says why.
@@ -440,179 +374,6 @@ impl Plan {
             .filter(|i| matches!(i.verdict, Verdict::Conflict(_) | Verdict::Refused(_)))
             .count()
     }
-}
-
-/// Whether a proposed id can be a row's id: lowercase words joined by
-/// underscores, starting with a letter, and short enough to read.
-pub fn valid_id(id: &str) -> bool {
-    let mut c = id.chars();
-    matches!(c.next(), Some('a'..='z'))
-        && id.len() <= 64
-        && id
-            .chars()
-            .all(|ch| ch.is_ascii_lowercase() || ch.is_ascii_digit() || ch == '_')
-}
-
-/// What a new node's form asks for, checked before anything exists: where it
-/// goes, what it is, what it reads. Nothing is built here: no route builds a
-/// new node from a form today (a node is added by its group, F4).
-fn plan_new(tree: &Tree, f: Form, n: NewNode) -> Plan {
-    let mut p = Plan::default();
-    let assisted = f.ai == "relation";
-    let place = |what: &str, v: &str, why: Option<String>| Item {
-        what: what.into(),
-        from: String::new(),
-        to: v.into(),
-        verdict: why.map(Verdict::Refused).unwrap_or(Verdict::Apply),
-    };
-    p.items.push(place(
-        "new · id",
-        &n.id,
-        if !valid_id(&n.id) {
-            Some("an id is lowercase words joined by underscores, starting with a letter".into())
-        } else if tree.sheets.contains_key(&n.id) || tree.groups.contains_key(&n.id) {
-            Some(format!("'{}' is already in the tree", n.id))
-        } else {
-            None
-        },
-    ));
-    p.items.push(place(
-        "new · parent",
-        &n.parent,
-        match tree.groups.get(&n.parent) {
-            None => Some(format!(
-                "'{}' is not a group in the tree. The form lists every group; a new group is a \
-                 developer's decision about the tree's shape",
-                n.parent
-            )),
-            Some(_) => None,
-        },
-    ));
-    p.items.push(place(
-        "new · kind",
-        &n.kind,
-        if !KINDS.contains(&n.kind.as_str()) {
-            Some(format!("a node is one of {}", KINDS.join(", ")))
-        } else if !tree.sheets.values().any(|s| s.kind == n.kind) {
-            Some(format!("no {} row exists to take the shape from", n.kind))
-        } else {
-            None
-        },
-    ));
-    for fld in FIELDS.iter().filter(|x| x.asked) {
-        let v = f.filled.fields.get(fld.field).cloned().unwrap_or_default();
-        if v.trim().is_empty() {
-            if fld.blocks {
-                p.open
-                    .push(format!("`{}` is not answered — {}", fld.field, fld.ask));
-            }
-            continue;
-        }
-        let verdict = if assisted && RELATION_FIELDS.contains(&fld.field) {
-            Verdict::Refused(
-                "the form says an assistant helped with the relation; a developer derives it"
-                    .into(),
-            )
-        } else {
-            match form::normalise(fld.field, &v) {
-                Ok(_) => Verdict::Apply,
-                Err(e) => Verdict::Refused(e.into()),
-            }
-        };
-        p.items.push(Item {
-            what: fld.field.to_string(),
-            from: String::new(),
-            to: v,
-            verdict,
-        });
-    }
-    for a in ARRAYS {
-        for (i, row) in f
-            .filled
-            .arrays
-            .get(a.name)
-            .into_iter()
-            .flatten()
-            .enumerate()
-        {
-            let missing: Vec<&str> = a
-                .columns
-                .iter()
-                .filter(|c| c.required && !c.managed)
-                .filter(|c| row.get(c.key).map(|v| v.trim().is_empty()).unwrap_or(true))
-                .map(|c| c.key)
-                .collect();
-            let verdict = if assisted && RELATION_ARRAYS.contains(&a.name) {
-                Verdict::Refused(
-                    "an assistant helped with the relation; a developer derives it".into(),
-                )
-            } else if !missing.is_empty() {
-                Verdict::Refused(format!("a {} block needs {}", a.name, missing.join(", ")))
-            } else {
-                Verdict::Apply
-            };
-            p.items.push(Item {
-                what: format!("{} {} · added", a.name, i + 1),
-                from: String::new(),
-                to: a
-                    .columns
-                    .iter()
-                    .filter(|c| !c.managed)
-                    .filter_map(|c| {
-                        row.get(c.key)
-                            .filter(|v| !v.is_empty())
-                            .map(|v| format!("{} = {}", c.key, short(v)))
-                    })
-                    .collect::<Vec<_>>()
-                    .join(", "),
-                verdict,
-            });
-        }
-    }
-    // A NEW NODE SAYS WHAT IT RESTS ON. Its first version is a belief nobody
-    // has tested yet, and the one thing the record needs from the start is what
-    // would break it.
-    let missing = f.derisk.missing(true);
-    p.about = vec!["node"];
-    if missing.is_empty() {
-        p.version = Some(1);
-    }
-    p.items.push(Item {
-        what: "de-risking · version 1".into(),
-        from: String::new(),
-        to: short(&f.derisk.rests_on),
-        verdict: if missing.is_empty() {
-            Verdict::Apply
-        } else {
-            Verdict::Refused(format!(
-                "a new node says what it rests on and what would break it — missing: {}",
-                missing.join(", ")
-            ))
-        },
-    });
-    if let Some(bad) = risk_problems(tree, &f.derisk) {
-        p.items.push(Item {
-            what: "de-risking · risks".into(),
-            from: String::new(),
-            to: f.derisk.risks.clone(),
-            verdict: Verdict::Refused(bad),
-        });
-    }
-    let ins = f.filled.arrays.get("input").cloned().unwrap_or_default();
-    p.interfaces = interfaces(tree, &ins);
-    let bad: Vec<&Interface> = p.interfaces.iter().filter(|i| !i.ok()).collect();
-    for it in p
-        .items
-        .iter_mut()
-        .filter(|it| it.what.starts_with("input "))
-    {
-        if !bad.is_empty() && it.verdict == Verdict::Apply {
-            it.verdict = Verdict::Refused("an input does not connect — see the interfaces".into());
-        }
-    }
-    p.new = Some(n);
-    p.form = f;
-    p
 }
 
 /// Two field values as the sheet would hold them: a bound of `40` and `40.0`
@@ -706,13 +467,14 @@ pub fn today() -> String {
 /// built from the groups' releases. Writes nothing; the sheet it would write is
 /// [`Plan::text`].
 pub fn plan_form_against(tree: &Tree, f: Form) -> Result<Plan, Error> {
-    plan_form_in(tree, f, false)
+    plan_form_in(tree, f)
 }
 
-fn plan_form_in(tree: &Tree, f: Form, first: bool) -> Result<Plan, Error> {
+fn plan_form_in(tree: &Tree, f: Form) -> Result<Plan, Error> {
     // How an assistant helped decides what may be applied, so an answer that
-    // is not one of these is refused before anything is planned.
-    if !f.ai.is_empty() && !AI_HELP.contains(&f.ai.as_str()) {
+    // is not one of these, or none, is refused before anything is planned.
+    // Silence is not "none".
+    if !AI_HELP.contains(&f.ai.as_str()) {
         return Err(Error::new(
             ErrorKind::Malformed,
             format!(
@@ -724,7 +486,7 @@ fn plan_form_in(tree: &Tree, f: Form, first: bool) -> Result<Plan, Error> {
     }
     let root = tree.root.as_path();
     let unlisted = sources_unlisted(tree, &f);
-    let mut p = plan_form_on(tree, f, first)?;
+    let mut p = plan_form_on(tree, f)?;
     p.open.extend(unlisted);
     // WHOSE PLAIN WORDS THESE ARE. A form that changes them names its filler
     // beside them, so the page never presents one person's wording — or an
@@ -778,15 +540,9 @@ fn sources_unlisted(tree: &Tree, f: &Form) -> Vec<String> {
     let mut cited: Vec<(String, String)> = Vec::new();
     let was = f.original.fields.get("source").map(String::as_str);
     if let Some(s) = f.filled.fields.get("source") {
-        if Some(s.as_str()) != was || f.new.is_some() {
+        if Some(s.as_str()) != was {
             cited.push(("the relation".into(), s.trim().to_string()));
         }
-    }
-    for (i, k) in f.known.iter().enumerate() {
-        cited.push((
-            format!("known value {}", i + 1),
-            k.source.trim().to_string(),
-        ));
     }
     cited
         .into_iter()
@@ -800,10 +556,7 @@ fn sources_unlisted(tree: &Tree, f: &Form) -> Vec<String> {
         .collect()
 }
 
-fn plan_form_on(tree: &Tree, f: Form, first: bool) -> Result<Plan, Error> {
-    if let Some(n) = f.new.clone() {
-        return Ok(plan_new(tree, f, n));
-    }
+fn plan_form_on(tree: &Tree, f: Form) -> Result<Plan, Error> {
     let p = plan_edits(tree, f.clone())?;
     let mut about: Vec<&'static str> = p
         .items
@@ -811,18 +564,12 @@ fn plan_form_on(tree: &Tree, f: Form, first: bool) -> Result<Plan, Error> {
         .filter(|i| i.verdict == Verdict::Apply)
         .filter_map(|i| item_about(&i.what))
         .collect();
-    // A NEW NODE IS ONE DECISION. Everything on its form differs from the row
-    // it was built on, but none of it replaces a belief: the node itself is
-    // what is new, and its first version says so.
-    if first {
-        about = vec!["node"];
-    }
     about.sort_by_key(|a| crate::derisk::ABOUT.iter().position(|x| x == a));
     about.dedup();
     if about.is_empty() {
         return Ok(p);
     }
-    let missing = f.derisk.missing(first);
+    let missing = f.derisk.missing();
     let risk_bad = risk_problems(tree, &f.derisk);
     if missing.is_empty() && risk_bad.is_none() {
         let mut p = p;
@@ -858,11 +605,7 @@ fn plan_form_on(tree: &Tree, f: Form, first: bool) -> Result<Plan, Error> {
             tested: f.derisk.tested.trim().to_string(),
             learned: f.derisk.learned.trim().to_string(),
             cost: f.derisk.cost.trim().to_string(),
-            changed: if f.derisk.changed.trim().is_empty() && first {
-                "first version".into()
-            } else {
-                f.derisk.changed.trim().to_string()
-            },
+            changed: f.derisk.changed.trim().to_string(),
             risks: f.derisk.moves(),
             rests_on: f.derisk.rests_on.trim().to_string(),
             breaks_if: f.derisk.breaks_if.trim().to_string(),
@@ -1239,127 +982,4 @@ fn plan_edits(tree: &Tree, f: Form) -> Result<Plan, Error> {
     }
     p.form = f;
     Ok(p)
-}
-
-/// The known-good values a form supplied, as `[[fixture]]` blocks for the
-/// person who records fixtures. Never written to the sheet by this module: an
-/// expected value is recorded by a person, with where it came from.
-///
-/// IN THE FIXTURE'S UNITS, NOT THE FORM'S. The form asks for the answer in the
-/// node's unit and the inputs as a person writes them (`orbit_altitude = 250
-/// km`); `fixtures.toml` holds SI, keyed by the node's own binding names. Pasted
-/// as typed, 70.2 degrees became 70.2 radians. So each value is converted here
-/// and what the form said stays beside it as a comment; whatever cannot be read
-/// is left as the comment alone, for the person recording it.
-pub fn fixture_request(f: &Form) -> String {
-    let unit = f
-        .filled
-        .fields
-        .get("unit")
-        .and_then(|u| vleo_units::Unit::from_name(u.trim()));
-    let inputs = f.filled.arrays.get("input").cloned().unwrap_or_default();
-    let mut o = String::new();
-    for k in &f.known {
-        o.push_str("[[fixture]]\n");
-        o.push_str(&format!("label = {}\n", tq(&k.label)));
-        let said = k.expected.trim();
-        match (said.parse::<f64>(), unit) {
-            (Ok(v), Some(u)) if u.si_factor() != 1.0 => o.push_str(&format!(
-                "expect = {}   # the form said {said} {}\n",
-                v * u.si_factor(),
-                u.symbol()
-            )),
-            _ => o.push_str(&format!("expect = {said}\n")),
-        }
-        o.push_str(&format!(
-            "tolerance = {}\n",
-            if k.tolerance.trim().is_empty() {
-                "1e-6"
-            } else {
-                k.tolerance.trim()
-            }
-        ));
-        o.push_str(&format!("provenance = {}\n", tq(&k.provenance)));
-        o.push_str(&format!("source = {}\n", tq(&k.source)));
-        match fixture_inputs(&k.inputs, &inputs) {
-            Some(t) => o.push_str(&format!(
-                "inputs = {{ {t} }}\n# the form gave the inputs as: {}\n\n",
-                k.inputs
-            )),
-            None => o.push_str(&format!(
-                "# inputs = {{ … }} in SI, by binding name, each with its unit — the form \
-                 gave: {}\n\n",
-                k.inputs
-            )),
-        }
-    }
-    o
-}
-
-/// `orbit_radius = 6778.137 km, …` as `r = 6778137.0, …`: each name is a
-/// binding or the row a binding reads, each value a number and a unit symbol.
-/// `None` unless every one of them reads, so nothing half-converted is offered.
-fn fixture_inputs(said: &str, inputs: &[BTreeMap<String, String>]) -> Option<String> {
-    let mut out = Vec::new();
-    for part in said
-        .split([',', ';'])
-        .map(str::trim)
-        .filter(|p| !p.is_empty())
-    {
-        let (name, rest) = part.split_once('=')?;
-        let name = name.trim();
-        let (binding, ty) = inputs.iter().find_map(|i| {
-            let b = i.get("binding").map(|b| b.trim()).unwrap_or("");
-            let v = i.get("var").map(|v| v.trim()).unwrap_or("");
-            let t = i.get("type").map(|t| t.trim()).unwrap_or("");
-            (name == b || name == v).then(|| (b.to_string(), t))
-        })?;
-        let mut w = rest.split_whitespace();
-        let value: f64 = w.next()?.parse().ok()?;
-        let sym = w.collect::<Vec<_>>().join(" ");
-        // A bare number is a unit only where there is none to name: a Ratio.
-        // Anywhere else `6778` could be metres or kilometres, and is not read.
-        let factor = if sym.is_empty() {
-            if ty != "Ratio" {
-                return None;
-            }
-            1.0
-        } else {
-            vleo_units::Unit::NAMES
-                .iter()
-                .filter_map(|n| vleo_units::Unit::from_name(n))
-                .find(|u| u.symbol() == sym)?
-                .si_factor()
-        };
-        out.push(format!("{binding} = {:?}", value * factor));
-    }
-    (!out.is_empty()).then(|| out.join(", "))
-}
-
-#[cfg(test)]
-mod tests {
-    use super::tq;
-
-    /// Every string the writer can meet comes back from a TOML parser as it
-    /// went in, and nothing it writes can close the script element it sits in.
-    #[test]
-    fn a_written_string_reads_back_exactly_and_never_closes_its_script() {
-        for v in [
-            "",
-            "plain",
-            "a </script> and <!-- a comment",
-            "quote \" and \"\"\" triple",
-            "ends with a quote\"",
-            "two lines\nthe second ending in a quote\"",
-            "back\\slash and tab\there",
-            "\u{1}control and \u{7f}delete",
-            "ünïcødé ✓ — and ≤ ≥",
-        ] {
-            let text = format!("k = {}\n", tq(v));
-            assert!(!text.to_ascii_lowercase().contains("</script"), "{text}");
-            assert!(!text.contains("<!"), "{text}");
-            let back: toml::Value = text.parse().unwrap_or_else(|e| panic!("{text}: {e}"));
-            assert_eq!(back.get("k").and_then(|x| x.as_str()), Some(v), "{text}");
-        }
-    }
 }
