@@ -440,6 +440,12 @@ jobs:
       # (docs/briefs/F4.md, F4-b).
       - name: the System workspace, a branch framed by its owner
         run: python3 tools/branch_check.py
+      # The frame at the system engineer's valve: an allocation refused with no
+      # sense and made with one, a group mounted on a subsystem's leaf with
+      # that subsystem's engineer the valve above it, and a mounted group
+      # started by its owner from My work (docs/briefs/F6.md, F6-a).
+      - name: the System workspace, a group mounted and started
+        run: python3 tools/start_group_check.py
       # The manual in the browser tells people what to paste and what they will
       # see. `cargo test` already holds every name in it to the code; this holds
       # every command to what it DOES — run exactly as written, its output

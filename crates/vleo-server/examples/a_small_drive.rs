@@ -27,7 +27,8 @@
 //! - beside solar, Ola owns power, whose releases folder holds something that
 //!   is not a release and nothing sealed, and thermal, whose file is signed by
 //!   someone who does not own it, so it is refused;
-//! - structure, mounted for Ola, whose folder holds no group file;
+//! - structure, mounted for Ola, whose folder holds no group file: Ola's to
+//!   start, and given its mass to bound (tools/start_group_check.py);
 //! - and a folder under groups/ that is not a group.
 //! - Test Stranger, whom no file registers.
 //!
@@ -327,6 +328,17 @@ fn main() {
     mount(&mut systems, "sys_propulsion", "l3_prop", "Test Ivo");
     // Mounted, but its folder holds no group file: refused, not passed over.
     mount(&mut systems, "sys_structure", "l3_struct", "Test Ola");
+    // What structure answers, for an allocation to bound
+    // (tools/start_group_check.py).
+    systems.ports.push(Port {
+        block_uid: s("sys_structure"),
+        direction: s("out"),
+        name: s("structure_mass"),
+        port_type: s("number"),
+        unit: s("kg"),
+        state: s("achieved"),
+        ..Port::default()
+    });
     std::fs::create_dir_all(drive.join("groups/l3_struct")).unwrap();
     write(
         &signed(systems, "Test Sam", &sam),
