@@ -625,7 +625,7 @@ fn route(
         // A branch's breakdown in the copy, framed by its owner (F4).
         ("GET", "/v1/branch") => ok_json(branch::tree(params, ctx)),
         ("POST", p) if p.starts_with("/v1/branch/") => {
-            ok_json(branch::edit_route(p.trim_start_matches("/v1/branch/"), params, ctx))
+            ok_json(branch::edit_route(p.strip_prefix("/v1/branch/").unwrap_or_default(), params, ctx))
         }
         ("POST", "/v1/people/register") => ok_json(people::change("register", params, ctx)),
         // An issue raised from a red mark, into the copy's issues/ (W11).

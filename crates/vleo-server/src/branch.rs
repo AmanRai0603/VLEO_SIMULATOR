@@ -18,15 +18,11 @@
 
 use super::*;
 use vleo_files::breakdown::{self, Answer, Branch, Edit, Framed, Part, State};
-use vleo_files::sqlite;
+use vleo_files::chain::{self, Registry};
 
-/// A group's id as its folder is named.
+/// A group's id, by the library's one rule of an id (`breakdown::valid_id`).
 fn group_id(id: &str) -> Result<&str, String> {
-    if id.is_empty()
-        || !id
-            .bytes()
-            .all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == b'_')
-    {
+    if !breakdown::valid_id(id) {
         return Err(format!("{id:?} is not a group's id"));
     }
     Ok(id)
@@ -43,78 +39,49 @@ fn the_copy(ctx: &Ctx) -> Result<PathBuf, String> {
     Ok(copy)
 }
 
-/// The chain as the copy opens it, and the file that mounts `group` in it.
-fn chain_for(copy: &Path, group: &str) -> Result<(me::Chain, usize), String> {
-    let c =
-        match me::registries(copy, copy, "") {
-            Ok(c) => c,
-            Err(me::NotRead::FirstUse(..)) => return Err(
-                "this computer has not accepted this database's anchor: open your key on it first"
-                    .into(),
-            ),
-            Err(me::NotRead::Why(why)) => return Err(why),
-        };
-    // 0: the programme's file; 1: the systems'.
-    let by = if group == "systems" {
-        0
-    } else if c
-        .systems
-        .as_ref()
-        .is_some_and(|s| s.file.mounts.iter().any(|m| m.group_id == group))
-    {
-        1
-    } else {
-        return Err(format!(
-            "no file in your copy mounts {group}, so nobody frames it here: a group mounted on a subsystem's node is F6's"
-        ));
-    };
-    Ok((c, by))
-}
-
-fn mounted_by(c: &me::Chain, by: usize) -> &vleo_files::chain::Registry {
-    match by {
-        1 => c.systems.as_ref().unwrap_or(&c.programme),
-        _ => &c.programme,
+/// The chain as the copy opens it.
+fn chain(copy: &Path) -> Result<me::Chain, String> {
+    match me::registries(copy, copy, "") {
+        Ok(c) => Ok(c),
+        Err(me::NotRead::FirstUse(..)) => Err(
+            "this computer has not accepted this database's anchor: open your key on it first"
+                .into(),
+        ),
+        Err(me::NotRead::Why(why)) => Err(why),
     }
 }
 
-/// The branch's files in the copy: its group file's bytes and file, and its
-/// node files.
-#[allow(clippy::type_complexity)]
-fn read(
-    copy: &Path,
-    group: &str,
-) -> Result<
-    (
-        String,
-        Vec<u8>,
-        vleo_files::model::File,
-        Vec<vleo_files::model::File>,
-    ),
-    String,
-> {
-    let rel = format!("groups/{group}/{group}.vgroup");
-    let at = copy.join(&rel);
-    let bytes = std::fs::read(&at).map_err(|e| format!("{rel}: {e}"))?;
-    let f = sqlite::read(&at).map_err(|e| format!("{rel}: {}", e.message()))?;
-    if std::fs::read(&at).map_err(|e| format!("{rel}: {e}"))? != bytes {
+/// The file that mounts `group`, by the library's one rule
+/// (`chain::mounted_by`, as People and the chain itself read it): one
+/// parent, the programme's file or the systems', on a block assigned to
+/// someone. The programme's own branch is F7's.
+fn mounted_by<'a>(c: &'a me::Chain, group: &str) -> Result<&'a Registry, String> {
+    if group == "programme" {
+        return Err(
+            "the programme's branch is framed in the Programme workspace (F7), not here".into(),
+        );
+    }
+    if group != "systems" && c.systems.is_none() {
+        let why = c
+            .left_out
+            .iter()
+            .find_map(|l| l.strip_prefix("systems: "))
+            .unwrap_or("it is not in your copy");
         return Err(format!(
-            "{rel} was written while it was opened: open it again"
+            "the systems' file does not open in your copy, so no branch it mounts is framed here: {why}"
         ));
     }
-    let mut nodes = Vec::new();
-    for p in std::fs::read_dir(copy.join("groups").join(group).join("nodes"))
-        .into_iter()
-        .flatten()
-        .flatten()
-        .map(|e| e.path())
-        .filter(|p| p.extension().is_some_and(|x| x == "vnode"))
-    {
-        if let Ok(n) = sqlite::read(&p) {
-            nodes.push(n);
-        }
-    }
-    Ok((rel, bytes, f, nodes))
+    let parents: Vec<&Registry> = std::iter::once(&c.programme)
+        .chain(c.systems.iter())
+        .collect();
+    chain::mounted_by(group, &parents)
+        .map(|(r, _)| r)
+        .map_err(|e| e.message().to_string())
+}
+
+/// How the application opens a file it reads here.
+fn how(at: &str) -> vleo_files::upgrade::Upgrade<'_> {
+    vleo_files::upgrade::Upgrade { app: APP, at }
 }
 
 /// `GET /v1/branch?group=<id>`.
@@ -131,16 +98,19 @@ fn tree_json(params: &str, ctx: &Ctx) -> Result<String, String> {
     let copy = the_copy(ctx)?;
     // Who mounts it first: a group nobody mounts is said as that, not as a
     // file that is missing.
-    let (c, by) = chain_for(&copy, group)?;
-    let (rel, bytes, f, nodes) = read(&copy, group)?;
-    let mb = mounted_by(&c, by);
-    let opens = vleo_files::chain::open_group_in(&f, mb, &c.programme);
-    let owner = vleo_files::chain::owner_of(mb, group)
-        .unwrap_or("")
-        .to_string();
+    let c = chain(&copy)?;
+    let mb = mounted_by(&c, group)?;
     let now = results::now_utc();
+    // Read as an edit reads it (`breakdown::group_file_in`, `nodes_in`): a
+    // file that cannot be read refuses the branch by its name.
+    let rel = format!("groups/{group}/{group}.vgroup");
+    let (bytes, f) = breakdown::group_file_in(&copy, group).map_err(|e| e.message().to_string())?;
+    let nodes =
+        breakdown::nodes_in(&copy, group, &how(&now)).map_err(|e| e.message().to_string())?;
+    let opens = chain::open_group_in(&f, mb, &c.programme);
+    let owner = chain::owner_of(mb, group).unwrap_or("").to_string();
     let may = me::with_key(|key, me| {
-        vleo_files::chain::may_frame(
+        chain::may_frame(
             group,
             &me.name,
             &key.public().to_hex(),
@@ -149,7 +119,17 @@ fn tree_json(params: &str, ctx: &Ctx) -> Result<String, String> {
             &c.programme,
         )
         .map(|_| me.name.clone())
-        .map_err(|e| e.message().to_string())
+        .map_err(|e| {
+            // The owner, or their deputy, whose key does not count now, is
+            // told that, not that the branch is someone else's.
+            let theirs = me.name == owner
+                || c.programme
+                    .file
+                    .people
+                    .iter()
+                    .any(|p| p.name == me.name && !owner.is_empty() && p.deputy_for == owner);
+            (theirs, e.message().to_string())
+        })
     });
     let branch = Branch::new(&f, &nodes);
     let mut j = Json::new();
@@ -181,7 +161,10 @@ fn tree_json(params: &str, ctx: &Ctx) -> Result<String, String> {
             None => "no key is open: open yours, and whether you frame it is read from the chain"
                 .to_string(),
             Some(Ok(_)) => String::new(),
-            Some(Err(why)) => format!(
+            Some(Err((true, why))) => format!(
+                "Your key does not count for {group} now, so nothing is framed with it: {why}"
+            ),
+            Some(Err((false, why))) => format!(
                 "Not yours to frame: {group} is framed by its owner {}, or their deputy. {why}",
                 if owner.is_empty() {
                     "nobody registered"
@@ -193,7 +176,7 @@ fn tree_json(params: &str, ctx: &Ctx) -> Result<String, String> {
     );
     j.key("blocks").raw("[");
     let mounts: Vec<&str> = f.mounts.iter().map(|m| m.block_uid.as_str()).collect();
-    let mut differs = Vec::new();
+    let (mut differs, mut not_run) = (Vec::new(), Vec::new());
     for (i, (b, place)) in branch.blocks().into_iter().enumerate() {
         if i > 0 {
             j.raw(",");
@@ -259,8 +242,10 @@ fn tree_json(params: &str, ctx: &Ctx) -> Result<String, String> {
         j.raw("]");
         if !answers.is_empty() {
             let r = breakdown::reproduces(&branch, &b.uid, opens.as_ref().ok());
-            if r.state != State::Agrees {
-                differs.push(b.id.clone());
+            match &r.state {
+                State::Agrees => {}
+                State::Differs => differs.push(b.id.clone()),
+                State::NotRun(why) => not_run.push(format!("{}: {why}", b.id)),
             }
             j.key("reproduces").raw("{");
             j.str_field(
@@ -321,6 +306,10 @@ fn tree_json(params: &str, ctx: &Ctx) -> Result<String, String> {
             format!("Nothing yet: {}", e.message())
         } else if !differs.is_empty() {
             format!("Fold back or fix {}: its children do not reproduce its cases", differs.join(", "))
+        } else if !not_run.is_empty() {
+            format!("A breakdown cannot be judged now, so it is not taken as reproducing: {}", not_run.join("; "))
+        } else if let Some(Err((true, why))) = &may {
+            format!("Nothing yet: your key does not count for {group} now: {why}")
         } else if !yours {
             format!("Nothing: {group} is framed by its owner {owner}. Read it here; ask them, or raise an issue")
         } else if open > 0 {
@@ -371,16 +360,18 @@ fn edit_of(name: &str, params: &str) -> Result<Edit, String> {
         },
         "break-down" => Edit::BreakDown {
             node: need("node")?,
-            answers: vec![Answer {
-                output: need("output")?,
-                child: need("child")?,
-                port: need("port")?,
-            }],
+            answers: answers_of(name, &get("answers"))?,
         },
         "move" => Edit::Move {
             block: need("block")?,
             parent: need("parent")?,
-            ord: get("ord").trim().parse().unwrap_or(0),
+            // Nothing given is first; anything else is a whole number.
+            ord: match get("ord").trim() {
+                "" => 0,
+                o => o
+                    .parse()
+                    .map_err(|_| format!("{name}'s ord is a whole number, and {o:?} is not one"))?,
+            },
         },
         "rename" => Edit::Rename {
             block: need("block")?,
@@ -405,6 +396,38 @@ fn edit_of(name: &str, params: &str) -> Result<Edit, String> {
     })
 }
 
+/// A breakdown's answers, one a line: `<output>=<child uid>.<port>`, an
+/// answer for each output of the node (the library refuses fewer).
+fn answers_of(name: &str, text: &str) -> Result<Vec<Answer>, String> {
+    let mut out = Vec::new();
+    for line in text.lines().map(str::trim).filter(|l| !l.is_empty()) {
+        let parsed = line.split_once('=').and_then(|(o, from)| {
+            let (child, port) = from.trim().split_once('.')?;
+            Some(Answer {
+                output: o.trim().to_string(),
+                child: child.trim().to_string(),
+                port: port.trim().to_string(),
+            })
+        });
+        match parsed {
+            Some(a) if !a.output.is_empty() && !a.child.is_empty() && !a.port.is_empty() => {
+                out.push(a)
+            }
+            _ => {
+                return Err(format!(
+                    "{name}'s answer {line:?} is not <output>=<child>.<port>"
+                ))
+            }
+        }
+    }
+    if out.is_empty() {
+        return Err(format!(
+            "{name} needs answers: one line for each output, <output>=<child>.<port>"
+        ));
+    }
+    Ok(out)
+}
+
 /// The program, as `written_by_app` names it in what it writes.
 const APP: &str = concat!("vleo ", env!("CARGO_PKG_VERSION"));
 
@@ -427,8 +450,8 @@ fn edited(name: &str, params: &str, ctx: &Ctx) -> Result<String, String> {
     let opened = param(params, "opened").map(decode).unwrap_or_default();
     let why = param(params, "why").map(decode).unwrap_or_default();
     let copy = the_copy(ctx)?;
-    let (c, by) = chain_for(&copy, group)?;
-    let mb = mounted_by(&c, by);
+    let c = chain(&copy)?;
+    let mb = mounted_by(&c, group)?;
     let at = results::now_utc();
     let done = me::with_key(|key, me| {
         breakdown::edit_in_place(

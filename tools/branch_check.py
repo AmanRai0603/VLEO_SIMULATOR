@@ -13,19 +13,19 @@ Then, as people would:
   it back: a node's cases are evidence for its breakdown only once its node
   engineer has signed them;
 - Test Ola, who owns solar, copies the drive and opens its branch in the
-  System workspace: the tree, said to be his copy, and his to frame;
-- he adds a block under the band and fills its question, and its history
+  System workspace: the tree, said to be their copy, and theirs to frame;
+- they add a block under the band and fill its question, and its history
   says who, when and why; an edit with no why is refused;
 - broken down into the child whose edge is wrong, it is refused on screen,
   naming the case at 130 sfu, and the group file is not written;
 - broken down into the child that reproduces it, it is accepted, and every
   case is shown agreeing beside its estimate; folded back, the estimate
   answers again and both children stay;
-- the block he added is removed: archived, shown struck through;
-- an edit from what he opened before, after the file changed from another
+- the block they added is removed: archived, shown struck through;
+- an edit from what they opened before, after the file changed from another
   tab, is a second writer: refused, nothing written, opened again on a click;
 - Test Pia, a node engineer of solar, on the other instance, reads the
-  branch with no edit forms, said why; her edit sent anyway is refused by
+  branch with no edit forms, said why; an edit of Pia's sent anyway is refused by
   the program, by name;
 - a group no file mounts is said, never drawn as an empty tree.
 
@@ -107,10 +107,10 @@ def check():
         step('Pia copies the drive on the other instance', r.get('ok'), r)
         r = ask(p2, '/v1/key/open', {'file': 'test-pia.vkey', 'passphrase': PASSPHRASE,
                                      'accept_anchor': anchor}, w2)
-        step('and opens her key', r.get('open'), r)
+        step('and opens their key', r.get('open'), r)
         opened = ask(p2, f'/v1/node/{BAND}/file').get('opened', '')
         r = ask(p2, f'/v1/node/{BAND}/sign', {'opened': opened}, w2)
-        step('she signs the band', r.get('ok') and r.get('signed_by') == 'Test Pia', r)
+        step('Pia signs the band', r.get('ok') and r.get('signed_by') == 'Test Pia', r)
         r = ask(p2, '/v1/put-back', {}, w2)
         named = '\n'.join(f"{f['digest']} {f['path']}" for f in r.get('files', []) if f.get('back'))
         r = ask(p2, '/v1/put-back', {'files': named}, w2)
@@ -125,15 +125,15 @@ def check():
             copy_drive(p, drive)
             open_key(p, 'Test Ola', anchor)
 
-            # His branch, in the System workspace.
+            # Ola's branch, in the System workspace.
             p.click('#sh-nav .tab:text-is("System")')
             p.wait_for_selector(f'[data-group-open="{GROUP}"]', timeout=60000)
-            step('the System workspace offers the branches he owns, solar among them',
+            step('the System workspace offers the branches Ola owns, solar among them',
                  p.locator(f'[data-group-open="{GROUP}"]').count() == 1, p.inner_text('#sh-main')[:200])
             p.click(f'[data-group-open="{GROUP}"]')
             branch(p)
             top = p.inner_text('.answer-first')
-            step('it says it shows his copy, and that he frames it',
+            step('it says it shows their copy, and that they frame it',
                  'your copy' in top and 'You frame it.' in top, top[:300])
             step('the band and its two children are in the tree, under it',
                  all(p.locator(f'.sy-tree [data-block="{BAND}"] ~ ul [data-block="{c}"]').count() == 1
@@ -167,7 +167,7 @@ def check():
             pick(p, BAND)
             before = digest(mine)
             p.fill('#sy-why', WHY)
-            p.select_option('#sy-bd-child', LATE)
+            p.select_option('.sy-bd-row[data-bd-out="band"] .sy-bd-child', LATE)
             p.click('#sy-break-down')
             notice = said_after(p, notice)
             step('broken down into the child whose edge is at 135 sfu, it is refused, naming the case at 130 sfu',
@@ -176,7 +176,7 @@ def check():
 
             # Into the child that reproduces it: accepted, its cases shown.
             p.fill('#sy-why', WHY)
-            p.select_option('#sy-bd-child', GOOD)
+            p.select_option('.sy-bd-row[data-bd-out="band"] .sy-bd-child', GOOD)
             p.click('#sy-break-down')
             notice = said_after(p, notice)
             step('broken down into the child that reproduces it, it is accepted',
@@ -196,12 +196,12 @@ def check():
                  'made the edit "fold back"' in notice and p.locator('.sy-cases').count() == 0
                  and all(p.locator(f'.sy-tree [data-block="{c}"]').count() == 1 for c in [GOOD, LATE]), notice)
 
-            # The block he added, removed: archived.
+            # The block Ola added, removed: archived.
             pick(p, ADDED)
             p.fill('#sy-why', 'Nothing is left out that the band does not say.')
             p.click('#sy-remove')
             notice = said_after(p, notice)
-            step('the block he added is removed: archived, shown struck through',
+            step('the block Ola added is removed: archived, shown struck through',
                  'made the edit "remove"' in notice
                  and p.locator(f'.sy-tree [data-block="{ADDED}"].sy-archived').count() == 1, notice)
 
@@ -216,10 +216,10 @@ def check():
             p.fill('#sy-add-id', 'sw_activity_late_tab')
             p.click('#sy-add')
             notice = said_after(p, notice)
-            step('his edit from what he opened before is a second writer, refused on screen',
+            step('an edit from what Ola opened before is a second writer, refused on screen',
                  'changed in your copy since you opened it' in notice, notice)
             step('and nothing is written', digest(mine) == meanwhile)
-            step('the branch is not opened again behind his back',
+            step('the branch is not opened again behind their back',
                  p.locator('#sy-reopen').count() == 1
                  and 'sw_activity_meanwhile' not in p.inner_text('.sy-tree'), p.inner_text('.sy-tree')[:300])
             p.click('#sy-reopen')
@@ -227,10 +227,10 @@ def check():
             step('opened again, the block added meanwhile is there',
                  'sw_activity_meanwhile' in p.inner_text('.sy-tree'))
 
-            # Test Pia, on the other instance: not hers to frame.
+            # Test Pia, on the other instance: not Pia's to frame.
             q = b.new_page(viewport={'width': 1400, 'height': 1000})
             q.on('pageerror', lambda e: errors.append(str(e)))
-            # Her copy and her key are open on it already, from signing.
+            # Pia's copy and key are open on it already, from signing.
             q.goto(f'http://127.0.0.1:{p2}/app#session={w2}')
             q.wait_for_selector('#sh-close', timeout=60000)
             q.goto(f'http://127.0.0.1:{p2}/app#system/{GROUP}')
@@ -241,13 +241,13 @@ def check():
                  q.locator('#sy-why').count() == 0 and q.locator('.sy-not-yours').count() == 1
                  and 'Framed by Test Ola' in q.inner_text('.answer-first')
                  and 'Not yours to frame' in q.inner_text('.sy-not-yours'), block[-300:])
-            hers = os.path.join(scratch, 'copy-two', PATH)
-            before = digest(hers)
+            pias = os.path.join(scratch, 'copy-two', PATH)
+            before = digest(pias)
             opened = ask(p2, f'/v1/branch?group={GROUP}')['opened']
             r = ask(p2, '/v1/branch/add', {'group': GROUP, 'opened': opened, 'why': WHY,
                                             'parent': BAND, 'id': 'sw_activity_pia'}, w2)
-            step('her edit sent anyway is refused by the program, by name',
-                 not r.get('ok') and 'Test Pia' in r.get('message', '') and digest(hers) == before, r)
+            step('an edit of Pia's sent anyway is refused by the program, by name',
+                 not r.get('ok') and 'Test Pia' in r.get('message', '') and digest(pias) == before, r)
 
             # A group no file mounts.
             q.goto(f'http://127.0.0.1:{p2}/app#system/no_such_group')

@@ -2,16 +2,17 @@
 //! alone (docs/briefs/F4.md, F4-b; `vleo_files::breakdown`).
 //!
 //! Solar's branch holds solar 1.1's `sw_activity_band`, issued to Test Nia
-//! and signed by her, and two children of it placed as F5 will issue them: one carrying the
-//! band's own method, and one whose elevated edge is at 135 sfu, invented
-//! here to be wrong. Test Ola owns solar; Test Dee is her deputy. Through
+//! and signed by Nia, and two children of it placed as F5 will issue them:
+//! one carrying the band's own method, and one whose elevated edge is at 135
+//! sfu, invented here to be wrong, and saying so. Test Ola owns solar; Test
+//! Dee is Ola's deputy; Test Sam owns the systems' branch. Through
 //! `GET /v1/branch` and `POST /v1/branch/<id>`:
 //!
 //! - with no copy, the branch is refused, saying to copy the drive; an edit
 //!   with no key open, or without the launch's word, is refused;
-//! - to Nia it is not hers to frame, said whose it is, and her edit is
-//!   refused by her name, with nothing written;
-//! - to Ola it is hers: the band and its children, each in its node file,
+//! - to Nia it is not Nia's to frame, said whose it is, and Nia's edit is
+//!   refused by name, with nothing written;
+//! - to Ola it is Ola's: the band and its children, each in its node file,
 //!   open parts counted; broken down into the child whose edge is wrong, it
 //!   is refused naming the case at 130 sfu and nothing is written; into the
 //!   child that reproduces it, accepted, read as its children with all ten
@@ -19,9 +20,17 @@
 //!   touched;
 //! - an edit from what was opened before is a second writer: refused, said,
 //!   and nothing written;
-//! - Dee frames it as Ola's deputy, and folds it back;
-//! - an edit that is not one, a group that is not an id, and a group no file
-//!   mounts are each refused by name.
+//! - the band changed since it was signed: its breakdown is not judged, and
+//!   said so, never as children that disagree; a node file that cannot be
+//!   read refuses the branch by its name;
+//! - add, fill (a question, then an output and an input), rename, move (an
+//!   order that is not a whole number refused) and split, each through its
+//!   fields; an answer that is not `<output>=<child>.<port>` refused;
+//! - the systems' branch is Sam's, and not Ola's; solar's is not Sam's;
+//! - Dee frames solar as Ola's deputy, and folds it back;
+//! - an edit that is not one, a group that is not an id, a group no file
+//!   mounts and the programme's branch are each refused by name;
+//! - the drive holds what it held when it was copied.
 
 use std::io::{Read, Write};
 use std::net::TcpStream;
@@ -243,8 +252,27 @@ fn child(id: &str, edit: &dyn Fn(&str) -> String) -> File {
     c
 }
 
+/// The child at 135 sfu says what it is: invented for this check by the
+/// test's own invented person, `who`, never transcribed by anyone from
+/// anything (F4's question 5).
+fn invented(mut c: File, who: &str) -> File {
+    for t in c.texts.iter_mut().filter(|t| t.kind == "pseudocode") {
+        let rest: Vec<&str> = t.body.lines().skip(1).collect();
+        t.body = format!(
+            "# INVENTED for the breakdown's check, never part of the design: sw_activity_band's method, its elevated edge moved from 130 to 135 sfu to be wrong.\n{}\n",
+            rest.join("\n")
+        );
+    }
+    for t in c.tables.iter_mut().filter(|t| t.path == "declaration.csv") {
+        t.csv = format!(
+            "author,ai,date,source,checked_by\n{who},transcribed,2026-10-17,\"sw_activity_band's method, its elevated edge moved to 135 sfu: invented to be wrong, for the breakdown's check\",{who}\n"
+        );
+    }
+    c
+}
+
 // Test Pat (81), programme manager; Test Sam (82), system engineer; Test Ola
-// (83), who owns solar; Test Dee (86), her deputy; Test Nia (84), a node
+// (83), who owns solar; Test Dee (86), Ola's deputy; Test Nia (84), a node
 // engineer of solar, assigned the band.
 fn drive(at: &Path, keys: &Path) {
     let mut programme = group("programme", "Test Pat");
@@ -319,9 +347,12 @@ fn drive(at: &Path, keys: &Path) {
     sqlite::write(&band, &at.join(nodes(UID))).unwrap();
     sqlite::write(&child(GOOD, &|m| m.to_string()), &at.join(nodes(GOOD))).unwrap();
     sqlite::write(
-        &child(LATE, &|m| {
-            m.replace("if f107 >= 130 then", "if f107 >= 135 then")
-        }),
+        &invented(
+            child(LATE, &|m| {
+                m.replace("if f107 >= 130 then", "if f107 >= 135 then")
+            }),
+            "Test Nia",
+        ),
         &at.join(nodes(LATE)),
     )
     .unwrap();
@@ -337,6 +368,7 @@ fn drive(at: &Path, keys: &Path) {
     write_key(keys, "test-ola.vkey", "Test Ola", &key(83));
     write_key(keys, "test-dee.vkey", "Test Dee", &key(86));
     write_key(keys, "test-nia.vkey", "Test Nia", &key(84));
+    write_key(keys, "test-sam.vkey", "Test Sam", &key(82));
 }
 
 fn nodes(uid: &str) -> String {
@@ -398,13 +430,21 @@ fn a_branch_is_framed_in_the_copy() {
         "{r}"
     );
     let copied = post(port, "/v1/copy", &[("drive", &drv.display().to_string())]);
-    assert!(copied.contains("\"ok\":true"), "{r}");
+    assert!(copied.contains("\"ok\":true"), "{copied}");
+    // What the drive holds, before anything is framed: never written here.
+    let on_drive = |d: &Path| -> Vec<Vec<u8>> {
+        [GROUP.to_string(), nodes(UID), nodes(GOOD), nodes(LATE)]
+            .iter()
+            .map(|p| std::fs::read(d.join(p)).unwrap())
+            .collect()
+    };
+    let drive_before = on_drive(&drv);
 
     // An edit with no key open is refused.
     let r = edit("add", &[("parent", UID), ("id", "sw_activity_note")]);
     assert!(field(&r, "message").starts_with("no key is open"), "{r}");
 
-    // Nia: read, not hers, said whose; her edit refused by her name.
+    // Nia: read, not Nia's to frame, said whose; Nia's edit refused by name.
     assert!(open_key(port, "test-nia.vkey").contains("\"open\":true"));
     let r = tree();
     assert!(
@@ -438,7 +478,7 @@ fn a_branch_is_framed_in_the_copy() {
     assert_eq!(group_bytes(), before);
     post(port, "/v1/key/close", &[]);
 
-    // Ola: hers. The band and its children, each in its node file.
+    // Ola: Ola's to frame. The band and its children, each in its node file.
     assert!(open_key(port, "test-ola.vkey").contains("\"open\":true"));
     let r = tree();
     assert!(
@@ -463,7 +503,7 @@ fn a_branch_is_framed_in_the_copy() {
     assert!(!r.contains("\"reproduces\""), "{r}");
     let nodes_before = node_bytes(&copy);
 
-    // Without the launch's word, her edit is refused, and nothing written.
+    // Without the launch's word, Ola's edit is refused, and nothing written.
     let before = group_bytes();
     let opened = field(&r, "opened").to_string();
     let r = ask(
@@ -493,9 +533,7 @@ fn a_branch_is_framed_in_the_copy() {
             &[
                 ("opened", opened),
                 ("node", UID),
-                ("output", "band"),
-                ("child", child),
-                ("port", "band"),
+                ("answers", &format!("band={child}.band")),
             ],
         )
     };
@@ -546,6 +584,143 @@ fn a_branch_is_framed_in_the_copy() {
         "{r}"
     );
     assert_eq!(group_bytes(), before);
+
+    // The band changed since Nia signed it: its breakdown cannot be judged,
+    // said as that, never as children that disagree.
+    let band_bytes = std::fs::read(copy.join(nodes(UID))).unwrap();
+    let mut changed = sqlite::read(&copy.join(nodes(UID))).unwrap();
+    for t in changed
+        .tables
+        .iter_mut()
+        .filter(|t| t.path == "results/isolation.csv")
+    {
+        t.csv = t.csv.replacen(",paper,", ",hand,", 1);
+    }
+    sqlite::write(&changed, &copy.join(nodes(UID))).unwrap();
+    let r = tree();
+    assert!(r.contains("\"reproduces\":{\"state\":\"not run\""), "{r}");
+    assert!(
+        field(&r, "next").starts_with("A breakdown cannot be judged now"),
+        "{r}"
+    );
+    std::fs::write(copy.join(nodes(UID)), &band_bytes).unwrap();
+    // A node file that cannot be read refuses the branch by its name.
+    std::fs::write(copy.join(nodes("zz_unread")), b"not a design file").unwrap();
+    let r = tree();
+    assert!(
+        r.contains("\"ok\":false") && r.contains("zz_unread.vnode cannot be read"),
+        "{r}"
+    );
+    std::fs::remove_file(copy.join(nodes("zz_unread"))).unwrap();
+
+    // Each edit's own fields, through the route.
+    let opened = || field(&tree(), "opened").to_string();
+    let ok = |r: String| {
+        assert!(r.contains("\"ok\":true"), "{r}");
+        r
+    };
+    ok(edit(
+        "add",
+        &[
+            ("opened", &opened()),
+            ("parent", UID),
+            ("id", "sw_activity_note"),
+        ],
+    ));
+    ok(edit(
+        "fill",
+        &[
+            ("opened", &opened()),
+            ("block", "sw_activity_note"),
+            ("question", "What does the band leave out?"),
+        ],
+    ));
+    for (dir, name) in [("out", "note"), ("in", "seen")] {
+        ok(edit(
+            "fill",
+            &[
+                ("opened", &opened()),
+                ("block", "sw_activity_note"),
+                ("direction", dir),
+                ("name", name),
+                ("type", "number"),
+                ("unit", "1"),
+                ("state", "open"),
+            ],
+        ));
+    }
+    ok(edit(
+        "rename",
+        &[
+            ("opened", &opened()),
+            ("block", "sw_activity_note"),
+            ("id", "sw_activity_remark"),
+        ],
+    ));
+    let r = edit(
+        "move",
+        &[
+            ("opened", &opened()),
+            ("block", "sw_activity_note"),
+            ("parent", UID),
+            ("ord", "first"),
+        ],
+    );
+    assert!(r.contains("ord is a whole number"), "{r}");
+    ok(edit(
+        "move",
+        &[
+            ("opened", &opened()),
+            ("block", "sw_activity_note"),
+            ("parent", UID),
+            ("ord", "4"),
+        ],
+    ));
+    ok(edit(
+        "split",
+        &[
+            ("opened", &opened()),
+            ("block", "sw_activity_note"),
+            ("id", "sw_activity_aside"),
+            ("ports", " note , "),
+        ],
+    ));
+    let r = tree();
+    assert!(
+        r.contains("\"uid\":\"sw_activity_note\",\"id\":\"sw_activity_remark\""),
+        "{r}"
+    );
+    assert!(
+        r.contains("\"uid\":\"sw_activity_aside\",\"id\":\"sw_activity_aside\""),
+        "{r}"
+    );
+    let aside = &r[r.find("\"uid\":\"sw_activity_aside\"").unwrap()..];
+    assert!(
+        aside[..aside.find("\"answers\"").unwrap()].contains("\"name\":\"note\""),
+        "the split moved its output: {aside}"
+    );
+    assert!(r.contains("\"ord\":4"), "{r}");
+    let r = edit(
+        "break-down",
+        &[("opened", &opened()), ("node", UID), ("answers", "band")],
+    );
+    assert!(r.contains("is not <output>=<child>.<port>"), "{r}");
+    post(port, "/v1/key/close", &[]);
+
+    // The systems' branch is the system engineer's: framed by Sam, read by Ola.
+    assert!(open_key(port, "test-sam.vkey").contains("\"open\":true"));
+    let sys = || ask(port, "GET", "/v1/branch?group=systems", &[], false);
+    let r = sys();
+    assert!(
+        r.contains("\"owner\":\"Test Sam\"") && r.contains("\"yours\":true"),
+        "{r}"
+    );
+    let r = tree();
+    assert!(r.contains("\"yours\":false"), "{r}");
+    post(port, "/v1/key/close", &[]);
+    assert!(open_key(port, "test-ola.vkey").contains("\"open\":true"));
+    let r = sys();
+    assert!(r.contains("\"yours\":false"), "{r}");
     post(port, "/v1/key/close", &[]);
 
     // Dee, Ola's deputy, frames it, and folds it back.
@@ -574,9 +749,10 @@ fn a_branch_is_framed_in_the_copy() {
     let r = ask(port, "GET", "/v1/branch?group=..%2Fsystems", &[], false);
     assert!(r.contains("is not a group's id"), "{r}");
     let r = ask(port, "GET", "/v1/branch?group=l3_power", &[], false);
-    assert!(
-        field(&r, "message").starts_with("no file in your copy mounts l3_power"),
-        "{r}"
-    );
+    assert!(r.contains("no file mounts the group"), "{r}");
+    let r = ask(port, "GET", "/v1/branch?group=programme", &[], false);
+    assert!(r.contains("Programme workspace (F7)"), "{r}");
+    // The drive is as it was copied: everything above is in the copy alone.
+    assert_eq!(on_drive(&drv), drive_before);
     let _ = std::fs::remove_dir_all(&scratch);
 }

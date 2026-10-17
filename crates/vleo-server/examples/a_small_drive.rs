@@ -237,6 +237,25 @@ fn activity_child(id: &str, edit: &dyn Fn(&str) -> String) -> File {
     c
 }
 
+/// The child at 135 sfu says what it is: invented for this check by the
+/// test's own invented person, `who`, never transcribed by anyone from
+/// anything (F4's question 5).
+fn invented(mut c: File, who: &str) -> File {
+    for t in c.texts.iter_mut().filter(|t| t.kind == "pseudocode") {
+        let rest: Vec<&str> = t.body.lines().skip(1).collect();
+        t.body = format!(
+            "# INVENTED for the breakdown's check, never part of the design: sw_activity_band's method, its elevated edge moved from 130 to 135 sfu to be wrong.\n{}\n",
+            rest.join("\n")
+        );
+    }
+    for t in c.tables.iter_mut().filter(|t| t.path == "declaration.csv") {
+        t.csv = format!(
+            "author,ai,date,source,checked_by\n{who},transcribed,2026-10-17,\"sw_activity_band's method, its elevated edge moved to 135 sfu: invented to be wrong, for the breakdown's check\",{who}\n"
+        );
+    }
+    c
+}
+
 fn main() {
     let out = std::env::args()
         .nth(1)
@@ -393,9 +412,12 @@ fn main() {
         &drive.join("groups/l3_solar/nodes/sw_activity_count.vnode"),
     );
     write(
-        &activity_child("sw_activity_count_late", &|m| {
-            m.replace("if f107 >= 130 then", "if f107 >= 135 then")
-        }),
+        &invented(
+            activity_child("sw_activity_count_late", &|m| {
+                m.replace("if f107 >= 130 then", "if f107 >= 135 then")
+            }),
+            "Test Pia",
+        ),
         &drive.join("groups/l3_solar/nodes/sw_activity_count_late.vnode"),
     );
 

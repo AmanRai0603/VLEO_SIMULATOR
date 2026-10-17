@@ -118,12 +118,21 @@ function tree(t) {
     kids.get(p).push(b);
   }
   for (const list of kids.values()) list.sort((a, b) => a.ord - b.ord || a.id.localeCompare(b.id));
+  // A block no root reaches (a parent cycle the file holds) is still shown,
+  // at the top: never dropped from the screen.
+  const reached = new Set();
+  const walk = p => (kids.get(p) || []).forEach(b => { if (!reached.has(b.uid)) { reached.add(b.uid); walk(b.uid); } });
+  walk('');
+  for (const b of t.blocks) {
+    if (!reached.has(b.uid)) { kids.get('').push(b); reached.add(b.uid); walk(b.uid); }
+  }
+  if (!kids.has('')) kids.set('', []);
   const item = b => '<li><button class="sy-node' + (b.uid === W.sel ? ' sel' : '') + (b.archived ? ' sy-archived' : '') +
     '" data-block="' + esc(b.uid) + '" title="' + esc(b.question || 'no question yet') + '">' + esc(b.id) + '</button>' +
     ' <span class="tag sy-' + esc(b.read_as) + '">' + esc(b.read_as) + '</span>' +
     (b.open.length && !b.archived ? ' <span class="sy-open">' + esc(plural(b.open.length, 'open part')) + '</span>' : '') +
     (b.reproduces ? ' <span class="sy-' + (b.reproduces.state === 'agrees' ? 'ok' : 'not') + '">' +
-      (b.reproduces.state === 'agrees' ? 'children reproduce it' : 'children do not reproduce it') + '</span>' : '') +
+      ({ agrees: 'children reproduce it', differs: 'children do not reproduce it' }[b.reproduces.state] || 'not judged') + '</span>' : '') +
     (kids.has(b.uid) ? '<ul>' + kids.get(b.uid).map(item).join('') + '</ul>' : '') + '</li>';
   return '<ul class="sy-roots">' + (kids.get('') || []).map(item).join('') + '</ul>';
 }
@@ -179,10 +188,12 @@ function edits(b, children, outs) {
       '<button class="ctl" id="sy-fill-p">Fill</button></p>';
   }
   if (!inGroup && !b.answers.length && children.length && outs.length) {
-    h += '<p><b>break it down</b> its <select id="sy-bd-out" class="ctl">' + outs.map(p => opt(p.name)).join('') + '</select> ' +
-      'answered by <select id="sy-bd-child" class="ctl">' + children.map(c => opt(c.uid, c.id)).join('') + '</select>\'s ' +
-      '<input id="sy-bd-port" size="16" placeholder="its output" value="' + esc(outs[0].name) + '"> ' +
-      '<button class="ctl" id="sy-break-down">Break down</button></p>';
+    // One answer for each output: the program refuses fewer.
+    h += '<p><b>break it down</b>, each output answered by a child\'s answer</p>' + outs.map(o =>
+      '<p class="sy-bd-row" data-bd-out="' + esc(o.name) + '">its ' + esc(o.name) + ' by ' +
+      '<select class="ctl sy-bd-child">' + children.map(c => opt(c.uid, c.id)).join('') + '</select>\'s ' +
+      '<input class="sy-bd-port" size="16" placeholder="its output" value="' + esc(o.name) + '"></p>').join('') +
+      '<p><button class="ctl" id="sy-break-down">Break down</button></p>';
   }
   if (b.answers.length) h += '<p><button class="ctl" id="sy-fold-back">Fold back</button> its estimate answers again; its children stay.</p>';
   if (inGroup && !b.archived) {
@@ -229,7 +240,11 @@ async function click(e) {
       block: b, direction: v('sy-p-dir'), name: v('sy-p-name').trim(), type: v('sy-p-type'), unit: v('sy-p-unit').trim(),
       lower: v('sy-p-lo').trim(), upper: v('sy-p-hi').trim(), state: v('sy-p-state'),
     });
-    case 'sy-break-down': return send('break-down', { node: b, output: v('sy-bd-out'), child: v('sy-bd-child'), port: v('sy-bd-port').trim() });
+    case 'sy-break-down': return send('break-down', {
+      node: b,
+      answers: [...W.host.querySelectorAll('.sy-bd-row')].map(r =>
+        r.dataset.bdOut + '=' + r.querySelector('.sy-bd-child').value + '.' + r.querySelector('.sy-bd-port').value.trim()).join('\n'),
+    });
     case 'sy-fold-back': return send('fold-back', { node: b });
     case 'sy-move': return send('move', { block: b, parent: v('sy-mv-parent').trim() });
     case 'sy-rename': return send('rename', { block: b, id: v('sy-rn-id').trim() });
