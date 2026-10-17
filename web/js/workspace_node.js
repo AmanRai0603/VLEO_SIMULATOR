@@ -5,9 +5,9 @@
 
   * LEFT, ITS SIX PARTS. Each done, missing or failing as the gate says, and
     *run my code again* (nodeparts.js, B's drawing, unchanged).
-  * CENTRE, ITS PAGE AS TODAY'S DESIGN HOLDS IT. Today's tool page's node view,
-    drawn by the same function (node.js drawNode), so the two cannot drift
-    while both exist. It is the design the engine has open, and says so: the
+  * CENTRE, ITS PAGE AS TODAY'S DESIGN HOLDS IT. A row's page, drawn by
+    node.js drawNode, the one place it is drawn since today's tool page's
+    node view went (F3-h3). It is the design the engine has open, and says so: the
     revision in your copy joins it only once its group seals a release (F5).
   * RIGHT, ITS FILE IN YOUR COPY. Its revision and writer, every signature
     and whether the node is signed as it is now, every request, and what its
@@ -147,8 +147,7 @@ export async function mountNode(host, post, nodes) {
     W.listening = true;
     // A what-if set from the node's own input control, or a case saved, and
     // every number on the page was for the inputs before: the case line, the
-    // what-if bar and the node's page are drawn again, as today's tool page
-    // opens its node again.
+    // what-if bar and the node's page are drawn again.
     onOverrideChange(() => { if (W.host && W.host.isConnected) whatIf(); });
     onCaseChange(() => { if (W.host && W.host.isConnected && W.id) { whatIf(); centre(W.id, W.file); } });
   }

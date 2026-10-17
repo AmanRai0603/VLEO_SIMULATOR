@@ -1,5 +1,5 @@
 /*
-  One node, opened.
+  One node, opened: its page, as the Node workspace draws it.
 
   Three segments in a fixed order, because the order is the thing that has to
   be repeatable: what the node is *made of*, what it is *connected to*, and

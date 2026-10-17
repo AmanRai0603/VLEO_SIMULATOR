@@ -134,7 +134,8 @@ Node workspace** (`/app#node/<id>`).
 The rest of what the design does is in **the application** (`/app`) too: its \
 **Explore** workspace says which design is open, shows where it breaks, runs \
 any row, holds the case's inputs and every result kept. Today's tool page keeps \
-the rows, to find one, and the architecture every row repeats."""
+the rows, to find one, the architecture every row repeats, its own Explore, the \
+forms and this manual."""
 
 [[layer.section.step]]
 say = "Every row of the design, by its group."

@@ -432,7 +432,6 @@ h4 { font-size: 10px; text-transform: uppercase; letter-spacing: .08em;
   color: var(--ink-3); margin: 1.2rem 0 .3rem; }
 
 /* ---------- the run ------------------------------------------------------- */
-.nw-run { margin-top: 1.4rem; border-top: 1px solid var(--rule); padding-top: 1rem; }
 .runbar { display: flex; gap: .35rem; align-items: center; flex-wrap: wrap; margin-bottom: .7rem; }
 .runbar .why { color: var(--ink-3); font-size: 10.5px; }
 .answer { font: 600 27px Georgia, serif; margin: .4rem 0 .2rem; }

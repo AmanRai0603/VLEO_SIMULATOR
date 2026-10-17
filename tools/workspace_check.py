@@ -17,7 +17,8 @@ around it. With no key and no copy, as anyone reading the design would:
   and the run panel's *the inputs…* opens Explore at its inputs, where the
   depth switch is not shown;
 - today's tool page holds no node view: a row's link there, and
-  `#row/<id>`, open the row in the Node workspace (F3-h3);
+  `#row/<id>`, open the row in the Node workspace (F3-h3), the second in
+  its own entry's place;
 - no page error.
 
     python3 tools/workspace_check.py
@@ -139,10 +140,15 @@ def check():
             p.wait_for_selector('.nw-page .sheet-read', timeout=60000)
             step("a row's link there opens it in the Node workspace",
                  '/app' in p.url and RECORD in p.inner_text('.answer-first'), p.url)
+            before = p.evaluate('history.length')
             p.goto(f'http://127.0.0.1:{port}/#row/{DECLARED}')
             p.wait_for_url('**/app', timeout=60000)
             workspace(p)
             step('and so does #row/<id>', DECLARED in p.inner_text('.answer-first'), p.url)
+            # In its place: one entry more, the workspace, so Back does not
+            # land on `#row/<id>` and send the reader on again.
+            step('#row/<id> leaves no entry for Back to send the reader on from',
+                 p.evaluate('history.length') == before + 1, f"{before} -> {p.evaluate('history.length')}")
             step('no page error', not errors, '; '.join(errors[:3]))
             b.close()
     finally:
