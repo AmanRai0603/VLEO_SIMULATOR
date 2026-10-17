@@ -24,6 +24,7 @@
 'use strict';
 
 import { $, esc, answerFirst, plural } from './dom.js';
+import { initDepth } from './depth.js';
 
 const POST = { method: 'POST', headers: { 'content-type': 'application/x-www-form-urlencoded' } };
 const WORD = 'vleo-session';
@@ -114,6 +115,8 @@ function draw() {
   $('#sh-nav').innerHTML = WORKSPACES.map(([id, name, holds]) =>
     '<button class="tab' + (S.ws === id ? ' sel' : '') + '" data-ws="' + id + '" title="' + esc(holds) + '">' +
     esc(name) + '</button>').join('');
+  // How deep a node's page goes: said where a node's page is drawn.
+  $('#depth').hidden = S.ws !== 'node';
   const n = S.notice;
   $('#sh-notice').innerHTML = n ? '<p class="' + (n.ok ? 'sh-said' : 'sh-refused') + '">' + esc(n.text) + '</p>' : '';
   if (S.ws === 'node') {
@@ -523,26 +526,31 @@ function systemLink() {
   return true;
 }
 
-takeWord();
-// Today's tool page sends its inputs and its results kept here.
-{
-  nodeLink();
-  systemLink();
+/** `#explore/<view>[/<file>]` opens Explore at its inputs or a result kept:
+ *  sent from today's tool page, and from a node's page. Whether one was
+ *  asked for is answered. */
+function exploreLink() {
   const m = location.hash.match(/^#explore\/(\w+)(?:\/(.+))?$/);
-  if (m) {
-    S.ws = 'explore';
-    // A name that does not decode opens Explore at its view, at no result:
-    // never a page that does not start.
-    let file = '';
-    try { file = m[2] ? decodeURIComponent(m[2]) : ''; } catch (e) { file = ''; }
-    exploreAt = { view: m[1], file };
-    history.replaceState(null, '', location.pathname + location.search);
-  }
+  if (!m) return false;
+  S.ws = 'explore'; S.notice = null; dropPending();
+  // A name that does not decode opens Explore at its view, at no result:
+  // never a page that does not start.
+  let file = '';
+  try { file = m[2] ? decodeURIComponent(m[2]) : ''; } catch (e) { file = ''; }
+  exploreAt = { view: m[1], file };
+  history.replaceState(null, '', location.pathname + location.search);
+  return true;
 }
+
+takeWord();
+initDepth();
+nodeLink();
+systemLink();
+exploreLink();
 document.addEventListener('click', click);
 window.addEventListener('hashchange', () => {
   if (nodeLink()) toNode(nodeAt);
-  else if (systemLink()) { $('#sh-main').innerHTML = ''; draw(); }
+  else if (systemLink() || exploreLink()) { $('#sh-main').innerHTML = ''; draw(); }
 });
 document.addEventListener('change', change);
 // The passphrase is held two minutes at most: long enough to find the
