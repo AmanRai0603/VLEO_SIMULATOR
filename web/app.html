@@ -13,6 +13,10 @@ body.sh { max-width: 64rem; margin: 0 auto; padding: 0 1.5rem 3rem; }
 #sh-head { display: flex; align-items: baseline; gap: 1rem; padding: 1rem 0 .4rem; }
 #sh-head h1 { font: 600 15px var(--mono); margin: 0; }
 .sh-who { color: var(--ink-2); font: 11px var(--mono); margin-left: auto; }
+/* The depth switch sits in the shell's header row, not floated over a title
+   as today's tool page sets it. */
+#sh-head #depth { float: none; margin-top: 0; }
+.nw-case { margin: .2rem 0 .4rem; }
 .sh-notice p { margin: .4rem 0; padding: .35rem .6rem; border-radius: 3px; font-size: 13px; }
 .sh-said { background: var(--both-pale); color: var(--both); }
 .sh-refused { background: var(--out-pale); color: var(--out); }
@@ -106,6 +110,13 @@ body.sh:has(#sh-node) { max-width: 118rem; }
 <header id="sh-head">
   <h1>VLEO</h1>
   <span id="sh-who" class="sh-who">no key open</span>
+  <!-- How deep a node's page goes, as on today's tool page (depth.js). -->
+  <span class="grp" id="depth" role="group" aria-label="how deep the page goes"
+    title="Learn keeps every step and asks you to predict first · Read shows the answer, the plain words and the real thing · Expert keeps the answer, the relation, the limits and the reference"><span class="lbl">depth</span>
+    <button class="ctl dp" data-depth="learn">Learn</button
+    ><button class="ctl dp" data-depth="read">Read</button
+    ><button class="ctl dp" data-depth="expert">Expert</button>
+  </span>
 </header>
 <nav id="sh-nav" class="tabrow" aria-label="workspaces"></nav>
 <div id="sh-notice" class="sh-notice" role="status" aria-live="polite"></div>

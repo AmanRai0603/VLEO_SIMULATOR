@@ -17,13 +17,12 @@ import { renderRows } from './rows.js';
 import { openNode } from './node.js';
 import { drawArchitecture } from './architecture.js';
 import { renderManual } from './manual.js';
-import { saveOverridesToCase, savableOverrides } from './case.js';
 import { renderForms } from './forms.js';
 import { renderExplore } from './explore.js';
 import { showContract, showMock } from './banners.js';
 import { initDepth } from './depth.js';
-import { loadOverrides, overrideCount, clearAllOverrides, clearOverride,
-         fromSI, onOverrideChange } from './inputs.js';
+import { loadOverrides, onOverrideChange } from './inputs.js';
+import { caseSaid, drawWhatIf } from './casebar.js';
 
 // ---------------------------------------------------------------------------
 // boot
@@ -54,13 +53,16 @@ async function boot() {
   wire();
   setRows();
   // A link to the manual opens it — `#manual`, or `#manual/<section>` to land
-  // on the one step somebody was sent to read — and `#row/<id>` opens a row's
-  // page.
+  // on the one step somebody was sent to read — `#row/<id>` opens a row's
+  // page, and `#group/<id>` the rows of a group (sent from a node's page in
+  // the application's Node workspace).
   const openFromHash = () => {
     const h = location.hash.match(/^#manual(?:\/([\w-]+))?$/);
     if (h) return setManual(h[1]);
     const r = location.hash.match(/^#row\/([\w-]+)$/);
     if (r && S.byId.has(r[1])) open(r[1]);
+    const g = location.hash.match(/^#group\/([\w-]+)$/);
+    if (g && S.gkids) openGroup(g[1]);
   };
   openFromHash();
   // AND WHEN ONLY THE HASH CHANGES. A manual link pasted into a tab that already
@@ -110,13 +112,7 @@ export function draw() {
 function drawCaseBar() {
   const c = theCase();
   $('#case-name').textContent = c ? c.label : 'no case';
-  const d = S.saved;
-  $('#case-state').textContent = !d ? 'the case could not be read'
-    : !d.stored ? 'every input at its default'
-    : d.changed + ' input' + (d.changed === 1 ? '' : 's') + ' changed from default' +
-      (d.upgrade ? ' · carried over to this version' + (d.upgrade.set_aside.length
-        ? ', ' + d.upgrade.set_aside.length + ' value' + (d.upgrade.set_aside.length === 1 ? '' : 's') +
-          ' set aside' : '') : '');
+  $('#case-state').textContent = caseSaid();
 }
 
 /** The rows of a group: its own, or, for a group that holds groups, the
@@ -158,80 +154,12 @@ function toExplore(view, file) {
   location.href = '/app#explore/' + view + (file ? '/' + encodeURIComponent(file) : '');
 }
 
-/**
- * The what-if bar.
- *
- * Hidden when nothing is overridden — a control strip that is always there
- * teaches a reader to stop seeing it, and the one moment this has to be seen
- * is the moment it appears. Every row it lists is a number the design does not
- * hold, so each one names itself, shows what it is running at, and can be put
- * back on its own without disturbing the others.
- */
+/** The what-if bar, above every view (`casebar.js`): put back, and a
+ *  what-if made the case, redraw everything that shows a number. */
 function drawOverrideBar() {
-  const bar = $('#ovrbar');
-  const n = overrideCount();
-  bar.hidden = n === 0;
-  if (!n) return;
-  const savable = savableOverrides();
-  const rows = [];
-  for (const [id, si] of S.overrides) {
-    const r = S.byId.get(id);
-    if (!r) continue;
-    rows.push('<span class="ovr-chip xref" data-goto="' + id + '">' +
-      '<b>' + (r.symbol || r.label) + '</b> ' + fmtNum(fromSI(r, si)) + ' ' + r.unit +
-      '<button class="ovr-x" data-drop="' + id + '" title="put this one back">×</button>' +
-      '</span>');
-  }
-  // THE BAR SAYS WHAT IS TRUE; IT DOES NOT RUN ANYTHING. Update lives beside
-  // the field on the node page, which is where the hand already is. A second
-  // update button here re-rendered this bar during its own click — the field's
-  // blur fires first, the bar redraws, and the button the click was travelling
-  // to no longer exists. One action, one place.
-  bar.innerHTML =
-    // WHAT THIS BAR MAY CLAIM. It used to say "everything below is a what-if",
-    // and that is not true of a figure drawn from the record: sw_regime is
-    // byte-identical with and without an override, correctly, because the
-    // measured record is the measured record whatever the design is set to.
-    // A reader looking at that chart under this bar would have been told it
-    // reflected their change. Anything the ENGINE computes does follow the
-    // override — the relation curves move — so that is what it says.
-    '<div class="ovr-bar-h"><b>' + n + ' input' + (n === 1 ? '' : 's') +
-      ' overridden.</b> Every number the engine computes below is a what-if. ' +
-      'A figure drawn from the measured record is unchanged, because the record ' +
-      'is. The sheets on disk are untouched and nothing is written to the ' +
-      'repository.</div>' +
-    '<div class="ovr-chips">' + rows.join('') +
-      '<button class="ctl ovr-bar-clear">put all back</button>' +
-      // A what-if worth keeping is made the case here — saved by the daemon,
-      // outside the repository, like any other change to the inputs.
-      (savable ? '<button class="ctl ovr-bar-save" title="make ' + (savable === n ? 'these' :
-        savable + ' of these') + ' part of the saved case: every run on every page then uses ' +
-        (savable === 1 ? 'it' : 'them') + '">save ' + (savable === n ? '' : savable + ' ') +
-        'to the case</button>' : '') +
-      '<span class="why ovr-bar-said"></span></div>';
-
-  $$('.ovr-x', bar).forEach(b => b.onclick = e => {
-    e.stopPropagation();
-    clearOverride(b.dataset.drop);
-    S.lastRun = null;
-    draw();
-  });
-  $('.ovr-bar-clear', bar).onclick = () => { clearAllOverrides(); S.lastRun = null; draw(); };
-  const save = $('.ovr-bar-save', bar);
-  if (save) save.onclick = async () => {
-    save.disabled = true;
-    const res = await saveOverridesToCase();
-    // On success the case changed and everything showing a number redraws,
-    // this bar with it; only a refusal is left to say here.
-    if (!res.ok && bar.isConnected) {
-      save.disabled = false;
-      $('.ovr-bar-said', bar).textContent = 'not saved: ' + (res.message || 'refused');
-    }
-  };
+  drawWhatIf($('#ovrbar'), draw);
 }
 
-/** Six significant figures, as the rest of the face writes a number. */
-const fmtNum = v => (v == null || !isFinite(v)) ? '—' : String(Number(v.toPrecision(6)));
 
 // ---------------------------------------------------------------------------
 // navigation

@@ -39,8 +39,10 @@
 'use strict';
 
 import { $, $$, esc, answerFirst, plural } from './dom.js';
-import { S as E, load, loadSaved } from './state.js';
-import { loadOverrides } from './inputs.js';
+import { S as E, load, loadSaved, theCase, onCaseChange } from './state.js';
+import { loadOverrides, onOverrideChange } from './inputs.js';
+import { caseSaid, drawWhatIf } from './casebar.js';
+import { showContract, showMock } from './banners.js';
 import { drawNode } from './node.js';
 import { mountParts } from './nodeparts.js';
 
@@ -51,6 +53,7 @@ const W = {
   behind: null, // the file as it is now, when the typing began on an earlier one
   seq: 0, timer: 0, // the typing checked last, and the check waiting to be asked
   view: 'today', // the centre: today's page, or the copy's revision over it
+  listening: false, // the case and the what-if heard, once
   centreSeq: 0, // the centre drawn last: an older drawing's answer is dropped
 };
 
@@ -91,6 +94,9 @@ function ready() {
  *  that does not hold the node. */
 async function readDesign() {
   try { await ready(); W.unread = ''; } catch (e) { W.unread = String(e); }
+  // A page in doubt says so before anything else, as today's tool page does.
+  showContract();
+  showMock();
 }
 
 async function get(path) {
@@ -118,6 +124,15 @@ export async function mountNode(host, post, nodes) {
     host.addEventListener('click', click);
     host.addEventListener('change', changed);
     host.addEventListener('input', typed);
+  }
+  if (!W.listening) {
+    W.listening = true;
+    // A what-if set from the node's own input control, or a case saved, and
+    // every number on the page was for the inputs before: the case line, the
+    // what-if bar and the node's page are drawn again, as today's tool page
+    // opens its node again.
+    onOverrideChange(() => { if (W.host && W.host.isConnected) whatIf(); });
+    onCaseChange(() => { if (W.host && W.host.isConnected && W.id) { whatIf(); centre(W.id, W.file); } });
   }
   await draw();
 }
@@ -148,7 +163,7 @@ async function draw(keep) {
   }
   W.rebasing = false;
   const row = E.byId && E.byId.get(id);
-  host.innerHTML = picker() + head(id, file, row) +
+  host.innerHTML = picker() + head(id, file, row) + (row ? theInputs() : '') +
     '<div class="nw-grid">' +
       '<aside class="nw-left"><h3 class="seg-h">its parts</h3><div class="nw-parts"></div></aside>' +
       '<section class="nw-centre"><h3 class="seg-h">its page' + (views(file) ? '' : ', as today\'s design holds it') + '</h3>' +
@@ -162,6 +177,7 @@ async function draw(keep) {
       '<aside class="nw-right">' + yourFile(id, file) + '</aside>' +
     '</div>';
   if (row) {
+    whatIf();
     mountParts($('.nw-parts', host), id);
     await centre(id, file);
   } else {
@@ -240,6 +256,24 @@ function yoursSaid(l) {
       ? '<p class="muted">Only the sheet is drawn: what it is made of, what it is joined to, its figures, its lesson ' +
         'and its run are today\'s design\'s, on the other page.</p>'
       : '') + '</div>';
+}
+
+/** Which inputs every number on the page is for, and the what-if bar when a
+ *  what-if is set (`casebar.js`), as today's tool page carries them. */
+function theInputs() {
+  const c = theCase();
+  return '<div class="tabrow sub nw-case"><span class="lbl">case</span> <b id="case-name">' +
+    esc(c ? c.label : 'no case') + '</b> <span class="hint-inline" id="case-state"></span> ' +
+    '<a class="ctl" href="#explore/inputs" title="every input of the case, in Explore">inputs…</a></div>' +
+    '<div id="ovrbar" hidden></div>';
+}
+
+/** The case line and the what-if bar, drawn again: put back, and a what-if
+ *  made the case, draw the node's page again. */
+function whatIf() {
+  const at = $('#case-state', W.host);
+  if (at) at.textContent = caseSaid();
+  drawWhatIf($('#ovrbar', W.host), () => { whatIf(); centre(W.id, W.file); });
 }
 
 function picker() {
@@ -490,11 +524,22 @@ async function click(e) {
   const t = e.target.closest('button, .xref');
   if (!t || !W.host.contains(t)) return;
   if (t.classList.contains('xref')) {
-    // A row named on the page opens here; anything else is today's page's.
+    // A row named on the page opens here; a group, in the rows on today's
+    // tool page; the inputs and a result kept, in Explore.
     if (t.dataset.goto && E.byId.has(t.dataset.goto)) {
       e.preventDefault();
       openAt(t.dataset.goto);
       return draw();
+    }
+    if (t.dataset.group) {
+      e.preventDefault();
+      location.href = '/#group/' + encodeURIComponent(t.dataset.group);
+    } else if (t.dataset.inputs !== undefined) {
+      e.preventDefault();
+      location.hash = '#explore/inputs';
+    } else if (t.dataset.results !== undefined) {
+      e.preventDefault();
+      location.hash = '#explore/results' + (t.dataset.results ? '/' + encodeURIComponent(t.dataset.results) : '');
     }
     return;
   }
