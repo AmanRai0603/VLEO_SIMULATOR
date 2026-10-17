@@ -102,7 +102,9 @@ Handed over Saturday 17 October (S1 to S3: F1 to F3-f, the key's proof, F3-g1, t
   - **188 F3-g2a writing the node, checked as it is typed: high risk.** Stacked on 187, on `claude/a-f3g2-edit` (it reads F4-a's split of the method's checks).
     - `vleo_files::edit`: the question, the explanation's three texts, the method and the cases of a release-shaped node file, each refused by name for rules 4 and 6, a decision with no record of which belief broke (a row of the node's own `versions.csv`), an edit that changes nothing, and a node of `design/`'s shape until F3-g0. Saved through `save::save`, split into `would_save` and the write; `try_edit` is the dry run.
     - `POST /v1/node/<id>/edit` with `dry_run`; the file route says the node's content. The Node workspace writes it, checked a moment after typing stops, never redrawn under the caret.
-    - Proved by a library test, a program test and `tools/edit_check.py` (panels job, port 7873). Its Opus review is running; CI is pending.
+    - Proved by a library test, a program test and `tools/edit_check.py` (panels job, port 7873).
+
+    The Opus review found two blocking points (the screen saved every field it first read over whatever revision was open, so a second writer's text was reverted; one section's text could begin, hide or double another) and seven more; all fixed in 6984cf1f, each with a test shown red but four paths named untested. Questions 16 and 17 for Aman are in its body. CI is pending on the fixes.
 - **What 171 decides, which B's PRs must follow:**
   - **Ownership follows the mount.** Only the programme's file (mounting `systems`) and the systems' file (mounting each `l3_*`) mount anything.
   - **A group file registers only node engineers.** It holds nobody the programme's file registers, and no key it registers. `open_group_in` refuses anything else, by name.
@@ -168,9 +170,9 @@ Handed over Saturday 17 October (S1 to S3: F1 to F3-f, the key's proof, F3-g1, t
 - **Lockfiles:** `crates/vleo-py` keeps its own, built `--locked` in CI, and so does `crates/vleo-kernel-wasm` until 177 removes it. A new dependency of `vleo-files` or `vleo-server` needs them refreshed, as 171 does.
 - **Disk:** the container's allowance filled on S1 and again on S2. `xtask files-wasm` and the scenarios leave a `target/` of 10 GB or more inside the worktree they run in; delete it after a push. Old worktrees' `target/` folders and `target/*/incremental` were deleted to make room.
 - **Next for A, in order:**
-  - **188's review**, then CI on 188.
+  - **CI on 188's review fixes.**
   - **F3-g2b, the live page of the copy's revision** (the brief, F3-g2b): the copy's node file read as a release's node, planned against today's design and laid over it for one request. High risk; Opus review.
-  - **For Aman:** the brief's questions 9 (one node shape, F3-g0) and 10 (ports), 7 and 8 (where today's page's Rows, Architecture, Forms and manual go), and 11 to 15 (F3-g2).
+  - **For Aman:** the brief's questions 9 (one node shape, F3-g0) and 10 (ports), 7 and 8 (where today's page's Rows, Architecture, Forms and manual go), and 11 to 17 (F3-g2).
   - **Then F3-h, the node view's removal**, once F3-g2 covers what it shows, with the panel checks moved to `/app`.
 
 ## Person B · night
