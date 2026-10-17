@@ -104,7 +104,12 @@ Handed over Saturday 17 October (S1 to S3: F1 to F3-f, the key's proof, F3-g1, t
     - `POST /v1/node/<id>/edit` with `dry_run`; the file route says the node's content. The Node workspace writes it, checked a moment after typing stops, never redrawn under the caret.
     - Proved by a library test, a program test and `tools/edit_check.py` (panels job, port 7873).
 
-    The Opus review found two blocking points (the screen saved every field it first read over whatever revision was open, so a second writer's text was reverted; one section's text could begin, hide or double another) and seven more; all fixed in 6984cf1f, each with a test shown red but four paths named untested. Questions 16 and 17 for Aman are in its body. CI is pending on the fixes.
+    The Opus review found two blocking points (the screen saved every field it first read over whatever revision was open, so a second writer's text was reverted; one section's text could begin, hide or double another) and seven more; all fixed in 6984cf1f, each with a test shown red but four paths named untested. Questions 16 and 17 for Aman are in its body. CI is green on the fixes.
+  - **189 F3-g2b the page of the copy's revision: high risk.** Stacked on 188, on `claude/a-f3g2b-page`.
+    - `vleo_files::intake::copy_form`: a node file of the copy laid out as a release's folder (`copy_release`) and taken by `node_form`, today's design's own intake, and nothing else.
+    - `GET /v1/node/<id>/live`: planned as today's design plans a release, laid over it for that request only, drawn by the page's own fragment, said so, with what it changes, what is withheld and why, and what a release does not bring in. Nothing of today's design is written or run.
+    - The Node workspace's centre has two pages, today's and the copy's revision's, the sheet alone on the second.
+    - Proved by a library test, a program test and `tools/edit_check.py`. Questions 18 and 19 for Aman are in its body. Its Opus review is running; CI is pending.
 - **What 171 decides, which B's PRs must follow:**
   - **Ownership follows the mount.** Only the programme's file (mounting `systems`) and the systems' file (mounting each `l3_*`) mount anything.
   - **A group file registers only node engineers.** It holds nobody the programme's file registers, and no key it registers. `open_group_in` refuses anything else, by name.
@@ -115,6 +120,9 @@ Handed over Saturday 17 October (S1 to S3: F1 to F3-f, the key's proof, F3-g1, t
   - **The record of which belief broke lives in the node's own `versions.csv`** until Aman says otherwise (question 12); which edits need one is `vleo_sheet::derisk::about_of`.
   - **`checks::ORIGINS` and `checks::NOT_A_REFERENCE` are the one list of each.**
   - **For B:** the Node workspace's right side gains *write it* (`.nw-live`, `data-edit` fields); a scenario that counts its parts must allow for it.
+- **What 189 decides:**
+  - **A copy's revision is drawn only as today's design would take it**: the same intake as a release, so its question and its explanation's texts are not on its page until intake takes them (question 18).
+  - **For B:** the Node workspace's centre names its page on a button (`.nw-view.sel`), not in its heading; `drawNode` takes `opts.fragment` and then draws the sheet alone.
 - **What 186 and 187 decide:**
   - **A breakdown is the group file's**: one wire into each output of the node from the child that answers it. The node's own file is not touched until F5 issues it again.
   - **A node's cases are evidence only once its node engineer has signed them as they are**, and its file's checks pass. A breakdown into children before that is refused, said why. So every breakdown waits for children F5 issues (question 6 on 186).
@@ -170,9 +178,8 @@ Handed over Saturday 17 October (S1 to S3: F1 to F3-f, the key's proof, F3-g1, t
 - **Lockfiles:** `crates/vleo-py` keeps its own, built `--locked` in CI, and so does `crates/vleo-kernel-wasm` until 177 removes it. A new dependency of `vleo-files` or `vleo-server` needs them refreshed, as 171 does.
 - **Disk:** the container's allowance filled on S1 and again on S2. `xtask files-wasm` and the scenarios leave a `target/` of 10 GB or more inside the worktree they run in; delete it after a push. Old worktrees' `target/` folders and `target/*/incremental` were deleted to make room.
 - **Next for A, in order:**
-  - **CI on 188's review fixes.**
-  - **F3-g2b, the live page of the copy's revision** (the brief, F3-g2b): the copy's node file read as a release's node, planned against today's design and laid over it for one request. High risk; Opus review.
-  - **For Aman:** the brief's questions 9 (one node shape, F3-g0) and 10 (ports), 7 and 8 (where today's page's Rows, Architecture, Forms and manual go), and 11 to 17 (F3-g2).
+  - **189's review**, then CI on 189.
+  - **For Aman:** the brief's questions 9 (one node shape, F3-g0) and 10 (ports), 7 and 8 (where today's page's Rows, Architecture, Forms and manual go), and 11 to 19 (F3-g2).
   - **Then F3-h, the node view's removal**, once F3-g2 covers what it shows, with the panel checks moved to `/app`.
 
 ## Person B · night
