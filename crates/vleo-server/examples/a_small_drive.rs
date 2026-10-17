@@ -16,6 +16,9 @@
 //! - Test Pia, solar's other node engineer, assigned `sw_activity_band` as
 //!   solar's 1.1 release holds it: a node whose checks hold, unsigned, for
 //!   the put-back's check (tools/put_back_check.py);
+//! - two children of that node, unassigned, as F5 will issue them: one with
+//!   its own method, and one whose elevated edge is at 135 sfu, invented to
+//!   be wrong, for the breakdown's check (tools/branch_check.py);
 //! - a node engineer whose name is made of what a page must escape;
 //! - solar's releases: 1.1, as the design already holds it; 1.2, whose hot
 //!   edge of the sustained F10.7 band breaks the first solar closure; and
@@ -197,6 +200,43 @@ fn activity_band() -> File {
     n
 }
 
+/// A child of `sw_activity_band`, as F5 will issue one, unassigned: the
+/// band's own method under another id, reading the band's input, with
+/// `edit` made to its method. For the breakdown's check (tools/
+/// branch_check.py): one that reproduces the band, and one whose elevated
+/// edge is at 135 sfu, invented to be wrong.
+fn activity_child(id: &str, edit: &dyn Fn(&str) -> String) -> File {
+    let mut c = activity_band();
+    c.meta.insert(s("block_uid"), s(id));
+    c.meta.insert(s("writer"), s(""));
+    c.blocks[0].uid = s(id);
+    c.blocks[0].id = s(id);
+    c.blocks[0].parent_uid = s("sw_activity_band");
+    for p in c.ports.iter_mut() {
+        p.block_uid = s(id);
+    }
+    c.wires = c
+        .ports
+        .iter()
+        .filter(|p| p.direction == "in")
+        .map(|p| Wire {
+            to_block: s(id),
+            to_port: p.name.clone(),
+            from_ref: format!("sw_activity_band.{}", p.name),
+        })
+        .collect();
+    for t in c.texts.iter_mut() {
+        t.scope = s(id);
+        if t.kind == "pseudocode" {
+            t.body = edit(&t.body);
+        }
+    }
+    for t in c.tables.iter_mut() {
+        t.scope = s(id);
+    }
+    c
+}
+
 fn main() {
     let out = std::env::args()
         .nth(1)
@@ -346,6 +386,17 @@ fn main() {
     write(
         &activity_band(),
         &drive.join("groups/l3_solar/nodes/sw_activity_band.vnode"),
+    );
+    // Two children of it, unassigned, for the breakdown's check.
+    write(
+        &activity_child("sw_activity_count", &|m| m.to_string()),
+        &drive.join("groups/l3_solar/nodes/sw_activity_count.vnode"),
+    );
+    write(
+        &activity_child("sw_activity_count_late", &|m| {
+            m.replace("if f107 >= 130 then", "if f107 >= 135 then")
+        }),
+        &drive.join("groups/l3_solar/nodes/sw_activity_count_late.vnode"),
     );
 
     // Power, with nothing sealed: its releases folder holds something that is

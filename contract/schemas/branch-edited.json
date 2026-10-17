@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "branch-edited",
+  "description": "One edit to a branch's breakdown, made in your copy, or why not; a second writer answered with the file's digest now.",
+  "type": "object",
+  "properties": {
+    "ok": {
+      "type": "boolean"
+    },
+    "conflict": {
+      "type": "boolean"
+    },
+    "group": {
+      "type": "string"
+    },
+    "edit": {
+      "type": "string"
+    },
+    "opened": {
+      "type": "string"
+    },
+    "message": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "ok"
+  ]
+}

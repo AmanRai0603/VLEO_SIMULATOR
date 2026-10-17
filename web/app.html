@@ -39,7 +39,7 @@ body.sh { max-width: 64rem; margin: 0 auto; padding: 0 1.5rem 3rem; }
 .ex-mark { font-size: 11px; color: var(--out); }
 /* The Node workspace: its parts, its page, its file in your copy. Wider than
    the rest of the shell, since its page is today's node view. */
-body.sh:has(#sh-node) { max-width: 100rem; }
+body.sh:has(#sh-node), body.sh:has(#sh-system) { max-width: 100rem; }
 .nw-pick { margin: .6rem 0; display: flex; flex-wrap: wrap; gap: .3rem; align-items: center; font-size: 12px; }
 .nw-pick-k { font: 600 11px var(--mono); text-transform: uppercase; letter-spacing: .08em; color: var(--ink-2); }
 .nw-mine.sel { background: var(--ink); color: var(--paper); }
@@ -55,6 +55,23 @@ body.sh:has(#sh-node) { max-width: 100rem; }
 .nw-wide { width: 100%; font: 12px var(--mono); }
 .nw-next { font-weight: 600; }
 .nw-stale { margin: .5rem 0; }
+.sy-grid { display: grid; grid-template-columns: 20rem minmax(0, 1fr); gap: 1rem; align-items: start; }
+@media (max-width: 60rem) { .sy-grid { grid-template-columns: minmax(0, 1fr); } }
+.sy-tree ul { list-style: none; margin: 0; padding-left: 14px; font-size: 12px; }
+.sy-tree > ul { padding-left: 0; }
+.sy-tree li { margin: 2px 0; }
+.sy-node { font: 12px var(--mono); background: none; border: 0; padding: 1px 3px; cursor: pointer; color: var(--ink); }
+.sy-node.sel { background: var(--ink); color: var(--paper); }
+.sy-archived { text-decoration: line-through; color: var(--ink-2); }
+.sy-open { font-size: 11px; color: var(--ink-2); }
+.sy-ok { color: var(--both); font-size: 11px; }
+.sy-not { color: var(--out); font-size: 11px; }
+.sy-block h4 { font: 600 11px var(--mono); margin: .9rem 0 .2rem; }
+.sy-block p { font-size: 12px; }
+.sy-cases { font-size: 12px; }
+.sy-differs td { color: var(--out); }
+.sy-next { font-weight: 600; }
+.sy-stale { margin: .5rem 0; }
 </style>
 </head>
 <body class="sh">
