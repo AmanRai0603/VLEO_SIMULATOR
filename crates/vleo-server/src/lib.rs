@@ -31,6 +31,7 @@ mod http;
 mod inputs;
 mod issues;
 mod json;
+mod live;
 mod me;
 mod my_work;
 mod node_file;
@@ -681,6 +682,10 @@ fn route(
         }
         // A node's file in the working copy, and its next revision saved
         // there (F3-a).
+        ("GET", p) if p.starts_with("/v1/node/") && p.ends_with("/live") => ok_json(live::live(
+            p.trim_start_matches("/v1/node/").trim_end_matches("/live"),
+            ctx,
+        )),
         ("GET", p) if p.starts_with("/v1/node/") && p.ends_with("/file") => ok_json(
             node_file::file(p.trim_start_matches("/v1/node/").trim_end_matches("/file"), ctx),
         ),

@@ -22,6 +22,8 @@ people on two computers that share the drive. Then, as people would:
 - Test Ola, solar's subsystem engineer, copies the drive on the other
   instance: the node is signed as it is now, not his to write, and both
   requests are there;
+- a node of today's design with no file in the copy has its page said to be
+  today's design's;
 - a node today's design does not hold, and an id that is not one, are each
   said, never drawn as an empty page.
 
@@ -123,7 +125,7 @@ def check():
             p.wait_for_selector('.nw-parts .np-part', timeout=60000)
             step('its six parts are drawn', p.locator('.nw-parts .np-part').count() == 6)
             p.wait_for_selector('.nw-page .sheet-read', timeout=60000)
-            centre = p.inner_text('.nw-centre h3').lower()
+            centre = p.inner_text('.nw-centre .nw-view.sel').lower()
             step("its page is drawn, said to be today's design's", "today's design" in centre, centre)
             step('once, down its side: the page in the centre draws none of its own',
                  p.locator('.nw-centre .np-part, .nw-centre .np-host').count() == 0)
@@ -202,6 +204,15 @@ def check():
             nxt = p.inner_text('.nw-next')
             step('then nothing is left to do, and the old notice is not said again',
                  nxt.startswith('Next: Nothing: revision 1 is signed') and not p.locator('.nw-notice').count(), nxt)
+
+            # A node of today's design with no file in the copy: its page is
+            # today's, and the centre says so with no choice of page beside it.
+            p.goto(f'http://127.0.0.1:{p1}/app#node/sw_kp_from_ap')
+            workspace(p)
+            p.wait_for_selector('.nw-page .sheet-read', timeout=60000)
+            heading = p.inner_text('.nw-centre h3').lower()
+            step("a node with no file in the copy: its page said to be today's design's",
+                 "today's design" in heading and p.locator('.nw-views').count() == 0, heading)
 
             # A node today's design does not hold, and an id that is not one.
             p.goto(f'http://127.0.0.1:{p1}/app#node/no_such_node')

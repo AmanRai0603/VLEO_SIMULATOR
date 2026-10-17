@@ -1,0 +1,138 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "node-live",
+  "description": "A node's page as the working copy's revision of it would make it, over today's design: read as a release's node, held to the node file's own checks and planned as today's design plans a release, and laid over it for this request only. Not drawn where today's design would refuse a release holding it: a check that finds an error, or anything the plan withholds, since one withheld change refuses the whole release. Said so, with what it changes, what is withheld and why, and what the copy's file says that a release does not bring into today's design. Nothing of today's design is written or run; or why not.",
+  "type": "object",
+  "properties": {
+    "ok": {
+      "type": "boolean"
+    },
+    "message": {
+      "type": "string",
+      "description": "Why nothing is drawn: no copy, no node file, a node today's design does not hold."
+    },
+    "node": {
+      "type": "string"
+    },
+    "path": {
+      "type": "string"
+    },
+    "opened": {
+      "type": "string",
+      "description": "The SHA-256 of the node file as it was read."
+    },
+    "revision": {
+      "type": "string"
+    },
+    "writer": {
+      "type": "string"
+    },
+    "not_taken": {
+      "type": "array",
+      "description": "What the copy's file says, where it differs from today's page, that a release does not bring into today's design: its question and its explanation's three texts.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "what": {
+            "type": "string"
+          },
+          "yours": {
+            "type": "string"
+          },
+          "page": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "what",
+          "yours",
+          "page"
+        ]
+      }
+    },
+    "checks": {
+      "type": "array",
+      "description": "Every error the node file's own checks find (checks::check_node): any one, and nothing is drawn.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "place": {
+            "type": "string"
+          },
+          "what": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "place",
+          "what"
+        ]
+      }
+    },
+    "changes": {
+      "type": "array",
+      "description": "What the plan applies: a field, or the version it records.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "what": {
+            "type": "string"
+          },
+          "from": {
+            "type": "string"
+          },
+          "to": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "what",
+          "from",
+          "to"
+        ]
+      }
+    },
+    "withheld": {
+      "type": "array",
+      "description": "What the plan does not apply, and why: a conflict, a refusal, a decision waiting for its record, a transcription taken as an assistant's relation. Any one, and nothing is drawn.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "what": {
+            "type": "string"
+          },
+          "why": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "what",
+          "why"
+        ]
+      }
+    },
+    "record": {
+      "type": "string",
+      "description": "When the plan records a version: which record it is, the node's own, and that a group's release is taken with the group's."
+    },
+    "drawn": {
+      "type": "boolean",
+      "description": "Whether the revision is drawn over today's design: false when its checks find an error, the plan withholds anything, or it does not plan or load over today's design; the page is then today's."
+    },
+    "changes_nothing": {
+      "type": "boolean",
+      "description": "The revision changes nothing on today's page, and the page is today's."
+    },
+    "said": {
+      "type": "string",
+      "description": "What the page is, in a sentence."
+    },
+    "html": {
+      "type": "string",
+      "description": "The page's fragment, as /v1/fragment/<id> draws today's."
+    }
+  },
+  "required": [
+    "ok"
+  ]
+}

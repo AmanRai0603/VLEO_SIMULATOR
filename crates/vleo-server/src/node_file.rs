@@ -23,7 +23,7 @@ use vleo_files::save::{ask_in_place, save, sign_in_place, Asked, Saved};
 use vleo_files::sqlite;
 
 /// A node's id as its file is named: letters, digits and `_`.
-fn node_id(id: &str) -> Result<&str, String> {
+pub(super) fn node_id(id: &str) -> Result<&str, String> {
     if id.is_empty() || !id.bytes().all(|c| c.is_ascii_alphanumeric() || c == b'_') {
         return Err(format!("{id:?} is not a node's id"));
     }
@@ -32,7 +32,7 @@ fn node_id(id: &str) -> Result<&str, String> {
 
 /// Where the node's file is in the copy, as a path inside it: the one
 /// `groups/<group>/nodes/<id>.vnode` there is. Two are refused, by name.
-fn find(copy: &Path, id: &str) -> Result<String, String> {
+pub(super) fn find(copy: &Path, id: &str) -> Result<String, String> {
     let groups = copy.join("groups");
     let mut found = Vec::new();
     for g in std::fs::read_dir(&groups).map_err(|e| format!("{}: {e}", groups.display()))? {
@@ -106,7 +106,7 @@ fn held(bytes: &[u8]) -> Result<vleo_files::model::File, String> {
 }
 
 /// The copy the program reads, once it is one.
-fn the_copy(ctx: &Ctx) -> Result<PathBuf, String> {
+pub(super) fn the_copy(ctx: &Ctx) -> Result<PathBuf, String> {
     let copy = copy::dir(ctx);
     if copy::record(&copy)?.is_none() {
         return Err(
@@ -119,7 +119,10 @@ fn the_copy(ctx: &Ctx) -> Result<PathBuf, String> {
 /// The node file at `path`, read from its bytes: the bytes, and the file they
 /// are. Read twice and compared, so what is answered is one file, not a
 /// file and the one written over it between.
-fn read_once(copy: &Path, path: &str) -> Result<(Vec<u8>, vleo_files::model::File), String> {
+pub(super) fn read_once(
+    copy: &Path,
+    path: &str,
+) -> Result<(Vec<u8>, vleo_files::model::File), String> {
     let at = copy.join(path);
     let bytes = std::fs::read(&at).map_err(|e| format!("{path}: {e}"))?;
     let f = sqlite::read(&at).map_err(|e| format!("{path}: {}", e.message()))?;

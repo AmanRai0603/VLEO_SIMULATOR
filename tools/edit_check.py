@@ -21,7 +21,14 @@ started on it. Then, as Test Pia, the band's node engineer, would:
   writer: refused on screen, nothing written, the typing kept, and the file
   opened again only when Pia asks; the other tab's *Common misreading*,
   written meanwhile, is taken, never written over; opened again, it is saved
-  as revision 4, and Pia signs it.
+  as revision 4, and Pia signs it;
+- the centre shows revision 2 over today's design (F3-g2b): it changes
+  nothing on the page, says a release does not bring the question in, and
+  draws today's page, whole;
+- Pia writes a line in the method, says who made it and which belief broke,
+  and saves it as revision 5: the centre draws its sheet alone over today's
+  design, with what it changes, and today's page, and today's fragment, do
+  not carry it.
 
     python3 tools/edit_check.py
 
@@ -32,6 +39,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import urllib.request
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
@@ -43,6 +51,17 @@ PATH = 'groups/l3_solar/nodes/sw_activity_band.vnode'
 SAID = 'A reading of 228 means little alone: the band says it is high.'
 QUESTION = 'Which level of solar activity does this F10.7 fall in?'
 THEIRS = 'Band 4 is not a storm: it is a level of the radio flux, not of the field.'
+LINE = '# Pia: the four levels are NOAA\'s, read at 130, 150 and 200 sfu.'
+# What the page shows of the line, with no character HTML would escape.
+MARK = 'read at 130, 150 and 200 sfu'
+METHOD_WHY = {
+    'believed': 'The method said nothing of where its edges come from.',
+    'tested': "Read beside NOAA's table of the four levels.",
+    'learned': "Its edges are NOAA's, and nothing said so.",
+    'changed': 'A line says where the edges come from.',
+    'rests_on': "NOAA's four F10.7 levels.",
+    'breaks_if': 'NOAA moves an edge.',
+}
 WHY = {
     'believed': 'The question named the band, not what it is for.',
     'tested': 'Read beside the drag nodes that use it.',
@@ -164,6 +183,21 @@ def check():
                  'revision\n2, written by Test Pia' in right and field(p, 'question').input_value() == QUESTION,
                  right[:200])
 
+            # Revision 2 over today's design: a question is not a release's.
+            p.click('[data-view="yours"]')
+            p.wait_for_selector('.nw-yours', timeout=60000)
+            yours = p.inner_text('.nw-yours')
+            step("revision 2 over today's design changes nothing on the page",
+                 "Your revision 2 changes nothing on today's page" in yours, yours)
+            step('and says a release does not bring its question into today\'s design',
+                 "what a release does not bring into today's design" in yours.lower() and 'its question: yours is on the right' in yours,
+                 yours)
+            p.wait_for_selector('.nw-page .asm-t', timeout=60000)
+            step('and the page drawn is today\'s, whole', p.locator('.nw-page .sheet-read').count() == 1)
+            p.click('[data-view="today"]')
+            p.wait_for_selector('.nw-page .asm-t', timeout=60000)
+            step("today's page is drawn again on a click", p.locator('.nw-yours').count() == 0)
+
             # A second writer: a request asked from another tab meanwhile.
             opened = ask(p1, f'/v1/node/{NODE}/file')['opened']
             r = ask(p1, f'/v1/node/{NODE}/ask', {'opened': opened, 'kind': 'contract',
@@ -201,6 +235,34 @@ def check():
             p.click('#nw-sign')
             notice = said_after(p, notice)
             step('and Pia signs it', 'is signed by Test Pia' in notice, notice)
+
+            # A line in the method, saved as revision 5, drawn over today's design.
+            field(p, 'method_text').fill(LINE + '\n' + method)
+            field(p, 'declared.author').fill('Test Pia')
+            p.select_option('[data-edit="declared.ai"]', 'none')
+            for k, v in METHOD_WHY.items():
+                field(p, f'why.{k}').fill(v)
+            live = live_after(p, p.inner_text('.nw-live .nw-would') if p.locator('.nw-live .nw-would').count() else '')
+            step('a line in the method, with who made it and its record, would be saved as revision 5',
+                 'A save would write revision 5' in live, live)
+            p.click('#nw-save')
+            notice = said_after(p, notice)
+            step('saved as revision 5', 'saved as revision 5' in notice, notice)
+            p.click('[data-view="yours"]')
+            p.wait_for_selector('.nw-yours', timeout=60000)
+            yours = p.inner_text('.nw-yours')
+            step("revision 5 is drawn over today's design, said so, with what it changes",
+                 "Your revision 5, from your copy, over today's design" in yours and 'what it changes' in yours.lower() and 'method_text' in yours, yours)
+            # The method is on a tab of the sheet: read every tab, shown or not.
+            page = p.text_content('.nw-page')
+            step('the page carries the line', MARK in page, page[:300])
+            step('only the sheet is drawn, not today\'s run or folder',
+                 p.locator('.nw-page .sheet-read').count() == 1 and p.locator('.nw-page .asm-t').count() == 0)
+            p.click('[data-view="today"]')
+            p.wait_for_selector('.nw-page .asm-t', timeout=60000)
+            step("today's page does not", MARK not in p.text_content('.nw-page'))
+            fragment = urllib.request.urlopen(f'http://127.0.0.1:{p1}/v1/fragment/{NODE}').read().decode()
+            step("nor does today's fragment", MARK not in fragment)
             step('no page error', not errors, '; '.join(errors[:3]))
             b.close()
     finally:
