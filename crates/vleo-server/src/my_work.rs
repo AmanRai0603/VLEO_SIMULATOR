@@ -252,6 +252,40 @@ fn items(me: &chain::Me, c: &me::Chain, database: &Path) -> Vec<Item> {
     // mounts), and the systems' file its system engineer's.
     for why in &c.left_out {
         let (group, says) = why.split_once(": ").unwrap_or(("", why.as_str()));
+        // Mounted by the systems' file and not started: its owner's step,
+        // or their deputy's, said as that and not as a refusal (F6-a).
+        let unstarted = group != "systems"
+            && mounted_by_systems(group)
+            && vleo_files::start::to_start(database, group);
+        if unstarted {
+            let owner = c
+                .systems
+                .iter()
+                .find_map(|s| chain::owner_of(s, group))
+                .unwrap_or("");
+            let starts =
+                !owner.is_empty() && (me.name == owner || me.deputy_for.iter().any(|d| d == owner));
+            if starts {
+                out.push(Item {
+                    kind: "start",
+                    group: group.to_string(),
+                    node: String::new(),
+                    says: format!(
+                        "Start {group}: the systems' file mounts it for {owner}, and its file is yours to begin, in the System workspace"
+                    ),
+                });
+                continue;
+            }
+            if me.owns.iter().any(|g| g == "systems") {
+                out.push(Item {
+                    kind: "not started",
+                    group: group.to_string(),
+                    node: String::new(),
+                    says: format!("{group} is mounted for {owner}, who starts its file"),
+                });
+                continue;
+            }
+        }
         let mounted_by_programme = c.programme.file.mounts.iter().any(|m| m.group_id == group);
         let mine = me.owns.iter().any(|g| g == group)
             || me.nodes.iter().any(|(g, _)| g == group)

@@ -55,10 +55,17 @@
 //!   file: each edit with why, and a node broken down only into children
 //!   that reproduce its own cases (F4);
 //!
+//! * [`frame`] — the frame at the system engineer's valve: a group mounted
+//!   on a leaf nobody writes, in the systems' file, and what it is
+//!   allocated, each with which way it binds (F6-a);
+//!
 //! * [`edit`] — a node written by plain edits in the working copy: its
 //!   question, the explanation's three texts, its method and its cases, each
 //!   held to rules 4 and 6 and to the record of which belief broke, saved as
 //!   a save is, and its dry run, checked as it is typed (F3-g2a);
+//!
+//! * [`start`] — a group's file started by the owner its mount names, or
+//!   their deputy, so one writer signs it (F6-a);
 //!
 //! * [`seal`] — the seal of a group's folder from before 1.0: its sign-offs,
 //!   current or stale against the fingerprint they were given for, who may
@@ -78,6 +85,7 @@ pub mod edit;
 pub mod error;
 pub mod folder;
 pub mod format_1;
+pub mod frame;
 pub mod intake;
 pub mod keys;
 pub mod meta;
@@ -94,6 +102,7 @@ pub mod save;
 pub mod seal;
 #[cfg(not(target_arch = "wasm32"))]
 pub mod sqlite;
+pub mod start;
 pub mod upgrade;
 
 pub use error::{Error, ErrorKind};

@@ -329,6 +329,20 @@ schema = "branch-edited"
 name = "branch-edit-refused"
 path = "/v1/branch/add"
 params = [["session", "@session"], ["group", "l3_solar"], ["opened", "0"], ["why", "x"], ["parent", "sw_ap_design"], ["id", "sw_x"]]
+[[route.example]]
+name = "branch-mount-refused"
+path = "/v1/branch/mount"
+params = [["session", "@session"], ["group", "systems"], ["opened", "0"], ["why", "x"], ["block", "sys_radiation"], ["mounts", "l3_radiation"], ["owner", "Test Rui"]]
+
+[[route]]
+method = "POST"
+path = "/v1/group/start"
+answer = "json"
+schema = "group-started"
+[[route.example]]
+name = "group-start-refused"
+path = "/v1/group/start"
+params = [["session", "@session"], ["group", "l3_radiation"]]
 
 [[route]]
 method = "POST"

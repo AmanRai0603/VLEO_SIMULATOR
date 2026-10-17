@@ -14,6 +14,13 @@
   * THE EDITS, for the branch's owner or their deputy only, as the program
     says (`chain::may_frame`): add a block, fill one a part at a time, break
     a node down, fold it back, move, rename, split, remove. Each says why.
+  * THE FRAME (docs/briefs/F6.md, F6-a): the valve above the branch and what
+    it is allocated, which way each binds; in the systems' branch, every
+    group mounted below. For the system engineer or their deputy, *mount a
+    group here* on a leaf of any branch, and *allocate* on a mount framed in
+    the systems' file, the sense chosen, never defaulted. A group mounted
+    and not started says whose step it is, and *Start <g>* is its owner's.
+    Budgets and margins are a link to Explore's health map: the engine's.
 
   Every answer is the program's. Nothing here decides who may frame a
   branch, writes a file or judges a breakdown. A group file changed in the
@@ -27,7 +34,7 @@
 
 import { $, esc, answerFirst, plural } from './dom.js';
 
-const W = { group: '', tree: null, sel: '', notice: null, stale: false, host: null, post: null, groups: [], why: '' };
+const W = { group: '', tree: null, sel: '', notice: null, stale: false, host: null, post: null, groups: [], why: '', seq: 0 };
 
 async function get(path) {
   try { return await (await fetch(path)).json(); } catch (e) { return { ok: false, message: 'the program did not answer: ' + e }; }
@@ -63,8 +70,11 @@ async function draw(keep) {
   const group = W.group;
   if (!keep || !W.tree) {
     host.innerHTML = picker() + '<p class="sh-loading">opening ' + esc(group) + '…</p>';
+    // Only the latest reading is drawn: an earlier one of the same branch,
+    // answered late, would draw over what was typed since.
+    const seq = ++W.seq;
     const t = await get('/v1/branch?group=' + encodeURIComponent(group));
-    if (group !== W.group) return;
+    if (group !== W.group || seq !== W.seq) return;
     W.tree = t;
     W.stale = false;
   }
@@ -74,6 +84,17 @@ async function draw(keep) {
       esc((t && t.message) || 'its branch cannot be read.'), [], 'reference');
     return;
   }
+  if (t.started === false) {
+    host.innerHTML = picker() + notice() +
+      answerFirst('<b>' + esc(group) + '</b> is mounted for ' + esc(t.owner || 'nobody') + ', and its file is not started yet.' +
+        ' <span class="sy-next">Next: ' + esc(t.next) + '</span>', [esc(t.shows)], 'reference') +
+      frame(t) +
+      (t.yours
+        ? '<p><button class="ctl" id="sy-start">Start ' + esc(group) + '</button> one heading, its question the mount\'s, signed by you. ' +
+          'It shows in today\'s design once ' + esc(group) + ' seals a release (F5).</p>'
+        : '<p class="muted sy-not-yours">' + esc(t.why_not || 'Not yours to start.') + '</p>');
+    return;
+  }
   if (!W.sel || !t.blocks.some(b => b.uid === W.sel)) W.sel = (t.blocks.find(b => !b.archived) || {}).uid || '';
   host.innerHTML = picker() + notice() + stale() +
     answerFirst('<b>' + esc(group) + '</b>, ' + esc(t.shows) + ' ' +
@@ -81,9 +102,39 @@ async function draw(keep) {
       ' <span class="sy-next">Next: ' + esc(t.next) + '</span>', [
         esc(plural(t.blocks.filter(b => !b.archived).length, 'block')) + ', ' + esc(plural(t.open, 'part')) + ' still open.',
         esc(t.signed.says) + '.',
-      ], 'reference') +
+      ], 'reference') + frame(t) +
     '<div class="sy-grid"><nav class="sy-tree" aria-label="the branch">' + tree(t) + '</nav>' +
     '<section class="sy-block">' + block(t) + '</section></div>';
+}
+
+/** The frame around the branch, as the systems' file says it: the valve
+ *  above, what the branch is allocated and which way each binds, every group
+ *  the systems' file mounts below, and the budgets, which are the engine's. */
+function frame(t) {
+  const v = t.valve_above;
+  const amount = a => a.value ? a.value : a.lower + ' to ' + a.upper;
+  const below = t.below || [];
+  if (t.frame_refused) {
+    return '<section class="sy-frame"><h3 class="seg-h">the frame</h3><p class="sh-refused sy-frame-refused">' +
+      esc(t.frame_refused) + '</p></section>';
+  }
+  return '<section class="sy-frame"><h3 class="seg-h">the frame</h3><dl class="nw-kv">' +
+    '<dt>the valve above</dt><dd class="sy-valve-above">' + (v
+      ? esc(v.owner) + ', who owns ' + esc(v.branch) + ', the branch that holds the leaf ' + esc(t.group) + ' hangs on'
+      : (t.group === 'systems' ? 'the programme\'s file, its programme manager' : 'not read from the systems\' file')) + '</dd>' +
+    '<dt>allocated</dt><dd class="sy-allocations">' + ((t.allocations || []).length
+      ? t.allocations.map(a => esc(a.name + ' = ' + amount(a) + (a.unit ? ' [' + a.unit + ']' : '') + ': ' + a.bounds + ' ' +
+          (a.sense || 'with no sense') + ' it') + (a.says ? ' <span class="muted">' + esc(a.says) + '</span>' : '')).join('<br>')
+      : 'nothing yet') + '</dd>' +
+    (t.group === 'systems'
+      ? '<dt>below</dt><dd class="sy-below">' + (below.length ? below.map(m =>
+          '<button class="ctl" data-group-open="' + esc(m.group) + '">' + esc(m.group) + '</button> on ' + esc(m.block) +
+          ', owned by ' + esc(m.owner || 'nobody') + (m.started ? '' : ', <b>not started</b>') +
+          (m.valve_above && m.valve_above.branch !== 'systems' ? ', below ' + esc(m.valve_above.owner) + '\'s ' + esc(m.valve_above.branch) : '')).join('<br>')
+        : 'nothing mounted') + '</dd>'
+      : '') +
+    '<dt>budgets and margins</dt><dd><a href="#explore/design" class="sy-budgets">the health map, in Explore</a>: ' +
+      'every margin as the engine computes it, never computed here</dd></dl></section>';
 }
 
 function picker() {
@@ -102,7 +153,8 @@ function notice() {
 
 function stale() {
   return W.stale
-    ? '<div class="blocked sy-stale"><b>what is shown is the branch as you opened it</b><div>Its group file changed in your copy since. ' +
+    ? '<div class="blocked sy-stale"><b>what is shown is the branch as you opened it</b><div>' +
+      (W.stale === 'systems' ? 'The systems\' file changed in your copy since. ' : 'Its group file changed in your copy since. ') +
       '<button class="ctl" id="sy-reopen">Open it again</button></div></div>'
     : '';
 }
@@ -147,7 +199,8 @@ function block(t) {
   const r = b.reproduces;
   return '<h3 class="seg-h">' + esc(b.id) + ' <span class="tag sy-' + esc(b.read_as) + '">' + esc(b.read_as) + '</span></h3>' +
     '<dl class="nw-kv"><dt>question</dt><dd>' + esc(b.question || '—') + '</dd>' +
-    '<dt>written in</dt><dd>' + esc(b.in) + (b.archived ? ', removed' : '') + (b.mount ? ', a group hangs here' : '') + '</dd>' +
+    '<dt>written in</dt><dd>' + esc(b.in) + (b.archived ? ', removed' : '') +
+      (b.carries ? ', ' + esc(b.carries) + ' hangs here' : b.mount ? ', a group hangs here' : '') + '</dd>' +
     '<dt>its ports</dt><dd>' + (b.ports.length ? b.ports.map(p => esc(p.direction + ' ' + p.name + ' · ' + (p.type || 'no type') +
       (p.unit ? ' [' + p.unit + ']' : '') + ' · ' + (p.state || 'no state'))).join('<br>') : '—') + '</dd>' +
     '<dt>still open</dt><dd class="sy-open-parts">' + (b.open.length ? esc(b.open.join('; ')) : 'nothing') + '</dd></dl>' +
@@ -164,7 +217,40 @@ function block(t) {
     '<h4>its history</h4>' + (history.length
       ? '<ul class="nw-list sy-history">' + history.map(c => '<li>' + esc(c.at) + ' · ' + esc(c.who) + ' · ' + esc(c.what) + '</li>').join('') + '</ul>'
       : '<p class="muted">nothing changed here yet</p>') +
-    (t.yours ? edits(b, children, outs) : '<p class="muted sy-not-yours">' + esc(t.why_not || 'Not yours to frame.') + '</p>');
+    // A leaf a group hangs from is not framed while it does: no form is
+    // offered that the program refuses.
+    (b.carries && t.group !== 'systems'
+      ? '<p class="muted sy-carried">' + esc(b.carries) + ' is mounted on it in the systems\' file: it is not filled, broken down, moved or removed while it hangs there.</p>'
+      : t.yours ? edits(b, children, outs) : '<p class="muted sy-not-yours">' + esc(t.why_not || 'Not yours to frame.') + '</p>') +
+    (t.may_mount ? frameEdits(t, b, children, outs) : '');
+}
+
+/** Mount a group on a leaf, and allocate to a mount framed in the systems'
+ *  file: the system engineer's, or their deputy's, written in the systems'
+ *  file whichever branch is open. The sense is chosen, never defaulted. */
+function frameEdits(t, b, children, outs) {
+  if (b.archived) return '';
+  let h = '';
+  // A leaf of a group file, or an issued node of a subsystem's branch: what
+  // the program mounts on. Not the branch's heading, nor a systems' node.
+  const leaf = !children.length && !b.carries && !b.mount && !b.answers.length && b.uid !== t.group &&
+    !(t.group === 'systems' && b.in !== 'the group file');
+  if (leaf) {
+    h += '<p><b>mount a group here</b> <input id="sy-m-group" size="16" placeholder="the group\'s id"> for ' +
+      '<input id="sy-m-owner" size="16" placeholder="its owner"> <button class="ctl" id="sy-mount">Mount</button></p>';
+  }
+  if (t.group === 'systems' && b.mount && b.in === 'the group file') {
+    const opt = (v, l) => '<option value="' + esc(v) + '">' + esc(l || v) + '</option>';
+    h += '<p><b>allocate</b> <input id="sy-a-name" size="16" placeholder="its name"> <select id="sy-a-type" class="ctl">' +
+      opt('number') + opt('integer') + '</select> <input id="sy-a-value" size="6" placeholder="a value"> or ' +
+      '<input id="sy-a-lo" size="5" placeholder="from"> <input id="sy-a-hi" size="5" placeholder="to"> <input id="sy-a-unit" size="6" placeholder="unit"> ' +
+      'bounding <select id="sy-a-bounds" class="ctl">' + outs.map(o => opt(o.name)).join('') + '</select> ' +
+      '<select id="sy-a-sense" class="ctl">' + opt('', 'which way it binds') + opt('<=', '<= stays under it') + opt('>=', '>= reaches it') + '</select> ' +
+      '<input id="sy-a-says" size="24" placeholder="what the closure says"> <button class="ctl" id="sy-allocate">Allocate</button></p>';
+  }
+  if (!h) return '';
+  return '<h4>the frame, in the systems\' file</h4><p><label>why <textarea id="sy-f-why" rows="2" class="nw-wide" placeholder="which belief this follows from">' +
+    '</textarea></label></p>' + h;
 }
 
 /** The edit forms, drawn for the branch's owner only; each says why. */
@@ -184,7 +270,8 @@ function edits(b, children, outs) {
       '<input id="sy-p-name" size="16" placeholder="name"> <select id="sy-p-type" class="ctl">' +
       ['number', 'integer', 'choice', 'boolean', 'list', 'table', 'series', 'uncertain', 'text', 'file'].map(v => opt(v)).join('') + '</select> ' +
       '<input id="sy-p-unit" size="6" placeholder="unit"> <input id="sy-p-lo" size="5" placeholder="from"> <input id="sy-p-hi" size="5" placeholder="to"> ' +
-      '<select id="sy-p-state" class="ctl">' + opt('open') + opt('decided') + opt('allocated') + opt('achieved') + '</select> ' +
+      // Not `allocated`: an allocation is given to a mounted group, with its sense.
+      '<select id="sy-p-state" class="ctl">' + opt('open') + opt('decided') + opt('achieved') + '</select> ' +
       '<button class="ctl" id="sy-fill-p">Fill</button></p>';
   }
   if (!inGroup && !b.answers.length && children.length && outs.length) {
@@ -204,6 +291,19 @@ function edits(b, children, outs) {
       '<p><button class="ctl" id="sy-remove">Remove</button> archived, never deleted.</p>';
   }
   return h;
+}
+
+/** Send one edit of the frame: made in the systems' file, held to its digest,
+ *  whichever branch is open. */
+async function sendFrame(edit, fields) {
+  const group = W.group;
+  const why = ($('#sy-f-why', W.host) || {}).value || '';
+  const r = await W.post('/v1/branch/' + edit, { group: 'systems', opened: W.tree.systems_opened, why, ...fields });
+  if (group !== W.group) return;
+  W.notice = { ok: !!(r && r.ok), text: (r && r.message) || 'nothing was changed' };
+  // The systems' file changed, not this branch's: said as that.
+  W.stale = r && r.conflict ? 'systems' : false;
+  return draw(!!W.stale);
 }
 
 /** Send one edit; the program's answer is said, and the branch read again,
@@ -250,5 +350,17 @@ async function click(e) {
     case 'sy-rename': return send('rename', { block: b, id: v('sy-rn-id').trim() });
     case 'sy-split': return send('split', { block: b, id: v('sy-sp-id').trim(), ports: v('sy-sp-ports') });
     case 'sy-remove': return send('remove', { block: b });
+    case 'sy-mount': return sendFrame('mount', { block: b, mounts: v('sy-m-group').trim(), owner: v('sy-m-owner').trim() });
+    case 'sy-allocate': return sendFrame('allocate', {
+      block: b, name: v('sy-a-name').trim(), type: v('sy-a-type'), value: v('sy-a-value').trim(), lower: v('sy-a-lo').trim(),
+      upper: v('sy-a-hi').trim(), unit: v('sy-a-unit').trim(), bounds: v('sy-a-bounds'), sense: v('sy-a-sense'), closure_says: v('sy-a-says'),
+    });
+    case 'sy-start': {
+      const group = W.group;
+      const r = await W.post('/v1/group/start', { group });
+      if (group !== W.group) return;
+      W.notice = { ok: !!(r && r.ok), text: (r && r.message) || 'nothing was started' };
+      return draw();
+    }
   }
 }

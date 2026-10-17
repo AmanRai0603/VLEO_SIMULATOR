@@ -625,6 +625,8 @@ fn route(
         ("GET", "/v1/people") => ok_json(people::list(params, ctx)),
         // A branch's breakdown in the copy, framed by its owner (F4).
         ("GET", "/v1/branch") => ok_json(branch::tree(params, ctx)),
+        // A group started by its owner once the systems' file mounts it (F6-a).
+        ("POST", "/v1/group/start") => ok_json(branch::start_route(params, ctx)),
         ("POST", p) if p.starts_with("/v1/branch/") => {
             ok_json(branch::edit_route(p.strip_prefix("/v1/branch/").unwrap_or_default(), params, ctx))
         }

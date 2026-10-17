@@ -294,6 +294,7 @@ function workList(items) {
       '</span> ' + esc(it.says) +
       (it.node && (nodes.has(it.node) || it.kind === 'request')
         ? ' <button class="ctl" data-open-node="' + esc(it.node) + '">open in Node</button>' : '') +
+      (it.kind === 'start' ? ' <a class="ctl" href="#system/' + encodeURIComponent(it.group) + '">open in System</a>' : '') +
       '</li>').join('') + '</ul></section>';
 }
 

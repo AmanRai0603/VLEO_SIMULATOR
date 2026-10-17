@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "branch",
-  "description": "A group's branch as your copy holds it: its blocks, what is still open, each broken-down node and whether its children reproduce its cases, its history, whether you may frame it, and the next step; or why not.",
+  "description": "A group's branch as your copy holds it: its blocks, what is still open, each broken-down node and whether its children reproduce its cases, its history, whether you may frame it, the frame around it from the systems' file, and the next step; for a group mounted and not started, that, and whose step it is; or why not.",
   "type": "object",
   "properties": {
     "ok": {
@@ -40,9 +40,128 @@
     "owner": {
       "type": "string"
     },
+    "started": {
+      "type": "boolean",
+      "description": "False for a group the systems' file mounts whose file is not started yet: its blocks and changes are empty, and next says whose step it is."
+    },
     "yours": {
       "type": "boolean",
       "description": "Whether the open key's person may frame it, by chain::may_frame."
+    },
+    "may_mount": {
+      "type": "boolean",
+      "description": "Whether the open key's person may mount groups and allocate in the systems' file, by chain::may_frame on the systems' branch."
+    },
+    "systems_opened": {
+      "type": "string",
+      "description": "The SHA-256 of the systems' file's bytes: what a mount or an allocation is held to."
+    },
+    "frame_refused": {
+      "type": "string",
+      "description": "Why the frame around the branch could not be read, when it could not: the systems' file not opening, changed since it was opened, or a file of the copy that cannot be read. Empty when it was read; valve_above, allocations and below are then what it says."
+    },
+    "valve_above": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "description": "The valve above: the branch that holds the leaf the group hangs on, and that branch's owner. Null for the systems' branch, whose valve above is the programme's file, and when frame_refused says why the frame was not read.",
+      "properties": {
+        "branch": {
+          "type": "string"
+        },
+        "owner": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "branch",
+        "owner"
+      ]
+    },
+    "allocations": {
+      "type": "array",
+      "description": "What the group is allocated on its mount in the systems' file, each with the sense its closure binds, read from the closure: empty when it has none.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "value": {
+            "type": "string"
+          },
+          "lower": {
+            "type": "string"
+          },
+          "upper": {
+            "type": "string"
+          },
+          "unit": {
+            "type": "string"
+          },
+          "bounds": {
+            "type": "string"
+          },
+          "sense": {
+            "type": "string"
+          },
+          "says": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "bounds",
+          "sense"
+        ]
+      }
+    },
+    "below": {
+      "type": "array",
+      "description": "For the systems' branch: every group it mounts, on which block, owned by whom, whether its file is started, and the valve above it.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "group": {
+            "type": "string"
+          },
+          "block": {
+            "type": "string"
+          },
+          "owner": {
+            "type": "string"
+          },
+          "started": {
+            "type": "boolean"
+          },
+          "valve_above": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "description": "The valve above: the branch that holds the leaf the group hangs on, and that branch's owner. Null for the systems' branch, whose valve above is the programme's file, and when the systems' file does not open.",
+            "properties": {
+              "branch": {
+                "type": "string"
+              },
+              "owner": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "branch",
+              "owner"
+            ]
+          }
+        },
+        "required": [
+          "group",
+          "block",
+          "owner",
+          "started"
+        ]
+      }
     },
     "why_not": {
       "type": "string"
@@ -81,6 +200,10 @@
           },
           "mount": {
             "type": "boolean"
+          },
+          "carries": {
+            "type": "string",
+            "description": "The group mounted on it, in this branch's file or the systems' file (W13); empty when none."
           },
           "open": {
             "type": "array",

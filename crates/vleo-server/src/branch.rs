@@ -11,14 +11,26 @@
 //! seals it (F5).
 //!
 //! `POST /v1/branch/<id>` makes one edit — `add`, `fill`, `break-down`,
-//! `move`, `rename`, `split`, `fold-back`, `remove` — with `group`, `opened`,
-//! `why` and the edit's own fields, as whoever's key is open. A file changed
-//! since it was opened is not written over. Carries the launch's word; the
-//! drive is never written.
+//! `move`, `rename`, `split`, `fold-back`, `remove`, and in the systems'
+//! file `mount` and `allocate` (F6-a, `vleo_files::frame`) — with `group`,
+//! `opened`, `why` and the edit's own fields, as whoever's key is open. A
+//! file changed since it was opened is not written over. Carries the
+//! launch's word; the drive is never written.
+//!
+//! `POST /v1/group/start` starts a group the systems' file mounts, as its
+//! owner or their deputy (`vleo_files::start`): `groups/<g>/<g>.vgroup`,
+//! new, in the copy. A group mounted and not started is said as that by
+//! `GET /v1/branch`, with whose step it is.
+//!
+//! What the frame says around a branch: the valve above it (the branch that
+//! holds the leaf it hangs on, and its owner, `frame::valve_above`), what it
+//! is allocated with the sense each binds, and, in the systems' file, every
+//! group it mounts below.
 
 use super::*;
 use vleo_files::breakdown::{self, Answer, Branch, Edit, Framed, Part, State};
 use vleo_files::chain::{self, Registry};
+use vleo_files::{frame, start};
 
 /// A group's id, by the library's one rule of an id (`breakdown::valid_id`).
 fn group_id(id: &str) -> Result<&str, String> {
@@ -101,6 +113,10 @@ fn tree_json(params: &str, ctx: &Ctx) -> Result<String, String> {
     let c = chain(&copy)?;
     let mb = mounted_by(&c, group)?;
     let now = results::now_utc();
+    // Mounted and not started: said as that, with whose step it is.
+    if group != "systems" && start::to_start(&copy, group) {
+        return not_started(group, &c, mb, &copy, &now);
+    }
     // Read as an edit reads it (`breakdown::group_file_in`, `nodes_in`): a
     // file that cannot be read refuses the branch by its name.
     let rel = format!("groups/{group}/{group}.vgroup");
@@ -153,8 +169,10 @@ fn tree_json(params: &str, ctx: &Ctx) -> Result<String, String> {
     );
     j.raw("}");
     j.str_field("owner", &owner);
+    j.bool_field("started", true);
     let yours = matches!(may, Some(Ok(_)));
     j.bool_field("yours", yours);
+    frame_json(&mut j, group, &c, &copy, &now);
     j.str_field(
         "why_not",
         &match &may {
@@ -176,6 +194,12 @@ fn tree_json(params: &str, ctx: &Ctx) -> Result<String, String> {
     );
     j.key("blocks").raw("[");
     let mounts: Vec<&str> = f.mounts.iter().map(|m| m.block_uid.as_str()).collect();
+    let mounts_on: Vec<(String, String)> = f
+        .mounts
+        .iter()
+        .chain(c.systems.iter().flat_map(|s| s.file.mounts.iter()))
+        .map(|m| (m.block_uid.clone(), m.group_id.clone()))
+        .collect();
     let (mut differs, mut not_run) = (Vec::new(), Vec::new());
     for (i, (b, place)) in branch.blocks().into_iter().enumerate() {
         if i > 0 {
@@ -206,6 +230,12 @@ fn tree_json(params: &str, ctx: &Ctx) -> Result<String, String> {
         j.bool_field("archived", b.archived != 0);
         j.str_field("question", &b.question);
         j.bool_field("mount", mounts.contains(&b.uid.as_str()));
+        // A group mounted on it, here or in the systems' file (W13).
+        let carries = mounts_on
+            .iter()
+            .find(|(uid, _)| *uid == b.uid)
+            .map_or("", |(_, g)| g.as_str());
+        j.str_field("carries", carries);
         j.key("open").raw("[");
         for (k, o) in branch.open_parts(&b.uid).iter().enumerate() {
             if k > 0 {
@@ -322,6 +352,270 @@ fn tree_json(params: &str, ctx: &Ctx) -> Result<String, String> {
     Ok(j.0)
 }
 
+/// What the frame says around `group`: the valve above it, what it is
+/// allocated with the sense each binds, and, for the systems' branch, every
+/// group it mounts below. Each read from the systems' file as the copy opens
+/// it; the block a group hangs on is found in whichever branch holds it.
+fn frame_json(j: &mut Json, group: &str, c: &me::Chain, copy: &Path, now: &str) {
+    // A frame that cannot be read is said, with why: never drawn as a
+    // frame with nothing in it.
+    let unread = |j: &mut Json, why: &str| {
+        j.bool_field("may_mount", false);
+        j.str_field("systems_opened", "");
+        j.str_field("frame_refused", why);
+        j.key("valve_above").raw("null");
+        j.key("allocations").raw("[]");
+        j.key("below").raw("[]");
+    };
+    let Some(sy) = &c.systems else {
+        let why = c
+            .left_out
+            .iter()
+            .find_map(|l| l.strip_prefix("systems: "))
+            .unwrap_or("it is not in your copy");
+        return unread(
+            j,
+            &format!(
+                "the systems' file does not open in your copy, so the frame is not read: {why}"
+            ),
+        );
+    };
+    // What is shown and what a mount is held to are one reading: the bytes
+    // read here, and the file they are, as the chain opened it.
+    let (bytes, read) = match breakdown::group_file_in(copy, "systems") {
+        Ok(x) => x,
+        Err(e) => {
+            return unread(
+                j,
+                &format!("the systems' file cannot be read: {}", e.message()),
+            )
+        }
+    };
+    if read != sy.file {
+        return unread(
+            j,
+            "the systems' file changed in your copy since it was opened: open the branch again",
+        );
+    }
+    let read_all = breakdown::nodes_in(copy, "systems", &how(now))
+        .and_then(|n| breakdown::others_in(copy, "systems", &how(now)).map(|o| (n, o)));
+    let (nodes, elsewhere) = match read_all {
+        Ok(x) => x,
+        Err(e) => {
+            return unread(
+                j,
+                &format!(
+                "a file of your copy cannot be read, so where each group hangs cannot be said: {}",
+                e.message()
+            ),
+            )
+        }
+    };
+    // The system engineer, or their deputy, mounts groups in the systems'
+    // file and allocates to them, wherever the leaf is (`chain::may_frame`,
+    // the one rule); an edit there is held to the systems' file's digest.
+    let may_mount = me::with_key(|key, me| {
+        chain::may_frame(
+            "systems",
+            &me.name,
+            &key.public().to_hex(),
+            now,
+            &c.programme,
+            &c.programme,
+        )
+        .is_ok()
+    });
+    j.bool_field("may_mount", may_mount == Some(true));
+    j.str_field("systems_opened", &vleo_files::copied::digest(&bytes));
+    j.str_field("frame_refused", "");
+    let valve = |g: &str| frame::valve_above(g, &sy.file, &nodes, &elsewhere, &c.programme);
+    let valve_json = |j: &mut Json, v: Option<frame::Valve>| match v {
+        Some(v) => {
+            j.raw("{");
+            j.str_field("branch", &v.branch);
+            j.str_field("owner", &v.owner);
+            j.raw("}");
+        }
+        None => {
+            j.raw("null");
+        }
+    };
+    j.key("valve_above");
+    valve_json(
+        j,
+        if group == "systems" {
+            None
+        } else {
+            valve(group)
+        },
+    );
+    j.key("allocations").raw("[");
+    let mount = sy.file.mounts.iter().find(|m| m.group_id == group);
+    let mut first = true;
+    if let Some(m) = mount {
+        for p in sy
+            .file
+            .ports
+            .iter()
+            .filter(|p| p.block_uid == m.block_uid && p.state == "allocated")
+        {
+            let closure = sy
+                .file
+                .closures
+                .iter()
+                .find(|x| x.required_ref == format!("{}.{}", p.block_uid, p.name));
+            if !first {
+                j.raw(",");
+            }
+            first = false;
+            j.raw("{");
+            j.str_field("name", &p.name);
+            j.str_field("value", &p.value);
+            j.str_field("lower", &p.lower);
+            j.str_field("upper", &p.upper);
+            j.str_field("unit", &p.unit);
+            j.str_field(
+                "bounds",
+                closure
+                    .and_then(|x| x.achieved_ref.split_once('.'))
+                    .map_or("", |(_, port)| port),
+            );
+            // Read from the closure, never assumed: none is said as none.
+            j.str_field("sense", closure.map_or("", |x| x.sense.as_str()));
+            j.str_field("says", closure.map_or("", |x| x.says.as_str()));
+            j.raw("}");
+        }
+    }
+    j.raw("]");
+    j.key("below").raw("[");
+    if group == "systems" {
+        for (i, m) in sy.file.mounts.iter().enumerate() {
+            if i > 0 {
+                j.raw(",");
+            }
+            j.raw("{");
+            j.str_field("group", &m.group_id);
+            j.str_field("block", &m.block_uid);
+            j.str_field("owner", chain::owner_of(sy, &m.group_id).unwrap_or(""));
+            j.bool_field(
+                "started",
+                copy.join(format!("groups/{0}/{0}.vgroup", m.group_id))
+                    .exists(),
+            );
+            j.key("valve_above");
+            valve_json(j, valve(&m.group_id));
+            j.raw("}");
+        }
+    }
+    j.raw("]");
+}
+
+/// `group`, mounted by `mb` and with no file in the copy yet: who starts it,
+/// whether the open key's person may, and the frame around it.
+fn not_started(
+    group: &str,
+    c: &me::Chain,
+    mb: &Registry,
+    copy: &Path,
+    now: &str,
+) -> Result<String, String> {
+    let owner = chain::owner_of(mb, group).unwrap_or("").to_string();
+    let may = me::with_key(|key, me| {
+        chain::may_frame(
+            group,
+            &me.name,
+            &key.public().to_hex(),
+            now,
+            mb,
+            &c.programme,
+        )
+        .map(|_| ())
+        .map_err(|e| e.message().to_string())
+    });
+    let yours = matches!(may, Some(Ok(())));
+    let mut j = Json::new();
+    j.raw("{");
+    j.bool_field("ok", true);
+    j.str_field("group", group);
+    j.str_field("path", &format!("groups/{group}/{group}.vgroup"));
+    j.str_field(
+        "shows",
+        &format!(
+            "your copy: {group} is mounted in {}, and its file is not started yet.",
+            mb.from
+        ),
+    );
+    j.str_field("owner", &owner);
+    j.bool_field("started", false);
+    j.bool_field("yours", yours);
+    j.str_field(
+        "why_not",
+        &match &may {
+            None => "no key is open: open yours, and whether you start it is read from the chain"
+                .to_string(),
+            Some(Ok(())) => String::new(),
+            Some(Err(why)) => format!(
+                "Not yours to start: {group} is started by its owner {owner}, or their deputy. {why}"
+            ),
+        },
+    );
+    frame_json(&mut j, group, c, copy, now);
+    j.key("blocks").raw("[]");
+    j.key("changes").raw("[]");
+    j.num_field("open", 0.0);
+    j.str_field(
+        "next",
+        &if yours {
+            format!("Start {group}: its file is yours to begin, with one heading whose question is the mount's. It shows in today's design once {group} seals a release (F5).")
+        } else {
+            format!("Nothing yet: {group} is mounted for {owner}, who starts its file")
+        },
+    );
+    j.raw("}");
+    Ok(j.0)
+}
+
+/// `POST /v1/group/start`.
+pub(super) fn start_route(params: &str, ctx: &Ctx) -> String {
+    match started(params, ctx) {
+        Ok(j) => j,
+        Err(why) => me::refusal(&why),
+    }
+}
+
+fn started(params: &str, ctx: &Ctx) -> Result<String, String> {
+    me::carries_session(params)?;
+    if me::with_key(|_, _| ()).is_none() {
+        return Err(
+            "no key is open: open yours, and the group is started and signed as you".into(),
+        );
+    }
+    let g = param(params, "group").map(decode).unwrap_or_default();
+    let group = group_id(&g)?;
+    let copy = the_copy(ctx)?;
+    let c = chain(&copy)?;
+    let at = results::now_utc();
+    let done = me::with_key(|key, me| {
+        start::start_in_place(&copy, group, &me.name, key, &at, APP, &c.programme)
+            .map(|d| (d, me.name.clone()))
+            .map_err(|e| e.message().to_string())
+    })
+    .ok_or("no key is open: open yours, and the group is started and signed as you")??;
+    let (digest, who) = done;
+    let mut j = Json::new();
+    j.raw("{");
+    j.bool_field("ok", true);
+    j.str_field("group", group);
+    j.str_field("path", &format!("groups/{group}/{group}.vgroup"));
+    j.str_field("opened", &digest);
+    j.str_field(
+        "message",
+        &format!("{who} started {group}, in your copy: one heading, signed by {who}. It stays in your copy until {group} is sealed (F5), and its file reaches the drive with F5's put-back."),
+    );
+    j.raw("}");
+    Ok(j.0)
+}
+
 /// The edit `name` asks for, from its fields.
 fn edit_of(name: &str, params: &str) -> Result<Edit, String> {
     let get = |k: &str| param(params, k).map(decode).unwrap_or_default();
@@ -391,6 +685,31 @@ fn edit_of(name: &str, params: &str) -> Result<Edit, String> {
         },
         "remove" => Edit::Remove {
             block: need("block")?,
+        },
+        // The frame, in the systems' file (F6-a): the group is `mounts`, as
+        // `group` is the branch the edit is made in.
+        "mount" => Edit::Mount {
+            block: need("block")?,
+            group: need("mounts")?,
+            owner: need("owner")?,
+        },
+        "allocate" => Edit::Allocate {
+            block: need("block")?,
+            port: Box::new(vleo_files::model::Port {
+                name: need("name")?,
+                port_type: need("type")?,
+                unit: get("unit"),
+                value: get("value"),
+                lower: get("lower"),
+                upper: get("upper"),
+                says: get("says"),
+                ..Default::default()
+            }),
+            bounds: need("bounds")?,
+            // Never defaulted: an allocation with no sense is refused by
+            // the library, by name.
+            sense: get("sense"),
+            says: get("closure_says"),
         },
         other => return Err(format!("{other:?} is not an edit of a branch")),
     })
