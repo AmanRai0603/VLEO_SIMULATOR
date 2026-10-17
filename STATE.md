@@ -9,7 +9,7 @@ Target 1.0.0 on Monday 19 October; Tuesday to Thursday are the buffer.
 
 ## Person A · day
 
-Handed over Saturday 17 October (S1 to S3: F1 to F3-f, the key's proof, F3-g1, the Node workspace, and F4, the breakdown). Nothing is merged: everything waits on Aman.
+Handed over Saturday 17 October (S1 to S3: F1 to F3-f, the key's proof, F3-g1, the Node workspace, F4, the breakdown, and F3-g2a, writing the node). Nothing is merged: everything waits on Aman.
 
 - **Open, in merge order:**
   - **162 the plan.** It now carries the nine briefs and F3's Plan (`docs/briefs/F3.md`).
@@ -98,12 +98,21 @@ Handed over Saturday 17 October (S1 to S3: F1 to F3-f, the key's proof, F3-g1, t
     - `/app`'s System workspace: the tree, the block chosen with its cases beside the estimate, and the edit forms for the owner or their deputy only.
     - Proved by a program test and `tools/branch_check.py` (panels job, ports 7869 and 7870).
 
-    The Opus review found two blocking points (which file mounts a group was decided on the screen's side, not by `chain::mounted_by`; node files that could not be read were left out of the tree) and six more; all fixed in 1bc260c7 to a4bf3329, each with a test shown red but two named untested. CI was green on the first commit; the fixes' run is pending.
+    The Opus review found two blocking points (which file mounts a group was decided on the screen's side, not by `chain::mounted_by`; node files that could not be read were left out of the tree) and six more; all fixed in 1bc260c7 to a4bf3329, each with a test shown red but two named untested. CI is green.
+  - **188 F3-g2a writing the node, checked as it is typed: high risk.** Stacked on 187, on `claude/a-f3g2-edit` (it reads F4-a's split of the method's checks).
+    - `vleo_files::edit`: the question, the explanation's three texts, the method and the cases of a release-shaped node file, each refused by name for rules 4 and 6, a decision with no record of which belief broke (a row of the node's own `versions.csv`), an edit that changes nothing, and a node of `design/`'s shape until F3-g0. Saved through `save::save`, split into `would_save` and the write; `try_edit` is the dry run.
+    - `POST /v1/node/<id>/edit` with `dry_run`; the file route says the node's content. The Node workspace writes it, checked a moment after typing stops, never redrawn under the caret.
+    - Proved by a library test, a program test and `tools/edit_check.py` (panels job, port 7873). Its Opus review is running; CI is pending.
 - **What 171 decides, which B's PRs must follow:**
   - **Ownership follows the mount.** Only the programme's file (mounting `systems`) and the systems' file (mounting each `l3_*`) mount anything.
   - **A group file registers only node engineers.** It holds nobody the programme's file registers, and no key it registers. `open_group_in` refuses anything else, by name.
   - **The test drive (165) must change.** It mounts the l3 groups in the programme's file, so they read as mounted twice. It should assign the mounting blocks in the systems' file instead, and register only node engineers in group files.
   - **The anchor** is accepted once per drive, with `accept_anchor` on `POST /v1/key/open`. A scenario that opens a key passes it once, and since 174 also `session`, read from `<keys>/open.html`. A face must make the person compare the fingerprint, never fill it in from the answer.
+- **What 188 decides:**
+  - **A page never writes a node file; it sends what was typed.** The library applies it (`vleo_files::edit`) and saves it as a save is; a dry run answers what a save would do, by the same checks.
+  - **The record of which belief broke lives in the node's own `versions.csv`** until Aman says otherwise (question 12); which edits need one is `vleo_sheet::derisk::about_of`.
+  - **`checks::ORIGINS` and `checks::NOT_A_REFERENCE` are the one list of each.**
+  - **For B:** the Node workspace's right side gains *write it* (`.nw-live`, `data-edit` fields); a scenario that counts its parts must allow for it.
 - **What 186 and 187 decide:**
   - **A breakdown is the group file's**: one wire into each output of the node from the child that answers it. The node's own file is not touched until F5 issues it again.
   - **A node's cases are evidence only once its node engineer has signed them as they are**, and its file's checks pass. A breakdown into children before that is refused, said why. So every breakdown waits for children F5 issues (question 6 on 186).
@@ -159,9 +168,9 @@ Handed over Saturday 17 October (S1 to S3: F1 to F3-f, the key's proof, F3-g1, t
 - **Lockfiles:** `crates/vleo-py` keeps its own, built `--locked` in CI, and so does `crates/vleo-kernel-wasm` until 177 removes it. A new dependency of `vleo-files` or `vleo-server` needs them refreshed, as 171 does.
 - **Disk:** the container's allowance filled on S1 and again on S2. `xtask files-wasm` and the scenarios leave a `target/` of 10 GB or more inside the worktree they run in; delete it after a push. Old worktrees' `target/` folders and `target/*/incremental` were deleted to make room.
 - **Next for A, in order:**
-  - CI on 187's fixes.
-  - **F3-g2, writing the node** (the brief, F3-g): the question, the explanation, the method and the cases through the library (`POST /v1/node/<id>/edit`, with a dry run for checked-as-you-type), and the live page of your copy's revision laid over today's design. High risk; Opus review.
-  - **For Aman:** the brief's questions 9 (one node shape, F3-g0) and 10 (ports), and 7 and 8 (where today's page's Rows, Architecture, Forms and manual go).
+  - **188's review**, then CI on 188.
+  - **F3-g2b, the live page of the copy's revision** (the brief, F3-g2b): the copy's node file read as a release's node, planned against today's design and laid over it for one request. High risk; Opus review.
+  - **For Aman:** the brief's questions 9 (one node shape, F3-g0) and 10 (ports), 7 and 8 (where today's page's Rows, Architecture, Forms and manual go), and 11 to 15 (F3-g2).
   - **Then F3-h, the node view's removal**, once F3-g2 covers what it shows, with the panel checks moved to `/app`.
 
 ## Person B · night
