@@ -9,7 +9,7 @@ Target 1.0.0 on Monday 19 October; Tuesday to Thursday are the buffer.
 
 ## Person A · day
 
-Handed over Saturday 17 October (S1 to S3: F1 to F3-f, the key's proof, F3-g1, the Node workspace, F4, the breakdown, and F3-g2a, writing the node). Nothing is merged: everything waits on Aman.
+Handed over Saturday 17 October (S1 to S3: F1 to F3-f, the key's proof, F3-g1, the Node workspace, F4, the breakdown, F3-g2, writing the node, and F3-h, the node view's removal). Nothing is merged: everything waits on Aman.
 
 - **Open, in merge order:**
   - **162 the plan.** It now carries the nine briefs and F3's Plan (`docs/briefs/F3.md`).
@@ -114,7 +114,8 @@ Handed over Saturday 17 October (S1 to S3: F1 to F3-f, the key's proof, F3-g1, t
     The Opus review found two blocking points (a plan that withheld one change still drew the others, though today's design refuses such a release whole; the copy was never held to the node's own checks) and four more; all fixed in eedf56c6, each with a test shown red but the screen's stale-answer guard named untested. CI is pending on the fixes.
   - **190 F3-h1 the panels drawn in `/app`: low risk.** Stacked on 189, on `claude/a-f3h1-panels`. `/app` has `window.openNode`; the Node workspace may grow to 118rem and its page stops at the node view's 74rem, so at `APP_WIDTH` (1920px) a figure is the size its references were recorded at, and none is recorded again (Aman's choice). Every panel names `page = "/app"`. 11 panels, 0 findings; the self-test 14 cases. The Opus review found nothing blocking; its four fixes are in a1010ff3.
   - **191 F3-h2 the case, the depth and a what-if in the Node workspace: low risk.** Stacked on 190, on `claude/a-f3h2-workspace`. `casebar.js` draws the case and the what-if bar on both pages; the depth switch and the banners in `/app`; a node's links to a group, the inputs and a kept result followed. Proved by `tools/workspace_check.py` (a CI step). The Opus review found nothing blocking; its three fixes (the what-if bar's words escaped, a group opened in its own tab, Explore asked for its inputs) are in 38ff29dd.
-  - Both are built on the brief's proposed answer to question 7.
+  - **192 F3-h3 today's tool page gives its node view to the workspace: low risk.** Stacked on 191, on `claude/a-f3h3-removal`. A row's link on `/`, and `#row/<id>` (in its own entry's place), open `/app#node/<id>`. `/`'s node view goes, with its markup, `window.openNode`, its status line, its parts heading, its styles and `/`'s depth switch. `input_check`, `mock_check` and `manual_check`'s node steps drive the workspace, and the manual's browser sections say where a row's page is. The Opus review found nothing blocking; its four fixes are in c40506a6, each re-pointed check shown red. CI was green on the first commit; the fixes' run is pending.
+  - 190 to 192 are all built on the brief's proposed answer to question 7.
 - **What 171 decides, which B's PRs must follow:**
   - **Ownership follows the mount.** Only the programme's file (mounting `systems`) and the systems' file (mounting each `l3_*`) mount anything.
   - **A group file registers only node engineers.** It holds nobody the programme's file registers, and no key it registers. `open_group_in` refuses anything else, by name.
@@ -183,8 +184,8 @@ Handed over Saturday 17 October (S1 to S3: F1 to F3-f, the key's proof, F3-g1, t
 - **Lockfiles:** `crates/vleo-py` keeps its own, built `--locked` in CI, and so does `crates/vleo-kernel-wasm` until 177 removes it. A new dependency of `vleo-files` or `vleo-server` needs them refreshed, as 171 does.
 - **Disk:** the container's allowance filled on S1 and again on S2. `xtask files-wasm` and the scenarios leave a `target/` of 10 GB or more inside the worktree they run in; delete it after a push. Old worktrees' `target/` folders and `target/*/incremental` were deleted to make room.
 - **Next for A, in order:**
-  - **F3-h3**: `input_check`, `mock_check` (and the mock engine's reading routes), `manual_check`'s node steps and the manual's browser sections move to the Node workspace, then `/`'s node view goes.
-  - **Then F6** (A, three pull requests), building on B's F5.
+  - **F6-a** (the frame and *Start group*, high risk), stacked on 192, on `claude/a-f6a-frame`, planned in `docs/briefs/F6.md` on questions 20 to 32.
+  - **Then F6-b and F6-c**, building on B's F5.
   - **For Aman:** the brief's questions 9 (one node shape, F3-g0) and 10 (ports), 7 and 8 (where today's page's Rows, Architecture, Forms and manual go), and 11 to 19 (F3-g2).
   - **F8 and F9** after F6. **For B, now:** F5, on the critical path of F6, F7 and F9; what it needs (F1's owner, F3's signed nodes, F4's tree) is in 175, 179 and 187.
 
