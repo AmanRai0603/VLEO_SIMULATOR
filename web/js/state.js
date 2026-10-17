@@ -32,9 +32,8 @@ export const S = {
   gnodes: new Map(),   // group id -> [node index]
 
   // what is on screen
-  view: 'rows',        // rows | node | arch | manual | forms | explore
+  view: 'rows',        // rows | arch | manual | forms | explore
   arch: 'node',        // which architecture section
-  selected: null,
 
   // The inputs a reader has moved: node id -> value in SI. A what-if, held in
   // this browser and sent with every run as `set=`; it never reaches a sheet
@@ -137,12 +136,6 @@ export async function loadSaved() {
 
 /** A short key for "the inputs every run is on now", for caching a run. */
 export const caseKey = () => S.engineCase + '#' + S.caseStamp;
-
-/** For a status line: the case, and how far its inputs are from the defaults. */
-export function caseTag() {
-  const n = S.saved ? S.saved.changed : 0;
-  return !S.saved || !S.saved.stored ? 'defaults' : n + ' input' + (n === 1 ? '' : 's') + ' changed';
-}
 
 // Who else needs telling when the saved case changes. Inputs saves
 // and resets it; everything showing a number for the old inputs has to be

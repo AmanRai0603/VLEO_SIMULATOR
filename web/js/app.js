@@ -14,7 +14,6 @@ import { $ } from './dom.js';
 import { S, load, theCase, loadSaved, onCaseChange } from './state.js';
 import { drawStatus, drawFoot } from './status.js';
 import { renderRows } from './rows.js';
-import { openNode } from './node.js';
 import { drawArchitecture } from './architecture.js';
 import { renderManual } from './manual.js';
 import { renderForms } from './forms.js';
@@ -78,7 +77,6 @@ async function boot() {
 export function draw() {
   const v = S.view;
   $('#rowsview').hidden = v !== 'rows';
-  $('#nodeview').hidden = v !== 'node';
   $('#archview').hidden = v !== 'arch';
   $('#manualview').hidden = v !== 'manual';
   $('#formsview').hidden = v !== 'forms';
@@ -182,12 +180,10 @@ function setArch(section) {
   draw();
 }
 
-async function open(id) {
-  S.selected = id;
-  S.runTarget = id;
-  S.view = 'node';
-  draw();
-  await openNode(id);
+/** A row's page: the application's Node workspace, which holds it now
+ *  (docs/briefs/F3.md, F3-h3). */
+function open(id) {
+  location.href = '/app#node/' + encodeURIComponent(id);
 }
 
 // ---------------------------------------------------------------------------
@@ -201,14 +197,8 @@ function wire() {
   $('#explore-tab').onclick = () => setExplore();
   $('#case-inputs').onclick = () => toExplore('inputs');
   // Whoever changed the saved case, every number on screen was for the old
-  // inputs. The node page is re-opened rather than patched: its input fields,
-  // its figures and its run panel all read the case, and re-opening is the one
-  // path that is already known to draw all of them from nothing.
-  onCaseChange(() => {
-    if (S.view === 'node' && S.selected) { draw(); openNode(S.selected); return; }
-    draw();
-  });
-  $('#back').onclick = () => setRows();
+  // inputs.
+  onCaseChange(() => draw());
 
   $('#arch-nav').addEventListener('click', e => {
     const b = e.target.closest('[data-arch]');
@@ -236,7 +226,6 @@ function wire() {
 
 // The tool is opened by a person, so a hand on the console is a person too.
 window.S = S;
-window.openNode = open;
 window.draw = draw;
 
 boot();

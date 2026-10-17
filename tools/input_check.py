@@ -58,7 +58,8 @@ def check():
         pg.on("pageerror", lambda e: errs.append("threw: %s" % str(e)[:160]))
         pg.on("console",
               lambda m: errs.append("console: %s" % m.text[:160]) if m.type == "error" else None)
-        pg.goto(HOST + "/", wait_until="networkidle")
+        # A row's page is the Node workspace's (docs/briefs/F3.md, F3-h3).
+        pg.goto(HOST + "/app", wait_until="networkidle")
         pg.evaluate("id => window.openNode(id)", ROW)
 
         try:
@@ -163,6 +164,7 @@ def check():
         pg.evaluate("p => localStorage.setItem('vleo.overrides.v1', p)",
                     '{"%s": 3155760000}' % ROW)     # 100 yr, bounded at 15
         pg.reload(wait_until="networkidle")
+        pg.evaluate("id => window.openNode(id)", ROW)
         pg.wait_for_timeout(1500)
         kept = pg.evaluate("async()=>{const s=await import('/js/state.js');return s.S.overrides.size}")
         if kept:

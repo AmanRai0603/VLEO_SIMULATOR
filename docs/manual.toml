@@ -123,18 +123,18 @@ id = "browser-find"
 title = "Find your way around"
 who = "user"
 kind = "tutorial"
-answer = "The design is a tree of rows, each with its own page. Today's tool lists them by group: find one and open its page. The design's runs, inputs, results kept and health map are in the application's Explore."
+answer = "The design is a tree of rows, each with its own page. Today's tool lists them by group: find one and open its page, in the application's Node workspace. The design's runs, inputs, results kept and health map are in the application's Explore."
 body = """
 The design is a tree of rows. Each row asks one small question and has one \
 answer, and each has a page of its own. **Rows**, the first tab of today's \
 tool, lists every row by the group it is in; type part of a row's id or label \
-to narrow the list, and click a row to open its page.
+to narrow the list, and click a row to open its page in **the application's \
+Node workspace** (`/app#node/<id>`).
 
-The rest of what the design does is in **the application** (`/app`): its \
+The rest of what the design does is in **the application** (`/app`) too: its \
 **Explore** workspace says which design is open, shows where it breaks, runs \
-any row, holds the case's inputs and every result kept. Today's tool page \
-keeps a row's page until the application's Node workspace holds it, and the \
-architecture every row repeats."""
+any row, holds the case's inputs and every result kept. Today's tool page keeps \
+the rows, to find one, and the architecture every row repeats."""
 
 [[layer.section.step]]
 say = "Every row of the design, by its group."
@@ -145,10 +145,10 @@ say = "Type part of a row's id or label to narrow the list."
 ui = "find a row"
 
 [[layer.section.step]]
-say = "Click a row to open its own page. A link to `#row/<id>` opens it too."
+say = "Click a row to open its own page, in the application's Node workspace. A link to `/app#node/<id>` opens it too, and so does `#row/<id>` on this page."
 
 [[layer.section.step]]
-say = "From the keyboard: **Esc** goes back to the rows."
+say = "From the keyboard: **Esc** goes back to the rows from any other tab here."
 
 [[layer.section.step]]
 say = "The pattern every row's file repeats — what is written by hand and what is generated — is under its own tab."
@@ -160,9 +160,11 @@ id = "browser-read"
 title = "Read a row"
 who = "user"
 kind = "explanation"
-answer = "A row's page opens with its answer first, then says it simply, then the real relation and its source, then where the simple version breaks. Every claim says whether it is sourced, derived or declared, and the depth switch chooses how much is shown."
+answer = "A row's page, in the application's Node workspace, opens with its answer first, then says it simply, then the real relation and its source, then where the simple version breaks. Every claim says whether it is sourced, derived or declared, and the depth switch chooses how much is shown."
 body = """
-A row's page answers four questions, in order.
+A row's page is drawn in the centre of the application's **Node workspace**, \
+with its six parts down the left and its file in your copy on the right. The \
+page answers four questions, in order.
 
 **What it is made of** — what its node file holds, which part a person writes \
 (the sheet, with its method and cases) and what is rendered from it.
@@ -189,15 +191,15 @@ saying where the relation came from, so it does not answer until its node \
 engineer supplies that."""
 
 [[layer.section.step]]
-say = "First, its six parts — identity, ports, behaviour, evidence, explanation, history — each done, missing or failing, as the gate says."
-ui = "its parts — what is done, missing or failing"
+say = "Down the left, its six parts — identity, ports, behaviour, evidence, explanation, history — each done, missing or failing, as the gate says."
+ui = "its parts"
 
 [[layer.section.step]]
 say = "Run the node engineer's own code again on each case recorded from it: a check only, and only when you press it."
 ui = "run my code again"
 
 [[layer.section.step]]
-say = "The four parts of a row's page, top to bottom."
+say = "In the centre, the four parts of a row's page, top to bottom."
 ui = "assembly — what this node is made of"
 
 [[layer.section.step]]
@@ -209,8 +211,8 @@ say = "The sheet, as its node engineer wrote it."
 ui = "the sheet — what it says"
 
 [[layer.section.step]]
-say = "Back to the rows."
-ui = "↑ back to the rows"
+say = "On the right, its file in your copy: its revision, who writes it, and what its checks find. With no copy, it says how to make one."
+ui = "its file in your copy"
 
 
 [[layer.section]]

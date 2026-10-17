@@ -226,7 +226,7 @@ async function centre(id, file) {
   const current = () => seq === W.centreSeq && id === W.id;
   if (W.view !== 'yours' || !file || file.ok === false) {
     at.innerHTML = '';
-    return drawNode(page, run, id, { parts: false, current });
+    return drawNode(page, run, id, { current });
   }
   at.innerHTML = '<p class="muted">drawing revision ' + esc(file.revision) + ' over today\'s design…</p>';
   page.innerHTML = ''; run.innerHTML = '';
@@ -245,9 +245,9 @@ async function centre(id, file) {
   // Drawn over today's design: the program's sheet alone. Not drawn, or
   // changing nothing: today's page, whole, as today's.
   if (l.drawn && !l.changes_nothing && typeof l.html === 'string') {
-    await drawNode(page, run, id, { parts: false, fragment: l.html, current });
+    await drawNode(page, run, id, { fragment: l.html, current });
   } else {
-    await drawNode(page, run, id, { parts: false, current });
+    await drawNode(page, run, id, { current });
   }
 }
 

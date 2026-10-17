@@ -7,10 +7,10 @@
   computed here from the folder on disk and from the graph, so neither can
   claim something the repository does not hold.
 
-  ONE DRAWING, TWO PAGES. drawNode draws it into any host; today's tool page
-  opens it in its node view (openNode), and the application's Node workspace
-  in its centre (workspace_node.js), with the parts down its own side. So the
-  two cannot drift while both exist.
+  drawNode draws it into any host: the application's Node workspace draws it
+  in its centre (workspace_node.js), with the node's parts down its own side.
+  Today's tool page drew it in its node view until the workspace held it
+  (docs/briefs/F3.md, F3-h3).
 */
 'use strict';
 
@@ -22,14 +22,9 @@ import { mountTheory } from './theory.js';
 import { figuresForRow, drawRowFigure } from './solar.js';
 import { isInput, inputControl, mountInput } from './inputs.js';
 import { renderLesson } from './components.js';
-import { mountParts } from './nodeparts.js';
 
-export async function openNode(id) {
-  return drawNode($('#node-body'), $('#run-panel'), id);
-}
-
-/** Draw node `id` into `body`, and its run into `runHost`. `opts.parts`
- *  false leaves its six parts to whoever draws them beside it.
+/** Draw node `id` into `body`, and its run into `runHost`; its six parts
+ *  are drawn beside it by whoever draws the page (nodeparts.js).
  *  `opts.fragment` is a sheet drawn by the program other than today's (the
  *  Node workspace's revision over today's design): only the sheet is drawn,
  *  and nothing of today's run, relation, figures or lesson beside it.
@@ -38,7 +33,6 @@ export async function openNode(id) {
 export async function drawNode(body, runHost, id, opts = {}) {
   const r = S.byId.get(id);
   if (!r || !body) return;
-  const withParts = opts.parts !== false;
   const other = typeof opts.fragment === 'string';
   body.innerHTML = '<p class="muted">loading the node…</p>';
   const figs = other ? [] : figuresForRow(id);
@@ -66,10 +60,6 @@ export async function drawNode(body, runHost, id, opts = {}) {
     // a thing a reader can move, and that is a different kind of statement. It
     // is drawn only where it can do something — see isInput.
     (isInput(r) ? '<section class="seg ovr-panel"></section>' : '') +
-    // ITS SIX PARTS, each done, missing or failing, as the gate says, before
-    // anything about what it is made of: what is left to do comes first.
-    (withParts ? '<section class="seg np-host" data-seg="parts"><h3 class="seg-h">' +
-      'its parts — what is done, missing or failing</h3><div class="np-body"></div></section>' : '') +
     '<section class="seg" data-seg="assembly"><h3 class="seg-h">' +
       '<span class="seg-n">1</span>assembly — what this node is made of</h3>' +
       assemblyHtml(r, meta) + '</section>' +
@@ -104,7 +94,6 @@ export async function drawNode(body, runHost, id, opts = {}) {
   if (other && runHost) runHost.innerHTML = '';
 
   if (isInput(r) && !other) mountInput($('.ovr-panel', body), r);
-  if (withParts && !other) mountParts($('.np-body', body), id);
 
   if (figs.length) {
     const hostFig = $('.row-figure', body);
