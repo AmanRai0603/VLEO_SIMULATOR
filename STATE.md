@@ -182,7 +182,7 @@ Handed over Saturday 17 October (S1 to S3: F1 to F3-f, the key's proof, F3-g1, t
 - **Next for A, in order:**
   - **CI on 189's review fixes.**
   - **For Aman:** the brief's questions 9 (one node shape, F3-g0) and 10 (ports), 7 and 8 (where today's page's Rows, Architecture, Forms and manual go), and 11 to 19 (F3-g2).
-  - **Then F3-h, the node view's removal**, once F3-g2 covers what it shows, with the panel checks moved to `/app`.
+  - **Then F3-h, the node view's removal**, planned in the brief (3a7b78eb, on #162): the eleven panels, `input_check`, `mock_check` (and the mock engine's reading routes) and `manual_check`'s node steps move to `/app#node/<row>`, then `/`'s node view goes. It waits on Aman's question 7, and is stacked on 189.
 
 ## Person B · night
 
