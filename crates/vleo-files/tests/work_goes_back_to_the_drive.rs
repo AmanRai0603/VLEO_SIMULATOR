@@ -236,6 +236,14 @@ fn world(name: &str) -> (PathBuf, PathBuf) {
         &key(75),
         "Test Ola",
     );
+    // Ola's record of which belief broke, for each release of solar sealed.
+    solar.tables.push(Tbl {
+        scope: s(FILE),
+        path: s("versions.csv"),
+        csv: s("version,date,by,believed,tested,learned,changed,risks,cost,rests_on,breaks_if\n\
+             1.0,2026-10-01,Test Ola,,,,,,,the four NOAA SWPC activity levels,a correction to those levels\n\
+             1.1,2026-10-05,Test Ola,The bands held.,Read against their cases.,They held.,Nothing but words.,,,the four NOAA SWPC activity levels,a correction to those levels\n"),
+    });
     for (uid, who) in [(UID, "Test Nia"), ("ivo_uid", "Test Ivo")] {
         solar.assignments.push(Assignment {
             block_uid: s(uid),

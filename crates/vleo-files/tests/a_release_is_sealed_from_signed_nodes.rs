@@ -144,6 +144,15 @@ fn solar_unsigned(contract: i64) -> File {
         person: s("Nia Node"),
         contract_version: contract,
     });
+    // The owner's record of which belief broke, a row for each version.
+    f.tables.push(Tbl {
+        scope: s(FILE),
+        path: s("versions.csv"),
+        csv: s("version,date,by,believed,tested,learned,changed,risks,cost,rests_on,breaks_if\n\
+             1.0,2026-10-01,Ola Sun,,,,,,,the four NOAA SWPC activity levels,a correction to those levels\n\
+             1.1,2026-10-05,Ola Sun,The bands held.,Read against their cases.,They held.,Nothing but words.,,,the four NOAA SWPC activity levels,a correction to those levels\n\
+             1.2,2026-10-10,Ola Sun,The bands held.,Read again.,They held.,A method said plainly.,,,the four NOAA SWPC activity levels,a correction to those levels\n"),
+    });
     f
 }
 
@@ -323,6 +332,9 @@ fn a_seal_is_refused_by_name_while_anything_stands_in_its_way() {
         "the group file holds rows of it too",
     );
 
+    // A version the group's record says nothing of: no belief said broken.
+    let e = seal(&w, &solar(), &[band(&w)], "1.3", None, "Ola Sun", 13).unwrap_err();
+    assert!(e.contains("versions.csv has no row for version 1.3"), "{e}");
     // A version that is not one, or does not come after the last.
     let e = seal(&w, &solar(), &[band(&w)], "two", None, "Ola Sun", 13).unwrap_err();
     assert!(e.contains("not a release's version"), "{e}");

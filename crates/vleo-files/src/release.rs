@@ -20,6 +20,7 @@
 //! copy's lock, never over a release already there: a release is never edited.
 
 use crate::chain::{self, Registry, FILE};
+use crate::checks;
 use crate::error::{Error, ErrorKind};
 use crate::keys::SigningKey;
 use crate::meta::{Kind, ReleaseVersion};
@@ -239,6 +240,19 @@ pub fn seal(
     r.meta.insert("sealed_by".into(), by.to_string());
     r.meta.insert("sealed_at".into(), at.to_string());
     r.check_values()?;
+    // Every check today's design makes of a release's content: its nodes,
+    // its requirements, and the record of which belief broke.
+    let found = checks::check_release(&r);
+    let errors: Vec<String> = found
+        .errors()
+        .map(|e| format!("{}: {}", e.place, e.what))
+        .collect();
+    if !errors.is_empty() {
+        return Err(refused(format!(
+            "{group_id} {version} is not sealed: its checks refuse it — {}",
+            errors.join("; ")
+        )));
+    }
     let row = chain::sign(&r, FILE, by, key, at, "ok", "")?;
     r.signatures.push(row);
 
