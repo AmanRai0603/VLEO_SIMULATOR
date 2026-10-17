@@ -92,11 +92,13 @@ Handed over Saturday 17 October (S1 to S3: F1 to F3-f, the key's proof, F3-g1, t
     - A node is broken down only into children that reproduce its own cases: its signed cases, from a file its checks pass, run through its children in the method language, each case judged by `judge_outcome`.
     - `edit_in_place` writes it in the copy under the lock; a second writer is stopped by the digest.
 
-    The Opus review found two blocking points (an edit re-signed a group file changed by hand; a node's cases were taken unsigned and unchecked) and eleven more; all fixed in 0ed6a202, each with a test shown red but the paths named untested. Nine questions for Aman are in its body. CI was green on the first commit; the fixes' run is pending.
+    The Opus review found two blocking points (an edit re-signed a group file changed by hand; a node's cases were taken unsigned and unchecked) and eleven more; all fixed in 0ed6a202, each with a test shown red but the paths named untested. Nine questions for Aman are in its body. CI is green on the fixes; c2c34627, from 187's review, makes the test's invented child say it is invented.
   - **187 F4-b the branch in the System workspace: high risk.** Stacked on 186, on `claude/a-f4b-system`.
     - `GET /v1/branch?group=` and `POST /v1/branch/<id>`, every rule the library's.
     - `/app`'s System workspace: the tree, the block chosen with its cases beside the estimate, and the edit forms for the owner or their deputy only.
-    - Proved by a program test and `tools/branch_check.py` (panels job, ports 7869 and 7870). Its Opus review is running; CI is pending.
+    - Proved by a program test and `tools/branch_check.py` (panels job, ports 7869 and 7870).
+
+    The Opus review found two blocking points (which file mounts a group was decided on the screen's side, not by `chain::mounted_by`; node files that could not be read were left out of the tree) and six more; all fixed in 1bc260c7 to a4bf3329, each with a test shown red but two named untested. CI was green on the first commit; the fixes' run is pending.
 - **What 171 decides, which B's PRs must follow:**
   - **Ownership follows the mount.** Only the programme's file (mounting `systems`) and the systems' file (mounting each `l3_*`) mount anything.
   - **A group file registers only node engineers.** It holds nobody the programme's file registers, and no key it registers. `open_group_in` refuses anything else, by name.
@@ -108,6 +110,7 @@ Handed over Saturday 17 October (S1 to S3: F1 to F3-f, the key's proof, F3-g1, t
   - **A group file is framed only when it opens through the chain as it is.** Anything that signs a group file afresh opens it first.
   - **Every file of the copy is read for an edit**, releases among them, and one that cannot be read refuses it: a reader is never missed.
   - **The page library's sources are every crate compiled into it**, the kernel among them: a kernel change makes `web/files.wasm.gz` stale, and `xtask files-wasm` must run after `cargo fmt`, not before.
+  - **A branch is read by one reader**, `breakdown::group_file_in` and `nodes_in`, for what is shown and for what is edited; which file mounts a group is always `chain::mounted_by`.
   - **For B:** the small drive gains two unassigned children of Pia's band (`sw_activity_count`, and `sw_activity_count_late`, wrong at 135 sfu on purpose). A scenario that counts solar's nodes must allow for them.
 - **What 185 decides:**
   - **Who may write a node is asked of the library, never worked out again on a screen** (`Registry::may_sign_node`, with `Registry::key`). The review found a second copy of the rule had lost its guard.
@@ -156,7 +159,7 @@ Handed over Saturday 17 October (S1 to S3: F1 to F3-f, the key's proof, F3-g1, t
 - **Lockfiles:** `crates/vleo-py` keeps its own, built `--locked` in CI, and so does `crates/vleo-kernel-wasm` until 177 removes it. A new dependency of `vleo-files` or `vleo-server` needs them refreshed, as 171 does.
 - **Disk:** the container's allowance filled on S1 and again on S2. `xtask files-wasm` and the scenarios leave a `target/` of 10 GB or more inside the worktree they run in; delete it after a push. Old worktrees' `target/` folders and `target/*/incremental` were deleted to make room.
 - **Next for A, in order:**
-  - **187's review**, then CI on 186 and 187.
+  - CI on 187's fixes.
   - **F3-g2, writing the node** (the brief, F3-g): the question, the explanation, the method and the cases through the library (`POST /v1/node/<id>/edit`, with a dry run for checked-as-you-type), and the live page of your copy's revision laid over today's design. High risk; Opus review.
   - **For Aman:** the brief's questions 9 (one node shape, F3-g0) and 10 (ports), and 7 and 8 (where today's page's Rows, Architecture, Forms and manual go).
   - **Then F3-h, the node view's removal**, once F3-g2 covers what it shows, with the panel checks moved to `/app`.
