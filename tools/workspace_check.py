@@ -16,6 +16,9 @@ around it. With no key and no copy, as anyone reading the design would:
   page, in a tab of its own so the node's page keeps what is typed in it,
   and the run panel's *the inputs…* opens Explore at its inputs, where the
   depth switch is not shown;
+- today's tool page holds no node view: a row's link there, and
+  `#row/<id>`, open the row in the Node workspace (F3-h3), the second in
+  its own entry's place;
 - no page error.
 
     python3 tools/workspace_check.py
@@ -125,6 +128,27 @@ def check():
             step("the run panel's inputs open Explore at its inputs",
                  p.locator('#sh-nav .tab.sel', has_text='Explore').count() == 1, p.inner_text('#sh-nav'))
             step('the depth switch is said only where a node is drawn', p.locator('#depth').is_hidden())
+            # And today's tool page holds no node view (F3-h3): a row's link
+            # there, and `#row/<id>`, open the row in the Node workspace.
+            p.goto(f'http://127.0.0.1:{port}/')
+            p.wait_for_selector('#rows-body .rows-find', timeout=60000)
+            step("today's tool page holds no node view",
+                 p.evaluate("() => !document.getElementById('nodeview') && typeof window.openNode === 'undefined'"))
+            p.fill('#rows-body .rows-find', RECORD)
+            p.click(f'#rows-body .xref[data-goto="{RECORD}"]')
+            workspace(p)
+            p.wait_for_selector('.nw-page .sheet-read', timeout=60000)
+            step("a row's link there opens it in the Node workspace",
+                 '/app' in p.url and RECORD in p.inner_text('.answer-first'), p.url)
+            before = p.evaluate('history.length')
+            p.goto(f'http://127.0.0.1:{port}/#row/{DECLARED}')
+            p.wait_for_url('**/app', timeout=60000)
+            workspace(p)
+            step('and so does #row/<id>', DECLARED in p.inner_text('.answer-first'), p.url)
+            # In its place: one entry more, the workspace, so Back does not
+            # land on `#row/<id>` and send the reader on again.
+            step('#row/<id> leaves no entry for Back to send the reader on from',
+                 p.evaluate('history.length') == before + 1, f"{before} -> {p.evaluate('history.length')}")
             step('no page error', not errors, '; '.join(errors[:3]))
             b.close()
     finally:

@@ -61,9 +61,9 @@ on your machine — nobody else can reach it. To stop it, close that window or p
 ## 2 · Use it
 
 - **Rows** lists every row of the design, by its group; type part of an id or label to find one.
-  Click any row to open its page. Every page starts with the answer, then says it simply, then
+  Click any row to open its page, in the application's Node workspace. Every page starts with the answer, then says it simply, then
   shows the real relation and where it comes from, then where the simple version stops being true.
-- **Learn · Read · Expert** at the top right sets how much each page explains.
+- **Learn · Read · Expert**, at the top of a row's page in the application, sets how much it explains.
 - **Inputs**, under **Explore** in the application (`/app`), is your case: every number you can
   set, with its default. Change them on the page, or download the CSV, edit it and upload it back.
 - **Run** a row from its page. **save this result** keeps what it returned, with the inputs it ran

@@ -32,7 +32,7 @@ and the page builds every part from its library (`web/js/components.js`).
 
 ## Where it shows
 
-On the row's page, as segment *the lesson — how this row is taught*, drawn by
+On the row's page, in the Node workspace, as segment *the lesson — how this row is taught*, drawn by
 `renderLesson`. **Learn · Read · Expert** apply: the plain-words and story
 stations and the checks are dropped for an expert. A widget sends the reader's
 value to the engine as a supplied input (`/v1/run`) and shows what comes back,

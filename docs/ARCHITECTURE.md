@@ -43,11 +43,11 @@ assembly if any group's rows end up in two of them or any one holds two layers.
 ## The shell is a tree of modules, not a bundle
 
     dom.js  ← state.js ← rows.js               ┐
-                      ↖ status.js              ├─ app.js
-                      ↖ node.js  ← run.js      │
+                      ↖ status.js              ├─ app.js           (today's tool page, /)
                       ↖ architecture.js        ┘
+                      ↖ node.js  ← run.js      ── workspace_node.js ← shell.js   (the application, /app)
 
-Every module depends inward and nothing depends on `app.js`. A view that could
+Every module depends inward and nothing depends on `app.js` or `shell.js`. A view that could
 navigate would have to import the router that imports it, and a cycle in a
 hundred-line module is a cycle nobody notices until it is a thousand. Views
 render markup carrying `data-` attributes; `app.js` owns every listener and

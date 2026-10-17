@@ -4,8 +4,8 @@
 The frontend is developed against the contract, not against a build of the
 engine (contract/README.md). This holds that promise: it starts
 tools/mock_engine.py, opens the page in a real browser, and walks what a
-frontend developer would — the rows, a node's page and a run in it, Explore,
-and the application's Explore with its results kept —
+frontend developer would — the rows, a node's page in the Node workspace and
+a run in it, Explore, and the application's Explore with its results kept —
 failing on any page error, on a banner that does not say the numbers are
 recorded examples, and on a run panel that does not show the recorded answer.
 
@@ -53,15 +53,21 @@ def check():
         listed = p.locator("#rows-body .rows-list .xref").count()
         step("the rows are listed from the recorded index", listed > 20, f"{listed} rows")
 
-        # A row's page, opened from the list, and run in its run panel.
+        # A row's page, opened from the list in the Node workspace, and run
+        # in its run panel there.
         p.fill("#rows-body .rows-find", "sw_ap_design")
         p.click('#rows-body .xref[data-goto="sw_ap_design"]')
-        p.wait_for_selector("#run-panel .run-go:not([disabled])", timeout=15000)
-        p.click("#run-panel .run-go")
-        p.wait_for_selector("#run-panel .run-out .answer", timeout=15000)
-        ans = p.inner_text("#run-panel .run-out .answer")
+        p.wait_for_selector(".nw-run .run-go:not([disabled])", timeout=15000)
+        step("a row opens in the Node workspace", "/app" in p.url, p.url)
+        bar = p.locator("#mock-bar")
+        step("which says its answers are recorded examples too", bar.count() == 1,
+             bar.inner_text()[:60] if bar.count() else "no #mock-bar")
+        p.click(".nw-run .run-go")
+        p.wait_for_selector(".nw-run .run-out .answer", timeout=15000)
+        ans = p.inner_text(".nw-run .run-out .answer")
         step("the run panel shows the recorded answer", "Ap" in ans, ans)
-        p.click("#back")
+        p.goto(url + "/")
+        p.wait_for_load_state("networkidle")
 
         # Every kind of figure the engine can describe, drawn from its samples.
         p.locator("#tabs .tab", has_text="Architecture").first.click()
@@ -105,14 +111,17 @@ def check():
         kept = a.locator(".res-row").count()
         step("the application's Explore lists the recorded results kept", kept >= 1, f"{kept} row(s)")
         a.close()
-        # A node's six parts, and its node engineer's code run again.
+        # A node's six parts, and its node engineer's code run again, down
+        # the Node workspace's side.
+        p.goto(url + "/app")
+        p.wait_for_load_state("networkidle")
         p.evaluate("id => window.openNode(id)", "sw_ap_design")
-        p.wait_for_selector("#node-body .np-parts", timeout=15000)
-        parts = p.locator("#node-body .np-part").count()
+        p.wait_for_selector(".nw-parts .np-parts", timeout=15000)
+        parts = p.locator(".nw-parts .np-part").count()
         step("a node's six parts are drawn", parts == 6, f"{parts} part(s)")
-        p.click("#node-body .np-rerun")
-        p.wait_for_selector("#node-body .np-rerun-out b", timeout=15000)
-        step("run my code again answers", "not run here" in p.inner_text("#node-body .np-rerun-out"))
+        p.click(".nw-parts .np-rerun")
+        p.wait_for_selector(".nw-parts .np-rerun-out b", timeout=15000)
+        step("run my code again answers", "not run here" in p.inner_text(".nw-parts .np-rerun-out"))
 
         step("no page error", not errors, "; ".join(errors[:3]))
 

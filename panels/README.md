@@ -40,9 +40,8 @@ tests.
 
 `page` is where the panel is drawn: `/app` for a row's figures, which the Node
 workspace draws (its `ready` opens the row with `window.openNode`), and `/`,
-the default, for the rows list. `/`'s node view is to go in F3-h3
-(docs/briefs/F3.md; question 7, still open); until then it draws the same
-`drawNode`, and no panel opens it. A figure's references were recorded there,
+the default, for the rows list. A figure's references were recorded in
+`/`'s node view, which the Node workspace replaced (docs/briefs/F3.md, F3-h),
 and are still the size they were, for the reason below. `width` is the
 window's, when a panel needs one of its own: 1440 on `/`, and `APP_WIDTH` in
 `/app`.

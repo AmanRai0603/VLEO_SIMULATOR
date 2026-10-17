@@ -33,8 +33,8 @@ cargo run --release -p vleo-daemon        # the tool, at http://127.0.0.1:7777
 
 Open it. You get **Rows** — every row of the design, by its group, with a
 filter to find one — and **? Manual** in the row of tabs above it; click a row
-to open its page. The run, the inputs and the results kept are in the
-application at `/app`, under **Explore**. The design has four layers:
+to open its page, in the application's **Node** workspace at `/app`. The run,
+the inputs and the results kept are in the application too, under **Explore**. The design has four layers:
 
 | layer | what it holds | rows | of those, written |
 |---|---|---|---|
@@ -372,7 +372,7 @@ the bundle:
 - **Repeatability** — every cycle stacked on phase, with cycle 25 dashed
   because it is still running.
 
-Open any solar row from **Rows** and its node page carries the same argument in
+Open any solar row from **Rows** and its page, in the Node workspace, carries the same argument in
 ten tabs, including **the relation, moving** and **de-risking**: the input crosses its declared
 domain, the answer moves, and the guards are drawn as the walls they are. That
 animation is the engine's own sweep, so a picture that disagrees with the row

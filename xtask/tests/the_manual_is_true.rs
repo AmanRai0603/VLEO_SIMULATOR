@@ -510,7 +510,10 @@ fn every_setting_the_code_reads_is_documented_and_nothing_else() {
 fn every_label_the_manual_says_to_click_is_on_the_page() {
     // A button renamed and a manual still telling people to press the old name
     // is the most ordinary drift there is, and the reader blames themselves.
+    // Both pages: today's tool page, and the application, which holds a
+    // row's page.
     let mut page = read("web/index.html");
+    page.push_str(&read("web/app.html"));
     for e in std::fs::read_dir(root().join("web/js")).unwrap().flatten() {
         page.push_str(&std::fs::read_to_string(e.path()).unwrap_or_default());
     }

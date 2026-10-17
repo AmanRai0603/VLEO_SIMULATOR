@@ -404,8 +404,10 @@ def browser_walk():
                 home()
                 tab(U("browser-find", 1))
                 page.fill("#rows-body .rows-find", row)
+                # A row's page is the application's Node workspace's
+                # (docs/briefs/F3.md, F3-h3): the link opens it there.
                 page.locator(f'#rows-body .xref[data-goto="{row}"]').first.click()
-                page.wait_for_selector("#nodeview:not([hidden]) .sheet-tabs")
+                page.wait_for_selector(".nw-page .sheet-tabs")
 
             def explore(view):
                 """The application's Explore, at one of its views, by the
@@ -505,28 +507,27 @@ def browser_walk():
                 open_row(WALK_COMPUTED)
                 # Its parts are asked of the engine after the page is drawn:
                 # read once they are there, or once they say why not.
-                page.wait_for_selector("#node-body .np-body > *")
-                text = page.locator("#node-body").inner_text()
-                # Its parts and running its code again (F3, 170), then the
-                # page's own three segments, as the manual names them.
+                page.wait_for_selector(".nw-parts .np-parts > *")
+                text = page.locator(".nw-grid").inner_text()
+                # Its parts and running its code again down the left (F3,
+                # 170), the page's own three segments in the centre, and its
+                # file on the right, as the manual names them.
                 for n in (1, 2, 3, 4, 5):
                     assert U("browser-read", n).lower() in text.lower(), f"no '{U('browser-read', n)}' on the page"
-                # Back, by the label the manual gives it.
-                page.locator("#nodeview button", has_text=U("browser-read", 6)).first.click()
-                page.wait_for_timeout(300)
-                assert page.locator("#rowsview").is_visible(), "back did not return to the rows"
-            ok("a row's page has the parts the manual names, and back returns", read_a_row)
+                right = page.locator(".nw-right").inner_text()
+                assert U("browser-read", 6).lower() in right.lower(), f"no '{U('browser-read', 6)}' on the right"
+            ok("a row's page, in the Node workspace, has the parts the manual names", read_a_row)
 
             print("\nrun a row")
 
             def run_a_row():
                 open_row(WALK_COMPUTED)
-                panel = "#run-panel"
+                panel = ".nw-run"
                 button(panel, U("browser-run", 2)).click()
                 button(panel, U("browser-run", 4)).click()
                 page.wait_for_function(
-                    "() => /ran/.test(document.querySelector('#run-panel').innerText) && "
-                    "/blocked/.test(document.querySelector('#run-panel').innerText)", timeout=60000)
+                    "() => /ran/.test(document.querySelector('.nw-run').innerText) && "
+                    "/blocked/.test(document.querySelector('.nw-run').innerText)", timeout=60000)
                 untouched("a run")
             ok("a run says how many rows ran and how many were blocked", run_a_row)
 
@@ -569,7 +570,7 @@ def browser_walk():
                     f"saving did not write the case to {CASE}"
                 untouched("saving the case")
                 open_row(WALK_COMPUTED)
-                panel = "#run-panel"
+                panel = ".nw-run"
                 page.wait_for_selector(panel + " .run-in-table", timeout=60000)
                 src = page.locator(f'{panel} tr.ri[data-ovr="{WALK_DECLARED}"] .ri-src').inner_text()
                 assert src == "saved case", f"a saved input is credited to '{src}'"
@@ -614,7 +615,7 @@ def browser_walk():
 
             def whatif_to_case():
                 open_row(WALK_COMPUTED)
-                panel = "#run-panel"
+                panel = ".nw-run"
                 page.wait_for_selector(panel + " .run-in-table", timeout=60000)
                 row = page.locator(f'{panel} tr.ri[data-ovr="{WALK_DECLARED}"]')
                 row.locator(".ri-v").fill("2")
@@ -672,7 +673,7 @@ def browser_walk():
                 box = page.locator(f'[data-ovr="{WALK_DECLARED}"] .ovr-v').first
                 box.fill("2")
                 box.press("Tab")
-                button("#node-body", U("browser-run", 8)).click()
+                button(".nw-page", U("browser-run", 8)).click()
                 page.wait_for_selector("#ovrbar:not([hidden])", timeout=60000)
                 bar = page.locator("#ovrbar")
                 assert U("browser-run", 9) in bar.inner_text(), "the bar has no way to put everything back"
@@ -697,13 +698,13 @@ def browser_walk():
 
             def results_round_trip():
                 open_row(WALK_COMPUTED)
-                panel = "#run-panel"
+                panel = ".nw-run"
                 button(panel, U("browser-run", 4)).click()
                 page.wait_for_selector(panel + " .res-save", timeout=60000)
                 page.locator(panel + " .res-name").fill("the walk, defaults")
                 button(panel, U("browser-results", 1)).click()
                 page.wait_for_function(
-                    "() => /saved/.test(document.querySelector('#run-panel .res-saved').innerText)", timeout=30000)
+                    "() => /saved/.test(document.querySelector('.nw-run .res-saved').innerText)", timeout=30000)
                 kept = kept_results()
                 assert len(kept) == 1, f"saving did not write one result to {RESULTS}: {kept}"
                 csv = kept[0] / "result.csv" if kept[0].is_dir() else kept[0]
@@ -780,8 +781,8 @@ def browser_walk():
 
             def depth_switch():
                 open_row(WALK_RECORD)
-                simply = page.locator("#node-body .simply").first
-                predict = page.locator("#node-body .predict").first
+                simply = page.locator(".nw-page .simply").first
+                predict = page.locator(".nw-page .predict").first
                 assert simply.is_visible() and not predict.is_visible(), "Read is not the default depth"
                 page.locator("#depth .dp", has_text=U("browser-derisk", 1)).click()
                 assert predict.is_visible(), "Learn does not ask for a prediction"
@@ -793,15 +794,17 @@ def browser_walk():
 
             def record_and_conclusion():
                 open_row(WALK_RECORD)
-                page.locator("#node-body .tabs .tab", has_text="de-risking").click()
-                panel = page.locator('#node-body [data-panel="2"]')
+                page.locator(".nw-page .tabs .tab", has_text="de-risking").click()
+                panel = page.locator('.nw-page [data-panel="2"]')
                 said = panel.inner_text()
                 assert "Rests on" in said and said.index("v3") < said.index("v1"), \
                     f"the record is not newest first: {said[:200]}"
                 panel.locator("a.xref", has_text="R-01").first.click()
-                page.wait_for_function(f"() => window.S && S.selected === '{WALK_REGISTER}'")
-                page.wait_for_selector("#nodeview:not([hidden]) .sheet-tabs")
-                page.locator("#node-body .tabs .tab", has_text="de-risking").click()
+                # The register row opens in place, in the Node workspace.
+                page.wait_for_function(
+                    f"() => {{ const a = document.querySelector('.answer-first'); return a && a.innerText.includes('{WALK_REGISTER}'); }}")
+                page.wait_for_selector(".nw-page .sheet-tabs")
+                page.locator(".nw-page .tabs .tab", has_text="de-risking").click()
                 page.wait_for_selector(".derisk-rollup table.risks")
                 roll = page.locator(".derisk-rollup").inner_text()
                 # The heading is set in capitals by the stylesheet; the words are the manual's.
@@ -816,7 +819,7 @@ def browser_walk():
                 open_row(WALK_COMPUTED)
                 for sel in (".sf-field", ".sf-save", ".sf-paste", ".sf-propose"):
                     assert page.locator(sel).count() == 0, f"a node page still has an editor ({sel})"
-                labels = " ".join(page.locator("#node-body .sheet-tabs button").all_inner_texts())
+                labels = " ".join(page.locator(".nw-page .sheet-tabs button").all_inner_texts())
                 assert "answer the questions" not in labels, "a node page still offers to answer its questions"
             ok("a node's page has no way to change the node", no_way_to_edit)
 

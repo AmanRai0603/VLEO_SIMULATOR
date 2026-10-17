@@ -9,16 +9,10 @@
 'use strict';
 
 import { $, esc } from './dom.js';
-import { S, caseTag } from './state.js';
+import { S } from './state.js';
 
 export function drawStatus() {
   const say = (status, note) => { $('#status').textContent = status; $('#caserow-note').textContent = note || ''; };
-  if (S.view === 'node') {
-    const r = S.byId.get(S.selected);
-    const g = r ? S.G.get(r.parent) : null;
-    return say(['Layer ' + (r ? r.layer : '—'), g ? g.label : '', caseTag(), r ? r.id : '', r ? r.state : '']
-      .filter(Boolean).join(' · '), r ? 'owner ' + r.owner : '');
-  }
   if (S.view === 'arch') return say('Architecture · the pattern every one of ' + S.rows.length + ' folders repeats');
   if (S.view === 'forms') return say('Forms · the inputs, results, and node forms');
   if (S.view === 'explore') return say('Explore · which design is open, where it breaks, what differs');

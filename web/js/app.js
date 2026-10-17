@@ -14,13 +14,11 @@ import { $ } from './dom.js';
 import { S, load, theCase, loadSaved, onCaseChange } from './state.js';
 import { drawStatus, drawFoot } from './status.js';
 import { renderRows } from './rows.js';
-import { openNode } from './node.js';
 import { drawArchitecture } from './architecture.js';
 import { renderManual } from './manual.js';
 import { renderForms } from './forms.js';
 import { renderExplore } from './explore.js';
 import { showContract, showMock } from './banners.js';
-import { initDepth } from './depth.js';
 import { loadOverrides, onOverrideChange } from './inputs.js';
 import { caseSaid, drawWhatIf } from './casebar.js';
 
@@ -28,7 +26,6 @@ import { caseSaid, drawWhatIf } from './casebar.js';
 // boot
 
 async function boot() {
-  initDepth();
   try {
     await load();
   } catch (e) {
@@ -45,10 +42,8 @@ async function boot() {
   // an override naming a row that no longer exists can be dropped rather than
   // sent to the engine.
   loadOverrides();
-  // The bar is redrawn wherever an override is set from — the node page's own
-  // control sets one without going through a full draw, and a bar that only
-  // appeared on the next navigation would be missing at the one moment it has
-  // something to say.
+  // The bar is redrawn wherever an override is set or put back from, so it
+  // says so at once, not at the next navigation.
   onOverrideChange(() => drawOverrideBar());
   wire();
   setRows();
@@ -60,7 +55,9 @@ async function boot() {
     const h = location.hash.match(/^#manual(?:\/([\w-]+))?$/);
     if (h) return setManual(h[1]);
     const r = location.hash.match(/^#row\/([\w-]+)$/);
-    if (r && S.byId.has(r[1])) open(r[1]);
+    // In this entry's place, so Back does not land here and send the
+    // reader on again.
+    if (r && S.byId.has(r[1])) return open(r[1], true);
     const g = location.hash.match(/^#group\/([\w-]+)$/);
     if (g && S.G.has(g[1])) openGroup(g[1]);
   };
@@ -78,7 +75,6 @@ async function boot() {
 export function draw() {
   const v = S.view;
   $('#rowsview').hidden = v !== 'rows';
-  $('#nodeview').hidden = v !== 'node';
   $('#archview').hidden = v !== 'arch';
   $('#manualview').hidden = v !== 'manual';
   $('#formsview').hidden = v !== 'forms';
@@ -182,12 +178,12 @@ function setArch(section) {
   draw();
 }
 
-async function open(id) {
-  S.selected = id;
-  S.runTarget = id;
-  S.view = 'node';
-  draw();
-  await openNode(id);
+/** A row's page: the application's Node workspace, which holds it now
+ *  (docs/briefs/F3.md, F3-h3). A link followed is an entry of its own, so
+ *  Back returns to the rows; `#row/<id>` is replaced. */
+function open(id, replace = false) {
+  const to = '/app#node/' + encodeURIComponent(id);
+  if (replace) location.replace(to); else location.href = to;
 }
 
 // ---------------------------------------------------------------------------
@@ -201,14 +197,8 @@ function wire() {
   $('#explore-tab').onclick = () => setExplore();
   $('#case-inputs').onclick = () => toExplore('inputs');
   // Whoever changed the saved case, every number on screen was for the old
-  // inputs. The node page is re-opened rather than patched: its input fields,
-  // its figures and its run panel all read the case, and re-opening is the one
-  // path that is already known to draw all of them from nothing.
-  onCaseChange(() => {
-    if (S.view === 'node' && S.selected) { draw(); openNode(S.selected); return; }
-    draw();
-  });
-  $('#back').onclick = () => setRows();
+  // inputs.
+  onCaseChange(() => draw());
 
   $('#arch-nav').addEventListener('click', e => {
     const b = e.target.closest('[data-arch]');
@@ -236,7 +226,6 @@ function wire() {
 
 // The tool is opened by a person, so a hand on the console is a person too.
 window.S = S;
-window.openNode = open;
 window.draw = draw;
 
 boot();

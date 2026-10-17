@@ -1,8 +1,8 @@
 /*
-  Every row of the design, by its group, to open its page: the way into the
-  node view now the layer figure is gone (docs/PLAN_F.md, F2). The node view
-  itself moves to the application's Node workspace in F3; the design's runs,
-  inputs, results and health are the application's Explore.
+  Every row of the design, by its group, to open its page: the way into a
+  row's page now the layer figure is gone (docs/PLAN_F.md, F2). The page is
+  the application's Node workspace (F3-h3); the design's runs, inputs,
+  results and health are the application's Explore.
 
   Nothing here is counted or judged: it lists what the index holds, in the
   order the index holds it, and a filter narrows the list by id or label.
