@@ -246,14 +246,14 @@ def check():
             opened = ask(p2, f'/v1/branch?group={GROUP}')['opened']
             r = ask(p2, '/v1/branch/add', {'group': GROUP, 'opened': opened, 'why': WHY,
                                             'parent': BAND, 'id': 'sw_activity_pia'}, w2)
-            step('an edit of Pia's sent anyway is refused by the program, by name',
+            step("an edit of Pia's sent anyway is refused by the program, by name",
                  not r.get('ok') and 'Test Pia' in r.get('message', '') and digest(pias) == before, r)
 
             # A group no file mounts.
             q.goto(f'http://127.0.0.1:{p2}/app#system/no_such_group')
             q.wait_for_selector('.answer-first:has-text("no_such_group")', timeout=60000)
             step('a group no file mounts is said, not drawn as an empty tree',
-                 'no file in your copy mounts no_such_group' in q.inner_text('#sh-main')
+                 'no file mounts the group "no_such_group"' in q.inner_text('#sh-main')
                  and q.locator('.sy-tree').count() == 0, q.inner_text('#sh-main')[:300])
             step('no page error', not errors, '; '.join(errors[:3]))
             b.close()
