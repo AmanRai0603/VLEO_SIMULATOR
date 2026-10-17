@@ -55,6 +55,11 @@
 //!   file: each edit with why, and a node broken down only into children
 //!   that reproduce its own cases (F4);
 //!
+//! * [`edit`] — a node written by plain edits in the working copy: its
+//!   question, the explanation's three texts, its method and its cases, each
+//!   held to rules 4 and 6 and to the record of which belief broke, saved as
+//!   a save is, and its dry run, checked as it is typed (F3-g2a);
+//!
 //! * [`seal`] — the seal of a group's folder from before 1.0: its sign-offs,
 //!   current or stale against the fingerprint they were given for, who may
 //!   sign what, and what stands between the folder and its seal, as the
@@ -67,6 +72,9 @@ pub mod compare;
 pub mod convert;
 pub mod copied;
 pub mod csv;
+// An edit writes the copy, as a save does: never in the page.
+#[cfg(not(target_arch = "wasm32"))]
+pub mod edit;
 pub mod error;
 pub mod folder;
 pub mod format_1;

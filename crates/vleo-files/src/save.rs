@@ -218,7 +218,7 @@ pub(crate) fn changed_outside(edit: &File, now: &File, uid: &str) -> Vec<String>
 }
 
 /// The second writer: the file as it is now, from the bytes read.
-fn second(at: &Path, bytes: Vec<u8>) -> Result<Saved, Error> {
+pub(crate) fn second(at: &Path, bytes: Vec<u8>) -> Result<Saved, Error> {
     let now = crate::sqlite::read(at)?;
     Ok(Saved::SecondWriter {
         writer: now.meta.get("writer").cloned().unwrap_or_default(),
@@ -241,28 +241,19 @@ fn second_asked(at: &Path, bytes: Vec<u8>) -> Result<Asked, Error> {
     })
 }
 
-/// Save `edit` as the next revision of the node at `path` inside the copy
-/// at `copy`, written by `by` with the program `app`, when the bytes there are
-/// still the ones whose SHA-256 is `opened`. `group` is the node's group file,
-/// opened through the chain: it says who is assigned the block.
-pub fn save(
-    copy: &Path,
+/// What saving `edit` over `now`, the node at `path`, would write as `by` with
+/// the program `app`: the next revision, or why it is refused. Every check a
+/// save makes but the comparison of the bytes, so a dry run (`edit::try_edit`)
+/// is refused for what a save is refused for, by the same code.
+pub(crate) fn would_save(
+    now: &File,
     path: &str,
     edit: &File,
-    opened: &str,
     by: &str,
     app: &str,
     group: &Registry,
-) -> Result<Saved, Error> {
-    if !copied::path_ok(path) {
-        return Err(refused(format!("{path:?} is not a path inside the copy")));
-    }
-    opened_ok(opened)?;
-    // One writer at a time, from the first read to the rename.
-    let _held = lock(copy)?;
-    let at = copy.join(path);
-    let now = crate::sqlite::read(&at)?;
-    let id = the_node(&now, path)?;
+) -> Result<(File, u64), Error> {
+    let id = the_node(now, path)?;
     for key in ["file_kind", "group_id", "block_uid"] {
         if edit.meta.get(key) != now.meta.get(key) {
             return Err(refused(format!(
@@ -299,7 +290,7 @@ pub fn save(
             "the edit changes the requests in {id}'s file: a request is kept as it was asked, and one is added only by asking"
         )));
     }
-    let changed = changed_outside(edit, &now, &block.uid);
+    let changed = changed_outside(edit, now, &block.uid);
     if !changed.is_empty() {
         return Err(refused(format!(
             "the edit changes what is not {id}'s own to change ({}): a save changes the node's own rows, and nothing else in its file",
@@ -316,7 +307,7 @@ pub fn save(
             "the edit changes {id}'s id, the block it hangs from or its contract's version: a save does not move a node, and a contract changes by a request"
         )));
     }
-    let revision = revision_of(&now, path)?.max(block.revision.max(0) as u64) + 1;
+    let revision = next_revision(now, path)?;
     let mut next = edit.clone();
     next.meta.insert("revision".into(), revision.to_string());
     next.meta.insert("writer".into(), by.to_string());
@@ -325,6 +316,37 @@ pub fn save(
         b.revision = revision as i64;
     }
     next.check_meta()?;
+    Ok((next, revision))
+}
+
+/// The revision a save of the node at `path` writes next.
+pub(crate) fn next_revision(now: &File, path: &str) -> Result<u64, Error> {
+    let block = now.blocks.first().map_or(0, |b| b.revision.max(0) as u64);
+    Ok(revision_of(now, path)?.max(block) + 1)
+}
+
+/// Save `edit` as the next revision of the node at `path` inside the copy
+/// at `copy`, written by `by` with the program `app`, when the bytes there are
+/// still the ones whose SHA-256 is `opened`. `group` is the node's group file,
+/// opened through the chain: it says who is assigned the block.
+pub fn save(
+    copy: &Path,
+    path: &str,
+    edit: &File,
+    opened: &str,
+    by: &str,
+    app: &str,
+    group: &Registry,
+) -> Result<Saved, Error> {
+    if !copied::path_ok(path) {
+        return Err(refused(format!("{path:?} is not a path inside the copy")));
+    }
+    opened_ok(opened)?;
+    // One writer at a time, from the first read to the rename.
+    let _held = lock(copy)?;
+    let at = copy.join(path);
+    let now = crate::sqlite::read(&at)?;
+    let (next, revision) = would_save(&now, path, edit, by, app, group)?;
     let findings = checks::check_release(&next);
     // The one comparison, as late as can be before the write: a writer who
     // saved since the person opened it is stopped, and nothing is written.

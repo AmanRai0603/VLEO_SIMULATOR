@@ -1,0 +1,154 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "node-edited",
+  "description": "A node written by plain edits as its next revision in the working copy, or, with dry_run, the same edits checked as they are typed with nothing written: what a save would be refused for, what signing it would find and its method on each case; a file changed since it was opened, stopped; or why not.",
+  "type": "object",
+  "properties": {
+    "ok": {
+      "type": "boolean",
+      "description": "Written, or a dry run a save would not refuse."
+    },
+    "conflict": {
+      "type": "boolean",
+      "description": "The file changed since it was opened: nothing is written."
+    },
+    "dry_run": {
+      "type": "boolean"
+    },
+    "written": {
+      "type": "boolean"
+    },
+    "node": {
+      "type": "string"
+    },
+    "path": {
+      "type": "string"
+    },
+    "revision": {
+      "type": "number",
+      "description": "The revision written, or the one a save would write; on a conflict, the one the file now is."
+    },
+    "opened": {
+      "type": "string",
+      "description": "The SHA-256 of the file as it now is."
+    },
+    "writer": {
+      "type": "string",
+      "description": "On a conflict, who wrote the file as it now is."
+    },
+    "refused": {
+      "type": "string",
+      "description": "Why a save of it would be refused now, or nothing."
+    },
+    "findings": {
+      "type": "array",
+      "description": "What signing it would find (checks::check_node).",
+      "items": {
+        "type": "object",
+        "properties": {
+          "level": {
+            "type": "string",
+            "enum": [
+              "error",
+              "warning"
+            ]
+          },
+          "place": {
+            "type": "string"
+          },
+          "what": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "level",
+          "place",
+          "what"
+        ]
+      }
+    },
+    "about": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Which kinds of decision the edits change: what needs the record of which belief broke."
+    },
+    "needs_record": {
+      "type": "boolean"
+    },
+    "method": {
+      "type": "object",
+      "description": "Its method run on its own cases, as its checks run it.",
+      "properties": {
+        "runs": {
+          "type": "boolean"
+        },
+        "diags": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "line": {
+                "type": "number"
+              },
+              "severity": {
+                "type": "string",
+                "enum": [
+                  "error",
+                  "warning"
+                ]
+              },
+              "msg": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "line",
+              "severity",
+              "msg"
+            ]
+          }
+        },
+        "cases": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "label": {
+                "type": "string"
+              },
+              "refuses": {
+                "type": "boolean"
+              },
+              "agrees": {
+                "type": "boolean"
+              },
+              "says": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "label",
+              "refuses",
+              "agrees",
+              "says"
+            ]
+          }
+        }
+      },
+      "required": [
+        "runs",
+        "diags",
+        "cases"
+      ]
+    },
+    "message": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "ok",
+    "message"
+  ]
+}

@@ -421,6 +421,13 @@ jobs:
       # on the other (docs/briefs/F3.md, F3-g1).
       - name: the Node workspace, from My work to the drive
         run: python3 tools/node_check.py
+      # A node written in the Node workspace, checked as it is typed: a dry
+      # run a moment after typing, nothing written, the caret kept; a broken
+      # case shown; a save refused with the typing kept; saved with its record
+      # of which belief broke; a second writer stopped; signed
+      # (docs/briefs/F3.md, F3-g2a).
+      - name: the Node workspace, a node written and checked as it is typed
+        run: python3 tools/edit_check.py
       # A branch framed by its owner in the System workspace: a block added and
       # filled, a node broken down into children that reproduce its cases and
       # refused into one that does not, folded back, a block removed, a second

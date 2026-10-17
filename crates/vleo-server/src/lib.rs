@@ -707,6 +707,14 @@ fn route(
                 ctx,
             ),
         ),
+        // The node written by plain edits, or checked as it is typed (F3-g2a).
+        ("POST", p) if p.starts_with("/v1/node/") && p.ends_with("/edit") => ok_json(
+            node_file::edit_route(
+                p.trim_start_matches("/v1/node/").trim_end_matches("/edit"),
+                params,
+                ctx,
+            ),
+        ),
         // A request written in the node's file, signed by whoever asks (F3-d).
         ("POST", p) if p.starts_with("/v1/node/") && p.ends_with("/ask") => ok_json(
             node_file::ask_route(

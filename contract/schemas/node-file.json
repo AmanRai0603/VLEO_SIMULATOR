@@ -172,6 +172,94 @@
       "type": "string",
       "description": "The one next step, named."
     },
+    "shape": {
+      "type": "string",
+      "enum": [
+        "release",
+        "design",
+        "neither"
+      ],
+      "description": "Which shape the node file is in: a release's (its method and cases), design/'s (its sheet), or neither."
+    },
+    "editable": {
+      "type": "boolean",
+      "description": "Whether the Node workspace may write it here: it is the open key's person's, and in the release's shape."
+    },
+    "edit_why_not": {
+      "type": "string",
+      "description": "Why it cannot be written here, when it cannot."
+    },
+    "content": {
+      "type": "object",
+      "description": "What the node says, as the library reads it from the file: what the Node workspace writes (F3-g2a).",
+      "properties": {
+        "question": {
+          "type": "string"
+        },
+        "explain": {
+          "type": "object",
+          "properties": {
+            "simply": {
+              "type": "string"
+            },
+            "breaks": {
+              "type": "string"
+            },
+            "wrong": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "simply",
+            "breaks",
+            "wrong"
+          ]
+        },
+        "method_text": {
+          "type": "string",
+          "description": "Its method, in the method language."
+        },
+        "case_csv": {
+          "type": "string",
+          "description": "Its cases: results/isolation.csv."
+        },
+        "declared": {
+          "type": "object",
+          "properties": {
+            "author": {
+              "type": "string"
+            },
+            "ai": {
+              "type": "string"
+            },
+            "source": {
+              "type": "string"
+            },
+            "checked_by": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "author",
+            "ai",
+            "source",
+            "checked_by"
+          ]
+        },
+        "versions": {
+          "type": "string",
+          "description": "Its own versions.csv: the record of which belief broke, a row a decision."
+        }
+      },
+      "required": [
+        "question",
+        "explain",
+        "method_text",
+        "case_csv",
+        "declared",
+        "versions"
+      ]
+    },
     "message": {
       "type": "string"
     }
