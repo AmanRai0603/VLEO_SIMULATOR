@@ -2,6 +2,7 @@ id = "segmentation"
 label = "Segmentation — where the record sits against the cuts"
 module = "web/js/solar.js"
 mount = "canvas.sw-panel"
+page = "/app"
 draws = """The distribution of the selected driver over the whole record, with the
 boundaries the study cut it at drawn on. The second view abandons the
 distribution and shows how the regimes are distributed across cycle phase

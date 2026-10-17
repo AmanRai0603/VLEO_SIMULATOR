@@ -97,7 +97,32 @@ def spec(path):
             "%s sets pixel_reference = false with no pixel_reference_why. Say what "
             "covers the picture instead, or record a reference" % path.name
         )
+    if d.get("page", "/") not in PAGES:
+        raise SystemExit(
+            "%s opens %r, which is not a page the panels are drawn on: %s"
+            % (path.name, d["page"], ", ".join(PAGES))
+        )
     return d
+
+
+# The pages a panel is drawn on. A row's figures are drawn in the Node
+# workspace (`/app`, `window.openNode`), which `/`'s node view was; the rows
+# list stays on `/`.
+PAGES = ("/", "/app")
+
+# How wide the window is for a panel in `/app`, unless its spec says `width`.
+# A figure is drawn at most 1180px wide (`fitCanvas`, web/js/solar.js), which
+# its references were recorded at on `/`, where the node view gave it that
+# room from a window of about 1260px. The Node workspace's centre gives it that
+# room only from about 1884px (its two side columns take the rest), so the
+# checks open `/app` this wide. Check 3 refuses a picture of another shape, so
+# a window that did not give it the room says so rather than passing.
+APP_WIDTH = 1920
+
+
+def opened(url, d):
+    """The page panel `d` is drawn on, at `url`."""
+    return url.rstrip("/") + d.get("page", "/")
 
 
 class Server:
@@ -350,12 +375,12 @@ def check_all(ids=None, record=False):
             # stitched, and the stitching composites whatever the page had
             # scrolled behind it — a reference that then changes when something
             # unrelated moves.
-            page = browser.new_page(
-                viewport={"width": d.get("width", 1440), "height": d.get("height", 1600)}
-            )
+            width = d.get("width", APP_WIDTH if d.get("page", "/") == "/app" else 1440)
+            page = browser.new_page(viewport={"width": width, "height": d.get("height", 1600)})
+            where = opened(url, d)
             errors = []
             page.on("pageerror", lambda e: errors.append(str(e)))
-            page.goto(url, wait_until="networkidle")
+            page.goto(where, wait_until="networkidle")
             mount = d["mount"]
             # Some panels do not draw until somebody asks. The sweep is the
             # example: its canvas is created hidden and stays blank until a
@@ -434,7 +459,7 @@ def check_all(ids=None, record=False):
                         "%s FAILED when %r moved rather than redrawing: %s"
                         % (mount, inp["name"], fail),
                     ))
-                page.goto(url, wait_until="networkidle")
+                page.goto(where, wait_until="networkidle")
                 if d.get("ready"):
                     try:
                         page.evaluate(d["ready"])
@@ -459,7 +484,7 @@ def check_all(ids=None, record=False):
             # this is happening, which is the point: a test hook in the page
             # would be a thing to keep working rather than a thing that checks.
             def _open(settle_ms, state=None):
-                page.goto(url, wait_until="networkidle")
+                page.goto(where, wait_until="networkidle")
                 if d.get("ready"):
                     try:
                         page.evaluate(d["ready"])
@@ -569,7 +594,7 @@ def check_all(ids=None, record=False):
             # taken from the panel's own opening state and not from the branch
             # 2b happened to need.
             if d.get("engine") or d.get("figures"):
-                page.goto(url, wait_until="networkidle")
+                page.goto(where, wait_until="networkidle")
                 if d.get("ready"):
                     try:
                         page.evaluate(d["ready"])
@@ -872,6 +897,25 @@ def _frac(ia, ib, slack=8):
     return over.histogram()[255] / float(w * h) if w and h else 0.0
 
 
+def _page_cases():
+    """A spec naming a page the panels are not drawn on is refused, by name."""
+    with tempfile.TemporaryDirectory() as tmp:
+        p = Path(tmp) / "nowhere.toml"
+        p.write_text(
+            'id = "nowhere"\nlabel = "x"\nmodule = "web/js/solar.js"\nmount = "canvas"\n'
+            'page = "/nowhere"\ndraws = "x"\ncorrect = "x"\n'
+        )
+        try:
+            spec(p)
+        except SystemExit as e:
+            if "is not a page the panels are drawn on" in str(e):
+                return 0
+            print("  FAIL a spec naming a page that is not one was refused for another reason: %s" % e)
+            return 1
+        print("  FAIL a spec naming a page that is not one was taken")
+        return 1
+
+
 def _differ_cases():
     """What the picture comparison must and must not report. No browser needed.
 
@@ -1007,7 +1051,7 @@ def selftest():
     """
     import shutil, tempfile
 
-    bad_img = _differ_cases()
+    bad_img = _differ_cases() + _page_cases()
 
     global ROOT, PANELS, REFERENCE
     real_root, real_panels, real_ref = ROOT, PANELS, REFERENCE
@@ -1135,7 +1179,7 @@ def selftest():
                 print("  FAIL %s was not caught by check %s; got %s" % (label, want, found))
     bad += bad_img
     print("selftest: %d cases, %s"
-          % (len(cases) + 4, "all as expected" if not bad else "%d FAILED" % bad))
+          % (len(cases) + 5, "all as expected" if not bad else "%d FAILED" % bad))
     return 1 if bad else 0
 
 

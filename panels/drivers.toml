@@ -2,6 +2,7 @@ id = "drivers"
 label = "Drivers — the five scenarios, against the legacy run"
 module = "web/js/solar.js"
 mount = "canvas.sw-panel"
+page = "/app"
 draws = """The five design scenarios this subsystem publishes — cold day, cold sustained,
 nominal, hot sustained, hot day — for one of five quantities at a time, with the
 legacy MATLAB tool's own answers for the same cells drawn as dots beside them.

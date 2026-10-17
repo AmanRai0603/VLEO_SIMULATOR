@@ -2,6 +2,7 @@ id = "closure"
 label = "Closure — each requirement against what the record gives it"
 module = "web/js/solar.js"
 mount = "canvas.sw-panel"
+page = "/app"
 draws = """One required/achieved pair at a time, in two stacked frames on one axis. The
 top frame holds what the record gives — the achieved quantity, swept — against
 the requirement as a flat dashed line. The bottom frame holds the same fact as

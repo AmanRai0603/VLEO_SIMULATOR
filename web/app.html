@@ -38,8 +38,13 @@ body.sh { max-width: 64rem; margin: 0 auto; padding: 0 1.5rem 3rem; }
 .ex-raise-refused { color: var(--out); }
 .ex-mark { font-size: 11px; color: var(--out); }
 /* The Node workspace: its parts, its page, its file in your copy. Wider than
-   the rest of the shell, since its page is today's node view. */
-body.sh:has(#sh-node), body.sh:has(#sh-system) { max-width: 100rem; }
+   the rest of the shell, since its page is what `/`'s node view was: on a wide
+   enough screen its centre reaches that view's own 74rem, and no further, so a
+   row's figures reach the size they were drawn at there, and their reference
+   pictures (panels/reference/) still hold (panels/README.md). */
+body.sh:has(#sh-system) { max-width: 100rem; }
+body.sh:has(#sh-node) { max-width: 118rem; }
+.nw-page { max-width: 74rem; }
 .nw-pick { margin: .6rem 0; display: flex; flex-wrap: wrap; gap: .3rem; align-items: center; font-size: 12px; }
 .nw-pick-k { font: 600 11px var(--mono); text-transform: uppercase; letter-spacing: .08em; color: var(--ink-2); }
 .nw-mine.sel { background: var(--ink); color: var(--paper); }

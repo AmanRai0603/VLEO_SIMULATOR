@@ -2,6 +2,7 @@ id = "thermosphere"
 label = "Thermosphere — where the solar drivers become physics"
 module = "web/js/solar.js"
 mount = "canvas.sw-panel"
+page = "/app"
 draws = """The exospheric temperature Jacchia 1971 gives for the sky this tree carries,
 four ways. Against the flux, with the three different things "raising the flux"
 can mean drawn separately. Against Kp, one curve per solar scenario, with both
