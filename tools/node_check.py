@@ -123,7 +123,7 @@ def check():
             p.wait_for_selector('.nw-parts .np-part', timeout=60000)
             step('its six parts are drawn', p.locator('.nw-parts .np-part').count() == 6)
             p.wait_for_selector('.nw-page .sheet-read', timeout=60000)
-            centre = p.inner_text('.nw-centre h3').lower()
+            centre = p.inner_text('.nw-centre .nw-view.sel').lower()
             step("its page is drawn, said to be today's design's", "today's design" in centre, centre)
             step('once, down its side: the page in the centre draws none of its own',
                  p.locator('.nw-centre .np-part, .nw-centre .np-host').count() == 0)

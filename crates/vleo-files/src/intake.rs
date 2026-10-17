@@ -18,6 +18,11 @@
 //! What the release holds beyond the method and its cases — its words, its
 //! pictures, its evidence — stays in the release, which is what the group
 //! signed.
+//!
+//! A node file of a working copy is read the same way ([`copy_form`]), for
+//! its node engineer's page of their revision over today's design (F3-g2b):
+//! laid out as a release's folder and taken by [`node_form`], so the page
+//! shows what today's design would take of it, no more.
 
 use std::collections::BTreeMap;
 use std::path::Path;
@@ -227,6 +232,105 @@ pub fn node_form(
         derisk,
     };
     Ok((form, help.not_taken))
+}
+
+/// A node file of a working copy, read as the release its group would seal
+/// it in (docs/briefs/F3.md, F3-g2b): its node's texts, tables and media
+/// where a release's folder puts them, `nodes/<id>/…`, so it is taken by
+/// the intake today's design takes a release by ([`node_form`]), and by
+/// nothing else. It is not sealed, and says so: its version is the copy's
+/// revision, and nothing checks a seal it does not have. Also returns its
+/// node's id, and the record of which belief broke, as the last row of the
+/// node's own `versions.csv` holds it (`vleo_files::edit`).
+pub fn copy_release(f: &crate::model::File) -> Result<(Release, Derisk, String), String> {
+    let uid = f.meta.get("block_uid").map_or("", String::as_str);
+    let [b] = f.blocks.as_slice() else {
+        return Err(format!(
+            "the node file holds {} blocks: a node file holds one, its own",
+            f.blocks.len()
+        ));
+    };
+    if b.uid != uid {
+        return Err(format!(
+            "the node file holds the block {:?}, and says it is {uid:?}",
+            b.uid
+        ));
+    }
+    let nd = format!("nodes/{}", b.id);
+    let mut folder = Folder::new();
+    for t in f.texts.iter().filter(|t| t.scope == uid) {
+        if let Some((rel, _)) = crate::format_1::NODE_DOCS
+            .iter()
+            .find(|(_, k)| *k == t.kind)
+        {
+            folder.insert(format!("{nd}/{rel}"), t.body.clone().into_bytes());
+        }
+    }
+    for t in f.tables.iter().filter(|t| t.scope == uid) {
+        folder.insert(format!("{nd}/{}", t.path), t.csv.clone().into_bytes());
+    }
+    for m in f.media.iter().filter(|m| m.scope == uid) {
+        folder.insert(format!("{nd}/{}", m.path), m.bytes.clone());
+    }
+    let get = |k: &str| f.meta.get(k).cloned().unwrap_or_default();
+    let release = Release {
+        group: get("group_id"),
+        version: format!("revision {}", get("revision")),
+        sealed: String::new(),
+        sealed_by: get("writer"),
+        fingerprint: String::new(),
+        folder,
+    };
+    let rows = release
+        .records(&format!("{nd}/versions.csv"))
+        .unwrap_or_default();
+    let v = rows.last().cloned().unwrap_or_default();
+    let g = |k: &str| v.get(k).cloned().unwrap_or_default();
+    let derisk = Derisk {
+        believed: g("believed"),
+        tested: g("tested"),
+        learned: g("learned"),
+        changed: g("changed"),
+        risks: g("risks"),
+        cost: g("cost"),
+        rests_on: g("rests_on"),
+        breaks_if: g("breaks_if"),
+    };
+    Ok((release, derisk, b.id.clone()))
+}
+
+/// The node file `f` of a working copy as the change its node would make to
+/// `sh`, today's design's sheet of it, whose `node.toml` hashes to `base`:
+/// read by [`copy_release`] and taken by [`node_form`], as a release would
+/// be, and said to be the copy's revision, not a release. Dated by the last
+/// row of its record, or by nothing (the plan then dates it today). Also
+/// returns, for a transcription not taken, why.
+pub fn copy_form(
+    root: &Path,
+    f: &crate::model::File,
+    sh: &vleo_sheet::model::Sheet,
+    base: String,
+) -> Result<(Form, Option<String>), String> {
+    let (release, derisk, id) = copy_release(f)?;
+    if id != sh.id {
+        return Err(format!(
+            "the node file holds {id}, not {}: it is not drawn over another node",
+            sh.id
+        ));
+    }
+    let (mut form, not_taken) = node_form(root, &release, sh, base, &derisk)?;
+    form.date = release
+        .records(&format!("nodes/{id}/versions.csv"))
+        .unwrap_or_default()
+        .last()
+        .and_then(|r| r.get("date"))
+        .map(|d| d.chars().take(10).collect())
+        .unwrap_or_default();
+    form.notes = format!(
+        "from {id}'s file in a working copy, {}: not sealed, and not in today's design",
+        release.version
+    );
+    Ok((form, not_taken))
 }
 
 /// How an assistant helped, as a node's declaration says.

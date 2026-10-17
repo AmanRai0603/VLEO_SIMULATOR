@@ -29,15 +29,19 @@ export async function openNode(id) {
 }
 
 /** Draw node `id` into `body`, and its run into `runHost`. `opts.parts`
- *  false leaves its six parts to whoever draws them beside it. */
+ *  false leaves its six parts to whoever draws them beside it.
+ *  `opts.fragment` is a sheet drawn by the program other than today's (the
+ *  Node workspace's revision over today's design): only the sheet is drawn,
+ *  and nothing of today's run, relation, figures or lesson beside it. */
 export async function drawNode(body, runHost, id, opts = {}) {
   const r = S.byId.get(id);
   if (!r || !body) return;
   const withParts = opts.parts !== false;
+  const other = typeof opts.fragment === 'string';
   body.innerHTML = '<p class="muted">loading the node…</p>';
-  const figs = figuresForRow(id);
+  const figs = other ? [] : figuresForRow(id);
 
-  const [meta, fragment, lesson] = await Promise.all([
+  const [meta, fragment, lesson] = other ? [null, opts.fragment, null] : await Promise.all([
     fetch('/v1/node/' + encodeURIComponent(id)).then(x => x.json()).catch(() => null),
     fetch('/v1/fragment/' + encodeURIComponent(id)).then(x => x.text()).catch(() => null),
     fetch('/v1/lesson/' + encodeURIComponent(id)).then(x => x.json()).catch(() => null),
@@ -47,7 +51,7 @@ export async function drawNode(body, runHost, id, opts = {}) {
   // being drawn half-right.
   const hasLesson = lesson && (lesson.lesson || !lesson.ok);
 
-  body.innerHTML =
+  body.innerHTML = other ? sheetHtml(id, fragment, false) :
     // AND THIS COMES BEFORE EVEN THAT. Whether the row answers is the first
     // thing a reader needs, because every number further down the page is
     // either the design's or nobody's and they look identical. It is a banner
@@ -69,22 +73,7 @@ export async function drawNode(body, runHost, id, opts = {}) {
     '<section class="seg" data-seg="connectivity"><h3 class="seg-h">' +
       '<span class="seg-n">2</span>connectivity — what it is joined to, as declared</h3>' +
       connectivityHtml(r) + '</section>' +
-    '<section class="seg" data-seg="sheet"><h3 class="seg-h">' +
-      '<span class="seg-n">3</span>the sheet — what it says</h3>' +
-      // READ IT HERE. The generated page is what the sheet says. Nothing in
-      // this tool writes a node: its owner writes it, in their own file.
-      '<div class="tabrow sub sheet-tabs">' +
-        // A LESSON IS WRITTEN IN ITS FORM: one the node engineer fills anywhere and
-        // saves into the row's node file (docs/LESSONS.md). Downloading it writes nothing.
-        '<a class="ctl lesson-form-dl" href="/v1/lesson-form/' + encodeURIComponent(id) + '" download="' +
-          esc(id) + '.lesson-form.html">' + (lesson && lesson.lesson ? 'the lesson form' : 'write a lesson — its form') +
-          '</a>' +
-      '</div>' +
-      '<div class="sheet-read">' +
-        (fragment || '<p class="empty">The sheet for <code>' + esc(id) +
-          '</code> is not on disk. Run <code>cargo xtask docs</code>.</p>') +
-      '</div>' +
-    '</section>' +
+    sheetHtml(id, fragment, true, lesson && lesson.lesson) +
     // A FIGURE IS NOT A ROW, and it is not a place of its own either. The eight
     // study figures used to live behind a sixth item in a navigation whose own
     // subtitle says there are four layers, showing solar weather in a second
@@ -109,9 +98,10 @@ export async function drawNode(body, runHost, id, opts = {}) {
             '</div></div>') + '</section>'
       : '');
   if (hasLesson && lesson.ok) renderLesson($('.row-lesson', body), lesson.lesson);
+  if (other && runHost) runHost.innerHTML = '';
 
-  if (isInput(r)) mountInput($('.ovr-panel', body), r);
-  if (withParts) mountParts($('.np-body', body), id);
+  if (isInput(r) && !other) mountInput($('.ovr-panel', body), r);
+  if (withParts && !other) mountParts($('.np-body', body), id);
 
   if (figs.length) {
     const hostFig = $('.row-figure', body);
@@ -141,6 +131,10 @@ export async function drawNode(body, runHost, id, opts = {}) {
       // and not before: a page that swept every node on load would ask a
       // question nobody had.
       const rel = p && $('.relation-host', p);
+      if (rel && !rel.dataset.mounted && other) {
+        rel.dataset.mounted = '1';
+        rel.innerHTML = '<p class="muted">Not run: the relation is asked of today\'s design\'s engine, and this sheet is not today\'s.</p>';
+      }
       if (rel && !rel.dataset.mounted) { rel.dataset.mounted = '1'; mountRelation(rel); }
       // The derivation is already complete in the fragment; this only adds the
       // controls that walk it, so mounting late costs the reader nothing.
@@ -153,7 +147,28 @@ export async function drawNode(body, runHost, id, opts = {}) {
     };
   });
 
-  renderRun(runHost, r);
+  if (!other) renderRun(runHost, r);
+}
+
+/** The sheet's segment: the page the program drew of it, with the lesson
+ *  form's link when it is today's sheet. */
+function sheetHtml(id, fragment, today, hasLesson) {
+  return '<section class="seg" data-seg="sheet"><h3 class="seg-h">' +
+    '<span class="seg-n">3</span>the sheet — what it says</h3>' +
+    // READ IT HERE. The generated page is what the sheet says. Nothing in
+    // this tool writes a node: its owner writes it, in their own file.
+    (today ? '<div class="tabrow sub sheet-tabs">' +
+      // A LESSON IS WRITTEN IN ITS FORM: one the node engineer fills anywhere and
+      // saves into the row's node file (docs/LESSONS.md). Downloading it writes nothing.
+      '<a class="ctl lesson-form-dl" href="/v1/lesson-form/' + encodeURIComponent(id) + '" download="' +
+        esc(id) + '.lesson-form.html">' + (hasLesson ? 'the lesson form' : 'write a lesson — its form') +
+        '</a>' +
+    '</div>' : '') +
+    '<div class="sheet-read">' +
+      (fragment || '<p class="empty">The sheet for <code>' + esc(id) +
+        '</code> is not on disk. Run <code>cargo xtask docs</code>.</p>') +
+    '</div>' +
+  '</section>';
 }
 
 /**

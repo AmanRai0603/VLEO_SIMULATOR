@@ -1,0 +1,122 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "node-live",
+  "description": "A node's page as the working copy's revision of it would make it, over today's design: read as a release's node, planned as today's design plans a release, and laid over it for this request only. Said so, with what it changes, what the plan withholds and why, what the copy's file says that a release does not bring into today's design, and the sources it cites that sources/ does not list. Nothing of today's design is written or run; or why not.",
+  "type": "object",
+  "properties": {
+    "ok": {
+      "type": "boolean"
+    },
+    "message": {
+      "type": "string",
+      "description": "Why nothing is drawn: no copy, no node file, a node today's design does not hold."
+    },
+    "node": {
+      "type": "string"
+    },
+    "path": {
+      "type": "string"
+    },
+    "opened": {
+      "type": "string",
+      "description": "The SHA-256 of the node file as it was read."
+    },
+    "revision": {
+      "type": "string"
+    },
+    "writer": {
+      "type": "string"
+    },
+    "not_taken": {
+      "type": "array",
+      "description": "What the copy's file says, where it differs from today's page, that a release does not bring into today's design: its question and its explanation's three texts.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "what": {
+            "type": "string"
+          },
+          "yours": {
+            "type": "string"
+          },
+          "page": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "what",
+          "yours",
+          "page"
+        ]
+      }
+    },
+    "changes": {
+      "type": "array",
+      "description": "What the plan applies: a field, or the version it records.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "what": {
+            "type": "string"
+          },
+          "from": {
+            "type": "string"
+          },
+          "to": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "what",
+          "from",
+          "to"
+        ]
+      }
+    },
+    "withheld": {
+      "type": "array",
+      "description": "What the plan does not apply, and why: a conflict, a refusal, a decision waiting for its record, a transcription taken as an assistant's relation.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "what": {
+            "type": "string"
+          },
+          "why": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "what",
+          "why"
+        ]
+      }
+    },
+    "open": {
+      "type": "array",
+      "description": "Every source it cites that sources/ does not list.",
+      "items": {
+        "type": "string"
+      }
+    },
+    "drawn": {
+      "type": "boolean",
+      "description": "Whether the revision is drawn over today's design: false when it does not plan or does not load over it, and the page is then today's."
+    },
+    "changes_nothing": {
+      "type": "boolean",
+      "description": "The revision changes nothing on today's page, and the page is today's."
+    },
+    "said": {
+      "type": "string",
+      "description": "What the page is, in a sentence."
+    },
+    "html": {
+      "type": "string",
+      "description": "The page's fragment, as /v1/fragment/<id> draws today's."
+    }
+  },
+  "required": [
+    "ok"
+  ]
+}

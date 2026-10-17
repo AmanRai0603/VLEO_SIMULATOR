@@ -684,9 +684,9 @@ fn upgraded(path: &Path, r: &Release) -> Result<vleo_files::model::File, String>
 
 /// The design with some of its sheets replaced: every other file is the
 /// base's.
-struct Overlay {
-    base: Arc<dyn Files>,
-    replaced: BTreeMap<PathBuf, Vec<u8>>,
+pub(crate) struct Overlay {
+    pub(crate) base: Arc<dyn Files>,
+    pub(crate) replaced: BTreeMap<PathBuf, Vec<u8>>,
 }
 
 impl Files for Overlay {

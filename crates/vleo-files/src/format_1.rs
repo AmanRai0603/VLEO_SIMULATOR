@@ -139,7 +139,7 @@ const GROUP_DOCS: &[(&str, &str)] = &[
     ("theory.md", "theory"),
     ("flow.txt", "flow"),
 ];
-const NODE_DOCS: &[(&str, &str)] = &[
+pub(crate) const NODE_DOCS: &[(&str, &str)] = &[
     ("explanation.md", "explanation"),
     ("theory.md", "theory"),
     ("pseudocode.txt", "pseudocode"),
