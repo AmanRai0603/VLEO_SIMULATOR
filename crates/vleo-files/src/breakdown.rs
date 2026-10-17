@@ -36,8 +36,11 @@
 //! in the method language, and agreeing with a case is `judge_outcome`'s
 //! rule.
 //!
-//! Not here: issuing node files, wiring and assigning (F5), mounting a group
-//! on a node (F6), the programme's branch (F7). A node issued is moved,
+//! A group is mounted, and given its allocations, in the systems' file by
+//! the same pipeline (`frame`, F6-a).
+//!
+//! Not here: issuing node files, wiring and assigning (F5), the programme's
+//! branch (F7). A node issued is moved,
 //! renamed, split or removed by issuing it again (F5).
 
 use std::collections::{BTreeMap, BTreeSet};
@@ -87,6 +90,22 @@ pub enum Edit {
     FoldBack { node: String },
     /// A block framed in the group file, archived.
     Remove { block: String },
+    /// The group `group` mounted on the leaf `block`, owned by `owner`: in
+    /// the systems' file only (`frame`).
+    Mount {
+        block: String,
+        group: String,
+        owner: String,
+    },
+    /// The input `port` allocated to the group mounted on `block`, bounding
+    /// its output `bounds` the way `sense` says (`frame`).
+    Allocate {
+        block: String,
+        port: Box<Port>,
+        bounds: String,
+        sense: String,
+        says: String,
+    },
 }
 
 impl Edit {
@@ -101,6 +120,8 @@ impl Edit {
             Edit::Split { .. } => "split",
             Edit::FoldBack { .. } => "fold back",
             Edit::Remove { .. } => "remove",
+            Edit::Mount { .. } => "mount",
+            Edit::Allocate { .. } => "allocate",
         }
     }
 }
@@ -369,6 +390,11 @@ pub fn edit(
         ))
     })?;
     chain::may_frame(&id, by, &key.public().to_hex(), at, mounted_by, programme)?;
+    if matches!(edit, Edit::Mount { .. } | Edit::Allocate { .. }) && id != "systems" {
+        return Err(refused(format!(
+            "a group is mounted, and given what it is allocated, in the systems' file by the system engineer: {id}'s group file mounts nothing"
+        )));
+    }
     if why.trim().is_empty() {
         return Err(refused(format!(
             "say why: every change to {id}'s breakdown says which belief it follows from, and this one says nothing"
@@ -389,9 +415,12 @@ pub fn edit(
     }
     let branch = Branch::new(group, nodes);
     let mut out = group.clone();
-    let (scope, before, verdict) = apply(&branch, elsewhere, edit, &mut out, &registry)?;
+    let (scope, before, verdict) = apply(&branch, elsewhere, edit, &mut out, &registry, programme)?;
     let after_branch = Branch::new(&out, nodes);
     let mut after = touched(&after_branch, &scope);
+    if matches!(edit, Edit::Mount { .. } | Edit::Allocate { .. }) {
+        after.push_str(&crate::frame::rows(&out, &scope));
+    }
     // A split makes a block: its rows are what the edit made, too.
     if let Edit::Split { id, .. } = edit {
         after.push_str(&touched(&after_branch, id));
@@ -454,6 +483,7 @@ fn apply(
     edit: &Edit,
     out: &mut File,
     registry: &Registry,
+    programme: &Registry,
 ) -> Result<(String, String, Option<Reproduced>), Error> {
     let group_id = branch.group_id();
     let mounts: BTreeSet<&str> = branch
@@ -473,6 +503,15 @@ fn apply(
             return Err(refused(format!(
                 "{} carries a mount: a group hangs there, and a mount is changed in F6",
                 b.id
+            )));
+        }
+        // A mount read across files: the systems' file mounts a group on a
+        // leaf of this branch (W13), and the leaf stays as it is under it.
+        let others: Vec<&File> = elsewhere.iter().collect();
+        if let Some((m, by)) = crate::frame::mounted_on_any(uid, &others) {
+            return Err(refused(format!(
+                "{} carries {}, mounted on it in {by}'s file: it is not filled, broken down, moved or removed while a group hangs there",
+                b.id, m.group_id
             )));
         }
         Ok((b, place))
@@ -597,6 +636,15 @@ fn apply(
                     let mut p = (**p).clone();
                     p.block_uid = block.clone();
                     port_ok(&p, &b.id)?;
+                    // An allocation is given to a mounted group, with the
+                    // sense it binds (`frame::allocate`); filled, it would
+                    // carry none.
+                    if p.state == "allocated" {
+                        return Err(refused(format!(
+                            "{}'s port {} is filled as allocated: an allocation is given to a mounted group in the systems' file, with which way it binds, and a port filled here says neither",
+                            b.id, p.name
+                        )));
+                    }
                     // In its place when it replaces one; after the others when new.
                     let at = out.ports.iter().position(|x| {
                         x.block_uid == *block && x.direction == p.direction && x.name == p.name
@@ -869,12 +917,34 @@ fn apply(
             }
             Ok((block.clone(), before, None))
         }
+        Edit::Mount {
+            block,
+            group,
+            owner,
+        } => {
+            let (scope, mut before) =
+                crate::frame::mount(branch, elsewhere, block, group, owner, out, programme)?;
+            before.insert_str(0, &touched(branch, block));
+            Ok((scope, before, None))
+        }
+        Edit::Allocate {
+            block,
+            port,
+            bounds,
+            sense,
+            says,
+        } => {
+            let (scope, mut before) =
+                crate::frame::allocate(branch, block, port, bounds, sense, says, out)?;
+            before.insert_str(0, &touched(branch, block));
+            Ok((scope, before, None))
+        }
     }
 }
 
 /// A port a person fills, held to what the schema allows and what the method
 /// language reads.
-fn port_ok(p: &Port, block: &str) -> Result<(), Error> {
+pub(crate) fn port_ok(p: &Port, block: &str) -> Result<(), Error> {
     if !valid_id(&p.name) {
         return Err(refused(format!(
             "{:?} is not a port's name: lower-case words joined by _, starting with a letter",
@@ -1537,6 +1607,36 @@ pub fn edit_in_place(
     let nodes = nodes_in(copy, group_id, &how)?;
     // Every other file of the copy, each read or the edit refused by its
     // name: a file skipped is a reader missed, or an id used twice.
+    let elsewhere = others_in(copy, group_id, &how)?;
+    let (mut out, reproduced) = edit(
+        &group, &nodes, &elsewhere, e, why, by, key, at, mounted_by, programme,
+    )?;
+    out.meta.insert("written_by_app".into(), app.to_string());
+    // The one comparison, as late as can be before the write.
+    let again = std::fs::read(&at_file)
+        .map_err(|e| Error::new(ErrorKind::Io, format!("{}: {e}", at_file.display())))?;
+    if crate::copied::digest(&again) != opened {
+        return Ok(Framed::SecondWriter {
+            digest: crate::copied::digest(&again),
+        });
+    }
+    let written = crate::sqlite::written(&out, &at_file)?;
+    Ok(Framed::Written {
+        digest: crate::copied::digest(&written),
+        reproduced,
+    })
+}
+
+/// Every file of the copy but `group_id`'s own group file and node files:
+/// each other group's group file and node files, and every release in a
+/// group's folder, each read or refused by its name. A file skipped is a
+/// reader missed, or an id used twice.
+#[cfg(not(target_arch = "wasm32"))]
+pub fn others_in(
+    copy: &std::path::Path,
+    group_id: &str,
+    how: &crate::upgrade::Upgrade,
+) -> Result<Vec<File>, Error> {
     let io = |p: &std::path::Path, e: std::io::Error| {
         Error::new(ErrorKind::Io, format!("{}: {e}", p.display()))
     };
@@ -1579,7 +1679,7 @@ pub fn edit_in_place(
         // A release another group's work reads from is a reader too.
         files.extend(listed(&g.join("releases"), "vleo")?);
         for p in files {
-            let f = crate::sqlite::open(&p, &how)
+            let f = crate::sqlite::open(&p, how)
                 .map_err(|e| {
                     refused(format!(
                         "{} cannot be read, so whether the edit leaves anything without what it reads cannot be said: {}",
@@ -1591,21 +1691,5 @@ pub fn edit_in_place(
             elsewhere.push(f);
         }
     }
-    let (mut out, reproduced) = edit(
-        &group, &nodes, &elsewhere, e, why, by, key, at, mounted_by, programme,
-    )?;
-    out.meta.insert("written_by_app".into(), app.to_string());
-    // The one comparison, as late as can be before the write.
-    let again = std::fs::read(&at_file)
-        .map_err(|e| Error::new(ErrorKind::Io, format!("{}: {e}", at_file.display())))?;
-    if crate::copied::digest(&again) != opened {
-        return Ok(Framed::SecondWriter {
-            digest: crate::copied::digest(&again),
-        });
-    }
-    let written = crate::sqlite::written(&out, &at_file)?;
-    Ok(Framed::Written {
-        digest: crate::copied::digest(&written),
-        reproduced,
-    })
+    Ok(elsewhere)
 }

@@ -8,6 +8,9 @@
 //! The copy is the drive's files, taken whole, with its record beside them.
 //!
 //! A request asked in a node's file (F3-d) goes back with it, or by itself.
+//!
+//! A node a group hangs from in the systems' file (F6-a, W13) is not put
+//! back, whichever file mounts it.
 
 use std::path::{Path, PathBuf};
 use vleo_files::chain::{self, Registry, FILE};
@@ -1768,6 +1771,38 @@ fn a_request_s_uid_is_its_own_whatever_the_file_s_table_allows() {
         !l.back
             && l.why
                 .contains("it holds more than one request \"sw_activity_band-r1\""),
+        "{l:?}"
+    );
+    let _ = std::fs::remove_dir_all(drive.parent().unwrap());
+}
+
+#[test]
+fn a_node_a_group_hangs_from_in_the_systems_file_is_not_put_back() {
+    let (drive, copy) = world("mounted");
+    // The systems' file mounts a group on the band, a leaf of solar's branch
+    // (W13): the mount is the systems' file's row, not solar's.
+    let at = "groups/systems/systems.vgroup";
+    let mut sys = sqlite::read(&drive.join(at)).unwrap();
+    sys.signatures.clear();
+    sys.mounts.push(Mount {
+        block_uid: s(UID),
+        group_id: s("l3_band"),
+        release: s(""),
+    });
+    sys.assignments.push(Assignment {
+        block_uid: s(UID),
+        person: s("Test Ola"),
+        contract_version: 1,
+    });
+    sqlite::write(&signed(sys, "Test Sam", &key(72)), &drive.join(at)).unwrap();
+    take_copy(&drive, &copy);
+    nia_signs(&copy);
+    let r = pb(&copy, &drive, "Test Nia", None).unwrap();
+    let l = line(&r, NODE);
+    assert!(
+        !l.back
+            && l.why
+                .contains("is where a group hangs, l3_band mounted in systems's file"),
         "{l:?}"
     );
     let _ = std::fs::remove_dir_all(drive.parent().unwrap());

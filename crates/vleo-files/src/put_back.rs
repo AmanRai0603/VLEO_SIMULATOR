@@ -381,10 +381,16 @@ fn node_verdict(
         );
     }
     let registry = registry_of(chain, group)?;
-    if registry.file.mounts.iter().any(|m| m.block_uid == mine.uid) {
+    // Where a group hangs, in whichever file mounts it: its own group's, or
+    // the systems' file on a leaf of a subsystem's branch (W13).
+    let files: Vec<&File> = std::iter::once(&chain.programme.file)
+        .chain(chain.systems.iter().map(|r| &r.file))
+        .chain(chain.groups.iter().map(|r| &r.file))
+        .collect();
+    if let Some((m, by)) = crate::frame::mounted_on_any(&mine.uid, &files) {
         return Err(format!(
-            "{} is where a group hangs in {}, not a node: no node's file is put back for it",
-            mine.id, registry.from
+            "{} is where a group hangs, {} mounted in {by}'s file, not a node: no node's file is put back for it",
+            mine.id, m.group_id
         ));
     }
     f.check_meta().map_err(said)?;
