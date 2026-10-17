@@ -110,11 +110,13 @@ def spec(path):
 # list stays on `/`.
 PAGES = ("/", "/app")
 
-# How wide the window is for a panel in `/app`. The Node workspace's page is
-# capped at 74rem, the cap `/`'s node view had, and reaches it on a window this
-# wide, so a row's figures are drawn at the size their references were
-# recorded at. Check 3 refuses a picture of another shape, so a page that did
-# not reach it says so rather than passing.
+# How wide the window is for a panel in `/app`, unless its spec says `width`.
+# A figure is drawn at most 1180px wide (`fitCanvas`, web/js/solar.js), which
+# its references were recorded at on `/`, where the node view gave it that
+# room from a window of about 1260px. The Node workspace's centre gives it that
+# room only from about 1884px (its two side columns take the rest), so the
+# checks open `/app` this wide. Check 3 refuses a picture of another shape, so
+# a window that did not give it the room says so rather than passing.
 APP_WIDTH = 1920
 
 
@@ -373,9 +375,7 @@ def check_all(ids=None, record=False):
             # stitched, and the stitching composites whatever the page had
             # scrolled behind it — a reference that then changes when something
             # unrelated moves.
-            width = d.get("width", 1440)
-            if d.get("page", "/") == "/app":
-                width = max(width, APP_WIDTH)
+            width = d.get("width", APP_WIDTH if d.get("page", "/") == "/app" else 1440)
             page = browser.new_page(viewport={"width": width, "height": d.get("height", 1600)})
             where = opened(url, d)
             errors = []
@@ -897,6 +897,25 @@ def _frac(ia, ib, slack=8):
     return over.histogram()[255] / float(w * h) if w and h else 0.0
 
 
+def _page_cases():
+    """A spec naming a page the panels are not drawn on is refused, by name."""
+    with tempfile.TemporaryDirectory() as tmp:
+        p = Path(tmp) / "nowhere.toml"
+        p.write_text(
+            'id = "nowhere"\nlabel = "x"\nmodule = "web/js/solar.js"\nmount = "canvas"\n'
+            'page = "/nowhere"\ndraws = "x"\ncorrect = "x"\n'
+        )
+        try:
+            spec(p)
+        except SystemExit as e:
+            if "is not a page the panels are drawn on" in str(e):
+                return 0
+            print("  FAIL a spec naming a page that is not one was refused for another reason: %s" % e)
+            return 1
+        print("  FAIL a spec naming a page that is not one was taken")
+        return 1
+
+
 def _differ_cases():
     """What the picture comparison must and must not report. No browser needed.
 
@@ -1032,7 +1051,7 @@ def selftest():
     """
     import shutil, tempfile
 
-    bad_img = _differ_cases()
+    bad_img = _differ_cases() + _page_cases()
 
     global ROOT, PANELS, REFERENCE
     real_root, real_panels, real_ref = ROOT, PANELS, REFERENCE
@@ -1160,7 +1179,7 @@ def selftest():
                 print("  FAIL %s was not caught by check %s; got %s" % (label, want, found))
     bad += bad_img
     print("selftest: %d cases, %s"
-          % (len(cases) + 4, "all as expected" if not bad else "%d FAILED" % bad))
+          % (len(cases) + 5, "all as expected" if not bad else "%d FAILED" % bad))
     return 1 if bad else 0
 
 

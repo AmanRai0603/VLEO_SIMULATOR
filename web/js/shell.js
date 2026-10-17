@@ -167,10 +167,15 @@ let nodeAt = '';
 /** The Node workspace's last opening, until its node is drawn. */
 let nodeOpening = Promise.resolve();
 
+/** The Node workspace's module, once it has loaded. */
+let nodeWs = null;
+
 /** The Node workspace, loaded the first time it is opened. */
 async function openNodeWs(host) {
   try {
-    const { mountNode, openAt } = await import('./workspace_node.js');
+    const ws = await import('./workspace_node.js');
+    const { mountNode, openAt } = ws;
+    nodeWs = ws;
     if (nodeAt) { openAt(nodeAt); nodeAt = ''; }
     await mountNode(host, post, (S.work && S.work.nodes) || []);
   } catch (e) {
@@ -187,10 +192,19 @@ function toNode(id) {
   draw();
 }
 
-// A row opened by hand on the console, and by the checks that drive a row's
-// figures (panels/*.toml, tools/input_check.py): the Node workspace at that
-// row, answered once its page is drawn, as `/`'s node view was.
-window.openNode = async id => { toNode(id); await nodeOpening; };
+// A row opened by a figure's link to it (solar.js), by hand on the console,
+// and by the checks that drive a row's figures (panels/*.toml): the Node
+// workspace at that row's page as today's design holds it, answered once it is
+// drawn, as `/`'s node view was. In the workspace already open it opens in
+// place, as a row's link on the page does. One opening at a time: a second
+// asked before the first is drawn makes the first answer as soon as its
+// drawing is dropped, and the checks ask once a page.
+window.openNode = async id => {
+  if (S.ws === 'node' && $('#sh-node') && nodeWs) return nodeWs.openRow(id);
+  if (nodeWs) nodeWs.atToday(id);
+  toNode(id);
+  await nodeOpening;
+};
 
 /** Where `#system/<group>` asked the System workspace to open, until it does. */
 let systemAt = '';

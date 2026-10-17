@@ -40,9 +40,12 @@ tests.
 
 `page` is where the panel is drawn: `/app` for a row's figures, which the Node
 workspace draws (its `ready` opens the row with `window.openNode`), and `/`,
-the default, for the rows list. `/`'s node view is gone (docs/briefs/F3.md,
-F3-h); a figure's references were recorded there, and are still the size they
-were, for the reason below.
+the default, for the rows list. `/`'s node view is to go in F3-h3
+(docs/briefs/F3.md; question 7, still open); until then it draws the same
+`drawNode`, and no panel opens it. A figure's references were recorded there,
+and are still the size they were, for the reason below. `width` is the
+window's, when a panel needs one of its own: 1440 on `/`, and `APP_WIDTH` in
+`/app`.
 
 ## The three checks
 
@@ -268,10 +271,12 @@ Two things this touches that are easy to miss:
 - **The references are unaffected** only because Playwright runs at a scale
   factor of 1. A checker configured for a HiDPI viewport would shoot every
   reference at twice the size, which is a real difference and not a drift.
-- **The width of the page around it.** A figure fills its row's page, so its
-  size is the page's. `/`'s node view stopped at 74rem; the Node workspace's
-  page stops there too, and reaches it on a window of `APP_WIDTH`
-  (`tools/panel_check.py`), so a panel in `/app` is drawn at the size its
-  references were recorded at. On a narrower window the figure is smaller, as
-  it always was on a narrower screen; check 3's shape test is what says the
-  page did not reach it.
+- **The width of the page around it.** A figure fills its row's page up to
+  1180px (`fitCanvas`), the size its references were recorded at. `/`'s node
+  view gave it that from a window of about 1260px; the Node workspace's centre,
+  beside its two side columns, only from about 1884px, so the checks open
+  `/app` at `APP_WIDTH` (`tools/panel_check.py`), and check 3's shape test is
+  what says a window did not give it the room. On a narrower window the figure
+  is smaller in `/app` than it was on `/`: at 1440px, 736px wide against 1180.
+  No check looks at a figure at that size. The workspace's page also stops at
+  74rem, the node view's cap, which keeps the sheet's own width as it was.
