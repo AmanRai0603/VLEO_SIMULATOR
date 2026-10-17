@@ -316,8 +316,17 @@ pub const WASM_SOURCES: &[&str] = &[
     "crates/vleo-files-wasm/Cargo.toml",
     "crates/vleo-files-wasm/Cargo.lock",
     "crates/vleo-files-wasm/src",
-    // The lesson check a node's own checks run (`checks::lesson`).
-    "crates/vleo-sheet/src/lesson.rs",
+    // Every crate compiled into it with this library: what a sheet means and
+    // the method language (`vleo-sheet`: a node's lesson, its method and its
+    // cases, a breakdown's children, the names an assistant arrives under),
+    // and the kernel functions and units a method calls (`vleo-core`,
+    // `vleo-units`). A corrected formula there changes what the page checks.
+    "crates/vleo-sheet/Cargo.toml",
+    "crates/vleo-sheet/src",
+    "crates/vleo-core/Cargo.toml",
+    "crates/vleo-core/src",
+    "crates/vleo-units/Cargo.toml",
+    "crates/vleo-units/src",
 ];
 
 /// The fingerprint of [`WASM_SOURCES`] as they are under `root`: every file,

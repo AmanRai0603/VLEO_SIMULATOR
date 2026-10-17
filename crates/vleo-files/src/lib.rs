@@ -51,11 +51,16 @@
 //! * [`n2`] — a block's N2, drawn from the files' wires, and every loop they
 //!   make: the block it belongs on, and whether that block declares it;
 //!
+//! * [`breakdown`] — a branch's breakdown grown by its owner, in its group
+//!   file: each edit with why, and a node broken down only into children
+//!   that reproduce its own cases (F4);
+//!
 //! * [`seal`] — the seal of a group's folder from before 1.0: its sign-offs,
 //!   current or stale against the fingerprint they were given for, who may
 //!   sign what, and what stands between the folder and its seal, as the
 //!   page's seal rules (`web/js/gseal.js`) have them.
 
+pub mod breakdown;
 pub mod chain;
 pub mod checks;
 pub mod compare;

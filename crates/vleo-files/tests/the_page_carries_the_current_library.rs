@@ -35,19 +35,20 @@ fn the_stamp_moves_when_a_source_does() {
     let root = root();
     let tmp = std::env::temp_dir().join(format!("vleo-files-stamp-{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&tmp);
-    for s in vleo_files::page::WASM_SOURCES {
-        let from = root.join(s);
-        let to = tmp.join(s);
+    fn copy(from: &std::path::Path, to: &std::path::Path) {
         if from.is_dir() {
-            std::fs::create_dir_all(&to).unwrap();
-            for e in std::fs::read_dir(&from).unwrap() {
+            std::fs::create_dir_all(to).unwrap();
+            for e in std::fs::read_dir(from).unwrap() {
                 let e = e.unwrap();
-                std::fs::copy(e.path(), to.join(e.file_name())).unwrap();
+                copy(&e.path(), &to.join(e.file_name()));
             }
         } else {
             std::fs::create_dir_all(to.parent().unwrap()).unwrap();
-            std::fs::copy(&from, &to).unwrap();
+            std::fs::copy(from, to).unwrap();
         }
+    }
+    for s in vleo_files::page::WASM_SOURCES {
+        copy(&root.join(s), &tmp.join(s));
     }
     let before = vleo_files::page::sources_fingerprint(&tmp).unwrap();
     assert_eq!(
@@ -58,6 +59,17 @@ fn the_stamp_moves_when_a_source_does() {
     let mut text = std::fs::read_to_string(&chain).unwrap();
     text.push(' ');
     std::fs::write(&chain, text).unwrap();
-    assert_ne!(before, vleo_files::page::sources_fingerprint(&tmp).unwrap());
+    let changed = vleo_files::page::sources_fingerprint(&tmp).unwrap();
+    assert_ne!(before, changed);
+    // A kernel function a method calls is in it too: a corrected formula
+    // there makes the committed build stale.
+    let env = tmp.join("crates/vleo-core/src/physics/env.rs");
+    let mut text = std::fs::read_to_string(&env).unwrap();
+    text.push(' ');
+    std::fs::write(&env, text).unwrap();
+    assert_ne!(
+        changed,
+        vleo_files::page::sources_fingerprint(&tmp).unwrap()
+    );
     std::fs::remove_dir_all(&tmp).unwrap();
 }

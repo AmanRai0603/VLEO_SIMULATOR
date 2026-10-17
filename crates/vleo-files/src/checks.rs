@@ -280,11 +280,15 @@ fn inputs(f: &File, b: &Block, ins: &[&Port], out: &mut Findings) {
         let connects = from == "case"
             || match from.split_once('.') {
                 Some((head, port)) => match f.blocks.iter().find(|x| x.uid == head) {
-                    // In this file: the block, and an output of it by that name.
-                    Some(x) => f
-                        .ports
-                        .iter()
-                        .any(|q| q.block_uid == x.uid && q.direction == "out" && q.name == port),
+                    // In this file: the block, and an output of it by that name;
+                    // or, for a child of a broken-down node, an input of its
+                    // node, which the child reads as the node does (F4).
+                    Some(x) => f.ports.iter().any(|q| {
+                        q.block_uid == x.uid
+                            && q.name == port
+                            && (q.direction == "out"
+                                || (q.direction == "in" && x.uid == b.parent_uid))
+                    }),
                     // Another group's: group.node, or group.node.port.
                     None => !head.is_empty() && !port.is_empty(),
                 },
@@ -537,16 +541,52 @@ fn case_value(v: &str) -> Option<f64> {
 /// contract; every value is taken to SI by them, as intake takes it.
 fn method(f: &File, b: &Block, ins: &[&Port], out_port: Option<&Port>, out: &mut Findings) {
     use vleo_sheet::method as m;
-    let Some(src) = f
+    let Some((src, sig, cases)) = method_cases(f, b, ins, out_port, out) else {
+        return;
+    };
+    let report = m::report(&src, &sig, &cases);
+    for d in &report.diags {
+        let what = format!("its method, line {}: {}", d.line, d.msg);
+        if d.severity == m::Severity::Error {
+            out.error(&b.id, what);
+        } else {
+            out.warning(&b.id, what);
+        }
+    }
+    // Too few cases, no refusal, no tolerance: already said by the results'
+    // own checks, once.
+    for (c, v) in &report.cases {
+        if !v.agrees() {
+            out.error(
+                &b.id,
+                format!("its method does not reproduce «{}»: {}", c.label, v.text(c)),
+            );
+        }
+    }
+}
+
+/// A node's method, its signature and its cases in SI, read from its file:
+/// its `pseudocode`, its ports' units and its `results/isolation.csv`. The
+/// one reader of a node's own cases, for its checks and for whether its
+/// children reproduce them (`breakdown::reproduces`). `None`, with why in
+/// `out` where a unit does not read, when it holds no method or no results.
+pub fn method_cases(
+    f: &File,
+    b: &Block,
+    ins: &[&Port],
+    out_port: Option<&Port>,
+    out: &mut Findings,
+) -> Option<(
+    String,
+    vleo_sheet::method::Signature,
+    Vec<vleo_sheet::method::Case>,
+)> {
+    use vleo_sheet::method as m;
+    let src = f
         .texts
         .iter()
-        .find(|t| t.scope == b.uid && t.kind == "pseudocode" && !t.body.trim().is_empty())
-    else {
-        return;
-    };
-    let Some(t) = Csv::of(f, &b.uid, "results/isolation.csv") else {
-        return;
-    };
+        .find(|t| t.scope == b.uid && t.kind == "pseudocode" && !t.body.trim().is_empty())?;
+    let t = Csv::of(f, &b.uid, "results/isolation.csv")?;
     let unit = |u: &str| m::parse_unit(if u.trim().is_empty() { "1" } else { u });
     let mut bad = false;
     let mut dim = |what: &str, u: &str, out: &mut Findings| match unit(u) {
@@ -582,7 +622,7 @@ fn method(f: &File, b: &Block, ins: &[&Port], out_port: Option<&Port>, out: &mut
         }
     }
     let (Some(output), false) = (output, bad) else {
-        return;
+        return None;
     };
     // Every column's factor to SI, by its own header.
     let factor_of = |i: usize| unit(unit_of(&t.head[i])).map_or(1.0, |(fct, _)| fct);
@@ -636,25 +676,79 @@ fn method(f: &File, b: &Block, ins: &[&Port], out_port: Option<&Port>, out: &mut
             .map(|(_, name, _, d)| (name.clone(), *d))
             .collect(),
     };
-    let report = m::report(&src.body, &sig, &cases);
-    for d in &report.diags {
-        let what = format!("its method, line {}: {}", d.line, d.msg);
-        if d.severity == m::Severity::Error {
-            out.error(&b.id, what);
-        } else {
-            out.warning(&b.id, what);
-        }
-    }
-    // Too few cases, no refusal, no tolerance: already said by the results'
-    // own checks, once.
-    for (c, v) in &report.cases {
-        if !v.agrees() {
+    Some((src.body.clone(), sig, cases))
+}
+
+/// A child of a broken-down node, held to what it must be before it is run
+/// on its node's cases (`breakdown::reproduces`): it says who made its
+/// method (rule 6, as `declaration` holds a node to), and its method reads
+/// and checks against its own ports' units, its first output its answer and
+/// the others the members it publishes. Its own cases are not asked for:
+/// its node's are what it is judged on.
+pub fn child_ready(f: &File, b: &Block) -> Findings {
+    use vleo_sheet::method as m;
+    let mut out = Findings::default();
+    declaration(f, b, &mut out);
+    let Some(src) = f
+        .texts
+        .iter()
+        .find(|t| t.scope == b.uid && t.kind == "pseudocode" && !t.body.trim().is_empty())
+    else {
+        // No method is said where the child is needed, by its behaviour.
+        return out;
+    };
+    let unit = |u: &str| m::parse_unit(if u.trim().is_empty() { "1" } else { u.trim() });
+    let dims = |p: &Port, out: &mut Findings| match unit(&p.unit) {
+        Ok((_, d)) => Some((p.name.clone(), d)),
+        Err(e) => {
             out.error(
                 &b.id,
-                format!("its method does not reproduce «{}»: {}", c.label, v.text(c)),
+                format!(
+                    "its {} {} is in [{}], which the method language does not read: {}",
+                    if p.direction == "in" {
+                        "input"
+                    } else {
+                        "output"
+                    },
+                    p.name,
+                    p.unit,
+                    e.message()
+                ),
             );
+            None
+        }
+    };
+    let ports: Vec<&Port> = f.ports.iter().filter(|p| p.block_uid == b.uid).collect();
+    let inputs: Vec<_> = ports
+        .iter()
+        .filter(|p| p.direction == "in")
+        .filter_map(|p| dims(p, &mut out))
+        .collect();
+    let outs: Vec<_> = ports
+        .iter()
+        .filter(|p| p.direction == "out")
+        .filter_map(|p| dims(p, &mut out))
+        .collect();
+    let Some(((_, output), publishes)) = outs.split_first() else {
+        out.error(&b.id, "has no output for its method to answer");
+        return out;
+    };
+    let sig = m::Signature {
+        inputs,
+        output: *output,
+        publishes: publishes.to_vec(),
+    };
+    match m::parse(&src.body) {
+        Err(d) => out.error(&b.id, format!("its method, line {}: {}", d.line, d.msg)),
+        Ok(program) => {
+            for d in m::check(&program, &sig) {
+                if d.severity == m::Severity::Error {
+                    out.error(&b.id, format!("its method, line {}: {}", d.line, d.msg));
+                }
+            }
         }
     }
+    out
 }
 
 /// A lesson belongs to a row (docs/LESSONS.md): in a node file, on its own
