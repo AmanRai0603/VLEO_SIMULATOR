@@ -277,8 +277,8 @@ impl<'a> Branch<'a> {
 }
 
 /// A uid or id a person can give: lower-case words joined by `_`, starting
-/// with a letter, 64 characters at most.
-fn valid_id(id: &str) -> bool {
+/// with a letter, 64 characters at most. A group's id is one too.
+pub fn valid_id(id: &str) -> bool {
     let mut c = id.chars();
     matches!(c.next(), Some('a'..='z'))
         && id.len() <= 64
@@ -1413,6 +1413,71 @@ fn rows_digest(f: &File) -> String {
     hex(&sha256(&crate::rows::encode(&f.to_tables())))
 }
 
+/// `group_id`'s group file in the copy: its bytes, and the file read from
+/// those bytes, so what is shown is what its digest names.
+#[cfg(not(target_arch = "wasm32"))]
+pub fn group_file_in(copy: &std::path::Path, group_id: &str) -> Result<(Vec<u8>, File), Error> {
+    if !valid_id(group_id) {
+        return Err(refused(format!("{group_id:?} is not a group's id")));
+    }
+    let rel = format!("groups/{group_id}/{group_id}.vgroup");
+    let bytes = std::fs::read(copy.join(&rel))
+        .map_err(|e| Error::new(ErrorKind::Io, format!("{rel}: {e}")))?;
+    let f = crate::save::parsed(&bytes)?;
+    Ok((bytes, f))
+}
+
+/// The node files of `group_id`'s branch in the copy, in order: every
+/// `.vnode` of its `nodes` folder, opened as the application opens a file,
+/// each a node file of that group, or refused by its name. A file that
+/// cannot be read is never passed over: the branch would be shown, and
+/// judged, without it. What the branch is shown from and what an edit is
+/// made on are read by this one reader.
+#[cfg(not(target_arch = "wasm32"))]
+pub fn nodes_in(
+    copy: &std::path::Path,
+    group_id: &str,
+    how: &crate::upgrade::Upgrade,
+) -> Result<Vec<File>, Error> {
+    if !valid_id(group_id) {
+        return Err(refused(format!("{group_id:?} is not a group's id")));
+    }
+    let rel = format!("groups/{group_id}/nodes");
+    let dir = copy.join(&rel);
+    if !dir.exists() {
+        return Ok(Vec::new());
+    }
+    let io = |e: std::io::Error| Error::new(ErrorKind::Io, format!("{rel}: {e}"));
+    let mut paths = Vec::new();
+    for e in std::fs::read_dir(&dir).map_err(io)? {
+        let p = e.map_err(io)?.path();
+        if p.extension().is_some_and(|x| x == "vnode") {
+            paths.push(p);
+        }
+    }
+    paths.sort();
+    let mut out = Vec::new();
+    for p in paths {
+        let name = format!(
+            "{rel}/{}",
+            p.file_name()
+                .map_or(String::new(), |n| n.to_string_lossy().into_owned())
+        );
+        let f = crate::sqlite::open(&p, how)
+            .map_err(|e| refused(format!("{name} cannot be read: {}", e.message())))?
+            .file;
+        if f.kind().ok() != Some(Kind::Node)
+            || f.meta.get("group_id").map(String::as_str) != Some(group_id)
+        {
+            return Err(refused(format!(
+                "{name} is not a node file of {group_id}: a branch's nodes folder holds its node files only"
+            )));
+        }
+        out.push(f);
+    }
+    Ok(out)
+}
+
 /// What an edit in the copy did, or why it wrote nothing.
 #[cfg(not(target_arch = "wasm32"))]
 #[derive(Debug)]
@@ -1453,8 +1518,10 @@ pub fn edit_in_place(
     }
     crate::save::opened_ok(opened)?;
     let _held = crate::save::lock(copy)?;
-    let dir = copy.join("groups").join(group_id);
-    let at_file = dir.join(format!("{group_id}.vgroup"));
+    let at_file = copy
+        .join("groups")
+        .join(group_id)
+        .join(format!("{group_id}.vgroup"));
     let bytes = std::fs::read(&at_file)
         .map_err(|e| Error::new(ErrorKind::Io, format!("{}: {e}", at_file.display())))?;
     if crate::copied::digest(&bytes) != opened {
@@ -1465,6 +1532,9 @@ pub fn edit_in_place(
     // What is edited is read from the bytes compared, not from the path
     // again: what the person opened, and nothing that came between.
     let group = crate::save::parsed(&bytes)?;
+    let how = crate::upgrade::Upgrade { app, at };
+    // The branch's node files, as the branch is shown (`nodes_in`).
+    let nodes = nodes_in(copy, group_id, &how)?;
     // Every other file of the copy, each read or the edit refused by its
     // name: a file skipped is a reader missed, or an id used twice.
     let io = |p: &std::path::Path, e: std::io::Error| {
@@ -1484,8 +1554,6 @@ pub fn edit_in_place(
         out.sort();
         Ok(out)
     };
-    let how = crate::upgrade::Upgrade { app, at };
-    let mut nodes = Vec::new();
     let mut elsewhere = Vec::new();
     let groups = copy.join("groups");
     let mut dirs: Vec<std::path::PathBuf> = Vec::new();
@@ -1500,18 +1568,17 @@ pub fn edit_in_place(
         let name = g
             .file_name()
             .map_or(String::new(), |n| n.to_string_lossy().into_owned());
-        let mine = name == group_id;
-        let mut files = listed(&g.join("nodes"), "vnode")?;
-        let own = g.join(format!("{name}.vgroup"));
-        if own.exists() {
-            files.push(own);
+        let mut files = Vec::new();
+        if name != group_id {
+            files.extend(listed(&g.join("nodes"), "vnode")?);
+            let own = g.join(format!("{name}.vgroup"));
+            if own.exists() {
+                files.push(own);
+            }
         }
         // A release another group's work reads from is a reader too.
         files.extend(listed(&g.join("releases"), "vleo")?);
         for p in files {
-            if mine && p == at_file {
-                continue;
-            }
             let f = crate::sqlite::open(&p, &how)
                 .map_err(|e| {
                     refused(format!(
@@ -1521,11 +1588,7 @@ pub fn edit_in_place(
                     ))
                 })?
                 .file;
-            if mine && f.kind().ok() == Some(Kind::Node) {
-                nodes.push(f);
-            } else {
-                elsewhere.push(f);
-            }
+            elsewhere.push(f);
         }
     }
     let (mut out, reproduced) = edit(

@@ -24,6 +24,7 @@
 //! Loopback by default. Exposing it to a network is an explicit, separate act,
 //! which also avoids a firewall prompt on first run.
 
+mod branch;
 mod copy;
 mod explore;
 mod http;
@@ -621,6 +622,11 @@ fn route(
         // The person's own work back on the drive (F3-c).
         ("POST", "/v1/put-back") => ok_json(put_back::route(params, ctx)),
         ("GET", "/v1/people") => ok_json(people::list(params, ctx)),
+        // A branch's breakdown in the copy, framed by its owner (F4).
+        ("GET", "/v1/branch") => ok_json(branch::tree(params, ctx)),
+        ("POST", p) if p.starts_with("/v1/branch/") => {
+            ok_json(branch::edit_route(p.strip_prefix("/v1/branch/").unwrap_or_default(), params, ctx))
+        }
         ("POST", "/v1/people/register") => ok_json(people::change("register", params, ctx)),
         // An issue raised from a red mark, into the copy's issues/ (W11).
         ("POST", "/v1/issues/raise") => ok_json(issues::raise(params, ctx)),

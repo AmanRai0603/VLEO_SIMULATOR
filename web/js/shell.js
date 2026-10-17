@@ -32,7 +32,7 @@ const WORD = 'vleo-session';
 const WORKSPACES = [
   ['my-work', 'My work', 'everything that needs you now', ''],
   ['node', 'Node', 'one node: its parts, its page, its file in your copy, signed when it is ready', ''],
-  ['system', 'System', 'your branch: its valves, today\'s view of it, and its release', 'F4 to F6'],
+  ['system', 'System', 'your branch: its breakdown, framed by its owner; its valves and its release arrive in F5 and F6', ''],
   ['programme', 'Programme', 'mission health, gates, risks, the organisation and decisions', 'F7'],
   ['explore', 'Explore', 'today\'s design or any released one: run, sweep, compare, trace to cause', ''],
 ];
@@ -123,6 +123,12 @@ function draw() {
       $('#sh-main').innerHTML = '<div id="sh-node"></div>';
       openNodeWs($('#sh-node'));
     }
+  } else if (S.ws === 'system') {
+    // Drawn on the way in, as the Node workspace is.
+    if (!$('#sh-system')) {
+      $('#sh-main').innerHTML = '<div id="sh-system"></div>';
+      openSystem($('#sh-system'));
+    }
   } else if (S.ws !== 'explore') {
     $('#sh-main').innerHTML = S.ws === 'my-work' ? myWork() : empty(S.ws);
   } else if (!$('#sh-explore')) {
@@ -176,6 +182,20 @@ function toNode(id) {
   // Drawn again even when the workspace is already open, so it opens there.
   $('#sh-main').innerHTML = '';
   draw();
+}
+
+/** Where `#system/<group>` asked the System workspace to open, until it does. */
+let systemAt = '';
+
+/** The System workspace, loaded the first time it is opened. */
+async function openSystem(host) {
+  try {
+    const { mountSystem, openAt } = await import('./workspace_system.js');
+    if (systemAt) { openAt(systemAt); systemAt = ''; }
+    await mountSystem(host, post, (S.me && S.me.owns) || []);
+  } catch (e) {
+    host.innerHTML = '<p class="sh-refused">The System workspace did not load: ' + esc(String(e)) + '</p>';
+  }
 }
 
 /** Ask the program to write an issue: the one request Explore makes that
@@ -470,10 +490,22 @@ function nodeLink() {
   return true;
 }
 
+/** `#system/<group>` opens the System workspace at that group's branch, as
+ *  `#node/<id>` opens a node. */
+function systemLink() {
+  const n = location.hash.match(/^#system\/(.+)$/);
+  if (!n) return false;
+  try { systemAt = decodeURIComponent(n[1]); } catch (e) { systemAt = n[1]; }
+  S.ws = 'system'; S.notice = null; dropPending();
+  history.replaceState(null, '', location.pathname + location.search);
+  return true;
+}
+
 takeWord();
 // Today's tool page sends its inputs and its results kept here.
 {
   nodeLink();
+  systemLink();
   const m = location.hash.match(/^#explore\/(\w+)(?:\/(.+))?$/);
   if (m) {
     S.ws = 'explore';
@@ -486,7 +518,10 @@ takeWord();
   }
 }
 document.addEventListener('click', click);
-window.addEventListener('hashchange', () => { if (nodeLink()) toNode(nodeAt); });
+window.addEventListener('hashchange', () => {
+  if (nodeLink()) toNode(nodeAt);
+  else if (systemLink()) { $('#sh-main').innerHTML = ''; draw(); }
+});
 document.addEventListener('change', change);
 // The passphrase is held two minutes at most: long enough to find the
 // fingerprint one was given, in another tab or on paper, and no longer.

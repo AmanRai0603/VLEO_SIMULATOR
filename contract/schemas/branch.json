@@ -1,0 +1,256 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "branch",
+  "description": "A group's branch as your copy holds it: its blocks, what is still open, each broken-down node and whether its children reproduce its cases, its history, whether you may frame it, and the next step; or why not.",
+  "type": "object",
+  "properties": {
+    "ok": {
+      "type": "boolean"
+    },
+    "group": {
+      "type": "string"
+    },
+    "path": {
+      "type": "string",
+      "description": "Its group file's path inside the copy."
+    },
+    "opened": {
+      "type": "string",
+      "description": "The SHA-256 of its group file's bytes: what an edit is held to."
+    },
+    "shows": {
+      "type": "string",
+      "description": "Which design this is: your copy, not today's design."
+    },
+    "signed": {
+      "type": "object",
+      "properties": {
+        "ok": {
+          "type": "boolean"
+        },
+        "says": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "ok",
+        "says"
+      ]
+    },
+    "owner": {
+      "type": "string"
+    },
+    "yours": {
+      "type": "boolean",
+      "description": "Whether the open key's person may frame it, by chain::may_frame."
+    },
+    "why_not": {
+      "type": "string"
+    },
+    "blocks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "uid": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "parent": {
+            "type": "string"
+          },
+          "ord": {
+            "type": "number"
+          },
+          "behaviour": {
+            "type": "string"
+          },
+          "read_as": {
+            "type": "string"
+          },
+          "in": {
+            "type": "string"
+          },
+          "archived": {
+            "type": "boolean"
+          },
+          "question": {
+            "type": "string"
+          },
+          "mount": {
+            "type": "boolean"
+          },
+          "open": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "ports": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "direction": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "type": {
+                  "type": "string"
+                },
+                "unit": {
+                  "type": "string"
+                },
+                "state": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "direction",
+                "name",
+                "type",
+                "unit",
+                "state"
+              ]
+            }
+          },
+          "answers": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "output": {
+                  "type": "string"
+                },
+                "child": {
+                  "type": "string"
+                },
+                "port": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "output",
+                "child",
+                "port"
+              ]
+            }
+          },
+          "reproduces": {
+            "type": "object",
+            "properties": {
+              "state": {
+                "type": "string",
+                "enum": [
+                  "agrees",
+                  "differs",
+                  "not run"
+                ]
+              },
+              "says": {
+                "type": "string"
+              },
+              "cases": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "label": {
+                      "type": "string"
+                    },
+                    "expected": {
+                      "type": "string"
+                    },
+                    "children": {
+                      "type": "string"
+                    },
+                    "estimate": {
+                      "type": "string"
+                    },
+                    "agrees": {
+                      "type": "boolean"
+                    },
+                    "says": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "label",
+                    "expected",
+                    "children",
+                    "estimate",
+                    "agrees",
+                    "says"
+                  ]
+                }
+              }
+            },
+            "required": [
+              "state",
+              "says",
+              "cases"
+            ]
+          }
+        },
+        "required": [
+          "uid",
+          "id",
+          "parent",
+          "ord",
+          "behaviour",
+          "read_as",
+          "in",
+          "archived",
+          "question",
+          "mount",
+          "open",
+          "ports",
+          "answers"
+        ]
+      }
+    },
+    "changes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "at": {
+            "type": "string"
+          },
+          "who": {
+            "type": "string"
+          },
+          "scope": {
+            "type": "string"
+          },
+          "what": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "at",
+          "who",
+          "scope",
+          "what"
+        ]
+      }
+    },
+    "open": {
+      "type": "number",
+      "description": "How many parts of the branch are still open."
+    },
+    "next": {
+      "type": "string"
+    },
+    "message": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "ok"
+  ]
+}

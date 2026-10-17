@@ -347,8 +347,8 @@ def check():
 
             explore(p, step, scratch, port)
 
-            # The Node workspace is tools/node_check.py's.
-            for name, stage in [('System', 'F4 to F6'), ('Programme', 'F7')]:
+            # The Node workspace is tools/node_check.py's; System is tools/branch_check.py's.
+            for name, stage in [('Programme', 'F7')]:
                 act(lambda: p.click(f'#sh-nav .tab:text-is("{name}")'))
                 step(f'the {name} workspace says which stage brings it', f'arrives in {stage}' in main(), main())
             b.close()
