@@ -13,7 +13,9 @@ around it. With no key and no copy, as anyone reading the design would:
 - a what-if set on a declared row's own control raises the what-if bar,
   which names the row, writes nothing to the case, and puts everything back;
 - a group named on a node's page opens that group's rows on today's tool
-  page, and the run panel's *the inputs…* opens Explore at its inputs;
+  page, in a tab of its own so the node's page keeps what is typed in it,
+  and the run panel's *the inputs…* opens Explore at its inputs, where the
+  depth switch is not shown;
 - no page error.
 
     python3 tools/workspace_check.py
@@ -98,27 +100,31 @@ def check():
             # A group, and the inputs, named on a node's page.
             p.evaluate('id => window.openNode(id)', RECORD)
             p.wait_for_selector('.nw-page .xref[data-group]', state='attached', timeout=60000)
-            # The nearest group the page names, the last of its crumbs: the
-            # rows list has a section for a group that holds rows.
+            # The page's last group link, which names a group that holds rows,
+            # so the rows list has a section for it. It opens in a tab of its
+            # own: this one keeps what is typed in it.
             near = p.locator('.nw-page .xref[data-group]').last
             group = near.get_attribute('data-group')
-            near.click()
-            p.wait_for_selector('#rowsview:not([hidden]) .rows-grp', timeout=60000)
-            p.wait_for_timeout(300)
+            with p.context.expect_page() as opened:
+                near.click()
+            rows = opened.value
+            rows.wait_for_selector('#rowsview:not([hidden]) .rows-grp', timeout=60000)
+            rows.wait_for_timeout(300)
             # Opened at that group: its section is on screen, as the rows list
             # scrolls to it; the list itself holds every group either way.
-            shown = p.evaluate("""g => { const s = document.querySelector(`#rows-body .rows-grp[data-group-id="${g}"]`);
+            shown = rows.evaluate("""g => { const s = document.querySelector(`#rows-body .rows-grp[data-group-id="${g}"]`);
               if (!s) return null; const r = s.getBoundingClientRect(); return [r.top, innerHeight]; }""", group)
-            step("a group named on the page opens its rows on today's tool page, at that group",
-                 p.url.endswith('/#group/' + group) and shown is not None and 0 <= shown[0] < shown[1],
-                 f'{p.url} {shown}')
-            p.goto(f'http://127.0.0.1:{port}/app#node/{RECORD}')
-            workspace(p)
+            step("a group named on the page opens its rows on today's tool page, at that group, in a tab of its own",
+                 rows.url.endswith('/#group/' + group) and shown is not None and 0 <= shown[0] < shown[1]
+                 and '/app' in p.url,
+                 f'{rows.url} {shown} {p.url}')
+            rows.close()
             p.wait_for_selector('.nw-run .xref[data-inputs]', timeout=60000)
             p.locator('.nw-run .xref[data-inputs]').first.click()
-            p.wait_for_selector('#sh-nav .tab.sel:has-text("Explore")', timeout=60000)
+            p.wait_for_selector('#sh-explore .ex-ws.sel[data-view="inputs"]', timeout=60000)
             step("the run panel's inputs open Explore at its inputs",
-                 p.locator('#sh-explore').count() == 1, p.inner_text('#sh-nav'))
+                 p.locator('#sh-nav .tab.sel', has_text='Explore').count() == 1, p.inner_text('#sh-nav'))
+            step('the depth switch is said only where a node is drawn', p.locator('#depth').is_hidden())
             step('no page error', not errors, '; '.join(errors[:3]))
             b.close()
     finally:

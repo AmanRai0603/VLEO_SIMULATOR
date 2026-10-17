@@ -10,7 +10,7 @@
 */
 'use strict';
 
-import { $, $$ } from './dom.js';
+import { $ } from './dom.js';
 import { S, load, theCase, loadSaved, onCaseChange } from './state.js';
 import { drawStatus, drawFoot } from './status.js';
 import { renderRows } from './rows.js';
@@ -62,7 +62,7 @@ async function boot() {
     const r = location.hash.match(/^#row\/([\w-]+)$/);
     if (r && S.byId.has(r[1])) open(r[1]);
     const g = location.hash.match(/^#group\/([\w-]+)$/);
-    if (g && S.gkids) openGroup(g[1]);
+    if (g && S.G.has(g[1])) openGroup(g[1]);
   };
   openFromHash();
   // AND WHEN ONLY THE HASH CHANGES. A manual link pasted into a tab that already

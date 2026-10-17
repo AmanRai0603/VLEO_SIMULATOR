@@ -94,6 +94,9 @@ function ready() {
  *  that does not hold the node. */
 async function readDesign() {
   try { await ready(); W.unread = ''; } catch (e) { W.unread = String(e); }
+  // The case as it is saved now: saved in another tab, or on today's tool
+  // page, since this one was opened.
+  if (!W.unread) { try { await loadSaved(); } catch (e) { /* said by the case line */ } }
   // A page in doubt says so before anything else, as today's tool page does.
   showContract();
   showMock();
@@ -547,8 +550,9 @@ async function click(e) {
       return draw();
     }
     if (t.dataset.group) {
+      // In a tab of its own: leaving this page would drop what is typed here.
       e.preventDefault();
-      location.href = '/#group/' + encodeURIComponent(t.dataset.group);
+      window.open('/#group/' + encodeURIComponent(t.dataset.group), '_blank', 'noopener');
     } else if (t.dataset.inputs !== undefined) {
       e.preventDefault();
       location.hash = '#explore/inputs';

@@ -8,7 +8,7 @@
 */
 'use strict';
 
-import { $, $$ } from './dom.js';
+import { $, $$, esc } from './dom.js';
 import { S } from './state.js';
 import { saveOverridesToCase, savableOverrides } from './case.js';
 import { overrideCount, clearAllOverrides, clearOverride, fromSI } from './inputs.js';
@@ -44,9 +44,12 @@ export function drawWhatIf(bar, redraw) {
   for (const [id, si] of S.overrides) {
     const r = S.byId.get(id);
     if (!r) continue;
-    rows.push('<span class="ovr-chip xref" data-goto="' + id + '">' +
-      '<b>' + (r.symbol || r.label) + '</b> ' + fmtNum(fromSI(r, si)) + ' ' + r.unit +
-      '<button class="ovr-x" data-drop="' + id + '" title="put this one back">×</button>' +
+    // A row's words are a release's, so they are escaped as every other
+    // place that draws them escapes them: in `/app` the page holds the word
+    // that signs.
+    rows.push('<span class="ovr-chip xref" data-goto="' + esc(id) + '">' +
+      '<b>' + esc(r.symbol || r.label) + '</b> ' + fmtNum(fromSI(r, si)) + ' ' + esc(r.unit) +
+      '<button class="ovr-x" data-drop="' + esc(id) + '" title="put this one back">×</button>' +
       '</span>');
   }
   // THE BAR SAYS WHAT IS TRUE; IT DOES NOT RUN ANYTHING. Update lives beside

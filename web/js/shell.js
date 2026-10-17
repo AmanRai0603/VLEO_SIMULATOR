@@ -115,6 +115,8 @@ function draw() {
   $('#sh-nav').innerHTML = WORKSPACES.map(([id, name, holds]) =>
     '<button class="tab' + (S.ws === id ? ' sel' : '') + '" data-ws="' + id + '" title="' + esc(holds) + '">' +
     esc(name) + '</button>').join('');
+  // How deep a node's page goes: said where a node's page is drawn.
+  $('#depth').hidden = S.ws !== 'node';
   const n = S.notice;
   $('#sh-notice').innerHTML = n ? '<p class="' + (n.ok ? 'sh-said' : 'sh-refused') + '">' + esc(n.text) + '</p>' : '';
   if (S.ws === 'node') {
