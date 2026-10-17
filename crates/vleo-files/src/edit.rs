@@ -184,22 +184,6 @@ pub struct Edits {
     pub why: Option<Derisk>,
 }
 
-impl Edits {
-    /// Which kinds of decision these edits change, each once: what needs a
-    /// record of which belief broke (`vleo_sheet::derisk::about_of`).
-    pub fn about(&self) -> Vec<&'static str> {
-        let mut out = Vec::new();
-        for e in &self.edits {
-            if let Some(a) = vleo_sheet::derisk::about_of(e.field()) {
-                if !out.contains(&a) {
-                    out.push(a);
-                }
-            }
-        }
-        out
-    }
-}
-
 /// `versions.csv`'s columns, as every group's is written.
 const VERSION_COLUMNS: [&str; 11] = [
     "version",
@@ -215,12 +199,51 @@ const VERSION_COLUMNS: [&str; 11] = [
     "breaks_if",
 ];
 
+/// Whether `body` holds a `## ` heading outside a fence, or leaves a fence
+/// open: either would make one section's text another's.
+fn body_refused(body: &str) -> Option<&'static str> {
+    let mut fence = false;
+    for l in body.split('\n') {
+        let lead = l.trim_start();
+        if lead.starts_with("```") || lead.starts_with("~~~") {
+            fence = !fence;
+            continue;
+        }
+        if !fence
+            && l.strip_prefix("##")
+                .is_some_and(|r| r.starts_with(|c: char| c.is_whitespace()))
+        {
+            return Some("it holds a \"## \" heading, which would begin another section");
+        }
+    }
+    fence.then_some("it leaves a code fence open, which would swallow every section after it")
+}
+
 /// `explanation`'s `title` section set to `body`, everything else kept byte
-/// for byte; a section it does not hold is placed where `order` puts it.
-fn with_section(text: &str, title: &str, body: &str, order: &[String]) -> String {
-    let lines: Vec<&str> = text.split('\n').collect();
+/// for byte; a section it does not hold is placed where `order` puts it. The
+/// line endings are the text's own. Refused when the body would begin or
+/// hide a section, or when the text read again does not hold every other
+/// section as it was (a fence the text already leaves open, say).
+fn with_section(text: &str, title: &str, body: &str, order: &[String]) -> Result<String, String> {
+    let body = body.replace('\r', "");
+    let body = body.trim_matches('\n');
+    if let Some(why) = body_refused(body) {
+        return Err(why.to_string());
+    }
+    let crlf = text.contains("\r\n");
+    let line = |l: &str| {
+        if crlf {
+            format!("{l}\r")
+        } else {
+            l.to_string()
+        }
+    };
+    let lines: Vec<&str> = if text.is_empty() {
+        Vec::new()
+    } else {
+        text.split('\n').collect()
+    };
     let secs = crate::folder::sections(text);
-    let body = body.trim_matches('\n').replace('\r', "");
     let at = secs.iter().position(|s| s.0.eq_ignore_ascii_case(title));
     let (from, to, heading) = match at {
         // The lines between its heading and the next one's.
@@ -243,37 +266,69 @@ fn with_section(text: &str, title: &str, body: &str, order: &[String]) -> String
     let mut out: Vec<String> = lines[..from].iter().map(|l| l.to_string()).collect();
     if heading {
         if out.last().is_some_and(|l| !l.trim().is_empty()) {
-            out.push(String::new());
+            out.push(line(""));
         }
-        out.push(format!("## {title}"));
+        out.push(line(&format!("## {title}")));
     }
-    out.push(String::new());
-    out.extend(body.split('\n').map(str::to_string));
+    out.push(line(""));
+    out.extend(body.split('\n').map(line));
     if to < lines.len() {
-        out.push(String::new());
+        out.push(line(""));
     }
     out.extend(lines[to..].iter().map(|l| l.to_string()));
     let mut joined = out.join("\n");
     if to >= lines.len() && !joined.ends_with('\n') {
-        joined.push('\n');
+        joined.push_str(if crlf { "\r\n" } else { "\n" });
     }
-    joined
+    // Read again: every other section as it was, in its place, and this one
+    // holding what was typed.
+    let after = crate::folder::sections(&joined);
+    let mut want: Vec<String> = secs.iter().map(|s| s.0.to_lowercase()).collect();
+    if heading {
+        let k = secs.iter().position(|s| s.2 > from).unwrap_or(secs.len());
+        want.insert(k, title.to_lowercase());
+    }
+    let got: Vec<String> = after.iter().map(|s| s.0.to_lowercase()).collect();
+    let kept = got == want
+        && after.iter().all(|a| {
+            if a.0.eq_ignore_ascii_case(title) {
+                a.1.trim_matches('\n') == body
+            } else {
+                secs.iter()
+                    .find(|b| b.0 == a.0)
+                    .is_some_and(|b| b.1.trim_end_matches('\n') == a.1.trim_end_matches('\n'))
+            }
+        });
+    if !kept {
+        return Err(format!(
+            "read again, the explanation would not hold its other sections as they were ({} before, {} after): a fence or heading in it already runs across sections",
+            secs.iter().map(|s| s.0.as_str()).collect::<Vec<_>>().join(", "),
+            after.iter().map(|s| s.0.as_str()).collect::<Vec<_>>().join(", ")
+        ));
+    }
+    Ok(joined)
 }
 
-/// The rows of `csv_text` whose `origin` is not a reference, as lines.
+/// Whether every row of `csv_text` reads, and says where its expected value
+/// came from: one of [`checks::ORIGINS`]. Each refusal names its line.
 fn origins_refused(csv_text: &str) -> Result<(), String> {
-    let (head, rows) = csv::parse(csv_text);
-    let Some(i) = head.iter().position(|h| csv::name_of(h) == "origin") else {
+    let p = csv::read(csv_text);
+    if let Some((line, why)) = p.problems.first() {
+        return Err(format!("the cases do not read as CSV, line {line}: {why}"));
+    }
+    let Some(i) = p.head.iter().position(|h| csv::name_of(h) == "origin") else {
         return Err(
             "the cases say no origin: each case says where its expected value came from".into(),
         );
     };
-    let bad: Vec<String> = rows
+    let bad: Vec<String> = p
+        .rows
         .iter()
         .enumerate()
         .filter_map(|(k, r)| {
             let o = r.get(i).map_or("", |v| v.trim());
-            (!checks::ORIGINS.contains(&o)).then(|| format!("line {}: {o:?}", k + 2))
+            let line = p.lines.get(k).copied().unwrap_or(k + 2);
+            (!checks::ORIGINS.contains(&o)).then(|| format!("line {line}: {o:?}"))
         })
         .collect();
     if bad.is_empty() {
@@ -337,11 +392,24 @@ fn content(now: &File, uid: &str, id: &str, e: &Edits) -> Result<File, Error> {
                     .iter_mut()
                     .find(|t| t.scope == uid && t.kind == "explanation")
                 {
-                    Some(t) => t.body = with_section(&t.body, part.heading(), body, &order),
+                    Some(t) => {
+                        t.body =
+                            with_section(&t.body, part.heading(), body, &order).map_err(|why| {
+                                refused(format!(
+                                    "{id}'s \"{}\" is not written: {why}",
+                                    part.heading()
+                                ))
+                            })?
+                    }
                     None => out.texts.push(Text {
                         scope: uid.to_string(),
                         kind: "explanation".into(),
-                        body: with_section("", part.heading(), body, &order),
+                        body: with_section("", part.heading(), body, &order).map_err(|why| {
+                            refused(format!(
+                                "{id}'s \"{}\" is not written: {why}",
+                                part.heading()
+                            ))
+                        })?,
                     }),
                 }
             }
@@ -398,6 +466,77 @@ pub struct Applied {
     pub about: Vec<&'static str>,
 }
 
+/// Which of the template form's fields `out` holds otherwise than `now`, for
+/// the node `uid`: what an edit changed, not what it sent.
+fn changed_fields(now: &File, out: &File, uid: &str) -> Vec<&'static str> {
+    let q = |f: &File| {
+        f.blocks
+            .iter()
+            .find(|b| b.uid == uid)
+            .map(|b| b.question.clone())
+    };
+    let text = |f: &File, k: &str| {
+        f.texts
+            .iter()
+            .find(|t| t.scope == uid && t.kind == k)
+            .map(|t| t.body.clone())
+    };
+    let table = |f: &File, p: &str| {
+        f.tables
+            .iter()
+            .find(|t| t.scope == uid && t.path == p)
+            .map(|t| t.csv.clone())
+    };
+    let mut out_fields = Vec::new();
+    if q(now) != q(out) {
+        out_fields.push("question");
+    }
+    for part in [Part::Simply, Part::Breaks, Part::Wrong] {
+        if section(now, uid, part) != section(out, uid, part) {
+            out_fields.push(part.field());
+        }
+    }
+    if text(now, "pseudocode") != text(out, "pseudocode") {
+        out_fields.push("method_text");
+    }
+    if table(now, "results/isolation.csv") != table(out, "results/isolation.csv") {
+        out_fields.push("case");
+    }
+    out_fields
+}
+
+/// Which kinds of decision `fields` change, each once
+/// (`vleo_sheet::derisk::about_of`).
+fn about_of(fields: &[&str]) -> Vec<&'static str> {
+    let mut out = Vec::new();
+    for f in fields {
+        if let Some(a) = vleo_sheet::derisk::about_of(f) {
+            if !out.contains(&a) {
+                out.push(a);
+            }
+        }
+    }
+    out
+}
+
+/// `d` written as the node's declaration, dated `at`.
+fn declare(out: &mut File, uid: &str, d: &Declared, at: &str) {
+    let date = at.get(..10).unwrap_or(at).to_string();
+    let row = vec![
+        d.author.trim().to_string(),
+        d.ai.trim().to_string(),
+        date,
+        d.source.trim().to_string(),
+        d.checked_by.trim().to_string(),
+    ];
+    set_table(
+        out,
+        uid,
+        "declaration.csv",
+        csv::write(&["author", "ai", "date", "source", "checked_by"], &[row]),
+    );
+}
+
 /// `e` applied to `now`, the node file at `path`, as `by` at `at` (an ISO
 /// 8601 time): every refusal above but a save's own, with nothing changed.
 /// Pure: the copy is not read or written.
@@ -405,30 +544,21 @@ pub fn apply(now: &File, path: &str, e: &Edits, by: &str, at: &str) -> Result<Ap
     let id = save::the_node(now, path)?;
     let b = now.blocks[0].clone();
     let mut out = content(now, &b.uid, &id, e)?;
-    let restates = e
-        .edits
-        .iter()
-        .any(|x| matches!(x, Edit::Method(_) | Edit::Cases(_)));
-    if restates {
+    // What changed is what the content changed: a part sent as it already
+    // is changes nothing, and asks for no declaration and no record.
+    let changed = changed_fields(now, &out, &b.uid);
+    if changed.is_empty() {
+        return Err(refused(format!(
+            "this changes nothing in {id}: a revision is saved for work"
+        )));
+    }
+    if changed.iter().any(|c| *c == "method_text" || *c == "case") {
         let Some(d) = &e.declared else {
             return Err(refused(format!(
                 "{id}'s method and its numbers are somebody's: say who made them, and how an assistant helped, if at all. Silence is not \"none\""
             )));
         };
-        let date = at.get(..10).unwrap_or(at).to_string();
-        let row = vec![
-            d.author.trim().to_string(),
-            d.ai.trim().to_string(),
-            date,
-            d.source.trim().to_string(),
-            d.checked_by.trim().to_string(),
-        ];
-        set_table(
-            &mut out,
-            &b.uid,
-            "declaration.csv",
-            csv::write(&["author", "ai", "date", "source", "checked_by"], &[row]),
-        );
+        declare(&mut out, &b.uid, d, at);
         let said: Vec<String> = checks::declared(&out, &b)
             .errors()
             .map(|f| f.what.clone())
@@ -440,7 +570,7 @@ pub fn apply(now: &File, path: &str, e: &Edits, by: &str, at: &str) -> Result<Ap
             )));
         }
     }
-    let about = e.about();
+    let about = about_of(&changed);
     if !about.is_empty() {
         let why = e.why.clone().unwrap_or_default();
         let missing = why.missing();
@@ -481,11 +611,6 @@ pub fn apply(now: &File, path: &str, e: &Edits, by: &str, at: &str) -> Result<Ap
         }
         rows.push(row);
         set_table(&mut out, &b.uid, "versions.csv", csv::write(&head, &rows));
-    }
-    if out == *now {
-        return Err(refused(format!(
-            "this changes nothing in {id}: a revision is saved for work"
-        )));
     }
     Ok(Applied { file: out, about })
 }
@@ -546,6 +671,9 @@ pub enum Tried {
         revision: u64,
         /// Why a save of it would be refused now, if it would.
         refused: Option<String>,
+        /// Whether what was typed could be checked: false when its content
+        /// is refused, and then no finding or report is given in its place.
+        checked: bool,
         findings: Findings,
         report: Option<(Vec<vleo_sheet::method::Case>, vleo_sheet::method::Report)>,
         about: Vec<&'static str>,
@@ -590,25 +718,51 @@ pub fn try_edit(
     };
     let id = save::the_node(&now, path)?;
     let uid = now.blocks[0].uid.clone();
-    let (laid, refusal) = match apply(&now, path, e, by, at) {
-        Ok(a) => (a.file, None),
-        // What was typed, shown even while the declaration or the record is
-        // still missing; when the content itself is refused, the file as it is.
+    // What was typed, laid on the file even while the declaration or the
+    // record is still missing, its declaration as typed, so it is checked as
+    // it is typed. When the content itself is refused, nothing typed can be
+    // checked, and none of the file's own checks is shown in its place.
+    let preview = content(&now, &uid, &id, e).ok().map(|mut f| {
+        if let Some(d) = &e.declared {
+            if changed_fields(&now, &f, &uid)
+                .iter()
+                .any(|c| *c == "method_text" || *c == "case")
+            {
+                declare(&mut f, &uid, d, at);
+            }
+        }
+        f
+    });
+    let (laid, refusal, about) = match apply(&now, path, e, by, at) {
+        Ok(a) => (Some(a.file), None, a.about),
         Err(why) => (
-            content(&now, &uid, &id, e).unwrap_or_else(|_| now.clone()),
+            preview.clone(),
             Some(why.message().to_string()),
+            preview
+                .as_ref()
+                .map(|f| about_of(&changed_fields(&now, f, &uid)))
+                .unwrap_or_default(),
         ),
     };
     // Who may write it is asked as a save asks it: refused, not shown.
-    let (next, revision) = save::would_save(&now, path, &laid, by, app, group)?;
-    let findings = checks::check_node(&next);
-    let report = checks::method_report(&next, &next.blocks[0]);
+    let (next, revision) =
+        save::would_save(&now, path, laid.as_ref().unwrap_or(&now), by, app, group)?;
+    let checked = laid.is_some();
+    let (findings, report) = if checked {
+        (
+            checks::check_node(&next),
+            checks::method_report(&next, &next.blocks[0]),
+        )
+    } else {
+        (Findings::default(), None)
+    };
     Ok(Tried::Would {
         file: Box::new(next),
         revision,
         refused: refusal,
+        checked,
         findings,
         report,
-        about: e.about(),
+        about,
     })
 }

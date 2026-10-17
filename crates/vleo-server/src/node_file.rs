@@ -1028,6 +1028,7 @@ fn edited(id: &str, params: &str, ctx: &Ctx) -> Result<String, String> {
                 file,
                 revision,
                 refused,
+                checked,
                 findings,
                 report,
                 about,
@@ -1042,7 +1043,12 @@ fn edited(id: &str, params: &str, ctx: &Ctx) -> Result<String, String> {
             });
             let mut written = None;
             if !dry && refused.is_none() {
-                let saved = me::with_key(|_, me| {
+                let saved = me::with_key(|key, me| {
+                    // Counted again for the write itself, as a save counts it:
+                    // never left to the dry run before it.
+                    group
+                        .key(&me.name, &key.public().to_hex(), &at)
+                        .map_err(|e| e.message().to_string())?;
                     edit::edit_in_place(&copy, &path, &opened, &e, &me.name, &at, APP, group)
                         .map_err(|e| e.message().to_string())
                 })
@@ -1081,7 +1087,7 @@ fn edited(id: &str, params: &str, ctx: &Ctx) -> Result<String, String> {
                     j.str_field("path", &path);
                     j.num_field("revision", revision as f64);
                     j.str_field("opened", &digest);
-                    tried_fields(&mut j, &None, &findings, &report, &about);
+                    tried_fields(&mut j, &None, true, &findings, &report, &about);
                     j.str_field(
                         "message",
                         &format!(
@@ -1097,7 +1103,7 @@ fn edited(id: &str, params: &str, ctx: &Ctx) -> Result<String, String> {
                     j.str_field("path", &path);
                     j.num_field("revision", revision as f64);
                     j.str_field("opened", &opened);
-                    tried_fields(&mut j, &refused, &findings, &report, &about);
+                    tried_fields(&mut j, &refused, checked, &findings, &report, &about);
                     j.str_field(
                         "message",
                         &match (&refused, dry) {
@@ -1120,11 +1126,15 @@ fn edited(id: &str, params: &str, ctx: &Ctx) -> Result<String, String> {
 fn tried_fields(
     j: &mut Json,
     refused: &Option<String>,
+    checked: bool,
     findings: &vleo_files::checks::Findings,
     report: &Option<(Vec<vleo_sheet::method::Case>, vleo_sheet::method::Report)>,
     about: &[&str],
 ) {
     j.str_field("refused", refused.as_deref().unwrap_or(""));
+    // Whether what was typed was checked: when its content is refused, no
+    // finding or case is given in its place.
+    j.bool_field("checked", checked);
     findings_field(j, findings);
     j.key("about").raw("[");
     for (i, a) in about.iter().enumerate() {
@@ -1168,7 +1178,8 @@ fn tried_fields(
             j.str_field("label", &c.label);
             j.bool_field("refuses", c.refuses());
             j.bool_field("agrees", v.agrees());
-            j.str_field("says", &v.text(c));
+            // The case's value is its reference, not the code's.
+            j.str_field("says", &v.text(c).replace("your code", "the case"));
             j.raw("}");
         }
     }

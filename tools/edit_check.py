@@ -19,8 +19,9 @@ started on it. Then, as Test Pia, the band's node engineer, would:
   saved as revision 2;
 - a request written from another tab meanwhile makes the next save a second
   writer: refused on screen, nothing written, the typing kept, and the file
-  opened again only when Pia asks; opened again, it is saved as revision 3,
-  and Pia signs it.
+  opened again only when Pia asks; the other tab's *Common misreading*,
+  written meanwhile, is taken, never written over; opened again, it is saved
+  as revision 4, and Pia signs it.
 
     python3 tools/edit_check.py
 
@@ -41,6 +42,7 @@ NODE = 'sw_activity_band'
 PATH = 'groups/l3_solar/nodes/sw_activity_band.vnode'
 SAID = 'A reading of 228 means little alone: the band says it is high.'
 QUESTION = 'Which level of solar activity does this F10.7 fall in?'
+THEIRS = 'Band 4 is not a storm: it is a level of the radio flux, not of the field.'
 WHY = {
     'believed': 'The question named the band, not what it is for.',
     'tested': 'Read beside the drag nodes that use it.',
@@ -167,6 +169,11 @@ def check():
             r = ask(p1, f'/v1/node/{NODE}/ask', {'opened': opened, 'kind': 'contract',
                                                  'body': 'The band needs its upper edge as an input.'}, w1)
             step('a request is asked from another tab', r.get('ok'), r)
+            # And the common misreading written there too, as revision 3.
+            opened = ask(p1, f'/v1/node/{NODE}/file')['opened']
+            r = ask(p1, f'/v1/node/{NODE}/edit', {'opened': opened, 'explain_wrong': THEIRS}, w1)
+            step('the common misreading is written from another tab, as revision 3',
+                 r.get('written') and r.get('revision') == 3, r)
             meanwhile = open(mine, 'rb').read()
             field(p, 'explain_breaks').fill('Above 300 sfu the four bands say nothing more.')
             p.click('#nw-save')
@@ -180,11 +187,17 @@ def check():
             p.click('#nw-reopen')
             workspace(p)
             p.wait_for_selector('[data-edit="explain_breaks"]', timeout=60000)
-            step('opened again, the typing is still there',
-                 field(p, 'explain_breaks').input_value() == 'Above 300 sfu the four bands say nothing more.')
+            step('opened again, the typing is still there, and what the other tab wrote is taken',
+                 field(p, 'explain_breaks').input_value() == 'Above 300 sfu the four bands say nothing more.'
+                 and field(p, 'explain_wrong').input_value() == THEIRS,
+                 field(p, 'explain_wrong').input_value())
             p.click('#nw-save')
             notice = said_after(p, notice)
-            step('saved as revision 3', 'saved as revision 3' in notice, notice)
+            step('saved as revision 4', 'saved as revision 4' in notice, notice)
+            content = ask(p1, f'/v1/node/{NODE}/file')['content']['explain']
+            step("and the other tab's common misreading is not written over",
+                 content['wrong'] == THEIRS and content['breaks'] == 'Above 300 sfu the four bands say nothing more.',
+                 content)
             p.click('#nw-sign')
             notice = said_after(p, notice)
             step('and Pia signs it', 'is signed by Test Pia' in notice, notice)

@@ -518,14 +518,16 @@ fn each_is_refused_where_a_save_is() {
         );
     }
     assert_eq!(digest(&c), opened);
-    // Nothing changed is not a revision.
+    // Nothing changed is not a revision, whatever record comes with it: a
+    // record says something changed.
     let same = from_release(BAND).blocks[0].question.clone();
     let e = apply(&Edits {
         edits: vec![Edit::Question(same)],
         why: Some(record()),
         ..Edits::default()
-    });
-    assert!(e.is_ok(), "a record is written, so it changes something");
+    })
+    .unwrap_err();
+    assert!(e.contains("changes nothing"), "{e}");
     let simply = from_release(BAND);
     let body = text(&simply, "explanation");
     let said = body
@@ -550,5 +552,153 @@ fn each_is_refused_where_a_save_is() {
     });
     let e = edit::apply(&design, PATH, &q, "Nia Node", AT).unwrap_err();
     assert!(e.message().contains("F3-g0, question 9"), "{}", e.message());
+    let _ = std::fs::remove_dir_all(&c);
+}
+
+#[test]
+fn a_section_never_begins_hides_or_moves_another() {
+    let band = from_release(BAND);
+    let explain = text(&band, "explanation").to_string();
+    // A heading typed into a section, or a fence left open: refused.
+    for (body, says) in [
+        (
+            "New.\n## Where it breaks\nInjected.",
+            "would begin another section",
+        ),
+        ("Look:\n```\ncode", "leaves a code fence open"),
+    ] {
+        let e = apply(&one(Edit::Explain(Part::Simply, s(body)))).unwrap_err();
+        assert!(e.contains(says), "{body:?}: {e}");
+    }
+    // A fence the file already leaves open runs across the sections after
+    // it: an edit of a later one is refused, never written as a second.
+    let mut open = band.clone();
+    for t in open.texts.iter_mut().filter(|t| t.kind == "explanation") {
+        t.body = t
+            .body
+            .replacen("## Said simply\n", "## Said simply\n\n```\n", 1);
+    }
+    let e = edit::apply(
+        &open,
+        PATH,
+        &one(Edit::Explain(
+            Part::Breaks,
+            s("Above 300 sfu the bands say no more."),
+        )),
+        "Nia Node",
+        AT,
+    )
+    .unwrap_err();
+    assert!(
+        e.message().contains("would not hold its other sections"),
+        "{}",
+        e.message()
+    );
+    // A section the text lacks goes where the pattern puts it.
+    let mut without = band.clone();
+    let start = explain.find("## Where it breaks").unwrap();
+    let end = explain.find("## Common misreading").unwrap();
+    for t in without.texts.iter_mut().filter(|t| t.kind == "explanation") {
+        t.body = format!("{}{}", &explain[..start], &explain[end..]);
+    }
+    let a = edit::apply(
+        &without,
+        PATH,
+        &one(Edit::Explain(
+            Part::Breaks,
+            s("Above 300 sfu the bands say no more."),
+        )),
+        "Nia Node",
+        AT,
+    )
+    .unwrap();
+    let body = text(&a.file, "explanation");
+    let at = |h: &str| body.find(&format!("## {h}")).unwrap();
+    assert!(
+        at("Guess first") < at("Where it breaks")
+            && at("Where it breaks") < at("Common misreading"),
+        "{body}"
+    );
+    assert_eq!(
+        edit::section(&a.file, BAND, Part::Breaks),
+        "Above 300 sfu the bands say no more."
+    );
+    // A text with CRLF line endings keeps them, and its other sections.
+    let mut crlf = band.clone();
+    for t in crlf.texts.iter_mut().filter(|t| t.kind == "explanation") {
+        t.body = t.body.replace('\n', "\r\n");
+    }
+    let a = edit::apply(
+        &crlf,
+        PATH,
+        &one(Edit::Explain(Part::Wrong, s("Band 4 is not a storm."))),
+        "Nia Node",
+        AT,
+    )
+    .unwrap();
+    let body = text(&a.file, "explanation");
+    assert!(
+        !body.replace("\r\n", "").contains('\n'),
+        "one line ending throughout"
+    );
+    for part in [Part::Simply, Part::Breaks] {
+        assert_eq!(
+            edit::section(&a.file, BAND, part),
+            edit::section(&crlf, BAND, part)
+        );
+    }
+}
+
+#[test]
+fn cases_are_read_whole_every_row_held_to_its_origin() {
+    let band = from_release(BAND);
+    let cases = table(&band, "results/isolation.csv").to_string();
+    // A later row, not only the first.
+    let lines: Vec<&str> = cases.lines().collect();
+    let late = lines[4].replacen(",paper,", ",agent-generated,", 1);
+    let bad = cases.replacen(lines[4], &late, 1);
+    let e = apply(&Edits {
+        edits: vec![Edit::Cases(bad)],
+        declared: Some(nia()),
+        why: None,
+    })
+    .unwrap_err();
+    assert!(e.contains("line 5: \"agent-generated\""), "{e}");
+    // A quote left open is not read as rows that hide in one field.
+    let open = cases.replacen(",paper,\"", ",paper,\"\"\"", 1);
+    let e = apply(&Edits {
+        edits: vec![Edit::Cases(format!("{open}\"unclosed"))],
+        declared: Some(nia()),
+        why: None,
+    })
+    .unwrap_err();
+    assert!(e.contains("do not read as CSV"), "{e}");
+}
+
+#[test]
+fn a_refused_part_is_never_checked_as_the_file_in_its_place() {
+    let (c, opened) = copy("unchecked");
+    let band = from_release(BAND);
+    let cases = table(&band, "results/isolation.csv").replacen(",paper,", ",self-snapshot,", 1);
+    let e = Edits {
+        edits: vec![Edit::Cases(cases)],
+        declared: Some(nia()),
+        why: None,
+    };
+    let t = edit::try_edit(&c, PATH, &opened, &e, "Nia Node", AT, APP, &solar()).unwrap();
+    let Tried::Would {
+        refused,
+        checked,
+        findings,
+        report,
+        ..
+    } = t
+    else {
+        panic!("{t:?}")
+    };
+    assert!(refused
+        .unwrap()
+        .contains("never comes from the code under test"));
+    assert!(!checked && findings.0.is_empty() && report.is_none());
     let _ = std::fs::remove_dir_all(&c);
 }

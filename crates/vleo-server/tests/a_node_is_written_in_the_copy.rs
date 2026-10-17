@@ -13,7 +13,7 @@
 //!   would be refused; a method that breaks the case at 130 sfu says so,
 //!   case by case, and as what signing would find;
 //! - saved, with its record, it is revision 2, written by Nia, the record a
-//!   row numbered 2; signed, it holds;
+//!   row numbered 2; signed, it holds; Dee writes it as Nia's deputy;
 //! - a case whose origin is the code's own, a declaration naming an
 //!   assistant, a file changed since it was opened, Ivo, and Ola (assigned it,
 //!   with no key solar's file counts), are each refused, with nothing written;
@@ -544,7 +544,26 @@ fn a_node_is_written_in_the_copy() {
     assert_eq!(today(), was, "a save moves nothing of today's design");
     post(port, "/v1/key/close", &[]);
 
-    // Ivo: not his to write, for a save and a dry run alike.
+    // Dee, Nia's deputy: theirs to write as the deputy.
+    assert!(open_key(port, "test-dee.vkey").contains("\"open\":true"));
+    let f = file();
+    assert!(f.contains("\"editable\":true"), "{f}");
+    let r = post(
+        port,
+        EDIT,
+        &[
+            ("opened", field(&f, "opened")),
+            ("dry_run", "1"),
+            ("explain_wrong", "Band 4 is not a storm."),
+        ],
+    );
+    assert!(
+        r.contains("\"ok\":true,\"dry_run\":true") && r.contains("\"checked\":true"),
+        "{r}"
+    );
+    post(port, "/v1/key/close", &[]);
+
+    // Ivo: not Ivo's to write, for a save and a dry run alike.
     assert!(open_key(port, "test-ivo.vkey").contains("\"open\":true"));
     let f = file();
     assert!(f.contains("\"editable\":false"), "{f}");

@@ -40,6 +40,10 @@
       "type": "string",
       "description": "Why a save of it would be refused now, or nothing."
     },
+    "checked": {
+      "type": "boolean",
+      "description": "Whether what was typed was checked: false when its content is refused, and then no finding or case is given in its place."
+    },
     "findings": {
       "type": "array",
       "description": "What signing it would find (checks::check_node).",

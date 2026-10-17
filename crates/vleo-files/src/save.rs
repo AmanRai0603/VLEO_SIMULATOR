@@ -345,7 +345,14 @@ pub fn save(
     // One writer at a time, from the first read to the rename.
     let _held = lock(copy)?;
     let at = copy.join(path);
-    let now = crate::sqlite::read(&at)?;
+    // A second writer is that before anything else, as signing and asking
+    // say it: its checks are not this person's to be told. What is saved
+    // over is read from the bytes compared.
+    let bytes = std::fs::read(&at).map_err(|e| unreadable(&at, e))?;
+    if copied::digest(&bytes) != opened {
+        return second(&at, bytes);
+    }
+    let now = parsed(&bytes)?;
     let (next, revision) = would_save(&now, path, edit, by, app, group)?;
     let findings = checks::check_release(&next);
     // The one comparison, as late as can be before the write: a writer who
