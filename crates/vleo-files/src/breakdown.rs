@@ -47,7 +47,7 @@ use crate::checks::{self, Findings};
 use crate::error::{Error, ErrorKind};
 use crate::keys::SigningKey;
 use crate::meta::Kind;
-use crate::model::{Block, Change, File, Port, Wire, ALLOWED};
+use crate::model::{Assignment, Block, Change, File, Port, Wire, ALLOWED};
 use vleo_sheet::method as m;
 
 fn refused(message: impl Into<String>) -> Error {
@@ -87,6 +87,17 @@ pub enum Edit {
     FoldBack { node: String },
     /// A block framed in the group file, archived.
     Remove { block: String },
+    /// A block given to `person`, a node engineer its group file registers:
+    /// its one assignment, at the contract it has (F5).
+    Assign { block: String, person: String },
+    /// The input `port` of a block framed in the group file, read from
+    /// `from`: `<block>.<port>` in the branch, `<group>.<node>[.<port>]` in
+    /// another, or `case` (F5).
+    Wire {
+        block: String,
+        port: String,
+        from: String,
+    },
 }
 
 impl Edit {
@@ -101,6 +112,8 @@ impl Edit {
             Edit::Split { .. } => "split",
             Edit::FoldBack { .. } => "fold back",
             Edit::Remove { .. } => "remove",
+            Edit::Assign { .. } => "assign",
+            Edit::Wire { .. } => "wire",
         }
     }
 }
@@ -396,6 +409,10 @@ pub fn edit(
     if let Edit::Split { id, .. } = edit {
         after.push_str(&touched(&after_branch, id));
     }
+    // An assignment is the block's row in the group file: what it was, and is.
+    if let Edit::Assign { block, .. } = edit {
+        after.push_str(&assigned(&out, block));
+    }
     // What the breakdown was judged on: the verdict, and each child it ran
     // by the digest of its rows, so it can be judged again once one changes.
     if let Some(v) = &verdict {
@@ -444,6 +461,20 @@ fn touched(branch: &Branch, scope: &str) -> String {
         .filter(|w| w.to_block == scope || w.from_ref.starts_with(&format!("{scope}.")))
         .collect();
     rows_text(&blocks, &ports, &wires)
+}
+
+/// The assignment of `uid` in `f`, as text, for a `change` row.
+fn assigned(f: &File, uid: &str) -> String {
+    f.assignments
+        .iter()
+        .filter(|a| a.block_uid == uid)
+        .map(|a| {
+            format!(
+                "assignment block={:?} person={:?} contract={}\n",
+                a.block_uid, a.person, a.contract_version
+            )
+        })
+        .collect()
 }
 
 /// The edit made in `out`, the group file: the uid it is about, the rows it
@@ -831,6 +862,113 @@ fn apply(
             out.wires
                 .retain(|w| !(w.to_block == *node && outs.contains(&w.to_port)));
             Ok((node.clone(), before, None))
+        }
+        Edit::Assign { block, person } => {
+            let (b, place) = live(block)?;
+            if place == Place::Group && b.behaviour == "children" {
+                return Err(refused(format!(
+                    "{} is a heading: it holds the blocks under it, and is its owner's own, assigned to nobody",
+                    b.id
+                )));
+            }
+            if !registry
+                .file
+                .people
+                .iter()
+                .any(|p| p.name == *person && p.role == "node engineer")
+            {
+                return Err(refused(format!(
+                    "{group_id}'s group file registers no node engineer {person}: a block is assigned to a node engineer its group registers"
+                )));
+            }
+            let at = out.assignments.iter().position(|a| a.block_uid == *block);
+            let before = assigned(out, block);
+            match at {
+                Some(i) if out.assignments[i].person == *person => {
+                    return Err(refused(format!("{} is assigned to {person} already", b.id)))
+                }
+                // Assigned again: the work moves to another person, and the
+                // contract stays what it was.
+                Some(i) => out.assignments[i].person = person.clone(),
+                None => out.assignments.push(Assignment {
+                    block_uid: block.clone(),
+                    person: person.clone(),
+                    contract_version: b.contract_version.max(1),
+                }),
+            }
+            Ok((block.clone(), before, None))
+        }
+        Edit::Wire { block, port, from } => {
+            let b = framed(block, "wired")?;
+            if !branch
+                .ports(block)
+                .iter()
+                .any(|p| p.direction == "in" && p.name == *port)
+            {
+                return Err(refused(format!("{} has no input {port}", b.id)));
+            }
+            let from = from.trim();
+            let parts: Vec<&str> = from.split('.').collect();
+            if parts.first() == Some(&block.as_str()) && parts.len() == 2 {
+                return Err(refused(format!(
+                    "{}'s input {port} reads itself: a block reads what another answers",
+                    b.id
+                )));
+            }
+            // Another group's node, as that group's file holds it: its
+            // answer, or the output named.
+            let there = |g: &str, node: &str, out_port: &str| {
+                g != group_id
+                    && elsewhere.iter().any(|f| {
+                        f.meta.get("group_id").map(String::as_str) == Some(g)
+                            && f.blocks.iter().any(|x| {
+                                x.id == node
+                                    && x.archived == 0
+                                    && f.ports.iter().any(|q| {
+                                        q.block_uid == x.uid
+                                            && q.direction == "out"
+                                            && q.name == out_port
+                                    })
+                            })
+                    })
+            };
+            let comes = match parts.as_slice() {
+                ["case"] => true,
+                [head, p] => match branch.find(head) {
+                    Some((x, _)) => {
+                        x.archived == 0
+                            && branch.ports(head).iter().any(|q| {
+                                q.name == *p
+                                    && (q.direction == "out"
+                                        || (q.direction == "in" && x.uid == b.parent_uid))
+                            })
+                    }
+                    None => there(head, p, p),
+                },
+                [g, node, p] => there(g, node, p),
+                _ => false,
+            };
+            if !comes {
+                return Err(refused(format!(
+                    "{}'s input {port} comes from nothing: {from:?} is not an output of a block of the branch, an input of the block it hangs from, another group's node, or case",
+                    b.id
+                )));
+            }
+            let before = touched(branch, block);
+            let w = Wire {
+                to_block: block.clone(),
+                to_port: port.clone(),
+                from_ref: from.to_string(),
+            };
+            match out
+                .wires
+                .iter()
+                .position(|x| x.to_block == *block && x.to_port == *port)
+            {
+                Some(i) => out.wires[i] = w,
+                None => out.wires.push(w),
+            }
+            Ok((block.clone(), before, None))
         }
         Edit::Remove { block } => {
             let b = framed(block, "removed")?;

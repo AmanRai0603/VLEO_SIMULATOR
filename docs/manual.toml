@@ -2244,7 +2244,7 @@ what = "A group's branch as your copy holds it, said so: group, the group's id. 
 [[route]]
 method = "POST"
 path = "/v1/branch/<id>"
-what = "One edit to a branch's breakdown — add, fill, break-down, move, rename, split, fold-back or remove — written to its group file in your copy by its owner, or their deputy, with a key that counts now: group, opened, the digest the edit was made from, why, and the edit's own fields (a break-down's answers one a line, `<output>=<child>.<port>`, for every output of the node). Signed afresh by whoever made it, and refused unless the file still opens through the chain; a node is broken down only into children that reproduce its own cases. A file changed since it was opened is not written over. Carries session."
+what = "One edit to a branch's breakdown — add, fill, break-down, move, rename, split, fold-back, remove, assign or wire — written to its group file in your copy by its owner, or their deputy, with a key that counts now: group, opened, the digest the edit was made from, why, and the edit's own fields (a break-down's answers one a line, `<output>=<child>.<port>`, for every output of the node; an assign's block and person, a node engineer the group file registers, at the contract the block has; a wire's block, its input port, and from, `<block>.<port>` in the branch, `<group>.<node>.<port>` in another, or `case`). Signed afresh by whoever made it, and refused unless the file still opens through the chain; a node is broken down only into children that reproduce its own cases. A file changed since it was opened is not written over. Carries session."
 
 [[route]]
 method = "POST"
