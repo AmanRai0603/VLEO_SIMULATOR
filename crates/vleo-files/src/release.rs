@@ -107,6 +107,32 @@ pub fn blockers(group: &File, nodes: &[File], registry: &Registry) -> Vec<String
     out
 }
 
+/// The node `uid` as `release` holds it, in the node file `base` is: every
+/// row of the block in `base` replaced by the release's, and every other
+/// row and the file's meta as `base` holds them. What today's design takes
+/// of a release's node, in the design's own file of it.
+pub fn node_in(release: &File, uid: &str, base: &File) -> File {
+    let mut n = base.clone();
+    macro_rules! take {
+        ($table:ident, $col:ident) => {
+            n.$table.retain(|r| r.$col != uid);
+            n.$table
+                .extend(release.$table.iter().filter(|r| r.$col == uid).cloned());
+        };
+    }
+    take!(blocks, uid);
+    take!(ports, block_uid);
+    take!(wires, to_block);
+    take!(mounts, block_uid);
+    take!(closures, block_uid);
+    take!(loops, block_uid);
+    take!(cases, block_uid);
+    take!(texts, scope);
+    take!(tables, scope);
+    take!(media, scope);
+    n
+}
+
 /// Whether `group` holds a row belonging to the block `uid`.
 fn holds_rows_of(group: &File, uid: &str) -> bool {
     group.ports.iter().any(|p| p.block_uid == uid)
