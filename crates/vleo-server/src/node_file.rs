@@ -18,6 +18,7 @@
 //! `POST /v1/node/<id>/lesson` saves the row's lesson in it (F3-e).
 
 use super::*;
+use vleo_files::edit::{self, Declared, Edit, Edits, Part, Tried};
 use vleo_files::save::{ask_in_place, save, sign_in_place, Asked, Saved};
 use vleo_files::sqlite;
 
@@ -343,6 +344,68 @@ fn state_fields(
         ),
     };
     j.str_field("next", &next);
+    content_fields(j, f, &block, yours);
+}
+
+/// What the node says, as the Node workspace writes it (F3-g2a): its shape,
+/// whether it can be written here and why not, and the four parts with the
+/// declaration and the record, as the library reads them from the file.
+fn content_fields(j: &mut Json, f: &vleo_files::model::File, block: &str, yours: bool) {
+    let shape = edit::shape(f, block);
+    j.str_field(
+        "shape",
+        match shape {
+            edit::Shape::Release => "release",
+            edit::Shape::Design => "design",
+            edit::Shape::Neither => "neither",
+        },
+    );
+    j.bool_field("editable", yours && shape == edit::Shape::Release);
+    j.str_field(
+        "edit_why_not",
+        match (yours, shape) {
+            (false, _) => "it is not yours to write: its writer, or their deputy, writes it",
+            (true, edit::Shape::Release) => "",
+            (true, edit::Shape::Design) => "it is in design/'s shape (its sheet): it is written here once one node shape is picked (F3-g0, question 9); until then it is read and asked of",
+            (true, edit::Shape::Neither) => "it holds neither a release's method and cases nor a sheet: it is written here once one node shape is picked (F3-g0, question 9)",
+        },
+    );
+    let text = |kind: &str| {
+        f.texts
+            .iter()
+            .find(|t| t.scope == block && t.kind == kind)
+            .map_or(String::new(), |t| t.body.clone())
+    };
+    let table = |path: &str| {
+        f.tables
+            .iter()
+            .find(|t| t.scope == block && t.path == path)
+            .map_or(String::new(), |t| t.csv.clone())
+    };
+    let d = edit::declared_of(f, block);
+    j.key("content").raw("{");
+    j.str_field(
+        "question",
+        f.blocks
+            .iter()
+            .find(|b| b.uid == block)
+            .map_or("", |b| b.question.as_str()),
+    );
+    j.key("explain").raw("{");
+    j.str_field("simply", &edit::section(f, block, Part::Simply));
+    j.str_field("breaks", &edit::section(f, block, Part::Breaks));
+    j.str_field("wrong", &edit::section(f, block, Part::Wrong));
+    j.raw("}");
+    j.str_field("method_text", &text("pseudocode"));
+    j.str_field("case_csv", &table("results/isolation.csv"));
+    j.key("declared").raw("{");
+    j.str_field("author", &d.author);
+    j.str_field("ai", &d.ai);
+    j.str_field("source", &d.source);
+    j.str_field("checked_by", &d.checked_by);
+    j.raw("}");
+    j.str_field("versions", &table("versions.csv"));
+    j.raw("}");
 }
 
 /// The group file of the node at `path`, as the chain opens it from the copy.
@@ -820,6 +883,307 @@ fn lesson_saved(id: &str, params: &str, ctx: &Ctx) -> Result<String, String> {
     }
     j.raw("}");
     Ok(j.0)
+}
+
+/// `POST /v1/node/<id>/edit`: the node written by plain edits as its next
+/// revision in the copy (docs/briefs/F3.md, F3-g2a), or, with `dry_run`, the
+/// same edits checked as they are typed, with nothing written. Each part is
+/// sent only when it changes: `question`, `explain_simply`, `explain_breaks`,
+/// `explain_wrong`, `method_text`, `case_csv`; with a method or cases,
+/// `declared.author`, `.ai`, `.source` and `.checked_by`; with a decision,
+/// the record `why.believed`, `.tested`, `.learned`, `.changed`, `.risks`,
+/// `.cost`, `.rests_on` and `.breaks_if`. Every rule is the library's
+/// (`vleo_files::edit`); a lesson the edit would leave pointing at nothing is
+/// refused, as a save's is. Carries the launch's word; the drive is never
+/// written.
+pub(super) fn edit_route(id: &str, params: &str, ctx: &Ctx) -> String {
+    match edited(id, params, ctx) {
+        Ok(j) => j,
+        Err(why) => me::refusal(&why),
+    }
+}
+
+/// The edits a request sends, from its fields.
+fn edits_of(params: &str) -> Edits {
+    let given = |k: &str| param(params, k).map(decode);
+    let mut edits = Vec::new();
+    if let Some(q) = given("question") {
+        edits.push(Edit::Question(q));
+    }
+    for (k, part) in [
+        ("explain_simply", Part::Simply),
+        ("explain_breaks", Part::Breaks),
+        ("explain_wrong", Part::Wrong),
+    ] {
+        if let Some(v) = given(k) {
+            edits.push(Edit::Explain(part, v));
+        }
+    }
+    if let Some(m) = given("method_text") {
+        edits.push(Edit::Method(m));
+    }
+    if let Some(c) = given("case_csv") {
+        edits.push(Edit::Cases(c));
+    }
+    let declared = ["author", "ai", "source", "checked_by"]
+        .iter()
+        .any(|k| given(&format!("declared.{k}")).is_some())
+        .then(|| {
+            let g = |k: &str| given(&format!("declared.{k}")).unwrap_or_default();
+            Declared {
+                author: g("author"),
+                ai: g("ai"),
+                source: g("source"),
+                checked_by: g("checked_by"),
+            }
+        });
+    let fields = [
+        "believed",
+        "tested",
+        "learned",
+        "changed",
+        "risks",
+        "cost",
+        "rests_on",
+        "breaks_if",
+    ];
+    let why = fields
+        .iter()
+        .any(|k| given(&format!("why.{k}")).is_some())
+        .then(|| {
+            let g = |k: &str| given(&format!("why.{k}")).unwrap_or_default();
+            vleo_sheet::template::Derisk {
+                believed: g("believed"),
+                tested: g("tested"),
+                learned: g("learned"),
+                changed: g("changed"),
+                risks: g("risks"),
+                cost: g("cost"),
+                rests_on: g("rests_on"),
+                breaks_if: g("breaks_if"),
+            }
+        });
+    Edits {
+        edits,
+        declared,
+        why,
+    }
+}
+
+fn edited(id: &str, params: &str, ctx: &Ctx) -> Result<String, String> {
+    me::carries_session(params)?;
+    // One writer per file is asked even of a dry run: without a key there is
+    // nobody whose writing it would be.
+    if me::with_key(|_, _| ()).is_none() {
+        return Err("no key is open: open yours, and the node is written as you".into());
+    }
+    let id = node_id(id)?;
+    let dry = param(params, "dry_run")
+        .map(decode)
+        .is_some_and(|v| !v.is_empty() && v != "0");
+    let copy = the_copy(ctx)?;
+    let opened = param(params, "opened").map(decode).unwrap_or_default();
+    let path = find(&copy, id)?;
+    let e = edits_of(params);
+    let group = group_of(&copy, &path)?;
+    let group = &group;
+    let at = results::now_utc();
+    let tried = me::with_key(|key, me| {
+        group
+            .key(&me.name, &key.public().to_hex(), &at)
+            .map_err(|e| e.message().to_string())?;
+        edit::try_edit(&copy, &path, &opened, &e, &me.name, &at, APP, group)
+            .map(|t| (t, me.name.clone()))
+            .map_err(|e| e.message().to_string())
+    })
+    .ok_or("no key is open: open yours, and the node is written as you")??;
+    let mut j = Json::new();
+    j.raw("{");
+    match tried {
+        (
+            Tried::SecondWriter {
+                writer,
+                revision,
+                digest,
+            },
+            _,
+        ) => {
+            j.bool_field("ok", false);
+            j.bool_field("conflict", true);
+            j.bool_field("dry_run", dry);
+            j.bool_field("written", false);
+            j.str_field("node", id);
+            j.str_field("writer", &writer);
+            j.num_field("revision", revision as f64);
+            j.str_field("opened", &digest);
+            j.str_field(
+                "message",
+                &format!(
+                    "{id} changed in your copy since you opened it: {writer} saved revision {revision}. Nothing is written; what you typed is kept: open it again, and write on what is there."
+                ),
+            );
+        }
+        (
+            Tried::Would {
+                file,
+                revision,
+                refused,
+                checked,
+                findings,
+                report,
+                about,
+            },
+            by,
+        ) => {
+            // A lesson is checked against the rows it names, as a save's is.
+            let refused = refused.or_else(|| {
+                lesson_holds(ctx, id, &file)
+                    .err()
+                    .map(|why| format!("{why}. Nothing is saved."))
+            });
+            let mut written = None;
+            if !dry && refused.is_none() {
+                let saved = me::with_key(|key, me| {
+                    // Counted again for the write itself, as a save counts it:
+                    // never left to the dry run before it.
+                    group
+                        .key(&me.name, &key.public().to_hex(), &at)
+                        .map_err(|e| e.message().to_string())?;
+                    edit::edit_in_place(&copy, &path, &opened, &e, &me.name, &at, APP, group)
+                        .map_err(|e| e.message().to_string())
+                })
+                .ok_or("no key is open: open yours, and the node is written as you")??;
+                written = Some(saved);
+            }
+            match written {
+                Some(Saved::SecondWriter {
+                    writer,
+                    revision,
+                    digest,
+                    ..
+                }) => {
+                    j.bool_field("ok", false);
+                    j.bool_field("conflict", true);
+                    j.bool_field("dry_run", false);
+                    j.bool_field("written", false);
+                    j.str_field("node", id);
+                    j.str_field("writer", &writer);
+                    j.num_field("revision", revision as f64);
+                    j.str_field("opened", &digest);
+                    j.str_field(
+                        "message",
+                        &format!(
+                            "{id} changed in your copy since you opened it: {writer} saved revision {revision}. Nothing is written; what you typed is kept."
+                        ),
+                    );
+                }
+                Some(Saved::Written {
+                    revision, digest, ..
+                }) => {
+                    j.bool_field("ok", true);
+                    j.bool_field("dry_run", false);
+                    j.bool_field("written", true);
+                    j.str_field("node", id);
+                    j.str_field("path", &path);
+                    j.num_field("revision", revision as f64);
+                    j.str_field("opened", &digest);
+                    tried_fields(&mut j, &None, true, &findings, &report, &about);
+                    j.str_field(
+                        "message",
+                        &format!(
+                            "{id} is saved as revision {revision}, written by {by}, in your copy. Not signed: sign it once its checks hold."
+                        ),
+                    );
+                }
+                None => {
+                    j.bool_field("ok", refused.is_none());
+                    j.bool_field("dry_run", dry);
+                    j.bool_field("written", false);
+                    j.str_field("node", id);
+                    j.str_field("path", &path);
+                    j.num_field("revision", revision as f64);
+                    j.str_field("opened", &opened);
+                    tried_fields(&mut j, &refused, checked, &findings, &report, &about);
+                    j.str_field(
+                        "message",
+                        &match (&refused, dry) {
+                            (Some(why), _) => why.clone(),
+                            (None, true) => format!(
+                                "Checked, not written: saved now, {id} would be revision {revision}."
+                            ),
+                            (None, false) => unreachable!("a save that is not refused is written"),
+                        },
+                    );
+                }
+            }
+        }
+    }
+    j.raw("}");
+    Ok(j.0)
+}
+
+/// What a dry run found, as the screen shows it beside what was typed.
+fn tried_fields(
+    j: &mut Json,
+    refused: &Option<String>,
+    checked: bool,
+    findings: &vleo_files::checks::Findings,
+    report: &Option<(Vec<vleo_sheet::method::Case>, vleo_sheet::method::Report)>,
+    about: &[&str],
+) {
+    j.str_field("refused", refused.as_deref().unwrap_or(""));
+    // Whether what was typed was checked: when its content is refused, no
+    // finding or case is given in its place.
+    j.bool_field("checked", checked);
+    findings_field(j, findings);
+    j.key("about").raw("[");
+    for (i, a) in about.iter().enumerate() {
+        if i > 0 {
+            j.raw(",");
+        }
+        j.raw(&json::string(a));
+    }
+    j.raw("]");
+    j.bool_field("needs_record", !about.is_empty());
+    j.key("method").raw("{");
+    j.bool_field("runs", report.is_some());
+    j.key("diags").raw("[");
+    if let Some((_, r)) = report {
+        for (i, d) in r.diags.iter().enumerate() {
+            if i > 0 {
+                j.raw(",");
+            }
+            j.raw("{");
+            j.num_field("line", d.line as f64);
+            j.str_field(
+                "severity",
+                if d.severity == vleo_sheet::method::Severity::Error {
+                    "error"
+                } else {
+                    "warning"
+                },
+            );
+            j.str_field("msg", &d.msg);
+            j.raw("}");
+        }
+    }
+    j.raw("]");
+    j.key("cases").raw("[");
+    if let Some((_, r)) = report {
+        for (i, (c, v)) in r.cases.iter().enumerate() {
+            if i > 0 {
+                j.raw(",");
+            }
+            j.raw("{");
+            j.str_field("label", &c.label);
+            j.bool_field("refuses", c.refuses());
+            j.bool_field("agrees", v.agrees());
+            // The case's value is its reference, not the code's.
+            j.str_field("says", &v.text(c).replace("your code", "the case"));
+            j.raw("}");
+        }
+    }
+    j.raw("]}");
 }
 
 #[cfg(test)]

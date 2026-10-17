@@ -12,9 +12,21 @@
   * RIGHT, ITS FILE IN YOUR COPY. Its revision and writer, every signature
     and whether the node is signed as it is now, every request, and what its
     checks find, as the program reads them (`GET /v1/node/<id>/file`). Then
-    the steps that exist: sign the revision, ask for a contract change or a
-    breakdown, save a filled lesson form. One next step is named, by the
-    program.
+    the steps that exist: write it (its question, the explanation's three
+    texts, its method and its cases, F3-g2a), sign the revision, ask for a
+    contract change or a breakdown, save a filled lesson form. One next step
+    is named, by the program.
+  * WRITING IT, CHECKED AS IT IS TYPED. What is typed is kept here
+    (`W.editing`): the revision it began on, and only the parts the person
+    touched. It is sent, a moment after typing stops, as a dry run
+    (`POST /v1/node/<id>/edit`, `dry_run`): nothing is written, and the
+    program says what a save would be refused for, what signing would find,
+    and the method on each case. Only that answer is drawn while typing, never
+    the form under the caret; an answer to older typing is dropped. Saving
+    writes the next revision of the one it began on, so a file changed since
+    is a second writer, never written over. Opened again, what was typed is
+    brought onto the file as it now is: the parts not touched take its new
+    text, and a part both changed is shown beside the file's.
 
   Every step is the program's: nothing here judges a node, signs or writes a
   file. A file that changed in the copy since it was opened is the second
@@ -32,7 +44,33 @@ import { loadOverrides } from './inputs.js';
 import { drawNode } from './node.js';
 import { mountParts } from './nodeparts.js';
 
-const W = { id: '', file: null, notice: null, stale: null, loaded: null, unread: '', host: null, post: null, nodes: [], asking: null };
+const W = {
+  id: '', file: null, notice: null, stale: null, loaded: null, unread: '', host: null, post: null, nodes: [], asking: null,
+  editing: null, // what is typed, and the revision it began on, until the program takes it
+  rebasing: false, // the file opened again on a click, to bring the typing onto it
+  behind: null, // the file as it is now, when the typing began on an earlier one
+  seq: 0, timer: 0, // the typing checked last, and the check waiting to be asked
+};
+
+/** How long after typing stops a dry run is asked. */
+const SETTLE_MS = 600;
+
+/** The fields a person writes, as the program names them, with what each is
+ *  in the file now (`GET …/file`'s `content`). */
+const FIELDS = [
+  ['question', c => c.question],
+  ['explain_simply', c => c.explain.simply],
+  ['explain_breaks', c => c.explain.breaks],
+  ['explain_wrong', c => c.explain.wrong],
+  ['method_text', c => c.method_text],
+  ['case_csv', c => c.case_csv],
+];
+const DECLARED = ['author', 'ai', 'source', 'checked_by'];
+const WHY = [
+  ['believed', 'what was believed'], ['tested', 'how it was tested'], ['learned', 'what was learned'],
+  ['changed', 'what changed'], ['rests_on', 'what it rests on'], ['breaks_if', 'what would break it'],
+  ['risks', 'risk moves (optional)'], ['cost', 'what it cost (optional)'],
+];
 
 /** The index and the case, read once, as Explore reads them. */
 function ready() {
@@ -59,7 +97,11 @@ async function get(path) {
 
 /** Open the workspace at node `id`, the next time it is drawn. */
 export function openAt(id) {
-  if (id && id !== W.id) { W.id = id; W.file = null; W.notice = null; W.stale = null; W.asking = null; }
+  if (id && id !== W.id) {
+    clearTimeout(W.timer);
+    W.id = id; W.file = null; W.notice = null; W.stale = null; W.asking = null;
+    W.editing = null; W.behind = null; W.rebasing = false; W.seq++;
+  }
 }
 
 /** Draw the workspace into `host`. `post(path, fields)` writes with the launch's word;
@@ -73,6 +115,7 @@ export async function mountNode(host, post, nodes) {
     host.dataset.wired = '1';
     host.addEventListener('click', click);
     host.addEventListener('change', changed);
+    host.addEventListener('input', typed);
   }
   await draw();
 }
@@ -94,6 +137,14 @@ async function draw(keep) {
   if (id !== W.id) return;
   W.file = file;
   if (!keep) W.stale = null;
+  if (file && file.ok !== false && file.content && !keep) {
+    const e = W.editing;
+    W.behind = null;
+    if (!e || (e.opened !== file.opened && !e.touched.size)) W.editing = fromFile(file);
+    else if (e.opened !== file.opened && W.rebasing) rebaseOn(e, file);
+    else if (e.opened !== file.opened) W.behind = { writer: file.writer, revision: file.revision };
+  }
+  W.rebasing = false;
   const row = E.byId && E.byId.get(id);
   host.innerHTML = picker() + head(id, file, row) +
     '<div class="nw-grid">' +
@@ -188,11 +239,166 @@ function yourFile(id, f) {
           esc(id) + '.lesson-form.html">the lesson form</a> — fill it anywhere, then save it here: ' +
           '<input type="file" id="nw-lesson" accept=".html,.toml"></p>'
       : '<p class="muted">Not yours to write: you read it here, and ask its node engineer or raise an issue.</p>') +
+    writeIt(f) +
     '<h4>its requests</h4>' + (reqs.length
       ? '<ul class="nw-list">' + reqs.map(r => '<li><b>' + esc(r.uid) + '</b> · ' + esc(r.kind) + ' · ' + esc(r.status) +
           ' · ' + esc(r.raised_by) + ', ' + esc(r.at) + '<div>' + esc(r.body) + '</div>' +
           (r.counts ? '' : '<div class="nw-not">does not count: ' + esc(r.why) + '</div>') + '</li>').join('') + '</ul>'
       : '<p class="muted">none</p>');
+}
+
+/** What the file says, field by field. */
+function baseOf(f) {
+  const c = f.content, b = {};
+  for (const [k, now] of FIELDS) b[k] = now(c) || '';
+  for (const k of DECLARED) b['declared.' + k] = (c.declared && c.declared[k]) || '';
+  for (const [k] of WHY) b['why.' + k] = '';
+  return b;
+}
+
+/** The typing begun on the file `f`: what it says, nothing touched yet. */
+function fromFile(f) {
+  const base = baseOf(f);
+  const vals = { ...base };
+  // The person writes the declaration as they make it: an assistant's help is
+  // never filled in for them.
+  vals['declared.ai'] = '';
+  return { opened: f.opened, revision: f.revision, base, vals, touched: new Set(), theirs: {} };
+}
+
+/** The typing brought onto the file `f` as it now is: what was not touched
+ *  takes its new text; what was touched is kept, and where the file changed it
+ *  too, the file's is kept beside it to compare. */
+function rebaseOn(e, f) {
+  const now = baseOf(f);
+  for (const k of Object.keys(now)) {
+    if (!e.touched.has(k)) e.vals[k] = k === 'declared.ai' ? '' : now[k];
+    else if (now[k] !== e.base[k]) e.theirs[k] = now[k];
+  }
+  e.base = now; e.opened = f.opened; e.revision = f.revision;
+}
+
+/** What is to be sent: each part the person touched, when it differs from the
+ *  file it began on; the declaration with a method or cases; the record when
+ *  any of it is written. */
+function changes() {
+  const e = W.editing;
+  if (!e) return {};
+  const out = {};
+  for (const [k] of FIELDS) if (e.touched.has(k) && e.vals[k] !== e.base[k]) out[k] = e.vals[k];
+  if ('method_text' in out || 'case_csv' in out) for (const k of DECLARED) out['declared.' + k] = e.vals['declared.' + k];
+  if (WHY.some(([k]) => (e.vals['why.' + k] || '').trim())) for (const [k] of WHY) out['why.' + k] = e.vals['why.' + k];
+  return out;
+}
+
+/** The write-it block: the four parts, the declaration and the record. */
+function writeIt(f) {
+  if (!f.editable) {
+    return '<h4>write it</h4><p class="muted nw-cannot">Not written here: ' + esc(f.edit_why_not || '') + '.</p>';
+  }
+  const e = W.editing || { vals: {}, theirs: {} };
+  const v = k => esc(e.vals[k] || '');
+  const theirs = k => k in e.theirs
+    ? '<div class="nw-theirs">changed in the file meanwhile too; yours is kept above, and a save writes yours. The file\'s:' +
+      '<pre>' + esc(e.theirs[k]) + '</pre></div>'
+    : '';
+  const area = (k, rows, cls) => '<textarea data-edit="' + k + '" rows="' + rows + '" class="nw-wide' + (cls ? ' ' + cls : '') + '">' + v(k) + '</textarea>' + theirs(k);
+  const behind = W.behind
+    ? '<div class="blocked nw-behind"><b>what you typed began on revision ' + esc(e.revision) + '</b><div>The file is now revision ' +
+      esc(W.behind.revision) + ', written by ' + esc(W.behind.writer || 'someone') + '. A save is refused until you bring your typing onto it. ' +
+      '<button class="ctl" id="nw-rebase">Bring it onto revision ' + esc(W.behind.revision) + '</button></div></div>'
+    : '';
+  return '<h4>write it</h4>' + behind +
+    '<p class="muted">Checked as you type, and written only when you save it. The page in the centre is today\'s design\'s; ' +
+      'your revision\'s own page comes next (F3-g2b).</p>' +
+    '<p><label>its question<br><input data-edit="question" class="nw-wide" value="' + v('question') + '"></label>' + theirs('question') + '</p>' +
+    '<p><label>said simply<br>' + area('explain_simply', 3) + '</label></p>' +
+    '<p><label>where it breaks<br>' + area('explain_breaks', 3) + '</label></p>' +
+    '<p><label>the common misreading<br>' + area('explain_wrong', 3) + '</label></p>' +
+    '<p><label>its method<br>' + area('method_text', 10, 'nw-code') + '</label></p>' +
+    '<p><label>its cases (results/isolation.csv)<br>' + area('case_csv', 6, 'nw-code') + '</label></p>' +
+    '<fieldset class="nw-declared"><legend>who made the method and its numbers</legend>' +
+      '<label>author <input data-edit="declared.author" value="' + v('declared.author') + '"></label> ' +
+      '<label>an assistant helped <select data-edit="declared.ai" class="ctl">' +
+        [['', 'say which'], ['none', 'not at all'], ['wording', 'with the wording'], ['transcribed', 'it was transcribed'], ['relation', 'it supplied the relation']]
+          .map(([o, l]) => '<option value="' + o + '"' + ((e['declared.ai'] || '') === o ? ' selected' : '') + '>' + l + '</option>').join('') +
+      '</select></label> ' +
+      '<label>source <input data-edit="declared.source" value="' + v('declared.source') + '"></label> ' +
+      '<label>checked by <input data-edit="declared.checked_by" value="' + v('declared.checked_by') + '"></label></fieldset>' +
+    '<fieldset class="nw-why"><legend>which belief broke: needed when its question or its method changes</legend>' +
+      WHY.map(([k, l]) => '<label>' + esc(l) + '<br>' + area('why.' + k, 2) + '</label>').join('') + '</fieldset>' +
+    '<div class="nw-live" aria-live="polite"></div>' +
+    '<p><button class="ctl" id="nw-save">Save as the next revision</button></p>';
+}
+
+/** The program's answer to a dry run, drawn into the live part alone. */
+function drawLive(r) {
+  const at = $('.nw-live', W.host);
+  if (!at) return;
+  if (!r || r.conflict) {
+    at.innerHTML = '<p class="sh-refused">' + esc((r && r.message) || 'not checked') + '</p>';
+    return;
+  }
+  if (r.ok === false && !r.dry_run) {
+    at.innerHTML = '<p class="sh-refused">' + esc(r.message || 'not checked') + '</p>';
+    return;
+  }
+  if (r.checked === false) {
+    // What was typed could not be checked: nothing is shown in its place.
+    at.innerHTML = '<p class="sh-refused nw-would">' + esc('A save would be refused: ' + r.refused) + '</p>' +
+      '<p class="muted">What you typed is not checked until this is mended.</p>';
+    return;
+  }
+  const m = r.method || { cases: [], diags: [] };
+  const errors = (r.findings || []).filter(x => x.level === 'error');
+  at.innerHTML =
+    '<p class="' + (r.refused ? 'sh-refused' : 'sh-said') + ' nw-would">' +
+      esc(r.refused ? 'A save would be refused: ' + r.refused : 'A save would write revision ' + r.revision + '.') + '</p>' +
+    (m.diags.length ? '<ul class="nw-list nw-diags">' + m.diags.map(d => '<li class="nw-' + esc(d.severity) + '">line ' +
+      esc(d.line) + ': ' + esc(d.msg) + '</li>').join('') + '</ul>' : '') +
+    (m.cases.length
+      ? '<table class="sh-table nw-cases"><thead><tr><th>case</th><th></th></tr></thead><tbody>' +
+        m.cases.map(c => '<tr class="' + (c.agrees ? '' : 'nw-differs') + '"><td>' + esc(c.label) + '</td><td>' +
+          esc(c.agrees ? 'agrees' : c.says) + '</td></tr>').join('') + '</tbody></table>'
+      : '<p class="muted">' + esc(m.runs ? 'its method runs on no case' : 'its method does not run on its cases yet') + '</p>') +
+    '<p class="' + (errors.length ? 'nw-not' : 'nw-ok') + ' nw-sign-would">' + esc(errors.length
+      ? 'Signing it would be refused: ' + plural(errors.length, 'finding') + ', ' + errors.map(x => x.what).join('; ')
+      : 'Its checks would let it be signed.') + '</p>';
+}
+
+/** Typing: kept, and checked a moment after it stops. */
+function typed(e) {
+  const k = e.target && e.target.dataset && e.target.dataset.edit;
+  const ed = W.editing;
+  if (!k || !ed) return;
+  ed.vals[k] = e.target.value;
+  ed.touched.add(k);
+  // A method or cases written anew are somebody's anew: who wrote, copied
+  // and checked the old ones is not carried over to them.
+  if ((k === 'method_text' || k === 'case_csv') && ed.vals[k] !== ed.base[k]) {
+    for (const d of ['author', 'source', 'checked_by']) {
+      const f = 'declared.' + d;
+      if (ed.touched.has(f) || !ed.vals[f]) continue;
+      ed.vals[f] = '';
+      const input = $('[data-edit="' + f + '"]', W.host);
+      if (input) input.value = '';
+    }
+  }
+  // Older typing's answer, still on its way, is no longer this typing's.
+  W.seq++;
+  clearTimeout(W.timer);
+  W.timer = setTimeout(check, SETTLE_MS);
+}
+
+/** Ask for a dry run of what is typed; an answer to older typing is dropped. */
+async function check() {
+  const id = W.id, seq = W.seq, ed = W.editing;
+  if (!W.file || !ed) return;
+  const sent = changes();
+  if (!Object.keys(sent).length) { drawLive({ ok: true, dry_run: true, checked: false, refused: 'nothing has changed yet' }); return; }
+  const r = await W.post('/v1/node/' + encodeURIComponent(id) + '/edit', { opened: ed.opened, dry_run: '1', ...sent });
+  if (seq !== W.seq || id !== W.id) return;
+  drawLive(r);
 }
 
 /** The program's answer to a step, said, and drawn: a second writer keeps the
@@ -219,13 +425,25 @@ async function click(e) {
     return;
   }
   if (t.dataset.open) { openAt(t.dataset.open); return draw(); }
-  if (t.id === 'nw-reopen') { W.notice = null; return draw(); }
+  if (t.id === 'nw-reopen' || t.id === 'nw-rebase') { W.notice = null; W.rebasing = true; return draw(); }
   const opened = W.file && W.file.opened;
   switch (t.id) {
     case 'nw-go': {
       const id = $('#nw-id', W.host).value.trim();
       if (id) { openAt(id); return draw(); }
       return;
+    }
+    case 'nw-save': {
+      const id = W.id;
+      clearTimeout(W.timer); W.seq++;
+      // Saved over the revision the typing began on: a file changed since is
+      // a second writer, never written over.
+      const r = await W.post('/v1/node/' + encodeURIComponent(id) + '/edit',
+        { opened: W.editing ? W.editing.opened : opened, ...changes() });
+      // Taken: what the file now says is shown. Refused, or a second writer:
+      // what was typed is kept.
+      if (r && r.ok && r.written && id === W.id) W.editing = null;
+      return said(id, r, 'the node was not saved');
     }
     case 'nw-sign': {
       const id = W.id;

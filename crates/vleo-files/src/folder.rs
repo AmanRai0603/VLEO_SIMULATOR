@@ -112,6 +112,29 @@ impl Spec {
         Spec::read(SPEC)
     }
 
+    /// The `## ` headings the text of `role` holds, in their order.
+    // An edit is made in the application, never in the page (`edit`).
+    #[cfg(not(target_arch = "wasm32"))]
+    pub(crate) fn headings(&self, role: &str) -> Vec<String> {
+        self.texts
+            .iter()
+            .find(|t| t.role == role)
+            .map(|t| t.headings.clone())
+            .unwrap_or_default()
+    }
+
+    /// What the text of `role` may not hold that `text` does, and why, as
+    /// the folder's checks say it.
+    // An edit is made in the application, never in the page (`edit`).
+    #[cfg(not(target_arch = "wasm32"))]
+    pub(crate) fn forbidden(&self, role: &str, text: &str) -> Option<String> {
+        let rule = self.texts.iter().find(|t| t.role == role)?;
+        rule.forbid
+            .iter()
+            .find(|bad| text.contains(bad.as_str()))
+            .map(|bad| format!("it holds {bad:?}: {}", rule.forbid_says))
+    }
+
     /// A pattern from its TOML.
     pub fn read(toml_text: &str) -> Result<Spec, Error> {
         let v: toml::Value = toml_text.parse().map_err(|e| {
@@ -236,7 +259,7 @@ fn mentions(code: &str, name: &str) -> bool {
 
 /// The `## ` sections of a Markdown text, outside fenced code: each title, its
 /// body and the line it starts on.
-fn sections(text: &str) -> Vec<(String, String, usize)> {
+pub(crate) fn sections(text: &str) -> Vec<(String, String, usize)> {
     let mut out: Vec<(String, String, usize)> = Vec::new();
     let mut fence = false;
     for (n, l) in text.replace('\r', "").split('\n').enumerate() {

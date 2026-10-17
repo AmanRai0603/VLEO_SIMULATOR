@@ -197,12 +197,20 @@ pub fn check_node(f: &File) -> Findings {
     out
 }
 
+/// Where a case's expected value may come from, in a node's results: never
+/// from the code under test (AGENTS.md, rule 4). The one list.
+pub const ORIGINS: &[&str] = &["code", "hand", "spreadsheet", "paper"];
+
+/// The provenances that are not a reference at all: the code under test's
+/// own answer, or one an assistant made. The one list.
+pub const NOT_A_REFERENCE: &[&str] = &["self-snapshot", "agent-generated"];
+
 /// No case's expected value comes from the code under test (AGENTS.md, rule
 /// 4): a case whose provenance is `self-snapshot` or `agent-generated` is
 /// refused, by name.
 fn cases(f: &File, out: &mut Findings) {
     for c in &f.cases {
-        if matches!(c.provenance.as_str(), "self-snapshot" | "agent-generated") {
+        if NOT_A_REFERENCE.contains(&c.provenance.as_str()) {
             out.error(
                 &place_of(f, &c.block_uid),
                 format!(
@@ -445,7 +453,7 @@ fn results(f: &File, b: &Block, ins: &[&Port], out_port: Option<&Port>, out: &mu
             }
         };
         let origin = t.get(r, "origin");
-        if !["code", "hand", "spreadsheet", "paper"].contains(&origin) {
+        if !ORIGINS.contains(&origin) {
             out.error(&b.id, format!(
                 "results line {line}: origin is {origin:?}; an expected value comes from code, hand, a spreadsheet or a paper — never from the code under test"
             ));
@@ -541,10 +549,9 @@ fn case_value(v: &str) -> Option<f64> {
 /// contract; every value is taken to SI by them, as intake takes it.
 fn method(f: &File, b: &Block, ins: &[&Port], out_port: Option<&Port>, out: &mut Findings) {
     use vleo_sheet::method as m;
-    let Some((src, sig, cases)) = method_cases(f, b, ins, out_port, out) else {
+    let Some((_, report)) = report_of(f, b, ins, out_port, out) else {
         return;
     };
-    let report = m::report(&src, &sig, &cases);
     for d in &report.diags {
         let what = format!("its method, line {}: {}", d.line, d.msg);
         if d.severity == m::Severity::Error {
@@ -563,6 +570,45 @@ fn method(f: &File, b: &Block, ins: &[&Port], out_port: Option<&Port>, out: &mut
             );
         }
     }
+}
+
+/// The method of the node `b` in `f` run on its own cases, as its checks run
+/// it: the cases, and the method language's report on each. `None` when it
+/// holds no method or no results, or a unit does not read. What a dry run of
+/// an edit answers case by case (`edit::try_edit`), by the code its checks
+/// use.
+pub fn method_report(
+    f: &File,
+    b: &Block,
+) -> Option<(Vec<vleo_sheet::method::Case>, vleo_sheet::method::Report)> {
+    let ports: Vec<&Port> = f.ports.iter().filter(|p| p.block_uid == b.uid).collect();
+    let ins: Vec<&Port> = ports
+        .iter()
+        .copied()
+        .filter(|p| p.direction == "in")
+        .collect();
+    let out_port = ports.iter().copied().find(|p| p.direction == "out");
+    report_of(f, b, &ins, out_port, &mut Findings::default())
+}
+
+fn report_of(
+    f: &File,
+    b: &Block,
+    ins: &[&Port],
+    out_port: Option<&Port>,
+    out: &mut Findings,
+) -> Option<(Vec<vleo_sheet::method::Case>, vleo_sheet::method::Report)> {
+    let (src, sig, cases) = method_cases(f, b, ins, out_port, out)?;
+    let report = vleo_sheet::method::report(&src, &sig, &cases);
+    Some((cases, report))
+}
+
+/// The declaration of the node `b` in `f`, held to what every node's is held
+/// to (rule 6): who made its method, and how an assistant helped, if at all.
+pub fn declared(f: &File, b: &Block) -> Findings {
+    let mut out = Findings::default();
+    declaration(f, b, &mut out);
+    out
 }
 
 /// A node's method, its signature and its cases in SI, read from its file:
