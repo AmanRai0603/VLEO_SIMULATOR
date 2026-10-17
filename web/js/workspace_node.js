@@ -112,6 +112,21 @@ export function openAt(id) {
   }
 }
 
+/** Open row `id` in the workspace already drawn, at today's page, as a row's
+ *  link on the page opens it: what was typed for another node is dropped, as
+ *  it is by every way of opening another node here. */
+export async function openRow(id) {
+  atToday(id);
+  await draw();
+}
+
+/** The workspace at row `id`'s page as today's design holds it, the next
+ *  time it is drawn. */
+export function atToday(id) {
+  openAt(id);
+  W.view = 'today';
+}
+
 /** Draw the workspace into `host`. `post(path, fields)` writes with the launch's word;
  *  `nodes` are the person's own, as My work lists them. */
 export async function mountNode(host, post, nodes) {
