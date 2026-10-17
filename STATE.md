@@ -109,7 +109,9 @@ Handed over Saturday 17 October (S1 to S3: F1 to F3-f, the key's proof, F3-g1, t
     - `vleo_files::intake::copy_form`: a node file of the copy laid out as a release's folder (`copy_release`) and taken by `node_form`, today's design's own intake, and nothing else.
     - `GET /v1/node/<id>/live`: planned as today's design plans a release, laid over it for that request only, drawn by the page's own fragment, said so, with what it changes, what is withheld and why, and what a release does not bring in. Nothing of today's design is written or run.
     - The Node workspace's centre has two pages, today's and the copy's revision's, the sheet alone on the second.
-    - Proved by a library test, a program test and `tools/edit_check.py`. Questions 18 and 19 for Aman are in its body. Its Opus review is running; CI is pending.
+    - Proved by a library test, a program test, `tools/edit_check.py` and `tools/node_check.py`. Questions 18 and 19 for Aman are in its body.
+
+    The Opus review found two blocking points (a plan that withheld one change still drew the others, though today's design refuses such a release whole; the copy was never held to the node's own checks) and four more; all fixed in eedf56c6, each with a test shown red but the screen's stale-answer guard named untested. CI is pending on the fixes.
 - **What 171 decides, which B's PRs must follow:**
   - **Ownership follows the mount.** Only the programme's file (mounting `systems`) and the systems' file (mounting each `l3_*`) mount anything.
   - **A group file registers only node engineers.** It holds nobody the programme's file registers, and no key it registers. `open_group_in` refuses anything else, by name.
@@ -121,7 +123,7 @@ Handed over Saturday 17 October (S1 to S3: F1 to F3-f, the key's proof, F3-g1, t
   - **`checks::ORIGINS` and `checks::NOT_A_REFERENCE` are the one list of each.**
   - **For B:** the Node workspace's right side gains *write it* (`.nw-live`, `data-edit` fields); a scenario that counts its parts must allow for it.
 - **What 189 decides:**
-  - **A copy's revision is drawn only as today's design would take it**: the same intake as a release, so its question and its explanation's texts are not on its page until intake takes them (question 18).
+  - **A copy's revision is drawn only as today's design would take it**: the same intake as a release, the node's own checks first, and nothing drawn when anything is withheld. So its question and its explanation's texts are not on its page until intake takes them (question 18).
   - **For B:** the Node workspace's centre names its page on a button (`.nw-view.sel`), not in its heading; `drawNode` takes `opts.fragment` and then draws the sheet alone.
 - **What 186 and 187 decide:**
   - **A breakdown is the group file's**: one wire into each output of the node from the child that answers it. The node's own file is not touched until F5 issues it again.
@@ -178,7 +180,7 @@ Handed over Saturday 17 October (S1 to S3: F1 to F3-f, the key's proof, F3-g1, t
 - **Lockfiles:** `crates/vleo-py` keeps its own, built `--locked` in CI, and so does `crates/vleo-kernel-wasm` until 177 removes it. A new dependency of `vleo-files` or `vleo-server` needs them refreshed, as 171 does.
 - **Disk:** the container's allowance filled on S1 and again on S2. `xtask files-wasm` and the scenarios leave a `target/` of 10 GB or more inside the worktree they run in; delete it after a push. Old worktrees' `target/` folders and `target/*/incremental` were deleted to make room.
 - **Next for A, in order:**
-  - **189's review**, then CI on 189.
+  - **CI on 189's review fixes.**
   - **For Aman:** the brief's questions 9 (one node shape, F3-g0) and 10 (ports), 7 and 8 (where today's page's Rows, Architecture, Forms and manual go), and 11 to 19 (F3-g2).
   - **Then F3-h, the node view's removal**, once F3-g2 covers what it shows, with the panel checks moved to `/app`.
 
