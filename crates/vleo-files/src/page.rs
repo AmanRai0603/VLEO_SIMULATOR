@@ -318,6 +318,10 @@ pub const WASM_SOURCES: &[&str] = &[
     "crates/vleo-files-wasm/src",
     // The lesson check a node's own checks run (`checks::lesson`).
     "crates/vleo-sheet/src/lesson.rs",
+    // The method language a node's own checks run (`checks::method`), and a
+    // breakdown's children (`breakdown::reproduces`).
+    "crates/vleo-sheet/src/method.rs",
+    "crates/vleo-sheet/src/method",
 ];
 
 /// The fingerprint of [`WASM_SOURCES`] as they are under `root`: every file,

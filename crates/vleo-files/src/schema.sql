@@ -114,7 +114,9 @@ CREATE TABLE port (
 
 -- A wire into an input. `from_ref` is `<block uid>.<port>` in this file,
 -- `<group>.<block id>.<port>` in another group, or `case` for a value a run
--- sets.
+-- sets. In a group file, a wire into an output of a node broken down says
+-- which child's port answers it (`breakdown`, F4): `from_ref` is
+-- `<child uid>.<port>`.
 CREATE TABLE wire (
   to_block  TEXT NOT NULL,
   to_port   TEXT NOT NULL,

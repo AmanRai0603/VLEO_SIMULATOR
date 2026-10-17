@@ -639,6 +639,41 @@ pub fn mounted_by<'a>(
     Ok((registry, owner))
 }
 
+/// Whether `by`, with the key `public_key` at `at`, may change the group
+/// file of `group` as its owner: the person the file that mounts it assigns
+/// the mount, or their deputy, with a key the programme's file counts for
+/// them then. The one rule of who frames a branch and whom it registers,
+/// wherever it is asked (People's changes, F1; the breakdown, F4). Gives the
+/// owner.
+pub fn may_frame<'a>(
+    group: &str,
+    by: &str,
+    public_key: &str,
+    at: &str,
+    mounted_by: &'a Registry,
+    programme: &Registry,
+) -> Result<&'a str, Error> {
+    programme.key(by, public_key, at)?;
+    let owner = owner_of(mounted_by, group).ok_or_else(|| {
+        refused(
+            ErrorKind::Signature,
+            format!(
+                "{} mounts no group {group:?}, so nobody changes its group file",
+                mounted_by.from
+            ),
+        )
+    })?;
+    if !programme.acts_for(by, owner) {
+        return Err(refused(
+            ErrorKind::Signature,
+            format!(
+                "{by} may not change {group}'s group file: its owner {owner}, or their deputy, does"
+            ),
+        ));
+    }
+    Ok(owner)
+}
+
 /// A group file checked through the file that mounts it: signed, as it is
 /// now, by the owner that file assigns, or their deputy, with a key the
 /// programme's file registers. The owner is a system engineer or a subsystem

@@ -154,7 +154,15 @@ pub fn judge(p: &Program, sig: &Signature, c: &Case) -> Verdict {
             }
         }
     }
-    match (run_all(p, &c.inputs), c.expect) {
+    judge_outcome(run_all(p, &c.inputs), c)
+}
+
+/// Whether what a method, or a node's children together, gave for one case
+/// agrees with the case: within its own tolerance, refused where it must
+/// refuse, and every published member the case names too. The one rule of
+/// agreeing with a case, for a method (`judge`) and for a breakdown.
+pub fn judge_outcome(got: Result<(Outcome, Vec<(String, f64)>), Diag>, c: &Case) -> Verdict {
+    match (got, c.expect) {
         (Err(d), _) => Verdict::Faulted(d.to_string()),
         (Ok((Outcome::Refused { .. }, _)), None) => Verdict::Agrees,
         (Ok((Outcome::Refused { reason, .. }, _)), Some(_)) => Verdict::RefusedAnswer { reason },

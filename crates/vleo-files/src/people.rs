@@ -154,18 +154,7 @@ pub fn change(
             programme,
         } => {
             let id = file.meta.get("group_id").cloned().unwrap_or_default();
-            programme.key(by, &mine, at)?;
-            let owner = chain::owner_of(mounted_by, &id).ok_or_else(|| {
-                refused(format!(
-                    "{} mounts no group {id:?}, so nobody changes whom it registers",
-                    mounted_by.from
-                ))
-            })?;
-            if !programme.acts_for(by, owner) {
-                return Err(refused(format!(
-                    "{by} may not change whom {id}'s group file registers: its owner {owner}, or their deputy, does"
-                )));
-            }
+            chain::may_frame(&id, by, &mine, at, mounted_by, programme)?;
             if let Change::Register { person, .. } = change {
                 if programme.file.people.iter().any(|p| p.name == person.name) {
                     return Err(refused(format!(
