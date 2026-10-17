@@ -1772,3 +1772,126 @@ fn a_request_s_uid_is_its_own_whatever_the_file_s_table_allows() {
     );
     let _ = std::fs::remove_dir_all(drive.parent().unwrap());
 }
+
+// ── A group's release, sealed in the copy, goes back as a new file (F5) ──
+
+/// Solar's release `version` on the drive and in a copy.
+fn release_path(version: &str) -> String {
+    format!("groups/l3_solar/releases/l3_solar-{version}.vleo")
+}
+
+/// Nia and Ivo sign their nodes in the copy, and Ola seals solar `version`
+/// there: the path of the release in the copy.
+fn sealed_in(copy: &Path, version: &str) -> String {
+    let signs = |path: &str, who: &str, k: &SigningKey| {
+        let g = opened(copy).groups.remove(0);
+        let seen = opened_digest(&copy.join(path));
+        match sign_in_place(copy, path, &seen, who, k, AT, APP, &g).unwrap() {
+            Saved::Written { .. } => {}
+            other => panic!("{who} did not sign: {other:?}"),
+        }
+    };
+    // Ivo's node, written in the copy as a whole node, for him to sign.
+    let mut ivo = renamed(node(), "l3_solar", "ivo_uid");
+    ivo.blocks[0].id = s("ivo_node");
+    ivo.meta.insert(s("writer"), s("Test Ivo"));
+    sqlite::write(&ivo, &copy.join(IVO)).unwrap();
+    signs(NODE, "Test Nia", &key(74));
+    signs(IVO, "Test Ivo", &key(75));
+    let o = opened(copy);
+    let at = vleo_files::release::seal_in_place(
+        copy,
+        "l3_solar",
+        version,
+        "Test Ola",
+        &key(73),
+        AT,
+        APP,
+        &o.systems,
+        &o.programme,
+    )
+    .unwrap();
+    assert_eq!(at, release_path(version));
+    at
+}
+
+#[test]
+fn a_release_sealed_in_the_copy_goes_back_as_a_new_file_by_its_owner_alone() {
+    let (drive, copy) = world("release");
+    let rel = sealed_in(&copy, "1.0");
+    // Nia's signed node is hers to put back, and the release is not.
+    let r = pb(&copy, &drive, "Test Nia", None).unwrap();
+    let l = line(&r, &rel);
+    assert!(!l.back && l.why.contains("sealed by \"Test Ola\""), "{l:?}");
+    // Ola's: the release goes back, and the nodes, signed by others, do not.
+    let r = pb(&copy, &drive, "Test Ola", None).unwrap();
+    assert_eq!(r.back(), [rel.clone()], "{:?}", r.lines);
+    assert!(line(&r, &rel)
+        .why
+        .contains("l3_solar 1.0, sealed by Test Ola"));
+    assert!(!drive.join("groups/l3_solar/releases").exists());
+    let r = pb(&copy, &drive, "Test Ola", Some(vec![named(&copy, &rel)])).unwrap();
+    assert!(r.written);
+    assert_eq!(
+        std::fs::read(drive.join(&rel)).unwrap(),
+        std::fs::read(copy.join(&rel)).unwrap()
+    );
+    // On the drive it checks through the drive's chain.
+    let o = opened(&drive);
+    let f = sqlite::read(&drive.join(&rel)).unwrap();
+    assert!(chain::check_release_in(&f, &o.systems, &o.programme)
+        .unwrap()
+        .holds());
+    let left: Vec<_> = std::fs::read_dir(drive.join("groups/l3_solar/releases"))
+        .unwrap()
+        .map(|e| e.unwrap().file_name().to_string_lossy().into_owned())
+        .collect();
+    assert_eq!(left, ["l3_solar-1.0.vleo"]);
+    let _ = std::fs::remove_dir_all(drive.parent().unwrap());
+}
+
+#[test]
+fn a_release_goes_back_only_after_the_drive_s_latest_and_is_never_written_over() {
+    let (drive, copy) = world("release-race");
+    let other = drive.parent().unwrap().join("other");
+    take_copy(&drive, &other);
+    // 1.0 sealed in the copy and put back.
+    let rel = sealed_in(&copy, "1.0");
+    pb(&copy, &drive, "Test Ola", Some(vec![named(&copy, &rel)])).unwrap();
+    // In another copy taken before it: 1.0 again is never written over.
+    let again = sealed_in(&other, "1.0");
+    let r = pb(&other, &drive, "Test Ola", None).unwrap();
+    assert!(!line(&r, &again).back, "{:?}", r.lines);
+    // 1.1, sealed beside the drive's 1.0 that copy never saw, does not go back.
+    let beside = drive.parent().unwrap().join("beside");
+    take_copy(&drive, &beside);
+    std::fs::remove_dir_all(beside.join("groups/l3_solar/releases")).unwrap();
+    let late = sealed_in(&beside, "1.1");
+    let r = pb(&beside, &drive, "Test Ola", None).unwrap();
+    let l = line(&r, &late);
+    assert!(
+        !l.back
+            && l.why.contains(
+                "it follows no release, and the drive's latest release of l3_solar is 1.0"
+            ),
+        "{l:?}"
+    );
+    let _ = std::fs::remove_dir_all(drive.parent().unwrap());
+}
+
+#[test]
+fn a_release_changed_after_its_seal_does_not_go_back() {
+    let (drive, copy) = world("release-changed");
+    let rel = sealed_in(&copy, "1.0");
+    let mut f = sqlite::read(&copy.join(&rel)).unwrap();
+    let p = f.ports.iter_mut().find(|p| p.block_uid == UID).unwrap();
+    p.symbol.push('x');
+    sqlite::write(&f, &copy.join(&rel)).unwrap();
+    let r = pb(&copy, &drive, "Test Ola", None).unwrap();
+    let l = line(&r, &rel);
+    assert!(
+        !l.back && l.why.contains("does not check through the chain"),
+        "{l:?}"
+    );
+    let _ = std::fs::remove_dir_all(drive.parent().unwrap());
+}
