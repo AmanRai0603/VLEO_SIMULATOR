@@ -32,7 +32,9 @@ export async function openNode(id) {
  *  false leaves its six parts to whoever draws them beside it.
  *  `opts.fragment` is a sheet drawn by the program other than today's (the
  *  Node workspace's revision over today's design): only the sheet is drawn,
- *  and nothing of today's run, relation, figures or lesson beside it. */
+ *  and nothing of today's run, relation, figures or lesson beside it.
+ *  `opts.current`, when given, says whether this drawing is still the one
+ *  wanted: one superseded while it fetched draws nothing. */
 export async function drawNode(body, runHost, id, opts = {}) {
   const r = S.byId.get(id);
   if (!r || !body) return;
@@ -46,6 +48,7 @@ export async function drawNode(body, runHost, id, opts = {}) {
     fetch('/v1/fragment/' + encodeURIComponent(id)).then(x => x.text()).catch(() => null),
     fetch('/v1/lesson/' + encodeURIComponent(id)).then(x => x.json()).catch(() => null),
   ]);
+  if (opts.current && !opts.current()) return;
   // A LESSON IS CONTENT, drawn from the component library. Most rows have none,
   // and say nothing about it; a lesson that fails its check says why instead of
   // being drawn half-right.
@@ -143,6 +146,10 @@ export async function drawNode(body, runHost, id, opts = {}) {
       // A risk-register row concludes what the whole tree has done to its
       // risks, which no single sheet holds: asked for when the tab opens.
       const dr = p && $('.derisk-rollup', p);
+      if (dr && !dr.dataset.mounted && other) {
+        dr.dataset.mounted = '1';
+        dr.innerHTML = '<p class="muted">Not asked: the risk register is read from today\'s design, and this sheet is not today\'s.</p>';
+      }
       if (dr && !dr.dataset.mounted) { dr.dataset.mounted = '1'; mountRollup(dr); }
     };
   });
@@ -154,7 +161,7 @@ export async function drawNode(body, runHost, id, opts = {}) {
  *  form's link when it is today's sheet. */
 function sheetHtml(id, fragment, today, hasLesson) {
   return '<section class="seg" data-seg="sheet"><h3 class="seg-h">' +
-    '<span class="seg-n">3</span>the sheet — what it says</h3>' +
+    (today ? '<span class="seg-n">3</span>' : '') + 'the sheet — what it says</h3>' +
     // READ IT HERE. The generated page is what the sheet says. Nothing in
     // this tool writes a node: its owner writes it, in their own file.
     (today ? '<div class="tabrow sub sheet-tabs">' +
@@ -165,8 +172,9 @@ function sheetHtml(id, fragment, today, hasLesson) {
         '</a>' +
     '</div>' : '') +
     '<div class="sheet-read">' +
-      (fragment || '<p class="empty">The sheet for <code>' + esc(id) +
-        '</code> is not on disk. Run <code>cargo xtask docs</code>.</p>') +
+      (fragment || (today
+        ? '<p class="empty">The sheet for <code>' + esc(id) + '</code> is not on disk. Run <code>cargo xtask docs</code>.</p>'
+        : '<p class="empty">The program drew no sheet for <code>' + esc(id) + '</code>.</p>')) +
     '</div>' +
   '</section>';
 }

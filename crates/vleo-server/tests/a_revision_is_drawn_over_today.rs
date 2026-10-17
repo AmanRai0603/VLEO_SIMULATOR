@@ -14,12 +14,17 @@
 //! - a method with a line of Nia's, saved with its declaration and record as
 //!   revision 3, is drawn: the page carries the line and its version record,
 //!   and today's fragment does not;
-//! - a method changed in the copy's file with no record is withheld, said
-//!   why, and a transcription nobody checked is said as an assistant's
-//!   relation; neither is drawn;
-//! - a node file of a node today's design does not hold is refused, by name;
+//! - a method withheld (a risk moved that nobody registered) beside a cases
+//!   change that would apply alone, saved as revision 4: nothing is drawn,
+//!   since today's design refuses such a release whole;
+//! - a method that no longer reproduces its cases, saved as revision 5: its
+//!   checks refuse it, by the case, and nothing is drawn; nor is a
+//!   transcription nobody checked, written in the file by hand;
+//! - a file that says it is another group's than its folder, a node of
+//!   today's design with no file in the copy, and a node file of a node
+//!   today's design does not hold, are each refused, by name;
 //! - today's design is as it was: the node's page and its fragment are the
-//!   same bytes before, during and after (rule 5).
+//!   same bytes before, during and after, and it runs as it did (rule 5).
 
 use std::io::{Read, Write};
 use std::net::TcpStream;
@@ -406,6 +411,9 @@ fn a_revision_is_drawn_over_today() {
     };
     let was = today();
     let fragment = json_text(&was.1);
+    let run = || ask(port, "GET", "/v1/run?node=sw_activity_band", &[], false);
+    let ran = run();
+    assert!(ran.contains("\"ok\":true"), "{ran}");
 
     // With no copy: refused.
     let r = live();
@@ -419,7 +427,7 @@ fn a_revision_is_drawn_over_today() {
     // As copied: it changes nothing, and the page is today's, byte for byte.
     let r = live();
     assert!(
-        said(&r).contains("\"revision\":\"1\",\"writer\":\"Test Nia\",\"not_taken\":[],\"changes\":[],\"withheld\":[],\"open\":[],\"drawn\":true,\"changes_nothing\":true"),
+        said(&r).contains("\"revision\":\"1\",\"writer\":\"Test Nia\",\"not_taken\":[],\"checks\":[],\"changes\":[],\"withheld\":[],\"drawn\":true,\"changes_nothing\":true"),
         "{}",
         said(&r)
     );
@@ -456,7 +464,7 @@ fn a_revision_is_drawn_over_today() {
     let r = live();
     assert!(
         said(&r).contains(&format!(
-            "\"revision\":\"2\",\"writer\":\"Test Nia\",\"not_taken\":[{{\"what\":\"its question\",\"yours\":\"{question}\",\"page\":\"Which activity band does this F10.7 fall in?\"}}],\"changes\":[],"
+            "\"revision\":\"2\",\"writer\":\"Test Nia\",\"not_taken\":[{{\"what\":\"its question\",\"yours\":\"{question}\",\"page\":\"Which activity band does this F10.7 fall in?\"}}],\"checks\":[],\"changes\":[],"
         )),
         "{}",
         said(&r)
@@ -509,7 +517,9 @@ fn a_revision_is_drawn_over_today() {
     );
     assert!(said(&r).contains("de-risking · version"), "{}", said(&r));
     assert!(
-        said(&r).contains("\"withheld\":[],\"open\":[],\"drawn\":true,\"changes_nothing\":false"),
+        said(&r).contains(
+            "\"withheld\":[],\"record\":\"Its record of which belief broke is the node's own"
+        ) && said(&r).contains("\"drawn\":true,\"changes_nothing\":false"),
         "{}",
         said(&r)
     );
@@ -532,12 +542,87 @@ fn a_revision_is_drawn_over_today() {
         "drawing a revision moves nothing of today's design"
     );
 
-    // Changed in the copy's file itself, with no record: withheld, said why.
-    // And a transcription nobody checked: an assistant's relation.
+    // Saved through the edit route, a change that would apply beside one
+    // that is withheld: a release of it is refused whole, so nothing of it
+    // is drawn, not even what would apply alone. A risk moved that nobody
+    // registered withholds the method; the cases' new label would apply.
+    let f = file();
+    let cases = {
+        let k = "\"case_csv\":\"";
+        let at = f.find(k).unwrap() + k.len();
+        let end = f[at..].find("\",\"declared\"").unwrap();
+        f[at..at + end].replace("\\n", "\n").replace("\\\"", "\"")
+    };
+    assert!(cases.contains("the record's quietest day"), "{cases}");
+    let relabelled = cases.replacen("the record's quietest day", "the quietest day on record", 1);
+    let twice = format!("# Nia: and read again.\n{mine}");
+    let mut fields: Vec<(&str, &str)> = vec![
+        ("opened", field(&f, "opened")),
+        ("method_text", &twice),
+        ("case_csv", &relabelled),
+        ("declared.author", "Test Nia"),
+        ("declared.ai", "none"),
+        ("why.risks", "R-99 L5->L4"),
+    ];
+    fields.extend(why);
+    let r = post(port, EDIT, &fields);
+    assert!(
+        r.contains("\"written\":true") && r.contains("\"revision\":4"),
+        "{r}"
+    );
+    let r = live();
+    assert!(
+        said(&r).contains("\"withheld\":[{\"what\":\"method_text\""),
+        "{}",
+        said(&r)
+    );
+    assert!(
+        said(&r).contains("\"drawn\":false")
+            && said(&r).contains("today's design would refuse a release of it whole"),
+        "{}",
+        said(&r)
+    );
+    assert_eq!(html(&r), fragment, "nothing of it is drawn");
+
+    // A method that no longer reproduces its cases, saved: its checks
+    // refuse it, as today's design would refuse a release holding it.
+    let f = file();
+    let late = method.replace("if f107 >= 130 then", "if f107 >= 135 then");
+    let mut fields: Vec<(&str, &str)> = vec![
+        ("opened", field(&f, "opened")),
+        ("method_text", &late),
+        ("case_csv", &cases),
+        ("declared.author", "Test Nia"),
+        ("declared.ai", "none"),
+        ("why.risks", ""),
+    ];
+    fields.extend(why);
+    let r = post(port, EDIT, &fields);
+    assert!(
+        r.contains("\"written\":true") && r.contains("\"revision\":5"),
+        "{r}"
+    );
+    let r = live();
+    assert!(
+        said(&r).contains("\"checks\":[{\"place\":\"sw_activity_band\"")
+            && said(&r).contains("130 sfu exactly"),
+        "{}",
+        said(&r)
+    );
+    assert!(
+        said(&r).contains("\"drawn\":false")
+            && said(&r).contains("its checks find what today's design would refuse"),
+        "{}",
+        said(&r)
+    );
+    assert_eq!(html(&r), fragment);
+
+    // Changed in the copy's file itself: the method put back, and a
+    // transcription nobody checked. Its checks refuse it, by its declaration.
     let at = copy.join(NODE);
     let mut n = sqlite::read(&at).unwrap();
-    for t in n.tables.iter_mut().filter(|t| t.path == "versions.csv") {
-        t.csv = t.csv.lines().next().unwrap().to_string() + "\n";
+    for t in n.texts.iter_mut().filter(|t| t.kind == "pseudocode") {
+        t.body = format!("{mine}\n");
     }
     for t in n.tables.iter_mut().filter(|t| t.path == "declaration.csv") {
         t.csv = "author,ai,date,source,checked_by\nTest Nia,transcribed,2026-10-17,NOAA's table,\n"
@@ -546,21 +631,35 @@ fn a_revision_is_drawn_over_today() {
     sqlite::write(&n, &at).unwrap();
     let r = live();
     assert!(
-        said(&r).contains("\"changes_nothing\":true"),
-        "nothing drawn: {}",
-        said(&r)
-    );
-    assert!(
-        said(&r).contains("\"withheld\":[{\"what\":\"method_text\""),
+        said(&r).contains("\"checks\":[{\"place\":\"sw_activity_band\"")
+            && said(&r).contains("\"drawn\":false"),
         "{}",
         said(&r)
     );
     assert!(
-        said(&r).contains("{\"what\":\"the method's declaration\",\"why\":\"transcribed, but it names nobody who checked the copy against its source: taken as a relation an assistant supplied\"}"),
-        "{}",
+        said(&r).contains("checked"),
+        "names who did not check it: {}",
         said(&r)
     );
     assert_eq!(html(&r), fragment);
+
+    // A file that says it is another group's than the folder it is in.
+    let mut moved = n.clone();
+    moved.meta.insert(s("group_id"), s("l3_power"));
+    sqlite::write(&moved, &at).unwrap();
+    let r = live();
+    assert!(
+        r.contains("\"ok\":false") && r.contains("is not in that group's folder"),
+        "{r}"
+    );
+    sqlite::write(&n, &at).unwrap();
+
+    // A node of today's design with no file in the copy: refused, by name.
+    let r = ask(port, "GET", "/v1/node/sw_ap_design/live", &[], false);
+    assert!(
+        r.contains("\"ok\":false") && r.contains("no node file sw_ap_design.vnode"),
+        "{r}"
+    );
 
     // A node file of a node today's design does not hold: refused, by name.
     let mut stray = File::new(Kind::Node, APP);
@@ -588,5 +687,6 @@ fn a_revision_is_drawn_over_today() {
     assert!(r.contains("is not a node's id"), "{r}");
 
     assert_eq!(today(), was, "today's design is as it was");
+    assert_eq!(run(), ran, "and it runs as it did");
     let _ = std::fs::remove_dir_all(&scratch);
 }

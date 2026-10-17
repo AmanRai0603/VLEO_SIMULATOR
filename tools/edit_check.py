@@ -23,10 +23,12 @@ started on it. Then, as Test Pia, the band's node engineer, would:
   written meanwhile, is taken, never written over; opened again, it is saved
   as revision 4, and Pia signs it;
 - the centre shows revision 2 over today's design (F3-g2b): it changes
-  nothing on the page, and says a release does not bring the question in;
+  nothing on the page, says a release does not bring the question in, and
+  draws today's page, whole;
 - Pia writes a line in the method, says who made it and which belief broke,
-  and saves it as revision 5: the centre draws it over today's design, with
-  what it changes, and today's page, and today's fragment, do not carry it.
+  and saves it as revision 5: the centre draws its sheet alone over today's
+  design, with what it changes, and today's page, and today's fragment, do
+  not carry it.
 
     python3 tools/edit_check.py
 
@@ -190,8 +192,8 @@ def check():
             step('and says a release does not bring its question into today\'s design',
                  "what a release does not bring into today's design" in yours.lower() and 'its question: yours is on the right' in yours,
                  yours)
-            step('only the sheet is drawn, not today\'s run or folder',
-                 p.locator('.nw-page .sheet-read').count() == 1 and p.locator('.nw-page .asm-t').count() == 0)
+            p.wait_for_selector('.nw-page .asm-t', timeout=60000)
+            step('and the page drawn is today\'s, whole', p.locator('.nw-page .sheet-read').count() == 1)
             p.click('[data-view="today"]')
             p.wait_for_selector('.nw-page .asm-t', timeout=60000)
             step("today's page is drawn again on a click", p.locator('.nw-yours').count() == 0)
@@ -254,6 +256,8 @@ def check():
             # The method is on a tab of the sheet: read every tab, shown or not.
             page = p.text_content('.nw-page')
             step('the page carries the line', MARK in page, page[:300])
+            step('only the sheet is drawn, not today\'s run or folder',
+                 p.locator('.nw-page .sheet-read').count() == 1 and p.locator('.nw-page .asm-t').count() == 0)
             p.click('[data-view="today"]')
             p.wait_for_selector('.nw-page .asm-t', timeout=60000)
             step("today's page does not", MARK not in p.text_content('.nw-page'))

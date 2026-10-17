@@ -9,12 +9,19 @@
 //! page's own fragment (`vleo_sheet::page::fragment`). Nothing of today's
 //! design is written, and nothing is run: the engine's graph is today's.
 //!
+//! It is drawn only as today's design would take it, and refused where
+//! today's design would refuse a release holding it (`today::take`): a node
+//! file whose own checks find an error (`vleo_files::checks::check_node`:
+//! its declaration, its cases' origins, its method against its cases), and a
+//! plan that withholds anything, since one withheld change refuses the whole
+//! release. Either is said, with what refuses it, and the page is today's.
+//!
 //! The answer says what it is: the copy's revision over today's design, not
 //! a release and not today's design. Beside the page, what it changes, what
-//! the plan withholds and why, what the copy's file says that a release does
-//! not bring into today's design (its question and its explanation's texts),
-//! and every source it cites that `sources/` does not list. A revision that
-//! changes nothing on the page says so, and the page is today's.
+//! the plan withholds and why, and what the copy's file says that a release
+//! does not bring into today's design (its question and its explanation's
+//! texts). A revision that changes nothing on the page says so, and the page
+//! is today's.
 
 use super::*;
 use vleo_files::edit::{self, Part};
@@ -30,6 +37,12 @@ fn drawn(id: &str, ctx: &Ctx) -> Result<String, String> {
     let copy = node_file::the_copy(ctx)?;
     let path = node_file::find(&copy, id)?;
     let (bytes, f) = node_file::read_once(&copy, &path)?;
+    let group = f.meta.get("group_id").map_or("", String::as_str);
+    if !path.starts_with(&format!("groups/{group}/nodes/")) {
+        return Err(format!(
+            "{path} says it is {group:?}'s, and is not in that group's folder: it is not drawn"
+        ));
+    }
     let tree = ctx
         .load()
         .map_err(|e| format!("today's design does not load, so nothing is drawn over it: {e}"))?;
@@ -50,6 +63,30 @@ fn drawn(id: &str, ctx: &Ctx) -> Result<String, String> {
     j.str_field("writer", f.meta.get("writer").map_or("", String::as_str));
     let uid = f.meta.get("block_uid").map_or("", String::as_str);
     not_read(&mut j, &f, uid, sh);
+    let today_page = || vleo_sheet::page::fragment(sh, &tree);
+
+    // Its own checks, as a release's are checked before it is taken.
+    let found = vleo_files::checks::check_node(&f);
+    j.key("checks").open_arr();
+    for e in found.errors() {
+        j.open_obj();
+        j.str_field("place", &e.place);
+        j.str_field("what", &e.what);
+        j.close_obj();
+    }
+    j.close_arr();
+    if !found.holds() {
+        j.bool_field("drawn", false);
+        j.str_field(
+            "said",
+            &format!(
+                "Your revision {revision} is not drawn: its checks find what today's design would refuse a release of it for. The page is today's."
+            ),
+        );
+        j.str_field("html", &today_page());
+        j.raw("}");
+        return Ok(j.0);
+    }
 
     // The plan, as today's design would make it of a release holding this.
     let node_toml = sh.dir.join("node.toml");
@@ -74,7 +111,7 @@ fn drawn(id: &str, ctx: &Ctx) -> Result<String, String> {
                     "Your revision {revision} is not drawn over today's design: {why}. The page is today's."
                 ),
             );
-            j.str_field("html", &vleo_sheet::page::fragment(sh, &tree));
+            j.str_field("html", &today_page());
             j.raw("}");
             return Ok(j.0);
         }
@@ -107,14 +144,26 @@ fn drawn(id: &str, ctx: &Ctx) -> Result<String, String> {
         j.close_obj();
     }
     j.close_arr();
-    j.key("open").open_arr();
-    for (k, o) in plan.open.iter().enumerate() {
-        if k > 0 {
-            j.raw(",");
-        }
-        j.push_string(o);
+    // One change withheld refuses the whole release (`today::take`), so
+    // nothing of it is drawn: not the changes that would apply alone.
+    if plan.blocked() > 0 || not_taken.is_some() {
+        j.bool_field("drawn", false);
+        j.str_field(
+            "said",
+            &format!(
+                "Your revision {revision} is not drawn: today's design would refuse a release of it whole, for what is withheld. The page is today's."
+            ),
+        );
+        j.str_field("html", &today_page());
+        j.raw("}");
+        return Ok(j.0);
     }
-    j.close_arr();
+    if plan.version.is_some() {
+        j.str_field(
+            "record",
+            "Its record of which belief broke is the node's own, the last row of its versions.csv. A group's release is taken with the group's record, and nothing carries a node's row into it yet (question 12).",
+        );
+    }
 
     let applies = plan.applicable() > 0;
     let Some(text) = plan.text.filter(|_| applies) else {
@@ -126,7 +175,7 @@ fn drawn(id: &str, ctx: &Ctx) -> Result<String, String> {
                 "Your revision {revision} changes nothing on today's page: what a release of it would bring is what today's design holds. The page is today's."
             ),
         );
-        j.str_field("html", &vleo_sheet::page::fragment(sh, &tree));
+        j.str_field("html", &today_page());
         j.raw("}");
         return Ok(j.0);
     };
@@ -144,10 +193,15 @@ fn drawn(id: &str, ctx: &Ctx) -> Result<String, String> {
                     "Your revision {revision} does not load over today's design, so it is not drawn: {e}. The page is today's."
                 ),
             );
-            j.str_field("html", &vleo_sheet::page::fragment(sh, &tree));
+            j.str_field("html", &today_page());
             j.raw("}");
             return Ok(j.0);
         }
+    };
+    let Some(mine) = yours.sheets.get(id) else {
+        return Err(format!(
+            "your revision of {id}, laid over today's design, holds no sheet {id}: it is not drawn"
+        ));
     };
     j.bool_field("drawn", true);
     j.bool_field("changes_nothing", false);
@@ -157,10 +211,7 @@ fn drawn(id: &str, ctx: &Ctx) -> Result<String, String> {
             "Your revision {revision}, from your copy, over today's design: not sealed, not in today's design, and not run. Nothing of today's design is written."
         ),
     );
-    j.str_field(
-        "html",
-        &vleo_sheet::page::fragment(&yours.sheets[id], &yours),
-    );
+    j.str_field("html", &vleo_sheet::page::fragment(mine, &yours));
     j.raw("}");
     Ok(j.0)
 }

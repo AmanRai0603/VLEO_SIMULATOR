@@ -2239,7 +2239,7 @@ what = "A request written in the node's file, for a contract change (kind contra
 [[route]]
 method = "GET"
 path = "/v1/node/<id>/live"
-what = "The node's page as the revision in your copy would make it, over today's design: its node file read as a release's node, planned as today's design plans a release, and laid over it for this request only, said so. Beside the page, what it changes, what the plan withholds and why, what the file says that a release does not bring into today's design (its question and its explanation's texts), and the sources it cites that sources/ does not list. A revision that changes nothing on the page says so, and the page is today's. Nothing of today's design is written or run."
+what = "The node's page as the revision in your copy would make it, over today's design: its node file read as a release's node, held to its own checks, planned as today's design plans a release, and laid over it for this request only, said so. Not drawn where today's design would refuse a release holding it: a check that finds an error, or anything the plan withholds, since one withheld change refuses the whole release. Beside the page, what its checks find, what it changes, what is withheld and why, and what the file says that a release does not bring into today's design (its question and its explanation's texts). A revision that changes nothing on the page says so, and the page is today's. Nothing of today's design is written or run."
 
 [[route]]
 method = "POST"

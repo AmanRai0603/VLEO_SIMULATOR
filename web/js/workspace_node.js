@@ -51,6 +51,7 @@ const W = {
   behind: null, // the file as it is now, when the typing began on an earlier one
   seq: 0, timer: 0, // the typing checked last, and the check waiting to be asked
   view: 'today', // the centre: today's page, or the copy's revision over it
+  centreSeq: 0, // the centre drawn last: an older drawing's answer is dropped
 };
 
 /** How long after typing stops a dry run is asked. */
@@ -150,7 +151,7 @@ async function draw(keep) {
   host.innerHTML = picker() + head(id, file, row) +
     '<div class="nw-grid">' +
       '<aside class="nw-left"><h3 class="seg-h">its parts</h3><div class="nw-parts"></div></aside>' +
-      '<section class="nw-centre"><h3 class="seg-h">its page</h3>' +
+      '<section class="nw-centre"><h3 class="seg-h">its page' + (views(file) ? '' : ', as today\'s design holds it') + '</h3>' +
         (row ? views(file) + '<div class="nw-yours-said"></div><div class="nw-page"></div><div class="nw-run"></div>'
           : W.unread
             ? '<div class="blocked"><b>today\'s design could not be read</b><div>' + esc(W.unread) +
@@ -185,17 +186,34 @@ async function centre(id, file) {
   const host = W.host;
   const page = $('.nw-page', host), run = $('.nw-run', host), at = $('.nw-yours-said', host);
   if (!page) return;
+  // Only the drawing asked last draws: one asked before it, answering late,
+  // is dropped, today's page among them.
+  const seq = ++W.centreSeq;
+  const current = () => seq === W.centreSeq && id === W.id;
   if (W.view !== 'yours' || !file || file.ok === false) {
     at.innerHTML = '';
-    return drawNode(page, run, id, { parts: false });
+    return drawNode(page, run, id, { parts: false, current });
   }
   at.innerHTML = '<p class="muted">drawing revision ' + esc(file.revision) + ' over today\'s design…</p>';
   page.innerHTML = ''; run.innerHTML = '';
   const l = await get('/v1/node/' + encodeURIComponent(id) + '/live');
-  if (id !== W.id || W.view !== 'yours') return;
+  if (!current()) return;
+  // The page named on the button is the revision that was opened: a file
+  // changed since is said, never drawn under the old revision's name.
+  if (l && l.ok !== false && l.opened !== file.opened) {
+    at.innerHTML = '<div class="blocked"><b>the file changed since you opened it</b><div>It is now revision ' +
+      esc(l.revision) + ', written by ' + esc(l.writer || 'someone') + '; this page was opened on revision ' + esc(file.revision) +
+      '. <button class="ctl" id="nw-live-reopen">Open it again</button></div></div>';
+    return;
+  }
   at.innerHTML = yoursSaid(l);
-  if (l && l.ok !== false && typeof l.html === 'string') {
-    await drawNode(page, run, id, { parts: false, fragment: l.html });
+  if (!l || l.ok === false) return;
+  // Drawn over today's design: the program's sheet alone. Not drawn, or
+  // changing nothing: today's page, whole, as today's.
+  if (l.drawn && !l.changes_nothing && typeof l.html === 'string') {
+    await drawNode(page, run, id, { parts: false, fragment: l.html, current });
+  } else {
+    await drawNode(page, run, id, { parts: false, current });
   }
 }
 
@@ -208,16 +226,20 @@ function yoursSaid(l) {
   const first = t => { const line = String(t || '').split('\n')[0]; return line.length > 90 ? line.slice(0, 90) + '…' : line; };
   const list = (title, items, f) => items && items.length
     ? '<h4>' + title + '</h4><ul>' + items.map(f).join('') + '</ul>' : '';
-  return '<div class="nw-yours' + (l.drawn && !l.changes_nothing ? ' is-drawn' : '') + '">' +
+  const drawn = l.drawn && !l.changes_nothing;
+  return '<div class="nw-yours' + (drawn ? ' is-drawn' : '') + '">' +
     '<p><b>' + esc(l.said) + '</b></p>' +
+    list('what its checks find', l.checks, c => '<li><code>' + esc(c.place) + '</code>: ' + esc(c.what) + '</li>') +
     list('what it changes', l.changes, c => '<li><code>' + esc(c.what) + '</code>' +
       (c.to ? ' — ' + esc(first(c.to)) : '') + '</li>') +
     list('what the plan withholds, and why', l.withheld, w => '<li><code>' + esc(w.what) + '</code>: ' + esc(w.why) + '</li>') +
     list('what a release does not bring into today\'s design', l.not_taken, n =>
-      '<li>' + esc(n.what) + ': yours is on the right; the page keeps «' + esc(first(n.page)) + '»</li>') +
-    list('sources it cites that sources/ does not list', l.open, o => '<li>' + esc(o) + '</li>') +
-    '<p class="muted">Only the sheet is drawn: what it is made of, what it is joined to, its figures, its lesson ' +
-      'and its run are today\'s design\'s, on the other page.</p></div>';
+      '<li>' + esc(n.what) + ': yours ' + (n.yours ? 'is on the right' : 'is empty') + '; the page keeps «' + esc(first(n.page)) + '»</li>') +
+    (l.record ? '<p class="muted">' + esc(l.record) + '</p>' : '') +
+    (drawn
+      ? '<p class="muted">Only the sheet is drawn: what it is made of, what it is joined to, its figures, its lesson ' +
+        'and its run are today\'s design\'s, on the other page.</p>'
+      : '') + '</div>';
 }
 
 function picker() {
@@ -482,7 +504,7 @@ async function click(e) {
     $$('.nw-view', W.host).forEach(b => b.classList.toggle('sel', b.dataset.view === W.view));
     return centre(W.id, W.file);
   }
-  if (t.id === 'nw-reopen' || t.id === 'nw-rebase') { W.notice = null; W.rebasing = true; return draw(); }
+  if (t.id === 'nw-reopen' || t.id === 'nw-rebase' || t.id === 'nw-live-reopen') { W.notice = null; W.rebasing = true; return draw(); }
   const opened = W.file && W.file.opened;
   switch (t.id) {
     case 'nw-go': {
