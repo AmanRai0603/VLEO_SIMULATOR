@@ -3,11 +3,12 @@
 //! (docs/briefs/F4.md, F4-a; W13; docs/SYSTEM_MODEL.md, section 2).
 //!
 //! A small programme of invented people, as People's test has it: Ola owns
-//! solar, Dee is her deputy, Nia a node engineer of solar, Sam the system
+//! solar, Dee is Ola's deputy, Nia a node engineer of solar, Sam the system
 //! engineer. Solar's branch holds solar 1.1's `sw_activity_band` as an issued
 //! node file, and two children of it placed as F5 will issue them: one
 //! carrying the node's own transcribed method, and one whose elevated edge
-//! is at 135 sfu, invented here to be wrong. The expected values are the
+//! is at 135 sfu, invented here to be wrong, and saying so in its method and
+//! its declaration. The expected values are the
 //! release's own, from its results; nothing here is computed by the code
 //! under test and then expected of it.
 //!
@@ -275,13 +276,30 @@ fn child(id: &str, edit: &dyn Fn(&str) -> String) -> File {
     c
 }
 
+/// The child at 135 sfu says what it is: invented for this check by the
+/// test's own invented person, never transcribed by anyone from anything
+/// (F4's question 5).
+fn invented(mut c: File) -> File {
+    for t in c.texts.iter_mut().filter(|t| t.kind == "pseudocode") {
+        let rest: Vec<&str> = t.body.lines().skip(1).collect();
+        t.body = format!(
+            "# INVENTED for the breakdown's check, never part of the design: sw_activity_band's method, its elevated edge moved from 130 to 135 sfu to be wrong.\n{}\n",
+            rest.join("\n")
+        );
+    }
+    for t in c.tables.iter_mut().filter(|t| t.path == "declaration.csv") {
+        t.csv = "author,ai,date,source,checked_by\nNia Node,transcribed,2026-10-17,\"sw_activity_band's method, its elevated edge moved to 135 sfu: invented to be wrong, for the breakdown's check\",Nia Node\n".into();
+    }
+    c
+}
+
 fn nodes() -> Vec<File> {
     vec![
         band(),
         child(GOOD, &|m| m.to_string()),
-        child(LATE, &|m| {
+        invented(child(LATE, &|m| {
             m.replace("if f107 >= 130 then", "if f107 >= 135 then")
-        }),
+        })),
     ]
 }
 
