@@ -68,11 +68,19 @@ impl Design {
             declared: Vec::new(),
         };
         let mut mounted: BTreeMap<String, String> = BTreeMap::new();
+        // Every port, by block, direction and name.
+        let mut ports: BTreeSet<(String, String, String)> = BTreeSet::new();
         for (_, f) in files {
             for m in &f.mounts {
                 mounted.insert(m.group_id.clone(), m.block_uid.clone());
             }
+            for p in &f.ports {
+                ports.insert((p.block_uid.clone(), p.direction.clone(), p.name.clone()));
+            }
         }
+        let has = |block: &str, direction: &str, name: &str| {
+            ports.contains(&(block.to_string(), direction.to_string(), name.to_string()))
+        };
         let mut wires: Vec<(String, String)> = Vec::new();
         for (path, f) in files {
             let kind = f.kind()?;
@@ -98,12 +106,23 @@ impl Design {
                 // `<block>.<port>` in its own group, `<group>.<block>.<port>`
                 // in another: the block is the one before the port.
                 let mut parts = w.from_ref.rsplit('.');
-                let (_, Some(from)) = (parts.next(), parts.next()) else {
+                let (Some(port), Some(from)) = (parts.next(), parts.next()) else {
                     return Err(malformed(format!(
                         "{path}: {}.{} is wired from {:?}, which names no block",
                         w.to_block, w.to_port, w.from_ref
                     )));
                 };
+                // Two wires of a breakdown carry nothing from one row to
+                // another (F4): a child answering its node, a wire into the
+                // node's output; and a child reading its node's own input,
+                // which comes from where the node's does.
+                // A port that is both an input and an output is read as before.
+                let into_output =
+                    has(&w.to_block, "out", &w.to_port) && !has(&w.to_block, "in", &w.to_port);
+                let from_input = has(from, "in", port) && !has(from, "out", port);
+                if into_output || from_input {
+                    continue;
+                }
                 wires.push((from.to_string(), w.to_block.clone()));
             }
             for l in &f.loops {

@@ -19,7 +19,8 @@
 //! - **remove** a block: archived, never deleted.
 //!
 //! **Only the branch's owner frames it**, or their deputy, with a key that
-//! counts now (`chain::may_frame`), and each edit says why: a `change` row,
+//! counts now (`chain::may_frame`), on a group file that opens through the
+//! chain as it is, and each edit says why: a `change` row,
 //! its `what` the edit and the reason, with the rows it touched before and
 //! after. The file is signed afresh by whoever made the edit and must open
 //! through the chain as it will be read, or nothing is given back.
@@ -28,8 +29,10 @@
 //! ([`reproduces`]): its children, run in the order their wires give, on each
 //! of the node's cases, give what the case expects within its own tolerance,
 //! and refuse where it must refuse. The node's cases are the evidence, read
-//! as its checks read them (`checks::method_cases`); the children's answer is
-//! what is under test. No formula is written here: each child's method runs
+//! as its checks read them (`checks::method_cases`), and taken only from a
+//! node file its checks pass and its node engineer signed as it is; the
+//! children's answer is what is under test, each child held to its
+//! declaration and its method to its ports before it runs. No formula is written here: each child's method runs
 //! in the method language, and agreeing with a case is `judge_outcome`'s
 //! rule.
 //!
@@ -356,6 +359,15 @@ pub fn edit(
             "the programme's branch is framed in the Programme workspace (F7), not here",
         ));
     }
+    // The file as it is, before anything: an edit is signed afresh over every
+    // row of it, so one that does not open now is never signed into one that
+    // does.
+    let registry = chain::open_group_in(group, mounted_by, programme).map_err(|e| {
+        refused(format!(
+            "{id}'s group file does not open through the chain as it is, so nothing is framed on it: {}",
+            e.message()
+        ))
+    })?;
     chain::may_frame(&id, by, &key.public().to_hex(), at, mounted_by, programme)?;
     if why.trim().is_empty() {
         return Err(refused(format!(
@@ -377,9 +389,21 @@ pub fn edit(
     }
     let branch = Branch::new(group, nodes);
     let mut out = group.clone();
-    let (scope, before, verdict) = apply(&branch, elsewhere, edit, &mut out)?;
+    let (scope, before, verdict) = apply(&branch, elsewhere, edit, &mut out, &registry)?;
     let after_branch = Branch::new(&out, nodes);
-    let after = touched(&after_branch, &scope);
+    let mut after = touched(&after_branch, &scope);
+    // A split makes a block: its rows are what the edit made, too.
+    if let Edit::Split { id, .. } = edit {
+        after.push_str(&touched(&after_branch, id));
+    }
+    // What the breakdown was judged on: the verdict, and each child it ran
+    // by the digest of its rows, so it can be judged again once one changes.
+    if let Some(v) = &verdict {
+        after.push_str(&format!("reproduces: {}\n", v.says()));
+        for (child, digest) in &v.children {
+            after.push_str(&format!("child {child:?} rows {digest}\n"));
+        }
+    }
     out.changes.push(Change {
         at: at.to_string(),
         who: by.to_string(),
@@ -429,6 +453,7 @@ fn apply(
     elsewhere: &[File],
     edit: &Edit,
     out: &mut File,
+    registry: &Registry,
 ) -> Result<(String, String, Option<Reproduced>), Error> {
     let group_id = branch.group_id();
     let mounts: BTreeSet<&str> = branch
@@ -469,10 +494,11 @@ fn apply(
             .blocks()
             .iter()
             .any(|(b, _)| b.uid == id || b.id == id)
+            // A uid is the design's, not the group's: two files holding one
+            // are refused when the design is read whole (`n2::Design::of`).
             || elsewhere
                 .iter()
-                .filter(|f| f.meta.get("group_id") == Some(&group_id))
-                .any(|f| f.blocks.iter().any(|b| b.uid == id || b.id == id))
+                .any(|f| f.blocks.iter().any(|b| b.uid == id))
     };
     let new_id = |id: &str| -> Result<(), Error> {
         if !valid_id(id) {
@@ -482,27 +508,38 @@ fn apply(
         }
         if taken(id) {
             return Err(refused(format!(
-                "{id} is in {group_id}'s branch already, live or removed: an id is never used twice"
+                "{id} is in {group_id}'s branch or another file of the design already, live or removed: an id is never used twice"
             )));
         }
         Ok(())
     };
-    // Who reads a block's ports: a wire anywhere in the branch, or in
-    // another group by `<group>.<id>.`.
-    let read_by = |b: &Block| -> Option<String> {
+    // Who reads a block's port `port`, or any of its ports: a wire anywhere
+    // in the branch, or in another group by `<group>.<id>.`. A wire into an
+    // output is a child answering its node, not a reader.
+    let read_by = |b: &Block, port: Option<&str>| -> Option<String> {
+        let reads = |from: &str, head: &str| match from.strip_prefix(head) {
+            Some(rest) => port.is_none_or(|p| rest == p),
+            None => false,
+        };
         let here = format!("{}.", b.uid);
         let there = format!("{group_id}.{}.", b.id);
+        let answering = |w: &Wire| {
+            branch
+                .ports(&w.to_block)
+                .iter()
+                .any(|p| p.direction == "out" && p.name == w.to_port)
+        };
         branch
             .wires()
             .into_iter()
             .filter(|w| w.to_block != b.uid)
-            .find(|w| w.from_ref.starts_with(&here) && branch.answers(&w.to_block).is_empty())
+            .find(|w| reads(&w.from_ref, &here) && !answering(w))
             .map(|w| format!("{}'s input {}", w.to_block, w.to_port))
             .or_else(|| {
                 elsewhere.iter().find_map(|f| {
                     f.wires
                         .iter()
-                        .find(|w| w.from_ref.starts_with(&there))
+                        .find(|w| reads(&w.from_ref, &there))
                         .map(|w| format!("{}'s input {}", w.to_block, w.to_port))
                 })
             })
@@ -560,10 +597,26 @@ fn apply(
                     let mut p = (**p).clone();
                     p.block_uid = block.clone();
                     port_ok(&p, &b.id)?;
-                    out.ports.retain(|x| {
-                        !(x.block_uid == *block && x.direction == p.direction && x.name == p.name)
+                    // In its place when it replaces one; after the others when new.
+                    let at = out.ports.iter().position(|x| {
+                        x.block_uid == *block && x.direction == p.direction && x.name == p.name
                     });
-                    out.ports.push(p);
+                    match at {
+                        Some(i) => {
+                            p.ord = out.ports[i].ord;
+                            out.ports[i] = p;
+                        }
+                        None => {
+                            p.ord = out
+                                .ports
+                                .iter()
+                                .filter(|x| x.block_uid == *block)
+                                .map(|x| x.ord + 1)
+                                .max()
+                                .unwrap_or(0);
+                            out.ports.push(p);
+                        }
+                    }
                 }
             }
             Ok((block.clone(), before, None))
@@ -613,12 +666,21 @@ fn apply(
                         c.id, n.id
                     )));
                 }
-                if !branch
+                let couts: Vec<&Port> = branch
                     .ports(&a.child)
-                    .iter()
-                    .any(|p| p.direction == "out" && p.name == a.port)
-                {
+                    .into_iter()
+                    .filter(|p| p.direction == "out")
+                    .collect();
+                if !couts.iter().any(|p| p.name == a.port) {
                     return Err(refused(format!("{} has no output {}", c.id, a.port)));
+                }
+                // Its first output is its answer; the others are members it
+                // publishes beside it, which are not compared yet.
+                if couts.first().is_some_and(|p| p.name != a.port) {
+                    return Err(refused(format!(
+                        "{}.{} is a member {} publishes, not its answer: an output is answered by a child's answer, {}, so far",
+                        c.id, a.port, c.id, couts[0].name
+                    )));
                 }
             }
             let before = touched(branch, node);
@@ -629,7 +691,7 @@ fn apply(
                     from_ref: format!("{}.{}", a.child, a.port),
                 });
             }
-            let verdict = reproduces(&Branch::new(out, branch.nodes), node);
+            let verdict = reproduces(&Branch::new(out, branch.nodes), node, Some(registry));
             if let Some(why) = verdict.refusal(&n.id) {
                 return Err(refused(why));
             }
@@ -668,7 +730,7 @@ fn apply(
         Edit::Rename { block, id } => {
             let b = framed(block, "renamed")?;
             new_id(id)?;
-            if let Some(r) = read_by(b) {
+            if let Some(r) = read_by(b, None) {
                 return Err(refused(format!(
                     "{} is read by {r}: it keeps its id while anything reads it",
                     b.id
@@ -697,8 +759,24 @@ fn apply(
             new_id(id)?;
             let has: Vec<&Port> = branch.ports(block);
             for p in ports {
-                if !has.iter().any(|x| &x.name == p) {
+                let named: Vec<&&Port> = has.iter().filter(|x| &x.name == p).collect();
+                if named.is_empty() {
                     return Err(refused(format!("{} has no port {p}", b.id)));
+                }
+                if named.len() > 1 {
+                    return Err(refused(format!(
+                        "{} has an input and an output named {p}: which one moves is not said, so neither does",
+                        b.id
+                    )));
+                }
+                // An output moves only while nothing reads it.
+                if named[0].direction == "out" {
+                    if let Some(r) = read_by(b, Some(p)) {
+                        return Err(refused(format!(
+                            "{}.{p} is read by {r}: it stays where it is read from",
+                            b.id
+                        )));
+                    }
                 }
             }
             if ports.is_empty() {
@@ -711,7 +789,13 @@ fn apply(
             let mut sibling = b.clone();
             sibling.uid = id.clone();
             sibling.id = id.clone();
-            sibling.ord = b.ord + 1;
+            // After every block under its parent: an order is never shared.
+            sibling.ord = branch
+                .children(&b.parent_uid)
+                .iter()
+                .map(|x| x.ord + 1)
+                .max()
+                .unwrap_or(0);
             out.blocks.push(sibling);
             for p in out
                 .ports
@@ -762,7 +846,7 @@ fn apply(
                     b.id
                 )));
             }
-            if let Some(r) = read_by(b) {
+            if let Some(r) = read_by(b, None) {
                 return Err(refused(format!(
                     "{} is read by {r}: it stays while anything reads it",
                     b.id
@@ -843,6 +927,9 @@ pub struct Reproduced {
     /// Each of the node's cases: what it expects, what the children gave,
     /// what the estimate gives, and whether the children agree.
     pub cases: Vec<CaseRow>,
+    /// Each child that ran, by id, and the digest of its file's rows: what
+    /// the verdict was reached on.
+    pub children: Vec<(String, String)>,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -874,6 +961,7 @@ impl Reproduced {
         Reproduced {
             state: State::NotRun(why),
             cases: Vec::new(),
+            children: Vec::new(),
         }
     }
 
@@ -943,7 +1031,15 @@ enum Source {
 /// and a sibling's answer when it is wired from that sibling. Each case
 /// agrees within its own tolerance, by the rule a method's case agrees by.
 /// The answer is compared; a published member is not, yet.
-pub fn reproduces(branch: &Branch, node: &str) -> Reproduced {
+///
+/// The node's cases are the evidence, so they are taken only from a node
+/// file its own checks pass (`checks::check_node`: no expected value from
+/// the code under test, at least three cases and a refusal, each a number)
+/// and that its node engineer signed as it is now, through `group`, the
+/// group file's registry (`chain::check_node`). Without `group`, or either,
+/// nothing is run. Each child is held to its declaration (rule 6) and its
+/// method to its own ports' units before it runs (`checks::child_ready`).
+pub fn reproduces(branch: &Branch, node: &str, group: Option<&Registry>) -> Reproduced {
     let Some((n, place)) = branch.find(node) else {
         return Reproduced::not_run(format!("the branch has no block {node}"));
     };
@@ -959,6 +1055,30 @@ pub fn reproduces(branch: &Branch, node: &str) -> Reproduced {
         ));
     }
     let f = branch.file(place);
+    let Some(group) = group else {
+        return Reproduced::not_run(format!(
+            "the group file does not open through the chain, so whether {} is signed by its node engineer cannot be read",
+            n.id
+        ));
+    };
+    if let Err(e) = chain::check_node(f, node, group) {
+        return Reproduced::not_run(format!(
+            "{}'s cases are its node engineer's, and are not taken until they sign it as it is: {}",
+            n.id,
+            e.message()
+        ));
+    }
+    let own: Vec<String> = checks::check_node(f)
+        .errors()
+        .map(|e| format!("{}: {}", e.place, e.what))
+        .collect();
+    if !own.is_empty() {
+        return Reproduced::not_run(format!(
+            "{}'s own checks refuse it, so its cases are not evidence: {}",
+            n.id,
+            own.join("; ")
+        ));
+    }
     let ports = branch.ports(node);
     let ins: Vec<&Port> = ports
         .iter()
@@ -977,26 +1097,36 @@ pub fn reproduces(branch: &Branch, node: &str) -> Reproduced {
             });
         return Reproduced::not_run(format!("{}'s own cases do not read: {why}", n.id));
     };
+    if cases.is_empty() {
+        return Reproduced::not_run(format!("{} has no case: nothing would be compared", n.id));
+    }
     let estimate = m::parse(&src).ok();
     // Where each of the node's inputs comes from, so a child wired from the
-    // same place reads it.
-    let node_from: BTreeMap<String, String> = ins
-        .iter()
-        .filter_map(|p| {
-            branch
-                .wire_into(node, &p.name)
-                .map(|w| (w.from_ref.clone(), p.name.clone()))
-        })
-        .collect();
+    // same place reads it. Two inputs from one place leave it unsaid which
+    // one a child reads.
+    let mut node_from: BTreeMap<String, Vec<String>> = BTreeMap::new();
+    for p in &ins {
+        if let Some(w) = branch.wire_into(node, &p.name) {
+            node_from
+                .entry(w.from_ref.clone())
+                .or_default()
+                .push(p.name.clone());
+        }
+    }
     let children: Vec<&Block> = branch.children(node);
     let child_uids: BTreeSet<&str> = children.iter().map(|c| c.uid.as_str()).collect();
     let mut ready: Vec<Child> = Vec::new();
+    let mut refused_children: BTreeMap<String, String> = BTreeMap::new();
     for c in &children {
         let cports = branch.ports(&c.uid);
         let Some((_, cplace)) = branch.find(&c.uid) else {
             continue;
         };
         let cf = branch.file(cplace);
+        let ready_said: Vec<String> = checks::child_ready(cf, c)
+            .errors()
+            .map(|e| e.what.clone())
+            .collect();
         let src = cf
             .texts
             .iter()
@@ -1006,6 +1136,11 @@ pub fn reproduces(branch: &Branch, node: &str) -> Reproduced {
             // said below, by name.
             continue;
         };
+        if !ready_said.is_empty() {
+            // Said once it is known to be needed, below.
+            refused_children.insert(c.uid.clone(), ready_said.join("; "));
+            continue;
+        }
         let program = match m::parse(&src.body) {
             Ok(p) => p,
             Err(d) => {
@@ -1032,11 +1167,33 @@ pub fn reproduces(branch: &Branch, node: &str) -> Reproduced {
                     ));
                 }
                 Source::Node(input.to_string())
-            } else if let Some(input) = node_from.get(from) {
-                Source::Node(input.clone())
-            } else if let Some((sib, _)) =
+            } else if let Some(inputs) = node_from.get(from) {
+                if inputs.len() > 1 {
+                    return Reproduced::not_run(format!(
+                        "{}'s input {} reads {from}, which feeds {}'s inputs {} alike: wire it from {node}.<the input it reads>",
+                        c.id,
+                        p.name,
+                        n.id,
+                        inputs.join(" and ")
+                    ));
+                }
+                Source::Node(inputs[0].clone())
+            } else if let Some((sib, port)) =
                 from.split_once('.').filter(|(s, _)| child_uids.contains(s))
             {
+                // A sibling's answer, its first output: a member it publishes
+                // is not run through, yet.
+                let answer = branch
+                    .ports(sib)
+                    .into_iter()
+                    .find(|q| q.direction == "out")
+                    .map(|q| q.name.clone());
+                if answer.as_deref() != Some(port) {
+                    return Reproduced::not_run(format!(
+                        "{}'s input {} reads {from}, which is not {sib}'s answer: a member is not run through, yet",
+                        c.id, p.name
+                    ));
+                }
                 Source::Sibling(sib.to_string())
             } else {
                 return Reproduced::not_run(format!(
@@ -1057,16 +1214,18 @@ pub fn reproduces(branch: &Branch, node: &str) -> Reproduced {
                     .find(|q| q.direction == "out")
                     .map(|q| q.unit.clone()),
             };
-            if let (Ok((fa, da)), Some(Ok((fb, db)))) = (unit(&p.unit), want.as_deref().map(unit)) {
-                if da != db || fa != fb {
-                    return Reproduced::not_run(format!(
-                        "{}'s input {} is in [{}], and what it reads is in [{}]: one quantity, one unit, or a conversion is a method of its own",
-                        c.id,
-                        p.name,
-                        p.unit,
-                        want.unwrap_or_default()
-                    ));
-                }
+            let same = match (unit(&p.unit), want.as_deref().map(unit)) {
+                (Ok((fa, da)), Some(Ok((fb, db)))) => da == db && fa == fb,
+                _ => false,
+            };
+            if !same {
+                return Reproduced::not_run(format!(
+                    "{}'s input {} is in [{}], and what it reads is in [{}]: one quantity, one unit, or a conversion is a method of its own",
+                    c.id,
+                    p.name,
+                    p.unit,
+                    want.unwrap_or_else(|| "nothing it says".into())
+                ));
             }
             inputs.push((p.name.clone(), source));
         }
@@ -1087,6 +1246,9 @@ pub fn reproduces(branch: &Branch, node: &str) -> Reproduced {
         }
         let Some(i) = ready.iter().position(|c| c.uid == uid) else {
             let id = branch.find(&uid).map_or(uid.clone(), |(b, _)| b.id.clone());
+            if let Some(said) = refused_children.get(&uid) {
+                return Reproduced::not_run(format!("{id} is not run: {said}"));
+            }
             let why = match branch.find(&uid) {
                 Some((b, _)) if b.behaviour == "open" => "it is open: not decided yet".to_string(),
                 Some((b, _)) => format!("its behaviour is {}, and it holds no method", b.behaviour),
@@ -1100,6 +1262,25 @@ pub fn reproduces(branch: &Branch, node: &str) -> Reproduced {
                 needed.push(sib.clone());
             }
         }
+    }
+    // The answer in the node's own unit.
+    let unit = |u: &str| m::parse_unit(if u.trim().is_empty() { "1" } else { u.trim() });
+    let node_unit = out_port.map(|p| p.unit.clone()).unwrap_or_default();
+    let child_unit = branch
+        .ports(&answer.child)
+        .into_iter()
+        .find(|q| q.direction == "out")
+        .map(|q| q.unit.clone())
+        .unwrap_or_default();
+    let same = match (unit(&node_unit), unit(&child_unit)) {
+        (Ok((fa, da)), Ok((fb, db))) => da == db && fa == fb,
+        _ => false,
+    };
+    if !same {
+        return Reproduced::not_run(format!(
+            "{} answers in [{node_unit}], and {} in [{child_unit}]: one quantity, one unit",
+            n.id, answer.child
+        ));
     }
     // Each child after the children it reads.
     let mut sorted: Vec<usize> = Vec::new();
@@ -1149,7 +1330,15 @@ pub fn reproduces(branch: &Branch, node: &str) -> Reproduced {
                         .map(|(_, v)| *v),
                     Source::Sibling(sib) => answers_of.get(sib).copied(),
                 };
-                values.push((name.clone(), v.unwrap_or(f64::NAN)));
+                // A value the case does not give is never made up: nothing
+                // is run on a case that does not say it.
+                let Some(v) = v else {
+                    return Reproduced::not_run(format!(
+                        "the case «{}» gives no value for {}, which {} reads",
+                        case.label, name, c.id
+                    ));
+                };
+                values.push((name.clone(), v));
             }
             got = m::run_all(&c.program, &values);
             by = c.id.clone();
@@ -1200,7 +1389,28 @@ pub fn reproduces(branch: &Branch, node: &str) -> Reproduced {
     } else {
         State::Differs
     };
-    Reproduced { state, cases: rows }
+    let children = sorted
+        .iter()
+        .map(|&i| {
+            let c = &ready[i];
+            let f = branch
+                .find(&c.uid)
+                .map(|(_, place)| branch.file(place))
+                .expect("a child that ran is in the branch");
+            (c.id.clone(), rows_digest(f))
+        })
+        .collect();
+    Reproduced {
+        state,
+        cases: rows,
+        children,
+    }
+}
+
+/// The digest of a file's rows, as the page carries them (`rows::encode`).
+fn rows_digest(f: &File) -> String {
+    use crate::keys::{hex, sha256};
+    hex(&sha256(&crate::rows::encode(&f.to_tables())))
 }
 
 /// What an edit in the copy did, or why it wrote nothing.
@@ -1252,31 +1462,65 @@ pub fn edit_in_place(
             digest: crate::copied::digest(&bytes),
         });
     }
-    let group = crate::sqlite::read(&at_file)?;
+    // What is edited is read from the bytes compared, not from the path
+    // again: what the person opened, and nothing that came between.
+    let group = crate::save::parsed(&bytes)?;
+    // Every other file of the copy, each read or the edit refused by its
+    // name: a file skipped is a reader missed, or an id used twice.
+    let io = |p: &std::path::Path, e: std::io::Error| {
+        Error::new(ErrorKind::Io, format!("{}: {e}", p.display()))
+    };
+    let listed = |dir: &std::path::Path, ext: &str| -> Result<Vec<std::path::PathBuf>, Error> {
+        if !dir.exists() {
+            return Ok(Vec::new());
+        }
+        let mut out = Vec::new();
+        for e in std::fs::read_dir(dir).map_err(|e| io(dir, e))? {
+            let p = e.map_err(|e| io(dir, e))?.path();
+            if p.extension().is_some_and(|x| x == ext) {
+                out.push(p);
+            }
+        }
+        out.sort();
+        Ok(out)
+    };
+    let how = crate::upgrade::Upgrade { app, at };
     let mut nodes = Vec::new();
     let mut elsewhere = Vec::new();
-    for g in std::fs::read_dir(copy.join("groups"))
-        .map_err(|e| Error::new(ErrorKind::Io, format!("{}: {e}", copy.display())))?
-        .flatten()
-    {
-        let mine = g.file_name().to_string_lossy() == group_id;
-        let files = std::fs::read_dir(g.path().join("nodes"))
-            .into_iter()
-            .flatten()
-            .flatten()
-            .map(|n| n.path())
-            .filter(|p| p.extension().is_some_and(|x| x == "vnode"))
-            .chain(std::iter::once(
-                g.path()
-                    .join(format!("{}.vgroup", g.file_name().to_string_lossy())),
-            ));
+    let groups = copy.join("groups");
+    let mut dirs: Vec<std::path::PathBuf> = Vec::new();
+    for g in std::fs::read_dir(&groups).map_err(|e| io(&groups, e))? {
+        let g = g.map_err(|e| io(&groups, e))?.path();
+        if g.is_dir() {
+            dirs.push(g);
+        }
+    }
+    dirs.sort();
+    for g in dirs {
+        let name = g
+            .file_name()
+            .map_or(String::new(), |n| n.to_string_lossy().into_owned());
+        let mine = name == group_id;
+        let mut files = listed(&g.join("nodes"), "vnode")?;
+        let own = g.join(format!("{name}.vgroup"));
+        if own.exists() {
+            files.push(own);
+        }
+        // A release another group's work reads from is a reader too.
+        files.extend(listed(&g.join("releases"), "vleo")?);
         for p in files {
             if mine && p == at_file {
                 continue;
             }
-            let Ok(f) = crate::sqlite::read(&p) else {
-                continue;
-            };
+            let f = crate::sqlite::open(&p, &how)
+                .map_err(|e| {
+                    refused(format!(
+                        "{} cannot be read, so whether the edit leaves anything without what it reads cannot be said: {}",
+                        p.strip_prefix(copy).unwrap_or(&p).display(),
+                        e.message()
+                    ))
+                })?
+                .file;
             if mine && f.kind().ok() == Some(Kind::Node) {
                 nodes.push(f);
             } else {

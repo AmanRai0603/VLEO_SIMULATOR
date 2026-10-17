@@ -18,10 +18,21 @@
 //!   130 sfu; into an open child, refused by that child's name;
 //! - only Ola or her deputy frames solar; Nia and Sam are refused, and an
 //!   edit with no why;
-//! - each edit's refusals: an id taken or not one, a cycle, a decided block
-//!   filled, a port the schema does not allow, an issued node moved, a block
-//!   that answers a node removed, the programme's branch;
-//! - folded back, the estimate answers again, and the children stay.
+//! - each edit's refusals: an id taken or not one, here or in another group's
+//!   file, a cycle, a decided block filled, a port the schema does not allow,
+//!   an issued node moved, a node broken down twice, a block another group
+//!   reads renamed, an output split away from its reader, the programme's
+//!   branch; and a move, a split and a port filled again, made;
+//! - folded back, the estimate answers again, and the children stay;
+//! - the node's cases are evidence only from a file its checks pass and its
+//!   node engineer signed as it is: unsigned, or with a case whose expected
+//!   value is the code's own, nothing is run; a group file changed since it
+//!   was signed is refused before anything is framed on it;
+//! - a child is held to its declaration before it runs; a child answering
+//!   with a member it publishes is refused; a child reading from where its
+//!   node's input comes reads that input;
+//! - a breakdown makes no loop in the design's N2, and a child's file reads
+//!   its node's input as it will in a release.
 
 use vleo_files::breakdown::{self, Answer, Edit, Part, State};
 use vleo_files::chain::{self, Registry, FILE};
@@ -144,7 +155,33 @@ fn solar() -> File {
         revoked_from: s(""),
         proof: vleo_files::people::proof(&key(16), "Nia Node"),
     });
+    f.assignments.push(Assignment {
+        block_uid: s(BAND),
+        person: s("Nia Node"),
+        contract_version: 1,
+    });
     signed(f, "Ola Sun", &key(13))
+}
+
+/// Solar's registry, as the chain opens its group file.
+fn solar_registry() -> Registry {
+    let pr = programme();
+    let sy = systems(&pr);
+    chain::open_group_in(&solar(), &sy, &pr).unwrap()
+}
+
+/// The band's node file, signed by Nia, its node engineer, as it is.
+fn band() -> File {
+    let (f, _) = chain::sign_node(
+        &from_release(BAND),
+        BAND,
+        "Nia Node",
+        &key(16),
+        AT,
+        &solar_registry(),
+    )
+    .expect("Nia signs the band");
+    f
 }
 
 /// `uid` from solar 1.1's release, in a node file of its own.
@@ -240,7 +277,7 @@ fn child(id: &str, edit: &dyn Fn(&str) -> String) -> File {
 
 fn nodes() -> Vec<File> {
     vec![
-        from_release(BAND),
+        band(),
         child(GOOD, &|m| m.to_string()),
         child(LATE, &|m| {
             m.replace("if f107 >= 130 then", "if f107 >= 135 then")
@@ -272,6 +309,31 @@ fn frame(
     let sy = systems(&pr);
     breakdown::edit(group, &nodes(), &[], e, why, who, k, AT, &sy, &pr)
         .map_err(|e| e.message().to_string())
+}
+
+/// An edit by Ola, with the branch's node files `ns` and the design's other
+/// files `elsewhere`.
+fn ola_with(
+    group: &File,
+    ns: &[File],
+    elsewhere: &[File],
+    e: &Edit,
+) -> Result<(File, Option<breakdown::Reproduced>), String> {
+    let pr = programme();
+    let sy = systems(&pr);
+    breakdown::edit(
+        group,
+        ns,
+        elsewhere,
+        e,
+        WHY,
+        "Ola Sun",
+        &key(13),
+        AT,
+        &sy,
+        &pr,
+    )
+    .map_err(|e| e.message().to_string())
 }
 
 fn ola(group: &File, e: &Edit) -> Result<(File, Option<breakdown::Reproduced>), String> {
@@ -319,6 +381,19 @@ fn a_node_is_broken_down_only_into_children_that_reproduce_its_cases() {
             .contains(&format!("from \"{GOOD}.{out}\"")),
         "{c:?}"
     );
+    // What it was judged on: the verdict, and the child that ran by its rows.
+    let judged = c.after.as_deref().unwrap_or("");
+    assert!(
+        judged.contains("reproduces: its children reproduce all 10 of its cases"),
+        "{judged}"
+    );
+    assert_eq!(v.children.len(), 1, "{v:?}");
+    assert_eq!(v.children[0].0, GOOD);
+    assert!(
+        judged.contains(&format!("child \"{GOOD}\" rows {}", v.children[0].1))
+            && v.children[0].1.len() == 64,
+        "{judged}"
+    );
     // Signed afresh by her, and it opens as it will be read.
     let pr = programme();
     let sy = systems(&pr);
@@ -336,7 +411,7 @@ fn a_node_is_broken_down_only_into_children_that_reproduce_its_cases() {
     let ns = nodes();
     let branch = breakdown::Branch::new(&after, &ns);
     assert_eq!(branch.answers(BAND).len(), 1);
-    assert_eq!(ns[0], from_release(BAND));
+    assert_eq!(ns[0], band());
 
     // Into the child whose edge is at 135, refused at the case it breaks.
     let e = ola(&solar(), &break_down_into(LATE)).unwrap_err();
@@ -464,8 +539,14 @@ fn each_edit_is_refused_by_name_with_nothing_written() {
     let open = breakdown::Branch::new(&f, &ns).open_parts("sw_storm_onset");
     assert_eq!(open, vec!["its question", "its behaviour", "an output"]);
     for (id, says) in [
-        ("sw_storm_onset", "is in l3_solar's branch already"),
-        (BAND, "is in l3_solar's branch already"),
+        (
+            "sw_storm_onset",
+            "is in l3_solar's branch or another file of the design already",
+        ),
+        (
+            BAND,
+            "is in l3_solar's branch or another file of the design already",
+        ),
         ("Not an id", "is not an id"),
     ] {
         let e = ola(&f, &add("l3_solar", id)).unwrap_err();
@@ -614,7 +695,7 @@ fn each_edit_is_refused_by_name_with_nothing_written() {
     )
     .unwrap_err();
     assert!(e.contains("is issued, a node file of its own"), "{e}");
-    // A block that answers a broken-down node stays while it answers.
+    // A node is broken down once.
     let (f, _) = ola(&f, &break_down_into(GOOD)).unwrap();
     let e = ola(
         &f,
@@ -718,5 +799,385 @@ fn an_edit_in_the_copy_writes_the_group_file_alone_and_stops_a_second_writer() {
     // No node file is touched by any of it.
     let after: Vec<Vec<u8>> = [BAND, GOOD, LATE].iter().map(|id| node_bytes(id)).collect();
     assert_eq!(after, before);
+    // A file of the copy that cannot be read is never skipped: whether the
+    // edit leaves a reader without what it reads cannot be said.
+    let other = copy.join("groups/l3_power/nodes");
+    std::fs::create_dir_all(&other).unwrap();
+    std::fs::write(other.join("pw_array.vnode"), b"not a design file").unwrap();
+    let e = breakdown::edit_in_place(
+        &copy,
+        "l3_solar",
+        &now,
+        &Edit::FoldBack { node: s(BAND) },
+        WHY,
+        "Ola Sun",
+        &key(13),
+        AT,
+        APP,
+        &sy,
+        &pr,
+    )
+    .unwrap_err();
+    assert!(
+        e.message()
+            .contains("groups/l3_power/nodes/pw_array.vnode cannot be read"),
+        "{}",
+        e.message()
+    );
+    assert_eq!(digest(&group), now);
     let _ = std::fs::remove_dir_all(&copy);
+}
+
+#[test]
+fn the_cases_are_evidence_only_from_a_file_its_checks_pass_and_its_engineer_signed() {
+    // Unsigned: its cases are not taken.
+    let mut ns = nodes();
+    ns[0] = from_release(BAND);
+    let e = ola_with(&solar(), &ns, &[], &break_down_into(GOOD)).unwrap_err();
+    assert!(
+        e.contains("are not taken until they sign it as it is"),
+        "{e}"
+    );
+    // Signed, then a case changed: the signature no longer holds.
+    let mut ns = nodes();
+    for t in ns[0]
+        .tables
+        .iter_mut()
+        .filter(|t| t.path == "results/isolation.csv")
+    {
+        t.csv = t.csv.replacen(",paper,", ",code,", 1);
+    }
+    let e = ola_with(&solar(), &ns, &[], &break_down_into(GOOD)).unwrap_err();
+    assert!(
+        e.contains("are not taken until they sign it as it is"),
+        "{e}"
+    );
+    // A case whose expected value is the code's own, signed as it is: its
+    // own checks refuse it, and nothing is run.
+    let mut agent = from_release(BAND);
+    for t in agent
+        .tables
+        .iter_mut()
+        .filter(|t| t.path == "results/isolation.csv")
+    {
+        t.csv = t.csv.replacen(",paper,", ",agent-generated,", 1);
+    }
+    let row = chain::sign(&agent, BAND, "Nia Node", &key(16), AT, "ok", "").unwrap();
+    agent.signatures.push(row);
+    chain::check_node(&agent, BAND, &solar_registry()).expect("signed as it is");
+    let mut ns = nodes();
+    ns[0] = agent;
+    let e = ola_with(&solar(), &ns, &[], &break_down_into(GOOD)).unwrap_err();
+    assert!(
+        e.contains("own checks refuse it, so its cases are not evidence")
+            && e.contains("never from the code under test"),
+        "{e}"
+    );
+    // Through the server's reading too: no registry, nothing is run.
+    let (after, _) = ola(&solar(), &break_down_into(GOOD)).unwrap();
+    let ns = nodes();
+    let r = breakdown::reproduces(&breakdown::Branch::new(&after, &ns), BAND, None);
+    assert!(
+        matches!(&r.state, State::NotRun(why) if why.contains("does not open through the chain")),
+        "{r:?}"
+    );
+}
+
+#[test]
+fn a_group_file_changed_since_it_was_signed_is_refused_before_anything_is_framed() {
+    // A node engineer's key written into the copy's group file by hand: the
+    // owner's next edit would sign it in, so the file is refused first.
+    let mut forged = solar();
+    forged.assignments.push(Assignment {
+        block_uid: s(GOOD),
+        person: s("Nia Node"),
+        contract_version: 1,
+    });
+    let e = ola(
+        &forged,
+        &Edit::Add {
+            parent: s("l3_solar"),
+            id: s("sw_storm_onset"),
+            question: s(""),
+        },
+    )
+    .unwrap_err();
+    assert!(
+        e.contains("does not open through the chain as it is, so nothing is framed on it"),
+        "{e}"
+    );
+}
+
+#[test]
+fn a_child_is_held_to_its_declaration_and_answers_with_its_answer() {
+    // A child whose declaration says an assistant supplied its relation is
+    // not run (rule 6).
+    let mut ns = nodes();
+    for t in ns[1]
+        .tables
+        .iter_mut()
+        .filter(|t| t.path == "declaration.csv")
+    {
+        t.csv = t.csv.replace(",transcribed,", ",relation,");
+    }
+    let e = ola_with(&solar(), &ns, &[], &break_down_into(GOOD)).unwrap_err();
+    assert!(
+        e.contains(&format!(
+            "{GOOD} is not run: its declaration says an assistant supplied the relation"
+        )),
+        "{e}"
+    );
+    // A child's member, not its answer, answering the node: refused.
+    let mut ns = nodes();
+    let mut member = ns[1]
+        .ports
+        .iter()
+        .find(|p| p.direction == "out")
+        .unwrap()
+        .clone();
+    member.name = s("band_alone");
+    ns[1].ports.push(member);
+    let out = out_port(&from_release(BAND));
+    let e = ola_with(
+        &solar(),
+        &ns,
+        &[],
+        &Edit::BreakDown {
+            node: s(BAND),
+            answers: vec![Answer {
+                output: out.clone(),
+                child: s(GOOD),
+                port: s("band_alone"),
+            }],
+        },
+    )
+    .unwrap_err();
+    assert!(
+        e.contains(&format!(
+            "{GOOD}.band_alone is a member {GOOD} publishes, not its answer"
+        )),
+        "{e}"
+    );
+    // A child answering in another unit: its method is checked against its
+    // own ports before it runs, and refused there.
+    let mut ns = nodes();
+    for p in ns[1].ports.iter_mut().filter(|p| p.direction == "out") {
+        p.unit = s("d");
+    }
+    let e = ola_with(&solar(), &ns, &[], &break_down_into(GOOD)).unwrap_err();
+    assert!(
+        e.contains(&format!(
+            "{GOOD} is not run: its method, line 21: the answer must be s and this is dimensionless"
+        )),
+        "{e}"
+    );
+    // A child wired from where the band's own input comes reads that input.
+    let mut ns = nodes();
+    let source = ns[0]
+        .wires
+        .iter()
+        .find(|w| w.to_block == BAND)
+        .unwrap()
+        .from_ref
+        .clone();
+    for w in ns[1].wires.iter_mut() {
+        w.from_ref = source.clone();
+    }
+    let (_, v) = ola_with(&solar(), &ns, &[], &break_down_into(GOOD)).unwrap();
+    assert_eq!(v.unwrap().state, State::Agrees);
+}
+
+#[test]
+fn a_breakdown_makes_no_loop_and_a_child_reads_its_node_s_input_as_a_release_will() {
+    let (after, _) = ola(&solar(), &break_down_into(GOOD)).unwrap();
+    // The band's input comes from the observed level, a node of its own.
+    let mut files = vec![(s("l3_solar.vgroup"), after.clone())];
+    let mut observed = from_release("sw_f107_observed");
+    observed.meta.insert(s("block_uid"), s("sw_f107_observed"));
+    files.push((s("sw_f107_observed.vnode"), observed));
+    for n in nodes() {
+        files.push((format!("{}.vnode", n.blocks[0].uid), n));
+    }
+    let d = vleo_files::n2::Design::of(&files).expect("the design reads");
+    assert!(d.loops().is_empty(), "{:?}", d.loops());
+    // Node and child in one file, as F5 will issue them in a release: the
+    // child's input reads its node's.
+    let mut both = band();
+    let good = child(GOOD, &|m| m.to_string());
+    both.blocks.extend(good.blocks.clone());
+    both.ports.extend(good.ports.clone());
+    both.wires.extend(good.wires.clone());
+    let found = vleo_files::checks::check_node(&both);
+    assert!(
+        !found
+            .errors()
+            .any(|e| e.what.contains("connects to nothing")),
+        "{:?}",
+        found.errors().collect::<Vec<_>>()
+    );
+}
+
+#[test]
+fn each_edit_keeps_the_design_s_readers_and_ids() {
+    let add = |parent: &str, id: &str| Edit::Add {
+        parent: s(parent),
+        id: s(id),
+        question: s(""),
+    };
+    // Another group's file holds a block, and reads one of solar's.
+    let mut thermal = group_file("l3_thermal");
+    thermal.blocks.push(Block {
+        uid: s("th_panel"),
+        id: s("th_panel"),
+        behaviour: s("open"),
+        ..Block::default()
+    });
+    thermal.wires.push(Wire {
+        to_block: s("th_panel"),
+        to_port: s("load"),
+        from_ref: s("l3_solar.sw_storm_onset.onset"),
+    });
+    let elsewhere = vec![thermal];
+    let ns = nodes();
+    let e = ola_with(&solar(), &ns, &elsewhere, &add("l3_solar", "th_panel")).unwrap_err();
+    assert!(e.contains("another file of the design already"), "{e}");
+    let (f, _) = ola_with(
+        &solar(),
+        &ns,
+        &elsewhere,
+        &add("l3_solar", "sw_storm_onset"),
+    )
+    .unwrap();
+    let e = ola_with(
+        &f,
+        &ns,
+        &elsewhere,
+        &Edit::Rename {
+            block: s("sw_storm_onset"),
+            id: s("sw_storm_start"),
+        },
+    )
+    .unwrap_err();
+    assert!(e.contains("is read by th_panel's input load"), "{e}");
+
+    // The broken-down band reads the observed level by its input: framed
+    // here, the level is not renamed under it.
+    let (f, _) = ola_with(&solar(), &ns, &[], &add("l3_solar", "sw_f107_observed")).unwrap();
+    let (f, _) = ola_with(&f, &ns, &[], &break_down_into(GOOD)).unwrap();
+    let e = ola_with(
+        &f,
+        &ns,
+        &[],
+        &Edit::Rename {
+            block: s("sw_f107_observed"),
+            id: s("sw_f107_seen"),
+        },
+    )
+    .unwrap_err();
+    assert!(
+        e.contains("is read by sw_activity_band's input f107"),
+        "{e}"
+    );
+
+    // Filled, a port again in its place; moved; split, an output read by
+    // another block staying where it is read from.
+    let port = |dir: &str, name: &str, unit: &str| Port {
+        direction: s(dir),
+        name: s(name),
+        port_type: s("number"),
+        unit: s(unit),
+        state: s("open"),
+        ..Port::default()
+    };
+    let fill = |f: &File, block: &str, p: Port| {
+        ola_with(
+            f,
+            &ns,
+            &[],
+            &Edit::Fill {
+                block: s(block),
+                part: Part::Port(Box::new(p)),
+            },
+        )
+        .unwrap()
+        .0
+    };
+    let f = fill(&f, "sw_f107_observed", port("in", "seen", "1"));
+    let f = fill(&f, "sw_f107_observed", port("out", "level", "1"));
+    let f = fill(&f, "sw_f107_observed", port("out", "level", "d"));
+    let ps: Vec<(&str, &str, i64)> = f
+        .ports
+        .iter()
+        .filter(|p| p.block_uid == "sw_f107_observed")
+        .map(|p| (p.name.as_str(), p.unit.as_str(), p.ord))
+        .collect();
+    assert_eq!(ps, vec![("seen", "1", 0), ("level", "d", 1)]);
+    let (f, _) = ola_with(&f, &ns, &[], &add("l3_solar", "sw_storm_onset")).unwrap();
+    let (f, _) = ola_with(
+        &f,
+        &ns,
+        &[],
+        &Edit::Move {
+            block: s("sw_storm_onset"),
+            parent: s("sw_f107_observed"),
+            ord: 0,
+        },
+    )
+    .unwrap();
+    assert!(f
+        .blocks
+        .iter()
+        .any(|b| b.uid == "sw_storm_onset" && b.parent_uid == "sw_f107_observed"));
+    // A block after it, so a split cannot take its place in the order.
+    let (f, _) = ola_with(&f, &ns, &[], &add("l3_solar", "sw_f107_trend")).unwrap();
+    // Read by another group: its output stays where it is read from.
+    let mut power = group_file("l3_power");
+    power.wires.push(Wire {
+        to_block: s("pw_array"),
+        to_port: s("level"),
+        from_ref: s("l3_solar.sw_f107_observed.level"),
+    });
+    let e = ola_with(
+        &f,
+        &ns,
+        &[power],
+        &Edit::Split {
+            block: s("sw_f107_observed"),
+            id: s("sw_f107_level"),
+            ports: vec![s("level")],
+        },
+    )
+    .unwrap_err();
+    assert!(
+        e.contains("sw_f107_observed.level is read by pw_array's input level"),
+        "{e}"
+    );
+    let (f, _) = ola_with(
+        &f,
+        &ns,
+        &[],
+        &Edit::Split {
+            block: s("sw_f107_observed"),
+            id: s("sw_f107_level"),
+            ports: vec![s("level")],
+        },
+    )
+    .unwrap();
+    let sib = f.blocks.iter().find(|b| b.uid == "sw_f107_level").unwrap();
+    let orders: Vec<i64> = f
+        .blocks
+        .iter()
+        .filter(|b| b.parent_uid == sib.parent_uid && b.uid != sib.uid)
+        .map(|b| b.ord)
+        .collect();
+    assert!(!orders.contains(&sib.ord), "{orders:?} {}", sib.ord);
+    assert!(f
+        .ports
+        .iter()
+        .any(|p| p.block_uid == "sw_f107_level" && p.name == "level"));
+    let c = f.changes.last().unwrap();
+    assert!(
+        c.after.as_deref().unwrap_or("").contains("sw_f107_level"),
+        "the change says what it made: {c:?}"
+    );
 }

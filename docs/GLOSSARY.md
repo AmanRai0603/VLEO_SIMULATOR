@@ -199,6 +199,12 @@ every hash. → the manual, *Reference data*
 **Node file** — `<node>.vnode`: one node's content, written only by its node
 engineer, in the node application. A node changes here. → `docs/GROUP_APPS.md`
 
+**Breakdown** — a node answered by its children: in its group's file, a wire
+into each of the node's outputs from the child that answers it, made only by the
+branch's owner, and only when the children, run on the node's own signed
+cases, give what each case expects. The node's own method stays beside them as
+its estimate. → `docs/briefs/F4.md`, `docs/SYSTEM_MODEL.md`, section 2
+
 **Sealed release** — `<group>-<version>.vleo`: a group's structure with every
 node's content in it, signed, and sealed by its subsystem engineer. It goes on
 the shared drive, in `groups/<group>/releases/`, and is taken into today's

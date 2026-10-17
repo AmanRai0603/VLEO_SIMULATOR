@@ -280,11 +280,15 @@ fn inputs(f: &File, b: &Block, ins: &[&Port], out: &mut Findings) {
         let connects = from == "case"
             || match from.split_once('.') {
                 Some((head, port)) => match f.blocks.iter().find(|x| x.uid == head) {
-                    // In this file: the block, and an output of it by that name.
-                    Some(x) => f
-                        .ports
-                        .iter()
-                        .any(|q| q.block_uid == x.uid && q.direction == "out" && q.name == port),
+                    // In this file: the block, and an output of it by that name;
+                    // or, for a child of a broken-down node, an input of its
+                    // node, which the child reads as the node does (F4).
+                    Some(x) => f.ports.iter().any(|q| {
+                        q.block_uid == x.uid
+                            && q.name == port
+                            && (q.direction == "out"
+                                || (q.direction == "in" && x.uid == b.parent_uid))
+                    }),
                     // Another group's: group.node, or group.node.port.
                     None => !head.is_empty() && !port.is_empty(),
                 },
@@ -673,6 +677,78 @@ pub fn method_cases(
             .collect(),
     };
     Some((src.body.clone(), sig, cases))
+}
+
+/// A child of a broken-down node, held to what it must be before it is run
+/// on its node's cases (`breakdown::reproduces`): it says who made its
+/// method (rule 6, as `declaration` holds a node to), and its method reads
+/// and checks against its own ports' units, its first output its answer and
+/// the others the members it publishes. Its own cases are not asked for:
+/// its node's are what it is judged on.
+pub fn child_ready(f: &File, b: &Block) -> Findings {
+    use vleo_sheet::method as m;
+    let mut out = Findings::default();
+    declaration(f, b, &mut out);
+    let Some(src) = f
+        .texts
+        .iter()
+        .find(|t| t.scope == b.uid && t.kind == "pseudocode" && !t.body.trim().is_empty())
+    else {
+        // No method is said where the child is needed, by its behaviour.
+        return out;
+    };
+    let unit = |u: &str| m::parse_unit(if u.trim().is_empty() { "1" } else { u.trim() });
+    let dims = |p: &Port, out: &mut Findings| match unit(&p.unit) {
+        Ok((_, d)) => Some((p.name.clone(), d)),
+        Err(e) => {
+            out.error(
+                &b.id,
+                format!(
+                    "its {} {} is in [{}], which the method language does not read: {}",
+                    if p.direction == "in" {
+                        "input"
+                    } else {
+                        "output"
+                    },
+                    p.name,
+                    p.unit,
+                    e.message()
+                ),
+            );
+            None
+        }
+    };
+    let ports: Vec<&Port> = f.ports.iter().filter(|p| p.block_uid == b.uid).collect();
+    let inputs: Vec<_> = ports
+        .iter()
+        .filter(|p| p.direction == "in")
+        .filter_map(|p| dims(p, &mut out))
+        .collect();
+    let outs: Vec<_> = ports
+        .iter()
+        .filter(|p| p.direction == "out")
+        .filter_map(|p| dims(p, &mut out))
+        .collect();
+    let Some(((_, output), publishes)) = outs.split_first() else {
+        out.error(&b.id, "has no output for its method to answer");
+        return out;
+    };
+    let sig = m::Signature {
+        inputs,
+        output: *output,
+        publishes: publishes.to_vec(),
+    };
+    match m::parse(&src.body) {
+        Err(d) => out.error(&b.id, format!("its method, line {}: {}", d.line, d.msg)),
+        Ok(program) => {
+            for d in m::check(&program, &sig) {
+                if d.severity == m::Severity::Error {
+                    out.error(&b.id, format!("its method, line {}: {}", d.line, d.msg));
+                }
+            }
+        }
+    }
+    out
 }
 
 /// A lesson belongs to a row (docs/LESSONS.md): in a node file, on its own
