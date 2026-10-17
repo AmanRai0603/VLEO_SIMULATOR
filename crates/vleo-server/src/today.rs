@@ -330,6 +330,12 @@ impl Chain {
             Chain::Open { programme, .. } => programme,
         };
         let path = drive.join("groups/systems/systems.vgroup");
+        if !path.is_file() {
+            return Err(
+                "its seal cannot be checked: the drive has no systems' file, which mounts every group"
+                    .into(),
+            );
+        }
         let systems = vleo_files::sqlite::read(&path)
             .map_err(|e| e.message().to_string())
             .and_then(|f| chain::open_systems(&f, programme).map_err(|e| e.message().to_string()))
