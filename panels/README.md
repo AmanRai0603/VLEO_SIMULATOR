@@ -24,6 +24,7 @@ id = "repeatability"
 label = "Repeatability — the mean cycle against every cycle"
 module = "web/js/solar.js"
 mount = "canvas.sw-panel"
+page = "/app"
 draws = "every cycle the record holds, stacked on cycle phase, the mean drawn heavier"
 correct = "cycle 25 dashed and stopping part way; the mean of the complete cycles only"
 
@@ -36,6 +37,12 @@ why = "the two views draw different quantities entirely"
 `mount` is the element the panel owns. Each `[[input]]` names a control it
 claims to depend on, and how to move it — and that claim is what check two
 tests.
+
+`page` is where the panel is drawn: `/app` for a row's figures, which the Node
+workspace draws (its `ready` opens the row with `window.openNode`), and `/`,
+the default, for the rows list. `/`'s node view is gone (docs/briefs/F3.md,
+F3-h); a figure's references were recorded there, and are still the size they
+were, for the reason below.
 
 ## The three checks
 
@@ -261,3 +268,10 @@ Two things this touches that are easy to miss:
 - **The references are unaffected** only because Playwright runs at a scale
   factor of 1. A checker configured for a HiDPI viewport would shoot every
   reference at twice the size, which is a real difference and not a drift.
+- **The width of the page around it.** A figure fills its row's page, so its
+  size is the page's. `/`'s node view stopped at 74rem; the Node workspace's
+  page stops there too, and reaches it on a window of `APP_WIDTH`
+  (`tools/panel_check.py`), so a panel in `/app` is drawn at the size its
+  references were recorded at. On a narrower window the figure is smaller, as
+  it always was on a narrower screen; check 3's shape test is what says the
+  page did not reach it.

@@ -2,6 +2,7 @@ id = "density"
 label = "Density — the precondition, and why there is no curve"
 module = "web/js/solar.js"
 mount = "canvas.sw-panel"
+page = "/app"
 draws = """Not a density profile. The study's density tab needs an atmosphere model owned
 by a subsystem with nothing written in it, so what is drawn is the honest
 precondition: the two drivers such a model takes, against each other, over

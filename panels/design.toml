@@ -2,6 +2,7 @@ id = "design"
 label = "Design — the window against what the vehicle is built for"
 module = "web/js/solar.js"
 mount = "canvas.sw-panel"
+page = "/app"
 draws = """What the record expects against what the design is built for: a return curve
 for the Ap driver, or lead and confidence for F10.7, with the capability and
 the requirement drawn on as the lines a reader compares against."""

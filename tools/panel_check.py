@@ -97,7 +97,30 @@ def spec(path):
             "%s sets pixel_reference = false with no pixel_reference_why. Say what "
             "covers the picture instead, or record a reference" % path.name
         )
+    if d.get("page", "/") not in PAGES:
+        raise SystemExit(
+            "%s opens %r, which is not a page the panels are drawn on: %s"
+            % (path.name, d["page"], ", ".join(PAGES))
+        )
     return d
+
+
+# The pages a panel is drawn on. A row's figures are drawn in the Node
+# workspace (`/app`, `window.openNode`), which `/`'s node view was; the rows
+# list stays on `/`.
+PAGES = ("/", "/app")
+
+# How wide the window is for a panel in `/app`. The Node workspace's page is
+# capped at 74rem, the cap `/`'s node view had, and reaches it on a window this
+# wide, so a row's figures are drawn at the size their references were
+# recorded at. Check 3 refuses a picture of another shape, so a page that did
+# not reach it says so rather than passing.
+APP_WIDTH = 1920
+
+
+def opened(url, d):
+    """The page panel `d` is drawn on, at `url`."""
+    return url.rstrip("/") + d.get("page", "/")
 
 
 class Server:
@@ -350,12 +373,14 @@ def check_all(ids=None, record=False):
             # stitched, and the stitching composites whatever the page had
             # scrolled behind it — a reference that then changes when something
             # unrelated moves.
-            page = browser.new_page(
-                viewport={"width": d.get("width", 1440), "height": d.get("height", 1600)}
-            )
+            width = d.get("width", 1440)
+            if d.get("page", "/") == "/app":
+                width = max(width, APP_WIDTH)
+            page = browser.new_page(viewport={"width": width, "height": d.get("height", 1600)})
+            where = opened(url, d)
             errors = []
             page.on("pageerror", lambda e: errors.append(str(e)))
-            page.goto(url, wait_until="networkidle")
+            page.goto(where, wait_until="networkidle")
             mount = d["mount"]
             # Some panels do not draw until somebody asks. The sweep is the
             # example: its canvas is created hidden and stays blank until a
@@ -434,7 +459,7 @@ def check_all(ids=None, record=False):
                         "%s FAILED when %r moved rather than redrawing: %s"
                         % (mount, inp["name"], fail),
                     ))
-                page.goto(url, wait_until="networkidle")
+                page.goto(where, wait_until="networkidle")
                 if d.get("ready"):
                     try:
                         page.evaluate(d["ready"])
@@ -459,7 +484,7 @@ def check_all(ids=None, record=False):
             # this is happening, which is the point: a test hook in the page
             # would be a thing to keep working rather than a thing that checks.
             def _open(settle_ms, state=None):
-                page.goto(url, wait_until="networkidle")
+                page.goto(where, wait_until="networkidle")
                 if d.get("ready"):
                     try:
                         page.evaluate(d["ready"])
@@ -569,7 +594,7 @@ def check_all(ids=None, record=False):
             # taken from the panel's own opening state and not from the branch
             # 2b happened to need.
             if d.get("engine") or d.get("figures"):
-                page.goto(url, wait_until="networkidle")
+                page.goto(where, wait_until="networkidle")
                 if d.get("ready"):
                     try:
                         page.evaluate(d["ready"])

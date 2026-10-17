@@ -2,6 +2,7 @@ id = "repeatability"
 label = "Repeatability — the mean cycle against every cycle"
 module = "web/js/solar.js"
 mount = "canvas.sw-panel"
+page = "/app"
 draws = """Every cycle the record holds, stacked on cycle phase, with the mean of the
 COMPLETE cycles drawn heavier over them. Cycle 25 is dashed and stops part way,
 because it is still running and the record simply has no days past its end."""

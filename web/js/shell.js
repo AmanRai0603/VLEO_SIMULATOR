@@ -121,7 +121,7 @@ function draw() {
     // open, and draws it again from the copy each time it is entered.
     if (!$('#sh-node')) {
       $('#sh-main').innerHTML = '<div id="sh-node"></div>';
-      openNodeWs($('#sh-node'));
+      nodeOpening = openNodeWs($('#sh-node'));
     }
   } else if (S.ws === 'system') {
     // Drawn on the way in, as the Node workspace is.
@@ -164,6 +164,9 @@ async function openExplore(host) {
 /** Where `#node/<id>` or My work asked the Node workspace to open, until it does. */
 let nodeAt = '';
 
+/** The Node workspace's last opening, until its node is drawn. */
+let nodeOpening = Promise.resolve();
+
 /** The Node workspace, loaded the first time it is opened. */
 async function openNodeWs(host) {
   try {
@@ -183,6 +186,11 @@ function toNode(id) {
   $('#sh-main').innerHTML = '';
   draw();
 }
+
+// A row opened by hand on the console, and by the checks that drive a row's
+// figures (panels/*.toml, tools/input_check.py): the Node workspace at that
+// row, answered once its page is drawn, as `/`'s node view was.
+window.openNode = async id => { toNode(id); await nodeOpening; };
 
 /** Where `#system/<group>` asked the System workspace to open, until it does. */
 let systemAt = '';

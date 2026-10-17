@@ -16,6 +16,7 @@ id = "sweep"
 label = "The behaviour sweep"
 module = "web/js/run.js"
 mount = "canvas.sw-plot"
+page = "/app"
 draws = """
 One node's answer against one declared decision, over that decision's whole
 declared range, as a line. The points are the engine's; the page computes
