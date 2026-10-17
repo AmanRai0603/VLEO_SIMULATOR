@@ -45,7 +45,9 @@
               "refused",
               "two files",
               "request",
-              "request refused"
+              "request refused",
+              "start",
+              "not started"
             ]
           },
           "group": {
