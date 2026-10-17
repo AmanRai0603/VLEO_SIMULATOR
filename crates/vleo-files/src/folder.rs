@@ -113,6 +113,8 @@ impl Spec {
     }
 
     /// The `## ` headings the text of `role` holds, in their order.
+    // An edit is made in the application, never in the page (`edit`).
+    #[cfg(not(target_arch = "wasm32"))]
     pub(crate) fn headings(&self, role: &str) -> Vec<String> {
         self.texts
             .iter()
@@ -123,6 +125,8 @@ impl Spec {
 
     /// What the text of `role` may not hold that `text` does, and why, as
     /// the folder's checks say it.
+    // An edit is made in the application, never in the page (`edit`).
+    #[cfg(not(target_arch = "wasm32"))]
     pub(crate) fn forbidden(&self, role: &str, text: &str) -> Option<String> {
         let rule = self.texts.iter().find(|t| t.role == role)?;
         rule.forbid
