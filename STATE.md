@@ -9,7 +9,7 @@ Target 1.0.0 on Monday 19 October; Tuesday to Thursday are the buffer.
 
 ## Person A · day
 
-Handed over Friday 16 October (S1 and S2: F1 to F3-f, the key's proof, and F3-g1, the Node workspace). Nothing is merged: everything waits on Aman.
+Handed over Saturday 17 October (S1 to S3: F1 to F3-f, the key's proof, F3-g1, the Node workspace, and F4, the breakdown). Nothing is merged: everything waits on Aman.
 
 - **Open, in merge order:**
   - **162 the plan.** It now carries the nine briefs and F3's Plan (`docs/briefs/F3.md`).
@@ -87,11 +87,28 @@ Handed over Friday 16 October (S1 and S2: F1 to F3-f, the key's proof, and F3-g1
     - `GET /v1/node/<id>/file` and `GET /v1/my-work` gain fields, additive. Proved by `tools/node_check.py` (panels job) and a program test.
 
     The Opus review found one blocking point (an empty assignment made a node everyone's: the screen had re-derived who may write it) and eight more; all fixed in a088a3ce, each shown red but four named untested. CI's panels job then failed on `manual_check.py`, which B's 170 left numbering a row's page as before; fixed there too. CI is green on a088a3ce.
+  - **186 F4-a the breakdown, the library: high risk.** Stacked on 185, on `claude/a-f4-breakdown`.
+    - `vleo_files::breakdown`: add, fill, break down, move, rename, split, fold back and remove, each writing the group file and nothing else, by the branch's owner or their deputy (`chain::may_frame`, which People now uses too), each with a why in its `change` row, signed afresh.
+    - A node is broken down only into children that reproduce its own cases: its signed cases, from a file its checks pass, run through its children in the method language, each case judged by `judge_outcome`.
+    - `edit_in_place` writes it in the copy under the lock; a second writer is stopped by the digest.
+
+    The Opus review found two blocking points (an edit re-signed a group file changed by hand; a node's cases were taken unsigned and unchecked) and eleven more; all fixed in 0ed6a202, each with a test shown red but the paths named untested. Nine questions for Aman are in its body. CI was green on the first commit; the fixes' run is pending.
+  - **187 F4-b the branch in the System workspace: high risk.** Stacked on 186, on `claude/a-f4b-system`.
+    - `GET /v1/branch?group=` and `POST /v1/branch/<id>`, every rule the library's.
+    - `/app`'s System workspace: the tree, the block chosen with its cases beside the estimate, and the edit forms for the owner or their deputy only.
+    - Proved by a program test and `tools/branch_check.py` (panels job, ports 7869 and 7870). Its Opus review is running; CI is pending.
 - **What 171 decides, which B's PRs must follow:**
   - **Ownership follows the mount.** Only the programme's file (mounting `systems`) and the systems' file (mounting each `l3_*`) mount anything.
   - **A group file registers only node engineers.** It holds nobody the programme's file registers, and no key it registers. `open_group_in` refuses anything else, by name.
   - **The test drive (165) must change.** It mounts the l3 groups in the programme's file, so they read as mounted twice. It should assign the mounting blocks in the systems' file instead, and register only node engineers in group files.
   - **The anchor** is accepted once per drive, with `accept_anchor` on `POST /v1/key/open`. A scenario that opens a key passes it once, and since 174 also `session`, read from `<keys>/open.html`. A face must make the person compare the fingerprint, never fill it in from the answer.
+- **What 186 and 187 decide:**
+  - **A breakdown is the group file's**: one wire into each output of the node from the child that answers it. The node's own file is not touched until F5 issues it again.
+  - **A node's cases are evidence only once its node engineer has signed them as they are**, and its file's checks pass. A breakdown into children before that is refused, said why. So every breakdown waits for children F5 issues (question 6 on 186).
+  - **A group file is framed only when it opens through the chain as it is.** Anything that signs a group file afresh opens it first.
+  - **Every file of the copy is read for an edit**, releases among them, and one that cannot be read refuses it: a reader is never missed.
+  - **The page library's sources are every crate compiled into it**, the kernel among them: a kernel change makes `web/files.wasm.gz` stale, and `xtask files-wasm` must run after `cargo fmt`, not before.
+  - **For B:** the small drive gains two unassigned children of Pia's band (`sw_activity_count`, and `sw_activity_count_late`, wrong at 135 sfu on purpose). A scenario that counts solar's nodes must allow for them.
 - **What 185 decides:**
   - **Who may write a node is asked of the library, never worked out again on a screen** (`Registry::may_sign_node`, with `Registry::key`). The review found a second copy of the rule had lost its guard.
   - **A page never reads a node file's bytes.** What a screen shows of a file, the program says as JSON; writing a node from a page (F3-g2) goes through the library in the program.
@@ -139,6 +156,7 @@ Handed over Friday 16 October (S1 and S2: F1 to F3-f, the key's proof, and F3-g1
 - **Lockfiles:** `crates/vleo-py` keeps its own, built `--locked` in CI, and so does `crates/vleo-kernel-wasm` until 177 removes it. A new dependency of `vleo-files` or `vleo-server` needs them refreshed, as 171 does.
 - **Disk:** the container's allowance filled on S1 and again on S2. `xtask files-wasm` and the scenarios leave a `target/` of 10 GB or more inside the worktree they run in; delete it after a push. Old worktrees' `target/` folders and `target/*/incremental` were deleted to make room.
 - **Next for A, in order:**
+  - **187's review**, then CI on 186 and 187.
   - **F3-g2, writing the node** (the brief, F3-g): the question, the explanation, the method and the cases through the library (`POST /v1/node/<id>/edit`, with a dry run for checked-as-you-type), and the live page of your copy's revision laid over today's design. High risk; Opus review.
   - **For Aman:** the brief's questions 9 (one node shape, F3-g0) and 10 (ports), and 7 and 8 (where today's page's Rows, Architecture, Forms and manual go).
   - **Then F3-h, the node view's removal**, once F3-g2 covers what it shows, with the panel checks moved to `/app`.
