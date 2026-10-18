@@ -346,23 +346,139 @@ pub struct Mark {
     pub raised: Option<i64>,
 }
 
+/// A closure of today's design as the engine answers it on the design as
+/// declared: its state, its margin when it has one, and why. The released
+/// design keeps each as a row of `margins.csv`, so a budget is read across
+/// releases and never computed again (F6-c, item 7).
+#[derive(Clone, Debug, PartialEq)]
+pub struct Margin {
+    pub node: String,
+    pub state: String,
+    pub margin: Option<f64>,
+    pub why: String,
+}
+
+/// The columns of `margins.csv`: each closure's answer, the design it was
+/// released as, and the application whose engine gave it.
+pub const MARGINS: [&str; 6] = ["node", "state", "margin", "why", "design", "application"];
+
+/// One closure's answers across released designs, oldest first: its margin
+/// in each design that kept margins and held it as a closure, by version.
+#[derive(Clone, Debug, PartialEq)]
+pub struct Budget {
+    pub node: String,
+    pub answers: Vec<(String, Margin)>,
+}
+
+/// Budgets across releases (F6-c, item 7): every closure any of `designs`
+/// kept a margin for, by name, with its answer in each design that kept it,
+/// in the order `designs` come ([`released_in`] gives them oldest first);
+/// and the version of each design released before margins were kept.
+/// Nothing is computed: each margin is the one its design was released
+/// with. A table that does not read is refused by name.
+pub fn budgets(designs: &[Opened]) -> Result<(Vec<Budget>, Vec<String>), String> {
+    let mut by: std::collections::BTreeMap<String, Vec<(String, Margin)>> =
+        std::collections::BTreeMap::new();
+    let mut without = Vec::new();
+    for o in designs {
+        match margins_of(&o.design)? {
+            None => without.push(o.version.clone()),
+            Some(kept) => {
+                for m in kept {
+                    by.entry(m.node.clone())
+                        .or_default()
+                        .push((o.version.clone(), m));
+                }
+            }
+        }
+    }
+    Ok((
+        by.into_iter()
+            .map(|(node, answers)| Budget { node, answers })
+            .collect(),
+        without,
+    ))
+}
+
 /// What the system engineer asks for when they release the design:
 /// `version`, after `previous`, the design released now; `changed`, in their
-/// words; and `understood`, every red mark of `marks` they mark understood.
+/// words; `understood`, every red mark of `marks` they mark understood; and
+/// `margins`, every closure as the engine answers it on the design as
+/// declared.
 pub struct Asked<'a> {
     pub version: &'a str,
     pub previous: Option<&'a str>,
     pub changed: &'a str,
     pub marks: &'a [Mark],
     pub understood: &'a [String],
+    pub margins: &'a [Margin],
+}
+
+/// The margins a released design was released with, read from its
+/// `margins.csv`: `None` for a design released before margins were kept.
+/// Refused by name when the table is not as [`release`] writes it: its
+/// columns, a closure named twice or not at all, a state not said, a margin
+/// that is not a finite number, or a row of another design. A design
+/// released again (W16) holds the margins of the design it is again, as that
+/// one was released with them, so its rows are of `again_of`.
+pub fn margins_of(design: &File) -> Result<Option<Vec<Margin>>, String> {
+    let version = design.meta.get("version").map_or("", String::as_str);
+    let of_design = design
+        .meta
+        .get("again_of")
+        .filter(|v| !v.is_empty())
+        .map_or(version, String::as_str);
+    let Some(t) = design.tables.iter().find(|t| t.path == "margins.csv") else {
+        return Ok(None);
+    };
+    let (head, rows) = crate::csv::parse(&t.csv);
+    if head != MARGINS {
+        return Err(format!(
+            "design {version}'s margins.csv has the columns {}, not {}",
+            head.join(","),
+            MARGINS.join(",")
+        ));
+    }
+    let mut out: Vec<Margin> = Vec::new();
+    for (i, row) in rows.iter().enumerate() {
+        let at = |what: String| format!("design {version}'s margins.csv, row {}: {what}", i + 1);
+        let [node, state, margin, why, of, _app] = row.as_slice() else {
+            return Err(at(format!("{} values, not {}", row.len(), MARGINS.len())));
+        };
+        if node.trim().is_empty() || state.trim().is_empty() {
+            return Err(at("a closure and its state are said on every row".into()));
+        }
+        if of != of_design {
+            return Err(at(format!("it is of design {of}")));
+        }
+        if out.iter().any(|m| &m.node == node) {
+            return Err(at(format!("{node} is named twice")));
+        }
+        let margin = match margin.trim() {
+            "" => None,
+            m => match m.parse::<f64>() {
+                Ok(v) if v.is_finite() => Some(v),
+                _ => return Err(at(format!("{node}'s margin {m:?} is not a finite number"))),
+            },
+        };
+        out.push(Margin {
+            node: node.clone(),
+            state: state.clone(),
+            margin,
+            why: why.clone(),
+        });
+    }
+    Ok(Some(out))
 }
 
 /// The design `asked.version`, released by `by` with `key` at `at`, from
 /// today's design: refused whole unless `checks` holds, every red mark is
 /// raised as an issue or marked understood, `by` is the system engineer or
 /// their deputy with a key the programme's file counts then, and the
-/// version comes after the design released now. `app` is the application
-/// releasing it, the oldest that can run it.
+/// version comes after the design released now, and every margin names one
+/// closure once, with its state, and a finite margin when it has one. `app`
+/// is the application releasing it, the oldest that can run it, whose engine
+/// gave the margins.
 #[allow(clippy::too_many_arguments)]
 pub fn release(
     checks: &Integration,
@@ -380,6 +496,7 @@ pub fn release(
         changed,
         marks,
         understood,
+        margins,
     } = *asked;
     if !checks.holds() {
         let failing = checks.failing();
@@ -446,6 +563,29 @@ pub fn release(
         ));
     }
     let app_version = app.split_whitespace().nth(1).unwrap_or("");
+    // Every closure as the engine answered it, kept as it was said: a margin
+    // the next release is read against, never computed again.
+    let mut said: Vec<&str> = Vec::new();
+    for m in margins {
+        if m.node.trim().is_empty() || m.state.trim().is_empty() {
+            return Err(refused(
+                "a closure's margin names the closure and its state: the engine's answer is kept as it was said",
+            ));
+        }
+        if said.contains(&m.node.as_str()) {
+            return Err(refused(format!(
+                "{} has two margins: a closure has one answer on the design as declared",
+                m.node
+            )));
+        }
+        if m.margin.is_some_and(|v| !v.is_finite()) {
+            return Err(refused(format!(
+                "{}'s margin is not a finite number, so it is not kept as one",
+                m.node
+            )));
+        }
+        said.push(&m.node);
+    }
     let mut f = File::new(Kind::Design, app);
     f.meta.insert("version".into(), version.into());
     f.meta
@@ -498,6 +638,24 @@ pub fn release(
         scope: FILE.into(),
         path: "red_marks.csv".into(),
         csv: crate::csv::write(&["mark", "said", "how"], &red),
+    });
+    let kept: Vec<Vec<String>> = margins
+        .iter()
+        .map(|m| {
+            vec![
+                m.node.clone(),
+                m.state.clone(),
+                m.margin.map_or(String::new(), |v| v.to_string()),
+                m.why.clone(),
+                version.to_string(),
+                app_version.to_string(),
+            ]
+        })
+        .collect();
+    f.tables.push(Tbl {
+        scope: FILE.into(),
+        path: "margins.csv".into(),
+        csv: crate::csv::write(&MARGINS, &kept),
     });
     f.texts.push(Text {
         scope: FILE.into(),
@@ -808,8 +966,9 @@ fn read_bytes(bytes: &[u8], how: &crate::upgrade::Upgrade) -> Result<File, Error
 /// says: its bytes give the SHA-256 kept beside them, each release is a row
 /// of `released.csv` and each row a file held, once, and each opens as the
 /// group's release, version and fingerprint its row names; the programme's
-/// and the systems' files are held, and are those files. Anything else is
-/// refused by name, never passed over.
+/// and the systems' files are held, and are those files; and the margins
+/// it keeps, when it keeps them, read as [`margins_of`] reads them.
+/// Anything else is refused by name, never passed over.
 #[cfg(not(target_arch = "wasm32"))]
 pub fn open_held(f: &File, programme: &Registry, app: &str) -> Result<Opened, Error> {
     let version = f.meta.get("version").cloned().unwrap_or_default();
@@ -977,6 +1136,9 @@ pub fn open_held(f: &File, programme: &Registry, app: &str) -> Result<Opened, Er
             extra.path
         )));
     }
+    // The margins it was released with read as they were kept, when it
+    // keeps them.
+    margins_of(f).map_err(refused)?;
     Ok(Opened {
         design: f.clone(),
         version,

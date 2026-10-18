@@ -1,0 +1,94 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "design-budgets",
+  "description": "Every closure's margin across the designs released on the drive, read from each one's margins.csv as the engine answered when it was released, oldest first, never computed again; or why there are none.",
+  "type": "object",
+  "properties": {
+    "ok": {
+      "type": "boolean"
+    },
+    "drive": {
+      "type": "string",
+      "description": "The drive today's design is built from, whose released designs are read."
+    },
+    "designs": {
+      "type": "array",
+      "description": "Every released design on the drive, oldest first.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "version": {
+            "type": "string"
+          },
+          "kept": {
+            "type": "boolean",
+            "description": "Whether it keeps its margins."
+          },
+          "application": {
+            "type": "string",
+            "description": "The application whose engine gave its margins, when it keeps them."
+          },
+          "says": {
+            "type": "string",
+            "description": "Why it has no margins, when it keeps none."
+          }
+        },
+        "required": [
+          "version",
+          "kept"
+        ]
+      }
+    },
+    "closures": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "node": {
+            "type": "string"
+          },
+          "answers": {
+            "type": "array",
+            "description": "Its answer in each released design that kept it, oldest first.",
+            "items": {
+              "type": "object",
+              "properties": {
+                "version": {
+                  "type": "string"
+                },
+                "state": {
+                  "type": "string"
+                },
+                "margin": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "why": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "version",
+                "state",
+                "margin",
+                "why"
+              ]
+            }
+          }
+        },
+        "required": [
+          "node",
+          "answers"
+        ]
+      }
+    },
+    "message": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "ok"
+  ]
+}

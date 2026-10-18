@@ -190,8 +190,13 @@ def check():
             step('and Ola is offered no edit of it the program would refuse',
                  p.locator('#sy-q').count() == 0 and p.locator('#sy-remove').count() == 0
                  and p.locator('.sy-carried').count() == 1, blk[-300:])
-            step('the budgets are a link to Explore\'s health map',
-                 p.locator('.sy-budgets[href="#explore/design"]').count() == 1)
+            step('today\'s margins are a link to Explore\'s health map',
+                 p.locator('.sy-margins-today[href="#explore/design"]').count() == 1)
+            p.wait_for_selector('.sy-budgets-said, .sy-budgets-refused', timeout=15000)
+            said = p.inner_text('.sy-budgets')
+            step('the budgets across releases are not read from the design\'s own files, and the page says why',
+                 p.locator('.sy-budgets-refused').count() == 1
+                 and 'budgets are read from the designs released on the drive' in said, said[:300])
             step('no page error', not errors, '; '.join(errors[:3]))
             b.close()
     finally:

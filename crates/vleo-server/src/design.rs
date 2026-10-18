@@ -26,7 +26,7 @@
 //! previews and their answers (F6-c), the daily snapshot.
 
 use super::*;
-use vleo_files::design::{self, Asked, Held, Integration, Mark, Part, Taken, Whole};
+use vleo_files::design::{self, Asked, Held, Integration, Margin, Mark, Part, Taken, Whole};
 use vleo_files::meta::DesignVersion;
 use vleo_modules::health::{health, is_closure, State};
 
@@ -429,12 +429,14 @@ fn released(params: &str, ctx: &Ctx) -> Result<String, String> {
             bytes: &sb,
         },
     };
+    let margins = margins(ctx);
     let asked = Asked {
         version: &version,
         previous: t.released.as_deref(),
         changed: &changed,
         marks: &t.marks,
         understood: &understood,
+        margins: &margins,
     };
     let at = results::now_utc();
     let (f, who) = me::with_key(|key, me| {
@@ -557,6 +559,130 @@ const NOTES_HEAD: &str = "# Released designs\n\nWhat changed in each, newest fir
 
 /// The health map of the design released, as CSV: each node's state and
 /// why on the design as declared, the engine's.
+/// Every closure of today's design as the engine answers it on the design as
+/// declared: what the released design keeps as `margins.csv`, so a budget is
+/// read across releases and never computed again.
+fn margins(ctx: &Ctx) -> Vec<Margin> {
+    let g = vleo_modules::engine();
+    let map = health(g, &declared_case(ctx));
+    map.nodes
+        .iter()
+        .filter(|n| is_closure(g, n.node))
+        .map(|n| Margin {
+            node: g.nodes[n.node as usize].id.to_string(),
+            state: n.state.name().to_string(),
+            margin: n.margin,
+            why: n.why.clone(),
+        })
+        .collect()
+}
+
+/// `GET /v1/design/budgets`: every closure's margin across the designs
+/// released on the drive today's design is built from, read from each one's
+/// `margins.csv` as it was released, oldest first; nothing is computed
+/// again. A design released before margins were kept is said, never left
+/// out, and a design on the drive that does not read back refuses the whole
+/// answer by name.
+pub(super) fn budgets_route(ctx: &Ctx) -> String {
+    let Some(report) = built_from() else {
+        return me::refusal(
+            "the design open is the design's own files, not today's design: budgets are read from the designs released on the drive",
+        );
+    };
+    let drive = PathBuf::from(&report.drive);
+    let c = match chain_of(&drive, ctx) {
+        Ok(c) => c,
+        Err(why) => return me::refusal(&why),
+    };
+    let designs = match design::released_in(
+        &[&drive.join("design"), &drive.join("design/archive")],
+        &c.programme,
+        APP,
+    ) {
+        Ok(d) => d,
+        Err(e) => {
+            return me::refusal(&format!(
+                "the released designs are not read: {}",
+                e.message()
+            ))
+        }
+    };
+    let (budgets, without) = match design::budgets(&designs) {
+        Ok(b) => b,
+        // Read back through `open_held`, which reads its margins: never
+        // here.
+        Err(why) => return me::refusal(&why),
+    };
+    let mut j = Json::new();
+    j.raw("{");
+    j.bool_field("ok", true);
+    j.str_field("drive", &drive.display().to_string());
+    j.key("designs").open_arr();
+    for o in &designs {
+        j.open_obj();
+        j.str_field("version", &o.version);
+        if without.contains(&o.version) {
+            j.bool_field("kept", false);
+            j.str_field(
+                "says",
+                &format!(
+                    "design {} was released before margins were kept, so its budgets are not known",
+                    o.version
+                ),
+            );
+        } else {
+            j.bool_field("kept", true);
+            j.str_field(
+                "application",
+                o.design
+                    .meta
+                    .get("oldest_application")
+                    .map_or("", String::as_str),
+            );
+        }
+        j.close_obj();
+    }
+    j.close_arr();
+    j.key("closures").open_arr();
+    for b in &budgets {
+        j.open_obj();
+        j.str_field("node", &b.node);
+        j.key("answers").open_arr();
+        for (version, m) in &b.answers {
+            j.open_obj();
+            j.str_field("version", version);
+            j.str_field("state", &m.state);
+            match m.margin {
+                Some(v) => j.num_field("margin", v),
+                None => j.key("margin").raw("null"),
+            };
+            j.str_field("why", &m.why);
+            j.close_obj();
+        }
+        j.close_arr();
+        j.close_obj();
+    }
+    j.close_arr();
+    let kept = designs.len() - without.len();
+    j.str_field(
+        "message",
+        &if designs.is_empty() {
+            "no design is released on the drive yet, so there are no budgets across releases".to_string()
+        } else {
+            format!(
+                "{} closure{} across {} of {} released design{}: each margin as the engine answered it when its design was released, on the design as declared, never computed again",
+                budgets.len(),
+                if budgets.len() == 1 { "" } else { "s" },
+                kept,
+                designs.len(),
+                if designs.len() == 1 { "" } else { "s" }
+            )
+        },
+    );
+    j.raw("}");
+    j.0
+}
+
 fn health_csv(ctx: &Ctx, version: &str) -> String {
     let g = vleo_modules::engine();
     let map = health(g, &declared_case(ctx));

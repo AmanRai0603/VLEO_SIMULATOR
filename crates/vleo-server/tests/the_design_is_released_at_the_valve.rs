@@ -605,6 +605,29 @@ fn the_system_engineer_releases_the_design_and_it_goes_back_to_the_drive() {
         .find(|m| m.path == "groups/l3_solar/releases/l3_solar-1.0.vleo")
         .expect("solar 1.0 held whole");
     assert_eq!(held.bytes, std::fs::read(drive.join(&held.path)).unwrap());
+    // Every closure of today's design as the engine answered it, kept with
+    // the design and the application.
+    let margins = vleo_files::design::margins_of(&d)
+        .unwrap()
+        .expect("margins kept");
+    assert!(!margins.is_empty(), "today's design has closures");
+    let app = env!("CARGO_PKG_VERSION");
+    let t = d.tables.iter().find(|t| t.path == "margins.csv").unwrap();
+    assert!(
+        t.csv
+            .lines()
+            .skip(1)
+            .all(|l| l.ends_with(&format!(",{version},{app}"))),
+        "{}",
+        t.csv
+    );
+    let first = &margins[0];
+    let budgets = ask(port, "GET", "/v1/design/budgets", &[], false);
+    assert!(
+        budgets.contains("\"designs\":[]")
+            && budgets.contains("no design is released on the drive yet"),
+        "{budgets}"
+    );
     let t = d.tables.iter().find(|t| t.path == "red_marks.csv").unwrap();
     assert!(t.csv.contains("issue:1-l3_solar,"), "{}", t.csv);
     assert!(t.csv.contains("understood by Test Sam"), "{}", t.csv);
@@ -677,6 +700,37 @@ fn the_system_engineer_releases_the_design_and_it_goes_back_to_the_drive() {
     let r = post(port, "/v1/put-back", &[("files", &files.join("\n"))]);
     assert!(r.contains("\"written\":true"), "{r}");
     assert!(drive.join(&path).is_file());
+    // Its margins are the budgets across releases now, read as released.
+    let budgets = ask(port, "GET", "/v1/design/budgets", &[], false);
+    assert!(
+        budgets.contains(&format!(
+            "\"version\":\"{version}\",\"kept\":true,\"application\":\"{app}\""
+        )) && budgets.contains(&format!(
+            "{{\"node\":\"{}\",\"answers\":[{{\"version\":\"{version}\",\"state\":\"{}\"",
+            first.node, first.state
+        )) && budgets.contains(&format!(
+            "{} closure{} across 1 of 1 released design:",
+            margins.len(),
+            if margins.len() == 1 { "" } else { "s" }
+        )),
+        "{budgets}"
+    );
+    // A design released before margins were kept is said, never left out.
+    let mut before = d.clone();
+    before.tables.retain(|t| t.path != "margins.csv");
+    before.meta.insert(s("version"), s("2099.1.1"));
+    before.signatures.retain(|r| r.scope != FILE);
+    let row = chain::sign(&before, FILE, "Test Sam", &key(92), AT, "ok", "").unwrap();
+    before.signatures.push(row);
+    let planted = drive.join("design/design-2099.1.1.vleo");
+    sqlite::write(&before, &planted).unwrap();
+    let budgets = ask(port, "GET", "/v1/design/budgets", &[], false);
+    assert!(
+        budgets.contains("{\"version\":\"2099.1.1\",\"kept\":false,\"says\":\"design 2099.1.1 was released before margins were kept")
+            && budgets.contains("across 1 of 2 released designs:"),
+        "{budgets}"
+    );
+    std::fs::remove_file(&planted).unwrap();
     let i = checks();
     assert!(i.contains("\"holds\":false"), "{i}");
     assert!(i.contains(&format!("\"released\":\"{version}\"")), "{i}");
