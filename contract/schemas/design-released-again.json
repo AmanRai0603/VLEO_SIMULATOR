@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "design-released-again",
+  "description": "An earlier released design released again under a new version in your copy (W16): its file, notes and readable/, and the words for everyone; or why not.",
+  "type": "object",
+  "properties": {
+    "ok": {
+      "type": "boolean"
+    },
+    "version": {
+      "type": "string"
+    },
+    "again_of": {
+      "type": "string"
+    },
+    "path": {
+      "type": "string",
+      "description": "design/design-<version>.vleo inside the copy."
+    },
+    "files": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "announce": {
+      "type": "string"
+    },
+    "message": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "ok"
+  ]
+}

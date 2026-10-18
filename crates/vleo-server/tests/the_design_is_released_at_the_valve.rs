@@ -813,5 +813,36 @@ fn the_system_engineer_releases_the_design_and_it_goes_back_to_the_drive() {
         )),
         "{r}"
     );
+    let mut files = Vec::new();
+    for p in std::iter::once(path3.clone())
+        .chain(["design/NOTES.md".to_string()])
+        .chain(
+            [
+                "Groups", "Nodes", "Ports", "Wires", "Closures", "Health", "Status",
+            ]
+            .map(|n| format!("readable/{n}.csv")),
+        )
+    {
+        // Only what differs from the drive goes back.
+        let mine = std::fs::read(copy.join(&p)).unwrap();
+        if std::fs::read(drive.join(&p)).ok().as_deref() == Some(&mine[..]) {
+            continue;
+        }
+        files.push(format!(
+            "{} {p}",
+            copied::digest(&std::fs::read(copy.join(&p)).unwrap())
+        ));
+    }
+    let r = post(port, "/v1/put-back", &[("files", &files.join("\n"))]);
+    assert!(r.contains("\"written\":true"), "{r}");
+    let list = ask(port, "GET", "/v1/design/released", &[], false);
+    assert!(
+        list.contains(&format!("\"released\":\"{third}\"")),
+        "{list}"
+    );
+    assert!(
+        list.contains(&format!("\"version\":\"{third}\",\"previous\":\"{next}\",\"released_by\":\"Test Sam\",\"again_of\":\"{version}\"")),
+        "{list}"
+    );
     let _ = std::fs::remove_dir_all(&scratch);
 }

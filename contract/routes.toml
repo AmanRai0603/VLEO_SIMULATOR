@@ -363,6 +363,24 @@ path = "/v1/design/release"
 params = [["session", "@session"], ["version", "2026.10.1"], ["changed", "x"]]
 
 [[route]]
+method = "GET"
+path = "/v1/design/released"
+answer = "json"
+schema = "design-released-list"
+[[route.example]]
+name = "design-released-no-copy"
+
+[[route]]
+method = "POST"
+path = "/v1/design/release-again"
+answer = "json"
+schema = "design-released-again"
+[[route.example]]
+name = "design-release-again-refused"
+path = "/v1/design/release-again"
+params = [["session", "@session"], ["of", "2026.10.1"], ["version", "2026.10.2"], ["why", "x"]]
+
+[[route]]
 method = "POST"
 path = "/v1/node/<id>/lesson"
 answer = "json"
