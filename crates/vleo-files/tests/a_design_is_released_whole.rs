@@ -1026,7 +1026,7 @@ fn a_released_design_is_read_back_as_it_was_released() {
     sy.bytes = p.bytes;
     sy.sha256 = p.sha256;
     let e = refused(resigned(x));
-    assert!(e.contains("which is not systems's file"), "{e}");
+    assert!(e.contains("which is not the systems' file"), "{e}");
 }
 
 #[test]
@@ -1055,4 +1055,256 @@ fn every_released_design_on_the_drive_is_read_back_oldest_first() {
         e.message()
     );
     let _ = std::fs::remove_dir_all(&dir);
+}
+
+/// `d` with its `released.csv` made `csv`.
+fn with_released(mut d: File, csv: impl Fn(&str) -> String) -> File {
+    for t in d.tables.iter_mut().filter(|t| t.path == "released.csv") {
+        t.csv = csv(&t.csv);
+    }
+    d
+}
+
+#[test]
+fn what_a_released_design_holds_is_refused_by_name_whenever_it_is_not_what_it_says() {
+    let w = world();
+    let r = solar_12(&w);
+    let i = checks_of(Ok(&r), "");
+    let d = release_it(&w, &i, &r, RELEASED, None, "Solar.", "Sam Engel", 12).unwrap();
+    let solar = "groups/l3_solar/releases/l3_solar-1.2.vleo";
+    let refused = |d: File| {
+        design::open_held(&resigned(d), &w.pr, APP)
+            .unwrap_err()
+            .message()
+            .to_string()
+    };
+    let says = |d: File, what: &str| {
+        let e = refused(d);
+        assert!(e.contains(what), "wanted {what:?}: {e}");
+    };
+    // The fingerprint is the release's own digest, not a label: relabelled,
+    // with its row, it is refused; and none is refused.
+    let mut x = d.clone();
+    let m = x.media.iter_mut().find(|m| m.path == solar).unwrap();
+    let mut f = r.clone();
+    f.meta.insert(s("fingerprint"), s("deadbeef"));
+    m.bytes = bytes(&f);
+    m.sha256 = vleo_files::keys::hex(&vleo_files::keys::sha256(&m.bytes));
+    let sha = m.sha256.clone();
+    let x = with_released(x, |c| {
+        let row = c.lines().nth(1).unwrap().to_string();
+        let mut cells: Vec<String> = row.split(',').map(String::from).collect();
+        cells[2] = s("deadbeef");
+        cells[4] = sha.clone();
+        c.replace(&row, &cells.join(","))
+    });
+    says(
+        x,
+        &format!("holds {solar}, whose fingerprint is not its content's"),
+    );
+    // Its path is where the drive keeps its group's releases.
+    for path in [
+        "/etc/evil.vleo",
+        "../../outside.vleo",
+        "groups/l3_power/releases/l3_solar-1.2.vleo",
+        "groups/l3_solar/releases/.vleo",
+        "groups/l3_solar/releases/a/b.vleo",
+    ] {
+        let mut x = d.clone();
+        x.media.iter_mut().find(|m| m.path == solar).unwrap().path = s(path);
+        let x = with_released(x, |c| c.replace(solar, path));
+        says(x, &format!("names {path:?} as l3_solar's release"));
+    }
+    // Each thing held once, for the design itself.
+    let mut x = d.clone();
+    x.media.iter_mut().find(|m| m.path == solar).unwrap().scope = s(BAND);
+    says(x, &format!("holds {solar} for {BAND:?}"));
+    let mut x = d.clone();
+    let row = x
+        .tables
+        .iter()
+        .find(|t| t.path == "released.csv")
+        .unwrap()
+        .csv
+        .lines()
+        .nth(1)
+        .unwrap()
+        .to_string();
+    x = with_released(x, |c| format!("{c}{row}\n"));
+    says(x, "holds two releases of l3_solar");
+    let x = with_released(d.clone(), |c| {
+        c.replace(solar, "groups/programme/programme.vgroup")
+    });
+    says(
+        x,
+        "names groups/programme/programme.vgroup as a group's release: it is the programme's file",
+    );
+    // A file held twice.
+    let mut x = d.clone();
+    let m = x.media.iter().find(|m| m.path == solar).unwrap().clone();
+    x.media.push(m);
+    says(x, &format!("holds {solar} twice"));
+    // A group's file in a release's place is not a release.
+    let mut x = d.clone();
+    let m = x.media.iter_mut().find(|m| m.path == solar).unwrap();
+    let mut g = w.sy.file.clone();
+    g.meta.insert(s("group_id"), s("l3_solar"));
+    m.bytes = bytes(&g);
+    m.sha256 = vleo_files::keys::hex(&vleo_files::keys::sha256(&m.bytes));
+    let sha = m.sha256.clone();
+    let old = d
+        .media
+        .iter()
+        .find(|m| m.path == solar)
+        .unwrap()
+        .sha256
+        .clone();
+    says(
+        with_released(x, |c| c.replace(&old, &sha)),
+        &format!("holds {solar}, which is not a group's release"),
+    );
+    // The systems' file is a group's file.
+    let mut x = d.clone();
+    let m = x
+        .media
+        .iter_mut()
+        .find(|m| m.path == "groups/systems/systems.vgroup")
+        .unwrap();
+    let mut issue = File::new(Kind::Issue, APP);
+    for (k, v) in [
+        ("group_id", "systems"),
+        ("number", "1"),
+        ("writer", "Sam Engel"),
+    ] {
+        issue.meta.insert(s(k), s(v));
+    }
+    m.bytes = bytes(&issue);
+    m.sha256 = vleo_files::keys::hex(&vleo_files::keys::sha256(&m.bytes));
+    says(
+        x,
+        "holds groups/systems/systems.vgroup, which is not a group's file",
+    );
+    // What it holds is said, in a table with its columns.
+    let mut x = d.clone();
+    x.tables.retain(|t| t.path != "released.csv");
+    says(x, "has no released.csv");
+    let x = with_released(d.clone(), |c| c.replacen("sha256", "digest", 1));
+    says(x, "a released.csv without its columns");
+}
+
+#[test]
+fn a_release_from_before_1_0_is_read_back_upgraded_as_it_is_held() {
+    let w = world();
+    let fixture = std::fs::read(
+        Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/l3_solar-1.1.vleo"),
+    )
+    .unwrap();
+    let how = vleo_files::upgrade::Upgrade { app: APP, at: AT };
+    let upgraded = vleo_files::sqlite::open(
+        &Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/l3_solar-1.1.vleo"),
+        &how,
+    )
+    .unwrap()
+    .file;
+    let fp = upgraded.meta.get("fingerprint").cloned().unwrap();
+    let sha = vleo_files::keys::hex(&vleo_files::keys::sha256(&fixture));
+    let path = "groups/l3_solar/releases/l3_solar-1.1.vleo";
+    let mut d = File::new(Kind::Design, APP);
+    for (k, v) in [
+        ("version", RELEASED),
+        ("previous", ""),
+        ("released_by", "Sam Engel"),
+        ("oldest_application", "1.0.0"),
+    ] {
+        d.meta.insert(s(k), s(v));
+    }
+    for (at, b) in [
+        (path, fixture.clone()),
+        ("groups/programme/programme.vgroup", bytes(&w.pr.file)),
+        ("groups/systems/systems.vgroup", bytes(&w.sy.file)),
+    ] {
+        d.media.push(Media {
+            scope: s(FILE),
+            path: s(at),
+            media_type: s("application/vnd.vleo"),
+            sha256: vleo_files::keys::hex(&vleo_files::keys::sha256(&b)),
+            bytes: b,
+        });
+    }
+    d.tables.push(Tbl {
+        scope: s(FILE),
+        path: s("released.csv"),
+        csv: format!("group,version,fingerprint,path,sha256\nl3_solar,1.1,{fp},{path},{sha}\n"),
+    });
+    let o = design::open_held(&resigned(d.clone()), &w.pr, APP).expect("read back, upgraded");
+    let h = &o.releases[0];
+    assert_eq!(
+        h.back.bytes, fixture,
+        "held as its bytes, never upgraded on the drive"
+    );
+    assert_eq!(
+        h.back.file.meta.get("upgraded_from").map(String::as_str),
+        Some(vleo_files::upgrade::FROM_FORMAT_1)
+    );
+    // Said with no fingerprint: refused.
+    let d = with_released(d, |c| c.replace(&fp, ""));
+    let e = design::open_held(&resigned(d), &w.pr, APP).unwrap_err();
+    assert!(
+        e.message()
+            .contains(&format!("holds {path}, which says no fingerprint")),
+        "{}",
+        e.message()
+    );
+}
+
+#[test]
+fn released_designs_are_read_from_every_folder_by_their_versions() {
+    let w = world();
+    let r = solar_12(&w);
+    let i = checks_of(Ok(&r), "");
+    let root = std::env::temp_dir().join(format!("vleo-released-in-two-{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&root);
+    let (here, archive) = (root.join("design"), root.join("design/archive"));
+    std::fs::create_dir_all(&archive).unwrap();
+    for (v, prev, dir) in [
+        ("2026.9.1", None, &archive),
+        ("2026.10.1", Some("2026.9.1"), &here),
+    ] {
+        let d = release_it(&w, &i, &r, v, prev, "Solar.", "Sam Engel", 12).unwrap();
+        vleo_files::sqlite::write(&d, &dir.join(format!("design-{v}.vleo"))).unwrap();
+    }
+    let all = design::released_in(&[&here, &archive], &w.pr, APP).unwrap();
+    let versions: Vec<&str> = all.iter().map(|o| o.version.as_str()).collect();
+    assert_eq!(
+        versions,
+        ["2026.9.1", "2026.10.1"],
+        "by version, not by name"
+    );
+    // One design in both: held twice, named.
+    std::fs::copy(
+        here.join("design-2026.10.1.vleo"),
+        archive.join("design-2026.10.1.vleo"),
+    )
+    .unwrap();
+    let e = design::released_in(&[&here, &archive], &w.pr, APP).unwrap_err();
+    assert!(
+        e.message().contains("design 2026.10.1 is held twice"),
+        "{}",
+        e.message()
+    );
+    std::fs::remove_file(archive.join("design-2026.10.1.vleo")).unwrap();
+    // A file named for one version that is another.
+    std::fs::copy(
+        here.join("design-2026.10.1.vleo"),
+        here.join("design-2026.10.2.vleo"),
+    )
+    .unwrap();
+    let e = design::released_in(&[&here, &archive], &w.pr, APP).unwrap_err();
+    assert!(
+        e.message()
+            .contains("design-2026.10.2.vleo is not design 2026.10.2"),
+        "{}",
+        e.message()
+    );
+    let _ = std::fs::remove_dir_all(&root);
 }

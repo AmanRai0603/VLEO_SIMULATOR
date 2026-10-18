@@ -572,22 +572,40 @@ pub fn build(base: Arc<dyn Files>, root: &Path, drive: &Path) -> Result<Today, S
 }
 
 /// The design `base` holds with exactly the releases the released design
-/// `held` holds taken into it, each as its bytes (F6-c; docs/briefs/F6.md,
-/// item 2): the released design as the engine reads it. Each is opened from
-/// a file of its own (`of_bytes`) and taken by the checks a build makes,
-/// through the chain `drive` holds now; one that does not pass is refused by
-/// name, and nothing is taken in its place. `held` is read back by
-/// `design::open_held`, which holds each file to what the design says.
+/// `design` holds taken into it, each as its bytes (F6-c; docs/briefs/F6.md,
+/// item 2): the released design as the engine reads it. It is read back
+/// first through the chain `drive` holds now (`design::open_held`), which
+/// holds each file to what the design says; a drive with no chain open
+/// builds none. Each release, in its group's order as a build takes them, is
+/// opened from a file of its own (`of_bytes`) and taken by the checks a
+/// build makes; one that does not pass is refused by name, and nothing is
+/// taken in its place.
 pub fn build_held(
     base: Arc<dyn Files>,
     root: &Path,
     drive: &Path,
-    held: &vleo_files::design::Opened,
+    design: &vleo_files::model::File,
 ) -> Result<Today, String> {
     let chain = chain_of(drive);
+    let programme = match &chain {
+        Chain::Open { programme, .. } => programme,
+        Chain::Absent(why) | Chain::Broken(why) => {
+            return Err(format!(
+                "a released design is built only through the chain: {why}"
+            ))
+        }
+    };
+    let held = vleo_files::design::open_held(
+        design,
+        programme,
+        concat!("vleo ", env!("CARGO_PKG_VERSION")),
+    )
+    .map_err(|e| e.message().to_string())?;
+    let mut releases: Vec<&vleo_files::design::HeldRelease> = held.releases.iter().collect();
+    releases.sort_by(|a, b| a.group.cmp(&b.group));
     let mut taken: BTreeMap<PathBuf, Vec<u8>> = BTreeMap::new();
     let mut groups = Vec::new();
-    for r in &held.releases {
+    for r in releases {
         let id = r.group.as_str();
         let refused = |why: String| {
             format!(
@@ -644,9 +662,16 @@ pub fn build_held(
         groups,
         ignored: Vec::new(),
         written,
+        // What it is based on is what the systems' file it holds names.
         base: Base {
-            based_on: held.version.clone(),
-            base_version: None,
+            based_on: held
+                .systems
+                .file
+                .meta
+                .get("based_on")
+                .cloned()
+                .unwrap_or_default(),
+            base_version: held.systems.file.base_version(),
             said: format!(
                 "the released design {}, as it holds its releases",
                 held.version

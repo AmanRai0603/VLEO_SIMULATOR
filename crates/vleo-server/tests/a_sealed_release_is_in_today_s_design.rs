@@ -385,8 +385,8 @@ fn a_release_of_the_one_schema_whose_seal_does_not_check_is_refused_by_name() {
 }
 
 /// Design 2026.10.1, released by Test Sam from today's design on `drive`,
-/// as `design::release` writes it, read back.
-fn released(drive: &Path) -> vleo_files::design::Opened {
+/// as `design::release` writes it.
+fn released(drive: &Path) -> File {
     use vleo_files::design::{self, Asked, Held, Part, Taken as Took, Whole};
     let o = opened(drive);
     let rel = drive.join("groups/l3_solar/releases/l3_solar-1.0.vleo");
@@ -445,7 +445,8 @@ fn released(drive: &Path) -> vleo_files::design::Opened {
         &o.programme,
     )
     .unwrap_or_else(|e| panic!("not released: {}", e.message()));
-    design::open_held(&d, &o.programme, APP).expect("read back")
+    design::open_held(&d, &o.programme, APP).expect("it reads back");
+    d
 }
 
 #[test]
@@ -470,10 +471,11 @@ fn a_released_design_is_built_from_the_releases_it_holds() {
         t.base.said
     );
 
-    // A release held whose seal no longer checks: refused by name, and
-    // nothing taken in its place.
+    // A release held whose content changed after its seal, the design
+    // signed again over it: refused by name, and nothing taken in its place.
     let mut bad = held.clone();
-    let mut f = bad.releases[0].back.file.clone();
+    let path = "groups/l3_solar/releases/l3_solar-1.0.vleo";
+    let mut f = sqlite::read(&drive.join(path)).unwrap();
     f.texts
         .iter_mut()
         .find(|t| t.scope == UID && t.kind == "explain.simply")
@@ -481,22 +483,42 @@ fn a_released_design_is_built_from_the_releases_it_holds() {
         .body
         .push_str(" And changed after the seal.");
     let at = drive.parent().unwrap().join("changed.vleo");
-    bad.releases[0].back.bytes = sqlite::written(&f, &at).unwrap();
-    let (design, _) = vleo_files::convert::serve(&root()).unwrap();
-    let e = vleo_server::today::build_held(Arc::new(design), &root(), &drive, &bad)
-        .err()
-        .expect("refused");
+    let m = bad.media.iter_mut().find(|m| m.path == path).unwrap();
+    m.bytes = sqlite::written(&f, &at).unwrap();
+    m.sha256 = vleo_files::keys::hex(&vleo_files::keys::sha256(&m.bytes));
+    let sha = m.sha256.clone();
+    let old = held
+        .media
+        .iter()
+        .find(|m| m.path == path)
+        .unwrap()
+        .sha256
+        .clone();
+    for t in bad.tables.iter_mut().filter(|t| t.path == "released.csv") {
+        t.csv = t.csv.replace(&old, &sha);
+    }
+    bad.signatures.retain(|r| r.scope != FILE);
+    let row = chain::sign(&bad, FILE, "Test Sam", &key(92), AT, "ok", "").unwrap();
+    bad.signatures.push(row);
+    let built = |d: &File| {
+        let (design, _) = vleo_files::convert::serve(&root()).unwrap();
+        vleo_server::today::build_held(Arc::new(design), &root(), &drive, d)
+    };
+    let e = built(&bad).err().expect("refused");
     assert!(
-        e.contains("design 2026.10.1 holds l3_solar 1.0, which is not taken: its seal does not check through the chain"),
+        e.contains(&format!(
+            "holds {path}, whose fingerprint is not its content's"
+        )),
         "{e}"
     );
-    // Bytes of another version than the design names: refused.
-    let mut other = held.clone();
-    other.releases[0].version = s("1.1");
-    let (design, _) = vleo_files::convert::serve(&root()).unwrap();
-    let e = vleo_server::today::build_held(Arc::new(design), &root(), &drive, &other)
-        .err()
-        .expect("refused");
-    assert!(e.contains("not the release the design names"), "{e}");
+    // A drive whose chain does not open builds no released design.
+    let pf = drive.join("groups/programme/programme.vgroup");
+    std::fs::rename(&pf, drive.join("programme.aside")).unwrap();
+    let e = built(&held).err().expect("refused");
+    assert!(
+        e.contains("a released design is built only through the chain"),
+        "{e}"
+    );
+    std::fs::rename(drive.join("programme.aside"), &pf).unwrap();
     let _ = std::fs::remove_dir_all(drive.parent().unwrap());
 }

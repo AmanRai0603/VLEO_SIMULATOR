@@ -684,7 +684,7 @@ pub fn readable(design: &File, releases: &[(&str, &File)]) -> Vec<(&'static str,
 /// The latest released design in `dir`, the drive's or the copy's `design/`,
 /// by the version each `design-<version>.vleo` is named for; none when it
 /// holds none. Each counts only when it is the released design it is named
-/// for and opens through `programme`'s chain (`chain::check_design`): a file
+/// for and reads back through `programme`'s chain ([`open_held`]): a file
 /// planted under a design's name is refused by name, never taken for one,
 /// and never passed over.
 #[cfg(not(target_arch = "wasm32"))]
@@ -717,7 +717,7 @@ pub fn latest_in(dir: &std::path::Path, programme: &Registry) -> Result<Option<S
                 f.meta.get("version").map_or("", String::as_str)
             )));
         }
-        chain::check_design(&f, programme).map_err(|x| {
+        open_held(&f, programme, concat!("vleo ", env!("CARGO_PKG_VERSION"))).map_err(|x| {
             refused(format!(
                 "design/{name} is not a released design that opens through the chain: {}",
                 x.message()
@@ -757,6 +757,16 @@ pub struct Opened {
     pub releases: Vec<HeldRelease>,
     pub programme: Back,
     pub systems: Back,
+}
+
+/// `group`'s, in words: the programme's, the systems', `l3_solar`'s.
+#[cfg(not(target_arch = "wasm32"))]
+fn whose(group: &str) -> String {
+    match group {
+        "programme" => "the programme's".into(),
+        "systems" => "the systems'".into(),
+        g => format!("{g}'s"),
+    }
 }
 
 /// The paths a released design holds the programme's and the systems' files
@@ -841,7 +851,8 @@ pub fn open_held(f: &File, programme: &Registry, app: &str) -> Result<Opened, Er
         })?;
         if file.meta.get("group_id").map(String::as_str) != Some(group) {
             return Err(named(format!(
-                "holds {path}, which is not {group}'s file: it says it is {:?}'s",
+                "holds {path}, which is not {} file: it says it is {:?}'s",
+                whose(group),
                 file.meta.get("group_id").map_or("", String::as_str)
             )));
         }
@@ -853,6 +864,14 @@ pub fn open_held(f: &File, programme: &Registry, app: &str) -> Result<Opened, Er
     };
     let programme_back = back(PROGRAMME_AT, "programme")?;
     let systems_back = back(SYSTEMS_AT, "systems")?;
+    for b in [&programme_back, &systems_back] {
+        if b.file.kind().ok() != Some(Kind::Group) {
+            return Err(named(format!(
+                "holds {}, which is not a group's file",
+                b.path
+            )));
+        }
+    }
     let table = f
         .tables
         .iter()
@@ -897,6 +916,19 @@ pub fn open_held(f: &File, programme: &Registry, app: &str) -> Result<Opened, Er
                 }
             )));
         }
+        let in_releases = path
+            .strip_prefix(&format!("groups/{group}/releases/"))
+            .is_some_and(|n| {
+                n.len() > ".vleo".len()
+                    && n.ends_with(".vleo")
+                    && !n.contains(['/', '\\'])
+                    && !n.starts_with('.')
+            });
+        if !crate::breakdown::valid_id(group) || !in_releases {
+            return Err(named(format!(
+                "names {path:?} as {group}'s release: a group's release is held where the drive keeps it, groups/{group}/releases/<name>.vleo"
+            )));
+        }
         let held = back(path, group)?;
         if media(path).map(|m| m.sha256.as_str()) != Some(row[sha].as_str()) {
             return Err(named(format!(
@@ -909,10 +941,23 @@ pub fn open_held(f: &File, programme: &Registry, app: &str) -> Result<Opened, Er
                 "holds {path}, which is not a group's release"
             )));
         }
+        if fingerprint.is_empty() {
+            return Err(named(format!("holds {path}, which says no fingerprint")));
+        }
         if said("version") != rv || said("fingerprint") != fingerprint {
             return Err(named(format!(
                 "holds {path} as {group} {rv}, and it is {group} {} with another fingerprint",
                 said("version")
+            )));
+        }
+        // The fingerprint is not covered by the seal, so it is worked out
+        // again: a release of the one schema gives its own digest; one from
+        // before 1.0 was held to its folder's when it was upgraded, which
+        // happens only when it says one.
+        let before_1_0 = said("upgraded_from") == crate::upgrade::FROM_FORMAT_1;
+        if !before_1_0 && chain::digest(&held.file, FILE)? != *fingerprint {
+            return Err(named(format!(
+                "holds {path}, whose fingerprint is not its content's: it is not the release that was sealed"
             )));
         }
         releases.push(HeldRelease {
@@ -957,9 +1002,11 @@ pub fn released_in(
             Err(e) if e.kind() == std::io::ErrorKind::NotFound => continue,
             Err(e) => return Err(Error::new(ErrorKind::Io, format!("{}: {e}", dir.display()))),
         };
-        let mut names: Vec<String> = entries
-            .filter_map(|e| e.ok().map(|e| e.file_name().to_string_lossy().into_owned()))
-            .collect();
+        let mut names: Vec<String> = Vec::new();
+        for e in entries {
+            let e = e.map_err(|e| Error::new(ErrorKind::Io, format!("{}: {e}", dir.display())))?;
+            names.push(e.file_name().to_string_lossy().into_owned());
+        }
         names.sort();
         for name in names {
             let Some(v) = name
@@ -975,7 +1022,10 @@ pub fn released_in(
                 ))
             })?;
             if out.iter().any(|(p, _)| *p == parsed) {
-                return Err(refused(format!("design {v} is held twice")));
+                return Err(refused(format!(
+                    "design {v} is held twice, the second in {}",
+                    dir.display()
+                )));
             }
             let f = crate::sqlite::read(&dir.join(&name))
                 .map_err(|x| refused(format!("{name} does not read: {}", x.message())))?;
@@ -985,7 +1035,9 @@ pub fn released_in(
                     f.meta.get("version").map_or("", String::as_str)
                 )));
             }
-            out.push((parsed, open_held(&f, programme, app)?));
+            let opened = open_held(&f, programme, app)
+                .map_err(|x| refused(format!("{}/{name}: {}", dir.display(), x.message())))?;
+            out.push((parsed, opened));
         }
     }
     out.sort_by(|a, b| a.0.cmp(&b.0));
