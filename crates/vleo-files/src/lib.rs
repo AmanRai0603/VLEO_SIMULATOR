@@ -59,6 +59,10 @@
 //!   on a leaf nobody writes, in the systems' file, and what it is
 //!   allocated, each with which way it binds (F6-a);
 //!
+//! * [`design`] — the design released by the system engineer: W8's
+//!   integration checks for each group, and a released design holding each
+//!   group's release whole, refused whole when a check fails (F6-b);
+//!
 //! * [`edit`] — a node written by plain edits in the working copy: its
 //!   question, the explanation's three texts, its method and its cases, each
 //!   held to rules 4 and 6 and to the record of which belief broke, saved as
@@ -79,6 +83,7 @@ pub mod compare;
 pub mod convert;
 pub mod copied;
 pub mod csv;
+pub mod design;
 // An edit writes the copy, as a save does: never in the page.
 #[cfg(not(target_arch = "wasm32"))]
 pub mod edit;
