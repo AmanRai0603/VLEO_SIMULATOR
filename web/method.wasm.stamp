@@ -1,5 +1,5 @@
 # The pages' method checker: web/method.wasm.gz, built by
 # `cargo run -p xtask -- method-wasm` from vleo_sheet::method::CHECKER_SOURCES.
 # A test refuses a checkout whose sources have moved on from it.
-fingerprint = "e0f0c76ecc172329"
+fingerprint = "ae8a116fedc1e661"
 language = 4

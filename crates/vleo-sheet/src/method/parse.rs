@@ -115,6 +115,9 @@ fn lex(src: &str) -> Result<Vec<Token>, Diag> {
                 }
             }
             let Some(sym) = SYMBOLS.iter().find(|s| text[p..].starts_with(**s)) else {
+                // The character itself, not the first byte of one written in
+                // more than one.
+                let c = text[p..].chars().next().unwrap_or(c);
                 return Err(Diag::err(
                     line,
                     format!("«{c}» is not part of the method language"),

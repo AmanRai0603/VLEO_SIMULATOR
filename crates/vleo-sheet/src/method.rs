@@ -107,9 +107,11 @@ impl std::fmt::Display for Diag {
 // ---------------------------------------------------------------------------
 // the parts, one file each, under src/method/
 
+pub mod amount;
 mod ast;
 mod cases;
 mod check;
+pub mod formula;
 mod kernel;
 mod node;
 mod parse;
