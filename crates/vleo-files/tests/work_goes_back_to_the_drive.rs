@@ -1414,27 +1414,12 @@ fn a_request_goes_back_only_as_its_asker_s_own_signed_work() {
     type Make = fn(File) -> File;
     let nia = key(74);
     let _ = &nia;
-    let cases: [(&str, Make, &str, &str); 5] = [
+    let cases: [(&str, Make, &str, &str); 4] = [
         (
             "unsigned",
             |f| by_hand(f, UID, "Test Nia", "contract", "open", None),
             "Test Nia",
             "does not count on the drive: the request sw_activity_band-r1 by Test Nia has no signature",
-        ),
-        (
-            "of the code",
-            |f| {
-                by_hand(
-                    f,
-                    UID,
-                    "Test Nia",
-                    "code",
-                    "open",
-                    Some(("Test Nia", &key(74))),
-                )
-            },
-            "Test Nia",
-            "of \"code\"",
         ),
         (
             "answered",

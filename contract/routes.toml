@@ -363,6 +363,14 @@ path = "/v1/design/release"
 params = [["session", "@session"], ["version", "2026.10.1"], ["changed", "x"]]
 
 [[route]]
+method = "GET"
+path = "/v1/requests"
+answer = "json"
+schema = "requests"
+[[route.example]]
+name = "requests"
+
+[[route]]
 method = "POST"
 path = "/v1/node/<id>/lesson"
 answer = "json"

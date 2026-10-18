@@ -1006,14 +1006,16 @@ pub fn sign_node(
     Ok((out, found))
 }
 
-/// The kinds of request a node file holds: a contract change (W4) and a
-/// breakdown (W13). A request of the code is made in My work (W14).
-pub const ASKED_IN_A_NODE: &[&str] = &["contract", "breakdown"];
+/// The kinds of request a node file holds: a contract change (W4), a
+/// breakdown (W13), and something the code cannot do yet (W14), for the
+/// developer, asked from My work and kept in the file of the node that waits
+/// on it (F6's question 55).
+pub const ASKED_IN_A_NODE: &[&str] = &["contract", "breakdown", "code"];
 
 /// The one rule of a request asked in a node's file: what [`ask`] writes, and
 /// all a put-back and My work take. It is the only one of its uid, and its uid
 /// is its node's followed by `-r` and a count from 1, as [`ask`] makes it;
-/// it is of a contract or a breakdown ([`ASKED_IN_A_NODE`]) and says
+/// it is of a contract, a breakdown or the code ([`ASKED_IN_A_NODE`]) and says
 /// something; it is on a block the file holds; and it carries a current `ok`
 /// signature by the person who asked, made at the moment it says it was
 /// asked, with a key the group counts for them, when they may write the node
@@ -1039,7 +1041,7 @@ pub fn check_request(f: &File, uid: &str, group: &Registry) -> Result<(), Error>
         return Err(refused(
             ErrorKind::Malformed,
             format!(
-                "the request {uid} is of {:?}: a node's file asks for a contract change or a breakdown",
+                "the request {uid} is of {:?}: a node's file asks for a contract change, a breakdown, or something of the code",
                 r.kind
             ),
         ));
@@ -1130,7 +1132,7 @@ pub fn ask(
         return Err(refused(
             ErrorKind::Malformed,
             format!(
-                "a node's file asks for a contract change or a breakdown, and {kind:?} is neither: a request of the code is made in My work"
+                "a node's file asks for a contract change, a breakdown, or something of the code, and {kind:?} is none of them"
             ),
         ));
     }

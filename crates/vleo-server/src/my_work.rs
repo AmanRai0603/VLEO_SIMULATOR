@@ -409,6 +409,7 @@ fn items(me: &chain::Me, c: &me::Chain, database: &Path) -> Vec<Item> {
                 let asked = match r.kind.as_str() {
                     "breakdown" => "a breakdown",
                     "contract" => "a contract change",
+                    "code" => "something the code cannot do yet (W14)",
                     other => other,
                 };
                 let refusal = |why: String| Item {

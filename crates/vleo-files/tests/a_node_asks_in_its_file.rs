@@ -260,13 +260,13 @@ fn only_its_node_engineer_or_their_deputy_asks_in_its_file() {
 }
 
 #[test]
-fn a_request_says_what_it_asks_and_is_of_the_contract_or_a_breakdown() {
+fn a_request_says_what_it_asks_and_is_of_the_contract_a_breakdown_or_the_code() {
     let g = group("");
     for (kind, body, says) in [
         ("contract", "", "says nothing"),
         ("breakdown", "  \n ", "says nothing"),
-        ("code", ASK, "a request of the code is made in My work"),
-        ("wish", ASK, "\"wish\" is neither"),
+        ("code", " ", "says nothing"),
+        ("wish", ASK, "\"wish\" is none of them"),
     ] {
         let e = chain::ask(&node(), UID, kind, body, "Test Nia", &key(74), AT, &g).unwrap_err();
         assert!(
@@ -568,10 +568,10 @@ fn a_request_counts_only_as_it_was_asked() {
     let g = group("");
     for (what, f, uid, says) in [
         (
-            "of the code",
-            by_hand(&node(), "sw_activity_band-r1", UID, "code", ASK, AT, AT),
+            "of a wish",
+            by_hand(&node(), "sw_activity_band-r1", UID, "wish", ASK, AT, AT),
             "sw_activity_band-r1",
-            "is of \"code\"",
+            "is of \"wish\"",
         ),
         (
             "saying nothing",
@@ -678,4 +678,24 @@ fn nothing_is_asked_of_an_archived_node_a_mount_or_a_file_of_two_revisions() {
     assert!(e.message().contains("its block says 1"), "{}", e.message());
     assert_eq!(std::fs::read(c.join(NODE)).unwrap(), before);
     let _ = std::fs::remove_dir_all(&c);
+}
+
+#[test]
+fn something_the_code_cannot_do_yet_is_asked_in_the_node_that_waits_on_it() {
+    // W14: for the developer, signed by whoever may write the node, and it
+    // counts as any request does.
+    let g = group("");
+    let (f, uid) = chain::ask(
+        &node(),
+        UID,
+        "code",
+        "The band needs a lookup of the NOAA scale by date, which the method language does not have.",
+        "Test Nia",
+        &key(74),
+        AT,
+        &g,
+    )
+    .expect("asked");
+    chain::check_request(&f, &uid, &g).expect("a request of the code counts");
+    assert_eq!(f.requests[0].kind, "code");
 }

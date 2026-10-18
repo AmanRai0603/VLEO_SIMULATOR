@@ -430,6 +430,7 @@ fn the_system_engineer_releases_the_design_and_it_goes_back_to_the_drive() {
     std::fs::create_dir_all(&keys).unwrap();
     write_key(&keys, "test-sam.vkey", "Test Sam", &key(92));
     write_key(&keys, "test-ola.vkey", "Test Ola", &key(93));
+    write_key(&keys, "test-nia.vkey", "Test Nia", &key(94));
     std::env::set_var("VLEO_KEYS", &keys);
     std::env::set_var("VLEO_COPY", &copy);
     std::env::set_var("VLEO_DRIVE", &drive);
@@ -440,7 +441,6 @@ fn the_system_engineer_releases_the_design_and_it_goes_back_to_the_drive() {
     std::env::remove_var("VLEO_DESIGN");
     let port = vleo_server::serve(Some(root()), 18981, false, true).expect("no server");
     let checks = || ask(port, "GET", "/v1/design/integration", &[], false);
-    let on_drive = digests(&drive).unwrap();
     // An issue open in the copy: a red mark, to be marked understood.
     let mut issue = File::new(Kind::Issue, APP);
     for (k, v) in [
@@ -496,6 +496,53 @@ fn the_system_engineer_releases_the_design_and_it_goes_back_to_the_drive() {
             ("understood", u),
         ])
     };
+
+    // W14: Nia asks, in her node's file, for something the code cannot do
+    // yet; the developer's list says it, and it goes back to the drive.
+    assert!(open_key(port, "test-nia.vkey").contains("\"open\":true"));
+    let file = ask(port, "GET", &format!("/v1/node/{UID}/file"), &[], false);
+    let want =
+        "The band needs the NOAA scale looked up by date, which the method language cannot do.";
+    let r = post(
+        port,
+        &format!("/v1/node/{UID}/ask"),
+        &[
+            ("opened", field(&file, "opened")),
+            ("kind", "code"),
+            ("body", want),
+        ],
+    );
+    assert!(
+        r.contains("\"ok\":true") && r.contains("for the developer (W14)"),
+        "{r}"
+    );
+    let code = field(&r, "request").to_string();
+    let list = ask(port, "GET", "/v1/requests", &[], false);
+    assert!(
+        list.contains(&format!("\"uid\":\"{code}\""))
+            && list.contains("\"counts\":true,\"why_not\":\"\",\"answered\":false"),
+        "{list}"
+    );
+    let r = post(port, "/v1/put-back", &[]);
+    // Her later revision, signed, goes back, and the request with it.
+    assert!(
+        r.contains("goes back: the node sw_activity_band, signed by Test Nia"),
+        "{r}"
+    );
+    let r = post(
+        port,
+        "/v1/put-back",
+        &[(
+            "files",
+            &format!(
+                "{} {NODE}",
+                copied::digest(&std::fs::read(copy.join(NODE)).unwrap())
+            ),
+        )],
+    );
+    assert!(r.contains("\"written\":true"), "{r}");
+    post(port, "/v1/key/close", &[]);
+    let on_drive = digests(&drive).unwrap();
 
     // Refused, by name, with nothing written.
     let r = asked(&version, &understood);
@@ -613,6 +660,12 @@ fn the_system_engineer_releases_the_design_and_it_goes_back_to_the_drive() {
         notes.contains(&format!("## {version}\n\nReleased by Test Sam")),
         "{notes}"
     );
+    let requests = std::fs::read_to_string(copy.join("readable/Requests.csv")).unwrap();
+    assert!(
+        requests.contains(&format!("l3_solar,sw_activity_band,{code},Test Nia,"))
+            && requests.contains(",counts,open"),
+        "{requests}"
+    );
     let health = std::fs::read_to_string(copy.join("readable/Health.csv")).unwrap();
     assert!(
         health.contains(&format!("\n{moved},l3_solar,closes,{declared},")),
@@ -627,6 +680,7 @@ fn the_system_engineer_releases_the_design_and_it_goes_back_to_the_drive() {
         ("Closures", false),
         ("Health", true),
         ("Status", true),
+        ("Requests", true),
     ] {
         let csv = std::fs::read_to_string(copy.join(format!("readable/{n}.csv"))).unwrap();
         assert_eq!(csv.lines().count() > 1, rows, "{n}: {csv}");
@@ -664,7 +718,7 @@ fn the_system_engineer_releases_the_design_and_it_goes_back_to_the_drive() {
         .chain(["design/NOTES.md".to_string()])
         .chain(
             [
-                "Groups", "Nodes", "Ports", "Wires", "Closures", "Health", "Status",
+                "Groups", "Nodes", "Ports", "Wires", "Closures", "Health", "Status", "Requests",
             ]
             .map(|n| format!("readable/{n}.csv")),
         )
