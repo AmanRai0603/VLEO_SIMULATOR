@@ -757,6 +757,18 @@ fn a_branch_is_framed_in_the_copy() {
         "{:?}",
         g.assignments
     );
+    // And takes it away: nobody writes it until it is assigned again.
+    let r = edit(
+        "unassign",
+        &[("opened", field(&tree(), "opened")), ("block", GOOD)],
+    );
+    assert!(r.contains("\"ok\":true"), "{r}");
+    let g = vleo_files::sqlite::read(&copy.join(GROUP)).unwrap();
+    assert!(
+        !g.assignments.iter().any(|a| a.block_uid == GOOD),
+        "{:?}",
+        g.assignments
+    );
     let r = edit(
         "wire",
         &[

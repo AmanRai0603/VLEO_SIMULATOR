@@ -90,6 +90,9 @@ pub enum Edit {
     /// A block given to `person`, a node engineer its group file registers:
     /// its one assignment, at the contract it has (F5).
     Assign { block: String, person: String },
+    /// A block's assignment taken away: nobody writes it until it is
+    /// assigned again (F5).
+    Unassign { block: String },
     /// The input `port` of a block framed in the group file, read from
     /// `from`: `<block>.<port>` in the branch, `<group>.<node>[.<port>]` in
     /// another, or `case` (F5).
@@ -275,6 +278,7 @@ impl Edit {
             Edit::Contract { .. } => "contract",
             Edit::UpdateBase { .. } => "update base",
             Edit::AssignIssue { .. } => "assign issue",
+            Edit::Unassign { .. } => "unassign",
         }
     }
 }
@@ -596,7 +600,7 @@ pub fn edit(
         after.push_str(&touched(&after_branch, id));
     }
     // An assignment is the block's row in the group file: what it was, and is.
-    if let Edit::Assign { block, .. } = edit {
+    if let Edit::Assign { block, .. } | Edit::Unassign { block } = edit {
         after.push_str(&assigned(&out, block));
     }
     // A contract's assignment as it is now, and who reads the node.
@@ -909,6 +913,33 @@ fn base_moves(branch: &Branch, old: Option<&File>, new: &File) -> Vec<String> {
         }
     }
     out
+}
+
+/// Whether the block `from` reads, through the branch's wires from outputs
+/// of its blocks, the block `to`.
+fn reaches(branch: &Branch, from: &str, to: &str) -> bool {
+    let mut seen: BTreeSet<String> = BTreeSet::new();
+    let mut todo = vec![from.to_string()];
+    while let Some(at) = todo.pop() {
+        if at == to {
+            return true;
+        }
+        if !seen.insert(at.clone()) {
+            continue;
+        }
+        for w in branch.wires().into_iter().filter(|w| w.to_block == at) {
+            if let Some((src, port)) = w.from_ref.split_once('.') {
+                let out = branch
+                    .ports(src)
+                    .iter()
+                    .any(|q| q.name == port && q.direction == "out");
+                if out && !port.contains('.') {
+                    todo.push(src.to_string());
+                }
+            }
+        }
+    }
+    false
 }
 
 /// The assignment of `uid` in `f`, as text, for a `change` row.
@@ -1319,14 +1350,27 @@ fn apply(
                     b.id
                 )));
             }
-            if !registry
+            if checks::is_assistant(person) {
+                return Err(refused(format!(
+                    "{person} is an assistant's name: a node is assigned to a person"
+                )));
+            }
+            let Some(p) = registry
                 .file
                 .people
                 .iter()
-                .any(|p| p.name == *person && p.role == "node engineer")
-            {
+                .find(|p| p.name == *person && p.role == "node engineer")
+            else {
                 return Err(refused(format!(
                     "{group_id}'s group file registers no node engineer {person}: a block is assigned to a node engineer its group registers"
+                )));
+            };
+            // A deputy acts for the node engineer they stand in for; the
+            // node is assigned to the node engineer, never to the deputy.
+            if !p.deputy_for.is_empty() {
+                return Err(refused(format!(
+                    "{person} is {}'s deputy: a node is assigned to its node engineer, and their deputy acts for them",
+                    p.deputy_for
                 )));
             }
             let at = out.assignments.iter().position(|a| a.block_uid == *block);
@@ -1346,6 +1390,15 @@ fn apply(
             }
             Ok((block.clone(), before, None))
         }
+        Edit::Unassign { block } => {
+            let (b, _) = live(block)?;
+            let before = assigned(out, block);
+            if before.is_empty() {
+                return Err(refused(format!("{} is assigned to nobody", b.id)));
+            }
+            out.assignments.retain(|a| a.block_uid != *block);
+            Ok((block.clone(), before, None))
+        }
         Edit::Wire { block, port, from } => {
             let b = framed(block, "wired")?;
             if !branch
@@ -1363,14 +1416,16 @@ fn apply(
                     b.id
                 )));
             }
-            // Another group's node, as that group's file holds it: its
-            // answer, or the output named.
+            // Another group's node, by its uid as the design reads it whole
+            // (`n2`), as that group's own group or node files hold it, not a
+            // release of it: the output named.
             let there = |g: &str, node: &str, out_port: &str| {
                 g != group_id
                     && elsewhere.iter().any(|f| {
                         f.meta.get("group_id").map(String::as_str) == Some(g)
+                            && matches!(f.kind(), Ok(Kind::Group) | Ok(Kind::Node))
                             && f.blocks.iter().any(|x| {
-                                x.id == node
+                                x.uid == node
                                     && x.archived == 0
                                     && f.ports.iter().any(|q| {
                                         q.block_uid == x.uid
@@ -1391,7 +1446,14 @@ fn apply(
                                         || (q.direction == "in" && x.uid == b.parent_uid))
                             })
                     }
-                    None => there(head, p, p),
+                    // Another group's node is named with its port, as every
+                    // reader of the design reads it.
+                    None => {
+                        return Err(refused(format!(
+                            "{}'s input {port} names {from:?}: another group's node is read as <group>.<node>.<port>",
+                            b.id
+                        )))
+                    }
                 },
                 [g, node, p] => there(g, node, p),
                 _ => false,
@@ -1401,6 +1463,33 @@ fn apply(
                     "{}'s input {port} comes from nothing: {from:?} is not an output of a block of the branch, an input of the block it hangs from, another group's node, or case",
                     b.id
                 )));
+            }
+            // A block reading an output in its own branch must not read
+            // what its own answer feeds: an ancestor's output, or a block
+            // that, through the branch's wires, already reads it.
+            if let [head, p] = parts.as_slice() {
+                let reads_output = branch
+                    .ports(head)
+                    .iter()
+                    .any(|q| q.name == *p && q.direction == "out");
+                if reads_output {
+                    let mut up = b.parent_uid.clone();
+                    while let Some((a, _)) = branch.find(&up) {
+                        if a.uid == *head {
+                            return Err(refused(format!(
+                                "{}'s input {port} reads the output of {}, which it hangs under: its own answer feeds it",
+                                b.id, a.id
+                            )));
+                        }
+                        up = a.parent_uid.clone();
+                    }
+                    if reaches(branch, head, block) {
+                        return Err(refused(format!(
+                            "{}'s input {port} reads {from}, which already reads {} through the branch: a loop is declared on the block that holds it, never made by a wire",
+                            b.id, b.id
+                        )));
+                    }
+                }
             }
             let before = touched(branch, block);
             let w = Wire {
