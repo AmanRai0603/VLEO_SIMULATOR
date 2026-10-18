@@ -766,6 +766,22 @@ fn a_branch_is_framed_in_the_copy() {
         ],
     );
     assert!(r.contains("wire needs from"), "{r}");
+    // Issued: a block framed in the group file, refused by name while it is
+    // assigned to nobody, and nothing written.
+    let before_issue = group_bytes();
+    let r = edit(
+        "issue",
+        &[
+            ("opened", field(&tree(), "opened")),
+            ("block", "sw_activity_aside"),
+            ("behaviour", "method"),
+        ],
+    );
+    assert!(r.contains("is assigned to nobody"), "{r}");
+    assert_eq!(group_bytes(), before_issue);
+    assert!(!copy
+        .join("groups/l3_solar/nodes/sw_activity_aside.vnode")
+        .exists());
 
     // Refused by name: an edit that is not one, a group that is not an id, a
     // group no file mounts.

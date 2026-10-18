@@ -1428,3 +1428,231 @@ fn an_input_of_a_framed_block_is_wired_to_where_it_comes_from() {
     refused("sw_storm_onset", "f10", "has no input f10");
     refused(BAND, "f107", "is issued");
 }
+
+// ── Issued as a node file of its own (docs/briefs/F5.md, F5-c) ──
+
+/// Solar's onset, its input from a case and assigned to Nia: ready to issue.
+fn onset_ready() -> File {
+    let f = with_onset();
+    let (f, _) = ola(
+        &f,
+        &Edit::Wire {
+            block: s("sw_storm_onset"),
+            port: s("f107"),
+            from: s("case"),
+        },
+    )
+    .unwrap();
+    ola(
+        &f,
+        &Edit::Assign {
+            block: s("sw_storm_onset"),
+            person: s("Nia Node"),
+        },
+    )
+    .unwrap()
+    .0
+}
+
+fn issue(block: &str, behaviour: &str) -> Edit {
+    Edit::Issue {
+        block: s(block),
+        behaviour: s(behaviour),
+    }
+}
+
+#[test]
+fn a_framed_block_is_issued_as_a_node_file_its_node_engineer_writes() {
+    let before = onset_ready();
+    let (after, _) = ola(&before, &issue("sw_storm_onset", "method")).unwrap();
+    // The group file holds none of its rows now, and keeps its assignment.
+    assert!(!after.blocks.iter().any(|b| b.uid == "sw_storm_onset"));
+    assert!(!after.ports.iter().any(|p| p.block_uid == "sw_storm_onset"));
+    assert!(!after.wires.iter().any(|w| w.to_block == "sw_storm_onset"));
+    assert!(after
+        .assignments
+        .iter()
+        .any(|a| a.block_uid == "sw_storm_onset" && a.person == "Nia Node"));
+    let c = after.changes.last().unwrap();
+    assert_eq!(c.what, format!("issue: {WHY}"));
+    assert!(
+        c.after
+            .as_deref()
+            .unwrap()
+            .contains("nodes/sw_storm_onset.vnode"),
+        "{c:?}"
+    );
+    // Its node file: the block, its ports and its wire, Nia its writer, at
+    // her contract, revision 1, signed by nobody yet.
+    let n = breakdown::issued(&before, "sw_storm_onset", "method").unwrap();
+    assert_eq!(n.kind().unwrap(), Kind::Node);
+    for (k, v) in [
+        ("group_id", "l3_solar"),
+        ("block_uid", "sw_storm_onset"),
+        ("writer", "Nia Node"),
+        ("revision", "1"),
+        ("contract_version", "1"),
+    ] {
+        assert_eq!(n.meta.get(k).map(String::as_str), Some(v), "{k}");
+    }
+    assert_eq!(n.blocks.len(), 1);
+    assert_eq!(
+        (n.blocks[0].behaviour.as_str(), n.blocks[0].revision),
+        ("method", 1)
+    );
+    assert_eq!(n.ports.len(), 2);
+    assert_eq!(n.wires.len(), 1);
+    assert!(n.signatures.is_empty());
+    n.check_meta().unwrap();
+    // The branch holds it once, in its node file.
+    let ns = [n];
+    let branch = breakdown::Branch::new(&after, &ns);
+    assert_eq!(
+        branch
+            .blocks()
+            .iter()
+            .filter(|(b, _)| b.uid == "sw_storm_onset")
+            .count(),
+        1
+    );
+
+    let refused = |g: &File, e: Edit, says: &str| {
+        let got = ola(g, &e).unwrap_err();
+        assert!(got.contains(says), "expected «{says}» in: {got}");
+    };
+    let unassigned = with_onset();
+    let (unassigned, _) = ola(
+        &unassigned,
+        &Edit::Wire {
+            block: s("sw_storm_onset"),
+            port: s("f107"),
+            from: s("case"),
+        },
+    )
+    .unwrap();
+    refused(
+        &unassigned,
+        issue("sw_storm_onset", "method"),
+        "is assigned to nobody",
+    );
+    let unwired = ola(
+        &with_onset(),
+        &Edit::Assign {
+            block: s("sw_storm_onset"),
+            person: s("Nia Node"),
+        },
+    )
+    .unwrap()
+    .0;
+    refused(
+        &unwired,
+        issue("sw_storm_onset", "method"),
+        "its input f107 does not say where it comes from",
+    );
+    refused(
+        &before,
+        issue("sw_storm_onset", "open"),
+        "is issued as a method or a stated node",
+    );
+    refused(&before, issue("l3_solar", "method"), "is a heading");
+    refused(&before, issue(BAND, "method"), "is issued already");
+    // A block with blocks framed under it.
+    let (parent, _) = ola(
+        &before,
+        &Edit::Add {
+            parent: s("sw_storm_onset"),
+            id: s("sw_storm_part"),
+            question: s("A part of it"),
+        },
+    )
+    .unwrap();
+    refused(
+        &parent,
+        issue("sw_storm_onset", "method"),
+        "has blocks under it",
+    );
+    // A block with no output, and no question.
+    let (bare, _) = ola(
+        &solar(),
+        &Edit::Add {
+            parent: s("l3_solar"),
+            id: s("sw_bare"),
+            question: s(""),
+        },
+    )
+    .unwrap();
+    let (bare, _) = ola(
+        &bare,
+        &Edit::Assign {
+            block: s("sw_bare"),
+            person: s("Nia Node"),
+        },
+    )
+    .unwrap();
+    refused(&bare, issue("sw_bare", "method"), "has no question");
+}
+
+#[test]
+fn an_issue_in_the_copy_writes_the_node_file_beside_the_group_file() {
+    let copy = std::env::temp_dir().join(format!("vleo-issue-{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&copy);
+    let dir = copy.join("groups/l3_solar");
+    std::fs::create_dir_all(dir.join("nodes")).unwrap();
+    let group = dir.join("l3_solar.vgroup");
+    vleo_files::sqlite::write(&onset_ready(), &group).unwrap();
+    for n in nodes() {
+        let id = n.blocks[0].id.clone();
+        vleo_files::sqlite::write(&n, &dir.join(format!("nodes/{id}.vnode"))).unwrap();
+    }
+    let digest = |p: &std::path::Path| vleo_files::copied::digest(&std::fs::read(p).unwrap());
+    let pr = programme();
+    let sy = systems(&pr);
+    let made = breakdown::edit_in_place(
+        &copy,
+        "l3_solar",
+        &digest(&group),
+        &issue("sw_storm_onset", "method"),
+        WHY,
+        "Ola Sun",
+        &key(13),
+        AT,
+        APP,
+        &sy,
+        &pr,
+    )
+    .unwrap();
+    assert!(
+        matches!(made, breakdown::Framed::Written { .. }),
+        "{made:?}"
+    );
+    let node = dir.join("nodes/sw_storm_onset.vnode");
+    let n = vleo_files::sqlite::read(&node).unwrap();
+    assert_eq!(n.meta.get("writer").map(String::as_str), Some("Nia Node"));
+    let g = vleo_files::sqlite::read(&group).unwrap();
+    assert!(!g.blocks.iter().any(|b| b.uid == "sw_storm_onset"));
+    // A node file already at that path is never written over: the group
+    // file as it was before the issue, given again, writes nothing.
+    vleo_files::sqlite::write(&onset_ready(), &group).unwrap();
+    let held = std::fs::read(&node).unwrap();
+    let e = breakdown::edit_in_place(
+        &copy,
+        "l3_solar",
+        &digest(&group),
+        &issue("sw_storm_onset", "method"),
+        WHY,
+        "Ola Sun",
+        &key(13),
+        AT,
+        APP,
+        &sy,
+        &pr,
+    )
+    .unwrap_err();
+    assert!(
+        e.message().contains("sw_storm_onset is in") || e.message().contains("never written over"),
+        "{}",
+        e.message()
+    );
+    assert_eq!(std::fs::read(&node).unwrap(), held);
+    let _ = std::fs::remove_dir_all(&copy);
+}
