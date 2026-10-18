@@ -63,9 +63,11 @@ pub struct Input {
     pub offered: Option<String>,
 }
 
-/// A formula read: the method it becomes, when it does, each input found,
-/// each spelling written back, a note, and every finding, by line of the
-/// formula (0 for the formula as a whole).
+/// A formula read: the method text it was written as, once every input is
+/// found and every unit named (whether the checker holds it sound is
+/// [`Read::ok`]: text that does not compile is kept to be shown, never to be
+/// saved), each input found, each spelling written back, a note, and every
+/// finding, by line of the formula (0 for the formula as a whole).
 #[derive(Clone, Debug, PartialEq)]
 pub struct Read {
     pub typed: String,
@@ -154,9 +156,16 @@ fn pieces(expr: &str) -> Result<Vec<(Piece, usize, usize)>, String> {
             let called = q < b.len() && b[q] == b'(';
             let is_fn = function(&name).is_some() || kernel_function(&name).is_some();
             if called && !is_fn {
-                return Err(format!(
-                    "«{name}» is not a function of the method language: write * for a product, as {name} * (…)"
-                ));
+                let lower = name.to_ascii_lowercase();
+                return Err(
+                    if function(&lower).is_some() || kernel_function(&lower).is_some() {
+                        format!("«{name}» is not a function of the method language: did you mean «{lower}»?")
+                    } else {
+                        format!(
+                            "«{name}» is not a function of the method language: write * for a product, as {name} * (…)"
+                        )
+                    },
+                );
             }
             out.push((
                 if called {
@@ -173,9 +182,27 @@ fn pieces(expr: &str) -> Result<Vec<(Piece, usize, usize)>, String> {
             b'(' => Piece::Open,
             b')' => Piece::Close,
             b'+' | b'-' | b'*' | b'/' | b'^' | b',' | b'<' | b'>' | b'!' | b'=' => Piece::Op,
+            b'#' => {
+                return Err(
+                    "a comment is not part of a formula: once it is the method, a comment may follow it there"
+                        .into(),
+                )
+            }
+            b'[' => {
+                return Err(
+                    "«[» here: a unit is written straight after its number, as 6371 [km]; a list is written in a method"
+                        .into(),
+                )
+            }
+            b':' | b'"' => {
+                return Err(format!(
+                    "«{}» is written in a method, not in a formula",
+                    c as char
+                ))
+            }
             _ => {
                 return Err(format!(
-                    "«{}» is not part of the method language",
+                    "«{}» is not an operator of the method language: + - * / ^",
                     c as char
                 ));
             }
@@ -337,6 +364,27 @@ pub fn read(
                 *n,
                 "each line before the last names what it works out, as q = 0.5 * rho * v^2",
             )),
+            // A line before the last works out a value of its own: never one
+            // of the node's inputs, nor a kernel constant, under its name.
+            Some(name) if !last => {
+                if let Some(p) = ports
+                    .iter()
+                    .find(|p| &p.name == name || (!p.symbol.is_empty() && &p.symbol == name))
+                {
+                    r.diags.push(Diag::err(
+                        *n,
+                        format!(
+                            "«{name}» is the input {}: a line works out a name of its own, as q",
+                            p.name
+                        ),
+                    ));
+                } else if kernel_constant(name).is_some() {
+                    r.diags.push(Diag::err(
+                        *n,
+                        format!("«{name}» is a kernel constant: a line works out a name of its own, as q"),
+                    ));
+                }
+            }
             _ => {}
         }
         if rhs.is_empty() {
@@ -353,16 +401,47 @@ pub fn read(
     // The names each expression reads, and the inputs among them.
     let mut scanned: Vec<Vec<(Piece, usize, usize)>> = Vec::new();
     let mut local: BTreeSet<String> = BTreeSet::new();
+    let worked_out: BTreeSet<String> = steps[..steps.len() - 1]
+        .iter()
+        .filter_map(|s| s.1.clone())
+        .collect();
     for (i, (n, lhs, rhs)) in steps.iter().enumerate() {
         match pieces(rhs) {
             Ok(p) => {
                 for (piece, ..) in &p {
                     let Piece::Var(name) = piece else { continue };
                     if local.contains(name)
-                        || kernel_constant(name).is_some()
                         || ["and", "or", "not", "true", "false"].contains(&name.as_str())
                         || r.inputs.iter().any(|x| &x.name == name)
                     {
+                        continue;
+                    }
+                    if kernel_constant(name).is_some() {
+                        // A constant is the constant; a port that writes it
+                        // as its symbol is never taken for it unsaid.
+                        if let Some(p) = ports.iter().find(|p| &p.symbol == name) {
+                            r.diags.push(Diag::err(
+                                *n,
+                                format!(
+                                    "«{name}» is a kernel constant and the symbol of the input {}: write {} for the input",
+                                    p.name, p.name
+                                ),
+                            ));
+                        }
+                        continue;
+                    }
+                    if KEYWORDS.contains(&name.as_str()) {
+                        r.diags.push(Diag::err(
+                            *n,
+                            format!("«{name}» is a word of the method language: a formula is one expression a line"),
+                        ));
+                        continue;
+                    }
+                    if worked_out.contains(name) {
+                        r.diags.push(Diag::err(
+                            *n,
+                            format!("«{name}» is read before the line that works it out: write that line first"),
+                        ));
                         continue;
                     }
                     let by_name = ports.iter().find(|p| &p.name == name);
@@ -470,6 +549,35 @@ pub fn read(
         }
         Some(fit) => {
             let dim_of = |port: &str| sig.inputs.iter().find(|(n, _)| n == port).map(|(_, d)| *d);
+            // Every unit named is of an input the formula reads, and each
+            // input is named once.
+            for (named, _) in &fit.inputs {
+                let of: Vec<&Input> = r
+                    .inputs
+                    .iter()
+                    .filter(|x| &x.name == named || x.port.as_deref() == Some(named.as_str()))
+                    .collect();
+                if of.is_empty() {
+                    r.diags.push(Diag::err(
+                        0,
+                        format!("a unit is named for «{named}», which the formula does not read"),
+                    ));
+                }
+            }
+            for x in &r.inputs {
+                let port = x.port.as_deref().unwrap_or("");
+                let times = fit
+                    .inputs
+                    .iter()
+                    .filter(|(n, _)| n == &x.name || n == port)
+                    .count();
+                if times > 1 {
+                    r.diags.push(Diag::err(
+                        0,
+                        format!("«{}» is given a unit {times} times: name it once", x.name),
+                    ));
+                }
+            }
             for x in &mut r.inputs {
                 let port = x.port.clone().unwrap_or_default();
                 let named = fit
@@ -493,9 +601,9 @@ pub fn read(
                         0,
                         format!(
                             "[{unit}] is {}, and «{}» is {}",
-                            dim_text(d),
+                            super::amount::kind_of(d),
                             x.name,
-                            dim_text(want)
+                            super::amount::kind_of(want)
                         ),
                     )),
                     _ => {
@@ -526,8 +634,8 @@ pub fn read(
                     0,
                     format!(
                         "[{answer}] is {}, and the node's output is {}",
-                        dim_text(d),
-                        dim_text(sig.output)
+                        super::amount::kind_of(d),
+                        super::amount::kind_of(sig.output)
                     ),
                 )),
                 Ok(_) => answer_unit = Some(answer.to_string()),

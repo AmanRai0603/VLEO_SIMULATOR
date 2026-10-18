@@ -9,7 +9,7 @@
 
 use vleo_sheet::method::amount::{self, Shape};
 use vleo_sheet::method::formula::{self, Fit, Found, Port};
-use vleo_sheet::method::{parse, quantity_dim, Signature};
+use vleo_sheet::method::{dim_text, parse, quantity_dim, Signature};
 
 fn ok(typed: &str, field: &str) -> amount::Amount {
     amount::read(typed, field).unwrap_or_else(|e| panic!("{typed}: {e}"))
@@ -84,6 +84,68 @@ fn a_value_a_range_and_a_spread_are_read_as_typed() {
     // A unit read as what it is, and called that: C is a coulomb, never Celsius.
     let a = ok("25 C", "");
     assert!(a.said.contains("a Charge"), "{}", a.said);
+    // Section 7's examples as typed, each said back exactly, its value in SI
+    // worked out from the digits: never 0.000054999999999999995.
+    let a = ok("55 mN/kW", "");
+    assert!(
+        a.said
+            .starts_with("55 mN/kW, of dimension s/m: 0.000055 s/m in SI"),
+        "{}",
+        a.said
+    );
+    let a = ok("2.5e-11 to 1.5e-10", "kg/m^3");
+    assert_eq!(
+        (a.lower.as_deref(), a.upper.as_deref(), a.unit.as_str()),
+        (Some("2.5e-11"), Some("1.5e-10"), "kg/m^3")
+    );
+    assert!(a.said.contains("the field's unit"), "{}", a.said);
+    let a = ok("55 ± 10%", "mN");
+    assert_eq!(
+        (a.lower.as_deref(), a.upper.as_deref(), a.unit.as_str()),
+        (Some("49.5"), Some("60.5"), "mN")
+    );
+    // A pure number is said as one, without its unit 1.
+    assert!(
+        ok("2.2", "").said.starts_with("2.2, a pure number"),
+        "{}",
+        ok("2.2", "").said
+    );
+    // Numbers as the lexer reads them.
+    for (typed, nominal) in [
+        ("-5 m", "-5"),
+        (".5 m", "0.5"),
+        ("5. m", "5"),
+        ("1e+3 m", "1000"),
+        ("2.50 m", "2.5"),
+        ("1e-30 m", "1e-30"),
+        ("1e25 m", "1e25"),
+    ] {
+        assert_eq!(ok(typed, "").nominal.as_deref(), Some(nominal), "{typed}");
+    }
+    assert!(
+        ok("1e-30 m", "").said.contains(": 1e-30 m in SI"),
+        "{}",
+        ok("1e-30 m", "").said
+    );
+    // A design file's machine name is a field's unit as its symbol is.
+    assert_eq!(ok("250", "Kilometre").unit, "km");
+    // Two units of one dimension a power of ten apart, the lower end in the
+    // upper's.
+    let a = ok("1 mN to 1500 uN", "");
+    assert_eq!(
+        (a.lower.as_deref(), a.upper.as_deref(), a.unit.as_str()),
+        (Some("1000"), Some("1500"), "uN")
+    );
+    let a = ok("-5 ± 10%", "");
+    assert_eq!(
+        (a.lower.as_deref(), a.upper.as_deref()),
+        (Some("-5.5"), Some("-4.5"))
+    );
+    assert!(
+        ok("1 [m^2]", "").said.contains("an Area"),
+        "{}",
+        ok("1 [m^2]", "").said
+    );
 }
 
 #[test]
@@ -104,6 +166,49 @@ fn what_an_amount_does_not_say_is_refused_by_name_with_the_fix() {
     refused("250 km", "kg", "this field is in [kg]");
     refused("km", "", "does not start with a number");
     refused("", "", "nothing is typed");
+    // A unit after the per-cent is the nominal's, or refused: never dropped.
+    refused(
+        "55 mN ± 10% N",
+        "",
+        "the nominal is in [mN] and the spread names [N]",
+    );
+    refused(
+        "55 mN ± 10% kg",
+        "",
+        "the nominal is in [mN] and the spread names [kg]",
+    );
+    assert_eq!(ok("55 ± 10% [mN]", "").unit, "mN");
+    refused(
+        "55 mN ± 5.5 N",
+        "",
+        "the nominal is in [mN] and the spread in [N]",
+    );
+    // A number too large or too small to hold, however it is written.
+    for typed in [
+        "1e400 km",
+        "1e-400 km",
+        "1e2147483647 m",
+        "10e2147483647 m",
+        "1e9999999999 m",
+    ] {
+        refused(typed, "", "too large or too small a number to hold");
+    }
+    // An end without its unit takes no other's.
+    refused("1 km to 2000", "m", "write the unit after the upper end");
+    refused(
+        "1 min to 2 h",
+        "",
+        "differ by a factor that is not a power of ten",
+    );
+    refused("55 ± -10%", "", "the spread in «55 ± -10%» is negative");
+    refused("55 ± -1 mN", "", "is negative");
+    refused("1 to 2 ± 1", "", "is both a range and a spread");
+    refused("1to 2", "", "a range is written with to between its ends");
+    refused("1 To 2", "", "a range is written with to between its ends");
+    refused("−5 m", "", "a typographic minus");
+    refused("5 µN", "", "write the micro prefix as u");
+    refused("55 ± x%", "", "is not a number of per cent");
+    refused("5", "furlong", "the field's own unit");
 }
 
 fn drag() -> (Signature, Vec<Port>, Port) {
@@ -179,14 +284,35 @@ fn a_formula_typed_as_written_becomes_a_method_the_checker_holds_sound() {
         .unwrap()
         .contains("let q = 0.5 * rho * v^2\nreturn q * Cd * A"));
     // A spelling with one meaning is written back, and said.
-    let r = formula::read("D = 0.5 × rho * v**2 · Cd * A", &sig, &ports, &out, None);
+    let r = formula::read(
+        "D = 0.5 × rho * v**2 · Cd * A − 0 [N]",
+        &sig,
+        &ports,
+        &out,
+        None,
+    );
     assert!(r.ok(), "{:?}", r.diags);
+    // A sum, a call and a constant read as the language reads them: a
+    // constant and a function are no inputs.
+    let f = formula::read(
+        "D = max(0.5 * rho * v^2 * Cd * A, 0 [N]) + 0 * G0 * rho * v * A",
+        &sig,
+        &ports,
+        &out,
+        None,
+    );
+    assert!(
+        f.inputs.iter().all(|x| x.name != "G0" && x.name != "max"),
+        "{:?}",
+        f.inputs
+    );
     assert_eq!(
         r.rewrites,
         [
             "«**» is written «^»",
             "«×» is written «*»",
-            "«·» is written «*»"
+            "«·» is written «*»",
+            "«−» is written «-»"
         ]
     );
 }
@@ -227,9 +353,76 @@ fn what_a_formula_does_not_say_is_refused_by_name_and_never_guessed() {
         .find(|d| d.msg.contains("the answer must be"))
         .unwrap();
     assert_eq!(d.line, 1, "on the formula's own line");
+    let (force, pressure) = (
+        dim_text(quantity_dim("Force").unwrap()),
+        dim_text(quantity_dim("Pressure").unwrap()),
+    );
+    assert!(
+        d.msg.contains(&force) && d.msg.contains(&pressure),
+        "both dimensions named: {}",
+        d.msg
+    );
+    let r = says("q = 0.5 * rho * v^2\nD = q * Cd", "the answer must be");
+    assert!(
+        r.diags
+            .iter()
+            .any(|d| d.line == 2 && d.msg.contains("the answer must be")),
+        "{:?}",
+        r.diags
+    );
     says(
         "q = 0.5 * rho * v^2\nq * Cd * A\nD = q",
         "each line before the last names what it works out",
+    );
+    says("D = 2 pi r", "«2» and «pi» stand side by side");
+    // A line never works out one of the node's inputs, nor a constant.
+    says(
+        "Cd = 2.2\nD = 0.5 * rho * v^2 * Cd * A",
+        "«Cd» is the input cd",
+    );
+    says(
+        "rho = 1.2 [kg/m^3]\nD = 0.5 * rho * v^2 * Cd * A",
+        "«rho» is the input rho",
+    );
+    says(
+        "G0 = 1\nD = 0.5 * rho * v^2 * Cd * A",
+        "«G0» is a kernel constant: a line works out a name of its own",
+    );
+    says(
+        "x = q * 2\nq = 0.5 * rho * v^2\nD = x * Cd * A",
+        "«q» is read before the line that works it out",
+    );
+    says("D = rho * end", "«end» is a word of the method language");
+    says(
+        "end = 1\nD = 0.5 * rho * v^2 * Cd * A",
+        "«end» is a word of the method language, not a name",
+    );
+    says("2x = 1\nD = 0.5 * rho * v^2 * Cd * A", "«2x» is not a name");
+    says("D =", "nothing follows the =");
+    says("", "nothing is typed");
+    says(
+        "D = 0.5 * rho * v^2 * Cd * A # Anderson 4.1",
+        "a comment is not part of a formula",
+    );
+    says(
+        "D = 0.5 * rho * v [m/s] * v * Cd * A",
+        "«[» here: a unit is written straight after its number",
+    );
+    says("D = 6371 [km * rho", "is not closed with ]");
+    says("D = Sqrt(rho) * v * Cd * A", "did you mean «sqrt»?");
+    says("D = 1 ÷ rho", "«÷» is not part of the method language");
+    says("D = rho == rho", "the answer is a number, not a condition");
+    // A constant is the constant: a port that writes it as its symbol is
+    // never taken for it unsaid.
+    let mut clash = ports.clone();
+    clash[3].symbol = "G0".into();
+    let r = formula::read("D = 0.5 * rho * v^2 * Cd * G0", &sig, &clash, &out, None);
+    assert!(
+        r.diags.iter().any(|d| d
+            .msg
+            .contains("«G0» is a kernel constant and the symbol of the input a")),
+        "{:?}",
+        r.diags
     );
 }
 
@@ -256,9 +449,39 @@ fn an_empirical_fit_checks_once_the_units_it_holds_in_are_named() {
         inputs: vec![(input.into(), unit.into())],
         answer: answer.into(),
     };
-    // Without its units, a power of a dimensioned value is refused.
+    // Without its units, a power of a dimensioned value is refused, by the
+    // checker, on the formula's line.
     let r = formula::read("m = 1.2 * P^0.7", &sig, &ports, &out, None);
     assert!(!r.ok(), "{:?}", r.method);
+    assert!(
+        r.diags
+            .iter()
+            .any(|d| d.line == 1 && d.severity == vleo_sheet::method::Severity::Error),
+        "{:?}",
+        r.diags
+    );
+    // Over several lines, as over one.
+    let r = formula::read(
+        "x = P / 2\nm = 1.2 * x^0.7",
+        &sig,
+        &ports,
+        &out,
+        Some(&fit("P", "kW", "kg")),
+    );
+    assert!(r.ok(), "{:?}", r.diags);
+    // An input given a unit twice is refused, by name.
+    let twice = Fit {
+        inputs: vec![("P".into(), "kW".into()), ("power".into(), "W".into())],
+        answer: "kg".into(),
+    };
+    let r = formula::read("m = 1.2 * P^0.7", &sig, &ports, &out, Some(&twice));
+    assert!(
+        r.diags
+            .iter()
+            .any(|d| d.msg.contains("«P» is given a unit 2 times")),
+        "{:?}",
+        r.diags
+    );
     // With them, each input is a number in its unit, and the answer one in its.
     let r = formula::read(
         "m = 1.2 * P^0.7",
@@ -291,9 +514,15 @@ fn an_empirical_fit_checks_once_the_units_it_holds_in_are_named() {
     );
     for (f, says) in [
         (fit("Q", "kW", "kg"), "name the unit «P» is read in"),
-        (fit("P", "kg", "kg"), "[kg] is kg, and «P» is"),
+        (fit("P", "kg", "kg"), "[kg] is a Mass, and «P» is a Power"),
         (fit("P", "kW", ""), "name the unit its answer is in"),
-        (fit("P", "kW", "W"), "and the node's output is kg"),
+        (fit("P", "kW", "W"), "and the node's output is a Mass"),
+        (
+            fit("Q", "kW", "kg"),
+            "a unit is named for «Q», which the formula does not read",
+        ),
+        (fit("P", "furlong", "kg"), "«furlong» is not a unit"),
+        (fit("P", "kW", "furlong"), "«furlong» is not a unit"),
     ] {
         let r = formula::read("m = 1.2 * P^0.7", &sig, &ports, &out, Some(&f));
         assert!(!r.ok(), "{says}");
