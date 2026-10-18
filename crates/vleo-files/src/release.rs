@@ -392,7 +392,11 @@ pub fn releases_in(
                     "releases/{name} is a release named in another case: its owner names it .vleo"
                 )))
             }
-            _ => continue,
+            _ => {
+                return Err(refused(format!(
+                    "releases/{name} is not a release: releases/ holds sealed releases only, and anything else is named, never passed over"
+                )))
+            }
         }
         if name.contains(" (") || name.contains("(1)") {
             return Err(refused(format!(
