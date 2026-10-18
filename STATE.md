@@ -202,18 +202,27 @@ Handed over Saturday 17 October (S1 to S3: F1 to F3-f, the key's proof, F3-g1, t
 
 ## Person B · night
 
-Handed over Wednesday 14 October, 23:20 IST. Nothing is merged: each PR waits on Aman. CI is green where finished.
+Handed over Sunday 18 October (S4: F5). Nothing is merged: each waits on A's review and Aman. Every PR was green on `gate && cargo test --no-fail-fast` before its push. 163 is in 176, and 168 to 170 are in 185.
 
-- **Merge order:** 165 before 166; 168 and 169 before 170. PRs 163, 168 and 169 each add 3 lines to the route table in `vleo-server/src/lib.rs`; the second to merge fixes a small conflict.
-- **Open:**
-  - 163 Explore (F2 without keys): routes for today, health, trace and compare, and the Explore tab. A's F2 is now the chain check on screen, then results.
-  - 164 setup (CLAUDE.md, this file, agents, deny rules) · 165 `xtask test-drive` · 166 `tools/scenarios.py` and its CI job, green on its first CI run.
-  - 167 `name@version` reserved · 168 `/v1/parts/<id>`, six parts as the gate says · 170 the node page shows them, with the button.
-  - **169 run my code again: high risk.** It runs code from a design file. Aman decides whether F1 limits it to your own nodes, or asks first.
-- **For A's F1 to decide:**
-  - Group ownership: `chain::owner_of` reads the programme's mounts, but `design/` mounts groups in the systems' file.
-  - `chain::open_group` admits only a subsystem engineer, so the systems' file cannot open.
-- **F3 moved to A, after F1:** signing a node through the chain (needs an Opus review); saving a revision in place, refused if the file moved (needs identity and the drive copy). Both should start from the six parts (168) and the test drive (165).
-- **Proving F1 and F2:** add a scenario to `SCENARIOS` in `tools/scenarios.py`. `world.person(name)` starts one program; `world.release(name)` puts a sealed release on the drive.
-- **Blocked on Aman:** merging PR 162 and the reviews above.
-- **Next for B:** no build work planned while B's seat is over budget; B answers review comments on 163–170 if asked.
+- **Two F5 stacks, both on A's 187:**
+  - **Release line:** 193 F5-a the seal → 194 F5-b1 a release put back → 196 F5-b2 today's design takes it (W5 proved end to end) → 200 F5-d today's view and impact → 205 F5-g1 seal on screen. 202 F5-e2 answers (W7) is on 194. **High risk:** 193, 194, 196, 202, 205.
+  - **Edit line:** 197 F5-c1 assign, wire → 198 c2 issue a node file → 199 c3 the sheet → 201 e1 contract change (W4) → 203 e3 update base (W12) → 204 f1 issues assigned, resolved (W11).
+  - Each line conflicts with the other only in `branch.rs`, `lib.rs`'s route table, `workspace_system.js`, `manual.toml` and `files.wasm.stamp`: small, additive. Regenerate the stamp with `xtask files-wasm`.
+- **Changed in A's code, for A to check:**
+  - `chain::checked_release` (193): a block no assignment names is a heading, vouched for by the seal.
+  - `chain::check_answer` (202) is new, beside `check_design`.
+  - `release::node_in` (200) keeps the text kinds a node does not carry.
+- **What F5 decides:**
+  - **A seal makes every check today's design makes** (`check_release`), the group's `versions.csv` row for the version among them.
+  - **A release and an answer go back as new files only.** Each is checked through the drive's chain as it is then, and never written over.
+  - **A contract change** re-issues the node's file, and the node reads behind until it is re-signed. **Issue** moves a framed block's rows into its own node file. **The sheet** sets up many blocks, all or none.
+  - **An issue's state is computed, never written.** It is assigned in the group file, and resolved by the release whose `versions.csv` row names it under `resolves`.
+- **For Aman, found while building:**
+  - **No node of `design/` can be signed.** The converted files have no declaration, no isolation results, inputs without defaults, and unit `One` where the method language reads `1`. Their method is a `method` text where the checks read `pseudocode` (same body). (The question 9 A names.)
+  - Group files still do not go back to the drive. So a contract change, an assignment or an update base stays in the copy until a release.
+- **Not done:**
+  - **F5-f2:** `GET /v1/issues`, the state from today's design and the health map. It needs both lines merged.
+  - **F5-g2:** remove `web/group.html`, `web/node.html` and `xtask group-app`. 37 files, `AGENTS.md` among them; it overlaps A's 192. One person, after 192.
+  - The test drive (165) per 171 and 181: assign mounts in the systems' file, and give keys their proofs.
+  - Neighbours' values on update base; My work naming moved groups (needs F6's previews); the health map of the view.
+- **Next for B:** F5-f2 once the lines merge; the 165 fix; review comments on 193 to 205.
