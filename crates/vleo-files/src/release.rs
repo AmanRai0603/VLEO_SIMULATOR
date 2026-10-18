@@ -163,8 +163,11 @@ pub fn node_in(release: &File, uid: &str, base: &File) -> File {
         .filter(|t| t.scope == uid)
         .map(|t| t.kind.as_str())
         .collect();
+    // The cases are the release's alone, and so are their words: a release
+    // with no cases keeps none of the design's.
+    let cases = |k: &str| k == "fixtures" || k.ends_with("fixtures.toml");
     n.texts
-        .retain(|t| t.scope != uid || !kinds.contains(&t.kind.as_str()));
+        .retain(|t| t.scope != uid || !(kinds.contains(&t.kind.as_str()) || cases(&t.kind)));
     n.texts
         .extend(release.texts.iter().filter(|t| t.scope == uid).cloned());
     take!(tables, scope);

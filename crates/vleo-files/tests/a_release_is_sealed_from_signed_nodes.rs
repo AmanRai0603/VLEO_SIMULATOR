@@ -413,6 +413,10 @@ fn a_release_s_node_in_the_design_s_file_keeps_the_kinds_of_text_it_does_not_car
     base.texts = vec![
         text("sheet", "the sheet's own words"),
         text("method", "return 1"),
+        text(
+            "fixtures",
+            "the design's cases, which the release no longer holds",
+        ),
     ];
     base.meta.insert(s("sheet.crate"), s("vleo-mod-solar"));
     let mut rel = from_release(BAND);
