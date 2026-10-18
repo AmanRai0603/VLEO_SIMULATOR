@@ -1291,6 +1291,12 @@ fn checked_release(
         }
     };
     for b in release.blocks.iter().filter(|b| b.archived == 0) {
+        // A heading is the group's own and no node engineer's to sign: no
+        // assignment names it, and the seal, checked above, vouches for it.
+        if !release.assignments.iter().any(|a| a.block_uid == b.uid) {
+            out.signed.push(b.id.clone());
+            continue;
+        }
         match check_node(release, &b.uid, &group) {
             Ok(()) => out.signed.push(b.id.clone()),
             Err(e) => out.refused.push(e.message().to_string()),

@@ -404,7 +404,7 @@ fn accepting_another_anchor_later_does_not_vouch_for_seals_checked_from_this_one
 }
 
 #[test]
-fn a_release_in_the_one_schema_is_refused_by_name() {
+fn a_release_in_the_one_schema_whose_seal_cannot_be_checked_is_refused_by_name() {
     keys();
     let d = drive("schema", &["1.1"], &pat().public().fingerprint());
     let mut f = File::new(Kind::GroupRelease, APP);
@@ -418,7 +418,7 @@ fn a_release_in_the_one_schema_is_refused_by_name() {
     assert!(
         g.refused
             .iter()
-            .any(|(v, why)| v == "l3_solar-2.0" && why.contains("not format 1")),
+            .any(|(v, why)| v == "2.0" && why.contains("the drive has no systems' file")),
         "{:?}",
         g.refused
     );

@@ -27,6 +27,14 @@
 //! that cannot be signed yet still asks. In either case every request the
 //! drive's file holds, and every signature of one, is kept as it is.
 //!
+//! Or it is a group's release, sealed in the copy (F5): a new file in the
+//! group's `releases/`, named for the group and the version it says, sealed
+//! by the person putting it back with a key the drive counts for them now,
+//! after the drive's latest release of the group, and checking through the
+//! chain as the drive holds it now: its seal through the file that mounts the
+//! group, every node in it through the group file it carries. A release is
+//! never written over, so one already on the drive at that path stays.
+//!
 //! A group's file does not go back yet: what may change in it at its valve
 //! is not yet checked against the drive's file, so a change of its people
 //! stays in the copy.
@@ -55,7 +63,9 @@ use crate::chain::{self, Registry};
 use crate::checks;
 use crate::copied::{self, Copied};
 use crate::error::{Error, ErrorKind};
+use crate::meta::Kind;
 use crate::model::File;
+use crate::release;
 use crate::save;
 
 /// The drive's chain, opened from the drive's own files: the anchor START
@@ -659,17 +669,117 @@ fn verdict(
     me: &str,
     at: &str,
     chain: &Chain,
+    drive: &Path,
 ) -> Result<String, String> {
     let parts: Vec<&str> = path.split('/').collect();
     match parts.as_slice() {
         ["groups", g, "nodes", name] if name.ends_with(".vnode") => {
             node_verdict(path, g, bytes, theirs, me, at, chain)
         }
+        ["groups", g, "releases", name] if name.ends_with(".vleo") => {
+            release_verdict(g, name, bytes, theirs, me, at, chain, drive)
+        }
         ["groups", g, name] if *name == format!("{g}.vgroup") => Err(format!(
             "{g}'s group file does not go back yet: what may change in a group's file is not yet checked against the drive's, so a change of its people stays in your copy"
         )),
-        _ => Err("it is not a file the application puts back yet: a node's file goes back".into()),
+        _ => Err("it is not a file the application puts back yet: a node's file, or a group's release, goes back".into()),
     }
+}
+
+/// Whether the release `name` in `group`'s `releases/`, `bytes` in the copy,
+/// goes back as a new file sealed by `me`, onto the drive at `drive` that
+/// holds `theirs` at that path.
+#[allow(clippy::too_many_arguments)]
+fn release_verdict(
+    group: &str,
+    name: &str,
+    bytes: &[u8],
+    theirs: Option<&[u8]>,
+    me: &str,
+    at: &str,
+    chain: &Chain,
+    drive: &Path,
+) -> Result<String, String> {
+    if theirs.is_some() {
+        return Err(
+            "the drive holds a release at this path already: a release is never written over"
+                .into(),
+        );
+    }
+    let f = save::parsed(bytes).map_err(|e| format!("it does not read: {}", e.message()))?;
+    match f.kind() {
+        Ok(Kind::GroupRelease) => {}
+        Ok(other) => {
+            return Err(format!(
+                "it is a {other}, and releases/ holds releases only"
+            ))
+        }
+        Err(e) => return Err(e.message().to_string()),
+    }
+    let said = |k: &str| f.meta.get(k).map_or("", String::as_str);
+    if said("group_id") != group {
+        return Err(format!(
+            "it says it is {:?}'s release, in {group}'s folder",
+            said("group_id")
+        ));
+    }
+    let version = said("version");
+    if name != format!("{group}-{version}.vleo") {
+        return Err(format!(
+            "it says it is {group} {version}, so its name is {group}-{version}.vleo"
+        ));
+    }
+    if said("sealed_by") != me {
+        return Err(format!(
+            "it is sealed by {:?}: a release goes back only by the person who sealed it",
+            said("sealed_by")
+        ));
+    }
+    // After the drive's latest release, as the drive holds it now: one sealed
+    // after another that is not the drive's latest was sealed beside a
+    // release nobody it followed knew of.
+    let latest = release::releases_in(
+        &drive.join("groups").join(group).join("releases"),
+        group,
+        concat!("vleo ", env!("CARGO_PKG_VERSION")),
+    )
+    .map_err(|e| {
+        format!(
+            "the drive's releases of {group} do not read: {}",
+            e.message()
+        )
+    })?
+    .into_iter()
+    .next()
+    .map(|(v, _)| v.to_string());
+    if said("previous") != latest.as_deref().unwrap_or("") {
+        return Err(format!(
+            "it follows {}, and the drive's latest release of {group} is {}: seal it again on a copy taken now",
+            if said("previous").is_empty() { "no release" } else { said("previous") },
+            latest.as_deref().unwrap_or("none")
+        ));
+    }
+    let systems = chain.systems.as_ref().ok_or_else(|| {
+        "the systems' file on the drive does not check through the chain, so no seal counts"
+            .to_string()
+    })?;
+    let (parent, _) = chain::mounted_by(group, &[&chain.programme, systems])
+        .map_err(|e| e.message().to_string())?;
+    // The seal by `me` with a key the drive's programme's file counts for
+    // them now, and every node it holds, checked through the chain as the
+    // drive holds it.
+    let now = only_counting_now(&f, chain::FILE, me, at, &chain.programme);
+    let checked = chain::check_release_in(&now, parent, &chain.programme)
+        .map_err(|e| e.message().to_string())?;
+    if !checked.holds() {
+        return Err(format!(
+            "it does not check through the chain as the drive holds it now, sealed by {me} with a key that counts at {at}: {}",
+            checked.refused.join("; ")
+        ));
+    }
+    Ok(format!(
+        "goes back: {group} {version}, sealed by {me}, a new release"
+    ))
 }
 
 /// The report of what in the working copy at `copy` would go back to the
@@ -754,7 +864,7 @@ pub fn put_back(
                 "{path} changed in your copy while it was being read: look again"
             )));
         }
-        match verdict(&path, &bytes, there.as_deref(), me, at, &chain) {
+        match verdict(&path, &bytes, there.as_deref(), me, at, &chain, &drive_root) {
             Ok(why) => report.lines.push(line(true, why, mine)),
             Err(why) => report.lines.push(line(false, why, mine)),
         }
@@ -867,6 +977,12 @@ fn write_on_drive(drive: &Path, path: &str, bytes: &[u8], n: usize) -> Result<()
     let dir = to
         .parent()
         .ok_or_else(|| refused(format!("{path} has no folder on the drive")))?;
+    // A group's first release makes its `releases/`, in the group's folder
+    // the drive holds; no other folder is made.
+    if dir.file_name().is_some_and(|n| n == "releases") && !dir.exists() {
+        std::fs::create_dir(dir).map_err(|e| io(dir, e))?;
+        no_link_on_the_way(drive, path)?;
+    }
     let name = to
         .file_name()
         .map_or_else(String::new, |n| n.to_string_lossy().into_owned());
