@@ -783,6 +783,24 @@ fn a_branch_is_framed_in_the_copy() {
     );
     let band = vleo_files::sqlite::read(&copy.join(nodes(UID))).unwrap();
     assert_eq!(band.blocks[0].contract_version, 2);
+    // The base moves to a released design the copy holds (W12): one that
+    // is not a version, or not in the copy, is refused by name.
+    let r = edit(
+        "update-base",
+        &[("opened", field(&tree(), "opened")), ("design", "../x")],
+    );
+    assert!(r.contains("is not a released design's version"), "{r}");
+    let r = edit(
+        "update-base",
+        &[
+            ("opened", field(&tree(), "opened")),
+            ("design", "2026.10.1"),
+        ],
+    );
+    assert!(
+        r.contains("your copy holds no released design 2026.10.1"),
+        "{r}"
+    );
     // Issued: a block framed in the group file, refused by name while it is
     // assigned to nobody, and nothing written.
     let before_issue = group_bytes();

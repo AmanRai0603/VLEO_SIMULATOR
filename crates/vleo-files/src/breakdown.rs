@@ -113,6 +113,15 @@ pub enum Edit {
         node: String,
         port: Option<Box<Port>>,
     },
+    /// The group's base moved to `design`, the released design after the one
+    /// it is based on, `previous` (none before its first) (W12): what it
+    /// reads from other groups that changed under it, and its mount, are
+    /// named for the node engineers who read them; no node's content
+    /// changes (F5).
+    UpdateBase {
+        design: Box<File>,
+        previous: Option<Box<File>>,
+    },
     /// Many blocks set up at once from a sheet, a CSV a row a block
     /// ([`SHEET_COLUMNS`]): each added, its ports filled, its inputs wired
     /// and its node engineer assigned, as those edits are, each saying the
@@ -260,6 +269,7 @@ impl Edit {
             Edit::Issue { .. } => "issue",
             Edit::Sheet { .. } => "sheet",
             Edit::Contract { .. } => "contract",
+            Edit::UpdateBase { .. } => "update base",
         }
     }
 }
@@ -546,6 +556,13 @@ pub fn edit(
             )));
         }
     }
+    // A released design is the system engineer's: each is checked through
+    // the chain before the base moves to it.
+    if let Edit::UpdateBase { design, previous } = edit {
+        for d in std::iter::once(design).chain(previous.iter()) {
+            chain::check_design(d, programme)?;
+        }
+    }
     // A sheet is the edits it makes, each made as it is alone, in order:
     // the first refused refuses the sheet, by its row.
     if let Edit::Sheet { csv } = edit {
@@ -586,6 +603,18 @@ pub fn edit(
         } else {
             format!("read by {}\n", readers.join(", "))
         });
+    }
+    // The base as it is now, and what changed under it.
+    if let Edit::UpdateBase { design, previous } = edit {
+        after.push_str(&format!(
+            "based_on={:?} base_version={}\n",
+            out.meta.get("based_on").map_or("", String::as_str),
+            out.base_version().unwrap_or(0)
+        ));
+        for line in base_moves(&branch, previous.as_deref(), design) {
+            after.push_str(&line);
+            after.push('\n');
+        }
     }
     // An issue's rows are in the node file it makes, not the group file.
     if let Edit::Issue { block, behaviour } = edit {
@@ -797,6 +826,77 @@ pub fn contracted(node: &File, group: &File, port: Option<&Port>) -> Result<File
         }
     }
     Ok(n)
+}
+
+/// What changed under a branch between the released design `old` (none
+/// before its first) and `new`: each input of the branch that reads another
+/// group's port whose type, unit or range differs, or that is gone, said for
+/// the node engineer who reads it; and the group's mount, moved.
+fn base_moves(branch: &Branch, old: Option<&File>, new: &File) -> Vec<String> {
+    let group = branch.group_id();
+    let port_of = |d: &File, node: &str, port: &str| -> Option<Port> {
+        let b = d.blocks.iter().find(|b| b.id == node)?;
+        d.ports
+            .iter()
+            .find(|p| p.block_uid == b.uid && p.direction == "out" && p.name == port)
+            .cloned()
+    };
+    let mut out = Vec::new();
+    let Some(old) = old else {
+        return out;
+    };
+    for w in branch.wires() {
+        let parts: Vec<&str> = w.from_ref.split('.').collect();
+        let (g, node, port) = match parts.as_slice() {
+            [g, node, port] => (*g, *node, *port),
+            [g, node] if branch.find(g).is_none() => (*g, *node, *node),
+            _ => continue,
+        };
+        if g == group || g == "case" {
+            continue;
+        }
+        let reads = format!("{}'s input {} reads {}", w.to_block, w.to_port, w.from_ref);
+        match (port_of(old, node, port), port_of(new, node, port)) {
+            (Some(a), Some(b)) => {
+                let mut said = Vec::new();
+                for (what, x, y) in [
+                    ("type", &a.port_type, &b.port_type),
+                    ("unit", &a.unit, &b.unit),
+                    ("lower", &a.lower, &b.lower),
+                    ("upper", &a.upper, &b.upper),
+                ] {
+                    if x != y {
+                        said.push(format!("{what} {x} → {y}"));
+                    }
+                }
+                if !said.is_empty() {
+                    out.push(format!(
+                        "{reads}, whose meaning changed ({}): check it",
+                        said.join(", ")
+                    ));
+                }
+            }
+            (Some(_), None) => out.push(format!(
+                "{reads}, which the new design no longer holds: check it"
+            )),
+            (None, Some(_)) => out.push(format!(
+                "{reads}, which the design it was based on did not hold: check it"
+            )),
+            (None, None) => {}
+        }
+    }
+    let mount = |d: &File| {
+        d.mounts
+            .iter()
+            .find(|m| m.group_id == group)
+            .map(|m| m.block_uid.clone())
+    };
+    if let (Some(a), Some(b)) = (mount(old), mount(new)) {
+        if a != b {
+            out.push(format!("its mount moved from {a} to {b}"));
+        }
+    }
+    out
 }
 
 /// The assignment of `uid` in `f`, as text, for a `change` row.
@@ -1397,6 +1497,45 @@ fn apply(
             };
             a.contract_version += 1;
             Ok((node.clone(), before, None))
+        }
+        Edit::UpdateBase { design, previous } => {
+            let version = design.meta.get("version").cloned().unwrap_or_default();
+            let based_on = out.meta.get("based_on").cloned().unwrap_or_default();
+            if version == based_on {
+                return Err(refused(format!(
+                    "{group_id} is already based on the released design {version}"
+                )));
+            }
+            let follows = design.meta.get("previous").cloned().unwrap_or_default();
+            if follows != based_on {
+                return Err(refused(format!(
+                    "the released design {version} follows {}, and {group_id} is based on {}: its base moves to each released design in turn",
+                    if follows.is_empty() { "none" } else { &follows },
+                    if based_on.is_empty() { "none" } else { &based_on }
+                )));
+            }
+            match previous {
+                None if !based_on.is_empty() => {
+                    return Err(refused(format!(
+                        "the released design {based_on}, which {group_id} is based on, is needed to say what changed under it"
+                    )))
+                }
+                Some(p) if p.meta.get("version") != Some(&based_on) => {
+                    return Err(refused(format!(
+                        "the design given as the one before is {}, and the design it is based on is {based_on}",
+                        p.meta.get("version").map_or("", String::as_str)
+                    )))
+                }
+                _ => {}
+            }
+            let before = format!(
+                "based_on={based_on:?} base_version={}\n",
+                out.base_version().unwrap_or(0)
+            );
+            let count = out.base_version().unwrap_or(0) + 1;
+            out.meta.insert("based_on".into(), version);
+            out.meta.insert("base_version".into(), count.to_string());
+            Ok((group_id.to_string(), before, None))
         }
         Edit::Sheet { .. } => Err(refused(
             "a sheet is the edits it makes, each made by itself",

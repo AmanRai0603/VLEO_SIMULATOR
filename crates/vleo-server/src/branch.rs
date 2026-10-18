@@ -432,6 +432,40 @@ fn edit_of(name: &str, params: &str) -> Result<Edit, String> {
     })
 }
 
+/// The base update `params` asks of `group` (W12): the released design
+/// `design`, by its version, and the one the group is based on now, each
+/// read from the copy's `design/` or its `archive/`.
+fn base_edit(copy: &Path, group: &str, params: &str) -> Result<Edit, String> {
+    let version = param(params, "design").map(decode).unwrap_or_default();
+    let read = |v: &str| -> Result<Box<vleo_files::model::File>, String> {
+        if vleo_files::meta::DesignVersion::parse(v).is_none() {
+            return Err(format!(
+                "{v:?} is not a released design's version: year.month.sequence"
+            ));
+        }
+        let name = format!("design-{v}.vleo");
+        let at = [
+            copy.join("design").join(&name),
+            copy.join("design/archive").join(&name),
+        ]
+        .into_iter()
+        .find(|p| p.is_file())
+        .ok_or_else(|| format!("your copy holds no released design {v}: copy the drive again"))?;
+        vleo_files::sqlite::read(&at)
+            .map(Box::new)
+            .map_err(|e| format!("design/{name} does not read: {}", e.message()))
+    };
+    let design = read(version.trim())?;
+    let (_, f) = breakdown::group_file_in(copy, group).map_err(|e| e.message().to_string())?;
+    let based_on = f.meta.get("based_on").cloned().unwrap_or_default();
+    let previous = if based_on.is_empty() {
+        None
+    } else {
+        Some(read(&based_on)?)
+    };
+    Ok(Edit::UpdateBase { design, previous })
+}
+
 /// A breakdown's answers, one a line: `<output>=<child uid>.<port>`, an
 /// answer for each output of the node (the library refuses fewer).
 fn answers_of(name: &str, text: &str) -> Result<Vec<Answer>, String> {
@@ -480,9 +514,12 @@ fn edited(name: &str, params: &str, ctx: &Ctx) -> Result<String, String> {
     if me::with_key(|_, _| ()).is_none() {
         return Err("no key is open: open yours, and the edit is made and signed as you".into());
     }
-    let e = edit_of(name, params)?;
     let g = param(params, "group").map(decode).unwrap_or_default();
     let group = group_id(&g)?;
+    let e = match name {
+        "update-base" => base_edit(&the_copy(ctx)?, group, params)?,
+        _ => edit_of(name, params)?,
+    };
     let opened = param(params, "opened").map(decode).unwrap_or_default();
     let why = param(params, "why").map(decode).unwrap_or_default();
     let copy = the_copy(ctx)?;
