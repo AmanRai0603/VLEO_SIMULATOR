@@ -9,7 +9,7 @@ Target 1.0.0 on Monday 19 October; Tuesday to Thursday are the buffer.
 
 ## Person A · day
 
-Handed over Saturday 17 October (S1 to S3: F1 to F3-f, the key's proof, F3-g1, the Node workspace, F4, the breakdown, F3-g2, writing the node, and F3-h, the node view's removal). Nothing is merged: everything waits on Aman.
+Handed over Sunday 18 October (S1 to S4: F1 to F3-f, the key's proof, F3-g1, the Node workspace, F4, the breakdown, F3-g2, writing the node, F3-h, the node view's removal, F6-a, the frame, and F6-b, the design released; and the reviews of B's F5). Nothing is merged: everything waits on Aman.
 
 - **Open, in merge order:**
   - **162 the plan.** It now carries the nine briefs and F3's Plan (`docs/briefs/F3.md`).
@@ -123,6 +123,12 @@ Handed over Saturday 17 October (S1 to S3: F1 to F3-f, the key's proof, F3-g1, t
     - `POST /v1/branch/mount|allocate`, `POST /v1/group/start`; `GET /v1/branch` says the frame, or why it cannot; My work says *Start <g>*. The System workspace draws it; `tools/start_group_check.py` in the panels job.
 
     The Opus review found two blocking points (a mount on a systems' issued node let its owner sign that file; My work's new kinds were not in the contract) and three more; all fixed before the push, each shown red but the guard that draws only the latest reading of a branch. CI is pending.
+  - **207 F6-b the integration checks and *Release design*: high risk.** Stacked on 195, on `claude/a-f6b-release`, with B's release line merged in (193, 194, 196 at ecb2b773, and B's fix to 193 at a4721507); built on the brief's proposed answers to questions 33 to 41.
+    - `vleo_files::design::integration`: W8's five lines for each group of today's design, each held or failing with why. `design::release`, by the system engineer or their deputy, refused whole when a line fails or a red mark (a closure that does not close, an issue open, a group whose latest is refused) is neither raised nor understood. It holds each release, the programme's and the systems' files whole by their bytes, signed and checked through the chain.
+    - `GET /v1/design/integration`, `POST /v1/design/release`: each release read again from the drive and checked as a build checks it; written in the copy as `design/design-<version>.vleo`, `design/NOTES.md` and `readable/`. Put-back takes one released design at a time, its record only beside it.
+    - The System workspace's release panel on the systems' branch; `tools/release_design_check.py` in the panels job.
+
+    The Opus review found one blocking point (two released designs could go back at once, each after the drive's latest, forking the chain) and nine more; all fixed in 3c4bac4b, each shown red but the record failing to write. Its decisions for Aman are in its body.
 - **What 171 decides, which B's PRs must follow:**
   - **Ownership follows the mount.** Only the programme's file (mounting `systems`) and the systems' file (mounting each `l3_*`) mount anything.
   - **A group file registers only node engineers.** It holds nobody the programme's file registers, and no key it registers. `open_group_in` refuses anything else, by name.
@@ -138,6 +144,13 @@ Handed over Saturday 17 October (S1 to S3: F1 to F3-f, the key's proof, F3-g1, t
   - **A group's file is written first by its owner**, never by the system engineer: one writer signs it.
   - **Whether a group is to be started is `start::to_start`**: no file, and a folder absent or empty. Anything else is the refusal it was.
   - **For B:** the small drive's `sys_structure` gains an output, `structure_mass`. My work says *Start l3_struct* and *Start l3_prop* in place of *refused*, and `shell_check` reads them so. A scenario that counts My work's refusals must allow for them. F5's group-file put-back is how a started group reaches the drive (question 26).
+- **What 207 decides:**
+  - **A released design holds each release whole, never merged**, and only what was checked: the library refuses releases held that are not the groups checked.
+  - **The design released now is the latest `design/design-<version>.vleo` that opens through the chain**; a file planted under that name is refused by name and stops every release until removed. F7's pointer must agree with it.
+  - **A version follows the one released now**: the next in its month, or the first of a later one (`design::follows`).
+  - **Red marks are read on the design as declared** (`inputs=defaults`), never a saved case.
+  - **A range's reason is not refused** (question 35); the brief says why.
+  - **For B:** a mounted group with no sealed release on the drive fails its line, so no design is released before every group has one. Only a computed node is held to a declaration, as the seal holds it.
 - **What 189 decides:**
   - **A copy's revision is drawn only as today's design would take it**: the same intake as a release, the node's own checks first, and nothing drawn when anything is withheld. So its question and its explanation's texts are not on its page until intake takes them (question 18).
   - **For B:** the Node workspace's centre names its page on a button (`.nw-view.sel`), not in its heading; `drawNode` takes `opts.fragment` and then draws the sheet alone.
@@ -196,8 +209,9 @@ Handed over Saturday 17 October (S1 to S3: F1 to F3-f, the key's proof, F3-g1, t
 - **Lockfiles:** `crates/vleo-py` keeps its own, built `--locked` in CI, and so does `crates/vleo-kernel-wasm` until 177 removes it. A new dependency of `vleo-files` or `vleo-server` needs them refreshed, as 171 does.
 - **Disk:** the container's allowance filled on S1 and again on S2. `xtask files-wasm` and the scenarios leave a `target/` of 10 GB or more inside the worktree they run in; delete it after a push. Old worktrees' `target/` folders and `target/*/incremental` were deleted to make room.
 - **Next for A, in order:**
-  - **F6-b** (the integration checks and *Release design*, high risk) and **F6-c**, building on B's F5 and on 195.
-  - **For Aman:** the brief's questions 9 (one node shape, F3-g0) and 10 (ports), 7 and 8 (where today's page's Rows, Architecture, Forms and manual go), 11 to 19 (F3-g2), and 20 to 32 (F6-a).
+  - **F6-c** (previews, their answers, budgets across releases), building on 207.
+  - **Merge B's fixes to 194 and 196** into 207 as they land; B's fix to 193 is in.
+  - **For Aman:** the brief's questions 9 (one node shape, F3-g0) and 10 (ports), 7 and 8 (where today's page's Rows, Architecture, Forms and manual go), 11 to 19 (F3-g2), 20 to 32 (F6-a), and 33 to 41 (F6-b).
   - **F8 and F9** after F6. **For B, now:** F5, on the critical path of F6, F7 and F9; what it needs (F1's owner, F3's signed nodes, F4's tree) is in 175, 179 and 187.
 
 ## Person B · night
