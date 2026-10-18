@@ -267,56 +267,7 @@ fn opened(at: &Path) -> Opened {
 /// Nia says the node again in the copy, as its second revision, and signs
 /// it; Ola seals solar 1.0 there and puts it back on the drive.
 fn sealed_and_put_back(drive: &Path, copy: &Path) -> String {
-    let mut n = sqlite::read(&copy.join(NODE)).unwrap();
-    n.meta.insert(s("revision"), s("2"));
-    n.blocks[0].revision = 2;
-    let t = n
-        .texts
-        .iter_mut()
-        .find(|t| t.scope == UID && t.kind == "explain.simply")
-        .unwrap();
-    t.body.push_str(SAID);
-    sqlite::write(&n, &copy.join(NODE)).unwrap();
-    let seen = copied::digest(&std::fs::read(copy.join(NODE)).unwrap());
-    let o = opened(copy);
-    match sign_in_place(copy, NODE, &seen, "Test Nia", &key(94), AT, APP, &o.solar).unwrap() {
-        Saved::Written { .. } => {}
-        other => panic!("Nia did not sign: {other:?}"),
-    }
-    let rel = vleo_files::release::seal_in_place(
-        copy,
-        "l3_solar",
-        "1.0",
-        "Test Ola",
-        &key(93),
-        AT,
-        APP,
-        &o.systems,
-        &o.programme,
-    )
-    .unwrap();
-    let open = || {
-        let o = opened(drive);
-        Ok(Chain {
-            anchor: o.anchor,
-            programme: o.programme,
-            systems: Some(o.systems),
-            groups: vec![o.solar],
-            left_out: Vec::new(),
-        })
-    };
-    let digest = copied::digest(&std::fs::read(copy.join(&rel)).unwrap());
-    let r = put_back(
-        copy,
-        drive,
-        "Test Ola",
-        "2026-10-16T09:00:00Z",
-        &open,
-        Some(&[(rel.clone(), digest)]),
-    )
-    .unwrap();
-    assert!(r.written, "{:?}", r.lines);
-    rel
+    sealed_with(drive, copy, &|_| {})
 }
 
 fn today(drive: &Path) -> Today {
@@ -385,8 +336,8 @@ fn a_release_of_the_one_schema_whose_seal_does_not_check_is_refused_by_name() {
 }
 
 /// Design 2026.10.1, released by Test Sam from today's design on `drive`,
-/// as `design::release` writes it, read back.
-fn released(drive: &Path) -> vleo_files::design::Opened {
+/// as `design::release` writes it.
+fn released(drive: &Path) -> File {
     use vleo_files::design::{self, Asked, Held, Part, Taken as Took, Whole};
     let o = opened(drive);
     let rel = drive.join("groups/l3_solar/releases/l3_solar-1.0.vleo");
@@ -445,7 +396,8 @@ fn released(drive: &Path) -> vleo_files::design::Opened {
         &o.programme,
     )
     .unwrap_or_else(|e| panic!("not released: {}", e.message()));
-    design::open_held(&d, &o.programme, APP).expect("read back")
+    design::open_held(&d, &o.programme, APP).expect("it reads back");
+    d
 }
 
 #[test]
@@ -470,10 +422,11 @@ fn a_released_design_is_built_from_the_releases_it_holds() {
         t.base.said
     );
 
-    // A release held whose seal no longer checks: refused by name, and
-    // nothing taken in its place.
+    // A release held whose content changed after its seal, the design
+    // signed again over it: refused by name, and nothing taken in its place.
     let mut bad = held.clone();
-    let mut f = bad.releases[0].back.file.clone();
+    let path = "groups/l3_solar/releases/l3_solar-1.0.vleo";
+    let mut f = sqlite::read(&drive.join(path)).unwrap();
     f.texts
         .iter_mut()
         .find(|t| t.scope == UID && t.kind == "explain.simply")
@@ -481,22 +434,205 @@ fn a_released_design_is_built_from_the_releases_it_holds() {
         .body
         .push_str(" And changed after the seal.");
     let at = drive.parent().unwrap().join("changed.vleo");
-    bad.releases[0].back.bytes = sqlite::written(&f, &at).unwrap();
-    let (design, _) = vleo_files::convert::serve(&root()).unwrap();
-    let e = vleo_server::today::build_held(Arc::new(design), &root(), &drive, &bad)
-        .err()
-        .expect("refused");
+    let m = bad.media.iter_mut().find(|m| m.path == path).unwrap();
+    m.bytes = sqlite::written(&f, &at).unwrap();
+    m.sha256 = vleo_files::keys::hex(&vleo_files::keys::sha256(&m.bytes));
+    let sha = m.sha256.clone();
+    let old = held
+        .media
+        .iter()
+        .find(|m| m.path == path)
+        .unwrap()
+        .sha256
+        .clone();
+    for t in bad.tables.iter_mut().filter(|t| t.path == "released.csv") {
+        t.csv = t.csv.replace(&old, &sha);
+    }
+    bad.signatures.retain(|r| r.scope != FILE);
+    let row = chain::sign(&bad, FILE, "Test Sam", &key(92), AT, "ok", "").unwrap();
+    bad.signatures.push(row);
+    let built = |d: &File| {
+        let (design, _) = vleo_files::convert::serve(&root()).unwrap();
+        vleo_server::today::build_held(Arc::new(design), &root(), &drive, d)
+    };
+    let e = built(&bad).err().expect("refused");
     assert!(
-        e.contains("design 2026.10.1 holds l3_solar 1.0, which is not taken: its seal does not check through the chain"),
+        e.contains(&format!(
+            "holds {path}, whose fingerprint is not its content's"
+        )),
         "{e}"
     );
-    // Bytes of another version than the design names: refused.
-    let mut other = held.clone();
-    other.releases[0].version = s("1.1");
-    let (design, _) = vleo_files::convert::serve(&root()).unwrap();
-    let e = vleo_server::today::build_held(Arc::new(design), &root(), &drive, &other)
-        .err()
-        .expect("refused");
-    assert!(e.contains("not the release the design names"), "{e}");
+    // A drive whose chain does not open builds no released design.
+    let pf = drive.join("groups/programme/programme.vgroup");
+    std::fs::rename(&pf, drive.join("programme.aside")).unwrap();
+    let e = built(&held).err().expect("refused");
+    assert!(
+        e.contains("a released design is built only through the chain"),
+        "{e}"
+    );
+    std::fs::rename(drive.join("programme.aside"), &pf).unwrap();
+    let _ = std::fs::remove_dir_all(drive.parent().unwrap());
+}
+
+/// As [`sealed_and_put_back`], with `edit` made to Nia's node before she
+/// signs it.
+fn sealed_with(drive: &Path, copy: &Path, edit: &dyn Fn(&mut File)) -> String {
+    let mut n = sqlite::read(&copy.join(NODE)).unwrap();
+    n.meta.insert(s("revision"), s("2"));
+    n.blocks[0].revision = 2;
+    let t = n
+        .texts
+        .iter_mut()
+        .find(|t| t.scope == UID && t.kind == "explain.simply")
+        .unwrap();
+    t.body.push_str(SAID);
+    edit(&mut n);
+    sqlite::write(&n, &copy.join(NODE)).unwrap();
+    let seen = copied::digest(&std::fs::read(copy.join(NODE)).unwrap());
+    let o = opened(copy);
+    match sign_in_place(copy, NODE, &seen, "Test Nia", &key(94), AT, APP, &o.solar).unwrap() {
+        Saved::Written { .. } => {}
+        other => panic!("Nia did not sign: {other:?}"),
+    }
+    let rel = vleo_files::release::seal_in_place(
+        copy,
+        "l3_solar",
+        "1.0",
+        "Test Ola",
+        &key(93),
+        AT,
+        APP,
+        &o.systems,
+        &o.programme,
+    )
+    .unwrap();
+    let open = || {
+        let o = opened(drive);
+        Ok(Chain {
+            anchor: o.anchor,
+            programme: o.programme,
+            systems: Some(o.systems),
+            groups: vec![o.solar],
+            left_out: Vec::new(),
+        })
+    };
+    let digest = copied::digest(&std::fs::read(copy.join(&rel)).unwrap());
+    let r = put_back(
+        copy,
+        drive,
+        "Test Ola",
+        "2026-10-16T09:00:00Z",
+        &open,
+        Some(&[(rel.clone(), digest)]),
+    )
+    .unwrap();
+    assert!(r.written, "{:?}", r.lines);
+    rel
+}
+
+fn refused_why(t: &Today) -> String {
+    let g = t.groups.iter().find(|g| g.id == "l3_solar").unwrap();
+    assert!(g.taken.is_none(), "taken: {:?}", g.taken);
+    g.refused[0].1.clone()
+}
+
+#[test]
+fn who_sealed_it_and_when_are_its_seal_s_never_its_unsigned_meta() {
+    let (drive, copy) = world("seal-of");
+    let rel = sealed_and_put_back(&drive, &copy);
+    let mut f = sqlite::read(&drive.join(&rel)).unwrap();
+    let fingerprint = vleo_files::chain::digest(&f, FILE).unwrap();
+    for (k, v) in [
+        ("sealed_by", "Test Pat"),
+        ("sealed_at", "2000-01-01T00:00:00Z"),
+        (
+            "fingerprint",
+            "0000000000000000000000000000000000000000000000000000000000000000",
+        ),
+    ] {
+        f.meta.insert(s(k), s(v));
+    }
+    sqlite::write(&f, &drive.join(&rel)).unwrap();
+    let t = today(&drive);
+    let k = t.groups[0].taken.as_ref().expect("its seal still holds");
+    assert_eq!(
+        (
+            k.sealed_by.as_str(),
+            k.sealed.as_str(),
+            k.fingerprint.as_str()
+        ),
+        ("Test Ola", AT, fingerprint.as_str())
+    );
+    let _ = std::fs::remove_dir_all(drive.parent().unwrap());
+}
+
+#[test]
+fn a_release_of_the_one_schema_upgraded_from_before_1_0_is_refused() {
+    let (drive, copy) = world("upgraded");
+    let rel = sealed_and_put_back(&drive, &copy);
+    let mut f = sqlite::read(&drive.join(&rel)).unwrap();
+    f.meta.insert(s("upgraded_from"), s("format 1"));
+    sqlite::write(&f, &drive.join(&rel)).unwrap();
+    let why = refused_why(&today(&drive));
+    assert!(
+        why.contains("a release from before 1.0 written in 1.0's one schema"),
+        "{why}"
+    );
+    let _ = std::fs::remove_dir_all(drive.parent().unwrap());
+}
+
+#[test]
+fn a_release_that_renames_a_node_is_refused() {
+    // The copy's own signing refuses a node renamed in its file, so the
+    // release is made as the library would make it from such a file: Nia
+    // signs the renamed node, Ola seals it, and it is put on the drive.
+    let (drive, copy) = world("renamed");
+    let o = opened(&copy);
+    let mut n = sqlite::read(&copy.join(NODE)).unwrap();
+    n.blocks[0].id = s("sw_activity_level");
+    let (n, _) = chain::sign_node(&n, UID, "Test Nia", &key(94), AT, &o.solar).unwrap();
+    let group = sqlite::read(&copy.join(SOLAR)).unwrap();
+    let r = vleo_files::release::seal(
+        &group,
+        &[n],
+        "1.0",
+        None,
+        "Test Ola",
+        &key(93),
+        AT,
+        APP,
+        &o.systems,
+        &o.programme,
+    )
+    .unwrap();
+    let dir = drive.join("groups/l3_solar/releases");
+    std::fs::create_dir_all(&dir).unwrap();
+    sqlite::write(&r, &dir.join("l3_solar-1.0.vleo")).unwrap();
+    let why = refused_why(&today(&drive));
+    assert!(
+        why.contains("a node is renamed through its group's breakdown"),
+        "{why}"
+    );
+    let _ = std::fs::remove_dir_all(drive.parent().unwrap());
+}
+
+#[test]
+fn what_a_release_s_node_no_longer_holds_is_not_served_from_the_design() {
+    let (drive, copy) = world("dropped");
+    sealed_with(&drive, &copy, &|n| {
+        n.cases.clear();
+        n.texts
+            .retain(|t| t.kind != "fixtures" && t.kind != "as converted: fixtures.toml");
+    });
+    let fixtures = root().join("crates/vleo-mod-solar/nodes/sw_activity_band/fixtures.toml");
+    let t = today(&drive);
+    let g = t.groups.iter().find(|g| g.id == "l3_solar").unwrap();
+    match &g.taken {
+        Some(_) => assert!(
+            !t.files.is_file(&fixtures),
+            "the design's cases are still served"
+        ),
+        None => panic!("refused: {:?}", g.refused),
+    }
     let _ = std::fs::remove_dir_all(drive.parent().unwrap());
 }

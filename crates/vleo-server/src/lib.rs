@@ -380,6 +380,16 @@ pub fn changed_in_the_design() -> Vec<(String, String)> {
 /// from, line by line.
 type Opened = (std::sync::Arc<dyn Files>, Option<DesignFile>, Vec<String>);
 
+/// The folder the design is read from: the one `VLEO_DESIGN` names, or
+/// `design/` under `root`. The one answer, for the design the tool opens and
+/// for today's design reading the design's own node files.
+pub(crate) fn design_dir(root: &Path) -> PathBuf {
+    std::env::var("VLEO_DESIGN")
+        .ok()
+        .filter(|v| !v.trim().is_empty())
+        .map_or_else(|| root.join("design"), PathBuf::from)
+}
+
 /// The design the tool is given: the folder `VLEO_DESIGN` names, or
 /// `design/` where the tool finds it. Where there is neither, there is no
 /// design, and the tool says so rather than reading anything in its place.
@@ -387,7 +397,7 @@ fn open_base(root: &Path) -> Result<(std::sync::Arc<dyn Files>, Option<DesignFil
     let named = std::env::var("VLEO_DESIGN")
         .ok()
         .filter(|v| !v.trim().is_empty())
-        .map(PathBuf::from);
+        .map(|_| design_dir(root));
     if let Some(dir) = named {
         // A design is a folder of its files; anything else named is refused,
         // never read past to whatever sits at the root.
