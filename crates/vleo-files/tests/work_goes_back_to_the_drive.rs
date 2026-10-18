@@ -1833,7 +1833,7 @@ fn a_release_sealed_in_the_copy_goes_back_as_a_new_file_by_its_owner_alone() {
     assert!(!l.back && l.why.contains("sealed by \"Test Ola\""), "{l:?}");
     // Ola's: the release goes back, and the nodes, signed by others, do not.
     let r = pb(&copy, &drive, "Test Ola", None).unwrap();
-    assert_eq!(r.back(), [rel.clone()], "{:?}", r.lines);
+    assert_eq!(r.back(), std::slice::from_ref(&rel), "{:?}", r.lines);
     assert!(line(&r, &rel)
         .why
         .contains("l3_solar 1.0, sealed by Test Ola"));
