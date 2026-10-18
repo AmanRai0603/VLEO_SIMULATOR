@@ -2127,7 +2127,7 @@ what = "The engine's identity: the contract version it speaks, kernel, graph, ro
 [[route]]
 method = "GET"
 path = "/v1/my-work"
-what = "What needs the person whose key is open, now: a node of theirs unsigned, a group of theirs with nothing sealed, a file below them the chain refuses. And nodes: every node file that is theirs to write, or theirs as a deputy, in a file of the chain that counts their key, signed or not, which the Node workspace opens."
+what = "What needs the person whose key is open, now: a node of theirs unsigned, a group of theirs with nothing sealed, a file below them the chain refuses, and each request of the code they asked (W14), open, answered by the application's release notes, or not counting and why. And nodes: every node file that is theirs to write, or theirs as a deputy, in a file of the chain that counts their key, signed or not, which the Node workspace opens."
 
 [[route]]
 method = "GET"
@@ -2277,7 +2277,7 @@ what = "The design released in your copy, as whoever's key is open: version, aft
 [[route]]
 method = "GET"
 path = "/v1/requests"
-what = "Every request of the code (W14) in the database the program reads: by group and node, its uid, who asked and when, what it says, whether it counts (held to the one rule of a request, through the chain) and why not, and whether the application's release notes, apps/NOTES.md, name it, which is how the developer answers one. A node file that does not read is said, never passed over. The released design writes the same list as readable/Requests.csv."
+what = "Every request of the code (W14) in the database the program reads: by group and node, its uid, who asked and when, what it says, whether it counts (held to the one rule of a request, through the chain, and open: nobody writes its status) and why not, and whether the application's release notes, apps/NOTES.md, name its uid whole, which is how the developer answers one. A node file that does not read, or is not one node's one file, is said, never passed over; so is a folder that cannot be listed. It reads the working copy when there is one, and names the database it read. A design released writes the drive's list, at that moment, as readable/Requests.csv, each row naming the design."
 
 [[route]]
 method = "POST"

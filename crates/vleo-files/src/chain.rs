@@ -1008,8 +1008,8 @@ pub fn sign_node(
 
 /// The kinds of request a node file holds: a contract change (W4), a
 /// breakdown (W13), and something the code cannot do yet (W14), for the
-/// developer, asked from My work and kept in the file of the node that waits
-/// on it (F6's question 55).
+/// developer, asked from the Node workspace and kept in the file of the node
+/// that waits on it (F6's question 55).
 pub const ASKED_IN_A_NODE: &[&str] = &["contract", "breakdown", "code"];
 
 /// The one rule of a request asked in a node's file: what [`ask`] writes, and

@@ -483,9 +483,12 @@ inputs changed in meaning is named for its node engineer to check.
 A new toolbox function, port type, picture or check, or a fault in the
 application or the engine.
 
-1. **Any engineer:** writes the request in My work's *Requests*, with an example.
-2. **Developer:** builds it in a tool release (W15). Until then the node stays
-   open, or keeps its estimate, and says what it waits for.
+1. **Any engineer:** asks in the file of the node that waits on it, with an
+   example, signed; it reaches the drive when the work is put back. My work
+   says whether it is answered yet.
+2. **Developer:** builds it in a tool release (W15), whose notes name the
+   request. Until then the node stays open, or keeps its estimate, and says
+   what it waits for.
 
 ### W15 · The tool is released
 

@@ -523,6 +523,64 @@ fn the_system_engineer_releases_the_design_and_it_goes_back_to_the_drive() {
             && list.contains("\"counts\":true,\"why_not\":\"\",\"answered\":false"),
         "{list}"
     );
+    // Her My work says what she asked of the code, and that it is open.
+    let work = ask(port, "GET", "/v1/my-work", &[], false);
+    assert!(
+        work.contains("\"kind\":\"asked of the code\"")
+            && work.contains(&format!(
+                "It is open until an application release's notes name {code}"
+            )),
+        "{work}"
+    );
+    // Answered only once the application's notes name it whole: a longer
+    // uid is another request.
+    let notes_at = copy.join("apps/NOTES.md");
+    let had = std::fs::read(&notes_at).ok();
+    std::fs::create_dir_all(copy.join("apps")).unwrap();
+    for (says, answered) in [
+        (format!("Answers {code}0."), false),
+        (format!("Answers {code}."), true),
+    ] {
+        std::fs::write(&notes_at, says).unwrap();
+        let list = ask(port, "GET", "/v1/requests", &[], false);
+        assert!(
+            list.contains(&format!("\"answered\":{answered}")),
+            "{answered}: {list}"
+        );
+    }
+    match &had {
+        Some(b) => std::fs::write(&notes_at, b).unwrap(),
+        None => std::fs::remove_file(&notes_at).unwrap(),
+    }
+    // A status nobody writes does not count, and says why.
+    let bytes = std::fs::read(copy.join(NODE)).unwrap();
+    let mut n = sqlite::read(&copy.join(NODE)).unwrap();
+    n.requests
+        .iter_mut()
+        .filter(|r| r.uid == code)
+        .for_each(|r| r.status = s("accepted"));
+    sqlite::write(&n, &copy.join(NODE)).unwrap();
+    let list = ask(port, "GET", "/v1/requests", &[], false);
+    assert!(
+        list.contains("\"counts\":false")
+            && list.contains("it says it is accepted, and nobody writes the status"),
+        "{list}"
+    );
+    std::fs::write(copy.join(NODE), &bytes).unwrap();
+    // A second file of the node, and a file that is no node's, are named,
+    // and the requests in the two files are not read.
+    let nodes = copy.join(NODE).parent().unwrap().to_path_buf();
+    std::fs::write(nodes.join("zz_twice.vnode"), &bytes).unwrap();
+    std::fs::write(nodes.join("zz_junk.vnode"), b"not a node").unwrap();
+    let list = ask(port, "GET", "/v1/requests", &[], false);
+    assert!(
+        !list.contains(&format!("\"uid\":\"{code}\""))
+            && list.contains("sw_activity_band has more than one file")
+            && list.contains("zz_junk.vnode"),
+        "{list}"
+    );
+    std::fs::remove_file(nodes.join("zz_twice.vnode")).unwrap();
+    std::fs::remove_file(nodes.join("zz_junk.vnode")).unwrap();
     let r = post(port, "/v1/put-back", &[]);
     // Her later revision, signed, goes back, and the request with it.
     assert!(
@@ -662,8 +720,9 @@ fn the_system_engineer_releases_the_design_and_it_goes_back_to_the_drive() {
     );
     let requests = std::fs::read_to_string(copy.join("readable/Requests.csv")).unwrap();
     assert!(
-        requests.contains(&format!("l3_solar,sw_activity_band,{code},Test Nia,"))
-            && requests.contains(",counts,open"),
+        requests.contains(&format!(
+            "\n{version},l3_solar,sw_activity_band,{code},Test Nia,"
+        )) && requests.contains(",counts,open"),
         "{requests}"
     );
     let health = std::fs::read_to_string(copy.join("readable/Health.csv")).unwrap();

@@ -703,11 +703,17 @@ fn asked(id: &str, params: &str, ctx: &Ctx) -> Result<String, String> {
             j.str_field(
                 "message",
                 &format!(
-                    "{by} asks, in {id}'s file, for {}, signed, in your copy. It goes back to the drive when your work is put back: by itself while {id} is the drive's revision, or with a later revision once you sign it. {id}'s subsystem engineer finds it in My work when they copy the drive again.",
+                    "{by} asks, in {id}'s file, for {}, signed, in your copy. It goes back to the drive when your work is put back: by itself while {id} is the drive's revision, or with a later revision once you sign it. {}",
                     match kind.as_str() {
                         "breakdown" => "a breakdown",
                         "code" => "something the code cannot do yet, for the developer (W14)",
                         _ => "a contract change",
+                    },
+                    if kind == "code" {
+                        "The developer finds it in the requests (GET /v1/requests, and readable/Requests.csv when the design is released), and answers it by an application release whose notes name it; your My work says when."
+                            .to_string()
+                    } else {
+                        format!("{id}'s subsystem engineer finds it in My work when they copy the drive again.")
                     }
                 ),
             );

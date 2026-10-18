@@ -238,8 +238,10 @@ fn only_its_node_engineer_or_their_deputy_asks_in_its_file() {
         ),
         ("Test Stranger", key(78), "Test Stranger is not registered"),
     ] {
-        let e = chain::ask(&node(), UID, "contract", ASK, who, &k, AT, &g).unwrap_err();
-        assert!(e.message().contains(says), "{who}: {}", e.message());
+        for kind in ["contract", "code"] {
+            let e = chain::ask(&node(), UID, kind, ASK, who, &k, AT, &g).unwrap_err();
+            assert!(e.message().contains(says), "{who}, {kind}: {}", e.message());
+        }
     }
     // A key revoked before the moment it asks asks nothing.
     let e = chain::ask(

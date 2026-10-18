@@ -7,6 +7,10 @@
     "ok": {
       "type": "boolean"
     },
+    "database": {
+      "type": "string",
+      "description": "The database it read: the working copy when there is one, else the drive."
+    },
     "requests": {
       "type": "array",
       "items": {

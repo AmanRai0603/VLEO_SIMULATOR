@@ -47,7 +47,8 @@
               "request",
               "request refused",
               "start",
-              "not started"
+              "not started",
+              "asked of the code"
             ]
           },
           "group": {

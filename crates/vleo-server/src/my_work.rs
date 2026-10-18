@@ -400,7 +400,9 @@ fn items(me: &chain::Me, c: &me::Chain, database: &Path) -> Vec<Item> {
                 }
                 continue;
             };
-            for r in &f.requests {
+            // A request of the code is the developer's to answer, never the
+            // group's: it is listed in its asker's My work, below.
+            for r in f.requests.iter().filter(|r| r.kind != "code") {
                 let id = f
                     .blocks
                     .iter()
@@ -409,7 +411,6 @@ fn items(me: &chain::Me, c: &me::Chain, database: &Path) -> Vec<Item> {
                 let asked = match r.kind.as_str() {
                     "breakdown" => "a breakdown",
                     "contract" => "a contract change",
-                    "code" => "something the code cannot do yet (W14)",
                     other => other,
                 };
                 let refusal = |why: String| Item {
@@ -438,6 +439,30 @@ fn items(me: &chain::Me, c: &me::Chain, database: &Path) -> Vec<Item> {
                 });
             }
         }
+    }
+    // What they asked of the code (W14), and whether the application's
+    // release notes answer it yet.
+    let (codes, _) = crate::code_requests::of_the_code(database, c);
+    for r in codes.iter().filter(|r| r.asked_by == me.name) {
+        out.push(Item {
+            kind: "asked of the code",
+            group: r.group.clone(),
+            node: r.node.clone(),
+            says: match (&r.refused, r.answered) {
+                (Some(why), _) => format!(
+                    "your request {} on {} does not count, so the developer does not see it as one: {why}",
+                    r.uid, r.node
+                ),
+                (None, true) => format!(
+                    "your request {} on {} is answered: the application's release notes name it",
+                    r.uid, r.node
+                ),
+                (None, false) => format!(
+                    "you asked the developer, on {}, for something the code cannot do yet for {}: {}. It is open until an application release's notes name {}",
+                    r.at, r.node, r.body, r.uid
+                ),
+            },
+        });
     }
     out
 }
