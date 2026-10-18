@@ -396,6 +396,9 @@ fn edit_of(name: &str, params: &str) -> Result<Edit, String> {
             block: need("block")?,
             person: need("person")?,
         },
+        "unassign" => Edit::Unassign {
+            block: need("block")?,
+        },
         "wire" => Edit::Wire {
             block: need("block")?,
             port: need("port")?,

@@ -198,7 +198,7 @@ function edits(b, children, outs) {
   if (b.answers.length) h += '<p><button class="ctl" id="sy-fold-back">Fold back</button> its estimate answers again; its children stay.</p>';
   // A node is assigned to one node engineer its group registers; a heading is nobody's.
   if (!b.archived && !b.mount && !(inGroup && b.read_as === 'children')) {
-    h += '<p><b>assign</b> to <input id="sy-as-person" size="18" placeholder="a node engineer\'s name"> <button class="ctl" id="sy-assign">Assign</button></p>';
+    h += '<p><b>assign</b> to <input id="sy-as-person" size="18" placeholder="a node engineer\'s name"> <button class="ctl" id="sy-assign">Assign</button> <button class="ctl" id="sy-unassign">Unassign</button></p>';
   }
   if (inGroup && !b.archived) {
     h += b.ports.filter(p => p.direction === 'in').map(p =>
@@ -265,5 +265,6 @@ async function click(e) {
     case 'sy-split': return send('split', { block: b, id: v('sy-sp-id').trim(), ports: v('sy-sp-ports') });
     case 'sy-remove': return send('remove', { block: b });
     case 'sy-assign': return send('assign', { block: b, person: v('sy-as-person').trim() });
+    case 'sy-unassign': return send('unassign', { block: b });
   }
 }

@@ -1332,7 +1332,8 @@ fn a_block_is_assigned_by_its_owner_to_a_node_engineer_its_group_registers() {
     )
     .unwrap_err();
     assert!(e.contains("is assigned to Nia Node already"), "{e}");
-    // Only the owner assigns.
+    // Only the owner assigns: Sam, whom the programme registers, is not
+    // solar's owner.
     let e = frame(
         &f,
         &Edit::Assign {
@@ -1340,11 +1341,115 @@ fn a_block_is_assigned_by_its_owner_to_a_node_engineer_its_group_registers() {
             person: s("Nia Node"),
         },
         WHY,
-        "Nia Node",
-        &key(16),
+        "Sam Engel",
+        &key(12),
     )
     .unwrap_err();
-    assert!(!e.is_empty());
+    assert!(
+        e.contains("its owner Ola Sun, or their deputy, does"),
+        "{e}"
+    );
+}
+
+/// `f` with `name` registered as a node engineer, deputy for `deputy_for`
+/// when it is not empty, and signed again by Ola.
+fn with_node_engineer(f: &File, name: &str, deputy_for: &str, k: &SigningKey) -> File {
+    let mut f = f.clone();
+    f.people.push(Person {
+        name: s(name),
+        role: s("node engineer"),
+        deputy_for: s(deputy_for),
+    });
+    f.keys.push(PersonKey {
+        person: s(name),
+        public_key: k.public().to_hex(),
+        registered_at: s("2026-01-01"),
+        registered_by: s("Ola Sun"),
+        revoked_from: s(""),
+        proof: vleo_files::people::proof(k, name),
+    });
+    f.signatures.retain(|x| x.scope != FILE);
+    signed(f, "Ola Sun", &key(13))
+}
+
+#[test]
+fn a_node_is_assigned_to_its_node_engineer_never_their_deputy_or_an_assistant() {
+    let f = with_node_engineer(&with_onset(), "Ivo Node", "Nia Node", &key(17));
+    let assign = |g: &File, person: &str| {
+        ola(
+            g,
+            &Edit::Assign {
+                block: s("sw_storm_onset"),
+                person: s(person),
+            },
+        )
+    };
+    let e = assign(&f, "Ivo Node").unwrap_err();
+    assert!(e.contains("Ivo Node is Nia Node's deputy"), "{e}");
+    let f = with_node_engineer(&with_onset(), "Claude", "", &key(18));
+    let e = assign(&f, "Claude").unwrap_err();
+    assert!(e.contains("Claude is an assistant's name"), "{e}");
+}
+
+#[test]
+fn an_assignment_is_taken_away_by_the_owner_and_nobody_writes_it_until_it_is_given_again() {
+    let f = with_onset();
+    let unassign = |g: &File, block: &str| ola(g, &Edit::Unassign { block: s(block) });
+    let e = unassign(&f, "sw_storm_onset").unwrap_err();
+    assert!(e.contains("sw_storm_onset is assigned to nobody"), "{e}");
+    let (a, _) = ola(
+        &f,
+        &Edit::Assign {
+            block: s("sw_storm_onset"),
+            person: s("Nia Node"),
+        },
+    )
+    .unwrap();
+    let (b, _) = unassign(&a, "sw_storm_onset").unwrap();
+    assert!(
+        !b.assignments
+            .iter()
+            .any(|x| x.block_uid == "sw_storm_onset"),
+        "{:?}",
+        b.assignments
+    );
+    let c = b.changes.last().unwrap();
+    assert_eq!(c.what, format!("unassign: {WHY}"));
+    assert!(c.before.as_deref().unwrap().contains("Nia Node"), "{c:?}");
+    // Unassigned, the block is removed as any open block is.
+    ola(
+        &b,
+        &Edit::Remove {
+            block: s("sw_storm_onset"),
+        },
+    )
+    .expect("an unassigned open block is removed");
+    // An issued node unassigned: Nia's signature no longer counts for it.
+    let (u, _) = unassign(&solar(), BAND).unwrap();
+    let pr = programme();
+    let sy = systems(&pr);
+    let g = chain::open_group_in(&u, &sy, &pr).unwrap();
+    assert!(chain::check_node(&band(), BAND, &g).is_err());
+}
+
+#[test]
+fn an_issued_node_assigned_again_counts_only_its_new_node_engineer_s_signature() {
+    let f = with_node_engineer(&solar(), "Ivo Node", "", &key(17));
+    let pr = programme();
+    let sy = systems(&pr);
+    let before = chain::open_group_in(&f, &sy, &pr).unwrap();
+    chain::check_node(&band(), BAND, &before).expect("Nia's signature counts while she has it");
+    let (moved, _) = ola(
+        &f,
+        &Edit::Assign {
+            block: s(BAND),
+            person: s("Ivo Node"),
+        },
+    )
+    .unwrap();
+    let after = chain::open_group_in(&moved, &sy, &pr).unwrap();
+    let e = chain::check_node(&band(), BAND, &after).unwrap_err();
+    assert!(e.message().contains(BAND), "{}", e.message());
 }
 
 #[test]
@@ -1399,7 +1504,8 @@ fn an_input_of_a_framed_block_is_wired_to_where_it_comes_from() {
     wire(&f, "l3_power.pw_bus.pw_bus", std::slice::from_ref(&power)).unwrap();
 
     for (from, says) in [
-        ("sw_nowhere.x", "comes from nothing"),
+        ("sw_nowhere.x", "another group's node is read as"),
+        ("l3_power.pw_bus", "another group's node is read as"),
         ("l3_power.pw_bus.pw_volts", "comes from nothing"),
         (&format!("{BAND}.f107") as &str, "comes from nothing"),
         ("sw_storm_onset.sw_storm_onset", "reads itself"),
@@ -1427,4 +1533,147 @@ fn an_input_of_a_framed_block_is_wired_to_where_it_comes_from() {
     );
     refused("sw_storm_onset", "f10", "has no input f10");
     refused(BAND, "f107", "is issued");
+}
+
+/// `f` with an open block `id` under `parent`, an input `x` and an output
+/// named as the block.
+fn with_block(f: &File, parent: &str, id: &str) -> File {
+    let (mut f, _) = ola(
+        f,
+        &Edit::Add {
+            parent: s(parent),
+            id: s(id),
+            question: s("What does it answer?"),
+        },
+    )
+    .unwrap();
+    for (dir, name) in [("in", "x"), ("out", id)] {
+        let p = Port {
+            direction: s(dir),
+            name: s(name),
+            port_type: s("number"),
+            unit: s("1"),
+            state: s("open"),
+            ..Port::default()
+        };
+        f = ola(
+            &f,
+            &Edit::Fill {
+                block: s(id),
+                part: Part::Port(Box::new(p)),
+            },
+        )
+        .unwrap()
+        .0;
+    }
+    f
+}
+
+fn wired(
+    g: &File,
+    block: &str,
+    port: &str,
+    from: &str,
+    elsewhere: &[File],
+) -> Result<File, String> {
+    ola_with(
+        g,
+        &nodes(),
+        elsewhere,
+        &Edit::Wire {
+            block: s(block),
+            port: s(port),
+            from: s(from),
+        },
+    )
+    .map(|(f, _)| f)
+}
+
+#[test]
+fn a_wire_makes_no_loop_through_the_branch_or_its_breakdown() {
+    let f = with_block(&with_onset(), "l3_solar", "sw_storm_peak");
+    // The peak reads the onset; the onset reading the peak would close a loop.
+    let f = wired(
+        &f,
+        "sw_storm_peak",
+        "x",
+        "sw_storm_onset.sw_storm_onset",
+        &[],
+    )
+    .unwrap();
+    let e = wired(
+        &f,
+        "sw_storm_onset",
+        "f107",
+        "sw_storm_peak.sw_storm_peak",
+        &[],
+    )
+    .unwrap_err();
+    assert!(
+        e.contains("which already reads sw_storm_onset through the branch"),
+        "{e}"
+    );
+    // A block under the onset reading the onset's answer reads what it feeds.
+    let f = with_block(&f, "sw_storm_onset", "sw_storm_rise");
+    let e = wired(
+        &f,
+        "sw_storm_rise",
+        "x",
+        "sw_storm_onset.sw_storm_onset",
+        &[],
+    )
+    .unwrap_err();
+    assert!(
+        e.contains("reads the output of sw_storm_onset, which it hangs under"),
+        "{e}"
+    );
+}
+
+#[test]
+fn another_group_s_node_is_read_by_its_uid_from_what_that_group_frames_and_holds() {
+    let f = with_onset();
+    // Power's bus, renamed: its uid is not its id.
+    let power = |archived: i64, kind: Kind| {
+        let mut p = File::new(kind, APP);
+        p.meta.insert(s("group_id"), s("l3_power"));
+        p.blocks.push(Block {
+            uid: s("pw_bus_7"),
+            id: s("pw_bus"),
+            behaviour: s("method"),
+            archived,
+            ..Block::default()
+        });
+        p.ports.push(Port {
+            block_uid: s("pw_bus_7"),
+            direction: s("out"),
+            name: s("pw_volts"),
+            port_type: s("number"),
+            ..Port::default()
+        });
+        p
+    };
+    let live = power(0, Kind::Group);
+    wired(
+        &f,
+        "sw_storm_onset",
+        "f107",
+        "l3_power.pw_bus_7.pw_volts",
+        std::slice::from_ref(&live),
+    )
+    .expect("read by its uid");
+    for (from, there) in [
+        ("l3_power.pw_bus.pw_volts", power(0, Kind::Group)),
+        ("l3_power.pw_bus_7.pw_volts", power(1, Kind::Group)),
+        ("l3_power.pw_bus_7.pw_volts", power(0, Kind::GroupRelease)),
+    ] {
+        let e = wired(
+            &f,
+            "sw_storm_onset",
+            "f107",
+            from,
+            std::slice::from_ref(&there),
+        )
+        .unwrap_err();
+        assert!(e.contains("comes from nothing"), "{from:?}: {e}");
+    }
 }
