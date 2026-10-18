@@ -1811,6 +1811,10 @@ fn a_node_a_group_hangs_from_in_the_systems_file_is_not_put_back() {
         !l.back
             && l.why
                 .contains("is where a group hangs, l3_band mounted in systems's file"),
+        "{l:?}"
+    );
+    let _ = std::fs::remove_dir_all(drive.parent().unwrap());
+}
 
 // ── A group's release, sealed in the copy, goes back as a new file (F5) ──
 
