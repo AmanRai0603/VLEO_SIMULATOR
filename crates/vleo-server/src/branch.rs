@@ -392,6 +392,18 @@ fn edit_of(name: &str, params: &str) -> Result<Edit, String> {
         "remove" => Edit::Remove {
             block: need("block")?,
         },
+        "assign" => Edit::Assign {
+            block: need("block")?,
+            person: need("person")?,
+        },
+        "unassign" => Edit::Unassign {
+            block: need("block")?,
+        },
+        "wire" => Edit::Wire {
+            block: need("block")?,
+            port: need("port")?,
+            from: need("from")?,
+        },
         other => return Err(format!("{other:?} is not an edit of a branch")),
     })
 }

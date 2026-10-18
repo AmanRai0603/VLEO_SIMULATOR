@@ -739,6 +739,46 @@ fn a_branch_is_framed_in_the_copy() {
     );
     assert_eq!(node_bytes(&copy), nodes_before);
 
+    // Dee assigns a child to Nia (F5): the assignment is in the group file.
+    let r = edit(
+        "assign",
+        &[
+            ("opened", field(&tree(), "opened")),
+            ("block", GOOD),
+            ("person", "Test Nia"),
+        ],
+    );
+    assert!(r.contains("\"ok\":true"), "{r}");
+    let g = vleo_files::sqlite::read(&copy.join(GROUP)).unwrap();
+    assert!(
+        g.assignments
+            .iter()
+            .any(|a| a.block_uid == GOOD && a.person == "Test Nia"),
+        "{:?}",
+        g.assignments
+    );
+    // And takes it away: nobody writes it until it is assigned again.
+    let r = edit(
+        "unassign",
+        &[("opened", field(&tree(), "opened")), ("block", GOOD)],
+    );
+    assert!(r.contains("\"ok\":true"), "{r}");
+    let g = vleo_files::sqlite::read(&copy.join(GROUP)).unwrap();
+    assert!(
+        !g.assignments.iter().any(|a| a.block_uid == GOOD),
+        "{:?}",
+        g.assignments
+    );
+    let r = edit(
+        "wire",
+        &[
+            ("opened", field(&tree(), "opened")),
+            ("block", GOOD),
+            ("port", "f107"),
+        ],
+    );
+    assert!(r.contains("wire needs from"), "{r}");
+
     // Refused by name: an edit that is not one, a group that is not an id, a
     // group no file mounts.
     let r = edit("graft", &[("opened", field(&tree(), "opened"))]);

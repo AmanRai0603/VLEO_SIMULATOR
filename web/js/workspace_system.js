@@ -196,6 +196,16 @@ function edits(b, children, outs) {
       '<p><button class="ctl" id="sy-break-down">Break down</button></p>';
   }
   if (b.answers.length) h += '<p><button class="ctl" id="sy-fold-back">Fold back</button> its estimate answers again; its children stay.</p>';
+  // A node is assigned to one node engineer its group registers; a heading is nobody's.
+  if (!b.archived && !b.mount && !(inGroup && b.read_as === 'children')) {
+    h += '<p><b>assign</b> to <input id="sy-as-person" size="18" placeholder="a node engineer\'s name"> <button class="ctl" id="sy-assign">Assign</button> <button class="ctl" id="sy-unassign">Unassign</button></p>';
+  }
+  if (inGroup && !b.archived) {
+    h += b.ports.filter(p => p.direction === 'in').map(p =>
+      '<p class="sy-wire-row" data-wire-port="' + esc(p.name) + '"><b>wire</b> its ' + esc(p.name) + ' from ' +
+      '<input class="sy-wire-from" size="28" placeholder="block.port, group.node.port or case"> ' +
+      '<button class="ctl sy-wire" type="button">Wire</button></p>').join('');
+  }
   if (inGroup && !b.archived) {
     h += '<p><b>move</b> under <input id="sy-mv-parent" size="18" placeholder="a block\'s uid"> <button class="ctl" id="sy-move">Move</button> ' +
       '<b>rename</b> <input id="sy-rn-id" size="18" placeholder="its new id"> <button class="ctl" id="sy-rename">Rename</button></p>' +
@@ -231,6 +241,10 @@ async function click(e) {
     return draw(true);
   }
   const b = W.sel;
+  if (t.classList.contains('sy-wire')) {
+    const row = t.closest('.sy-wire-row');
+    return send('wire', { block: b, port: row.dataset.wirePort, from: row.querySelector('.sy-wire-from').value.trim() });
+  }
   switch (t.id) {
     case 'sy-go': { const id = v('sy-id').trim(); if (id) { openAt(id); return draw(); } return; }
     case 'sy-reopen': W.notice = null; return draw();
@@ -250,5 +264,7 @@ async function click(e) {
     case 'sy-rename': return send('rename', { block: b, id: v('sy-rn-id').trim() });
     case 'sy-split': return send('split', { block: b, id: v('sy-sp-id').trim(), ports: v('sy-sp-ports') });
     case 'sy-remove': return send('remove', { block: b });
+    case 'sy-assign': return send('assign', { block: b, person: v('sy-as-person').trim() });
+    case 'sy-unassign': return send('unassign', { block: b });
   }
 }
