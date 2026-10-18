@@ -103,6 +103,134 @@ pub enum Edit {
     /// to, as a `method` or a `stated` node: its rows leave the group file
     /// for that file ([`issued`]) (F5).
     Issue { block: String, behaviour: String },
+    /// Many blocks set up at once from a sheet, a CSV a row a block
+    /// ([`SHEET_COLUMNS`]): each added, its ports filled, its inputs wired
+    /// and its node engineer assigned, as those edits are, each saying the
+    /// one why. Every row or none (F5).
+    Sheet { csv: String },
+}
+
+/// The sheet's columns: a block's id and the block it hangs from; its
+/// question; its output, by name, type, unit and range; its inputs,
+/// `name:unit=from` each, by `;`, every one a number; and the node engineer
+/// it is assigned to. Only `id` and `parent` must be there.
+pub const SHEET_COLUMNS: [&str; 10] = [
+    "id", "parent", "question", "output", "type", "unit", "lower", "upper", "inputs", "assign",
+];
+
+/// The edits a sheet makes, each with its row (the header is row 1) and the
+/// id it sets up: every block added and its ports filled first, so a row
+/// reads the output of another however they are ordered; then every wire;
+/// then every assignment.
+pub fn sheet_edits(csv: &str) -> Result<Vec<(usize, String, Edit)>, Error> {
+    let (head, rows) = crate::intake::parse_csv(csv);
+    if let Some(c) = head.iter().find(|c| !SHEET_COLUMNS.contains(&c.trim())) {
+        return Err(refused(format!(
+            "the sheet has a column {c:?}, which is not one of its columns: {}",
+            SHEET_COLUMNS.join(", ")
+        )));
+    }
+    for need in ["id", "parent"] {
+        if !head.iter().any(|c| c.trim() == need) {
+            return Err(refused(format!("the sheet has no column {need}")));
+        }
+    }
+    if rows.is_empty() {
+        return Err(refused("the sheet has no row: nothing is set up"));
+    }
+    let (mut frame, mut wires, mut assigns) = (Vec::new(), Vec::new(), Vec::new());
+    for (i, r) in rows.iter().enumerate() {
+        let n = i + 2;
+        let get = |k: &str| {
+            head.iter()
+                .position(|c| c.trim() == k)
+                .and_then(|j| r.get(j))
+                .map_or(String::new(), |v| v.trim().to_string())
+        };
+        let id = get("id");
+        let port = |direction: &str, name: String, port_type: String, unit: String| Port {
+            direction: direction.into(),
+            name,
+            port_type,
+            unit,
+            state: "open".into(),
+            ..Port::default()
+        };
+        frame.push((
+            n,
+            id.clone(),
+            Edit::Add {
+                parent: get("parent"),
+                id: id.clone(),
+                question: get("question"),
+            },
+        ));
+        if !get("output").is_empty() {
+            let mut p = port("out", get("output"), get("type"), get("unit"));
+            p.lower = get("lower");
+            p.upper = get("upper");
+            frame.push((
+                n,
+                id.clone(),
+                Edit::Fill {
+                    block: id.clone(),
+                    part: Part::Port(Box::new(p)),
+                },
+            ));
+        }
+        for input in get("inputs")
+            .split(';')
+            .map(str::trim)
+            .filter(|x| !x.is_empty())
+        {
+            let parsed = input.split_once('=').and_then(|(name, from)| {
+                let (name, unit) = name.split_once(':')?;
+                Some((name.trim(), unit.trim(), from.trim()))
+            });
+            let Some((name, unit, from)) =
+                parsed.filter(|(a, _, c)| !a.is_empty() && !c.is_empty())
+            else {
+                return Err(refused(format!(
+                    "the sheet's row {n} ({id}): its input {input:?} is not name:unit=from"
+                )));
+            };
+            frame.push((
+                n,
+                id.clone(),
+                Edit::Fill {
+                    block: id.clone(),
+                    part: Part::Port(Box::new(port(
+                        "in",
+                        name.into(),
+                        "number".into(),
+                        unit.into(),
+                    ))),
+                },
+            ));
+            wires.push((
+                n,
+                id.clone(),
+                Edit::Wire {
+                    block: id.clone(),
+                    port: name.into(),
+                    from: from.into(),
+                },
+            ));
+        }
+        if !get("assign").is_empty() {
+            assigns.push((
+                n,
+                id.clone(),
+                Edit::Assign {
+                    block: id.clone(),
+                    person: get("assign"),
+                },
+            ));
+        }
+    }
+    frame.extend(wires);
+    frame.extend(assigns);
+    Ok(frame)
 }
 
 impl Edit {
@@ -120,6 +248,7 @@ impl Edit {
             Edit::Assign { .. } => "assign",
             Edit::Wire { .. } => "wire",
             Edit::Issue { .. } => "issue",
+            Edit::Sheet { .. } => "sheet",
         }
     }
 }
@@ -405,6 +534,24 @@ pub fn edit(
                 f.meta.get("group_id").map_or("no group", String::as_str)
             )));
         }
+    }
+    // A sheet is the edits it makes, each made as it is alone, in order:
+    // the first refused refuses the sheet, by its row.
+    if let Edit::Sheet { csv } = edit {
+        let mut g = group.clone();
+        for (row, id, e) in sheet_edits(csv)? {
+            g = self::edit(
+                &g, nodes, elsewhere, &e, why, by, key, at, mounted_by, programme,
+            )
+            .map_err(|err| {
+                refused(format!(
+                    "the sheet's row {row} ({id}) is refused, so nothing is set up: {}",
+                    err.message()
+                ))
+            })?
+            .0;
+        }
+        return Ok((g, None));
     }
     let branch = Branch::new(group, nodes);
     let mut out = group.clone();
@@ -1144,6 +1291,9 @@ fn apply(
             out.media.retain(|r| !mine(&r.scope));
             Ok((block.clone(), before, None))
         }
+        Edit::Sheet { .. } => Err(refused(
+            "a sheet is the edits it makes, each made by itself",
+        )),
         Edit::Remove { block } => {
             let b = framed(block, "removed")?;
             if let Some(c) = branch.children(block).first() {
