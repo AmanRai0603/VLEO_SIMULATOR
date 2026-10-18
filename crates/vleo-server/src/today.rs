@@ -614,7 +614,7 @@ type Candidate = (
 /// 1.0's one schema, sealed by its group's owner (F5).
 enum Found {
     Before1_0(Release),
-    OneSchema(vleo_files::model::File),
+    OneSchema(Box<vleo_files::model::File>),
 }
 
 impl Found {
@@ -625,7 +625,7 @@ impl Found {
             Ok(r) => Ok(Found::Before1_0(r)),
             Err(old) => match vleo_files::sqlite::read(path) {
                 Ok(f) if f.kind().ok() == Some(vleo_files::meta::Kind::GroupRelease) => {
-                    Ok(Found::OneSchema(f))
+                    Ok(Found::OneSchema(Box::new(f)))
                 }
                 Ok(f) => Err(format!(
                     "it is a {}, and releases/ holds a group's releases only",
