@@ -766,6 +766,23 @@ fn a_branch_is_framed_in_the_copy() {
         ],
     );
     assert!(r.contains("wire needs from"), "{r}");
+    // The band's contract changes (W4): it rises in the group file, and the
+    // band's file is issued again at it.
+    let r = edit(
+        "contract",
+        &[("opened", field(&tree(), "opened")), ("node", UID)],
+    );
+    assert!(r.contains("\"ok\":true"), "{r}");
+    let g = vleo_files::sqlite::read(&copy.join(GROUP)).unwrap();
+    assert_eq!(
+        g.assignments
+            .iter()
+            .find(|a| a.block_uid == UID)
+            .map(|a| a.contract_version),
+        Some(2)
+    );
+    let band = vleo_files::sqlite::read(&copy.join(nodes(UID))).unwrap();
+    assert_eq!(band.blocks[0].contract_version, 2);
     // Issued: a block framed in the group file, refused by name while it is
     // assigned to nobody, and nothing written.
     let before_issue = group_bytes();

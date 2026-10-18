@@ -103,6 +103,16 @@ pub enum Edit {
     /// to, as a `method` or a `stated` node: its rows leave the group file
     /// for that file ([`issued`]) (F5).
     Issue { block: String, behaviour: String },
+    /// An issued node's contract changed by its branch's owner (W4): its
+    /// assignment's contract rises, every node that reads it is named, and
+    /// its file is issued again at the new contract with `port` in place of
+    /// its port of that direction and name, its content kept ([`contracted`]).
+    /// Its node engineer's signature no longer counts: it reads behind until
+    /// they sign it again (F5).
+    Contract {
+        node: String,
+        port: Option<Box<Port>>,
+    },
     /// Many blocks set up at once from a sheet, a CSV a row a block
     /// ([`SHEET_COLUMNS`]): each added, its ports filled, its inputs wired
     /// and its node engineer assigned, as those edits are, each saying the
@@ -249,6 +259,7 @@ impl Edit {
             Edit::Wire { .. } => "wire",
             Edit::Issue { .. } => "issue",
             Edit::Sheet { .. } => "sheet",
+            Edit::Contract { .. } => "contract",
         }
     }
 }
@@ -566,6 +577,16 @@ pub fn edit(
     if let Edit::Assign { block, .. } = edit {
         after.push_str(&assigned(&out, block));
     }
+    // A contract's assignment as it is now, and who reads the node.
+    if let Edit::Contract { node, .. } = edit {
+        after.push_str(&assigned(&out, node));
+        let readers = readers_of(&branch, elsewhere, node);
+        after.push_str(&if readers.is_empty() {
+            "read by nothing\n".to_string()
+        } else {
+            format!("read by {}\n", readers.join(", "))
+        });
+    }
     // An issue's rows are in the node file it makes, not the group file.
     if let Edit::Issue { block, behaviour } = edit {
         let n = issued(group, block, behaviour)?;
@@ -712,6 +733,69 @@ pub fn issued(group: &File, block: &str, behaviour: &str) -> Result<File, Error>
         .filter(|r| mine(&r.scope))
         .cloned()
         .collect();
+    Ok(n)
+}
+
+/// Every input that reads the node `uid` of `branch`, by any of its ports:
+/// `<node>'s input <port>`, in the branch or in another group's file.
+fn readers_of(branch: &Branch, elsewhere: &[File], uid: &str) -> Vec<String> {
+    let Some((b, _)) = branch.find(uid) else {
+        return Vec::new();
+    };
+    let here = format!("{uid}.");
+    let there = format!("{}.{}", branch.group_id(), b.id);
+    let mut out: Vec<String> = branch
+        .wires()
+        .into_iter()
+        .filter(|w| w.to_block != uid && w.from_ref.starts_with(&here))
+        .map(|w| format!("{}'s input {}", w.to_block, w.to_port))
+        .collect();
+    for f in elsewhere {
+        for w in &f.wires {
+            if w.from_ref == there || w.from_ref.starts_with(&format!("{there}.")) {
+                out.push(format!("{}'s input {}", w.to_block, w.to_port));
+            }
+        }
+    }
+    out.sort();
+    out.dedup();
+    out
+}
+
+/// The node file `node` issued again under the contract `group` now holds
+/// for it: its block and its meta at that contract, `port` in place of its
+/// port of that direction and name (or added), and everything else as it
+/// was, its signatures with it. They were made over the node as it was, so
+/// none counts until its node engineer signs it again.
+pub fn contracted(node: &File, group: &File, port: Option<&Port>) -> Result<File, Error> {
+    let b = node
+        .blocks
+        .first()
+        .ok_or_else(|| refused("a node file holds no block"))?;
+    let a = group
+        .assignments
+        .iter()
+        .find(|a| a.block_uid == b.uid)
+        .ok_or_else(|| refused(format!("{} is assigned to nobody", b.id)))?;
+    let mut n = node.clone();
+    n.blocks[0].contract_version = a.contract_version;
+    n.meta
+        .insert("contract_version".into(), a.contract_version.to_string());
+    if let Some(p) = port {
+        let mut p = p.clone();
+        p.block_uid = b.uid.clone();
+        match n
+            .ports
+            .iter()
+            .position(|x| x.direction == p.direction && x.name == p.name)
+        {
+            Some(i) => {
+                p.ord = n.ports[i].ord;
+                n.ports[i] = p;
+            }
+            None => n.ports.push(p),
+        }
+    }
     Ok(n)
 }
 
@@ -1290,6 +1374,29 @@ fn apply(
             out.tables.retain(|r| !mine(&r.scope));
             out.media.retain(|r| !mine(&r.scope));
             Ok((block.clone(), before, None))
+        }
+        Edit::Contract { node, port } => {
+            let (b, place) = live(node)?;
+            if place == Place::Group {
+                return Err(refused(format!(
+                    "{} is framed in the group file: its parts are filled while it is open; a contract is an issued node's",
+                    b.id
+                )));
+            }
+            if let Some(p) = port {
+                let mut p = (**p).clone();
+                p.block_uid = node.clone();
+                port_ok(&p, &b.id)?;
+            }
+            let before = assigned(out, node);
+            let Some(a) = out.assignments.iter_mut().find(|a| a.block_uid == *node) else {
+                return Err(refused(format!(
+                    "{} is assigned to nobody: a contract is between the group and the node engineer it is assigned to",
+                    b.id
+                )));
+            };
+            a.contract_version += 1;
+            Ok((node.clone(), before, None))
         }
         Edit::Sheet { .. } => Err(refused(
             "a sheet is the edits it makes, each made by itself",
@@ -2076,6 +2183,28 @@ pub fn edit_in_place(
             }
             Some((n, at))
         }
+        Edit::Contract { node: uid, port } => {
+            let at = nodes
+                .iter()
+                .find(|n| n.blocks.first().is_some_and(|b| b.uid == *uid))
+                .map(|n| {
+                    copy.join("groups")
+                        .join(group_id)
+                        .join("nodes")
+                        .join(format!("{}.vnode", n.blocks[0].id))
+                })
+                .ok_or_else(|| refused(format!("{uid} has no node file in the branch")))?;
+            let theirs = crate::sqlite::read(&at)?;
+            if theirs.blocks.first().map(|b| b.uid.as_str()) != Some(uid.as_str()) {
+                return Err(refused(format!(
+                    "{} does not hold {uid}: a node's file is named for it",
+                    at.strip_prefix(copy).unwrap_or(&at).display()
+                )));
+            }
+            let mut n = contracted(&theirs, &out, port.as_deref())?;
+            n.meta.insert("written_by_app".into(), app.to_string());
+            Some((n, at))
+        }
         _ => None,
     };
     // The one comparison, as late as can be before the write.
@@ -2088,18 +2217,34 @@ pub fn edit_in_place(
     }
     // The node's file first: a group file without the block's rows is never
     // left with no file holding them.
+    // A contract issues the node's file again: what it was is kept, to put
+    // back if the group file cannot be written.
+    let was = match &node {
+        Some((_, at)) if at.exists() => Some(
+            std::fs::read(at)
+                .map_err(|e| Error::new(ErrorKind::Io, format!("{}: {e}", at.display())))?,
+        ),
+        _ => None,
+    };
     if let Some((n, at)) = &node {
         if let Some(dir) = at.parent() {
             std::fs::create_dir_all(dir)
                 .map_err(|e| Error::new(ErrorKind::Io, format!("{}: {e}", dir.display())))?;
         }
-        crate::sqlite::write(n, at)?;
+        crate::sqlite::written(n, at)?;
     }
     let written = match crate::sqlite::written(&out, &at_file) {
         Ok(w) => w,
         Err(err) => {
             if let Some((_, at)) = &node {
-                let _ = std::fs::remove_file(at);
+                match &was {
+                    Some(bytes) => {
+                        let _ = std::fs::write(at, bytes);
+                    }
+                    None => {
+                        let _ = std::fs::remove_file(at);
+                    }
+                }
             }
             return Err(err);
         }

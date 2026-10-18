@@ -1770,3 +1770,174 @@ fn a_sheet_with_one_row_refused_sets_up_nothing_and_names_the_row() {
     let taken = format!("{SHEET}sw_storm_onset,l3_solar,Again?,sw_storm_onset,number,1,,,,\n");
     refused(&taken, &["row 5", "sw_storm_onset", "never used twice"]);
 }
+
+// ── A contract changes, and its node reads behind until re-signed (W4) ──
+
+/// The band's output, its range widened: the contract changed.
+fn wider(band: &File) -> Port {
+    let mut p = band
+        .ports
+        .iter()
+        .find(|p| p.direction == "out")
+        .unwrap()
+        .clone();
+    p.upper = s("5");
+    p
+}
+
+#[test]
+fn a_contract_changed_rises_names_its_readers_and_leaves_its_node_behind_until_re_signed() {
+    let pr = programme();
+    let sy = systems(&pr);
+    let band = band();
+    let e = Edit::Contract {
+        node: s(BAND),
+        port: Some(Box::new(wider(&band))),
+    };
+    let (after, _) = ola(&solar(), &e).unwrap();
+    // The contract rises in the group file, and its change names every
+    // node that reads it.
+    let a = after
+        .assignments
+        .iter()
+        .find(|a| a.block_uid == BAND)
+        .unwrap();
+    assert_eq!(a.contract_version, 2);
+    let c = after.changes.last().unwrap();
+    assert_eq!(c.what, format!("contract: {WHY}"));
+    let said = c.after.as_deref().unwrap();
+    assert!(said.contains("contract=2"), "{said}");
+    assert!(
+        said.contains("read by") && said.contains(GOOD) && said.contains(LATE),
+        "{said}"
+    );
+    // The node file re-issued: its content kept, at the new contract, with
+    // the port changed; its node engineer's signature no longer counts.
+    let re = breakdown::contracted(&band, &after, Some(&wider(&band))).unwrap();
+    assert_eq!(re.blocks[0].contract_version, 2);
+    assert_eq!(
+        re.meta.get("contract_version").map(String::as_str),
+        Some("2")
+    );
+    assert_eq!(
+        re.ports
+            .iter()
+            .find(|p| p.direction == "out")
+            .unwrap()
+            .upper,
+        "5"
+    );
+    assert_eq!(re.texts, band.texts, "its content is kept");
+    let registry = chain::open_group_in(&after, &sy, &pr).unwrap();
+    // What the seal refuses as not signed as it is (`release::blockers`).
+    assert!(chain::check_node(&re, BAND, &registry).is_err());
+    // Nia re-signs it at the new contract: it counts again.
+    let (signed_again, _) =
+        chain::sign_node(&re, BAND, "Nia Node", &key(16), AT, &registry).expect("Nia re-signs");
+    chain::check_node(&signed_again, BAND, &registry).unwrap();
+
+    // A contract with no port changed still rises: the contract is said again.
+    let (again, _) = ola(
+        &after,
+        &Edit::Contract {
+            node: s(BAND),
+            port: None,
+        },
+    )
+    .unwrap();
+    assert_eq!(
+        again
+            .assignments
+            .iter()
+            .find(|a| a.block_uid == BAND)
+            .unwrap()
+            .contract_version,
+        3
+    );
+    // Refused: a block framed in the group file, a node assigned to nobody,
+    // and anyone but the owner.
+    let f = with_onset();
+    let e = ola(
+        &f,
+        &Edit::Contract {
+            node: s("sw_storm_onset"),
+            port: None,
+        },
+    )
+    .unwrap_err();
+    assert!(e.contains("is framed in the group file"), "{e}");
+    let e = ola(
+        &solar(),
+        &Edit::Contract {
+            node: s(GOOD),
+            port: None,
+        },
+    )
+    .unwrap_err();
+    assert!(e.contains("is assigned to nobody"), "{e}");
+    let e = frame(
+        &solar(),
+        &Edit::Contract {
+            node: s(BAND),
+            port: None,
+        },
+        WHY,
+        "Nia Node",
+        &key(16),
+    )
+    .unwrap_err();
+    assert!(!e.is_empty());
+}
+
+#[test]
+fn a_contract_changed_in_the_copy_re_issues_the_node_s_file() {
+    let copy = std::env::temp_dir().join(format!("vleo-contract-{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&copy);
+    let dir = copy.join("groups/l3_solar");
+    std::fs::create_dir_all(dir.join("nodes")).unwrap();
+    let group = dir.join("l3_solar.vgroup");
+    vleo_files::sqlite::write(&solar(), &group).unwrap();
+    for n in nodes() {
+        let id = n.blocks[0].id.clone();
+        vleo_files::sqlite::write(&n, &dir.join(format!("nodes/{id}.vnode"))).unwrap();
+    }
+    let digest = |p: &std::path::Path| vleo_files::copied::digest(&std::fs::read(p).unwrap());
+    let pr = programme();
+    let sy = systems(&pr);
+    let band_file = dir.join(format!("nodes/{BAND}.vnode"));
+    let before = vleo_files::sqlite::read(&band_file).unwrap();
+    let made = breakdown::edit_in_place(
+        &copy,
+        "l3_solar",
+        &digest(&group),
+        &Edit::Contract {
+            node: s(BAND),
+            port: Some(Box::new(wider(&before))),
+        },
+        WHY,
+        "Ola Sun",
+        &key(13),
+        AT,
+        APP,
+        &sy,
+        &pr,
+    )
+    .unwrap();
+    assert!(
+        matches!(made, breakdown::Framed::Written { .. }),
+        "{made:?}"
+    );
+    let re = vleo_files::sqlite::read(&band_file).unwrap();
+    assert_eq!(re.blocks[0].contract_version, 2);
+    assert_eq!(re.texts, before.texts);
+    let g = vleo_files::sqlite::read(&group).unwrap();
+    assert_eq!(
+        g.assignments
+            .iter()
+            .find(|a| a.block_uid == BAND)
+            .unwrap()
+            .contract_version,
+        2
+    );
+    let _ = std::fs::remove_dir_all(&copy);
+}
