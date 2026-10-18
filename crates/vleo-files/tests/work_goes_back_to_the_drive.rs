@@ -1938,7 +1938,7 @@ fn an_answer_goes_back_as_a_new_file_by_the_person_who_wrote_it() {
     assert!(!l.back && l.why.contains("\"Test Sam\"'s answer"), "{l:?}");
     // Sam's: it goes back, a new folder and file on the drive.
     let r = pb(&copy, &drive, "Test Sam", None).unwrap();
-    assert_eq!(r.back(), [rel.clone()], "{:?}", r.lines);
+    assert_eq!(r.back(), std::slice::from_ref(&rel), "{:?}", r.lines);
     assert!(line(&r, &rel)
         .why
         .contains("systems's answer to l3_solar 1.0"));
