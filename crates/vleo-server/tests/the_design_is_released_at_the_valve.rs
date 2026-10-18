@@ -610,7 +610,7 @@ fn the_system_engineer_releases_the_design_and_it_goes_back_to_the_drive() {
     let margins = vleo_files::design::margins_of(&d)
         .unwrap()
         .expect("margins kept");
-    assert!(!margins.is_empty(), "today's design has closures");
+    assert!(!margins.margins.is_empty(), "today's design has closures");
     let app = env!("CARGO_PKG_VERSION");
     let t = d.tables.iter().find(|t| t.path == "margins.csv").unwrap();
     assert!(
@@ -621,7 +621,17 @@ fn the_system_engineer_releases_the_design_and_it_goes_back_to_the_drive() {
         "{}",
         t.csv
     );
-    let first = &margins[0];
+    // The engine's answer on the design as declared, as Health.csv says it,
+    // and only the closures: solar's band, a node of solar's that is no
+    // closure, is not one of them.
+    assert!(
+        t.csv
+            .contains(&format!("\n{moved},l3_solar,closes,{declared},")),
+        "{moved} at {declared}: {}",
+        t.csv
+    );
+    assert!(!t.csv.contains("\nsw_activity_band,"), "{}", t.csv);
+    let first = &margins.margins[0];
     let budgets = ask(port, "GET", "/v1/design/budgets", &[], false);
     assert!(
         budgets.contains("\"designs\":[]")
@@ -706,12 +716,12 @@ fn the_system_engineer_releases_the_design_and_it_goes_back_to_the_drive() {
         budgets.contains(&format!(
             "\"version\":\"{version}\",\"kept\":true,\"application\":\"{app}\""
         )) && budgets.contains(&format!(
-            "{{\"node\":\"{}\",\"answers\":[{{\"version\":\"{version}\",\"state\":\"{}\"",
-            first.node, first.state
+            "{{\"node\":\"{}\",\"group\":\"{}\",\"answers\":[{{\"version\":\"{version}\",\"state\":\"{}\"",
+            first.node, first.group, first.state
         )) && budgets.contains(&format!(
             "{} closure{} across 1 of 1 released design:",
-            margins.len(),
-            if margins.len() == 1 { "" } else { "s" }
+            margins.margins.len(),
+            if margins.margins.len() == 1 { "" } else { "s" }
         )),
         "{budgets}"
     );

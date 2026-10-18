@@ -45,7 +45,7 @@
 */
 'use strict';
 
-import { $, esc, answerFirst, plural } from './dom.js';
+import { $, esc, answerFirst, plural, fmt } from './dom.js';
 
 const W = { group: '', tree: null, sel: '', notice: null, stale: false, host: null, post: null, groups: [], why: '', seq: 0 };
 /** The release panel: the checks as last read, what was typed, and the program's answer. */
@@ -133,8 +133,9 @@ async function draw(keep) {
     '<div class="sy-grid"><nav class="sy-tree" aria-label="the branch">' + tree(t) + '</nav>' +
     '<section class="sy-block">' + block(t) + '</section></div>' +
     (group === 'systems' ? '<section class="sy-release" id="sy-release"><p class="sh-loading">reading the integration checks…</p></section>' : '');
-  await drawBudgets();
-  if (group === 'systems') await drawRelease();
+  // The budgets and the release panel are read side by side: neither waits
+  // on the other.
+  await Promise.all([drawBudgets(), group === 'systems' ? drawRelease() : null]);
 }
 
 /** Budgets across releases, as the program reads them from each released
@@ -142,6 +143,8 @@ async function draw(keep) {
  *  that kept them, each cell its state and margin as the engine answered
  *  when that design was released. Nothing is computed here. */
 async function drawBudgets() {
+  // A frame refused has no budgets drawn: it says why already.
+  if (!W.host || !W.host.querySelector('.sy-budgets')) return;
   const seq = ++B.seq;
   const b = await get('/v1/design/budgets');
   const host = W.host && W.host.querySelector('.sy-budgets');
@@ -155,14 +158,15 @@ async function drawBudgets() {
     const a = c.answers.find(x => x.version === v);
     return a
       ? '<td class="sy-b-' + esc(a.state) + '" title="' + esc(a.why) + '">' + esc(a.state) +
-        (a.margin === null ? '' : ' ' + esc(String(a.margin))) + '</td>'
+        (a.margin === null ? '' : ' ' + esc(fmt(a.margin))) + '</td>'
       : '<td class="muted">not a closure then</td>';
   };
   host.innerHTML = '<p class="sy-budgets-said">' + esc(b.message) + '</p>' +
     (kept.length && b.closures.length
-      ? '<table class="nw-table sy-budgets-table"><thead><tr><th>closure</th>' +
+      ? '<table class="nw-table sy-budgets-table"><thead><tr><th>group</th><th>closure</th>' +
         kept.map(d => '<th>' + esc(d.version) + '</th>').join('') + '</tr></thead><tbody>' +
-        b.closures.map(c => '<tr><td>' + esc(c.node) + '</td>' + kept.map(d => cell(c, d.version)).join('') + '</tr>').join('') +
+        b.closures.map(c => '<tr><td>' + esc(c.group) + '</td><td>' + esc(c.node) + '</td>' +
+          kept.map(d => cell(c, d.version)).join('') + '</tr>').join('') +
         '</tbody></table>'
       : '') +
     b.designs.filter(d => !d.kept).map(d => '<p class="muted sy-budgets-before">' + esc(d.says) + '</p>').join('');

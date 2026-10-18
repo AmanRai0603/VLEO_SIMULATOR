@@ -26,7 +26,7 @@
           },
           "application": {
             "type": "string",
-            "description": "The application whose engine gave its margins, when it keeps them."
+            "description": "The application whose engine gave its margins, as its margins.csv says, when it keeps them."
           },
           "says": {
             "type": "string",
@@ -46,6 +46,10 @@
         "properties": {
           "node": {
             "type": "string"
+          },
+          "group": {
+            "type": "string",
+            "description": "The group it hangs in, in the latest design that kept it."
           },
           "answers": {
             "type": "array",
@@ -80,6 +84,7 @@
         },
         "required": [
           "node",
+          "group",
           "answers"
         ]
       }

@@ -347,12 +347,14 @@ pub struct Mark {
 }
 
 /// A closure of today's design as the engine answers it on the design as
-/// declared: its state, its margin when it has one, and why. The released
-/// design keeps each as a row of `margins.csv`, so a budget is read across
-/// releases and never computed again (F6-c, item 7).
+/// declared: the group it hangs in, its state, its margin when it has one,
+/// and why. The released design keeps each as a row of `margins.csv`, so a
+/// budget is read across releases and never computed again (F6-c, item 7).
+/// Each is kept without leading or trailing spaces, as a table reads back.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Margin {
     pub node: String,
+    pub group: String,
     pub state: String,
     pub margin: Option<f64>,
     pub why: String,
@@ -360,31 +362,63 @@ pub struct Margin {
 
 /// The columns of `margins.csv`: each closure's answer, the design it was
 /// released as, and the application whose engine gave it.
-pub const MARGINS: [&str; 6] = ["node", "state", "margin", "why", "design", "application"];
+pub const MARGINS: [&str; 7] = [
+    "node",
+    "group",
+    "state",
+    "margin",
+    "why",
+    "design",
+    "application",
+];
 
 /// One closure's answers across released designs, oldest first: its margin
 /// in each design that kept margins and held it as a closure, by version.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Budget {
     pub node: String,
+    /// The group it hangs in, in the latest design that kept it.
+    pub group: String,
     pub answers: Vec<(String, Margin)>,
 }
 
+/// The margins a released design keeps, and the application whose engine
+/// gave them.
+#[derive(Clone, Debug, PartialEq)]
+pub struct Kept {
+    pub application: String,
+    pub margins: Vec<Margin>,
+}
+
+/// Budgets across releases, as [`budgets`] reads them.
+#[derive(Clone, Debug, PartialEq, Default)]
+pub struct Budgets {
+    /// Every closure kept, by its group, then by name.
+    pub closures: Vec<Budget>,
+    /// Each design that kept margins, by version, with the application whose
+    /// engine gave them.
+    pub kept: Vec<(String, String)>,
+    /// Each design released before margins were kept, by version.
+    pub without: Vec<String>,
+}
+
 /// Budgets across releases (F6-c, item 7): every closure any of `designs`
-/// kept a margin for, by name, with its answer in each design that kept it,
-/// in the order `designs` come ([`released_in`] gives them oldest first);
-/// and the version of each design released before margins were kept.
-/// Nothing is computed: each margin is the one its design was released
-/// with. A table that does not read is refused by name.
-pub fn budgets(designs: &[Opened]) -> Result<(Vec<Budget>, Vec<String>), String> {
+/// kept a margin for, by its group and name, with its answer in each design
+/// that kept it, in the order `designs` come ([`released_in`] gives them
+/// oldest first); each design that kept them, with its application; and
+/// each design released before margins were kept. Nothing is computed: each
+/// margin is the one its design was released with. A table that does not
+/// read is refused by name.
+pub fn budgets(designs: &[Opened]) -> Result<Budgets, String> {
     let mut by: std::collections::BTreeMap<String, Vec<(String, Margin)>> =
         std::collections::BTreeMap::new();
-    let mut without = Vec::new();
+    let mut out = Budgets::default();
     for o in designs {
         match margins_of(&o.design)? {
-            None => without.push(o.version.clone()),
-            Some(kept) => {
-                for m in kept {
+            None => out.without.push(o.version.clone()),
+            Some(k) => {
+                out.kept.push((o.version.clone(), k.application));
+                for m in k.margins {
                     by.entry(m.node.clone())
                         .or_default()
                         .push((o.version.clone(), m));
@@ -392,12 +426,19 @@ pub fn budgets(designs: &[Opened]) -> Result<(Vec<Budget>, Vec<String>), String>
             }
         }
     }
-    Ok((
-        by.into_iter()
-            .map(|(node, answers)| Budget { node, answers })
-            .collect(),
-        without,
-    ))
+    out.closures = by
+        .into_iter()
+        .map(|(node, answers)| Budget {
+            group: answers
+                .last()
+                .map_or(String::new(), |(_, m)| m.group.clone()),
+            node,
+            answers,
+        })
+        .collect();
+    out.closures
+        .sort_by(|a, b| (&a.group, &a.node).cmp(&(&b.group, &b.node)));
+    Ok(out)
 }
 
 /// What the system engineer asks for when they release the design:
@@ -414,47 +455,81 @@ pub struct Asked<'a> {
     pub margins: &'a [Margin],
 }
 
-/// The margins a released design was released with, read from its
-/// `margins.csv`: `None` for a design released before margins were kept.
-/// Refused by name when the table is not as [`release`] writes it: its
-/// columns, a closure named twice or not at all, a state not said, a margin
-/// that is not a finite number, or a row of another design. A design
-/// released again (W16) holds the margins of the design it is again, as that
-/// one was released with them, so its rows are of `again_of`.
-pub fn margins_of(design: &File) -> Result<Option<Vec<Margin>>, String> {
+/// The margins a released design was released with, read from its one
+/// `margins.csv`, and the application whose engine gave them: `None` for a
+/// design released before margins were kept. Refused by name when the table
+/// is not as [`release`] writes it: a table that does not read whole (a row
+/// with more or fewer values than its columns, a quote never closed), its
+/// columns, two tables of the name, a closure named twice or not at all, a
+/// state not said, a margin that is not a finite number, a row of another
+/// design, or rows of more than one application, or of another than the
+/// design's oldest. A design released again (W16, `again_of`, an earlier
+/// version than its own) holds the margins of the design it is again, as
+/// that one was released with them, so its rows are of that design and of
+/// the application that released it.
+pub fn margins_of(design: &File) -> Result<Option<Kept>, String> {
     let version = design.meta.get("version").map_or("", String::as_str);
-    let of_design = design
-        .meta
-        .get("again_of")
-        .filter(|v| !v.is_empty())
-        .map_or(version, String::as_str);
-    let Some(t) = design.tables.iter().find(|t| t.path == "margins.csv") else {
-        return Ok(None);
+    let named = |what: String| format!("design {version}'s margins.csv {what}");
+    let tables: Vec<&Tbl> = design
+        .tables
+        .iter()
+        .filter(|t| t.path == "margins.csv")
+        .collect();
+    let t = match tables.as_slice() {
+        [] => return Ok(None),
+        [t] if t.scope == FILE => *t,
+        [_] => return Err(named("is not the design's own table".into())),
+        _ => return Err(named("is held more than once".into())),
     };
-    let (head, rows) = crate::csv::parse(&t.csv);
-    if head != MARGINS {
-        return Err(format!(
-            "design {version}'s margins.csv has the columns {}, not {}",
-            head.join(","),
+    let again = design.meta.get("again_of").filter(|v| !v.is_empty());
+    if let Some(a) = again {
+        let earlier = match (DesignVersion::parse(a), DesignVersion::parse(version)) {
+            (Some(a), Some(v)) => a < v,
+            _ => false,
+        };
+        if !earlier {
+            return Err(named(format!(
+                "is of design {a} released again, which is not earlier than {version}"
+            )));
+        }
+    }
+    let of_design = again.map_or(version, String::as_str);
+    let read = crate::csv::read(&t.csv);
+    if let Some((line, why)) = read.problems.first() {
+        return Err(named(format!("does not read, line {line}: {why}")));
+    }
+    if read.head != MARGINS {
+        return Err(named(format!(
+            "has the columns {}, not {}",
+            read.head.join(","),
             MARGINS.join(",")
-        ));
+        )));
     }
     let mut out: Vec<Margin> = Vec::new();
-    for (i, row) in rows.iter().enumerate() {
-        let at = |what: String| format!("design {version}'s margins.csv, row {}: {what}", i + 1);
-        let [node, state, margin, why, of, _app] = row.as_slice() else {
+    let mut application: Option<&str> = None;
+    for (i, row) in read.rows.iter().enumerate() {
+        let at = |what: String| named(format!("row {}: {what}", i + 1));
+        let [node, group, state, margin, why, of, app] = row.as_slice() else {
             return Err(at(format!("{} values, not {}", row.len(), MARGINS.len())));
         };
-        if node.trim().is_empty() || state.trim().is_empty() {
+        if node.is_empty() || state.is_empty() {
             return Err(at("a closure and its state are said on every row".into()));
         }
         if of != of_design {
             return Err(at(format!("it is of design {of}")));
         }
+        match application {
+            Some(a) if a != app => {
+                return Err(at(format!(
+                    "it is of the application {app}, and the rows before it of {a}"
+                )))
+            }
+            _ => application = Some(app),
+        }
         if out.iter().any(|m| &m.node == node) {
             return Err(at(format!("{node} is named twice")));
         }
-        let margin = match margin.trim() {
+        let margin = match margin.as_str() {
             "" => None,
             m => match m.parse::<f64>() {
                 Ok(v) if v.is_finite() => Some(v),
@@ -463,12 +538,26 @@ pub fn margins_of(design: &File) -> Result<Option<Vec<Margin>>, String> {
         };
         out.push(Margin {
             node: node.clone(),
+            group: group.clone(),
             state: state.clone(),
             margin,
             why: why.clone(),
         });
     }
-    Ok(Some(out))
+    let oldest = design
+        .meta
+        .get("oldest_application")
+        .map_or("", String::as_str);
+    let application = application.unwrap_or(oldest).to_string();
+    if again.is_none() && application != oldest {
+        return Err(named(format!(
+            "is of the application {application}, and the design is of {oldest}"
+        )));
+    }
+    Ok(Some(Kept {
+        application,
+        margins: out,
+    }))
 }
 
 /// The design `asked.version`, released by `by` with `key` at `at`, from
@@ -572,7 +661,7 @@ pub fn release(
                 "a closure's margin names the closure and its state: the engine's answer is kept as it was said",
             ));
         }
-        if said.contains(&m.node.as_str()) {
+        if said.contains(&m.node.trim()) {
             return Err(refused(format!(
                 "{} has two margins: a closure has one answer on the design as declared",
                 m.node
@@ -584,7 +673,7 @@ pub fn release(
                 m.node
             )));
         }
-        said.push(&m.node);
+        said.push(m.node.trim());
     }
     let mut f = File::new(Kind::Design, app);
     f.meta.insert("version".into(), version.into());
@@ -643,10 +732,11 @@ pub fn release(
         .iter()
         .map(|m| {
             vec![
-                m.node.clone(),
-                m.state.clone(),
+                m.node.trim().to_string(),
+                m.group.trim().to_string(),
+                m.state.trim().to_string(),
                 m.margin.map_or(String::new(), |v| v.to_string()),
-                m.why.clone(),
+                m.why.trim().to_string(),
                 version.to_string(),
                 app_version.to_string(),
             ]
