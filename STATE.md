@@ -128,7 +128,31 @@ Handed over Sunday 18 October (S1 to S4: F1 to F3-f, the key's proof, F3-g1, the
     - `GET /v1/design/integration`, `POST /v1/design/release`: each release read again from the drive and checked as a build checks it; written in the copy as `design/design-<version>.vleo`, `design/NOTES.md` and `readable/`. Put-back takes one released design at a time, its record only beside it.
     - The System workspace's release panel on the systems' branch; `tools/release_design_check.py` in the panels job.
 
-    The Opus review found one blocking point (two released designs could go back at once, each after the drive's latest, forking the chain) and nine more; all fixed in 3c4bac4b, each shown red but the record failing to write. Its decisions for Aman are in its body.
+    The Opus review found one blocking point (two released designs could go back at once, each after the drive's latest, forking the chain) and nine more; all fixed in 3c4bac4b, each shown red but the record failing to write. Its decisions for Aman are in its body. B's fix to 196 is merged in (ebee4236): today's design takes a release as it was signed.
+  - **208 F6-c1 a released design read back, and a design built from it.** Stacked on 207. Reading only.
+    - `design::open_held` reads a released design back as anything that relies on one must: through the chain, its held bytes by their SHA-256, `released.csv` row by row, the programme's and the systems' files in their places. Releases from before 1.0 are upgraded in memory.
+    - `design::released_in` lists every released design in the folders named, oldest first, and names any file under a design's name that is not one.
+    - `today::build_held` builds the design from exactly the releases a released design holds, each taken by a build's checks, and refuses one that does not pass by name.
+
+    Its Opus review's findings are fixed and posted in its comments. Green.
+  - **209 F6-c4 a design released again (W16): high risk.** Stacked on 208.
+    - `design::release_again`, by the system engineer or their deputy, releases an earlier design under a new version. That design is read back now (`open_held`), it must be earlier than the design released now, every seal it holds must check now (`seals_hold`), and every table it was released on is carried.
+    - Route: `POST /v1/design/release-again`. It writes the design, then `readable/`, then `design/NOTES.md`, and undoes what it wrote on a failure. The notes say what each group goes back to, that today's design is unchanged, and that each group's base check fails until it moves its base.
+    - Put-back takes a design released again only when the drive holds the design it names, with the same media and tables, and its seals check.
+
+    The Opus review's findings are fixed in 313426c9, each shown red; what is not fixed is listed in its comments. Green.
+  - **210 F6-c5 requests for the developer (W14).** Stacked on 207, independent of 208 and 209.
+    - A request of kind `code` is asked in the file of the node that waits on it, signed, held to `check_request`, and put back like the others. This reverses F3-d's "made in My work" (question 55).
+    - `GET /v1/requests` lists every request of the code, whether it counts and why not, and whether `apps/NOTES.md` names its uid whole. A released design writes the drive's list as `readable/Requests.csv`.
+    - The asker's My work lists theirs; the subsystem engineer's no longer does.
+
+    Its Opus review found one blocking point (an answered request matched as a substring) and nine more; fixed in its second commit, each shown red. Green.
+- **What 208 to 210 decide:**
+  - **What relies on a released design reads it back with `design::open_held`**, never as handed over.
+  - **A seal whose key was revoked after it was made still counts** (question 51, read as the chain reads every other signature). Put to Aman on 209.
+  - **A design released again changes nothing in today's design.** Each group moves its base (W12).
+  - **The developer answers a request of the code by naming its uid in `apps/NOTES.md`.** Nobody writes its status, and the notes are not signed.
+  - **For B:** `GET /v1/my-work` gains the kind `asked of the code`, and a subsystem engineer's My work no longer lists requests of the code. `readable/` gains `Requests.csv`, with a `design` column.
 - **What 171 decides, which B's PRs must follow:**
   - **Ownership follows the mount.** Only the programme's file (mounting `systems`) and the systems' file (mounting each `l3_*`) mount anything.
   - **A group file registers only node engineers.** It holds nobody the programme's file registers, and no key it registers. `open_group_in` refuses anything else, by name.
@@ -209,9 +233,9 @@ Handed over Sunday 18 October (S1 to S4: F1 to F3-f, the key's proof, F3-g1, the
 - **Lockfiles:** `crates/vleo-py` keeps its own, built `--locked` in CI, and so does `crates/vleo-kernel-wasm` until 177 removes it. A new dependency of `vleo-files` or `vleo-server` needs them refreshed, as 171 does.
 - **Disk:** the container's allowance filled on S1 and again on S2. `xtask files-wasm` and the scenarios leave a `target/` of 10 GB or more inside the worktree they run in; delete it after a push. Old worktrees' `target/` folders and `target/*/incremental` were deleted to make room.
 - **Next for A, in order:**
-  - **F6-c** (previews, their answers, budgets across releases), building on 207.
-  - **Merge B's fixes to 194 and 196** into 207 as they land; B's fix to 193 is in.
-  - **For Aman:** the brief's questions 9 (one node shape, F3-g0) and 10 (ports), 7 and 8 (where today's page's Rows, Architecture, Forms and manual go), 11 to 19 (F3-g2), 20 to 32 (F6-a), and 33 to 41 (F6-b).
+  - **F6-c2** (previews and their answers: high risk, needs B's 200 and 202) and **F6-c3** (the decision on an objection, margins and budgets across releases: needs B's 204).
+  - **Merge B's fixes** into 207 as they land; B's fixes to 193 and 196 are in.
+  - **For Aman:** the brief's questions 9 (one node shape, F3-g0) and 10 (ports), 7 and 8 (where today's page's Rows, Architecture, Forms and manual go), 11 to 19 (F3-g2), 20 to 32 (F6-a), 33 to 41 (F6-b), 51 (209) and 55 (210).
   - **F8 and F9** after F6. **For B, now:** F5, on the critical path of F6, F7 and F9; what it needs (F1's owner, F3's signed nodes, F4's tree) is in 175, 179 and 187.
 
 ## Person B · night
