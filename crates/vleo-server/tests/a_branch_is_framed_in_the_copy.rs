@@ -801,6 +801,19 @@ fn a_branch_is_framed_in_the_copy() {
         r.contains("your copy holds no released design 2026.10.1"),
         "{r}"
     );
+    // An issue the copy does not hold is not assigned (W11).
+    let r = edit(
+        "assign-issue",
+        &[
+            ("opened", field(&tree(), "opened")),
+            ("number", "3"),
+            ("person", "Test Nia"),
+        ],
+    );
+    assert!(
+        r.contains("your copy holds no issue 3 addressed to l3_solar"),
+        "{r}"
+    );
     // Issued: a block framed in the group file, refused by name while it is
     // assigned to nobody, and nothing written.
     let before_issue = group_bytes();

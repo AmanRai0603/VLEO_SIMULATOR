@@ -122,6 +122,10 @@ pub enum Edit {
         design: Box<File>,
         previous: Option<Box<File>>,
     },
+    /// Issue `number`, addressed to the group, given to `person`, a node
+    /// engineer its group file registers, to resolve (W11): kept in the
+    /// group file, the issue file being its raiser's (`crate::issues`).
+    AssignIssue { number: u64, person: String },
     /// Many blocks set up at once from a sheet, a CSV a row a block
     /// ([`SHEET_COLUMNS`]): each added, its ports filled, its inputs wired
     /// and its node engineer assigned, as those edits are, each saying the
@@ -270,6 +274,7 @@ impl Edit {
             Edit::Sheet { .. } => "sheet",
             Edit::Contract { .. } => "contract",
             Edit::UpdateBase { .. } => "update base",
+            Edit::AssignIssue { .. } => "assign issue",
         }
     }
 }
@@ -615,6 +620,13 @@ pub fn edit(
             after.push_str(&line);
             after.push('\n');
         }
+    }
+    // An issue assigned: to whom, now.
+    if let Edit::AssignIssue { number, person } = edit {
+        after.push_str(&format!(
+            "{} assigned to {person}\n",
+            crate::issues::text_kind(*number)
+        ));
     }
     // An issue's rows are in the node file it makes, not the group file.
     if let Edit::Issue { block, behaviour } = edit {
@@ -1536,6 +1548,33 @@ fn apply(
             out.meta.insert("based_on".into(), version);
             out.meta.insert("base_version".into(), count.to_string());
             Ok((group_id.to_string(), before, None))
+        }
+        Edit::AssignIssue { number, person } => {
+            if !registry
+                .file
+                .people
+                .iter()
+                .any(|p| p.name == *person && p.role == "node engineer")
+            {
+                return Err(refused(format!(
+                    "{group_id}'s group file registers no node engineer {person}: an issue is assigned to a node engineer its group registers"
+                )));
+            }
+            let kind = crate::issues::text_kind(*number);
+            let was = crate::issues::assigned(out, *number);
+            if was.as_deref() == Some(person.as_str()) {
+                return Err(refused(format!(
+                    "issue {number} is assigned to {person} already"
+                )));
+            }
+            let before = was.map_or(String::new(), |w| format!("{kind} assigned to {w}\n"));
+            out.texts.retain(|t| !(t.scope == FILE && t.kind == kind));
+            out.texts.push(crate::model::Text {
+                scope: FILE.into(),
+                kind: kind.clone(),
+                body: person.clone(),
+            });
+            Ok((kind, before, None))
         }
         Edit::Sheet { .. } => Err(refused(
             "a sheet is the edits it makes, each made by itself",

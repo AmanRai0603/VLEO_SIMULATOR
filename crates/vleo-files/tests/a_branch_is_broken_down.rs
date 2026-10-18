@@ -2071,3 +2071,35 @@ fn a_group_s_base_moves_to_each_released_design_naming_what_changed_under_it() {
     refused(&solar, update(&forged, None), "system engineer");
     refused(&a, update(&first, None), "already");
 }
+
+// ── An issue assigned by the branch's owner (W11) ──
+
+#[test]
+fn an_issue_is_assigned_by_the_branch_s_owner_to_a_node_engineer() {
+    let e = |person: &str| Edit::AssignIssue {
+        number: 3,
+        person: s(person),
+    };
+    let (a, _) = ola(&solar(), &e("Nia Node")).unwrap();
+    assert_eq!(
+        vleo_files::issues::assigned(&a, 3).as_deref(),
+        Some("Nia Node")
+    );
+    let c = a.changes.last().unwrap();
+    assert_eq!(
+        (c.what.as_str(), c.scope.as_str()),
+        (&*format!("assign issue: {WHY}"), "issue 3")
+    );
+    let err = ola(&a, &e("Nia Node")).unwrap_err();
+    assert!(
+        err.contains("issue 3 is assigned to Nia Node already"),
+        "{err}"
+    );
+    let err = ola(&solar(), &e("Pat Morgan")).unwrap_err();
+    assert!(
+        err.contains("registers no node engineer Pat Morgan"),
+        "{err}"
+    );
+    let err = frame(&solar(), &e("Nia Node"), WHY, "Nia Node", &key(16)).unwrap_err();
+    assert!(!err.is_empty());
+}

@@ -112,7 +112,10 @@ function stale() {
  *  branch is said in its history, for the node engineers who read it. */
 function baseForm() {
   return '<p class="sy-base"><b>update base</b> to the released design <input id="sy-base-design" size="12" placeholder="2026.11.1"> ' +
-    '<button class="ctl" id="sy-update-base">Update base</button></p>';
+    '<button class="ctl" id="sy-update-base">Update base</button></p>' +
+    // An issue addressed to the branch, given to a node engineer (W11).
+    '<p class="sy-issue"><b>assign issue</b> <input id="sy-is-number" size="5" placeholder="number"> to ' +
+    '<input id="sy-is-person" size="18" placeholder="a node engineer\'s name"> <button class="ctl" id="sy-assign-issue">Assign</button></p>';
 }
 
 /** The branch as a tree: each block under its parent; a block whose parent the
@@ -292,6 +295,7 @@ async function click(e) {
       node: b, direction: v('sy-c-dir'), name: v('sy-c-name').trim(), type: v('sy-c-type').trim(),
       unit: v('sy-c-unit').trim(), lower: v('sy-c-lo').trim(), upper: v('sy-c-hi').trim(), state: 'decided',
     });
+    case 'sy-assign-issue': return send('assign-issue', { number: v('sy-is-number').trim(), person: v('sy-is-person').trim() });
     case 'sy-update-base': return send('update-base', { design: v('sy-base-design').trim() });
     case 'sy-sheet-go': return send('sheet', { sheet: v('sy-sheet') });
     case 'sy-issue': return send('issue', { block: b, behaviour: v('sy-is-behaviour') });

@@ -432,6 +432,30 @@ fn edit_of(name: &str, params: &str) -> Result<Edit, String> {
     })
 }
 
+/// The issue assignment `params` asks of `group` (W11): issue `number`, as
+/// the copy's `issues/` holds it, addressed to `group`, given to `person`.
+fn issue_edit(copy: &Path, group: &str, params: &str) -> Result<Edit, String> {
+    let get = |k: &str| param(params, k).map(decode).unwrap_or_default();
+    let number: u64 = get("number")
+        .trim()
+        .parse()
+        .map_err(|_| format!("{:?} is not an issue's number", get("number")))?;
+    let at = copy.join("issues").join(format!("{number}-{group}.vissue"));
+    let f = vleo_files::sqlite::read(&at)
+        .map_err(|_| format!("your copy holds no issue {number} addressed to {group}"))?;
+    if f.meta.get("group_id").map(String::as_str) != Some(group) {
+        return Err(format!("issue {number} is not addressed to {group}"));
+    }
+    let person = get("person");
+    if person.trim().is_empty() {
+        return Err("assign-issue needs person".into());
+    }
+    Ok(Edit::AssignIssue {
+        number,
+        person: person.trim().to_string(),
+    })
+}
+
 /// The base update `params` asks of `group` (W12): the released design
 /// `design`, by its version, and the one the group is based on now, each
 /// read from the copy's `design/` or its `archive/`.
@@ -518,6 +542,7 @@ fn edited(name: &str, params: &str, ctx: &Ctx) -> Result<String, String> {
     let group = group_id(&g)?;
     let e = match name {
         "update-base" => base_edit(&the_copy(ctx)?, group, params)?,
+        "assign-issue" => issue_edit(&the_copy(ctx)?, group, params)?,
         _ => edit_of(name, params)?,
     };
     let opened = param(params, "opened").map(decode).unwrap_or_default();
