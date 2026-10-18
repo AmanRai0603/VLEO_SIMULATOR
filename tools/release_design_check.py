@@ -129,6 +129,11 @@ def check():
                  p.locator('.sy-r-lines tbody tr').count() % 5 == 0
                  and p.locator('.sy-r-lines tbody tr:has-text("both ends of every declared range")').count()
                  == p.locator('.sy-r-lines tbody tr').count() // 5, p.locator('.sy-r-lines tbody tr').count())
+            p.wait_for_selector('.sy-q-said, .sy-q-refused', timeout=60000)
+            asked = p.inner_text('.sy-requests')
+            step('the requests of the code are listed from the copy, and none is asked yet',
+                 p.locator('.sy-q-said').count() == 1
+                 and '0 requests of the code, 0 open' in asked, asked[:300])
             marks = p.inner_text('.sy-r-marks')
             step('the closure solar 1.2 breaks is a red mark, to be understood or raised',
                  p.locator('.sy-r-understood[data-mark^="closure:"]').count() >= 1

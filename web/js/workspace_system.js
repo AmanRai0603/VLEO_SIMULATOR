@@ -38,6 +38,13 @@
     its version and what changed. The program refuses it by name when a line
     fails or a mark is neither; the page never decides it. Released, it is in
     your copy, and reaches everyone once it is put back.
+
+  * REQUESTS OF THE CODE (docs/briefs/F6.md, F6-c item 9; W14), on the
+    systems' branch: every request for something the code cannot do yet,
+    asked in the file of the node that waits on it, as the program reads
+    them: who asked, when and what, whether it counts and why not, and
+    whether an application release's notes answer it. Nobody answers one
+    here: the developer answers it by an application release.
 */
 'use strict';
 
@@ -46,6 +53,8 @@ import { $, esc, answerFirst, plural } from './dom.js';
 const W = { group: '', tree: null, sel: '', notice: null, stale: false, host: null, post: null, groups: [], why: '', seq: 0 };
 /** The release panel: the checks as last read, what was typed, and the program's answer. */
 const R = { seq: 0, checks: null, version: '', changed: '', understood: new Set(), notice: null, sending: false };
+/** The requests of the code, read again with each drawing of the systems' branch. */
+const Q = { seq: 0 };
 
 async function get(path) {
   try { return await (await fetch(path)).json(); } catch (e) { return { ok: false, message: 'the program did not answer: ' + e }; }
@@ -125,12 +134,39 @@ async function draw(keep) {
       ], 'reference') + frame(t) +
     '<div class="sy-grid"><nav class="sy-tree" aria-label="the branch">' + tree(t) + '</nav>' +
     '<section class="sy-block">' + block(t) + '</section></div>' +
-    (group === 'systems' ? '<section class="sy-release" id="sy-release"><p class="sh-loading">reading the integration checks…</p></section>' : '');
-  if (group === 'systems') await drawRelease();
+    (group === 'systems' ? '<section class="sy-release" id="sy-release"><p class="sh-loading">reading the integration checks…</p></section>' +
+      '<section class="sy-requests" id="sy-requests"><p class="sh-loading">reading the requests of the code…</p></section>' : '');
+  if (group === 'systems') await Promise.all([drawRelease(), drawRequests()]);
 }
 
 /** The release panel, read again from the program: the integration checks of
  *  today's design, its red marks, and Release design. */
+/** The requests of the code, as the program lists them (GET /v1/requests):
+ *  each counting or not, and answered or open. The page decides nothing. */
+async function drawRequests() {
+  const seq = ++Q.seq;
+  const q = await get('/v1/requests');
+  const at = W.host && $('#sy-requests', W.host);
+  if (seq !== Q.seq || W.group !== 'systems' || !at) return;
+  const head = '<h3 class="seg-h">requests of the code</h3>';
+  if (!q || q.ok === false) {
+    at.innerHTML = head + '<p class="sh-refused sy-q-refused">' + esc((q && q.message) || 'the requests cannot be read') + '</p>';
+    return;
+  }
+  at.innerHTML = head + '<p class="sy-q-said">' + esc(q.message) + '</p>' +
+    (q.requests.length
+      ? '<table class="nw-table sy-q-table"><thead><tr><th>group</th><th>node</th><th>request</th><th>asked by</th>' +
+        '<th>at</th><th>says</th><th>counts</th><th>answered</th></tr></thead><tbody>' +
+        q.requests.map(r => '<tr class="' + (r.counts ? 'sy-q-counts' : 'sy-q-not') + '"><td>' + esc(r.group) + '</td><td>' +
+          esc(r.node) + '</td><td>' + esc(r.uid) + '</td><td>' + esc(r.asked_by) + '</td><td>' + esc(r.at) + '</td><td>' +
+          esc(r.says) + '</td><td>' + (r.counts ? 'counts' : 'does not count: ' + esc(r.why_not)) + '</td><td>' +
+          (r.answered ? 'named in the application\'s notes' : 'open') + '</td></tr>').join('') + '</tbody></table>'
+      : '') +
+    ((q.not_read || []).length
+      ? '<ul class="sy-q-unread">' + q.not_read.map(u => '<li class="sh-refused">not read: ' + esc(u) + '</li>').join('') + '</ul>'
+      : '');
+}
+
 async function drawRelease() {
   const seq = ++R.seq;
   const c = await get('/v1/design/integration');
