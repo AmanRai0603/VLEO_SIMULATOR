@@ -14,6 +14,10 @@
 //!   which the schema keeps optional, so it is not refused here (F6's
 //!   question 35).
 //!
+//! Beside them, not refusing, the red marks ([`Mark`]): each closure that
+//! does not close and each issue open, raised as an issue or marked
+//! understood before the design is released (question 34).
+//!
 //! **Release design** ([`release`]) is refused whole when any line fails. A
 //! released design holds each group's release taken whole, by its bytes and
 //! their SHA-256, beside the programme's and the systems' files the same way,
@@ -270,25 +274,54 @@ pub struct Held<'a> {
     pub systems: Whole<'a>,
 }
 
-/// The design `version`, released by `by` with `key` at `at`, from today's
-/// design: refused whole unless `checks` holds, `by` is the system engineer
-/// or their deputy with a key the programme's file counts then, and
-/// `version` comes after `previous`, the design released now. `changed` is
-/// what changed, in the system engineer's words; `app` the application
+/// A red mark of today's design, beside the checks and not refusing one: a
+/// closure that does not close, or an issue open (W8's step 2; F6's
+/// question 34). Each is marked understood by the system engineer, or is
+/// raised as an issue, and the released design records which.
+#[derive(Clone, Debug, PartialEq)]
+pub struct Mark {
+    /// What names it on the page: `closure:<node>`, `issue:<number>`.
+    pub id: String,
+    pub said: String,
+    /// The open issue it is raised as, when it is.
+    pub raised: Option<i64>,
+}
+
+/// What the system engineer asks for when they release the design:
+/// `version`, after `previous`, the design released now; `changed`, in their
+/// words; and `understood`, every red mark of `marks` they mark understood.
+pub struct Asked<'a> {
+    pub version: &'a str,
+    pub previous: Option<&'a str>,
+    pub changed: &'a str,
+    pub marks: &'a [Mark],
+    pub understood: &'a [String],
+}
+
+/// The design `asked.version`, released by `by` with `key` at `at`, from
+/// today's design: refused whole unless `checks` holds, every red mark is
+/// raised as an issue or marked understood, `by` is the system engineer or
+/// their deputy with a key the programme's file counts then, and the
+/// version comes after the design released now. `app` is the application
 /// releasing it, the oldest that can run it.
 #[allow(clippy::too_many_arguments)]
 pub fn release(
     checks: &Integration,
     held: &Held,
-    version: &str,
-    previous: Option<&str>,
-    changed: &str,
+    asked: &Asked,
     by: &str,
     key: &SigningKey,
     at: &str,
     app: &str,
     programme: &Registry,
 ) -> Result<File, Error> {
+    let Asked {
+        version,
+        previous,
+        changed,
+        marks,
+        understood,
+    } = *asked;
     if !checks.holds() {
         let failing = checks.failing();
         return Err(refused(if failing.is_empty() {
@@ -299,6 +332,25 @@ pub fn release(
                 failing.join("; ")
             )
         }));
+    }
+    if let Some(u) = understood
+        .iter()
+        .find(|u| !marks.iter().any(|m| &m.id == *u))
+    {
+        return Err(refused(format!(
+            "{u} is marked understood, and today's design has no such red mark: look at the red marks again"
+        )));
+    }
+    let open: Vec<&str> = marks
+        .iter()
+        .filter(|m| m.raised.is_none() && !understood.contains(&m.id))
+        .map(|m| m.said.as_str())
+        .collect();
+    if !open.is_empty() {
+        return Err(refused(format!(
+            "every red mark is understood before the design is released (W8), and these are not: {}. Mark each understood, or raise it as an issue",
+            open.join("; ")
+        )));
     }
     if crate::checks::is_assistant(by) {
         return Err(refused(format!(
@@ -351,21 +403,44 @@ pub fn release(
         sha256: hex(&sha256(w.bytes)),
         bytes: w.bytes.to_vec(),
     };
-    let mut csv = String::from("group,version,fingerprint,path,sha256\n");
+    let mut rows = Vec::new();
     f.media.push(whole(&held.programme));
     f.media.push(whole(&held.systems));
     for (group, version, fingerprint, w) in &held.releases {
-        csv.push_str(&format!(
-            "{group},{version},{fingerprint},{},{}\n",
-            w.path,
-            hex(&sha256(w.bytes))
-        ));
+        rows.push(vec![
+            group.to_string(),
+            version.to_string(),
+            fingerprint.to_string(),
+            w.path.to_string(),
+            hex(&sha256(w.bytes)),
+        ]);
         f.media.push(whole(w));
     }
     f.tables.push(Tbl {
         scope: FILE.into(),
         path: "released.csv".into(),
-        csv,
+        csv: crate::csv::write(
+            &["group", "version", "fingerprint", "path", "sha256"],
+            &rows,
+        ),
+    });
+    let red: Vec<Vec<String>> = marks
+        .iter()
+        .map(|m| {
+            vec![
+                m.id.clone(),
+                m.said.clone(),
+                match m.raised {
+                    Some(n) => format!("raised as issue {n}"),
+                    None => format!("understood by {by}"),
+                },
+            ]
+        })
+        .collect();
+    f.tables.push(Tbl {
+        scope: FILE.into(),
+        path: "red_marks.csv".into(),
+        csv: crate::csv::write(&["mark", "said", "how"], &red),
     });
     f.texts.push(Text {
         scope: FILE.into(),
@@ -391,4 +466,189 @@ pub fn release(
         ))
     })?;
     Ok(f)
+}
+
+/// The released design as CSV anyone can open without the application
+/// (docs/OPERATING_1_0.md, section 15, `readable/`): `Groups`, `Nodes`,
+/// `Ports`, `Wires`, `Closures` and `Status`, each by its file name, from
+/// `design`, the released design, and `releases`, each group's release it
+/// holds, by its group, read as the one schema. Every value is a release's
+/// own, as it holds it; what the engine makes of them is not here (the
+/// application writes `Health` beside these from the engine's map).
+pub fn readable(design: &File, releases: &[(&str, &File)]) -> Vec<(&'static str, String)> {
+    let get = |f: &File, k: &str| f.meta.get(k).cloned().unwrap_or_default();
+    let version = get(design, "version");
+    let groups: Vec<Vec<String>> = releases
+        .iter()
+        .map(|(g, f)| {
+            vec![
+                g.to_string(),
+                get(f, "version"),
+                get(f, "sealed_by"),
+                get(f, "sealed_at"),
+                get(f, "fingerprint"),
+                version.clone(),
+            ]
+        })
+        .collect();
+    let (mut nodes, mut ports, mut wires, mut closures) = (vec![], vec![], vec![], vec![]);
+    for (g, f) in releases {
+        let id = |uid: &str| {
+            f.blocks
+                .iter()
+                .find(|b| b.uid == uid)
+                .map_or(uid.to_string(), |b| b.id.clone())
+        };
+        for b in f.blocks.iter().filter(|b| b.archived == 0) {
+            nodes.push(vec![
+                g.to_string(),
+                b.id.clone(),
+                id(&b.parent_uid),
+                b.behaviour.clone(),
+                b.question.clone(),
+                b.revision.to_string(),
+            ]);
+        }
+        for p in &f.ports {
+            ports.push(vec![
+                g.to_string(),
+                id(&p.block_uid),
+                p.direction.clone(),
+                p.name.clone(),
+                p.unit.clone(),
+                p.value.clone(),
+                p.lower.clone(),
+                p.upper.clone(),
+                p.state.clone(),
+            ]);
+        }
+        for w in &f.wires {
+            wires.push(vec![
+                g.to_string(),
+                id(&w.to_block),
+                w.to_port.clone(),
+                w.from_ref.clone(),
+            ]);
+        }
+        for c in &f.closures {
+            closures.push(vec![
+                g.to_string(),
+                id(&c.block_uid),
+                c.required_ref.clone(),
+                c.achieved_ref.clone(),
+                c.sense.clone(),
+            ]);
+        }
+    }
+    let status: Vec<Vec<String>> = design
+        .texts
+        .iter()
+        .filter(|t| t.scope == FILE && t.kind == "integration")
+        .flat_map(|t| t.body.lines())
+        .filter_map(|l| {
+            let mut it = l.splitn(3, ": ");
+            Some(vec![
+                it.next()?.to_string(),
+                it.next()?.to_string(),
+                it.next()?.to_string(),
+                version.clone(),
+            ])
+        })
+        .collect();
+    use crate::csv::write;
+    vec![
+        (
+            "Groups.csv",
+            write(
+                &[
+                    "group",
+                    "release",
+                    "sealed_by",
+                    "sealed_at",
+                    "fingerprint",
+                    "design",
+                ],
+                &groups,
+            ),
+        ),
+        (
+            "Nodes.csv",
+            write(
+                &[
+                    "group",
+                    "node",
+                    "parent",
+                    "behaviour",
+                    "question",
+                    "revision",
+                ],
+                &nodes,
+            ),
+        ),
+        (
+            "Ports.csv",
+            write(
+                &[
+                    "group",
+                    "node",
+                    "direction",
+                    "port",
+                    "unit",
+                    "value",
+                    "lower",
+                    "upper",
+                    "state",
+                ],
+                &ports,
+            ),
+        ),
+        (
+            "Wires.csv",
+            write(&["group", "node", "port", "from"], &wires),
+        ),
+        (
+            "Closures.csv",
+            write(
+                &["group", "node", "required", "achieved", "sense"],
+                &closures,
+            ),
+        ),
+        (
+            "Status.csv",
+            write(&["group", "check", "says", "design"], &status),
+        ),
+    ]
+}
+
+/// The latest released design in `dir`, the drive's or the copy's `design/`,
+/// by the version each `design-<version>.vleo` is named for; none when it
+/// holds none. A file named `design-` that is not a version is refused by
+/// name, never passed over.
+#[cfg(not(target_arch = "wasm32"))]
+pub fn latest_in(dir: &std::path::Path) -> Result<Option<String>, Error> {
+    let entries = match std::fs::read_dir(dir) {
+        Ok(d) => d,
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => return Ok(None),
+        Err(e) => return Err(Error::new(ErrorKind::Io, format!("{}: {e}", dir.display()))),
+    };
+    let mut latest: Option<(DesignVersion, String)> = None;
+    for e in entries {
+        let e = e.map_err(|e| Error::new(ErrorKind::Io, format!("{}: {e}", dir.display())))?;
+        let name = e.file_name().to_string_lossy().into_owned();
+        let Some(v) = name
+            .strip_prefix("design-")
+            .and_then(|n| n.strip_suffix(".vleo"))
+        else {
+            continue;
+        };
+        let parsed = DesignVersion::parse(v).ok_or_else(|| {
+            refused(format!(
+                "design/{name} is not named for a design's version: year.month.sequence"
+            ))
+        })?;
+        if latest.as_ref().is_none_or(|(l, _)| parsed > *l) {
+            latest = Some((parsed, v.to_string()));
+        }
+    }
+    Ok(latest.map(|(_, v)| v))
 }

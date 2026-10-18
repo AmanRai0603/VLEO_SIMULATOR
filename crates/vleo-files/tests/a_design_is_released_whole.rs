@@ -23,7 +23,7 @@
 use std::path::Path;
 
 use vleo_files::chain::{self, Registry, FILE};
-use vleo_files::design::{self, Check, Held, Integration, Part, Taken, Whole};
+use vleo_files::design::{self, Asked, Check, Held, Integration, Mark, Part, Taken, Whole};
 use vleo_files::keys::SigningKey;
 use vleo_files::meta::Kind;
 use vleo_files::model::*;
@@ -298,6 +298,22 @@ fn release_it(
     by: &str,
     k: u8,
 ) -> Result<File, String> {
+    release_marked(w, i, r, version, previous, changed, &[], &[], by, k)
+}
+
+#[allow(clippy::too_many_arguments)]
+fn release_marked(
+    w: &World,
+    i: &Integration,
+    r: &File,
+    version: &str,
+    previous: Option<&str>,
+    changed: &str,
+    marks: &[Mark],
+    understood: &[String],
+    by: &str,
+    k: u8,
+) -> Result<File, String> {
     let (rb, pb, sb) = (bytes(r), bytes(&w.pr.file), bytes(&w.sy.file));
     let held = Held {
         releases: vec![(
@@ -318,19 +334,15 @@ fn release_it(
             bytes: &sb,
         },
     };
-    design::release(
-        i,
-        &held,
+    let asked = Asked {
         version,
         previous,
         changed,
-        by,
-        &key(k),
-        AT,
-        APP,
-        &w.pr,
-    )
-    .map_err(|e| e.message().to_string())
+        marks,
+        understood,
+    };
+    design::release(i, &held, &asked, by, &key(k), AT, APP, &w.pr)
+        .map_err(|e| e.message().to_string())
 }
 
 #[test]
@@ -597,5 +609,144 @@ fn a_release_of_the_design_is_refused_whole_and_by_name() {
     assert!(
         e.contains("is not one the programme's file registers"),
         "{e}"
+    );
+}
+
+fn mark(id: &str, said: &str, raised: Option<i64>) -> Mark {
+    Mark {
+        id: s(id),
+        said: s(said),
+        raised,
+    }
+}
+
+#[test]
+fn every_red_mark_is_understood_or_raised_before_the_design_is_released() {
+    let w = world();
+    let r = solar_12(&w);
+    let i = checks_of(Ok(&r), "");
+    let marks = [
+        mark(
+            "closure:k_drag",
+            "k_drag fails: the drag is above its bound",
+            None,
+        ),
+        mark("closure:k_power", "k_power is blocked", Some(4)),
+    ];
+    // Neither marked: the one not raised refuses it, by what it says.
+    let e = release_marked(
+        &w,
+        &i,
+        &r,
+        RELEASED,
+        None,
+        "Solar.",
+        &marks,
+        &[],
+        "Sam Engel",
+        12,
+    )
+    .unwrap_err();
+    assert!(e.contains("every red mark is understood"), "{e}");
+    assert!(
+        e.contains("k_drag fails: the drag is above its bound"),
+        "{e}"
+    );
+    assert!(!e.contains("k_power"), "{e}");
+    // A mark today's design does not have is refused, never ignored.
+    let e = release_marked(
+        &w,
+        &i,
+        &r,
+        RELEASED,
+        None,
+        "Solar.",
+        &marks,
+        &[s("closure:k_drag"), s("closure:gone")],
+        "Sam Engel",
+        12,
+    )
+    .unwrap_err();
+    assert!(
+        e.contains("closure:gone is marked understood, and today's design has no such red mark"),
+        "{e}"
+    );
+    // Understood: released, and the record says which was which.
+    let d = release_marked(
+        &w,
+        &i,
+        &r,
+        RELEASED,
+        None,
+        "Solar.",
+        &marks,
+        &[s("closure:k_drag")],
+        "Sam Engel",
+        12,
+    )
+    .expect("released with every red mark understood or raised");
+    let t = d.tables.iter().find(|t| t.path == "red_marks.csv").unwrap();
+    assert_eq!(
+        t.csv,
+        "mark,said,how\n\
+         closure:k_drag,k_drag fails: the drag is above its bound,understood by Sam Engel\n\
+         closure:k_power,k_power is blocked,raised as issue 4\n"
+    );
+}
+
+#[test]
+fn the_released_design_is_written_readable_as_csv() {
+    let w = world();
+    let r = solar_12(&w);
+    let i = checks_of(Ok(&r), "");
+    let d = release_it(&w, &i, &r, RELEASED, None, "Solar.", "Sam Engel", 12).unwrap();
+    let files = design::readable(&d, &[("l3_solar", &r)]);
+    let names: Vec<&str> = files.iter().map(|(n, _)| *n).collect();
+    assert_eq!(
+        names,
+        [
+            "Groups.csv",
+            "Nodes.csv",
+            "Ports.csv",
+            "Wires.csv",
+            "Closures.csv",
+            "Status.csv"
+        ]
+    );
+    let of = |n: &str| &files.iter().find(|(x, _)| *x == n).unwrap().1;
+    assert!(
+        of("Groups.csv").contains("\nl3_solar,1.2,Ola Sun,"),
+        "{}",
+        of("Groups.csv")
+    );
+    assert!(
+        of("Groups.csv").trim_end().ends_with(",2026.10.1"),
+        "{}",
+        of("Groups.csv")
+    );
+    assert!(
+        of("Nodes.csv").contains(&format!("\nl3_solar,{BAND},l3_solar,")),
+        "{}",
+        of("Nodes.csv")
+    );
+    let band_ports = r.ports.iter().filter(|p| p.block_uid == BAND).count();
+    assert_eq!(
+        of("Ports.csv")
+            .lines()
+            .filter(|l| l.starts_with(&format!("l3_solar,{BAND},")))
+            .count(),
+        band_ports
+    );
+    // The status is the checks the design was released on, a line each.
+    assert_eq!(
+        of("Status.csv").lines().count(),
+        1 + 5,
+        "{}",
+        of("Status.csv")
+    );
+    assert!(
+        of("Status.csv").contains("l3_solar,the base still fitting,"),
+        "{}",
+        of("Status.csv")
     );
 }
