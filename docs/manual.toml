@@ -2243,6 +2243,11 @@ what = "A group's branch as your copy holds it, said so: group, the group's id. 
 
 [[route]]
 method = "POST"
+path = "/v1/answer"
+what = "A group's answer to another group's release that moves its values, written in your copy as whoever's key is open and signed by them: group and version, the release answered; answering, the group that answers; said, fine or object; because, why, for an objection, which says something. Refused unless the key's person owns the answering group, as the file that mounts it names its owner, or is their deputy, with a key that counts now; a group does not answer its own release. Written at integration/<group>-<version>/<group>-<version>.<answering>.answer, never over an answer there, and put back to the drive as a new file by the person who wrote it. Carries session."
+
+[[route]]
+method = "POST"
 path = "/v1/branch/<id>"
 what = "One edit to a branch's breakdown — add, fill, break-down, move, rename, split, fold-back or remove — written to its group file in your copy by its owner, or their deputy, with a key that counts now: group, opened, the digest the edit was made from, why, and the edit's own fields (a break-down's answers one a line, `<output>=<child>.<port>`, for every output of the node). Signed afresh by whoever made it, and refused unless the file still opens through the chain; a node is broken down only into children that reproduce its own cases. A file changed since it was opened is not written over. Carries session."
 

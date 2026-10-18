@@ -1305,6 +1305,47 @@ fn checked_release(
     Ok(out)
 }
 
+/// A group's answer to another group's release (W7, `crate::answer`),
+/// checked through the chain: signed as it is by the answering group's
+/// owner, or their deputy, as `mounted_by`, the file that mounts that group,
+/// names its owner, with a key the programme's file registers.
+pub fn check_answer(
+    answer: &File,
+    mounted_by: &Registry,
+    programme: &Registry,
+) -> Result<(), Error> {
+    if answer.kind()? != Kind::PreviewAnswer {
+        return Err(refused(
+            ErrorKind::WrongKind,
+            format!("this is a {}, not an answer", answer.kind()?),
+        ));
+    }
+    let g = answer
+        .meta
+        .get("answering_group")
+        .cloned()
+        .unwrap_or_default();
+    let owner = owner_of(mounted_by, &g).ok_or_else(|| {
+        refused(
+            ErrorKind::Signature,
+            format!(
+                "{} mounts no group {g:?}, so nobody answers for it",
+                mounted_by.from
+            ),
+        )
+    })?;
+    let (ok, why) = counted(answer, FILE, programme, |name| {
+        programme.acts_for(name, owner)
+    });
+    if ok.is_empty() {
+        return Err(none_counts(
+            &format!("{g}'s answer, by its owner {owner},"),
+            &why,
+        ));
+    }
+    Ok(())
+}
+
 /// A released design, checked through the chain: signed as it is by the
 /// system engineer, or their deputy, as the programme's file registers them.
 pub fn check_design(design: &File, programme: &Registry) -> Result<(), Error> {

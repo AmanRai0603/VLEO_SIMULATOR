@@ -35,6 +35,13 @@
 //! group, every node in it through the group file it carries. A release is
 //! never written over, so one already on the drive at that path stays.
 //!
+//! Or it is a group's answer to another group's release (W7), written in
+//! the copy: a new file in `integration/<group>-<version>/`, named for what
+//! it says it answers, written and signed by the person putting it back,
+//! as the answering group's owner or their deputy, with a key the drive
+//! counts for them now (`chain::check_answer`). An answer is never written
+//! over.
+//!
 //! A group's file does not go back yet: what may change in it at its valve
 //! is not yet checked against the drive's file, so a change of its people
 //! stays in the copy.
@@ -673,11 +680,72 @@ fn verdict(
         ["groups", g, "releases", name] if name.ends_with(".vleo") => {
             release_verdict(g, name, bytes, theirs, me, at, chain, drive)
         }
+        ["integration", dir, name] if name.ends_with(".answer") => {
+            answer_verdict(dir, name, bytes, theirs, me, at, chain)
+        }
         ["groups", g, name] if *name == format!("{g}.vgroup") => Err(format!(
             "{g}'s group file does not go back yet: what may change in a group's file is not yet checked against the drive's, so a change of its people stays in your copy"
         )),
-        _ => Err("it is not a file the application puts back yet: a node's file, or a group's release, goes back".into()),
+        _ => Err("it is not a file the application puts back yet: a node's file, a group's release, or an answer to one, goes back".into()),
     }
+}
+
+/// Whether the answer `name` in `integration/<dir>/`, `bytes` in the copy,
+/// goes back as a new file written and signed by `me`.
+fn answer_verdict(
+    dir: &str,
+    name: &str,
+    bytes: &[u8],
+    theirs: Option<&[u8]>,
+    me: &str,
+    at: &str,
+    chain: &Chain,
+) -> Result<String, String> {
+    if theirs.is_some() {
+        return Err(
+            "the drive holds an answer at this path already: an answer is never written over"
+                .into(),
+        );
+    }
+    let f = save::parsed(bytes).map_err(|e| format!("it does not read: {}", e.message()))?;
+    match f.kind() {
+        Ok(Kind::PreviewAnswer) => {}
+        Ok(other) => {
+            return Err(format!(
+                "it is a {other}, and integration/ holds answers here"
+            ))
+        }
+        Err(e) => return Err(e.message().to_string()),
+    }
+    let said = |k: &str| f.meta.get(k).map_or("", String::as_str);
+    let (group, version, answering) = (said("group_id"), said("version"), said("answering_group"));
+    if format!("integration/{dir}/{name}") != crate::answer::path_of(group, version, answering) {
+        return Err(format!(
+            "it says it is {answering}'s answer to {group} {version}, so it is {}",
+            crate::answer::path_of(group, version, answering)
+        ));
+    }
+    crate::answer::said(&f).map_err(|e| e.message().to_string())?;
+    if said("writer") != me {
+        return Err(format!(
+            "it is {:?}'s answer: an answer goes back only by the person who wrote it",
+            said("writer")
+        ));
+    }
+    let mut parents = vec![&chain.programme];
+    parents.extend(chain.systems.iter());
+    let (parent, _) =
+        chain::mounted_by(answering, &parents).map_err(|e| e.message().to_string())?;
+    let now = only_counting_now(&f, chain::FILE, me, at, &chain.programme);
+    chain::check_answer(&now, parent, &chain.programme).map_err(|e| {
+        format!(
+            "it does not check through the chain as the drive holds it now, signed by {me} with a key that counts at {at}: {}",
+            e.message()
+        )
+    })?;
+    Ok(format!(
+        "goes back: {answering}'s answer to {group} {version}, by {me}"
+    ))
 }
 
 /// Whether the release `name` in `group`'s `releases/`, `bytes` in the copy,
@@ -972,9 +1040,14 @@ fn write_on_drive(drive: &Path, path: &str, bytes: &[u8], n: usize) -> Result<()
         .parent()
         .ok_or_else(|| refused(format!("{path} has no folder on the drive")))?;
     // A group's first release makes its `releases/`, in the group's folder
-    // the drive holds; no other folder is made.
+    // the drive holds, and the first answer to a release its folder in
+    // `integration/`; no other folder is made.
     if dir.file_name().is_some_and(|n| n == "releases") && !dir.exists() {
         std::fs::create_dir(dir).map_err(|e| io(dir, e))?;
+        no_link_on_the_way(drive, path)?;
+    }
+    if path.starts_with("integration/") && path.split('/').count() == 3 && !dir.exists() {
+        std::fs::create_dir_all(dir).map_err(|e| io(dir, e))?;
         no_link_on_the_way(drive, path)?;
     }
     let name = to

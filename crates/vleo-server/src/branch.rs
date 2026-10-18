@@ -504,3 +504,73 @@ fn edited(name: &str, params: &str, ctx: &Ctx) -> Result<String, String> {
     j.raw("}");
     Ok(j.0)
 }
+
+/// `POST /v1/answer` — a group's answer to another group's release that
+/// moves its values (W7, `vleo_files::answer`), written in your copy as
+/// whoever's key is open: group and version, the release answered;
+/// answering, the group that answers; said, `fine` or `object`; because,
+/// why, for an objection. Refused unless the key's person owns the
+/// answering group, or is their deputy. An answer is never written over.
+/// It goes back to the drive by put-back. Carries the launch's word.
+pub(super) fn answer_route(params: &str, ctx: &Ctx) -> String {
+    match answered(params, ctx) {
+        Ok(j) => j,
+        Err(why) => me::refusal(&why),
+    }
+}
+
+fn answered(params: &str, ctx: &Ctx) -> Result<String, String> {
+    use vleo_files::answer::{self, Said};
+    me::carries_session(params)?;
+    let get = |k: &str| param(params, k).map(decode).unwrap_or_default();
+    let group = get("group");
+    let version = get("version");
+    let answering = get("answering");
+    let said = match get("said").trim() {
+        "fine" => Said::Fine,
+        "object" => Said::Object(get("because")),
+        other => {
+            return Err(format!(
+                "an answer says fine or object, and {other:?} is neither"
+            ))
+        }
+    };
+    let copy = the_copy(ctx)?;
+    let c = chain(&copy)?;
+    let parents: Vec<&Registry> = std::iter::once(&c.programme)
+        .chain(c.systems.iter())
+        .collect();
+    let (mb, _) =
+        chain::mounted_by(group_id(&answering)?, &parents).map_err(|e| e.message().to_string())?;
+    let at = results::now_utc();
+    let (rel, who) = me::with_key(|key, me| {
+        answer::answer_in_place(
+            &copy,
+            &group,
+            &version,
+            &answering,
+            &said,
+            &me.name,
+            key,
+            &at,
+            APP,
+            mb,
+            &c.programme,
+        )
+        .map(|rel| (rel, me.name.clone()))
+        .map_err(|e| e.message().to_string())
+    })
+    .ok_or("no key is open: open yours, and the answer is written and signed as you")??;
+    let mut j = Json::new();
+    j.raw("{");
+    j.bool_field("ok", true);
+    j.str_field("path", &rel);
+    j.str_field(
+        "message",
+        &format!(
+            "{who} answered {group} {version} for {answering}, in your copy: {rel}. It goes to the drive when you put your work back."
+        ),
+    );
+    j.raw("}");
+    Ok(j.0)
+}

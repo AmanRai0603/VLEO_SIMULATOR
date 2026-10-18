@@ -709,6 +709,36 @@ fn a_branch_is_framed_in_the_copy() {
 
     // The systems' branch is the system engineer's: framed by Sam, read by Ola.
     assert!(open_key(port, "test-sam.vkey").contains("\"open\":true"));
+    // Sam answers solar's 1.0 for the systems' branch (W7), in the copy.
+    let a = post(
+        port,
+        "/v1/answer",
+        &[
+            ("group", "l3_solar"),
+            ("version", "1.0"),
+            ("answering", "systems"),
+            ("said", "object"),
+            (
+                "because",
+                "the space environment moves past what systems holds",
+            ),
+        ],
+    );
+    assert!(a.contains("\"ok\":true"), "{a}");
+    assert!(copy
+        .join("integration/l3_solar-1.0/l3_solar-1.0.systems.answer")
+        .is_file());
+    let a = post(
+        port,
+        "/v1/answer",
+        &[
+            ("group", "l3_solar"),
+            ("version", "1.0"),
+            ("answering", "systems"),
+            ("said", "fine"),
+        ],
+    );
+    assert!(a.contains("never written over"), "{a}");
     let sys = || ask(port, "GET", "/v1/branch?group=systems", &[], false);
     let r = sys();
     assert!(

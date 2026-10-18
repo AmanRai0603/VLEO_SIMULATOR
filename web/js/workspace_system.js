@@ -82,6 +82,7 @@ async function draw(keep) {
         esc(plural(t.blocks.filter(b => !b.archived).length, 'block')) + ', ' + esc(plural(t.open, 'part')) + ' still open.',
         esc(t.signed.says) + '.',
       ], 'reference') +
+    (t.yours ? answerForm() : '') +
     '<div class="sy-grid"><nav class="sy-tree" aria-label="the branch">' + tree(t) + '</nav>' +
     '<section class="sy-block">' + block(t) + '</section></div>';
 }
@@ -105,6 +106,16 @@ function stale() {
     ? '<div class="blocked sy-stale"><b>what is shown is the branch as you opened it</b><div>Its group file changed in your copy since. ' +
       '<button class="ctl" id="sy-reopen">Open it again</button></div></div>'
     : '';
+}
+
+/** A release that moves this branch's values, answered by its owner (W7):
+ *  fine, or object, because…, signed, written in the copy. */
+function answerForm() {
+  return '<details class="sy-answer"><summary>answer a release that moves ' + esc(W.group) + '\'s values</summary>' +
+    '<p><input id="sy-an-group" size="14" placeholder="its group"> <input id="sy-an-version" size="6" placeholder="version"> ' +
+    '<select id="sy-an-said" class="ctl"><option value="fine">fine</option><option value="object">object, because…</option></select></p>' +
+    '<p><textarea id="sy-an-because" rows="2" class="nw-wide" placeholder="why, for an objection"></textarea></p>' +
+    '<p><button class="ctl" id="sy-answer">Answer</button></p></details>';
 }
 
 /** The branch as a tree: each block under its parent; a block whose parent the
@@ -234,6 +245,14 @@ async function click(e) {
   switch (t.id) {
     case 'sy-go': { const id = v('sy-id').trim(); if (id) { openAt(id); return draw(); } return; }
     case 'sy-reopen': W.notice = null; return draw();
+    case 'sy-answer': {
+      const r = await W.post('/v1/answer', {
+        group: v('sy-an-group').trim(), version: v('sy-an-version').trim(), answering: W.group,
+        said: v('sy-an-said'), because: v('sy-an-because'),
+      });
+      W.notice = { ok: !!(r && r.ok), text: (r && r.message) || 'nothing was answered' };
+      return draw(true);
+    }
     case 'sy-add': return send('add', { parent: b, id: v('sy-add-id').trim(), question: v('sy-add-q') });
     case 'sy-fill-q': return send('fill', { block: b, question: v('sy-q') });
     case 'sy-fill-p': return send('fill', {

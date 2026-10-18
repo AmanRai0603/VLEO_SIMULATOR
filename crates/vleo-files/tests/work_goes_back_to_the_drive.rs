@@ -1903,3 +1903,76 @@ fn a_release_changed_after_its_seal_does_not_go_back() {
     );
     let _ = std::fs::remove_dir_all(drive.parent().unwrap());
 }
+
+// ── A group's answer to a release goes back as a new file (W7) ──
+
+/// Sam answers solar's 1.0 for the systems' branch, in the copy.
+fn sam_answers(copy: &Path, said: &vleo_files::answer::Said) -> String {
+    let o = opened(copy);
+    vleo_files::answer::answer_in_place(
+        copy,
+        "l3_solar",
+        "1.0",
+        "systems",
+        said,
+        "Test Sam",
+        &key(72),
+        AT,
+        APP,
+        &o.programme,
+        &o.programme,
+    )
+    .unwrap()
+}
+
+#[test]
+fn an_answer_goes_back_as_a_new_file_by_the_person_who_wrote_it() {
+    let (drive, copy) = world("answer");
+    let rel = sam_answers(
+        &copy,
+        &vleo_files::answer::Said::Object(s("the space environment moves past what systems holds")),
+    );
+    // Not Ola's to put back.
+    let r = pb(&copy, &drive, "Test Ola", None).unwrap();
+    let l = line(&r, &rel);
+    assert!(!l.back && l.why.contains("\"Test Sam\"'s answer"), "{l:?}");
+    // Sam's: it goes back, a new folder and file on the drive.
+    let r = pb(&copy, &drive, "Test Sam", None).unwrap();
+    assert_eq!(r.back(), [rel.clone()], "{:?}", r.lines);
+    assert!(line(&r, &rel)
+        .why
+        .contains("systems's answer to l3_solar 1.0"));
+    let r = pb(&copy, &drive, "Test Sam", Some(vec![named(&copy, &rel)])).unwrap();
+    assert!(r.written);
+    assert_eq!(
+        std::fs::read(drive.join(&rel)).unwrap(),
+        std::fs::read(copy.join(&rel)).unwrap()
+    );
+    let o = opened(&drive);
+    let f = sqlite::read(&drive.join(&rel)).unwrap();
+    chain::check_answer(&f, &o.programme, &o.programme).unwrap();
+    let _ = std::fs::remove_dir_all(drive.parent().unwrap());
+}
+
+#[test]
+fn an_answer_changed_after_it_was_signed_does_not_go_back() {
+    let (drive, copy) = world("answer-changed");
+    let rel = sam_answers(&copy, &vleo_files::answer::Said::Fine);
+    let mut f = sqlite::read(&copy.join(&rel)).unwrap();
+    for t in f.texts.iter_mut().filter(|t| t.kind == "answer") {
+        t.body = s("object");
+    }
+    f.texts.push(Text {
+        scope: s(FILE),
+        kind: s("because"),
+        body: s("said by nobody who signed it"),
+    });
+    sqlite::write(&f, &copy.join(&rel)).unwrap();
+    let r = pb(&copy, &drive, "Test Sam", None).unwrap();
+    let l = line(&r, &rel);
+    assert!(
+        !l.back && l.why.contains("does not check through the chain"),
+        "{l:?}"
+    );
+    let _ = std::fs::remove_dir_all(drive.parent().unwrap());
+}
