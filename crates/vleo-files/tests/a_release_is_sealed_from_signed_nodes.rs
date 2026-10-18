@@ -400,3 +400,36 @@ fn a_release_is_written_into_the_copy_and_never_written_over() {
     assert_eq!(next.meta.get("previous").map(String::as_str), Some("1.0"));
     let _ = std::fs::remove_dir_all(&copy);
 }
+
+#[test]
+fn a_release_s_node_in_the_design_s_file_keeps_the_kinds_of_text_it_does_not_carry() {
+    let text = |kind: &str, body: &str| Text {
+        scope: s(BAND),
+        kind: s(kind),
+        body: s(body),
+    };
+    let mut base = from_release(BAND);
+    base.texts = vec![
+        text("sheet", "the sheet's own words"),
+        text("method", "return 1"),
+    ];
+    base.meta.insert(s("sheet.crate"), s("vleo-mod-solar"));
+    let mut rel = from_release(BAND);
+    rel.texts = vec![text("method", "return 2")];
+    let n = vleo_files::release::node_in(&rel, BAND, &base);
+    let kinds: Vec<(&str, &str)> = n
+        .texts
+        .iter()
+        .map(|t| (t.kind.as_str(), t.body.as_str()))
+        .collect();
+    assert_eq!(kinds.len(), 2, "{kinds:?}");
+    assert!(
+        kinds.contains(&("sheet", "the sheet's own words")),
+        "{kinds:?}"
+    );
+    assert!(kinds.contains(&("method", "return 2")), "{kinds:?}");
+    assert_eq!(
+        n.meta.get("sheet.crate").map(String::as_str),
+        Some("vleo-mod-solar")
+    );
+}

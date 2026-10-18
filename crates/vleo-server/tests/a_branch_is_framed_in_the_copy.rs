@@ -446,6 +446,15 @@ fn a_branch_is_framed_in_the_copy() {
 
     // Nia: read, not Nia's to frame, said whose; Nia's edit refused by name.
     assert!(open_key(port, "test-nia.vkey").contains("\"open\":true"));
+    // Today's view of solar (F5-d): nothing in the copy is signed as it is,
+    // so every node of it is left out, saying so, and nothing moves.
+    let v = ask(port, "GET", "/v1/branch/view?group=l3_solar", &[], false);
+    assert!(v.contains("\"ok\":true"), "{v}");
+    assert!(
+        v.contains("\"changes\":[]") && v.contains("\"impact\":[]"),
+        "{v}"
+    );
+    assert!(v.contains("not signed as it is"), "{v}");
     let r = tree();
     assert!(
         r.contains("\"ok\":true") && r.contains("\"yours\":false"),

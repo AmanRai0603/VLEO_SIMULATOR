@@ -108,8 +108,8 @@ pub fn blockers(group: &File, nodes: &[File], registry: &Registry) -> Vec<String
 }
 
 /// The node `uid` as `release` holds it, in the node file `base` is: every
-/// row of the block in `base` replaced by the release's, and every other
-/// row and the file's meta as `base` holds them. What today's design takes
+/// row of the block in `base` replaced by the release's, a text kind by
+/// kind, and every other row and the file's meta as `base` holds them. What today's design takes
 /// of a release's node, in the design's own file of it.
 pub fn node_in(release: &File, uid: &str, base: &File) -> File {
     let mut n = base.clone();
@@ -127,7 +127,19 @@ pub fn node_in(release: &File, uid: &str, base: &File) -> File {
     take!(closures, block_uid);
     take!(loops, block_uid);
     take!(cases, block_uid);
-    take!(texts, scope);
+    // A text by its kind: the release's in place of the design's, and a
+    // kind it does not carry (the sheet's own words the design keeps,
+    // `convert`) the design's still.
+    let kinds: Vec<&str> = release
+        .texts
+        .iter()
+        .filter(|t| t.scope == uid)
+        .map(|t| t.kind.as_str())
+        .collect();
+    n.texts
+        .retain(|t| t.scope != uid || !kinds.contains(&t.kind.as_str()));
+    n.texts
+        .extend(release.texts.iter().filter(|t| t.scope == uid).cloned());
     take!(tables, scope);
     take!(media, scope);
     n
