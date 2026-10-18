@@ -1454,3 +1454,84 @@ fn released_designs_are_read_from_every_folder_by_their_versions() {
     );
     let _ = std::fs::remove_dir_all(&root);
 }
+
+#[test]
+fn a_design_released_again_is_an_earlier_one_holding_every_table_it_held() {
+    let w = world();
+    let r = solar_12(&w);
+    let i = checks_of(Ok(&r), "");
+    let one = release_it(&w, &i, &r, "2026.10.1", None, "Solar.", "Sam Engel", 12).unwrap();
+    // A table a later release would add (F6-c3's margins), held as it is.
+    let mut one = one;
+    one.tables.push(Tbl {
+        scope: s(FILE),
+        path: s("margins.csv"),
+        csv: s("node,state,margin\nk_drag,closes,0.2\n"),
+    });
+    let one = resigned(one);
+    let old = design::open_held(&one, &w.pr, APP).unwrap();
+    let again = |version: &str, previous: Option<&str>| {
+        design::release_again(
+            &old,
+            version,
+            previous,
+            "Wrong.",
+            "Sam Engel",
+            &key(12),
+            AT,
+            APP,
+            &w.pr,
+        )
+        .map_err(|e| e.message().to_string())
+    };
+    let d = again("2026.10.3", Some("2026.10.2")).unwrap();
+    assert_eq!(d.tables, one.tables, "every table it was released on");
+    // Never one that is not earlier than the design released now.
+    for (version, previous) in [("2026.9.2", Some("2026.9.1")), ("2026.11.1", None)] {
+        let e = again(version, previous).unwrap_err();
+        assert!(
+            e.contains("design 2026.10.1 is not earlier than the design released now"),
+            "{version} after {previous:?}: {e}"
+        );
+    }
+    // What is released again is the design read back now, not what a caller
+    // hands over: a version said in memory is not the one it names again,
+    // and a held file changed in memory is refused.
+    let mut said = old.clone();
+    said.version = s("2026.8.1");
+    let d = design::release_again(
+        &said,
+        "2026.10.3",
+        Some("2026.10.2"),
+        "Wrong.",
+        "Sam Engel",
+        &key(12),
+        AT,
+        APP,
+        &w.pr,
+    )
+    .unwrap();
+    assert_eq!(
+        d.meta["again_of"], "2026.10.1",
+        "the version its file holds"
+    );
+    let mut forged = old.clone();
+    forged.design.media[0].bytes.push(0);
+    let e = design::release_again(
+        &forged,
+        "2026.10.3",
+        Some("2026.10.2"),
+        "Wrong.",
+        "Sam Engel",
+        &key(12),
+        AT,
+        APP,
+        &w.pr,
+    )
+    .unwrap_err();
+    assert!(
+        e.message().contains("by the system engineer") || e.message().contains("SHA-256"),
+        "{}",
+        e.message()
+    );
+}

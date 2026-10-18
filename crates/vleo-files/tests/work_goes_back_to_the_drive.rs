@@ -2311,3 +2311,59 @@ fn a_release_never_goes_back_through_a_link_on_the_drive() {
     assert!(!l.back && l.why.contains("through a link"), "{l:?}");
     let _ = std::fs::remove_dir_all(drive.parent().unwrap());
 }
+
+#[test]
+fn a_design_released_again_goes_back_only_as_the_drive_s_design_it_names() {
+    let (drive, copy) = world("design-again");
+    // 2026.10.1 on the drive, then 2026.10.2 after it.
+    let one = released_in(&copy, "2026.10.1", "", "Test Sam", 72);
+    pb(&copy, &drive, "Test Sam", Some(vec![named(&copy, &one)])).unwrap();
+    let elsewhere = drive.parent().unwrap().join("elsewhere");
+    let two = released_in(&elsewhere, "2026.10.2", "2026.10.1", "Test Sam", 72);
+    std::fs::copy(elsewhere.join(&two), drive.join(&two)).unwrap();
+    // 2026.10.1 again, as 2026.10.3: it goes, said so.
+    let again = |of: &str, more: Option<Tbl>| {
+        let mut f = sqlite::read(&copy.join(&one)).unwrap();
+        for (k, v) in [
+            ("version", "2026.10.3"),
+            ("previous", "2026.10.2"),
+            ("again_of", of),
+        ] {
+            f.meta.insert(s(k), s(v));
+        }
+        f.tables.extend(more);
+        f.signatures.retain(|r| r.scope != FILE);
+        let row = chain::sign(&f, FILE, "Test Sam", &key(72), AT, "ok", "").unwrap();
+        f.signatures.push(row);
+        sqlite::write(&f, &copy.join("design/design-2026.10.3.vleo")).unwrap();
+        let r = pb(&copy, &drive, "Test Sam", None).unwrap();
+        line(&r, "design/design-2026.10.3.vleo").clone()
+    };
+    let l = again("2026.10.1", None);
+    assert!(
+        l.back
+            && l.why
+                .contains("design 2026.10.3, design 2026.10.1 released again by Test Sam"),
+        "{l:?}"
+    );
+    // Of a design the drive does not hold, or holding what it does not hold:
+    // refused by name.
+    let l = again("2026.9.9", None);
+    assert!(
+        !l.back && l.why.contains("the drive holds no design 2026.9.9"),
+        "{l:?}"
+    );
+    let extra = Tbl {
+        scope: s(FILE),
+        path: s("x.csv"),
+        csv: s("a\n1\n"),
+    };
+    let l = again("2026.10.1", Some(extra));
+    assert!(
+        !l.back
+            && l.why
+                .contains("it does not hold what the drive's design 2026.10.1 holds"),
+        "{l:?}"
+    );
+    let _ = std::fs::remove_dir_all(drive.parent().unwrap());
+}

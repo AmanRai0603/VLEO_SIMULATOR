@@ -1047,8 +1047,11 @@ pub fn released_in(
 /// Every release `old` holds, its seal checked through the chain as
 /// `programme` holds it now: each through the systems' file `old` holds,
 /// opened under `programme`, as the file that mounts its group; one from
-/// before 1.0 by the programme manager's anchor. A seal made with a key
-/// revoked since does not check, and is refused by name (F6's question 51).
+/// before 1.0 by the programme manager's anchor. A seal made with a key the
+/// programme's file now says was revoked from before it was made does not
+/// check, and is refused by name; one whose key was revoked after it still
+/// counts, as the chain counts every signature made while its key counted
+/// (F6's question 51, read as the chain reads every other signature).
 #[cfg(not(target_arch = "wasm32"))]
 pub fn seals_hold(old: &Opened, programme: &Registry) -> Result<(), Error> {
     let systems = chain::open_systems(&old.systems.file, programme).map_err(|e| {
@@ -1092,14 +1095,14 @@ pub fn seals_hold(old: &Opened, programme: &Registry) -> Result<(), Error> {
 /// The released design `old` released again as `version`, after `previous`,
 /// the design released now, by `by` with `key` at `at`, saying `why` (W16:
 /// "the system engineer releases the last good one again under a new
-/// version, and the notes say why"). It holds `old`'s files byte for byte,
-/// its table of them and the checks and red marks it was released on, and
-/// says which it is again (`again_of`). Refused by name unless `by` is the
-/// system engineer or their deputy with a key the programme's file counts
-/// then, `old` is not the design released now, every seal it holds checks
-/// through the chain now ([`seals_hold`]), the version follows, and why is
-/// said. Today's integration checks are not run: they are of today's design,
-/// not of `old`.
+/// version, and the notes say why"). It holds `old`'s files byte for byte
+/// and every table it was released on, and says which it is again
+/// (`again_of`). Refused by name unless `by` is the system engineer or their
+/// deputy with a key the programme's file counts then, the version follows,
+/// why is said, `old` reads back through `programme` now ([`open_held`]) and
+/// is earlier than the design released now, and every seal it holds checks
+/// through the chain now ([`seals_hold`]). Today's integration checks are not
+/// run: they are of today's design, not of `old`.
 #[cfg(not(target_arch = "wasm32"))]
 #[allow(clippy::too_many_arguments)]
 pub fn release_again(
@@ -1140,6 +1143,23 @@ pub fn release_again(
         )));
     }
     follows(version, previous).map_err(refused)?;
+    // What is released again is the design as `programme` reads it back now,
+    // never what a caller says it holds, and an earlier one than `previous`.
+    let old = &open_held(&old.design, programme, app)?;
+    let earlier = match (
+        DesignVersion::parse(&old.version),
+        previous.and_then(DesignVersion::parse),
+    ) {
+        (Some(o), Some(p)) => o < p,
+        _ => false,
+    };
+    if !earlier {
+        return Err(refused(format!(
+            "design {} is not earlier than the design released now ({}): a design released again is an earlier one",
+            old.version,
+            previous.unwrap_or("none")
+        )));
+    }
     seals_hold(old, programme)?;
     let app_version = app.split_whitespace().nth(1).unwrap_or("");
     let mut f = File::new(Kind::Design, app);
@@ -1151,16 +1171,8 @@ pub fn release_again(
         .insert("oldest_application".into(), app_version.to_string());
     f.meta.insert("again_of".into(), old.version.clone());
     f.media = old.design.media.clone();
-    for name in ["released.csv", "integration.csv", "red_marks.csv"] {
-        if let Some(t) = old
-            .design
-            .tables
-            .iter()
-            .find(|t| t.scope == FILE && t.path == name)
-        {
-            f.tables.push(t.clone());
-        }
-    }
+    // Every table it was released on, whatever tables a release holds.
+    f.tables = old.design.tables.clone();
     f.texts.push(Text {
         scope: FILE.into(),
         kind: "changed".into(),

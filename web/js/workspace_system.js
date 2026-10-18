@@ -435,10 +435,14 @@ async function click(e) {
       t.disabled = true;
       R.again.version = v('sy-a-version').trim();
       R.again.why = v('sy-a-why');
+      const of = R.again.of;
       let r;
       try {
-        r = await W.post('/v1/design/release-again', { of: R.again.of, version: R.again.version, why: R.again.why });
+        r = await W.post('/v1/design/release-again', { of, version: R.again.version, why: R.again.why });
       } finally { R.sending = false; }
+      // An answer about another design than the one now chosen is not drawn
+      // over it.
+      if (R.again.of !== of) return drawRelease();
       R.again.notice = { ok: !!(r && r.ok), text: r && r.ok ? r.message + ' ' + r.announce : (r && r.message) || 'nothing was released' };
       if (r && r.ok) { R.again.of = ''; R.again.why = ''; }
       return drawRelease();

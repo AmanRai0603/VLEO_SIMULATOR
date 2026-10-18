@@ -518,10 +518,11 @@ fn released(params: &str, ctx: &Ctx) -> Result<String, String> {
 const NOTES_HEAD: &str = "# Released designs\n\nWhat changed in each, newest first.\n\n";
 
 /// The released design `f`, `version`, written into the copy under its
-/// lock: the design new, never over, then its record, `entry` at the top of
-/// `design/NOTES.md` and `readable`'s files; when the record fails, the
-/// design is taken out again, so the copy never holds one without it. Gives
-/// the design's path and every file written.
+/// lock: the design new, never over, then its record, `readable`'s files and
+/// last `entry` at the top of `design/NOTES.md`; when the record fails, the
+/// design is taken out again, so the copy never holds one without it, and the
+/// notes never speak of one it does not hold. Gives the design's path and
+/// every file written.
 fn into_copy(
     copy: &Path,
     version: &str,
@@ -544,6 +545,15 @@ fn into_copy(
         let _ = std::fs::remove_file(&at_file);
         format!("the design is not released in your copy, nothing of it is kept: {why}")
     };
+    std::fs::create_dir_all(copy.join("readable"))
+        .map_err(|e| undo(io(&copy.join("readable"), e)))?;
+    let mut files = vec![name.clone(), "design/NOTES.md".to_string()];
+    for (n, csv) in readable {
+        let p = copy.join("readable").join(n);
+        std::fs::write(&p, csv).map_err(|e| undo(io(&p, e)))?;
+        files.push(format!("readable/{n}"));
+    }
+    // The notes last: they speak of a design once everything of it is written.
     let notes_at = copy.join("design/NOTES.md");
     let before = match std::fs::read_to_string(&notes_at) {
         Ok(t) => t,
@@ -556,14 +566,6 @@ fn into_copy(
         format!("{NOTES_HEAD}{entry}\n{}", body.trim_start()),
     )
     .map_err(|e| undo(io(&notes_at, e)))?;
-    std::fs::create_dir_all(copy.join("readable"))
-        .map_err(|e| undo(io(&copy.join("readable"), e)))?;
-    let mut files = vec![name.clone(), "design/NOTES.md".to_string()];
-    for (n, csv) in readable {
-        let p = copy.join("readable").join(n);
-        std::fs::write(&p, csv).map_err(|e| undo(io(&p, e)))?;
-        files.push(format!("readable/{n}"));
-    }
     Ok((name, files))
 }
 
@@ -716,10 +718,35 @@ fn released_again(params: &str, ctx: &Ctx) -> Result<String, String> {
         .map_err(|e| e.message().to_string())
     })
     .ok_or(no_key)??;
+    // What each group goes back to, against the design released now: said,
+    // never left for a reader to work out.
+    let now = all.last();
+    let mut moves: Vec<String> = Vec::new();
+    for r in &old.releases {
+        match now.and_then(|n| n.releases.iter().find(|x| x.group == r.group)) {
+            Some(x) if x.version == r.version => {}
+            Some(x) => moves.push(format!("{}: {} back to {}", r.group, x.version, r.version)),
+            None => moves.push(format!(
+                "{}: {} again, not in the design released now",
+                r.group, r.version
+            )),
+        }
+    }
+    for x in now.iter().flat_map(|n| n.releases.iter()) {
+        if !old.releases.iter().any(|r| r.group == x.group) {
+            moves.push(format!("{}: {} is not in it", x.group, x.version));
+        }
+    }
     let quoted: String = why.trim().lines().map(|l| format!("> {l}\n")).collect();
+    let listed: String = moves.iter().map(|m| format!("- {m}\n")).collect();
     let entry = format!(
-        "## {version}\n\nDesign {of} released again by {who}, {at}, after {}.\n\n{quoted}\nToday's integration checks were not run: design {of} is released as it was, with the checks and the red marks it was released on.\n",
+        "## {version}\n\nDesign {of} released again by {who}, {at}, after {}.\n\n{quoted}\n{}Today's integration checks were not run: design {of} is released as it was, with the checks and the red marks it was released on. Today's design is unchanged; each group's base check fails until it moves its base to {version} (W12).\n",
         latest.as_deref().unwrap_or("none"),
+        if moves.is_empty() {
+            "Every group holds the release the design released now holds.\n\n".to_string()
+        } else {
+            format!("What each group goes back to:\n\n{listed}\n")
+        },
     );
     let by_group: Vec<(&str, &vleo_files::model::File)> = old
         .releases
@@ -754,8 +781,13 @@ fn released_again(params: &str, ctx: &Ctx) -> Result<String, String> {
     j.str_field(
         "announce",
         &format!(
-            "Design {version} is released: design {of} again, because {}",
-            why.trim().trim_end_matches('.')
+            "Design {version} is released: design {of} again, because {}.{} Today's design is unchanged; each group moves its base to {version}.",
+            why.trim().trim_end_matches('.'),
+            if moves.is_empty() {
+                String::new()
+            } else {
+                format!(" {}.", moves.join("; "))
+            }
         ),
     );
     j.str_field(

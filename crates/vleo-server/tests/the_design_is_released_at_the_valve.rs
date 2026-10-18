@@ -796,6 +796,11 @@ fn the_system_engineer_releases_the_design_and_it_goes_back_to_the_drive() {
         )),
         "{notes}"
     );
+    assert!(
+        notes.contains("Every group holds the release the design released now holds.")
+            && notes.contains(&format!("Today's design is unchanged; each group's base check fails until it moves its base to {third} (W12).")),
+        "{notes}"
+    );
     assert!(std::fs::read_to_string(copy.join("readable/Health.csv"))
         .unwrap()
         .contains("not computed"));
@@ -844,5 +849,16 @@ fn the_system_engineer_releases_the_design_and_it_goes_back_to_the_drive() {
         list.contains(&format!("\"version\":\"{third}\",\"previous\":\"{next}\",\"released_by\":\"Test Sam\",\"again_of\":\"{version}\"")),
         "{list}"
     );
+    // A file planted on the drive under a design's name: the list and
+    // Release again say it by name, and take nothing for a design.
+    std::fs::write(drive.join("design/design-2099.1.1.vleo"), b"not a design").unwrap();
+    let list = ask(port, "GET", "/v1/design/released", &[], false);
+    assert!(
+        list.contains("\"ok\":false") && list.contains("design-2099.1.1.vleo does not read"),
+        "{list}"
+    );
+    let r = again(&version, "2099.1.2", "Again.");
+    assert!(r.contains("design-2099.1.1.vleo does not read"), "{r}");
+    std::fs::remove_file(drive.join("design/design-2099.1.1.vleo")).unwrap();
     let _ = std::fs::remove_dir_all(&scratch);
 }
