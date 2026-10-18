@@ -18,9 +18,11 @@
 //! `design/NOTES.md`, newest first; and `readable/`. Put-back takes them to
 //! the drive. Carries the launch's word.
 //!
-//! The checks and the release are of today's design, built from the drive;
-//! the red marks are the health map's on the default case, as Explore draws
-//! it. Not here: the pointer `design/design.vleo` and the archive (F7),
+//! The checks and the release are of today's design, built from the drive,
+//! through the chain as the drive holds it; the red marks are the health
+//! map's on the design as declared (`inputs=defaults`), never a saved case,
+//! with each group whose latest release is refused and its last good held.
+//! A design released in the copy goes back before the next is released. Not here: the pointer `design/design.vleo` and the archive (F7),
 //! previews and their answers (F6-c), the daily snapshot.
 
 use super::*;
@@ -67,15 +69,36 @@ impl Today {
     }
 }
 
+/// The chain as the drive holds it, opened from the drive's own files.
+fn chain_of(drive: &Path, ctx: &Ctx) -> Result<me::Chain, String> {
+    match me::registries(drive, &copy::dir(ctx), "") {
+        Ok(c) => Ok(c),
+        Err(me::NotRead::FirstUse(..)) => Err(
+            "this computer has not accepted this database's anchor: open your key on it first"
+                .into(),
+        ),
+        Err(me::NotRead::Why(why)) => Err(format!(
+            "the drive's files do not open through the chain, so nothing is checked: {why}"
+        )),
+    }
+}
+
 /// Today's design, as the checks read it: every group with a release on the
-/// drive, and every group the systems' file mounts without one.
-fn today(ctx: &Ctx) -> Result<Today, String> {
+/// drive, and every group the systems' file mounts without one, and the
+/// chain it was read through.
+fn today(ctx: &Ctx) -> Result<(Today, me::Chain), String> {
     let report = built_from().ok_or(
         "the design open is the design's own files, not today's design: the design is released from today's design, built from the drive",
     )?;
     let drive = PathBuf::from(&report.drive);
-    let released = design::latest_in(&drive.join("design")).map_err(|e| e.message().to_string())?;
+    let c = chain_of(&drive, ctx)?;
+    let systems = c.systems.as_ref().ok_or(
+        "the systems' file on the drive does not check through the chain, so the groups it mounts are not known",
+    )?;
+    let released = design::latest_in(&drive.join("design"), &c.programme)
+        .map_err(|e| e.message().to_string())?;
     let mut parts = Vec::new();
+    let mut marks = Vec::new();
     for g in &report.groups {
         let taken = match &g.taken {
             None => Err(g.said()),
@@ -96,6 +119,22 @@ fn today(ctx: &Ctx) -> Result<Today, String> {
                         .map(|c| c.as_os_str().to_string_lossy().into_owned())
                         .collect::<Vec<_>>()
                         .join("/");
+                    // A newer release refused is said on the seal's line, and
+                    // is a red mark: its last good one is held in its place.
+                    let chain = match g.refused.first() {
+                        Some((v, why)) => {
+                            marks.push(Mark {
+                                id: format!("group:{}", g.id),
+                                said: format!(
+                                    "{}'s latest, {v}, is refused ({why}); {} {} is held in its place",
+                                    g.id, g.id, t.version
+                                ),
+                                raised: None,
+                            });
+                            format!("{chain}; its latest, {v}, is refused, so its last good release is held")
+                        }
+                        None => chain,
+                    };
                     Ok((under, t.version.clone(), chain, bytes, file))
                 })
                 .map_err(|why| format!("{} {} is not read again from the drive: {why}", g.id, t.version)),
@@ -107,34 +146,48 @@ fn today(ctx: &Ctx) -> Result<Today, String> {
     }
     // A group the systems' file mounts and that has no release on the drive
     // is not in the design released: it is said, never left out.
-    if let Ok(c) = me::registries(&drive, &copy::dir(ctx), "") {
-        if let Some(sy) = &c.systems {
-            for m in &sy.file.mounts {
-                if !parts.iter().any(|p| p.group == m.group_id) {
-                    parts.push(Read {
-                        group: m.group_id.clone(),
-                        taken: Err(format!(
-                            "{} is mounted, and the drive holds no release of it",
-                            m.group_id
-                        )),
-                    });
-                }
-            }
+    for m in &systems.file.mounts {
+        if !parts.iter().any(|p| p.group == m.group_id) {
+            parts.push(Read {
+                group: m.group_id.clone(),
+                taken: Err(format!(
+                    "{} is mounted, and the drive holds no release of it",
+                    m.group_id
+                )),
+            });
         }
     }
-    Ok(Today {
-        marks: marks(ctx, &drive),
-        drive,
-        released,
-        parts,
-    })
+    marks.extend(red_marks(ctx, &drive));
+    Ok((
+        Today {
+            marks,
+            drive,
+            released,
+            parts,
+        },
+        c,
+    ))
+}
+
+/// The case the red marks and the health map are read on: the design as
+/// declared, never the case someone last saved, so every computer gives the
+/// same (W6).
+fn declared_case(ctx: &Ctx) -> vleo_bus::Case {
+    let g = vleo_modules::engine();
+    let mut case = build_case("inputs=defaults", ctx);
+    case.target = g.nodes.first().map_or("", |n| n.id).to_string();
+    case.mode = RunMode::All;
+    case
 }
 
 /// The red marks of today's design: each closure that fails, is refused or
-/// is blocked on the default case, raised when an issue open names it; and
-/// each issue open on the drive or in the copy.
-fn marks(ctx: &Ctx, drive: &Path) -> Vec<Mark> {
+/// is blocked on the design as declared, raised when an issue open names it;
+/// each issue open on the drive or in the copy, the drive's first; and each
+/// issue file that does not read, said, never passed over.
+fn red_marks(ctx: &Ctx, drive: &Path) -> Vec<Mark> {
     let mut open: Vec<(String, vleo_files::model::Issue)> = Vec::new();
+    let mut seen: Vec<String> = Vec::new();
+    let mut out = Vec::new();
     for dir in [drive.join("issues"), copy::dir(ctx).join("issues")] {
         let Ok(entries) = std::fs::read_dir(&dir) else {
             continue;
@@ -148,22 +201,26 @@ fn marks(ctx: &Ctx, drive: &Path) -> Vec<Mark> {
             let name = p
                 .file_name()
                 .map_or(String::new(), |n| n.to_string_lossy().into_owned());
-            if open.iter().any(|(n, _)| *n == name) {
+            if seen.contains(&name) {
                 continue;
             }
-            if let Ok(f) = vleo_files::sqlite::read(&p) {
-                for i in f.issues.into_iter().filter(|i| i.closed_by.is_empty()) {
-                    open.push((name.clone(), i));
+            seen.push(name.clone());
+            match vleo_files::sqlite::read(&p) {
+                Ok(f) => {
+                    for i in f.issues.into_iter().filter(|i| i.closed_by.is_empty()) {
+                        open.push((name.clone(), i));
+                    }
                 }
+                Err(e) => out.push(Mark {
+                    id: format!("issue:{}", name.trim_end_matches(".vissue")),
+                    said: format!("the issue file {name} does not read: {}", e.message()),
+                    raised: None,
+                }),
             }
         }
     }
     let g = vleo_modules::engine();
-    let mut case = build_case("", ctx);
-    case.target = g.nodes.first().map_or("", |n| n.id).to_string();
-    case.mode = RunMode::All;
-    let map = health(g, &case);
-    let mut out = Vec::new();
+    let map = health(g, &declared_case(ctx));
     for n in &map.nodes {
         if !is_closure(g, n.node)
             || !matches!(n.state, State::Fails | State::Refused | State::Blocked)
@@ -190,12 +247,15 @@ fn marks(ctx: &Ctx, drive: &Path) -> Vec<Mark> {
     out
 }
 
-/// The version after `latest` this month, as the page offers it.
+/// The version after `latest` this month, as the page offers it; after a
+/// latest released in a later month than this computer's clock, the next in
+/// its month.
 fn next_version(latest: Option<&str>) -> String {
     let now = results::now_utc();
     let year = now.get(0..4).and_then(|y| y.parse().ok()).unwrap_or(2026);
     let month = now.get(5..7).and_then(|m| m.parse().ok()).unwrap_or(1);
     match latest.and_then(DesignVersion::parse) {
+        Some(v) if (v.year, v.month) > (year, month) => v.next(v.year, v.month).to_string(),
         Some(v) => v.next(year, month).to_string(),
         None => format!("{year}.{month}.1"),
     }
@@ -204,7 +264,7 @@ fn next_version(latest: Option<&str>) -> String {
 /// `GET /v1/design/integration`.
 pub(super) fn integration_route(ctx: &Ctx) -> String {
     let t = match today(ctx) {
-        Ok(t) => t,
+        Ok((t, _)) => t,
         Err(why) => return me::refusal(&why),
     };
     let i = t.integration();
@@ -267,20 +327,41 @@ pub(super) fn release_route(params: &str, ctx: &Ctx) -> String {
     }
 }
 
-/// The bytes of the file at `path` and the file they read as, read twice so
-/// they are one.
+/// The bytes of the file at `path` and the file those bytes read as: read
+/// once, and parsed from what was read (`today::of_bytes`), so the two are
+/// one.
 fn whole(path: &Path) -> Result<(Vec<u8>, vleo_files::model::File), String> {
-    let read = || std::fs::read(path).map_err(|e| format!("{}: {e}", path.display()));
-    let bytes = read()?;
-    let f = vleo_files::sqlite::read(path)
-        .map_err(|e| format!("{}: {}", path.display(), e.message()))?;
-    if read()? != bytes {
-        return Err(format!(
-            "{} changed while it was read: try again",
-            path.display()
-        ));
-    }
+    let bytes = std::fs::read(path).map_err(|e| format!("{}: {e}", path.display()))?;
+    let f = today::of_bytes(&bytes, |at| {
+        vleo_files::sqlite::read(at).map_err(|e| format!("{}: {}", path.display(), e.message()))
+    })?;
     Ok((bytes, f))
+}
+
+/// A released design in the copy's `design/` that the drive does not hold,
+/// by its path, if there is one.
+fn not_put_back(copy: &Path, drive: &Path) -> Result<Option<String>, String> {
+    let dir = copy.join("design");
+    let Ok(entries) = std::fs::read_dir(&dir) else {
+        return Ok(None);
+    };
+    let mut names: Vec<String> = entries
+        .filter_map(|e| e.ok().map(|e| e.file_name().to_string_lossy().into_owned()))
+        .filter(|n| n.starts_with("design-") && n.ends_with(".vleo"))
+        .collect();
+    names.sort();
+    for n in names {
+        let (mine, theirs) = (dir.join(&n), drive.join("design").join(&n));
+        let same = match (std::fs::read(&mine), std::fs::read(&theirs)) {
+            (Ok(a), Ok(b)) => a == b,
+            (Err(e), _) => return Err(format!("{}: {e}", mine.display())),
+            (Ok(_), Err(_)) => false,
+        };
+        if !same {
+            return Ok(Some(format!("design/{n}")));
+        }
+    }
+    Ok(None)
 }
 
 fn released(params: &str, ctx: &Ctx) -> Result<String, String> {
@@ -301,7 +382,7 @@ fn released(params: &str, ctx: &Ctx) -> Result<String, String> {
     let record = copy::record(&copy)?.ok_or(
         "a design is released in your copy of the database, then put back: copy it from the drive first",
     )?;
-    let t = today(ctx)?;
+    let (t, c) = today(ctx)?;
     let drive =
         std::fs::canonicalize(&t.drive).map_err(|e| format!("{}: {e}", t.drive.display()))?;
     if Path::new(&record.drive) != drive {
@@ -311,15 +392,13 @@ fn released(params: &str, ctx: &Ctx) -> Result<String, String> {
             drive.display()
         ));
     }
-    let c =
-        match me::registries(&t.drive, &copy, "") {
-            Ok(c) => c,
-            Err(me::NotRead::FirstUse(..)) => return Err(
-                "this computer has not accepted this database's anchor: open your key on it first"
-                    .into(),
-            ),
-            Err(me::NotRead::Why(why)) => return Err(why),
-        };
+    // A design released in the copy and not put back yet is the one the
+    // next follows: it goes back first, so two never follow the same one.
+    if let Some(waiting) = not_put_back(&copy, &t.drive)? {
+        return Err(format!(
+            "your copy holds {waiting}, released and not put back on the drive yet: put it back, then release the next on a copy taken after it"
+        ));
+    }
     let checks = t.integration();
     let (pb, pf) = whole(&t.drive.join("groups/programme/programme.vgroup"))?;
     let (sb, sf) = whole(&t.drive.join("groups/systems/systems.vgroup"))?;
@@ -386,17 +465,25 @@ fn released(params: &str, ctx: &Ctx) -> Result<String, String> {
     let io = |p: &Path, e: std::io::Error| format!("{}: {e}", p.display());
     std::fs::create_dir_all(copy.join("design")).map_err(|e| io(&copy.join("design"), e))?;
     vleo_files::sqlite::write(&f, &at_file).map_err(|e| e.message().to_string())?;
+    // Its record, written after it; when that fails the released design is
+    // taken out again, so the copy never holds one without its record.
+    let undo = |why: String| {
+        let _ = std::fs::remove_file(&at_file);
+        format!("the design is not released in your copy, nothing of it is kept: {why}")
+    };
     let notes_at = copy.join("design/NOTES.md");
     let before = match std::fs::read_to_string(&notes_at) {
         Ok(t) => t,
         Err(e) if e.kind() == std::io::ErrorKind::NotFound => String::new(),
-        Err(e) => return Err(io(&notes_at, e)),
+        Err(e) => return Err(undo(io(&notes_at, e))),
     };
     let body = before.strip_prefix(NOTES_HEAD).unwrap_or(&before);
+    // What changed is the system engineer's words, quoted, so no line of
+    // it reads as a heading of the notes.
+    let quoted: String = changed.trim().lines().map(|l| format!("> {l}\n")).collect();
     let mut entry = format!(
-        "## {version}\n\nReleased by {who}, {at}, after {}.\n\n{}\n",
+        "## {version}\n\nReleased by {who}, {at}, after {}.\n\n{quoted}",
         t.released.as_deref().unwrap_or("none"),
-        changed.trim()
     );
     for m in &t.marks {
         entry.push_str(&format!(
@@ -415,7 +502,7 @@ fn released(params: &str, ctx: &Ctx) -> Result<String, String> {
         &notes_at,
         format!("{NOTES_HEAD}{entry}\n{}", body.trim_start()),
     )
-    .map_err(|e| io(&notes_at, e))?;
+    .map_err(|e| undo(io(&notes_at, e)))?;
     let by_group: Vec<(&str, &vleo_files::model::File)> = t
         .parts
         .iter()
@@ -426,11 +513,12 @@ fn released(params: &str, ctx: &Ctx) -> Result<String, String> {
         .map(|(n, csv)| (n.to_string(), csv))
         .collect::<Vec<_>>();
     readable.push(("Health.csv".to_string(), health_csv(ctx, &version)));
-    std::fs::create_dir_all(copy.join("readable")).map_err(|e| io(&copy.join("readable"), e))?;
+    std::fs::create_dir_all(copy.join("readable"))
+        .map_err(|e| undo(io(&copy.join("readable"), e)))?;
     let mut files = vec![name.clone(), "design/NOTES.md".to_string()];
     for (n, csv) in &readable {
         let p = copy.join("readable").join(n);
-        std::fs::write(&p, csv).map_err(|e| io(&p, e))?;
+        std::fs::write(&p, csv).map_err(|e| undo(io(&p, e)))?;
         files.push(format!("readable/{n}"));
     }
     let failing: Vec<&str> = t
@@ -468,13 +556,10 @@ fn released(params: &str, ctx: &Ctx) -> Result<String, String> {
 const NOTES_HEAD: &str = "# Released designs\n\nWhat changed in each, newest first.\n\n";
 
 /// The health map of the design released, as CSV: each node's state and
-/// why on the default case, the engine's.
+/// why on the design as declared, the engine's.
 fn health_csv(ctx: &Ctx, version: &str) -> String {
     let g = vleo_modules::engine();
-    let mut case = build_case("", ctx);
-    case.target = g.nodes.first().map_or("", |n| n.id).to_string();
-    case.mode = RunMode::All;
-    let map = health(g, &case);
+    let map = health(g, &declared_case(ctx));
     let rows: Vec<Vec<String>> = map
         .nodes
         .iter()

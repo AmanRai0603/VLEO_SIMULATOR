@@ -414,7 +414,17 @@ fn mark_ids(json: &str) -> Vec<String> {
 #[test]
 fn the_system_engineer_releases_the_design_and_it_goes_back_to_the_drive() {
     let (drive, copy) = world("design-released");
-    sealed_and_put_back(&drive, &copy);
+    let rel = sealed_and_put_back(&drive, &copy);
+    // A newer release of solar on the drive whose seal does not check:
+    // today's design refuses it and takes 1.0, its last good one.
+    let mut newer = sqlite::read(&drive.join(&rel)).unwrap();
+    newer.meta.insert(s("version"), s("1.1"));
+    newer.meta.insert(s("previous"), s("1.0"));
+    sqlite::write(
+        &newer,
+        &drive.join("groups/l3_solar/releases/l3_solar-1.1.vleo"),
+    )
+    .unwrap();
     let scratch = drive.parent().unwrap().to_path_buf();
     let keys = scratch.join("keys");
     std::fs::create_dir_all(&keys).unwrap();
@@ -453,6 +463,16 @@ fn the_system_engineer_releases_the_design_and_it_goes_back_to_the_drive() {
     });
     std::fs::create_dir_all(copy.join("issues")).unwrap();
     sqlite::write(&issue, &copy.join("issues/1-l3_solar.vissue")).unwrap();
+
+    // Before this computer accepts the drive's anchor, nothing is checked.
+    let i = checks();
+    assert!(
+        i.contains("this computer has not accepted this database's anchor"),
+        "{i}"
+    );
+    // Ola opens their key, and the anchor with it; then closes it.
+    assert!(open_key(port, "test-ola.vkey").contains("\"open\":true"));
+    post(port, "/v1/key/close", &[]);
 
     // The checks hold for solar, a line for each of W8's five.
     let i = checks();
@@ -508,7 +528,11 @@ fn the_system_engineer_releases_the_design_and_it_goes_back_to_the_drive() {
         ),
         "{r}"
     );
-    assert_eq!(understood, "issue:1-l3_solar", "{i}");
+    assert_eq!(understood, "group:l3_solar,issue:1-l3_solar", "{i}");
+    assert!(
+        i.contains("its latest, 1.1, is refused, so its last good release is held"),
+        "{i}"
+    );
     let r = asked(&version, "");
     assert!(
         r.contains("every red mark is understood")
@@ -529,9 +553,34 @@ fn the_system_engineer_releases_the_design_and_it_goes_back_to_the_drive() {
     );
     std::fs::write(copy.join(copied::FILE_NAME), record).unwrap();
     assert!(
-        !copy.join("design").exists(),
+        !copy.join("design").exists() && !copy.join("readable").exists(),
         "a refused release writes nothing"
     );
+
+    // A case saved on this computer moves the health map; the design
+    // released is read on the design as declared, never on it.
+    assert!(post(
+        port,
+        "/v1/inputs",
+        &[("set", "sw_ap_central_expectation:40")]
+    )
+    .contains("\"ok\":true"));
+    let margin_of = |q: &str, id: &str| {
+        let h = ask(port, "GET", q, &[], false);
+        let at = h.find(&format!("\"id\":\"{id}\"")).unwrap();
+        let m = &h[at..][h[at..].find("\"margin\":").unwrap() + 9..];
+        m[..m.find('}').unwrap()].to_string()
+    };
+    let (moved, declared) = (1..=5)
+        .map(|k| format!("l3_solar_ach_0{k}"))
+        .find_map(|id| {
+            let (d, saved) = (
+                margin_of("/v1/health?inputs=defaults", &id),
+                margin_of("/v1/health", &id),
+            );
+            (d != saved).then_some((id, d))
+        })
+        .expect("the case saved moves a solar closure's margin");
 
     // Sam releases it, in the copy.
     let r = asked(&version, &understood);
@@ -564,6 +613,11 @@ fn the_system_engineer_releases_the_design_and_it_goes_back_to_the_drive() {
         notes.contains(&format!("## {version}\n\nReleased by Test Sam")),
         "{notes}"
     );
+    let health = std::fs::read_to_string(copy.join("readable/Health.csv")).unwrap();
+    assert!(
+        health.contains(&format!("\n{moved},l3_solar,closes,{declared},")),
+        "{moved} at {declared}: {health}"
+    );
     // Every file of readable/; solar holds no closure.
     for (n, rows) in [
         ("Groups", true),
@@ -582,12 +636,20 @@ fn the_system_engineer_releases_the_design_and_it_goes_back_to_the_drive() {
         on_drive,
         "the drive holds none of it yet"
     );
-    // Again under the same version: never written over.
-    let r = asked(&version, &understood);
-    assert!(
-        field(&r, "message").contains("a released design is never written over"),
-        "{r}"
-    );
+    // Another before it is put back, under its version or the next: it goes
+    // back first, so two never follow the same one.
+    let next = vleo_files::meta::DesignVersion::parse(&version)
+        .map(|v| v.next(v.year, v.month).to_string())
+        .unwrap();
+    for v in [&version, &next] {
+        let r = asked(v, &understood);
+        assert!(
+            r.contains(&format!(
+                "your copy holds {path}, released and not put back on the drive yet"
+            )),
+            "{r}"
+        );
+    }
 
     // Put back: the drive holds it, and solar's base no longer fits.
     let r = post(port, "/v1/put-back", &[]);
@@ -621,6 +683,19 @@ fn the_system_engineer_releases_the_design_and_it_goes_back_to_the_drive() {
     assert!(
         i.contains(&format!("and the design released now is {version}")),
         "{i}"
+    );
+    // So the next is refused whole, by the line that fails, and writes
+    // nothing.
+    let readable = std::fs::read(copy.join("readable/Groups.csv")).unwrap();
+    let r = asked(&next, &understood);
+    assert!(
+        r.contains("the design is not released, refused whole: l3_solar, the base still fitting"),
+        "{r}"
+    );
+    assert!(!copy.join(format!("design/design-{next}.vleo")).exists());
+    assert_eq!(
+        std::fs::read(copy.join("readable/Groups.csv")).unwrap(),
+        readable
     );
 
     // A group the systems' file mounts with no release on the drive fails

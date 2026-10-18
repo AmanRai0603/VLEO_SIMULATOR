@@ -750,3 +750,127 @@ fn the_released_design_is_written_readable_as_csv() {
         of("Status.csv")
     );
 }
+
+#[test]
+fn a_design_s_version_follows_the_design_released_now() {
+    for (version, previous, says) in [
+        ("2026.10.1", None, None),
+        ("2026.10.3", None, Some("2026.10.3 is not the first of its month")),
+        ("2026.10.2", Some("2026.10.1"), None),
+        ("2026.11.1", Some("2026.10.1"), None),
+        ("2026.10.3", Some("2026.10.1"), Some("does not follow 2026.10.1, the design released now: the next in 2026.10 is 2026.10.2")),
+        ("2026.11.2", Some("2026.10.1"), Some("the next in 2026.11 is 2026.11.1")),
+        ("2026.9.1", Some("2026.10.1"), Some("does not come after")),
+    ] {
+        match (design::follows(version, previous), says) {
+            (Ok(()), None) => {}
+            (Err(e), Some(s)) => assert!(e.contains(s), "{version} after {previous:?}: {e}"),
+            (got, _) => panic!("{version} after {previous:?}: {got:?}"),
+        }
+    }
+    // And the release itself is held to it.
+    let w = world();
+    let r = solar_12(&w);
+    let i = checks_of(Ok(&r), "");
+    let e = release_it(
+        &w,
+        &i,
+        &r,
+        "2026.10.3",
+        Some("2026.10.1"),
+        "Solar.",
+        "Sam Engel",
+        12,
+    )
+    .unwrap_err();
+    assert!(e.contains("does not follow 2026.10.1"), "{e}");
+}
+
+#[test]
+fn a_released_design_holds_what_was_checked_and_nothing_beside() {
+    let w = world();
+    let r = solar_12(&w);
+    // Checked for solar and power; held for solar only.
+    let mut i = checks_of(Ok(&r), "");
+    let mut power = i.lines.clone();
+    for l in power.iter_mut() {
+        l.group = s("l3_power");
+    }
+    i.lines.extend(power);
+    let e = release_it(&w, &i, &r, RELEASED, None, "Solar.", "Sam Engel", 12).unwrap_err();
+    assert!(
+        e.contains("the releases held (l3_solar) are not the groups checked (l3_power, l3_solar)"),
+        "{e}"
+    );
+}
+
+#[test]
+fn only_a_computed_node_declares_its_method_and_an_assistant_s_signature_is_the_assistant_s_line() {
+    let w = world();
+    let r = solar_12(&w);
+    // A stated node with no declaration: sealing asks none of it, nor do the
+    // checks.
+    let mut stated = r.clone();
+    stated.blocks.push(Block {
+        uid: s("sw_stated"),
+        id: s("sw_stated"),
+        parent_uid: s("l3_solar"),
+        behaviour: s("stated"),
+        question: s("What is stated?"),
+        contract_version: 1,
+        ..Block::default()
+    });
+    let i = checks_of(Ok(&stated), "");
+    assert!(
+        line(&i, Check::Assistant).holds,
+        "{}",
+        line(&i, Check::Assistant).says
+    );
+    // A signature in an assistant's name is the assistant's line, not the
+    // nodes'.
+    let mut signed = r.clone();
+    let mut row = signed
+        .signatures
+        .iter()
+        .find(|x| x.scope == FILE)
+        .unwrap()
+        .clone();
+    row.signer = s("Claude");
+    signed.signatures.push(row);
+    let i = checks_of(Ok(&signed), "");
+    assert!(!line(&i, Check::Assistant).holds);
+    assert!(
+        line(&i, Check::Assistant)
+            .says
+            .contains("an assistant's name"),
+        "{}",
+        line(&i, Check::Assistant).says
+    );
+    assert!(
+        line(&i, Check::Nodes).holds,
+        "{}",
+        line(&i, Check::Nodes).says
+    );
+}
+
+#[test]
+fn a_range_s_ends_are_finite_numbers() {
+    let w = world();
+    let mut r = solar_12(&w);
+    let p = r
+        .ports
+        .iter_mut()
+        .find(|p| p.block_uid == BAND && p.direction == "in")
+        .unwrap();
+    p.lower = s("0");
+    p.upper = s("inf");
+    let name = p.name.clone();
+    let i = checks_of(Ok(&r), "");
+    assert!(
+        line(&i, Check::Ranges).says.contains(&format!(
+            "{BAND}.{name}'s range, 0 to inf, is not two numbers"
+        )),
+        "{}",
+        line(&i, Check::Ranges).says
+    );
+}

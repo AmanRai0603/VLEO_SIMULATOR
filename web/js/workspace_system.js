@@ -45,7 +45,7 @@ import { $, esc, answerFirst, plural } from './dom.js';
 
 const W = { group: '', tree: null, sel: '', notice: null, stale: false, host: null, post: null, groups: [], why: '', seq: 0 };
 /** The release panel: the checks as last read, what was typed, and the program's answer. */
-const R = { seq: 0, checks: null, version: '', changed: '', understood: new Set(), notice: null };
+const R = { seq: 0, checks: null, version: '', changed: '', understood: new Set(), notice: null, sending: false };
 
 async function get(path) {
   try { return await (await fetch(path)).json(); } catch (e) { return { ok: false, message: 'the program did not answer: ' + e }; }
@@ -53,7 +53,7 @@ async function get(path) {
 
 /** Open the workspace at group `id`, the next time it is drawn. */
 export function openAt(id) {
-  if (id && id !== W.group) { W.group = id; W.tree = null; W.sel = ''; W.notice = null; W.stale = false; }
+  if (id && id !== W.group) { W.group = id; W.tree = null; W.sel = ''; W.notice = null; W.stale = false; R.notice = null; }
 }
 
 /** Draw the workspace into `host`. `post(path, fields)` writes with the launch's word;
@@ -165,7 +165,7 @@ async function drawRelease() {
     '<h4 class="seg-h">red marks</h4>' + marks +
     '<div class="sy-r-form"><label>version <input id="sy-r-version" size="12" value="' + esc(R.version) + '"></label> ' +
     '<label>what changed <textarea id="sy-r-changed" rows="2" cols="60">' + esc(R.changed) + '</textarea></label> ' +
-    '<button class="ctl" id="sy-r-release">Release design</button></div>' +
+    '<button class="ctl" id="sy-r-release"' + (R.sending ? ' disabled' : '') + '>Release design</button></div>' +
     (n ? '<p class="' + (n.ok ? 'sh-said' : 'sh-refused') + ' sy-r-notice">' + esc(n.text) + '</p>' : '');
 }
 
@@ -395,10 +395,16 @@ async function click(e) {
   const b = W.sel;
   switch (t.id) {
     case 'sy-r-release': {
+      if (R.sending) return;
+      R.sending = true;
+      t.disabled = true;
       R.version = v('sy-r-version').trim();
       R.changed = v('sy-r-changed');
       R.understood = new Set([...W.host.querySelectorAll('.sy-r-understood:checked')].map(c => c.dataset.mark));
-      const r = await W.post('/v1/design/release', { version: R.version, changed: R.changed, understood: [...R.understood].join(',') });
+      let r;
+      try {
+        r = await W.post('/v1/design/release', { version: R.version, changed: R.changed, understood: [...R.understood].join(',') });
+      } finally { R.sending = false; }
       R.notice = { ok: !!(r && r.ok), text: r && r.ok ? r.message + ' ' + r.announce : (r && r.message) || 'nothing was released' };
       if (r && r.ok) { R.version = ''; R.changed = ''; R.understood = new Set(); }
       return drawRelease();

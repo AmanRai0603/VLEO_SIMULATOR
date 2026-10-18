@@ -574,46 +574,65 @@ pub fn build(base: Arc<dyn Files>, root: &Path, drive: &Path) -> Result<Today, S
 /// A release today's design took, read again from `path` on `drive` as the
 /// group `id`'s and checked through the chain as a build checks it, for a
 /// released design to hold (F6-b): its bytes, the release they read as in
-/// the one schema, and how its seal checked. Refused when its bytes change
-/// while it is read, so what is held is what was checked.
+/// the one schema, and how its seal checked, every check made of the bytes
+/// held.
 pub fn read_again(
     drive: &Path,
     id: &str,
     path: &Path,
 ) -> Result<(Vec<u8>, vleo_files::model::File, String), String> {
-    let read = || std::fs::read(path).map_err(|e| format!("{}: {e}", path.display()));
-    let bytes = read()?;
-    let found = Found::open(path)?;
-    if read()? != bytes {
-        return Err("it changed while it was read: read it again".into());
-    }
-    let chain = chain_of(drive);
-    let (file, said) = match found {
-        Found::OneSchema(f) => {
-            if f.meta.get("group_id").map(String::as_str) != Some(id) {
-                return Err(format!("it is not {id}'s release"));
+    let bytes = std::fs::read(path).map_err(|e| format!("{}: {e}", path.display()))?;
+    // Every check is of the bytes read, opened from a file of their own: a
+    // file changed on the drive between two reads is never what is held.
+    let (file, said) = of_bytes(&bytes, |at| {
+        let chain = chain_of(drive);
+        match Found::open(at)? {
+            Found::OneSchema(f) => {
+                if f.meta.get("group_id").map(String::as_str) != Some(id) {
+                    return Err(format!("it is not {id}'s release"));
+                }
+                let said = chain.check_one(drive, &f, id)?;
+                Ok((*f, said))
             }
-            let said = chain.check_one(drive, &f, id)?;
-            (*f, said)
+            Found::Before1_0(r) => {
+                if r.group != id {
+                    return Err(format!("it is not {id}'s release"));
+                }
+                r.check_seal()
+                    .map_err(|e| format!("its files are not the ones sealed: {e}"))?;
+                let f = upgraded(at, &r)?;
+                if f.meta.get("fingerprint") != Some(&r.fingerprint) {
+                    return Err("its fingerprint is not the one it was sealed with".into());
+                }
+                let said = chain.check(&f, &r.sealed_by)?;
+                Ok((f, said))
+            }
         }
-        Found::Before1_0(r) => {
-            if r.group != id {
-                return Err(format!("it is not {id}'s release"));
-            }
-            r.check_seal()
-                .map_err(|e| format!("its files are not the ones sealed: {e}"))?;
-            let f = upgraded(path, &r)?;
-            if f.meta.get("fingerprint") != Some(&r.fingerprint) {
-                return Err("it changed while it was read: read it again".into());
-            }
-            let said = chain.check(&f, &r.sealed_by)?;
-            (f, said)
-        }
-    };
-    if read()? != bytes {
-        return Err("it changed while it was read: read it again".into());
-    }
+    })?;
     Ok((bytes, file, said))
+}
+
+/// What `read` makes of `bytes`, written whole to a file of this program's
+/// own, outside the drive and the copy, and read there; the file is gone
+/// after.
+pub fn of_bytes<T>(
+    bytes: &[u8],
+    read: impl FnOnce(&Path) -> Result<T, String>,
+) -> Result<T, String> {
+    static NEXT: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+    let dir = std::env::temp_dir().join(format!(
+        "vleo-held-{}-{}",
+        std::process::id(),
+        NEXT.fetch_add(1, std::sync::atomic::Ordering::Relaxed)
+    ));
+    let _ = std::fs::remove_dir_all(&dir);
+    std::fs::create_dir_all(&dir).map_err(|e| format!("{}: {e}", dir.display()))?;
+    let at = dir.join("held.vleo");
+    let out = std::fs::write(&at, bytes)
+        .map_err(|e| format!("{}: {e}", at.display()))
+        .and_then(|()| read(&at));
+    let _ = std::fs::remove_dir_all(&dir);
+    out
 }
 
 /// Every sheet replaced, by its path under `root` and the hash of its bytes,

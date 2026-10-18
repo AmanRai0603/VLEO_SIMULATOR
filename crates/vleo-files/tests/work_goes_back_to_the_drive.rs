@@ -2067,3 +2067,84 @@ fn a_released_design_by_anyone_else_or_not_as_it_was_signed_does_not_go_back() {
     );
     let _ = std::fs::remove_dir_all(drive.parent().unwrap());
 }
+
+#[test]
+fn one_released_design_goes_back_at_a_time_and_its_record_only_beside_it() {
+    let (drive, copy) = world("design-one");
+    // Two released in the copy, each after the drive's none: neither goes.
+    let a = released_in(&copy, "2026.10.1", "", "Test Sam", 72);
+    let b = released_in(&copy, "2026.11.1", "", "Test Sam", 72);
+    std::fs::write(copy.join("design/NOTES.md"), "# notes\n").unwrap();
+    let r = pb(&copy, &drive, "Test Sam", None).unwrap();
+    for p in [&a, &b] {
+        let l = line(&r, p);
+        assert!(
+            !l.back && l.why.contains("2 released designs would go back at once"),
+            "{l:?}"
+        );
+    }
+    let l = line(&r, "design/NOTES.md");
+    assert!(
+        !l.back && l.why.contains("goes back only beside the released design"),
+        "{l:?}"
+    );
+    // One, with its record: both go.
+    std::fs::remove_file(copy.join(&b)).unwrap();
+    let r = pb(&copy, &drive, "Test Sam", None).unwrap();
+    assert!(
+        line(&r, &a).back && line(&r, "design/NOTES.md").back,
+        "{:?}",
+        r.lines
+    );
+    pb(&copy, &drive, "Test Sam", Some(r.named())).unwrap();
+    // The record alone, after: it does not go.
+    std::fs::write(copy.join("design/NOTES.md"), "# notes, changed\n").unwrap();
+    let r = pb(&copy, &drive, "Test Sam", None).unwrap();
+    assert!(!line(&r, "design/NOTES.md").back, "{:?}", r.lines);
+    let _ = std::fs::remove_dir_all(drive.parent().unwrap());
+}
+
+#[test]
+fn a_design_not_named_for_its_version_or_planted_on_the_drive_is_refused_by_name() {
+    let (drive, copy) = world("design-planted");
+    // In the copy, a design named for no version does not go back.
+    let x = released_in(&copy, "2026.10.1", "", "Test Sam", 72);
+    let mut f = sqlite::read(&copy.join(&x)).unwrap();
+    f.meta.insert(s("version"), s("x"));
+    std::fs::remove_file(copy.join(&x)).unwrap();
+    sqlite::write(&f, &copy.join("design/design-x.vleo")).unwrap();
+    let r = pb(&copy, &drive, "Test Sam", None).unwrap();
+    assert!(!line(&r, "design/design-x.vleo").back, "{:?}", r.lines);
+    std::fs::remove_file(copy.join("design/design-x.vleo")).unwrap();
+    // On the drive, a file under a design's name that is not one: nothing
+    // after it goes back, and it is named.
+    std::fs::create_dir_all(drive.join("design")).unwrap();
+    std::fs::write(drive.join("design/design-2099.12.9.vleo"), b"not a design").unwrap();
+    let d = released_in(&copy, "2026.10.1", "", "Test Sam", 72);
+    let r = pb(&copy, &drive, "Test Sam", None).unwrap();
+    let l = line(&r, &d);
+    assert!(
+        !l.back && l.why.contains("design/design-2099.12.9.vleo does not read"),
+        "{l:?}"
+    );
+    // A design that reads, released by Ola, who is not the system engineer:
+    // not taken for the drive's latest, and named.
+    std::fs::remove_file(drive.join("design/design-2099.12.9.vleo")).unwrap();
+    let planted = drive.parent().unwrap().join("planted");
+    released_in(&planted, "2026.9.1", "", "Test Ola", 73);
+    std::fs::copy(
+        planted.join("design/design-2026.9.1.vleo"),
+        drive.join("design/design-2026.9.1.vleo"),
+    )
+    .unwrap();
+    let r = pb(&copy, &drive, "Test Sam", None).unwrap();
+    let l = line(&r, &d);
+    assert!(
+        !l.back
+            && l.why.contains(
+                "design/design-2026.9.1.vleo is not a released design that opens through the chain"
+            ),
+        "{l:?}"
+    );
+    let _ = std::fs::remove_dir_all(drive.parent().unwrap());
+}

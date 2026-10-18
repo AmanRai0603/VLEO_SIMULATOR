@@ -21,7 +21,9 @@
 //! **Release design** ([`release`]) is refused whole when any line fails. A
 //! released design holds each group's release taken whole, by its bytes and
 //! their SHA-256, beside the programme's and the systems' files the same way,
-//! and a table of what is in it. Their rows are not merged: a reader opens
+//! a table of what is in it, and the checks it was released on. Its version
+//! follows the design released now: the next in its month, or the first of a
+//! later one. Their rows are not merged: a reader opens
 //! each as today's design opens a release. It is signed by the system
 //! engineer, or their deputy, and held to `chain::check_design` as it will be
 //! read.
@@ -178,23 +180,37 @@ pub fn integration(parts: &[Part], released: &str) -> Integration {
                 ),
             )
         });
-        // A declaration's findings are the assistant's line; every other
-        // finding of the release's checks is the nodes' line.
-        let mut declared: Vec<String> = Vec::new();
-        for b in t.file.blocks.iter().filter(|b| b.archived == 0) {
-            if b.behaviour == "children" {
-                continue;
-            }
+        // The assistant's line: each computed node's declaration, the one
+        // `check_release` asks of it, and every signature in an assistant's
+        // name. Every other finding of the release's checks is the nodes'
+        // line. Both are read from `check_release`'s own findings, so a
+        // finding is on one line or the other, never on neither.
+        let mut asked: Vec<(String, String)> = Vec::new();
+        for b in t
+            .file
+            .blocks
+            .iter()
+            .filter(|b| b.archived == 0 && b.behaviour == "method")
+        {
             for e in checks::declared(t.file, b).errors() {
-                declared.push(format!("{}: {}", e.place, e.what));
+                asked.push((e.place.clone(), e.what.clone()));
             }
         }
-        let found = checks::check_release(t.file);
-        let nodes: Vec<String> = found
-            .errors()
-            .map(|e| format!("{}: {}", e.place, e.what))
-            .filter(|e| !declared.contains(e))
-            .collect();
+        let by_assistant = |what: &str| {
+            t.file.signatures.iter().any(|s| {
+                checks::is_assistant(&s.signer)
+                    && what.starts_with(&format!("is signed by {:?}", s.signer))
+            })
+        };
+        let (mut declared, mut nodes) = (Vec::new(), Vec::new());
+        for e in checks::check_release(t.file).errors() {
+            let said = format!("{}: {}", e.place, e.what);
+            if asked.contains(&(e.place.clone(), e.what.clone())) || by_assistant(&e.what) {
+                declared.push(said);
+            } else {
+                nodes.push(said);
+            }
+        }
         lines.push(line(
             Check::Nodes,
             nodes.is_empty(),
@@ -227,8 +243,9 @@ pub fn integration(parts: &[Part], released: &str) -> Integration {
     Integration { lines }
 }
 
-/// Every port of `f` whose range is declared by one end only, whose ends
-/// are not numbers, or whose lower end is above its upper.
+/// Every port of a live block of `f` whose range is declared by one end
+/// only, whose ends are not finite numbers, or whose lower end is above its
+/// upper.
 fn ranges(f: &File) -> Vec<String> {
     let mut out = Vec::new();
     let id = |uid: &str| {
@@ -237,7 +254,8 @@ fn ranges(f: &File) -> Vec<String> {
             .find(|b| b.uid == uid)
             .map_or(uid.to_string(), |b| b.id.clone())
     };
-    for p in &f.ports {
+    let live = |uid: &str| f.blocks.iter().any(|b| b.uid == uid && b.archived == 0);
+    for p in f.ports.iter().filter(|p| live(&p.block_uid)) {
         let (lo, hi) = (p.lower.trim(), p.upper.trim());
         if lo.is_empty() && hi.is_empty() {
             continue;
@@ -247,7 +265,7 @@ fn ranges(f: &File) -> Vec<String> {
             out.push(format!("{at} declares one end of its range only"));
             continue;
         }
-        let num = |v: &str| v.parse::<f64>().ok();
+        let num = |v: &str| v.parse::<f64>().ok().filter(|x| x.is_finite());
         match (num(lo), num(hi)) {
             (Some(a), Some(b)) if a <= b => {}
             (Some(_), Some(_)) => out.push(format!(
@@ -272,6 +290,42 @@ pub struct Held<'a> {
     pub releases: Vec<(&'a str, &'a str, &'a str, Whole<'a>)>,
     pub programme: Whole<'a>,
     pub systems: Whole<'a>,
+}
+
+/// Whether the design `version` may follow `previous`, the design released
+/// now (F6's question 39): year.month.sequence, the next in the month of
+/// `previous`, or the first of a later month; the first design of all is the
+/// first of its month. Why not, when it may not.
+pub fn follows(version: &str, previous: Option<&str>) -> Result<(), String> {
+    let v = DesignVersion::parse(version).ok_or_else(|| {
+        format!("{version:?} is not a design's version: year.month.sequence, such as 2026.11.2")
+    })?;
+    let Some(p) = previous.filter(|p| !p.is_empty()) else {
+        return if v.sequence == 1 {
+            Ok(())
+        } else {
+            Err(format!(
+                "{version} is not the first of its month: the first design released is {}.{}.1",
+                v.year, v.month
+            ))
+        };
+    };
+    let was = DesignVersion::parse(p).ok_or_else(|| {
+        format!("the design released now says it is {p:?}, which is not a design's version")
+    })?;
+    if v <= was {
+        return Err(format!(
+            "{version} does not come after {p}, the design released now"
+        ));
+    }
+    let next = was.next(v.year, v.month);
+    if v != next {
+        return Err(format!(
+            "{version} does not follow {p}, the design released now: the next in {}.{} is {next}",
+            v.year, v.month
+        ));
+    }
+    Ok(())
 }
 
 /// A red mark of today's design, beside the checks and not refusing one: a
@@ -333,6 +387,20 @@ pub fn release(
             )
         }));
     }
+    // What is held is what was checked: a release for each group the checks
+    // read, and none beside.
+    let mut holding: Vec<&str> = held.releases.iter().map(|r| r.0).collect();
+    holding.sort_unstable();
+    let mut sorted: Vec<&str> = checks.lines.iter().map(|l| l.group.as_str()).collect();
+    sorted.sort_unstable();
+    sorted.dedup();
+    if holding != sorted {
+        return Err(refused(format!(
+            "the releases held ({}) are not the groups checked ({}): a released design holds what was checked",
+            holding.join(", "),
+            sorted.join(", ")
+        )));
+    }
     if let Some(u) = understood
         .iter()
         .find(|u| !marks.iter().any(|m| &m.id == *u))
@@ -366,23 +434,7 @@ pub fn release(
             ),
         ));
     }
-    let v = DesignVersion::parse(version).ok_or_else(|| {
-        refused(format!(
-            "{version:?} is not a design's version: year.month.sequence, such as 2026.11.2"
-        ))
-    })?;
-    if let Some(p) = previous {
-        let was = DesignVersion::parse(p).ok_or_else(|| {
-            refused(format!(
-                "the design released now says it is {p:?}, which is not a design's version"
-            ))
-        })?;
-        if v <= was {
-            return Err(refused(format!(
-                "{version} does not come after {p}, the design released now"
-            )));
-        }
-    }
+    follows(version, previous).map_err(refused)?;
     if changed.trim().is_empty() {
         return Err(refused(
             "say what changed: a released design says what changed in it, for everyone it reaches",
@@ -447,14 +499,22 @@ pub fn release(
         kind: "changed".into(),
         body: changed.trim().to_string(),
     });
-    let mut checked = String::new();
-    for l in &checks.lines {
-        checked.push_str(&format!("{}: {}: {}\n", l.group, l.check.name(), l.says));
-    }
-    f.texts.push(Text {
+    let lines: Vec<Vec<String>> = checks
+        .lines
+        .iter()
+        .map(|l| {
+            vec![
+                l.group.clone(),
+                l.check.name().to_string(),
+                if l.holds { "holds" } else { "fails" }.to_string(),
+                l.says.clone(),
+            ]
+        })
+        .collect();
+    f.tables.push(Tbl {
         scope: FILE.into(),
-        kind: "integration".into(),
-        body: checked,
+        path: "integration.csv".into(),
+        csv: crate::csv::write(&["group", "check", "holds", "says"], &lines),
     });
     f.check_meta()?;
     let row = chain::sign(&f, FILE, by, key, at, "ok", "")?;
@@ -541,18 +601,14 @@ pub fn readable(design: &File, releases: &[(&str, &File)]) -> Vec<(&'static str,
         }
     }
     let status: Vec<Vec<String>> = design
-        .texts
+        .tables
         .iter()
-        .filter(|t| t.scope == FILE && t.kind == "integration")
-        .flat_map(|t| t.body.lines())
-        .filter_map(|l| {
-            let mut it = l.splitn(3, ": ");
-            Some(vec![
-                it.next()?.to_string(),
-                it.next()?.to_string(),
-                it.next()?.to_string(),
-                version.clone(),
-            ])
+        .filter(|t| t.scope == FILE && t.path == "integration.csv")
+        .flat_map(|t| crate::csv::read(&t.csv).rows)
+        .map(|mut r| {
+            r.resize(4, String::new());
+            r.push(version.clone());
+            r
         })
         .collect();
     use crate::csv::write;
@@ -615,17 +671,19 @@ pub fn readable(design: &File, releases: &[(&str, &File)]) -> Vec<(&'static str,
         ),
         (
             "Status.csv",
-            write(&["group", "check", "says", "design"], &status),
+            write(&["group", "check", "holds", "says", "design"], &status),
         ),
     ]
 }
 
 /// The latest released design in `dir`, the drive's or the copy's `design/`,
 /// by the version each `design-<version>.vleo` is named for; none when it
-/// holds none. A file named `design-` that is not a version is refused by
-/// name, never passed over.
+/// holds none. Each counts only when it is the released design it is named
+/// for and opens through `programme`'s chain (`chain::check_design`): a file
+/// planted under a design's name is refused by name, never taken for one,
+/// and never passed over.
 #[cfg(not(target_arch = "wasm32"))]
-pub fn latest_in(dir: &std::path::Path) -> Result<Option<String>, Error> {
+pub fn latest_in(dir: &std::path::Path, programme: &Registry) -> Result<Option<String>, Error> {
     let entries = match std::fs::read_dir(dir) {
         Ok(d) => d,
         Err(e) if e.kind() == std::io::ErrorKind::NotFound => return Ok(None),
@@ -644,6 +702,20 @@ pub fn latest_in(dir: &std::path::Path) -> Result<Option<String>, Error> {
         let parsed = DesignVersion::parse(v).ok_or_else(|| {
             refused(format!(
                 "design/{name} is not named for a design's version: year.month.sequence"
+            ))
+        })?;
+        let f = crate::sqlite::read(&e.path())
+            .map_err(|x| refused(format!("design/{name} does not read: {}", x.message())))?;
+        if f.meta.get("version").map(String::as_str) != Some(v) {
+            return Err(refused(format!(
+                "design/{name} is not design {v}: it says it is {:?}",
+                f.meta.get("version").map_or("", String::as_str)
+            )));
+        }
+        chain::check_design(&f, programme).map_err(|x| {
+            refused(format!(
+                "design/{name} is not a released design that opens through the chain: {}",
+                x.message()
             ))
         })?;
         if latest.as_ref().is_none_or(|(l, _)| parsed > *l) {

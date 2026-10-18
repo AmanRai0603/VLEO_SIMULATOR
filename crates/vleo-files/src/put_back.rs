@@ -36,11 +36,12 @@
 //! never written over, so one already on the drive at that path stays.
 //!
 //! Or it is a released design (F6-b): a new file in `design/`, named for the
-//! version it says, released by the person putting it back, after the
+//! version it says, released by the person putting it back, following the
 //! drive's latest, and checking through the chain as the drive holds it now,
-//! signed with a key that counts then. Its record, `design/NOTES.md` and the
-//! files of `readable/`, goes back by the system engineer or their deputy,
-//! over the drive's only when the drive's is as copied.
+//! signed with a key that counts then; one at a time. Its record,
+//! `design/NOTES.md` and the files of `readable/`, goes back by the system
+//! engineer or their deputy beside it, over the drive's only when the
+//! drive's is as copied.
 //!
 //! A group's file does not go back yet: what may change in it at its valve
 //! is not yet checked against the drive's file, so a change of its people
@@ -835,7 +836,8 @@ fn design_verdict(
         ));
     }
     // After the drive's latest released design, as the drive holds it now.
-    let latest = crate::design::latest_in(&drive.join("design"))
+    f.check_meta().map_err(|e| e.message().to_string())?;
+    let latest = crate::design::latest_in(&drive.join("design"), &chain.programme)
         .map_err(|e| format!("the drive's released designs do not read: {}", e.message()))?;
     if said("previous") != latest.as_deref().unwrap_or("") {
         return Err(format!(
@@ -844,6 +846,7 @@ fn design_verdict(
             latest.as_deref().unwrap_or("none")
         ));
     }
+    crate::design::follows(version, latest.as_deref())?;
     let now = only_counting_now(&f, chain::FILE, me, at, &chain.programme);
     chain::check_design(&now, &chain.programme).map_err(|e| {
         format!(
@@ -961,6 +964,7 @@ pub fn put_back(
             Err(why) => report.lines.push(line(false, why, mine)),
         }
     }
+    one_design_at_a_time(&mut report);
     let Some(named) = write else {
         return Ok(report);
     };
@@ -1056,6 +1060,41 @@ pub fn put_back(
     report.recorded = already.iter().map(|(p, _)| p.clone()).collect();
     report.written = !done.is_empty();
     Ok(report)
+}
+
+/// Whether `path` is a released design in `design/`.
+fn is_design(path: &str) -> bool {
+    path.strip_prefix("design/")
+        .is_some_and(|n| n.starts_with("design-") && n.ends_with(".vleo") && !n.contains('/'))
+}
+
+/// Whether `path` is the record of a released design: `design/NOTES.md`, a
+/// file of `readable/`.
+fn is_record(path: &str) -> bool {
+    path == "design/NOTES.md" || path.starts_with("readable/")
+}
+
+/// One released design goes back at a time, each after the drive's latest,
+/// so two never follow the same one; and its record goes back only beside
+/// it, so a record never says of the drive what no released design there
+/// says. Said as why, never dropped.
+fn one_design_at_a_time(report: &mut Report) {
+    let designs = report
+        .lines
+        .iter()
+        .filter(|l| l.back && is_design(&l.path))
+        .count();
+    for l in report.lines.iter_mut().filter(|l| l.back) {
+        if designs > 1 && is_design(&l.path) {
+            l.back = false;
+            l.why = format!(
+                "{designs} released designs would go back at once, each after the drive's latest: one goes back at a time, then the next is released on a copy taken after it"
+            );
+        } else if designs != 1 && is_record(&l.path) {
+            l.back = false;
+            l.why = "the released design's record goes back only beside the released design it is of, put back at the same time".into();
+        }
+    }
 }
 
 /// `bytes` written whole at `path` on the drive: to a name of the program's
