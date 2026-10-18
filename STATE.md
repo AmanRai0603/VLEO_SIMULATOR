@@ -202,7 +202,17 @@ Handed over Saturday 17 October (S1 to S3: F1 to F3-f, the key's proof, F3-g1, t
 
 ## Person B · night
 
-Handed over Sunday 18 October (S4: F5). Nothing is merged: each waits on A's review and Aman. Every PR was green on `gate && cargo test --no-fail-fast` before its push. 163 is in 176, and 168 to 170 are in 185.
+Handed over Sunday 18 October, evening (S4: F5, after A's first reviews). Nothing is merged: each waits on A's review and Aman. Every PR was green on `gate && cargo test --no-fail-fast` and `clippy -D warnings` before its push. 163 is in 176, and 168 to 170 are in 185.
+
+- **A's reviews of 193, 194, 196 and 197 are answered**, each fix with a test shown red first, and a reply on each PR. 198 to 205 are not reviewed yet.
+- **Both stacks carry the fixes**, merged up branch by branch: CI is green on all twelve (204's panel check was still running at handover).
+- **Found while merging, fixed:**
+  - `accepting_another_anchor_later…` failed on CI on 200 and 202. A race between tests over one `anchors` file, now held under a lock (193 and up). It did not reproduce locally in 40 runs.
+  - `release::node_in` (200) kept the design's case texts for a release with no cases, so its folder could not be written. The case texts are now the release's alone (22f57eba).
+- **Open, for A or Aman:**
+  - *What a group publishes* to another group's wires: today any framed block in its group file, issued or not (197, finding 4). A decision, not guessed.
+  - 197's Assign, Unassign and Wire move beside 195's `others_in` and `mounted_on_any` when 195 merges (finding 7).
+  - Not checked yet: whether 204's assign-issue refuses a deputy or an assistant's name as Assign now does, and its "only the owner" test asserts only that there is an error (the weakness 197's finding 8 named).
 
 - **Two F5 stacks, both on A's 187:**
   - **Release line:** 193 F5-a the seal → 194 F5-b1 a release put back → 196 F5-b2 today's design takes it (W5 proved end to end) → 200 F5-d today's view and impact → 205 F5-g1 seal on screen. 202 F5-e2 answers (W7) is on 194. **High risk:** 193, 194, 196, 202, 205.
@@ -211,7 +221,7 @@ Handed over Sunday 18 October (S4: F5). Nothing is merged: each waits on A's rev
 - **Changed in A's code, for A to check:**
   - `chain::checked_release` (193): a block no assignment names is a heading, vouched for by the seal.
   - `chain::check_answer` (202) is new, beside `check_design`.
-  - `release::node_in` (200) keeps the text kinds a node does not carry.
+  - `release::node_in` (200) keeps the text kinds a node does not carry, except its cases'.
 - **What F5 decides:**
   - **A seal makes every check today's design makes** (`check_release`), the group's `versions.csv` row for the version among them.
   - **A release and an answer go back as new files only.** Each is checked through the drive's chain as it is then, and never written over.
@@ -225,4 +235,4 @@ Handed over Sunday 18 October (S4: F5). Nothing is merged: each waits on A's rev
   - **F5-g2:** remove `web/group.html`, `web/node.html` and `xtask group-app`. 37 files, `AGENTS.md` among them; it overlaps A's 192. One person, after 192.
   - The test drive (165) per 171 and 181: assign mounts in the systems' file, and give keys their proofs.
   - Neighbours' values on update base; My work naming moved groups (needs F6's previews); the health map of the view.
-- **Next for B:** F5-f2 once the lines merge; the 165 fix; review comments on 193 to 205.
+- **Next for B:** A's reviews of 198 to 205; F5-f2 once the lines merge; the 165 fix.
