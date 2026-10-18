@@ -1056,3 +1056,149 @@ fn every_released_design_on_the_drive_is_read_back_oldest_first() {
     );
     let _ = std::fs::remove_dir_all(&dir);
 }
+
+/// The programme's file as `programme` writes it, with Ola's key revoked
+/// from `from`, signed again by Pat.
+fn programme_revoking_ola(from: &str) -> Registry {
+    let mut f = programme().file.clone();
+    for k in f.keys.iter_mut().filter(|k| k.person == "Ola Sun") {
+        k.revoked_from = s(from);
+    }
+    f.signatures.retain(|r| r.scope != FILE);
+    chain::open_programme(
+        signed(f, "Pat Morgan", &key(11)),
+        &key(11).public().fingerprint(),
+    )
+    .unwrap()
+}
+
+#[test]
+fn a_design_is_released_again_under_a_new_version_holding_what_it_held() {
+    let w = world();
+    let r = solar_12(&w);
+    let i = checks_of(Ok(&r), "");
+    let one = release_it(&w, &i, &r, "2026.10.1", None, "Solar.", "Sam Engel", 12).unwrap();
+    let old = design::open_held(&one, &w.pr, APP).unwrap();
+    let again =
+        |version: &str, previous: Option<&str>, why: &str, by: &str, k: u8, pr: &Registry| {
+            design::release_again(&old, version, previous, why, by, &key(k), AT, APP, pr)
+                .map_err(|e| e.message().to_string())
+        };
+    // 2026.10.2 was released after it, and was wrong: .1 again, as .3.
+    let d = again(
+        "2026.10.3",
+        Some("2026.10.2"),
+        "2026.10.2's band was wrong.",
+        "Sam Engel",
+        12,
+        &w.pr,
+    )
+    .expect("released again");
+    assert_eq!(d.media, one.media, "the same files, byte for byte");
+    for (k, v) in [
+        ("version", "2026.10.3"),
+        ("previous", "2026.10.2"),
+        ("again_of", "2026.10.1"),
+        ("released_by", "Sam Engel"),
+    ] {
+        assert_eq!(d.meta.get(k).map(String::as_str), Some(v), "{k}");
+    }
+    let o = design::open_held(&d, &w.pr, APP).expect("it reads back");
+    assert_eq!(o.releases[0].back.bytes, old.releases[0].back.bytes);
+    for t in ["released.csv", "integration.csv", "red_marks.csv"] {
+        assert_eq!(
+            d.tables.iter().find(|x| x.path == t).map(|x| &x.csv),
+            one.tables.iter().find(|x| x.path == t).map(|x| &x.csv),
+            "{t}"
+        );
+    }
+    assert!(d.texts.iter().any(|t| t.kind == "changed"
+        && t.body
+            .contains("released again, as 2026.10.3: 2026.10.2's band was wrong.")));
+    // Sid, Sam's deputy, too.
+    again(
+        "2026.10.3",
+        Some("2026.10.2"),
+        "Wrong.",
+        "Sid Side",
+        17,
+        &w.pr,
+    )
+    .expect("the deputy");
+    // Refused, by name.
+    for (version, previous, why, by, k, says) in [
+        (
+            "2026.10.3",
+            Some("2026.10.2"),
+            "Wrong.",
+            "Ola Sun",
+            13,
+            "Ola Sun may not release a design again",
+        ),
+        (
+            "2026.10.2",
+            Some("2026.10.1"),
+            "Wrong.",
+            "Sam Engel",
+            12,
+            "2026.10.1 is the design released now",
+        ),
+        (
+            "2026.10.3",
+            Some("2026.10.2"),
+            "  ",
+            "Sam Engel",
+            12,
+            "say why 2026.10.1 is released again",
+        ),
+        (
+            "2026.10.5",
+            Some("2026.10.2"),
+            "Wrong.",
+            "Sam Engel",
+            12,
+            "does not follow 2026.10.2",
+        ),
+        (
+            "2026.10.3",
+            Some("2026.10.2"),
+            "Wrong.",
+            "Claude",
+            12,
+            "Claude is an assistant's name",
+        ),
+    ] {
+        let e = again(version, previous, why, by, k, &w.pr).unwrap_err();
+        assert!(e.contains(says), "{by} {version}: {e}");
+    }
+    // The programme's file now says Ola's key was revoked before the seal
+    // was made: the seal it holds does not check through the chain now.
+    let revoked = programme_revoking_ola("2026-10-16");
+    let e = again(
+        "2026.10.3",
+        Some("2026.10.2"),
+        "Wrong.",
+        "Sam Engel",
+        12,
+        &revoked,
+    )
+    .unwrap_err();
+    assert!(
+        e.contains(
+            "design 2026.10.1 holds l3_solar 1.2, which does not check through the chain now"
+        ) && e.contains("with a key revoked from 2026-10-16"),
+        "{e}"
+    );
+    // A key revoked after the seal still counts for it, as the chain counts
+    // every signature made while its key counted.
+    let later = programme_revoking_ola("2026-10-18");
+    again(
+        "2026.10.3",
+        Some("2026.10.2"),
+        "Wrong.",
+        "Sam Engel",
+        12,
+        &later,
+    )
+    .expect("a seal made before its key was revoked still counts");
+}

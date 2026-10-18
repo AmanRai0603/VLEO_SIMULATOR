@@ -452,32 +452,6 @@ fn released(params: &str, ctx: &Ctx) -> Result<String, String> {
         .map_err(|e| e.message().to_string())
     })
     .ok_or(no_key)??;
-    // Into the copy, under its lock: the released design new, then its
-    // record.
-    let _held = vleo_files::save::lock(&copy).map_err(|e| e.message().to_string())?;
-    let name = format!("design/design-{version}.vleo");
-    let at_file = copy.join(&name);
-    if at_file.exists() {
-        return Err(format!(
-            "your copy holds {name} already: a released design is never written over"
-        ));
-    }
-    let io = |p: &Path, e: std::io::Error| format!("{}: {e}", p.display());
-    std::fs::create_dir_all(copy.join("design")).map_err(|e| io(&copy.join("design"), e))?;
-    vleo_files::sqlite::write(&f, &at_file).map_err(|e| e.message().to_string())?;
-    // Its record, written after it; when that fails the released design is
-    // taken out again, so the copy never holds one without its record.
-    let undo = |why: String| {
-        let _ = std::fs::remove_file(&at_file);
-        format!("the design is not released in your copy, nothing of it is kept: {why}")
-    };
-    let notes_at = copy.join("design/NOTES.md");
-    let before = match std::fs::read_to_string(&notes_at) {
-        Ok(t) => t,
-        Err(e) if e.kind() == std::io::ErrorKind::NotFound => String::new(),
-        Err(e) => return Err(undo(io(&notes_at, e))),
-    };
-    let body = before.strip_prefix(NOTES_HEAD).unwrap_or(&before);
     // What changed is the system engineer's words, quoted, so no line of
     // it reads as a heading of the notes.
     let quoted: String = changed.trim().lines().map(|l| format!("> {l}\n")).collect();
@@ -498,11 +472,6 @@ fn released(params: &str, ctx: &Ctx) -> Result<String, String> {
     if !t.marks.is_empty() {
         entry.push('\n');
     }
-    std::fs::write(
-        &notes_at,
-        format!("{NOTES_HEAD}{entry}\n{}", body.trim_start()),
-    )
-    .map_err(|e| undo(io(&notes_at, e)))?;
     let by_group: Vec<(&str, &vleo_files::model::File)> = t
         .parts
         .iter()
@@ -513,14 +482,7 @@ fn released(params: &str, ctx: &Ctx) -> Result<String, String> {
         .map(|(n, csv)| (n.to_string(), csv))
         .collect::<Vec<_>>();
     readable.push(("Health.csv".to_string(), health_csv(ctx, &version)));
-    std::fs::create_dir_all(copy.join("readable"))
-        .map_err(|e| undo(io(&copy.join("readable"), e)))?;
-    let mut files = vec![name.clone(), "design/NOTES.md".to_string()];
-    for (n, csv) in &readable {
-        let p = copy.join("readable").join(n);
-        std::fs::write(&p, csv).map_err(|e| undo(io(&p, e)))?;
-        files.push(format!("readable/{n}"));
-    }
+    let (name, files) = into_copy(&copy, &version, &f, &entry, &readable)?;
     let failing: Vec<&str> = t
         .marks
         .iter()
@@ -555,6 +517,56 @@ fn released(params: &str, ctx: &Ctx) -> Result<String, String> {
 
 const NOTES_HEAD: &str = "# Released designs\n\nWhat changed in each, newest first.\n\n";
 
+/// The released design `f`, `version`, written into the copy under its
+/// lock: the design new, never over, then its record, `entry` at the top of
+/// `design/NOTES.md` and `readable`'s files; when the record fails, the
+/// design is taken out again, so the copy never holds one without it. Gives
+/// the design's path and every file written.
+fn into_copy(
+    copy: &Path,
+    version: &str,
+    f: &vleo_files::model::File,
+    entry: &str,
+    readable: &[(String, String)],
+) -> Result<(String, Vec<String>), String> {
+    let _held = vleo_files::save::lock(copy).map_err(|e| e.message().to_string())?;
+    let name = format!("design/design-{version}.vleo");
+    let at_file = copy.join(&name);
+    if at_file.exists() {
+        return Err(format!(
+            "your copy holds {name} already: a released design is never written over"
+        ));
+    }
+    let io = |p: &Path, e: std::io::Error| format!("{}: {e}", p.display());
+    std::fs::create_dir_all(copy.join("design")).map_err(|e| io(&copy.join("design"), e))?;
+    vleo_files::sqlite::write(f, &at_file).map_err(|e| e.message().to_string())?;
+    let undo = |why: String| {
+        let _ = std::fs::remove_file(&at_file);
+        format!("the design is not released in your copy, nothing of it is kept: {why}")
+    };
+    let notes_at = copy.join("design/NOTES.md");
+    let before = match std::fs::read_to_string(&notes_at) {
+        Ok(t) => t,
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => String::new(),
+        Err(e) => return Err(undo(io(&notes_at, e))),
+    };
+    let body = before.strip_prefix(NOTES_HEAD).unwrap_or(&before);
+    std::fs::write(
+        &notes_at,
+        format!("{NOTES_HEAD}{entry}\n{}", body.trim_start()),
+    )
+    .map_err(|e| undo(io(&notes_at, e)))?;
+    std::fs::create_dir_all(copy.join("readable"))
+        .map_err(|e| undo(io(&copy.join("readable"), e)))?;
+    let mut files = vec![name.clone(), "design/NOTES.md".to_string()];
+    for (n, csv) in readable {
+        let p = copy.join("readable").join(n);
+        std::fs::write(&p, csv).map_err(|e| undo(io(&p, e)))?;
+        files.push(format!("readable/{n}"));
+    }
+    Ok((name, files))
+}
+
 /// The health map of the design released, as CSV: each node's state and
 /// why on the design as declared, the engine's.
 fn health_csv(ctx: &Ctx, version: &str) -> String {
@@ -579,4 +591,179 @@ fn health_csv(ctx: &Ctx, version: &str) -> String {
         &["node", "parent", "state", "margin", "why", "design"],
         &rows,
     )
+}
+
+/// The drive a release is made on: the one the copy was taken from.
+fn drive_of(ctx: &Ctx) -> Result<(PathBuf, PathBuf), String> {
+    let copy = copy::dir(ctx);
+    let record = copy::record(&copy)?.ok_or(
+        "a design is released in your copy of the database, then put back: copy it from the drive first",
+    )?;
+    Ok((copy, PathBuf::from(record.drive)))
+}
+
+/// Every released design the drive holds, read back (`design::released_in`):
+/// `design/`, and `design/archive/` once there is one.
+fn released_on(drive: &Path, c: &me::Chain) -> Result<Vec<design::Opened>, String> {
+    let (here, archive) = (drive.join("design"), drive.join("design/archive"));
+    design::released_in(&[&here, &archive], &c.programme, APP).map_err(|e| e.message().to_string())
+}
+
+/// `GET /v1/design/released`: every released design on the drive the copy
+/// was taken from, each read back, oldest first, with what it holds, who
+/// released it, what changed, and which it is again, if it is.
+pub(super) fn released_list_route(ctx: &Ctx) -> String {
+    let answer = || -> Result<String, String> {
+        let (_, drive) = drive_of(ctx)?;
+        let c = chain_of(&drive, ctx)?;
+        let all = released_on(&drive, &c)?;
+        let mut j = Json::new();
+        j.raw("{");
+        j.bool_field("ok", true);
+        j.str_field("released", all.last().map_or("", |o| o.version.as_str()));
+        j.key("designs").open_arr();
+        for o in &all {
+            let get = |k: &str| o.design.meta.get(k).map_or("", String::as_str);
+            j.open_obj();
+            j.str_field("version", &o.version);
+            j.str_field("previous", get("previous"));
+            j.str_field("released_by", get("released_by"));
+            j.str_field("again_of", get("again_of"));
+            j.str_field(
+                "changed",
+                o.design
+                    .texts
+                    .iter()
+                    .find(|t| t.scope == vleo_files::chain::FILE && t.kind == "changed")
+                    .map_or("", |t| t.body.as_str()),
+            );
+            let holds: Vec<String> = o
+                .releases
+                .iter()
+                .map(|r| format!("{} {}", r.group, r.version))
+                .collect();
+            strings(&mut j, "holds", &holds);
+            j.close_obj();
+        }
+        j.close_arr();
+        j.str_field(
+            "message",
+            &match all.last() {
+                Some(o) => format!(
+                    "{} released design{} on the drive; the design released now is {}",
+                    all.len(),
+                    if all.len() == 1 { "" } else { "s" },
+                    o.version
+                ),
+                None => "no design has been released on this drive yet".to_string(),
+            },
+        );
+        j.raw("}");
+        Ok(j.0)
+    };
+    answer().unwrap_or_else(|why| me::refusal(&why))
+}
+
+/// `POST /v1/design/release-again`: the released design `of` released again
+/// as `version`, saying `why` (W16), as whoever's key is open, refused by the
+/// library by name; written into the copy as a release is, and put back the
+/// same way. Carries session.
+pub(super) fn release_again_route(params: &str, ctx: &Ctx) -> String {
+    match released_again(params, ctx) {
+        Ok(j) => j,
+        Err(why) => me::refusal(&why),
+    }
+}
+
+fn released_again(params: &str, ctx: &Ctx) -> Result<String, String> {
+    me::carries_session(params)?;
+    let no_key = "no key is open: open yours, and the design is released again and signed as you";
+    if me::with_key(|_, _| ()).is_none() {
+        return Err(no_key.into());
+    }
+    let get = |k: &str| param(params, k).map(decode).unwrap_or_default();
+    let (of, version, why) = (
+        get("of").trim().to_string(),
+        get("version").trim().to_string(),
+        get("why"),
+    );
+    let (copy, drive) = drive_of(ctx)?;
+    let c = chain_of(&drive, ctx)?;
+    if let Some(waiting) = not_put_back(&copy, &drive)? {
+        return Err(format!(
+            "your copy holds {waiting}, released and not put back on the drive yet: put it back, then release the next on a copy taken after it"
+        ));
+    }
+    let all = released_on(&drive, &c)?;
+    let latest = all.last().map(|o| o.version.clone());
+    let old = all.iter().find(|o| o.version == of).ok_or_else(|| {
+        format!("the drive holds no released design {of:?}: a design released again is one the drive holds")
+    })?;
+    let at = results::now_utc();
+    let (f, who) = me::with_key(|key, me| {
+        design::release_again(
+            old,
+            &version,
+            latest.as_deref(),
+            &why,
+            &me.name,
+            key,
+            &at,
+            APP,
+            &c.programme,
+        )
+        .map(|f| (f, me.name.clone()))
+        .map_err(|e| e.message().to_string())
+    })
+    .ok_or(no_key)??;
+    let quoted: String = why.trim().lines().map(|l| format!("> {l}\n")).collect();
+    let entry = format!(
+        "## {version}\n\nDesign {of} released again by {who}, {at}, after {}.\n\n{quoted}\nToday's integration checks were not run: design {of} is released as it was, with the checks and the red marks it was released on.\n",
+        latest.as_deref().unwrap_or("none"),
+    );
+    let by_group: Vec<(&str, &vleo_files::model::File)> = old
+        .releases
+        .iter()
+        .map(|r| (r.group.as_str(), &r.back.file))
+        .collect();
+    let mut readable = design::readable(&f, &by_group)
+        .into_iter()
+        .map(|(n, csv)| (n.to_string(), csv))
+        .collect::<Vec<_>>();
+    // The engine runs today's design, not the one released again: its
+    // health is not computed here, and the file says so rather than show
+    // another design's.
+    readable.push((
+        "Health.csv".to_string(),
+        vleo_files::csv::write(
+            &["note", "design"],
+            &[vec![
+                format!("not computed: design {version} is design {of} released again, and this application computes today's design"),
+                version.clone(),
+            ]],
+        ),
+    ));
+    let (name, files) = into_copy(&copy, &version, &f, &entry, &readable)?;
+    let mut j = Json::new();
+    j.raw("{");
+    j.bool_field("ok", true);
+    j.str_field("version", &version);
+    j.str_field("again_of", &of);
+    j.str_field("path", &name);
+    strings(&mut j, "files", &files);
+    j.str_field(
+        "announce",
+        &format!(
+            "Design {version} is released: design {of} again, because {}",
+            why.trim().trim_end_matches('.')
+        ),
+    );
+    j.str_field(
+        "message",
+        &format!(
+            "{who} released design {of} again as {version}, in your copy as {name}, with its notes and readable/. Today's integration checks were not run on it. It reaches everyone once it is put back on the drive."
+        ),
+    );
+    j.raw("}");
+    Ok(j.0)
 }

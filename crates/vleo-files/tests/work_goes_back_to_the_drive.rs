@@ -1944,7 +1944,8 @@ fn a_release_changed_after_its_seal_does_not_go_back() {
 }
 
 /// A released design `version`, after `previous`, released by `who` with
-/// key `k`, in the copy's `design/`; its path.
+/// key `k`, holding the programme's and the systems' files and no group's
+/// release, in the copy's `design/`; its path.
 fn released_in(copy: &Path, version: &str, previous: &str, who: &str, k: u8) -> String {
     let mut f = File::new(Kind::Design, APP);
     for (m, v) in [
@@ -1955,6 +1956,32 @@ fn released_in(copy: &Path, version: &str, previous: &str, who: &str, k: u8) -> 
     ] {
         f.meta.insert(s(m), s(v));
     }
+    // It holds the programme's and the systems' files whole, as the drive
+    // holds them, and no group's release.
+    for at in [
+        "groups/programme/programme.vgroup",
+        "groups/systems/systems.vgroup",
+    ] {
+        let here = copy.join(at);
+        let from = if here.is_file() {
+            here
+        } else {
+            copy.parent().unwrap().join("drive").join(at)
+        };
+        let bytes = std::fs::read(from).unwrap();
+        f.media.push(Media {
+            scope: s(FILE),
+            path: s(at),
+            media_type: s("application/vnd.vleo"),
+            sha256: vleo_files::keys::hex(&vleo_files::keys::sha256(&bytes)),
+            bytes,
+        });
+    }
+    f.tables.push(Tbl {
+        scope: s(FILE),
+        path: s("released.csv"),
+        csv: s("group,version,fingerprint,path,sha256\n"),
+    });
     let f = {
         let row = chain::sign(&f, FILE, who, &key(k), AT, "ok", "").unwrap();
         let mut f = f;
@@ -2047,6 +2074,22 @@ fn a_released_design_by_anyone_else_or_not_as_it_was_signed_does_not_go_back() {
     let l = line(&r, &d);
     assert!(
         !l.back && l.why.contains("does not check through the chain"),
+        "{l:?}"
+    );
+    // Signed as it is, and holding a file that is not the one it says.
+    let mut f = sqlite::read(&copy.join(&d)).unwrap();
+    f.meta.insert(s("oldest_application"), s("1.0.0"));
+    f.media[0].bytes.push(0);
+    f.signatures.retain(|r| r.scope != FILE);
+    let row = chain::sign(&f, FILE, "Test Sam", &key(72), AT, "ok", "").unwrap();
+    f.signatures.push(row);
+    sqlite::write(&f, &copy.join(&d)).unwrap();
+    let r = pb(&copy, &drive, "Test Sam", None).unwrap();
+    let l = line(&r, &d);
+    assert!(
+        !l.back
+            && l.why
+                .contains("whose bytes are not the ones it was released with"),
         "{l:?}"
     );
     // Named for another version than it says.

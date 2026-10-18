@@ -854,9 +854,20 @@ fn design_verdict(
             e.message()
         )
     })?;
-    Ok(format!(
-        "goes back: design {version}, released by {me}, a new released design"
-    ))
+    // And every file it holds is the one it says (F6-c): a released design
+    // goes back only as it will be read.
+    crate::design::open_held(
+        &now,
+        &chain.programme,
+        concat!("vleo ", env!("CARGO_PKG_VERSION")),
+    )
+    .map_err(|e| e.message().to_string())?;
+    Ok(match f.meta.get("again_of").filter(|v| !v.is_empty()) {
+        Some(old) => format!(
+            "goes back: design {version}, design {old} released again by {me}, a new released design"
+        ),
+        None => format!("goes back: design {version}, released by {me}, a new released design"),
+    })
 }
 
 /// Whether `path`, the record of the released design (`design/NOTES.md`, a
