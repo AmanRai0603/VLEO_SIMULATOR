@@ -383,3 +383,120 @@ fn a_release_of_the_one_schema_whose_seal_does_not_check_is_refused_by_name() {
     assert!(!sheet(&t).contains(SAID.trim()));
     let _ = std::fs::remove_dir_all(drive.parent().unwrap());
 }
+
+/// Design 2026.10.1, released by Test Sam from today's design on `drive`,
+/// as `design::release` writes it, read back.
+fn released(drive: &Path) -> vleo_files::design::Opened {
+    use vleo_files::design::{self, Asked, Held, Part, Taken as Took, Whole};
+    let o = opened(drive);
+    let rel = drive.join("groups/l3_solar/releases/l3_solar-1.0.vleo");
+    let (rb, pb, sb) = (
+        std::fs::read(&rel).unwrap(),
+        std::fs::read(drive.join("groups/programme/programme.vgroup")).unwrap(),
+        std::fs::read(drive.join("groups/systems/systems.vgroup")).unwrap(),
+    );
+    let file = sqlite::read(&rel).unwrap();
+    let checks = design::integration(
+        &[Part {
+            group: "l3_solar",
+            taken: Ok(Took {
+                version: "1.0",
+                chain: "sealed by Test Ola",
+                file: &file,
+            }),
+        }],
+        "",
+    );
+    let fingerprint = file.meta.get("fingerprint").cloned().unwrap_or_default();
+    let held = Held {
+        releases: vec![(
+            "l3_solar",
+            "1.0",
+            &fingerprint,
+            Whole {
+                path: "groups/l3_solar/releases/l3_solar-1.0.vleo",
+                bytes: &rb,
+            },
+        )],
+        programme: Whole {
+            path: "groups/programme/programme.vgroup",
+            bytes: &pb,
+        },
+        systems: Whole {
+            path: "groups/systems/systems.vgroup",
+            bytes: &sb,
+        },
+    };
+    let asked = Asked {
+        version: "2026.10.1",
+        previous: None,
+        changed: "Solar 1.0.",
+        marks: &[],
+        understood: &[],
+    };
+    let d = design::release(
+        &checks,
+        &held,
+        &asked,
+        "Test Sam",
+        &key(92),
+        AT,
+        APP,
+        &o.programme,
+    )
+    .unwrap_or_else(|e| panic!("not released: {}", e.message()));
+    design::open_held(&d, &o.programme, APP).expect("read back")
+}
+
+#[test]
+fn a_released_design_is_built_from_the_releases_it_holds() {
+    let (drive, copy) = world("held");
+    sealed_and_put_back(&drive, &copy);
+    let held = released(&drive);
+    let (design, _) = vleo_files::convert::serve(&root()).unwrap();
+    let t = vleo_server::today::build_held(Arc::new(design), &root(), &drive, &held)
+        .unwrap_or_else(|e| panic!("not built: {e}"));
+    // As today's design takes solar 1.0, so does the design built from it.
+    let today = today(&drive);
+    assert_eq!(t.written, today.written);
+    assert!(sheet(&t).contains(SAID.trim()));
+    let g = &t.groups[0];
+    let k = g.taken.as_ref().unwrap();
+    assert_eq!((g.id.as_str(), k.version.as_str()), ("l3_solar", "1.0"));
+    assert!(k.chain.contains("sealed by Test Ola"), "{}", k.chain);
+    assert!(
+        t.base.said.contains("the released design 2026.10.1"),
+        "{}",
+        t.base.said
+    );
+
+    // A release held whose seal no longer checks: refused by name, and
+    // nothing taken in its place.
+    let mut bad = held.clone();
+    let mut f = bad.releases[0].back.file.clone();
+    f.texts
+        .iter_mut()
+        .find(|t| t.scope == UID && t.kind == "explain.simply")
+        .unwrap()
+        .body
+        .push_str(" And changed after the seal.");
+    let at = drive.parent().unwrap().join("changed.vleo");
+    bad.releases[0].back.bytes = sqlite::written(&f, &at).unwrap();
+    let (design, _) = vleo_files::convert::serve(&root()).unwrap();
+    let e = vleo_server::today::build_held(Arc::new(design), &root(), &drive, &bad)
+        .err()
+        .expect("refused");
+    assert!(
+        e.contains("design 2026.10.1 holds l3_solar 1.0, which is not taken: its seal does not check through the chain"),
+        "{e}"
+    );
+    // Bytes of another version than the design names: refused.
+    let mut other = held.clone();
+    other.releases[0].version = s("1.1");
+    let (design, _) = vleo_files::convert::serve(&root()).unwrap();
+    let e = vleo_server::today::build_held(Arc::new(design), &root(), &drive, &other)
+        .err()
+        .expect("refused");
+    assert!(e.contains("not the release the design names"), "{e}");
+    let _ = std::fs::remove_dir_all(drive.parent().unwrap());
+}

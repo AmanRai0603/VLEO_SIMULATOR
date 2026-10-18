@@ -283,8 +283,19 @@ fn line(i: &Integration, c: Check) -> &design::Line {
     i.lines.iter().find(|l| l.check == c).unwrap()
 }
 
+/// `f` as the drive holds it: its bytes as a file of the one schema.
 fn bytes(f: &File) -> Vec<u8> {
-    vleo_files::rows::encode(&f.to_tables())
+    let dir = std::env::temp_dir().join(format!(
+        "vleo-design-bytes-{}-{:?}",
+        std::process::id(),
+        std::thread::current().id()
+    ));
+    std::fs::create_dir_all(&dir).unwrap();
+    let at = dir.join("f.vleo");
+    let _ = std::fs::remove_file(&at);
+    let b = vleo_files::sqlite::written(f, &at).unwrap();
+    let _ = std::fs::remove_dir_all(&dir);
+    b
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -873,4 +884,175 @@ fn a_range_s_ends_are_finite_numbers() {
         "{}",
         line(&i, Check::Ranges).says
     );
+}
+
+/// `d` signed again by Sam as it is: a released design whose signature
+/// counts, whatever it holds, so what is read back is checked on its own.
+fn resigned(mut d: File) -> File {
+    d.signatures.retain(|r| r.scope != FILE);
+    let row = chain::sign(&d, FILE, "Sam Engel", &key(12), AT, "ok", "").unwrap();
+    d.signatures.push(row);
+    d
+}
+
+#[test]
+fn a_released_design_is_read_back_as_it_was_released() {
+    let w = world();
+    let r = solar_12(&w);
+    let i = checks_of(Ok(&r), "");
+    let d = release_it(&w, &i, &r, RELEASED, None, "Solar.", "Sam Engel", 12).unwrap();
+    let o = design::open_held(&d, &w.pr, APP).expect("read back");
+    assert_eq!(o.version, RELEASED);
+    assert_eq!(o.releases.len(), 1);
+    let h = &o.releases[0];
+    assert_eq!((h.group.as_str(), h.version.as_str()), ("l3_solar", "1.2"));
+    assert_eq!(h.back.bytes, bytes(&r));
+    assert_eq!(
+        h.back.file.meta.get("version").map(String::as_str),
+        Some("1.2")
+    );
+    assert_eq!(
+        o.programme.file.meta.get("group_id").map(String::as_str),
+        Some("programme")
+    );
+    assert_eq!(
+        o.systems.file.meta.get("group_id").map(String::as_str),
+        Some("systems")
+    );
+
+    let solar = "groups/l3_solar/releases/l3_solar-1.2.vleo";
+    let refused = |d: File| {
+        design::open_held(&d, &w.pr, APP)
+            .unwrap_err()
+            .message()
+            .to_string()
+    };
+    // Changed after it was signed: the chain refuses it.
+    let mut x = d.clone();
+    x.media
+        .iter_mut()
+        .find(|m| m.path == solar)
+        .unwrap()
+        .bytes
+        .push(0);
+    assert!(
+        refused(x).contains("by the system engineer"),
+        "a signature that does not count"
+    );
+    // Signed as it is, and each thing it holds wrong, by name.
+    let mut x = d.clone();
+    x.media
+        .iter_mut()
+        .find(|m| m.path == solar)
+        .unwrap()
+        .bytes
+        .push(0);
+    let e = refused(resigned(x));
+    assert!(
+        e.contains(&format!(
+            "holds {solar} whose bytes are not the ones it was released with"
+        )),
+        "{e}"
+    );
+    let mut x = d.clone();
+    let m = x.media.iter_mut().find(|m| m.path == solar).unwrap();
+    m.bytes = bytes(&w.sy.file);
+    m.sha256 = vleo_files::keys::hex(&vleo_files::keys::sha256(&m.bytes));
+    let e = refused(resigned(x));
+    assert!(
+        e.contains(&format!("holds {solar}, which is not l3_solar's file")),
+        "{e}"
+    );
+    let mut x = d.clone();
+    x.media.retain(|m| m.path != solar);
+    let e = refused(resigned(x));
+    assert!(e.contains(&format!("does not hold {solar}")), "{e}");
+    let mut x = d.clone();
+    for t in x.tables.iter_mut().filter(|t| t.path == "released.csv") {
+        t.csv = s("group,version,fingerprint,path,sha256\n");
+    }
+    let e = refused(resigned(x));
+    assert!(
+        e.contains(&format!("holds {solar}, which released.csv does not name")),
+        "{e}"
+    );
+    let mut x = d.clone();
+    for t in x.tables.iter_mut().filter(|t| t.path == "released.csv") {
+        t.csv = t.csv.replace("l3_solar,1.2,", "l3_solar,1.3,");
+    }
+    let e = refused(resigned(x));
+    assert!(
+        e.contains(&format!(
+            "holds {solar} as l3_solar 1.3, and it is l3_solar 1.2"
+        )),
+        "{e}"
+    );
+    let mut x = d.clone();
+    let sha = x
+        .media
+        .iter()
+        .find(|m| m.path == solar)
+        .unwrap()
+        .sha256
+        .clone();
+    for t in x.tables.iter_mut().filter(|t| t.path == "released.csv") {
+        t.csv = t.csv.replace(&sha, &"0".repeat(64));
+    }
+    let e = refused(resigned(x));
+    assert!(
+        e.contains("whose SHA-256 is not the one released.csv names"),
+        "{e}"
+    );
+    let mut x = d.clone();
+    x.media
+        .retain(|m| m.path != "groups/systems/systems.vgroup");
+    let e = refused(resigned(x));
+    assert!(
+        e.contains("does not hold groups/systems/systems.vgroup"),
+        "{e}"
+    );
+    let mut x = d.clone();
+    let p = x
+        .media
+        .iter()
+        .find(|m| m.path == "groups/programme/programme.vgroup")
+        .unwrap()
+        .clone();
+    let sy = x
+        .media
+        .iter_mut()
+        .find(|m| m.path == "groups/systems/systems.vgroup")
+        .unwrap();
+    sy.bytes = p.bytes;
+    sy.sha256 = p.sha256;
+    let e = refused(resigned(x));
+    assert!(e.contains("which is not systems's file"), "{e}");
+}
+
+#[test]
+fn every_released_design_on_the_drive_is_read_back_oldest_first() {
+    let w = world();
+    let r = solar_12(&w);
+    let i = checks_of(Ok(&r), "");
+    let dir = std::env::temp_dir().join(format!("vleo-released-in-{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&dir);
+    std::fs::create_dir_all(&dir).unwrap();
+    for (v, prev) in [("2026.10.1", None), ("2026.10.2", Some("2026.10.1"))] {
+        let d = release_it(&w, &i, &r, v, prev, "Solar.", "Sam Engel", 12).unwrap();
+        vleo_files::sqlite::write(&d, &dir.join(format!("design-{v}.vleo"))).unwrap();
+    }
+    std::fs::write(dir.join("NOTES.md"), "# notes\n").unwrap();
+    let all = design::released_in(&[&dir], &w.pr, APP).unwrap();
+    let versions: Vec<&str> = all.iter().map(|o| o.version.as_str()).collect();
+    assert_eq!(versions, ["2026.10.1", "2026.10.2"]);
+    // A file named for no version is refused by name, never passed over.
+    std::fs::write(dir.join("design-x.vleo"), b"not one").unwrap();
+    let e = design::released_in(&[&dir], &w.pr, APP).unwrap_err();
+    assert!(
+        e.message()
+            .contains("design-x.vleo is not named for a design's version"),
+        "{}",
+        e.message()
+    );
+    let _ = std::fs::remove_dir_all(&dir);
 }
