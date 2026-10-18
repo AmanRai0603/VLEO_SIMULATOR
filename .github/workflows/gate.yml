@@ -446,6 +446,12 @@ jobs:
       # started by its owner from My work (docs/briefs/F6.md, F6-a).
       - name: the System workspace, a group mounted and started
         run: python3 tools/start_group_check.py
+      # Release design on today's design of a small drive: the integration
+      # checks, a line for each of W8's five for each group, a red mark to be
+      # understood, and the release refused on screen by the program, naming
+      # the lines that fail, with nothing written (docs/briefs/F6.md, F6-b).
+      - name: the System workspace, the design released or refused
+        run: python3 tools/release_design_check.py
       # The manual in the browser tells people what to paste and what they will
       # see. `cargo test` already holds every name in it to the code; this holds
       # every command to what it DOES — run exactly as written, its output

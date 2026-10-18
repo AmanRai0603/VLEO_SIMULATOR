@@ -1,0 +1,86 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "design-integration",
+  "description": "The integration checks of today's design, W8's five for each group, held or failing with why, and the red marks beside them; or why there are none, when the design open is not today's.",
+  "type": "object",
+  "properties": {
+    "ok": {
+      "type": "boolean"
+    },
+    "drive": {
+      "type": "string",
+      "description": "The drive today's design is built from."
+    },
+    "released": {
+      "type": "string",
+      "description": "The design released now, the drive's latest; empty before the first."
+    },
+    "next_version": {
+      "type": "string",
+      "description": "The version after it this month, as the page offers it: year.month.sequence."
+    },
+    "holds": {
+      "type": "boolean",
+      "description": "Whether every line holds."
+    },
+    "lines": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "group": {
+            "type": "string"
+          },
+          "check": {
+            "type": "string"
+          },
+          "holds": {
+            "type": "boolean"
+          },
+          "says": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "group",
+          "check",
+          "holds",
+          "says"
+        ]
+      }
+    },
+    "marks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "closure:<node> or issue:<file>"
+          },
+          "said": {
+            "type": "string"
+          },
+          "raised": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "description": "The open issue it is raised as, or null."
+          }
+        },
+        "required": [
+          "id",
+          "said",
+          "raised"
+        ]
+      }
+    },
+    "message": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "ok"
+  ]
+}

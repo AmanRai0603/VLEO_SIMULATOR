@@ -2265,6 +2265,16 @@ path = "/v1/group/start"
 what = "A group the systems' file mounts, started in your copy by the owner the mount names, or their deputy: group. Its file, groups/<group>/<group>.vgroup, new, holds one heading whose question is the mount's, its base copied from the systems' file, and a change row, signed by whoever started it, and opens through the chain or is not written. Refused for anyone else, a group nobody mounts, one started already, a folder that holds anything, and a systems' file that does not open. Carries session."
 
 [[route]]
+method = "GET"
+path = "/v1/design/integration"
+what = "The integration checks of today's design (W8): for each group, a line for each of the five, the seal and the signature chain, the base still fitting, every node's method, cases and record, no relation supplied by an assistant, and both ends of every declared range, each held or failing with why. Each release is read again from the drive and checked through the chain as a build checks it. A group the systems' file mounts with no release fails its line. Beside them, the red marks: each closure that fails, is refused or is blocked on the default case, raised when an open issue names it, and each issue open on the drive or in the copy. With the design released now and the version after it. Refused when the design open is not today's."
+
+[[route]]
+method = "POST"
+path = "/v1/design/release"
+what = "The design released in your copy, as whoever's key is open: version, after the design released now; changed, what changed; understood, every red mark marked understood by its id, comma between. Refused whole, by name, when any integration line fails, a red mark is neither raised nor understood, or one named is not today's design's; for anyone but the system engineer or their deputy, a version that is not one or does not come after, nothing said of what changed, and a copy of another drive. Written in the copy under its lock: design/design-<version>.vleo, new and never over, holding each group's release and the programme's and the systems' files whole, signed and checked through the chain; design/NOTES.md, newest first; and readable/. Put back, it reaches the drive. Carries session."
+
+[[route]]
 method = "POST"
 path = "/v1/node/<id>/lesson"
 what = "The row's lesson saved in its node file in the working copy, as the node's next revision: lesson, a filled lesson form or a bare lesson.toml; opened, the digest of the file as it was opened. Checked first as the gate checks it, against the design the program reads, and refused with every reason, with nothing written. Saved as any save is, by whoever's key is open, only when they are assigned the node or are the deputy of whoever is. Not signed: the lesson is signed with the node, as the day's work. A file changed since it was opened is not written. Carries session."

@@ -29,12 +29,23 @@
 
   It shows your copy, said so: a branch joins today's design when its group
   seals a release that holds it (F5).
+
+  * RELEASE THE DESIGN (docs/briefs/F6.md, F6-b; W8), on the systems'
+    branch: the integration checks of today's design, a line for each of
+    W8's five for each group, held or failing with why; the red marks beside
+    them, each closure that does not close and each issue open, to be marked
+    understood or raised as an issue in Explore; and *Release design*, with
+    its version and what changed. The program refuses it by name when a line
+    fails or a mark is neither; the page never decides it. Released, it is in
+    your copy, and reaches everyone once it is put back.
 */
 'use strict';
 
 import { $, esc, answerFirst, plural } from './dom.js';
 
 const W = { group: '', tree: null, sel: '', notice: null, stale: false, host: null, post: null, groups: [], why: '', seq: 0 };
+/** The release panel: the checks as last read, what was typed, and the program's answer. */
+const R = { seq: 0, checks: null, version: '', changed: '', understood: new Set(), notice: null };
 
 async function get(path) {
   try { return await (await fetch(path)).json(); } catch (e) { return { ok: false, message: 'the program did not answer: ' + e }; }
@@ -54,6 +65,15 @@ export async function mountSystem(host, post, groups) {
   if (!host.dataset.wired) {
     host.dataset.wired = '1';
     host.addEventListener('click', click);
+    // What is typed and ticked in the release panel is kept across its redraws.
+    host.addEventListener('input', e => {
+      if (e.target.id === 'sy-r-version') R.version = e.target.value;
+      if (e.target.id === 'sy-r-changed') R.changed = e.target.value;
+    });
+    host.addEventListener('change', e => {
+      const m = e.target.dataset && e.target.dataset.mark;
+      if (m) { if (e.target.checked) R.understood.add(m); else R.understood.delete(m); }
+    });
   }
   await draw();
 }
@@ -104,7 +124,49 @@ async function draw(keep) {
         esc(t.signed.says) + '.',
       ], 'reference') + frame(t) +
     '<div class="sy-grid"><nav class="sy-tree" aria-label="the branch">' + tree(t) + '</nav>' +
-    '<section class="sy-block">' + block(t) + '</section></div>';
+    '<section class="sy-block">' + block(t) + '</section></div>' +
+    (group === 'systems' ? '<section class="sy-release" id="sy-release"><p class="sh-loading">reading the integration checks…</p></section>' : '');
+  if (group === 'systems') await drawRelease();
+}
+
+/** The release panel, read again from the program: the integration checks of
+ *  today's design, its red marks, and Release design. */
+async function drawRelease() {
+  const seq = ++R.seq;
+  const c = await get('/v1/design/integration');
+  if (seq !== R.seq || W.group !== 'systems') return;
+  R.checks = c;
+  const at = $('#sy-release', W.host);
+  if (!at) return;
+  if (!c || c.ok === false) {
+    at.innerHTML = '<h3 class="seg-h">release the design</h3><p class="sh-refused sy-r-refused">' +
+      esc((c && c.message) || 'the integration checks cannot be read') + '</p>';
+    return;
+  }
+  if (!R.version) R.version = c.next_version || '';
+  const lines = c.lines.map(l =>
+    '<tr class="' + (l.holds ? 'sy-r-holds' : 'sy-r-fails') + '"><td>' + esc(l.group) + '</td><td>' + esc(l.check) +
+    '</td><td><b>' + (l.holds ? 'holds' : 'fails') + '</b></td><td>' + esc(l.says) + '</td></tr>').join('');
+  const marks = c.marks.length ? '<ul class="sy-r-marks">' + c.marks.map(m =>
+    '<li>' + esc(m.said) + ' ' + (m.raised !== null
+      ? '<span class="muted">raised as issue ' + esc(String(m.raised)) + '</span>'
+      : '<label><input type="checkbox" class="sy-r-understood" data-mark="' + esc(m.id) + '"' +
+        (R.understood.has(m.id) ? ' checked' : '') + '> understood</label>' +
+        (m.id.startsWith('closure:') ? ' <a href="#explore/design" class="sy-r-raise">or raise it as an issue, in Explore</a>' : '')) +
+    '</li>').join('') + '</ul>' : '<p class="muted sy-r-marks">no red mark: every closure closes, and no issue is open</p>';
+  const n = R.notice;
+  at.innerHTML = '<h3 class="seg-h">release the design</h3>' +
+    answerFirst(esc(c.message), [
+      c.released ? 'The design released now is ' + esc(c.released) + '.' : 'No design has been released yet.',
+      'Today\'s design, built from the drive ' + esc(c.drive) + '.',
+    ], 'reference') +
+    '<table class="sy-r-lines"><thead><tr><th>group</th><th>check</th><th></th><th>why</th></tr></thead><tbody>' +
+    lines + '</tbody></table>' +
+    '<h4 class="seg-h">red marks</h4>' + marks +
+    '<div class="sy-r-form"><label>version <input id="sy-r-version" size="12" value="' + esc(R.version) + '"></label> ' +
+    '<label>what changed <textarea id="sy-r-changed" rows="2" cols="60">' + esc(R.changed) + '</textarea></label> ' +
+    '<button class="ctl" id="sy-r-release">Release design</button></div>' +
+    (n ? '<p class="' + (n.ok ? 'sh-said' : 'sh-refused') + ' sy-r-notice">' + esc(n.text) + '</p>' : '');
 }
 
 /** The frame around the branch, as the systems' file says it: the valve
@@ -332,6 +394,15 @@ async function click(e) {
   }
   const b = W.sel;
   switch (t.id) {
+    case 'sy-r-release': {
+      R.version = v('sy-r-version').trim();
+      R.changed = v('sy-r-changed');
+      R.understood = new Set([...W.host.querySelectorAll('.sy-r-understood:checked')].map(c => c.dataset.mark));
+      const r = await W.post('/v1/design/release', { version: R.version, changed: R.changed, understood: [...R.understood].join(',') });
+      R.notice = { ok: !!(r && r.ok), text: r && r.ok ? r.message + ' ' + r.announce : (r && r.message) || 'nothing was released' };
+      if (r && r.ok) { R.version = ''; R.changed = ''; R.understood = new Set(); }
+      return drawRelease();
+    }
     case 'sy-go': { const id = v('sy-id').trim(); if (id) { openAt(id); return draw(); } return; }
     case 'sy-reopen': W.notice = null; return draw();
     case 'sy-add': return send('add', { parent: b, id: v('sy-add-id').trim(), question: v('sy-add-q') });

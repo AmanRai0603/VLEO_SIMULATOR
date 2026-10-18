@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "design-released",
+  "description": "The design released in your copy by the system engineer or their deputy: its file, its notes and readable/, and the words for everyone; or why not.",
+  "type": "object",
+  "properties": {
+    "ok": {
+      "type": "boolean"
+    },
+    "version": {
+      "type": "string"
+    },
+    "path": {
+      "type": "string",
+      "description": "The released design's path inside the copy: design/design-<version>.vleo."
+    },
+    "files": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Every file written in the copy, to be put back."
+    },
+    "announce": {
+      "type": "string",
+      "description": "W8's message to everyone: what changed, and what still fails."
+    },
+    "message": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "ok"
+  ]
+}
