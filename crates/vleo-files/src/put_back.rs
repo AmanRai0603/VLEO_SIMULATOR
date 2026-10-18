@@ -710,6 +710,17 @@ fn release_verdict(
         }
         Err(e) => return Err(e.message().to_string()),
     }
+    // A release sealed in a copy is the one schema's: one upgraded from
+    // before 1.0 is checked on the programme manager's anchor alone, never
+    // on a seal by the person putting it back.
+    if f.meta.contains_key("upgraded_from") {
+        return Err(
+            "it is a release from before 1.0, upgraded: a release goes back only as sealed in the application"
+                .into(),
+        );
+    }
+    f.check_meta().map_err(|e| e.message().to_string())?;
+    f.check_values().map_err(|e| e.message().to_string())?;
     let said = |k: &str| f.meta.get(k).map_or("", String::as_str);
     if said("group_id") != group {
         return Err(format!(
@@ -718,6 +729,11 @@ fn release_verdict(
         ));
     }
     let version = said("version");
+    let Some(v) = crate::meta::ReleaseVersion::parse(version) else {
+        return Err(format!(
+            "it says its version is {version:?}, which is not a release's: major.minor"
+        ));
+    };
     if name != format!("{group}-{version}.vleo") {
         return Err(format!(
             "it says it is {group} {version}, so its name is {group}-{version}.vleo"
@@ -744,8 +760,15 @@ fn release_verdict(
         )
     })?
     .into_iter()
-    .next()
-    .map(|(v, _)| v.to_string());
+    .next();
+    if let Some((l, _)) = &latest {
+        if v <= *l {
+            return Err(format!(
+                "it is {group} {version}, and the drive's latest release of {group} is {l}: a release comes after the latest"
+            ));
+        }
+    }
+    let latest = latest.map(|(l, _)| l.to_string());
     if said("previous") != latest.as_deref().unwrap_or("") {
         return Err(format!(
             "it follows {}, and the drive's latest release of {group} is {}: seal it again on a copy taken now",
@@ -759,6 +782,33 @@ fn release_verdict(
     })?;
     let (parent, _) = chain::mounted_by(group, &[&chain.programme, systems])
         .map_err(|e| e.message().to_string())?;
+    // Its nodes are counted through the group file it carries; that file's
+    // people, keys and assignments must be the drive's group file's as it
+    // is now, or a copy taken before a change, or one with a person invented
+    // in it, would carry them onto the drive inside the release.
+    let theirs_group = registry_of(chain, group)?;
+    for (table, same) in [
+        ("people", same_rows(&f.people, &theirs_group.file.people)),
+        ("keys", same_rows(&f.keys, &theirs_group.file.keys)),
+        (
+            "assignments",
+            same_rows(&f.assignments, &theirs_group.file.assignments),
+        ),
+    ] {
+        if !same {
+            return Err(format!(
+                "its {table} are not the drive's group file's as it is now: a release is sealed on a copy whose group file is the drive's; copy the drive again, and seal it there"
+            ));
+        }
+    }
+    let found = checks::check_release(&f);
+    let refusing: Vec<String> = found
+        .errors()
+        .map(|e| format!("{}: {}", e.place, e.what))
+        .collect();
+    if !refusing.is_empty() {
+        return Err(format!("its checks refuse it — {}", refusing.join("; ")));
+    }
     // The seal by `me` with a key the drive's programme's file counts for
     // them now, and every node it holds, checked through the chain as the
     // drive holds it.
@@ -774,6 +824,11 @@ fn release_verdict(
     Ok(format!(
         "goes back: {group} {version}, sealed by {me}, a new release"
     ))
+}
+
+/// Whether `a` and `b` hold the same rows, in whatever order.
+fn same_rows<T: PartialEq>(a: &[T], b: &[T]) -> bool {
+    a.len() == b.len() && a.iter().all(|x| b.contains(x)) && b.iter().all(|x| a.contains(x))
 }
 
 /// The report of what in the working copy at `copy` would go back to the
@@ -911,7 +966,8 @@ pub fn put_back(
     let mut done = Vec::new();
     let mut failed = None;
     for (n, (path, bytes)) in bytes_of.iter().enumerate() {
-        match write_on_drive(&drive_root, path, bytes, n) {
+        let new = !record.files.contains_key(path);
+        match write_on_drive(&drive_root, path, bytes, n, new) {
             Ok(()) => {
                 record.files.insert(path.clone(), copied::digest(bytes));
                 done.push(path.clone());
@@ -964,7 +1020,13 @@ pub fn put_back(
 /// own beside it, then renamed over it, so a write cut short leaves the
 /// drive's file as it was. Never through a link, and never into a folder the
 /// drive does not hold.
-fn write_on_drive(drive: &Path, path: &str, bytes: &[u8], n: usize) -> Result<(), Error> {
+fn write_on_drive(
+    drive: &Path,
+    path: &str,
+    bytes: &[u8],
+    n: usize,
+    new: bool,
+) -> Result<(), Error> {
     use std::io::Write as _;
     no_link_on_the_way(drive, path)?;
     let to = drive.join(path);
@@ -991,7 +1053,15 @@ fn write_on_drive(drive: &Path, path: &str, bytes: &[u8], n: usize) -> Result<()
         f.sync_all().map_err(|e| io(&tmp, e))?;
         drop(f);
         no_link_on_the_way(drive, path)?;
-        std::fs::rename(&tmp, &to).map_err(|e| io(&to, e))
+        if new {
+            // A new file is linked into its place, which fails when anything
+            // is there, whoever wrote it since: it is never written over.
+            std::fs::hard_link(&tmp, &to).map_err(|e| io(&to, e))?;
+            let _ = std::fs::remove_file(&tmp);
+            Ok(())
+        } else {
+            std::fs::rename(&tmp, &to).map_err(|e| io(&to, e))
+        }
     })();
     if made.is_err() {
         let _ = std::fs::remove_file(&tmp);
@@ -1024,7 +1094,7 @@ mod tests {
         std::fs::create_dir_all(&outside).unwrap();
         std::fs::write(outside.join("f.vnode"), "theirs").unwrap();
         std::os::unix::fs::symlink(&outside, drive.join("groups/g/nodes")).unwrap();
-        let e = write_on_drive(&drive, "groups/g/nodes/f.vnode", b"mine", 0).unwrap_err();
+        let e = write_on_drive(&drive, "groups/g/nodes/f.vnode", b"mine", 0, false).unwrap_err();
         assert!(
             e.message().contains("reached through a link"),
             "{}",

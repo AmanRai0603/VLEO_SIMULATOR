@@ -1291,10 +1291,19 @@ fn checked_release(
         }
     };
     for b in release.blocks.iter().filter(|b| b.archived == 0) {
-        // A heading is the group's own and no node engineer's to sign: no
-        // assignment names it, and the seal, checked above, vouches for it.
+        // A heading is the group's own and no node engineer's to sign: it
+        // holds the blocks under it, no assignment names it, and the seal,
+        // checked above, vouches for it. Any other block no assignment names
+        // computes or decides something nobody's signature counts for.
         if !release.assignments.iter().any(|a| a.block_uid == b.uid) {
-            out.signed.push(b.id.clone());
+            if b.behaviour == "children" {
+                out.signed.push(b.id.clone());
+            } else {
+                out.refused.push(format!(
+                    "{} is a {} block that no assignment names, so no node engineer's signature counts for it: only a heading is the seal's own",
+                    b.id, b.behaviour
+                ));
+            }
             continue;
         }
         match check_node(release, &b.uid, &group) {
@@ -1303,6 +1312,33 @@ fn checked_release(
         }
     }
     Ok(out)
+}
+
+/// The seal of `release` that counts through the chain: its signature of
+/// the whole file by the group's owner, or their deputy, as `mounted_by`
+/// names the owner, with a key the programme's file counts. Who sealed it,
+/// and when, are this row's, never the release's unsigned meta.
+pub fn seal_of<'a>(
+    release: &'a File,
+    mounted_by: &Registry,
+    programme: &Registry,
+) -> Result<&'a SignatureRow, Error> {
+    let id = release.meta.get("group_id").cloned().unwrap_or_default();
+    let owner = owner_of(mounted_by, &id).ok_or_else(|| {
+        refused(
+            ErrorKind::Signature,
+            format!(
+                "{} mounts no group {id:?}, so nobody seals it",
+                mounted_by.from
+            ),
+        )
+    })?;
+    let (ok, why) = counted(release, FILE, programme, |name| {
+        programme.acts_for(name, owner)
+    });
+    ok.into_iter()
+        .next()
+        .ok_or_else(|| none_counts(&format!("{id}'s release, by its owner {owner},"), &why))
 }
 
 /// A released design, checked through the chain: signed as it is by the
