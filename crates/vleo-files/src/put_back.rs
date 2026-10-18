@@ -906,15 +906,42 @@ fn design_verdict(
     })?;
     // And every file it holds is the one it says (F6-c): a released design
     // goes back only as it will be read.
-    crate::design::open_held(
+    let opened = crate::design::open_held(
         &now,
         &chain.programme,
         concat!("vleo ", env!("CARGO_PKG_VERSION")),
     )
     .map_err(|e| e.message().to_string())?;
-    Ok(format!(
-        "goes back: design {version}, released by {me}, a new released design"
-    ))
+    // A design released again (W16) is the drive's design it names, byte for
+    // byte, and every seal it holds checks through the chain as the drive
+    // holds it now.
+    if let Some(old) = f.meta.get("again_of").filter(|v| !v.is_empty()) {
+        let name = format!("design-{old}.vleo");
+        let there = [
+            drive.join("design").join(&name),
+            drive.join("design/archive").join(&name),
+        ]
+        .into_iter()
+        .find(|p| p.is_file())
+        .ok_or_else(|| {
+            format!("it is design {old} released again, and the drive holds no design {old}")
+        })?;
+        let was = crate::sqlite::read(&there)
+            .map_err(|e| format!("the drive's design {old} does not read: {}", e.message()))?;
+        if was.media != f.media || was.tables != f.tables {
+            return Err(format!(
+                "it says it is design {old} released again, and it does not hold what the drive's design {old} holds"
+            ));
+        }
+        crate::design::seals_hold(&opened, &chain.programme)
+            .map_err(|e| e.message().to_string())?;
+    }
+    Ok(match f.meta.get("again_of").filter(|v| !v.is_empty()) {
+        Some(old) => format!(
+            "goes back: design {version}, design {old} released again by {me}, a new released design"
+        ),
+        None => format!("goes back: design {version}, released by {me}, a new released design"),
+    })
 }
 
 /// Whether `path`, the record of the released design (`design/NOTES.md`, a

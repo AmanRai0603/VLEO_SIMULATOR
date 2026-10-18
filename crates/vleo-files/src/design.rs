@@ -1043,3 +1043,153 @@ pub fn released_in(
     out.sort_by(|a, b| a.0.cmp(&b.0));
     Ok(out.into_iter().map(|(_, o)| o).collect())
 }
+
+/// Every release `old` holds, its seal checked through the chain as
+/// `programme` holds it now: each through the systems' file `old` holds,
+/// opened under `programme`, as the file that mounts its group; one from
+/// before 1.0 by the programme manager's anchor. A seal made with a key the
+/// programme's file now says was revoked from before it was made does not
+/// check, and is refused by name; one whose key was revoked after it still
+/// counts, as the chain counts every signature made while its key counted
+/// (F6's question 51, read as the chain reads every other signature).
+#[cfg(not(target_arch = "wasm32"))]
+pub fn seals_hold(old: &Opened, programme: &Registry) -> Result<(), Error> {
+    let systems = chain::open_systems(&old.systems.file, programme).map_err(|e| {
+        refused(format!(
+            "design {} holds a systems' file that does not open through the chain now: {}",
+            old.version,
+            e.message()
+        ))
+    })?;
+    for r in &old.releases {
+        let before_1_0 = r.back.file.meta.get("upgraded_from").map(String::as_str)
+            == Some(crate::upgrade::FROM_FORMAT_1);
+        let checked = if before_1_0 {
+            chain::check_release_in(&r.back.file, programme, programme)
+        } else {
+            let (parent, _) = chain::mounted_by(&r.group, &[programme, &systems])?;
+            chain::check_release_in(&r.back.file, parent, programme)
+        }
+        .map_err(|e| {
+            refused(format!(
+                "design {} holds {} {}, whose seal does not check through the chain now: {}",
+                old.version,
+                r.group,
+                r.version,
+                e.message()
+            ))
+        })?;
+        if !checked.holds() {
+            return Err(refused(format!(
+                "design {} holds {} {}, which does not check through the chain now: {}",
+                old.version,
+                r.group,
+                r.version,
+                checked.refused.join("; ")
+            )));
+        }
+    }
+    Ok(())
+}
+
+/// The released design `old` released again as `version`, after `previous`,
+/// the design released now, by `by` with `key` at `at`, saying `why` (W16:
+/// "the system engineer releases the last good one again under a new
+/// version, and the notes say why"). It holds `old`'s files byte for byte
+/// and every table it was released on, and says which it is again
+/// (`again_of`). Refused by name unless `by` is the system engineer or their
+/// deputy with a key the programme's file counts then, the version follows,
+/// why is said, `old` reads back through `programme` now ([`open_held`]) and
+/// is earlier than the design released now, and every seal it holds checks
+/// through the chain now ([`seals_hold`]). Today's integration checks are not
+/// run: they are of today's design, not of `old`.
+#[cfg(not(target_arch = "wasm32"))]
+#[allow(clippy::too_many_arguments)]
+pub fn release_again(
+    old: &Opened,
+    version: &str,
+    previous: Option<&str>,
+    why: &str,
+    by: &str,
+    key: &SigningKey,
+    at: &str,
+    app: &str,
+    programme: &Registry,
+) -> Result<File, Error> {
+    if crate::checks::is_assistant(by) {
+        return Err(refused(format!(
+            "{by} is an assistant's name: a design is released by a person"
+        )));
+    }
+    programme.key(by, &key.public().to_hex(), at)?;
+    if !programme.acts_as(by, "system engineer") {
+        return Err(Error::new(
+            ErrorKind::Signature,
+            format!(
+                "{by} may not release a design again: the system engineer, or their deputy, releases it (W16)"
+            ),
+        ));
+    }
+    if previous == Some(old.version.as_str()) {
+        return Err(refused(format!(
+            "{} is the design released now: a design released again is an earlier one",
+            old.version
+        )));
+    }
+    if why.trim().is_empty() {
+        return Err(refused(format!(
+            "say why {} is released again: the notes say why (W16)",
+            old.version
+        )));
+    }
+    follows(version, previous).map_err(refused)?;
+    // What is released again is the design as `programme` reads it back now,
+    // never what a caller says it holds, and an earlier one than `previous`.
+    let old = &open_held(&old.design, programme, app)?;
+    let earlier = match (
+        DesignVersion::parse(&old.version),
+        previous.and_then(DesignVersion::parse),
+    ) {
+        (Some(o), Some(p)) => o < p,
+        _ => false,
+    };
+    if !earlier {
+        return Err(refused(format!(
+            "design {} is not earlier than the design released now ({}): a design released again is an earlier one",
+            old.version,
+            previous.unwrap_or("none")
+        )));
+    }
+    seals_hold(old, programme)?;
+    let app_version = app.split_whitespace().nth(1).unwrap_or("");
+    let mut f = File::new(Kind::Design, app);
+    f.meta.insert("version".into(), version.into());
+    f.meta
+        .insert("previous".into(), previous.unwrap_or("").into());
+    f.meta.insert("released_by".into(), by.into());
+    f.meta
+        .insert("oldest_application".into(), app_version.to_string());
+    f.meta.insert("again_of".into(), old.version.clone());
+    f.media = old.design.media.clone();
+    // Every table it was released on, whatever tables a release holds.
+    f.tables = old.design.tables.clone();
+    f.texts.push(Text {
+        scope: FILE.into(),
+        kind: "changed".into(),
+        body: format!(
+            "Design {} released again, as {version}: {}",
+            old.version,
+            why.trim()
+        ),
+    });
+    f.check_meta()?;
+    let row = chain::sign(&f, FILE, by, key, at, "ok", "")?;
+    f.signatures.push(row);
+    open_held(&f, programme, app).map_err(|e| {
+        refused(format!(
+            "the design would not read back as it will be read, so it is not released again: {}",
+            e.message()
+        ))
+    })?;
+    Ok(f)
+}

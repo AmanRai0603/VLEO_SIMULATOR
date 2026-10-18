@@ -1057,6 +1057,152 @@ fn every_released_design_on_the_drive_is_read_back_oldest_first() {
     let _ = std::fs::remove_dir_all(&dir);
 }
 
+/// The programme's file as `programme` writes it, with Ola's key revoked
+/// from `from`, signed again by Pat.
+fn programme_revoking_ola(from: &str) -> Registry {
+    let mut f = programme().file.clone();
+    for k in f.keys.iter_mut().filter(|k| k.person == "Ola Sun") {
+        k.revoked_from = s(from);
+    }
+    f.signatures.retain(|r| r.scope != FILE);
+    chain::open_programme(
+        signed(f, "Pat Morgan", &key(11)),
+        &key(11).public().fingerprint(),
+    )
+    .unwrap()
+}
+
+#[test]
+fn a_design_is_released_again_under_a_new_version_holding_what_it_held() {
+    let w = world();
+    let r = solar_12(&w);
+    let i = checks_of(Ok(&r), "");
+    let one = release_it(&w, &i, &r, "2026.10.1", None, "Solar.", "Sam Engel", 12).unwrap();
+    let old = design::open_held(&one, &w.pr, APP).unwrap();
+    let again =
+        |version: &str, previous: Option<&str>, why: &str, by: &str, k: u8, pr: &Registry| {
+            design::release_again(&old, version, previous, why, by, &key(k), AT, APP, pr)
+                .map_err(|e| e.message().to_string())
+        };
+    // 2026.10.2 was released after it, and was wrong: .1 again, as .3.
+    let d = again(
+        "2026.10.3",
+        Some("2026.10.2"),
+        "2026.10.2's band was wrong.",
+        "Sam Engel",
+        12,
+        &w.pr,
+    )
+    .expect("released again");
+    assert_eq!(d.media, one.media, "the same files, byte for byte");
+    for (k, v) in [
+        ("version", "2026.10.3"),
+        ("previous", "2026.10.2"),
+        ("again_of", "2026.10.1"),
+        ("released_by", "Sam Engel"),
+    ] {
+        assert_eq!(d.meta.get(k).map(String::as_str), Some(v), "{k}");
+    }
+    let o = design::open_held(&d, &w.pr, APP).expect("it reads back");
+    assert_eq!(o.releases[0].back.bytes, old.releases[0].back.bytes);
+    for t in ["released.csv", "integration.csv", "red_marks.csv"] {
+        assert_eq!(
+            d.tables.iter().find(|x| x.path == t).map(|x| &x.csv),
+            one.tables.iter().find(|x| x.path == t).map(|x| &x.csv),
+            "{t}"
+        );
+    }
+    assert!(d.texts.iter().any(|t| t.kind == "changed"
+        && t.body
+            .contains("released again, as 2026.10.3: 2026.10.2's band was wrong.")));
+    // Sid, Sam's deputy, too.
+    again(
+        "2026.10.3",
+        Some("2026.10.2"),
+        "Wrong.",
+        "Sid Side",
+        17,
+        &w.pr,
+    )
+    .expect("the deputy");
+    // Refused, by name.
+    for (version, previous, why, by, k, says) in [
+        (
+            "2026.10.3",
+            Some("2026.10.2"),
+            "Wrong.",
+            "Ola Sun",
+            13,
+            "Ola Sun may not release a design again",
+        ),
+        (
+            "2026.10.2",
+            Some("2026.10.1"),
+            "Wrong.",
+            "Sam Engel",
+            12,
+            "2026.10.1 is the design released now",
+        ),
+        (
+            "2026.10.3",
+            Some("2026.10.2"),
+            "  ",
+            "Sam Engel",
+            12,
+            "say why 2026.10.1 is released again",
+        ),
+        (
+            "2026.10.5",
+            Some("2026.10.2"),
+            "Wrong.",
+            "Sam Engel",
+            12,
+            "does not follow 2026.10.2",
+        ),
+        (
+            "2026.10.3",
+            Some("2026.10.2"),
+            "Wrong.",
+            "Claude",
+            12,
+            "Claude is an assistant's name",
+        ),
+    ] {
+        let e = again(version, previous, why, by, k, &w.pr).unwrap_err();
+        assert!(e.contains(says), "{by} {version}: {e}");
+    }
+    // The programme's file now says Ola's key was revoked before the seal
+    // was made: the seal it holds does not check through the chain now.
+    let revoked = programme_revoking_ola("2026-10-16");
+    let e = again(
+        "2026.10.3",
+        Some("2026.10.2"),
+        "Wrong.",
+        "Sam Engel",
+        12,
+        &revoked,
+    )
+    .unwrap_err();
+    assert!(
+        e.contains(
+            "design 2026.10.1 holds l3_solar 1.2, which does not check through the chain now"
+        ) && e.contains("with a key revoked from 2026-10-16"),
+        "{e}"
+    );
+    // A key revoked after the seal still counts for it, as the chain counts
+    // every signature made while its key counted.
+    let later = programme_revoking_ola("2026-10-18");
+    again(
+        "2026.10.3",
+        Some("2026.10.2"),
+        "Wrong.",
+        "Sam Engel",
+        12,
+        &later,
+    )
+    .expect("a seal made before its key was revoked still counts");
+}
+
 /// `d` with its `released.csv` made `csv`.
 fn with_released(mut d: File, csv: impl Fn(&str) -> String) -> File {
     for t in d.tables.iter_mut().filter(|t| t.path == "released.csv") {
@@ -1307,4 +1453,85 @@ fn released_designs_are_read_from_every_folder_by_their_versions() {
         e.message()
     );
     let _ = std::fs::remove_dir_all(&root);
+}
+
+#[test]
+fn a_design_released_again_is_an_earlier_one_holding_every_table_it_held() {
+    let w = world();
+    let r = solar_12(&w);
+    let i = checks_of(Ok(&r), "");
+    let one = release_it(&w, &i, &r, "2026.10.1", None, "Solar.", "Sam Engel", 12).unwrap();
+    // A table a later release would add (F6-c3's margins), held as it is.
+    let mut one = one;
+    one.tables.push(Tbl {
+        scope: s(FILE),
+        path: s("margins.csv"),
+        csv: s("node,state,margin\nk_drag,closes,0.2\n"),
+    });
+    let one = resigned(one);
+    let old = design::open_held(&one, &w.pr, APP).unwrap();
+    let again = |version: &str, previous: Option<&str>| {
+        design::release_again(
+            &old,
+            version,
+            previous,
+            "Wrong.",
+            "Sam Engel",
+            &key(12),
+            AT,
+            APP,
+            &w.pr,
+        )
+        .map_err(|e| e.message().to_string())
+    };
+    let d = again("2026.10.3", Some("2026.10.2")).unwrap();
+    assert_eq!(d.tables, one.tables, "every table it was released on");
+    // Never one that is not earlier than the design released now.
+    for (version, previous) in [("2026.9.2", Some("2026.9.1")), ("2026.11.1", None)] {
+        let e = again(version, previous).unwrap_err();
+        assert!(
+            e.contains("design 2026.10.1 is not earlier than the design released now"),
+            "{version} after {previous:?}: {e}"
+        );
+    }
+    // What is released again is the design read back now, not what a caller
+    // hands over: a version said in memory is not the one it names again,
+    // and a held file changed in memory is refused.
+    let mut said = old.clone();
+    said.version = s("2026.8.1");
+    let d = design::release_again(
+        &said,
+        "2026.10.3",
+        Some("2026.10.2"),
+        "Wrong.",
+        "Sam Engel",
+        &key(12),
+        AT,
+        APP,
+        &w.pr,
+    )
+    .unwrap();
+    assert_eq!(
+        d.meta["again_of"], "2026.10.1",
+        "the version its file holds"
+    );
+    let mut forged = old.clone();
+    forged.design.media[0].bytes.push(0);
+    let e = design::release_again(
+        &forged,
+        "2026.10.3",
+        Some("2026.10.2"),
+        "Wrong.",
+        "Sam Engel",
+        &key(12),
+        AT,
+        APP,
+        &w.pr,
+    )
+    .unwrap_err();
+    assert!(
+        e.message().contains("by the system engineer") || e.message().contains("SHA-256"),
+        "{}",
+        e.message()
+    );
 }

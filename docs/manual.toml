@@ -2275,6 +2275,16 @@ path = "/v1/design/release"
 what = "The design released in your copy, as whoever's key is open: version, after the design released now; changed, what changed; understood, every red mark marked understood by its id, comma between. Refused whole, by name, when any integration line fails, a red mark is neither raised nor understood, or one named is not today's design's; for anyone but the system engineer or their deputy, a version that is not one or does not follow the design released now (the next in its month, or the first of a later one), nothing said of what changed, a copy of another drive, and a copy holding a released design not put back yet. Written in the copy under its lock: design/design-<version>.vleo, new and never over, holding each group's release and the programme's and the systems' files whole, signed and checked through the chain; design/NOTES.md, newest first; and readable/. Put back, it reaches the drive. Carries session."
 
 [[route]]
+method = "GET"
+path = "/v1/design/released"
+what = "Every released design on the drive the copy was taken from, oldest first, each read back as it is relied on (every file it holds checked against what it says): its version, the one before it, who released it, which it is released again from, if it is, what changed, and each group's release it holds. Refused with no copy, when the drive's chain does not open, and when any released design on the drive does not read back, named."
+
+[[route]]
+method = "POST"
+path = "/v1/design/release-again"
+what = "An earlier released design released again under a new version (W16), in your copy, as whoever's key is open: of, the design released again; version, following the design released now; why, said in the notes. Refused by name for anyone but the system engineer or their deputy, the design released now, a design the drive does not hold, a version that does not follow, nothing said of why, a seal it holds that does not check through the chain now, and a copy holding a released design not put back yet. It holds the old design's files byte for byte and every table it was released on, the checks and red marks among them; today's integration checks are not run, and its notes say so, with what each group goes back to and that each group moves its base. Put back, it must hold what the drive's design it names holds, and its seals check through the chain as the drive holds them then. Written in the copy as a release is, with readable/; its Health.csv says it is not computed. Carries session."
+
+[[route]]
 method = "POST"
 path = "/v1/node/<id>/lesson"
 what = "The row's lesson saved in its node file in the working copy, as the node's next revision: lesson, a filled lesson form or a bare lesson.toml; opened, the digest of the file as it was opened. Checked first as the gate checks it, against the design the program reads, and refused with every reason, with nothing written. Saved as any save is, by whoever's key is open, only when they are assigned the node or are the deputy of whoever is. Not signed: the lesson is signed with the node, as the day's work. A file changed since it was opened is not written. Carries session."

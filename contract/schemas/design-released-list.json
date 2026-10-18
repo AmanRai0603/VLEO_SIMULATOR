@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "design-released-list",
+  "description": "Every released design on the drive the copy was taken from, each read back, oldest first; or why not.",
+  "type": "object",
+  "properties": {
+    "ok": {
+      "type": "boolean"
+    },
+    "released": {
+      "type": "string",
+      "description": "The design released now, the latest; empty before the first."
+    },
+    "designs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "version": {
+            "type": "string"
+          },
+          "previous": {
+            "type": "string"
+          },
+          "released_by": {
+            "type": "string"
+          },
+          "again_of": {
+            "type": "string",
+            "description": "The design it is released again from (W16), or empty."
+          },
+          "changed": {
+            "type": "string"
+          },
+          "holds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Each group's release it holds, as <group> <version>."
+          }
+        },
+        "required": [
+          "version",
+          "previous",
+          "released_by",
+          "again_of",
+          "changed",
+          "holds"
+        ]
+      }
+    },
+    "message": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "ok"
+  ]
+}

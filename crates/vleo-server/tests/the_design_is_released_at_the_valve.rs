@@ -729,5 +729,136 @@ fn the_system_engineer_releases_the_design_and_it_goes_back_to_the_drive() {
         i.contains("l3_solar 1.0 is not read again from the drive: its seal does not check through the chain"),
         "{i}"
     );
+
+    // W16: the design released now is not released again; an earlier one is.
+    let again = |of: &str, v: &str, why: &str| {
+        post(
+            port,
+            "/v1/design/release-again",
+            &[("of", of), ("version", v), ("why", why)],
+        )
+    };
+    let r = again(&version, &next, "Solar's band was right before.");
+    assert!(
+        r.contains(&format!("{version} is the design released now")),
+        "{r}"
+    );
+    // A later design is on the drive: the same files under the next
+    // version, signed by Sam, so it is the earlier now.
+    let held = sqlite::read(&drive.join(&path)).unwrap();
+    let mut later = held.clone();
+    later.meta.insert(s("version"), next.clone());
+    later.meta.insert(s("previous"), version.clone());
+    later.signatures.retain(|r| r.scope != FILE);
+    let row = chain::sign(&later, FILE, "Test Sam", &key(92), AT, "ok", "").unwrap();
+    later.signatures.push(row);
+    sqlite::write(&later, &drive.join(format!("design/design-{next}.vleo"))).unwrap();
+    let list = ask(port, "GET", "/v1/design/released", &[], false);
+    assert!(list.contains(&format!("\"released\":\"{next}\"")), "{list}");
+    assert!(list.contains("\"holds\":[\"l3_solar 1.0\"]"), "{list}");
+    let third = vleo_files::meta::DesignVersion::parse(&next)
+        .map(|v| v.next(v.year, v.month).to_string())
+        .unwrap();
+    for (of, v, why, says) in [
+        (
+            "2026.1.1",
+            third.as_str(),
+            "x",
+            "the drive holds no released design",
+        ),
+        (
+            version.as_str(),
+            version.as_str(),
+            "x",
+            "does not come after",
+        ),
+        (version.as_str(), third.as_str(), " ", "say why"),
+    ] {
+        let r = again(of, v, why);
+        assert!(r.contains(says), "{of} as {v}: {r}");
+    }
+    let r = again(&version, &third, "The later one was wrong.");
+    assert!(r.contains("\"ok\":true"), "{r}");
+    assert!(
+        field(&r, "announce").starts_with(&format!(
+            "Design {third} is released: design {version} again, because The later one was wrong"
+        )),
+        "{r}"
+    );
+    let path3 = format!("design/design-{third}.vleo");
+    let d3 = sqlite::read(&copy.join(&path3)).unwrap();
+    assert_eq!(d3.meta.get("again_of"), Some(&version));
+    assert_eq!(d3.media, held.media, "the same files, byte for byte");
+    let notes = std::fs::read_to_string(copy.join("design/NOTES.md")).unwrap();
+    assert!(
+        notes.starts_with(&format!(
+            "# Released designs\n\nWhat changed in each, newest first.\n\n## {third}\n\nDesign {version} released again by Test Sam"
+        )),
+        "{notes}"
+    );
+    assert!(
+        notes.contains("Every group holds the release the design released now holds.")
+            && notes.contains(&format!("Today's design is unchanged; each group's base check fails until it moves its base to {third} (W12).")),
+        "{notes}"
+    );
+    assert!(std::fs::read_to_string(copy.join("readable/Health.csv"))
+        .unwrap()
+        .contains("not computed"));
+    // Another before it goes back: refused, as a release is.
+    let r = again(&version, "2026.12.1", "Again.");
+    assert!(
+        r.contains("released and not put back on the drive yet"),
+        "{r}"
+    );
+    // Put back: it goes, said as a design released again.
+    let r = post(port, "/v1/put-back", &[]);
+    assert!(
+        r.contains(&format!(
+            "goes back: design {third}, design {version} released again by Test Sam"
+        )),
+        "{r}"
+    );
+    let mut files = Vec::new();
+    for p in std::iter::once(path3.clone())
+        .chain(["design/NOTES.md".to_string()])
+        .chain(
+            [
+                "Groups", "Nodes", "Ports", "Wires", "Closures", "Health", "Status",
+            ]
+            .map(|n| format!("readable/{n}.csv")),
+        )
+    {
+        // Only what differs from the drive goes back.
+        let mine = std::fs::read(copy.join(&p)).unwrap();
+        if std::fs::read(drive.join(&p)).ok().as_deref() == Some(&mine[..]) {
+            continue;
+        }
+        files.push(format!(
+            "{} {p}",
+            copied::digest(&std::fs::read(copy.join(&p)).unwrap())
+        ));
+    }
+    let r = post(port, "/v1/put-back", &[("files", &files.join("\n"))]);
+    assert!(r.contains("\"written\":true"), "{r}");
+    let list = ask(port, "GET", "/v1/design/released", &[], false);
+    assert!(
+        list.contains(&format!("\"released\":\"{third}\"")),
+        "{list}"
+    );
+    assert!(
+        list.contains(&format!("\"version\":\"{third}\",\"previous\":\"{next}\",\"released_by\":\"Test Sam\",\"again_of\":\"{version}\"")),
+        "{list}"
+    );
+    // A file planted on the drive under a design's name: the list and
+    // Release again say it by name, and take nothing for a design.
+    std::fs::write(drive.join("design/design-2099.1.1.vleo"), b"not a design").unwrap();
+    let list = ask(port, "GET", "/v1/design/released", &[], false);
+    assert!(
+        list.contains("\"ok\":false") && list.contains("design-2099.1.1.vleo does not read"),
+        "{list}"
+    );
+    let r = again(&version, "2099.1.2", "Again.");
+    assert!(r.contains("design-2099.1.1.vleo does not read"), "{r}");
+    std::fs::remove_file(drive.join("design/design-2099.1.1.vleo")).unwrap();
     let _ = std::fs::remove_dir_all(&scratch);
 }

@@ -38,6 +38,9 @@
     its version and what changed. The program refuses it by name when a line
     fails or a mark is neither; the page never decides it. Released, it is in
     your copy, and reaches everyone once it is put back.
+  * RELEASED AGAIN (W16): every released design on the drive, and *Release
+    again* on each earlier one, with its version and why. Today's checks are
+    not run on it, said so; the program refuses it by name.
 */
 'use strict';
 
@@ -45,7 +48,8 @@ import { $, esc, answerFirst, plural } from './dom.js';
 
 const W = { group: '', tree: null, sel: '', notice: null, stale: false, host: null, post: null, groups: [], why: '', seq: 0 };
 /** The release panel: the checks as last read, what was typed, and the program's answer. */
-const R = { seq: 0, checks: null, version: '', changed: '', understood: new Set(), notice: null, sending: false };
+const R = { seq: 0, checks: null, version: '', changed: '', understood: new Set(), notice: null, sending: false,
+  again: { of: '', version: '', why: '', notice: null } };
 
 async function get(path) {
   try { return await (await fetch(path)).json(); } catch (e) { return { ok: false, message: 'the program did not answer: ' + e }; }
@@ -69,6 +73,8 @@ export async function mountSystem(host, post, groups) {
     host.addEventListener('input', e => {
       if (e.target.id === 'sy-r-version') R.version = e.target.value;
       if (e.target.id === 'sy-r-changed') R.changed = e.target.value;
+      if (e.target.id === 'sy-a-version') R.again.version = e.target.value;
+      if (e.target.id === 'sy-a-why') R.again.why = e.target.value;
     });
     host.addEventListener('change', e => {
       const m = e.target.dataset && e.target.dataset.mark;
@@ -133,14 +139,14 @@ async function draw(keep) {
  *  today's design, its red marks, and Release design. */
 async function drawRelease() {
   const seq = ++R.seq;
-  const c = await get('/v1/design/integration');
+  const [c, d] = await Promise.all([get('/v1/design/integration'), get('/v1/design/released')]);
   if (seq !== R.seq || W.group !== 'systems') return;
   R.checks = c;
   const at = $('#sy-release', W.host);
   if (!at) return;
   if (!c || c.ok === false) {
     at.innerHTML = '<h3 class="seg-h">release the design</h3><p class="sh-refused sy-r-refused">' +
-      esc((c && c.message) || 'the integration checks cannot be read') + '</p>';
+      esc((c && c.message) || 'the integration checks cannot be read') + '</p>' + releasedAgain(d);
     return;
   }
   if (!R.version) R.version = c.next_version || '';
@@ -166,7 +172,32 @@ async function drawRelease() {
     '<div class="sy-r-form"><label>version <input id="sy-r-version" size="12" value="' + esc(R.version) + '"></label> ' +
     '<label>what changed <textarea id="sy-r-changed" rows="2" cols="60">' + esc(R.changed) + '</textarea></label> ' +
     '<button class="ctl" id="sy-r-release"' + (R.sending ? ' disabled' : '') + '>Release design</button></div>' +
-    (n ? '<p class="' + (n.ok ? 'sh-said' : 'sh-refused') + ' sy-r-notice">' + esc(n.text) + '</p>' : '');
+    (n ? '<p class="' + (n.ok ? 'sh-said' : 'sh-refused') + ' sy-r-notice">' + esc(n.text) + '</p>' : '') +
+    releasedAgain(d);
+}
+
+/** Every released design on the drive, and *Release again* on each earlier
+ *  one (W16): the program refuses it by name; the page never decides it. */
+function releasedAgain(d) {
+  if (!d || d.ok === false) {
+    return '<h4 class="seg-h">released designs</h4><p class="muted sy-a-refused">' +
+      esc((d && d.message) || 'the released designs cannot be read') + '</p>';
+  }
+  const a = R.again;
+  const rows = d.designs.slice().reverse().map(x =>
+    '<tr><td>' + esc(x.version) + '</td><td>' + esc(x.released_by) + '</td><td>' +
+    (x.again_of ? 'again of ' + esc(x.again_of) : '') + '</td><td>' + esc(x.holds.join(', ')) + '</td><td>' +
+    (x.version === d.released ? '<span class="muted">released now</span>'
+      : '<button class="ctl" data-again="' + esc(x.version) + '">Release again</button>') + '</td></tr>').join('');
+  const n = a.notice;
+  return '<h4 class="seg-h">released designs</h4><p class="muted">' + esc(d.message) + '</p>' +
+    (rows ? '<table class="sy-r-lines sy-a-list"><tbody>' + rows + '</tbody></table>' : '') +
+    (a.of ? '<div class="sy-r-form sy-a-form"><b>release ' + esc(a.of) + ' again</b> ' +
+      '<label>as <input id="sy-a-version" size="12" value="' + esc(a.version) + '"></label> ' +
+      '<label>why <textarea id="sy-a-why" rows="2" cols="60">' + esc(a.why) + '</textarea></label> ' +
+      '<button class="ctl" id="sy-a-release"' + (R.sending ? ' disabled' : '') + '>Release again</button>' +
+      '<span class="muted"> today\'s integration checks are not run: it is released as it was</span></div>' : '') +
+    (n ? '<p class="' + (n.ok ? 'sh-said' : 'sh-refused') + ' sy-a-notice">' + esc(n.text) + '</p>' : '');
 }
 
 /** The frame around the branch, as the systems' file says it: the valve
@@ -393,7 +424,29 @@ async function click(e) {
     return draw(true);
   }
   const b = W.sel;
+  if (t.dataset.again) {
+    R.again = { of: t.dataset.again, version: (R.checks && R.checks.next_version) || R.version || '', why: '', notice: null };
+    return drawRelease();
+  }
   switch (t.id) {
+    case 'sy-a-release': {
+      if (R.sending) return;
+      R.sending = true;
+      t.disabled = true;
+      R.again.version = v('sy-a-version').trim();
+      R.again.why = v('sy-a-why');
+      const of = R.again.of;
+      let r;
+      try {
+        r = await W.post('/v1/design/release-again', { of, version: R.again.version, why: R.again.why });
+      } finally { R.sending = false; }
+      // An answer about another design than the one now chosen is not drawn
+      // over it.
+      if (R.again.of !== of) return drawRelease();
+      R.again.notice = { ok: !!(r && r.ok), text: r && r.ok ? r.message + ' ' + r.announce : (r && r.message) || 'nothing was released' };
+      if (r && r.ok) { R.again.of = ''; R.again.why = ''; }
+      return drawRelease();
+    }
     case 'sy-r-release': {
       if (R.sending) return;
       R.sending = true;

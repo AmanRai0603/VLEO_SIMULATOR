@@ -16,6 +16,8 @@ started. Then, as people would:
   it understood and a way to raise it in Explore;
 - *Release design* is refused on screen by the program, naming the lines
   that fail, and nothing is written in the copy;
+- the released designs are listed, none yet on this drive (W16's *Release
+  again* is proved through the routes);
 - no page error.
 
 The release that succeeds is proved by the program's own test
@@ -146,6 +148,9 @@ def check():
             step('what was typed is kept', p.input_value('#sy-r-changed') == "Solar's sustained band, as 1.2 says it.")
             step('and nothing is written in the copy',
                  not os.path.exists(os.path.join(copy, 'design')) and not os.path.exists(os.path.join(copy, 'readable')))
+            released = p.inner_text('.sy-release')
+            step('the released designs are listed, none yet on this drive',
+                 'no design has been released on this drive yet' in released, released[-300:])
             step('no page error', not errors, '; '.join(errors[:3]))
             b.close()
     finally:
