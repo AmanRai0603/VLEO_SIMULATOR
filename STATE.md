@@ -147,11 +147,18 @@ Handed over Sunday 18 October (S1 to S4: F1 to F3-f, the key's proof, F3-g1, the
     - The asker's My work lists theirs; the subsystem engineer's no longer does.
 
     Its Opus review found one blocking point (an answered request matched as a substring) and nine more; fixed in its second commit, each shown red. Green.
+  - **211 F6-c3a margins kept, budgets across releases: high risk.** Stacked on 208. F6-c3 is split (the brief's question 57, 77e76bb0 on 162): c3a needs only c1; c3b, the decision on an objection and the release's refusals, waits for c2 and B's 204.
+    - A released design keeps `margins.csv`: every closure's group, state, margin and why, as the engine answers on the design as declared, with the design and the application. The release is refused while the engine runs another design than today's as the drive was last read.
+    - `design::margins_of` reads it whole or refuses by name; `open_held` reads it; `design::budgets` reads every closure across released designs, by group, a design without margins said.
+    - `GET /v1/design/budgets`, and the System workspace's frame shows them as a table, in place of F6-a's link.
+
+    Its Opus review found one blocking point (a malformed table passed over) and six more; fixed in 3ed29817, each shown red but the engine check's call site.
 - **What 208 to 210 decide:**
   - **What relies on a released design reads it back with `design::open_held`**, never as handed over.
   - **A seal whose key was revoked after it was made still counts** (question 51, read as the chain reads every other signature). Put to Aman on 209.
   - **A design released again changes nothing in today's design.** Each group moves its base (W12).
   - **The developer answers a request of the code by naming its uid in `apps/NOTES.md`.** Nobody writes its status, and the notes are not signed.
+  - **A released design's margins are never computed again.** `margins.csv` is read across releases; a design released before margins were kept is said as unknown.
   - **For B:** `GET /v1/my-work` gains the kind `asked of the code`, and a subsystem engineer's My work no longer lists requests of the code. `readable/` gains `Requests.csv`, with a `design` column.
 - **What 171 decides, which B's PRs must follow:**
   - **Ownership follows the mount.** Only the programme's file (mounting `systems`) and the systems' file (mounting each `l3_*`) mount anything.
@@ -233,9 +240,9 @@ Handed over Sunday 18 October (S1 to S4: F1 to F3-f, the key's proof, F3-g1, the
 - **Lockfiles:** `crates/vleo-py` keeps its own, built `--locked` in CI, and so does `crates/vleo-kernel-wasm` until 177 removes it. A new dependency of `vleo-files` or `vleo-server` needs them refreshed, as 171 does.
 - **Disk:** the container's allowance filled on S1 and again on S2. `xtask files-wasm` and the scenarios leave a `target/` of 10 GB or more inside the worktree they run in; delete it after a push. Old worktrees' `target/` folders and `target/*/incremental` were deleted to make room.
 - **Next for A, in order:**
-  - **F6-c2** (previews and their answers: high risk, needs B's 200 and 202) and **F6-c3** (the decision on an objection, margins and budgets across releases: needs B's 204).
+  - **F6-c2** (previews and their answers: high risk, needs B's fixes to 200 and 202) and **F6-c3b** (the decision on an objection and the release's refusals: needs c2 and B's 204).
   - **Merge B's fixes** into 207 as they land; B's fixes to 193 and 196 are in.
-  - **For Aman:** the brief's questions 9 (one node shape, F3-g0) and 10 (ports), 7 and 8 (where today's page's Rows, Architecture, Forms and manual go), 11 to 19 (F3-g2), 20 to 32 (F6-a), 33 to 41 (F6-b), 51 (209) and 55 (210).
+  - **For Aman:** the brief's questions 9 (one node shape, F3-g0) and 10 (ports), 7 and 8 (where today's page's Rows, Architecture, Forms and manual go), 11 to 19 (F3-g2), 20 to 32 (F6-a), 33 to 41 (F6-b), 51 (209), 55 (210) and 57, the split of c3 (211).
   - **F8 and F9** after F6. **For B, now:** F5, on the critical path of F6, F7 and F9; what it needs (F1's owner, F3's signed nodes, F4's tree) is in 175, 179 and 187.
 
 ## Person B · night
