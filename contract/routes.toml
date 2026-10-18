@@ -313,6 +313,16 @@ params = [["group", "l3_solar"]]
 
 [[route]]
 method = "POST"
+path = "/v1/seal"
+answer = "json"
+schema = "sealed"
+[[route.example]]
+name = "seal-no-copy"
+path = "/v1/seal"
+params = [["session", "@session"], ["group", "l3_solar"], ["version", "1.0"]]
+
+[[route]]
+method = "POST"
 path = "/v1/branch/<id>"
 answer = "json"
 schema = "branch-edited"

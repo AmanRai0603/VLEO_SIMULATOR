@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "sealed",
+  "description": "A group's release sealed by its owner in your copy, and where; or every reason it is not.",
+  "type": "object",
+  "properties": {
+    "ok": {
+      "type": "boolean"
+    },
+    "group": {
+      "type": "string"
+    },
+    "path": {
+      "type": "string",
+      "description": "The release's path inside the copy: groups/<group>/releases/<group>-<version>.vleo."
+    },
+    "message": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "ok"
+  ]
+}

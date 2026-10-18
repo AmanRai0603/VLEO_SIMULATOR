@@ -496,6 +496,18 @@ fn a_branch_is_framed_in_the_copy() {
     );
     assert!(r.contains("\"signed\":{\"ok\":true"), "{r}");
     assert!(field(&r, "shows").starts_with("your copy"), "{r}");
+    // Ola seals solar 1.0 (W5): refused, every reason by name, and no
+    // release written, while the band's children are assigned to nobody.
+    let sealed = post(
+        port,
+        "/v1/seal",
+        &[("group", "l3_solar"), ("version", "1.0")],
+    );
+    assert!(
+        sealed.contains("l3_solar 1.0 is not sealed") && sealed.contains("assigns it to nobody"),
+        "{sealed}"
+    );
+    assert!(!copy.join("groups/l3_solar/releases").exists());
     for uid in [UID, GOOD, LATE] {
         assert!(
             r.contains(&format!(

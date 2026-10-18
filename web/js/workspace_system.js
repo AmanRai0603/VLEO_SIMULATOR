@@ -102,7 +102,12 @@ function view() {
         v.impact.map(m => '<tr><td>' + esc(m.id) + '</td><td>' + esc(m.group) + '</td><td>' + esc(num(m.before)) + '</td><td>' + esc(num(m.after)) + '</td></tr>').join('') +
         '</tbody></table>'
       : '<p class="muted">No value outside the branch moves.</p>') +
-    '<p><button class="ctl" id="sy-view">Build it again</button></p></section>';
+    '<p><button class="ctl" id="sy-view">Build it again</button></p>' +
+    (W.tree && W.tree.yours
+      ? '<p class="sy-seal"><b>seal</b> it as release <input id="sy-seal-version" size="6" placeholder="1.0"> ' +
+        '<button class="ctl" id="sy-seal">Seal</button> every node signed at its contract, the group\'s checks passing, or every reason it is not.</p>'
+      : '') +
+    '</section>';
 }
 
 function picker() {
@@ -253,6 +258,11 @@ async function click(e) {
   switch (t.id) {
     case 'sy-go': { const id = v('sy-id').trim(); if (id) { openAt(id); return draw(); } return; }
     case 'sy-reopen': W.notice = null; return draw();
+    case 'sy-seal': {
+      const r = await W.post('/v1/seal', { group: W.group, version: v('sy-seal-version').trim() });
+      W.notice = { ok: !!(r && r.ok), text: (r && r.message) || 'nothing was sealed' };
+      return draw(true);
+    }
     case 'sy-view': {
       const group = W.group;
       const r = await get('/v1/branch/view?group=' + encodeURIComponent(group));
