@@ -11,7 +11,7 @@
 //! admits nothing.
 
 use std::path::{Path, PathBuf};
-use std::sync::Arc;
+use std::sync::{Arc, Mutex, MutexGuard};
 
 use vleo_files::chain::{self, FILE};
 use vleo_files::keys::SigningKey;
@@ -170,16 +170,20 @@ fn today(d: &Path) -> Today {
 }
 
 /// The keys folder this computer reads its accepted anchors from: one of the
-/// test's own, which has accepted none.
-fn keys() {
+/// test's own, which has accepted none. Its anchors file is one for the
+/// whole run, and a test writes it, so each test holds it until it is done.
+fn keys() -> MutexGuard<'static, ()> {
+    static HELD: Mutex<()> = Mutex::new(());
+    let held = HELD.lock().unwrap_or_else(|e| e.into_inner());
     let k = std::env::temp_dir().join(format!("vleo-today-chain-keys-{}", std::process::id()));
     std::fs::create_dir_all(&k).unwrap();
     std::env::set_var("VLEO_KEYS", &k);
+    held
 }
 
 #[test]
 fn a_release_the_chain_does_not_admit_is_refused_and_the_last_good_one_taken() {
-    keys();
+    let _keys = keys();
     let d = drive("one", &["1.1"], &pat().public().fingerprint());
     let t = today(&d);
     let g = &t.groups[0];
@@ -219,7 +223,7 @@ fn a_release_the_chain_does_not_admit_is_refused_and_the_last_good_one_taken() {
 
 #[test]
 fn a_release_the_chain_admits_is_taken() {
-    keys();
+    let _keys = keys();
     let d = drive("both", &["1.1", "1.2"], &pat().public().fingerprint());
     let t = today(&d);
     let g = &t.groups[0];
@@ -235,7 +239,7 @@ fn a_release_the_chain_admits_is_taken() {
 
 #[test]
 fn a_programme_s_file_that_does_not_open_admits_nothing() {
-    keys();
+    let _keys = keys();
     let other = SigningKey::from_seed([82; 32]).public().fingerprint();
     let d = drive("broken", &["1.1", "1.2"], &other);
     let t = today(&d);
@@ -261,7 +265,7 @@ fn today_at(root: &Path, d: &Path) -> (Today, String) {
 
 #[test]
 fn two_instances_on_one_drive_build_the_same_design_by_fingerprint() {
-    keys();
+    let _keys = keys();
     let d = drive("twice", &["1.1", "1.2"], &pat().public().fingerprint());
     // A second copy of the tool, in another folder, on the same design.
     let other = std::env::temp_dir().join(format!("vleo-today-chain-other-{}", std::process::id()));
@@ -314,7 +318,7 @@ fn systems(d: &Path, based_on: &str, base_version: &str, signed: bool) {
 
 #[test]
 fn the_design_s_base_is_the_one_the_systems_file_names() {
-    keys();
+    let _keys = keys();
     let d = drive("base", &["1.1"], &pat().public().fingerprint());
     let (t, _) = today_at(&root(), &d);
     assert!(t.base.said.contains("no systems' file"), "{}", t.base.said);
@@ -360,7 +364,7 @@ fn the_design_s_base_is_the_one_the_systems_file_names() {
 
 #[test]
 fn a_drive_with_an_anchor_and_no_programme_s_file_admits_nothing() {
-    keys();
+    let _keys = keys();
     let d = drive(
         "no-programme",
         &["1.1", "1.2"],
@@ -382,7 +386,7 @@ fn a_drive_with_an_anchor_and_no_programme_s_file_admits_nothing() {
 
 #[test]
 fn accepting_another_anchor_later_does_not_vouch_for_seals_checked_from_this_one() {
-    keys();
+    let _keys = keys();
     let d = drive("other-anchor", &["1.1"], &pat().public().fingerprint());
     let t = today(&d);
     let k = t.groups[0].taken.as_ref().unwrap();
@@ -405,7 +409,7 @@ fn accepting_another_anchor_later_does_not_vouch_for_seals_checked_from_this_one
 
 #[test]
 fn a_release_in_the_one_schema_whose_seal_cannot_be_checked_is_refused_by_name() {
-    keys();
+    let _keys = keys();
     let d = drive("schema", &["1.1"], &pat().public().fingerprint());
     let mut f = File::new(Kind::GroupRelease, APP);
     for (k, v) in [("group_id", "l3_solar"), ("version", "2.0")] {

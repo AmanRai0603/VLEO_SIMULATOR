@@ -182,6 +182,7 @@ fn drawn(id: &str, ctx: &Ctx) -> Result<String, String> {
     let over = today::Overlay {
         base: ctx.tree.clone(),
         replaced: BTreeMap::from([(node_toml, text.into_bytes())]),
+        removed: Default::default(),
     };
     let yours = match vleo_sheet::load::load_all_from(&over, &ctx.root) {
         Ok(t) => t,
