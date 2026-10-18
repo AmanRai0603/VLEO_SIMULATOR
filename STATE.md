@@ -153,6 +153,10 @@ Handed over Sunday 18 October (S1 to S4: F1 to F3-f, the key's proof, F3-g1, the
     - `GET /v1/design/budgets`, and the System workspace's frame shows them as a table, in place of F6-a's link.
 
     Its Opus review found one blocking point (a malformed table passed over) and six more; fixed in 3ed29817, each shown red but the engine check's call site.
+  - **212 F8-a2 an amount and a formula read as typed.** Stacked on 207 (it touches only the method language). F8-a is planned in the F8 brief (20e447d7 on 162), four pull requests, questions 58 to 71.
+    - `vleo_sheet::method::amount::read`: a value, a range or a spread as typed, the unit by `parse_unit` alone, every number worked out from the digits; refused by name with the fix.
+    - `vleo_sheet::method::formula::read`: a formula into method text `compile` checks, inputs found by port name or symbol, a near name offered and never taken, an empirical fit in units the person names.
+    - Nothing calls either yet (a3, a4). Its Opus review found two blocking points (a unit after a per-cent dropped; an exponent that could wrap) and eleven more; fixed in 4519f117, each shown red.
 - **What 208 to 210 decide:**
   - **What relies on a released design reads it back with `design::open_held`**, never as handed over.
   - **A seal whose key was revoked after it was made still counts** (question 51, read as the chain reads every other signature). Put to Aman on 209.
@@ -241,8 +245,9 @@ Handed over Sunday 18 October (S1 to S4: F1 to F3-f, the key's proof, F3-g1, the
 - **Disk:** the container's allowance filled on S1 and again on S2. `xtask files-wasm` and the scenarios leave a `target/` of 10 GB or more inside the worktree they run in; delete it after a push. Old worktrees' `target/` folders and `target/*/incremental` were deleted to make room.
 - **Next for A, in order:**
   - **F6-c2** (previews and their answers: high risk, needs B's fixes to 200 and 202) and **F6-c3b** (the decision on an objection and the release's refusals: needs c2 and B's 204).
+  - **F8-a1** (high risk): the engine reads every unit with the one parser, and refuses by name what it reads as a pure number today. Then a3 (a typed formula through the edit, high risk, waits on question 58) and a4 (amounts in the frame's forms).
   - **Merge B's fixes** into 207 as they land; B's fixes to 193 and 196 are in.
-  - **For Aman:** the brief's questions 9 (one node shape, F3-g0) and 10 (ports), 7 and 8 (where today's page's Rows, Architecture, Forms and manual go), 11 to 19 (F3-g2), 20 to 32 (F6-a), 33 to 41 (F6-b), 51 (209), 55 (210) and 57, the split of c3 (211).
+  - **For Aman:** the brief's questions 9 (one node shape, F3-g0) and 10 (ports), 7 and 8 (where today's page's Rows, Architecture, Forms and manual go), 11 to 19 (F3-g2), 20 to 32 (F6-a), 33 to 41 (F6-b), 51 (209), 55 (210), 57, the split of c3 (211), and 58 to 71 (F8-a).
   - **F8 and F9** after F6. **For B, now:** F5, on the critical path of F6, F7 and F9; what it needs (F1's owner, F3's signed nodes, F4's tree) is in 175, 179 and 187.
 
 ## Person B · night
