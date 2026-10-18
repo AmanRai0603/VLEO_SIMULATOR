@@ -12,9 +12,10 @@
 //! file is `based_on`, with its `base_version`, and the release before it. Its
 //! fingerprint is the digest of what it holds, and the subsystem engineer, or
 //! their deputy, signs it with a key the programme's file counts for them. The
-//! sealed file is then held to [`chain::check_release_in`], the check today's
-//! design makes of it, before it is written: what is sealed here is what will
-//! be taken there.
+//! sealed file is then held to [`chain::check_release_in`] through the file
+//! that mounts the group, before it is written. Only a heading, a block whose
+//! behaviour is its children, is the seal's own: every other block is a
+//! node's, signed by the node engineer it is assigned to.
 //!
 //! [`seal_in_place`] writes it into the copy's `releases/` folder under the
 //! copy's lock, never over a release already there: a release is never edited.
@@ -35,6 +36,17 @@ fn refused(message: impl Into<String>) -> Error {
 pub fn blockers(group: &File, nodes: &[File], registry: &Registry) -> Vec<String> {
     let mut out = Vec::new();
     let mut seen: Vec<&str> = Vec::new();
+    // A block framed in the group file is a heading, or not yet issued: one
+    // that decides or computes is issued to its node engineer first, since
+    // nobody's signature but the seal's would count for it.
+    for b in group.blocks.iter().filter(|b| b.archived == 0) {
+        if b.behaviour != "children" {
+            out.push(format!(
+                "{}: framed in the group file as a {} block and not issued: it is issued to its node engineer, or removed, before the group is sealed",
+                b.id, b.behaviour
+            ));
+        }
+    }
     for n in nodes {
         let uid = n.meta.get("block_uid").map_or("", String::as_str);
         let name = n
@@ -56,6 +68,14 @@ pub fn blockers(group: &File, nodes: &[File], registry: &Registry) -> Vec<String
             continue;
         }
         seen.push(uid);
+        let foreign = foreign_rows(n, uid);
+        if !foreign.is_empty() {
+            out.push(format!(
+                "{name}: its file holds rows that are not its block's ({}): a node file holds its own block's rows, and nothing its signature does not cover",
+                foreign.join(", ")
+            ));
+            continue;
+        }
         if group.blocks.iter().any(|b| b.uid == uid) || holds_rows_of(group, uid) {
             out.push(format!(
                 "{name}: the group file holds rows of it too, so the release cannot hold \
@@ -69,6 +89,13 @@ pub fn blockers(group: &File, nodes: &[File], registry: &Registry) -> Vec<String
             ));
             continue;
         };
+        if n.blocks[0].contract_version > a.contract_version {
+            out.push(format!(
+                "{name}: ahead of its contract — written at contract {}, and the group's is {}",
+                n.blocks[0].contract_version, a.contract_version
+            ));
+            continue;
+        }
         if n.blocks[0].contract_version < a.contract_version {
             out.push(format!(
                 "{name}: behind its contract — written at contract {}, and the group's is {}: \
@@ -136,13 +163,53 @@ pub fn node_in(release: &File, uid: &str, base: &File) -> File {
         .filter(|t| t.scope == uid)
         .map(|t| t.kind.as_str())
         .collect();
+    // The cases are the release's alone, and so are their words: a release
+    // with no cases keeps none of the design's.
+    let cases = |k: &str| k == "fixtures" || k.ends_with("fixtures.toml");
     n.texts
-        .retain(|t| t.scope != uid || !kinds.contains(&t.kind.as_str()));
+        .retain(|t| t.scope != uid || !(kinds.contains(&t.kind.as_str()) || cases(&t.kind)));
     n.texts
         .extend(release.texts.iter().filter(|t| t.scope == uid).cloned());
     take!(tables, scope);
     take!(media, scope);
     n
+}
+
+/// The tables of the node file `n` holding a row that is not the block
+/// `uid`'s: what its node engineer's signature does not cover, and so what
+/// the seal would carry in signed by nobody else.
+fn foreign_rows(n: &File, uid: &str) -> Vec<&'static str> {
+    let request = |scope: &str| {
+        scope
+            .strip_prefix("request:")
+            .is_some_and(|r| n.requests.iter().any(|q| q.uid == r && q.scope == uid))
+    };
+    let mut out = Vec::new();
+    for (table, off) in [
+        ("port", n.ports.iter().any(|r| r.block_uid != uid)),
+        ("wire", n.wires.iter().any(|r| r.to_block != uid)),
+        ("mount", n.mounts.iter().any(|r| r.block_uid != uid)),
+        ("closure", n.closures.iter().any(|r| r.block_uid != uid)),
+        ("loop", n.loops.iter().any(|r| r.block_uid != uid)),
+        ("test_case", n.cases.iter().any(|r| r.block_uid != uid)),
+        ("text", n.texts.iter().any(|r| r.scope != uid)),
+        ("tbl", n.tables.iter().any(|r| r.scope != uid)),
+        ("media", n.media.iter().any(|r| r.scope != uid)),
+        ("request", n.requests.iter().any(|r| r.scope != uid)),
+        ("comment", n.comments.iter().any(|r| r.scope != uid)),
+        ("change", n.changes.iter().any(|r| r.scope != uid)),
+        (
+            "signature",
+            n.signatures
+                .iter()
+                .any(|r| r.scope != FILE && r.scope != uid && !request(&r.scope)),
+        ),
+    ] {
+        if off {
+            out.push(table);
+        }
+    }
+    out
 }
 
 /// Whether `group` holds a row belonging to the block `uid`.
@@ -160,8 +227,11 @@ fn holds_rows_of(group: &File, uid: &str) -> bool {
 
 /// The group `group`'s release `version`, sealed by `by` with `key` at `at`:
 /// its group file and every node file in `nodes`, after `previous` (the
-/// release before it, if any). Refused, with every reason, unless `by` frames
-/// the group ([`chain::may_frame`]), the group file opens through the chain,
+/// release before it, if any). The file that mounts the group is found as
+/// the chain finds it (`chain::mounted_by`), among the programme's file and
+/// `systems`, the systems' file, each as the chain opened it. Refused, with
+/// every reason, unless `by` frames the group ([`chain::may_frame`]), the
+/// group file opens through the chain,
 /// the version is a release's and comes after `previous`, and nothing in
 /// [`blockers`] stands in the way. The sealed release is held to
 /// [`chain::check_release_in`] before it is given back.
@@ -175,7 +245,7 @@ pub fn seal(
     key: &SigningKey,
     at: &str,
     app: &str,
-    mounted_by: &Registry,
+    systems: &Registry,
     programme: &Registry,
 ) -> Result<File, Error> {
     if group.kind()? != Kind::Group {
@@ -185,6 +255,7 @@ pub fn seal(
         )));
     }
     let group_id = group.meta.get("group_id").cloned().unwrap_or_default();
+    let (mounted_by, _) = chain::mounted_by(&group_id, &[programme, systems])?;
     chain::may_frame(
         &group_id,
         by,
@@ -323,12 +394,30 @@ pub fn releases_in(
     let io = |e: std::io::Error| Error::new(ErrorKind::Io, format!("{}: {e}", dir.display()));
     for e in std::fs::read_dir(dir).map_err(io)? {
         let p = e.map_err(io)?.path();
-        if p.extension().is_none_or(|x| x != "vleo") {
-            continue;
-        }
         let name = p
             .file_name()
             .map_or(String::new(), |n| n.to_string_lossy().into_owned());
+        // A release in another case, or two files where there should be one,
+        // is said by its name, never read past.
+        let ext = p.extension().map(|x| x.to_string_lossy().into_owned());
+        match ext.as_deref() {
+            Some("vleo") => {}
+            Some(x) if x.eq_ignore_ascii_case("vleo") => {
+                return Err(refused(format!(
+                    "releases/{name} is a release named in another case: its owner names it .vleo"
+                )))
+            }
+            _ => {
+                return Err(refused(format!(
+                    "releases/{name} is not a release: releases/ holds sealed releases only, and anything else is named, never passed over"
+                )))
+            }
+        }
+        if name.contains(" (") || name.contains("(1)") {
+            return Err(refused(format!(
+                "releases/{name}: two files where there should be one — its owner keeps one"
+            )));
+        }
         let how = crate::upgrade::Upgrade { app, at: "" };
         let f = crate::sqlite::open(&p, &how)
             .map_err(|e| refused(format!("releases/{name} cannot be read: {}", e.message())))?
@@ -343,6 +432,11 @@ pub fn releases_in(
             .get("version")
             .and_then(|v| ReleaseVersion::parse(v))
             .ok_or_else(|| refused(format!("releases/{name} says no release version")))?;
+        if let Some((_, other)) = out.iter().find(|(w, _)| *w == v) {
+            return Err(refused(format!(
+                "releases/{name} and releases/{other} both say they are {group_id} {v}: its owner keeps one"
+            )));
+        }
         out.push((v, name));
     }
     out.sort_by(|a, b| b.0.cmp(&a.0));
@@ -365,7 +459,7 @@ pub fn seal_in_place(
     key: &SigningKey,
     at: &str,
     app: &str,
-    mounted_by: &Registry,
+    systems: &Registry,
     programme: &Registry,
 ) -> Result<String, Error> {
     if !crate::breakdown::valid_id(group_id) {
@@ -377,6 +471,20 @@ pub fn seal_in_place(
     let nodes = crate::breakdown::nodes_in(copy, group_id, &how)?;
     let dir = copy.join("groups").join(group_id).join("releases");
     let before = releases_in(&dir, group_id, app)?;
+    // The release before is one the chain admits: a file in releases/ it
+    // does not refuses the seal by its name, never sets the version after it.
+    let (mounted_by, _) = chain::mounted_by(group_id, &[programme, systems])?;
+    for (_, name) in &before {
+        let how = crate::upgrade::Upgrade { app, at: "" };
+        let f = crate::sqlite::open(&dir.join(name), &how)?.file;
+        let checked = chain::check_release_in(&f, mounted_by, programme)?;
+        if !checked.holds() {
+            return Err(refused(format!(
+                "releases/{name} does not check through the chain ({}): a release is sealed after the releases the chain admits; its owner removes it, or the copy is taken again",
+                checked.refused.join("; ")
+            )));
+        }
+    }
     let previous = before.first().map(|(v, _)| v.to_string());
     let rel = format!("groups/{group_id}/releases/{group_id}-{version}.vleo");
     let path = copy.join(&rel);
@@ -394,11 +502,26 @@ pub fn seal_in_place(
         key,
         at,
         app,
-        mounted_by,
+        systems,
         programme,
     )?;
     std::fs::create_dir_all(&dir)
         .map_err(|e| Error::new(ErrorKind::Io, format!("{}: {e}", dir.display())))?;
-    crate::sqlite::write(&r, &path)?;
+    // Written beside its place, then linked into it: a link fails when
+    // anything is at the path, a dangling link among them, so a release is
+    // never written over, whoever came between.
+    let tmp = dir.join(format!(
+        ".vleo-sealing-{}-{group_id}-{version}.vleo",
+        std::process::id()
+    ));
+    let _ = std::fs::remove_file(&tmp);
+    crate::sqlite::write(&r, &tmp)?;
+    let linked = std::fs::hard_link(&tmp, &path);
+    let _ = std::fs::remove_file(&tmp);
+    linked.map_err(|e| {
+        refused(format!(
+            "{rel} could not be written ({e}): a release is never written over"
+        ))
+    })?;
     Ok(rel)
 }

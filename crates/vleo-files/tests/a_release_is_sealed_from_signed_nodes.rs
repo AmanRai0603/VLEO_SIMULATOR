@@ -284,10 +284,11 @@ fn a_branch_of_signed_nodes_is_sealed_by_its_owner_and_checks_through_the_chain(
         checked.signed
     );
 
-    // Dee, Ola's deputy, seals it too; Nia and Sam do not.
+    // Dee, Ola's deputy, seals it too. Nia, whom the programme's file does
+    // not register, does not; Sam, whom it does, is refused by the owner rule.
     seal(&w, &solar(), &[band(&w)], "1.2", None, "Dee Puty", 14).unwrap();
     let e = seal(&w, &solar(), &[band(&w)], "1.2", None, "Nia Node", 16).unwrap_err();
-    assert!(e.contains("Nia Node"), "{e}");
+    assert!(e.contains("Nia Node is not registered"), "{e}");
     let e = seal(&w, &solar(), &[band(&w)], "1.2", None, "Sam Engel", 12).unwrap_err();
     assert!(e.contains("may not change l3_solar"), "{e}");
 }
@@ -385,7 +386,7 @@ fn a_release_is_written_into_the_copy_and_never_written_over() {
     let before = std::fs::read(copy.join(&rel)).unwrap();
     let e = seal_in("1.0").unwrap_err();
     assert!(
-        e.contains("never written over") || e.contains("does not come after"),
+        e.contains("l3_solar-1.0.vleo is already there: a release is never written over"),
         "{e}"
     );
     assert_eq!(
@@ -412,6 +413,10 @@ fn a_release_s_node_in_the_design_s_file_keeps_the_kinds_of_text_it_does_not_car
     base.texts = vec![
         text("sheet", "the sheet's own words"),
         text("method", "return 1"),
+        text(
+            "fixtures",
+            "the design's cases, which the release no longer holds",
+        ),
     ];
     base.meta.insert(s("sheet.crate"), s("vleo-mod-solar"));
     let mut rel = from_release(BAND);
@@ -432,4 +437,147 @@ fn a_release_s_node_in_the_design_s_file_keeps_the_kinds_of_text_it_does_not_car
         n.meta.get("sheet.crate").map(String::as_str),
         Some("vleo-mod-solar")
     );
+}
+
+#[test]
+fn only_a_heading_is_the_seal_s_own_and_a_node_file_holds_its_block_s_rows_alone() {
+    let w = world();
+    let refused = |group: &File, nodes: &[File], says: &str| {
+        let e = seal(&w, group, nodes, "1.2", None, "Ola Sun", 13).unwrap_err();
+        assert!(e.contains(says), "expected «{says}» in: {e}");
+    };
+    // A computing block framed in the group file, assigned to nobody.
+    let mut framed = solar_unsigned(1);
+    framed.blocks.push(Block {
+        uid: s("sw_unsigned_rule"),
+        id: s("sw_unsigned_rule"),
+        parent_uid: s("l3_solar"),
+        behaviour: s("method"),
+        ..Block::default()
+    });
+    refused(
+        &signed(framed, "Ola Sun", &key(13)),
+        &[band(&w)],
+        "sw_unsigned_rule: framed in the group file as a method block and not issued",
+    );
+    // A release built by hand with the band's assignment taken away: the
+    // band is no heading, and nobody's signature counts for it.
+    let r = seal(&w, &solar(), &[band(&w)], "1.2", None, "Ola Sun", 13).unwrap();
+    let mut bare = r.clone();
+    bare.assignments.retain(|a| a.block_uid != BAND);
+    let bare = signed(bare, "Ola Sun", &key(13));
+    let checked = chain::check_release_in(&bare, &w.sy, &w.pr).unwrap();
+    assert!(
+        checked
+            .refused
+            .iter()
+            .any(|e| e.contains("sw_activity_band is a method block that no assignment names")),
+        "{:?}",
+        checked.refused
+    );
+    // A node file carrying a requirement of the file's own, which its node
+    // engineer's signature does not cover.
+    let mut carried = band(&w);
+    carried.tables.push(Tbl {
+        scope: s(FILE),
+        path: s("requirements.csv"),
+        csv: s("id,sense\nr1,>=\n"),
+    });
+    chain::check_node(
+        &carried,
+        BAND,
+        &chain::open_group_in(&solar(), &w.sy, &w.pr).unwrap(),
+    )
+    .expect("the signature does not cover it");
+    refused(
+        &solar(),
+        &[carried],
+        "its file holds rows that are not its block's (tbl)",
+    );
+    // Ahead of its contract.
+    let mut ahead = band(&w);
+    ahead.blocks[0].contract_version = 2;
+    refused(&solar(), &[ahead], "ahead of its contract");
+    // A node file of two blocks; a node assigned to nobody; a group file
+    // that does not open; a file that is not a group file.
+    let mut two = band(&w);
+    let mut extra = two.blocks[0].clone();
+    extra.uid = s("sw_second");
+    two.blocks.push(extra);
+    refused(&solar(), &[two], "holds its one block, and this holds 2");
+    refused(
+        &solar(),
+        &[band(&w), from_release("sw_f107_observed")],
+        "the group file assigns it to nobody",
+    );
+    refused(&solar_unsigned(1), &[band(&w)], "l3_solar's group file:");
+    refused(
+        &band(&w),
+        &[band(&w)],
+        "sealed from a group file, not a node",
+    );
+}
+
+#[test]
+fn the_releases_already_there_are_each_one_the_chain_admits_or_the_seal_is_refused() {
+    let w = world();
+    let copy = copy_with("releases-there", &w);
+    let rel = copy.join("groups/l3_solar/releases");
+    let seal_in = |v: &str| {
+        release::seal_in_place(
+            &copy,
+            "l3_solar",
+            v,
+            "Ola Sun",
+            &key(13),
+            AT,
+            APP,
+            &w.sy,
+            &w.pr,
+        )
+        .map_err(|e| e.message().to_string())
+    };
+    let first = copy.join(seal_in("1.0").unwrap());
+    let refused = |name: &str, bytes: Option<&[u8]>, says: &str| {
+        let at = rel.join(name);
+        match bytes {
+            Some(b) => std::fs::write(&at, b).unwrap(),
+            None => {
+                std::fs::copy(&first, &at).unwrap();
+            }
+        }
+        let e = seal_in("1.1").unwrap_err();
+        assert!(e.contains(says), "{name}: expected «{says}» in: {e}");
+        std::fs::remove_file(&at).unwrap();
+    };
+    refused(
+        "l3_solar-1.0 (1).vleo",
+        None,
+        "two files where there should be one",
+    );
+    refused(
+        "l3_solar-1.0-again.vleo",
+        None,
+        "both say they are l3_solar 1.0",
+    );
+    refused("l3_solar-1.1.VLEO", None, "named in another case");
+    refused(
+        "l3_solar-9.0.vleo",
+        Some(b"not a release"),
+        "cannot be read",
+    );
+    // One changed after its seal: the chain does not admit it.
+    let how = vleo_files::upgrade::Upgrade { app: APP, at: AT };
+    let mut f = vleo_files::sqlite::open(&first, &how).unwrap().file;
+    f.meta.insert(s("version"), s("9.0"));
+    vleo_files::sqlite::write(&f, &rel.join("l3_solar-9.0.vleo")).unwrap();
+    let e = seal_in("9.1").unwrap_err();
+    assert!(
+        e.contains("releases/l3_solar-9.0.vleo does not check through the chain"),
+        "{e}"
+    );
+    std::fs::remove_file(rel.join("l3_solar-9.0.vleo")).unwrap();
+    // With only what the chain admits there, the next is sealed after it.
+    seal_in("1.1").unwrap();
+    let _ = std::fs::remove_dir_all(&copy);
 }
