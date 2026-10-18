@@ -211,6 +211,8 @@ pub struct Taken {
     /// kept.
     pub based_on: String,
     pub base_version: Option<u64>,
+    /// Where the drive holds it.
+    pub path: PathBuf,
 }
 
 /// The chain the drive's releases are checked through. One is made for a
@@ -544,6 +546,7 @@ pub fn build(base: Arc<dyn Files>, root: &Path, drive: &Path) -> Result<Today, S
                         chain: how.said,
                         based_on: how.based_on,
                         base_version: how.base_version,
+                        path: path.clone(),
                     });
                 }
                 Err(why) => group.refused.push((said, why)),
@@ -566,6 +569,51 @@ pub fn build(base: Arc<dyn Files>, root: &Path, drive: &Path) -> Result<Today, S
         written,
         base: base_of(drive, &chain),
     })
+}
+
+/// A release today's design took, read again from `path` on `drive` as the
+/// group `id`'s and checked through the chain as a build checks it, for a
+/// released design to hold (F6-b): its bytes, the release they read as in
+/// the one schema, and how its seal checked. Refused when its bytes change
+/// while it is read, so what is held is what was checked.
+pub fn read_again(
+    drive: &Path,
+    id: &str,
+    path: &Path,
+) -> Result<(Vec<u8>, vleo_files::model::File, String), String> {
+    let read = || std::fs::read(path).map_err(|e| format!("{}: {e}", path.display()));
+    let bytes = read()?;
+    let found = Found::open(path)?;
+    if read()? != bytes {
+        return Err("it changed while it was read: read it again".into());
+    }
+    let chain = chain_of(drive);
+    let (file, said) = match found {
+        Found::OneSchema(f) => {
+            if f.meta.get("group_id").map(String::as_str) != Some(id) {
+                return Err(format!("it is not {id}'s release"));
+            }
+            let said = chain.check_one(drive, &f, id)?;
+            (*f, said)
+        }
+        Found::Before1_0(r) => {
+            if r.group != id {
+                return Err(format!("it is not {id}'s release"));
+            }
+            r.check_seal()
+                .map_err(|e| format!("its files are not the ones sealed: {e}"))?;
+            let f = upgraded(path, &r)?;
+            if f.meta.get("fingerprint") != Some(&r.fingerprint) {
+                return Err("it changed while it was read: read it again".into());
+            }
+            let said = chain.check(&f, &r.sealed_by)?;
+            (f, said)
+        }
+    };
+    if read()? != bytes {
+        return Err("it changed while it was read: read it again".into());
+    }
+    Ok((bytes, file, said))
 }
 
 /// Every sheet replaced, by its path under `root` and the hash of its bytes,

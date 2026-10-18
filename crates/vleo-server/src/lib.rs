@@ -26,6 +26,7 @@
 
 mod branch;
 mod copy;
+mod design;
 mod explore;
 mod http;
 mod inputs;
@@ -627,6 +628,8 @@ fn route(
         ("GET", "/v1/branch") => ok_json(branch::tree(params, ctx)),
         // A group started by its owner once the systems' file mounts it (F6-a).
         ("POST", "/v1/group/start") => ok_json(branch::start_route(params, ctx)),
+        ("GET", "/v1/design/integration") => ok_json(design::integration_route(ctx)),
+        ("POST", "/v1/design/release") => ok_json(design::release_route(params, ctx)),
         ("POST", p) if p.starts_with("/v1/branch/") => {
             ok_json(branch::edit_route(p.strip_prefix("/v1/branch/").unwrap_or_default(), params, ctx))
         }
