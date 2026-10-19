@@ -162,6 +162,15 @@ Handed over Sunday 18 October (S1 to S4: F1 to F3-f, the key's proof, F3-g1, the
     - The engine keeps a refusal for each row (`Graph::unread`), asked in `call`, `estimate` and `supply_checked`, for every behaviour; a row nobody has specified is `NotRun` whatever its unit. The page's index and xtask's group page show such a unit as written and no number.
     - No answer of `design/` moves (machine names only). A release's `km`, `%`, `d` and `yr` now convert, and `km/h`, `mN/kW`, `kW.h` refuse: the release notes are in the commit and the body, for the groups before the application release.
     - Its Opus review found two blocking points (a supplied value taken; lookup and children rows past the check) and six more; fixed in f823f0c0, each shown red. Not fixed: a refused row's cases show NaN with no reason, and three readers of "a unit reads" remain.
+  - **214 F8-a4 amounts in the frame's forms.** Stacked on 212 with 213 merged in (both are its needs).
+    - `breakdown::with_amount` reads an amount as typed into a port's unit, value and ends, never converted; an allocation takes a spread's range, and says so. A port filled again keeps what the fill does not give, a range's reason only with its range, and refuses keeping a value or range in another unit.
+    - `port_ok` refuses an end or value that is no finite number, a value outside its range, one end, and a symbol a method cannot write or that names two ports; an allocation is of the dimension of the output it bounds.
+    - `GET /v1/amount`; fill and allocate take `amount`; the answer says what a port now holds; the System workspace's forms take one amount, said back. `tools/amount_check.py`.
+    - Its Opus review found two blocking points (a bare number written in the old unit; a new range given the old reason) and seven more; fixed in 5ee4520c, each shown red.
+  - **215 F8-a3 a formula typed as the node's method: high risk.** Stacked on 212. Built on question 58's proposed answer, Aman's to give.
+    - `edit::Edit::Formula` becomes the method text `formula::read` makes, against `checks::node_signature` (shared with `child_ready`), held to everything a method edit is; writes `pseudocode`, and design/'s `method` with the same body when the file holds one (none can before F3-g0); two bodies that differ are refused by the checks.
+    - The edit route takes `formula`, `formula.units`, `formula.answer`, and says what it was read as. The Node workspace's *type a formula* is read and run on the cases; only *Use it as the method* brings it to the file, seen in *its method*. `tools/formula_check.py`.
+    - Its Opus review found one blocking point (a formula saved unseen from its box) and four more; fixed in 2aff26d0, each shown red.
 - **What 208 to 210 decide:**
   - **What relies on a released design reads it back with `design::open_held`**, never as handed over.
   - **A seal whose key was revoked after it was made still counts** (question 51, read as the chain reads every other signature). Put to Aman on 209.
@@ -250,9 +259,9 @@ Handed over Sunday 18 October (S1 to S4: F1 to F3-f, the key's proof, F3-g1, the
 - **Disk:** the container's allowance filled on S1 and again on S2. `xtask files-wasm` and the scenarios leave a `target/` of 10 GB or more inside the worktree they run in; delete it after a push. Old worktrees' `target/` folders and `target/*/incremental` were deleted to make room.
 - **Next for A, in order:**
   - **F6-c2** (previews and their answers: high risk, needs B's fixes to 200 and 202) and **F6-c3b** (the decision on an objection and the release's refusals: needs c2 and B's 204).
-  - **F8-a3** (a typed formula through the edit, high risk, waits on question 58), then a4 (amounts in the frame's forms). a1 is 213.
+  - **F8-a is built:** a1 is 213, a2 212, a3 215 (on question 58 as proposed) and a4 214. Next, F8's remaining stages after Aman's answers, and F6-c2 and c3b once B's fixes land.
   - **Merge B's fixes** into 207 as they land; B's fixes to 193 and 196 are in.
-  - **For Aman:** the brief's questions 9 (one node shape, F3-g0) and 10 (ports), 7 and 8 (where today's page's Rows, Architecture, Forms and manual go), 11 to 19 (F3-g2), 20 to 32 (F6-a), 33 to 41 (F6-b), 51 (209), 55 (210), 57, the split of c3 (211), 58 to 71 (F8-a), and 70 as 213 answers it.
+  - **For Aman:** the brief's questions 9 (one node shape, F3-g0) and 10 (ports), 7 and 8 (where today's page's Rows, Architecture, Forms and manual go), 11 to 19 (F3-g2), 20 to 32 (F6-a), 33 to 41 (F6-b), 51 (209), 55 (210), 57, the split of c3 (211), 58 to 71 (F8-a), 70 as 213 answers it, and 58 as 215 builds on it.
   - **F8 and F9** after F6. **For B, now:** F5, on the critical path of F6, F7 and F9; what it needs (F1's owner, F3's signed nodes, F4's tree) is in 175, 179 and 187.
 
 ## Person B · night
