@@ -408,13 +408,16 @@ fn accepting_another_anchor_later_does_not_vouch_for_seals_checked_from_this_one
 }
 
 #[test]
-fn a_release_in_the_one_schema_is_refused_by_name() {
+fn a_release_in_the_one_schema_whose_seal_cannot_be_checked_is_refused_by_name() {
     let _keys = keys();
     let d = drive("schema", &["1.1"], &pat().public().fingerprint());
     let mut f = File::new(Kind::GroupRelease, APP);
     for (k, v) in [("group_id", "l3_solar"), ("version", "2.0")] {
         f.meta.insert(s(k), s(v));
     }
+    // Named by the fingerprint of what it holds, so the seal is what is read.
+    let fingerprint = chain::digest(&f, FILE).unwrap();
+    f.meta.insert(s("fingerprint"), fingerprint);
     vleo_files::sqlite::write(&f, &d.join("groups/l3_solar/releases/l3_solar-2.0.vleo")).unwrap();
     let t = today(&d);
     let g = &t.groups[0];
@@ -422,7 +425,7 @@ fn a_release_in_the_one_schema_is_refused_by_name() {
     assert!(
         g.refused
             .iter()
-            .any(|(v, why)| v == "l3_solar-2.0" && why.contains("not format 1")),
+            .any(|(v, why)| v == "2.0" && why.contains("the drive has no systems' file")),
         "{:?}",
         g.refused
     );

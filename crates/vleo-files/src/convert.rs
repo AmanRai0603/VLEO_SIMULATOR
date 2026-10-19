@@ -710,22 +710,10 @@ impl Served {
         for (path, f) in files {
             match f.kind()? {
                 Kind::Node => {
-                    let (sheet, fixtures, parity) = node_back(f)?;
-                    let krate = f
-                        .meta
-                        .get("sheet.crate")
-                        .ok_or_else(|| malformed(format!("{path} names no crate for its code")))?;
-                    let id = &f.blocks[0].uid;
-                    let dir = root.join("crates").join(krate).join("nodes").join(id);
-                    s.put(dir.join("node.toml"), sheet.into_bytes());
-                    if let Some(fx) = fixtures {
-                        s.put(dir.join("fixtures.toml"), fx.into_bytes());
-                    }
-                    if let Some(pc) = parity {
-                        s.put(dir.join("parity.csv"), pc.into_bytes());
-                    }
-                    if let Some(l) = text_in(f, id, LESSON) {
-                        s.put(dir.join(vleo_sheet::lesson::FILE), l.as_bytes().to_vec());
+                    for (p, bytes) in node_folder(root, f)
+                        .map_err(|e| malformed(format!("{path}: {}", e.message())))?
+                    {
+                        s.put(p, bytes);
                     }
                 }
                 Kind::Group => {
@@ -830,6 +818,30 @@ impl Files for Served {
     fn is_file(&self, p: &Path) -> bool {
         self.files.contains_key(p)
     }
+}
+
+/// A node's file as the folder it was converted from, under `root`: its
+/// sheet, and its fixtures, parity and lesson when it has them, each by its
+/// path. What the loader reads of one node.
+pub fn node_folder(root: &Path, f: &File) -> Result<Vec<(PathBuf, Vec<u8>)>, Error> {
+    let (sheet, fixtures, parity) = node_back(f)?;
+    let krate = f
+        .meta
+        .get("sheet.crate")
+        .ok_or_else(|| malformed("it names no crate for its code"))?;
+    let id = &f.blocks[0].uid;
+    let dir = root.join("crates").join(krate).join("nodes").join(id);
+    let mut out = vec![(dir.join("node.toml"), sheet.into_bytes())];
+    if let Some(fx) = fixtures {
+        out.push((dir.join("fixtures.toml"), fx.into_bytes()));
+    }
+    if let Some(pc) = parity {
+        out.push((dir.join("parity.csv"), pc.into_bytes()));
+    }
+    if let Some(l) = text_in(f, id, LESSON) {
+        out.push((dir.join(vleo_sheet::lesson::FILE), l.as_bytes().to_vec()));
+    }
+    Ok(out)
 }
 
 /// The design under `root`, as everything in the repository reads it: the

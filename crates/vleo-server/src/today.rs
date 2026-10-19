@@ -8,7 +8,8 @@
 //! which releases it used.
 //!
 //! The drive holds each group's releases at `groups/<group>/releases/`. Each
-//! release found there is taken only when it passes, in this order:
+//! release from before 1.0 found there is taken only when it passes, in this
+//! order (one in 1.0's one schema, as said below):
 //!
 //! 1. it opens, as a sealed group release (`vleo_files::intake::Release`);
 //! 2. it says it is the group whose folder it is in;
@@ -30,9 +31,16 @@
 //!
 //! And each release's seal is checked through the chain from the anchor its
 //! START HERE names (`vleo_files::chain`, docs/briefs/F2.md): the programme's
-//! file opened under that anchor, and each release, all from before 1.0 until
-//! 1.0's intake reads the one schema, by the programme manager's anchor of its
-//! fingerprint. A seal that does not check is refused like any other reason,
+//! file opened under that anchor, and each release from before 1.0 by the
+//! programme manager's anchor of its fingerprint.
+//!
+//! A release in 1.0's one schema, sealed by its group's owner
+//! (`vleo_files::release`, docs/briefs/F5.md), is taken only through the
+//! chain: its seal checked through the systems' file that mounts its group,
+//! every node in it through the group file it carries, and every check of a
+//! release holding. Each node its group assigns then replaces the design's
+//! own file of that node, read as the loader reads it
+//! (`vleo_files::convert::node_folder`); its headings stay the design's own. A seal that does not check is refused like any other reason,
 //! and the group's last good release taken in its place. Whether this
 //! computer has accepted the anchor the seals were checked from is said beside
 //! each release taken, read when it is said (`Taken::chain_said`). A drive that
@@ -41,7 +49,7 @@
 //! so for every release. The design's base is read from the systems' file
 //! once it checks through the chain.
 
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
@@ -263,10 +271,9 @@ impl Chain {
                 "its seal cannot be checked through the chain: {why}"
             )),
             Chain::Open { programme, .. } => {
-                // Today's design reads a release from before 1.0 only
-                // (`intake::Release::open`), so a release in the one schema
-                // never reaches here; one that did is refused by name rather
-                // than checked by a path nothing yet exercises.
+                // A release in the one schema is checked by `check_one`, never
+                // here; one that did reach here is refused by name rather than
+                // checked by a path nothing exercises.
                 let before_1_0 = release
                     .meta
                     .get("upgraded_from")
@@ -295,6 +302,94 @@ impl Chain {
                 ))
             }
         }
+    }
+}
+
+impl Chain {
+    /// How `release`, in 1.0's one schema, checks through the chain: its seal
+    /// through the file on `drive` that mounts the group `id`, and every node
+    /// it holds through the group file it carries; or why it is refused. A
+    /// release of the one schema is checked through the chain or not taken.
+    fn check_one(
+        &self,
+        drive: &Path,
+        release: &vleo_files::model::File,
+        id: &str,
+    ) -> Result<(String, (String, String, String)), String> {
+        // A release upgraded from before 1.0 is checked by its anchor alone,
+        // which covers neither its cases nor its assignments: in the one
+        // schema, only a release sealed in the application is taken.
+        if release.meta.contains_key("upgraded_from") {
+            return Err(
+                "it is a release from before 1.0 written in 1.0's one schema: a release of the one schema is taken only as sealed in the application"
+                    .into(),
+            );
+        }
+        // Its fingerprint is not under its seal: it is worked out again from
+        // what it holds, or anyone who can write the drive could give one
+        // release another's name.
+        let fingerprint = chain::digest(release, chain::FILE)
+            .map_err(|e| format!("its fingerprint cannot be read: {}", e.message()))?;
+        match release.meta.get("fingerprint").map(|f| f.trim()) {
+            None | Some("") => {
+                return Err(
+                    "it says no fingerprint: a release is known by the fingerprint of what it holds"
+                        .into(),
+                )
+            }
+            Some(f) if f != fingerprint => {
+                return Err(format!(
+                    "its fingerprint is {f}, and what it holds gives {fingerprint}: a release is never relabelled"
+                ))
+            }
+            Some(_) => {}
+        }
+        let programme = match self {
+            Chain::Absent(why) => {
+                return Err(format!(
+                    "it is a release of 1.0's one schema, taken only once its seal checks through the chain, and {why}"
+                ))
+            }
+            Chain::Broken(why) => {
+                return Err(format!(
+                    "its seal cannot be checked through the chain: {why}"
+                ))
+            }
+            Chain::Open { programme, .. } => programme,
+        };
+        let path = drive.join("groups/systems/systems.vgroup");
+        if !path.is_file() {
+            return Err(
+                "its seal cannot be checked: the drive has no systems' file, which mounts every group"
+                    .into(),
+            );
+        }
+        let systems = vleo_files::sqlite::read(&path)
+            .map_err(|e| e.message().to_string())
+            .and_then(|f| chain::open_systems(&f, programme).map_err(|e| e.message().to_string()))
+            .map_err(|why| {
+                format!("its seal cannot be checked: the systems' file does not check through the chain: {why}")
+            })?;
+        let (parent, _) = chain::mounted_by(id, &[programme, &systems])
+            .map_err(|e| format!("its seal does not check through the chain: {}", e.message()))?;
+        let checked = chain::check_release_in(release, parent, programme)
+            .map_err(|e| format!("its seal does not check through the chain: {}", e.message()))?;
+        if !checked.holds() {
+            return Err(format!(
+                "its seal does not check through the chain: {}",
+                checked.refused.join("; ")
+            ));
+        }
+        // Who sealed it, and when, as the seal's own signature says.
+        let seal = chain::seal_of(release, parent, programme)
+            .map_err(|e| format!("its seal does not check through the chain: {}", e.message()))?;
+        Ok((
+            format!(
+                "sealed by {}, its owner as {} mounts it, from the anchor START HERE names",
+                seal.signer, parent.from
+            ),
+            (seal.signer.clone(), seal.signed_at.clone(), fingerprint),
+        ))
     }
 }
 
@@ -419,6 +514,7 @@ pub fn build(base: Arc<dyn Files>, root: &Path, drive: &Path) -> Result<Today, S
 
     let chain = chain_of(drive);
     let mut taken: BTreeMap<PathBuf, Vec<u8>> = BTreeMap::new();
+    let mut gone: BTreeSet<PathBuf> = BTreeSet::new();
     let mut groups = Vec::new();
     for (id, files) in found {
         // Newest first, by the version each release says it is; one that does
@@ -426,16 +522,12 @@ pub fn build(base: Arc<dyn Files>, root: &Path, drive: &Path) -> Result<Today, S
         let mut releases: Vec<Candidate> = files
             .iter()
             .map(|f| {
-                let r = Release::open(f);
-                let v = r
-                    .as_ref()
-                    .ok()
-                    .map(|r| r.version.clone())
-                    .unwrap_or_else(|| {
-                        f.file_stem()
-                            .map(|s| s.to_string_lossy().into_owned())
-                            .unwrap_or_default()
-                    });
+                let r = Found::open(f);
+                let v = r.as_ref().ok().map(|r| r.said().0).unwrap_or_else(|| {
+                    f.file_stem()
+                        .map(|s| s.to_string_lossy().into_owned())
+                        .unwrap_or_default()
+                });
                 (ReleaseVersion::parse(&v), v, f.clone(), r)
             })
             .collect();
@@ -463,16 +555,33 @@ pub fn build(base: Arc<dyn Files>, root: &Path, drive: &Path) -> Result<Today, S
                 if version.is_none() {
                     return Err(format!("'{said}' is not a release's version"));
                 }
-                take(&base, &taken, root, &id, &path, &r, &chain).map(|t| (r, t))
+                let edits = match &r {
+                    Found::Before1_0(r) => take(&base, &taken, &gone, root, &id, &path, r, &chain),
+                    Found::OneSchema(f) => {
+                        take_one(&base, &taken, &gone, root, &id, f, &chain, drive)
+                    }
+                };
+                edits.map(|t| (r.said(), t))
             });
             match tried {
-                Ok((r, (edits, changes, notes, how))) => {
+                Ok((said, (edits, changes, notes, how, removed))) => {
+                    let (version, sealed, sealed_by, fingerprint) = match &how.seal {
+                        Some((by, at, fp)) => (said.0, at.clone(), by.clone(), fp.clone()),
+                        None => said,
+                    };
+                    for p in &edits {
+                        gone.remove(p.0);
+                    }
                     taken.extend(edits);
+                    for p in removed {
+                        taken.remove(&p);
+                        gone.insert(p);
+                    }
                     group.taken = Some(Taken {
-                        version: r.version,
-                        sealed: r.sealed,
-                        sealed_by: r.sealed_by,
-                        fingerprint: r.fingerprint,
+                        version,
+                        sealed,
+                        sealed_by,
+                        fingerprint,
                         changes,
                         notes,
                         anchor: match &chain {
@@ -489,10 +598,11 @@ pub fn build(base: Arc<dyn Files>, root: &Path, drive: &Path) -> Result<Today, S
         }
         groups.push(group);
     }
-    let written = digest(root, &taken)?;
+    let written = digest(root, &taken, &gone)?;
     let files: Arc<dyn Files> = Arc::new(Overlay {
         base,
         replaced: taken,
+        removed: gone,
     });
     // The whole design, read again through every check the loader makes.
     vleo_sheet::load::load_all_from(&*files, root)
@@ -509,11 +619,25 @@ pub fn build(base: Arc<dyn Files>, root: &Path, drive: &Path) -> Result<Today, S
 /// Every sheet replaced, by its path under `root` and the hash of its bytes,
 /// as one digest; empty when none is. The path is the one under the root, so
 /// two copies of the tool in two folders agree.
-fn digest(root: &Path, taken: &BTreeMap<PathBuf, Vec<u8>>) -> Result<String, String> {
-    if taken.is_empty() {
+fn digest(
+    root: &Path,
+    taken: &BTreeMap<PathBuf, Vec<u8>>,
+    gone: &BTreeSet<PathBuf>,
+) -> Result<String, String> {
+    if taken.is_empty() && gone.is_empty() {
         return Ok(String::new());
     }
     let mut all = Vec::new();
+    for path in gone {
+        let under = path.strip_prefix(root).map_err(|_| {
+            format!(
+                "{} is not under the design's root, so today's design has no fingerprint",
+                path.display()
+            )
+        })?;
+        all.extend_from_slice(under.to_string_lossy().replace('\\', "/").as_bytes());
+        all.extend_from_slice(b"\0removed\0");
+    }
     for (path, bytes) in taken {
         // A sheet outside the root would be named by where this copy of the
         // tool sits, and two copies would disagree on the fingerprint.
@@ -545,8 +669,63 @@ type Candidate = (
     Option<ReleaseVersion>,
     String,
     PathBuf,
-    Result<Release, String>,
+    Result<Found, String>,
 );
+
+/// A release as it was found: from before 1.0, read as its folder, or in
+/// 1.0's one schema, sealed by its group's owner (F5).
+enum Found {
+    Before1_0(Release),
+    OneSchema(Box<vleo_files::model::File>),
+}
+
+impl Found {
+    /// The release at `path`: from before 1.0 when it is format 1, else in
+    /// the one schema when it is a group's release there, else why not.
+    fn open(path: &Path) -> Result<Found, String> {
+        match Release::open(path) {
+            Ok(r) => Ok(Found::Before1_0(r)),
+            Err(old) => match vleo_files::sqlite::read(path) {
+                Ok(f) if f.kind().ok() == Some(vleo_files::meta::Kind::GroupRelease) => {
+                    Ok(Found::OneSchema(Box::new(f)))
+                }
+                Ok(f) => Err(format!(
+                    "it is a {}, and releases/ holds a group's releases only",
+                    f.kind()
+                        .map_or("file of no kind".to_string(), |k| k.to_string())
+                )),
+                // A file in the one schema says why it does not read as one;
+                // any other says why it is not a release from before 1.0.
+                Err(e) if old.contains("not format 1") => {
+                    Err(format!("it does not read as a release: {}", e.message()))
+                }
+                Err(_) => Err(old),
+            },
+        }
+    }
+
+    /// What it says of itself: its version, when it was sealed, by whom, and
+    /// its fingerprint.
+    fn said(&self) -> (String, String, String, String) {
+        match self {
+            Found::Before1_0(r) => (
+                r.version.clone(),
+                r.sealed.clone(),
+                r.sealed_by.clone(),
+                r.fingerprint.clone(),
+            ),
+            Found::OneSchema(f) => {
+                let get = |k: &str| f.meta.get(k).cloned().unwrap_or_default();
+                (
+                    get("version"),
+                    get("sealed_at"),
+                    get("sealed_by"),
+                    get("fingerprint"),
+                )
+            }
+        }
+    }
+}
 
 /// The sheets one release writes into the design as it stands, the nodes it
 /// changes, what a person should know of it, and how its seal checked — or
@@ -556,6 +735,7 @@ type Edits = (
     Vec<String>,
     Vec<String>,
     Checked,
+    BTreeSet<PathBuf>,
 );
 
 /// How a release's seal checked, and the design it was based on.
@@ -563,11 +743,17 @@ struct Checked {
     said: String,
     based_on: String,
     base_version: Option<u64>,
+    /// Who sealed it, when, and its fingerprint, as its seal's signature and
+    /// its own digest say, where the chain read them; none for a release
+    /// whose seal is not read through a signature.
+    seal: Option<(String, String, String)>,
 }
 
+#[allow(clippy::too_many_arguments)]
 fn take(
     base: &Arc<dyn Files>,
     taken: &BTreeMap<PathBuf, Vec<u8>>,
+    gone: &BTreeSet<PathBuf>,
     root: &Path,
     id: &str,
     path: &Path,
@@ -604,6 +790,7 @@ fn take(
         said: chain.check(&file, &r.sealed_by)?,
         based_on: file.meta.get("based_on").cloned().unwrap_or_default(),
         base_version: file.base_version(),
+        seal: None,
     };
     let findings = vleo_files::checks::check_release(&file);
     if !findings.holds() {
@@ -618,6 +805,7 @@ fn take(
     let now = Overlay {
         base: base.clone(),
         replaced: taken.clone(),
+        removed: gone.clone(),
     };
     let tree = vleo_sheet::load::load_all_from(&now, root)
         .map_err(|e| format!("the design does not load to take it into: {e}"))?;
@@ -666,7 +854,157 @@ fn take(
     if !refused.is_empty() {
         return Err(refused.join("; "));
     }
-    Ok((edits, changes, notes, how))
+    Ok((edits, changes, notes, how, BTreeSet::new()))
+}
+
+/// What a release in 1.0's one schema writes into the design as it stands:
+/// taken only when its seal checks through the chain from the file that
+/// mounts its group, and every check of a release holds. Each node its
+/// group assigns, as the release holds it, replaces the design's own file of
+/// that node; a block no assignment names is a heading of the group, and is
+/// the design's own still.
+#[allow(clippy::too_many_arguments)]
+fn take_one(
+    base: &Arc<dyn Files>,
+    taken: &BTreeMap<PathBuf, Vec<u8>>,
+    gone: &BTreeSet<PathBuf>,
+    root: &Path,
+    id: &str,
+    file: &vleo_files::model::File,
+    chain: &Chain,
+    drive: &Path,
+) -> Result<Edits, String> {
+    let get = |k: &str| file.meta.get(k).map_or("", String::as_str);
+    if get("group_id") != id {
+        return Err(format!(
+            "it says it is {}'s release, in {id}'s folder",
+            if get("group_id").is_empty() {
+                "no group"
+            } else {
+                get("group_id")
+            }
+        ));
+    }
+    let (said, seal) = chain.check_one(drive, file, id)?;
+    let how = Checked {
+        said,
+        based_on: get("based_on").to_string(),
+        base_version: file.base_version(),
+        seal: Some(seal),
+    };
+    let findings = vleo_files::checks::check_release(file);
+    if !findings.holds() {
+        let errors: Vec<String> = findings
+            .0
+            .iter()
+            .filter(|f| f.level == vleo_files::checks::Level::Error)
+            .map(|f| format!("{}: {}", f.place, f.what))
+            .collect();
+        return Err(errors.join("; "));
+    }
+    let now = Overlay {
+        base: base.clone(),
+        replaced: taken.clone(),
+        removed: gone.clone(),
+    };
+    let tree = vleo_sheet::load::load_all_from(&now, root)
+        .map_err(|e| format!("the design does not load to take it into: {e}"))?;
+    let design = design_nodes(root, id)?;
+    let (mut edits, mut changes) = (BTreeMap::new(), Vec::new());
+    let mut notes = Vec::new();
+    let mut removed = BTreeSet::new();
+    for b in file.blocks.iter().filter(|b| b.archived == 0) {
+        // Unassigned, it is a heading: the release's check holds every other
+        // block to an assignment (`chain::check_release_in`). A heading is
+        // the design's own still.
+        if !file.assignments.iter().any(|a| a.block_uid == b.uid) {
+            continue;
+        }
+        let own = design
+            .iter()
+            .find(|n| n.blocks.first().is_some_and(|x| x.uid == b.uid));
+        let own = own.filter(|o| tree.sheets.contains_key(&o.blocks[0].id));
+        let Some(own) = own else {
+            notes.push(format!(
+                "{} is not in the design: a new node joins it through the design's own files",
+                b.id
+            ));
+            continue;
+        };
+        if own.blocks[0].id != b.id {
+            return Err(format!(
+                "it names the design's {} {}: a node is renamed through its group's breakdown, not by a release",
+                own.blocks[0].id, b.id
+            ));
+        }
+        let node = vleo_files::release::node_in(file, &b.uid, own);
+        let folder = vleo_files::convert::node_folder(root, &node)
+            .map_err(|e| format!("{}: {}", b.id, e.message()))?;
+        let mut moved = false;
+        // What the node's folder no longer holds, the design's own kept but
+        // nobody signed: its cases, its parity grid, its lesson.
+        if let Some(dir) = folder.first().and_then(|(p, _)| p.parent()) {
+            for name in ["fixtures.toml", "parity.csv", vleo_sheet::lesson::FILE] {
+                let p = dir.join(name);
+                if now.is_file(&p) && !folder.iter().any(|(q, _)| *q == p) {
+                    removed.insert(p);
+                    moved = true;
+                }
+            }
+        }
+        for (path, bytes) in folder {
+            if now.read(&path).ok().as_deref() != Some(&bytes[..]) {
+                edits.insert(path, bytes);
+                moved = true;
+            }
+        }
+        if moved {
+            changes.push(b.id.clone());
+        }
+    }
+    // The design with the release in it, read through every check the loader
+    // makes: a release the design does not load with is refused, and the
+    // group's last good one tried.
+    let mut with = now.replaced.clone();
+    with.extend(edits.iter().map(|(p, b)| (p.clone(), b.clone())));
+    let mut without = now.removed.clone();
+    without.extend(removed.iter().cloned());
+    for p in edits.keys() {
+        without.remove(p);
+    }
+    let after = Overlay {
+        base: base.clone(),
+        replaced: with,
+        removed: without,
+    };
+    vleo_sheet::load::load_all_from(&after, root)
+        .map_err(|e| format!("the design does not load with it: {e}"))?;
+    Ok((edits, changes, notes, how, removed))
+}
+
+/// The design's own node files of the group `id`, from the folder the design
+/// is read from: `VLEO_DESIGN`, or `design/` under `root`.
+pub(crate) fn design_nodes(root: &Path, id: &str) -> Result<Vec<vleo_files::model::File>, String> {
+    let dir = crate::design_dir(root)
+        .join("groups")
+        .join(id)
+        .join("nodes");
+    let mut out = Vec::new();
+    let entries = match std::fs::read_dir(&dir) {
+        Ok(e) => e,
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => return Ok(out),
+        Err(e) => return Err(format!("the design's {}: {e}", dir.display())),
+    };
+    for e in entries.filter_map(Result::ok) {
+        let p = e.path();
+        if p.extension().is_some_and(|x| x == "vnode") {
+            out.push(
+                vleo_files::sqlite::read(&p)
+                    .map_err(|e| format!("the design's {}: {}", p.display(), e.message()))?,
+            );
+        }
+    }
+    Ok(out)
 }
 
 /// A release as the one schema holds it, for the checks of its content: a
@@ -687,22 +1025,42 @@ fn upgraded(path: &Path, r: &Release) -> Result<vleo_files::model::File, String>
 struct Overlay {
     base: Arc<dyn Files>,
     replaced: BTreeMap<PathBuf, Vec<u8>>,
+    /// Files of the base a release's node no longer holds.
+    removed: BTreeSet<PathBuf>,
 }
 
 impl Files for Overlay {
     fn read(&self, p: &Path) -> std::io::Result<Vec<u8>> {
+        if self.removed.contains(p) {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::NotFound,
+                format!("{} is not in today's design", p.display()),
+            ));
+        }
         match self.replaced.get(p) {
             Some(b) => Ok(b.clone()),
             None => self.base.read(p),
         }
     }
     fn entries(&self, p: &Path) -> std::io::Result<Vec<PathBuf>> {
-        self.base.entries(p)
+        let mut out: Vec<PathBuf> = self
+            .base
+            .entries(p)?
+            .into_iter()
+            .filter(|e| !self.removed.contains(e))
+            .collect();
+        for added in self.replaced.keys().filter(|k| k.parent() == Some(p)) {
+            if !out.contains(added) {
+                out.push(added.clone());
+            }
+        }
+        out.sort();
+        Ok(out)
     }
     fn is_dir(&self, p: &Path) -> bool {
         self.base.is_dir(p)
     }
     fn is_file(&self, p: &Path) -> bool {
-        self.replaced.contains_key(p) || self.base.is_file(p)
+        !self.removed.contains(p) && (self.replaced.contains_key(p) || self.base.is_file(p))
     }
 }
