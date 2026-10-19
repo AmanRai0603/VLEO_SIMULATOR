@@ -28,8 +28,10 @@
 //!   drive, it is an objection with why, and My work says no more of it;
 //! - Sam decides her objection, asking for solar's next version: an issue in
 //!   his copy to Ola at the objection's place, the listing saying what was
-//!   decided and its mark no red mark of its own; decided again, by Uma, as
-//!   an allocation, as no decision, or of no objection, refused by name;
+//!   decided, and the issue a red mark on solar, open for Ola, as any issue
+//!   to a group is; decided again, by Uma, as
+//!   an allocation, which decides nothing yet, as no decision, or of no
+//!   objection, refused by name;
 //! - changed on the drive after she signed it, her answer is refused, and My
 //!   work says it does not count;
 //! - the preview copied under another design's name is listed with why, and
@@ -398,6 +400,7 @@ fn released(drive: &Path, release: &[u8]) {
         understood: &[],
         margins: &[],
         previews: &[],
+        unread: &[],
         decided: &[],
     };
     let d = design::release(
@@ -751,7 +754,7 @@ fn the_system_engineer_previews_a_release_and_its_named_group_answers_it() {
         (
             "allocation",
             "l3_x_envorbit",
-            "by reallocate, its why naming objection:l3_solar-1.1.l3_x_envorbit",
+            "an allocation changed does not decide objection:l3_solar-1.1.l3_x_envorbit yet",
         ),
         (
             "maybe",
@@ -787,17 +790,43 @@ fn the_system_engineer_previews_a_release_and_its_named_group_answers_it() {
         field(&r, "message").contains(&format!("{objection} is decided already: its next version")),
         "{r}"
     );
-    // The decision is the objection's: it is no red mark of its own.
+    // Its next version asked for is work for solar's owner: a red mark on
+    // solar, as any open issue to a group is, never hidden as the
+    // objection's.
     let i = ask(port, "GET", "/v1/design/integration", &[], false);
-    assert!(
-        !i.contains(&format!(
-            "issue:{}",
-            issue
-                .trim_start_matches("issues/")
-                .trim_end_matches(".vissue")
-        )),
-        "{i}"
+    assert!(i.contains("\"ok\":true"), "{i}");
+    let mark = format!(
+        "issue:{}",
+        issue
+            .trim_start_matches("issues/")
+            .trim_end_matches(".vissue")
     );
+    assert!(
+        i.contains(&format!("{{\"id\":\"{mark}\",\"said\":\"issue 1 on l3_solar, open: l3_x_envorbit objects to l3_solar 1.1:")),
+        "{mark}: {i}"
+    );
+    // Released anyway in its place: the programme manager's issue raises the
+    // objection's mark, and is no red mark of its own.
+    std::fs::remove_file(copy.join(&issue)).unwrap();
+    let r = decide("anyway", "l3_x_envorbit");
+    assert!(r.contains("\"ok\":true"), "{r}");
+    let anyway = format!(
+        "issue:{}",
+        field(&r, "file")
+            .trim_start_matches("issues/")
+            .trim_end_matches(".vissue")
+    );
+    assert!(anyway.ends_with("-programme"), "{r}");
+    let i = ask(port, "GET", "/v1/design/integration", &[], false);
+    assert!(i.contains("\"ok\":true"), "{i}");
+    assert!(!i.contains(&format!("{{\"id\":\"{anyway}\"")), "{i}");
+    // Beside a preview that may be one and does not open, no objection
+    // stands: the issue is said as it is.
+    let odd = drive.join("integration/l3_solar-1.1/preview-of-something.vleo");
+    std::fs::write(&odd, b"not a file").unwrap();
+    let i = ask(port, "GET", "/v1/design/integration", &[], false);
+    assert!(i.contains(&format!("{{\"id\":\"{anyway}\"")), "{i}");
+    std::fs::remove_file(&odd).unwrap();
     assert!(open_key(port, "test-uma.vkey").contains("\"open\":true"));
     // Changed on the drive after she signed it: refused, never her answer,
     // and My work says it does not count.

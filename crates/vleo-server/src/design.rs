@@ -78,6 +78,11 @@ struct Today {
     released: Option<String>,
     parts: Vec<Read>,
     marks: Vec<Mark>,
+    /// Every preview as it stands and every objection decided (F6-c3b).
+    standing: Objections,
+    /// The objections that are red marks, each raised by its programme
+    /// manager's issue, when the previews ask nothing more.
+    objected: Vec<Mark>,
 }
 
 impl Today {
@@ -190,12 +195,44 @@ fn today(ctx: &Ctx) -> Result<(Today, me::Chain), String> {
         }
     }
     marks.extend(red_marks(ctx, &drive));
+    // An issue the previews count as an objection's raised mark is that
+    // objection's (`design::asked_of`), never a mark of its own; every other
+    // issue, a next version asked for, a decision of a stale objection or
+    // one that does not count among them, is said as it is.
+    let held: Vec<(String, String)> = parts
+        .iter()
+        .filter_map(|p| {
+            p.taken
+                .as_ref()
+                .ok()
+                .map(|t| (p.group.clone(), t.1.clone()))
+        })
+        .collect();
+    let holding: Vec<(&str, &str)> = held.iter().map(|(g, v)| (g.as_str(), v.as_str())).collect();
+    let standing = objections_now(&drive, &copy::dir(ctx), &c, released.as_deref(), &holding);
+    let objected = design::asked_of(
+        &standing.previews,
+        &standing.unread,
+        &standing.decided,
+        released.as_deref(),
+        &holding,
+    )
+    .map(|(m, _)| m)
+    .unwrap_or_default();
+    let raised: Vec<String> = objected
+        .iter()
+        .filter_map(|m| m.raised)
+        .map(|n| format!("issue:{n}-programme"))
+        .collect();
+    marks.retain(|m| !raised.contains(&m.id));
     Ok((
         Today {
             marks,
             drive,
             released,
             parts,
+            standing,
+            objected,
         },
         c,
     ))
@@ -269,12 +306,7 @@ fn red_marks(ctx: &Ctx, drive: &Path) -> Vec<Mark> {
                 .map(|(_, i)| i.number),
         });
     }
-    // An issue deciding an objection is the objection's: its mark is the
-    // objection's own (`design::asked_of`), never one beside it.
-    for (name, i) in open
-        .iter()
-        .filter(|(_, i)| !i.place.starts_with("objection:"))
-    {
+    for (name, i) in &open {
         out.push(Mark {
             id: format!("issue:{}", name.trim_end_matches(".vissue")),
             said: format!("issue {} on {}, open: {}", i.number, i.group_id, i.what),
@@ -470,7 +502,7 @@ fn released(params: &str, ctx: &Ctx) -> Result<String, String> {
     };
     // Every preview as it stands, and every objection to one with what was
     // decided of it: the library refuses the release while any is wanting.
-    let standing = objections_now(&t.drive, &copy, &c);
+    let standing = &t.standing;
     // The engine's answers on the design as declared, read once for the
     // margins kept and for readable/Health.csv, of the design released.
     let today_is = built_from().map(|r| r.fingerprint).unwrap_or_default();
@@ -485,6 +517,7 @@ fn released(params: &str, ctx: &Ctx) -> Result<String, String> {
         understood: &understood,
         margins: &margins,
         previews: &standing.previews,
+        unread: &standing.unread,
         decided: &standing.decided,
     };
     let at = results::now_utc();
@@ -536,7 +569,7 @@ fn released(params: &str, ctx: &Ctx) -> Result<String, String> {
         "## {version}\n\nReleased by {who}, {at}, after {}.\n\n{quoted}",
         t.released.as_deref().unwrap_or("none"),
     );
-    for m in &t.marks {
+    for m in t.marks.iter().chain(t.objected.iter()) {
         entry.push_str(&format!(
             "\n- {}: {}",
             m.said,
@@ -1304,9 +1337,22 @@ fn previews_into(j: &mut Json, ctx: &Ctx, drive: &Path, c: &me::Chain) {
         .chain(c.systems.iter())
         .collect();
     let (listed, unread) = previews(drive, &copy, &parents, &c.programme);
-    let decided = objections_now(drive, &copy, c).decided;
+    // Only what was decided is read here: the previews that do not open are
+    // listed below as they are.
+    let report = built_from();
+    let held: Vec<(&str, &str)> = report
+        .iter()
+        .flat_map(|r| r.groups.iter())
+        .filter_map(|g| {
+            g.taken
+                .as_ref()
+                .map(|t| (g.id.as_str(), t.version.as_str()))
+        })
+        .collect();
+    let on = released.as_ref().ok().map(|d| d.version.as_str());
+    let decided = objections_now(drive, &copy, c, on, &held).decided;
     j.key("pending").open_arr();
-    if let (Ok(d), Some(report)) = (&released, built_from()) {
+    if let (Ok(d), Some(report)) = (&released, &report) {
         for g in &report.groups {
             let Some(t) = &g.taken else { continue };
             if d.releases
@@ -1385,8 +1431,8 @@ fn previews_into(j: &mut Json, ctx: &Ctx, drive: &Path, c: &me::Chain) {
                             j.str_field("objection", &id);
                             let d = decided
                                 .iter()
-                                .find(|d| d.objection.id() == id)
-                                .and_then(|d| d.decision.as_ref());
+                                .find(|d| d.objection().id() == id)
+                                .and_then(|d| d.decision());
                             j.str_field("decision", &d.map_or("undecided".into(), |d| d.said()));
                         }
                         design::Answered::Refused(w) => {
@@ -1428,12 +1474,27 @@ pub(super) fn previews_route(ctx: &Ctx) -> String {
 // ── The decision on an objection (F6-c items 5 and 6) ──
 
 /// Every preview as it stands, from the drive and the copy, each with what
-/// its groups said on the drive; and every objection to one, with what was
-/// decided of it, read from the issues of the drive and the copy and from
-/// the systems' file the chain opened.
+/// its groups said on the drive; why each preview that does not open, and
+/// may be one the release must hear, does not; and every objection to one,
+/// with what was decided of it, read from the issues of the drive and the
+/// copy.
 pub(crate) struct Objections {
     pub(crate) previews: Vec<design::Standing>,
+    pub(crate) unread: Vec<String>,
     pub(crate) decided: Vec<design::Decided>,
+}
+
+/// The release and the design a preview's path names it is of and on,
+/// `integration/<g>-<v>/preview-<g>-<v>-on-<design>.vleo`, when it names
+/// them.
+fn named_by(path: &str) -> Option<(String, String, String)> {
+    let name = path.rsplit('/').next()?;
+    let (gv, design) = name
+        .strip_prefix("preview-")?
+        .strip_suffix(".vleo")?
+        .split_once("-on-")?;
+    let (g, v) = gv.rsplit_once('-')?;
+    Some((g.to_string(), v.to_string(), design.to_string()))
 }
 
 /// Every issue file of the drive's `issues/` and the copy's, the drive's
@@ -1466,11 +1527,40 @@ fn issue_files(drive: &Path, copy: &Path) -> Vec<vleo_files::model::File> {
     out
 }
 
-pub(crate) fn objections_now(drive: &Path, copy: &Path, c: &me::Chain) -> Objections {
+pub(crate) fn objections_now(
+    drive: &Path,
+    copy: &Path,
+    c: &me::Chain,
+    released: Option<&str>,
+    holding: &[(&str, &str)],
+) -> Objections {
     let parents: Vec<&Registry> = std::iter::once(&c.programme)
         .chain(c.systems.iter())
         .collect();
-    let (listed, _) = previews(drive, copy, &parents, &c.programme);
+    let (listed, not_read) = previews(drive, copy, &parents, &c.programme);
+    // A preview that does not open asks the release what one unanswered does
+    // when its path says it is of a release today's design holds, on the
+    // design released now, or says nothing it can be read by; and so does an
+    // integration/ that does not read.
+    let mut unread: Vec<String> = not_read
+        .into_iter()
+        .map(|(on_drive, why)| {
+            format!(
+                "{}'s integration/ does not read: {why}",
+                if on_drive { "the drive" } else { "your copy" }
+            )
+        })
+        .collect();
+    for l in &listed {
+        if let Err(why) = &l.opened {
+            let live = named_by(&l.path).is_none_or(|(g, v, d)| {
+                Some(d.as_str()) == released && holding.iter().any(|(hg, hv)| *hg == g && *hv == v)
+            });
+            if live {
+                unread.push(why.clone());
+            }
+        }
+    }
     let mut previews = Vec::new();
     let mut objections = Vec::new();
     for p in listed.iter().filter_map(|l| l.opened.as_ref().ok()) {
@@ -1500,23 +1590,11 @@ pub(crate) fn objections_now(drive: &Path, copy: &Path, c: &me::Chain) -> Object
             answers: answers.into_iter().map(|(g, a, _)| (g, a)).collect(),
         });
     }
-    let decided = match &c.systems {
-        Some(systems) => {
-            let issues = issue_files(drive, copy);
-            design::decisions(&objections, &issues, &systems.file, &parents, &c.programme)
-        }
-        None => vec![None; objections.len()],
-    };
+    let issues = issue_files(drive, copy);
     Objections {
         previews,
-        decided: objections
-            .into_iter()
-            .zip(decided)
-            .map(|(objection, decision)| design::Decided {
-                objection,
-                decision,
-            })
-            .collect(),
+        unread,
+        decided: design::decisions(&objections, &issues, &parents, &c.programme),
     }
 }
 
@@ -1541,13 +1619,13 @@ fn deciding(params: &str, ctx: &Ctx) -> Result<String, String> {
         "anyway" => design::Decide::ReleaseAnyway,
         "allocation" => {
             return Err(format!(
-                "an allocation is changed in the systems' frame, by reallocate, its why naming {}: that change decides the objection",
+                "an allocation changed does not decide {} yet: it is changed in your copy's systems' file, by reallocate, and no group file goes back to the drive yet, where the release reads its decisions",
                 design::objection_id(group.trim(), version.trim(), answering.trim())
             ))
         }
         other => {
             return Err(format!(
-                "{other:?} is not a decision: next (ask for its next version), allocation, or anyway (release anyway)"
+                "{other:?} is not a decision: next (ask for its next version) or anyway (release anyway); an allocation changed does not decide one yet"
             ))
         }
     };
@@ -1569,16 +1647,22 @@ fn deciding(params: &str, ctx: &Ctx) -> Result<String, String> {
         ));
     }
     let id = design::objection_id(group.trim(), version.trim(), answering.trim());
-    let now = objections_now(&drive, &copy, &c);
-    let d = now
+    let (t, _) = today(ctx)?;
+    let d = t
+        .standing
         .decided
         .iter()
-        .find(|d| d.objection.id() == id)
+        .find(|d| d.objection().id() == id)
         .ok_or_else(|| {
             format!("no answer on the drive objects as {id}: an objection is decided once its answer is on the drive")
         })?;
-    if let Some(done) = &d.decision {
+    if let Some(done) = d.decision() {
         return Err(format!("{id} is decided already: {}", done.said()));
+    }
+    if d.objection().answer.is_empty() {
+        return Err(format!(
+            "{id}'s answer on the drive does not read, so its digest cannot be named: nothing is decided"
+        ));
     }
     let parents: Vec<&Registry> = std::iter::once(&c.programme)
         .chain(c.systems.iter())
@@ -1591,7 +1675,7 @@ fn deciding(params: &str, ctx: &Ctx) -> Result<String, String> {
     let at = results::now_utc();
     let (f, who) = me::with_key(|key, me| {
         design::decision_issue(
-            &d.objection,
+            d.objection(),
             decide,
             number as i64,
             &me.name,

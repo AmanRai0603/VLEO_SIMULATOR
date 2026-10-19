@@ -8,23 +8,30 @@
 //! - **ask for its next version**: an issue on the releasing group, to its
 //!   owner, at the objection's place `objection:<g>-<v>.<a>`, resolved by the
 //!   release that names it (`crate::issues`);
-//! - **change an allocation**: `breakdown::Edit::Reallocate` in the systems'
-//!   file, its why naming the objection (question 48);
 //! - **release anyway**: an issue on `programme`, to the programme manager,
 //!   holding the objection's words and the answer's digest.
 //!
-//! [`decisions`] reads what was decided from those files, each held to the
-//! chain: an issue counts only signed by the system engineer, or their
-//! deputy, who raised it, naming the answer by its digest; a change only in
-//! the systems' file, which the chain opened.
+//! **Changing an allocation does not decide one yet.** `breakdown::
+//! Edit::Reallocate` changes it (question 48), in the copy's systems' file,
+//! and no group file goes back to the drive yet; and a file's `change` rows,
+//! where its why would name the objection, are not covered by its signature.
+//! A reallocation decides once what decides it is signed and on the drive.
+//!
+//! [`decisions`] reads what was decided from the issue files, each held to
+//! the chain: an issue counts only signed by the system engineer, or their
+//! deputy, who raised it, naming the answer by its digest, and saying what
+//! it decides again in a text its signature covers. What it gives
+//! ([`Decided`]) only it makes, so a release is given no decision it did not
+//! read.
 //!
 //! The release asks it of today's design ([`asked_of`]): every preview on
 //! the design released now of a release today's design holds answered by
 //! every group it names; every objection decided; none decided *next
 //! version* while today's design still holds the release objected to. Each
 //! objection is a red mark, `objection:…`, never marked understood: one
-//! decided *release anyway* is raised by the programme manager's issue, and
-//! one decided by an allocation changed is closed by that change.
+//! decided *release anyway* is raised by the programme manager's issue. A
+//! preview that does not open, and may be one the release must hear, holds
+//! it as one unanswered does.
 //!
 //! Nothing is computed here: what moved is the preview's, and what each
 //! group said is its answer's.
@@ -70,8 +77,6 @@ pub enum Decision {
     /// Its next version asked for, by the issue `issue` to the releasing
     /// group's owner.
     NextVersion { issue: i64, by: String },
-    /// An allocation changed in the systems' file, by `by` at `at`.
-    Reallocated { by: String, at: String },
     /// Released anyway, by the issue `issue` to the programme manager.
     ReleaseAnyway { issue: i64, by: String },
 }
@@ -82,9 +87,6 @@ impl Decision {
         match self {
             Decision::NextVersion { issue, by } => {
                 format!("its next version, asked for by {by} in issue {issue}")
-            }
-            Decision::Reallocated { by, at } => {
-                format!("an allocation changed by {by}, {at}")
             }
             Decision::ReleaseAnyway { issue, by } => {
                 format!("released anyway, put by {by} to the programme manager in issue {issue}")
@@ -207,28 +209,34 @@ pub fn decision_issue(
 }
 
 /// What was decided of each of `objections`, read from `issues`, every issue
-/// file of the drive and the copy, and from `systems`, the systems' file the
-/// chain opened: an issue at the objection's place naming its answer by its
-/// digest, signed by the system engineer or their deputy who raised it, on
-/// the releasing group to its owner or on `programme` to its programme
-/// manager; or a change of the systems' file reallocating, its why naming
-/// the objection. The first that holds is the decision; none, undecided.
+/// file of the drive and the copy: an issue file of one issue, its number and
+/// group as its signed meta says them, at the objection's place, naming its
+/// answer by its digest, saying so in its one signed `decision` text as its
+/// row does, signed by the system engineer or their deputy who raised it, on
+/// the releasing group to its owner, as the file among `parents` that mounts
+/// it names them, or on `programme` to its programme manager. The first that
+/// holds is the decision; none, undecided.
 pub fn decisions(
     objections: &[Objection],
     issues: &[File],
-    systems: &File,
     parents: &[&Registry],
     programme: &Registry,
-) -> Vec<Option<Decision>> {
+) -> Vec<Decided> {
     objections
         .iter()
         .map(|o| {
             let id = o.id();
-            let by_issue = issues.iter().find_map(|f| {
+            let decision = issues.iter().find_map(|f| {
                 let [i] = f.issues.as_slice() else {
                     return None;
                 };
-                if i.place != id || i.evidence != format!("answer {}", o.answer) {
+                let meta = |k: &str| f.meta.get(k).map_or("", String::as_str);
+                if f.kind().ok() != Some(Kind::Issue)
+                    || meta("number") != i.number.to_string()
+                    || meta("group_id") != i.group_id
+                    || i.place != id
+                    || i.evidence != format!("answer {}", o.answer)
+                {
                     return None;
                 }
                 let signed = decided_as(&i.place, &i.group_id, &i.addressed_to, &o.answer);
@@ -255,26 +263,22 @@ pub fn decisions(
                         by: i.raised_by.clone(),
                     });
                 }
-                let to_pm = programme
-                    .file
-                    .people
-                    .iter()
-                    .any(|p| p.name == i.addressed_to && p.role == "programme manager");
+                // The programme manager, as `decision_issue` addresses them:
+                // never their deputy.
+                let to_pm = programme.file.people.iter().any(|p| {
+                    p.name == i.addressed_to
+                        && p.role == "programme manager"
+                        && p.deputy_for.is_empty()
+                });
                 (i.group_id == "programme" && to_pm).then(|| Decision::ReleaseAnyway {
                     issue: i.number,
                     by: i.raised_by.clone(),
                 })
             });
-            by_issue.or_else(|| {
-                systems
-                    .changes
-                    .iter()
-                    .find(|c| c.what.starts_with("reallocate:") && c.what.contains(&id))
-                    .map(|c| Decision::Reallocated {
-                        by: c.who.clone(),
-                        at: c.at.clone(),
-                    })
-            })
+            Decided {
+                objection: o.clone(),
+                decision,
+            }
         })
         .collect()
 }
@@ -289,25 +293,37 @@ pub struct Standing {
     pub answers: Vec<(String, Answered)>,
 }
 
-/// An objection and what was decided of it.
+/// An objection and what was decided of it, as [`decisions`] read it: made
+/// nowhere else, so what a release is given was read from signed files.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Decided {
-    pub objection: Objection,
-    pub decision: Option<Decision>,
+    objection: Objection,
+    decision: Option<Decision>,
+}
+
+impl Decided {
+    pub fn objection(&self) -> &Objection {
+        &self.objection
+    }
+
+    pub fn decision(&self) -> Option<&Decision> {
+        self.decision.as_ref()
+    }
 }
 
 /// What the previews ask of the design `version`, released after `previous`
 /// from today's design holding `holding` (each group's release, by its group
 /// and version): refused, by name, while a preview on `previous` of a
 /// release today's design holds is unanswered or answered by a file that
-/// does not count, while an objection to one has no decision, or while one
-/// decided *next version* is of a release today's design still holds. A
-/// preview of another release, or on another design, is stale and asks
-/// nothing (question 46). Gives the red marks the objections are, each
-/// raised by its programme manager's issue, and the rows of
-/// `objections.csv`.
+/// does not count, while `unread` says a preview that may be such a one does
+/// not open, while an objection to one has no decision, or while one decided
+/// *next version* is of a release today's design still holds. A preview of
+/// another release, or on another design, is stale and asks nothing
+/// (question 46). Gives the red marks the objections are, each raised by its
+/// programme manager's issue, and the rows of `objections.csv`.
 pub fn asked_of(
     previews: &[Standing],
+    unread: &[String],
     decided: &[Decided],
     previous: Option<&str>,
     holding: &[(&str, &str)],
@@ -317,7 +333,10 @@ pub fn asked_of(
         .iter()
         .filter(|p| Some(p.based_on.as_str()) == previous && held(&p.group, &p.version))
         .collect();
-    let mut wanting = Vec::new();
+    let mut wanting: Vec<String> = unread
+        .iter()
+        .map(|why| format!("a preview that may be one does not open: {why}"))
+        .collect();
     for p in &live {
         for (g, a) in &p.answers {
             match a {
@@ -342,6 +361,7 @@ pub fn asked_of(
     let mut marks = Vec::new();
     let mut rows = Vec::new();
     let mut open = Vec::new();
+    let mut again = Vec::new();
     for p in &live {
         for (g, a) in &p.answers {
             let Answered::Object(because) = a else {
@@ -363,10 +383,11 @@ pub fn asked_of(
                 continue;
             };
             if let Decision::NextVersion { issue, .. } = decision {
-                return Err(refused(format!(
-                    "{} {} is to be released again, as issue {issue} asks for {g}'s objection: today's design still holds it, so the design is not released until {}'s next version replaces it",
-                    p.group, p.version, p.group
-                )));
+                again.push(format!(
+                    "{} {} is to be released again, as issue {issue} asks for {g}'s objection, and today's design still holds it",
+                    p.group, p.version
+                ));
+                continue;
             }
             if let Decision::ReleaseAnyway { issue, .. } = decision {
                 marks.push(Mark {
@@ -391,11 +412,21 @@ pub fn asked_of(
             ]);
         }
     }
-    if !open.is_empty() {
-        return Err(refused(format!(
-            "every objection is decided before the design is released (W7), and these are not: {}. Ask for its next version, change an allocation, or release anyway",
-            open.join("; ")
-        )));
+    if !open.is_empty() || !again.is_empty() {
+        let mut said = Vec::new();
+        if !open.is_empty() {
+            said.push(format!(
+                "every objection is decided before the design is released (W7), and these are not: {}. Ask for its next version, or release anyway",
+                open.join("; ")
+            ));
+        }
+        if !again.is_empty() {
+            said.push(format!(
+                "the design is not released until each next version asked for replaces the release objected to: {}",
+                again.join("; ")
+            ));
+        }
+        return Err(refused(said.join(". ")));
     }
     Ok((marks, rows))
 }

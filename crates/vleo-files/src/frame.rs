@@ -17,18 +17,17 @@
 //!   `allocated`, parameter `system`, a value or both ends of a range, and
 //!   the `closure` that says which way it binds the output it bounds. The
 //!   sense is given, never defaulted: *the design sustains Ap 200* and *the
-//!   design needs Ap 200* are the same number and opposite requirements.
+//!   design needs Ap 200* are the same number and opposite requirements;
+//! - **reallocate** an allocation given ([`reallocate`], F6-c): another value
+//!   or range, and the sense of its closure only when one is given, its why
+//!   saying which belief it follows from. It is the frame's own change; an
+//!   objection is not decided by it yet (`design::decide`).
 //!
 //! A mount is read across files ([`mounted_on_any`]): the branch that holds
 //! the block a group hangs on does not break it down, move it or remove it.
 //!
 //! Nothing is computed here: no margin, no budget. A closure is what the
 //! engine reads once a group's release answers it (F6-b).
-//!
-//! - **reallocate** an allocation given ([`reallocate`], F6-c): another value
-//!   or range, and the sense of its closure only when one is given, its why
-//!   saying which belief it follows from; what decides an objection names
-//!   it there (`design::decisions`).
 //!
 //! Not here: moving or removing a mount, changing what an allocation bounds
 //! or its unit, starting the group's file (`start`), issuing and unassigning
@@ -425,8 +424,9 @@ pub(crate) fn allocate(
 /// systems' file `out`, given the value `value` or the range `lower` to
 /// `upper`, as an allocation is given one; its closure's sense changed to
 /// `sense` only when one is given, and kept otherwise (question 48). Its
-/// unit, type and what it bounds are not changed here. Refused by name, with
-/// nothing written.
+/// unit, type and what it bounds are not changed here, nor what its closure
+/// says, which its why does. Refused by name, with nothing written, and
+/// when it changes nothing.
 #[allow(clippy::too_many_arguments)]
 pub(crate) fn reallocate(
     branch: &Branch,
@@ -441,6 +441,9 @@ pub(crate) fn reallocate(
     let (b, place) = branch
         .find(block)
         .ok_or_else(|| refused(format!("the systems' branch has no block {block:?}")))?;
+    if b.archived != 0 {
+        return Err(refused(format!("{} is removed: it is archived", b.id)));
+    }
     if place != Place::Group || !branch.group.mounts.iter().any(|m| m.block_uid == block) {
         return Err(refused(format!(
             "no group is mounted on {} in the systems' file: an allocation is changed on its mount",
@@ -514,7 +517,8 @@ pub(crate) fn reallocate(
     }
     port_ok(&p, &b.id)?;
     let before = rows(out, block);
-    if p == out.ports[at] && sense.is_empty() {
+    let same_sense = sense.is_empty() || closure.is_some_and(|c| out.closures[c].sense == sense);
+    if p == out.ports[at] && same_sense {
         return Err(refused(format!(
             "{}'s allocation {name} is given what it holds already: nothing changes",
             b.id

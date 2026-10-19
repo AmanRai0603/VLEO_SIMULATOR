@@ -390,6 +390,7 @@ fn released(drive: &Path) -> File {
         understood: &[],
         margins: &[],
         previews: &[],
+        unread: &[],
         decided: &[],
     };
     let d = design::release(

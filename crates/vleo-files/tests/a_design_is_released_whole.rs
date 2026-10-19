@@ -384,6 +384,7 @@ fn release_kept(
         understood,
         margins,
         previews: &[],
+        unread: &[],
         decided: &[],
     };
     design::release(i, &held, &asked, by, &key(k), AT, APP, &w.pr)

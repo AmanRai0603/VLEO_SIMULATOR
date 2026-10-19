@@ -222,8 +222,9 @@ async function drawRelease() {
  *  what moved, and what each group it names has said, unanswered first. What
  *  moved is the engine's, built when Preview is pressed, never here. */
 /** What was decided of an objection, or the decisions offered (W7): ask for
- *  its next version, release anyway, or change an allocation in the frame,
- *  its why naming the objection. */
+ *  its next version, or release anyway. An allocation changed by Reallocate
+ *  does not decide one yet: the systems' file it is written in does not go
+ *  back to the drive, where the release reads its decisions. */
 function decide(a, p) {
   if (a.decision && a.decision !== 'undecided') {
     return ' <span class="sy-p-decision">decided: ' + esc(a.decision) + '</span>';
@@ -231,8 +232,7 @@ function decide(a, p) {
   const on = ' data-group="' + esc(p.group) + '" data-version="' + esc(p.version) + '" data-answering="' + esc(a.group) + '"';
   return ' <span class="sy-p-decide"><b>undecided</b>: ' +
     '<button class="ctl" data-decide="next"' + on + (R.deciding ? ' disabled' : '') + '>Ask for its next version</button> ' +
-    '<button class="ctl" data-decide="anyway"' + on + (R.deciding ? ' disabled' : '') + '>Release anyway</button> ' +
-    '<span class="muted">or change an allocation in the frame, by Reallocate, its why naming ' + esc(a.objection || '') + '</span></span>';
+    '<button class="ctl" data-decide="anyway"' + on + (R.deciding ? ' disabled' : '') + '>Release anyway</button></span>';
 }
 
 function previews(c) {

@@ -343,6 +343,7 @@ fn released(w: &World) -> design::Opened {
         understood: &[],
         margins: &[],
         previews: &[],
+        unread: &[],
         decided: &[],
     };
     let d = design::release(&i, &held, &asked, "Sam Engel", &key(12), AT, APP, &w.pr).unwrap();

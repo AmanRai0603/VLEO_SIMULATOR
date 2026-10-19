@@ -477,6 +477,9 @@ pub struct Asked<'a> {
     pub margins: &'a [Margin],
     /// Every preview read back, as it stands (F6-c3b).
     pub previews: &'a [Standing],
+    /// Each preview that does not open and may be one the release must hear,
+    /// by why it does not.
+    pub unread: &'a [String],
     /// Every objection to one, and what was decided of it.
     pub decided: &'a [Decided],
 }
@@ -613,6 +616,7 @@ pub fn release(
         understood,
         margins,
         previews,
+        unread,
         decided,
     } = *asked;
     if !checks.holds() {
@@ -648,7 +652,7 @@ pub fn release(
         )));
     }
     let holding: Vec<(&str, &str)> = held.releases.iter().map(|r| (r.0, r.1)).collect();
-    let (objected, objections) = asked_of(previews, decided, previous, &holding)?;
+    let (objected, objections) = asked_of(previews, unread, decided, previous, &holding)?;
     let marks: &[Mark] = &marks.iter().cloned().chain(objected).collect::<Vec<_>>();
     if let Some(u) = understood
         .iter()

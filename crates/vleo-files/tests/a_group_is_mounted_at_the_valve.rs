@@ -1309,10 +1309,42 @@ fn an_allocation_changed_is_refused_by_name() {
             12,
             "is given what it holds already: nothing changes",
         ),
+        (
+            reallocate("shield_mass_allocated", "12", "", "", "<="),
+            "Sam Engel",
+            12,
+            "is given what it holds already: nothing changes",
+        ),
+        (
+            reallocate("shield_mass_allocated", "", "16", "10", ""),
+            "Sam Engel",
+            12,
+            "runs from 16 to 10: its lower end is above its upper",
+        ),
     ] {
         let e = frame_it(&before, &e, who, &key(k)).unwrap_err();
         assert!(e.contains(why), "{why}: {e}");
     }
+    // On a mount removed, never.
+    let mut gone = before.clone();
+    gone.blocks
+        .iter_mut()
+        .find(|b| b.uid == "sys_radiation")
+        .unwrap()
+        .archived = 1;
+    gone.signatures.clear();
+    let gone = signed(gone, "Sam Engel", &key(12));
+    let e = frame_it(
+        &gone,
+        &reallocate("shield_mass_allocated", "14", "", "", ""),
+        "Sam Engel",
+        &key(12),
+    )
+    .unwrap_err();
+    assert!(
+        e.contains("sys_radiation is removed: it is archived"),
+        "{e}"
+    );
     // In a subsystem's own file, never.
     let e = breakdown::edit(
         &solar(),

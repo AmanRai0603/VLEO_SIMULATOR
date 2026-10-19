@@ -10,20 +10,21 @@
 //! the test by hand, as their answers would say it: nothing is computed.
 //!
 //! - the design is refused while a group named has not answered, or answered
-//!   by a file that does not count; while an objection has no decision; and,
-//!   decided *next version*, while today's design still holds solar 1.3. An
-//!   objection is never marked understood;
+//!   by a file that does not count; while a preview that may be one does not
+//!   open; while an objection has no decision; and, decided *next version*,
+//!   while today's design still holds solar 1.3. An objection is never
+//!   marked understood;
 //! - released anyway, the objection is a red mark raised by the programme
-//!   manager's issue; with an allocation changed, it is decided; either way
-//!   the released design keeps it in `objections.csv`;
+//!   manager's issue, and the released design keeps it in `objections.csv`;
 //! - a preview on another design, or of a release today's design does not
 //!   hold, asks nothing;
 //! - Sam, or Sid, decides by an issue: on solar to Ola for its next version,
 //!   or on the programme to Pat to release anyway; refused for Ola and under
 //!   an assistant's name;
 //! - a decision is read only from an issue the system engineer raised and
-//!   signed, at the objection's place, naming its answer by its digest, or
-//!   from a reallocation of the systems' file naming it.
+//!   signed, at the objection's place, naming its answer by its digest, its
+//!   signed text saying what its row says; a reallocation of the systems'
+//!   file naming it decides nothing yet.
 
 use std::path::Path;
 
@@ -319,11 +320,27 @@ fn objection() -> Objection {
     }
 }
 
-fn decided(d: Option<Decision>) -> Vec<Decided> {
-    vec![Decided {
-        objection: objection(),
-        decision: d,
-    }]
+/// What was decided of `objection()`, read by `design::decisions` from the
+/// issue `number` that `by`, with key `k`, raised deciding `d`, or from none.
+fn decided(w: &World, d: Option<(Decide, i64, &str, u8)>) -> Vec<Decided> {
+    let issues: Vec<File> = d
+        .into_iter()
+        .map(|(d, number, by, k)| {
+            design::decision_issue(
+                &objection(),
+                d,
+                number,
+                by,
+                &key(k),
+                AT,
+                APP,
+                &[&w.pr, &w.sy],
+                &w.pr,
+            )
+            .unwrap()
+        })
+        .collect();
+    design::decisions(&[objection()], &issues, &[&w.pr, &w.sy], &w.pr)
 }
 
 /// Design 2026.10.2, after 2026.10.1, from today's design taking solar 1.3,
@@ -332,6 +349,18 @@ fn release_it(
     w: &World,
     r: &File,
     previews: &[Standing],
+    decided: &[Decided],
+    understood: &[String],
+) -> Result<File, String> {
+    release_unread(w, r, previews, &[], decided, understood)
+}
+
+/// As `release_it`, while `unread` says what previews do not open.
+fn release_unread(
+    w: &World,
+    r: &File,
+    previews: &[Standing],
+    unread: &[String],
     decided: &[Decided],
     understood: &[String],
 ) -> Result<File, String> {
@@ -375,6 +404,7 @@ fn release_it(
         understood,
         margins: &[],
         previews,
+        unread,
         decided,
     };
     design::release(&i, &held, &asked, "Sam Engel", &key(12), AT, APP, &w.pr)
@@ -426,37 +456,40 @@ fn the_design_is_released_only_once_every_answer_is_in_and_every_objection_decid
         e.contains("l3_x_envorbit's answer to the preview of l3_solar 1.3 does not count: its signature does not count"),
         "{e}"
     );
+    // A preview that may be one does not open, every answer given.
+    let fine = [standing(RELEASED, "1.3", Answered::Fine, Answered::Fine)];
+    let e = release_unread(
+        &w,
+        &r,
+        &fine,
+        &[s("its signature does not check")],
+        &[],
+        &[],
+    )
+    .unwrap_err();
+    assert!(
+        e.contains("every answer is in before the design is released (W8)")
+            && e.contains("a preview that may be one does not open: its signature does not check"),
+        "{e}"
+    );
     // An objection with no decision.
     let previews = [standing(RELEASED, "1.3", object(), Answered::Fine)];
-    let e = release_it(&w, &r, &previews, &decided(None), &[]).unwrap_err();
+    let e = release_it(&w, &r, &previews, &decided(&w, None), &[]).unwrap_err();
     assert!(
         e.contains("every objection is decided before the design is released (W7)")
             && e.contains(&format!("l3_drag objects to l3_solar 1.3: {BECAUSE}")),
         "{e}"
     );
     // Its next version asked for: not while today's design holds 1.3.
-    let next = Decision::NextVersion {
-        issue: 7,
-        by: s("Sam Engel"),
-    };
-    let e = release_it(&w, &r, &previews, &decided(Some(next)), &[]).unwrap_err();
+    let next = decided(&w, Some((Decide::NextVersion, 7, "Sam Engel", 12)));
+    let e = release_it(&w, &r, &previews, &next, &[]).unwrap_err();
     assert!(
         e.contains("l3_solar 1.3 is to be released again, as issue 7 asks for l3_drag's objection"),
         "{e}"
     );
     // Never marked understood.
-    let anyway = Decision::ReleaseAnyway {
-        issue: 8,
-        by: s("Sid Side"),
-    };
-    let e = release_it(
-        &w,
-        &r,
-        &previews,
-        &decided(Some(anyway.clone())),
-        &[s(DRAG)],
-    )
-    .unwrap_err();
+    let anyway = decided(&w, Some((Decide::ReleaseAnyway, 8, "Sid Side", 17)));
+    let e = release_it(&w, &r, &previews, &anyway, &[s(DRAG)]).unwrap_err();
     assert!(
         e.contains(&format!(
             "{DRAG} is an objection, and an objection is never marked understood"
@@ -464,7 +497,7 @@ fn the_design_is_released_only_once_every_answer_is_in_and_every_objection_decid
         "{e}"
     );
     // Released anyway: a red mark the programme manager's issue raises.
-    let d = release_it(&w, &r, &previews, &decided(Some(anyway)), &[]).expect("released anyway");
+    let d = release_it(&w, &r, &previews, &anyway, &[]).expect("released anyway");
     assert!(
         table(&d, "red_marks.csv").contains(&format!("{DRAG},\"l3_drag objects to l3_solar 1.3: {BECAUSE}; released anyway, for the programme manager\",raised as issue 8")),
         "{}",
@@ -477,19 +510,6 @@ fn the_design_is_released_only_once_every_answer_is_in_and_every_objection_decid
              {DRAG},l3_solar,1.3,l3_drag,{BECAUSE},{},\"released anyway, put by Sid Side to the programme manager in issue 8\"\n",
             "a1".repeat(32)
         )
-    );
-    // An allocation changed: decided, and no mark.
-    let moved = Decision::Reallocated {
-        by: s("Sam Engel"),
-        at: s(AT),
-    };
-    let d = release_it(&w, &r, &previews, &decided(Some(moved)), &[])
-        .expect("released with an allocation changed");
-    assert!(!table(&d, "red_marks.csv").contains(DRAG));
-    assert!(
-        table(&d, "objections.csv").contains("an allocation changed by Sam Engel"),
-        "{}",
-        table(&d, "objections.csv")
     );
     // Fine from both: released, nothing objected.
     let d = release_it(
@@ -554,15 +574,11 @@ fn decide(w: &World, o: &Objection, d: Decide, by: &str, k: u8) -> Result<File, 
         .map_err(|e| e.message().to_string())
 }
 
-fn decisions(w: &World, o: &Objection, issues: &[File], systems: &File) -> Option<Decision> {
-    design::decisions(
-        std::slice::from_ref(o),
-        issues,
-        systems,
-        &[&w.pr, &w.sy],
-        &w.pr,
-    )
-    .remove(0)
+fn decisions(w: &World, o: &Objection, issues: &[File]) -> Option<Decision> {
+    design::decisions(std::slice::from_ref(o), issues, &[&w.pr, &w.sy], &w.pr)
+        .remove(0)
+        .decision()
+        .cloned()
 }
 
 #[test]
@@ -590,7 +606,7 @@ fn the_system_engineer_decides_an_objection_by_an_issue() {
         i.what
     );
     assert_eq!(
-        decisions(&w, &o, &[f], &w.sy.file),
+        decisions(&w, &o, &[f]),
         Some(Decision::NextVersion {
             issue: 7,
             by: s("Sam Engel")
@@ -604,7 +620,7 @@ fn the_system_engineer_decides_an_objection_by_an_issue() {
         ("programme", "Pat Morgan")
     );
     assert_eq!(
-        decisions(&w, &o, &[f], &w.sy.file),
+        decisions(&w, &o, &[f]),
         Some(Decision::ReleaseAnyway {
             issue: 7,
             by: s("Sid Side")
@@ -626,16 +642,16 @@ fn a_decision_is_read_only_from_what_the_system_engineer_signed() {
     let r = solar_13(&w);
     let (_, o) = uma_objects(&w, &r);
     let good = decide(&w, &o, Decide::ReleaseAnyway, "Sam Engel", 12).unwrap();
-    assert!(
-        decisions(&w, &o, &[], &w.sy.file).is_none(),
-        "nothing decided"
-    );
+    assert!(decisions(&w, &o, &[]).is_none(), "nothing decided");
     // Raised by Ola, signed by Ola: not a decision.
     let mut ola = good.clone();
     ola.issues[0].raised_by = s("Ola Sun");
     ola.signatures.clear();
     ola.signatures
         .push(chain::sign(&ola, FILE, "Ola Sun", &key(13), AT, "ok", "raised").unwrap());
+    // Raised by Sid, signed by Sam: not who raised it.
+    let mut sid = good.clone();
+    sid.issues[0].raised_by = s("Sid Side");
     // Naming another answer.
     let mut other = good.clone();
     other.issues[0].evidence = format!("answer {}", "b2".repeat(32));
@@ -666,30 +682,56 @@ fn a_decision_is_read_only_from_what_the_system_engineer_signed() {
         f.signatures.push(row);
         f
     };
+    // Its number, or its group, not what its signed meta says, the rest
+    // agreeing and signed again by Sam.
+    let again = |mut f: File| {
+        f.signatures.clear();
+        let row = chain::sign(&f, FILE, "Sam Engel", &key(12), AT, "ok", "raised").unwrap();
+        f.signatures.push(row);
+        f
+    };
+    let mut number = good.clone();
+    number.issues[0].number = 9;
+    let number = again(number);
+    let mut moved = decide(&w, &o, Decide::NextVersion, "Sam Engel", 12).unwrap();
+    moved.issues[0].group_id = s("programme");
+    moved.issues[0].addressed_to = s("Pat Morgan");
+    for t in moved.texts.iter_mut().filter(|t| t.kind == "decision") {
+        t.body = t.body.replace("l3_solar\nOla Sun", "programme\nPat Morgan");
+    }
+    let moved = again(moved);
+    // Its row alone moved to another objection, of the same release: the
+    // signature still counts, and its signed text says the drag's.
+    let o2 = Objection {
+        answering: s("l3_x_envorbit"),
+        answer: "c3".repeat(32),
+        ..o.clone()
+    };
+    let mut shifted = good.clone();
+    shifted.issues[0].place = o2.id();
+    shifted.issues[0].evidence = format!("answer {}", o2.answer);
+    assert!(
+        decisions(&w, &o2, &[shifted]).is_none(),
+        "moved to another objection"
+    );
     let wrong = to_uma(good.clone());
     let wrong_owner = to_uma(decide(&w, &o, Decide::NextVersion, "Sam Engel", 12).unwrap());
     for (what, f) in [
         ("raised by Ola", ola),
+        ("raised by Sid, signed by Sam", sid),
         ("naming another answer", other),
         ("its row changed after it was signed", changed),
         ("its row and its text changed after it was signed", both),
+        ("its number not its meta's", number),
+        ("its group not its meta's", moved),
         ("on the programme, to someone else", wrong),
         ("on solar, to someone else", wrong_owner),
     ] {
-        assert!(decisions(&w, &o, &[f], &w.sy.file).is_none(), "{what}");
+        assert!(decisions(&w, &o, &[f]).is_none(), "{what}");
     }
-    // A reallocation of the systems' file naming it decides it; another
-    // edit naming it does not.
+    // A reallocation of the systems' file naming it decides nothing yet:
+    // a change row no signature covers is never a decision.
     let mut sy = w.sy.file.clone();
-    sy.changes.push(Change {
-        at: s(AT),
-        who: s("Sam Engel"),
-        scope: s("sys_drag"),
-        what: format!("allocate: {DRAG}"),
-        before: None,
-        after: None,
-    });
-    assert!(decisions(&w, &o, &[], &sy).is_none(), "an allocation given");
     sy.changes.push(Change {
         at: s(AT),
         who: s("Sam Engel"),
@@ -698,11 +740,6 @@ fn a_decision_is_read_only_from_what_the_system_engineer_signed() {
         before: None,
         after: None,
     });
-    assert_eq!(
-        decisions(&w, &o, &[], &sy),
-        Some(Decision::Reallocated {
-            by: s("Sam Engel"),
-            at: s(AT)
-        })
-    );
+    let issues = [sy];
+    assert!(decisions(&w, &o, &issues).is_none(), "a reallocation");
 }
