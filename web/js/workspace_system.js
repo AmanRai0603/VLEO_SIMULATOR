@@ -174,6 +174,10 @@ function edits(b, children, outs) {
   const opt = (v, l) => '<option value="' + esc(v) + '">' + esc(l || v) + '</option>';
   let h = '<h4>frame it</h4><p><label>why <textarea id="sy-why" rows="2" class="nw-wide" placeholder="which belief this follows from">' +
     esc(W.why) + '</textarea></label></p>';
+  h += '<details class="sy-sheet"><summary>set up many blocks from a sheet</summary>' +
+    '<p class="muted">A row a block: id,parent,question,output,type,unit,lower,upper,inputs,assign — inputs as name:unit=from, by ;. Every row or none.</p>' +
+    '<p><textarea id="sy-sheet" rows="5" class="nw-wide" placeholder="id,parent,question,output,type,unit,lower,upper,inputs,assign"></textarea></p>' +
+    '<p><button class="ctl" id="sy-sheet-go">Set up</button></p></details>';
   if (!b.archived) {
     h += '<p><b>add a block under it</b> <input id="sy-add-id" size="18" placeholder="its id"> ' +
       '<input id="sy-add-q" size="30" placeholder="the question it answers"> <button class="ctl" id="sy-add">Add</button></p>';
@@ -268,6 +272,7 @@ async function click(e) {
     case 'sy-rename': return send('rename', { block: b, id: v('sy-rn-id').trim() });
     case 'sy-split': return send('split', { block: b, id: v('sy-sp-id').trim(), ports: v('sy-sp-ports') });
     case 'sy-remove': return send('remove', { block: b });
+    case 'sy-sheet-go': return send('sheet', { sheet: v('sy-sheet') });
     case 'sy-issue': return send('issue', { block: b, behaviour: v('sy-is-behaviour') });
     case 'sy-assign': return send('assign', { block: b, person: v('sy-as-person').trim() });
     case 'sy-unassign': return send('unassign', { block: b });

@@ -1895,6 +1895,178 @@ fn an_issue_in_the_copy_writes_the_node_file_beside_the_group_file() {
     let _ = std::fs::remove_dir_all(&copy);
 }
 
+// ── Many nodes set up at once, from a sheet (docs/briefs/F5.md, F5-c) ──
+
+const SHEET: &str = "id,parent,question,output,type,unit,lower,upper,inputs,assign
+sw_storm_onset,l3_solar,When does a storm begin?,sw_storm_onset,number,1,0,10,f107:1=case,Nia Node
+sw_storm_peak,l3_solar,How high does it go?,sw_storm_peak,number,1,,,onset:1=sw_storm_onset.sw_storm_onset; f107:1=case,Nia Node
+sw_storm_note,sw_storm_onset,What is noted of it?,sw_storm_note,text,,,,,
+";
+
+fn sheet(csv: &str) -> Edit {
+    Edit::Sheet { csv: s(csv) }
+}
+
+#[test]
+fn a_sheet_sets_up_many_blocks_at_once_each_edit_saying_why() {
+    let (f, _) = ola(&solar(), &sheet(SHEET)).unwrap();
+    let ns = nodes();
+    let branch = breakdown::Branch::new(&f, &ns);
+    for id in ["sw_storm_onset", "sw_storm_peak", "sw_storm_note"] {
+        assert!(
+            branch.blocks().iter().any(|(b, _)| b.uid == id),
+            "{id} is set up"
+        );
+    }
+    assert_eq!(
+        branch.children("sw_storm_onset")[0].uid,
+        "sw_storm_note",
+        "a row hangs from the block its parent names"
+    );
+    let ports = |uid: &str| f.ports.iter().filter(|p| p.block_uid == uid).count();
+    assert_eq!(
+        (
+            ports("sw_storm_onset"),
+            ports("sw_storm_peak"),
+            ports("sw_storm_note")
+        ),
+        (2, 3, 1)
+    );
+    let peak = f
+        .ports
+        .iter()
+        .find(|p| p.block_uid == "sw_storm_onset" && p.direction == "out")
+        .unwrap();
+    assert_eq!(
+        (peak.unit.as_str(), peak.lower.as_str(), peak.upper.as_str()),
+        ("1", "0", "10")
+    );
+    // A row reads another's output, set up in the same sheet.
+    assert!(f.wires.iter().any(|w| w.to_block == "sw_storm_peak"
+        && w.to_port == "onset"
+        && w.from_ref == "sw_storm_onset.sw_storm_onset"));
+    assert_eq!(f.wires.len(), 3);
+    let assigned: Vec<&str> = f
+        .assignments
+        .iter()
+        .filter(|a| a.person == "Nia Node" && a.block_uid != BAND)
+        .map(|a| a.block_uid.as_str())
+        .collect();
+    assert_eq!(assigned, ["sw_storm_onset", "sw_storm_peak"]);
+    // Each edit says why: 3 added, 6 ports, 3 wires, 2 assigned.
+    let made: Vec<&str> = f.changes.iter().map(|c| c.what.as_str()).collect();
+    assert_eq!(made.len(), 14, "{made:?}");
+    // Each says it came from the sheet, by the row that made it.
+    assert!(
+        made.iter()
+            .all(|w| w.contains(WHY) && w.contains("(the sheet's row ")),
+        "{made:?}"
+    );
+    assert!(made.contains(&format!("add: {WHY} (the sheet's row 3)").as_str()));
+    // A row reads an output set up in a later row as well as an earlier one.
+    let lines: Vec<&str> = SHEET.lines().collect();
+    let swapped = format!("{}\n{}\n{}\n{}\n", lines[0], lines[2], lines[1], lines[3]);
+    let (g, _) = ola(&solar(), &sheet(&swapped)).unwrap();
+    assert_eq!(g.wires.len(), 3);
+    // The sheet's blocks are framed, their ports open: each is decided,
+    // then issued, one by one.
+    let e = ola_edited(&f, &nodes(), &issue("sw_storm_peak", "method")).unwrap_err();
+    assert!(
+        e.contains("sw_storm_peak is not decided enough to issue"),
+        "{e}"
+    );
+}
+
+#[test]
+fn a_sheet_with_one_row_refused_sets_up_nothing_and_names_the_row() {
+    let refused = |csv: &str, says: &[&str]| {
+        let e = ola(&solar(), &sheet(csv)).unwrap_err();
+        for s in says {
+            assert!(e.contains(s), "expected «{s}» in: {e}");
+        }
+    };
+    let bad_person = SHEET.replace(
+        "onset; f107:1=case,Nia Node",
+        "onset; f107:1=case,Zed Nobody",
+    );
+    refused(
+        &bad_person,
+        &[
+            "row 3",
+            "sw_storm_peak",
+            "registers no node engineer Zed Nobody",
+        ],
+    );
+    let bad_wire = SHEET.replace(
+        "onset:1=sw_storm_onset.sw_storm_onset",
+        "onset:1=l3_nowhere.sw_nowhere.x",
+    );
+    refused(&bad_wire, &["row 3", "sw_storm_peak", "comes from nothing"]);
+    let bad_input = SHEET.replace(
+        "f107:1=case,Nia Node\nsw_storm_peak",
+        "f107 from case,Nia Node\nsw_storm_peak",
+    );
+    refused(&bad_input, &["row 2", "sw_storm_onset", "name:unit=from"]);
+    refused(
+        "id,parent,colour\nsw_x,l3_solar,red\n",
+        &["column", "colour"],
+    );
+    refused(
+        "id,parent,question,output,type,unit,lower,upper,inputs,assign\n",
+        &["no row"],
+    );
+    let taken = format!("{SHEET}sw_storm_onset,l3_solar,Again?,sw_storm_onset,number,1,,,,\n");
+    refused(&taken, &["row 5", "sw_storm_onset", "never used twice"]);
+}
+
+#[test]
+fn a_sheet_is_read_as_a_person_reads_it_or_refused_by_its_row() {
+    let refused = |csv: &str, says: &str| {
+        let e = ola(&solar(), &sheet(csv)).unwrap_err();
+        assert!(e.contains(says), "expected «{says}» in: {e}");
+    };
+    // A quote never closed would make every row after it one cell.
+    let open_quote = SHEET.replace("How high does it go?", "Ring 5\" wide?");
+    refused(
+        &open_quote,
+        "the sheet's row 3 opens a quote that is never closed",
+    );
+    // A comma outside quotes moves every column after it.
+    let ragged = SHEET.replace("How high does it go?", "How high, really?");
+    refused(&ragged, "the sheet's row 3 has 11 cells and its header 10");
+    // An input named twice, and a column named twice.
+    let twice = SHEET.replace(
+        "onset:1=sw_storm_onset.sw_storm_onset; f107:1=case",
+        "f107:1=case; f107:1=sw_storm_onset.sw_storm_onset",
+    );
+    refused(
+        &twice,
+        "the sheet's row 3 (sw_storm_peak) names its input f107 twice",
+    );
+    refused(
+        "id,parent,unit,unit\nsw_x,l3_solar,1,m\n",
+        "names its column unit twice",
+    );
+    // What a spreadsheet writes is read: a byte-order mark, CRLF, a quoted
+    // cell with a comma and a doubled quote, and a blank line, which is
+    // counted.
+    let excel = format!("\u{feff}{}", SHEET.replace('\n', "\r\n"))
+        .replace("How high does it go?", "\"How high, \"\"really\"\"?\"");
+    let (f, _) = ola(&solar(), &sheet(&excel)).unwrap();
+    let peak = f.blocks.iter().find(|b| b.uid == "sw_storm_peak").unwrap();
+    assert_eq!(peak.question, "How high, \"really\"?");
+    let blank = SHEET
+        .replacen('\n', "\n\n", 1)
+        .replace("Nia Node\nsw_storm_note", "Zed Nobody\nsw_storm_note");
+    refused(&blank, "the sheet's row 4 (sw_storm_peak)");
+    // A cell quoted over two lines is one row, and the rows after it are
+    // named by the line they start on.
+    let spanned = SHEET
+        .replace("When does a storm begin?", "\"When does\na storm begin?\"")
+        .replace("Nia Node\nsw_storm_note", "Zed Nobody\nsw_storm_note");
+    refused(&spanned, "the sheet's row 4 (sw_storm_peak)");
+}
+
 /// `f` with an open block `id` under `parent`, an input `x` and an output
 /// named as the block.
 fn with_block(f: &File, parent: &str, id: &str) -> File {

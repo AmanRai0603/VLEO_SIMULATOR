@@ -794,6 +794,25 @@ fn a_branch_is_framed_in_the_copy() {
     assert!(!copy
         .join("groups/l3_solar/nodes/sw_activity_aside.vnode")
         .exists());
+    // A sheet: two blocks set up at once, through the route.
+    let r = edit(
+        "sheet",
+        &[
+            ("opened", field(&tree(), "opened")),
+            (
+                "sheet",
+                "id,parent,question,output,type,unit\n\
+                 sw_storm_onset,sw_activity_band,When does a storm begin?,sw_storm_onset,number,1\n\
+                 sw_storm_peak,sw_activity_band,How high does it go?,sw_storm_peak,number,1\n",
+            ),
+        ],
+    );
+    assert!(r.contains("\"ok\":true"), "{r}");
+    let r = tree();
+    assert!(
+        r.contains("\"uid\":\"sw_storm_onset\"") && r.contains("\"uid\":\"sw_storm_peak\""),
+        "{r}"
+    );
 
     // Refused by name: an edit that is not one, a group that is not an id, a
     // group no file mounts.

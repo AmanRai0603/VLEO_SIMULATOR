@@ -396,6 +396,9 @@ fn edit_of(name: &str, params: &str) -> Result<Edit, String> {
             block: need("block")?,
             person: need("person")?,
         },
+        "sheet" => Edit::Sheet {
+            csv: need("sheet")?,
+        },
         "issue" => Edit::Issue {
             block: need("block")?,
             behaviour: need("behaviour")?,
