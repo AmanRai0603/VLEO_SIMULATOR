@@ -411,7 +411,7 @@ fn place(named: &str, ctx: &Ctx) -> Result<PathBuf, String> {
     Ok(path)
 }
 
-fn strings(j: &mut Json, k: &str, items: &[String]) {
+pub(super) fn strings(j: &mut Json, k: &str, items: &[String]) {
     j.key(k).open_arr();
     for (i, s) in items.iter().enumerate() {
         if i > 0 {

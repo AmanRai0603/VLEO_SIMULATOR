@@ -26,6 +26,7 @@
 
 mod branch;
 mod copy;
+mod design;
 mod explore;
 mod http;
 mod inputs;
@@ -379,6 +380,16 @@ pub fn changed_in_the_design() -> Vec<(String, String)> {
 /// from, line by line.
 type Opened = (std::sync::Arc<dyn Files>, Option<DesignFile>, Vec<String>);
 
+/// The folder the design is read from: the one `VLEO_DESIGN` names, or
+/// `design/` under `root`. The one answer, for the design the tool opens and
+/// for today's design reading the design's own node files.
+pub(crate) fn design_dir(root: &Path) -> PathBuf {
+    std::env::var("VLEO_DESIGN")
+        .ok()
+        .filter(|v| !v.trim().is_empty())
+        .map_or_else(|| root.join("design"), PathBuf::from)
+}
+
 /// The design the tool is given: the folder `VLEO_DESIGN` names, or
 /// `design/` where the tool finds it. Where there is neither, there is no
 /// design, and the tool says so rather than reading anything in its place.
@@ -386,7 +397,7 @@ fn open_base(root: &Path) -> Result<(std::sync::Arc<dyn Files>, Option<DesignFil
     let named = std::env::var("VLEO_DESIGN")
         .ok()
         .filter(|v| !v.trim().is_empty())
-        .map(PathBuf::from);
+        .map(|_| design_dir(root));
     if let Some(dir) = named {
         // A design is a folder of its files; anything else named is refused,
         // never read past to whatever sits at the root.
@@ -627,6 +638,8 @@ fn route(
         ("GET", "/v1/branch") => ok_json(branch::tree(params, ctx)),
         // A group started by its owner once the systems' file mounts it (F6-a).
         ("POST", "/v1/group/start") => ok_json(branch::start_route(params, ctx)),
+        ("GET", "/v1/design/integration") => ok_json(design::integration_route(ctx)),
+        ("POST", "/v1/design/release") => ok_json(design::release_route(params, ctx)),
         ("POST", p) if p.starts_with("/v1/branch/") => {
             ok_json(branch::edit_route(p.strip_prefix("/v1/branch/").unwrap_or_default(), params, ctx))
         }

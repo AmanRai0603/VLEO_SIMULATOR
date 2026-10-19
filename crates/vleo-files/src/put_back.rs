@@ -27,6 +27,22 @@
 //! that cannot be signed yet still asks. In either case every request the
 //! drive's file holds, and every signature of one, is kept as it is.
 //!
+//! Or it is a group's release, sealed in the copy (F5): a new file in the
+//! group's `releases/`, named for the group and the version it says, sealed
+//! by the person putting it back with a key the drive counts for them now,
+//! after the drive's latest release of the group, and checking through the
+//! chain as the drive holds it now: its seal through the file that mounts the
+//! group, every node in it through the group file it carries. A release is
+//! never written over, so one already on the drive at that path stays.
+//!
+//! Or it is a released design (F6-b): a new file in `design/`, named for the
+//! version it says, released by the person putting it back, following the
+//! drive's latest, and checking through the chain as the drive holds it now,
+//! signed with a key that counts then; one at a time. Its record,
+//! `design/NOTES.md` and the files of `readable/`, goes back by the system
+//! engineer or their deputy beside it, over the drive's only when the
+//! drive's is as copied.
+//!
 //! A group's file does not go back yet: what may change in it at its valve
 //! is not yet checked against the drive's file, so a change of its people
 //! stays in the copy.
@@ -55,7 +71,9 @@ use crate::chain::{self, Registry};
 use crate::checks;
 use crate::copied::{self, Copied};
 use crate::error::{Error, ErrorKind};
+use crate::meta::Kind;
 use crate::model::File;
+use crate::release;
 use crate::save;
 
 /// The drive's chain, opened from the drive's own files: the anchor START
@@ -659,17 +677,259 @@ fn verdict(
     me: &str,
     at: &str,
     chain: &Chain,
+    drive: &Path,
 ) -> Result<String, String> {
     let parts: Vec<&str> = path.split('/').collect();
     match parts.as_slice() {
         ["groups", g, "nodes", name] if name.ends_with(".vnode") => {
             node_verdict(path, g, bytes, theirs, me, at, chain)
         }
+        ["groups", g, "releases", name] if name.ends_with(".vleo") => {
+            release_verdict(g, name, bytes, theirs, me, at, chain, drive)
+        }
+        ["design", name] if name.starts_with("design-") && name.ends_with(".vleo") => {
+            design_verdict(name, bytes, theirs, me, at, chain, drive)
+        }
+        ["design", "NOTES.md"] | ["readable", _] => record_verdict(path, me, chain),
         ["groups", g, name] if *name == format!("{g}.vgroup") => Err(format!(
             "{g}'s group file does not go back yet: what may change in a group's file is not yet checked against the drive's, so a change of its people stays in your copy"
         )),
-        _ => Err("it is not a file the application puts back yet: a node's file goes back".into()),
+        _ => Err("it is not a file the application puts back yet: a node's file, a group's release, or a released design and its record, goes back".into()),
     }
+}
+
+/// Whether the release `name` in `group`'s `releases/`, `bytes` in the copy,
+/// goes back as a new file sealed by `me`, onto the drive at `drive` that
+/// holds `theirs` at that path.
+#[allow(clippy::too_many_arguments)]
+fn release_verdict(
+    group: &str,
+    name: &str,
+    bytes: &[u8],
+    theirs: Option<&[u8]>,
+    me: &str,
+    at: &str,
+    chain: &Chain,
+    drive: &Path,
+) -> Result<String, String> {
+    if theirs.is_some() {
+        return Err(
+            "the drive holds a release at this path already: a release is never written over"
+                .into(),
+        );
+    }
+    let f = save::parsed(bytes).map_err(|e| format!("it does not read: {}", e.message()))?;
+    match f.kind() {
+        Ok(Kind::GroupRelease) => {}
+        Ok(other) => {
+            return Err(format!(
+                "it is a {other}, and releases/ holds releases only"
+            ))
+        }
+        Err(e) => return Err(e.message().to_string()),
+    }
+    // A release sealed in a copy is the one schema's: one upgraded from
+    // before 1.0 is checked on the programme manager's anchor alone, never
+    // on a seal by the person putting it back.
+    if f.meta.contains_key("upgraded_from") {
+        return Err(
+            "it is a release from before 1.0, upgraded: a release goes back only as sealed in the application"
+                .into(),
+        );
+    }
+    f.check_meta().map_err(|e| e.message().to_string())?;
+    f.check_values().map_err(|e| e.message().to_string())?;
+    let said = |k: &str| f.meta.get(k).map_or("", String::as_str);
+    if said("group_id") != group {
+        return Err(format!(
+            "it says it is {:?}'s release, in {group}'s folder",
+            said("group_id")
+        ));
+    }
+    let version = said("version");
+    let Some(v) = crate::meta::ReleaseVersion::parse(version) else {
+        return Err(format!(
+            "it says its version is {version:?}, which is not a release's: major.minor"
+        ));
+    };
+    if name != format!("{group}-{version}.vleo") {
+        return Err(format!(
+            "it says it is {group} {version}, so its name is {group}-{version}.vleo"
+        ));
+    }
+    if said("sealed_by") != me {
+        return Err(format!(
+            "it is sealed by {:?}: a release goes back only by the person who sealed it",
+            said("sealed_by")
+        ));
+    }
+    // After the drive's latest release, as the drive holds it now: one sealed
+    // after another that is not the drive's latest was sealed beside a
+    // release nobody it followed knew of.
+    let latest = release::releases_in(
+        &drive.join("groups").join(group).join("releases"),
+        group,
+        concat!("vleo ", env!("CARGO_PKG_VERSION")),
+    )
+    .map_err(|e| {
+        format!(
+            "the drive's releases of {group} do not read: {}",
+            e.message()
+        )
+    })?
+    .into_iter()
+    .next();
+    if let Some((l, _)) = &latest {
+        if v <= *l {
+            return Err(format!(
+                "it is {group} {version}, and the drive's latest release of {group} is {l}: a release comes after the latest"
+            ));
+        }
+    }
+    let latest = latest.map(|(l, _)| l.to_string());
+    if said("previous") != latest.as_deref().unwrap_or("") {
+        return Err(format!(
+            "it follows {}, and the drive's latest release of {group} is {}: seal it again on a copy taken now",
+            if said("previous").is_empty() { "no release" } else { said("previous") },
+            latest.as_deref().unwrap_or("none")
+        ));
+    }
+    let systems = chain.systems.as_ref().ok_or_else(|| {
+        "the systems' file on the drive does not check through the chain, so no seal counts"
+            .to_string()
+    })?;
+    let (parent, _) = chain::mounted_by(group, &[&chain.programme, systems])
+        .map_err(|e| e.message().to_string())?;
+    // Its nodes are counted through the group file it carries; that file's
+    // people, keys and assignments must be the drive's group file's as it
+    // is now, or a copy taken before a change, or one with a person invented
+    // in it, would carry them onto the drive inside the release.
+    let theirs_group = registry_of(chain, group)?;
+    for (table, same) in [
+        ("people", same_rows(&f.people, &theirs_group.file.people)),
+        ("keys", same_rows(&f.keys, &theirs_group.file.keys)),
+        (
+            "assignments",
+            same_rows(&f.assignments, &theirs_group.file.assignments),
+        ),
+    ] {
+        if !same {
+            return Err(format!(
+                "its {table} are not the drive's group file's as it is now: a release is sealed on a copy whose group file is the drive's; copy the drive again, and seal it there"
+            ));
+        }
+    }
+    let found = checks::check_release(&f);
+    let refusing: Vec<String> = found
+        .errors()
+        .map(|e| format!("{}: {}", e.place, e.what))
+        .collect();
+    if !refusing.is_empty() {
+        return Err(format!("its checks refuse it — {}", refusing.join("; ")));
+    }
+    // The seal by `me` with a key the drive's programme's file counts for
+    // them now, and every node it holds, checked through the chain as the
+    // drive holds it.
+    let now = only_counting_now(&f, chain::FILE, me, at, &chain.programme);
+    let checked = chain::check_release_in(&now, parent, &chain.programme)
+        .map_err(|e| e.message().to_string())?;
+    if !checked.holds() {
+        return Err(format!(
+            "it does not check through the chain as the drive holds it now, sealed by {me} with a key that counts at {at}: {}",
+            checked.refused.join("; ")
+        ));
+    }
+    Ok(format!(
+        "goes back: {group} {version}, sealed by {me}, a new release"
+    ))
+}
+
+/// Whether the released design `name` in `design/`, `bytes` in the copy,
+/// goes back as a new file released by `me`, onto the drive at `drive` that
+/// holds `theirs` at that path (F6-b).
+fn design_verdict(
+    name: &str,
+    bytes: &[u8],
+    theirs: Option<&[u8]>,
+    me: &str,
+    at: &str,
+    chain: &Chain,
+    drive: &Path,
+) -> Result<String, String> {
+    if theirs.is_some() {
+        return Err(
+            "the drive holds a released design at this path already: a release is never written over"
+                .into(),
+        );
+    }
+    let f = save::parsed(bytes).map_err(|e| format!("it does not read: {}", e.message()))?;
+    match f.kind() {
+        Ok(Kind::Design) => {}
+        Ok(other) => {
+            return Err(format!(
+                "it is a {other}, and design/ holds released designs only"
+            ))
+        }
+        Err(e) => return Err(e.message().to_string()),
+    }
+    let said = |k: &str| f.meta.get(k).map_or("", String::as_str);
+    let version = said("version");
+    if name != format!("design-{version}.vleo") {
+        return Err(format!(
+            "it says it is design {version}, so its name is design-{version}.vleo"
+        ));
+    }
+    if said("released_by") != me {
+        return Err(format!(
+            "it is released by {:?}: a released design goes back only by the person who released it",
+            said("released_by")
+        ));
+    }
+    // After the drive's latest released design, as the drive holds it now.
+    f.check_meta().map_err(|e| e.message().to_string())?;
+    let latest = crate::design::latest_in(&drive.join("design"), &chain.programme)
+        .map_err(|e| format!("the drive's released designs do not read: {}", e.message()))?;
+    if said("previous") != latest.as_deref().unwrap_or("") {
+        return Err(format!(
+            "it follows {}, and the drive's latest released design is {}: release it again on a copy taken now",
+            if said("previous").is_empty() { "no released design" } else { said("previous") },
+            latest.as_deref().unwrap_or("none")
+        ));
+    }
+    crate::design::follows(version, latest.as_deref())?;
+    let now = only_counting_now(&f, chain::FILE, me, at, &chain.programme);
+    chain::check_design(&now, &chain.programme).map_err(|e| {
+        format!(
+            "it does not check through the chain as the drive holds it now, released by {me} with a key that counts at {at}: {}",
+            e.message()
+        )
+    })?;
+    Ok(format!(
+        "goes back: design {version}, released by {me}, a new released design"
+    ))
+}
+
+/// Whether `path`, the record of the released design (`design/NOTES.md`, a
+/// file of `readable/`), goes back as `me`'s: the system engineer's, or their
+/// deputy's, as the drive's programme's file counts them, over the drive's
+/// file only when it is as copied (question 38).
+fn record_verdict(path: &str, me: &str, chain: &Chain) -> Result<String, String> {
+    if path.starts_with("readable/") && !path.ends_with(".csv") {
+        return Err("readable/ holds CSV only".into());
+    }
+    if !chain.programme.acts_as(me, "system engineer") {
+        return Err(format!(
+            "{me} is not the system engineer, nor their deputy: the released design's record is theirs to write"
+        ));
+    }
+    Ok(format!(
+        "goes back: {path}, the released design's record, by {me}"
+    ))
+}
+
+/// Whether `a` and `b` hold the same rows, in whatever order.
+fn same_rows<T: PartialEq>(a: &[T], b: &[T]) -> bool {
+    a.len() == b.len() && a.iter().all(|x| b.contains(x)) && b.iter().all(|x| a.contains(x))
 }
 
 /// The report of what in the working copy at `copy` would go back to the
@@ -754,11 +1014,12 @@ pub fn put_back(
                 "{path} changed in your copy while it was being read: look again"
             )));
         }
-        match verdict(&path, &bytes, there.as_deref(), me, at, &chain) {
+        match verdict(&path, &bytes, there.as_deref(), me, at, &chain, &drive_root) {
             Ok(why) => report.lines.push(line(true, why, mine)),
             Err(why) => report.lines.push(line(false, why, mine)),
         }
     }
+    one_design_at_a_time(&mut report);
     let Some(named) = write else {
         return Ok(report);
     };
@@ -807,7 +1068,8 @@ pub fn put_back(
     let mut done = Vec::new();
     let mut failed = None;
     for (n, (path, bytes)) in bytes_of.iter().enumerate() {
-        match write_on_drive(&drive_root, path, bytes, n) {
+        let new = !record.files.contains_key(path);
+        match write_on_drive(&drive_root, path, bytes, n, new) {
             Ok(()) => {
                 record.files.insert(path.clone(), copied::digest(bytes));
                 done.push(path.clone());
@@ -856,17 +1118,69 @@ pub fn put_back(
     Ok(report)
 }
 
+/// Whether `path` is a released design in `design/`.
+fn is_design(path: &str) -> bool {
+    path.strip_prefix("design/")
+        .is_some_and(|n| n.starts_with("design-") && n.ends_with(".vleo") && !n.contains('/'))
+}
+
+/// Whether `path` is the record of a released design: `design/NOTES.md`, a
+/// file of `readable/`.
+fn is_record(path: &str) -> bool {
+    path == "design/NOTES.md" || path.starts_with("readable/")
+}
+
+/// One released design goes back at a time, each after the drive's latest,
+/// so two never follow the same one; and its record goes back only beside
+/// it, so a record never says of the drive what no released design there
+/// says. Said as why, never dropped.
+fn one_design_at_a_time(report: &mut Report) {
+    let designs = report
+        .lines
+        .iter()
+        .filter(|l| l.back && is_design(&l.path))
+        .count();
+    for l in report.lines.iter_mut().filter(|l| l.back) {
+        if designs > 1 && is_design(&l.path) {
+            l.back = false;
+            l.why = format!(
+                "{designs} released designs would go back at once, each after the drive's latest: one goes back at a time, then the next is released on a copy taken after it"
+            );
+        } else if designs != 1 && is_record(&l.path) {
+            l.back = false;
+            l.why = "the released design's record goes back only beside the released design it is of, put back at the same time".into();
+        }
+    }
+}
+
 /// `bytes` written whole at `path` on the drive: to a name of the program's
 /// own beside it, then renamed over it, so a write cut short leaves the
 /// drive's file as it was. Never through a link, and never into a folder the
 /// drive does not hold.
-fn write_on_drive(drive: &Path, path: &str, bytes: &[u8], n: usize) -> Result<(), Error> {
+fn write_on_drive(
+    drive: &Path,
+    path: &str,
+    bytes: &[u8],
+    n: usize,
+    new: bool,
+) -> Result<(), Error> {
     use std::io::Write as _;
     no_link_on_the_way(drive, path)?;
     let to = drive.join(path);
     let dir = to
         .parent()
         .ok_or_else(|| refused(format!("{path} has no folder on the drive")))?;
+    // A group's first release makes its `releases/`, in the group's folder
+    // the drive holds, and the first released design `design/` and
+    // `readable/` at the top; no other folder is made.
+    let top = matches!(
+        path.split('/').collect::<Vec<_>>().as_slice(),
+        ["design" | "readable", _]
+    );
+    if (top || dir.file_name().is_some_and(|n| n == "releases")) && !dir.exists() {
+        std::fs::create_dir(dir).map_err(|e| io(dir, e))?;
+        no_link_on_the_way(drive, path)?;
+    }
     let name = to
         .file_name()
         .map_or_else(String::new, |n| n.to_string_lossy().into_owned());
@@ -881,7 +1195,15 @@ fn write_on_drive(drive: &Path, path: &str, bytes: &[u8], n: usize) -> Result<()
         f.sync_all().map_err(|e| io(&tmp, e))?;
         drop(f);
         no_link_on_the_way(drive, path)?;
-        std::fs::rename(&tmp, &to).map_err(|e| io(&to, e))
+        if new {
+            // A new file is linked into its place, which fails when anything
+            // is there, whoever wrote it since: it is never written over.
+            std::fs::hard_link(&tmp, &to).map_err(|e| io(&to, e))?;
+            let _ = std::fs::remove_file(&tmp);
+            Ok(())
+        } else {
+            std::fs::rename(&tmp, &to).map_err(|e| io(&to, e))
+        }
     })();
     if made.is_err() {
         let _ = std::fs::remove_file(&tmp);
@@ -914,7 +1236,7 @@ mod tests {
         std::fs::create_dir_all(&outside).unwrap();
         std::fs::write(outside.join("f.vnode"), "theirs").unwrap();
         std::os::unix::fs::symlink(&outside, drive.join("groups/g/nodes")).unwrap();
-        let e = write_on_drive(&drive, "groups/g/nodes/f.vnode", b"mine", 0).unwrap_err();
+        let e = write_on_drive(&drive, "groups/g/nodes/f.vnode", b"mine", 0, false).unwrap_err();
         assert!(
             e.message().contains("reached through a link"),
             "{}",
