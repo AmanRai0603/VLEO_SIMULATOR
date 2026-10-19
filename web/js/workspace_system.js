@@ -223,7 +223,7 @@ function edits(b, children, outs) {
   if (!b.archived && !b.mount && !(inGroup && b.read_as === 'children')) {
     h += '<p><b>assign</b> to <input id="sy-as-person" size="18" placeholder="a node engineer\'s name"> <button class="ctl" id="sy-assign">Assign</button> <button class="ctl" id="sy-unassign">Unassign</button></p>';
   }
-  if (inGroup && !b.archived && b.read_as !== 'children') {
+  if (inGroup && !b.archived && !b.mount && b.read_as !== 'children') {
     h += '<p><b>issue</b> it as a <select id="sy-is-behaviour" class="ctl">' + opt('method') + opt('stated') + '</select> node, ' +
       'a file of its own for the node engineer it is assigned to <button class="ctl" id="sy-issue">Issue</button></p>';
   }
