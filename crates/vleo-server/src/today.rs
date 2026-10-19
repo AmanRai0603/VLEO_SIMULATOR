@@ -325,6 +325,25 @@ impl Chain {
                     .into(),
             );
         }
+        // Its fingerprint is not under its seal: it is worked out again from
+        // what it holds, or anyone who can write the drive could give one
+        // release another's name.
+        let fingerprint = chain::digest(release, chain::FILE)
+            .map_err(|e| format!("its fingerprint cannot be read: {}", e.message()))?;
+        match release.meta.get("fingerprint").map(|f| f.trim()) {
+            None | Some("") => {
+                return Err(
+                    "it says no fingerprint: a release is known by the fingerprint of what it holds"
+                        .into(),
+                )
+            }
+            Some(f) if f != fingerprint => {
+                return Err(format!(
+                    "its fingerprint is {f}, and what it holds gives {fingerprint}: a release is never relabelled"
+                ))
+            }
+            Some(_) => {}
+        }
         let programme = match self {
             Chain::Absent(why) => {
                 return Err(format!(
@@ -364,8 +383,6 @@ impl Chain {
         // Who sealed it, and when, as the seal's own signature says.
         let seal = chain::seal_of(release, parent, programme)
             .map_err(|e| format!("its seal does not check through the chain: {}", e.message()))?;
-        let fingerprint = chain::digest(release, chain::FILE)
-            .map_err(|e| format!("its fingerprint cannot be read: {}", e.message()))?;
         Ok((
             format!(
                 "sealed by {}, its owner as {} mounts it, from the anchor START HERE names",
