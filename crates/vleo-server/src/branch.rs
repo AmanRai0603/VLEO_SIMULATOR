@@ -255,6 +255,17 @@ fn tree_json(params: &str, ctx: &Ctx) -> Result<String, String> {
             j.str_field("type", &p.port_type);
             j.str_field("unit", &p.unit);
             j.str_field("state", &p.state);
+            // What a fill of it keeps, where the fill gives none.
+            for (k, v) in [
+                ("value", &p.value),
+                ("lower", &p.lower),
+                ("upper", &p.upper),
+                ("symbol", &p.symbol),
+                ("range_reason", &p.range_reason),
+                ("says", &p.says),
+            ] {
+                j.str_field(k, v);
+            }
             j.raw("}");
         }
         j.raw("]");
@@ -616,6 +627,67 @@ fn started(params: &str, ctx: &Ctx) -> Result<String, String> {
     Ok(j.0)
 }
 
+/// What a port filled holds now, read back from the group file written: its
+/// unit, value, range, symbol and reasons, so what the fill kept of it is
+/// said, not only what was typed. Nothing for any other edit.
+fn holds(copy: &std::path::Path, group: &str, e: &Edit) -> String {
+    let Edit::Fill {
+        block,
+        part: Part::Port(p),
+    } = e
+    else {
+        return String::new();
+    };
+    let Ok((_, f)) = breakdown::group_file_in(copy, group) else {
+        return String::new();
+    };
+    let Some(q) = f
+        .ports
+        .iter()
+        .find(|q| q.block_uid == *block && q.direction == p.direction && q.name == p.name)
+    else {
+        return String::new();
+    };
+    let unit = if q.unit.trim().is_empty() || q.unit.trim() == "1" {
+        String::new()
+    } else {
+        format!(" {}", q.unit.trim())
+    };
+    let mut parts = Vec::new();
+    if !q.value.trim().is_empty() {
+        parts.push(format!("the value {}{unit}", q.value.trim()));
+    }
+    if !q.lower.trim().is_empty() {
+        parts.push(format!(
+            "the range {} to {}{unit}{}",
+            q.lower.trim(),
+            q.upper.trim(),
+            if q.range_reason.trim().is_empty() {
+                ", with no reason given".to_string()
+            } else {
+                format!(", because {}", q.range_reason.trim())
+            }
+        ));
+    }
+    if parts.is_empty() {
+        parts.push(format!(
+            "no value or range{}",
+            if unit.is_empty() {
+                String::new()
+            } else {
+                format!(", in{unit}")
+            }
+        ));
+    }
+    if !q.symbol.trim().is_empty() {
+        parts.push(format!("the symbol {}", q.symbol.trim()));
+    }
+    if !q.says.trim().is_empty() {
+        parts.push(format!("says {:?}", q.says.trim()));
+    }
+    format!(" Its port {} now holds {}.", q.name, parts.join(", "))
+}
+
 /// `GET /v1/amount?text=&unit=`: one amount as typed in a field whose unit
 /// is `unit`, read as the frame's forms read it (`amount::read`): its shape,
 /// its numbers as typed, its unit, and what it is said back; or why not, with
@@ -673,7 +745,8 @@ fn amount_into(
         .any(|v| !v.trim().is_empty())
     {
         return Err(format!(
-            "{name} is given an amount and a value or ends beside it: type the amount, as 250 km, 1 to 2 km or 55 ± 10% mN, or the value and ends, not both"
+            "{name}'s port {} is given an amount and a value or ends beside it: type the amount, as 250 km, 1 to 2 km or 55 ± 10% mN, or the value and ends, not both",
+            port.name
         ));
     }
     breakdown::with_amount(&port, typed, allocation).map_err(|e| e.message().to_string())
@@ -701,6 +774,13 @@ fn edit_of(name: &str, params: &str) -> Result<(Edit, String), String> {
         "fill" => Edit::Fill {
             block: need("block")?,
             part: if !get("question").trim().is_empty() {
+                // A fill is one part: an amount beside a question would be
+                // dropped without a word.
+                if !get("amount").trim().is_empty() {
+                    return Err(format!(
+                        "{name} fills one part at a time, and is given a question and an amount: fill the question, then the port"
+                    ));
+                }
                 Part::Question(get("question"))
             } else {
                 let (port, s) = amount_into(
@@ -887,7 +967,7 @@ fn edited(name: &str, params: &str, ctx: &Ctx) -> Result<String, String> {
             j.str_field(
                 "message",
                 &format!(
-                    "{who} made the edit {:?} to {group}'s breakdown, in your copy{}.{} It stays in your copy until {group} is sealed (F5).",
+                    "{who} made the edit {:?} to {group}'s breakdown, in your copy{}.{}{} It stays in your copy until {group} is sealed (F5).",
                     e.name(),
                     reproduced
                         .map(|r| format!(": {}", r.says()))
@@ -896,7 +976,8 @@ fn edited(name: &str, params: &str, ctx: &Ctx) -> Result<String, String> {
                         String::new()
                     } else {
                         format!(" The amount is {said}.")
-                    }
+                    },
+                    holds(&copy, group, &e)
                 ),
             );
         }

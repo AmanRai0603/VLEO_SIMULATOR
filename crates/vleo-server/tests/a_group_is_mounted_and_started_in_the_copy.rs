@@ -406,6 +406,20 @@ fn a_group_is_mounted_and_started_in_the_copy() {
         field(&r, "message").contains("an amount and a value or ends beside it"),
         "{r}"
     );
+    // A fill is one part: an amount beside a question is refused, never
+    // dropped.
+    let r = frame(
+        "fill",
+        &[
+            ("block", "sys_radiation"),
+            ("question", "What dose?"),
+            ("amount", "12 kg"),
+        ],
+    );
+    assert!(
+        field(&r, "message").contains("is given a question and an amount"),
+        "{r}"
+    );
     assert_eq!(systems_bytes(), before, "a refused amount writes nothing");
     let r = band("8 to 12 kg", &[]);
     assert!(

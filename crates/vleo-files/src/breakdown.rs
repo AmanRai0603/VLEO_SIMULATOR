@@ -649,10 +649,30 @@ fn apply(
                     let at = out.ports.iter().position(|x| {
                         x.block_uid == *block && x.direction == p.direction && x.name == p.name
                     });
+                    if let Some(i) = at {
+                        p = kept(&out.ports[i], p, &b.id)?;
+                        port_ok(&p, &b.id)?;
+                    }
+                    // A method reads a port by its name, else by its symbol
+                    // (F8's question 62): one symbol names one port of the
+                    // block, and never another port's name.
+                    let sym = p.symbol.trim();
+                    if let Some(o) = out.ports.iter().enumerate().find(|(k, x)| {
+                        x.block_uid == *block
+                            && Some(*k) != at
+                            && (!sym.is_empty() && (x.name == sym || x.symbol.trim() == sym)
+                                || x.symbol.trim() == p.name)
+                    }) {
+                        return Err(refused(format!(
+                            "{}'s port {} would share {:?} with its port {}: a method reads a port by its name or its symbol, and each names one port",
+                            b.id,
+                            p.name,
+                            if o.1.symbol.trim() == p.name { p.name.as_str() } else { sym },
+                            o.1.name
+                        )));
+                    }
                     match at {
                         Some(i) => {
-                            p = kept(&out.ports[i], p, &b.id)?;
-                            port_ok(&p, &b.id)?;
                             p.ord = out.ports[i].ord;
                             out.ports[i] = p;
                         }
@@ -944,14 +964,21 @@ fn apply(
     }
 }
 
-/// A port a person fills, held to what the schema allows and what the method
-/// language reads.
 /// A port filled again, `new`, keeping what it does not give of `was`: its
-/// unit, its value, its range, its symbol and their reasons. A value or a
-/// range kept is in `was`'s unit, so a fill in another unit that keeps one is
-/// refused, by name, never converted.
+/// unit, its value, its range with the reason for it, its symbol and what it
+/// says. A range's reason is kept only with the range it was given for. A
+/// value or a range kept is in `was`'s unit, so a fill in another unit that
+/// keeps one is refused, by name, never converted; and a value kept that a
+/// new range leaves out is refused, saying it was kept.
 fn kept(was: &Port, mut new: Port, block: &str) -> Result<Port, Error> {
     let none = |v: &str| v.trim().is_empty();
+    let shown = |u: &str| {
+        if none(u) {
+            "no unit".to_string()
+        } else {
+            format!("[{}]", u.trim())
+        }
+    };
     let keeps_value = none(&new.value) && !none(&was.value);
     let keeps_range =
         none(&new.lower) && none(&new.upper) && !(none(&was.lower) && none(&was.upper));
@@ -959,26 +986,35 @@ fn kept(was: &Port, mut new: Port, block: &str) -> Result<Port, Error> {
         new.unit = was.unit.clone();
     } else if (keeps_value || keeps_range) && unit_read(&new.unit) != unit_read(&was.unit) {
         return Err(refused(format!(
-            "{block}'s port {} keeps its {} in [{}], and is filled in [{}]: give it again in [{}], or fill it in [{}]",
+            "{block}'s port {} keeps its {} from before, in {}, and is filled in {}: give its value and range again in {}, or fill it in {}",
             new.name,
             if keeps_value { "value" } else { "range" },
-            was.unit,
-            new.unit,
-            new.unit,
-            was.unit
+            shown(&was.unit),
+            shown(&new.unit),
+            shown(&new.unit),
+            shown(&was.unit)
         )));
     }
     if keeps_value {
         new.value = was.value.clone();
+        let num = |v: &str| v.trim().parse::<f64>().ok();
+        if let (Some(v), Some(lo), Some(hi)) = (num(&new.value), num(&new.lower), num(&new.upper)) {
+            if v < lo || v > hi {
+                return Err(refused(format!(
+                    "{block}'s port {} keeps its value {v} {} from before, outside the range {lo} to {hi} typed: type a value in it as well, or a spread",
+                    new.name,
+                    shown(&new.unit)
+                )));
+            }
+        }
     }
     if keeps_range {
         (new.lower, new.upper) = (was.lower.clone(), was.upper.clone());
+        if none(&new.range_reason) {
+            new.range_reason = was.range_reason.clone();
+        }
     }
-    for (n, w) in [
-        (&mut new.symbol, &was.symbol),
-        (&mut new.range_reason, &was.range_reason),
-        (&mut new.says, &was.says),
-    ] {
+    for (n, w) in [(&mut new.symbol, &was.symbol), (&mut new.says, &was.says)] {
         if none(n) {
             *n = w.clone();
         }
@@ -986,6 +1022,8 @@ fn kept(was: &Port, mut new: Port, block: &str) -> Result<Port, Error> {
     Ok(new)
 }
 
+/// A port a person fills, held to what the schema allows and what the method
+/// language reads.
 pub(crate) fn port_ok(p: &Port, block: &str) -> Result<(), Error> {
     if !valid_id(&p.name) {
         return Err(refused(format!(
@@ -1036,6 +1074,24 @@ pub(crate) fn port_ok(p: &Port, block: &str) -> Result<(), Error> {
             }
         }
     }
+    if p.lower.trim().is_empty() != p.upper.trim().is_empty() {
+        return Err(refused(format!(
+            "{block}'s port {} gives one end of a range: a range declares both",
+            p.name
+        )));
+    }
+    // A symbol is how a method writes the port: a name the method language
+    // reads, ASCII, a letter first.
+    let sym = p.symbol.trim();
+    let written = sym.is_empty()
+        || sym.starts_with(|c: char| c.is_ascii_alphabetic())
+            && sym.chars().all(|c| c.is_ascii_alphanumeric() || c == '_');
+    if !written {
+        return Err(refused(format!(
+            "{block}'s port {} has the symbol {sym:?}, which is not a name a method writes: ASCII letters, digits and _, a letter first",
+            p.name
+        )));
+    }
     let num = |v: &str| v.trim().parse::<f64>().ok();
     if let (Some(lo), Some(hi)) = (num(&p.lower), num(&p.upper)) {
         if lo > hi {
@@ -1070,20 +1126,38 @@ pub(crate) fn unit_read(unit: &str) -> Option<(f64, vleo_units::unit::Dim)> {
 
 /// `port` given an amount as a person typed it (docs/briefs/F8.md, F8-a,
 /// item 7): read by `amount::read` in the port's unit, when it says one, and
-/// written as typed, its unit and its numbers, never converted. A value is
-/// the port's value; a range its two ends; a spread's nominal its value and
-/// its ends its range (question 67). An allocation is a value or a range, so
-/// from a spread it takes the range, and says so. What the amount is, said
-/// back, is given beside the port.
+/// written as typed, its unit and its numbers, never converted; a pure
+/// number's unit as `1`, so a fill never takes another unit for it. A value
+/// is the port's value; a range its two ends; a spread's nominal its value
+/// and its ends its range (question 67). An allocation is a value or a
+/// range, so from a spread it takes the range, and says so. What the amount
+/// gives replaces the port's value and ends: what a fill keeps is
+/// `Edit::Fill`'s to say. Only a number or an integer is an amount, and an
+/// integer's are whole. What the amount is, said back, is given beside the
+/// port.
 pub fn with_amount(port: &Port, typed: &str, allocation: bool) -> Result<(Port, String), Error> {
+    if port.port_type != "number" && port.port_type != "integer" {
+        return Err(refused(format!(
+            "{} is a {} port, and an amount is a number's: type it as the port's type says",
+            port.name,
+            if port.port_type.is_empty() {
+                "typeless"
+            } else {
+                port.port_type.as_str()
+            }
+        )));
+    }
     let a = m::amount::read(typed, &port.unit)
         .map_err(|why| refused(format!("{}'s amount {:?}: {why}", port.name, typed.trim())))?;
     let mut p = port.clone();
-    // A pure number is written as the port says one, empty or `1`.
-    if a.unit != "1" {
-        p.unit = a.unit.clone();
-    }
+    p.unit = a.unit.clone();
+    (p.value, p.lower, p.upper) = (String::new(), String::new(), String::new());
     let end = |e: &Option<String>| e.clone().unwrap_or_default();
+    let in_unit = if a.unit == "1" {
+        String::new()
+    } else {
+        format!(" {}", a.unit)
+    };
     let mut said = a.said.clone();
     match a.shape {
         m::amount::Shape::Value => p.value = end(&a.nominal),
@@ -1091,13 +1165,23 @@ pub fn with_amount(port: &Port, typed: &str, allocation: bool) -> Result<(Port, 
         m::amount::Shape::Spread => {
             (p.lower, p.upper) = (end(&a.lower), end(&a.upper));
             if allocation {
-                p.value.clear();
                 said.push_str(&format!(
-                    ". An allocation is a value or a range: it takes the range, {} to {} {}, and not the nominal",
-                    p.lower, p.upper, a.unit
+                    ". An allocation is a value or a range: it takes the range, {} to {}{in_unit}, and not the nominal",
+                    p.lower, p.upper
                 ));
             } else {
                 p.value = end(&a.nominal);
+            }
+        }
+    }
+    if p.port_type == "integer" {
+        for v in [&p.value, &p.lower, &p.upper] {
+            if v.parse::<f64>().is_ok_and(|x| x.fract() != 0.0) {
+                return Err(refused(format!(
+                    "{} is an integer, and its amount {:?} gives {v}{in_unit}, which is not whole",
+                    port.name,
+                    typed.trim()
+                )));
             }
         }
     }

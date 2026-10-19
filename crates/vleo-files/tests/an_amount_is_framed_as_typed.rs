@@ -6,18 +6,25 @@
 //! The systems' file of a small programme of invented people, Pat the
 //! programme manager, Sam the system engineer and Rui a subsystem engineer,
 //! holds two blocks invented for the check: `sys_thrust`, an open leaf Sam
-//! fills, and `sys_drag`, with a density in kg/m^3 and a power in W, which
-//! Sam mounts for Rui and allocates to. Nothing here is computed: every
+//! fills, and `sys_drag`, with a density in kg/m^3, a power in W, a mass in
+//! the machine name `Kilogram` and a reach in `furlong`, which Sam mounts
+//! for Rui and allocates to. Nothing here is computed: every
 //! expected value is written in the test, as typed.
 //!
 //! - filled: a spread's nominal is the port's value and its ends its range
 //!   (question 67), with its symbol and both reasons; filled again with less,
-//!   the port keeps what it is not given; refused by name when it would keep
-//!   a value or a range in another unit, when its value is outside its
-//!   range, and when an end is not a number;
+//!   the port keeps what it is not given, and a range's reason only with its
+//!   range; refused by name when it would keep a value or a range in another
+//!   unit (a bare number is a pure one, never given the kept range's unit),
+//!   when a value kept is outside the range typed, for one end of a range,
+//!   and for a value or end that is no finite number;
+//! - an amount replaces the value and ends it gives, is a number's or an
+//!   integer's only, an integer's whole; a symbol is a name a method writes,
+//!   naming one port of its block;
 //! - allocated: a range as typed; a spread gives its range only, and says
 //!   so; an allocation in kg bounding an output in W is refused, both
-//!   dimensions named;
+//!   dimensions named; an output in a machine name reads as its unit, and one
+//!   whose unit does not read is refused;
 //! - what does not read is refused by name, with the reader's own fix.
 
 use vleo_files::breakdown::{self, Edit, Part};
@@ -129,6 +136,9 @@ fn systems_file() -> File {
     ));
     f.ports.push(out_port("sys_drag", "density", "kg/m^3"));
     f.ports.push(out_port("sys_drag", "power", "W"));
+    // One in a design's machine name, and one in a unit that does not read.
+    f.ports.push(out_port("sys_drag", "mass", "Kilogram"));
+    f.ports.push(out_port("sys_drag", "reach", "furlong"));
     signed(f, "Sam Engel", &key(12))
 }
 
@@ -228,14 +238,14 @@ fn a_port_is_filled_with_an_amount_as_typed_and_keeps_what_it_is_not_given() {
     let (newton, _) = thrust("0.05 N", "", "", "");
     let e = fill(&f, newton).unwrap_err();
     assert!(
-        e.contains("keeps its range in [mN], and is filled in [N]"),
+        e.contains("keeps its range from before, in [mN], and is filled in [N]"),
         "{e}"
     );
     // A range its kept value is outside of.
     let (narrow, _) = thrust("50 to 52 mN", "", "", "");
     let e = fill(&f, narrow).unwrap_err();
     assert!(
-        e.contains("has the value 55, outside its range 50 to 52"),
+        e.contains("keeps its value 55 [mN] from before, outside the range 50 to 52 typed"),
         "{e}"
     );
     // An end that is not a number, typed apart.
@@ -251,6 +261,105 @@ fn a_port_is_filled_with_an_amount_as_typed_and_keeps_what_it_is_not_given() {
     (out.unit, out.value, out.lower, out.upper) = (s("mN"), s("70"), s("49.5"), s("60.5"));
     let e = fill(&systems_file(), out).unwrap_err();
     assert!(e.contains("has the value 70, outside its range"), "{e}");
+}
+
+#[test]
+fn a_fill_keeps_only_what_it_can_say_it_kept() {
+    let (p, _) = thrust(
+        "55 ± 10% mN",
+        "T",
+        "the thruster's datasheet band",
+        "the thrust it gives",
+    );
+    let f = fill(&systems_file(), p).unwrap();
+    // A bare number is a pure number, said so and written as one: it never
+    // takes the unit of the range it would keep.
+    let (bare, said) = thrust("58", "", "", "");
+    assert!(said.contains("a pure number"), "{said}");
+    assert_eq!(bare.unit, "1");
+    let e = fill(&f, bare).unwrap_err();
+    assert!(
+        e.contains("keeps its range from before, in [mN], and is filled in [1]"),
+        "{e}"
+    );
+    // Typed in the port's unit, it keeps the range and its reason.
+    let mut in_mn = thrust("", "", "", "").0;
+    in_mn.unit = s("mN");
+    let (in_mn, _) = breakdown::with_amount(&in_mn, "58", false).unwrap();
+    let g = fill(&f, in_mn).unwrap();
+    let t = port(&g, "sys_thrust", "thrust");
+    assert_eq!(held(t), ["mN", "58", "49.5", "60.5"]);
+    assert_eq!(
+        [t.range_reason.as_str(), t.says.as_str(), t.symbol.as_str()],
+        ["the thruster's datasheet band", "the thrust it gives", "T"]
+    );
+    // A new range is not given the old range's reason.
+    let (wide, _) = thrust("40 to 70 mN", "", "", "");
+    let g = fill(&f, wide).unwrap();
+    let t = port(&g, "sys_thrust", "thrust");
+    assert_eq!(
+        (held(t), t.range_reason.as_str()),
+        (["mN", "55", "40", "70"], "")
+    );
+    // One end of a range, typed apart, is refused, never half kept.
+    let (mut one, _) = thrust("", "", "", "");
+    (one.unit, one.lower) = (s("mN"), s("1"));
+    let e = fill(&f, one).unwrap_err();
+    assert!(e.contains("gives one end of a range"), "{e}");
+    // A value that is no finite number.
+    for v in ["inf", "NaN", "1e400"] {
+        let (mut x, _) = thrust("", "", "", "");
+        (x.unit, x.value) = (s("mN"), s(v));
+        let e = fill(&systems_file(), x).unwrap_err();
+        assert!(e.contains("which is not a number"), "{v}: {e}");
+    }
+}
+
+#[test]
+fn an_amount_is_a_number_s_and_a_symbol_names_one_port() {
+    // An amount replaces what it gives: a range typed over a port's value
+    // and range leaves neither under the new unit.
+    let p = Port {
+        name: s("thrust"),
+        port_type: s("number"),
+        unit: s("mN"),
+        value: s("55"),
+        lower: s("49.5"),
+        upper: s("60.5"),
+        ..Port::default()
+    };
+    let (q, _) = breakdown::with_amount(&p, "0.05 N", false).unwrap();
+    assert_eq!(held(&q), ["N", "0.05", "", ""]);
+    // Not a number's port, and an integer's ends not whole.
+    let mut b = p.clone();
+    b.port_type = s("boolean");
+    let e = breakdown::with_amount(&b, "55 mN", false)
+        .unwrap_err()
+        .message()
+        .to_string();
+    assert!(e.contains("thrust is a boolean port"), "{e}");
+    let mut i = p.clone();
+    i.port_type = s("integer");
+    let e = breakdown::with_amount(&i, "55 ± 10%", false)
+        .unwrap_err()
+        .message()
+        .to_string();
+    assert!(e.contains("gives 49.5 mN, which is not whole"), "{e}");
+    // A symbol a method can write, naming one port of the block.
+    let f = fill(&systems_file(), thrust("55 mN", "T", "", "").0).unwrap();
+    let (mut other, _) = thrust("1 mN", "", "", "");
+    other.name = s("drag");
+    for (sym, says) in [
+        ("2x", "is not a name a method writes"),
+        ("T", "would share \"T\" with its port thrust"),
+        ("thrust", "would share \"thrust\" with its port thrust"),
+    ] {
+        other.symbol = s(sym);
+        let e = fill(&f, other.clone()).unwrap_err();
+        assert!(e.contains(says), "{sym}: {e}");
+    }
+    other.symbol = s("D");
+    fill(&f, other).expect("a symbol of its own");
 }
 
 fn drag_mounted() -> File {
@@ -321,9 +430,35 @@ fn an_allocation_is_typed_as_an_amount_of_the_output_s_dimension() {
             && e.contains("an allocation is of the dimension of the output it bounds"),
         "{e}"
     );
+    // An output in a design's machine name reads as its unit does.
+    let f = drag_mounted();
+    let given = |name: &str, typed: &str, bounds: &str| {
+        let p = Port {
+            name: s(name),
+            port_type: s("number"),
+            ..Port::default()
+        };
+        let (p, _) = breakdown::with_amount(&p, typed, true).unwrap();
+        framed(
+            &f,
+            &Edit::Allocate {
+                block: s("sys_drag"),
+                port: Box::new(p),
+                bounds: s(bounds),
+                sense: s("<="),
+                says: s("within"),
+            },
+        )
+    };
+    given("mass_allocated", "40 kg", "mass").expect("kg bounds Kilogram");
+    let e = given("reach_allocated", "40 km", "reach").unwrap_err();
+    assert!(
+        e.contains("output reach is in [furlong], which does not read as a unit"),
+        "{e}"
+    );
     // A pure number bounding a density, the same.
     let e = allocate("density_allocated", "3", "density").unwrap_err();
-    assert!(e.contains("is in no unit"), "{e}");
+    assert!(e.contains("is in [1]"), "{e}");
 }
 
 #[test]

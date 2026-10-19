@@ -10,7 +10,10 @@ started on it. Then, as people would:
   output's amount: the program
   says on screen why it does not read, and a fill of it writes nothing;
 - typed as `55 ± 10% mN`, it is said back as a force, and filled: solar's
-  group file in the copy holds its unit, its value and its ends as typed;
+  group file in the copy holds its unit, its value and its ends as typed,
+  and the answer says what the port now holds;
+- named again, the form says what a fill keeps and takes the port's unit,
+  and `58` is read in mN and filled, keeping the range and its reason;
 - Test Sam, the system engineer, allocates `40 kg` to propulsion's mount,
   bounding the density it is designed for: refused on screen, both
   dimensions named, and nothing written;
@@ -136,9 +139,32 @@ def check():
             notice = said_after(p, notice)
             step('filled, the program says the amount it wrote',
                  'made the edit "fill"' in notice and 'The amount is 55 mN, from 49.5 to 60.5' in notice, notice)
+            step('and what the port now holds, its range with its reason',
+                 "Its port thrust now holds the value 55 mN, the range 49.5 to 60.5 mN, because the thruster's datasheet band"
+                 in notice, notice)
             got = held(solar, BLOCK, 'thrust')
             step("solar's group file holds its unit, value and ends as typed",
                  got == ('mN', '55', '49.5', '60.5'), got)
+
+            # Filled again: the form says what is kept, and a bare number is
+            # read in the port's unit.
+            pick(p, BLOCK)
+            p.fill('#sy-why', WHY)
+            p.select_option('#sy-p-dir', 'out')
+            p.fill('#sy-p-name', 'thrust')
+            p.dispatch_event('#sy-p-name', 'change')
+            kept = p.inner_text('#sy-p-said')
+            step('naming a port to fill again says what the fill keeps',
+                 'it keeps its value 55 mN, its range 49.5 to 60.5 mN' in kept
+                 and p.input_value('#sy-p-unit') == 'mN', kept)
+            text = said(p, 'sy-p', '58', p.input_value('#sy-p-unit'))
+            step("a bare number is read in the port's unit, and said so",
+                 '58 mN' in text and "the field's unit" in text, text)
+            p.click('#sy-fill-p')
+            notice = said_after(p, notice)
+            step('filled, it keeps the range and its reason',
+                 "now holds the value 58 mN, the range 49.5 to 60.5 mN, because the thruster's datasheet band" in notice,
+                 notice)
 
             # Sam allocates to propulsion's mount, typed as amounts.
             p.goto(f'http://127.0.0.1:{port}/app')

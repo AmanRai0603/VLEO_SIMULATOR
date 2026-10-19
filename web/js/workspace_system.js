@@ -73,6 +73,7 @@ export async function mountSystem(host, post, groups) {
       if (e.target.id === 'sy-r-changed') R.changed = e.target.value;
     });
     host.addEventListener('change', e => {
+      if (e.target.id === 'sy-p-name' || e.target.id === 'sy-p-dir') sayKept();
       if (e.target.classList.contains('sy-amount') || e.target.classList.contains('sy-amount-unit')) sayAmount(e.target);
       const m = e.target.dataset && e.target.dataset.mark;
       if (m) { if (e.target.checked) R.understood.add(m); else R.understood.delete(m); }
@@ -312,6 +313,28 @@ async function sayAmount(input) {
   if (said.dataset.seq !== seq) return;
   said.textContent = r && r.ok ? r.said : (r && r.message) || 'not read';
   said.classList.toggle('sy-said-refused', !(r && r.ok));
+}
+
+/** A port of the chosen block filled again: the form takes its unit, so an
+ *  amount typed bare is read in it, and says what the fill keeps of it where
+ *  the fill gives none, as the program does. */
+function sayKept() {
+  const b = (W.tree && W.tree.blocks || []).find(x => x.uid === W.sel);
+  const name = (($('#sy-p-name', W.host) || {}).value || '').trim();
+  const dir = ($('#sy-p-dir', W.host) || {}).value || '';
+  const p = b && (b.ports || []).find(x => x.name === name && x.direction === dir);
+  const unit = $('#sy-p-unit', W.host);
+  const said = $('#sy-p-said', W.host);
+  if (!p || !said) return;
+  if (unit && !unit.value.trim()) unit.value = p.unit;
+  const u = p.unit && p.unit !== '1' ? ' ' + p.unit : '';
+  const kept = [];
+  if (p.value) kept.push('its value ' + p.value + u);
+  if (p.lower) kept.push('its range ' + p.lower + ' to ' + p.upper + u);
+  if (p.symbol) kept.push('its symbol ' + p.symbol);
+  said.classList.remove('sy-said-refused');
+  said.textContent = name + ' is filled again: it keeps ' + (kept.length ? kept.join(', ') : 'nothing of a value or range') +
+    ' where this fill gives none, and its unit ' + (p.unit || 'none') + ' unless another is typed.';
 }
 
 /** Mount a group on a leaf, and allocate to a mount framed in the systems'
