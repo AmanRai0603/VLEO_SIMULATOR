@@ -158,11 +158,13 @@ pub fn parse_unit(text: &str) -> Result<(f64, Dim), Error> {
 /// The unit a design's text names, as the engine holds units
 /// (docs/briefs/F8.md, F8-a1): a machine name (`Kilometre`), as `design/`'s
 /// rows hold it; a symbol (`km`), as a release's ports hold it; or any unit
-/// [`parse_unit`] reads that is exactly one the engine holds (`kg.m/s^2` is
-/// `N`). Empty, or `1`, is a pure number. Refused by name, never read as a
-/// pure number: a text [`parse_unit`] does not read, and a unit it reads that
-/// the engine holds none of (`mN/kW`), until `vleo-units` gains it as a
-/// reviewed change (F8's question 63).
+/// [`parse_unit`] reads that is exactly one unit the engine holds
+/// (`kg.m/s^2` is `N`). Empty, or `1`, is a pure number. Refused by name,
+/// never read as a pure number: a text [`parse_unit`] does not read; a unit it
+/// reads that the engine holds none of (`mN/kW`), until `vleo-units` gains it
+/// as a reviewed change (F8's question 63); and one that is exactly more than
+/// one unit the engine holds (`1/s`, both Hertz and radians per second),
+/// whose symbol says which.
 pub fn unit_named(text: &str) -> Result<Unit, String> {
     let t = text.trim();
     if t.is_empty() || t == "1" {
@@ -177,11 +179,21 @@ pub fn unit_named(text: &str) -> Result<Unit, String> {
     if let Some(u) = units().find(|u| u.symbol() == t) {
         return Ok(u);
     }
-    if let Some(u) = units().find(|u| u.dim() == dim && u.si_factor() == factor) {
-        return Ok(u);
+    let same: Vec<Unit> = units()
+        .filter(|u| u.dim() == dim && u.si_factor() == factor)
+        .collect();
+    match same.as_slice() {
+        [u] => Ok(*u),
+        [] => Err(format!(
+            "the unit «{t}» reads as {} with a factor of {factor:e} to SI, and the engine holds no such unit: it is asked for as a request of the code (W14), never read as a pure number",
+            dim_text(dim)
+        )),
+        many => Err(format!(
+            "the unit «{t}» is each of {}: write the one it is",
+            many.iter()
+                .map(|u| format!("[{}]", u.symbol()))
+                .collect::<Vec<_>>()
+                .join(", ")
+        )),
     }
-    Err(format!(
-        "the unit «{t}» reads as {} with a factor of {factor} to SI, and the engine holds no such unit: it is asked for as a request of the code (W14), never read as a pure number",
-        dim_text(dim)
-    ))
 }

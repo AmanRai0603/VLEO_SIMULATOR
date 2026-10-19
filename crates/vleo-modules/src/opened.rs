@@ -66,22 +66,28 @@ fn slice<T>(v: Vec<T>) -> &'static [T] {
 }
 
 /// A row's unit as the engine holds it, read by the method language's one
-/// reader (`method::unit_named`). A unit it does not read refuses the row by
-/// name (`unread_unit`), so the pure number this stands in for is never a
-/// value anything reads.
+/// reader (`method::unit_named`). A unit it does not read makes its row
+/// refuse by name wherever it is asked, called, estimated or given a value
+/// (`Graph::unread`), so the pure number this stands in for, in its unit and
+/// its limits, is never one anything reads.
 fn unit_of(name: &str) -> Unit {
     method::unit_named(name).unwrap_or(Unit::One)
 }
 
 /// Why a row's units, its own or a value it publishes, do not read, when
-/// one does not.
+/// one does not. A row nobody has specified yet is not run at all, and says
+/// so: its unit is read once it is.
 fn unread_unit(sh: &sheet::Sheet) -> Option<String> {
-    std::iter::once((&sh.symbol, &sh.unit))
-        .chain(sh.publishes.iter().map(|pb| (&pb.symbol, &pb.unit)))
-        .find_map(|(symbol, unit)| {
-            method::unit_named(unit)
-                .err()
-                .map(|why| format!("{}'s {symbol}: {why}", sh.id))
+    if sh.is_seeded() {
+        return None;
+    }
+    std::iter::once((None, &sh.unit))
+        .chain(sh.publishes.iter().map(|pb| (Some(&pb.symbol), &pb.unit)))
+        .find_map(|(published, unit)| {
+            method::unit_named(unit).err().map(|why| match published {
+                Some(symbol) => format!("the value {symbol} it publishes: {why}"),
+                None => why,
+            })
         })
 }
 
@@ -613,20 +619,8 @@ fn build(tree: &Tree) -> Result<&'static Graph, Error> {
             behaviour: behaviour_of(sh),
         });
         // A method runs in the interpreter, and a stated value is published
-        // by the graph itself. A row whose unit does not read refuses, by
-        // name: its value is never read as a pure number.
-        let own = match unread_unit(sh) {
-            Some(why) => {
-                let node = text(&sh.id);
-                let reason = text(&why);
-                let refuses: &'static Relation =
-                    Box::leak(Box::new(move |_: &[f64], _: &mut [f64]| {
-                        Err(Fault::Refused { node, reason })
-                    }));
-                Some(refuses)
-            }
-            None => interpreted(sh).or_else(|| stated(sh)),
-        };
+        // by the graph itself.
+        let own = interpreted(sh).or_else(|| stated(sh));
         dispatch.push(if own.is_some() {
             not_in_this_build
         } else {
@@ -756,6 +750,12 @@ fn build(tree: &Tree) -> Result<&'static Graph, Error> {
         vars: slice(vars),
         dispatch: slice(dispatch),
         run: slice(run),
+        unread: slice(
+            sheets
+                .iter()
+                .map(|sh| unread_unit(sh).map(|why| text(&why)))
+                .collect(),
+        ),
         cases: slice(cases),
         groups: slice(groups),
         relations: slice(relations),
