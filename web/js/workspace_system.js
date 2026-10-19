@@ -82,6 +82,7 @@ async function draw(keep) {
         esc(plural(t.blocks.filter(b => !b.archived).length, 'block')) + ', ' + esc(plural(t.open, 'part')) + ' still open.',
         esc(t.signed.says) + '.',
       ], 'reference') +
+    (t.yours ? baseForm() : '') +
     '<div class="sy-grid"><nav class="sy-tree" aria-label="the branch">' + tree(t) + '</nav>' +
     '<section class="sy-block">' + block(t) + '</section></div>';
 }
@@ -105,6 +106,13 @@ function stale() {
     ? '<div class="blocked sy-stale"><b>what is shown is the branch as you opened it</b><div>Its group file changed in your copy since. ' +
       '<button class="ctl" id="sy-reopen">Open it again</button></div></div>'
     : '';
+}
+
+/** The base moved to the next released design (W12): what changed under the
+ *  branch is said in its history, for the node engineers who read it. */
+function baseForm() {
+  return '<p class="sy-base"><b>update base</b> to the released design <input id="sy-base-design" size="12" placeholder="2026.11.1"> ' +
+    '<button class="ctl" id="sy-update-base">Update base</button></p>';
 }
 
 /** The branch as a tree: each block under its parent; a block whose parent the
@@ -284,6 +292,7 @@ async function click(e) {
       node: b, direction: v('sy-c-dir'), name: v('sy-c-name').trim(), type: v('sy-c-type').trim(),
       unit: v('sy-c-unit').trim(), lower: v('sy-c-lo').trim(), upper: v('sy-c-hi').trim(), state: 'decided',
     });
+    case 'sy-update-base': return send('update-base', { design: v('sy-base-design').trim() });
     case 'sy-sheet-go': return send('sheet', { sheet: v('sy-sheet') });
     case 'sy-issue': return send('issue', { block: b, behaviour: v('sy-is-behaviour') });
     case 'sy-assign': return send('assign', { block: b, person: v('sy-as-person').trim() });

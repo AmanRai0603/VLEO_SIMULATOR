@@ -839,6 +839,42 @@ fn a_branch_is_framed_in_the_copy() {
     );
     let band = vleo_files::sqlite::read(&copy.join(nodes(UID))).unwrap();
     assert_eq!(band.blocks[0].contract_version, 2);
+    // The base moves to a released design the copy holds (W12): one that
+    // is not a version, or not in the copy, is refused by name.
+    let r = edit(
+        "update-base",
+        &[("opened", field(&tree(), "opened")), ("design", "../x")],
+    );
+    assert!(r.contains("is not a released design's version"), "{r}");
+    let r = edit(
+        "update-base",
+        &[
+            ("opened", field(&tree(), "opened")),
+            ("design", "2026.10.1"),
+        ],
+    );
+    assert!(
+        r.contains("your copy holds no released design 2026.10.1"),
+        "{r}"
+    );
+    // A file named for a version and holding another is not read as it.
+    let mut other =
+        vleo_files::model::File::new(vleo_files::meta::Kind::Design, "vleo 1.0.0 (test)");
+    other.meta.insert("version".into(), "2026.11.1".into());
+    std::fs::create_dir_all(copy.join("design")).unwrap();
+    vleo_files::sqlite::write(&other, &copy.join("design/design-2026.10.1.vleo")).unwrap();
+    let r = edit(
+        "update-base",
+        &[
+            ("opened", field(&tree(), "opened")),
+            ("design", "2026.10.1"),
+        ],
+    );
+    assert!(
+        r.contains("holds the released design \\\"2026.11.1\\\", not 2026.10.1"),
+        "{r}"
+    );
+    std::fs::remove_file(copy.join("design/design-2026.10.1.vleo")).unwrap();
     // Issued: a block framed in the group file, refused by name while it is
     // assigned to nobody, and nothing written.
     let before_issue = group_bytes();

@@ -2290,6 +2290,239 @@ fn a_contract_changed_in_the_copy_re_issues_the_node_s_file() {
     let _ = std::fs::remove_dir_all(&copy);
 }
 
+// ── A group's base moves when a design is released (W12) ──
+
+/// A released design `version` after `previous`, released and signed by
+/// Sam: power's bus answering in W up to `upper`, and solar hung on `mount`.
+fn released(version: &str, previous: &str, upper: &str, mount: &str) -> File {
+    released_under(version, previous, upper, mount, "l3_power")
+}
+
+/// As [`released`], power's bus under the block that mounts `bus_group`.
+fn released_under(
+    version: &str,
+    previous: &str,
+    upper: &str,
+    mount: &str,
+    bus_group: &str,
+) -> File {
+    let mut d = File::new(Kind::Design, APP);
+    for g in ["l3_power", "l3_comms"] {
+        d.blocks.push(Block {
+            uid: format!("{g}_root"),
+            id: format!("{g}_root"),
+            behaviour: s("children"),
+            ..Block::default()
+        });
+        d.mounts.push(Mount {
+            block_uid: format!("{g}_root"),
+            group_id: s(g),
+            release: s(""),
+        });
+    }
+    for (k, v) in [
+        ("version", version),
+        ("previous", previous),
+        ("released_by", "Sam Engel"),
+        ("oldest_application", "1.0.0"),
+    ] {
+        d.meta.insert(s(k), s(v));
+    }
+    d.blocks.push(Block {
+        uid: s("pw_bus"),
+        id: s("pw_bus"),
+        parent_uid: format!("{bus_group}_root"),
+        behaviour: s("method"),
+        ..Block::default()
+    });
+    d.ports.push(Port {
+        block_uid: s("pw_bus"),
+        direction: s("out"),
+        name: s("pw_bus"),
+        port_type: s("number"),
+        unit: s("W"),
+        upper: s(upper),
+        ..Port::default()
+    });
+    d.mounts.push(Mount {
+        block_uid: s(mount),
+        group_id: s("l3_solar"),
+        release: s(""),
+    });
+    signed(d, "Sam Engel", &key(12))
+}
+
+/// Solar with its onset reading power's bus.
+fn reading_power() -> File {
+    let mut power = group_file("l3_power");
+    power.blocks.push(Block {
+        uid: s("pw_bus"),
+        id: s("pw_bus"),
+        behaviour: s("method"),
+        ..Block::default()
+    });
+    power.ports.push(Port {
+        block_uid: s("pw_bus"),
+        direction: s("out"),
+        name: s("pw_bus"),
+        port_type: s("number"),
+        ..Port::default()
+    });
+    ola_with(
+        &with_onset(),
+        &nodes(),
+        &[power],
+        &Edit::Wire {
+            block: s("sw_storm_onset"),
+            port: s("f107"),
+            from: s("l3_power.pw_bus.pw_bus"),
+        },
+    )
+    .unwrap()
+    .0
+}
+
+fn update(design: &File, previous: Option<&File>) -> Edit {
+    Edit::UpdateBase {
+        design: Box::new(design.clone()),
+        previous: previous.map(|p| Box::new(p.clone())),
+    }
+}
+
+#[test]
+fn a_group_s_base_moves_to_each_released_design_naming_what_changed_under_it() {
+    let first = released("2026.10.1", "", "100", "sys_space_environment");
+    let second = released("2026.11.1", "2026.10.1", "200", "sys_solar_wing");
+    let solar = reading_power();
+    // Its first released design: based on it, the first.
+    let (a, _) = ola(&solar, &update(&first, None)).unwrap();
+    assert_eq!(
+        a.meta.get("based_on").map(String::as_str),
+        Some("2026.10.1")
+    );
+    assert_eq!(a.base_version(), Some(1));
+    assert!(a.changes.last().unwrap().what.starts_with("update base: "));
+    // The next: what changed under it is named for its node engineers, and
+    // no node's content changes.
+    let (b, _) = ola(&a, &update(&second, Some(&first))).unwrap();
+    assert_eq!(
+        b.meta.get("based_on").map(String::as_str),
+        Some("2026.11.1")
+    );
+    assert_eq!(b.base_version(), Some(2));
+    let said = b.changes.last().unwrap().after.clone().unwrap();
+    assert!(
+        said.contains("sw_storm_onset's input f107 reads l3_power.pw_bus.pw_bus")
+            && said.contains("upper 100 → 200"),
+        "{said}"
+    );
+    assert!(
+        said.contains("its mount moved from sys_space_environment to sys_solar_wing"),
+        "{said}"
+    );
+    assert_eq!(b.blocks, a.blocks);
+    assert_eq!(b.ports, a.ports);
+    assert_eq!(b.wires, a.wires);
+
+    // Refused by name: a design skipped, the design it is based on not
+    // given, the wrong one given, one not released by the system engineer,
+    // and one already its base.
+    let refused = |g: &File, e: Edit, says: &str| {
+        let got = ola(g, &e).unwrap_err();
+        assert!(got.contains(says), "expected «{says}» in: {got}");
+    };
+    refused(&solar, update(&second, None), "follows 2026.10.1");
+    refused(&a, update(&second, None), "is needed to say what changed");
+    refused(
+        &a,
+        update(&second, Some(&second)),
+        "the design it is based on is 2026.10.1",
+    );
+    let mut forged = released("2026.10.1", "", "100", "sys_space_environment");
+    forged.signatures.clear();
+    let forged = signed(forged, "Ola Sun", &key(13));
+    refused(&solar, update(&forged, None), "system engineer");
+    refused(&a, update(&first, None), "already");
+    // Backwards: from 2026.11.1 to the design before it.
+    refused(
+        &b,
+        update(&first, None),
+        "follows none, and l3_solar is based on 2026.11.1",
+    );
+    // A daily snapshot, or a group's release, given as a released design.
+    let mut daily = first.clone();
+    daily.meta.insert(s("file_kind"), s("daily snapshot"));
+    refused(
+        &solar,
+        update(&daily, None),
+        "this is a daily snapshot, not a released design",
+    );
+    let mut rel = File::new(Kind::GroupRelease, APP);
+    rel.meta.insert(s("group_id"), s("l3_solar"));
+    rel.meta.insert(s("version"), s("1.1"));
+    refused(
+        &solar,
+        update(&rel, None),
+        "this is a group release, not a released design",
+    );
+    // A design holding its groups' releases whole, and no rows of its own.
+    let mut whole = released("2026.10.1", "", "100", "sys_space_environment");
+    whole.blocks.clear();
+    whole.ports.clear();
+    whole.media.push(Media {
+        scope: s("file"),
+        path: s("releases/l3_power-1.0.vleo"),
+        media_type: s("application/vnd.vleo"),
+        sha256: s("0"),
+        bytes: Vec::new(),
+    });
+    let whole = {
+        let mut w = whole;
+        w.signatures.clear();
+        signed(w, "Sam Engel", &key(12))
+    };
+    refused(
+        &solar,
+        update(&whole, None),
+        "holds its groups' releases whole",
+    );
+    // Based on a design and not saying which in order: it does not count on.
+    let mut uncounted = a.clone();
+    uncounted.meta.remove("base_version");
+    uncounted.signatures.retain(|x| x.scope != FILE);
+    let uncounted = signed(uncounted, "Ola Sun", &key(13));
+    refused(
+        &uncounted,
+        update(&second, Some(&first)),
+        "does not say which it is in order",
+    );
+}
+
+#[test]
+fn a_group_s_first_base_and_another_group_s_node_are_read_where_the_wire_says() {
+    let solar = reading_power();
+    // Its first released design does not hold the bus it reads: said.
+    let mut bare = released("2026.10.1", "", "100", "sys_space_environment");
+    bare.blocks.retain(|b| b.uid != "pw_bus");
+    bare.ports.clear();
+    bare.signatures.clear();
+    let bare = signed(bare, "Sam Engel", &key(12));
+    let (a, _) = ola(&solar, &update(&bare, None)).unwrap();
+    let said = a.changes.last().unwrap().after.clone().unwrap();
+    assert!(
+        said.contains("sw_storm_onset's input f107 reads l3_power.pw_bus.pw_bus, which the released design does not hold"),
+        "{said}"
+    );
+    // A bus of that name under another group's mount is not power's.
+    let comms = released_under("2026.10.1", "", "100", "sys_space_environment", "l3_comms");
+    let (c, _) = ola(&solar, &update(&comms, None)).unwrap();
+    let said = c.changes.last().unwrap().after.clone().unwrap();
+    assert!(
+        said.contains("sw_storm_onset's input f107 reads l3_power.pw_bus.pw_bus, which the released design does not hold"),
+        "{said}"
+    );
+}
+
 #[test]
 fn a_sheet_is_read_as_a_person_reads_it_or_refused_by_its_row() {
     let refused = |csv: &str, says: &str| {
