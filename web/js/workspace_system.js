@@ -43,7 +43,7 @@
 
 import { $, esc, answerFirst, plural } from './dom.js';
 
-const W = { group: '', tree: null, sel: '', notice: null, stale: false, host: null, post: null, groups: [], why: '', seq: 0 };
+const W = { group: '', tree: null, sel: '', notice: null, stale: false, host: null, post: null, groups: [], why: '', seq: 0, view: null };
 /** The release panel: the checks as last read, what was typed, and the program's answer. */
 const R = { seq: 0, checks: null, version: '', changed: '', understood: new Set(), notice: null, sending: false };
 
@@ -53,7 +53,7 @@ async function get(path) {
 
 /** Open the workspace at group `id`, the next time it is drawn. */
 export function openAt(id) {
-  if (id && id !== W.group) { W.group = id; W.tree = null; W.sel = ''; W.notice = null; W.stale = false; R.notice = null; }
+  if (id && id !== W.group) { W.group = id; W.tree = null; W.sel = ''; W.notice = null; W.stale = false; W.view = null; R.notice = null; }
 }
 
 /** Draw the workspace into `host`. `post(path, fields)` writes with the launch's word;
@@ -123,6 +123,7 @@ async function draw(keep) {
         esc(plural(t.blocks.filter(b => !b.archived).length, 'block')) + ', ' + esc(plural(t.open, 'part')) + ' still open.',
         esc(t.signed.says) + '.',
       ], 'reference') + frame(t) +
+    view() +
     '<div class="sy-grid"><nav class="sy-tree" aria-label="the branch">' + tree(t) + '</nav>' +
     '<section class="sy-block">' + block(t) + '</section></div>' +
     (group === 'systems' ? '<section class="sy-release" id="sy-release"><p class="sh-loading">reading the integration checks…</p></section>' : '');
@@ -197,6 +198,29 @@ function frame(t) {
       : '') +
     '<dt>budgets and margins</dt><dd><a href="#explore/design" class="sy-budgets">the health map, in Explore</a>: ' +
       'every margin as the engine computes it, never computed here</dd></dl></section>';
+}
+
+/** Today's view of the branch and its impact (F5-d), once asked for: what the
+ *  program built and ran, said as it said it. */
+function view() {
+  const v = W.view;
+  if (!v) return '<p><button class="ctl" id="sy-view">Today\'s view</button> today\'s design with every node of this branch signed as it is in your copy, and every value outside it that moves.</p>';
+  if (v.ok === false) return '<p class="sh-refused sy-view">' + esc(v.message || 'today\'s view cannot be built') + '</p>';
+  const num = (x, why) => x === null || x === undefined ? 'refused' + (why ? ': ' + why : '') : String(+x.toPrecision(6));
+  const ran = (k, r) => '<p>' + k + ': ' + r.ran + ' ran, ' + r.blocked.length + ' blocked' +
+    (r.blocked.length ? ' — ' + r.blocked.map(b => esc(b.node + ': ' + b.why)).join('<br>') : '') + '</p>';
+  return '<section class="sy-view"><h4>today\'s view</h4><p>' + esc(v.says) + '</p>' +
+    '<p>Run on ' + esc(v.case) + '.</p>' +
+    '<p>' + (v.changes.length ? 'It changes ' + esc(v.changes.join(', ')) + '.' : 'Nothing signed in your copy changes today\'s design.') + '</p>' +
+    (v.left_out.length ? '<p>Left out: ' + v.left_out.map(l => esc(l.node + ' — ' + l.why)).join('<br>') + '</p>' : '') +
+    (v.seal_refuses.length ? '<p class="sh-refused">Sealed now, it would be refused: ' + v.seal_refuses.map(esc).join('<br>') + '</p>' : '') +
+    ran('Today\'s design', v.today) + ran('The view', v.view) +
+    (v.impact.length
+      ? '<table class="sh-table sy-impact"><thead><tr><th>outside the branch</th><th>group</th><th>today</th><th>in the view</th></tr></thead><tbody>' +
+        v.impact.map(m => '<tr><td>' + esc(m.id) + '</td><td>' + esc(m.group) + '</td><td>' + esc(num(m.before, m.before_why)) + '</td><td>' + esc(num(m.after, m.after_why)) + '</td></tr>').join('') +
+        '</tbody></table>'
+      : '<p class="muted">No value outside the branch moves.</p>') +
+    '<p><button class="ctl" id="sy-view">Build it again</button></p></section>';
 }
 
 function picker() {
@@ -411,6 +435,13 @@ async function click(e) {
     }
     case 'sy-go': { const id = v('sy-id').trim(); if (id) { openAt(id); return draw(); } return; }
     case 'sy-reopen': W.notice = null; return draw();
+    case 'sy-view': {
+      const group = W.group;
+      const r = await get('/v1/branch/view?group=' + encodeURIComponent(group));
+      if (group !== W.group) return;
+      W.view = r;
+      return draw(true);
+    }
     case 'sy-add': return send('add', { parent: b, id: v('sy-add-id').trim(), question: v('sy-add-q') });
     case 'sy-fill-q': return send('fill', { block: b, question: v('sy-q') });
     case 'sy-fill-p': return send('fill', {
