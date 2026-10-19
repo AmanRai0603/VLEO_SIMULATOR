@@ -528,6 +528,9 @@ fn view_json(params: &str, ctx: &Ctx) -> Result<String, String> {
     let g = param(params, "group").map(decode).unwrap_or_default();
     let group = group_id(&g)?;
     let copy = the_copy(ctx)?;
+    // What the view is made from, read before anything of it: a seal of it
+    // is made only while this is the same.
+    let shown = vleo_files::release::shown(&copy, group).map_err(|e| e.message().to_string())?;
     let c = chain(&copy)?;
     let mb = mounted_by(&c, group)?;
     let now = results::now_utc();
@@ -583,6 +586,7 @@ fn view_json(params: &str, ctx: &Ctx) -> Result<String, String> {
     j.raw("{");
     j.bool_field("ok", true);
     j.str_field("group", group);
+    j.str_field("shown", &shown);
     j.str_field(
         "says",
         &format!(
@@ -654,6 +658,71 @@ fn view_json(params: &str, ctx: &Ctx) -> Result<String, String> {
         j.close_obj();
     }
     j.close_arr();
+    j.raw("}");
+    Ok(j.0)
+}
+
+/// `POST /v1/seal` — a group's release sealed by its owner in your copy (W5,
+/// `vleo_files::release`): group, and version, the release's. Refused, with
+/// every reason by name, unless the open key's person frames the group and
+/// every node it assigns is signed as it is, at its contract, its checks
+/// and the release's passing. Written into the copy's `releases/`, never
+/// over a release there; it joins today's design for everyone once it is
+/// put back on the drive. Carries the launch's word.
+pub(super) fn seal_route(params: &str, ctx: &Ctx) -> String {
+    match sealed(params, ctx) {
+        Ok(j) => j,
+        Err(why) => me::refusal(&why),
+    }
+}
+
+fn sealed(params: &str, ctx: &Ctx) -> Result<String, String> {
+    me::carries_session(params)?;
+    let g = param(params, "group").map(decode).unwrap_or_default();
+    let group = group_id(&g)?;
+    let version = param(params, "version").map(decode).unwrap_or_default();
+    // What its owner was shown, as today's view gave it: a seal is made from
+    // that, or not at all.
+    let shown = param(params, "shown").map(decode).unwrap_or_default();
+    if shown.trim().is_empty() {
+        return Err(
+            "seal needs shown: what today's view of the branch showed you, so nothing you did not see is sealed"
+                .into(),
+        );
+    }
+    let copy = the_copy(ctx)?;
+    let c = chain(&copy)?;
+    let mb = mounted_by(&c, group)?;
+    let at = results::now_utc();
+    let (rel, who) = me::with_key(|key, me| {
+        vleo_files::release::seal_in_place(
+            &copy,
+            group,
+            version.trim(),
+            shown.trim(),
+            &me.name,
+            key,
+            &at,
+            APP,
+            mb,
+            &c.programme,
+        )
+        .map(|rel| (rel, me.name.clone()))
+        .map_err(|e| e.message().to_string())
+    })
+    .ok_or("no key is open: open yours, and the release is sealed as you")??;
+    let mut j = Json::new();
+    j.raw("{");
+    j.bool_field("ok", true);
+    j.str_field("group", group);
+    j.str_field("path", &rel);
+    j.str_field(
+        "message",
+        &format!(
+            "{who} sealed {group} {}, in your copy: {rel}. It joins today's design for everyone once you put it back on the drive.",
+            version.trim()
+        ),
+    );
     j.raw("}");
     Ok(j.0)
 }

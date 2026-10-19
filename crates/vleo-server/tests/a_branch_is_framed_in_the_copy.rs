@@ -485,7 +485,26 @@ fn a_branch_is_framed_in_the_copy() {
         "{r}"
     );
     assert_eq!(group_bytes(), before);
+    // Nor does Nia seal it, whom only solar's file registers.
+    let shown = vleo_files::release::shown(&copy, "l3_solar").unwrap();
+    let sealed = post(
+        port,
+        "/v1/seal",
+        &[("group", "l3_solar"), ("version", "1.0"), ("shown", &shown)],
+    );
+    assert!(
+        sealed.contains("Test Nia is not registered in the programme's file"),
+        "{sealed}"
+    );
     post(port, "/v1/key/close", &[]);
+    // With no key open, nothing is sealed as anyone.
+    let sealed = post(
+        port,
+        "/v1/seal",
+        &[("group", "l3_solar"), ("version", "1.0"), ("shown", &shown)],
+    );
+    assert!(sealed.contains("no key is open"), "{sealed}");
+    assert!(!copy.join("groups/l3_solar/releases").exists());
 
     // Ola: Ola's to frame. The band and its children, each in its node file.
     assert!(open_key(port, "test-ola.vkey").contains("\"open\":true"));
@@ -496,6 +515,42 @@ fn a_branch_is_framed_in_the_copy() {
     );
     assert!(r.contains("\"signed\":{\"ok\":true"), "{r}");
     assert!(field(&r, "shows").starts_with("your copy"), "{r}");
+    // Ola seals solar 1.0 (W5): refused, every reason by name, and no
+    // release written, while the band's children are assigned to nobody.
+    // Sealed only from what today's view showed: none given, or one the
+    // branch no longer is, and nothing is sealed.
+    let sealed = post(
+        port,
+        "/v1/seal",
+        &[("group", "l3_solar"), ("version", "1.0")],
+    );
+    assert!(sealed.contains("seal needs shown"), "{sealed}");
+    let sealed = post(
+        port,
+        "/v1/seal",
+        &[("group", "l3_solar"), ("version", "1.0"), ("shown", "0")],
+    );
+    assert!(
+        sealed.contains("l3_solar has changed in your copy since you were shown it"),
+        "{sealed}"
+    );
+    let shown = vleo_files::release::shown(&copy, "l3_solar").unwrap();
+    let sealed = post(
+        port,
+        "/v1/seal",
+        &[("group", "l3_solar"), ("version", "two"), ("shown", &shown)],
+    );
+    assert!(sealed.contains("not a release's version"), "{sealed}");
+    let sealed = post(
+        port,
+        "/v1/seal",
+        &[("group", "l3_solar"), ("version", "1.0"), ("shown", &shown)],
+    );
+    assert!(
+        sealed.contains("l3_solar 1.0 is not sealed") && sealed.contains("assigns it to nobody"),
+        "{sealed}"
+    );
+    assert!(!copy.join("groups/l3_solar/releases").exists());
     for uid in [UID, GOOD, LATE] {
         assert!(
             r.contains(&format!(
@@ -726,6 +781,18 @@ fn a_branch_is_framed_in_the_copy() {
     );
     let r = tree();
     assert!(r.contains("\"yours\":false"), "{r}");
+    // Sam, whom the programme registers, does not seal solar: only its
+    // owner, or their deputy, does.
+    let shown = vleo_files::release::shown(&copy, "l3_solar").unwrap();
+    let sealed = post(
+        port,
+        "/v1/seal",
+        &[("group", "l3_solar"), ("version", "1.0"), ("shown", &shown)],
+    );
+    assert!(
+        sealed.contains("Test Sam may not change l3_solar's group file: its owner Test Ola, or their deputy, does"),
+        "{sealed}"
+    );
     post(port, "/v1/key/close", &[]);
     assert!(open_key(port, "test-ola.vkey").contains("\"open\":true"));
     let r = sys();

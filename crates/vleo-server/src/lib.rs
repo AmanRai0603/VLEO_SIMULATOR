@@ -635,6 +635,8 @@ fn route(
         // A branch's breakdown in the copy, framed by its owner (F4).
         ("GET", "/v1/branch") => ok_json(branch::tree(params, ctx)),
         ("GET", "/v1/branch/view") => ok_json(branch::view(params, ctx)),
+        // A group's release sealed by its owner in the copy (W5).
+        ("POST", "/v1/seal") => ok_json(branch::seal_route(params, ctx)),
         ("POST", p) if p.starts_with("/v1/branch/") => {
             ok_json(branch::edit_route(p.strip_prefix("/v1/branch/").unwrap_or_default(), params, ctx))
         }

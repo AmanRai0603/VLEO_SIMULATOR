@@ -10,6 +10,10 @@
     "group": {
       "type": "string"
     },
+    "shown": {
+      "type": "string",
+      "description": "One digest of the group file and every node file the view was made from: a seal of the branch sends it, and is refused when any has changed since."
+    },
     "says": {
       "type": "string",
       "description": "What the view is: today's design with the branch's signed nodes, not a release."

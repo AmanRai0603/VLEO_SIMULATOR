@@ -2248,6 +2248,11 @@ what = "Today's view of a branch, from your copy: group, the group's id. Today's
 
 [[route]]
 method = "POST"
+path = "/v1/seal"
+what = "A group's release sealed by its owner in your copy, as whoever's key is open: group; version, the release's, after the latest in the copy's releases/; and shown, what today's view of the branch showed them, so nothing is sealed that they did not see: refused when the group file or any node file has changed since. Refused, with every reason by name, unless the key's person owns the group or is their deputy, with a key that counts now, and every node it assigns is signed as it is by its node engineer at its current contract, nothing behind, no node held twice, the group's checks and the release's passing, its versions.csv saying which belief broke for this version. Written into the copy's groups/<group>/releases/, never over a release there; it joins today's design for everyone once it is put back on the drive. Carries session."
+
+[[route]]
+method = "POST"
 path = "/v1/branch/<id>"
 what = "One edit to a branch's breakdown — add, fill, break-down, move, rename, split, fold-back or remove — written to its group file in your copy by its owner, or their deputy, with a key that counts now: group, opened, the digest the edit was made from, why, and the edit's own fields (a break-down's answers one a line, `<output>=<child>.<port>`, for every output of the node). Signed afresh by whoever made it, and refused unless the file still opens through the chain; a node is broken down only into children that reproduce its own cases. A file changed since it was opened is not written over. Carries session."
 

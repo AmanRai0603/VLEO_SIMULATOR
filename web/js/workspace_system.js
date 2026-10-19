@@ -107,7 +107,12 @@ function view() {
         v.impact.map(m => '<tr><td>' + esc(m.id) + '</td><td>' + esc(m.group) + '</td><td>' + esc(num(m.before, m.before_why)) + '</td><td>' + esc(num(m.after, m.after_why)) + '</td></tr>').join('') +
         '</tbody></table>'
       : '<p class="muted">No value outside the branch moves.</p>') +
-    '<p><button class="ctl" id="sy-view">Build it again</button></p></section>';
+    '<p><button class="ctl" id="sy-view">Build it again</button></p>' +
+    (W.tree && W.tree.yours
+      ? '<p class="sy-seal"><b>seal</b> it as release <input id="sy-seal-version" size="6" placeholder="1.0"> ' +
+        '<button class="ctl" id="sy-seal">Seal</button> every node signed at its contract, the group\'s checks passing, or every reason it is not.</p>'
+      : '') +
+    '</section>';
 }
 
 function picker() {
@@ -238,7 +243,9 @@ async function send(edit, fields) {
   const r = await W.post('/v1/branch/' + edit, { group, opened: W.tree.opened, why: W.why, ...fields });
   if (group !== W.group) return;
   W.notice = { ok: !!(r && r.ok), text: (r && r.message) || 'nothing was changed' };
-  if (r && r.ok) W.why = '';
+  // An edit made, the view is of the branch as it was: it is built again
+  // before anything is sealed from it.
+  if (r && r.ok) { W.why = ''; W.view = null; }
   W.stale = !!(r && r.conflict);
   if (W.stale) return draw(true);
   return draw();
@@ -258,6 +265,17 @@ async function click(e) {
   switch (t.id) {
     case 'sy-go': { const id = v('sy-id').trim(); if (id) { openAt(id); return draw(); } return; }
     case 'sy-reopen': W.notice = null; return draw();
+    case 'sy-seal': {
+      // Sealed from what the view showed, or refused: the program compares.
+      const group = W.group;
+      const r = await W.post('/v1/seal', { group, version: v('sy-seal-version').trim(), shown: (W.view && W.view.shown) || '' });
+      if (group !== W.group) return;
+      W.notice = { ok: !!(r && r.ok), text: (r && r.message) || 'nothing was sealed' };
+      // Sealed, the branch is read again and its release shown; the view is
+      // of before.
+      if (r && r.ok) { W.view = null; return draw(); }
+      return draw(true);
+    }
     case 'sy-view': {
       const group = W.group;
       const r = await get('/v1/branch/view?group=' + encodeURIComponent(group));
