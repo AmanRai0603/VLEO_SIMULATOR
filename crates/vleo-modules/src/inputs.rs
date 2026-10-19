@@ -491,9 +491,9 @@ pub fn read_csv(text: &str) -> Reading {
         if !unit.is_empty() && unit != inp.unit {
             let same_kind = r
                 .outdated
-                .then(|| unit_named(&unit))
+                .then(|| unit_by_symbol(&unit))
                 .flatten()
-                .zip(unit_named(inp.unit))
+                .zip(unit_by_symbol(inp.unit))
                 .filter(|(a, b)| a.dim() == b.dim() && a.dim() != vleo_units::unit::Dim::NONE);
             match same_kind {
                 Some((from, _)) => factor = from.si_factor(),
@@ -559,8 +559,11 @@ pub fn read_csv(text: &str) -> Reading {
     r
 }
 
-/// A unit by the symbol a file writes it with.
-fn unit_named(symbol: &str) -> Option<Unit> {
+/// A unit by the symbol a case file writes it with, and no other spelling:
+/// what it does not name, the value is set aside for (never read as
+/// another), unlike the engine's reader of a design's units
+/// (`vleo_sheet::method::unit_named`).
+fn unit_by_symbol(symbol: &str) -> Option<Unit> {
     Unit::NAMES
         .iter()
         .filter_map(|n| Unit::from_name(n))

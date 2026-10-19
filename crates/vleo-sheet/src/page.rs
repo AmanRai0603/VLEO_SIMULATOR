@@ -17,7 +17,6 @@ use crate::load::Tree;
 use crate::model::*;
 use crate::shell::Parts;
 use crate::short_hex;
-use vleo_units::Unit;
 
 use crate::text::html as h;
 
@@ -48,11 +47,22 @@ fn lines(name: &str) -> Vec<&'static str> {
     t(name).lines().filter(|l| !l.trim().is_empty()).collect()
 }
 
+/// A unit's symbol, read as the engine reads it (`method::unit_named`); a
+/// unit it does not read is shown as it is written, never as a pure number's.
 fn unit_symbol(name: &str) -> String {
-    Unit::from_name(name)
-        .unwrap_or(Unit::One)
-        .symbol()
-        .to_string()
+    match crate::method::unit_named(name) {
+        Ok(u) => u.symbol().to_string(),
+        Err(_) => name.to_string(),
+    }
+}
+
+/// `v`, in the unit `name`, in SI as JSON: `null` when the unit does not
+/// read, so a page never shows a number converted by a factor nobody knows.
+fn si_json(v: f64, name: &str) -> String {
+    match crate::method::unit_named(name) {
+        Ok(u) => json_num(v * u.si_factor()),
+        Err(_) => "null".into(),
+    }
 }
 
 /// A unit to put after a number in a sentence: nothing for a dimensionless
@@ -928,11 +938,11 @@ pub fn index_json(tree: &Tree) -> String {
             tier = h(&sh.tier),
             unit = h(&unit_symbol(&sh.unit)),
             sym = h(&sh.symbol),
-            lo = json_num(sh.lower * Unit::from_name(&sh.unit).unwrap_or(Unit::One).si_factor()),
-            hi = json_num(sh.upper * Unit::from_name(&sh.unit).unwrap_or(Unit::One).si_factor()),
+            lo = si_json(sh.lower, &sh.unit),
+            hi = si_json(sh.upper, &sh.unit),
             val = sh
                 .value
-                .map(|v| json_num(v * Unit::from_name(&sh.unit).unwrap_or(Unit::One).si_factor()))
+                .map(|v| si_json(v, &sh.unit))
                 .unwrap_or_else(|| "null".into()),
             gaps = gaps,
             sh_hash = short_hex(sh.sheet_hash),
