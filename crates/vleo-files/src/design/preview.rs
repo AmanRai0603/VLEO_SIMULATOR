@@ -25,8 +25,8 @@
 //! fingerprint. An answer is to the release, not to the preview, so one
 //! given on an earlier design's preview still answers it.
 //!
-//! Not here: the decision on an objection, and the release refused while a
-//! preview is unanswered (F6-c3b).
+//! The decision on an objection, and the release refused while a preview is
+//! unanswered, are `decide`'s (F6-c3b).
 
 #[cfg(not(target_arch = "wasm32"))]
 use super::{read_bytes, Opened};

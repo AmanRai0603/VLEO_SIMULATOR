@@ -38,10 +38,24 @@
 //!
 //! **A preview, and the answers to it** (`preview`, F6-c): see its module.
 //!
+//! **The decision on an objection** (`decide`, F6-c3b): see its module.
+//! Release design asks it too, W8's step 2: refused while a preview on the
+//! design released now of a release today's design holds is unanswered,
+//! while an objection has no decision, and while one decided *next version*
+//! is of a release today's design still holds; an objection is a red mark
+//! never marked understood, and the released design keeps each, with what
+//! was decided, in `objections.csv`.
+//!
 //! Not here: the pointer that makes a design current and the archive (F7),
 //! the daily snapshot.
 
+mod decide;
 mod preview;
+
+pub use decide::{
+    asked_of, decision_issue, decisions, objection_id, Decide, Decided, Decision, Objection,
+    Standing, OBJECTIONS,
+};
 
 pub use preview::{answers, named, Answered, Move, OpenedPreview};
 #[cfg(not(target_arch = "wasm32"))]
@@ -461,6 +475,10 @@ pub struct Asked<'a> {
     pub marks: &'a [Mark],
     pub understood: &'a [String],
     pub margins: &'a [Margin],
+    /// Every preview read back, as it stands (F6-c3b).
+    pub previews: &'a [Standing],
+    /// Every objection to one, and what was decided of it.
+    pub decided: &'a [Decided],
 }
 
 /// The margins a released design was released with, read from its one
@@ -594,6 +612,8 @@ pub fn release(
         marks,
         understood,
         margins,
+        previews,
+        decided,
     } = *asked;
     if !checks.holds() {
         let failing = checks.failing();
@@ -620,6 +640,16 @@ pub fn release(
             sorted.join(", ")
         )));
     }
+    // W8's step 2: every answer in, every objection decided, each one a
+    // red mark beside the others.
+    if let Some(u) = understood.iter().find(|u| u.starts_with("objection:")) {
+        return Err(refused(format!(
+            "{u} is an objection, and an objection is never marked understood: the system engineer decides it, and one released anyway is raised by the programme manager's issue"
+        )));
+    }
+    let holding: Vec<(&str, &str)> = held.releases.iter().map(|r| (r.0, r.1)).collect();
+    let (objected, objections) = asked_of(previews, decided, previous, &holding)?;
+    let marks: &[Mark] = &marks.iter().cloned().chain(objected).collect::<Vec<_>>();
     if let Some(u) = understood
         .iter()
         .find(|u| !marks.iter().any(|m| &m.id == *u))
@@ -754,6 +784,11 @@ pub fn release(
         scope: FILE.into(),
         path: "margins.csv".into(),
         csv: crate::csv::write(&MARGINS, &kept),
+    });
+    f.tables.push(Tbl {
+        scope: FILE.into(),
+        path: "objections.csv".into(),
+        csv: crate::csv::write(&OBJECTIONS, &objections),
     });
     f.texts.push(Text {
         scope: FILE.into(),

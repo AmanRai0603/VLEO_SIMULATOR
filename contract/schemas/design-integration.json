@@ -229,6 +229,14 @@
                 "in_copy": {
                   "type": "boolean",
                   "description": "Whether an answer is in your copy and not on the drive: written, not put back, so it does not count yet."
+                },
+                "objection": {
+                  "type": "string",
+                  "description": "For an objection: its place, objection:<g>-<v>.<a>, where an issue deciding it is raised and the red mark it is."
+                },
+                "decision": {
+                  "type": "string",
+                  "description": "For an objection: what the system engineer decided of it, in words, or undecided."
                 }
               },
               "required": [

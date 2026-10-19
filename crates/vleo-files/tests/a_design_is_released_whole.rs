@@ -383,6 +383,8 @@ fn release_kept(
         marks,
         understood,
         margins,
+        previews: &[],
+        decided: &[],
     };
     design::release(i, &held, &asked, by, &key(k), AT, APP, &w.pr)
         .map_err(|e| e.message().to_string())

@@ -44,9 +44,17 @@
 //! built only when asked for, never on a reading of the checks. Carries the
 //! launch's word.
 //!
+//! `POST /v1/design/decide`, with `group`, `version`, `answering` and
+//! `decision`, `next` or `anyway`, decides an objection on the drive by an
+//! issue in the copy, as whoever's key is open, the system engineer or their
+//! deputy (F6-c3b); an allocation changed decides one through the frame, by
+//! `reallocate`. The release reads every preview, every objection and what
+//! was decided of it from the drive and the copy, and the library refuses it
+//! while any is wanting. An issue deciding an objection is that objection's
+//! red mark, never one of its own. Carries the launch's word.
+//!
 //! Not here: the pointer `design/design.vleo` and the archive (F7), the
-//! decision on an objection and the release refused while a preview is
-//! unanswered (F6-c3b), the daily snapshot.
+//! daily snapshot.
 
 use super::*;
 use vleo_files::chain::Registry;
@@ -261,7 +269,12 @@ fn red_marks(ctx: &Ctx, drive: &Path) -> Vec<Mark> {
                 .map(|(_, i)| i.number),
         });
     }
-    for (name, i) in &open {
+    // An issue deciding an objection is the objection's: its mark is the
+    // objection's own (`design::asked_of`), never one beside it.
+    for (name, i) in open
+        .iter()
+        .filter(|(_, i)| !i.place.starts_with("objection:"))
+    {
         out.push(Mark {
             id: format!("issue:{}", name.trim_end_matches(".vissue")),
             said: format!("issue {} on {}, open: {}", i.number, i.group_id, i.what),
@@ -455,6 +468,9 @@ fn released(params: &str, ctx: &Ctx) -> Result<String, String> {
             bytes: &sb,
         },
     };
+    // Every preview as it stands, and every objection to one with what was
+    // decided of it: the library refuses the release while any is wanting.
+    let standing = objections_now(&t.drive, &copy, &c);
     // The engine's answers on the design as declared, read once for the
     // margins kept and for readable/Health.csv, of the design released.
     let today_is = built_from().map(|r| r.fingerprint).unwrap_or_default();
@@ -468,6 +484,8 @@ fn released(params: &str, ctx: &Ctx) -> Result<String, String> {
         marks: &t.marks,
         understood: &understood,
         margins: &margins,
+        previews: &standing.previews,
+        decided: &standing.decided,
     };
     let at = results::now_utc();
     let (f, who) = me::with_key(|key, me| {
@@ -1286,6 +1304,7 @@ fn previews_into(j: &mut Json, ctx: &Ctx, drive: &Path, c: &me::Chain) {
         .chain(c.systems.iter())
         .collect();
     let (listed, unread) = previews(drive, &copy, &parents, &c.programme);
+    let decided = objections_now(drive, &copy, c).decided;
     j.key("pending").open_arr();
     if let (Ok(d), Some(report)) = (&released, built_from()) {
         for g in &report.groups {
@@ -1361,6 +1380,14 @@ fn previews_into(j: &mut Json, ctx: &Ctx, drive: &Path, c: &me::Chain) {
                     match &a {
                         design::Answered::Object(b) => {
                             j.str_field("because", b);
+                            // What was decided of it, or that nothing is.
+                            let id = design::objection_id(&p.group, &p.version, &g);
+                            j.str_field("objection", &id);
+                            let d = decided
+                                .iter()
+                                .find(|d| d.objection.id() == id)
+                                .and_then(|d| d.decision.as_ref());
+                            j.str_field("decision", &d.map_or("undecided".into(), |d| d.said()));
                         }
                         design::Answered::Refused(w) => {
                             j.str_field("why", w);
@@ -1396,6 +1423,219 @@ pub(super) fn previews_route(ctx: &Ctx) -> String {
     previews_into(&mut j, ctx, &drive, &c);
     j.raw("}");
     j.0
+}
+
+// ── The decision on an objection (F6-c items 5 and 6) ──
+
+/// Every preview as it stands, from the drive and the copy, each with what
+/// its groups said on the drive; and every objection to one, with what was
+/// decided of it, read from the issues of the drive and the copy and from
+/// the systems' file the chain opened.
+pub(crate) struct Objections {
+    pub(crate) previews: Vec<design::Standing>,
+    pub(crate) decided: Vec<design::Decided>,
+}
+
+/// Every issue file of the drive's `issues/` and the copy's, the drive's
+/// first, each read, by its name; one that does not read is left out here
+/// and said with the red marks, where every issue file is read.
+fn issue_files(drive: &Path, copy: &Path) -> Vec<vleo_files::model::File> {
+    let mut seen: Vec<String> = Vec::new();
+    let mut out = Vec::new();
+    for dir in [drive.join("issues"), copy.join("issues")] {
+        let mut names: Vec<PathBuf> = std::fs::read_dir(&dir)
+            .into_iter()
+            .flatten()
+            .filter_map(|e| e.ok().map(|e| e.path()))
+            .filter(|p| p.extension().is_some_and(|x| x == "vissue"))
+            .collect();
+        names.sort();
+        for p in names {
+            let name = p
+                .file_name()
+                .map_or(String::new(), |n| n.to_string_lossy().into_owned());
+            if seen.contains(&name) {
+                continue;
+            }
+            seen.push(name);
+            if let Ok(f) = vleo_files::sqlite::read(&p) {
+                out.push(f);
+            }
+        }
+    }
+    out
+}
+
+pub(crate) fn objections_now(drive: &Path, copy: &Path, c: &me::Chain) -> Objections {
+    let parents: Vec<&Registry> = std::iter::once(&c.programme)
+        .chain(c.systems.iter())
+        .collect();
+    let (listed, _) = previews(drive, copy, &parents, &c.programme);
+    let mut previews = Vec::new();
+    let mut objections = Vec::new();
+    for p in listed.iter().filter_map(|l| l.opened.as_ref().ok()) {
+        let answers = answered_on(p, drive, copy, &parents, &c.programme);
+        for (g, a, _) in &answers {
+            if let design::Answered::Object(because) = a {
+                // What the decision names: the answer on the drive, by its
+                // digest.
+                let at = drive.join(vleo_files::answer::path_of(&p.group, &p.version, g));
+                let digest = vleo_files::sqlite::read(&at)
+                    .ok()
+                    .and_then(|f| vleo_files::chain::digest(&f, vleo_files::chain::FILE).ok())
+                    .unwrap_or_default();
+                objections.push(design::Objection {
+                    group: p.group.clone(),
+                    version: p.version.clone(),
+                    answering: g.clone(),
+                    because: because.clone(),
+                    answer: digest,
+                });
+            }
+        }
+        previews.push(design::Standing {
+            group: p.group.clone(),
+            version: p.version.clone(),
+            based_on: p.based_on.clone(),
+            answers: answers.into_iter().map(|(g, a, _)| (g, a)).collect(),
+        });
+    }
+    let decided = match &c.systems {
+        Some(systems) => {
+            let issues = issue_files(drive, copy);
+            design::decisions(&objections, &issues, &systems.file, &parents, &c.programme)
+        }
+        None => vec![None; objections.len()],
+    };
+    Objections {
+        previews,
+        decided: objections
+            .into_iter()
+            .zip(decided)
+            .map(|(objection, decision)| design::Decided {
+                objection,
+                decision,
+            })
+            .collect(),
+    }
+}
+
+/// `POST /v1/design/decide`.
+pub(super) fn decide_route(params: &str, ctx: &Ctx) -> String {
+    match deciding(params, ctx) {
+        Ok(j) => j,
+        Err(why) => me::refusal(&why),
+    }
+}
+
+fn deciding(params: &str, ctx: &Ctx) -> Result<String, String> {
+    me::carries_session(params)?;
+    let no_key = "no key is open: open yours, and the decision is written and signed as you";
+    if me::with_key(|_, _| ()).is_none() {
+        return Err(no_key.into());
+    }
+    let get = |k: &str| param(params, k).map(decode).unwrap_or_default();
+    let (group, version, answering) = (get("group"), get("version"), get("answering"));
+    let decide = match get("decision").trim() {
+        "next" => design::Decide::NextVersion,
+        "anyway" => design::Decide::ReleaseAnyway,
+        "allocation" => {
+            return Err(format!(
+                "an allocation is changed in the systems' frame, by reallocate, its why naming {}: that change decides the objection",
+                design::objection_id(group.trim(), version.trim(), answering.trim())
+            ))
+        }
+        other => {
+            return Err(format!(
+                "{other:?} is not a decision: next (ask for its next version), allocation, or anyway (release anyway)"
+            ))
+        }
+    };
+    let copy = copy::dir(ctx);
+    let record = copy::record(&copy)?.ok_or(
+        "a decision is written in your copy of the database, then put back: copy it from the drive first",
+    )?;
+    let report = built_from()
+        .ok_or("the design open is not today's design: an objection is to a release in it")?;
+    let drive = PathBuf::from(&report.drive);
+    let c = chain_of(&drive, ctx)?;
+    let canonical =
+        std::fs::canonicalize(&drive).map_err(|e| format!("{}: {e}", drive.display()))?;
+    if Path::new(&record.drive) != canonical {
+        return Err(format!(
+            "your copy came from {}, and today's design is built from {}: decide in a copy of the drive it is built from",
+            record.drive,
+            canonical.display()
+        ));
+    }
+    let id = design::objection_id(group.trim(), version.trim(), answering.trim());
+    let now = objections_now(&drive, &copy, &c);
+    let d = now
+        .decided
+        .iter()
+        .find(|d| d.objection.id() == id)
+        .ok_or_else(|| {
+            format!("no answer on the drive objects as {id}: an objection is decided once its answer is on the drive")
+        })?;
+    if let Some(done) = &d.decision {
+        return Err(format!("{id} is decided already: {}", done.said()));
+    }
+    let parents: Vec<&Registry> = std::iter::once(&c.programme)
+        .chain(c.systems.iter())
+        .collect();
+    let _held = copy::lock(&copy)?;
+    let dir = copy.join("issues");
+    std::fs::create_dir_all(&dir).map_err(|e| format!("{}: {e}", dir.display()))?;
+    let number =
+        crate::issues::highest(&dir).max(crate::issues::highest(&drive.join("issues"))) + 1;
+    let at = results::now_utc();
+    let (f, who) = me::with_key(|key, me| {
+        design::decision_issue(
+            &d.objection,
+            decide,
+            number as i64,
+            &me.name,
+            key,
+            &at,
+            APP,
+            &parents,
+            &c.programme,
+        )
+        .map(|f| (f, me.name.clone()))
+        .map_err(|e| e.message().to_string())
+    })
+    .ok_or(no_key)??;
+    let group_id = f.meta.get("group_id").cloned().unwrap_or_default();
+    let name = format!("{number}-{group_id}.vissue");
+    let path = dir.join(&name);
+    if path.exists() {
+        return Err(format!(
+            "{} is already there, so nothing is written over it: decide again",
+            path.display()
+        ));
+    }
+    vleo_files::sqlite::write(&f, &path)
+        .map_err(|e| format!("{}: {}", path.display(), e.message()))?;
+    let to = f.issues[0].addressed_to.clone();
+    let mut j = Json::new();
+    j.raw("{");
+    j.bool_field("ok", true);
+    j.str_field("objection", &id);
+    j.str_field("file", &format!("issues/{name}"));
+    j.num_field("number", number as f64);
+    j.str_field("addressed_to", &to);
+    j.str_field(
+        "message",
+        &format!(
+            "{who} decided {id}: {}, in issue {number} to {to}, in your copy as issues/{name}. It goes to the drive when issue files go back.",
+            match decide {
+                design::Decide::NextVersion => "ask for its next version",
+                design::Decide::ReleaseAnyway => "release anyway",
+            }
+        ),
+    );
+    j.raw("}");
+    Ok(j.0)
 }
 
 #[cfg(test)]

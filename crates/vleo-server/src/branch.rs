@@ -711,6 +711,16 @@ fn edit_of(name: &str, params: &str) -> Result<Edit, String> {
             sense: get("sense"),
             says: get("closure_says"),
         },
+        // An allocation given another value or range; its sense changes only
+        // when one is given (F6-c).
+        "reallocate" => Edit::Reallocate {
+            block: need("block")?,
+            port: need("name")?,
+            value: get("value"),
+            lower: get("lower"),
+            upper: get("upper"),
+            sense: get("sense"),
+        },
         "assign" => Edit::Assign {
             block: need("block")?,
             person: need("person")?,

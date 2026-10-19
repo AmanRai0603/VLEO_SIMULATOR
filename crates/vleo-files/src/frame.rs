@@ -2,7 +2,7 @@
 //! W13; docs/SYSTEM_MODEL.md, section 2).
 //!
 //! The systems' file says where each subsystem's group hangs and what it is
-//! given. Two edits write it, made as every edit to a branch is made
+//! given. Three edits write it, made as every edit to a branch is made
 //! (`breakdown::edit`: through the chain, by the branch's owner or their
 //! deputy, saying why, signed afresh and opened again):
 //!
@@ -25,8 +25,14 @@
 //! Nothing is computed here: no margin, no budget. A closure is what the
 //! engine reads once a group's release answers it (F6-b).
 //!
-//! Not here: changing or moving a mount or an allocation (F6-c), starting
-//! the group's file (`start`), issuing and unassigning (F5).
+//! - **reallocate** an allocation given ([`reallocate`], F6-c): another value
+//!   or range, and the sense of its closure only when one is given, its why
+//!   saying which belief it follows from; what decides an objection names
+//!   it there (`design::decisions`).
+//!
+//! Not here: moving or removing a mount, changing what an allocation bounds
+//! or its unit, starting the group's file (`start`), issuing and unassigning
+//! (F5).
 
 use crate::breakdown::{port_ok, valid_id, Branch, Place};
 use crate::chain::Registry;
@@ -412,6 +418,112 @@ pub(crate) fn allocate(
         says: says.trim().to_string(),
     });
     out.ports.push(p);
+    Ok((block.to_string(), before))
+}
+
+/// The allocation `name` of the group mounted on `block`, framed in the
+/// systems' file `out`, given the value `value` or the range `lower` to
+/// `upper`, as an allocation is given one; its closure's sense changed to
+/// `sense` only when one is given, and kept otherwise (question 48). Its
+/// unit, type and what it bounds are not changed here. Refused by name, with
+/// nothing written.
+#[allow(clippy::too_many_arguments)]
+pub(crate) fn reallocate(
+    branch: &Branch,
+    block: &str,
+    name: &str,
+    value: &str,
+    lower: &str,
+    upper: &str,
+    sense: &str,
+    out: &mut File,
+) -> Result<(String, String), Error> {
+    let (b, place) = branch
+        .find(block)
+        .ok_or_else(|| refused(format!("the systems' branch has no block {block:?}")))?;
+    if place != Place::Group || !branch.group.mounts.iter().any(|m| m.block_uid == block) {
+        return Err(refused(format!(
+            "no group is mounted on {} in the systems' file: an allocation is changed on its mount",
+            b.id
+        )));
+    }
+    let Some(at) = out.ports.iter().position(|p| {
+        p.block_uid == block && p.name == name && p.direction == "in" && p.state == "allocated"
+    }) else {
+        return Err(refused(format!(
+            "{} has no allocation {name:?} to change: an allocation is given first, by allocate",
+            b.id
+        )));
+    };
+    let given = |v: &str| !v.trim().is_empty();
+    if given(lower) != given(upper) {
+        return Err(refused(format!(
+            "{}'s allocation {name} is given one end of a range: a range declares both",
+            b.id
+        )));
+    }
+    match (given(value), given(lower)) {
+        (false, false) => {
+            return Err(refused(format!(
+                "{}'s allocation {name} is given no value and no range: it is a value, or both ends of a range",
+                b.id
+            )))
+        }
+        (true, true) => {
+            return Err(refused(format!(
+                "{}'s allocation {name} is given a value and a range: it is one or the other",
+                b.id
+            )))
+        }
+        _ => {}
+    }
+    let uid = format!("{block}.{name}");
+    let closure = out.closures.iter().position(|c| c.required_ref == uid);
+    match sense {
+        "" => {}
+        "<=" | ">=" if closure.is_some() => {}
+        "<=" | ">=" => {
+            return Err(refused(format!(
+                "{}'s allocation {name} bounds nothing: it has no closure whose sense could change",
+                b.id
+            )))
+        }
+        other => {
+            return Err(refused(format!(
+                "{other:?} is not a sense: an allocation binds <= or >="
+            )))
+        }
+    }
+    let mut p = out.ports[at].clone();
+    p.value = value.trim().to_string();
+    p.lower = lower.trim().to_string();
+    p.upper = upper.trim().to_string();
+    if p.port_type == "number" || p.port_type == "integer" {
+        for (what, v) in [
+            ("value", &p.value),
+            ("lower end", &p.lower),
+            ("upper end", &p.upper),
+        ] {
+            if given(v) && v.parse::<f64>().is_err() {
+                return Err(refused(format!(
+                    "{}'s allocation {name} is given the {what} {v:?}, which is not a number",
+                    b.id
+                )));
+            }
+        }
+    }
+    port_ok(&p, &b.id)?;
+    let before = rows(out, block);
+    if p == out.ports[at] && sense.is_empty() {
+        return Err(refused(format!(
+            "{}'s allocation {name} is given what it holds already: nothing changes",
+            b.id
+        )));
+    }
+    out.ports[at] = p;
+    if let (Some(c), false) = (closure, sense.is_empty()) {
+        out.closures[c].sense = sense.to_string();
+    }
     Ok((block.to_string(), before))
 }
 

@@ -670,6 +670,8 @@ fn route(
         // answers to it (F6-c).
         ("GET", "/v1/design/previews") => ok_json(design::previews_route(ctx)),
         ("POST", "/v1/design/preview") => ok_json(design::preview_route(params, ctx)),
+        // The decision on an objection to a release (F6-c).
+        ("POST", "/v1/design/decide") => ok_json(design::decide_route(params, ctx)),
         // A group's answer to a release that moves its values (W7).
         ("POST", "/v1/answer") => ok_json(branch::answer_route(params, ctx)),
         ("GET", "/v1/design/budgets") => ok_json(design::budgets_route(ctx)),

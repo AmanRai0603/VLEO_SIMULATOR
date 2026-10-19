@@ -1169,3 +1169,163 @@ fn an_allocation_on_an_issued_node_is_refused_for_its_ports_are_its_contract() {
         e.message()
     );
 }
+
+// ── An allocation changed (F6-c, question 48) ──
+
+fn reallocate(name: &str, value: &str, lower: &str, upper: &str, sense: &str) -> Edit {
+    Edit::Reallocate {
+        block: s("sys_radiation"),
+        port: s(name),
+        value: s(value),
+        lower: s(lower),
+        upper: s(upper),
+        sense: s(sense),
+    }
+}
+
+/// Radiation's mount, given 12 kg of shield, kept under it.
+fn radiation_allocated() -> File {
+    frame_it(
+        &radiation_mounted(),
+        &allocate(
+            allocation("shield_mass_allocated", "12", "", ""),
+            "shield_mass",
+            "<=",
+        ),
+        "Sam Engel",
+        &key(12),
+    )
+    .expect("Sam allocates")
+}
+
+fn allocated(f: &File) -> (&Port, &Closure) {
+    (
+        f.ports
+            .iter()
+            .find(|p| p.name == "shield_mass_allocated")
+            .unwrap(),
+        f.closures
+            .iter()
+            .find(|c| c.uid == "sys_radiation.shield_mass_allocated")
+            .unwrap(),
+    )
+}
+
+#[test]
+fn an_allocation_is_changed_and_its_sense_only_when_given() {
+    let before = radiation_allocated();
+    // Another value; its sense kept.
+    let f = frame_it(
+        &before,
+        &reallocate("shield_mass_allocated", "14", "", "", ""),
+        "Sam Engel",
+        &key(12),
+    )
+    .expect("Sam gives it another value");
+    let (p, c) = allocated(&f);
+    assert_eq!((p.value.as_str(), c.sense.as_str()), ("14", "<="));
+    let change = f.changes.last().unwrap();
+    assert!(change.what.starts_with("reallocate: "), "{change:?}");
+    assert!(
+        change.before.as_deref().unwrap().contains("value=\"12\"")
+            && change.after.as_deref().unwrap().contains("value=\"14\""),
+        "{change:?}"
+    );
+    chain::open_systems(&f, &programme()).expect("it opens");
+    // A range in place of the value, reaching it: the sense given changes.
+    let f = frame_it(
+        &f,
+        &reallocate("shield_mass_allocated", "", "10", "16", ">="),
+        "Sid Side",
+        &key(17),
+    )
+    .expect("Sam's deputy gives it a range and the other sense");
+    let (p, c) = allocated(&f);
+    assert_eq!(
+        (
+            p.value.as_str(),
+            p.lower.as_str(),
+            p.upper.as_str(),
+            c.sense.as_str()
+        ),
+        ("", "10", "16", ">=")
+    );
+    // Its unit, what it bounds and its state are not the change's.
+    assert_eq!(
+        (p.unit.as_str(), p.state.as_str(), c.achieved_ref.as_str()),
+        ("kg", "allocated", "sys_radiation.shield_mass")
+    );
+}
+
+#[test]
+fn an_allocation_changed_is_refused_by_name() {
+    let before = radiation_allocated();
+    for (e, who, k, why) in [
+        (
+            reallocate("shield_mass_allocated", "14", "", "", ""),
+            "Ola Sun",
+            13,
+            "may not",
+        ),
+        (
+            reallocate("shield_mass", "14", "", "", ""),
+            "Sam Engel",
+            12,
+            "sys_radiation has no allocation \"shield_mass\" to change",
+        ),
+        (
+            reallocate("shield_mass_allocated", "", "", "", ""),
+            "Sam Engel",
+            12,
+            "is given no value and no range",
+        ),
+        (
+            reallocate("shield_mass_allocated", "14", "10", "16", ""),
+            "Sam Engel",
+            12,
+            "is given a value and a range",
+        ),
+        (
+            reallocate("shield_mass_allocated", "", "10", "", ""),
+            "Sam Engel",
+            12,
+            "is given one end of a range",
+        ),
+        (
+            reallocate("shield_mass_allocated", "heavy", "", "", ""),
+            "Sam Engel",
+            12,
+            "is given the value \"heavy\", which is not a number",
+        ),
+        (
+            reallocate("shield_mass_allocated", "14", "", "", "<"),
+            "Sam Engel",
+            12,
+            "\"<\" is not a sense",
+        ),
+        (
+            reallocate("shield_mass_allocated", "12", "", "", ""),
+            "Sam Engel",
+            12,
+            "is given what it holds already: nothing changes",
+        ),
+    ] {
+        let e = frame_it(&before, &e, who, &key(k)).unwrap_err();
+        assert!(e.contains(why), "{why}: {e}");
+    }
+    // In a subsystem's own file, never.
+    let e = breakdown::edit(
+        &solar(),
+        &[],
+        &[programme().file.clone(), before.clone()],
+        &reallocate("shield_mass_allocated", "14", "", "", ""),
+        WHY,
+        "Ola Sun",
+        &key(13),
+        AT,
+        &systems(&programme()),
+        &programme(),
+    )
+    .unwrap_err();
+    assert!(e.message().contains("mounts nothing"), "{}", e.message());
+}

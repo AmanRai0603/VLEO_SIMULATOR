@@ -410,6 +410,16 @@ params = [["session", "@session"], ["group", "l3_solar"]]
 
 [[route]]
 method = "POST"
+path = "/v1/design/decide"
+answer = "json"
+schema = "design-decided"
+[[route.example]]
+name = "design-decide-refused"
+path = "/v1/design/decide"
+params = [["session", "@session"], ["group", "l3_solar"], ["version", "1.1"], ["answering", "l3_power"], ["decision", "next"]]
+
+[[route]]
+method = "POST"
 path = "/v1/node/<id>/lesson"
 answer = "json"
 schema = "node-lesson-saved"

@@ -106,6 +106,17 @@ pub enum Edit {
         sense: String,
         says: String,
     },
+    /// The allocation `port` of the group mounted on `block` given another
+    /// value or range, and the way its closure binds changed to `sense` only
+    /// when one is given (`frame`; F6-c, question 48).
+    Reallocate {
+        block: String,
+        port: String,
+        value: String,
+        lower: String,
+        upper: String,
+        sense: String,
+    },
     /// A block given to `person`, a node engineer its group file registers:
     /// its one assignment, at the contract it has (F5).
     Assign { block: String, person: String },
@@ -381,6 +392,7 @@ impl Edit {
             Edit::Remove { .. } => "remove",
             Edit::Mount { .. } => "mount",
             Edit::Allocate { .. } => "allocate",
+            Edit::Reallocate { .. } => "reallocate",
             Edit::Assign { .. } => "assign",
             Edit::Wire { .. } => "wire",
             Edit::Issue { .. } => "issue",
@@ -695,7 +707,11 @@ pub fn edited(
         ))
     })?;
     chain::may_frame(&id, by, &key.public().to_hex(), at, mounted_by, programme)?;
-    if matches!(edit, Edit::Mount { .. } | Edit::Allocate { .. }) && id != "systems" {
+    if matches!(
+        edit,
+        Edit::Mount { .. } | Edit::Allocate { .. } | Edit::Reallocate { .. }
+    ) && id != "systems"
+    {
         return Err(refused(format!(
             "a group is mounted, and given what it is allocated, in the systems' file by the system engineer: {id}'s group file mounts nothing"
         )));
@@ -766,7 +782,10 @@ pub fn edited(
     let (scope, before, verdict) = apply(&branch, elsewhere, edit, &mut out, &registry, programme)?;
     let after_branch = Branch::new(&out, nodes);
     let mut after = touched(&after_branch, &scope);
-    if matches!(edit, Edit::Mount { .. } | Edit::Allocate { .. }) {
+    if matches!(
+        edit,
+        Edit::Mount { .. } | Edit::Allocate { .. } | Edit::Reallocate { .. }
+    ) {
         after.push_str(&crate::frame::rows(&out, &scope));
     }
     // A split makes a block: its rows are what the edit made, too.
@@ -2105,6 +2124,19 @@ fn apply(
         } => {
             let (scope, mut before) =
                 crate::frame::allocate(branch, block, port, bounds, sense, says, out)?;
+            before.insert_str(0, &touched(branch, block));
+            Ok((scope, before, None))
+        }
+        Edit::Reallocate {
+            block,
+            port,
+            value,
+            lower,
+            upper,
+            sense,
+        } => {
+            let (scope, mut before) =
+                crate::frame::reallocate(branch, block, port, value, lower, upper, sense, out)?;
             before.insert_str(0, &touched(branch, block));
             Ok((scope, before, None))
         }

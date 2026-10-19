@@ -389,6 +389,8 @@ fn released(drive: &Path) -> File {
         marks: &[],
         understood: &[],
         margins: &[],
+        previews: &[],
+        decided: &[],
     };
     let d = design::release(
         &checks,
