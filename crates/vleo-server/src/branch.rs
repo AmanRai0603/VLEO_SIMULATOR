@@ -577,12 +577,11 @@ fn view_json(params: &str, ctx: &Ctx) -> Result<String, String> {
             .iter()
             .flat_map(|n| n.blocks.iter().map(|b| b.id.clone())),
     );
-    let moved = today::impact(
-        vleo_modules::engine(),
-        vg,
-        &build_case(params, ctx),
-        &|id| inside.contains(id),
-    )?;
+    let case = build_case(params, ctx);
+    let im = today::impact(vleo_modules::engine(), vg, &case, &|id| inside.contains(id))?;
+    // What the seal would refuse now, said before anyone presses it: the
+    // view runs what is signed; the seal asks more of each node.
+    let blockers = vleo_files::release::blockers(&f, &nodes, &registry);
     let mut j = Json::new();
     j.raw("{");
     j.bool_field("ok", true);
@@ -610,16 +609,51 @@ fn view_json(params: &str, ctx: &Ctx) -> Result<String, String> {
         j.close_obj();
     }
     j.close_arr();
+    j.key("seal_refuses").open_arr();
+    for (i, b) in blockers.iter().enumerate() {
+        if i > 0 {
+            j.raw(",");
+        }
+        j.push_string(b);
+    }
+    j.close_arr();
+    j.str_field(
+        "case",
+        &if case.base.is_empty() {
+            "the case saved in your copy, as every run reads it".to_string()
+        } else {
+            format!("the case {}", case.base)
+        },
+    );
+    for (k, ran) in [("today", &im.today), ("view", &im.view)] {
+        j.key(k).open_obj();
+        j.num_field("ran", ran.ran as f64);
+        j.key("blocked").open_arr();
+        for (node, why) in &ran.blocked {
+            j.open_obj();
+            j.str_field("node", node);
+            j.str_field("why", why);
+            j.close_obj();
+        }
+        j.close_arr();
+        j.close_obj();
+    }
     j.key("impact").open_arr();
-    for m in &moved {
+    for m in &im.moved {
         j.open_obj();
         j.str_field("id", &m.id);
         j.str_field("group", &m.group);
-        for (k, v) in [("before", m.before), ("after", m.after)] {
+        for (k, v, w) in [
+            ("before", m.before, &m.before_why),
+            ("after", m.after, &m.after_why),
+        ] {
             match v {
                 Some(x) => j.num_field(k, x),
                 None => j.key(k).raw("null"),
             };
+            if let Some(w) = w {
+                j.str_field(&format!("{k}_why"), w);
+            }
         }
         j.close_obj();
     }

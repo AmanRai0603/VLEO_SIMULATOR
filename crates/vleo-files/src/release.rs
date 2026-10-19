@@ -135,9 +135,15 @@ pub fn blockers(group: &File, nodes: &[File], registry: &Registry) -> Vec<String
 }
 
 /// The node `uid` as `release` holds it, in the node file `base` is: every
-/// row of the block in `base` replaced by the release's, a text kind by
-/// kind, and every other row and the file's meta as `base` holds them. What today's design takes
-/// of a release's node, in the design's own file of it.
+/// row of the block in `base` replaced by the release's, and every other row
+/// and the file's meta as `base` holds them. What today's design takes of a
+/// release's node, in the design's own file of it.
+///
+/// Of the block's texts, the release's alone, and the design's `sheet` (the
+/// sheet's own words, `convert`) where the release carries none: the one
+/// kind a release's node does not carry. Nothing else of the design's is
+/// kept, so a release whose node says no method runs none, and is refused
+/// as it is read, never run with the design's old one.
 pub fn node_in(release: &File, uid: &str, base: &File) -> File {
     let mut n = base.clone();
     macro_rules! take {
@@ -154,20 +160,12 @@ pub fn node_in(release: &File, uid: &str, base: &File) -> File {
     take!(closures, block_uid);
     take!(loops, block_uid);
     take!(cases, block_uid);
-    // A text by its kind: the release's in place of the design's, and a
-    // kind it does not carry (the sheet's own words the design keeps,
-    // `convert`) the design's still.
-    let kinds: Vec<&str> = release
+    let carries_sheet = release
         .texts
         .iter()
-        .filter(|t| t.scope == uid)
-        .map(|t| t.kind.as_str())
-        .collect();
-    // The cases are the release's alone, and so are their words: a release
-    // with no cases keeps none of the design's.
-    let cases = |k: &str| k == "fixtures" || k.ends_with("fixtures.toml");
+        .any(|t| t.scope == uid && t.kind == "sheet");
     n.texts
-        .retain(|t| t.scope != uid || !(kinds.contains(&t.kind.as_str()) || cases(&t.kind)));
+        .retain(|t| t.scope != uid || (t.kind == "sheet" && !carries_sheet));
     n.texts
         .extend(release.texts.iter().filter(|t| t.scope == uid).cloned());
     take!(tables, scope);

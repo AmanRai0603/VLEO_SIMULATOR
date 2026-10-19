@@ -325,6 +325,25 @@ impl Chain {
                     .into(),
             );
         }
+        // Its fingerprint is not under its seal: it is worked out again from
+        // what it holds, or anyone who can write the drive could give one
+        // release another's name.
+        let fingerprint = chain::digest(release, chain::FILE)
+            .map_err(|e| format!("its fingerprint cannot be read: {}", e.message()))?;
+        match release.meta.get("fingerprint").map(|f| f.trim()) {
+            None | Some("") => {
+                return Err(
+                    "it says no fingerprint: a release is known by the fingerprint of what it holds"
+                        .into(),
+                )
+            }
+            Some(f) if f != fingerprint => {
+                return Err(format!(
+                    "its fingerprint is {f}, and what it holds gives {fingerprint}: a release is never relabelled"
+                ))
+            }
+            Some(_) => {}
+        }
         let programme = match self {
             Chain::Absent(why) => {
                 return Err(format!(
@@ -364,8 +383,6 @@ impl Chain {
         // Who sealed it, and when, as the seal's own signature says.
         let seal = chain::seal_of(release, parent, programme)
             .map_err(|e| format!("its seal does not check through the chain: {}", e.message()))?;
-        let fingerprint = chain::digest(release, chain::FILE)
-            .map_err(|e| format!("its fingerprint cannot be read: {}", e.message()))?;
         Ok((
             format!(
                 "sealed by {}, its owner as {} mounts it, from the anchor START HERE names",
@@ -1165,30 +1182,65 @@ pub struct Moved {
     pub group: String,
     pub before: Option<f64>,
     pub after: Option<f64>,
+    /// Why it refused, where it refused: its node's own reason.
+    pub before_why: Option<String>,
+    pub after_why: Option<String>,
+}
+
+/// One design run whole: how many values it answered, and every node it
+/// blocked, each with why. Never only the values: a run is "n ran, m
+/// blocked".
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct Ran {
+    pub ran: usize,
+    pub blocked: Vec<(String, String)>,
+}
+
+/// The impact of a branch: every value outside it that moves, and how each
+/// design ran, the branch's own nodes among them.
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct Impact {
+    pub moved: Vec<Moved>,
+    pub today: Ran,
+    pub view: Ran,
 }
 
 /// Every value of a node not `inside` the branch that differs between
 /// `today` and `view`, each design run whole on `case`: the impact of the
 /// branch on the rest of the design. A value is a node's answer, `<node>`,
 /// or another of its outputs, `<node>.<port>`, and is the node's. A value
-/// that runs in one and refuses in the other has moved too. Its group is the
-/// nearest group it hangs under.
+/// that runs in one and refuses in the other has moved too, with its node's
+/// reason. Its group is the nearest group it hangs under, or `the design`
+/// at the root. Beside them, how each design ran: what it answered and what
+/// it blocked, inside the branch or not, so a value refused in both, or a
+/// node of the branch that starts refusing, is said too.
 pub fn impact(
     today: &'static vleo_modules::Graph,
     view: &'static vleo_modules::Graph,
     case: &vleo_bus::Case,
     inside: &dyn Fn(&str) -> bool,
-) -> Result<Vec<Moved>, String> {
-    let answers = |g: &'static vleo_modules::Graph| -> Result<BTreeMap<String, f64>, String> {
-        let mut all = case.clone();
-        all.mode = vleo_bus::RunMode::All;
-        all.target = g.nodes.first().map_or("", |n| n.id).to_string();
-        let r = g
-            .evaluate(&all, &mut vleo_modules::Scratch::for_graph(g))
-            .map_err(|f| format!("the design did not run on this case: {f}"))?;
-        Ok(r.values.into_iter().map(|v| (v.id, v.value)).collect())
+) -> Result<Impact, String> {
+    let answers =
+        |g: &'static vleo_modules::Graph| -> Result<(BTreeMap<String, f64>, Ran), String> {
+            let mut all = case.clone();
+            all.mode = vleo_bus::RunMode::All;
+            all.target = g.nodes.first().map_or("", |n| n.id).to_string();
+            let r = g
+                .evaluate(&all, &mut vleo_modules::Scratch::for_graph(g))
+                .map_err(|f| format!("the design did not run on this case: {f}"))?;
+            let ran = Ran {
+                ran: r.manifest.ran,
+                blocked: r.blocked.into_iter().map(|b| (b.id, b.message)).collect(),
+            };
+            Ok((r.values.into_iter().map(|v| (v.id, v.value)).collect(), ran))
+        };
+    let ((was, ran_today), (now, ran_view)) = (answers(today)?, answers(view)?);
+    let why = |ran: &Ran, node: &str| {
+        ran.blocked
+            .iter()
+            .find(|(id, _)| id == node)
+            .map(|(_, w)| w.clone())
     };
-    let (was, now) = (answers(today)?, answers(view)?);
     // The group a node is in: the nearest of its parents that is a group.
     let group_of = |id: &str| -> String {
         let mut at = id.to_string();
@@ -1202,7 +1254,10 @@ pub fn impact(
                 today
             };
             let parent = g.nodes[k as usize].parent;
-            if g.groups.iter().any(|x| x.id == parent) || parent.is_empty() {
+            if parent.is_empty() {
+                return "the design".to_string();
+            }
+            if g.groups.iter().any(|x| x.id == parent) {
                 return parent.to_string();
             }
             at = parent.to_string();
@@ -1229,8 +1284,14 @@ pub fn impact(
                 group: group_of(node),
                 before: b,
                 after: a,
+                before_why: b.is_none().then(|| why(&ran_today, node)).flatten(),
+                after_why: a.is_none().then(|| why(&ran_view, node)).flatten(),
             });
         }
     }
-    Ok(out)
+    Ok(Impact {
+        moved: out,
+        today: ran_today,
+        view: ran_view,
+    })
 }

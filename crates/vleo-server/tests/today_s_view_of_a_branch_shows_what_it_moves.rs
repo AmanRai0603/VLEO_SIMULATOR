@@ -277,7 +277,32 @@ fn today_s_view_of_a_branch_takes_its_signed_nodes_and_lists_what_they_move() {
     let v_tree = vleo_sheet::load::load_all_from(&*view.files, &root()).unwrap();
     let v_graph = vleo_modules::opened::graph(&v_tree).unwrap();
     let inside = solar_ids();
-    let moved = impact(t_graph, v_graph, &case, &|id| inside.contains(id)).unwrap();
+    let im = impact(t_graph, v_graph, &case, &|id| inside.contains(id)).unwrap();
+    // How each design ran is said beside what moved: "n ran, m blocked",
+    // each blocked node with why.
+    assert!(
+        im.today.ran > 0 && im.view.ran > 0,
+        "{:?} {:?}",
+        im.today,
+        im.view
+    );
+    assert!(im.view.blocked.iter().all(|(_, why)| !why.is_empty()));
+    // On a case with no reference data, what needs it blocks: each blocked
+    // node is named, with why, never dropped.
+    let bare = impact(t_graph, v_graph, &Case::default(), &|id| {
+        inside.contains(id)
+    })
+    .unwrap();
+    assert!(!bare.today.blocked.is_empty(), "{:?}", bare.today);
+    assert!(
+        bare.view
+            .blocked
+            .iter()
+            .all(|(node, why)| !node.is_empty() && !why.is_empty()),
+        "{:?}",
+        bare.view
+    );
+    let moved = im.moved;
     // Nothing of solar's own is its impact: its interface's outputs neither.
     assert!(
         moved
@@ -302,8 +327,37 @@ fn today_s_view_of_a_branch_takes_its_signed_nodes_and_lists_what_they_move() {
     }
     // The same designs, judged with nothing inside the branch: solar's own
     // node moves too, and nothing in the view that is not signed does.
-    let everything = impact(t_graph, v_graph, &case, &|_| false).unwrap();
+    let everything = impact(t_graph, v_graph, &case, &|_| false).unwrap().moved;
     assert!(everything.iter().any(|m| m.id == LONG));
     assert!(!everything.iter().any(|m| m.id == BAND));
+    let _ = std::fs::remove_dir_all(&scratch);
+}
+
+#[test]
+fn a_node_whose_method_its_node_engineer_dropped_is_left_out_never_run_with_the_design_s() {
+    let scratch = std::env::temp_dir().join(format!("vleo-view-drop-{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&scratch);
+    let drive = scratch.join("drive");
+    std::fs::create_dir_all(drive.join("groups")).unwrap();
+    let (served, _) = vleo_files::convert::serve(&root()).unwrap();
+    let today = build(Arc::new(served), &root(), &drive).expect("today's design builds");
+    let registry = solar_registry();
+    // Its method text gone from the file Nia signs, its pseudocode, which
+    // the checks read, kept: the design's method is not what runs in its
+    // place.
+    let mut n = brought_up(LONG);
+    n.texts.retain(|t| t.kind != "method");
+    let n = chain::sign_node(&n, LONG, "Test Nia", &key(94), AT, &registry)
+        .expect("Nia signs it")
+        .0;
+    let view = branch_view(today.files.clone(), &root(), "l3_solar", &registry, &[n])
+        .expect("the view builds");
+    assert!(view.changes.is_empty(), "{:?}", view.changes);
+    let (left, why) = &view.left_out[0];
+    assert_eq!(left, LONG);
+    assert!(
+        why.contains("it is not read as the design reads a node"),
+        "{why}"
+    );
     let _ = std::fs::remove_dir_all(&scratch);
 }
