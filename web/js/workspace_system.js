@@ -238,7 +238,9 @@ async function send(edit, fields) {
   const r = await W.post('/v1/branch/' + edit, { group, opened: W.tree.opened, why: W.why, ...fields });
   if (group !== W.group) return;
   W.notice = { ok: !!(r && r.ok), text: (r && r.message) || 'nothing was changed' };
-  if (r && r.ok) W.why = '';
+  // An edit made, the view is of the branch as it was: it is built again
+  // before anything is sealed from it.
+  if (r && r.ok) { W.why = ''; W.view = null; }
   W.stale = !!(r && r.conflict);
   if (W.stale) return draw(true);
   return draw();
@@ -259,8 +261,14 @@ async function click(e) {
     case 'sy-go': { const id = v('sy-id').trim(); if (id) { openAt(id); return draw(); } return; }
     case 'sy-reopen': W.notice = null; return draw();
     case 'sy-seal': {
-      const r = await W.post('/v1/seal', { group: W.group, version: v('sy-seal-version').trim() });
+      // Sealed from what the view showed, or refused: the program compares.
+      const group = W.group;
+      const r = await W.post('/v1/seal', { group, version: v('sy-seal-version').trim(), shown: (W.view && W.view.shown) || '' });
+      if (group !== W.group) return;
       W.notice = { ok: !!(r && r.ok), text: (r && r.message) || 'nothing was sealed' };
+      // Sealed, the branch is read again and its release shown; the view is
+      // of before.
+      if (r && r.ok) { W.view = null; return draw(); }
       return draw(true);
     }
     case 'sy-view': {

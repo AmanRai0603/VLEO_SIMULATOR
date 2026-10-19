@@ -528,6 +528,9 @@ fn view_json(params: &str, ctx: &Ctx) -> Result<String, String> {
     let g = param(params, "group").map(decode).unwrap_or_default();
     let group = group_id(&g)?;
     let copy = the_copy(ctx)?;
+    // What the view is made from, read before anything of it: a seal of it
+    // is made only while this is the same.
+    let shown = vleo_files::release::shown(&copy, group).map_err(|e| e.message().to_string())?;
     let c = chain(&copy)?;
     let mb = mounted_by(&c, group)?;
     let now = results::now_utc();
@@ -584,6 +587,7 @@ fn view_json(params: &str, ctx: &Ctx) -> Result<String, String> {
     j.raw("{");
     j.bool_field("ok", true);
     j.str_field("group", group);
+    j.str_field("shown", &shown);
     j.str_field(
         "says",
         &format!(
@@ -643,6 +647,15 @@ fn sealed(params: &str, ctx: &Ctx) -> Result<String, String> {
     let g = param(params, "group").map(decode).unwrap_or_default();
     let group = group_id(&g)?;
     let version = param(params, "version").map(decode).unwrap_or_default();
+    // What its owner was shown, as today's view gave it: a seal is made from
+    // that, or not at all.
+    let shown = param(params, "shown").map(decode).unwrap_or_default();
+    if shown.trim().is_empty() {
+        return Err(
+            "seal needs shown: what today's view of the branch showed you, so nothing you did not see is sealed"
+                .into(),
+        );
+    }
     let copy = the_copy(ctx)?;
     let c = chain(&copy)?;
     let mb = mounted_by(&c, group)?;
@@ -652,6 +665,7 @@ fn sealed(params: &str, ctx: &Ctx) -> Result<String, String> {
             &copy,
             group,
             version.trim(),
+            shown.trim(),
             &me.name,
             key,
             &at,

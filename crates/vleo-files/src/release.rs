@@ -443,18 +443,63 @@ pub fn releases_in(
     Ok(out)
 }
 
+/// One digest of what a seal of `group_id` is made from in the copy: its
+/// group file and every node file of its branch, each by its path and the
+/// SHA-256 of its bytes. Its owner is shown this with what they seal, and a
+/// seal is made only while it is the same.
+#[cfg(not(target_arch = "wasm32"))]
+pub fn shown(copy: &std::path::Path, group_id: &str) -> Result<String, Error> {
+    if !crate::breakdown::valid_id(group_id) {
+        return Err(refused(format!("{group_id:?} is not a group's id")));
+    }
+    let dir = copy.join("groups").join(group_id);
+    let read = |p: &std::path::Path| {
+        std::fs::read(p).map_err(|e| Error::new(ErrorKind::Io, format!("{}: {e}", p.display())))
+    };
+    let own = format!("{group_id}.vgroup");
+    let mut lines = vec![format!(
+        "{own} {}",
+        crate::copied::digest(&read(&dir.join(&own))?)
+    )];
+    let nodes = dir.join("nodes");
+    if nodes.is_dir() {
+        let io = |e: std::io::Error| Error::new(ErrorKind::Io, format!("{}: {e}", nodes.display()));
+        let mut paths = Vec::new();
+        for e in std::fs::read_dir(&nodes).map_err(io)? {
+            let p = e.map_err(io)?.path();
+            if p.extension().is_some_and(|x| x == "vnode") {
+                paths.push(p);
+            }
+        }
+        paths.sort();
+        for p in paths {
+            let name = p
+                .file_name()
+                .map_or(String::new(), |n| n.to_string_lossy().into_owned());
+            lines.push(format!(
+                "nodes/{name} {}",
+                crate::copied::digest(&read(&p)?)
+            ));
+        }
+    }
+    Ok(crate::copied::digest(lines.join("\n").as_bytes()))
+}
+
 /// `group_id`'s release `version`, sealed from the copy at `copy` and written
 /// into `groups/<group_id>/releases/<group_id>-<version>.vleo`, under the
 /// copy's lock from the first read to the write. The release before it is the
 /// newest already there. Refused, writing nothing, for anything [`seal`]
-/// refuses, and when a file of that name is already there: a release is never
-/// written over. Gives the path written, inside the copy.
+/// refuses; when what its owner was shown, `was_shown` ([`shown`]), has
+/// changed since; when the programme's or the systems' file it was given is
+/// no longer the copy's; and when a file of that name is already there: a
+/// release is never written over. Gives the path written, inside the copy.
 #[cfg(not(target_arch = "wasm32"))]
 #[allow(clippy::too_many_arguments)]
 pub fn seal_in_place(
     copy: &std::path::Path,
     group_id: &str,
     version: &str,
+    was_shown: &str,
     by: &str,
     key: &SigningKey,
     at: &str,
@@ -466,6 +511,26 @@ pub fn seal_in_place(
         return Err(refused(format!("{group_id:?} is not a group's id")));
     }
     let _held = crate::save::lock(copy)?;
+    // A release is never edited and its version is used up: it is sealed
+    // from what its owner saw, or not at all.
+    if shown(copy, group_id)? != was_shown {
+        return Err(refused(format!(
+            "{group_id} has changed in your copy since you were shown it: a release is sealed only from what its owner saw, so view it again and seal that"
+        )));
+    }
+    // The chain it was given was read before the lock: it is the copy's
+    // still, or nothing is sealed.
+    for (reg, path) in [
+        (programme, "groups/programme/programme.vgroup"),
+        (systems, "groups/systems/systems.vgroup"),
+    ] {
+        let now = crate::sqlite::read(&copy.join(path))?;
+        if chain::digest(&now, chain::FILE)? != chain::digest(&reg.file, chain::FILE)? {
+            return Err(refused(format!(
+                "{path} changed in your copy while the seal was made: seal again"
+            )));
+        }
+    }
     let (_, group) = crate::breakdown::group_file_in(copy, group_id)?;
     let how = crate::upgrade::Upgrade { app, at };
     let nodes = crate::breakdown::nodes_in(copy, group_id, &how)?;

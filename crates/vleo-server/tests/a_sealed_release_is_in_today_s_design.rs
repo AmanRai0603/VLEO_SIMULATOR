@@ -294,6 +294,7 @@ fn sealed_with(drive: &Path, copy: &Path, edit: &dyn Fn(&mut File)) -> String {
         copy,
         "l3_solar",
         "1.0",
+        &vleo_files::release::shown(copy, "l3_solar").unwrap(),
         "Test Ola",
         &key(93),
         AT,

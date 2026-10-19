@@ -350,6 +350,11 @@ fn copy_with(name: &str, w: &World) -> PathBuf {
     std::fs::create_dir_all(g.join("nodes")).unwrap();
     vleo_files::sqlite::write(&solar(), &g.join("l3_solar.vgroup")).unwrap();
     vleo_files::sqlite::write(&band(w), &g.join(format!("nodes/{BAND}.vnode"))).unwrap();
+    for (id, f) in [("programme", &w.pr.file), ("systems", &w.sy.file)] {
+        let at = dir.join(format!("groups/{id}"));
+        std::fs::create_dir_all(&at).unwrap();
+        vleo_files::sqlite::write(f, &at.join(format!("{id}.vgroup"))).unwrap();
+    }
     dir
 }
 
@@ -362,6 +367,7 @@ fn a_release_is_written_into_the_copy_and_never_written_over() {
             &copy,
             "l3_solar",
             v,
+            &vleo_files::release::shown(&copy, "l3_solar").unwrap(),
             "Ola Sun",
             &key(13),
             AT,
@@ -399,6 +405,39 @@ fn a_release_is_written_into_the_copy_and_never_written_over() {
         .unwrap()
         .file;
     assert_eq!(next.meta.get("previous").map(String::as_str), Some("1.0"));
+    let _ = std::fs::remove_dir_all(&copy);
+}
+
+#[test]
+fn a_release_is_sealed_only_from_what_its_owner_was_shown() {
+    let w = world();
+    let copy = copy_with("shown", &w);
+    let was = release::shown(&copy, "l3_solar").unwrap();
+    // The band's file changes after its owner was shown the branch.
+    let at = copy.join(format!("groups/l3_solar/nodes/{BAND}.vnode"));
+    let mut b = vleo_files::sqlite::read(&at).unwrap();
+    b.meta.insert(s("written_by_app"), s("another program"));
+    vleo_files::sqlite::write(&b, &at).unwrap();
+    let e = release::seal_in_place(
+        &copy,
+        "l3_solar",
+        "1.0",
+        &was,
+        "Ola Sun",
+        &key(13),
+        AT,
+        APP,
+        &w.sy,
+        &w.pr,
+    )
+    .unwrap_err();
+    assert!(
+        e.message()
+            .contains("l3_solar has changed in your copy since you were shown it"),
+        "{}",
+        e.message()
+    );
+    assert!(!copy.join("groups/l3_solar/releases").exists());
     let _ = std::fs::remove_dir_all(&copy);
 }
 
@@ -528,6 +567,7 @@ fn the_releases_already_there_are_each_one_the_chain_admits_or_the_seal_is_refus
             &copy,
             "l3_solar",
             v,
+            &vleo_files::release::shown(&copy, "l3_solar").unwrap(),
             "Ola Sun",
             &key(13),
             AT,

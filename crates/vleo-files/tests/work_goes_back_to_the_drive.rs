@@ -1811,6 +1811,7 @@ fn sealed_in(copy: &Path, version: &str) -> String {
         copy,
         "l3_solar",
         version,
+        &vleo_files::release::shown(copy, "l3_solar").unwrap(),
         "Test Ola",
         &key(73),
         AT,
