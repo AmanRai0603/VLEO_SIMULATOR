@@ -302,6 +302,16 @@ path = "/v1/branch"
 params = [["group", "l3_solar"]]
 
 [[route]]
+method = "GET"
+path = "/v1/branch/view"
+answer = "json"
+schema = "branch-view"
+[[route.example]]
+name = "branch-view-no-copy"
+path = "/v1/branch/view"
+params = [["group", "l3_solar"]]
+
+[[route]]
 method = "POST"
 path = "/v1/branch/<id>"
 answer = "json"

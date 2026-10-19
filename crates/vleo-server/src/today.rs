@@ -1064,3 +1064,234 @@ impl Files for Overlay {
         !self.removed.contains(p) && (self.replaced.contains_key(p) || self.base.is_file(p))
     }
 }
+
+/// Today's view of a branch (docs/briefs/F5.md, F5-d): today's design with
+/// every node of the branch whose latest revision its node engineer signed
+/// as it is taken in, each in the design's own file of it, as a release's
+/// node is. What its group would seal, seen inside the design before it is.
+pub struct View {
+    /// The design, as the loader reads it, with the branch's signed nodes.
+    pub files: Arc<dyn Files>,
+    /// The nodes taken in that change the design, by id.
+    pub changes: Vec<String>,
+    /// The branch's nodes not taken, and why.
+    pub left_out: Vec<(String, String)>,
+    /// What the view writes over today's design, as one digest
+    /// ([`Today::written`]'s kind): two views that write the same are one.
+    pub written: String,
+}
+
+/// Today's view of the branch `group`: `today`, today's design, with each of
+/// `nodes` (the branch's node files) whose signature counts through
+/// `registry`, its group file as the chain opens it.
+pub fn branch_view(
+    today: Arc<dyn Files>,
+    root: &Path,
+    group: &str,
+    registry: &Registry,
+    nodes: &[vleo_files::model::File],
+) -> Result<View, String> {
+    let now = Overlay {
+        base: today.clone(),
+        replaced: BTreeMap::new(),
+        removed: BTreeSet::new(),
+    };
+    let tree = vleo_sheet::load::load_all_from(&now, root)
+        .map_err(|e| format!("today's design does not load: {e}"))?;
+    let design = design_nodes(root, group)?;
+    let (mut edits, mut changes, mut left_out) = (BTreeMap::new(), Vec::new(), Vec::new());
+    let mut removed = BTreeSet::new();
+    for n in nodes {
+        let Some(b) = n.blocks.first() else {
+            continue;
+        };
+        if let Err(e) = chain::check_node(n, &b.uid, registry) {
+            left_out.push((
+                b.id.clone(),
+                format!("not signed as it is: {}", e.message()),
+            ));
+            continue;
+        }
+        let own = design
+            .iter()
+            .find(|d| d.blocks.first().is_some_and(|x| x.uid == b.uid))
+            .filter(|_| tree.sheets.contains_key(&b.id));
+        let Some(own) = own else {
+            left_out.push((
+                b.id.clone(),
+                "a new node, not in the design: it joins today's design through its group's release"
+                    .into(),
+            ));
+            continue;
+        };
+        let node = vleo_files::release::node_in(n, &b.uid, own);
+        let folder = match vleo_files::convert::node_folder(root, &node) {
+            Ok(f) => f,
+            Err(e) => {
+                left_out.push((
+                    b.id.clone(),
+                    format!("it is not read as the design reads a node: {}", e.message()),
+                ));
+                continue;
+            }
+        };
+        let mut moved = false;
+        // What the node's folder no longer holds is not served, as a
+        // release's is not (`take_one`).
+        if let Some(dir) = folder.first().and_then(|(p, _)| p.parent()) {
+            for name in ["fixtures.toml", "parity.csv", vleo_sheet::lesson::FILE] {
+                let p = dir.join(name);
+                if now.is_file(&p) && !folder.iter().any(|(q, _)| *q == p) {
+                    removed.insert(p);
+                    moved = true;
+                }
+            }
+        }
+        for (path, bytes) in folder {
+            if now.read(&path).ok().as_deref() != Some(&bytes[..]) {
+                edits.insert(path, bytes);
+                moved = true;
+            }
+        }
+        if moved {
+            changes.push(b.id.clone());
+        }
+    }
+    let written = digest(root, &edits, &removed)?;
+    let files: Arc<dyn Files> = Arc::new(Overlay {
+        base: today,
+        replaced: edits,
+        removed,
+    });
+    vleo_sheet::load::load_all_from(&*files, root)
+        .map_err(|e| format!("today's view of {group} does not load: {e}"))?;
+    Ok(View {
+        files,
+        changes,
+        left_out,
+        written,
+    })
+}
+
+/// A value outside a branch that the branch moves: the node, the group it
+/// is in, and its answer in today's design and in today's view of the
+/// branch, `None` where it refuses or does not run.
+#[derive(Clone, Debug, PartialEq)]
+pub struct Moved {
+    pub id: String,
+    pub group: String,
+    pub before: Option<f64>,
+    pub after: Option<f64>,
+    /// Why it refused, where it refused: its node's own reason.
+    pub before_why: Option<String>,
+    pub after_why: Option<String>,
+}
+
+/// One design run whole: how many values it answered, and every node it
+/// blocked, each with why. Never only the values: a run is "n ran, m
+/// blocked".
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct Ran {
+    pub ran: usize,
+    pub blocked: Vec<(String, String)>,
+}
+
+/// The impact of a branch: every value outside it that moves, and how each
+/// design ran, the branch's own nodes among them.
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct Impact {
+    pub moved: Vec<Moved>,
+    pub today: Ran,
+    pub view: Ran,
+}
+
+/// Every value of a node not `inside` the branch that differs between
+/// `today` and `view`, each design run whole on `case`: the impact of the
+/// branch on the rest of the design. A value is a node's answer, `<node>`,
+/// or another of its outputs, `<node>.<port>`, and is the node's. A value
+/// that runs in one and refuses in the other has moved too, with its node's
+/// reason. Its group is the nearest group it hangs under, or `the design`
+/// at the root. Beside them, how each design ran: what it answered and what
+/// it blocked, inside the branch or not, so a value refused in both, or a
+/// node of the branch that starts refusing, is said too.
+pub fn impact(
+    today: &'static vleo_modules::Graph,
+    view: &'static vleo_modules::Graph,
+    case: &vleo_bus::Case,
+    inside: &dyn Fn(&str) -> bool,
+) -> Result<Impact, String> {
+    let answers =
+        |g: &'static vleo_modules::Graph| -> Result<(BTreeMap<String, f64>, Ran), String> {
+            let mut all = case.clone();
+            all.mode = vleo_bus::RunMode::All;
+            all.target = g.nodes.first().map_or("", |n| n.id).to_string();
+            let r = g
+                .evaluate(&all, &mut vleo_modules::Scratch::for_graph(g))
+                .map_err(|f| format!("the design did not run on this case: {f}"))?;
+            let ran = Ran {
+                ran: r.manifest.ran,
+                blocked: r.blocked.into_iter().map(|b| (b.id, b.message)).collect(),
+            };
+            Ok((r.values.into_iter().map(|v| (v.id, v.value)).collect(), ran))
+        };
+    let ((was, ran_today), (now, ran_view)) = (answers(today)?, answers(view)?);
+    let why = |ran: &Ran, node: &str| {
+        ran.blocked
+            .iter()
+            .find(|(id, _)| id == node)
+            .map(|(_, w)| w.clone())
+    };
+    // The group a node is in: the nearest of its parents that is a group.
+    let group_of = |id: &str| -> String {
+        let mut at = id.to_string();
+        for _ in 0..64 {
+            let Some(k) = view.find(&at).or_else(|| today.find(&at)) else {
+                break;
+            };
+            let g = if view.find(&at).is_some() {
+                view
+            } else {
+                today
+            };
+            let parent = g.nodes[k as usize].parent;
+            if parent.is_empty() {
+                return "the design".to_string();
+            }
+            if g.groups.iter().any(|x| x.id == parent) {
+                return parent.to_string();
+            }
+            at = parent.to_string();
+        }
+        String::new()
+    };
+    let same = |a: f64, b: f64| a == b || (a - b).abs() <= 1e-12 * a.abs().max(b.abs());
+    let ids: std::collections::BTreeSet<&String> = was.keys().chain(now.keys()).collect();
+    let mut out = Vec::new();
+    for id in ids {
+        let node = id.split('.').next().unwrap_or(id);
+        if inside(node) {
+            continue;
+        }
+        let (b, a) = (was.get(id).copied(), now.get(id).copied());
+        let moved = match (b, a) {
+            (Some(x), Some(y)) => !same(x, y),
+            (None, None) => false,
+            _ => true,
+        };
+        if moved {
+            out.push(Moved {
+                id: id.clone(),
+                group: group_of(node),
+                before: b,
+                after: a,
+                before_why: b.is_none().then(|| why(&ran_today, node)).flatten(),
+                after_why: a.is_none().then(|| why(&ran_view, node)).flatten(),
+            });
+        }
+    }
+    Ok(Impact {
+        moved: out,
+        today: ran_today,
+        view: ran_view,
+    })
+}
