@@ -18,7 +18,9 @@
     it is allocated, which way each binds; in the systems' branch, every
     group mounted below. For the system engineer or their deputy, *mount a
     group here* on a leaf of any branch, and *allocate* on a mount framed in
-    the systems' file, the sense chosen, never defaulted. A group mounted
+    the systems' file, the sense chosen, never defaulted. A port's amount
+    and an allocation are typed as a person writes them (F8-a4, `250 km`,
+    `55 ± 10% mN`), read and said back by the program. A group mounted
     and not started says whose step it is, and *Start <g>* is its owner's.
     Budgets and margins are a link to Explore's health map: the engine's.
 
@@ -71,6 +73,7 @@ export async function mountSystem(host, post, groups) {
       if (e.target.id === 'sy-r-changed') R.changed = e.target.value;
     });
     host.addEventListener('change', e => {
+      if (e.target.classList.contains('sy-amount') || e.target.classList.contains('sy-amount-unit')) sayAmount(e.target);
       const m = e.target.dataset && e.target.dataset.mark;
       if (m) { if (e.target.checked) R.understood.add(m); else R.understood.delete(m); }
     });
@@ -287,6 +290,30 @@ function block(t) {
     (t.may_mount ? frameEdits(t, b, children, outs) : '');
 }
 
+/** An amount as typed and the unit it is read in when it gives none, with
+ *  `id`-amount and `id`-unit: read by the program as it is typed, and said
+ *  back below its form (F8-a4). */
+function amountInput(id, placeholder) {
+  return '<input id="' + id + '-amount" class="sy-amount" size="26" placeholder="' + esc(placeholder) + '"> ' +
+    '<input id="' + id + '-unit" class="sy-amount-unit" size="6" placeholder="its unit">';
+}
+
+/** What the amount typed beside `input` is, as the program reads it: said
+ *  below its form, or why not. Only the latest reading is said. */
+async function sayAmount(input) {
+  const id = input.id.replace(/-(amount|unit)$/, '');
+  const text = ($('#' + id + '-amount', W.host) || {}).value || '';
+  const said = $('#' + id + '-said', W.host);
+  if (!said) return;
+  const seq = said.dataset.seq = String(Number(said.dataset.seq || 0) + 1);
+  if (!text.trim()) { said.textContent = ''; return; }
+  const unit = ($('#' + id + '-unit', W.host) || {}).value || '';
+  const r = await get('/v1/amount?text=' + encodeURIComponent(text) + '&unit=' + encodeURIComponent(unit.trim()));
+  if (said.dataset.seq !== seq) return;
+  said.textContent = r && r.ok ? r.said : (r && r.message) || 'not read';
+  said.classList.toggle('sy-said-refused', !(r && r.ok));
+}
+
 /** Mount a group on a leaf, and allocate to a mount framed in the systems'
  *  file: the system engineer's, or their deputy's, written in the systems'
  *  file whichever branch is open. The sense is chosen, never defaulted. */
@@ -304,11 +331,12 @@ function frameEdits(t, b, children, outs) {
   if (t.group === 'systems' && b.mount && b.in === 'the group file') {
     const opt = (v, l) => '<option value="' + esc(v) + '">' + esc(l || v) + '</option>';
     h += '<p><b>allocate</b> <input id="sy-a-name" size="16" placeholder="its name"> <select id="sy-a-type" class="ctl">' +
-      opt('number') + opt('integer') + '</select> <input id="sy-a-value" size="6" placeholder="a value"> or ' +
-      '<input id="sy-a-lo" size="5" placeholder="from"> <input id="sy-a-hi" size="5" placeholder="to"> <input id="sy-a-unit" size="6" placeholder="unit"> ' +
+      opt('number') + opt('integer') + '</select> ' + amountInput('sy-a', 'a value or a range, as 40 kg or 2.5e-11 to 1.5e-10 kg/m^3') +
+      ' <input id="sy-a-reason" size="18" placeholder="why this range"> ' +
       'bounding <select id="sy-a-bounds" class="ctl">' + outs.map(o => opt(o.name)).join('') + '</select> ' +
       '<select id="sy-a-sense" class="ctl">' + opt('', 'which way it binds') + opt('<=', '<= stays under it') + opt('>=', '>= reaches it') + '</select> ' +
-      '<input id="sy-a-says" size="24" placeholder="what the closure says"> <button class="ctl" id="sy-allocate">Allocate</button></p>';
+      '<input id="sy-a-says" size="24" placeholder="what the closure says"> <button class="ctl" id="sy-allocate">Allocate</button></p>' +
+      '<p class="muted sy-said" id="sy-a-said"></p>';
   }
   if (!h) return '';
   return '<h4>the frame, in the systems\' file</h4><p><label>why <textarea id="sy-f-why" rows="2" class="nw-wide" placeholder="which belief this follows from">' +
@@ -331,10 +359,11 @@ function edits(b, children, outs) {
       '<p><b>a port</b> <select id="sy-p-dir" class="ctl">' + opt('out') + opt('in') + '</select> ' +
       '<input id="sy-p-name" size="16" placeholder="name"> <select id="sy-p-type" class="ctl">' +
       ['number', 'integer', 'choice', 'boolean', 'list', 'table', 'series', 'uncertain', 'text', 'file'].map(v => opt(v)).join('') + '</select> ' +
-      '<input id="sy-p-unit" size="6" placeholder="unit"> <input id="sy-p-lo" size="5" placeholder="from"> <input id="sy-p-hi" size="5" placeholder="to"> ' +
+      amountInput('sy-p', 'its amount, as 250 km, 1 to 2 km or 55 ± 10% mN') + ' <input id="sy-p-symbol" size="5" placeholder="symbol"> ' +
+      '<input id="sy-p-reason" size="18" placeholder="why this range"> <input id="sy-p-says" size="18" placeholder="what it says"> ' +
       // Not `allocated`: an allocation is given to a mounted group, with its sense.
       '<select id="sy-p-state" class="ctl">' + opt('open') + opt('decided') + opt('achieved') + '</select> ' +
-      '<button class="ctl" id="sy-fill-p">Fill</button></p>';
+      '<button class="ctl" id="sy-fill-p">Fill</button></p><p class="muted sy-said" id="sy-p-said"></p>';
   }
   if (!inGroup && !b.answers.length && children.length && outs.length) {
     // One answer for each output: the program refuses fewer.
@@ -415,7 +444,7 @@ async function click(e) {
     case 'sy-fill-q': return send('fill', { block: b, question: v('sy-q') });
     case 'sy-fill-p': return send('fill', {
       block: b, direction: v('sy-p-dir'), name: v('sy-p-name').trim(), type: v('sy-p-type'), unit: v('sy-p-unit').trim(),
-      lower: v('sy-p-lo').trim(), upper: v('sy-p-hi').trim(), state: v('sy-p-state'),
+      amount: v('sy-p-amount'), symbol: v('sy-p-symbol').trim(), range_reason: v('sy-p-reason'), says: v('sy-p-says'), state: v('sy-p-state'),
     });
     case 'sy-break-down': return send('break-down', {
       node: b,
@@ -429,8 +458,8 @@ async function click(e) {
     case 'sy-remove': return send('remove', { block: b });
     case 'sy-mount': return sendFrame('mount', { block: b, mounts: v('sy-m-group').trim(), owner: v('sy-m-owner').trim() });
     case 'sy-allocate': return sendFrame('allocate', {
-      block: b, name: v('sy-a-name').trim(), type: v('sy-a-type'), value: v('sy-a-value').trim(), lower: v('sy-a-lo').trim(),
-      upper: v('sy-a-hi').trim(), unit: v('sy-a-unit').trim(), bounds: v('sy-a-bounds'), sense: v('sy-a-sense'), closure_says: v('sy-a-says'),
+      block: b, name: v('sy-a-name').trim(), type: v('sy-a-type'), amount: v('sy-a-amount'), unit: v('sy-a-unit').trim(),
+      range_reason: v('sy-a-reason'), bounds: v('sy-a-bounds'), sense: v('sy-a-sense'), closure_says: v('sy-a-says'),
     });
     case 'sy-start': {
       const group = W.group;

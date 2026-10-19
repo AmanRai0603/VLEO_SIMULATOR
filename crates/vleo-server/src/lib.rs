@@ -636,6 +636,8 @@ fn route(
         ("GET", "/v1/people") => ok_json(people::list(params, ctx)),
         // A branch's breakdown in the copy, framed by its owner (F4).
         ("GET", "/v1/branch") => ok_json(branch::tree(params, ctx)),
+        // An amount as typed in a frame's form, read and said back (F8-a4).
+        ("GET", "/v1/amount") => ok_json(branch::amount_route(params)),
         // A group started by its owner once the systems' file mounts it (F6-a).
         ("POST", "/v1/group/start") => ok_json(branch::start_route(params, ctx)),
         ("GET", "/v1/design/integration") => ok_json(design::integration_route(ctx)),

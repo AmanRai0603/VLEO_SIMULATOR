@@ -616,8 +616,72 @@ fn started(params: &str, ctx: &Ctx) -> Result<String, String> {
     Ok(j.0)
 }
 
-/// The edit `name` asks for, from its fields.
-fn edit_of(name: &str, params: &str) -> Result<Edit, String> {
+/// `GET /v1/amount?text=&unit=`: one amount as typed in a field whose unit
+/// is `unit`, read as the frame's forms read it (`amount::read`): its shape,
+/// its numbers as typed, its unit, and what it is said back; or why not, with
+/// the fix. Nothing is written.
+pub(super) fn amount_route(params: &str) -> String {
+    let get = |k: &str| param(params, k).map(decode).unwrap_or_default();
+    match vleo_sheet::method::amount::read(&get("text"), &get("unit")) {
+        Err(why) => me::refusal(&why),
+        Ok(a) => {
+            let mut j = Json::new();
+            j.raw("{");
+            j.bool_field("ok", true);
+            j.str_field("typed", &a.typed);
+            j.str_field(
+                "shape",
+                match a.shape {
+                    vleo_sheet::method::amount::Shape::Value => "value",
+                    vleo_sheet::method::amount::Shape::Range => "range",
+                    vleo_sheet::method::amount::Shape::Spread => "spread",
+                },
+            );
+            for (k, v) in [
+                ("nominal", &a.nominal),
+                ("lower", &a.lower),
+                ("upper", &a.upper),
+            ] {
+                match v {
+                    Some(v) => j.str_field(k, v),
+                    None => j.key(k).raw("null"),
+                };
+            }
+            j.str_field("unit", &a.unit);
+            j.str_field("said", &a.said);
+            j.raw("}");
+            j.0
+        }
+    }
+}
+
+/// A port's `amount` as typed, read by the library into its unit, value and
+/// ends (`breakdown::with_amount`), and what it is, said back; the port as it
+/// is when none is typed. An amount and its ends typed apart are refused,
+/// since either could be meant.
+fn amount_into(
+    name: &str,
+    port: vleo_files::model::Port,
+    typed: &str,
+    allocation: bool,
+) -> Result<(vleo_files::model::Port, String), String> {
+    if typed.trim().is_empty() {
+        return Ok((port, String::new()));
+    }
+    if [&port.value, &port.lower, &port.upper]
+        .iter()
+        .any(|v| !v.trim().is_empty())
+    {
+        return Err(format!(
+            "{name} is given an amount and a value or ends beside it: type the amount, as 250 km, 1 to 2 km or 55 ± 10% mN, or the value and ends, not both"
+        ));
+    }
+    breakdown::with_amount(&port, typed, allocation).map_err(|e| e.message().to_string())
+}
+
+/// The edit `name` asks for, from its fields, and an amount typed in it,
+/// said back.
+fn edit_of(name: &str, params: &str) -> Result<(Edit, String), String> {
     let get = |k: &str| param(params, k).map(decode).unwrap_or_default();
     let need = |k: &str| {
         let v = get(k);
@@ -627,7 +691,8 @@ fn edit_of(name: &str, params: &str) -> Result<Edit, String> {
             Ok(v.trim().to_string())
         }
     };
-    Ok(match name {
+    let mut said = String::new();
+    let edit = match name {
         "add" => Edit::Add {
             parent: need("parent")?,
             id: need("id")?,
@@ -638,18 +703,28 @@ fn edit_of(name: &str, params: &str) -> Result<Edit, String> {
             part: if !get("question").trim().is_empty() {
                 Part::Question(get("question"))
             } else {
-                Part::Port(Box::new(vleo_files::model::Port {
-                    direction: need("direction")?,
-                    name: need("name")?,
-                    port_type: need("type")?,
-                    unit: get("unit"),
-                    lower: get("lower"),
-                    upper: get("upper"),
-                    state: get("state"),
-                    maturity: get("maturity"),
-                    says: get("says"),
-                    ..Default::default()
-                }))
+                let (port, s) = amount_into(
+                    name,
+                    vleo_files::model::Port {
+                        direction: need("direction")?,
+                        name: need("name")?,
+                        symbol: get("symbol").trim().to_string(),
+                        port_type: need("type")?,
+                        unit: get("unit"),
+                        value: get("value"),
+                        lower: get("lower"),
+                        upper: get("upper"),
+                        range_reason: get("range_reason"),
+                        state: get("state"),
+                        maturity: get("maturity"),
+                        says: get("says"),
+                        ..Default::default()
+                    },
+                    &get("amount"),
+                    false,
+                )?;
+                said = s;
+                Part::Port(Box::new(port))
             },
         },
         "break-down" => Edit::BreakDown {
@@ -695,16 +770,26 @@ fn edit_of(name: &str, params: &str) -> Result<Edit, String> {
         },
         "allocate" => Edit::Allocate {
             block: need("block")?,
-            port: Box::new(vleo_files::model::Port {
-                name: need("name")?,
-                port_type: need("type")?,
-                unit: get("unit"),
-                value: get("value"),
-                lower: get("lower"),
-                upper: get("upper"),
-                says: get("says"),
-                ..Default::default()
-            }),
+            port: {
+                let (port, s) = amount_into(
+                    name,
+                    vleo_files::model::Port {
+                        name: need("name")?,
+                        port_type: need("type")?,
+                        unit: get("unit"),
+                        value: get("value"),
+                        lower: get("lower"),
+                        upper: get("upper"),
+                        range_reason: get("range_reason"),
+                        says: get("says"),
+                        ..Default::default()
+                    },
+                    &get("amount"),
+                    true,
+                )?;
+                said = s;
+                Box::new(port)
+            },
             bounds: need("bounds")?,
             // Never defaulted: an allocation with no sense is refused by
             // the library, by name.
@@ -712,7 +797,8 @@ fn edit_of(name: &str, params: &str) -> Result<Edit, String> {
             says: get("closure_says"),
         },
         other => return Err(format!("{other:?} is not an edit of a branch")),
-    })
+    };
+    Ok((edit, said))
 }
 
 /// A breakdown's answers, one a line: `<output>=<child uid>.<port>`, an
@@ -763,7 +849,7 @@ fn edited(name: &str, params: &str, ctx: &Ctx) -> Result<String, String> {
     if me::with_key(|_, _| ()).is_none() {
         return Err("no key is open: open yours, and the edit is made and signed as you".into());
     }
-    let e = edit_of(name, params)?;
+    let (e, said) = edit_of(name, params)?;
     let g = param(params, "group").map(decode).unwrap_or_default();
     let group = group_id(&g)?;
     let opened = param(params, "opened").map(decode).unwrap_or_default();
@@ -801,11 +887,16 @@ fn edited(name: &str, params: &str, ctx: &Ctx) -> Result<String, String> {
             j.str_field(
                 "message",
                 &format!(
-                    "{who} made the edit {:?} to {group}'s breakdown, in your copy{}. It stays in your copy until {group} is sealed (F5).",
+                    "{who} made the edit {:?} to {group}'s breakdown, in your copy{}.{} It stays in your copy until {group} is sealed (F5).",
                     e.name(),
                     reproduced
                         .map(|r| format!(": {}", r.says()))
-                        .unwrap_or_default()
+                        .unwrap_or_default(),
+                    if said.is_empty() {
+                        String::new()
+                    } else {
+                        format!(" The amount is {said}.")
+                    }
                 ),
             );
         }

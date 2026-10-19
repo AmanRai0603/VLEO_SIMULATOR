@@ -651,6 +651,8 @@ fn apply(
                     });
                     match at {
                         Some(i) => {
+                            p = kept(&out.ports[i], p, &b.id)?;
+                            port_ok(&p, &b.id)?;
                             p.ord = out.ports[i].ord;
                             out.ports[i] = p;
                         }
@@ -944,6 +946,46 @@ fn apply(
 
 /// A port a person fills, held to what the schema allows and what the method
 /// language reads.
+/// A port filled again, `new`, keeping what it does not give of `was`: its
+/// unit, its value, its range, its symbol and their reasons. A value or a
+/// range kept is in `was`'s unit, so a fill in another unit that keeps one is
+/// refused, by name, never converted.
+fn kept(was: &Port, mut new: Port, block: &str) -> Result<Port, Error> {
+    let none = |v: &str| v.trim().is_empty();
+    let keeps_value = none(&new.value) && !none(&was.value);
+    let keeps_range =
+        none(&new.lower) && none(&new.upper) && !(none(&was.lower) && none(&was.upper));
+    if none(&new.unit) {
+        new.unit = was.unit.clone();
+    } else if (keeps_value || keeps_range) && unit_read(&new.unit) != unit_read(&was.unit) {
+        return Err(refused(format!(
+            "{block}'s port {} keeps its {} in [{}], and is filled in [{}]: give it again in [{}], or fill it in [{}]",
+            new.name,
+            if keeps_value { "value" } else { "range" },
+            was.unit,
+            new.unit,
+            new.unit,
+            was.unit
+        )));
+    }
+    if keeps_value {
+        new.value = was.value.clone();
+    }
+    if keeps_range {
+        (new.lower, new.upper) = (was.lower.clone(), was.upper.clone());
+    }
+    for (n, w) in [
+        (&mut new.symbol, &was.symbol),
+        (&mut new.range_reason, &was.range_reason),
+        (&mut new.says, &was.says),
+    ] {
+        if none(n) {
+            *n = w.clone();
+        }
+    }
+    Ok(new)
+}
+
 pub(crate) fn port_ok(p: &Port, block: &str) -> Result<(), Error> {
     if !valid_id(&p.name) {
         return Err(refused(format!(
@@ -978,6 +1020,22 @@ pub(crate) fn port_ok(p: &Port, block: &str) -> Result<(), Error> {
             ))
         })?;
     }
+    // A number's value and ends are numbers: what is not one is refused by
+    // name, never read as nothing.
+    if p.port_type == "number" || p.port_type == "integer" {
+        for (what, v) in [
+            ("value", &p.value),
+            ("lower end", &p.lower),
+            ("upper end", &p.upper),
+        ] {
+            if !v.trim().is_empty() && !v.trim().parse::<f64>().is_ok_and(f64::is_finite) {
+                return Err(refused(format!(
+                    "{block}'s port {} has the {what} {:?}, which is not a number",
+                    p.name, v
+                )));
+            }
+        }
+    }
     let num = |v: &str| v.trim().parse::<f64>().ok();
     if let (Some(lo), Some(hi)) = (num(&p.lower), num(&p.upper)) {
         if lo > hi {
@@ -986,8 +1044,64 @@ pub(crate) fn port_ok(p: &Port, block: &str) -> Result<(), Error> {
                 p.name
             )));
         }
+        if let Some(v) = num(&p.value).filter(|v| *v < lo || *v > hi) {
+            return Err(refused(format!(
+                "{block}'s port {} has the value {v}, outside its range {lo} to {hi}: a value lies in its range",
+                p.name
+            )));
+        }
     }
     Ok(())
+}
+
+/// A unit as a port holds it, read as its factor to SI and its dimension: a
+/// symbol or any unit the method language reads, or a design's machine name
+/// (`Kilogram`). Empty is a pure number; `None` is a unit that does not read.
+pub(crate) fn unit_read(unit: &str) -> Option<(f64, vleo_units::unit::Dim)> {
+    let u = unit.trim();
+    if u.is_empty() {
+        return Some((1.0, vleo_units::unit::Dim::NONE));
+    }
+    if let Some(n) = vleo_units::Unit::from_name(u) {
+        return Some((n.si_factor(), n.dim()));
+    }
+    m::parse_unit(u).ok()
+}
+
+/// `port` given an amount as a person typed it (docs/briefs/F8.md, F8-a,
+/// item 7): read by `amount::read` in the port's unit, when it says one, and
+/// written as typed, its unit and its numbers, never converted. A value is
+/// the port's value; a range its two ends; a spread's nominal its value and
+/// its ends its range (question 67). An allocation is a value or a range, so
+/// from a spread it takes the range, and says so. What the amount is, said
+/// back, is given beside the port.
+pub fn with_amount(port: &Port, typed: &str, allocation: bool) -> Result<(Port, String), Error> {
+    let a = m::amount::read(typed, &port.unit)
+        .map_err(|why| refused(format!("{}'s amount {:?}: {why}", port.name, typed.trim())))?;
+    let mut p = port.clone();
+    // A pure number is written as the port says one, empty or `1`.
+    if a.unit != "1" {
+        p.unit = a.unit.clone();
+    }
+    let end = |e: &Option<String>| e.clone().unwrap_or_default();
+    let mut said = a.said.clone();
+    match a.shape {
+        m::amount::Shape::Value => p.value = end(&a.nominal),
+        m::amount::Shape::Range => (p.lower, p.upper) = (end(&a.lower), end(&a.upper)),
+        m::amount::Shape::Spread => {
+            (p.lower, p.upper) = (end(&a.lower), end(&a.upper));
+            if allocation {
+                p.value.clear();
+                said.push_str(&format!(
+                    ". An allocation is a value or a range: it takes the range, {} to {} {}, and not the nominal",
+                    p.lower, p.upper, a.unit
+                ));
+            } else {
+                p.value = end(&a.nominal);
+            }
+        }
+    }
+    Ok((p, said))
 }
 
 /// Whether a node's children reproduce its own cases.
