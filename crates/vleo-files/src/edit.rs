@@ -44,7 +44,7 @@
 use crate::checks::{self, Findings};
 use crate::csv;
 use crate::error::{Error, ErrorKind};
-use crate::model::{File, Tbl, Text};
+use crate::model::{File, Port, Tbl, Text};
 use crate::save::{self, Saved};
 use std::path::Path;
 use vleo_sheet::template::Derisk;
@@ -151,6 +151,20 @@ pub enum Edit {
     Method(String),
     /// The cases, as `results/isolation.csv`'s text.
     Cases(String),
+    /// A formula as the person types it (F8-a3), written as the method text
+    /// [`formula_of`] makes of it, and held to everything a method is.
+    Formula(Formula),
+}
+
+/// A formula as a person types it (docs/briefs/F8.md, F8-a items 3 and 4):
+/// `typed`, `NAME = EXPR`, a bare expression, or lines whose last is the
+/// answer; and, for an empirical fit, the unit each input is read in and the
+/// answer's, as the person names them (question 69). The program never
+/// chooses a unit.
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct Formula {
+    pub typed: String,
+    pub fit: Option<vleo_sheet::method::formula::Fit>,
 }
 
 impl Edit {
@@ -159,7 +173,7 @@ impl Edit {
         match self {
             Edit::Question(_) => "question",
             Edit::Explain(p, _) => p.field(),
-            Edit::Method(_) => "method_text",
+            Edit::Method(_) | Edit::Formula(_) => "method_text",
             Edit::Cases(_) => "case",
         }
     }
@@ -342,6 +356,91 @@ fn origins_refused(csv_text: &str) -> Result<(), String> {
     }
 }
 
+/// A formula typed for node `uid` of `f`, read against the node's own ports
+/// (`checks::node_signature`): its inputs found by name, else by symbol, its
+/// answer the node's first output, and the method text it becomes, checked
+/// by `compile` (`vleo_sheet::method::formula::read`). Nothing is written
+/// and nothing runs: what the cases say of it is the dry run's. Refused by
+/// name when the node's ports give no signature.
+pub fn formula_of(
+    f: &File,
+    uid: &str,
+    fm: &Formula,
+) -> Result<vleo_sheet::method::formula::Read, Error> {
+    use vleo_sheet::method::formula;
+    let b = f
+        .blocks
+        .iter()
+        .find(|b| b.uid == uid)
+        .ok_or_else(|| refused(format!("no node {uid:?} is in the file")))?;
+    let typed = fm.typed.replace('\r', "");
+    if typed.trim().is_empty() {
+        return Err(refused(format!(
+            "{}'s formula is empty: type it as NAME = EXPR, as D = 0.5 * rho * v^2 * Cd * A",
+            b.id
+        )));
+    }
+    let mut findings = Findings::default();
+    let sig = checks::node_signature(f, b, &mut findings);
+    let bad: Vec<String> = findings.errors().map(|x| x.what.clone()).collect();
+    let sig = match sig {
+        Some(sig) if bad.is_empty() => sig,
+        _ => {
+            return Err(refused(format!(
+                "{}'s formula is not read, for its ports give no method signature: {}",
+                b.id,
+                bad.join("; ")
+            )))
+        }
+    };
+    // A formula answers one output. A node that publishes values beside its
+    // answer, by its ports or by its cases' columns, is written as a method
+    // (the brief's "Not in F8-a"), and never read here as one that does not.
+    let published: Vec<String> = sig
+        .publishes
+        .iter()
+        .map(|(n, _)| n.clone())
+        .chain(
+            f.tables
+                .iter()
+                .filter(|t| t.scope == uid && t.path == "results/isolation.csv")
+                .flat_map(|t| {
+                    t.csv
+                        .lines()
+                        .next()
+                        .unwrap_or("")
+                        .split(',')
+                        .map(str::to_string)
+                        .collect::<Vec<_>>()
+                })
+                .filter_map(|h| {
+                    h.trim()
+                        .strip_prefix("answer.")
+                        .map(|m| m.split(' ').next().unwrap_or("").to_string())
+                }),
+        )
+        .collect();
+    if !published.is_empty() {
+        return Err(refused(format!(
+            "{}'s formula is not read: it publishes {} beside its answer, and a formula answers one output, so a method with several values is written as a method",
+            b.id,
+            published.join(", ")
+        )));
+    }
+    let port = |p: &Port| formula::Port {
+        name: p.name.clone(),
+        symbol: p.symbol.trim().to_string(),
+        unit: p.unit.trim().to_string(),
+    };
+    let ours = || f.ports.iter().filter(|p| p.block_uid == uid);
+    let ins: Vec<formula::Port> = ours().filter(|p| p.direction == "in").map(port).collect();
+    let output = ours()
+        .find(|p| p.direction == "out")
+        .map(port)
+        .expect("a signature has an output");
+    Ok(formula::read(&typed, &sig, &ins, &output, fm.fit.as_ref()))
+}
+
 /// The edits' content laid on `now`, before the declaration and the record
 /// are asked for: what a dry run shows while either is still missing.
 fn content(now: &File, uid: &str, id: &str, e: &Edits) -> Result<File, Error> {
@@ -357,6 +456,13 @@ fn content(now: &File, uid: &str, id: &str, e: &Edits) -> Result<File, Error> {
     if e.edits.is_empty() {
         return Err(refused(format!(
             "nothing is written to {id}: no part of it is given"
+        )));
+    }
+    if e.edits.iter().any(|x| matches!(x, Edit::Method(_)))
+        && e.edits.iter().any(|x| matches!(x, Edit::Formula(_)))
+    {
+        return Err(refused(format!(
+            "{id} is given a method and a formula, both: a formula becomes its method, so give one"
         )));
     }
     let spec = crate::folder::Spec::carried()?;
@@ -431,6 +537,55 @@ fn content(now: &File, uid: &str, id: &str, e: &Edits) -> Result<File, Error> {
                         kind: "pseudocode".into(),
                         body,
                     }),
+                }
+            }
+            Edit::Formula(fm) => {
+                let r = formula_of(&out, uid, fm)?;
+                let text = match (r.ok(), &r.method) {
+                    (true, Some(text)) => text,
+                    _ => {
+                        return Err(refused(format!(
+                            "{id}'s formula is not written: {}",
+                            r.diags
+                                .iter()
+                                .filter(|d| d.severity == vleo_sheet::method::Severity::Error)
+                                .map(|d| if d.line == 0 {
+                                    d.msg.clone()
+                                } else {
+                                    format!("line {}: {}", d.line, d.msg)
+                                })
+                                .collect::<Vec<_>>()
+                                .join("; ")
+                        )))
+                    }
+                };
+                let body = format!("{}\n", text.trim_end_matches('\n'));
+                // The method's own text, as every method edit writes it; and,
+                // while one node shape is not picked (F3-g0), design/'s
+                // `method` with the same body when the file holds one, so the
+                // checks and the engine read one method (question 58). No node
+                // written here holds one today: design/'s nodes hold a sheet,
+                // and are refused above. The write is for a node brought to
+                // the release's shape before F3-g0; the checks' refusal of two
+                // bodies that differ is what holds now.
+                match out
+                    .texts
+                    .iter_mut()
+                    .find(|t| t.scope == uid && t.kind == "pseudocode")
+                {
+                    Some(t) => t.body = body.clone(),
+                    None => out.texts.push(Text {
+                        scope: uid.to_string(),
+                        kind: "pseudocode".into(),
+                        body: body.clone(),
+                    }),
+                }
+                for t in out
+                    .texts
+                    .iter_mut()
+                    .filter(|t| t.scope == uid && t.kind == "method")
+                {
+                    t.body = body.clone();
                 }
             }
             Edit::Cases(text) => {

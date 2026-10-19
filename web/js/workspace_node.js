@@ -71,6 +71,8 @@ const FIELDS = [
   ['case_csv', c => c.case_csv],
 ];
 const DECLARED = ['author', 'ai', 'source', 'checked_by'];
+/** A formula as typed, and its empirical fit's units (F8-a3). */
+const FORMULA = ['formula', 'formula.units', 'formula.answer'];
 const WHY = [
   ['believed', 'what was believed'], ['tested', 'how it was tested'], ['learned', 'what was learned'],
   ['changed', 'what changed'], ['rests_on', 'what it rests on'], ['breaks_if', 'what would break it'],
@@ -193,6 +195,8 @@ async function draw(keep) {
       '</section>' +
       '<aside class="nw-right">' + yourFile(id, file) + '</aside>' +
     '</div>';
+  // A formula's reading, still the typing's, survives the page drawn again.
+  if (W.formula) drawFormula(W.formula);
   if (row) {
     whatIf();
     mountParts($('.nw-parts', host), id);
@@ -406,12 +410,16 @@ function rebaseOn(e, f) {
 /** What is to be sent: each part the person touched, when it differs from the
  *  file it began on; the declaration with a method or cases; the record when
  *  any of it is written. */
-function changes() {
+function changes(forSave) {
   const e = W.editing;
   if (!e) return {};
   const out = {};
   for (const [k] of FIELDS) if (e.touched.has(k) && e.vals[k] !== e.base[k]) out[k] = e.vals[k];
-  if ('method_text' in out || 'case_csv' in out) for (const k of DECLARED) out['declared.' + k] = e.vals['declared.' + k];
+  // A formula typed is sent to be read, with its fit's units, and its method
+  // shown: it is saved only as the method it became, used as its method and
+  // seen there (F8-a3), never from the formula box.
+  if (!forSave && (e.vals.formula || '').trim()) for (const k of FORMULA) out[k] = e.vals[k] || '';
+  if ('method_text' in out || 'case_csv' in out || 'formula' in out) for (const k of DECLARED) out['declared.' + k] = e.vals['declared.' + k];
   if (WHY.some(([k]) => (e.vals['why.' + k] || '').trim())) for (const [k] of WHY) out['why.' + k] = e.vals['why.' + k];
   return out;
 }
@@ -440,13 +448,21 @@ function writeIt(f) {
     '<p><label>said simply<br>' + area('explain_simply', 3) + '</label></p>' +
     '<p><label>where it breaks<br>' + area('explain_breaks', 3) + '</label></p>' +
     '<p><label>the common misreading<br>' + area('explain_wrong', 3) + '</label></p>' +
+    '<fieldset class="nw-formula"><legend>type a formula</legend>' +
+      '<p class="muted">As you would write it, <code>D = 0.5 * rho * v^2 * Cd * A</code>: each name it reads is one of its ' +
+      'inputs, by the port\'s name or its symbol, and it becomes its method, checked on its cases. Nothing is saved until ' +
+      'you use it as its method and save.</p>' + area('formula', 2, 'nw-code') +
+      '<details' + ((e.vals['formula.units'] || e.vals['formula.answer']) ? ' open' : '') + '><summary>an empirical fit: the units its numbers are in</summary>' +
+        '<label>each input\'s unit, one <code>name=unit</code> a line<br>' + area('formula.units', 2, 'nw-code') + '</label>' +
+        '<label>its answer\'s unit <input data-edit="formula.answer" value="' + v('formula.answer') + '"></label></details>' +
+      '<div class="nw-formula-read" aria-live="polite"></div></fieldset>' +
     '<p><label>its method<br>' + area('method_text', 10, 'nw-code') + '</label></p>' +
     '<p><label>its cases (results/isolation.csv)<br>' + area('case_csv', 6, 'nw-code') + '</label></p>' +
     '<fieldset class="nw-declared"><legend>who made the method and its numbers</legend>' +
       '<label>author <input data-edit="declared.author" value="' + v('declared.author') + '"></label> ' +
       '<label>an assistant helped <select data-edit="declared.ai" class="ctl">' +
         [['', 'say which'], ['none', 'not at all'], ['wording', 'with the wording'], ['transcribed', 'it was transcribed'], ['relation', 'it supplied the relation']]
-          .map(([o, l]) => '<option value="' + o + '"' + ((e['declared.ai'] || '') === o ? ' selected' : '') + '>' + l + '</option>').join('') +
+          .map(([o, l]) => '<option value="' + o + '"' + ((e.vals['declared.ai'] || '') === o ? ' selected' : '') + '>' + l + '</option>').join('') +
       '</select></label> ' +
       '<label>source <input data-edit="declared.source" value="' + v('declared.source') + '"></label> ' +
       '<label>checked by <input data-edit="declared.checked_by" value="' + v('declared.checked_by') + '"></label></fieldset>' +
@@ -456,8 +472,34 @@ function writeIt(f) {
     '<p><button class="ctl" id="nw-save">Save as the next revision</button></p>';
 }
 
+/** What a formula typed was read as, drawn above its method: each input found
+ *  by name or symbol with its unit, or missing with a near name offered; each
+ *  spelling written back; the method it becomes; and every finding by line.
+ *  Each case agreeing or not is the dry run's, drawn below. */
+function drawFormula(f) {
+  const at = $('.nw-formula-read', W.host);
+  W.formula = f || null;
+  if (!at) return;
+  if (!f) { at.innerHTML = ''; return; }
+  const input = x => '<li class="' + (x.found === 'missing' ? 'nw-error' : '') + '">' + esc(x.name) + ': ' + esc(x.found === 'missing'
+    ? 'no input of this node' + (x.offered ? ', did you mean ' + x.offered + '?' : '')
+    : (x.found === 'symbol' ? 'the symbol of ' : '') + x.port + (x.unit ? ', in ' + x.unit : '')) + '</li>';
+  const missing = f.inputs.some(x => x.found === 'missing');
+  at.innerHTML =
+    (f.inputs.length ? '<ul class="nw-list nw-formula-inputs">' + f.inputs.map(input).join('') + '</ul>' : '') +
+    (f.rewrites.length ? '<p class="muted nw-formula-rewrites">' + esc(f.rewrites.join('; ') + '.') + '</p>' : '') +
+    (f.note ? '<p class="muted">' + esc(f.note) + '</p>' : '') +
+    (f.diags.length ? '<ul class="nw-list nw-formula-diags">' + f.diags.map(d => '<li class="nw-' + esc(d.severity) + '">' +
+      esc((d.line ? 'line ' + d.line + ': ' : '') + d.msg) + '</li>').join('') + '</ul>' : '') +
+    (f.method ? '<p class="muted">the method it becomes</p><pre class="nw-code nw-formula-method">' + esc(f.method) + '</pre>' : '') +
+    '<p>' + (f.ok ? '<button class="ctl" id="nw-use-formula">Use it as the method</button> ' : '') +
+      '<button class="ctl" id="nw-clear-formula">Clear the formula</button></p>' +
+    (missing ? '<p><button class="ctl" id="nw-ask-inputs">Ask for these inputs</button> a contract change, drafted for you to change</p>' : '');
+}
+
 /** The program's answer to a dry run, drawn into the live part alone. */
 function drawLive(r) {
+  drawFormula(r && r.formula);
   const at = $('.nw-live', W.host);
   if (!at) return;
   if (!r || r.conflict) {
@@ -498,9 +540,11 @@ function typed(e) {
   if (!k || !ed) return;
   ed.vals[k] = e.target.value;
   ed.touched.add(k);
+  // A reading of older typing is no longer this typing's: it is not offered.
+  if (FORMULA.includes(k)) drawFormula(null);
   // A method or cases written anew are somebody's anew: who wrote, copied
   // and checked the old ones is not carried over to them.
-  if ((k === 'method_text' || k === 'case_csv') && ed.vals[k] !== ed.base[k]) {
+  if ((k === 'method_text' || k === 'case_csv' || k === 'formula') && ed.vals[k] !== (ed.base[k] || '')) {
     for (const d of ['author', 'source', 'checked_by']) {
       const f = 'declared.' + d;
       if (ed.touched.has(f) || !ed.vals[f]) continue;
@@ -577,15 +621,68 @@ async function click(e) {
     }
     case 'nw-save': {
       const id = W.id;
+      // A formula is saved as the method it became, seen in its method:
+      // one still in its box is used or cleared first, never saved unseen.
+      if (W.editing && (W.editing.vals.formula || '').trim()) {
+        W.notice = { ok: false, text: 'A formula is typed and not used: use it as the method, and see it there, or clear it, then save.' };
+        return draw(true);
+      }
       clearTimeout(W.timer); W.seq++;
       // Saved over the revision the typing began on: a file changed since is
       // a second writer, never written over.
       const r = await W.post('/v1/node/' + encodeURIComponent(id) + '/edit',
-        { opened: W.editing ? W.editing.opened : opened, ...changes() });
+        { opened: W.editing ? W.editing.opened : opened, ...changes(true) });
       // Taken: what the file now says is shown. Refused, or a second writer:
       // what was typed is kept.
       if (r && r.ok && r.written && id === W.id) W.editing = null;
       return said(id, r, 'the node was not saved');
+    }
+    case 'nw-use-formula': {
+      // The method it became goes into its method, as typed there; the
+      // formula is cleared, and the method is checked as any is.
+      const ed = W.editing;
+      if (!ed || !W.formula || !W.formula.method || W.formula.typed !== (ed.vals.formula || '').replace(/\r/g, '')) return;
+      ed.vals.method_text = W.formula.method;
+      ed.touched.add('method_text');
+      for (const k of FORMULA) {
+        ed.vals[k] = '';
+        const input = $('[data-edit="' + k + '"]', W.host);
+        if (input) input.value = '';
+      }
+      const m = $('[data-edit="method_text"]', W.host);
+      if (m) m.value = ed.vals.method_text;
+      W.formula = null;
+      drawFormula(null);
+      W.seq++;
+      return check();
+    }
+    case 'nw-clear-formula': {
+      const ed = W.editing;
+      if (!ed) return;
+      for (const k of FORMULA) {
+        ed.vals[k] = '';
+        const input = $('[data-edit="' + k + '"]', W.host);
+        if (input) input.value = '';
+      }
+      drawFormula(null);
+      W.seq++;
+      return check();
+    }
+    case 'nw-ask-inputs': {
+      // Drafted from what the formula reads and the node has not got, for the
+      // person to change before asking: a port is a contract change.
+      const f = W.formula;
+      if (!f) return;
+      const missing = f.inputs.filter(x => x.found === 'missing').map(x => x.name);
+      W.asking = {
+        kind: 'contract',
+        body: 'Inputs for ' + W.id + ': ' + missing.join(', ') + ', each with its unit. Its formula, ' + f.typed.trim() +
+          ', reads ' + (missing.length === 1 ? 'it' : 'them') + ', and the node has no port of that name or symbol.',
+      };
+      await draw(true);
+      const body = $('#nw-ask-body', W.host);
+      if (body) body.focus();
+      return;
     }
     case 'nw-sign': {
       const id = W.id;
