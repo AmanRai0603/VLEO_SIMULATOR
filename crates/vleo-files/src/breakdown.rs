@@ -350,13 +350,10 @@ fn rows_text(blocks: &[&Block], ports: &[&Port], wires: &[&Wire]) -> String {
     o
 }
 
-/// The group file `group` with `edit` made, as `by` with `key` at `at`,
-/// saying `why`; signed afresh by `by` and opened again through the chain
-/// as it will be read (`open`), or refused with nothing given back. `nodes`
-/// are the branch's node files; `elsewhere`, every other file of the
-/// database, so a block another group reads is never renamed or removed
-/// under it. `mounted_by` is the file that mounts the group, `programme` the
-/// programme's file. A breakdown's verdict comes back beside the file.
+/// The group file `group` with `edit` made, as [`edited`] makes it: for
+/// every edit but an issue, which makes a node file beside the group file
+/// and is made with [`edited`] alone, so its block's rows are never given
+/// back in no file.
 #[allow(clippy::too_many_arguments)]
 pub fn edit(
     group: &File,
@@ -370,6 +367,47 @@ pub fn edit(
     mounted_by: &Registry,
     programme: &Registry,
 ) -> Result<(File, Option<Reproduced>), Error> {
+    if let Edit::Issue { .. } = edit {
+        return Err(refused(
+            "an issue makes a node file beside the group file: it is made with `edited`, which gives both back",
+        ));
+    }
+    let e = edited(
+        group, nodes, elsewhere, edit, why, by, key, at, mounted_by, programme,
+    )?;
+    Ok((e.group, e.reproduced))
+}
+
+/// What one edit made: the group file, the node file an issue makes beside
+/// it, and a breakdown's verdict.
+#[derive(Debug)]
+pub struct Edited {
+    pub group: File,
+    pub node: Option<File>,
+    pub reproduced: Option<Reproduced>,
+}
+
+/// The group file `group` with `edit` made, as `by` with `key` at `at`,
+/// saying `why`; signed afresh by `by` and opened again through the chain
+/// as it will be read (`open`), or refused with nothing given back. `nodes`
+/// are the branch's node files; `elsewhere`, every other file of the
+/// database, so a block another group reads is never renamed or removed
+/// under it. `mounted_by` is the file that mounts the group, `programme` the
+/// programme's file. An issue's node file and a breakdown's verdict come
+/// back beside the group file.
+#[allow(clippy::too_many_arguments)]
+pub fn edited(
+    group: &File,
+    nodes: &[File],
+    elsewhere: &[File],
+    edit: &Edit,
+    why: &str,
+    by: &str,
+    key: &SigningKey,
+    at: &str,
+    mounted_by: &Registry,
+    programme: &Registry,
+) -> Result<Edited, Error> {
     if group.kind()? != Kind::Group {
         return Err(Error::new(
             ErrorKind::WrongKind,
@@ -410,6 +448,18 @@ pub fn edit(
             )));
         }
     }
+    // A block's rows are in one file. In both, an issue was cut off between
+    // its two writes: the node file was written and the group file not.
+    for f in nodes {
+        for b in &f.blocks {
+            if group.blocks.iter().any(|g| g.uid == b.uid) {
+                return Err(refused(format!(
+                    "{} is in both {id}'s group file and its own node file, nodes/{}.vnode: an issue was cut off after the node file was written. Remove that node file, then issue it again",
+                    b.id, b.id
+                )));
+            }
+        }
+    }
     let branch = Branch::new(group, nodes);
     let mut out = group.clone();
     let (scope, before, verdict) = apply(&branch, elsewhere, edit, &mut out, &registry)?;
@@ -424,8 +474,11 @@ pub fn edit(
         after.push_str(&assigned(&out, block));
     }
     // An issue's rows are in the node file it makes, not the group file.
-    if let Edit::Issue { block, behaviour } = edit {
-        let n = issued(group, block, behaviour)?;
+    let node = match edit {
+        Edit::Issue { block, behaviour } => Some(issued(group, block, behaviour)?),
+        _ => None,
+    };
+    if let Some(n) = &node {
         after.push_str(&format!(
             "issued to nodes/{}.vnode, written by {} at contract {}\n",
             n.blocks[0].id,
@@ -461,7 +514,11 @@ pub fn edit(
             e.message()
         ))
     })?;
-    Ok((out, verdict))
+    Ok(Edited {
+        group: out,
+        node,
+        reproduced: verdict,
+    })
 }
 
 /// The rows of `scope` in `branch` as text: its block, its ports and the
@@ -505,7 +562,7 @@ pub fn issued(group: &File, block: &str, behaviour: &str) -> Result<File, Error>
         .get("written_by_app")
         .cloned()
         .unwrap_or_default();
-    let mut n = File::new(Kind::Node, &app);
+    let mut n = block_rows(group, block, &app);
     for (k, v) in [
         ("group_id", id.as_str()),
         ("block_uid", block),
@@ -515,61 +572,51 @@ pub fn issued(group: &File, block: &str, behaviour: &str) -> Result<File, Error>
     ] {
         n.meta.insert(k.into(), v.to_string());
     }
-    let mut nb = b.clone();
+    let nb = &mut n.blocks[0];
     nb.behaviour = behaviour.to_string();
     nb.revision = 1;
     nb.contract_version = a.contract_version;
-    n.blocks = vec![nb];
-    let mine = |x: &str| x == block;
-    n.ports = group
-        .ports
-        .iter()
-        .filter(|r| mine(&r.block_uid))
-        .cloned()
-        .collect();
-    n.wires = group
-        .wires
-        .iter()
-        .filter(|r| mine(&r.to_block))
-        .cloned()
-        .collect();
-    n.closures = group
-        .closures
-        .iter()
-        .filter(|r| mine(&r.block_uid))
-        .cloned()
-        .collect();
-    n.loops = group
-        .loops
-        .iter()
-        .filter(|r| mine(&r.block_uid))
-        .cloned()
-        .collect();
-    n.cases = group
-        .cases
-        .iter()
-        .filter(|r| mine(&r.block_uid))
-        .cloned()
-        .collect();
-    n.texts = group
-        .texts
-        .iter()
-        .filter(|r| mine(&r.scope))
-        .cloned()
-        .collect();
-    n.tables = group
-        .tables
-        .iter()
-        .filter(|r| mine(&r.scope))
-        .cloned()
-        .collect();
-    n.media = group
-        .media
-        .iter()
-        .filter(|r| mine(&r.scope))
-        .cloned()
-        .collect();
     Ok(n)
+}
+
+/// Every row of the block `block` in `group`, as a node file holds them:
+/// the block, its ports, the wires into it, its closures, loops, cases,
+/// texts, tables, media, comments and requests. The one list of what an
+/// issue moves.
+fn block_rows(group: &File, block: &str, app: &str) -> File {
+    let mut n = File::new(Kind::Node, app);
+    let mine = |x: &str| x == block;
+    macro_rules! take {
+        ($t:ident, $k:ident) => {
+            n.$t = group.$t.iter().filter(|r| mine(&r.$k)).cloned().collect();
+        };
+    }
+    take!(blocks, uid);
+    take!(ports, block_uid);
+    take!(wires, to_block);
+    take!(closures, block_uid);
+    take!(loops, block_uid);
+    take!(cases, block_uid);
+    take!(texts, scope);
+    take!(tables, scope);
+    take!(media, scope);
+    take!(comments, scope);
+    take!(requests, scope);
+    n
+}
+
+/// Every row of `f` as text, table by table, its meta aside.
+fn held_text(f: &File) -> String {
+    let mut o = String::new();
+    for t in f.to_tables() {
+        if t.name == "meta" {
+            continue;
+        }
+        for r in &t.rows {
+            o.push_str(&format!("{} {:?}\n", t.name, r));
+        }
+    }
+    o
 }
 
 /// Whether the block `from` reads, through the branch's wires from outputs
@@ -1220,7 +1267,22 @@ fn apply(
                     b.id
                 )));
             }
-            let before = touched(branch, block);
+            // Issued once it is decided: what it answers, its ports' types
+            // and states. Its behaviour is what the issue decides.
+            let open: Vec<String> = branch
+                .open_parts(block)
+                .into_iter()
+                .filter(|p| p != "its behaviour")
+                .collect();
+            if !open.is_empty() {
+                return Err(refused(format!(
+                    "{} is not decided enough to issue: {} still open",
+                    b.id,
+                    open.join(", ")
+                )));
+            }
+            // Every row it moves, as the group file held it.
+            let before = held_text(&block_rows(out, block, ""));
             let mine = |x: &str| x == block.as_str();
             out.blocks.retain(|r| !mine(&r.uid));
             out.ports.retain(|r| !mine(&r.block_uid));
@@ -1231,6 +1293,8 @@ fn apply(
             out.texts.retain(|r| !mine(&r.scope));
             out.tables.retain(|r| !mine(&r.scope));
             out.media.retain(|r| !mine(&r.scope));
+            out.comments.retain(|r| !mine(&r.scope));
+            out.requests.retain(|r| !mine(&r.scope));
             Ok((block.clone(), before, None))
         }
         Edit::Remove { block } => {
@@ -1992,15 +2056,15 @@ pub fn edit_in_place(
             elsewhere.push(f);
         }
     }
-    let (mut out, reproduced) = edit(
+    let made = edited(
         &group, &nodes, &elsewhere, e, why, by, key, at, mounted_by, programme,
     )?;
+    let (mut out, reproduced) = (made.group, made.reproduced);
     out.meta.insert("written_by_app".into(), app.to_string());
     // An issue makes the node's own file beside the group file, and never
     // writes over one there.
-    let node = match e {
-        Edit::Issue { block, behaviour } => {
-            let mut n = issued(&group, block, behaviour)?;
+    let node = match made.node {
+        Some(mut n) => {
             n.meta.insert("written_by_app".into(), app.to_string());
             let at = copy
                 .join("groups")
@@ -2015,7 +2079,7 @@ pub fn edit_in_place(
             }
             Some((n, at))
         }
-        _ => None,
+        None => None,
     };
     // The one comparison, as late as can be before the write.
     let again = std::fs::read(&at_file)
@@ -2037,8 +2101,19 @@ pub fn edit_in_place(
     let written = match crate::sqlite::written(&out, &at_file) {
         Ok(w) => w,
         Err(err) => {
+            // The node file written first goes with it, or the person is
+            // told which file to remove before anything is framed again.
             if let Some((_, at)) = &node {
-                let _ = std::fs::remove_file(at);
+                if let Err(gone) = std::fs::remove_file(at) {
+                    return Err(Error::new(
+                        err.kind(),
+                        format!(
+                            "{}; and {}, written first, could not be removed ({gone}): remove it before issuing again",
+                            err.message(),
+                            at.strip_prefix(copy).unwrap_or(at).display()
+                        ),
+                    ));
+                }
             }
             return Err(err);
         }
