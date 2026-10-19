@@ -321,6 +321,10 @@ fn a_release_of_the_one_schema_whose_seal_does_not_check_is_refused_by_name() {
         .find(|t| t.scope == UID && t.kind == "explain.simply")
         .unwrap();
     t.body.push_str(" And changed after the seal.");
+    // Its fingerprint made to agree with what it now holds: only the seal
+    // tells.
+    let fingerprint = vleo_files::chain::digest(&f, FILE).unwrap();
+    f.meta.insert(s("fingerprint"), fingerprint);
     sqlite::write(&f, &drive.join(&rel)).unwrap();
     let t = today(&drive);
     let g = t.groups.iter().find(|g| g.id == "l3_solar").unwrap();
@@ -545,10 +549,6 @@ fn who_sealed_it_and_when_are_its_seal_s_never_its_unsigned_meta() {
     for (k, v) in [
         ("sealed_by", "Test Pat"),
         ("sealed_at", "2000-01-01T00:00:00Z"),
-        (
-            "fingerprint",
-            "0000000000000000000000000000000000000000000000000000000000000000",
-        ),
     ] {
         f.meta.insert(s(k), s(v));
     }
@@ -563,6 +563,29 @@ fn who_sealed_it_and_when_are_its_seal_s_never_its_unsigned_meta() {
         ),
         ("Test Ola", AT, fingerprint.as_str())
     );
+    let _ = std::fs::remove_dir_all(drive.parent().unwrap());
+}
+
+#[test]
+fn a_release_is_known_only_by_the_fingerprint_of_what_it_holds() {
+    let (drive, copy) = world("relabelled");
+    let rel = sealed_and_put_back(&drive, &copy);
+    let held = sqlite::read(&drive.join(&rel)).unwrap();
+    // Its seal does not cover its fingerprint: relabelled, or with none, the
+    // seal still holds, and it is refused all the same.
+    for (label, says) in [
+        (
+            "0000000000000000000000000000000000000000000000000000000000000000",
+            "its fingerprint is 0000",
+        ),
+        ("", "says no fingerprint"),
+    ] {
+        let mut f = held.clone();
+        f.meta.insert(s("fingerprint"), s(label));
+        sqlite::write(&f, &drive.join(&rel)).unwrap();
+        let why = refused_why(&today(&drive));
+        assert!(why.contains(says), "{label:?}: {why}");
+    }
     let _ = std::fs::remove_dir_all(drive.parent().unwrap());
 }
 

@@ -714,7 +714,8 @@ fn the_system_engineer_releases_the_design_and_it_goes_back_to_the_drive() {
         "{i}"
     );
     // Solar's release changed on the drive since the tool opened: read
-    // again, its seal does not check, and nothing of it is held.
+    // again, what it holds is not what its fingerprint says (B's cb7ab7da
+    // asks this before its seal), and nothing of it is held.
     let rel = drive.join("groups/l3_solar/releases/l3_solar-1.0.vleo");
     let mut f = sqlite::read(&rel).unwrap();
     f.texts
@@ -726,7 +727,8 @@ fn the_system_engineer_releases_the_design_and_it_goes_back_to_the_drive() {
     sqlite::write(&f, &rel).unwrap();
     let i = checks();
     assert!(
-        i.contains("l3_solar 1.0 is not read again from the drive: its seal does not check through the chain"),
+        i.contains("l3_solar 1.0 is not read again from the drive: its fingerprint is")
+            && i.contains("a release is never relabelled"),
         "{i}"
     );
     let _ = std::fs::remove_dir_all(&scratch);
