@@ -199,6 +199,14 @@ function edits(b, children, outs) {
       '<input class="sy-bd-port" size="16" placeholder="its output" value="' + esc(o.name) + '"></p>').join('') +
       '<p><button class="ctl" id="sy-break-down">Break down</button></p>';
   }
+  if (!inGroup && !b.archived && !b.mount) {
+    // A contract changes in the group file and issues the node's file again;
+    // it reads behind until its node engineer signs it again (W4).
+    h += '<p><b>change its contract</b> a port <select id="sy-c-dir" class="ctl">' + opt('out') + opt('in') + '</select> ' +
+      '<input id="sy-c-name" size="16" placeholder="its name, or none"> <input id="sy-c-type" size="8" placeholder="type" value="number"> ' +
+      '<input id="sy-c-unit" size="6" placeholder="unit"> <input id="sy-c-lo" size="5" placeholder="from"> <input id="sy-c-hi" size="5" placeholder="to"> ' +
+      '<button class="ctl" id="sy-contract">Change contract</button></p>';
+  }
   if (b.answers.length) h += '<p><button class="ctl" id="sy-fold-back">Fold back</button> its estimate answers again; its children stay.</p>';
   // A node is assigned to one node engineer its group registers; a heading is nobody's.
   if (!b.archived && !b.mount && !(inGroup && b.read_as === 'children')) {
@@ -272,6 +280,10 @@ async function click(e) {
     case 'sy-rename': return send('rename', { block: b, id: v('sy-rn-id').trim() });
     case 'sy-split': return send('split', { block: b, id: v('sy-sp-id').trim(), ports: v('sy-sp-ports') });
     case 'sy-remove': return send('remove', { block: b });
+    case 'sy-contract': return send('contract', {
+      node: b, direction: v('sy-c-dir'), name: v('sy-c-name').trim(), type: v('sy-c-type').trim(),
+      unit: v('sy-c-unit').trim(), lower: v('sy-c-lo').trim(), upper: v('sy-c-hi').trim(), state: 'decided',
+    });
     case 'sy-sheet-go': return send('sheet', { sheet: v('sy-sheet') });
     case 'sy-issue': return send('issue', { block: b, behaviour: v('sy-is-behaviour') });
     case 'sy-assign': return send('assign', { block: b, person: v('sy-as-person').trim() });

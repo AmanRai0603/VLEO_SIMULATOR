@@ -106,6 +106,16 @@ pub enum Edit {
     /// to, as a `method` or a `stated` node: its rows leave the group file
     /// for that file ([`issued`]) (F5).
     Issue { block: String, behaviour: String },
+    /// An issued node's contract changed by its branch's owner (W4): its
+    /// assignment's contract rises, every node that reads it is named, and
+    /// its file is issued again at the new contract with `port` in place of
+    /// its port of that direction and name, its content kept ([`contracted`]).
+    /// Its node engineer's signature no longer counts: it reads behind until
+    /// they sign it again (F5).
+    Contract {
+        node: String,
+        port: Option<Box<Port>>,
+    },
     /// Many blocks set up at once from a sheet, a CSV a row a block
     /// ([`SHEET_COLUMNS`]): each added, its ports filled, its inputs wired
     /// and its node engineer assigned, as those edits are, each saying the
@@ -338,6 +348,7 @@ impl Edit {
             Edit::Wire { .. } => "wire",
             Edit::Issue { .. } => "issue",
             Edit::Sheet { .. } => "sheet",
+            Edit::Contract { .. } => "contract",
             Edit::Unassign { .. } => "unassign",
         }
     }
@@ -712,6 +723,28 @@ pub fn edited(
     if let Edit::Assign { block, .. } | Edit::Unassign { block } = edit {
         after.push_str(&assigned(&out, block));
     }
+    // A contract's assignment as it is now, and who reads the node.
+    if let Edit::Contract { node, port } = edit {
+        after.push_str(&assigned(&out, node));
+        if let Some(p) = port {
+            let mut p = (**p).clone();
+            p.block_uid = node.clone();
+            after.push_str(&rows_text(&[], &[&p], &[]));
+        }
+        let readers = readers_of(
+            &branch,
+            elsewhere,
+            node,
+            port.as_deref()
+                .filter(|p| p.direction == "out")
+                .map(|p| p.name.as_str()),
+        );
+        after.push_str(&if readers.is_empty() {
+            "read by nothing\n".to_string()
+        } else {
+            format!("read by {}\n", readers.join(", "))
+        });
+    }
     // An issue's rows are in the node file it makes, not the group file.
     let node = match edit {
         Edit::Issue { block, behaviour } => Some(issued(group, block, behaviour)?),
@@ -815,6 +848,153 @@ pub fn issued(group: &File, block: &str, behaviour: &str) -> Result<File, Error>
     nb.behaviour = behaviour.to_string();
     nb.revision = 1;
     nb.contract_version = a.contract_version;
+    Ok(n)
+}
+
+/// Every input that reads the node `uid` of `branch`, by any of its ports:
+/// `<node>'s input <port>`, in the branch or in another group's file.
+fn readers_of(branch: &Branch, elsewhere: &[File], uid: &str, port: Option<&str>) -> Vec<String> {
+    let Some((b, _)) = branch.find(uid) else {
+        return Vec::new();
+    };
+    let here = format!("{uid}.");
+    let there = format!("{}.{}.", branch.group_id(), b.id);
+    // Of one output, by its name; or of any.
+    let reads = |rest: &str| port.is_none_or(|p| rest == p);
+    let mut out: Vec<String> = branch
+        .wires()
+        .into_iter()
+        .filter(|w| w.to_block != uid)
+        .filter(|w| w.from_ref.strip_prefix(&here).is_some_and(reads))
+        .map(|w| format!("{}'s input {}", w.to_block, w.to_port))
+        .collect();
+    for f in elsewhere {
+        for w in &f.wires {
+            if w.from_ref.strip_prefix(&there).is_some_and(reads) {
+                out.push(format!("{}'s input {}", w.to_block, w.to_port));
+            }
+        }
+    }
+    out.sort();
+    out.dedup();
+    out
+}
+
+/// What a contract holds of a port: its type, unit, range, state and
+/// maturity, and what it says. A contract change changes these and nothing
+/// else of it.
+fn contract_of(p: &Port) -> [&str; 7] {
+    [
+        &p.port_type,
+        &p.unit,
+        &p.lower,
+        &p.upper,
+        &p.state,
+        &p.maturity,
+        &p.says,
+    ]
+}
+
+/// The node file `node` issued again under the contract `group` now holds
+/// for it, by `by` at `at` saying `why`: its next revision, its block and
+/// meta at that contract, `port`'s contract in place of the port of that
+/// direction and name (its symbol, value, choices, parameter and the rest
+/// kept), or added after the others; everything else as it was, its
+/// signatures with it. They were made over the node as it was, so none
+/// counts until its node engineer signs it again. Its writer stays its node
+/// engineer, whose file it is to sign; its change row says who re-issued it
+/// and what the contract changed, and an open request for a contract change
+/// is answered by it. Refused when the file it makes would not be one.
+pub fn contracted(
+    node: &File,
+    group: &File,
+    port: &Port,
+    by: &str,
+    at: &str,
+    why: &str,
+) -> Result<File, Error> {
+    let b = node
+        .blocks
+        .first()
+        .ok_or_else(|| refused("a node file holds no block"))?;
+    let uid = b.uid.clone();
+    let a = group
+        .assignments
+        .iter()
+        .find(|a| a.block_uid == uid)
+        .ok_or_else(|| refused(format!("{} is assigned to nobody", b.id)))?;
+    let mut n = node.clone();
+    let revision = b.revision + 1;
+    n.blocks[0].contract_version = a.contract_version;
+    n.blocks[0].revision = revision;
+    n.meta
+        .insert("contract_version".into(), a.contract_version.to_string());
+    n.meta.insert("revision".into(), revision.to_string());
+    let mut p = port.clone();
+    p.block_uid = uid.clone();
+    let before = match n
+        .ports
+        .iter()
+        .position(|x| x.direction == p.direction && x.name == p.name)
+    {
+        Some(i) => {
+            let was = rows_text(&[], &[&n.ports[i]], &[]);
+            let x = &mut n.ports[i];
+            x.port_type = p.port_type.clone();
+            x.unit = p.unit.clone();
+            x.lower = p.lower.clone();
+            x.upper = p.upper.clone();
+            x.state = p.state.clone();
+            x.maturity = p.maturity.clone();
+            x.says = p.says.clone();
+            was
+        }
+        None => {
+            p.ord = n.ports.iter().map(|x| x.ord).max().map_or(0, |o| o + 1);
+            n.ports.push(p.clone());
+            format!("no port {} {}\n", p.direction, p.name)
+        }
+    };
+    let now = n
+        .ports
+        .iter()
+        .find(|x| x.direction == p.direction && x.name == p.name)
+        .map(|x| rows_text(&[], &[x], &[]))
+        .unwrap_or_default();
+    let answer = format!("contract {}: {}", a.contract_version, now.trim_end());
+    for r in n
+        .requests
+        .iter_mut()
+        .filter(|r| r.scope == uid && r.kind == "contract" && r.status == "open")
+    {
+        r.status = "accepted".into();
+        r.answer = answer.clone();
+    }
+    n.check_meta()?;
+    let found: Vec<String> = crate::checks::check_node(&n)
+        .errors()
+        .map(|f| format!("{}: {}", f.place, f.what))
+        .collect();
+    n.changes.push(Change {
+        at: at.to_string(),
+        who: by.to_string(),
+        scope: uid,
+        what: format!("contract: {}", why.trim()),
+        before: Some(format!(
+            "{before}contract {} revision {}\n",
+            node.blocks[0].contract_version,
+            node.blocks[0].revision
+        )),
+        after: Some(format!(
+            "{now}contract {} revision {revision}, re-issued by {by}; its node engineer signs it again{}\n",
+            a.contract_version,
+            if found.is_empty() {
+                String::new()
+            } else {
+                format!("; its checks find: {}", found.join("; "))
+            }
+        )),
+    });
     Ok(n)
 }
 
@@ -1535,6 +1715,49 @@ fn apply(
             out.comments.retain(|r| !mine(&r.scope));
             out.requests.retain(|r| !mine(&r.scope));
             Ok((block.clone(), before, None))
+        }
+        Edit::Contract { node, port } => {
+            let (b, place) = live(node)?;
+            if place == Place::Group {
+                return Err(refused(format!(
+                    "{} is framed in the group file: its parts are filled while it is open; a contract is an issued node's",
+                    b.id
+                )));
+            }
+            // A contract change is a port's: one said again changes nothing,
+            // and would leave its node behind for nothing.
+            let Some(p) = port else {
+                return Err(refused(format!(
+                    "{}'s contract change names no port: a contract changes a port's type, unit, range or state",
+                    b.id
+                )));
+            };
+            let mut p = (**p).clone();
+            p.block_uid = node.clone();
+            port_ok(&p, &b.id)?;
+            let ports = branch.ports(node);
+            let was = ports
+                .iter()
+                .find(|x| x.direction == p.direction && x.name == p.name);
+            if was.is_some_and(|w| contract_of(w) == contract_of(&p)) {
+                return Err(refused(format!(
+                    "{}'s port {} is already so: the contract change changes nothing",
+                    b.id, p.name
+                )));
+            }
+            let mut before = assigned(out, node);
+            match was {
+                Some(w) => before.push_str(&rows_text(&[], &[*w], &[])),
+                None => before.push_str(&format!("no port {} {}\n", p.direction, p.name)),
+            }
+            let Some(a) = out.assignments.iter_mut().find(|a| a.block_uid == *node) else {
+                return Err(refused(format!(
+                    "{} is assigned to nobody: a contract is between the group and the node engineer it is assigned to",
+                    b.id
+                )));
+            };
+            a.contract_version += 1;
+            Ok((node.clone(), before, None))
         }
         Edit::Sheet { .. } => Err(refused(
             "a sheet is the edits it makes, each made by itself",
@@ -2304,7 +2527,7 @@ pub fn edit_in_place(
     let (mut out, reproduced) = (made.group, made.reproduced);
     out.meta.insert("written_by_app".into(), app.to_string());
     // An issue makes the node's own file beside the group file, and never
-    // writes over one there.
+    // writes over one there; a contract issues the node's file again.
     let node = match made.node {
         Some(mut n) => {
             n.meta.insert("written_by_app".into(), app.to_string());
@@ -2321,7 +2544,35 @@ pub fn edit_in_place(
             }
             Some((n, at))
         }
-        None => None,
+        None => match e {
+            Edit::Contract { node: uid, port } => {
+                let when = at;
+                let at = nodes
+                    .iter()
+                    .find(|n| n.blocks.first().is_some_and(|b| b.uid == *uid))
+                    .map(|n| {
+                        copy.join("groups")
+                            .join(group_id)
+                            .join("nodes")
+                            .join(format!("{}.vnode", n.blocks[0].id))
+                    })
+                    .ok_or_else(|| refused(format!("{uid} has no node file in the branch")))?;
+                let theirs = crate::sqlite::read(&at)?;
+                if theirs.blocks.first().map(|b| b.uid.as_str()) != Some(uid.as_str()) {
+                    return Err(refused(format!(
+                        "{} does not hold {uid}: a node's file is named for it",
+                        at.strip_prefix(copy).unwrap_or(&at).display()
+                    )));
+                }
+                let port = port
+                    .as_deref()
+                    .ok_or_else(|| refused(format!("{uid}'s contract change names no port")))?;
+                let mut n = contracted(&theirs, &out, port, by, when, why)?;
+                n.meta.insert("written_by_app".into(), app.to_string());
+                Some((n, at))
+            }
+            _ => None,
+        },
     };
     // The one comparison, as late as can be before the write.
     let again = std::fs::read(&at_file)
@@ -2333,24 +2584,40 @@ pub fn edit_in_place(
     }
     // The node's file first: a group file without the block's rows is never
     // left with no file holding them.
+    // A contract issues the node's file again: what it was is kept, to put
+    // back if the group file cannot be written.
+    let was = match &node {
+        Some((_, at)) if at.exists() => Some(
+            std::fs::read(at)
+                .map_err(|e| Error::new(ErrorKind::Io, format!("{}: {e}", at.display())))?,
+        ),
+        _ => None,
+    };
     if let Some((n, at)) = &node {
         if let Some(dir) = at.parent() {
             std::fs::create_dir_all(dir)
                 .map_err(|e| Error::new(ErrorKind::Io, format!("{}: {e}", dir.display())))?;
         }
-        crate::sqlite::write(n, at)?;
+        crate::sqlite::written(n, at)?;
     }
     let written = match crate::sqlite::written(&out, &at_file) {
         Ok(w) => w,
         Err(err) => {
-            // The node file written first goes with it, or the person is
-            // told which file to remove before anything is framed again.
+            // The node's file is put back as it was, whole or not at all, or
+            // the person is told which file is left ahead of its group file.
             if let Some((_, at)) = &node {
-                if let Err(gone) = std::fs::remove_file(at) {
+                let back = match &was {
+                    Some(bytes) => {
+                        let tmp = at.with_extension("vnode.back");
+                        std::fs::write(&tmp, bytes).and_then(|_| std::fs::rename(&tmp, at))
+                    }
+                    None => std::fs::remove_file(at),
+                };
+                if let Err(e) = back {
                     return Err(Error::new(
                         err.kind(),
                         format!(
-                            "{}; and {}, written first, could not be removed ({gone}): remove it before issuing again",
+                            "{}; and {}, written first, could not be put back as it was ({e}): it is ahead of its group file, so put it back by hand before anything else is framed",
                             err.message(),
                             at.strip_prefix(copy).unwrap_or(at).display()
                         ),

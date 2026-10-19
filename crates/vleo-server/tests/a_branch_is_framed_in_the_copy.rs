@@ -778,6 +778,67 @@ fn a_branch_is_framed_in_the_copy() {
         ],
     );
     assert!(r.contains("wire needs from"), "{r}");
+    // The band's contract changes (W4): it rises in the group file, and the
+    // band's file is issued again at it.
+    // One that names no port changes nothing, and is refused.
+    let r = edit(
+        "contract",
+        &[("opened", field(&tree(), "opened")), ("node", UID)],
+    );
+    assert!(r.contains("contract change names no port"), "{r}");
+    // Its output, given a symbol and a parameter's owner the contract does
+    // not carry: they are kept.
+    let at = copy.join(nodes(UID));
+    let mut held = vleo_files::sqlite::read(&at).unwrap();
+    let out = held
+        .ports
+        .iter_mut()
+        .find(|p| p.direction == "out")
+        .unwrap();
+    out.symbol = "B".into();
+    out.parameter = "programme".into();
+    let (name, port_type, unit, lower) = (
+        out.name.clone(),
+        out.port_type.clone(),
+        out.unit.clone(),
+        out.lower.clone(),
+    );
+    vleo_files::sqlite::write(&held, &at).unwrap();
+    let r = edit(
+        "contract",
+        &[
+            ("opened", field(&tree(), "opened")),
+            ("node", UID),
+            ("direction", "out"),
+            ("name", &name),
+            ("type", &port_type),
+            ("unit", &unit),
+            ("lower", &lower),
+            ("upper", "5"),
+            ("state", "decided"),
+        ],
+    );
+    assert!(r.contains("\"ok\":true"), "{r}");
+    let re = vleo_files::sqlite::read(&at).unwrap();
+    let kept = re.ports.iter().find(|p| p.direction == "out").unwrap();
+    assert_eq!(
+        (
+            kept.upper.as_str(),
+            kept.symbol.as_str(),
+            kept.parameter.as_str()
+        ),
+        ("5", "B", "programme")
+    );
+    let g = vleo_files::sqlite::read(&copy.join(GROUP)).unwrap();
+    assert_eq!(
+        g.assignments
+            .iter()
+            .find(|a| a.block_uid == UID)
+            .map(|a| a.contract_version),
+        Some(2)
+    );
+    let band = vleo_files::sqlite::read(&copy.join(nodes(UID))).unwrap();
+    assert_eq!(band.blocks[0].contract_version, 2);
     // Issued: a block framed in the group file, refused by name while it is
     // assigned to nobody, and nothing written.
     let before_issue = group_bytes();

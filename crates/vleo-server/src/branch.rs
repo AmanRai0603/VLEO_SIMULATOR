@@ -396,6 +396,26 @@ fn edit_of(name: &str, params: &str) -> Result<Edit, String> {
             block: need("block")?,
             person: need("person")?,
         },
+        "contract" => Edit::Contract {
+            node: need("node")?,
+            // A port given by its name; none, and the contract is said again.
+            port: if get("name").trim().is_empty() {
+                None
+            } else {
+                Some(Box::new(vleo_files::model::Port {
+                    direction: need("direction")?,
+                    name: need("name")?,
+                    port_type: need("type")?,
+                    unit: get("unit"),
+                    lower: get("lower"),
+                    upper: get("upper"),
+                    state: get("state"),
+                    maturity: get("maturity"),
+                    says: get("says"),
+                    ..Default::default()
+                }))
+            },
+        },
         "sheet" => Edit::Sheet {
             csv: need("sheet")?,
         },
