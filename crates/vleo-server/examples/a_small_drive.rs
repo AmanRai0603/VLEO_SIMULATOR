@@ -339,6 +339,17 @@ fn main() {
         state: s("achieved"),
         ..Port::default()
     });
+    // The density propulsion is designed for, for an allocation typed as
+    // an amount to bound (tools/amount_check.py).
+    systems.ports.push(Port {
+        block_uid: s("sys_propulsion"),
+        direction: s("out"),
+        name: s("design_density"),
+        port_type: s("number"),
+        unit: s("kg/m^3"),
+        state: s("achieved"),
+        ..Port::default()
+    });
     std::fs::create_dir_all(drive.join("groups/l3_struct")).unwrap();
     write(
         &signed(systems, "Test Sam", &sam),

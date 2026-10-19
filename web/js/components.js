@@ -107,7 +107,8 @@ const ENGINE = {
  * the first output across that input's range, as the engine describes it.
  */
 export async function mountWidget(el, w) {
-  const rows = w.inputs.map(id => S.byId.get(id)).filter(Boolean);
+  // A row whose unit the engine does not read has no ends, and no slider.
+  const rows = w.inputs.map(id => S.byId.get(id)).filter(r => r && r.lo != null && r.hi != null);
   const ask = async p => {
     try { return await ENGINE.run(p); } catch (e) { return { ok: false, message: 'the engine did not answer: ' + e }; }
   };

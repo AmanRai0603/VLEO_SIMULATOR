@@ -255,6 +255,17 @@ fn tree_json(params: &str, ctx: &Ctx) -> Result<String, String> {
             j.str_field("type", &p.port_type);
             j.str_field("unit", &p.unit);
             j.str_field("state", &p.state);
+            // What a fill of it keeps, where the fill gives none.
+            for (k, v) in [
+                ("value", &p.value),
+                ("lower", &p.lower),
+                ("upper", &p.upper),
+                ("symbol", &p.symbol),
+                ("range_reason", &p.range_reason),
+                ("says", &p.says),
+            ] {
+                j.str_field(k, v);
+            }
             j.raw("}");
         }
         j.raw("]");
@@ -616,8 +627,134 @@ fn started(params: &str, ctx: &Ctx) -> Result<String, String> {
     Ok(j.0)
 }
 
-/// The edit `name` asks for, from its fields.
-fn edit_of(name: &str, params: &str) -> Result<Edit, String> {
+/// What a port filled holds now, read back from the group file written: its
+/// unit, value, range, symbol and reasons, so what the fill kept of it is
+/// said, not only what was typed. Nothing for any other edit.
+fn holds(copy: &std::path::Path, group: &str, e: &Edit) -> String {
+    let Edit::Fill {
+        block,
+        part: Part::Port(p),
+    } = e
+    else {
+        return String::new();
+    };
+    let Ok((_, f)) = breakdown::group_file_in(copy, group) else {
+        return String::new();
+    };
+    let Some(q) = f
+        .ports
+        .iter()
+        .find(|q| q.block_uid == *block && q.direction == p.direction && q.name == p.name)
+    else {
+        return String::new();
+    };
+    let unit = if q.unit.trim().is_empty() || q.unit.trim() == "1" {
+        String::new()
+    } else {
+        format!(" {}", q.unit.trim())
+    };
+    let mut parts = Vec::new();
+    if !q.value.trim().is_empty() {
+        parts.push(format!("the value {}{unit}", q.value.trim()));
+    }
+    if !q.lower.trim().is_empty() {
+        parts.push(format!(
+            "the range {} to {}{unit}{}",
+            q.lower.trim(),
+            q.upper.trim(),
+            if q.range_reason.trim().is_empty() {
+                ", with no reason given".to_string()
+            } else {
+                format!(", because {}", q.range_reason.trim())
+            }
+        ));
+    }
+    if parts.is_empty() {
+        parts.push(format!(
+            "no value or range{}",
+            if unit.is_empty() {
+                String::new()
+            } else {
+                format!(", in{unit}")
+            }
+        ));
+    }
+    if !q.symbol.trim().is_empty() {
+        parts.push(format!("the symbol {}", q.symbol.trim()));
+    }
+    if !q.says.trim().is_empty() {
+        parts.push(format!("says {:?}", q.says.trim()));
+    }
+    format!(" Its port {} now holds {}.", q.name, parts.join(", "))
+}
+
+/// `GET /v1/amount?text=&unit=`: one amount as typed in a field whose unit
+/// is `unit`, read as the frame's forms read it (`amount::read`): its shape,
+/// its numbers as typed, its unit, and what it is said back; or why not, with
+/// the fix. Nothing is written.
+pub(super) fn amount_route(params: &str) -> String {
+    let get = |k: &str| param(params, k).map(decode).unwrap_or_default();
+    match vleo_sheet::method::amount::read(&get("text"), &get("unit")) {
+        Err(why) => me::refusal(&why),
+        Ok(a) => {
+            let mut j = Json::new();
+            j.raw("{");
+            j.bool_field("ok", true);
+            j.str_field("typed", &a.typed);
+            j.str_field(
+                "shape",
+                match a.shape {
+                    vleo_sheet::method::amount::Shape::Value => "value",
+                    vleo_sheet::method::amount::Shape::Range => "range",
+                    vleo_sheet::method::amount::Shape::Spread => "spread",
+                },
+            );
+            for (k, v) in [
+                ("nominal", &a.nominal),
+                ("lower", &a.lower),
+                ("upper", &a.upper),
+            ] {
+                match v {
+                    Some(v) => j.str_field(k, v),
+                    None => j.key(k).raw("null"),
+                };
+            }
+            j.str_field("unit", &a.unit);
+            j.str_field("said", &a.said);
+            j.raw("}");
+            j.0
+        }
+    }
+}
+
+/// A port's `amount` as typed, read by the library into its unit, value and
+/// ends (`breakdown::with_amount`), and what it is, said back; the port as it
+/// is when none is typed. An amount and its ends typed apart are refused,
+/// since either could be meant.
+fn amount_into(
+    name: &str,
+    port: vleo_files::model::Port,
+    typed: &str,
+    allocation: bool,
+) -> Result<(vleo_files::model::Port, String), String> {
+    if typed.trim().is_empty() {
+        return Ok((port, String::new()));
+    }
+    if [&port.value, &port.lower, &port.upper]
+        .iter()
+        .any(|v| !v.trim().is_empty())
+    {
+        return Err(format!(
+            "{name}'s port {} is given an amount and a value or ends beside it: type the amount, as 250 km, 1 to 2 km or 55 ± 10% mN, or the value and ends, not both",
+            port.name
+        ));
+    }
+    breakdown::with_amount(&port, typed, allocation).map_err(|e| e.message().to_string())
+}
+
+/// The edit `name` asks for, from its fields, and an amount typed in it,
+/// said back.
+fn edit_of(name: &str, params: &str) -> Result<(Edit, String), String> {
     let get = |k: &str| param(params, k).map(decode).unwrap_or_default();
     let need = |k: &str| {
         let v = get(k);
@@ -627,7 +764,8 @@ fn edit_of(name: &str, params: &str) -> Result<Edit, String> {
             Ok(v.trim().to_string())
         }
     };
-    Ok(match name {
+    let mut said = String::new();
+    let edit = match name {
         "add" => Edit::Add {
             parent: need("parent")?,
             id: need("id")?,
@@ -636,20 +774,37 @@ fn edit_of(name: &str, params: &str) -> Result<Edit, String> {
         "fill" => Edit::Fill {
             block: need("block")?,
             part: if !get("question").trim().is_empty() {
+                // A fill is one part: an amount beside a question would be
+                // dropped without a word.
+                if !get("amount").trim().is_empty() {
+                    return Err(format!(
+                        "{name} fills one part at a time, and is given a question and an amount: fill the question, then the port"
+                    ));
+                }
                 Part::Question(get("question"))
             } else {
-                Part::Port(Box::new(vleo_files::model::Port {
-                    direction: need("direction")?,
-                    name: need("name")?,
-                    port_type: need("type")?,
-                    unit: get("unit"),
-                    lower: get("lower"),
-                    upper: get("upper"),
-                    state: get("state"),
-                    maturity: get("maturity"),
-                    says: get("says"),
-                    ..Default::default()
-                }))
+                let (port, s) = amount_into(
+                    name,
+                    vleo_files::model::Port {
+                        direction: need("direction")?,
+                        name: need("name")?,
+                        symbol: get("symbol").trim().to_string(),
+                        port_type: need("type")?,
+                        unit: get("unit"),
+                        value: get("value"),
+                        lower: get("lower"),
+                        upper: get("upper"),
+                        range_reason: get("range_reason"),
+                        state: get("state"),
+                        maturity: get("maturity"),
+                        says: get("says"),
+                        ..Default::default()
+                    },
+                    &get("amount"),
+                    false,
+                )?;
+                said = s;
+                Part::Port(Box::new(port))
             },
         },
         "break-down" => Edit::BreakDown {
@@ -695,16 +850,26 @@ fn edit_of(name: &str, params: &str) -> Result<Edit, String> {
         },
         "allocate" => Edit::Allocate {
             block: need("block")?,
-            port: Box::new(vleo_files::model::Port {
-                name: need("name")?,
-                port_type: need("type")?,
-                unit: get("unit"),
-                value: get("value"),
-                lower: get("lower"),
-                upper: get("upper"),
-                says: get("says"),
-                ..Default::default()
-            }),
+            port: {
+                let (port, s) = amount_into(
+                    name,
+                    vleo_files::model::Port {
+                        name: need("name")?,
+                        port_type: need("type")?,
+                        unit: get("unit"),
+                        value: get("value"),
+                        lower: get("lower"),
+                        upper: get("upper"),
+                        range_reason: get("range_reason"),
+                        says: get("says"),
+                        ..Default::default()
+                    },
+                    &get("amount"),
+                    true,
+                )?;
+                said = s;
+                Box::new(port)
+            },
             bounds: need("bounds")?,
             // Never defaulted: an allocation with no sense is refused by
             // the library, by name.
@@ -712,7 +877,8 @@ fn edit_of(name: &str, params: &str) -> Result<Edit, String> {
             says: get("closure_says"),
         },
         other => return Err(format!("{other:?} is not an edit of a branch")),
-    })
+    };
+    Ok((edit, said))
 }
 
 /// A breakdown's answers, one a line: `<output>=<child uid>.<port>`, an
@@ -763,7 +929,7 @@ fn edited(name: &str, params: &str, ctx: &Ctx) -> Result<String, String> {
     if me::with_key(|_, _| ()).is_none() {
         return Err("no key is open: open yours, and the edit is made and signed as you".into());
     }
-    let e = edit_of(name, params)?;
+    let (e, said) = edit_of(name, params)?;
     let g = param(params, "group").map(decode).unwrap_or_default();
     let group = group_id(&g)?;
     let opened = param(params, "opened").map(decode).unwrap_or_default();
@@ -801,11 +967,17 @@ fn edited(name: &str, params: &str, ctx: &Ctx) -> Result<String, String> {
             j.str_field(
                 "message",
                 &format!(
-                    "{who} made the edit {:?} to {group}'s breakdown, in your copy{}. It stays in your copy until {group} is sealed (F5).",
+                    "{who} made the edit {:?} to {group}'s breakdown, in your copy{}.{}{} It stays in your copy until {group} is sealed (F5).",
                     e.name(),
                     reproduced
                         .map(|r| format!(": {}", r.says()))
-                        .unwrap_or_default()
+                        .unwrap_or_default(),
+                    if said.is_empty() {
+                        String::new()
+                    } else {
+                        format!(" The amount is {said}.")
+                    },
+                    holds(&copy, group, &e)
                 ),
             );
         }

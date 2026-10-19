@@ -65,8 +65,30 @@ fn slice<T>(v: Vec<T>) -> &'static [T] {
     Box::leak(v.into_boxed_slice())
 }
 
+/// A row's unit as the engine holds it, read by the method language's one
+/// reader (`method::unit_named`). A unit it does not read makes its row
+/// refuse by name wherever it is asked, called, estimated or given a value
+/// (`Graph::unread`), so the pure number this stands in for, in its unit and
+/// its limits, is never one anything reads.
 fn unit_of(name: &str) -> Unit {
-    Unit::from_name(name).unwrap_or(Unit::One)
+    method::unit_named(name).unwrap_or(Unit::One)
+}
+
+/// Why a row's units, its own or a value it publishes, do not read, when
+/// one does not. A row nobody has specified yet is not run at all, and says
+/// so: its unit is read once it is.
+fn unread_unit(sh: &sheet::Sheet) -> Option<String> {
+    if sh.is_seeded() {
+        return None;
+    }
+    std::iter::once((None, &sh.unit))
+        .chain(sh.publishes.iter().map(|pb| (Some(&pb.symbol), &pb.unit)))
+        .find_map(|(published, unit)| {
+            method::unit_named(unit).err().map(|why| match published {
+                Some(symbol) => format!("the value {symbol} it publishes: {why}"),
+                None => why,
+            })
+        })
 }
 
 fn to_si(v: f64, unit: &str) -> f64 {
@@ -728,6 +750,12 @@ fn build(tree: &Tree) -> Result<&'static Graph, Error> {
         vars: slice(vars),
         dispatch: slice(dispatch),
         run: slice(run),
+        unread: slice(
+            sheets
+                .iter()
+                .map(|sh| unread_unit(sh).map(|why| text(&why)))
+                .collect(),
+        ),
         cases: slice(cases),
         groups: slice(groups),
         relations: slice(relations),
