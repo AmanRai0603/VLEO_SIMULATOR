@@ -2571,6 +2571,49 @@ fn a_sheet_is_read_as_a_person_reads_it_or_refused_by_its_row() {
     refused(&spanned, "the sheet's row 4 (sw_storm_peak)");
 }
 
+// ── An issue assigned by the branch's owner (W11) ──
+
+#[test]
+fn an_issue_is_assigned_by_the_branch_s_owner_to_a_node_engineer() {
+    let e = |person: &str| Edit::AssignIssue {
+        number: 3,
+        person: s(person),
+    };
+    let (a, _) = ola(&solar(), &e("Nia Node")).unwrap();
+    assert_eq!(
+        vleo_files::issues::assigned(&a, 3).as_deref(),
+        Some("Nia Node")
+    );
+    let c = a.changes.last().unwrap();
+    assert_eq!(
+        (c.what.as_str(), c.scope.as_str()),
+        (&*format!("assign issue: {WHY}"), "issue 3")
+    );
+    let err = ola(&a, &e("Nia Node")).unwrap_err();
+    assert!(
+        err.contains("issue 3 is assigned to Nia Node already"),
+        "{err}"
+    );
+    let err = ola(&solar(), &e("Pat Morgan")).unwrap_err();
+    assert!(
+        err.contains("registers no node engineer Pat Morgan"),
+        "{err}"
+    );
+    // Never to a deputy, nor to an assistant's name.
+    let deputy = with_node_engineer(&solar(), "Ivo Node", "Nia Node", &key(17));
+    let err = ola(&deputy, &e("Ivo Node")).unwrap_err();
+    assert!(err.contains("Ivo Node is Nia Node's deputy"), "{err}");
+    let assistant = with_node_engineer(&solar(), "Claude", "", &key(18));
+    let err = ola(&assistant, &e("Claude")).unwrap_err();
+    assert!(err.contains("Claude is an assistant's name"), "{err}");
+    // Only the owner: Sam, whom the programme registers, is not solar's.
+    let err = frame(&solar(), &e("Nia Node"), WHY, "Sam Engel", &key(12)).unwrap_err();
+    assert!(
+        err.contains("its owner Ola Sun, or their deputy, does"),
+        "{err}"
+    );
+}
+
 /// `f` with an open block `id` under `parent`, an input `x` and an output
 /// named as the block.
 fn with_block(f: &File, parent: &str, id: &str) -> File {

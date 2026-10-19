@@ -125,6 +125,13 @@ pub enum Edit {
         design: Box<File>,
         previous: Option<Box<File>>,
     },
+    /// Issue `number`, addressed to the group, given to `person`, a node
+    /// engineer its group file registers, never their deputy nor an
+    /// assistant's name, to resolve (W11): kept in the group file, the issue
+    /// file being its raiser's (`crate::issues`). The library does not read
+    /// the issue: its caller holds that `number` is an issue addressed to
+    /// the group, as `POST /v1/branch/assign-issue` does.
+    AssignIssue { number: u64, person: String },
     /// Many blocks set up at once from a sheet, a CSV a row a block
     /// ([`SHEET_COLUMNS`]): each added, its ports filled, its inputs wired
     /// and its node engineer assigned, as those edits are, each saying the
@@ -359,6 +366,7 @@ impl Edit {
             Edit::Sheet { .. } => "sheet",
             Edit::Contract { .. } => "contract",
             Edit::UpdateBase { .. } => "update base",
+            Edit::AssignIssue { .. } => "assign issue",
             Edit::Unassign { .. } => "unassign",
         }
     }
@@ -773,6 +781,13 @@ pub fn edited(
             after.push_str(&line);
             after.push('\n');
         }
+    }
+    // An issue assigned: to whom, now.
+    if let Edit::AssignIssue { number, person } = edit {
+        after.push_str(&format!(
+            "{} assigned to {person}\n",
+            crate::issues::text_kind(*number)
+        ));
     }
     // An issue's rows are in the node file it makes, not the group file.
     let node = match edit {
@@ -1943,6 +1958,45 @@ fn apply(
             out.meta.insert("based_on".into(), version);
             out.meta.insert("base_version".into(), count.to_string());
             Ok((group_id.to_string(), before, None))
+        }
+        Edit::AssignIssue { number, person } => {
+            if checks::is_assistant(person) {
+                return Err(refused(format!(
+                    "{person} is an assistant's name: an issue is assigned to a person"
+                )));
+            }
+            let Some(p) = registry
+                .file
+                .people
+                .iter()
+                .find(|p| p.name == *person && p.role == "node engineer")
+            else {
+                return Err(refused(format!(
+                    "{group_id}'s group file registers no node engineer {person}: an issue is assigned to a node engineer its group registers"
+                )));
+            };
+            // As a node is: to the node engineer, whose deputy acts for them.
+            if !p.deputy_for.is_empty() {
+                return Err(refused(format!(
+                    "{person} is {}'s deputy: an issue is assigned to its node engineer, and their deputy acts for them",
+                    p.deputy_for
+                )));
+            }
+            let kind = crate::issues::text_kind(*number);
+            let was = crate::issues::assigned(out, *number);
+            if was.as_deref() == Some(person.as_str()) {
+                return Err(refused(format!(
+                    "issue {number} is assigned to {person} already"
+                )));
+            }
+            let before = was.map_or(String::new(), |w| format!("{kind} assigned to {w}\n"));
+            out.texts.retain(|t| !(t.scope == FILE && t.kind == kind));
+            out.texts.push(crate::model::Text {
+                scope: FILE.into(),
+                kind: kind.clone(),
+                body: person.clone(),
+            });
+            Ok((kind, before, None))
         }
         Edit::Sheet { .. } => Err(refused(
             "a sheet is the edits it makes, each made by itself",

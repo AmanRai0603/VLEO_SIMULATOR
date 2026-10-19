@@ -875,6 +875,63 @@ fn a_branch_is_framed_in_the_copy() {
         "{r}"
     );
     std::fs::remove_file(copy.join("design/design-2026.10.1.vleo")).unwrap();
+    // An issue the copy does not hold is not assigned (W11).
+    let r = edit(
+        "assign-issue",
+        &[
+            ("opened", field(&tree(), "opened")),
+            ("number", "3"),
+            ("person", "Test Nia"),
+        ],
+    );
+    assert!(
+        r.contains("your copy holds no issue 3 addressed to l3_solar"),
+        "{r}"
+    );
+    // The file named for issue 3 is that issue, of solar, open: one of
+    // another kind, of another number, or closed, is not assigned.
+    std::fs::create_dir_all(copy.join("issues")).unwrap();
+    let at = copy.join("issues/3-l3_solar.vissue");
+    let issue_file = |number: &str, closed_by: &str| {
+        let mut f =
+            vleo_files::model::File::new(vleo_files::meta::Kind::Issue, "vleo 1.0.0 (test)");
+        f.meta.insert("number".into(), number.into());
+        f.meta.insert("group_id".into(), "l3_solar".into());
+        f.meta.insert("writer".into(), "Test Nia".into());
+        f.issues.push(vleo_files::model::Issue {
+            number: number.parse().unwrap(),
+            group_id: "l3_solar".into(),
+            closed_by: closed_by.into(),
+            ..Default::default()
+        });
+        f
+    };
+    let assign = || {
+        edit(
+            "assign-issue",
+            &[
+                ("opened", field(&tree(), "opened")),
+                ("number", "3"),
+                ("person", "Test Nia"),
+            ],
+        )
+    };
+    for (f, says) in [
+        (
+            vleo_files::model::File::new(vleo_files::meta::Kind::Node, "vleo 1.0.0 (test)"),
+            "issues/3-l3_solar.vissue is not an issue file",
+        ),
+        (issue_file("4", ""), "says it is issue 4, not 3"),
+        (
+            issue_file("3", "Test Ola"),
+            "issue 3 is closed, by Test Ola",
+        ),
+    ] {
+        vleo_files::sqlite::write(&f, &at).unwrap();
+        let r = assign();
+        assert!(r.contains(says), "expected «{says}» in {r}");
+    }
+    std::fs::remove_file(&at).unwrap();
     // Issued: a block framed in the group file, refused by name while it is
     // assigned to nobody, and nothing written.
     let before_issue = group_bytes();
