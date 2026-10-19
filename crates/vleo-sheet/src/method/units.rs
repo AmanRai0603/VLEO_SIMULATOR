@@ -154,3 +154,34 @@ pub fn parse_unit(text: &str) -> Result<(f64, Dim), Error> {
     }
     Ok((factor, dim))
 }
+
+/// The unit a design's text names, as the engine holds units
+/// (docs/briefs/F8.md, F8-a1): a machine name (`Kilometre`), as `design/`'s
+/// rows hold it; a symbol (`km`), as a release's ports hold it; or any unit
+/// [`parse_unit`] reads that is exactly one the engine holds (`kg.m/s^2` is
+/// `N`). Empty, or `1`, is a pure number. Refused by name, never read as a
+/// pure number: a text [`parse_unit`] does not read, and a unit it reads that
+/// the engine holds none of (`mN/kW`), until `vleo-units` gains it as a
+/// reviewed change (F8's question 63).
+pub fn unit_named(text: &str) -> Result<Unit, String> {
+    let t = text.trim();
+    if t.is_empty() || t == "1" {
+        return Ok(Unit::One);
+    }
+    if let Some(u) = Unit::from_name(t) {
+        return Ok(u);
+    }
+    let (factor, dim) =
+        parse_unit(t).map_err(|e| format!("the unit «{t}» does not read: {}", e.message()))?;
+    let units = || Unit::NAMES.iter().filter_map(|n| Unit::from_name(n));
+    if let Some(u) = units().find(|u| u.symbol() == t) {
+        return Ok(u);
+    }
+    if let Some(u) = units().find(|u| u.dim() == dim && u.si_factor() == factor) {
+        return Ok(u);
+    }
+    Err(format!(
+        "the unit «{t}» reads as {} with a factor of {factor} to SI, and the engine holds no such unit: it is asked for as a request of the code (W14), never read as a pure number",
+        dim_text(dim)
+    ))
+}

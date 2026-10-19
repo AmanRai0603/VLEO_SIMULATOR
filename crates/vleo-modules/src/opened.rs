@@ -65,8 +65,24 @@ fn slice<T>(v: Vec<T>) -> &'static [T] {
     Box::leak(v.into_boxed_slice())
 }
 
+/// A row's unit as the engine holds it, read by the method language's one
+/// reader (`method::unit_named`). A unit it does not read refuses the row by
+/// name (`unread_unit`), so the pure number this stands in for is never a
+/// value anything reads.
 fn unit_of(name: &str) -> Unit {
-    Unit::from_name(name).unwrap_or(Unit::One)
+    method::unit_named(name).unwrap_or(Unit::One)
+}
+
+/// Why a row's units, its own or a value it publishes, do not read, when
+/// one does not.
+fn unread_unit(sh: &sheet::Sheet) -> Option<String> {
+    std::iter::once((&sh.symbol, &sh.unit))
+        .chain(sh.publishes.iter().map(|pb| (&pb.symbol, &pb.unit)))
+        .find_map(|(symbol, unit)| {
+            method::unit_named(unit)
+                .err()
+                .map(|why| format!("{}'s {symbol}: {why}", sh.id))
+        })
 }
 
 fn to_si(v: f64, unit: &str) -> f64 {
@@ -597,8 +613,20 @@ fn build(tree: &Tree) -> Result<&'static Graph, Error> {
             behaviour: behaviour_of(sh),
         });
         // A method runs in the interpreter, and a stated value is published
-        // by the graph itself.
-        let own = interpreted(sh).or_else(|| stated(sh));
+        // by the graph itself. A row whose unit does not read refuses, by
+        // name: its value is never read as a pure number.
+        let own = match unread_unit(sh) {
+            Some(why) => {
+                let node = text(&sh.id);
+                let reason = text(&why);
+                let refuses: &'static Relation =
+                    Box::leak(Box::new(move |_: &[f64], _: &mut [f64]| {
+                        Err(Fault::Refused { node, reason })
+                    }));
+                Some(refuses)
+            }
+            None => interpreted(sh).or_else(|| stated(sh)),
+        };
         dispatch.push(if own.is_some() {
             not_in_this_build
         } else {
