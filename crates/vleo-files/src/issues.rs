@@ -7,13 +7,19 @@
 //!   file's own named `issue <number>` holding the person
 //!   (`breakdown::Edit::AssignIssue`);
 //! - **resolved** by a release whose notes name it: its de-risking record,
-//!   the group's `versions.csv` row for its version, lists it in its
-//!   `resolves` column;
+//!   the group's `versions.csv`, lists it in the `resolves` column of the
+//!   row of that release or of any release before it, since the record is
+//!   carried whole from release to release;
 //! - **closed** when that release is in today's design and the issue's mark
 //!   is no longer red.
+//!
+//! An issue upgraded from before 1.0 may say who closed it then
+//! (`closed_by`): that is read as it was said, and nothing else of its
+//! state is.
 
 use crate::chain::FILE;
-use crate::model::File;
+use crate::meta::ReleaseVersion;
+use crate::model::{File, Issue};
 
 /// What has become of an issue.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -29,6 +35,10 @@ pub enum State {
     Closed {
         by: String,
     },
+    /// Closed before 1.0, as its upgraded file says, by whom it says.
+    ClosedBefore1_0 {
+        by: String,
+    },
 }
 
 impl State {
@@ -41,6 +51,7 @@ impl State {
                 format!("resolved by {group} {by}, and its mark is still red")
             }
             State::Closed { by } => format!("closed by {group} {by}"),
+            State::ClosedBefore1_0 { by } => format!("closed by {by}, before 1.0"),
         }
     }
 }
@@ -61,63 +72,94 @@ pub fn assigned(group: &File, number: u64) -> Option<String> {
         .filter(|w| !w.is_empty())
 }
 
-/// The issues `release`'s notes resolve: the numbers in the `resolves`
-/// column of its group's `versions.csv` row for its version, in order,
-/// each once. A release with no such row resolves nothing.
-pub fn resolves(release: &File) -> Vec<u64> {
+/// The issues `release`'s notes resolve, each with the version whose row
+/// names it: the numbers in the `resolves` column of every row of its
+/// group's `versions.csv` up to its own version, in order, each once. The
+/// record is carried whole from release to release, so a later release
+/// still resolves what an earlier one did. A release with no record
+/// resolves nothing; an entry that is not an issue's number, or a row whose
+/// version is not one, is refused by its row, never skipped.
+pub fn resolves(release: &File) -> Result<Vec<(u64, String)>, String> {
     let version = release.meta.get("version").map_or("", String::as_str);
+    let upto = ReleaseVersion::parse(version)
+        .ok_or_else(|| format!("the release says its version is {version:?}, which is not one"))?;
     let Some(t) = release
         .tables
         .iter()
         .find(|t| t.scope == FILE && t.path == "versions.csv")
     else {
-        return Vec::new();
+        return Ok(Vec::new());
     };
     let (head, rows) = crate::csv::parse(&t.csv);
     let col = |name: &str| head.iter().position(|h| crate::csv::name_of(h) == name);
     let (Some(v), Some(r)) = (col("version"), col("resolves")) else {
-        return Vec::new();
+        return Ok(Vec::new());
     };
-    let mut out = Vec::new();
-    for row in rows
-        .iter()
-        .filter(|row| row.get(v).map(|x| x.trim()) == Some(version))
-    {
-        for n in row
-            .get(r)
-            .map_or("", String::as_str)
+    let mut out: Vec<(u64, String)> = Vec::new();
+    for row in &rows {
+        let at = row.get(v).map_or("", |x| x.trim());
+        let named = row.get(r).map_or("", |x| x.trim());
+        let Some(rv) = ReleaseVersion::parse(at) else {
+            if named.is_empty() {
+                continue;
+            }
+            return Err(format!(
+                "versions.csv's row {at:?} resolves {named:?}, and {at:?} is not a release's version"
+            ));
+        };
+        if rv > upto {
+            continue;
+        }
+        for x in named
             .split([',', ';', ' '])
-            .filter_map(|x| x.trim().trim_start_matches('#').parse::<u64>().ok())
+            .map(str::trim)
+            .filter(|x| !x.is_empty())
         {
-            if !out.contains(&n) {
-                out.push(n);
+            let n = x.trim_start_matches('#').parse::<u64>().map_err(|_| {
+                format!("versions.csv's row {at} resolves {x:?}, which is not an issue's number")
+            })?;
+            if !out.iter().any(|(m, _)| *m == n) {
+                out.push((n, at.to_string()));
             }
         }
     }
-    out
+    Ok(out)
 }
 
-/// What has become of issue `number`: assigned to `assigned`, with
-/// `taken`, the release of its group in today's design (its version and
-/// the release), and `red`, whether its mark is red there now.
+/// What has become of `issue`: assigned to `assigned`, with `taken`, its
+/// group's release in today's design, and `red`, whether its mark is red
+/// there now. A release of another group is refused: issue numbers are not
+/// a group's own, so another group's notes never resolve this one.
 pub fn state(
-    number: u64,
+    issue: &Issue,
     assigned: Option<&str>,
-    taken: Option<(&str, &File)>,
+    taken: Option<&File>,
     red: bool,
-) -> State {
-    if let Some((version, release)) = taken {
-        if resolves(release).contains(&number) {
-            let by = version.to_string();
-            return if red {
+) -> Result<State, String> {
+    if !issue.closed_by.trim().is_empty() {
+        return Ok(State::ClosedBefore1_0 {
+            by: issue.closed_by.trim().to_string(),
+        });
+    }
+    if let Some(release) = taken {
+        let of = release.meta.get("group_id").map_or("", String::as_str);
+        if of != issue.group_id {
+            return Err(format!(
+                "the release given is {of}'s, and issue {} is addressed to {}",
+                issue.number, issue.group_id
+            ));
+        }
+        let number = u64::try_from(issue.number).unwrap_or(u64::MAX);
+        if let Some((_, by)) = resolves(release)?.into_iter().find(|(n, _)| *n == number) {
+            return Ok(if red {
                 State::Resolved { by }
             } else {
                 State::Closed { by }
-            };
+            });
         }
     }
-    match assigned {
+    Ok(match assigned {
         Some(who) => State::Assigned(who.to_string()),
         None => State::Open,
-    }
+    })
 }

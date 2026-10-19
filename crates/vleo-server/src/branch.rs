@@ -446,8 +446,31 @@ fn issue_edit(copy: &Path, group: &str, params: &str) -> Result<Edit, String> {
     let at = copy.join("issues").join(format!("{number}-{group}.vissue"));
     let f = vleo_files::sqlite::read(&at)
         .map_err(|_| format!("your copy holds no issue {number} addressed to {group}"))?;
+    // The file named for the issue is that issue: an issue file, of that
+    // number, addressed to the group, and not closed.
+    if f.kind() != Ok(vleo_files::meta::Kind::Issue) {
+        return Err(format!(
+            "issues/{number}-{group}.vissue is not an issue file"
+        ));
+    }
+    if f.meta.get("number").map(String::as_str) != Some(number.to_string().as_str()) {
+        return Err(format!(
+            "issues/{number}-{group}.vissue says it is issue {}, not {number}",
+            f.meta.get("number").map_or("none", String::as_str)
+        ));
+    }
     if f.meta.get("group_id").map(String::as_str) != Some(group) {
         return Err(format!("issue {number} is not addressed to {group}"));
+    }
+    if let Some(by) = f
+        .issues
+        .iter()
+        .map(|i| i.closed_by.trim())
+        .find(|b| !b.is_empty())
+    {
+        return Err(format!(
+            "issue {number} is closed, by {by}: a closed issue is not assigned"
+        ));
     }
     let person = get("person");
     if person.trim().is_empty() {

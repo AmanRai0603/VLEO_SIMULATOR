@@ -32,42 +32,100 @@ fn release(version: &str, resolves: &str) -> File {
     f
 }
 
+/// Issue `number`, raised against solar.
+fn issue(number: i64) -> Issue {
+    Issue {
+        number,
+        group_id: s("l3_solar"),
+        raised_by: s("Pia Power"),
+        ..Issue::default()
+    }
+}
+
+/// The numbers alone.
+fn numbers(r: &File) -> Vec<u64> {
+    issues::resolves(r)
+        .unwrap()
+        .into_iter()
+        .map(|(n, _)| n)
+        .collect()
+}
+
 #[test]
 fn a_release_resolves_the_issues_its_notes_name() {
-    assert_eq!(issues::resolves(&release("1.2", "3, 7")), [3, 7]);
-    assert_eq!(issues::resolves(&release("1.2", "3;7 12")), [3, 7, 12]);
-    assert!(issues::resolves(&release("1.2", "")).is_empty());
-    // Another version's row says nothing of this one.
+    assert_eq!(numbers(&release("1.2", "3, 7")), [3, 7]);
+    assert_eq!(numbers(&release("1.2", "3;7 12")), [3, 7, 12]);
+    assert!(numbers(&release("1.2", "")).is_empty());
+    // A later release still resolves what an earlier one did: the record is
+    // carried whole, and every row up to its own version is read.
+    let mut later = release("1.2", "3");
+    later.meta.insert(s("version"), s("1.3"));
+    assert_eq!(
+        issues::resolves(&later).unwrap(),
+        [(3, s("1.2"))],
+        "1.3 carries 1.2's row"
+    );
+    // An earlier release does not resolve what a later row names.
     let mut r = release("1.2", "3");
     r.meta.insert(s("version"), s("1.0"));
-    assert!(issues::resolves(&r).is_empty());
+    assert!(numbers(&r).is_empty());
     // A release with no record resolves nothing.
     let mut bare = release("1.2", "3");
     bare.tables.clear();
-    assert!(issues::resolves(&bare).is_empty());
+    assert!(numbers(&bare).is_empty());
+    // An entry that is not an issue's number is refused by its row.
+    let e = issues::resolves(&release("1.2", "3a, 7")).unwrap_err();
+    assert!(
+        e.contains("versions.csv's row 1.2 resolves \"3a\", which is not an issue's number"),
+        "{e}"
+    );
 }
 
 #[test]
 fn an_issue_closes_only_once_its_release_is_taken_and_its_mark_is_not_red() {
     let r = release("1.2", "3");
-    let taken = Some(("1.2", &r));
+    let state = |n: i64, who: Option<&str>, taken: Option<&File>, red: bool| {
+        issues::state(&issue(n), who, taken, red).unwrap()
+    };
     assert_eq!(
-        issues::state(3, None, taken, false),
+        state(3, None, Some(&r), false),
         State::Closed { by: s("1.2") }
     );
     assert_eq!(
-        issues::state(3, Some("Nia Node"), taken, true),
+        state(3, Some("Nia Node"), Some(&r), true),
         State::Resolved { by: s("1.2") }
     );
     assert_eq!(
-        issues::state(4, Some("Nia Node"), taken, true),
+        state(4, Some("Nia Node"), Some(&r), true),
         State::Assigned(s("Nia Node"))
     );
-    assert_eq!(issues::state(4, None, taken, false), State::Open);
-    assert_eq!(issues::state(3, None, None, false), State::Open);
+    assert_eq!(state(4, None, Some(&r), false), State::Open);
+    assert_eq!(state(3, None, None, false), State::Open);
+    // Closed by 1.2, it stays closed once 1.3 is taken.
+    let mut next = release("1.2", "3");
+    next.meta.insert(s("version"), s("1.3"));
+    assert_eq!(
+        state(3, None, Some(&next), false),
+        State::Closed { by: s("1.2") }
+    );
     assert_eq!(
         issues::State::Closed { by: s("1.2") }.said("l3_solar"),
         "closed by l3_solar 1.2"
+    );
+    // Another group's release never resolves solar's issue 3.
+    let mut power = release("1.2", "3");
+    power.meta.insert(s("group_id"), s("l3_power"));
+    let e = issues::state(&issue(3), None, Some(&power), false).unwrap_err();
+    assert!(
+        e.contains("the release given is l3_power's, and issue 3 is addressed to l3_solar"),
+        "{e}"
+    );
+    // Closed before 1.0, as its upgraded file says: read as it was said.
+    let mut old = issue(5);
+    old.closed_by = s("Ola Sun");
+    assert_eq!(
+        issues::state(&old, None, None, true).unwrap(),
+        State::ClosedBefore1_0 { by: s("Ola Sun") }
     );
 }
 

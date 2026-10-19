@@ -126,8 +126,11 @@ pub enum Edit {
         previous: Option<Box<File>>,
     },
     /// Issue `number`, addressed to the group, given to `person`, a node
-    /// engineer its group file registers, to resolve (W11): kept in the
-    /// group file, the issue file being its raiser's (`crate::issues`).
+    /// engineer its group file registers, never their deputy nor an
+    /// assistant's name, to resolve (W11): kept in the group file, the issue
+    /// file being its raiser's (`crate::issues`). The library does not read
+    /// the issue: its caller holds that `number` is an issue addressed to
+    /// the group, as `POST /v1/branch/assign-issue` does.
     AssignIssue { number: u64, person: String },
     /// Many blocks set up at once from a sheet, a CSV a row a block
     /// ([`SHEET_COLUMNS`]): each added, its ports filled, its inputs wired
@@ -1639,14 +1642,26 @@ fn apply(
             Ok((group_id.to_string(), before, None))
         }
         Edit::AssignIssue { number, person } => {
-            if !registry
+            if checks::is_assistant(person) {
+                return Err(refused(format!(
+                    "{person} is an assistant's name: an issue is assigned to a person"
+                )));
+            }
+            let Some(p) = registry
                 .file
                 .people
                 .iter()
-                .any(|p| p.name == *person && p.role == "node engineer")
-            {
+                .find(|p| p.name == *person && p.role == "node engineer")
+            else {
                 return Err(refused(format!(
                     "{group_id}'s group file registers no node engineer {person}: an issue is assigned to a node engineer its group registers"
+                )));
+            };
+            // As a node is: to the node engineer, whose deputy acts for them.
+            if !p.deputy_for.is_empty() {
+                return Err(refused(format!(
+                    "{person} is {}'s deputy: an issue is assigned to its node engineer, and their deputy acts for them",
+                    p.deputy_for
                 )));
             }
             let kind = crate::issues::text_kind(*number);

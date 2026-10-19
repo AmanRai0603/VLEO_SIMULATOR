@@ -2206,8 +2206,19 @@ fn an_issue_is_assigned_by_the_branch_s_owner_to_a_node_engineer() {
         err.contains("registers no node engineer Pat Morgan"),
         "{err}"
     );
-    let err = frame(&solar(), &e("Nia Node"), WHY, "Nia Node", &key(16)).unwrap_err();
-    assert!(!err.is_empty());
+    // Never to a deputy, nor to an assistant's name.
+    let deputy = with_node_engineer(&solar(), "Ivo Node", "Nia Node", &key(17));
+    let err = ola(&deputy, &e("Ivo Node")).unwrap_err();
+    assert!(err.contains("Ivo Node is Nia Node's deputy"), "{err}");
+    let assistant = with_node_engineer(&solar(), "Claude", "", &key(18));
+    let err = ola(&assistant, &e("Claude")).unwrap_err();
+    assert!(err.contains("Claude is an assistant's name"), "{err}");
+    // Only the owner: Sam, whom the programme registers, is not solar's.
+    let err = frame(&solar(), &e("Nia Node"), WHY, "Sam Engel", &key(12)).unwrap_err();
+    assert!(
+        err.contains("its owner Ola Sun, or their deputy, does"),
+        "{err}"
+    );
 }
 
 /// `f` with an open block `id` under `parent`, an input `x` and an output
