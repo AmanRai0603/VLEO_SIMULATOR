@@ -414,8 +414,8 @@ impl Registry {
         Ok(person)
     }
 
-    /// Whether `name` holds `role` here, or is registered as the deputy of
-    /// someone who does.
+    /// Whether `name` is registered here in `role`. A deputy is registered
+    /// in the role of whoever they deputise for, so this holds for them too.
     pub fn acts_as(&self, name: &str, role: &str) -> bool {
         self.file
             .people
@@ -451,7 +451,7 @@ impl Registry {
 /// The current signatures of `scope` with verdict `ok` that check, each by
 /// someone `may` allows, through `registry`. The refusals of every other come
 /// back with it, so a person reads why each did not count.
-fn counted<'a>(
+pub(crate) fn counted<'a>(
     f: &'a File,
     scope: &str,
     registry: &Registry,

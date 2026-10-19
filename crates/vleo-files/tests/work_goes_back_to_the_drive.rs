@@ -2546,7 +2546,7 @@ fn a_preview_goes_back_as_a_new_file_by_the_system_engineer_who_wrote_it() {
     assert!(r.written, "{:?}", r.lines);
     let o = opened(&drive);
     let f = sqlite::read(&drive.join(&p)).unwrap();
-    vleo_files::design::open_preview(&f, &o.programme, APP).unwrap();
+    vleo_files::design::open_preview(&f, &[&o.programme, &o.systems], &o.programme, APP).unwrap();
     // One there already is never written over.
     let r = pb(&copy, &drive, "Test Sam", None).unwrap();
     assert!(!r.back().contains(&p), "{:?}", r.lines);
@@ -2591,9 +2591,25 @@ fn a_preview_of_a_release_or_on_a_design_the_drive_does_not_hold_does_not_go_bac
             ),
         "{l:?}"
     );
-    // Moved under another name, it says where it is.
+    // The drive's release as it was sealed again.
     std::fs::remove_file(drive.join(&rel)).unwrap();
     std::fs::copy(copy.join(&rel), drive.join(&rel)).unwrap();
+    // Written by Ola, who is its writer and not the system engineer.
+    let theirs = sqlite::read(&copy.join(&p)).unwrap();
+    let mut ola = theirs.clone();
+    ola.meta.insert(s("writer"), s("Test Ola"));
+    ola.signatures.clear();
+    let row = chain::sign(&ola, FILE, "Test Ola", &key(73), AT, "ok", "").unwrap();
+    ola.signatures.push(row);
+    sqlite::write(&ola, &copy.join(&p)).unwrap();
+    let r = pb(&copy, &drive, "Test Ola", None).unwrap();
+    let l = line(&r, &p);
+    assert!(
+        !l.back && l.why.contains("does not check through the chain"),
+        "{l:?}"
+    );
+    sqlite::write(&theirs, &copy.join(&p)).unwrap();
+    // Moved under another name, it says where it is.
     let moved = "integration/l3_solar-1.0/preview-l3_solar-1.0-on-2026.10.2.vleo";
     std::fs::rename(copy.join(&p), copy.join(moved)).unwrap();
     let r = pb(&copy, &drive, "Test Sam", None).unwrap();

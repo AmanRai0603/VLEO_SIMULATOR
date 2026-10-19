@@ -7,7 +7,7 @@
 //! the release whole, `based_on` the design released now, `moved.csv`, every
 //! value outside the group that moved, and `named.csv`, every subsystem's
 //! group a value moved in, whose owner answers. What moved is the engine's,
-//! run on two graphs it built itself (the server's `design::preview`); here
+//! run on two graphs it built itself (the server's `POST /v1/design/preview`); here
 //! nothing is computed, only held and checked. A move in the systems' or the
 //! programme's branch is shown and not answered: the system engineer decides,
 //! and the programme manager owns the decision (F6's question 45).
@@ -175,8 +175,8 @@ pub fn to_preview(
 /// file as the drive holds it at `release.path`, on `based_on`, the design
 /// released now read back, written by `by` with `key` at `at`: holding the
 /// release whole, every value of `moved` and the groups whose owners answer
-/// ([`named`], through `parents`). Refused unless the release is one the
-/// design does not already hold, it moves a value outside its group, and
+/// ([`named`], through `parents`). Refused unless the release is sealed
+/// through the chain, is one the design does not already hold, it moves a value outside its group, and
 /// `by` is the system engineer or their deputy with a key the programme's
 /// file counts then; held to `chain::check_preview` as it will be read.
 #[cfg(not(target_arch = "wasm32"))]
@@ -212,6 +212,7 @@ pub fn preview(
             release.path
         )));
     }
+    sealed(&file, &group, &version, parents, programme)?;
     to_preview(based_on, &group, &version, &fingerprint)?;
     if moved.is_empty() {
         return Err(refused(format!(
@@ -289,6 +290,29 @@ pub fn preview(
     Ok(f)
 }
 
+/// Whether `file`, `group`'s release `version`, is sealed through the
+/// chain: its owner's seal, as the file among `parents` that mounts the group
+/// names its owner (`chain::seal_of`); or, from before 1.0, its anchor in the
+/// programme's file. A release nobody sealed is never previewed.
+#[cfg(not(target_arch = "wasm32"))]
+fn sealed(
+    file: &File,
+    group: &str,
+    version: &str,
+    parents: &[&Registry],
+    programme: &Registry,
+) -> Result<(), Error> {
+    let (mounted_by, _) = chain::mounted_by(group, parents)?;
+    if file.meta.get("upgraded_from").map(String::as_str) == Some(crate::upgrade::FROM_FORMAT_1) {
+        let checked = chain::check_release_in(file, mounted_by, programme)?;
+        if let Some(why) = checked.refused.first() {
+            return Err(refused(format!("{group} {version} is not sealed: {why}")));
+        }
+        return Ok(());
+    }
+    chain::seal_of(file, mounted_by, programme).map(|_| ())
+}
+
 /// The fingerprint of a group's release, as its seal names it: a release of
 /// the one schema gives its own digest; one from before 1.0 was held to its
 /// folder's when it was upgraded, and says it.
@@ -314,18 +338,26 @@ fn fingerprint_of(file: &File) -> Result<String, Error> {
 /// The preview `f` read back, as it is read wherever one is relied on: it
 /// checks through `programme`'s chain (`chain::check_preview`), and the
 /// release it holds reads as a group's release, the group and version the
-/// preview says, whose fingerprint is its content's. Anything else is
-/// refused by name.
+/// preview says, whose fingerprint is its content's, sealed through the
+/// chain of `parents` (the programme's and the systems' files). Anything
+/// else is refused by name.
 #[cfg(not(target_arch = "wasm32"))]
-pub fn open_preview(f: &File, programme: &Registry, app: &str) -> Result<OpenedPreview, Error> {
+pub fn open_preview(
+    f: &File,
+    parents: &[&Registry],
+    programme: &Registry,
+    app: &str,
+) -> Result<OpenedPreview, Error> {
     chain::check_preview(f, programme)?;
     let get = |k: &str| f.meta.get(k).cloned().unwrap_or_default();
-    let (group, version) = (get("group_id"), get("version"));
+    let (group, version, writer) = (get("group_id"), get("version"), get("writer"));
     let named_as = |what: String| refused(format!("the preview of {group} {version} {what}"));
-    let at = f
-        .signatures
-        .iter()
-        .find(|s| s.scope == FILE)
+    // Read as of the signature that counts, never a row beside it.
+    let (counts, _) = chain::counted(f, FILE, programme, |name| {
+        name == writer && programme.acts_as(name, "system engineer")
+    });
+    let at = counts
+        .first()
         .map_or(String::new(), |s| s.signed_at.clone());
     let how = crate::upgrade::Upgrade { app, at: &at };
     let m = &f.media[0];
@@ -347,6 +379,8 @@ pub fn open_preview(f: &File, programme: &Registry, app: &str) -> Result<OpenedP
         )));
     }
     let fingerprint = fingerprint_of(&file)
+        .map_err(|e| named_as(format!("holds {}: {}", m.path, e.message())))?;
+    sealed(&file, &group, &version, parents, programme)
         .map_err(|e| named_as(format!("holds {}: {}", m.path, e.message())))?;
     let table = |path: &str| {
         crate::csv::read(

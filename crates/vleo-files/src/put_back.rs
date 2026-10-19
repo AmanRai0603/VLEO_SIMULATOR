@@ -722,9 +722,10 @@ fn verdict(
 /// Whether the preview `name` in `integration/<dir>/`, `bytes` in the copy,
 /// goes back as a new file written by `me`, onto the drive at `drive` that
 /// holds `theirs` at that path: at the place its meta names, on a design the
-/// drive holds, holding the release the drive holds at its place byte for
-/// byte, and checking through the chain as the drive holds it now, signed by
-/// `me` with a key that counts at `at`.
+/// drive holds that opens through the chain, holding the release the drive
+/// holds at its place byte for byte, and read back as every preview is
+/// (`design::open_preview`) through the chain as the drive holds it now,
+/// signed by `me` with a key that counts at `at`.
 #[allow(clippy::too_many_arguments)]
 fn preview_verdict(
     dir: &str,
@@ -766,11 +767,17 @@ fn preview_verdict(
             said("writer")
         ));
     }
-    if !drive.join(format!("design/design-{design}.vleo")).is_file() {
-        return Err(format!(
-            "the drive holds no design {design}: a preview is on a design released there"
-        ));
-    }
+    let app = concat!("vleo ", env!("CARGO_PKG_VERSION"));
+    let on =
+        crate::sqlite::read(&drive.join(format!("design/design-{design}.vleo"))).map_err(|_| {
+            format!("the drive holds no design {design}: a preview is on a design released there")
+        })?;
+    crate::design::open_held(&on, &chain.programme, app).map_err(|e| {
+        format!(
+            "design {design} on the drive does not open through the chain, so nothing is previewed on it: {}",
+            e.message()
+        )
+    })?;
     // The release it holds is the drive's, byte for byte: never one the
     // drive does not hold, nor another of that number.
     let rel = format!("groups/{group}/releases/{group}-{version}.vleo");
@@ -783,7 +790,9 @@ fn preview_verdict(
         ));
     }
     let now = only_counting_now(&f, chain::FILE, me, at, &chain.programme);
-    chain::check_preview(&now, &chain.programme).map_err(|e| {
+    let mut parents = vec![&chain.programme];
+    parents.extend(chain.systems.iter());
+    crate::design::open_preview(&now, &parents, &chain.programme, app).map_err(|e| {
         format!(
             "it does not check through the chain as the drive holds it now, signed by {me} with a key that counts at {at}: {}",
             e.message()

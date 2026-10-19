@@ -53,7 +53,7 @@
         "properties": {
           "path": {
             "type": "string",
-            "description": "integration/<g>-<v>/preview-<g>-<v>-on-<design>.vleo"
+            "description": "integration/<g>-<v>/preview-<g>-<v>-on-<design>.vleo, or integration/ when that folder does not read."
           },
           "in": {
             "type": "string",
@@ -157,18 +157,18 @@
                   "type": "string",
                   "description": "Why the answer there does not count, for one refused."
                 },
-                "on_drive": {
+                "in_copy": {
                   "type": "boolean",
-                  "description": "Whether the drive holds the answer; one in your copy only is not put back yet."
+                  "description": "Whether an answer is in your copy and not on the drive: written, not put back, so it does not count yet."
                 }
               },
               "required": [
                 "group",
                 "said",
-                "on_drive"
+                "in_copy"
               ]
             },
-            "description": "What each group named has said, unanswered first."
+            "description": "What each group named has said, as the drive's answers say it, unanswered first."
           }
         },
         "required": [

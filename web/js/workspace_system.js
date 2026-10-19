@@ -178,7 +178,7 @@ async function drawRelease() {
  *  what moved, and what each group it names has said, unanswered first. What
  *  moved is the engine's, built when Preview is pressed, never here. */
 function previews(c) {
-  const num = (x, why) => x === null || x === undefined ? 'refused' + (why ? ': ' + why : '') : String(x);
+  const num = (x, why) => x === null || x === undefined ? (why ? 'refused: ' + why : 'not in this design') : String(x);
   const pending = (c.pending || []).map(p =>
     '<li class="sy-p-pending">' + esc(p.group + ' ' + p.version) + ' is in today\'s design, and design ' + esc(c.previews_on) +
     ' holds ' + esc(p.held ? p.group + ' ' + p.held : 'none of ' + p.group) + ': ' +
@@ -187,7 +187,7 @@ function previews(c) {
         '>Preview ' + esc(p.group + ' ' + p.version) + '</button>') + '</li>').join('');
   const said = a => '<li class="sy-p-said sy-p-' + esc(a.said) + '"><b>' + esc(a.group) + '</b>: ' + esc(a.said) +
     (a.because ? ', because ' + esc(a.because) : '') + (a.why ? ': ' + esc(a.why) : '') +
-    (a.said !== 'unanswered' && !a.on_drive ? ' <span class="muted">in your copy, not put back yet</span>' : '') + '</li>';
+    (a.in_copy ? ' <span class="muted">answered in your copy, not put back yet, so not counted</span>' : '') + '</li>';
   const one = p => p.opens === false
     ? '<li class="sh-refused sy-p-refused">' + esc(p.why) + '</li>'
     : '<li class="sy-p-one"><b>' + esc(p.group + ' ' + p.version) + '</b> on design ' + esc(p.based_on) +

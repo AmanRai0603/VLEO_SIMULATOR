@@ -23,8 +23,13 @@
 //!   named to answer; the systems' own value shown and not named. Asked
 //!   again, it is never written over;
 //! - put back, Uma's My work says *Answer l3_solar 1.1*; her objection,
-//!   written through `POST /v1/answer`, is read back as an objection with
-//!   why, and My work says no more of it.
+//!   written through `POST /v1/answer`, counts only once it is put back: in
+//!   her copy, it is unanswered and My work says to put it back; on the
+//!   drive, it is an objection with why, and My work says no more of it;
+//! - changed on the drive after she signed it, her answer is refused, and My
+//!   work says it does not count;
+//! - the preview copied under another design's name is listed with why, and
+//!   said to Uma in My work.
 //!
 //! What moved is the engine's, on two graphs it built itself: the test
 //! asserts that a value moved and where, never what it moved to.
@@ -619,7 +624,8 @@ fn the_system_engineer_previews_a_release_and_its_named_group_answers_it() {
     );
     let f = sqlite::read(&copy.join(&path)).unwrap();
     let o = opened(&copy);
-    let back = design::open_preview(&f, &o.programme, APP).expect("it opens through the chain");
+    let back = design::open_preview(&f, &[&o.programme, &o.systems], &o.programme, APP)
+        .expect("it opens through the chain");
     assert_eq!(back.named, ["l3_x_envorbit"]);
     assert_eq!(
         back.release.bytes,
@@ -644,7 +650,7 @@ fn the_system_engineer_previews_a_release_and_its_named_group_answers_it() {
         listed[0].contains("\"in\":\"your copy, not put back yet\"")
             && listed[0].contains("\"stale\":false")
             && listed[0].contains(
-                "\"answers\":[{\"group\":\"l3_x_envorbit\",\"said\":\"unanswered\",\"on_drive\":false}]"
+                "\"answers\":[{\"group\":\"l3_x_envorbit\",\"said\":\"unanswered\",\"in_copy\":false}]"
             ),
         "{p}"
     );
@@ -683,14 +689,72 @@ fn the_system_engineer_previews_a_release_and_its_named_group_answers_it() {
         ],
     );
     assert!(r.contains("\"ok\":true"), "{r}");
+    // In her copy only, it is not counted: unanswered, said to be in the
+    // copy, and My work asks her to put it back.
+    let p = previews();
+    assert!(
+        entries(&p, "previews")[0].contains(
+            "\"answers\":[{\"group\":\"l3_x_envorbit\",\"said\":\"unanswered\",\"in_copy\":true}]"
+        ),
+        "{p}"
+    );
+    let w = ask(port, "GET", "/v1/my-work", &[], false);
+    assert!(
+        w.contains("\"says\":\"Put back l3_x_envorbit's answer to l3_solar 1.1"),
+        "{w}"
+    );
+    // Put back, it is her objection, with why, and My work says no more.
+    let answer = vleo_files::answer::path_of("l3_solar", "1.1", "l3_x_envorbit");
+    let files = format!(
+        "{} {answer}",
+        copied::digest(&std::fs::read(copy.join(&answer)).unwrap())
+    );
+    let r = post(port, "/v1/put-back", &[("files", &files)]);
+    assert!(r.contains("\"written\":true"), "{r}");
     let p = previews();
     assert!(
         entries(&p, "previews")[0].contains(&format!(
-            "\"answers\":[{{\"group\":\"l3_x_envorbit\",\"said\":\"object\",\"because\":\"{because}\",\"on_drive\":false}}]"
+            "\"answers\":[{{\"group\":\"l3_x_envorbit\",\"said\":\"object\",\"because\":\"{because}\",\"in_copy\":false}}]"
         )),
         "{p}"
     );
     let w = ask(port, "GET", "/v1/my-work", &[], false);
     assert!(!w.contains("\"kind\":\"answer\""), "{w}");
+    // Changed on the drive after she signed it: refused, never her answer,
+    // and My work says it does not count.
+    let mut f = sqlite::read(&drive.join(&answer)).unwrap();
+    for t in f.texts.iter_mut().filter(|t| t.kind == "because") {
+        t.body = s("Nothing moves that matters.");
+    }
+    sqlite::write(&f, &drive.join(&answer)).unwrap();
+    let p = previews();
+    let listed = entries(&p, "previews")[0];
+    assert!(
+        listed.contains("\"said\":\"refused\"") && listed.contains("has no signature that counts"),
+        "{p}"
+    );
+    let w = ask(port, "GET", "/v1/my-work", &[], false);
+    assert!(
+        w.contains("\"says\":\"l3_x_envorbit's answer to l3_solar 1.1 does not count"),
+        "{w}"
+    );
+    // The preview under a name that is not its own: listed with why, and
+    // said to Uma, whom it says it names.
+    let wrong = "integration/l3_solar-1.1/preview-l3_solar-1.1-on-2026.10.9.vleo";
+    std::fs::copy(drive.join(&path), drive.join(wrong)).unwrap();
+    let p = previews();
+    let planted = entries(&p, "previews")
+        .into_iter()
+        .find(|e| e.contains(wrong))
+        .unwrap_or_else(|| panic!("{p}"));
+    assert!(
+        planted.contains("\"opens\":false") && planted.contains(&format!("so it is {path}")),
+        "{planted}"
+    );
+    let w = ask(port, "GET", "/v1/my-work", &[], false);
+    assert!(
+        w.contains("\"kind\":\"preview refused\"") && w.contains(wrong),
+        "{w}"
+    );
     let _ = std::fs::remove_dir_all(&scratch);
 }

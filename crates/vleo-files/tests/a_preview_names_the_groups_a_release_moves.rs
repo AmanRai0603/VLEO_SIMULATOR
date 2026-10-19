@@ -463,7 +463,7 @@ fn sam_previews_a_release_that_moves_other_groups_and_names_their_owners() {
     );
     assert_eq!(table(&p, "named.csv"), "group\nl3_drag\nl3_x_envorbit\n");
     chain::check_preview(&p, &w.pr).expect("the preview opens through the chain");
-    let o = design::open_preview(&p, &w.pr, APP).expect("it reads back");
+    let o = design::open_preview(&p, &[&w.pr, &w.sy], &w.pr, APP).expect("it reads back");
     assert_eq!(
         (o.group.as_str(), o.version.as_str(), o.based_on.as_str()),
         ("l3_solar", "1.3", "2026.10.1")
@@ -513,6 +513,10 @@ fn a_preview_is_refused_by_name() {
         e.contains("design 2026.10.1 holds l3_solar 1.2 already: there is nothing to preview"),
         "{e}"
     );
+    let mut unsealed = r.clone();
+    unsealed.signatures.retain(|row| row.scope != FILE);
+    let e = preview_of(&w, &d, &unsealed, &all, "Sam Engel", &key(12)).unwrap_err();
+    assert!(e.contains("has no signature"), "{e}");
     let e = preview_of(&w, &d, &r, &[], "Sam Engel", &key(12)).unwrap_err();
     assert!(
         e.contains(
@@ -561,7 +565,7 @@ fn resigned(w: &World, p: &File, change: impl Fn(&mut File)) -> String {
     f.signatures.retain(|r| r.scope != FILE);
     let row = chain::sign(&f, FILE, "Sam Engel", &key(12), AT, "ok", "").unwrap();
     f.signatures.push(row);
-    let e = design::open_preview(&f, &w.pr, APP).unwrap_err();
+    let e = design::open_preview(&f, &[&w.pr, &w.sy], &w.pr, APP).unwrap_err();
     assert_eq!(
         chain::check_preview(&f, &w.pr).is_err(),
         !e.message().contains("holds groups/"),
@@ -576,6 +580,9 @@ fn a_preview_changed_or_not_as_a_preview_writes_it_does_not_open() {
     let d = released(&w);
     let r = solar_13(&w);
     let p = preview_of(&w, &d, &r, &what_moved(), "Sam Engel", &key(12)).unwrap();
+    let mut bare = r.clone();
+    bare.signatures.retain(|row| row.scope != FILE);
+    let unsealed = bytes(&bare);
     // Changed after Sam signed it.
     let mut f = p.clone();
     f.tables[0].csv = f.tables[0].csv.replace("151.5", "152.5");
@@ -655,6 +662,17 @@ fn a_preview_changed_or_not_as_a_preview_writes_it_does_not_open() {
             "holds block rows",
         ),
         (
+            Box::new(|f: &mut File| f.media[0].path = s("groups/l3_solar/releases/latest.vleo")),
+            "holds 1 file: a preview holds the one release it previews, whole, as groups/l3_solar/releases/l3_solar-1.3.vleo",
+        ),
+        (
+            Box::new(move |f: &mut File| {
+                f.media[0].bytes = unsealed.clone();
+                f.media[0].sha256 = vleo_files::keys::hex(&vleo_files::keys::sha256(&unsealed));
+            }),
+            "holds groups/l3_solar/releases/l3_solar-1.3.vleo: l3_solar's release, by its owner Ola Sun, has no signature",
+        ),
+        (
             Box::new(|f: &mut File| {
                 f.meta.insert(s("writer"), s("Sid Side"));
             }),
@@ -679,7 +697,7 @@ fn each_group_named_says_fine_object_unanswered_or_refused() {
     let d = released(&w);
     let r = solar_13(&w);
     let p = preview_of(&w, &d, &r, &what_moved(), "Sam Engel", &key(12)).unwrap();
-    let o = design::open_preview(&p, &w.pr, APP).unwrap();
+    let o = design::open_preview(&p, &[&w.pr, &w.sy], &w.pr, APP).unwrap();
     let parents = [&w.pr, &w.sy];
     let answering = |release: &File, g: &str, said: &Said| {
         answer::answer(
