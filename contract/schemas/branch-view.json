@@ -40,6 +40,83 @@
         ]
       }
     },
+    "seal_refuses": {
+      "type": "array",
+      "description": "What the seal would refuse now, each reason as the seal says it: the view runs what is signed, and the seal asks more of each node.",
+      "items": {
+        "type": "string"
+      }
+    },
+    "case": {
+      "type": "string",
+      "description": "The case the view ran on."
+    },
+    "today": {
+      "type": "object",
+      "description": "How today's design ran on the case: n ran, m blocked, each blocked node with why.",
+      "properties": {
+        "ran": {
+          "type": "number",
+          "description": "How many values it answered."
+        },
+        "blocked": {
+          "type": "array",
+          "description": "Every node it blocked, inside the branch or not, each with why.",
+          "items": {
+            "type": "object",
+            "properties": {
+              "node": {
+                "type": "string"
+              },
+              "why": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "node",
+              "why"
+            ]
+          }
+        }
+      },
+      "required": [
+        "ran",
+        "blocked"
+      ]
+    },
+    "view": {
+      "type": "object",
+      "description": "How the view ran on the case: n ran, m blocked, each blocked node with why, the branch's own nodes among them.",
+      "properties": {
+        "ran": {
+          "type": "number",
+          "description": "How many values it answered."
+        },
+        "blocked": {
+          "type": "array",
+          "description": "Every node it blocked, inside the branch or not, each with why.",
+          "items": {
+            "type": "object",
+            "properties": {
+              "node": {
+                "type": "string"
+              },
+              "why": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "node",
+              "why"
+            ]
+          }
+        }
+      },
+      "required": [
+        "ran",
+        "blocked"
+      ]
+    },
     "impact": {
       "type": "array",
       "description": "Every value outside the branch that moves, with the nearest group it hangs under; null where it refuses or does not run.",
@@ -63,6 +140,14 @@
               "number",
               "null"
             ]
+          },
+          "before_why": {
+            "type": "string",
+            "description": "Why it refused in today's design, its node's own reason, where it refused."
+          },
+          "after_why": {
+            "type": "string",
+            "description": "Why it refused in the view, its node's own reason, where it refused."
           }
         },
         "required": [

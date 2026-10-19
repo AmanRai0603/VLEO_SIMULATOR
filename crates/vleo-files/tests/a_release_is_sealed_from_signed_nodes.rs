@@ -403,7 +403,7 @@ fn a_release_is_written_into_the_copy_and_never_written_over() {
 }
 
 #[test]
-fn a_release_s_node_in_the_design_s_file_keeps_the_kinds_of_text_it_does_not_carry() {
+fn a_release_s_node_in_the_design_s_file_keeps_only_the_sheet_s_own_words() {
     let text = |kind: &str, body: &str| Text {
         scope: s(BAND),
         kind: s(kind),
@@ -413,26 +413,41 @@ fn a_release_s_node_in_the_design_s_file_keeps_the_kinds_of_text_it_does_not_car
     base.texts = vec![
         text("sheet", "the sheet's own words"),
         text("method", "return 1"),
+        text("pseudocode", "return 1"),
+        text("explain.simply", "the design's old words"),
         text(
             "fixtures",
             "the design's cases, which the release no longer holds",
         ),
     ];
     base.meta.insert(s("sheet.crate"), s("vleo-mod-solar"));
+    let kinds = |rel: &File| -> Vec<(String, String)> {
+        vleo_files::release::node_in(rel, BAND, &base)
+            .texts
+            .into_iter()
+            .map(|t| (t.kind, t.body))
+            .collect()
+    };
+    // Its method and pseudocode are the release's; the design's sheet is
+    // kept, and nothing else the release dropped.
     let mut rel = from_release(BAND);
-    rel.texts = vec![text("method", "return 2")];
-    let n = vleo_files::release::node_in(&rel, BAND, &base);
-    let kinds: Vec<(&str, &str)> = n
-        .texts
-        .iter()
-        .map(|t| (t.kind.as_str(), t.body.as_str()))
-        .collect();
-    assert_eq!(kinds.len(), 2, "{kinds:?}");
-    assert!(
-        kinds.contains(&("sheet", "the sheet's own words")),
-        "{kinds:?}"
+    rel.texts = vec![text("method", "return 2"), text("pseudocode", "return 2")];
+    let mut got = kinds(&rel);
+    got.sort();
+    assert_eq!(
+        got,
+        [
+            (s("method"), s("return 2")),
+            (s("pseudocode"), s("return 2")),
+            (s("sheet"), s("the sheet's own words")),
+        ]
     );
-    assert!(kinds.contains(&("method", "return 2")), "{kinds:?}");
+    // A release whose node says its pseudocode and no method runs no method
+    // of the design's: none is kept, and the node is refused as it is read.
+    rel.texts = vec![text("pseudocode", "return 2")];
+    let got = kinds(&rel);
+    assert!(!got.iter().any(|(k, _)| k == "method"), "{got:?}");
+    let n = vleo_files::release::node_in(&rel, BAND, &base);
     assert_eq!(
         n.meta.get("sheet.crate").map(String::as_str),
         Some("vleo-mod-solar")

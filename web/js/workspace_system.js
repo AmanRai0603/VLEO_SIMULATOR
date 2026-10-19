@@ -93,13 +93,18 @@ function view() {
   const v = W.view;
   if (!v) return '<p><button class="ctl" id="sy-view">Today\'s view</button> today\'s design with every node of this branch signed as it is in your copy, and every value outside it that moves.</p>';
   if (v.ok === false) return '<p class="sh-refused sy-view">' + esc(v.message || 'today\'s view cannot be built') + '</p>';
-  const num = x => x === null || x === undefined ? 'refused' : String(+x.toPrecision(6));
+  const num = (x, why) => x === null || x === undefined ? 'refused' + (why ? ': ' + why : '') : String(+x.toPrecision(6));
+  const ran = (k, r) => '<p>' + k + ': ' + r.ran + ' ran, ' + r.blocked.length + ' blocked' +
+    (r.blocked.length ? ' — ' + r.blocked.map(b => esc(b.node + ': ' + b.why)).join('<br>') : '') + '</p>';
   return '<section class="sy-view"><h4>today\'s view</h4><p>' + esc(v.says) + '</p>' +
+    '<p>Run on ' + esc(v.case) + '.</p>' +
     '<p>' + (v.changes.length ? 'It changes ' + esc(v.changes.join(', ')) + '.' : 'Nothing signed in your copy changes today\'s design.') + '</p>' +
     (v.left_out.length ? '<p>Left out: ' + v.left_out.map(l => esc(l.node + ' — ' + l.why)).join('<br>') + '</p>' : '') +
+    (v.seal_refuses.length ? '<p class="sh-refused">Sealed now, it would be refused: ' + v.seal_refuses.map(esc).join('<br>') + '</p>' : '') +
+    ran('Today\'s design', v.today) + ran('The view', v.view) +
     (v.impact.length
       ? '<table class="sh-table sy-impact"><thead><tr><th>outside the branch</th><th>group</th><th>today</th><th>in the view</th></tr></thead><tbody>' +
-        v.impact.map(m => '<tr><td>' + esc(m.id) + '</td><td>' + esc(m.group) + '</td><td>' + esc(num(m.before)) + '</td><td>' + esc(num(m.after)) + '</td></tr>').join('') +
+        v.impact.map(m => '<tr><td>' + esc(m.id) + '</td><td>' + esc(m.group) + '</td><td>' + esc(num(m.before, m.before_why)) + '</td><td>' + esc(num(m.after, m.after_why)) + '</td></tr>').join('') +
         '</tbody></table>'
       : '<p class="muted">No value outside the branch moves.</p>') +
     '<p><button class="ctl" id="sy-view">Build it again</button></p></section>';
