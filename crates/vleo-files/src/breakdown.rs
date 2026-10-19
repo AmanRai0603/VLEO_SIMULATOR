@@ -257,15 +257,18 @@ pub fn sheet_edits(csv: &str) -> Result<Vec<(usize, String, Edit)>, Error> {
     Ok(frame)
 }
 
+/// A sheet's rows, each with the line it starts on.
+type SheetRows = Vec<(usize, Vec<String>)>;
+
 /// A sheet's header and its rows, each with the line it starts on (the
 /// header is line 1), as a person reading the file counts them: a blank
 /// line is skipped and counted, a cell quoted over lines is one row. A
 /// UTF-8 byte-order mark, as a spreadsheet writes one, is not part of the
 /// first column's name. A quote never closed is refused by the line it
 /// opened on, or every row after it would be read as one cell.
-fn sheet_rows(csv: &str) -> Result<(Vec<String>, Vec<(usize, Vec<String>)>), Error> {
+fn sheet_rows(csv: &str) -> Result<(Vec<String>, SheetRows), Error> {
     let text = csv.strip_prefix('\u{feff}').unwrap_or(csv);
-    let mut rows: Vec<(usize, Vec<String>)> = Vec::new();
+    let mut rows: SheetRows = Vec::new();
     let (mut row, mut cell, mut quoted) = (Vec::new(), String::new(), false);
     let (mut line, mut starts, mut opened) = (1usize, 1usize, 0usize);
     let mut chars = text.chars().peekable();
