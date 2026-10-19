@@ -392,6 +392,7 @@ fn released(drive: &Path, release: &[u8]) {
         changed: "Solar's long design F10.7.",
         marks: &[],
         understood: &[],
+        margins: &[],
     };
     let d = design::release(
         &i,

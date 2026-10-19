@@ -373,6 +373,14 @@ schema = "design-integration"
 name = "design-integration-not-today"
 
 [[route]]
+method = "GET"
+path = "/v1/design/budgets"
+answer = "json"
+schema = "design-budgets"
+[[route.example]]
+name = "design-budgets-not-today"
+
+[[route]]
 method = "POST"
 path = "/v1/design/release"
 answer = "json"

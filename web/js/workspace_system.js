@@ -20,7 +20,11 @@
     group here* on a leaf of any branch, and *allocate* on a mount framed in
     the systems' file, the sense chosen, never defaulted. A group mounted
     and not started says whose step it is, and *Start <g>* is its owner's.
-    Budgets and margins are a link to Explore's health map: the engine's.
+    Budgets across releases: each closure's state and margin in every
+    released design that kept them, read from its margins.csv as the engine
+    answered when it was released, never computed here (F6-c, item 7); a
+    design released before margins were kept is said. Today's margins are a
+    link to Explore's health map: the engine's.
 
   Every answer is the program's. Nothing here decides who may frame a
   branch, writes a file or judges a breakdown. A group file changed in the
@@ -41,11 +45,13 @@
 */
 'use strict';
 
-import { $, esc, answerFirst, plural } from './dom.js';
+import { $, esc, answerFirst, plural, fmt } from './dom.js';
 
 const W = { group: '', tree: null, sel: '', notice: null, stale: false, host: null, post: null, groups: [], why: '', seq: 0, view: null };
 /** The release panel: the checks as last read, what was typed, and the program's answer. */
 const R = { seq: 0, checks: null, version: '', changed: '', understood: new Set(), notice: null, sending: false, previewing: false, previewed: null };
+/** The budgets across releases, read again with each drawing of the frame. */
+const B = { seq: 0 };
 
 async function get(path) {
   try { return await (await fetch(path)).json(); } catch (e) { return { ok: false, message: 'the program did not answer: ' + e }; }
@@ -113,6 +119,7 @@ async function draw(keep) {
         ? '<p><button class="ctl" id="sy-start">Start ' + esc(group) + '</button> one heading, its question the mount\'s, signed by you. ' +
           'It shows in today\'s design once ' + esc(group) + ' seals a release (F5).</p>'
         : '<p class="muted sy-not-yours">' + esc(t.why_not || 'Not yours to start.') + '</p>');
+    await drawBudgets();
     return;
   }
   if (!W.sel || !t.blocks.some(b => b.uid === W.sel)) W.sel = (t.blocks.find(b => !b.archived) || {}).uid || '';
@@ -128,7 +135,43 @@ async function draw(keep) {
     '<div class="sy-grid"><nav class="sy-tree" aria-label="the branch">' + tree(t) + '</nav>' +
     '<section class="sy-block">' + block(t) + '</section></div>' +
     (group === 'systems' ? '<section class="sy-release" id="sy-release"><p class="sh-loading">reading the integration checks…</p></section>' : '');
-  if (group === 'systems') await drawRelease();
+  // The budgets and the release panel are read side by side: neither waits
+  // on the other.
+  await Promise.all([drawBudgets(), group === 'systems' ? drawRelease() : null]);
+}
+
+/** Budgets across releases, as the program reads them from each released
+ *  design's margins.csv: a row for each closure, a column for each design
+ *  that kept them, each cell its state and margin as the engine answered
+ *  when that design was released. Nothing is computed here. */
+async function drawBudgets() {
+  // A frame refused has no budgets drawn: it says why already.
+  if (!W.host || !W.host.querySelector('.sy-budgets')) return;
+  const seq = ++B.seq;
+  const b = await get('/v1/design/budgets');
+  const host = W.host && W.host.querySelector('.sy-budgets');
+  if (seq !== B.seq || !host) return;
+  if (!b || b.ok === false) {
+    host.innerHTML = '<p class="sh-refused sy-budgets-refused">' + esc((b && b.message) || 'the budgets cannot be read') + '</p>';
+    return;
+  }
+  const kept = b.designs.filter(d => d.kept);
+  const cell = (c, v) => {
+    const a = c.answers.find(x => x.version === v);
+    return a
+      ? '<td class="sy-b-' + esc(a.state) + '" title="' + esc(a.why) + '">' + esc(a.state) +
+        (a.margin === null ? '' : ' ' + esc(fmt(a.margin))) + '</td>'
+      : '<td class="muted">not a closure then</td>';
+  };
+  host.innerHTML = '<p class="sy-budgets-said">' + esc(b.message) + '</p>' +
+    (kept.length && b.closures.length
+      ? '<table class="nw-table sy-budgets-table"><thead><tr><th>group</th><th>closure</th>' +
+        kept.map(d => '<th>' + esc(d.version) + '</th>').join('') + '</tr></thead><tbody>' +
+        b.closures.map(c => '<tr><td>' + esc(c.group) + '</td><td>' + esc(c.node) + '</td>' +
+          kept.map(d => cell(c, d.version)).join('') + '</tr>').join('') +
+        '</tbody></table>'
+      : '') +
+    b.designs.filter(d => !d.kept).map(d => '<p class="muted sy-budgets-before">' + esc(d.says) + '</p>').join('');
 }
 
 /** The release panel, read again from the program: the integration checks of
@@ -235,7 +278,8 @@ function frame(t) {
           (m.valve_above && m.valve_above.branch !== 'systems' ? ', below ' + esc(m.valve_above.owner) + '\'s ' + esc(m.valve_above.branch) : '')).join('<br>')
         : 'nothing mounted') + '</dd>'
       : '') +
-    '<dt>budgets and margins</dt><dd><a href="#explore/design" class="sy-budgets">the health map, in Explore</a>: ' +
+    '<dt>budgets across releases</dt><dd class="sy-budgets"><p class="sh-loading">reading the released designs…</p></dd>' +
+    '<dt>margins today</dt><dd><a href="#explore/design" class="sy-margins-today">the health map, in Explore</a>: ' +
       'every margin as the engine computes it, never computed here</dd></dl></section>';
 }
 

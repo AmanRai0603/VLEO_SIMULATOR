@@ -23,7 +23,9 @@
 use std::path::Path;
 
 use vleo_files::chain::{self, Registry, FILE};
-use vleo_files::design::{self, Asked, Check, Held, Integration, Mark, Part, Taken, Whole};
+use vleo_files::design::{
+    self, Asked, Check, Held, Integration, Kept, Margin, Mark, Part, Taken, Whole,
+};
 use vleo_files::keys::SigningKey;
 use vleo_files::meta::Kind;
 use vleo_files::model::*;
@@ -325,6 +327,35 @@ fn release_marked(
     by: &str,
     k: u8,
 ) -> Result<File, String> {
+    release_kept(
+        w,
+        i,
+        r,
+        version,
+        previous,
+        changed,
+        marks,
+        understood,
+        &[],
+        by,
+        k,
+    )
+}
+
+#[allow(clippy::too_many_arguments)]
+fn release_kept(
+    w: &World,
+    i: &Integration,
+    r: &File,
+    version: &str,
+    previous: Option<&str>,
+    changed: &str,
+    marks: &[Mark],
+    understood: &[String],
+    margins: &[Margin],
+    by: &str,
+    k: u8,
+) -> Result<File, String> {
     let (rb, pb, sb) = (bytes(r), bytes(&w.pr.file), bytes(&w.sy.file));
     let held = Held {
         releases: vec![(
@@ -351,6 +382,7 @@ fn release_marked(
         changed,
         marks,
         understood,
+        margins,
     };
     design::release(i, &held, &asked, by, &key(k), AT, APP, &w.pr)
         .map_err(|e| e.message().to_string())
@@ -1307,4 +1339,309 @@ fn released_designs_are_read_from_every_folder_by_their_versions() {
         e.message()
     );
     let _ = std::fs::remove_dir_all(&root);
+}
+
+fn margin(node: &str, state: &str, margin: Option<f64>, why: &str) -> Margin {
+    margin_in("l3_solar", node, state, margin, why)
+}
+
+fn margin_in(group: &str, node: &str, state: &str, margin: Option<f64>, why: &str) -> Margin {
+    Margin {
+        node: s(node),
+        group: s(group),
+        state: s(state),
+        margin,
+        why: s(why),
+    }
+}
+
+#[test]
+fn a_released_design_keeps_every_closure_s_margin_as_the_engine_gave_it() {
+    let w = world();
+    let r = solar_12(&w);
+    let i = checks_of(Ok(&r), "");
+    let kept = [
+        margin("k_drag", "closes", Some(0.2), "within its bound"),
+        margin("k_power", "fails", Some(-0.125), "short by an eighth"),
+        margin("k_link", "blocked", None, "an input is not given"),
+    ];
+    let release = |margins: &[Margin]| {
+        release_kept(
+            &w,
+            &i,
+            &r,
+            RELEASED,
+            None,
+            "Solar.",
+            &[],
+            &[],
+            margins,
+            "Sam Engel",
+            12,
+        )
+    };
+    // Kept as given, with the design and the application whose engine gave
+    // them, and read back so.
+    let d = release(&kept).unwrap();
+    let as_kept = |margins: &[Margin]| Kept {
+        application: s("1.0.0"),
+        margins: margins.to_vec(),
+    };
+    assert_eq!(design::margins_of(&d).unwrap(), Some(as_kept(&kept)));
+    let t = d.tables.iter().find(|t| t.path == "margins.csv").unwrap();
+    assert!(
+        t.csv
+            .contains("k_power,l3_solar,fails,-0.125,short by an eighth,2026.10.1,1.0.0"),
+        "{}",
+        t.csv
+    );
+    // Kept without the spaces a table does not read back.
+    let spaced = release(&[margin(" k_drag ", "closes ", Some(0.2), " within ")]).unwrap();
+    assert_eq!(
+        design::margins_of(&spaced).unwrap(),
+        Some(as_kept(&[margin("k_drag", "closes", Some(0.2), "within")]))
+    );
+    let t = spaced
+        .tables
+        .iter()
+        .find(|t| t.path == "margins.csv")
+        .unwrap();
+    assert!(
+        t.csv
+            .contains("\nk_drag,l3_solar,closes,0.2,within,2026.10.1,1.0.0"),
+        "{}",
+        t.csv
+    );
+    design::open_held(&d, &w.pr, APP).expect("read back with its margins");
+    // A margin not said as one answer is not kept.
+    for (margins, says) in [
+        (
+            vec![kept[0].clone(), kept[0].clone()],
+            "k_drag has two margins",
+        ),
+        (
+            vec![margin("k_drag", " ", Some(0.2), "")],
+            "names the closure and its state",
+        ),
+        (
+            vec![margin(" ", "closes", Some(0.2), "")],
+            "names the closure and its state",
+        ),
+        (
+            vec![margin("k_drag", "closes", Some(f64::NAN), "")],
+            "k_drag's margin is not a finite number",
+        ),
+    ] {
+        let e = release(&margins).unwrap_err();
+        assert!(e.contains(says), "{says}: {e}");
+    }
+    // A design released before margins were kept says so.
+    let mut before = d.clone();
+    before.tables.retain(|t| t.path != "margins.csv");
+    assert_eq!(design::margins_of(&before).unwrap(), None);
+    // A table that is not as a release writes it is refused by name, and a
+    // design holding one does not read back.
+    let with = |csv: &str| {
+        let mut f = d.clone();
+        f.tables
+            .iter_mut()
+            .filter(|t| t.path == "margins.csv")
+            .for_each(|t| t.csv = s(csv));
+        f
+    };
+    let head = "node,group,state,margin,why,design,application\n";
+    let row = "k_drag,l3_solar,closes,0.2,,2026.10.1,1.0.0\n";
+    for (csv, says) in [
+        (
+            "node,state,margin\nk_drag,closes,0.2\n".to_string(),
+            "has the columns node,state,margin",
+        ),
+        (
+            format!("{head}k_drag,l3_solar,closes,0.2,,2026.10.1,1.0.0,extra\n"),
+            "does not read, line 2: has 8 fields where the header has 7",
+        ),
+        (
+            format!("{head}k_drag,l3_solar,closes,0.2,,2026.10.1\n"),
+            "does not read, line 2: has 6 fields where the header has 7",
+        ),
+        (
+            format!("{head}k_drag,l3_solar,closes,0.2,\"never closed,2026.10.1,1.0.0\n"),
+            "does not read, line 2: a quoted field is never closed",
+        ),
+        (
+            format!("{head}k_drag,l3_solar,closes,0.2,,2026.9.1,1.0.0\n"),
+            "row 1: it is of design 2026.9.1",
+        ),
+        (
+            format!("{head}k_drag,l3_solar,closes,inf,,2026.10.1,1.0.0\n"),
+            "k_drag's margin \"inf\" is not a finite number",
+        ),
+        (
+            format!("{head}{row}k_drag,l3_solar,fails,-1,,2026.10.1,1.0.0\n"),
+            "row 2: k_drag is named twice",
+        ),
+        (
+            format!("{head},l3_solar,closes,0.2,,2026.10.1,1.0.0\n"),
+            "a closure and its state are said on every row",
+        ),
+        (
+            format!("{head}k_drag,l3_solar,,0.2,,2026.10.1,1.0.0\n"),
+            "a closure and its state are said on every row",
+        ),
+        (
+            format!("{head}{row}k_power,l3_solar,fails,-1,,2026.10.1,9.9.9\n"),
+            "row 2: it is of the application 9.9.9, and the rows before it of 1.0.0",
+        ),
+        (
+            format!("{head}k_drag,l3_solar,closes,0.2,,2026.10.1,9.9.9\n"),
+            "is of the application 9.9.9, and the design is of 1.0.0",
+        ),
+    ] {
+        let e = design::margins_of(&with(&csv)).unwrap_err();
+        assert!(e.contains(says), "{says}: {e}");
+        let e = design::open_held(&resigned(with(&csv)), &w.pr, APP).unwrap_err();
+        assert!(e.message().contains(says), "{says}: {}", e.message());
+    }
+    // One table of the name, the design's own.
+    let mut twice = d.clone();
+    let t = twice
+        .tables
+        .iter()
+        .find(|t| t.path == "margins.csv")
+        .unwrap()
+        .clone();
+    twice.tables.push(t);
+    let e = design::margins_of(&twice).unwrap_err();
+    assert!(e.contains("margins.csv is held more than once"), "{e}");
+    let mut scoped = d.clone();
+    scoped
+        .tables
+        .iter_mut()
+        .filter(|t| t.path == "margins.csv")
+        .for_each(|t| t.scope = s("k_drag"));
+    let e = design::margins_of(&scoped).unwrap_err();
+    assert!(e.contains("is not the design's own table"), "{e}");
+    // A design released again holds the margins of the one it is again,
+    // their rows of that design and of the application that released it;
+    // never of a design that is not earlier.
+    let mut again = d.clone();
+    again.meta.insert(s("version"), s("2026.10.3"));
+    again.meta.insert(s("oldest_application"), s("1.1.0"));
+    again.meta.insert(s("again_of"), s(RELEASED));
+    assert_eq!(design::margins_of(&again).unwrap(), Some(as_kept(&kept)));
+    again.meta.insert(s("again_of"), s("2026.9.1"));
+    let e = design::margins_of(&again).unwrap_err();
+    assert!(e.contains("row 1: it is of design 2026.10.1"), "{e}");
+    again.meta.insert(s("again_of"), s("2026.11.1"));
+    let e = design::margins_of(&again).unwrap_err();
+    assert!(
+        e.contains("is of design 2026.11.1 released again, which is not earlier than 2026.10.3"),
+        "{e}"
+    );
+}
+
+#[test]
+fn budgets_are_read_across_three_designs_one_released_before_margins_were_kept() {
+    let w = world();
+    let r = solar_12(&w);
+    let i = checks_of(Ok(&r), "");
+    let dir = std::env::temp_dir().join(format!("vleo-budgets-{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&dir);
+    std::fs::create_dir_all(&dir).unwrap();
+    let release = |v: &str, previous: Option<&str>, margins: &[Margin]| {
+        let d = release_kept(
+            &w,
+            &i,
+            &r,
+            v,
+            previous,
+            "Solar.",
+            &[],
+            &[],
+            margins,
+            "Sam Engel",
+            12,
+        )
+        .unwrap();
+        vleo_files::sqlite::write(&d, &dir.join(format!("design-{v}.vleo"))).unwrap();
+    };
+    // The first as a design released before margins were kept.
+    let mut first = release_kept(
+        &w,
+        &i,
+        &r,
+        "2026.9.1",
+        None,
+        "Solar.",
+        &[],
+        &[],
+        &[],
+        "Sam Engel",
+        12,
+    )
+    .unwrap();
+    first.tables.retain(|t| t.path != "margins.csv");
+    vleo_files::sqlite::write(&resigned(first), &dir.join("design-2026.9.1.vleo")).unwrap();
+    release(
+        "2026.10.1",
+        Some("2026.9.1"),
+        &[
+            margin("k_drag", "closes", Some(0.2), "within its bound"),
+            margin_in(
+                "l3_power",
+                "k_power",
+                "fails",
+                Some(-0.125),
+                "short by an eighth",
+            ),
+        ],
+    );
+    release(
+        "2026.10.2",
+        Some("2026.10.1"),
+        &[
+            margin("k_drag", "closes", Some(0.15), "within its bound"),
+            margin("k_link", "blocked", None, "an input is not given"),
+        ],
+    );
+    let designs = design::released_in(&[&dir], &w.pr, APP).unwrap();
+    let b = design::budgets(&designs).unwrap();
+    assert_eq!(b.without, ["2026.9.1"], "said, never left out");
+    assert_eq!(
+        b.kept,
+        [(s("2026.10.1"), s("1.0.0")), (s("2026.10.2"), s("1.0.0"))],
+        "each with the application whose engine gave its margins"
+    );
+    let budgets = &b.closures;
+    let answers = |node: &str| -> Vec<(String, Option<f64>)> {
+        budgets
+            .iter()
+            .find(|b| b.node == node)
+            .unwrap_or_else(|| panic!("{node} is a budget"))
+            .answers
+            .iter()
+            .map(|(v, m)| (v.clone(), m.margin))
+            .collect()
+    };
+    let nodes: Vec<(&str, &str)> = budgets
+        .iter()
+        .map(|b| (b.group.as_str(), b.node.as_str()))
+        .collect();
+    assert_eq!(
+        nodes,
+        [
+            ("l3_power", "k_power"),
+            ("l3_solar", "k_drag"),
+            ("l3_solar", "k_link")
+        ],
+        "by group, then by name"
+    );
+    assert_eq!(
+        answers("k_drag"),
+        [(s("2026.10.1"), Some(0.2)), (s("2026.10.2"), Some(0.15))],
+        "oldest first, each as its design was released"
+    );
+    assert_eq!(answers("k_power"), [(s("2026.10.1"), Some(-0.125))]);
+    assert_eq!(answers("k_link"), [(s("2026.10.2"), None)]);
+    let _ = std::fs::remove_dir_all(&dir);
 }
