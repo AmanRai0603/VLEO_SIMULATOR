@@ -200,6 +200,10 @@ function edits(b, children, outs) {
   if (!b.archived && !b.mount && !(inGroup && b.read_as === 'children')) {
     h += '<p><b>assign</b> to <input id="sy-as-person" size="18" placeholder="a node engineer\'s name"> <button class="ctl" id="sy-assign">Assign</button> <button class="ctl" id="sy-unassign">Unassign</button></p>';
   }
+  if (inGroup && !b.archived && !b.mount && b.read_as !== 'children') {
+    h += '<p><b>issue</b> it as a <select id="sy-is-behaviour" class="ctl">' + opt('method') + opt('stated') + '</select> node, ' +
+      'a file of its own for the node engineer it is assigned to <button class="ctl" id="sy-issue">Issue</button></p>';
+  }
   if (inGroup && !b.archived) {
     h += b.ports.filter(p => p.direction === 'in').map(p =>
       '<p class="sy-wire-row" data-wire-port="' + esc(p.name) + '"><b>wire</b> its ' + esc(p.name) + ' from ' +
@@ -264,6 +268,7 @@ async function click(e) {
     case 'sy-rename': return send('rename', { block: b, id: v('sy-rn-id').trim() });
     case 'sy-split': return send('split', { block: b, id: v('sy-sp-id').trim(), ports: v('sy-sp-ports') });
     case 'sy-remove': return send('remove', { block: b });
+    case 'sy-issue': return send('issue', { block: b, behaviour: v('sy-is-behaviour') });
     case 'sy-assign': return send('assign', { block: b, person: v('sy-as-person').trim() });
     case 'sy-unassign': return send('unassign', { block: b });
   }

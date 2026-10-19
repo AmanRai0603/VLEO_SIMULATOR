@@ -358,6 +358,15 @@ fn ola(group: &File, e: &Edit) -> Result<(File, Option<breakdown::Reproduced>), 
     frame(group, e, WHY, "Ola Sun", &key(13))
 }
 
+/// An edit by Ola, with what it made beside the group file: an issue's node
+/// file.
+fn ola_edited(group: &File, ns: &[File], e: &Edit) -> Result<breakdown::Edited, String> {
+    let pr = programme();
+    let sy = systems(&pr);
+    breakdown::edited(group, ns, &[], e, WHY, "Ola Sun", &key(13), AT, &sy, &pr)
+        .map_err(|e| e.message().to_string())
+}
+
 #[test]
 fn a_node_is_broken_down_only_into_children_that_reproduce_its_cases() {
     let (after, verdict) =
@@ -1533,6 +1542,357 @@ fn an_input_of_a_framed_block_is_wired_to_where_it_comes_from() {
     );
     refused("sw_storm_onset", "f10", "has no input f10");
     refused(BAND, "f107", "is issued");
+}
+
+// ── Issued as a node file of its own (docs/briefs/F5.md, F5-c) ──
+
+/// Solar's onset, its ports decided, its input from a case and assigned to
+/// Nia: ready to issue.
+fn onset_ready() -> File {
+    let mut f = with_onset();
+    for (dir, name) in [("in", "f107"), ("out", "sw_storm_onset")] {
+        let p = Port {
+            direction: s(dir),
+            name: s(name),
+            port_type: s("number"),
+            unit: s("1"),
+            state: s("decided"),
+            ..Port::default()
+        };
+        f = ola(
+            &f,
+            &Edit::Fill {
+                block: s("sw_storm_onset"),
+                part: Part::Port(Box::new(p)),
+            },
+        )
+        .unwrap()
+        .0;
+    }
+    let (f, _) = ola(
+        &f,
+        &Edit::Wire {
+            block: s("sw_storm_onset"),
+            port: s("f107"),
+            from: s("case"),
+        },
+    )
+    .unwrap();
+    ola(
+        &f,
+        &Edit::Assign {
+            block: s("sw_storm_onset"),
+            person: s("Nia Node"),
+        },
+    )
+    .unwrap()
+    .0
+}
+
+fn issue(block: &str, behaviour: &str) -> Edit {
+    Edit::Issue {
+        block: s(block),
+        behaviour: s(behaviour),
+    }
+}
+
+#[test]
+fn a_framed_block_is_issued_as_a_node_file_its_node_engineer_writes() {
+    // Every kind of row a block has in the group file, beside its own.
+    let mut before = onset_ready();
+    let on = s("sw_storm_onset");
+    before.texts.push(Text {
+        scope: on.clone(),
+        kind: s("explain.simply"),
+        body: s("When a storm begins."),
+    });
+    before.tables.push(Tbl {
+        scope: on.clone(),
+        path: s("onsets.csv"),
+        csv: s("day\n1\n"),
+    });
+    before.media.push(Media {
+        scope: on.clone(),
+        path: s("onset.txt"),
+        media_type: s("text/plain"),
+        sha256: s("0"),
+        bytes: b"onset".to_vec(),
+    });
+    before.comments.push(Comment {
+        scope: on.clone(),
+        section: s(""),
+        author: s("Nia Node"),
+        at: s(AT),
+        body: s("Is f107 enough?"),
+        resolved: 0,
+    });
+    before.signatures.retain(|x| x.scope != FILE);
+    let before = signed(before, "Ola Sun", &key(13));
+    // `edit` gives back the group file alone, so it never makes an issue.
+    let e = ola(&before, &issue("sw_storm_onset", "method")).unwrap_err();
+    assert!(e.contains("it is made with `edited`"), "{e}");
+    let made = ola_edited(&before, &nodes(), &issue("sw_storm_onset", "method")).unwrap();
+    let after = made.group;
+    // The group file holds none of its rows now, and keeps its assignment.
+    let mine = |x: &str| x == "sw_storm_onset";
+    assert!(!after.blocks.iter().any(|b| mine(&b.uid)));
+    assert!(!after.ports.iter().any(|p| mine(&p.block_uid)));
+    assert!(!after.wires.iter().any(|w| mine(&w.to_block)));
+    assert!(!after.texts.iter().any(|x| mine(&x.scope)));
+    assert!(!after.tables.iter().any(|x| mine(&x.scope)));
+    assert!(!after.media.iter().any(|x| mine(&x.scope)));
+    assert!(!after.comments.iter().any(|x| mine(&x.scope)));
+    assert!(after
+        .assignments
+        .iter()
+        .any(|a| a.block_uid == "sw_storm_onset" && a.person == "Nia Node"));
+    let c = after.changes.last().unwrap();
+    assert_eq!(c.what, format!("issue: {WHY}"));
+    assert!(
+        c.after
+            .as_deref()
+            .unwrap()
+            .contains("nodes/sw_storm_onset.vnode"),
+        "{c:?}"
+    );
+    // What left the group file is on record, every row of it.
+    let was = c.before.as_deref().unwrap();
+    for table in [
+        "block ", "port ", "wire ", "text ", "tbl ", "media ", "comment ",
+    ] {
+        assert!(was.contains(table), "no {table}in: {was}");
+    }
+    // Its node file, given back beside the group file: the block and every
+    // row of it, Nia its writer, at her contract, revision 1, signed by
+    // nobody yet.
+    let n = made.node.expect("an issue gives back its node file");
+    assert_eq!(
+        n,
+        breakdown::issued(&before, "sw_storm_onset", "method").unwrap()
+    );
+    assert_eq!(
+        (
+            n.texts.len(),
+            n.tables.len(),
+            n.media.len(),
+            n.comments.len()
+        ),
+        (1, 1, 1, 1)
+    );
+    assert_eq!(n.kind().unwrap(), Kind::Node);
+    for (k, v) in [
+        ("group_id", "l3_solar"),
+        ("block_uid", "sw_storm_onset"),
+        ("writer", "Nia Node"),
+        ("revision", "1"),
+        ("contract_version", "1"),
+    ] {
+        assert_eq!(n.meta.get(k).map(String::as_str), Some(v), "{k}");
+    }
+    assert_eq!(n.blocks.len(), 1);
+    assert_eq!(
+        (n.blocks[0].behaviour.as_str(), n.blocks[0].revision),
+        ("method", 1)
+    );
+    assert_eq!(n.ports.len(), 2);
+    assert_eq!(n.wires.len(), 1);
+    assert!(n.signatures.is_empty());
+    n.check_meta().unwrap();
+    // The branch holds it once, in its node file.
+    let ns = [n.clone()];
+    let branch = breakdown::Branch::new(&after, &ns);
+    assert_eq!(
+        branch
+            .blocks()
+            .iter()
+            .filter(|(b, _)| b.uid == "sw_storm_onset")
+            .count(),
+        1
+    );
+
+    let refused = |g: &File, e: Edit, says: &str| {
+        let got = ola_edited(g, &nodes(), &e).unwrap_err();
+        assert!(got.contains(says), "expected «{says}» in: {got}");
+    };
+    // Not decided enough: its ports still open.
+    let undecided = ola(
+        &ola(
+            &with_onset(),
+            &Edit::Wire {
+                block: s("sw_storm_onset"),
+                port: s("f107"),
+                from: s("case"),
+            },
+        )
+        .unwrap()
+        .0,
+        &Edit::Assign {
+            block: s("sw_storm_onset"),
+            person: s("Nia Node"),
+        },
+    )
+    .unwrap()
+    .0;
+    refused(
+        &undecided,
+        issue("sw_storm_onset", "method"),
+        "sw_storm_onset is not decided enough to issue: the state of f107, the state of sw_storm_onset still open",
+    );
+    // Its block in both the group file and its node file: an issue cut off
+    // after the node file was written. Nothing more is framed until one goes.
+    let mut both = nodes();
+    both.push(n.clone());
+    let e = ola_edited(
+        &before,
+        &both,
+        &Edit::Rename {
+            block: s("sw_storm_onset"),
+            id: s("sw_storm_start"),
+        },
+    )
+    .unwrap_err();
+    assert!(
+        e.contains("sw_storm_onset is in both l3_solar's group file and its own node file, nodes/sw_storm_onset.vnode: an issue was cut off"),
+        "{e}"
+    );
+    let unassigned = with_onset();
+    let (unassigned, _) = ola(
+        &unassigned,
+        &Edit::Wire {
+            block: s("sw_storm_onset"),
+            port: s("f107"),
+            from: s("case"),
+        },
+    )
+    .unwrap();
+    refused(
+        &unassigned,
+        issue("sw_storm_onset", "method"),
+        "is assigned to nobody",
+    );
+    let unwired = ola(
+        &with_onset(),
+        &Edit::Assign {
+            block: s("sw_storm_onset"),
+            person: s("Nia Node"),
+        },
+    )
+    .unwrap()
+    .0;
+    refused(
+        &unwired,
+        issue("sw_storm_onset", "method"),
+        "its input f107 does not say where it comes from",
+    );
+    refused(
+        &before,
+        issue("sw_storm_onset", "open"),
+        "is issued as a method or a stated node",
+    );
+    refused(&before, issue("l3_solar", "method"), "is a heading");
+    refused(&before, issue(BAND, "method"), "is issued already");
+    // A block with blocks framed under it.
+    let (parent, _) = ola(
+        &before,
+        &Edit::Add {
+            parent: s("sw_storm_onset"),
+            id: s("sw_storm_part"),
+            question: s("A part of it"),
+        },
+    )
+    .unwrap();
+    refused(
+        &parent,
+        issue("sw_storm_onset", "method"),
+        "has blocks under it",
+    );
+    // A block with no output, and no question.
+    let (bare, _) = ola(
+        &solar(),
+        &Edit::Add {
+            parent: s("l3_solar"),
+            id: s("sw_bare"),
+            question: s(""),
+        },
+    )
+    .unwrap();
+    let (bare, _) = ola(
+        &bare,
+        &Edit::Assign {
+            block: s("sw_bare"),
+            person: s("Nia Node"),
+        },
+    )
+    .unwrap();
+    refused(&bare, issue("sw_bare", "method"), "has no question");
+}
+
+#[test]
+fn an_issue_in_the_copy_writes_the_node_file_beside_the_group_file() {
+    let copy = std::env::temp_dir().join(format!("vleo-issue-{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&copy);
+    let dir = copy.join("groups/l3_solar");
+    std::fs::create_dir_all(dir.join("nodes")).unwrap();
+    let group = dir.join("l3_solar.vgroup");
+    vleo_files::sqlite::write(&onset_ready(), &group).unwrap();
+    for n in nodes() {
+        let id = n.blocks[0].id.clone();
+        vleo_files::sqlite::write(&n, &dir.join(format!("nodes/{id}.vnode"))).unwrap();
+    }
+    let digest = |p: &std::path::Path| vleo_files::copied::digest(&std::fs::read(p).unwrap());
+    let pr = programme();
+    let sy = systems(&pr);
+    let made = breakdown::edit_in_place(
+        &copy,
+        "l3_solar",
+        &digest(&group),
+        &issue("sw_storm_onset", "method"),
+        WHY,
+        "Ola Sun",
+        &key(13),
+        AT,
+        APP,
+        &sy,
+        &pr,
+    )
+    .unwrap();
+    assert!(
+        matches!(made, breakdown::Framed::Written { .. }),
+        "{made:?}"
+    );
+    let node = dir.join("nodes/sw_storm_onset.vnode");
+    let n = vleo_files::sqlite::read(&node).unwrap();
+    assert_eq!(n.meta.get("writer").map(String::as_str), Some("Nia Node"));
+    let g = vleo_files::sqlite::read(&group).unwrap();
+    assert!(!g.blocks.iter().any(|b| b.uid == "sw_storm_onset"));
+    // Cut off after its node file was written: the group file still holds
+    // the block. Issued again, nothing is written, and the person is told
+    // which file to remove.
+    vleo_files::sqlite::write(&onset_ready(), &group).unwrap();
+    let held = std::fs::read(&node).unwrap();
+    let e = breakdown::edit_in_place(
+        &copy,
+        "l3_solar",
+        &digest(&group),
+        &issue("sw_storm_onset", "method"),
+        WHY,
+        "Ola Sun",
+        &key(13),
+        AT,
+        APP,
+        &sy,
+        &pr,
+    )
+    .unwrap_err();
+    assert!(
+        e.message().contains(
+            "sw_storm_onset is in both l3_solar's group file and its own node file, nodes/sw_storm_onset.vnode: an issue was cut off after the node file was written. Remove that node file, then issue it again"
+        ),
+        "{}",
+        e.message()
+    );
+    assert_eq!(std::fs::read(&node).unwrap(), held);
+    let _ = std::fs::remove_dir_all(&copy);
 }
 
 /// `f` with an open block `id` under `parent`, an input `x` and an output
