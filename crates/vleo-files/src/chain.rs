@@ -1314,6 +1314,105 @@ fn checked_release(
     Ok(out)
 }
 
+/// A group's answer to another group's release (W7, `crate::answer`),
+/// checked through the chain, the one rule wherever an answer is read:
+/// an answer file, its meta whole; another group's answer to the release,
+/// never the systems' branch's, which decides an objection; saying fine,
+/// or object and why, and nothing else; signed as it is by the person it
+/// says wrote it, who is the answering group's owner, a subsystem engineer
+/// who does not own the release's group, or their deputy, as `mounted_by`,
+/// the file that mounts the answering group, names its owner, with a key
+/// the programme's file registers.
+pub fn check_answer(
+    answer: &File,
+    mounted_by: &Registry,
+    programme: &Registry,
+) -> Result<(), Error> {
+    if answer.kind()? != Kind::PreviewAnswer {
+        return Err(refused(
+            ErrorKind::WrongKind,
+            format!("this is a {}, not an answer", answer.kind()?),
+        ));
+    }
+    answer.check_meta()?;
+    let get = |k: &str| answer.meta.get(k).cloned().unwrap_or_default();
+    let (group, g, writer) = (get("group_id"), get("answering_group"), get("writer"));
+    for id in [&group, &g] {
+        if !crate::breakdown::valid_id(id) {
+            return Err(refused(
+                ErrorKind::Malformed,
+                format!("{id:?} is not a group's id"),
+            ));
+        }
+    }
+    if group == g {
+        return Err(refused(
+            ErrorKind::Malformed,
+            format!("{g} does not answer its own release: an answer is another group's"),
+        ));
+    }
+    if g == "systems" {
+        return Err(refused(
+            ErrorKind::Malformed,
+            "the systems' branch decides an objection to a release, and does not answer one: a subsystem's group answers",
+        ));
+    }
+    crate::answer::said(answer)?;
+    // Its word, and why, and its signatures: nothing rides along unsigned.
+    for t in answer.to_tables() {
+        let own = [
+            "meta",
+            <crate::model::Text as crate::model::Record>::TABLE,
+            <SignatureRow as crate::model::Record>::TABLE,
+        ];
+        if !own.contains(&t.name.as_str()) && !t.rows.is_empty() {
+            return Err(refused(
+                ErrorKind::Malformed,
+                format!(
+                    "the answer holds {} rows: an answer holds its word and why, and nothing else",
+                    t.name
+                ),
+            ));
+        }
+    }
+    let owner = owner_of(mounted_by, &g).ok_or_else(|| {
+        refused(
+            ErrorKind::Signature,
+            format!(
+                "{} mounts no group {g:?}, so nobody answers for it",
+                mounted_by.from
+            ),
+        )
+    })?;
+    if !programme
+        .file
+        .people
+        .iter()
+        .any(|p| p.name == owner && p.role == "subsystem engineer")
+    {
+        return Err(refused(
+            ErrorKind::Signature,
+            format!("{g}'s owner {owner} is not a subsystem engineer the programme's file registers: a subsystem's owner answers"),
+        ));
+    }
+    if owner_of(mounted_by, &group) == Some(owner) {
+        return Err(refused(
+            ErrorKind::Signature,
+            format!("{owner} owns both {group} and {g}: a release's owner does not answer it for another group"),
+        ));
+    }
+    let (ok, why) = counted(answer, FILE, programme, |name| {
+        name == writer && programme.acts_for(name, owner)
+    });
+    if ok.is_empty() {
+        return Err(none_counts(
+            &format!("{g}'s answer, written by {writer} and by its owner {owner},"),
+            &why,
+        ));
+    }
+    Ok(())
+}
+
 /// A released design, checked through the chain: signed as it is by the
 /// system engineer, or their deputy, as the programme's file registers them.
 pub fn check_design(design: &File, programme: &Registry) -> Result<(), Error> {

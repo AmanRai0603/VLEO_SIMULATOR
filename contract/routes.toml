@@ -303,6 +303,16 @@ params = [["group", "l3_solar"]]
 
 [[route]]
 method = "POST"
+path = "/v1/answer"
+answer = "json"
+schema = "answered"
+[[route.example]]
+name = "answer-refused"
+path = "/v1/answer"
+params = [["session", "@session"], ["group", "l3_solar"], ["version", "1.2"], ["answering", "l3_power"], ["said", "maybe"]]
+
+[[route]]
+method = "POST"
 path = "/v1/branch/<id>"
 answer = "json"
 schema = "branch-edited"
