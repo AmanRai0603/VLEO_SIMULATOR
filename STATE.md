@@ -202,37 +202,27 @@ Handed over Saturday 17 October (S1 to S3: F1 to F3-f, the key's proof, F3-g1, t
 
 ## Person B · night
 
-Handed over Sunday 18 October, evening (S4: F5, after A's first reviews). Nothing is merged: each waits on A's review and Aman. Every PR was green on `gate && cargo test --no-fail-fast` and `clippy -D warnings` before its push. 163 is in 176, and 168 to 170 are in 185.
+Handed over Monday 19 October (S4: F5, after A's reviews of every PR). Nothing is merged: each waits on A's re-review and Aman. Every push was green on `gate`, `clippy -D warnings` and the full `cargo test --no-fail-fast`; CI is green on every head. Each new check was shown red with its guard broken.
 
-- **A's reviews of 193, 194, 196 and 197 are answered**, each fix with a test shown red first, and a reply on each PR. 198 to 205 are not reviewed yet.
-- **Both stacks carry the fixes**, merged up branch by branch: CI is green on all twelve (204's panel check was still running at handover).
-- **Found while merging, fixed:**
-  - `accepting_another_anchor_later…` failed on CI on 200 and 202. A race between tests over one `anchors` file, now held under a lock (193 and up). It did not reproduce locally in 40 runs.
-  - `release::node_in` (200) kept the design's case texts for a release with no cases, so its folder could not be written. The case texts are now the release's alone (22f57eba).
-- **Open, for A or Aman:**
-  - *What a group publishes* to another group's wires: today any framed block in its group file, issued or not (197, finding 4). A decision, not guessed.
-  - 197's Assign, Unassign and Wire move beside 195's `others_in` and `mounted_on_any` when 195 merges (finding 7).
-  - Not checked yet: whether 204's assign-issue refuses a deputy or an assistant's name as Assign now does, and its "only the owner" test asserts only that there is an error (the weakness 197's finding 8 named).
-
-- **Two F5 stacks, both on A's 187:**
-  - **Release line:** 193 F5-a the seal → 194 F5-b1 a release put back → 196 F5-b2 today's design takes it (W5 proved end to end) → 200 F5-d today's view and impact → 205 F5-g1 seal on screen. 202 F5-e2 answers (W7) is on 194. **High risk:** 193, 194, 196, 202, 205.
-  - **Edit line:** 197 F5-c1 assign, wire → 198 c2 issue a node file → 199 c3 the sheet → 201 e1 contract change (W4) → 203 e3 update base (W12) → 204 f1 issues assigned, resolved (W11).
-  - Each line conflicts with the other only in `branch.rs`, `lib.rs`'s route table, `workspace_system.js`, `manual.toml` and `files.wasm.stamp`: small, additive. Regenerate the stamp with `xtask files-wasm`.
+- **Every review of A's is answered**, with a reply on its PR: 193, 194, 196 (and its fingerprint addendum from 208), 197, 198, 199, 200, 201, 202, 203 (and the 207 finding), 204 (and its addendum), 205.
+- **Two F5 stacks, both on A's 187, fixes merged up:**
+  - **Release line:** 193 seal → 194 put back → 196 today takes it → 200 view and impact → 205 seal on screen; 202 answers (W7) on 194. **High risk:** 193, 194, 196, 202, 205.
+  - **Edit line:** 197 assign, wire → 198 issue → 199 sheet → 201 contract (W4) → 203 update base (W12) → 204 issues (W11).
+  - The two lines meet in `branch.rs`, the route table, `workspace_system.js`, `manual.toml` and `files.wasm.stamp`: small, additive. `xtask files-wasm` regenerates the stamp.
 - **Changed in A's code, for A to check:**
-  - `chain::checked_release` (193): a block no assignment names is a heading, vouched for by the seal.
-  - `chain::check_answer` (202) is new, beside `check_design`.
-  - `release::node_in` (200) keeps the text kinds a node does not carry, except its cases'.
-- **What F5 decides:**
-  - **A seal makes every check today's design makes** (`check_release`), the group's `versions.csv` row for the version among them.
-  - **A release and an answer go back as new files only.** Each is checked through the drive's chain as it is then, and never written over.
-  - **A contract change** re-issues the node's file, and the node reads behind until it is re-signed. **Issue** moves a framed block's rows into its own node file. **The sheet** sets up many blocks, all or none.
-  - **An issue's state is computed, never written.** It is assigned in the group file, and resolved by the release whose `versions.csv` row names it under `resolves`.
-- **For Aman, found while building:**
-  - **No node of `design/` can be signed.** The converted files have no declaration, no isolation results, inputs without defaults, and unit `One` where the method language reads `1`. Their method is a `method` text where the checks read `pseudocode` (same body). (The question 9 A names.)
-  - Group files still do not go back to the drive. So a contract change, an assignment or an update base stays in the copy until a release.
-- **Not done:**
-  - **F5-f2:** `GET /v1/issues`, the state from today's design and the health map. It needs both lines merged.
-  - **F5-g2:** remove `web/group.html`, `web/node.html` and `xtask group-app`. 37 files, `AGENTS.md` among them; it overlaps A's 192. One person, after 192.
-  - The test drive (165) per 171 and 181: assign mounts in the systems' file, and give keys their proofs.
-  - Neighbours' values on update base; My work naming moved groups (needs F6's previews); the health map of the view.
-- **Next for B:** A's reviews of 198 to 205; F5-f2 once the lines merge; the 165 fix.
+  - `chain::checked_release` (193): an unassigned block is a heading, the seal's.
+  - `chain::check_answer` (202): now the whole rule — meta, no self-answer, no answer by the systems' branch or by one owner of both groups, signed by its writer, one thing said.
+  - `chain::check_design` (203) runs `check_meta`.
+  - `release::node_in` (200) keeps none of the design's texts but its `sheet`.
+- **Calls made, for A or Aman to confirm:**
+  - A contract re-issue (201) keeps the node engineer as writer, not the owner: put-back takes a node only from a writer who may sign it. Its change row says the owner re-issued it.
+  - The systems' branch no longer answers a release (202): the system engineer decides an objection.
+  - A group file based on a design without its `base_version` is refused, not counted on (203).
+  - A released design holding its groups' releases whole (207's format) is refused for update base until `design::open_held` lands (F6-c-1).
+- **Open, for A or Aman:** what a group publishes to other groups' wires (197, finding 4); 197's edits beside 195's `others_in` when 195 merges (finding 7).
+- **For Aman:** no node of `design/` can be signed as converted (A's question 9); group files do not go back to the drive yet.
+- **Not done, said on each PR:**
+  - Route tests that succeed: a seal (205), an answer (202), a base move (203) — each needs a fixture the test world lacks.
+  - Rollback failures (198, 201) are untested; readers in other groups are named, not made behind (201); a sheet is still quadratic (199); the view's graph cache is not keyed by today's base (200); an unknown issue number is not refused at the seal (204).
+  - F5-f2 (`GET /v1/issues`), once the lines merge; F5-g2, the page removal, after 192; the test drive (165) per 171 and 181.
+- **Next for B:** A's re-reviews; F5-f2; the 165 fix.
