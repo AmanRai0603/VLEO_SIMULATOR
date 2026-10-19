@@ -1824,7 +1824,13 @@ fn a_sheet_sets_up_many_blocks_at_once_each_edit_saying_why() {
     // Each edit says why: 3 added, 6 ports, 3 wires, 2 assigned.
     let made: Vec<&str> = f.changes.iter().map(|c| c.what.as_str()).collect();
     assert_eq!(made.len(), 14, "{made:?}");
-    assert!(made.iter().all(|w| w.ends_with(WHY)), "{made:?}");
+    // Each says it came from the sheet, by the row that made it.
+    assert!(
+        made.iter()
+            .all(|w| w.contains(WHY) && w.contains("(the sheet's row ")),
+        "{made:?}"
+    );
+    assert!(made.contains(&format!("add: {WHY} (the sheet's row 3)").as_str()));
     // A row reads an output set up in a later row as well as an earlier one.
     let lines: Vec<&str> = SHEET.lines().collect();
     let swapped = format!("{}\n{}\n{}\n{}\n", lines[0], lines[2], lines[1], lines[3]);
@@ -1875,6 +1881,45 @@ fn a_sheet_with_one_row_refused_sets_up_nothing_and_names_the_row() {
     );
     let taken = format!("{SHEET}sw_storm_onset,l3_solar,Again?,sw_storm_onset,number,1,,,,\n");
     refused(&taken, &["row 5", "sw_storm_onset", "never used twice"]);
+}
+
+#[test]
+fn a_sheet_is_read_as_a_person_reads_it_or_refused_by_its_row() {
+    let refused = |csv: &str, says: &str| {
+        let e = ola(&solar(), &sheet(csv)).unwrap_err();
+        assert!(e.contains(says), "expected «{says}» in: {e}");
+    };
+    // A quote never closed would make every row after it one cell.
+    let open_quote = SHEET.replace("How high does it go?", "Ring 5\" wide?");
+    refused(
+        &open_quote,
+        "the sheet's row 3 opens a quote that is never closed",
+    );
+    // A comma outside quotes moves every column after it.
+    let ragged = SHEET.replace("How high does it go?", "How high, really?");
+    refused(&ragged, "the sheet's row 3 has 11 cells and its header 10");
+    // An input named twice, and a column named twice.
+    let twice = SHEET.replace(
+        "onset:1=sw_storm_onset.sw_storm_onset; f107:1=case",
+        "f107:1=case; f107:1=sw_storm_onset.sw_storm_onset",
+    );
+    refused(&twice, "the sheet's row 3 (sw_storm_peak) names its input f107 twice");
+    refused(
+        "id,parent,unit,unit\nsw_x,l3_solar,1,m\n",
+        "names its column unit twice",
+    );
+    // What a spreadsheet writes is read: a byte-order mark, CRLF, a quoted
+    // cell with a comma and a doubled quote, and a blank line, which is
+    // counted.
+    let excel = format!("\u{feff}{}", SHEET.replace('\n', "\r\n")).replace(
+        "How high does it go?",
+        "\"How high, \"\"really\"\"?\"",
+    );
+    let (f, _) = ola(&solar(), &sheet(&excel)).unwrap();
+    let peak = f.blocks.iter().find(|b| b.uid == "sw_storm_peak").unwrap();
+    assert_eq!(peak.question, "How high, \"really\"?");
+    let blank = SHEET.replacen('\n', "\n\n", 1).replace("Nia Node\nsw_storm_note", "Zed Nobody\nsw_storm_note");
+    refused(&blank, "the sheet's row 4 (sw_storm_peak)");
 }
 
 /// `f` with an open block `id` under `parent`, an input `x` and an output

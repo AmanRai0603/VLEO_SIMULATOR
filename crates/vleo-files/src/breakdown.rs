@@ -126,7 +126,7 @@ pub const SHEET_COLUMNS: [&str; 10] = [
 /// reads the output of another however they are ordered; then every wire;
 /// then every assignment.
 pub fn sheet_edits(csv: &str) -> Result<Vec<(usize, String, Edit)>, Error> {
-    let (head, rows) = crate::intake::parse_csv(csv);
+    let (head, rows) = sheet_rows(csv)?;
     if let Some(c) = head.iter().find(|c| !SHEET_COLUMNS.contains(&c.trim())) {
         return Err(refused(format!(
             "the sheet has a column {c:?}, which is not one of its columns: {}",
@@ -138,12 +138,26 @@ pub fn sheet_edits(csv: &str) -> Result<Vec<(usize, String, Edit)>, Error> {
             return Err(refused(format!("the sheet has no column {need}")));
         }
     }
+    for (i, c) in head.iter().enumerate() {
+        if head[..i].contains(c) {
+            return Err(refused(format!(
+                "the sheet names its column {c} twice: which one a row means cannot be said"
+            )));
+        }
+    }
     if rows.is_empty() {
         return Err(refused("the sheet has no row: nothing is set up"));
     }
     let (mut frame, mut wires, mut assigns) = (Vec::new(), Vec::new(), Vec::new());
-    for (i, r) in rows.iter().enumerate() {
-        let n = i + 2;
+    for (n, r) in &rows {
+        let n = *n;
+        if r.len() != head.len() {
+            return Err(refused(format!(
+                "the sheet's row {n} has {} cells and its header {}: a comma outside quotes moves every column after it",
+                r.len(),
+                head.len()
+            )));
+        }
         let get = |k: &str| {
             head.iter()
                 .position(|c| c.trim() == k)
@@ -181,6 +195,7 @@ pub fn sheet_edits(csv: &str) -> Result<Vec<(usize, String, Edit)>, Error> {
                 },
             ));
         }
+        let mut named: Vec<String> = Vec::new();
         for input in get("inputs")
             .split(';')
             .map(str::trim)
@@ -197,6 +212,12 @@ pub fn sheet_edits(csv: &str) -> Result<Vec<(usize, String, Edit)>, Error> {
                     "the sheet's row {n} ({id}): its input {input:?} is not name:unit=from"
                 )));
             };
+            if named.iter().any(|x| x == name) {
+                return Err(refused(format!(
+                    "the sheet's row {n} ({id}) names its input {name} twice: an input comes from one place"
+                )));
+            }
+            named.push(name.to_string());
             frame.push((
                 n,
                 id.clone(),
@@ -234,6 +255,68 @@ pub fn sheet_edits(csv: &str) -> Result<Vec<(usize, String, Edit)>, Error> {
     frame.extend(wires);
     frame.extend(assigns);
     Ok(frame)
+}
+
+/// A sheet's header and its rows, each with the line it starts on (the
+/// header is line 1), as a person reading the file counts them: a blank
+/// line is skipped and counted, a cell quoted over lines is one row. A
+/// UTF-8 byte-order mark, as a spreadsheet writes one, is not part of the
+/// first column's name. A quote never closed is refused by the line it
+/// opened on, or every row after it would be read as one cell.
+fn sheet_rows(csv: &str) -> Result<(Vec<String>, Vec<(usize, Vec<String>)>), Error> {
+    let text = csv.strip_prefix('\u{feff}').unwrap_or(csv);
+    let mut rows: Vec<(usize, Vec<String>)> = Vec::new();
+    let (mut row, mut cell, mut quoted) = (Vec::new(), String::new(), false);
+    let (mut line, mut starts, mut opened) = (1usize, 1usize, 0usize);
+    let mut chars = text.chars().peekable();
+    while let Some(c) = chars.next() {
+        match (quoted, c) {
+            (true, '"') if chars.peek() == Some(&'"') => {
+                cell.push('"');
+                chars.next();
+            }
+            (true, '"') => quoted = false,
+            (true, c) => {
+                if c == '\n' {
+                    line += 1;
+                }
+                cell.push(c)
+            }
+            (false, '"') => {
+                quoted = true;
+                opened = line;
+            }
+            (false, ',') => row.push(std::mem::take(&mut cell)),
+            (false, '\r') => {}
+            (false, '\n') => {
+                row.push(std::mem::take(&mut cell));
+                rows.push((starts, std::mem::take(&mut row)));
+                line += 1;
+                starts = line;
+            }
+            (false, c) => cell.push(c),
+        }
+    }
+    if quoted {
+        return Err(refused(format!(
+            "the sheet's row {opened} opens a quote that is never closed: every row after it would be read as one cell, so nothing is set up"
+        )));
+    }
+    if !cell.is_empty() || !row.is_empty() {
+        row.push(cell);
+        rows.push((starts, row));
+    }
+    rows.retain(|(_, r)| r.iter().any(|c| !c.trim().is_empty()));
+    if rows.is_empty() {
+        return Ok((Vec::new(), Vec::new()));
+    }
+    let head = rows
+        .remove(0)
+        .1
+        .into_iter()
+        .map(|h| h.trim().to_string())
+        .collect();
+    Ok((head, rows))
 }
 
 impl Edit {
@@ -544,8 +627,10 @@ pub fn edit(
     if let Edit::Sheet { csv } = edit {
         let mut g = group.clone();
         for (row, id, e) in sheet_edits(csv)? {
+            // Each change row says it came from the sheet, by its row.
+            let said = format!("{} (the sheet's row {row})", why.trim());
             g = self::edit(
-                &g, nodes, elsewhere, &e, why, by, key, at, mounted_by, programme,
+                &g, nodes, elsewhere, &e, &said, by, key, at, mounted_by, programme,
             )
             .map_err(|err| {
                 refused(format!(
