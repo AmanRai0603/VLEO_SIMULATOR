@@ -157,6 +157,11 @@ Handed over Sunday 18 October (S1 to S4: F1 to F3-f, the key's proof, F3-g1, the
     - `vleo_sheet::method::amount::read`: a value, a range or a spread as typed, the unit by `parse_unit` alone, every number worked out from the digits; refused by name with the fix.
     - `vleo_sheet::method::formula::read`: a formula into method text `compile` checks, inputs found by port name or symbol, a near name offered and never taken, an empirical fit in units the person names.
     - Nothing calls either yet (a3, a4). Its Opus review found two blocking points (a unit after a per-cent dropped; an exponent that could wrap) and eleven more; fixed in 4519f117, each shown red.
+  - **213 F8-a1 a unit the engine does not read refuses its row: high risk.** Stacked on 207 (it touches nothing of F6). Answers question 70: the fallback is refused now, in F8.
+    - `vleo_sheet::method::unit_named` is the one reader: a machine name, a symbol, or a unit `parse_unit` reads that is exactly one the engine holds. It refuses by name text that does not read, a unit the engine holds none of (`mN/kW`, question 63), and one that is several (`1/s`).
+    - The engine keeps a refusal for each row (`Graph::unread`), asked in `call`, `estimate` and `supply_checked`, for every behaviour; a row nobody has specified is `NotRun` whatever its unit. The page's index and xtask's group page show such a unit as written and no number.
+    - No answer of `design/` moves (machine names only). A release's `km`, `%`, `d` and `yr` now convert, and `km/h`, `mN/kW`, `kW.h` refuse: the release notes are in the commit and the body, for the groups before the application release.
+    - Its Opus review found two blocking points (a supplied value taken; lookup and children rows past the check) and six more; fixed in f823f0c0, each shown red. Not fixed: a refused row's cases show NaN with no reason, and three readers of "a unit reads" remain.
 - **What 208 to 210 decide:**
   - **What relies on a released design reads it back with `design::open_held`**, never as handed over.
   - **A seal whose key was revoked after it was made still counts** (question 51, read as the chain reads every other signature). Put to Aman on 209.
@@ -245,9 +250,9 @@ Handed over Sunday 18 October (S1 to S4: F1 to F3-f, the key's proof, F3-g1, the
 - **Disk:** the container's allowance filled on S1 and again on S2. `xtask files-wasm` and the scenarios leave a `target/` of 10 GB or more inside the worktree they run in; delete it after a push. Old worktrees' `target/` folders and `target/*/incremental` were deleted to make room.
 - **Next for A, in order:**
   - **F6-c2** (previews and their answers: high risk, needs B's fixes to 200 and 202) and **F6-c3b** (the decision on an objection and the release's refusals: needs c2 and B's 204).
-  - **F8-a1** (high risk): the engine reads every unit with the one parser, and refuses by name what it reads as a pure number today. Then a3 (a typed formula through the edit, high risk, waits on question 58) and a4 (amounts in the frame's forms).
+  - **F8-a3** (a typed formula through the edit, high risk, waits on question 58), then a4 (amounts in the frame's forms). a1 is 213.
   - **Merge B's fixes** into 207 as they land; B's fixes to 193 and 196 are in.
-  - **For Aman:** the brief's questions 9 (one node shape, F3-g0) and 10 (ports), 7 and 8 (where today's page's Rows, Architecture, Forms and manual go), 11 to 19 (F3-g2), 20 to 32 (F6-a), 33 to 41 (F6-b), 51 (209), 55 (210), 57, the split of c3 (211), and 58 to 71 (F8-a).
+  - **For Aman:** the brief's questions 9 (one node shape, F3-g0) and 10 (ports), 7 and 8 (where today's page's Rows, Architecture, Forms and manual go), 11 to 19 (F3-g2), 20 to 32 (F6-a), 33 to 41 (F6-b), 51 (209), 55 (210), 57, the split of c3 (211), 58 to 71 (F8-a), and 70 as 213 answers it.
   - **F8 and F9** after F6. **For B, now:** F5, on the critical path of F6, F7 and F9; what it needs (F1's owner, F3's signed nodes, F4's tree) is in 175, 179 and 187.
 
 ## Person B · night
