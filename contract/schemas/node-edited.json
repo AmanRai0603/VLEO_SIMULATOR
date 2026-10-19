@@ -230,7 +230,11 @@
                 "type": "number"
               },
               "severity": {
-                "type": "string"
+                "type": "string",
+                "enum": [
+                  "error",
+                  "warning"
+                ]
               },
               "msg": {
                 "type": "string"

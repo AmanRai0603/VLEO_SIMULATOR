@@ -373,7 +373,8 @@ pub fn formula_of(
         .iter()
         .find(|b| b.uid == uid)
         .ok_or_else(|| refused(format!("no node {uid:?} is in the file")))?;
-    if fm.typed.trim().is_empty() {
+    let typed = fm.typed.replace('\r', "");
+    if typed.trim().is_empty() {
         return Err(refused(format!(
             "{}'s formula is empty: type it as NAME = EXPR, as D = 0.5 * rho * v^2 * Cd * A",
             b.id
@@ -392,6 +393,40 @@ pub fn formula_of(
             )))
         }
     };
+    // A formula answers one output. A node that publishes values beside its
+    // answer, by its ports or by its cases' columns, is written as a method
+    // (the brief's "Not in F8-a"), and never read here as one that does not.
+    let published: Vec<String> = sig
+        .publishes
+        .iter()
+        .map(|(n, _)| n.clone())
+        .chain(
+            f.tables
+                .iter()
+                .filter(|t| t.scope == uid && t.path == "results/isolation.csv")
+                .flat_map(|t| {
+                    t.csv
+                        .lines()
+                        .next()
+                        .unwrap_or("")
+                        .split(',')
+                        .map(str::to_string)
+                        .collect::<Vec<_>>()
+                })
+                .filter_map(|h| {
+                    h.trim()
+                        .strip_prefix("answer.")
+                        .map(|m| m.split(' ').next().unwrap_or("").to_string())
+                }),
+        )
+        .collect();
+    if !published.is_empty() {
+        return Err(refused(format!(
+            "{}'s formula is not read: it publishes {} beside its answer, and a formula answers one output, so a method with several values is written as a method",
+            b.id,
+            published.join(", ")
+        )));
+    }
     let port = |p: &Port| formula::Port {
         name: p.name.clone(),
         symbol: p.symbol.trim().to_string(),
@@ -403,13 +438,7 @@ pub fn formula_of(
         .find(|p| p.direction == "out")
         .map(port)
         .expect("a signature has an output");
-    Ok(formula::read(
-        &fm.typed,
-        &sig,
-        &ins,
-        &output,
-        fm.fit.as_ref(),
-    ))
+    Ok(formula::read(&typed, &sig, &ins, &output, fm.fit.as_ref()))
 }
 
 /// The edits' content laid on `now`, before the declaration and the record
@@ -534,7 +563,11 @@ fn content(now: &File, uid: &str, id: &str, e: &Edits) -> Result<File, Error> {
                 // The method's own text, as every method edit writes it; and,
                 // while one node shape is not picked (F3-g0), design/'s
                 // `method` with the same body when the file holds one, so the
-                // checks and the engine read one method (question 58).
+                // checks and the engine read one method (question 58). No node
+                // written here holds one today: design/'s nodes hold a sheet,
+                // and are refused above. The write is for a node brought to
+                // the release's shape before F3-g0; the checks' refusal of two
+                // bodies that differ is what holds now.
                 match out
                     .texts
                     .iter_mut()

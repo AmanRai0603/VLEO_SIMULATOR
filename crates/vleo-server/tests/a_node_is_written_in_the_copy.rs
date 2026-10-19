@@ -509,6 +509,21 @@ fn a_node_is_written_in_the_copy() {
             && r.contains("formula is not written"),
         "{r}"
     );
+    // An empirical fit, its units one name=unit a line, and a line with no
+    // unit refused by the name it gives.
+    let r = typed(
+        "band = f107 / 50",
+        &[("formula.units", "f107=1"), ("formula.answer", "1")],
+    );
+    assert!(
+        r.contains("\"formula\":{\"ok\":true") && r.contains("let f107_number = f107 / 1 [1]"),
+        "{r}"
+    );
+    let r = typed(
+        "band = f107 / 50",
+        &[("formula.units", "f107"), ("formula.answer", "1")],
+    );
+    assert!(r.contains("name the unit «f107» is read in"), "{r}");
     let r = typed("band = f107 / 50", &[("method_text", "return 1")]);
     assert!(r.contains("a method and a formula, both"), "{r}");
     assert_eq!(bytes(), before, "a formula's dry run writes nothing");

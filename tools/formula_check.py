@@ -8,6 +8,9 @@ is started on it. Then, as Test Pia, the band's node engineer, would:
 - Pia types, in *type a formula*, `band = f107 / q`: a moment later the
   program says `q` is no input of the node, and *Ask for these inputs* drafts
   a contract change naming it, for Pia to change; nothing is written;
+- a save with that formula in its box is refused on screen: a formula is
+  saved only as the method it became, seen in *its method*;
+- a reading of older typing is withdrawn as soon as the formula changes;
 - Pia types `band = f107 ** 0`: the program says it read `**` as `^`, found
   `f107` by its port's name, shows the method it becomes, saying what was
   typed, and runs it on the band's cases, some agreeing and some not;
@@ -98,10 +101,24 @@ def check():
             step('which drafts a contract change naming it, for Pia to change',
                  body.startswith(f'Inputs for {NODE}: q,') and p.input_value('#nw-ask-kind') == 'contract', body)
             step('and nothing is written', open(mine, 'rb').read() == before)
+            step('the reading is still shown after the page is drawn again',
+                 'q: no input of this node' in p.inner_text('.nw-formula-read'), p.inner_text('.nw-formula-read'))
+            # A save with a formula in its box: never saved unseen.
+            p.click('#nw-save')
+            notice = said_after(p, '')
+            step('a save with a formula typed and not used is refused on screen, nothing written',
+                 'A formula is typed and not used' in notice and open(mine, 'rb').read() == before, notice)
 
             # A formula that reads: said back, and run on the cases.
             field(p, 'formula').click()
+            field(p, 'formula').fill('band = f107 ** 1')
+            read_after(p, 'the method it becomes')
             field(p, 'formula').fill(TYPED)
+            step('a reading of older typing is withdrawn as soon as the formula changes',
+                 p.locator('#nw-use-formula').count() == 0)
+            p.wait_for_function(
+                "t => { const n = document.querySelector('.nw-formula-method'); return n && n.innerText.includes(t); }",
+                arg='# Typed as: ' + TYPED, timeout=60000)
             read = read_after(p, 'the method it becomes')
             step('its spelling is said written back', '«**» is written «^»' in read, read)
             step('its input is found by its port\'s name', 'f107: f107' in read and 'no input' not in read, read)
@@ -124,7 +141,7 @@ def check():
             for k, v in METHOD_WHY.items():
                 field(p, 'why.' + k).fill(v)
             p.click('#nw-save')
-            notice = said_after(p, '')
+            notice = said_after(p, notice)
             step('saved as revision 2', 'is saved as revision 2' in notice, notice)
             saved = ask(port, f'/v1/node/{NODE}/file')['content']['method_text']
             step("the file's method is the one the formula became", saved.strip() == method.strip(), saved[:200])

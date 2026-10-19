@@ -249,7 +249,9 @@ fn blocks(f: &File, out: &mut Findings) {
                 // Until one node shape is picked (F3-g0), a node may hold its
                 // method twice, as a release's `pseudocode` and as design/'s
                 // `method`: the checks read the one and the engine runs the
-                // other, so the two must be the same (F8, question 58).
+                // other, so the two must be the same (F8, question 58). Their
+                // texts are compared whole, trimmed: two that differ only in a
+                // comment are refused too, until F3-g0 keeps one.
                 let body = |kind: &str| {
                     f.texts
                         .iter()

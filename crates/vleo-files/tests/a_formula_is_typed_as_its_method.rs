@@ -417,9 +417,40 @@ fn a_formula_is_refused_by_name_with_nothing_written() {
         why.contains("formula is not written") && why.contains("«q»"),
         "{why}"
     );
-    // Of the wrong dimension: a force is not a pressure.
+    // Of the wrong dimension: a force is not a pressure, both named.
     let why = refused(&formula("D = 0.5 * rho * v^2"));
-    assert!(why.contains("formula is not written"), "{why}");
+    assert!(
+        why.contains("formula is not written")
+            && why.contains("the answer must be m.kg/s^2 and this is kg/m.s^2"),
+        "{why}"
+    );
+    // No record of which belief broke, and an assistant's part not said.
+    let mut e = formula(TYPED);
+    e.why = None;
+    assert!(
+        refused(&e).contains("which belief broke"),
+        "{}",
+        refused(&e)
+    );
+    let mut e = formula(TYPED);
+    e.declared.as_mut().unwrap().ai = s("");
+    assert!(
+        refused(&e).contains("declaration does not hold"),
+        "{}",
+        refused(&e)
+    );
+    // Saved, refused all the same, and nothing written.
+    let saved = edit::edit_in_place(
+        &c,
+        PATH,
+        &opened,
+        &formula("D = 0.5 * rho * v^2 * Cd * A * q"),
+        "Nia Node",
+        AT,
+        APP,
+        &solar(),
+    );
+    assert!(saved.is_err(), "{saved:?}");
     // A method and a formula, both.
     let mut e = formula(TYPED);
     e.edits.push(Edit::Method(s("return rho * v^2 * cd * a")));
@@ -430,6 +461,73 @@ fn a_formula_is_refused_by_name_with_nothing_written() {
     );
     assert_eq!(digest(&c), opened, "a refused formula writes nothing");
     let _ = std::fs::remove_dir_all(&c);
+}
+
+#[test]
+fn an_empirical_fit_is_read_in_the_units_the_person_names() {
+    let (c, opened) = copy("fit", &drag());
+    let mut e = formula(TYPED);
+    e.edits = vec![Edit::Formula(Formula {
+        typed: s(TYPED),
+        fit: Some(vleo_sheet::method::formula::Fit {
+            inputs: vec![
+                (s("rho"), s("kg/m^3")),
+                (s("v"), s("m/s")),
+                (s("Cd"), s("1")),
+                (s("A"), s("m^2")),
+            ],
+            answer: s("N"),
+        }),
+    })];
+    match tried(&c, &opened, &e) {
+        Tried::Would {
+            refused, report, ..
+        } => {
+            assert_eq!(refused, None);
+            let (_, rep) = report.expect("it runs on its cases");
+            assert!(rep.cases.iter().all(|(_, v)| v.agrees()), "{:?}", rep.cases);
+        }
+        Tried::SecondWriter { .. } => panic!("a second writer"),
+    }
+    let a = edit::apply(&drag(), PATH, &e, "Nia Node", AT).unwrap();
+    let m = text(&a.file, "pseudocode");
+    assert!(
+        m.contains("let rho_number = rho / 1 [kg/m^3]") && m.contains("* 1 [N]"),
+        "{m}"
+    );
+    let _ = std::fs::remove_dir_all(&c);
+}
+
+#[test]
+fn a_node_whose_ports_or_cases_a_formula_cannot_answer_is_refused() {
+    // A port whose unit does not read: the whole formula is refused by name.
+    let mut f = drag();
+    f.ports[0].unit = s("furlong");
+    let e = edit::apply(&f, PATH, &formula(TYPED), "Nia Node", AT)
+        .unwrap_err()
+        .message()
+        .to_string();
+    assert!(
+        e.contains("its ports give no method signature") && e.contains("furlong"),
+        "{e}"
+    );
+    // A node publishing a value beside its answer, by its cases.
+    let mut f = drag();
+    for t in f
+        .tables
+        .iter_mut()
+        .filter(|t| t.path == "results/isolation.csv")
+    {
+        t.csv = t
+            .csv
+            .replacen("answer [N],", "answer [N],answer.lift [N],", 1)
+            .replace(",1e-12,", ",0,1e-12,");
+    }
+    let e = edit::apply(&f, PATH, &formula(TYPED), "Nia Node", AT)
+        .unwrap_err()
+        .message()
+        .to_string();
+    assert!(e.contains("it publishes lift beside its answer"), "{e}");
 }
 
 #[test]

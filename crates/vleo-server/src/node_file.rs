@@ -1021,7 +1021,7 @@ fn formula_field(j: &mut Json, file: &vleo_files::model::File, e: &Edits) {
                     if d.severity == vleo_sheet::method::Severity::Error {
                         "error"
                     } else {
-                        "note"
+                        "warning"
                     },
                 );
                 j.str_field("msg", &d.msg);

@@ -195,6 +195,8 @@ async function draw(keep) {
       '</section>' +
       '<aside class="nw-right">' + yourFile(id, file) + '</aside>' +
     '</div>';
+  // A formula's reading, still the typing's, survives the page drawn again.
+  if (W.formula) drawFormula(W.formula);
   if (row) {
     whatIf();
     mountParts($('.nw-parts', host), id);
@@ -408,13 +410,15 @@ function rebaseOn(e, f) {
 /** What is to be sent: each part the person touched, when it differs from the
  *  file it began on; the declaration with a method or cases; the record when
  *  any of it is written. */
-function changes() {
+function changes(forSave) {
   const e = W.editing;
   if (!e) return {};
   const out = {};
   for (const [k] of FIELDS) if (e.touched.has(k) && e.vals[k] !== e.base[k]) out[k] = e.vals[k];
-  // A formula typed is sent as one, with its fit's units, in place of a method.
-  if ((e.vals.formula || '').trim()) for (const k of FORMULA) out[k] = e.vals[k] || '';
+  // A formula typed is sent to be read, with its fit's units, and its method
+  // shown: it is saved only as the method it became, used as its method and
+  // seen there (F8-a3), never from the formula box.
+  if (!forSave && (e.vals.formula || '').trim()) for (const k of FORMULA) out[k] = e.vals[k] || '';
   if ('method_text' in out || 'case_csv' in out || 'formula' in out) for (const k of DECLARED) out['declared.' + k] = e.vals['declared.' + k];
   if (WHY.some(([k]) => (e.vals['why.' + k] || '').trim())) for (const [k] of WHY) out['why.' + k] = e.vals['why.' + k];
   return out;
@@ -488,7 +492,8 @@ function drawFormula(f) {
     (f.diags.length ? '<ul class="nw-list nw-formula-diags">' + f.diags.map(d => '<li class="nw-' + esc(d.severity) + '">' +
       esc((d.line ? 'line ' + d.line + ': ' : '') + d.msg) + '</li>').join('') + '</ul>' : '') +
     (f.method ? '<p class="muted">the method it becomes</p><pre class="nw-code nw-formula-method">' + esc(f.method) + '</pre>' : '') +
-    (f.ok ? '<p><button class="ctl" id="nw-use-formula">Use it as the method</button></p>' : '') +
+    '<p>' + (f.ok ? '<button class="ctl" id="nw-use-formula">Use it as the method</button> ' : '') +
+      '<button class="ctl" id="nw-clear-formula">Clear the formula</button></p>' +
     (missing ? '<p><button class="ctl" id="nw-ask-inputs">Ask for these inputs</button> a contract change, drafted for you to change</p>' : '');
 }
 
@@ -535,6 +540,8 @@ function typed(e) {
   if (!k || !ed) return;
   ed.vals[k] = e.target.value;
   ed.touched.add(k);
+  // A reading of older typing is no longer this typing's: it is not offered.
+  if (FORMULA.includes(k)) drawFormula(null);
   // A method or cases written anew are somebody's anew: who wrote, copied
   // and checked the old ones is not carried over to them.
   if ((k === 'method_text' || k === 'case_csv' || k === 'formula') && ed.vals[k] !== (ed.base[k] || '')) {
@@ -614,11 +621,17 @@ async function click(e) {
     }
     case 'nw-save': {
       const id = W.id;
+      // A formula is saved as the method it became, seen in its method:
+      // one still in its box is used or cleared first, never saved unseen.
+      if (W.editing && (W.editing.vals.formula || '').trim()) {
+        W.notice = { ok: false, text: 'A formula is typed and not used: use it as the method, and see it there, or clear it, then save.' };
+        return draw(true);
+      }
       clearTimeout(W.timer); W.seq++;
       // Saved over the revision the typing began on: a file changed since is
       // a second writer, never written over.
       const r = await W.post('/v1/node/' + encodeURIComponent(id) + '/edit',
-        { opened: W.editing ? W.editing.opened : opened, ...changes() });
+        { opened: W.editing ? W.editing.opened : opened, ...changes(true) });
       // Taken: what the file now says is shown. Refused, or a second writer:
       // what was typed is kept.
       if (r && r.ok && r.written && id === W.id) W.editing = null;
@@ -628,7 +641,7 @@ async function click(e) {
       // The method it became goes into its method, as typed there; the
       // formula is cleared, and the method is checked as any is.
       const ed = W.editing;
-      if (!ed || !W.formula || !W.formula.method) return;
+      if (!ed || !W.formula || !W.formula.method || W.formula.typed !== (ed.vals.formula || '').replace(/\r/g, '')) return;
       ed.vals.method_text = W.formula.method;
       ed.touched.add('method_text');
       for (const k of FORMULA) {
@@ -639,6 +652,18 @@ async function click(e) {
       const m = $('[data-edit="method_text"]', W.host);
       if (m) m.value = ed.vals.method_text;
       W.formula = null;
+      drawFormula(null);
+      W.seq++;
+      return check();
+    }
+    case 'nw-clear-formula': {
+      const ed = W.editing;
+      if (!ed) return;
+      for (const k of FORMULA) {
+        ed.vals[k] = '';
+        const input = $('[data-edit="' + k + '"]', W.host);
+        if (input) input.value = '';
+      }
       drawFormula(null);
       W.seq++;
       return check();
