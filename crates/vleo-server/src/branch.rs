@@ -454,9 +454,16 @@ fn base_edit(copy: &Path, group: &str, params: &str) -> Result<Edit, String> {
         .into_iter()
         .find(|p| p.is_file())
         .ok_or_else(|| format!("your copy holds no released design {v}: copy the drive again"))?;
-        vleo_files::sqlite::read(&at)
-            .map(Box::new)
-            .map_err(|e| format!("design/{name} does not read: {}", e.message()))
+        let f = vleo_files::sqlite::read(&at)
+            .map_err(|e| format!("design/{name} does not read: {}", e.message()))?;
+        // The file named for a version is that version, or nothing is moved.
+        let holds = f.meta.get("version").map_or("", String::as_str);
+        if holds != v {
+            return Err(format!(
+                "design/{name} holds the released design {holds:?}, not {v}: it is not read as {v}"
+            ));
+        }
+        Ok(Box::new(f))
     };
     let design = read(version.trim())?;
     let (_, f) = breakdown::group_file_in(copy, group).map_err(|e| e.message().to_string())?;

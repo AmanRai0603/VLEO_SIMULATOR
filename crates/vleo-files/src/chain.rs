@@ -1308,6 +1308,7 @@ pub fn check_design(design: &File, programme: &Registry) -> Result<(), Error> {
             format!("this is a {}, not a released design", design.kind()?),
         ));
     }
+    design.check_meta()?;
     let (ok, why) = counted(design, FILE, programme, |name| {
         programme.acts_as(name, "system engineer")
     });

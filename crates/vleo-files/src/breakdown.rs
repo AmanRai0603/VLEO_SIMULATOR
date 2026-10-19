@@ -838,17 +838,35 @@ pub fn contracted(node: &File, group: &File, port: Option<&Port>) -> Result<File
 /// the node engineer who reads it; and the group's mount, moved.
 fn base_moves(branch: &Branch, old: Option<&File>, new: &File) -> Vec<String> {
     let group = branch.group_id();
-    let port_of = |d: &File, node: &str, port: &str| -> Option<Port> {
-        let b = d.blocks.iter().find(|b| b.id == node)?;
+    // The output `port` of the node `node` of the group `g` in the design
+    // `d`: the node by its uid, as a wire names it, and only under the block
+    // that mounts `g`, so two groups' nodes of one id are never taken for
+    // each other.
+    let port_of = |d: &File, g: &str, node: &str, port: &str| -> Option<Port> {
+        let mount = &d.mounts.iter().find(|m| m.group_id == g)?.block_uid;
+        let b = d.blocks.iter().find(|b| b.uid == node)?;
+        let mut up = b.parent_uid.clone();
+        let mut under = b.uid == *mount;
+        for _ in 0..d.blocks.len() {
+            if under || up.is_empty() {
+                break;
+            }
+            under = up == *mount;
+            up = d
+                .blocks
+                .iter()
+                .find(|x| x.uid == up)
+                .map_or(String::new(), |x| x.parent_uid.clone());
+        }
+        if !under {
+            return None;
+        }
         d.ports
             .iter()
             .find(|p| p.block_uid == b.uid && p.direction == "out" && p.name == port)
             .cloned()
     };
     let mut out = Vec::new();
-    let Some(old) = old else {
-        return out;
-    };
     for w in branch.wires() {
         let parts: Vec<&str> = w.from_ref.split('.').collect();
         let (g, node, port) = match parts.as_slice() {
@@ -860,7 +878,17 @@ fn base_moves(branch: &Branch, old: Option<&File>, new: &File) -> Vec<String> {
             continue;
         }
         let reads = format!("{}'s input {} reads {}", w.to_block, w.to_port, w.from_ref);
-        match (port_of(old, node, port), port_of(new, node, port)) {
+        // Its first base: nothing to compare with, and what the design does
+        // not hold is said all the same.
+        let Some(old) = old else {
+            if port_of(new, g, node, port).is_none() {
+                out.push(format!(
+                    "{reads}, which the released design does not hold: check it"
+                ));
+            }
+            continue;
+        };
+        match (port_of(old, g, node, port), port_of(new, g, node, port)) {
             (Some(a), Some(b)) => {
                 let mut said = Vec::new();
                 for (what, x, y) in [
@@ -895,7 +923,7 @@ fn base_moves(branch: &Branch, old: Option<&File>, new: &File) -> Vec<String> {
             .find(|m| m.group_id == group)
             .map(|m| m.block_uid.clone())
     };
-    if let (Some(a), Some(b)) = (mount(old), mount(new)) {
+    if let (Some(a), Some(b)) = (old.and_then(mount), mount(new)) {
         if a != b {
             out.push(format!("its mount moved from {a} to {b}"));
         }
@@ -1590,6 +1618,24 @@ fn apply(
         Edit::UpdateBase { design, previous } => {
             let version = design.meta.get("version").cloned().unwrap_or_default();
             let based_on = out.meta.get("based_on").cloned().unwrap_or_default();
+            // A released design that holds its groups' releases whole has no
+            // rows of its own to read what changed under the branch from; read
+            // as if it had, every input would say nothing moved.
+            for d in std::iter::once(&**design).chain(previous.as_deref()) {
+                if d.blocks.is_empty() && !d.media.is_empty() {
+                    return Err(refused(format!(
+                        "the released design {} holds its groups' releases whole, and what changed under {group_id} is not yet read through them: its base is not moved with nothing said",
+                        d.meta.get("version").map_or("", String::as_str)
+                    )));
+                }
+            }
+            // Its count is of released designs: a group file based on one and
+            // not saying which in order cannot count on from it.
+            if !based_on.is_empty() && out.base_version().is_none() {
+                return Err(refused(format!(
+                    "{group_id} is based on the released design {based_on} and does not say which it is in order (its base_version): its base does not move until it does"
+                )));
+            }
             if version == based_on {
                 return Err(refused(format!(
                     "{group_id} is already based on the released design {version}"
