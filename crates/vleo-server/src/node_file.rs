@@ -892,7 +892,9 @@ fn lesson_saved(id: &str, params: &str, ctx: &Ctx) -> Result<String, String> {
 /// revision in the copy (docs/briefs/F3.md, F3-g2a), or, with `dry_run`, the
 /// same edits checked as they are typed, with nothing written. Each part is
 /// sent only when it changes: `question`, `explain_simply`, `explain_breaks`,
-/// `explain_wrong`, `method_text`, `case_csv`; with a method or cases,
+/// `explain_wrong`, `method_text`, `case_csv`, or `formula` in place of
+/// `method_text`, with `formula.units` and `formula.answer` for an empirical
+/// fit (F8-a3, read as `formula_of` says); with a method or cases,
 /// `declared.author`, `.ai`, `.source` and `.checked_by`; with a decision,
 /// the record `why.believed`, `.tested`, `.learned`, `.changed`, `.risks`,
 /// `.cost`, `.rests_on` and `.breaks_if`. Every rule is the library's
@@ -904,6 +906,131 @@ pub(super) fn edit_route(id: &str, params: &str, ctx: &Ctx) -> String {
         Ok(j) => j,
         Err(why) => me::refusal(&why),
     }
+}
+
+/// A formula as sent (F8-a3): `formula`, and for an empirical fit
+/// `formula.units`, one `<name>=<unit>` a line for each input the formula
+/// reads, and `formula.answer`, the unit its answer is given in. A line that
+/// is not one is kept whole as a name with no unit, which the reader refuses
+/// by name.
+fn formula_of(params: &str, typed: String) -> edit::Formula {
+    let given = |k: &str| param(params, k).map(decode).unwrap_or_default();
+    let (units, answer) = (given("formula.units"), given("formula.answer"));
+    let fit = (!units.trim().is_empty() || !answer.trim().is_empty()).then(|| {
+        vleo_sheet::method::formula::Fit {
+            inputs: units
+                .lines()
+                .map(str::trim)
+                .filter(|l| !l.is_empty())
+                .map(|l| match l.split_once('=') {
+                    Some((n, u)) => (n.trim().to_string(), u.trim().to_string()),
+                    None => (l.to_string(), String::new()),
+                })
+                .collect(),
+            answer: answer.trim().to_string(),
+        }
+    });
+    edit::Formula { typed, fit }
+}
+
+/// What a formula typed was read as (F8-a3), beside what the dry run found:
+/// the method text it becomes, each input found with its unit, each spelling
+/// written back, a note, and every finding by the formula's own line.
+fn formula_field(j: &mut Json, file: &vleo_files::model::File, e: &Edits) {
+    use vleo_sheet::method::formula::Found;
+    let Some(fm) = e.edits.iter().find_map(|x| match x {
+        Edit::Formula(fm) => Some(fm),
+        _ => None,
+    }) else {
+        return;
+    };
+    let Some(uid) = file.blocks.first().map(|b| b.uid.clone()) else {
+        return;
+    };
+    j.key("formula").raw("{");
+    match edit::formula_of(file, &uid, fm) {
+        Err(why) => {
+            j.bool_field("ok", false);
+            j.str_field("typed", &fm.typed);
+            j.key("method").raw("null");
+            j.key("inputs").raw("[]");
+            j.key("rewrites").raw("[]");
+            j.key("note").raw("null");
+            j.key("diags").raw("[");
+            j.raw("{");
+            j.num_field("line", 0.0);
+            j.str_field("severity", "error");
+            j.str_field("msg", why.message());
+            j.raw("}]");
+        }
+        Ok(r) => {
+            j.bool_field("ok", r.ok());
+            j.str_field("typed", &r.typed);
+            match &r.method {
+                Some(m) => j.str_field("method", m),
+                None => j.key("method").raw("null"),
+            };
+            j.key("inputs").raw("[");
+            for (k, x) in r.inputs.iter().enumerate() {
+                if k > 0 {
+                    j.raw(",");
+                }
+                j.raw("{");
+                j.str_field("name", &x.name);
+                match &x.port {
+                    Some(p) => j.str_field("port", p),
+                    None => j.key("port").raw("null"),
+                };
+                j.str_field(
+                    "found",
+                    match x.found {
+                        Found::Name => "name",
+                        Found::Symbol => "symbol",
+                        Found::Missing => "missing",
+                    },
+                );
+                j.str_field("unit", &x.unit);
+                match &x.offered {
+                    Some(o) => j.str_field("offered", o),
+                    None => j.key("offered").raw("null"),
+                };
+                j.raw("}");
+            }
+            j.raw("]");
+            j.key("rewrites").raw("[");
+            for (k, w) in r.rewrites.iter().enumerate() {
+                if k > 0 {
+                    j.raw(",");
+                }
+                j.raw(&json::string(w));
+            }
+            j.raw("]");
+            match &r.note {
+                Some(n) => j.str_field("note", n),
+                None => j.key("note").raw("null"),
+            };
+            j.key("diags").raw("[");
+            for (k, d) in r.diags.iter().enumerate() {
+                if k > 0 {
+                    j.raw(",");
+                }
+                j.raw("{");
+                j.num_field("line", d.line as f64);
+                j.str_field(
+                    "severity",
+                    if d.severity == vleo_sheet::method::Severity::Error {
+                        "error"
+                    } else {
+                        "note"
+                    },
+                );
+                j.str_field("msg", &d.msg);
+                j.raw("}");
+            }
+            j.raw("]");
+        }
+    }
+    j.raw("}");
 }
 
 /// The edits a request sends, from its fields.
@@ -927,6 +1054,9 @@ fn edits_of(params: &str) -> Edits {
     }
     if let Some(c) = given("case_csv") {
         edits.push(Edit::Cases(c));
+    }
+    if let Some(typed) = given("formula") {
+        edits.push(Edit::Formula(formula_of(params, typed)));
     }
     let declared = ["author", "ai", "source", "checked_by"]
         .iter()
@@ -1091,6 +1221,7 @@ fn edited(id: &str, params: &str, ctx: &Ctx) -> Result<String, String> {
                     j.num_field("revision", revision as f64);
                     j.str_field("opened", &digest);
                     tried_fields(&mut j, &None, true, &findings, &report, &about);
+                    formula_field(&mut j, &file, &e);
                     j.str_field(
                         "message",
                         &format!(
@@ -1107,6 +1238,7 @@ fn edited(id: &str, params: &str, ctx: &Ctx) -> Result<String, String> {
                     j.num_field("revision", revision as f64);
                     j.str_field("opened", &opened);
                     tried_fields(&mut j, &refused, checked, &findings, &report, &about);
+                    formula_field(&mut j, &file, &e);
                     j.str_field(
                         "message",
                         &match (&refused, dry) {

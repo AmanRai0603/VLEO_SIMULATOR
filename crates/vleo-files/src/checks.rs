@@ -246,6 +246,24 @@ fn blocks(f: &File, out: &mut Findings) {
                         "has no method: a computed node is its method in the method language",
                     );
                 }
+                // Until one node shape is picked (F3-g0), a node may hold its
+                // method twice, as a release's `pseudocode` and as design/'s
+                // `method`: the checks read the one and the engine runs the
+                // other, so the two must be the same (F8, question 58).
+                let body = |kind: &str| {
+                    f.texts
+                        .iter()
+                        .find(|t| t.scope == b.uid && t.kind == kind)
+                        .map(|t| t.body.trim().to_string())
+                };
+                if let (Some(p), Some(m)) = (body("pseudocode"), body("method")) {
+                    if p != m {
+                        out.error(
+                            &b.id,
+                            "holds two methods that differ, its pseudocode and its method: the checks read the one and today's design runs the other, so they are one body",
+                        );
+                    }
+                }
                 results(f, b, &ins, out_port, out);
                 method(f, b, &ins, out_port, out);
             }
@@ -725,24 +743,18 @@ pub fn method_cases(
     Some((src.body.clone(), sig, cases))
 }
 
-/// A child of a broken-down node, held to what it must be before it is run
-/// on its node's cases (`breakdown::reproduces`): it says who made its
-/// method (rule 6, as `declaration` holds a node to), and its method reads
-/// and checks against its own ports' units, its first output its answer and
-/// the others the members it publishes. Its own cases are not asked for:
-/// its node's are what it is judged on.
-pub fn child_ready(f: &File, b: &Block) -> Findings {
+/// A node's method signature, read from its own ports: its inputs by name
+/// and dimension, in the file's order; its first output the answer, and the
+/// others the members it publishes. What a child's method is checked against
+/// (`child_ready`) and what a typed formula is read against (F8-a3). A port
+/// in a unit the method language does not read is a finding, by name, and a
+/// node with no output has no signature.
+pub fn node_signature(
+    f: &File,
+    b: &Block,
+    out: &mut Findings,
+) -> Option<vleo_sheet::method::Signature> {
     use vleo_sheet::method as m;
-    let mut out = Findings::default();
-    declaration(f, b, &mut out);
-    let Some(src) = f
-        .texts
-        .iter()
-        .find(|t| t.scope == b.uid && t.kind == "pseudocode" && !t.body.trim().is_empty())
-    else {
-        // No method is said where the child is needed, by its behaviour.
-        return out;
-    };
     let unit = |u: &str| m::parse_unit(if u.trim().is_empty() { "1" } else { u.trim() });
     let dims = |p: &Port, out: &mut Findings| match unit(&p.unit) {
         Ok((_, d)) => Some((p.name.clone(), d)),
@@ -768,21 +780,44 @@ pub fn child_ready(f: &File, b: &Block) -> Findings {
     let inputs: Vec<_> = ports
         .iter()
         .filter(|p| p.direction == "in")
-        .filter_map(|p| dims(p, &mut out))
+        .filter_map(|p| dims(p, out))
         .collect();
     let outs: Vec<_> = ports
         .iter()
         .filter(|p| p.direction == "out")
-        .filter_map(|p| dims(p, &mut out))
+        .filter_map(|p| dims(p, out))
         .collect();
     let Some(((_, output), publishes)) = outs.split_first() else {
         out.error(&b.id, "has no output for its method to answer");
-        return out;
+        return None;
     };
-    let sig = m::Signature {
+    Some(m::Signature {
         inputs,
         output: *output,
         publishes: publishes.to_vec(),
+    })
+}
+
+/// A child of a broken-down node, held to what it must be before it is run
+/// on its node's cases (`breakdown::reproduces`): it says who made its
+/// method (rule 6, as `declaration` holds a node to), and its method reads
+/// and checks against its own ports' units, its first output its answer and
+/// the others the members it publishes. Its own cases are not asked for:
+/// its node's are what it is judged on.
+pub fn child_ready(f: &File, b: &Block) -> Findings {
+    use vleo_sheet::method as m;
+    let mut out = Findings::default();
+    declaration(f, b, &mut out);
+    let Some(src) = f
+        .texts
+        .iter()
+        .find(|t| t.scope == b.uid && t.kind == "pseudocode" && !t.body.trim().is_empty())
+    else {
+        // No method is said where the child is needed, by its behaviour.
+        return out;
+    };
+    let Some(sig) = node_signature(f, b, &mut out) else {
+        return out;
     };
     match m::parse(&src.body) {
         Err(d) => out.error(&b.id, format!("its method, line {}: {}", d.line, d.msg)),

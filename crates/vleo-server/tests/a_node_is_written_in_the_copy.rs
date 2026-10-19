@@ -478,6 +478,41 @@ fn a_node_is_written_in_the_copy() {
     assert_eq!(bytes(), before);
     assert_eq!(today(), was, "a dry run moves nothing of today's design");
 
+    // A formula typed (F8-a3): read against the node's ports and said back,
+    // its method checked on the cases, nothing written.
+    let typed = |formula: &str, extra: &[(&'static str, &'static str)]| {
+        let mut fields: Vec<(&str, &str)> = vec![
+            ("opened", field(&f, "opened")),
+            ("dry_run", "1"),
+            ("formula", formula),
+            ("declared.author", "Test Nia"),
+            ("declared.ai", "none"),
+        ];
+        fields.extend(record);
+        fields.extend_from_slice(extra);
+        post(port, EDIT, &fields)
+    };
+    let r = typed("band = f107 / 50", &[]);
+    assert!(
+        r.contains("\"formula\":{\"ok\":true,\"typed\":\"band = f107 / 50\",\"method\":\"# Typed as: band = f107 / 50")
+            && r.contains("{\"name\":\"f107\",\"port\":\"f107\",\"found\":\"name\""),
+        "{r}"
+    );
+    assert!(
+        r.contains("\"agrees\":false"),
+        "its cases are run on it: {r}"
+    );
+    let r = typed("band = f107 / q", &[]);
+    assert!(
+        r.contains("\"formula\":{\"ok\":false")
+            && r.contains("{\"name\":\"q\",\"port\":null,\"found\":\"missing\"")
+            && r.contains("formula is not written"),
+        "{r}"
+    );
+    let r = typed("band = f107 / 50", &[("method_text", "return 1")]);
+    assert!(r.contains("a method and a formula, both"), "{r}");
+    assert_eq!(bytes(), before, "a formula's dry run writes nothing");
+
     // Refused, with nothing written: a case that is the code's own, an
     // assistant's declaration, and a file changed since it was opened.
     let cases = {

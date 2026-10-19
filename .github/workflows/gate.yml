@@ -428,6 +428,11 @@ jobs:
       # (docs/briefs/F3.md, F3-g2a).
       - name: the Node workspace, a node written and checked as it is typed
         run: python3 tools/edit_check.py
+      # A formula typed in the Node workspace: a name no port has said and
+      # asked for, the formula read back and run on the node's cases, and
+      # used as its method and saved (docs/briefs/F8.md, F8-a3).
+      - name: the Node workspace, a formula typed as its method
+        run: python3 tools/formula_check.py
       # What `/`'s node view drew around a node, in the Node workspace: the
       # case, the depth switch, the what-if bar, and a group's and the inputs'
       # links (docs/briefs/F3.md, F3-h2).

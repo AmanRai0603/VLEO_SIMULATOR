@@ -149,6 +149,110 @@
     },
     "message": {
       "type": "string"
+    },
+    "formula": {
+      "type": "object",
+      "description": "What a formula typed was read as (F8-a3), when one was sent: the method text it becomes, each input found by name or symbol with its unit, or missing with a near name offered, each spelling written back, a note, and every finding by the formula's own line (0 for the formula as a whole).",
+      "properties": {
+        "ok": {
+          "type": "boolean",
+          "description": "Whether it became a method the checker holds sound."
+        },
+        "typed": {
+          "type": "string"
+        },
+        "method": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "The method text it becomes, starting # Typed as:; shown, never saved, when it does not hold."
+        },
+        "inputs": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "port": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "found": {
+                "type": "string",
+                "enum": [
+                  "name",
+                  "symbol",
+                  "missing"
+                ]
+              },
+              "unit": {
+                "type": "string"
+              },
+              "offered": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            },
+            "required": [
+              "name",
+              "port",
+              "found",
+              "unit",
+              "offered"
+            ]
+          }
+        },
+        "rewrites": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "note": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "diags": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "line": {
+                "type": "number"
+              },
+              "severity": {
+                "type": "string"
+              },
+              "msg": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "line",
+              "severity",
+              "msg"
+            ]
+          }
+        }
+      },
+      "required": [
+        "ok",
+        "typed",
+        "method",
+        "inputs",
+        "rewrites",
+        "note",
+        "diags"
+      ]
     }
   },
   "required": [
