@@ -112,6 +112,22 @@ fn systems(pr: &Registry) -> Registry {
     chain::open_systems(&signed(f, "Sam Engel", &key(12)), pr).unwrap()
 }
 
+/// `group`'s release `version`, as an answer reads it: named by the
+/// fingerprint of what it holds.
+fn release_of(group: &str, version: &str) -> File {
+    let mut f = File::new(Kind::GroupRelease, APP);
+    f.meta.insert(s("group_id"), s(group));
+    f.meta.insert(s("version"), s(version));
+    f.texts.push(Text {
+        scope: s(FILE),
+        kind: s("note"),
+        body: format!("{group} {version}"),
+    });
+    let fingerprint = chain::digest(&f, FILE).unwrap();
+    f.meta.insert(s("fingerprint"), fingerprint);
+    f
+}
+
 fn answered(said: &Said, who: &str, k: u8) -> Result<File, String> {
     answered_to("l3_solar", "1.2", "l3_power", said, who, k)
 }
@@ -127,8 +143,7 @@ fn answered_to(
     let pr = programme();
     let sy = systems(&pr);
     answer::answer(
-        group,
-        version,
+        &release_of(group, version),
         answering,
         said,
         who,
@@ -147,9 +162,11 @@ fn a_group_s_owner_answers_fine_or_objects_saying_why_signed() {
     let sy = systems(&pr);
     let fine = answered(&Said::Fine, "Pia Power", 15).unwrap();
     assert_eq!(fine.kind().unwrap(), Kind::PreviewAnswer);
+    let answers = chain::digest(&release_of("l3_solar", "1.2"), FILE).unwrap();
     for (k, v) in [
         ("group_id", "l3_solar"),
         ("version", "1.2"),
+        ("answers", answers.as_str()),
         ("answering_group", "l3_power"),
         ("writer", "Pia Power"),
     ] {
@@ -200,7 +217,137 @@ fn a_group_s_owner_answers_fine_or_objects_saying_why_signed() {
     assert!(e.contains("not a release's version"), "{e}");
     // Ola's key under Pia's name: it does not count.
     let e = answered(&Said::Fine, "Pia Power", 13).unwrap_err();
-    assert!(!e.is_empty());
+    assert!(
+        e.contains("is not one the programme's file registers"),
+        "{e}"
+    );
+    // A release relabelled: its fingerprint is not what it holds.
+    let mut relabelled = release_of("l3_solar", "1.2");
+    relabelled.meta.insert(s("fingerprint"), s("0"));
+    let e = answer::answer(
+        &relabelled,
+        "l3_power",
+        &Said::Fine,
+        "Pia Power",
+        &key(15),
+        AT,
+        APP,
+        &sy,
+        &pr,
+    )
+    .unwrap_err();
+    assert!(
+        e.message()
+            .contains("an answer is to the release its seal names"),
+        "{}",
+        e.message()
+    );
+}
+
+/// `f` with its meta and texts as `edit` leaves them, signed again by `who`.
+fn resigned(f: &File, who: &str, k: u8, edit: &dyn Fn(&mut File)) -> File {
+    let mut f = f.clone();
+    edit(&mut f);
+    f.signatures.clear();
+    let row = chain::sign(&f, FILE, who, &key(k), AT, "ok", "").unwrap();
+    f.signatures.push(row);
+    f
+}
+
+#[test]
+fn an_answer_is_held_to_every_rule_wherever_it_is_read() {
+    let pr = programme();
+    let sy = systems(&pr);
+    let fine = answered(&Said::Fine, "Pia Power", 15).unwrap();
+    let refused = |f: &File, says: &str| {
+        let e = chain::check_answer(f, &sy, &pr).unwrap_err();
+        assert!(
+            e.message().contains(says),
+            "expected «{says}» in: {}",
+            e.message()
+        );
+    };
+    // Its own release, made by hand past `answer`.
+    refused(
+        &resigned(&fine, "Pia Power", 15, &|f| {
+            f.meta.insert(s("group_id"), s("l3_power"));
+        }),
+        "does not answer its own release",
+    );
+    // The systems' branch decides an objection; it does not answer.
+    refused(
+        &resigned(&fine, "Sam Engel", 12, &|f| {
+            f.meta.insert(s("answering_group"), s("systems"));
+        }),
+        "the systems' branch decides an objection",
+    );
+    // A version that is not one.
+    refused(
+        &resigned(&fine, "Pia Power", 15, &|f| {
+            f.meta.insert(s("version"), s("x"));
+        }),
+        "version",
+    );
+    // Written by Pia, signed only by Dee: one writer per file.
+    refused(
+        &resigned(&fine, "Dee Puty", 14, &|_| {}),
+        "written by Pia Power",
+    );
+    // Saying two things, or nothing, or with a comment riding along.
+    refused(
+        &resigned(&fine, "Pia Power", 15, &|f| {
+            f.texts.push(Text {
+                scope: s(FILE),
+                kind: s("answer"),
+                body: s("object"),
+            });
+        }),
+        "says its answer twice",
+    );
+    refused(
+        &resigned(&fine, "Pia Power", 15, &|f| f.texts.clear()),
+        "the answer says nothing",
+    );
+    refused(
+        &resigned(&fine, "Pia Power", 15, &|f| {
+            f.comments.push(Comment {
+                scope: s(FILE),
+                section: s(""),
+                author: s("Ola Sun"),
+                at: s(AT),
+                body: s("ride along"),
+                resolved: 0,
+            });
+        }),
+        "the answer holds comment rows",
+    );
+    // An answer unsigned does not count.
+    let mut bare = fine.clone();
+    bare.signatures.clear();
+    assert!(chain::check_answer(&bare, &sy, &pr).is_err());
+    // A wrong kind.
+    let mut other = fine.clone();
+    other.meta.insert(s("file_kind"), s("issue"));
+    refused(&other, "not an answer");
+    // One person owning both groups does not answer one for the other.
+    let mut both = group_file("systems");
+    mount(&mut both, "sys_space_environment", "l3_solar", "Pia Power");
+    mount(&mut both, "sys_power", "l3_power", "Pia Power");
+    let both = chain::open_systems(&signed(both, "Sam Engel", &key(12)), &pr).unwrap();
+    let e = chain::check_answer(&fine, &both, &pr).unwrap_err();
+    assert!(
+        e.message()
+            .contains("Pia Power owns both l3_solar and l3_power"),
+        "{}",
+        e.message()
+    );
+    // A group nobody mounts has nobody to answer for it.
+    refused(
+        &resigned(&fine, "Pia Power", 15, &|f| {
+            f.meta.insert(s("answering_group"), s("l3_comms"));
+        }),
+        "mounts no group",
+    );
 }
 
 #[test]
@@ -210,6 +357,34 @@ fn an_answer_is_written_into_integration_and_never_over_another() {
     std::fs::create_dir_all(&copy).unwrap();
     let pr = programme();
     let sy = systems(&pr);
+    // No release of that version in the copy: nothing to answer.
+    let e = answer::answer_in_place(
+        &copy,
+        "l3_solar",
+        "1.2",
+        "l3_power",
+        &Said::Fine,
+        "Pia Power",
+        &key(15),
+        AT,
+        APP,
+        &sy,
+        &pr,
+    )
+    .unwrap_err();
+    assert!(
+        e.message()
+            .contains("your copy holds no release l3_solar 1.2"),
+        "{}",
+        e.message()
+    );
+    let releases = copy.join("groups/l3_solar/releases");
+    std::fs::create_dir_all(&releases).unwrap();
+    vleo_files::sqlite::write(
+        &release_of("l3_solar", "1.2"),
+        &releases.join("l3_solar-1.2.vleo"),
+    )
+    .unwrap();
     let write = |said: &Said| {
         answer::answer_in_place(
             &copy,

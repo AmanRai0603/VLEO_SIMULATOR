@@ -681,7 +681,7 @@ fn verdict(
             release_verdict(g, name, bytes, theirs, me, at, chain, drive)
         }
         ["integration", dir, name] if name.ends_with(".answer") => {
-            answer_verdict(dir, name, bytes, theirs, me, at, chain)
+            answer_verdict(dir, name, bytes, theirs, me, at, chain, drive)
         }
         ["groups", g, name] if *name == format!("{g}.vgroup") => Err(format!(
             "{g}'s group file does not go back yet: what may change in a group's file is not yet checked against the drive's, so a change of its people stays in your copy"
@@ -692,6 +692,7 @@ fn verdict(
 
 /// Whether the answer `name` in `integration/<dir>/`, `bytes` in the copy,
 /// goes back as a new file written and signed by `me`.
+#[allow(clippy::too_many_arguments)]
 fn answer_verdict(
     dir: &str,
     name: &str,
@@ -700,6 +701,7 @@ fn answer_verdict(
     me: &str,
     at: &str,
     chain: &Chain,
+    drive: &Path,
 ) -> Result<String, String> {
     if theirs.is_some() {
         return Err(
@@ -732,10 +734,28 @@ fn answer_verdict(
             said("writer")
         ));
     }
+    // An answer is to a release the drive holds, the one it names by its
+    // fingerprint: never to a version not sealed yet, nor to another of that
+    // number.
+    let rel = format!("groups/{group}/releases/{group}-{version}.vleo");
+    let held = crate::sqlite::read(&drive.join(&rel)).map_err(|_| {
+        format!("the drive holds no {rel}: an answer is to a release that is there")
+    })?;
+    let fingerprint = chain::digest(&held, chain::FILE).map_err(|e| e.message().to_string())?;
+    if said("answers") != fingerprint {
+        return Err(format!(
+            "it answers a release whose fingerprint is {:?}, and the drive's {group} {version} is {fingerprint}: it is not an answer to that release",
+            said("answers")
+        ));
+    }
     let mut parents = vec![&chain.programme];
     parents.extend(chain.systems.iter());
-    let (parent, _) =
-        chain::mounted_by(answering, &parents).map_err(|e| e.message().to_string())?;
+    let (parent, _) = chain::mounted_by(answering, &parents).map_err(|e| {
+        format!(
+            "whose answer it is cannot be read through the chain: {}",
+            e.message()
+        )
+    })?;
     let now = only_counting_now(&f, chain::FILE, me, at, &chain.programme);
     chain::check_answer(&now, parent, &chain.programme).map_err(|e| {
         format!(
@@ -1109,7 +1129,14 @@ fn write_on_drive(
         no_link_on_the_way(drive, path)?;
     }
     if path.starts_with("integration/") && path.split('/').count() == 3 && !dir.exists() {
-        std::fs::create_dir_all(dir).map_err(|e| io(dir, e))?;
+        // In the drive's `integration/`, which is the system engineer's to
+        // make: never made here.
+        if !drive.join("integration").is_dir() {
+            return Err(refused(
+                "the drive holds no integration/ folder: its system engineer makes it, and an answer goes into it",
+            ));
+        }
+        std::fs::create_dir(dir).map_err(|e| io(dir, e))?;
         no_link_on_the_way(drive, path)?;
     }
     let name = to
