@@ -582,9 +582,21 @@ pub fn edit(
         after.push_str(&assigned(&out, block));
     }
     // A contract's assignment as it is now, and who reads the node.
-    if let Edit::Contract { node, .. } = edit {
+    if let Edit::Contract { node, port } = edit {
         after.push_str(&assigned(&out, node));
-        let readers = readers_of(&branch, elsewhere, node);
+        if let Some(p) = port {
+            let mut p = (**p).clone();
+            p.block_uid = node.clone();
+            after.push_str(&rows_text(&[], &[&p], &[]));
+        }
+        let readers = readers_of(
+            &branch,
+            elsewhere,
+            node,
+            port.as_deref()
+                .filter(|p| p.direction == "out")
+                .map(|p| p.name.as_str()),
+        );
         after.push_str(&if readers.is_empty() {
             "read by nothing\n".to_string()
         } else {
@@ -742,21 +754,24 @@ pub fn issued(group: &File, block: &str, behaviour: &str) -> Result<File, Error>
 
 /// Every input that reads the node `uid` of `branch`, by any of its ports:
 /// `<node>'s input <port>`, in the branch or in another group's file.
-fn readers_of(branch: &Branch, elsewhere: &[File], uid: &str) -> Vec<String> {
+fn readers_of(branch: &Branch, elsewhere: &[File], uid: &str, port: Option<&str>) -> Vec<String> {
     let Some((b, _)) = branch.find(uid) else {
         return Vec::new();
     };
     let here = format!("{uid}.");
-    let there = format!("{}.{}", branch.group_id(), b.id);
+    let there = format!("{}.{}.", branch.group_id(), b.id);
+    // Of one output, by its name; or of any.
+    let reads = |rest: &str| port.is_none_or(|p| rest == p);
     let mut out: Vec<String> = branch
         .wires()
         .into_iter()
-        .filter(|w| w.to_block != uid && w.from_ref.starts_with(&here))
+        .filter(|w| w.to_block != uid)
+        .filter(|w| w.from_ref.strip_prefix(&here).is_some_and(reads))
         .map(|w| format!("{}'s input {}", w.to_block, w.to_port))
         .collect();
     for f in elsewhere {
         for w in &f.wires {
-            if w.from_ref == there || w.from_ref.starts_with(&format!("{there}.")) {
+            if w.from_ref.strip_prefix(&there).is_some_and(reads) {
                 out.push(format!("{}'s input {}", w.to_block, w.to_port));
             }
         }
@@ -766,40 +781,121 @@ fn readers_of(branch: &Branch, elsewhere: &[File], uid: &str) -> Vec<String> {
     out
 }
 
+/// What a contract holds of a port: its type, unit, range, state and
+/// maturity, and what it says. A contract change changes these and nothing
+/// else of it.
+fn contract_of(p: &Port) -> [&str; 7] {
+    [
+        &p.port_type,
+        &p.unit,
+        &p.lower,
+        &p.upper,
+        &p.state,
+        &p.maturity,
+        &p.says,
+    ]
+}
+
 /// The node file `node` issued again under the contract `group` now holds
-/// for it: its block and its meta at that contract, `port` in place of its
-/// port of that direction and name (or added), and everything else as it
-/// was, its signatures with it. They were made over the node as it was, so
-/// none counts until its node engineer signs it again.
-pub fn contracted(node: &File, group: &File, port: Option<&Port>) -> Result<File, Error> {
+/// for it, by `by` at `at` saying `why`: its next revision, its block and
+/// meta at that contract, `port`'s contract in place of the port of that
+/// direction and name (its symbol, value, choices, parameter and the rest
+/// kept), or added after the others; everything else as it was, its
+/// signatures with it. They were made over the node as it was, so none
+/// counts until its node engineer signs it again. Its writer stays its node
+/// engineer, whose file it is to sign; its change row says who re-issued it
+/// and what the contract changed, and an open request for a contract change
+/// is answered by it. Refused when the file it makes would not be one.
+pub fn contracted(
+    node: &File,
+    group: &File,
+    port: &Port,
+    by: &str,
+    at: &str,
+    why: &str,
+) -> Result<File, Error> {
     let b = node
         .blocks
         .first()
         .ok_or_else(|| refused("a node file holds no block"))?;
+    let uid = b.uid.clone();
     let a = group
         .assignments
         .iter()
-        .find(|a| a.block_uid == b.uid)
+        .find(|a| a.block_uid == uid)
         .ok_or_else(|| refused(format!("{} is assigned to nobody", b.id)))?;
     let mut n = node.clone();
+    let revision = b.revision + 1;
     n.blocks[0].contract_version = a.contract_version;
+    n.blocks[0].revision = revision;
     n.meta
         .insert("contract_version".into(), a.contract_version.to_string());
-    if let Some(p) = port {
-        let mut p = p.clone();
-        p.block_uid = b.uid.clone();
-        match n
-            .ports
-            .iter()
-            .position(|x| x.direction == p.direction && x.name == p.name)
-        {
-            Some(i) => {
-                p.ord = n.ports[i].ord;
-                n.ports[i] = p;
-            }
-            None => n.ports.push(p),
+    n.meta.insert("revision".into(), revision.to_string());
+    let mut p = port.clone();
+    p.block_uid = uid.clone();
+    let before = match n
+        .ports
+        .iter()
+        .position(|x| x.direction == p.direction && x.name == p.name)
+    {
+        Some(i) => {
+            let was = rows_text(&[], &[&n.ports[i]], &[]);
+            let x = &mut n.ports[i];
+            x.port_type = p.port_type.clone();
+            x.unit = p.unit.clone();
+            x.lower = p.lower.clone();
+            x.upper = p.upper.clone();
+            x.state = p.state.clone();
+            x.maturity = p.maturity.clone();
+            x.says = p.says.clone();
+            was
         }
+        None => {
+            p.ord = n.ports.iter().map(|x| x.ord).max().map_or(0, |o| o + 1);
+            n.ports.push(p.clone());
+            format!("no port {} {}\n", p.direction, p.name)
+        }
+    };
+    let now = n
+        .ports
+        .iter()
+        .find(|x| x.direction == p.direction && x.name == p.name)
+        .map(|x| rows_text(&[], &[x], &[]))
+        .unwrap_or_default();
+    let answer = format!("contract {}: {}", a.contract_version, now.trim_end());
+    for r in n
+        .requests
+        .iter_mut()
+        .filter(|r| r.scope == uid && r.kind == "contract" && r.status == "open")
+    {
+        r.status = "accepted".into();
+        r.answer = answer.clone();
     }
+    n.check_meta()?;
+    let found: Vec<String> = crate::checks::check_node(&n)
+        .errors()
+        .map(|f| format!("{}: {}", f.place, f.what))
+        .collect();
+    n.changes.push(Change {
+        at: at.to_string(),
+        who: by.to_string(),
+        scope: uid,
+        what: format!("contract: {}", why.trim()),
+        before: Some(format!(
+            "{before}contract {} revision {}\n",
+            node.blocks[0].contract_version,
+            node.blocks[0].revision
+        )),
+        after: Some(format!(
+            "{now}contract {} revision {revision}, re-issued by {by}; its node engineer signs it again{}\n",
+            a.contract_version,
+            if found.is_empty() {
+                String::new()
+            } else {
+                format!("; its checks find: {}", found.join("; "))
+            }
+        )),
+    });
     Ok(n)
 }
 
@@ -1472,12 +1568,32 @@ fn apply(
                     b.id
                 )));
             }
-            if let Some(p) = port {
-                let mut p = (**p).clone();
-                p.block_uid = node.clone();
-                port_ok(&p, &b.id)?;
+            // A contract change is a port's: one said again changes nothing,
+            // and would leave its node behind for nothing.
+            let Some(p) = port else {
+                return Err(refused(format!(
+                    "{}'s contract change names no port: a contract changes a port's type, unit, range or state",
+                    b.id
+                )));
+            };
+            let mut p = (**p).clone();
+            p.block_uid = node.clone();
+            port_ok(&p, &b.id)?;
+            let ports = branch.ports(node);
+            let was = ports
+                .iter()
+                .find(|x| x.direction == p.direction && x.name == p.name);
+            if was.is_some_and(|w| contract_of(w) == contract_of(&p)) {
+                return Err(refused(format!(
+                    "{}'s port {} is already so: the contract change changes nothing",
+                    b.id, p.name
+                )));
             }
-            let before = assigned(out, node);
+            let mut before = assigned(out, node);
+            match was {
+                Some(w) => before.push_str(&rows_text(&[], &[*w], &[])),
+                None => before.push_str(&format!("no port {} {}\n", p.direction, p.name)),
+            }
             let Some(a) = out.assignments.iter_mut().find(|a| a.block_uid == *node) else {
                 return Err(refused(format!(
                     "{} is assigned to nobody: a contract is between the group and the node engineer it is assigned to",
@@ -2273,6 +2389,7 @@ pub fn edit_in_place(
             Some((n, at))
         }
         Edit::Contract { node: uid, port } => {
+            let when = at;
             let at = nodes
                 .iter()
                 .find(|n| n.blocks.first().is_some_and(|b| b.uid == *uid))
@@ -2290,7 +2407,10 @@ pub fn edit_in_place(
                     at.strip_prefix(copy).unwrap_or(&at).display()
                 )));
             }
-            let mut n = contracted(&theirs, &out, port.as_deref())?;
+            let port = port
+                .as_deref()
+                .ok_or_else(|| refused(format!("{uid}'s contract change names no port")))?;
+            let mut n = contracted(&theirs, &out, port, by, when, why)?;
             n.meta.insert("written_by_app".into(), app.to_string());
             Some((n, at))
         }
@@ -2325,14 +2445,25 @@ pub fn edit_in_place(
     let written = match crate::sqlite::written(&out, &at_file) {
         Ok(w) => w,
         Err(err) => {
+            // The node's file is put back as it was, whole or not at all, or
+            // the person is told which file is left ahead of its group file.
             if let Some((_, at)) = &node {
-                match &was {
+                let back = match &was {
                     Some(bytes) => {
-                        let _ = std::fs::write(at, bytes);
+                        let tmp = at.with_extension("vnode.back");
+                        std::fs::write(&tmp, bytes).and_then(|_| std::fs::rename(&tmp, at))
                     }
-                    None => {
-                        let _ = std::fs::remove_file(at);
-                    }
+                    None => std::fs::remove_file(at),
+                };
+                if let Err(e) = back {
+                    return Err(Error::new(
+                        err.kind(),
+                        format!(
+                            "{}; and {}, written first, could not be put back as it was ({e}): it is ahead of its group file, so put it back by hand before anything else is framed",
+                            err.message(),
+                            at.strip_prefix(copy).unwrap_or(at).display()
+                        ),
+                    ));
                 }
             }
             return Err(err);

@@ -1913,14 +1913,95 @@ fn a_contract_changed_rises_names_its_readers_and_leaves_its_node_behind_until_r
     assert_eq!(c.what, format!("contract: {WHY}"));
     let said = c.after.as_deref().unwrap();
     assert!(said.contains("contract=2"), "{said}");
+    // What the contract changed is on record: the port as it was, and is.
+    let was = c.before.as_deref().unwrap();
     assert!(
-        said.contains("read by") && said.contains(GOOD) && said.contains(LATE),
-        "{said}"
+        was.contains("port block=") && !was.contains("..\"5\""),
+        "{was}"
+    );
+    assert!(said.contains("..\"5\""), "{said}");
+    // Its readers are the readers of the port that changed: its children
+    // read its input, not its output.
+    assert!(said.contains("read by nothing"), "{said}");
+    let mut input = band
+        .ports
+        .iter()
+        .find(|p| p.direction == "in")
+        .unwrap()
+        .clone();
+    input.upper = s("451");
+    let (on_input, _) = ola(
+        &solar(),
+        &Edit::Contract {
+            node: s(BAND),
+            port: Some(Box::new(input)),
+        },
+    )
+    .unwrap();
+    let read = on_input.changes.last().unwrap().after.clone().unwrap();
+    assert!(
+        read.contains("read by") && read.contains(GOOD) && read.contains(LATE),
+        "{read}"
     );
     // The node file re-issued: its content kept, at the new contract, with
     // the port changed; its node engineer's signature no longer counts.
-    let re = breakdown::contracted(&band, &after, Some(&wider(&band))).unwrap();
+    // Its port carries more than a contract holds: that is kept. And its
+    // node engineer asked for the change.
+    // The contract as the route sends it: none of what it does not carry.
+    let plain = wider(&band);
+    let mut band = band;
+    let out = band
+        .ports
+        .iter_mut()
+        .find(|p| p.direction == "out")
+        .unwrap();
+    out.symbol = s("B");
+    out.parameter = s("programme");
+    band.requests.push(Request {
+        uid: s("r1"),
+        kind: s("contract"),
+        scope: s(BAND),
+        raised_by: s("Nia Node"),
+        at: s(AT),
+        body: s("Let the band reach 5."),
+        status: s("open"),
+        answer: s(""),
+    });
+    let re = breakdown::contracted(&band, &after, &plain, "Ola Sun", AT, WHY).unwrap();
     assert_eq!(re.blocks[0].contract_version, 2);
+    // Its next revision, still its node engineer's to write and sign, and
+    // said to be the owner's re-issue.
+    let rev = band.blocks[0].revision;
+    assert_eq!(re.blocks[0].revision, rev + 1);
+    assert_eq!(
+        re.meta.get("revision").map(String::as_str),
+        Some((rev + 1).to_string().as_str())
+    );
+    assert_eq!(re.meta.get("writer").map(String::as_str), Some("Nia Node"));
+    let rc = re.changes.last().unwrap();
+    assert_eq!(
+        (rc.who.as_str(), rc.what.as_str()),
+        ("Ola Sun", format!("contract: {WHY}").as_str())
+    );
+    assert!(
+        rc.after
+            .as_deref()
+            .unwrap()
+            .contains("re-issued by Ola Sun"),
+        "{rc:?}"
+    );
+    let kept = re.ports.iter().find(|p| p.direction == "out").unwrap();
+    assert_eq!(
+        (kept.symbol.as_str(), kept.parameter.as_str()),
+        ("B", "programme")
+    );
+    assert_eq!(
+        (
+            re.requests[0].status.as_str(),
+            re.requests[0].answer.starts_with("contract 2:")
+        ),
+        ("accepted", true)
+    );
     assert_eq!(
         re.meta.get("contract_version").map(String::as_str),
         Some("2")
@@ -1942,32 +2023,41 @@ fn a_contract_changed_rises_names_its_readers_and_leaves_its_node_behind_until_r
         chain::sign_node(&re, BAND, "Nia Node", &key(16), AT, &registry).expect("Nia re-signs");
     chain::check_node(&signed_again, BAND, &registry).unwrap();
 
-    // A contract with no port changed still rises: the contract is said again.
-    let (again, _) = ola(
+    // A contract that names no port, or changes nothing, is refused: it
+    // would leave its node behind for nothing.
+    let e = ola(
         &after,
         &Edit::Contract {
             node: s(BAND),
             port: None,
         },
     )
-    .unwrap();
-    assert_eq!(
-        again
-            .assignments
-            .iter()
-            .find(|a| a.block_uid == BAND)
-            .unwrap()
-            .contract_version,
-        3
-    );
+    .unwrap_err();
+    assert!(e.contains("contract change names no port"), "{e}");
+    let same = band
+        .ports
+        .iter()
+        .find(|p| p.direction == "out")
+        .unwrap()
+        .clone();
+    let e = ola(
+        &solar(),
+        &Edit::Contract {
+            node: s(BAND),
+            port: Some(Box::new(same)),
+        },
+    )
+    .unwrap_err();
+    assert!(e.contains("the contract change changes nothing"), "{e}");
     // Refused: a block framed in the group file, a node assigned to nobody,
     // and anyone but the owner.
     let f = with_onset();
+    let some = || Some(Box::new(wider(&band)));
     let e = ola(
         &f,
         &Edit::Contract {
             node: s("sw_storm_onset"),
-            port: None,
+            port: some(),
         },
     )
     .unwrap_err();
@@ -1976,23 +2066,27 @@ fn a_contract_changed_rises_names_its_readers_and_leaves_its_node_behind_until_r
         &solar(),
         &Edit::Contract {
             node: s(GOOD),
-            port: None,
+            port: some(),
         },
     )
     .unwrap_err();
     assert!(e.contains("is assigned to nobody"), "{e}");
+    // Only the owner: Sam, whom the programme registers, is not solar's.
     let e = frame(
         &solar(),
         &Edit::Contract {
             node: s(BAND),
-            port: None,
+            port: some(),
         },
         WHY,
-        "Nia Node",
-        &key(16),
+        "Sam Engel",
+        &key(12),
     )
     .unwrap_err();
-    assert!(!e.is_empty());
+    assert!(
+        e.contains("its owner Ola Sun, or their deputy, does"),
+        "{e}"
+    );
 }
 
 #[test]
@@ -2035,7 +2129,13 @@ fn a_contract_changed_in_the_copy_re_issues_the_node_s_file() {
     );
     let re = vleo_files::sqlite::read(&band_file).unwrap();
     assert_eq!(re.blocks[0].contract_version, 2);
+    assert_eq!(re.blocks[0].revision, before.blocks[0].revision + 1);
     assert_eq!(re.texts, before.texts);
+    // The file written reads behind: its node engineer's signature no
+    // longer counts, until she signs it again.
+    let g = vleo_files::sqlite::read(&group).unwrap();
+    let registry = chain::open_group_in(&g, &sy, &pr).unwrap();
+    assert!(chain::check_node(&re, BAND, &registry).is_err());
     let g = vleo_files::sqlite::read(&group).unwrap();
     assert_eq!(
         g.assignments
