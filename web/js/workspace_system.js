@@ -132,6 +132,7 @@ async function draw(keep) {
       ], 'reference') + frame(t) +
     view() +
     (t.yours ? answerForm() : '') +
+    (t.yours ? baseForm() : '') +
     '<div class="sy-grid"><nav class="sy-tree" aria-label="the branch">' + tree(t) + '</nav>' +
     '<section class="sy-block">' + block(t) + '</section></div>' +
     (group === 'systems' ? '<section class="sy-release" id="sy-release"><p class="sh-loading">reading the integration checks…</p></section>' : '');
@@ -338,6 +339,16 @@ function answerForm() {
     '<p><button class="ctl" id="sy-answer">Answer</button></p></details>';
 }
 
+/** The base moved to the next released design (W12): what changed under the
+ *  branch is said in its history, for the node engineers who read it. */
+function baseForm() {
+  return '<p class="sy-base"><b>update base</b> to the released design <input id="sy-base-design" size="12" placeholder="2026.11.1"> ' +
+    '<button class="ctl" id="sy-update-base">Update base</button></p>' +
+    // An issue addressed to the branch, given to a node engineer (W11).
+    '<p class="sy-issue"><b>assign issue</b> <input id="sy-is-number" size="5" placeholder="number"> to ' +
+    '<input id="sy-is-person" size="18" placeholder="a node engineer\'s name"> <button class="ctl" id="sy-assign-issue">Assign</button></p>';
+}
+
 /** The branch as a tree: each block under its parent; a block whose parent the
  *  branch does not hold is a root. */
 function tree(t) {
@@ -439,6 +450,10 @@ function edits(b, children, outs) {
   const opt = (v, l) => '<option value="' + esc(v) + '">' + esc(l || v) + '</option>';
   let h = '<h4>frame it</h4><p><label>why <textarea id="sy-why" rows="2" class="nw-wide" placeholder="which belief this follows from">' +
     esc(W.why) + '</textarea></label></p>';
+  h += '<details class="sy-sheet"><summary>set up many blocks from a sheet</summary>' +
+    '<p class="muted">A row a block: id,parent,question,output,type,unit,lower,upper,inputs,assign — inputs as name:unit=from, by ;. Every row or none.</p>' +
+    '<p><textarea id="sy-sheet" rows="5" class="nw-wide" placeholder="id,parent,question,output,type,unit,lower,upper,inputs,assign"></textarea></p>' +
+    '<p><button class="ctl" id="sy-sheet-go">Set up</button></p></details>';
   if (!b.archived) {
     h += '<p><b>add a block under it</b> <input id="sy-add-id" size="18" placeholder="its id"> ' +
       '<input id="sy-add-q" size="30" placeholder="the question it answers"> <button class="ctl" id="sy-add">Add</button></p>';
@@ -461,7 +476,29 @@ function edits(b, children, outs) {
       '<input class="sy-bd-port" size="16" placeholder="its output" value="' + esc(o.name) + '"></p>').join('') +
       '<p><button class="ctl" id="sy-break-down">Break down</button></p>';
   }
+  if (!inGroup && !b.archived && !b.mount) {
+    // A contract changes in the group file and issues the node's file again;
+    // it reads behind until its node engineer signs it again (W4).
+    h += '<p><b>change its contract</b> a port <select id="sy-c-dir" class="ctl">' + opt('out') + opt('in') + '</select> ' +
+      '<input id="sy-c-name" size="16" placeholder="its name, or none"> <input id="sy-c-type" size="8" placeholder="type" value="number"> ' +
+      '<input id="sy-c-unit" size="6" placeholder="unit"> <input id="sy-c-lo" size="5" placeholder="from"> <input id="sy-c-hi" size="5" placeholder="to"> ' +
+      '<button class="ctl" id="sy-contract">Change contract</button></p>';
+  }
   if (b.answers.length) h += '<p><button class="ctl" id="sy-fold-back">Fold back</button> its estimate answers again; its children stay.</p>';
+  // A node is assigned to one node engineer its group registers; a heading is nobody's.
+  if (!b.archived && !b.mount && !(inGroup && b.read_as === 'children')) {
+    h += '<p><b>assign</b> to <input id="sy-as-person" size="18" placeholder="a node engineer\'s name"> <button class="ctl" id="sy-assign">Assign</button> <button class="ctl" id="sy-unassign">Unassign</button></p>';
+  }
+  if (inGroup && !b.archived && !b.mount && b.read_as !== 'children') {
+    h += '<p><b>issue</b> it as a <select id="sy-is-behaviour" class="ctl">' + opt('method') + opt('stated') + '</select> node, ' +
+      'a file of its own for the node engineer it is assigned to <button class="ctl" id="sy-issue">Issue</button></p>';
+  }
+  if (inGroup && !b.archived) {
+    h += b.ports.filter(p => p.direction === 'in').map(p =>
+      '<p class="sy-wire-row" data-wire-port="' + esc(p.name) + '"><b>wire</b> its ' + esc(p.name) + ' from ' +
+      '<input class="sy-wire-from" size="28" placeholder="block.port, group.node.port or case"> ' +
+      '<button class="ctl sy-wire" type="button">Wire</button></p>').join('');
+  }
   if (inGroup && !b.archived) {
     h += '<p><b>move</b> under <input id="sy-mv-parent" size="18" placeholder="a block\'s uid"> <button class="ctl" id="sy-move">Move</button> ' +
       '<b>rename</b> <input id="sy-rn-id" size="18" placeholder="its new id"> <button class="ctl" id="sy-rename">Rename</button></p>' +
@@ -522,6 +559,10 @@ async function click(e) {
     return draw(true);
   }
   const b = W.sel;
+  if (t.classList.contains('sy-wire')) {
+    const row = t.closest('.sy-wire-row');
+    return send('wire', { block: b, port: row.dataset.wirePort, from: row.querySelector('.sy-wire-from').value.trim() });
+  }
   switch (t.id) {
     case 'sy-r-release': {
       if (R.sending) return;
@@ -583,5 +624,15 @@ async function click(e) {
       W.notice = { ok: !!(r && r.ok), text: (r && r.message) || 'nothing was started' };
       return draw();
     }
+    case 'sy-contract': return send('contract', {
+      node: b, direction: v('sy-c-dir'), name: v('sy-c-name').trim(), type: v('sy-c-type').trim(),
+      unit: v('sy-c-unit').trim(), lower: v('sy-c-lo').trim(), upper: v('sy-c-hi').trim(), state: 'decided',
+    });
+    case 'sy-assign-issue': return send('assign-issue', { number: v('sy-is-number').trim(), person: v('sy-is-person').trim() });
+    case 'sy-update-base': return send('update-base', { design: v('sy-base-design').trim() });
+    case 'sy-sheet-go': return send('sheet', { sheet: v('sy-sheet') });
+    case 'sy-issue': return send('issue', { block: b, behaviour: v('sy-is-behaviour') });
+    case 'sy-assign': return send('assign', { block: b, person: v('sy-as-person').trim() });
+    case 'sy-unassign': return send('unassign', { block: b });
   }
 }

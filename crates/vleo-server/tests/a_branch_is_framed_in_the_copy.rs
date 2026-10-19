@@ -793,6 +793,235 @@ fn a_branch_is_framed_in_the_copy() {
     );
     assert_eq!(node_bytes(&copy), nodes_before);
 
+    // Dee assigns a child to Nia (F5): the assignment is in the group file.
+    let r = edit(
+        "assign",
+        &[
+            ("opened", field(&tree(), "opened")),
+            ("block", GOOD),
+            ("person", "Test Nia"),
+        ],
+    );
+    assert!(r.contains("\"ok\":true"), "{r}");
+    let g = vleo_files::sqlite::read(&copy.join(GROUP)).unwrap();
+    assert!(
+        g.assignments
+            .iter()
+            .any(|a| a.block_uid == GOOD && a.person == "Test Nia"),
+        "{:?}",
+        g.assignments
+    );
+    // And takes it away: nobody writes it until it is assigned again.
+    let r = edit(
+        "unassign",
+        &[("opened", field(&tree(), "opened")), ("block", GOOD)],
+    );
+    assert!(r.contains("\"ok\":true"), "{r}");
+    let g = vleo_files::sqlite::read(&copy.join(GROUP)).unwrap();
+    assert!(
+        !g.assignments.iter().any(|a| a.block_uid == GOOD),
+        "{:?}",
+        g.assignments
+    );
+    let r = edit(
+        "wire",
+        &[
+            ("opened", field(&tree(), "opened")),
+            ("block", GOOD),
+            ("port", "f107"),
+        ],
+    );
+    assert!(r.contains("wire needs from"), "{r}");
+    // The band's contract changes (W4): it rises in the group file, and the
+    // band's file is issued again at it.
+    // One that names no port changes nothing, and is refused.
+    let r = edit(
+        "contract",
+        &[("opened", field(&tree(), "opened")), ("node", UID)],
+    );
+    assert!(r.contains("contract change names no port"), "{r}");
+    // Its output, given a symbol and a parameter's owner the contract does
+    // not carry: they are kept.
+    let at = copy.join(nodes(UID));
+    let mut held = vleo_files::sqlite::read(&at).unwrap();
+    let out = held
+        .ports
+        .iter_mut()
+        .find(|p| p.direction == "out")
+        .unwrap();
+    out.symbol = "B".into();
+    out.parameter = "programme".into();
+    let (name, port_type, unit, lower) = (
+        out.name.clone(),
+        out.port_type.clone(),
+        out.unit.clone(),
+        out.lower.clone(),
+    );
+    vleo_files::sqlite::write(&held, &at).unwrap();
+    let r = edit(
+        "contract",
+        &[
+            ("opened", field(&tree(), "opened")),
+            ("node", UID),
+            ("direction", "out"),
+            ("name", &name),
+            ("type", &port_type),
+            ("unit", &unit),
+            ("lower", &lower),
+            ("upper", "5"),
+            ("state", "decided"),
+        ],
+    );
+    assert!(r.contains("\"ok\":true"), "{r}");
+    let re = vleo_files::sqlite::read(&at).unwrap();
+    let kept = re.ports.iter().find(|p| p.direction == "out").unwrap();
+    assert_eq!(
+        (
+            kept.upper.as_str(),
+            kept.symbol.as_str(),
+            kept.parameter.as_str()
+        ),
+        ("5", "B", "programme")
+    );
+    let g = vleo_files::sqlite::read(&copy.join(GROUP)).unwrap();
+    assert_eq!(
+        g.assignments
+            .iter()
+            .find(|a| a.block_uid == UID)
+            .map(|a| a.contract_version),
+        Some(2)
+    );
+    let band = vleo_files::sqlite::read(&copy.join(nodes(UID))).unwrap();
+    assert_eq!(band.blocks[0].contract_version, 2);
+    // The base moves to a released design the copy holds (W12): one that
+    // is not a version, or not in the copy, is refused by name.
+    let r = edit(
+        "update-base",
+        &[("opened", field(&tree(), "opened")), ("design", "../x")],
+    );
+    assert!(r.contains("is not a released design's version"), "{r}");
+    let r = edit(
+        "update-base",
+        &[
+            ("opened", field(&tree(), "opened")),
+            ("design", "2026.10.1"),
+        ],
+    );
+    assert!(
+        r.contains("your copy holds no released design 2026.10.1"),
+        "{r}"
+    );
+    // A file named for a version and holding another is not read as it.
+    let mut other =
+        vleo_files::model::File::new(vleo_files::meta::Kind::Design, "vleo 1.0.0 (test)");
+    other.meta.insert("version".into(), "2026.11.1".into());
+    std::fs::create_dir_all(copy.join("design")).unwrap();
+    vleo_files::sqlite::write(&other, &copy.join("design/design-2026.10.1.vleo")).unwrap();
+    let r = edit(
+        "update-base",
+        &[
+            ("opened", field(&tree(), "opened")),
+            ("design", "2026.10.1"),
+        ],
+    );
+    assert!(
+        r.contains("holds the released design \\\"2026.11.1\\\", not 2026.10.1"),
+        "{r}"
+    );
+    std::fs::remove_file(copy.join("design/design-2026.10.1.vleo")).unwrap();
+    // An issue the copy does not hold is not assigned (W11).
+    let r = edit(
+        "assign-issue",
+        &[
+            ("opened", field(&tree(), "opened")),
+            ("number", "3"),
+            ("person", "Test Nia"),
+        ],
+    );
+    assert!(
+        r.contains("your copy holds no issue 3 addressed to l3_solar"),
+        "{r}"
+    );
+    // The file named for issue 3 is that issue, of solar, open: one of
+    // another kind, of another number, or closed, is not assigned.
+    std::fs::create_dir_all(copy.join("issues")).unwrap();
+    let at = copy.join("issues/3-l3_solar.vissue");
+    let issue_file = |number: &str, closed_by: &str| {
+        let mut f =
+            vleo_files::model::File::new(vleo_files::meta::Kind::Issue, "vleo 1.0.0 (test)");
+        f.meta.insert("number".into(), number.into());
+        f.meta.insert("group_id".into(), "l3_solar".into());
+        f.meta.insert("writer".into(), "Test Nia".into());
+        f.issues.push(vleo_files::model::Issue {
+            number: number.parse().unwrap(),
+            group_id: "l3_solar".into(),
+            closed_by: closed_by.into(),
+            ..Default::default()
+        });
+        f
+    };
+    let assign = || {
+        edit(
+            "assign-issue",
+            &[
+                ("opened", field(&tree(), "opened")),
+                ("number", "3"),
+                ("person", "Test Nia"),
+            ],
+        )
+    };
+    for (f, says) in [
+        (
+            vleo_files::model::File::new(vleo_files::meta::Kind::Node, "vleo 1.0.0 (test)"),
+            "issues/3-l3_solar.vissue is not an issue file",
+        ),
+        (issue_file("4", ""), "says it is issue 4, not 3"),
+        (
+            issue_file("3", "Test Ola"),
+            "issue 3 is closed, by Test Ola",
+        ),
+    ] {
+        vleo_files::sqlite::write(&f, &at).unwrap();
+        let r = assign();
+        assert!(r.contains(says), "expected «{says}» in {r}");
+    }
+    std::fs::remove_file(&at).unwrap();
+    // Issued: a block framed in the group file, refused by name while it is
+    // assigned to nobody, and nothing written.
+    let before_issue = group_bytes();
+    let r = edit(
+        "issue",
+        &[
+            ("opened", field(&tree(), "opened")),
+            ("block", "sw_activity_aside"),
+            ("behaviour", "method"),
+        ],
+    );
+    assert!(r.contains("is assigned to nobody"), "{r}");
+    assert_eq!(group_bytes(), before_issue);
+    assert!(!copy
+        .join("groups/l3_solar/nodes/sw_activity_aside.vnode")
+        .exists());
+    // A sheet: two blocks set up at once, through the route.
+    let r = edit(
+        "sheet",
+        &[
+            ("opened", field(&tree(), "opened")),
+            (
+                "sheet",
+                "id,parent,question,output,type,unit\n\
+                 sw_storm_onset,sw_activity_band,When does a storm begin?,sw_storm_onset,number,1\n\
+                 sw_storm_peak,sw_activity_band,How high does it go?,sw_storm_peak,number,1\n",
+            ),
+        ],
+    );
+    assert!(r.contains("\"ok\":true"), "{r}");
+    let r = tree();
+    assert!(
+        r.contains("\"uid\":\"sw_storm_onset\"") && r.contains("\"uid\":\"sw_storm_peak\""),
+        "{r}"
+    );
+
     // Refused by name: an edit that is not one, a group that is not an id, a
     // group no file mounts.
     let r = edit("graft", &[("opened", field(&tree(), "opened"))]);
