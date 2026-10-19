@@ -1,7 +1,7 @@
 //! A small drive of invented people, and their keys, for the shell's check in
 //! a browser (tools/shell_check.py).
 //!
-//!     cargo run -p vleo-server --example a_small_drive -- <folder>
+//!     cargo run -p vleo-server --example a_small_drive -- <folder> [--released]
 //!
 //! writes `<folder>/drive` and `<folder>/keys`. The people are invented and
 //! their keys come from fixed seeds:
@@ -31,6 +31,11 @@
 //!   start, and given its mass to bound (tools/start_group_check.py);
 //! - and a folder under groups/ that is not a group.
 //! - Test Stranger, whom no file registers.
+//!
+//! With `--released`, beside all of it: Test Uma, a subsystem engineer
+//! registered, who owns the orbit's environment, `l3_x_envorbit`, mounted and
+//! not started; design 2026.10.1, released by Sam, holding solar 1.1; and
+//! the drive's `integration/` (tools/preview_check.py).
 //!
 //! Every key is locked with the passphrase "a long enough passphrase".
 
@@ -80,6 +85,61 @@ fn solar_release(at: &Path, version: &str, change: Option<&str>) {
         at,
         &format!("UPDATE meta SET value = '{fp}' WHERE key = 'fingerprint'"),
     );
+}
+
+/// Design 2026.10.1, released by Sam: solar 1.1 as the design already
+/// holds it, and the programme's and the systems' files, each held whole by
+/// its bytes and their SHA-256, with `released.csv` saying so, written to the
+/// drive's `design/` as put-back writes it; and the drive's `integration/`,
+/// which the system engineer makes. Solar 1.2, which today's design takes,
+/// is then not the release the design released now holds
+/// (tools/preview_check.py).
+fn release_design(drive: &Path, sam: &SigningKey) {
+    let mut d = File::new(Kind::Design, APP);
+    for (k, v) in [
+        ("version", "2026.10.1"),
+        ("previous", ""),
+        ("released_by", "Test Sam"),
+        ("oldest_application", "1.0.0"),
+    ] {
+        d.meta.insert(s(k), s(v));
+    }
+    let solar = "groups/l3_solar/releases/l3_solar-1.1.vleo";
+    let mut rows = String::from("group,version,fingerprint,path,sha256\n");
+    for at in [
+        "groups/programme/programme.vgroup",
+        "groups/systems/systems.vgroup",
+        solar,
+    ] {
+        let bytes = std::fs::read(drive.join(at)).unwrap();
+        let sha = vleo_files::keys::hex(&vleo_files::keys::sha256(&bytes));
+        if at == solar {
+            let r = vleo_files::intake::Release::open(&drive.join(at)).unwrap();
+            rows.push_str(&format!("l3_solar,1.1,{},{at},{sha}\n", r.fingerprint));
+        }
+        d.media.push(Media {
+            scope: s(FILE),
+            path: s(at),
+            media_type: s("application/vnd.vleo"),
+            sha256: sha,
+            bytes,
+        });
+    }
+    d.tables.push(Tbl {
+        scope: s(FILE),
+        path: s("released.csv"),
+        csv: rows,
+    });
+    d.texts.push(Text {
+        scope: s(FILE),
+        kind: s("changed"),
+        body: s("Solar 1.1, as the design holds it."),
+    });
+    let row = chain::sign(&d, FILE, "Test Sam", sam, "2026-10-08T09:00:00Z", "ok", "").unwrap();
+    d.signatures.push(row);
+    std::fs::create_dir_all(drive.join("design")).unwrap();
+    sqlite::write(&d, &drive.join("design/design-2026.10.1.vleo")).unwrap();
+    std::fs::create_dir_all(drive.join("integration")).unwrap();
 }
 
 const APP: &str = "vleo 1.0.0 (example)";
@@ -260,11 +320,19 @@ fn invented(mut c: File, who: &str) -> File {
 fn main() {
     let out = std::env::args()
         .nth(1)
-        .expect("usage: a_small_drive <folder>");
+        .expect("usage: a_small_drive <folder> [--released]");
+    let released = std::env::args().nth(2).as_deref() == Some("--released");
     let out = Path::new(&out);
     let (drive, keys) = (out.join("drive"), out.join("keys"));
-    let (pat, sam, ola, nia, stranger, ivo) =
-        (key(61), key(62), key(63), key(64), key(65), key(66));
+    let (pat, sam, ola, nia, stranger, ivo, uma) = (
+        key(61),
+        key(62),
+        key(63),
+        key(64),
+        key(65),
+        key(66),
+        key(67),
+    );
 
     let mut programme = group("programme", "Test Pat");
     register(
@@ -288,6 +356,15 @@ fn main() {
         &ola,
         "Test Pat",
     );
+    if released {
+        register(
+            &mut programme,
+            "Test Uma",
+            "subsystem engineer",
+            &uma,
+            "Test Pat",
+        );
+    }
     mount(&mut programme, "root", "systems", "Test Sam");
     // Solar's releases, from before 1.0: the programme manager anchors 1.1
     // and 1.2, and not 1.3. The anchors are part of what he signs.
@@ -340,6 +417,9 @@ fn main() {
         ..Port::default()
     });
     std::fs::create_dir_all(drive.join("groups/l3_struct")).unwrap();
+    if released {
+        mount(&mut systems, "sys_orbit", "l3_x_envorbit", "Test Uma");
+    }
     write(
         &signed(systems, "Test Sam", &sam),
         &drive.join("groups/systems/systems.vgroup"),
@@ -464,8 +544,13 @@ fn main() {
     )
     .unwrap();
 
+    if released {
+        release_design(&drive, &sam);
+    }
+
     std::fs::create_dir_all(&keys).unwrap();
     for (file, person, k) in [
+        ("test-uma.vkey", "Test Uma", &uma),
         ("test-pat.vkey", "Test Pat", &pat),
         ("test-sam.vkey", "Test Sam", &sam),
         ("test-ola.vkey", "Test Ola", &ola),

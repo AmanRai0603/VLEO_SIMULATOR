@@ -416,7 +416,7 @@ impl Registry {
 
     /// Whether `name` holds `role` here, or is registered as the deputy of
     /// someone who does.
-    pub(crate) fn acts_as(&self, name: &str, role: &str) -> bool {
+    pub fn acts_as(&self, name: &str, role: &str) -> bool {
         self.file
             .people
             .iter()
@@ -1434,6 +1434,180 @@ pub fn check_answer(
     if ok.is_empty() {
         return Err(none_counts(
             &format!("{g}'s answer, written by {writer} and by its owner {owner},"),
+            &why,
+        ));
+    }
+    Ok(())
+}
+
+/// The columns of a preview's `moved.csv` (F6-c, `design::preview`): each
+/// value outside the release's group that moved, its node and the group it
+/// hangs under, its answer in the design released now and with the release
+/// in it, empty where it refused, and why where it refused.
+pub const PREVIEW_MOVED: &[&str] = &[
+    "value",
+    "node",
+    "group",
+    "before",
+    "after",
+    "before_why",
+    "after_why",
+];
+
+/// The columns of a preview's `named.csv`: each group whose owner answers.
+pub const PREVIEW_NAMED: &[&str] = &["group"];
+
+/// Where the preview of `group`'s release `version`, on the released design
+/// `design`, is, inside a copy or the drive: beside the answers to that
+/// release, and named for the design it is on, since a release may be
+/// previewed again on a later one (F6's question 53).
+pub fn preview_path(group: &str, version: &str, design: &str) -> String {
+    format!("integration/{group}-{version}/preview-{group}-{version}-on-{design}.vleo")
+}
+
+/// A preview (F6-c, `design::preview`), checked through the chain, the one
+/// rule wherever a preview is read: a preview file, its meta whole; holding
+/// the one release it previews, whole, at the place the drive keeps it, its
+/// bytes their SHA-256; its `moved.csv` and `named.csv` as a preview writes
+/// them, every value in it one that moved, outside the release's group, and
+/// every group named one a value moved in, never the release's own, the
+/// systems' or the programme's, and each once; nothing else; and signed as
+/// it is by the person it says wrote it, the system engineer or their
+/// deputy, with a key the programme's file registers. That the release held
+/// is the one it says is `design::open_preview`'s, which reads it.
+pub fn check_preview(preview: &File, programme: &Registry) -> Result<(), Error> {
+    if preview.kind()? != Kind::Preview {
+        return Err(refused(
+            ErrorKind::WrongKind,
+            format!("this is a {}, not a preview", preview.kind()?),
+        ));
+    }
+    preview.check_meta()?;
+    let get = |k: &str| preview.meta.get(k).cloned().unwrap_or_default();
+    let (group, version, writer) = (get("group_id"), get("version"), get("writer"));
+    let bad = |what: String| refused(ErrorKind::Malformed, format!("the preview {what}"));
+    if !crate::breakdown::valid_id(&group) {
+        return Err(bad(format!("is of {group:?}, which is not a group's id")));
+    }
+    // Its release, and its two tables, and its signatures: nothing rides
+    // along unsigned.
+    for t in preview.to_tables() {
+        let own = [
+            "meta",
+            <crate::model::Tbl as crate::model::Record>::TABLE,
+            <crate::model::Media as crate::model::Record>::TABLE,
+            <SignatureRow as crate::model::Record>::TABLE,
+        ];
+        if !own.contains(&t.name.as_str()) && !t.rows.is_empty() {
+            return Err(bad(format!(
+                "holds {} rows: a preview holds its release, what moved and who answers, and nothing else",
+                t.name
+            )));
+        }
+    }
+    let at = format!("groups/{group}/releases/{group}-{version}.vleo");
+    match preview.media.as_slice() {
+        [m] if m.scope == FILE && m.path == at => {
+            if hex(&sha256(&m.bytes)) != m.sha256 {
+                return Err(bad(format!(
+                    "holds {at} whose bytes are not the ones it was written with: their SHA-256 differs"
+                )));
+            }
+        }
+        _ => {
+            return Err(bad(format!(
+                "holds {} file{}: a preview holds the one release it previews, whole, as {at}",
+                preview.media.len(),
+                if preview.media.len() == 1 { "" } else { "s" }
+            )))
+        }
+    }
+    let table = |path: &str, head: &[&str]| -> Result<Vec<Vec<String>>, Error> {
+        let mut found = preview.tables.iter().filter(|t| t.path == path);
+        let (Some(t), None) = (found.next(), found.next()) else {
+            return Err(bad(format!("does not hold {path} once")));
+        };
+        let csv = crate::csv::read(&t.csv);
+        if t.scope != FILE || !csv.problems.is_empty() || csv.head != head {
+            return Err(bad(format!(
+                "holds a {path} that is not as a preview writes it: its columns are {}",
+                head.join(", ")
+            )));
+        }
+        Ok(csv.rows)
+    };
+    if preview.tables.len() != 2 {
+        return Err(bad(
+            "holds tables beside moved.csv and named.csv: it holds those two".into(),
+        ));
+    }
+    let moved = table("moved.csv", PREVIEW_MOVED)?;
+    let named = table("named.csv", PREVIEW_NAMED)?;
+    if moved.is_empty() {
+        return Err(bad(format!(
+            "says nothing moved: a release that moves nothing outside {group} has no preview"
+        )));
+    }
+    let answer = |cell: &str| -> Result<Option<u64>, Error> {
+        if cell.is_empty() {
+            return Ok(None);
+        }
+        cell.parse::<f64>()
+            .ok()
+            .filter(|x| x.is_finite())
+            .map(|x| Some(x.to_bits()))
+            .ok_or_else(|| {
+                bad(format!(
+                    "says {cell:?} is an answer, and it is not a number"
+                ))
+            })
+    };
+    for row in &moved {
+        let (value, node, g) = (&row[0], &row[1], &row[2]);
+        let of_node = value == node
+            || value
+                .strip_prefix(node.as_str())
+                .is_some_and(|r| r.starts_with('.'));
+        if node.is_empty() || !of_node || g.is_empty() {
+            return Err(bad(format!(
+                "says {value:?} moved in {node:?}, which is not a node's value"
+            )));
+        }
+        if *g == group {
+            return Err(bad(format!(
+                "says {value}, of {group} itself, moved: a preview is of what moves outside it"
+            )));
+        }
+        if answer(&row[3])? == answer(&row[4])? {
+            return Err(bad(format!(
+                "says {value} moved, and its two answers are one"
+            )));
+        }
+    }
+    let mut seen: Vec<&str> = Vec::new();
+    for row in &named {
+        let g = row[0].as_str();
+        if !crate::breakdown::valid_id(g) || ["systems", "programme"].contains(&g) || g == group {
+            return Err(bad(format!(
+                "names {g:?} to answer: a subsystem's group answers another group's release"
+            )));
+        }
+        if seen.contains(&g) {
+            return Err(bad(format!("names {g} twice")));
+        }
+        if !moved.iter().any(|r| r[2] == g) {
+            return Err(bad(format!("names {g}, and no value of {g} moved")));
+        }
+        seen.push(g);
+    }
+    let (ok, why) = counted(preview, FILE, programme, |name| {
+        name == writer && programme.acts_as(name, "system engineer")
+    });
+    if ok.is_empty() {
+        return Err(none_counts(
+            &format!(
+                "the preview of {group} {version}, written by {writer} as the system engineer,"
+            ),
             &why,
         ));
     }

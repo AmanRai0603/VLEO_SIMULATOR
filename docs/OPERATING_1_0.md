@@ -296,7 +296,7 @@ is, its version, what it was based on, and who wrote it.
 | **node file** | `<node>.vnode` | one node, all six parts | its node engineer | yes: each save a revision |
 | **group file** | `<group>.vgroup` | the branch, its members and their public keys, who is assigned what at which contract version, its mount read-only, its base | its subsystem engineer; for the programme and the systems, their owners | yes |
 | **group release** | `<group>-<version>.vleo` | the group file and every node, every signature, release notes, the seal; for the programme, its signed decisions | its owner, sealing | never |
-| **preview** | `preview-<group>-<version>.vleo` | the released design with one release in it, when that release moves other groups' values | the system engineer | never |
+| **preview** | `preview-<group>-<version>-on-<design>.vleo` | the released design with one release in it, when that release moves other groups' values | the system engineer | never |
 | **preview answer** | `<group>-<version>.<answering group>.answer` | *fine*, or *object, because…*, signed | the answering subsystem engineer | never |
 | **issue** | `<number>-<group>.vissue` | what is wrong, where, the evidence from the health map, whom it is addressed to | whoever raises it | never; closed by the release that resolves it |
 | **daily snapshot** | `design-<date>.daily.vleo` | today's design as built that day, and the releases it used | the system engineer's application | never |

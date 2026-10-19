@@ -22,10 +22,27 @@
 //! through the chain as the drive holds it; the red marks are the health
 //! map's on the design as declared (`inputs=defaults`), never a saved case,
 //! with each group whose latest release is refused and its last good held.
-//! A design released in the copy goes back before the next is released. Not here: the pointer `design/design.vleo` and the archive (F7),
-//! previews and their answers (F6-c), the daily snapshot.
+//! A design released in the copy goes back before the next is released.
+//!
+//! `GET /v1/design/previews` gives, for each group whose release in today's
+//! design is not the one in the design released now, the preview of it on
+//! that design where there is one, and every preview on the drive and in
+//! the copy, read back, with what each group it names has said, unanswered
+//! first; the integration route gives them too. `POST /v1/design/preview`,
+//! with `group`, writes one in the copy as whoever's key is open, the
+//! system engineer or their deputy: two designs built and run on the
+//! design as declared, the design released now and the same with the
+//! group's release in it, and every value outside the group answered
+//! differently held in the preview (F6-c items 3, 4 and 10). Previews are
+//! built only when asked for, never on a reading of the checks. Carries the
+//! launch's word.
+//!
+//! Not here: the pointer `design/design.vleo` and the archive (F7), the
+//! decision on an objection and the release refused while a preview is
+//! unanswered (F6-c3b), the daily snapshot.
 
 use super::*;
+use vleo_files::chain::Registry;
 use vleo_files::design::{self, Asked, Held, Integration, Mark, Part, Taken, Whole};
 use vleo_files::meta::DesignVersion;
 use vleo_modules::health::{health, is_closure, State};
@@ -263,8 +280,8 @@ fn next_version(latest: Option<&str>) -> String {
 
 /// `GET /v1/design/integration`.
 pub(super) fn integration_route(ctx: &Ctx) -> String {
-    let t = match today(ctx) {
-        Ok((t, _)) => t,
+    let (t, c) = match today(ctx) {
+        Ok(t) => t,
         Err(why) => return me::refusal(&why),
     };
     let i = t.integration();
@@ -297,6 +314,8 @@ pub(super) fn integration_route(ctx: &Ctx) -> String {
         j.close_obj();
     }
     j.close_arr();
+    // Beside the checks, the previews and their answers (F6-c).
+    previews_into(&mut j, ctx, &t.drive, &c);
     j.str_field(
         "message",
         &if i.holds() {
@@ -579,4 +598,501 @@ fn health_csv(ctx: &Ctx, version: &str) -> String {
         &["node", "parent", "state", "margin", "why", "design"],
         &rows,
     )
+}
+
+// ── Previews and their answers (F6-c items 3, 4 and 10) ──
+
+/// Each graph a preview built, by the digest of what it took into the
+/// design's files: a graph lives as long as the program, so a design asked
+/// again is not built again.
+static GRAPHS: std::sync::Mutex<Vec<(String, &'static vleo_modules::Graph)>> =
+    std::sync::Mutex::new(Vec::new());
+
+fn graph_of(
+    t: &today::Today,
+    root: &Path,
+    what: &str,
+) -> Result<&'static vleo_modules::Graph, String> {
+    let mut held = GRAPHS.lock().unwrap_or_else(|e| e.into_inner());
+    if let Some((_, g)) = held.iter().find(|(k, _)| *k == t.written) {
+        return Ok(g);
+    }
+    let tree = vleo_sheet::load::load_all_from(&*t.files, root)
+        .map_err(|e| format!("{what} does not load: {e}"))?;
+    let g = vleo_modules::opened::graph(&tree).map_err(|e| format!("{what} does not run: {e}"))?;
+    held.push((t.written.clone(), g));
+    Ok(g)
+}
+
+/// The design released now, read back from the drive through the chain
+/// (`design::open_held`), or why there is none.
+fn released_now(drive: &Path, programme: &Registry) -> Result<design::Opened, String> {
+    let v = design::latest_in(&drive.join("design"), programme)
+        .map_err(|e| e.message().to_string())?
+        .ok_or("no design is released yet: a preview is on the design released now, so none is written before the first")?;
+    let f = vleo_files::sqlite::read(&drive.join(format!("design/design-{v}.vleo")))
+        .map_err(|e| format!("design {v} does not read: {}", e.message()))?;
+    design::open_held(&f, programme, APP).map_err(|e| e.message().to_string())
+}
+
+/// What a preview of `group`'s release in today's design is made from: the
+/// release, as the drive holds it and where; the design released now; every
+/// value outside the group that taking it in moves, on the design as
+/// declared; and how each design ran.
+struct Previewed {
+    path: String,
+    bytes: Vec<u8>,
+    version: String,
+    design: design::Opened,
+    moved: Vec<design::Move>,
+    impact: today::Impact,
+}
+
+fn previewed(group: &str, ctx: &Ctx, c: &me::Chain) -> Result<Previewed, String> {
+    let report = built_from().ok_or(
+        "the design open is the design's own files, not today's design: a preview is of a release in today's design, built from the drive",
+    )?;
+    let drive = PathBuf::from(&report.drive);
+    let design = released_now(&drive, &c.programme)?;
+    let t = report
+        .groups
+        .iter()
+        .find(|g| g.id == group)
+        .and_then(|g| g.taken.as_ref())
+        .ok_or_else(|| {
+            format!("today's design takes no release of {group}: there is nothing to preview")
+        })?;
+    let (bytes, file, _) = today::read_again(&drive, group, &t.path).map_err(|why| {
+        format!(
+            "{group} {} is not read again from the drive: {why}",
+            t.version
+        )
+    })?;
+    if file.meta.get("fingerprint") != Some(&t.fingerprint) {
+        return Err(format!(
+            "{group} {} on the drive is not the release today's design took: start the tool again, so today's design is built from the drive as it is",
+            t.version
+        ));
+    }
+    design::to_preview(&design, group, &t.version, &t.fingerprint)
+        .map_err(|e| e.message().to_string())?;
+    let path = t
+        .path
+        .strip_prefix(&drive)
+        .map_err(|_| format!("{} is not on the drive", t.path.display()))?
+        .components()
+        .map(|c| c.as_os_str().to_string_lossy().into_owned())
+        .collect::<Vec<_>>()
+        .join("/");
+    let base = crate::base_files()
+        .ok_or("the design's own files are not open, so no released design is built")?;
+    let now = today::build_held(base.clone(), &ctx.root, &drive, &design.design)?;
+    let with = today::build_held_with(
+        base,
+        &ctx.root,
+        &drive,
+        &design.design,
+        Some(&today::One {
+            group,
+            version: &t.version,
+            fingerprint: &t.fingerprint,
+            path: &path,
+            bytes: &bytes,
+        }),
+    )?;
+    let before = graph_of(&now, &ctx.root, &format!("design {}", design.version))?;
+    let after = graph_of(
+        &with,
+        &ctx.root,
+        &format!("design {} with {group} {}", design.version, t.version),
+    )?;
+    // Inside the group: its release's blocks, the one the design holds, and
+    // every node of it the design's own files hold.
+    let mut inside: std::collections::BTreeSet<String> = std::iter::once(group.to_string())
+        .chain(file.blocks.iter().map(|b| b.id.clone()))
+        .chain(
+            design
+                .releases
+                .iter()
+                .filter(|r| r.group == group)
+                .flat_map(|r| r.back.file.blocks.iter().map(|b| b.id.clone())),
+        )
+        .collect();
+    inside.extend(
+        today::design_nodes(&ctx.root, group)?
+            .iter()
+            .flat_map(|n| n.blocks.iter().map(|b| b.id.clone())),
+    );
+    let impact = today::impact(before, after, &declared_case(ctx), &|id| {
+        inside.contains(id)
+    })?;
+    let moved = impact
+        .moved
+        .iter()
+        .map(|m| design::Move {
+            value: m.id.clone(),
+            node: m.id.split('.').next().unwrap_or(&m.id).to_string(),
+            group: m.group.clone(),
+            before: m.before,
+            after: m.after,
+            before_why: m.before_why.clone(),
+            after_why: m.after_why.clone(),
+        })
+        .collect();
+    Ok(Previewed {
+        path,
+        bytes,
+        version: t.version.clone(),
+        design,
+        moved,
+        impact,
+    })
+}
+
+/// `POST /v1/design/preview`.
+pub(super) fn preview_route(params: &str, ctx: &Ctx) -> String {
+    match previewing(params, ctx) {
+        Ok(j) => j,
+        Err(why) => me::refusal(&why),
+    }
+}
+
+fn previewing(params: &str, ctx: &Ctx) -> Result<String, String> {
+    me::carries_session(params)?;
+    let no_key = "no key is open: open yours, and the preview is written and signed as you";
+    if me::with_key(|_, _| ()).is_none() {
+        return Err(no_key.into());
+    }
+    let group = param(params, "group").map(decode).unwrap_or_default();
+    let group = group.trim();
+    if !vleo_files::breakdown::valid_id(group) {
+        return Err(format!("{group:?} is not a group's id"));
+    }
+    let copy = copy::dir(ctx);
+    let record = copy::record(&copy)?.ok_or(
+        "a preview is written in your copy of the database, then put back: copy it from the drive first",
+    )?;
+    let report = built_from()
+        .ok_or("the design open is not today's design: a preview is of a release in it")?;
+    let drive = PathBuf::from(&report.drive);
+    let c = chain_of(&drive, ctx)?;
+    let canonical =
+        std::fs::canonicalize(&drive).map_err(|e| format!("{}: {e}", drive.display()))?;
+    if Path::new(&record.drive) != canonical {
+        return Err(format!(
+            "your copy came from {}, and today's design is built from {}: write the preview in a copy of the drive it is built from",
+            record.drive,
+            canonical.display()
+        ));
+    }
+    // Who may write one is asked before two designs are built for it.
+    let may = me::with_key(|_, me| {
+        (
+            me.name.clone(),
+            c.programme.acts_as(&me.name, "system engineer"),
+        )
+    })
+    .ok_or(no_key)?;
+    if !may.1 {
+        return Err(format!(
+            "{} may not write a preview: the system engineer, or their deputy, writes one (W7)",
+            may.0
+        ));
+    }
+    let p = previewed(group, ctx, &c)?;
+    let parents: Vec<&Registry> = std::iter::once(&c.programme)
+        .chain(c.systems.iter())
+        .collect();
+    let at = results::now_utc();
+    let (f, who) = me::with_key(|key, me| {
+        design::preview(
+            &Whole {
+                path: &p.path,
+                bytes: &p.bytes,
+            },
+            &p.design,
+            &p.moved,
+            &parents,
+            &me.name,
+            key,
+            &at,
+            APP,
+            &c.programme,
+        )
+        .map(|f| (f, me.name.clone()))
+        .map_err(|e| e.message().to_string())
+    })
+    .ok_or(no_key)??;
+    let rel = vleo_files::chain::preview_path(group, &p.version, &p.design.version);
+    let _held = vleo_files::save::lock(&copy).map_err(|e| e.message().to_string())?;
+    for (whose, at) in [
+        ("your copy", copy.join(&rel)),
+        ("the drive", drive.join(&rel)),
+    ] {
+        if at.exists() {
+            return Err(format!(
+                "{whose} holds {rel} already: a preview is never written over"
+            ));
+        }
+    }
+    let at_file = copy.join(&rel);
+    if let Some(dir) = at_file.parent() {
+        std::fs::create_dir_all(dir).map_err(|e| format!("{}: {e}", dir.display()))?;
+    }
+    vleo_files::sqlite::write(&f, &at_file).map_err(|e| e.message().to_string())?;
+    let named = design::named(&p.moved, group, &parents, &c.programme);
+    let mut j = Json::new();
+    j.raw("{");
+    j.bool_field("ok", true);
+    j.str_field("path", &rel);
+    j.str_field("group", group);
+    j.str_field("version", &p.version);
+    j.str_field("based_on", &p.design.version);
+    strings(&mut j, "named", &named);
+    moved_json(&mut j, &p.moved);
+    for (k, ran) in [("released", &p.impact.today), ("with", &p.impact.view)] {
+        j.key(k).open_obj();
+        j.num_field("ran", ran.ran as f64);
+        j.key("blocked").open_arr();
+        for (node, why) in &ran.blocked {
+            j.open_obj();
+            j.str_field("node", node);
+            j.str_field("why", why);
+            j.close_obj();
+        }
+        j.close_arr();
+        j.close_obj();
+    }
+    j.str_field(
+        "message",
+        &format!(
+            "{who} wrote the preview of {group} {} on design {}, in your copy: {rel}. {} It reaches them once it is put back on the drive.",
+            p.version,
+            p.design.version,
+            if named.is_empty() {
+                format!(
+                    "It moves {} outside {group}, and names no subsystem's group to answer: what moves is the systems' or the programme's, shown and not answered.",
+                    plural(p.moved.len(), "value")
+                )
+            } else {
+                format!(
+                    "It moves {} outside {group}, and names {} to answer.",
+                    plural(p.moved.len(), "value"),
+                    named.join(", ")
+                )
+            }
+        ),
+    );
+    j.raw("}");
+    Ok(j.0)
+}
+
+fn plural(n: usize, what: &str) -> String {
+    format!("{n} {what}{}", if n == 1 { "" } else { "s" })
+}
+
+fn moved_json(j: &mut Json, moved: &[design::Move]) {
+    j.key("moved").open_arr();
+    for m in moved {
+        j.open_obj();
+        j.str_field("value", &m.value);
+        j.str_field("group", &m.group);
+        for (k, v, w) in [
+            ("before", m.before, &m.before_why),
+            ("after", m.after, &m.after_why),
+        ] {
+            match v {
+                Some(x) => j.num_field(k, x),
+                None => j.key(k).raw("null"),
+            };
+            if let Some(w) = w {
+                j.str_field(&format!("{k}_why"), w);
+            }
+        }
+        j.close_obj();
+    }
+    j.close_arr();
+}
+
+/// Every preview file in `integration/` under `folder`, by its path there.
+pub(crate) fn previews_in(folder: &Path) -> Vec<String> {
+    let mut out = Vec::new();
+    for d in std::fs::read_dir(folder.join("integration"))
+        .into_iter()
+        .flatten()
+        .flatten()
+    {
+        let dir = d.file_name().to_string_lossy().into_owned();
+        for e in std::fs::read_dir(d.path()).into_iter().flatten().flatten() {
+            let name = e.file_name().to_string_lossy().into_owned();
+            if name.starts_with("preview-") && name.ends_with(".vleo") {
+                out.push(format!("integration/{dir}/{name}"));
+            }
+        }
+    }
+    out.sort();
+    out
+}
+
+/// The previews and their answers, into `j` as `pending` and `previews`:
+/// each group whose release in today's design is not the one in the design
+/// released now, and the preview of it on that design where there is one;
+/// and every preview on the drive, and in the copy where the drive does not
+/// hold it, read back (`design::open_preview`), each with what each group it
+/// names has said, unanswered first. A preview that does not open is listed
+/// with why, never passed over. Nothing is computed: a preview is built
+/// only when asked for.
+fn previews_into(j: &mut Json, ctx: &Ctx, drive: &Path, c: &me::Chain) {
+    let copy = copy::dir(ctx);
+    let released = released_now(drive, &c.programme);
+    j.str_field(
+        "previews_on",
+        released.as_ref().map_or("", |d| d.version.as_str()),
+    );
+    if let Err(why) = &released {
+        j.str_field("previews_said", why);
+    }
+    j.key("pending").open_arr();
+    if let (Ok(d), Some(report)) = (&released, built_from()) {
+        for g in &report.groups {
+            let Some(t) = &g.taken else { continue };
+            if d.releases
+                .iter()
+                .any(|r| r.group == g.id && r.fingerprint == t.fingerprint)
+            {
+                continue;
+            }
+            let rel = vleo_files::chain::preview_path(&g.id, &t.version, &d.version);
+            j.open_obj();
+            j.str_field("group", &g.id);
+            j.str_field("version", &t.version);
+            j.str_field(
+                "held",
+                d.releases
+                    .iter()
+                    .find(|r| r.group == g.id)
+                    .map_or("", |r| r.version.as_str()),
+            );
+            j.str_field(
+                "preview",
+                if drive.join(&rel).is_file() || copy.join(&rel).is_file() {
+                    &rel
+                } else {
+                    ""
+                },
+            );
+            j.close_obj();
+        }
+    }
+    j.close_arr();
+    let parents: Vec<&Registry> = std::iter::once(&c.programme)
+        .chain(c.systems.iter())
+        .collect();
+    let mut paths: Vec<(String, &str)> = previews_in(drive)
+        .into_iter()
+        .map(|p| (p, "drive"))
+        .collect();
+    for p in previews_in(&copy) {
+        if !paths.iter().any(|(q, _)| *q == p) {
+            paths.push((p, "copy"));
+        }
+    }
+    j.key("previews").open_arr();
+    for (rel, held_in) in &paths {
+        j.open_obj();
+        j.str_field("path", rel);
+        j.str_field(
+            "in",
+            if *held_in == "drive" {
+                "the drive"
+            } else {
+                "your copy, not put back yet"
+            },
+        );
+        let folder = if *held_in == "drive" {
+            drive
+        } else {
+            copy.as_path()
+        };
+        let opened = vleo_files::sqlite::read(&folder.join(rel))
+            .map_err(|e| e.message().to_string())
+            .and_then(|f| {
+                design::open_preview(&f, &c.programme, APP).map_err(|e| e.message().to_string())
+            });
+        match opened {
+            Err(why) => {
+                j.bool_field("opens", false);
+                j.str_field(
+                    "why",
+                    &format!("{rel} does not open through the chain: {why}"),
+                );
+            }
+            Ok(p) => {
+                j.bool_field("opens", true);
+                j.str_field("group", &p.group);
+                j.str_field("version", &p.version);
+                j.str_field("based_on", &p.based_on);
+                j.str_field("writer", &p.writer);
+                j.bool_field(
+                    "stale",
+                    released.as_ref().map_or(true, |d| d.version != p.based_on),
+                );
+                strings(j, "named", &p.named);
+                moved_json(j, &p.moved);
+                // An answer counts from the drive; one in the copy only is
+                // said as not put back yet.
+                let read = |path: &str| {
+                    [drive, copy.as_path()].iter().find_map(|at| {
+                        let file = at.join(path);
+                        file.is_file().then(|| {
+                            vleo_files::sqlite::read(&file).map_err(|e| e.message().to_string())
+                        })
+                    })
+                };
+                let mut said = design::answers(&p, &read, &parents, &c.programme);
+                said.sort_by_key(|(_, a)| !matches!(a, design::Answered::Unanswered));
+                j.key("answers").open_arr();
+                for (g, a) in &said {
+                    j.open_obj();
+                    j.str_field("group", g);
+                    j.str_field("said", a.name());
+                    match a {
+                        design::Answered::Object(b) => {
+                            j.str_field("because", b);
+                        }
+                        design::Answered::Refused(w) => {
+                            j.str_field("why", w);
+                        }
+                        _ => {}
+                    }
+                    let at = vleo_files::answer::path_of(&p.group, &p.version, g);
+                    j.bool_field("on_drive", drive.join(&at).is_file());
+                    j.close_obj();
+                }
+                j.close_arr();
+            }
+        }
+        j.close_obj();
+    }
+    j.close_arr();
+}
+
+/// `GET /v1/design/previews`.
+pub(super) fn previews_route(ctx: &Ctx) -> String {
+    let Some(report) = built_from() else {
+        return me::refusal(
+            "the design open is the design's own files, not today's design: previews are of releases in today's design, built from the drive",
+        );
+    };
+    let drive = PathBuf::from(&report.drive);
+    let c = match chain_of(&drive, ctx) {
+        Ok(c) => c,
+        Err(why) => return me::refusal(&why),
+    };
+    let mut j = Json::new();
+    j.raw("{");
+    j.bool_field("ok", true);
+    previews_into(&mut j, ctx, &drive, &c);
+    j.raw("}");
+    j.0
 }

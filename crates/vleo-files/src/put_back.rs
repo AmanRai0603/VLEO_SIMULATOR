@@ -50,6 +50,14 @@
 //! counts for them now (`chain::check_answer`). An answer is never written
 //! over.
 //!
+//! Or it is a preview of a group's release (F6-c), written in the copy by
+//! the system engineer or their deputy: a new file in
+//! `integration/<group>-<version>/`, named for the release and the design it
+//! is on, holding the drive's release byte for byte, on a design the drive
+//! holds, written and signed by the person putting it back with a key the
+//! drive counts for them now (`chain::check_preview`). A preview is never
+//! written over.
+//!
 //! A group's file does not go back yet: what may change in it at its valve
 //! is not yet checked against the drive's file, so a change of its people
 //! stays in the copy.
@@ -698,14 +706,92 @@ fn verdict(
             design_verdict(name, bytes, theirs, me, at, chain, drive)
         }
         ["design", "NOTES.md"] | ["readable", _] => record_verdict(path, me, chain),
+        ["integration", dir, name] if name.starts_with("preview-") && name.ends_with(".vleo") => {
+            preview_verdict(dir, name, bytes, theirs, me, at, chain, drive)
+        }
         ["integration", dir, name] if name.ends_with(".answer") => {
             answer_verdict(dir, name, bytes, theirs, me, at, chain, drive)
         }
         ["groups", g, name] if *name == format!("{g}.vgroup") => Err(format!(
             "{g}'s group file does not go back yet: what may change in a group's file is not yet checked against the drive's, so a change of its people stays in your copy"
         )),
-        _ => Err("it is not a file the application puts back yet: a node's file, a group's release, a released design and its record, or an answer to a release, goes back".into()),
+        _ => Err("it is not a file the application puts back yet: a node's file, a group's release, a released design and its record, or a preview of a release and an answer to one, goes back".into()),
     }
+}
+
+/// Whether the preview `name` in `integration/<dir>/`, `bytes` in the copy,
+/// goes back as a new file written by `me`, onto the drive at `drive` that
+/// holds `theirs` at that path: at the place its meta names, on a design the
+/// drive holds, holding the release the drive holds at its place byte for
+/// byte, and checking through the chain as the drive holds it now, signed by
+/// `me` with a key that counts at `at`.
+#[allow(clippy::too_many_arguments)]
+fn preview_verdict(
+    dir: &str,
+    name: &str,
+    bytes: &[u8],
+    theirs: Option<&[u8]>,
+    me: &str,
+    at: &str,
+    chain: &Chain,
+    drive: &Path,
+) -> Result<String, String> {
+    if theirs.is_some() {
+        return Err(
+            "the drive holds a preview at this path already: a preview is never written over"
+                .into(),
+        );
+    }
+    let f = save::parsed(bytes).map_err(|e| format!("it does not read: {}", e.message()))?;
+    match f.kind() {
+        Ok(Kind::Preview) => {}
+        Ok(other) => {
+            return Err(format!(
+                "it is a {other}, and integration/ holds previews here"
+            ))
+        }
+        Err(e) => return Err(e.message().to_string()),
+    }
+    let said = |k: &str| f.meta.get(k).map_or("", String::as_str);
+    let (group, version, design) = (said("group_id"), said("version"), said("based_on"));
+    let place = chain::preview_path(group, version, design);
+    if format!("integration/{dir}/{name}") != place {
+        return Err(format!(
+            "it says it is the preview of {group} {version} on design {design}, so it is {place}"
+        ));
+    }
+    if said("writer") != me {
+        return Err(format!(
+            "it is {:?}'s preview: a preview goes back only by the person who wrote it",
+            said("writer")
+        ));
+    }
+    if !drive.join(format!("design/design-{design}.vleo")).is_file() {
+        return Err(format!(
+            "the drive holds no design {design}: a preview is on a design released there"
+        ));
+    }
+    // The release it holds is the drive's, byte for byte: never one the
+    // drive does not hold, nor another of that number.
+    let rel = format!("groups/{group}/releases/{group}-{version}.vleo");
+    let held = std::fs::read(drive.join(&rel)).map_err(|_| {
+        format!("the drive holds no {rel}: a preview is of a release that is there")
+    })?;
+    if f.media.first().map(|m| m.bytes.as_slice()) != Some(held.as_slice()) {
+        return Err(format!(
+            "the release it holds is not the drive's {rel}, byte for byte"
+        ));
+    }
+    let now = only_counting_now(&f, chain::FILE, me, at, &chain.programme);
+    chain::check_preview(&now, &chain.programme).map_err(|e| {
+        format!(
+            "it does not check through the chain as the drive holds it now, signed by {me} with a key that counts at {at}: {}",
+            e.message()
+        )
+    })?;
+    Ok(format!(
+        "goes back: the preview of {group} {version} on design {design}, by {me}"
+    ))
 }
 
 /// Whether the answer `name` in `integration/<dir>/`, `bytes` in the copy,

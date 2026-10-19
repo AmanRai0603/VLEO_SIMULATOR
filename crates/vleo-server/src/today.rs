@@ -634,6 +634,32 @@ pub fn build_held(
     drive: &Path,
     design: &vleo_files::model::File,
 ) -> Result<Today, String> {
+    build_held_with(base, root, drive, design, None)
+}
+
+/// One group's release taken into a released design in place of the one it
+/// holds of that group, or beside them where it holds none (F6-c, a
+/// preview): its group, version and fingerprint, where the drive keeps it,
+/// and its bytes.
+pub struct One<'a> {
+    pub group: &'a str,
+    pub version: &'a str,
+    pub fingerprint: &'a str,
+    pub path: &'a str,
+    pub bytes: &'a [u8],
+}
+
+/// The released design `design` built as [`build_held`] builds it, with
+/// `one`, when given, taken in place of the release it holds of that group,
+/// by the same checks: the design released now with one release in it, as a
+/// preview reads it.
+pub fn build_held_with(
+    base: Arc<dyn Files>,
+    root: &Path,
+    drive: &Path,
+    design: &vleo_files::model::File,
+    one: Option<&One>,
+) -> Result<Today, String> {
     let chain = chain_of(drive);
     let programme = match &chain {
         Chain::Open { programme, .. } => programme,
@@ -649,20 +675,34 @@ pub fn build_held(
         concat!("vleo ", env!("CARGO_PKG_VERSION")),
     )
     .map_err(|e| e.message().to_string())?;
-    let mut releases: Vec<&vleo_files::design::HeldRelease> = held.releases.iter().collect();
-    releases.sort_by(|a, b| a.group.cmp(&b.group));
+    let mut releases: Vec<One> = held
+        .releases
+        .iter()
+        .filter(|r| one.is_none_or(|o| o.group != r.group))
+        .map(|r| One {
+            group: &r.group,
+            version: &r.version,
+            fingerprint: &r.fingerprint,
+            path: &r.back.path,
+            bytes: &r.back.bytes,
+        })
+        .collect();
+    if let Some(o) = one {
+        releases.push(One { ..*o });
+    }
+    releases.sort_by(|a, b| a.group.cmp(b.group));
     let mut taken: BTreeMap<PathBuf, Vec<u8>> = BTreeMap::new();
     let mut gone: BTreeSet<PathBuf> = BTreeSet::new();
     let mut groups = Vec::new();
     for r in releases {
-        let id = r.group.as_str();
+        let id = r.group;
         let refused = |why: String| {
             format!(
                 "design {} holds {id} {}, which is not taken: {why}",
                 held.version, r.version
             )
         };
-        let (said, (edits, changes, notes, how, removed)) = of_bytes(&r.back.bytes, |at| {
+        let (said, (edits, changes, notes, how, removed)) = of_bytes(r.bytes, |at| {
             let found = Found::open(at)?;
             let edits = match &found {
                 Found::Before1_0(rel) => take(&base, &taken, &gone, root, id, at, rel, &chain),
@@ -705,7 +745,7 @@ pub fn build_held(
                 chain: how.said,
                 based_on: how.based_on,
                 base_version: how.base_version,
-                path: drive.join(&r.back.path),
+                path: drive.join(r.path),
             }),
             refused: Vec::new(),
         });
@@ -1453,7 +1493,9 @@ pub fn impact(
         }
         String::new()
     };
-    let same = |a: f64, b: f64| a == b || (a - b).abs() <= 1e-12 * a.abs().max(b.abs());
+    // Moved is answered differently by one bit (F6's question 44): no
+    // threshold is set here, outside the kernel, on what counts as the same.
+    let same = |a: f64, b: f64| a.to_bits() == b.to_bits();
     let ids: std::collections::BTreeSet<&String> = was.keys().chain(now.keys()).collect();
     let mut out = Vec::new();
     for id in ids {

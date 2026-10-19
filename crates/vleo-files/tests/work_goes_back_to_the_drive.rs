@@ -2458,3 +2458,146 @@ fn a_release_never_goes_back_through_a_link_on_the_drive() {
     assert!(!l.back && l.why.contains("through a link"), "{l:?}");
     let _ = std::fs::remove_dir_all(drive.parent().unwrap());
 }
+
+// ── A preview of a release goes back as a new file (F6-c) ──
+
+/// Sam's preview of the release at `rel` in the copy, on the released design
+/// `design` in the copy, moving power's value, written into the copy; its
+/// path.
+fn sam_previews(copy: &Path, rel: &str, design: &str) -> String {
+    let o = opened(copy);
+    let d = sqlite::read(&copy.join(design)).unwrap();
+    let held = vleo_files::design::open_held(&d, &o.programme, APP).unwrap();
+    let bytes = std::fs::read(copy.join(rel)).unwrap();
+    let f = vleo_files::design::preview(
+        &vleo_files::design::Whole {
+            path: rel,
+            bytes: &bytes,
+        },
+        &held,
+        &[vleo_files::design::Move {
+            value: s("power_array_margin"),
+            node: s("power_array_margin"),
+            group: s("l3_power"),
+            before: Some(0.25),
+            after: Some(0.125),
+            before_why: None,
+            after_why: None,
+        }],
+        &[&o.programme, &o.systems],
+        "Test Sam",
+        &key(72),
+        AT,
+        APP,
+        &o.programme,
+    )
+    .unwrap();
+    let f_meta = |k: &str| f.meta[k].clone();
+    let at = chain::preview_path(&f_meta("group_id"), &f_meta("version"), &f_meta("based_on"));
+    std::fs::create_dir_all(copy.join(&at).parent().unwrap()).unwrap();
+    sqlite::write(&f, &copy.join(&at)).unwrap();
+    at
+}
+
+#[test]
+fn a_preview_goes_back_as_a_new_file_by_the_system_engineer_who_wrote_it() {
+    let (drive, copy) = world("preview");
+    let rel = sealed_in(&copy, "1.0");
+    let r = pb(&copy, &drive, "Test Ola", Some(vec![named(&copy, &rel)])).unwrap();
+    assert!(r.written, "{:?}", r.lines);
+    let d = released_in(&copy, "2026.10.1", "", "Test Sam", 72);
+    let r = pb(&copy, &drive, "Test Sam", Some(vec![named(&copy, &d)])).unwrap();
+    assert!(r.written, "{:?}", r.lines);
+    let p = sam_previews(&copy, &rel, &d);
+    assert_eq!(
+        p,
+        "integration/l3_solar-1.0/preview-l3_solar-1.0-on-2026.10.1.vleo"
+    );
+    // Not Ola's to put back.
+    let r = pb(&copy, &drive, "Test Ola", None).unwrap();
+    let l = line(&r, &p);
+    assert!(!l.back && l.why.contains("\"Test Sam\"'s preview"), "{l:?}");
+    // Another file at its place on the drive when the copy was taken: never
+    // written over.
+    std::fs::create_dir_all(drive.join(&p).parent().unwrap()).unwrap();
+    std::fs::write(drive.join(&p), "another").unwrap();
+    let record = std::fs::read_to_string(copy.join(copied::FILE_NAME)).unwrap();
+    let mut taken = Copied::from_toml(&record).unwrap();
+    taken.files.insert(p.clone(), copied::digest(b"another"));
+    std::fs::write(copy.join(copied::FILE_NAME), taken.to_toml()).unwrap();
+    let r = pb(&copy, &drive, "Test Sam", None).unwrap();
+    let l = line(&r, &p);
+    assert!(
+        !l.back && l.why.contains("a preview is never written over"),
+        "{l:?}"
+    );
+    std::fs::remove_file(drive.join(&p)).unwrap();
+    std::fs::write(copy.join(copied::FILE_NAME), record).unwrap();
+    // Sam's: it goes back, a new folder and file in the drive's integration/.
+    let r = pb(&copy, &drive, "Test Sam", None).unwrap();
+    let l = line(&r, &p);
+    assert!(
+        l.back
+            && l.why
+                .contains("the preview of l3_solar 1.0 on design 2026.10.1, by Test Sam"),
+        "{l:?}"
+    );
+    let r = pb(&copy, &drive, "Test Sam", Some(vec![named(&copy, &p)])).unwrap();
+    assert!(r.written, "{:?}", r.lines);
+    let o = opened(&drive);
+    let f = sqlite::read(&drive.join(&p)).unwrap();
+    vleo_files::design::open_preview(&f, &o.programme, APP).unwrap();
+    // One there already is never written over.
+    let r = pb(&copy, &drive, "Test Sam", None).unwrap();
+    assert!(!r.back().contains(&p), "{:?}", r.lines);
+    let _ = std::fs::remove_dir_all(drive.parent().unwrap());
+}
+
+#[test]
+fn a_preview_of_a_release_or_on_a_design_the_drive_does_not_hold_does_not_go_back() {
+    let (drive, copy) = world("preview-refused");
+    let rel = sealed_in(&copy, "1.0");
+    let d = released_in(&copy, "2026.10.1", "", "Test Sam", 72);
+    // Neither the release nor the design is on the drive.
+    let p = sam_previews(&copy, &rel, &d);
+    let r = pb(&copy, &drive, "Test Sam", None).unwrap();
+    let l = line(&r, &p);
+    assert!(
+        !l.back && l.why.contains("the drive holds no design 2026.10.1"),
+        "{l:?}"
+    );
+    let r = pb(&copy, &drive, "Test Sam", Some(vec![named(&copy, &d)])).unwrap();
+    assert!(r.written, "{:?}", r.lines);
+    let r = pb(&copy, &drive, "Test Sam", None).unwrap();
+    let l = line(&r, &p);
+    assert!(
+        !l.back
+            && l.why.contains(
+                "the drive holds no groups/l3_solar/releases/l3_solar-1.0.vleo: a preview is of a release that is there"
+            ),
+        "{l:?}"
+    );
+    // The drive's release is another of that number: not the one held.
+    std::fs::create_dir_all(drive.join("groups/l3_solar/releases")).unwrap();
+    let mut other = sqlite::read(&copy.join(&rel)).unwrap();
+    other.meta.insert(s("sealed_at"), s("2026-10-16T09:00:00Z"));
+    sqlite::write(&other, &drive.join(&rel)).unwrap();
+    let r = pb(&copy, &drive, "Test Sam", None).unwrap();
+    let l = line(&r, &p);
+    assert!(
+        !l.back
+            && l.why.contains(
+                "is not the drive's groups/l3_solar/releases/l3_solar-1.0.vleo, byte for byte"
+            ),
+        "{l:?}"
+    );
+    // Moved under another name, it says where it is.
+    std::fs::remove_file(drive.join(&rel)).unwrap();
+    std::fs::copy(copy.join(&rel), drive.join(&rel)).unwrap();
+    let moved = "integration/l3_solar-1.0/preview-l3_solar-1.0-on-2026.10.2.vleo";
+    std::fs::rename(copy.join(&p), copy.join(moved)).unwrap();
+    let r = pb(&copy, &drive, "Test Sam", None).unwrap();
+    let l = line(&r, moved);
+    assert!(!l.back && l.why.contains(&format!("so it is {p}")), "{l:?}");
+    let _ = std::fs::remove_dir_all(drive.parent().unwrap());
+}

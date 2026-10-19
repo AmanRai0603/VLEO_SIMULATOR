@@ -14,8 +14,14 @@
 //!   node (F3-d); one that does not count, or says it is answered while no
 //!   answer is signed, is named as refused.
 //!
-//! Nodes failing their checks, issues, previews and decisions join as the
-//! stages that make them arrive (F3 to F7).
+//! - a preview on the design released now naming a group they answer for,
+//!   owner or deputy, that the group has not answered, or answered by a file
+//!   that does not count (F6-c): *Answer <group> <version>*. Previews and
+//!   the design released now are read from the drive the program was
+//!   started on, then the copy; an answer in either counts as given.
+//!
+//! Nodes failing their checks, issues and decisions join as the stages that
+//! make them arrive (F3 to F7).
 //!
 //! Beside the items, `nodes` lists every node file that is the person's to
 //! write, or their deputy's, signed or not, for the Node workspace to open
@@ -436,6 +442,76 @@ fn items(me: &chain::Me, c: &me::Chain, database: &Path) -> Vec<Item> {
                     },
                 });
             }
+        }
+    }
+    // The previews on the design released now that name a group this person
+    // answers for, owner or deputy (F6-c): each unanswered, or answered by a
+    // file that does not count, is theirs to answer.
+    // A preview reaches them on the drive, where the system engineer puts
+    // it back, and the design released now is the drive's: the drive the
+    // program was started on is read first, then the copy.
+    let parents: Vec<&Registry> = std::iter::once(&c.programme)
+        .chain(c.systems.iter())
+        .collect();
+    let app = concat!("vleo ", env!("CARGO_PKG_VERSION"));
+    let mut folders: Vec<PathBuf> = std::env::var_os("VLEO_DRIVE")
+        .filter(|v| !v.is_empty())
+        .map(PathBuf::from)
+        .into_iter()
+        .collect();
+    if !folders.iter().any(|f| f == database) {
+        folders.push(database.to_path_buf());
+    }
+    let now = folders.iter().find_map(|f| {
+        vleo_files::design::latest_in(&f.join("design"), &c.programme)
+            .ok()
+            .flatten()
+    });
+    let mut seen: Vec<String> = Vec::new();
+    for (folder, rel) in folders.iter().flat_map(|f| {
+        crate::design::previews_in(f)
+            .into_iter()
+            .map(move |r| (f, r))
+    }) {
+        if seen.contains(&rel) {
+            continue;
+        }
+        seen.push(rel.clone());
+        let Some(p) = sqlite::read(&folder.join(&rel))
+            .ok()
+            .and_then(|f| vleo_files::design::open_preview(&f, &c.programme, app).ok())
+            .filter(|p| now.as_deref() == Some(p.based_on.as_str()))
+        else {
+            continue;
+        };
+        let read = |path: &str| {
+            folders
+                .iter()
+                .map(|f| f.join(path))
+                .find(|at| at.is_file())
+                .map(|at| sqlite::read(&at).map_err(|e| e.message().to_string()))
+        };
+        for (g, said) in vleo_files::design::answers(&p, &read, &parents, &c.programme) {
+            if !answers.contains(&g) {
+                continue;
+            }
+            let says = match said {
+                vleo_files::design::Answered::Unanswered => format!(
+                    "Answer {} {}: its preview on design {} names {g}, whose values it moves. Say fine, or object and why, in the System workspace on {g}",
+                    p.group, p.version, p.based_on
+                ),
+                vleo_files::design::Answered::Refused(why) => format!(
+                    "{g}'s answer to {} {} does not count, so {g} has not answered it: {why}",
+                    p.group, p.version
+                ),
+                _ => continue,
+            };
+            out.push(Item {
+                kind: "answer",
+                group: g,
+                node: String::new(),
+                says,
+            });
         }
     }
     out
