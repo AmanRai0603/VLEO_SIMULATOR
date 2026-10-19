@@ -641,6 +641,8 @@ fn route(
         ("POST", "/v1/group/start") => ok_json(branch::start_route(params, ctx)),
         ("GET", "/v1/design/integration") => ok_json(design::integration_route(ctx)),
         ("POST", "/v1/design/release") => ok_json(design::release_route(params, ctx)),
+        // A group's answer to a release that moves its values (W7).
+        ("POST", "/v1/answer") => ok_json(branch::answer_route(params, ctx)),
         ("POST", p) if p.starts_with("/v1/branch/") => {
             ok_json(branch::edit_route(p.strip_prefix("/v1/branch/").unwrap_or_default(), params, ctx))
         }

@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "answered",
+  "description": "A group's answer to another group's release, written in your copy and signed, with where; or why not.",
+  "type": "object",
+  "properties": {
+    "ok": {
+      "type": "boolean"
+    },
+    "path": {
+      "type": "string",
+      "description": "The answer's path inside the copy: integration/<group>-<version>/<group>-<version>.<answering>.answer."
+    },
+    "message": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "ok"
+  ]
+}

@@ -76,6 +76,7 @@
 //!   sign what, and what stands between the folder and its seal, as the
 //!   page's seal rules (`web/js/gseal.js`) have them.
 
+pub mod answer;
 pub mod breakdown;
 pub mod chain;
 pub mod checks;

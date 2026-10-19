@@ -124,6 +124,7 @@ async function draw(keep) {
         esc(t.signed.says) + '.',
       ], 'reference') + frame(t) +
     view() +
+    (t.yours ? answerForm() : '') +
     '<div class="sy-grid"><nav class="sy-tree" aria-label="the branch">' + tree(t) + '</nav>' +
     '<section class="sy-block">' + block(t) + '</section></div>' +
     (group === 'systems' ? '<section class="sy-release" id="sy-release"><p class="sh-loading">reading the integration checks…</p></section>' : '');
@@ -243,6 +244,16 @@ function stale() {
       (W.stale === 'systems' ? 'The systems\' file changed in your copy since. ' : 'Its group file changed in your copy since. ') +
       '<button class="ctl" id="sy-reopen">Open it again</button></div></div>'
     : '';
+}
+
+/** A release that moves this branch's values, answered by its owner (W7):
+ *  fine, or object, because…, signed, written in the copy. */
+function answerForm() {
+  return '<details class="sy-answer"><summary>answer a release that moves ' + esc(W.group) + '\'s values</summary>' +
+    '<p><input id="sy-an-group" size="14" placeholder="its group"> <input id="sy-an-version" size="6" placeholder="version"> ' +
+    '<select id="sy-an-said" class="ctl"><option value="fine">fine</option><option value="object">object, because…</option></select></p>' +
+    '<p><textarea id="sy-an-because" rows="2" class="nw-wide" placeholder="why, for an objection"></textarea></p>' +
+    '<p><button class="ctl" id="sy-answer">Answer</button></p></details>';
 }
 
 /** The branch as a tree: each block under its parent; a block whose parent the
@@ -440,6 +451,14 @@ async function click(e) {
       const r = await get('/v1/branch/view?group=' + encodeURIComponent(group));
       if (group !== W.group) return;
       W.view = r;
+      return draw(true);
+    }
+    case 'sy-answer': {
+      const r = await W.post('/v1/answer', {
+        group: v('sy-an-group').trim(), version: v('sy-an-version').trim(), answering: W.group,
+        said: v('sy-an-said'), because: v('sy-an-because'),
+      });
+      W.notice = { ok: !!(r && r.ok), text: (r && r.message) || 'nothing was answered' };
       return draw(true);
     }
     case 'sy-add': return send('add', { parent: b, id: v('sy-add-id').trim(), question: v('sy-add-q') });

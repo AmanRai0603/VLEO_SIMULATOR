@@ -107,6 +107,7 @@ impl Kind {
             Kind::PreviewAnswer => &[
                 ("group_id", Name),
                 ("version", Release),
+                ("answers", Digest),
                 ("answering_group", Name),
                 ("writer", Name),
             ],
