@@ -239,6 +239,10 @@ Handed over Sunday 18 October (S1 to S4: F1 to F3-f, the key's proof, F3-g1, the
   - **The chain never opens a group's file through a link** (`me::registries`).
   - **The small drive** (`examples/a_small_drive.rs`) gains Test Pia (key seed 68), assigned solar's `sw_activity_band`, a node whose checks hold. A scenario that counts solar's people or nodes must allow for her.
   - **Today's view shows a node put back only once its group seals it (F5)**: today's design reads releases, not loose node files.
+- **What 216 decides:**
+  - **`today::impact` compares answers by their bits** (question 44): B's view of a branch (200) now lists a move of one bit.
+  - **A preview is at `integration/<g>-<v>/preview-<g>-<v>-on-<design>.vleo`** (question 53), and put-back takes one only into a drive whose `integration/` exists, as B's answers do.
+  - **The small drive's `--released`** adds Test Uma (seed 67), owning `l3_x_envorbit`, and design 2026.10.1 holding solar 1.1. Without the flag the drive is unchanged.
 - **What 178 and 179 decide:**
   - **The copy's lock is the library's** (`vleo_files::save::lock`). Anything that writes the copy takes it, and holds it from its first read to its rename.
   - **A node file is one block,** kept as `groups/<group_id>/nodes/<block id>.vnode`. A save or a signing refuses any other.
@@ -258,10 +262,10 @@ Handed over Sunday 18 October (S1 to S4: F1 to F3-f, the key's proof, F3-g1, the
 - **Lockfiles:** `crates/vleo-py` keeps its own, built `--locked` in CI, and so does `crates/vleo-kernel-wasm` until 177 removes it. A new dependency of `vleo-files` or `vleo-server` needs them refreshed, as 171 does.
 - **Disk:** the container's allowance filled on S1 and again on S2. `xtask files-wasm` and the scenarios leave a `target/` of 10 GB or more inside the worktree they run in; delete it after a push. Old worktrees' `target/` folders and `target/*/incremental` were deleted to make room.
 - **Next for A, in order:**
-  - **F6-c2** (previews and their answers: high risk, needs B's fixes to 200 and 202) and **F6-c3b** (the decision on an objection and the release's refusals: needs c2 and B's 204).
-  - **F8-a is built:** a1 is 213, a2 212, a3 215 (on question 58 as proposed) and a4 214. Next, F8's remaining stages after Aman's answers, and F6-c2 and c3b once B's fixes land.
+  - **F6-c2 is 216** (previews and their answers, high risk, on questions 42 to 46, 53 and 56 as proposed), stacked on 208 with 207, B's 200 and 202 merged in; its Opus review is running. Then **F6-c3b** (the decision on an objection and the release's refusals: needs c2 and B's 204).
+  - **F8-a is built:** a1 is 213, a2 212, a3 215 (on question 58 as proposed) and a4 214. Next, F8's remaining stages after Aman's answers.
   - **Merge B's fixes** into 207 as they land; B's fixes to 193 and 196 are in.
-  - **For Aman:** the brief's questions 9 (one node shape, F3-g0) and 10 (ports), 7 and 8 (where today's page's Rows, Architecture, Forms and manual go), 11 to 19 (F3-g2), 20 to 32 (F6-a), 33 to 41 (F6-b), 51 (209), 55 (210), 57, the split of c3 (211), 58 to 71 (F8-a), 70 as 213 answers it, and 58 as 215 builds on it.
+  - **For Aman:** the brief's questions 9 (one node shape, F3-g0) and 10 (ports), 7 and 8 (where today's page's Rows, Architecture, Forms and manual go), 11 to 19 (F3-g2), 20 to 32 (F6-a), 33 to 41 (F6-b), 42 to 46, 53 and 56 (216), 51 (209), 55 (210), 57, the split of c3 (211), 58 to 71 (F8-a), 70 as 213 answers it, and 58 as 215 builds on it.
   - **F8 and F9** after F6. **For B, now:** F5, on the critical path of F6, F7 and F9; what it needs (F1's owner, F3's signed nodes, F4's tree) is in 175, 179 and 187.
 
 ## Person B · night
