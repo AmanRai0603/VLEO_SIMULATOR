@@ -354,7 +354,8 @@ function yourFile(id, f) {
           esc(plural(errors.length, 'error')) + ': the program will refuse, and say each"' : '') + '>Sign revision ' +
           esc(f.revision) + '</button></p>' +
         '<h4>ask</h4><p><label>for <select id="nw-ask-kind" class="ctl">' +
-          [['contract', 'a contract change'], ['breakdown', 'a breakdown']].map(([v, l]) =>
+          [['contract', 'a contract change'], ['breakdown', 'a breakdown'],
+            ['code', 'something the code cannot do yet, for the developer']].map(([v, l]) =>
             '<option value="' + v + '"' + (W.asking && W.asking.kind === v ? ' selected' : '') + '>' + l + '</option>').join('') +
           '</select></label></p>' +
         '<p><textarea id="nw-ask-body" rows="3" class="nw-wide" placeholder="what you ask for, and why">' +

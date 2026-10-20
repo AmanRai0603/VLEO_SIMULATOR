@@ -2127,7 +2127,7 @@ what = "The engine's identity: the contract version it speaks, kernel, graph, ro
 [[route]]
 method = "GET"
 path = "/v1/my-work"
-what = "What needs the person whose key is open, now: a node of theirs unsigned, a group of theirs with nothing sealed, a file below them the chain refuses. And nodes: every node file that is theirs to write, or theirs as a deputy, in a file of the chain that counts their key, signed or not, which the Node workspace opens."
+what = "What needs the person whose key is open, now: a node of theirs unsigned, a group of theirs with nothing sealed, a file below them the chain refuses, and each request of the code they asked (W14), open, answered by the application's release notes, or not counting and why. And nodes: every node file that is theirs to write, or theirs as a deputy, in a file of the chain that counts their key, signed or not, which the Node workspace opens."
 
 [[route]]
 method = "GET"
@@ -2237,7 +2237,7 @@ what = "A node signed as the day's work, with whoever's key is open, at this mom
 [[route]]
 method = "POST"
 path = "/v1/node/<id>/ask"
-what = "A request written in the node's file, for a contract change (kind contract) or a breakdown (kind breakdown), saying body, signed by whoever's key is open, at this moment: opened, the digest of the file as it was opened. Refused unless the key is the one its group file registers for them and they are assigned the node, or are the deputy of whoever is, and refused when it says nothing. The node is not touched, its revision and signatures are as they were, so a node that cannot be signed yet still asks. Refused too for an archived node, a mount, and a file whose two revisions disagree. Written in the working copy as a save is. It goes back to the drive by itself while the node is the drive's revision, or with a later revision once that is signed; the group's subsystem engineer, or their deputy, finds it in My work once they copy the drive again. A file changed since it was opened is not written. Carries session."
+what = "A request written in the node's file, for a contract change (kind contract), a breakdown (kind breakdown), or something the code cannot do yet, for the developer (kind code, W14), saying body, signed by whoever's key is open, at this moment: opened, the digest of the file as it was opened. Refused unless the key is the one its group file registers for them and they are assigned the node, or are the deputy of whoever is, and refused when it says nothing. The node is not touched, its revision and signatures are as they were, so a node that cannot be signed yet still asks. Refused too for an archived node, a mount, and a file whose two revisions disagree. Written in the working copy as a save is. It goes back to the drive by itself while the node is the drive's revision, or with a later revision once that is signed; the group's subsystem engineer, or their deputy, finds it in My work once they copy the drive again. A file changed since it was opened is not written. Carries session."
 
 [[route]]
 method = "GET"
@@ -2273,6 +2273,11 @@ what = "The integration checks of today's design (W8): for each group, a line fo
 method = "POST"
 path = "/v1/design/release"
 what = "The design released in your copy, as whoever's key is open: version, after the design released now; changed, what changed; understood, every red mark marked understood by its id, comma between. Refused whole, by name, when any integration line fails, a red mark is neither raised nor understood, or one named is not today's design's; for anyone but the system engineer or their deputy, a version that is not one or does not follow the design released now (the next in its month, or the first of a later one), nothing said of what changed, a copy of another drive, and a copy holding a released design not put back yet. Written in the copy under its lock: design/design-<version>.vleo, new and never over, holding each group's release and the programme's and the systems' files whole, signed and checked through the chain; design/NOTES.md, newest first; and readable/. Put back, it reaches the drive. Carries session."
+
+[[route]]
+method = "GET"
+path = "/v1/requests"
+what = "Every request of the code (W14) in the database the program reads: by group and node, its uid, who asked and when, what it says, whether it counts (held to the one rule of a request, through the chain, and open: nobody writes its status) and why not, and whether the application's release notes, apps/NOTES.md, name its uid whole, which is how the developer answers one. A node file that does not read, or is not one node's one file, is said, never passed over; so is a folder that cannot be listed. It reads the working copy when there is one, and names the database it read. A design released writes the drive's list, at that moment, as readable/Requests.csv, each row naming the design."
 
 [[route]]
 method = "POST"

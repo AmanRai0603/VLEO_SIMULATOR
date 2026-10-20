@@ -513,6 +513,11 @@ fn released(params: &str, ctx: &Ctx) -> Result<String, String> {
         .map(|(n, csv)| (n.to_string(), csv))
         .collect::<Vec<_>>();
     readable.push(("Health.csv".to_string(), health_csv(ctx, &version)));
+    let (codes, unread) = code_requests::of_the_code(&t.drive, &c);
+    readable.push((
+        "Requests.csv".to_string(),
+        code_requests::csv(&codes, &unread, &version),
+    ));
     std::fs::create_dir_all(copy.join("readable"))
         .map_err(|e| undo(io(&copy.join("readable"), e)))?;
     let mut files = vec![name.clone(), "design/NOTES.md".to_string()];

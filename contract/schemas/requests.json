@@ -1,0 +1,74 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "requests",
+  "description": "Every request of the code (W14) in the database the program reads, each counting or not, and answered or open; or why there are none.",
+  "type": "object",
+  "properties": {
+    "ok": {
+      "type": "boolean"
+    },
+    "database": {
+      "type": "string",
+      "description": "The database it read: the working copy when there is one, else the drive."
+    },
+    "requests": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "group": {
+            "type": "string"
+          },
+          "node": {
+            "type": "string"
+          },
+          "uid": {
+            "type": "string"
+          },
+          "asked_by": {
+            "type": "string"
+          },
+          "at": {
+            "type": "string"
+          },
+          "says": {
+            "type": "string"
+          },
+          "counts": {
+            "type": "boolean"
+          },
+          "why_not": {
+            "type": "string"
+          },
+          "answered": {
+            "type": "boolean",
+            "description": "Whether apps/NOTES.md names it."
+          }
+        },
+        "required": [
+          "group",
+          "node",
+          "uid",
+          "asked_by",
+          "at",
+          "says",
+          "counts",
+          "why_not",
+          "answered"
+        ]
+      }
+    },
+    "not_read": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "message": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "ok"
+  ]
+}

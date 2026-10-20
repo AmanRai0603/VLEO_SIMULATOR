@@ -6,8 +6,8 @@
 //! copy.rs`): Test Nia assigned solar's `sw_activity_band`, Test Dee her
 //! deputy, Test Ivo assigned nothing, Test Ola solar's subsystem engineer.
 //! Through the routes: Ivo is refused by name; Nia's node fails a case, so she
-//! cannot sign it, and she asks all the same; a request of the code, or one
-//! that says nothing, is refused; asking from what she opened before is
+//! cannot sign it, and she asks all the same; a request of no kind a node's
+//! file holds, or one that says nothing, is refused; asking from what she opened before is
 //! stopped. Ola's My work then holds the request, and a request written in the
 //! copy by hand, signed by nobody, is said as refused. Refused without the
 //! launch's word and without a key.
@@ -451,7 +451,7 @@ fn a_node_engineer_asks_in_the_node_s_file_and_its_subsystem_engineer_sees_it() 
     assert!(r.contains("its checks refuse it"), "{r}");
     let first = opened(port);
     for (kind, body, says) in [
-        ("code", words, "a request of the code is made in My work"),
+        ("wish", words, "is none of them"),
         ("contract", "  ", "says nothing"),
     ] {
         let r = asking(port, &first, kind, body);
