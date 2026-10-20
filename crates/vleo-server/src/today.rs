@@ -619,6 +619,128 @@ pub fn build(base: Arc<dyn Files>, root: &Path, drive: &Path) -> Result<Today, S
     })
 }
 
+/// The design `base` holds with exactly the releases the released design
+/// `design` holds taken into it, each as its bytes (F6-c; docs/briefs/F6.md,
+/// item 2): the released design as the engine reads it. It is read back
+/// first through the chain `drive` holds now (`design::open_held`), which
+/// holds each file to what the design says; a drive with no chain open
+/// builds none. Each release, in its group's order as a build takes them, is
+/// opened from a file of its own (`of_bytes`) and taken by the checks a
+/// build makes; one that does not pass is refused by name, and nothing is
+/// taken in its place.
+pub fn build_held(
+    base: Arc<dyn Files>,
+    root: &Path,
+    drive: &Path,
+    design: &vleo_files::model::File,
+) -> Result<Today, String> {
+    let chain = chain_of(drive);
+    let programme = match &chain {
+        Chain::Open { programme, .. } => programme,
+        Chain::Absent(why) | Chain::Broken(why) => {
+            return Err(format!(
+                "a released design is built only through the chain: {why}"
+            ))
+        }
+    };
+    let held = vleo_files::design::open_held(
+        design,
+        programme,
+        concat!("vleo ", env!("CARGO_PKG_VERSION")),
+    )
+    .map_err(|e| e.message().to_string())?;
+    let mut releases: Vec<&vleo_files::design::HeldRelease> = held.releases.iter().collect();
+    releases.sort_by(|a, b| a.group.cmp(&b.group));
+    let mut taken: BTreeMap<PathBuf, Vec<u8>> = BTreeMap::new();
+    let mut gone: BTreeSet<PathBuf> = BTreeSet::new();
+    let mut groups = Vec::new();
+    for r in releases {
+        let id = r.group.as_str();
+        let refused = |why: String| {
+            format!(
+                "design {} holds {id} {}, which is not taken: {why}",
+                held.version, r.version
+            )
+        };
+        let (said, (edits, changes, notes, how, removed)) = of_bytes(&r.back.bytes, |at| {
+            let found = Found::open(at)?;
+            let edits = match &found {
+                Found::Before1_0(rel) => take(&base, &taken, &gone, root, id, at, rel, &chain),
+                Found::OneSchema(f) => take_one(&base, &taken, &gone, root, id, f, &chain, drive),
+            }?;
+            Ok((found.said(), edits))
+        })
+        .map_err(refused)?;
+        // Who sealed it and when are its seal's, as a build takes them.
+        let (version, sealed, sealed_by, fingerprint) = match &how.seal {
+            Some((by, at, fp)) => (said.0, at.clone(), by.clone(), fp.clone()),
+            None => said,
+        };
+        if version != r.version || fingerprint != r.fingerprint {
+            return Err(refused(format!(
+                "its bytes say they are {id} {version}, not the release the design names"
+            )));
+        }
+        for p in &edits {
+            gone.remove(p.0);
+        }
+        taken.extend(edits);
+        for p in removed {
+            taken.remove(&p);
+            gone.insert(p);
+        }
+        groups.push(Group {
+            id: id.to_string(),
+            taken: Some(Taken {
+                version,
+                sealed,
+                sealed_by,
+                fingerprint,
+                changes,
+                notes,
+                anchor: match &chain {
+                    Chain::Open { anchor, .. } => Some(anchor.clone()),
+                    _ => None,
+                },
+                chain: how.said,
+                based_on: how.based_on,
+                base_version: how.base_version,
+                path: drive.join(&r.back.path),
+            }),
+            refused: Vec::new(),
+        });
+    }
+    let written = digest(root, &taken, &gone)?;
+    let files: Arc<dyn Files> = Arc::new(Overlay {
+        base,
+        replaced: taken,
+        removed: gone,
+    });
+    vleo_sheet::load::load_all_from(&*files, root)
+        .map_err(|e| format!("design {} does not load: {e}", held.version))?;
+    Ok(Today {
+        files,
+        groups,
+        ignored: Vec::new(),
+        written,
+        // What it is based on is what the systems' file it holds names.
+        base: Base {
+            based_on: held
+                .systems
+                .file
+                .meta
+                .get("based_on")
+                .cloned()
+                .unwrap_or_default(),
+            base_version: held.systems.file.base_version(),
+            said: format!(
+                "the released design {}, as it holds its releases",
+                held.version
+            ),
+        },
+    })
+}
+
 /// A release today's design took, read again from `path` on `drive` as the
 /// group `id`'s and checked through the chain as a build checks it, for a
 /// released design to hold (F6-b): its bytes, the release they read as in

@@ -28,6 +28,11 @@
 //! engineer, or their deputy, and held to `chain::check_design` as it will be
 //! read.
 //!
+//! **A released design read back** ([`open_held`], [`released_in`], F6-c):
+//! opened through the chain, every file it holds held to its SHA-256 and to
+//! its row of `released.csv`, each opening as the release that row names.
+//! What relies on a released design reads it so.
+//!
 //! Nothing is computed here: every number is a release's own, and what a
 //! closure does with it is the engine's.
 //!
@@ -679,7 +684,7 @@ pub fn readable(design: &File, releases: &[(&str, &File)]) -> Vec<(&'static str,
 /// The latest released design in `dir`, the drive's or the copy's `design/`,
 /// by the version each `design-<version>.vleo` is named for; none when it
 /// holds none. Each counts only when it is the released design it is named
-/// for and opens through `programme`'s chain (`chain::check_design`): a file
+/// for and reads back through `programme`'s chain ([`open_held`]): a file
 /// planted under a design's name is refused by name, never taken for one,
 /// and never passed over.
 #[cfg(not(target_arch = "wasm32"))]
@@ -712,7 +717,7 @@ pub fn latest_in(dir: &std::path::Path, programme: &Registry) -> Result<Option<S
                 f.meta.get("version").map_or("", String::as_str)
             )));
         }
-        chain::check_design(&f, programme).map_err(|x| {
+        open_held(&f, programme, concat!("vleo ", env!("CARGO_PKG_VERSION"))).map_err(|x| {
             refused(format!(
                 "design/{name} is not a released design that opens through the chain: {}",
                 x.message()
@@ -723,4 +728,318 @@ pub fn latest_in(dir: &std::path::Path, programme: &Registry) -> Result<Option<S
         }
     }
     Ok(latest.map(|(_, v)| v))
+}
+
+/// A file a released design holds, read back: where the drive keeps it, its
+/// bytes, and the file they read as in the one schema.
+#[derive(Clone, Debug)]
+pub struct Back {
+    pub path: String,
+    pub bytes: Vec<u8>,
+    pub file: File,
+}
+
+/// A group's release a released design holds, read back.
+#[derive(Clone, Debug)]
+pub struct HeldRelease {
+    pub group: String,
+    pub version: String,
+    pub fingerprint: String,
+    pub back: Back,
+}
+
+/// A released design read back (F6-c, `open_held`): the design, and each
+/// file it holds, every one checked.
+#[derive(Clone, Debug)]
+pub struct Opened {
+    pub design: File,
+    pub version: String,
+    pub releases: Vec<HeldRelease>,
+    pub programme: Back,
+    pub systems: Back,
+}
+
+/// `group`'s, in words: the programme's, the systems', `l3_solar`'s.
+#[cfg(not(target_arch = "wasm32"))]
+fn whose(group: &str) -> String {
+    match group {
+        "programme" => "the programme's".into(),
+        "systems" => "the systems'".into(),
+        g => format!("{g}'s"),
+    }
+}
+
+/// The paths a released design holds the programme's and the systems' files
+/// at.
+pub const PROGRAMME_AT: &str = "groups/programme/programme.vgroup";
+pub const SYSTEMS_AT: &str = "groups/systems/systems.vgroup";
+
+/// What `bytes` read as in the one schema, a release from before 1.0
+/// upgraded as it is read (`sqlite::open`), through a file of its own in the
+/// system's temporary folder, gone once read.
+#[cfg(not(target_arch = "wasm32"))]
+fn read_bytes(bytes: &[u8], how: &crate::upgrade::Upgrade) -> Result<File, Error> {
+    use std::io::Write as _;
+    static NEXT: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+    let nanos = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map_or(0, |d| d.as_nanos());
+    let at = std::env::temp_dir().join(format!(
+        "vleo-held-{}-{nanos}-{}.vleo",
+        std::process::id(),
+        NEXT.fetch_add(1, std::sync::atomic::Ordering::Relaxed)
+    ));
+    let io = |e: std::io::Error| Error::new(ErrorKind::Io, format!("{}: {e}", at.display()));
+    let mut out = std::fs::OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .open(&at)
+        .map_err(io)?;
+    let wrote = out.write_all(bytes).map_err(io);
+    drop(out);
+    let read = wrote.and_then(|()| crate::sqlite::open(&at, how).map(|o| o.file));
+    let _ = std::fs::remove_file(&at);
+    read
+}
+
+/// The released design `f` read back, as it is read wherever one is relied
+/// on (F6-c; docs/briefs/F6.md, item 1): it opens through `programme`'s
+/// chain (`chain::check_design`), and every file it holds is the one it
+/// says: its bytes give the SHA-256 kept beside them, each release is a row
+/// of `released.csv` and each row a file held, once, and each opens as the
+/// group's release, version and fingerprint its row names; the programme's
+/// and the systems' files are held, and are those files. Anything else is
+/// refused by name, never passed over.
+#[cfg(not(target_arch = "wasm32"))]
+pub fn open_held(f: &File, programme: &Registry, app: &str) -> Result<Opened, Error> {
+    let version = f.meta.get("version").cloned().unwrap_or_default();
+    let named = |what: String| refused(format!("design {version} {what}"));
+    chain::check_design(f, programme)?;
+    let at = f
+        .signatures
+        .iter()
+        .find(|s| s.scope == FILE)
+        .map_or(String::new(), |s| s.signed_at.clone());
+    let how = crate::upgrade::Upgrade { app, at: &at };
+    let mut seen: Vec<&str> = Vec::new();
+    for m in &f.media {
+        if m.scope != FILE {
+            return Err(named(format!(
+                "holds {} for {:?}: a released design holds its files whole, for itself",
+                m.path, m.scope
+            )));
+        }
+        if seen.contains(&m.path.as_str()) {
+            return Err(named(format!("holds {} twice", m.path)));
+        }
+        seen.push(&m.path);
+        if hex(&sha256(&m.bytes)) != m.sha256 {
+            return Err(named(format!(
+                "holds {} whose bytes are not the ones it was released with: their SHA-256 differs",
+                m.path
+            )));
+        }
+    }
+    let media = |path: &str| f.media.iter().find(|m| m.path == path);
+    let back = |path: &str, group: &str| -> Result<Back, Error> {
+        let m = media(path).ok_or_else(|| named(format!("does not hold {path}")))?;
+        let file = read_bytes(&m.bytes, &how).map_err(|e| {
+            named(format!(
+                "holds {path}, which does not read: {}",
+                e.message()
+            ))
+        })?;
+        if file.meta.get("group_id").map(String::as_str) != Some(group) {
+            return Err(named(format!(
+                "holds {path}, which is not {} file: it says it is {:?}'s",
+                whose(group),
+                file.meta.get("group_id").map_or("", String::as_str)
+            )));
+        }
+        Ok(Back {
+            path: path.to_string(),
+            bytes: m.bytes.clone(),
+            file,
+        })
+    };
+    let programme_back = back(PROGRAMME_AT, "programme")?;
+    let systems_back = back(SYSTEMS_AT, "systems")?;
+    for b in [&programme_back, &systems_back] {
+        if b.file.kind().ok() != Some(Kind::Group) {
+            return Err(named(format!(
+                "holds {}, which is not a group's file",
+                b.path
+            )));
+        }
+    }
+    let table = f
+        .tables
+        .iter()
+        .find(|t| t.scope == FILE && t.path == "released.csv")
+        .ok_or_else(|| named("has no released.csv: what it holds is not said".into()))?;
+    let csv = crate::csv::read(&table.csv);
+    if !csv.problems.is_empty() {
+        return Err(named(format!(
+            "says what it holds in a released.csv that does not read: {}",
+            csv.problems
+                .iter()
+                .map(|(l, p)| format!("line {l}: {p}"))
+                .collect::<Vec<_>>()
+                .join("; ")
+        )));
+    }
+    let col = |name: &str| csv.head.iter().position(|h| h == name);
+    let (Some(g), Some(v), Some(fp), Some(p), Some(sha)) = (
+        col("group"),
+        col("version"),
+        col("fingerprint"),
+        col("path"),
+        col("sha256"),
+    ) else {
+        return Err(named(
+            "says what it holds in a released.csv without its columns: group, version, fingerprint, path, sha256".into(),
+        ));
+    };
+    let mut releases: Vec<HeldRelease> = Vec::new();
+    for row in &csv.rows {
+        let (group, rv, fingerprint, path) = (&row[g], &row[v], &row[fp], &row[p]);
+        if releases.iter().any(|r| &r.group == group) {
+            return Err(named(format!("holds two releases of {group}")));
+        }
+        if path == PROGRAMME_AT || path == SYSTEMS_AT {
+            return Err(named(format!(
+                "names {path} as a group's release: it is the {} file",
+                if path == PROGRAMME_AT {
+                    "programme's"
+                } else {
+                    "systems'"
+                }
+            )));
+        }
+        let in_releases = path
+            .strip_prefix(&format!("groups/{group}/releases/"))
+            .is_some_and(|n| {
+                n.len() > ".vleo".len()
+                    && n.ends_with(".vleo")
+                    && !n.contains(['/', '\\'])
+                    && !n.starts_with('.')
+            });
+        if !crate::breakdown::valid_id(group) || !in_releases {
+            return Err(named(format!(
+                "names {path:?} as {group}'s release: a group's release is held where the drive keeps it, groups/{group}/releases/<name>.vleo"
+            )));
+        }
+        let held = back(path, group)?;
+        if media(path).map(|m| m.sha256.as_str()) != Some(row[sha].as_str()) {
+            return Err(named(format!(
+                "holds {path} whose SHA-256 is not the one released.csv names"
+            )));
+        }
+        let said = |k: &str| held.file.meta.get(k).map_or("", String::as_str);
+        if held.file.kind().ok() != Some(Kind::GroupRelease) {
+            return Err(named(format!(
+                "holds {path}, which is not a group's release"
+            )));
+        }
+        if fingerprint.is_empty() {
+            return Err(named(format!("holds {path}, which says no fingerprint")));
+        }
+        if said("version") != rv || said("fingerprint") != fingerprint {
+            return Err(named(format!(
+                "holds {path} as {group} {rv}, and it is {group} {} with another fingerprint",
+                said("version")
+            )));
+        }
+        // The fingerprint is not covered by the seal, so it is worked out
+        // again: a release of the one schema gives its own digest; one from
+        // before 1.0 was held to its folder's when it was upgraded, which
+        // happens only when it says one.
+        let before_1_0 = said("upgraded_from") == crate::upgrade::FROM_FORMAT_1;
+        if !before_1_0 && chain::digest(&held.file, FILE)? != *fingerprint {
+            return Err(named(format!(
+                "holds {path}, whose fingerprint is not its content's: it is not the release that was sealed"
+            )));
+        }
+        releases.push(HeldRelease {
+            group: group.clone(),
+            version: rv.clone(),
+            fingerprint: fingerprint.clone(),
+            back: held,
+        });
+    }
+    if let Some(extra) = f.media.iter().find(|m| {
+        m.path != PROGRAMME_AT
+            && m.path != SYSTEMS_AT
+            && !releases.iter().any(|r| r.back.path == m.path)
+    }) {
+        return Err(named(format!(
+            "holds {}, which released.csv does not name",
+            extra.path
+        )));
+    }
+    Ok(Opened {
+        design: f.clone(),
+        version,
+        releases,
+        programme: programme_back,
+        systems: systems_back,
+    })
+}
+
+/// Every released design in `dirs` (the drive's `design/`, and its archive
+/// once there is one), each read back through `open_held`, oldest first: a
+/// file under a design's name that does not is refused by name.
+#[cfg(not(target_arch = "wasm32"))]
+pub fn released_in(
+    dirs: &[&std::path::Path],
+    programme: &Registry,
+    app: &str,
+) -> Result<Vec<Opened>, Error> {
+    let mut out: Vec<(DesignVersion, Opened)> = Vec::new();
+    for dir in dirs {
+        let entries = match std::fs::read_dir(dir) {
+            Ok(d) => d,
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => continue,
+            Err(e) => return Err(Error::new(ErrorKind::Io, format!("{}: {e}", dir.display()))),
+        };
+        let mut names: Vec<String> = Vec::new();
+        for e in entries {
+            let e = e.map_err(|e| Error::new(ErrorKind::Io, format!("{}: {e}", dir.display())))?;
+            names.push(e.file_name().to_string_lossy().into_owned());
+        }
+        names.sort();
+        for name in names {
+            let Some(v) = name
+                .strip_prefix("design-")
+                .and_then(|n| n.strip_suffix(".vleo"))
+            else {
+                continue;
+            };
+            let parsed = DesignVersion::parse(v).ok_or_else(|| {
+                refused(format!(
+                    "{}/{name} is not named for a design's version: year.month.sequence",
+                    dir.display()
+                ))
+            })?;
+            if out.iter().any(|(p, _)| *p == parsed) {
+                return Err(refused(format!(
+                    "design {v} is held twice, the second in {}",
+                    dir.display()
+                )));
+            }
+            let f = crate::sqlite::read(&dir.join(&name))
+                .map_err(|x| refused(format!("{name} does not read: {}", x.message())))?;
+            if f.meta.get("version").map(String::as_str) != Some(v) {
+                return Err(refused(format!(
+                    "{name} is not design {v}: it says it is {:?}",
+                    f.meta.get("version").map_or("", String::as_str)
+                )));
+            }
+            let opened = open_held(&f, programme, app)
+                .map_err(|x| refused(format!("{}/{name}: {}", dir.display(), x.message())))?;
+            out.push((parsed, opened));
+        }
+    }
+    out.sort_by(|a, b| a.0.cmp(&b.0));
+    Ok(out.into_iter().map(|(_, o)| o).collect())
 }

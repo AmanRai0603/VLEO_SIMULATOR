@@ -904,6 +904,14 @@ fn design_verdict(
             e.message()
         )
     })?;
+    // And every file it holds is the one it says (F6-c): a released design
+    // goes back only as it will be read.
+    crate::design::open_held(
+        &now,
+        &chain.programme,
+        concat!("vleo ", env!("CARGO_PKG_VERSION")),
+    )
+    .map_err(|e| e.message().to_string())?;
     Ok(format!(
         "goes back: design {version}, released by {me}, a new released design"
     ))
