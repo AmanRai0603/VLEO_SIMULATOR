@@ -1148,21 +1148,22 @@ struct Fx {
     variable: String,
 }
 
-/// A unit as a reader writes it: the tree's machine name (`Day`) as its
-/// symbol (`d`), and a pure number as `1`.
+/// A unit as a reader writes it, read as the engine reads it
+/// (`vleo_sheet::method::unit_named`): the tree's machine name (`Day`) as its
+/// symbol (`d`), and a pure number as `1`. A unit the engine does not read is
+/// written as it is.
 fn unit_symbol(name: &str) -> String {
-    match vleo_units::Unit::from_name(name).map(|u| u.symbol()) {
-        Some("-") => "1".into(),
-        Some(sym) => sym.into(),
-        None => name.into(),
+    match vleo_sheet::method::unit_named(name).map(|u| u.symbol()) {
+        Ok("-") => "1".into(),
+        Ok(sym) => sym.into(),
+        Err(_) => name.into(),
     }
 }
 
-/// A value the tree holds in SI, in the unit a reader is shown (`Day` → days).
+/// A value the tree holds in SI, in the unit a reader is shown (`Day` → days):
+/// not a number in a unit the engine does not read, never SI labelled as it.
 fn shown(si: f64, unit: &str) -> f64 {
-    vleo_units::Unit::from_name(unit)
-        .map(|u| si / u.si_factor())
-        .unwrap_or(si)
+    vleo_sheet::method::unit_named(unit).map_or(f64::NAN, |u| si / u.si_factor())
 }
 
 fn with_unit(name: &str, unit: &str) -> String {
@@ -1220,6 +1221,20 @@ mod tests {
             .map(|v| v.as_str().unwrap().to_string())
             .collect();
         assert_eq!(listed, vleo_sheet::form::agent_identities(root));
+    }
+
+    /// A fixture's value is shown in its unit as the engine reads it, in
+    /// either spelling, and as no number in a unit the engine does not read:
+    /// never the SI value under a label it is not in.
+    #[test]
+    fn a_value_is_shown_in_its_unit_as_the_engine_reads_it_or_as_no_number() {
+        assert_eq!(shown(1500.0, "Kilometre"), 1.5);
+        assert_eq!(shown(1500.0, "km"), 1.5);
+        assert_eq!(unit_symbol("Kilometre"), "km");
+        assert_eq!(unit_symbol("km"), "km");
+        assert_eq!(unit_symbol(""), "1");
+        assert!(shown(1500.0, "furlong").is_nan());
+        assert_eq!(unit_symbol("furlong"), "furlong");
     }
 
     #[test]

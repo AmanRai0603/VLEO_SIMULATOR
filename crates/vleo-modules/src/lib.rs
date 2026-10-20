@@ -98,6 +98,10 @@ pub struct Graph {
     /// Each node's relation when the graph runs it itself, in place of its
     /// entry in `dispatch`, which then only refuses.
     pub run: &'static [Option<&'static Relation>],
+    /// Each node's unit that does not read, when one does not: why. Such a
+    /// row refuses by it however it is asked, called, estimated or given a
+    /// value, and is never read as a pure number (docs/briefs/F8.md, F8-a1).
+    pub unread: &'static [Option<&'static str>],
     pub cases: &'static [CaseDef],
     /// The headings of the tree the rows hang from.
     pub groups: &'static [GroupDef],
@@ -151,6 +155,7 @@ pub static EMPTY: Graph = Graph {
     vars: &[],
     dispatch: &[],
     run: &[],
+    unread: &[],
     cases: &[],
     groups: &[],
     relations: &[],
@@ -219,6 +224,7 @@ impl Graph {
     /// answer, both by the engine itself; any other row runs its relation —
     /// the graph's own when it has one, else its refusal.
     pub fn call(&self, i: usize, inputs: &[f64], outputs: &mut [f64]) -> Result<(), Fault> {
+        self.unit_read(i)?;
         let def = &self.nodes[i];
         match def.behaviour {
             Behaviour::Open => Err(Fault::NotRun { node: def.id }),
@@ -273,9 +279,21 @@ impl Graph {
     /// Node `i`'s own relation, whatever its behaviour: for a row answered by
     /// its children, the estimate it kept from before it was broken down.
     pub fn estimate(&self, i: usize, inputs: &[f64], outputs: &mut [f64]) -> Result<(), Fault> {
+        self.unit_read(i)?;
         match self.run.get(i) {
             Some(Some(r)) => r(inputs, outputs),
             _ => (self.dispatch[i])(inputs, outputs),
+        }
+    }
+
+    /// Node `i`'s refusal when one of its units does not read ([`Graph::unread`]).
+    fn unit_read(&self, i: usize) -> Result<(), Fault> {
+        match self.unread.get(i) {
+            Some(Some(reason)) => Err(Fault::Refused {
+                node: self.nodes[i].id,
+                reason,
+            }),
+            _ => Ok(()),
         }
     }
 
@@ -1038,6 +1056,9 @@ fn supply_checked(
 ) -> Result<(), Fault> {
     let var = &graph.vars[v as usize];
     let def = &graph.nodes[var.producer as usize];
+    // A value of a row whose unit does not read is never checked against a
+    // range read as a pure number's, nor taken.
+    graph.unit_read(var.producer as usize)?;
     // NaN passes both range comparisons below, so it is refused first.
     if !value.is_finite() {
         return Err(Fault::Refused {
