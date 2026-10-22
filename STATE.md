@@ -280,18 +280,27 @@ Handed over Sunday 18 October (S1 to S4: F1 to F3-f, the key's proof, F3-g1, the
 
 ## Person B · night
 
-Handed over Wednesday 14 October, 23:20 IST. Nothing is merged: each PR waits on Aman. CI is green where finished.
+Handed over Monday 19 October (S4: F5, after A's reviews of every PR). Nothing is merged: each waits on A's re-review and Aman. Every push was green on `gate`, `clippy -D warnings` and the full `cargo test --no-fail-fast`; CI is green on every head. Each new check was shown red with its guard broken.
 
-- **Merge order:** 165 before 166; 168 and 169 before 170. PRs 163, 168 and 169 each add 3 lines to the route table in `vleo-server/src/lib.rs`; the second to merge fixes a small conflict.
-- **Open:**
-  - 163 Explore (F2 without keys): routes for today, health, trace and compare, and the Explore tab. A's F2 is now the chain check on screen, then results.
-  - 164 setup (CLAUDE.md, this file, agents, deny rules) · 165 `xtask test-drive` · 166 `tools/scenarios.py` and its CI job, green on its first CI run.
-  - 167 `name@version` reserved · 168 `/v1/parts/<id>`, six parts as the gate says · 170 the node page shows them, with the button.
-  - **169 run my code again: high risk.** It runs code from a design file. Aman decides whether F1 limits it to your own nodes, or asks first.
-- **For A's F1 to decide:**
-  - Group ownership: `chain::owner_of` reads the programme's mounts, but `design/` mounts groups in the systems' file.
-  - `chain::open_group` admits only a subsystem engineer, so the systems' file cannot open.
-- **F3 moved to A, after F1:** signing a node through the chain (needs an Opus review); saving a revision in place, refused if the file moved (needs identity and the drive copy). Both should start from the six parts (168) and the test drive (165).
-- **Proving F1 and F2:** add a scenario to `SCENARIOS` in `tools/scenarios.py`. `world.person(name)` starts one program; `world.release(name)` puts a sealed release on the drive.
-- **Blocked on Aman:** merging PR 162 and the reviews above.
-- **Next for B:** no build work planned while B's seat is over budget; B answers review comments on 163–170 if asked.
+- **Every review of A's is answered**, with a reply on its PR: 193, 194, 196 (and its fingerprint addendum from 208), 197, 198, 199, 200, 201, 202, 203 (and the 207 finding), 204 (and its addendum), 205.
+- **Two F5 stacks, both on A's 187, fixes merged up:**
+  - **Release line:** 193 seal → 194 put back → 196 today takes it → 200 view and impact → 205 seal on screen; 202 answers (W7) on 194. **High risk:** 193, 194, 196, 202, 205.
+  - **Edit line:** 197 assign, wire → 198 issue → 199 sheet → 201 contract (W4) → 203 update base (W12) → 204 issues (W11).
+  - The two lines meet in `branch.rs`, the route table, `workspace_system.js`, `manual.toml` and `files.wasm.stamp`: small, additive. `xtask files-wasm` regenerates the stamp.
+- **Changed in A's code, for A to check:**
+  - `chain::checked_release` (193): an unassigned block is a heading, the seal's.
+  - `chain::check_answer` (202): now the whole rule — meta, no self-answer, no answer by the systems' branch or by one owner of both groups, signed by its writer, one thing said.
+  - `chain::check_design` (203) runs `check_meta`.
+  - `release::node_in` (200) keeps none of the design's texts but its `sheet`.
+- **Calls made, for A or Aman to confirm:**
+  - A contract re-issue (201) keeps the node engineer as writer, not the owner: put-back takes a node only from a writer who may sign it. Its change row says the owner re-issued it.
+  - The systems' branch no longer answers a release (202): the system engineer decides an objection.
+  - A group file based on a design without its `base_version` is refused, not counted on (203).
+  - A released design holding its groups' releases whole (207's format) is refused for update base until `design::open_held` lands (F6-c-1).
+- **Open, for A or Aman:** what a group publishes to other groups' wires (197, finding 4); 197's edits beside 195's `others_in` when 195 merges (finding 7).
+- **For Aman:** no node of `design/` can be signed as converted (A's question 9); group files do not go back to the drive yet.
+- **Not done, said on each PR:**
+  - Route tests that succeed: a seal (205), an answer (202), a base move (203) — each needs a fixture the test world lacks.
+  - Rollback failures (198, 201) are untested; readers in other groups are named, not made behind (201); a sheet is still quadratic (199); the view's graph cache is not keyed by today's base (200); an unknown issue number is not refused at the seal (204).
+  - F5-f2 (`GET /v1/issues`), once the lines merge; F5-g2, the page removal, after 192; the test drive (165) per 171 and 181.
+- **Next for B:** A's re-reviews; F5-f2; the 165 fix.
