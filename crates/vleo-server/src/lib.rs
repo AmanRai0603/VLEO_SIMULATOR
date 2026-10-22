@@ -289,12 +289,14 @@ fn open_tree(root: &Path) -> Result<Opened, String> {
     else {
         *CHANGED.write().unwrap_or_else(|e| e.into_inner()) = Vec::new();
         *BUILT_FROM.write().unwrap_or_else(|e| e.into_inner()) = None;
+        *BASE.write().unwrap_or_else(|e| e.into_inner()) = None;
         return Ok((files, design, Vec::new()));
     };
     // Today's design: every group's latest sealed release on the drive that
     // passes its checks, taken into the design (`today`). A drive that is not
     // one stops the tool, naming why; the design is never shown as today's
     // when it is not.
+    *BASE.write().unwrap_or_else(|e| e.into_inner()) = Some(files.clone());
     let t = today::build(files, root, &drive)
         .map_err(|e| format!("today's design is not built: {e}"))?;
     let mut said = vec![format!(
@@ -361,6 +363,15 @@ pub(crate) fn open_design(ctx: &Ctx) -> (String, String) {
                 .unwrap_or_default(),
         ),
     }
+}
+
+/// The design's own files under today's design, when the design open is
+/// today's: what a released design is built on (`today::build_held`).
+static BASE: std::sync::RwLock<Option<std::sync::Arc<dyn Files>>> = std::sync::RwLock::new(None);
+
+/// The design's own files under today's design (`BASE`).
+pub(crate) fn base_files() -> Option<std::sync::Arc<dyn Files>> {
+    BASE.read().unwrap_or_else(|e| e.into_inner()).clone()
 }
 
 /// What the design the tool opened last was built from (`BUILT_FROM`).
@@ -636,10 +647,17 @@ fn route(
         ("GET", "/v1/people") => ok_json(people::list(params, ctx)),
         // A branch's breakdown in the copy, framed by its owner (F4).
         ("GET", "/v1/branch") => ok_json(branch::tree(params, ctx)),
+        ("GET", "/v1/branch/view") => ok_json(branch::view(params, ctx)),
         // A group started by its owner once the systems' file mounts it (F6-a).
         ("POST", "/v1/group/start") => ok_json(branch::start_route(params, ctx)),
         ("GET", "/v1/design/integration") => ok_json(design::integration_route(ctx)),
         ("POST", "/v1/design/release") => ok_json(design::release_route(params, ctx)),
+        // A preview of a release that moves other groups' values, and the
+        // answers to it (F6-c).
+        ("GET", "/v1/design/previews") => ok_json(design::previews_route(ctx)),
+        ("POST", "/v1/design/preview") => ok_json(design::preview_route(params, ctx)),
+        // A group's answer to a release that moves its values (W7).
+        ("POST", "/v1/answer") => ok_json(branch::answer_route(params, ctx)),
         ("POST", p) if p.starts_with("/v1/branch/") => {
             ok_json(branch::edit_route(p.strip_prefix("/v1/branch/").unwrap_or_default(), params, ctx))
         }

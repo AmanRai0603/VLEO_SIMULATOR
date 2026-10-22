@@ -414,9 +414,9 @@ impl Registry {
         Ok(person)
     }
 
-    /// Whether `name` holds `role` here, or is registered as the deputy of
-    /// someone who does.
-    pub(crate) fn acts_as(&self, name: &str, role: &str) -> bool {
+    /// Whether `name` is registered here in `role`. A deputy is registered
+    /// in the role of whoever they deputise for, so this holds for them too.
+    pub fn acts_as(&self, name: &str, role: &str) -> bool {
         self.file
             .people
             .iter()
@@ -451,7 +451,7 @@ impl Registry {
 /// The current signatures of `scope` with verdict `ok` that check, each by
 /// someone `may` allows, through `registry`. The refusals of every other come
 /// back with it, so a person reads why each did not count.
-fn counted<'a>(
+pub(crate) fn counted<'a>(
     f: &'a File,
     scope: &str,
     registry: &Registry,
@@ -1339,6 +1339,306 @@ pub fn seal_of<'a>(
     ok.into_iter()
         .next()
         .ok_or_else(|| none_counts(&format!("{id}'s release, by its owner {owner},"), &why))
+}
+
+/// A group's answer to another group's release (W7, `crate::answer`),
+/// checked through the chain, the one rule wherever an answer is read:
+/// an answer file, its meta whole; another group's answer to the release,
+/// never the systems' branch's, which decides an objection; saying fine,
+/// or object and why, and nothing else; signed as it is by the person it
+/// says wrote it, who is the answering group's owner, a subsystem engineer
+/// who does not own the release's group, or their deputy, as `mounted_by`,
+/// the file that mounts the answering group, names its owner, with a key
+/// the programme's file registers.
+pub fn check_answer(
+    answer: &File,
+    mounted_by: &Registry,
+    programme: &Registry,
+) -> Result<(), Error> {
+    if answer.kind()? != Kind::PreviewAnswer {
+        return Err(refused(
+            ErrorKind::WrongKind,
+            format!("this is a {}, not an answer", answer.kind()?),
+        ));
+    }
+    answer.check_meta()?;
+    let get = |k: &str| answer.meta.get(k).cloned().unwrap_or_default();
+    let (group, g, writer) = (get("group_id"), get("answering_group"), get("writer"));
+    for id in [&group, &g] {
+        if !crate::breakdown::valid_id(id) {
+            return Err(refused(
+                ErrorKind::Malformed,
+                format!("{id:?} is not a group's id"),
+            ));
+        }
+    }
+    if group == g {
+        return Err(refused(
+            ErrorKind::Malformed,
+            format!("{g} does not answer its own release: an answer is another group's"),
+        ));
+    }
+    if g == "systems" {
+        return Err(refused(
+            ErrorKind::Malformed,
+            "the systems' branch decides an objection to a release, and does not answer one: a subsystem's group answers",
+        ));
+    }
+    crate::answer::said(answer)?;
+    // Its word, and why, and its signatures: nothing rides along unsigned.
+    for t in answer.to_tables() {
+        let own = [
+            "meta",
+            <crate::model::Text as crate::model::Record>::TABLE,
+            <SignatureRow as crate::model::Record>::TABLE,
+        ];
+        if !own.contains(&t.name.as_str()) && !t.rows.is_empty() {
+            return Err(refused(
+                ErrorKind::Malformed,
+                format!(
+                    "the answer holds {} rows: an answer holds its word and why, and nothing else",
+                    t.name
+                ),
+            ));
+        }
+    }
+    let owner = owner_of(mounted_by, &g).ok_or_else(|| {
+        refused(
+            ErrorKind::Signature,
+            format!(
+                "{} mounts no group {g:?}, so nobody answers for it",
+                mounted_by.from
+            ),
+        )
+    })?;
+    if !programme
+        .file
+        .people
+        .iter()
+        .any(|p| p.name == owner && p.role == "subsystem engineer")
+    {
+        return Err(refused(
+            ErrorKind::Signature,
+            format!("{g}'s owner {owner} is not a subsystem engineer the programme's file registers: a subsystem's owner answers"),
+        ));
+    }
+    if owner_of(mounted_by, &group) == Some(owner) {
+        return Err(refused(
+            ErrorKind::Signature,
+            format!("{owner} owns both {group} and {g}: a release's owner does not answer it for another group"),
+        ));
+    }
+    let (ok, why) = counted(answer, FILE, programme, |name| {
+        name == writer && programme.acts_for(name, owner)
+    });
+    if ok.is_empty() {
+        return Err(none_counts(
+            &format!("{g}'s answer, written by {writer} and by its owner {owner},"),
+            &why,
+        ));
+    }
+    Ok(())
+}
+
+/// The columns of a preview's `moved.csv` (F6-c, `design::preview`): each
+/// value outside the release's group that moved, its node and the group it
+/// hangs under, its answer in the design released now and with the release
+/// in it, empty where it refused, and why where it refused.
+pub const PREVIEW_MOVED: &[&str] = &[
+    "value",
+    "node",
+    "group",
+    "before",
+    "after",
+    "before_why",
+    "after_why",
+];
+
+/// The columns of a preview's `named.csv`: each group whose owner answers.
+pub const PREVIEW_NAMED: &[&str] = &["group"];
+
+/// Where the preview of `group`'s release `version`, on the released design
+/// `design`, is, inside a copy or the drive: beside the answers to that
+/// release, and named for the design it is on, since a release may be
+/// previewed again on a later one (F6's question 53).
+pub fn preview_path(group: &str, version: &str, design: &str) -> String {
+    preview_path_n(group, version, design, 1)
+}
+
+/// The `n`th place a preview of `group`'s release `version` on `design` may
+/// be: the first at [`preview_path`], each after it with `-<n>`, from 2. A
+/// preview is written at the next once the one before it is taken and no
+/// longer opens, as when its writer stops being the system engineer (F6's
+/// answer (a), 22 October).
+pub fn preview_path_n(group: &str, version: &str, design: &str, n: u32) -> String {
+    if n <= 1 {
+        format!("integration/{group}-{version}/preview-{group}-{version}-on-{design}.vleo")
+    } else {
+        format!("integration/{group}-{version}/preview-{group}-{version}-on-{design}-{n}.vleo")
+    }
+}
+
+/// Whether `rel` is one of the places [`preview_path_n`] names for a preview
+/// of `group`'s release `version` on `design`: its first, or a sequence
+/// from 2, written as [`preview_path_n`] writes it.
+pub fn is_preview_path(rel: &str, group: &str, version: &str, design: &str) -> bool {
+    if rel == preview_path(group, version, design) {
+        return true;
+    }
+    let stem = format!("integration/{group}-{version}/preview-{group}-{version}-on-{design}-");
+    rel.strip_prefix(&stem)
+        .and_then(|r| r.strip_suffix(".vleo"))
+        .and_then(|n| n.parse::<u32>().ok())
+        .is_some_and(|n| rel == preview_path_n(group, version, design, n))
+}
+
+/// A preview (F6-c, `design::preview`), checked through the chain, the one
+/// rule wherever a preview is read: a preview file, its meta whole; holding
+/// the one release it previews, whole, at the place the drive keeps it, its
+/// bytes their SHA-256; its `moved.csv` and `named.csv` as a preview writes
+/// them, every value in it one that moved, outside the release's group, and
+/// every group named one a value moved in, never the release's own, the
+/// systems' or the programme's, and each once; nothing else; and signed as
+/// it is by the person it says wrote it, the system engineer or their
+/// deputy, with a key the programme's file registers. That the release held
+/// is the one it says is `design::open_preview`'s, which reads it.
+pub fn check_preview(preview: &File, programme: &Registry) -> Result<(), Error> {
+    if preview.kind()? != Kind::Preview {
+        return Err(refused(
+            ErrorKind::WrongKind,
+            format!("this is a {}, not a preview", preview.kind()?),
+        ));
+    }
+    preview.check_meta()?;
+    let get = |k: &str| preview.meta.get(k).cloned().unwrap_or_default();
+    let (group, version, writer) = (get("group_id"), get("version"), get("writer"));
+    let bad = |what: String| refused(ErrorKind::Malformed, format!("the preview {what}"));
+    if !crate::breakdown::valid_id(&group) {
+        return Err(bad(format!("is of {group:?}, which is not a group's id")));
+    }
+    // Its release, and its two tables, and its signatures: nothing rides
+    // along unsigned.
+    for t in preview.to_tables() {
+        let own = [
+            "meta",
+            <crate::model::Tbl as crate::model::Record>::TABLE,
+            <crate::model::Media as crate::model::Record>::TABLE,
+            <SignatureRow as crate::model::Record>::TABLE,
+        ];
+        if !own.contains(&t.name.as_str()) && !t.rows.is_empty() {
+            return Err(bad(format!(
+                "holds {} rows: a preview holds its release, what moved and who answers, and nothing else",
+                t.name
+            )));
+        }
+    }
+    let at = format!("groups/{group}/releases/{group}-{version}.vleo");
+    match preview.media.as_slice() {
+        [m] if m.scope == FILE && m.path == at => {
+            if hex(&sha256(&m.bytes)) != m.sha256 {
+                return Err(bad(format!(
+                    "holds {at} whose bytes are not the ones it was written with: their SHA-256 differs"
+                )));
+            }
+        }
+        _ => {
+            return Err(bad(format!(
+                "holds {} file{}: a preview holds the one release it previews, whole, as {at}",
+                preview.media.len(),
+                if preview.media.len() == 1 { "" } else { "s" }
+            )))
+        }
+    }
+    let table = |path: &str, head: &[&str]| -> Result<Vec<Vec<String>>, Error> {
+        let mut found = preview.tables.iter().filter(|t| t.path == path);
+        let (Some(t), None) = (found.next(), found.next()) else {
+            return Err(bad(format!("does not hold {path} once")));
+        };
+        let csv = crate::csv::read(&t.csv);
+        if t.scope != FILE || !csv.problems.is_empty() || csv.head != head {
+            return Err(bad(format!(
+                "holds a {path} that is not as a preview writes it: its columns are {}",
+                head.join(", ")
+            )));
+        }
+        Ok(csv.rows)
+    };
+    if preview.tables.len() != 2 {
+        return Err(bad(
+            "holds tables beside moved.csv and named.csv: it holds those two".into(),
+        ));
+    }
+    let moved = table("moved.csv", PREVIEW_MOVED)?;
+    let named = table("named.csv", PREVIEW_NAMED)?;
+    if moved.is_empty() {
+        return Err(bad(format!(
+            "says nothing moved: a release that moves nothing outside {group} has no preview"
+        )));
+    }
+    let answer = |cell: &str| -> Result<Option<u64>, Error> {
+        if cell.is_empty() {
+            return Ok(None);
+        }
+        cell.parse::<f64>()
+            .ok()
+            .filter(|x| x.is_finite())
+            .map(|x| Some(x.to_bits()))
+            .ok_or_else(|| {
+                bad(format!(
+                    "says {cell:?} is an answer, and it is not a number"
+                ))
+            })
+    };
+    for row in &moved {
+        let (value, node, g) = (&row[0], &row[1], &row[2]);
+        let of_node = value == node
+            || value
+                .strip_prefix(node.as_str())
+                .is_some_and(|r| r.starts_with('.'));
+        if node.is_empty() || !of_node || g.is_empty() {
+            return Err(bad(format!(
+                "says {value:?} moved in {node:?}, which is not a node's value"
+            )));
+        }
+        if *g == group {
+            return Err(bad(format!(
+                "says {value}, of {group} itself, moved: a preview is of what moves outside it"
+            )));
+        }
+        if answer(&row[3])? == answer(&row[4])? {
+            return Err(bad(format!(
+                "says {value} moved, and its two answers are one"
+            )));
+        }
+    }
+    let mut seen: Vec<&str> = Vec::new();
+    for row in &named {
+        let g = row[0].as_str();
+        if !crate::breakdown::valid_id(g) || ["systems", "programme"].contains(&g) || g == group {
+            return Err(bad(format!(
+                "names {g:?} to answer: a subsystem's group answers another group's release"
+            )));
+        }
+        if seen.contains(&g) {
+            return Err(bad(format!("names {g} twice")));
+        }
+        if !moved.iter().any(|r| r[2] == g) {
+            return Err(bad(format!("names {g}, and no value of {g} moved")));
+        }
+        seen.push(g);
+    }
+    let (ok, why) = counted(preview, FILE, programme, |name| {
+        name == writer && programme.acts_as(name, "system engineer")
+    });
+    if ok.is_empty() {
+        return Err(none_counts(
+            &format!(
+                "the preview of {group} {version}, written by {writer} as the system engineer,"
+            ),
+            &why,
+        ));
+    }
+    Ok(())
 }
 
 /// A released design, checked through the chain: signed as it is by the

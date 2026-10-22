@@ -415,6 +415,9 @@ fn a_release_in_the_one_schema_whose_seal_cannot_be_checked_is_refused_by_name()
     for (k, v) in [("group_id", "l3_solar"), ("version", "2.0")] {
         f.meta.insert(s(k), s(v));
     }
+    // Named by the fingerprint of what it holds, so the seal is what is read.
+    let fingerprint = chain::digest(&f, FILE).unwrap();
+    f.meta.insert(s("fingerprint"), fingerprint);
     vleo_files::sqlite::write(&f, &d.join("groups/l3_solar/releases/l3_solar-2.0.vleo")).unwrap();
     let t = today(&d);
     let g = &t.groups[0];

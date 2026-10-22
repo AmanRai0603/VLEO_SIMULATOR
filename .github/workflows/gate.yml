@@ -452,6 +452,13 @@ jobs:
       # the lines that fail, with nothing written (docs/briefs/F6.md, F6-b).
       - name: the System workspace, the design released or refused
         run: python3 tools/release_design_check.py
+      # A preview on a small drive with a design released on it: the release
+      # today's design takes and the design released now does not hold, the
+      # preview written on screen by the program with both designs run, the
+      # group it names unanswered, and Answer in that group's owner's My
+      # work (docs/briefs/F6.md, F6-c items 3, 4 and 10).
+      - name: the System workspace, a release previewed
+        run: python3 tools/preview_check.py
       # The manual in the browser tells people what to paste and what they will
       # see. `cargo test` already holds every name in it to the code; this holds
       # every command to what it DOES — run exactly as written, its output

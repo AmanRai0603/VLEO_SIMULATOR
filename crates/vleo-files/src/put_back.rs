@@ -43,6 +43,21 @@
 //! engineer or their deputy beside it, over the drive's only when the
 //! drive's is as copied.
 //!
+//! Or it is a group's answer to another group's release (W7), written in
+//! the copy: a new file in `integration/<group>-<version>/`, named for what
+//! it says it answers, written and signed by the person putting it back,
+//! as the answering group's owner or their deputy, with a key the drive
+//! counts for them now (`chain::check_answer`). An answer is never written
+//! over.
+//!
+//! Or it is a preview of a group's release (F6-c), written in the copy by
+//! the system engineer or their deputy: a new file in
+//! `integration/<group>-<version>/`, named for the release and the design it
+//! is on, holding the drive's release byte for byte, on a design the drive
+//! holds, written and signed by the person putting it back with a key the
+//! drive counts for them now (`chain::check_preview`). A preview is never
+//! written over.
+//!
 //! A group's file does not go back yet: what may change in it at its valve
 //! is not yet checked against the drive's file, so a change of its people
 //! stays in the copy.
@@ -691,11 +706,179 @@ fn verdict(
             design_verdict(name, bytes, theirs, me, at, chain, drive)
         }
         ["design", "NOTES.md"] | ["readable", _] => record_verdict(path, me, chain),
+        ["integration", dir, name] if name.starts_with("preview-") && name.ends_with(".vleo") => {
+            preview_verdict(dir, name, bytes, theirs, me, at, chain, drive)
+        }
+        ["integration", dir, name] if name.ends_with(".answer") => {
+            answer_verdict(dir, name, bytes, theirs, me, at, chain, drive)
+        }
         ["groups", g, name] if *name == format!("{g}.vgroup") => Err(format!(
             "{g}'s group file does not go back yet: what may change in a group's file is not yet checked against the drive's, so a change of its people stays in your copy"
         )),
-        _ => Err("it is not a file the application puts back yet: a node's file, a group's release, or a released design and its record, goes back".into()),
+        _ => Err("it is not a file the application puts back yet: a node's file, a group's release, a released design and its record, or a preview of a release and an answer to one, goes back".into()),
     }
+}
+
+/// Whether the preview `name` in `integration/<dir>/`, `bytes` in the copy,
+/// goes back as a new file written by `me`, onto the drive at `drive` that
+/// holds `theirs` at that path: at the place its meta names, on a design the
+/// drive holds that opens through the chain, holding the release the drive
+/// holds at its place byte for byte, and read back as every preview is
+/// (`design::open_preview`) through the chain as the drive holds it now,
+/// signed by `me` with a key that counts at `at`.
+#[allow(clippy::too_many_arguments)]
+fn preview_verdict(
+    dir: &str,
+    name: &str,
+    bytes: &[u8],
+    theirs: Option<&[u8]>,
+    me: &str,
+    at: &str,
+    chain: &Chain,
+    drive: &Path,
+) -> Result<String, String> {
+    if theirs.is_some() {
+        return Err(
+            "the drive holds a preview at this path already: a preview is never written over"
+                .into(),
+        );
+    }
+    let f = save::parsed(bytes).map_err(|e| format!("it does not read: {}", e.message()))?;
+    match f.kind() {
+        Ok(Kind::Preview) => {}
+        Ok(other) => {
+            return Err(format!(
+                "it is a {other}, and integration/ holds previews here"
+            ))
+        }
+        Err(e) => return Err(e.message().to_string()),
+    }
+    let said = |k: &str| f.meta.get(k).map_or("", String::as_str);
+    let (group, version, design) = (said("group_id"), said("version"), said("based_on"));
+    let place = chain::preview_path(group, version, design);
+    if !chain::is_preview_path(&format!("integration/{dir}/{name}"), group, version, design) {
+        return Err(format!(
+            "it says it is the preview of {group} {version} on design {design}, so it is {place}"
+        ));
+    }
+    if said("writer") != me {
+        return Err(format!(
+            "it is {:?}'s preview: a preview goes back only by the person who wrote it",
+            said("writer")
+        ));
+    }
+    let app = concat!("vleo ", env!("CARGO_PKG_VERSION"));
+    let on =
+        crate::sqlite::read(&drive.join(format!("design/design-{design}.vleo"))).map_err(|_| {
+            format!("the drive holds no design {design}: a preview is on a design released there")
+        })?;
+    crate::design::open_held(&on, &chain.programme, app).map_err(|e| {
+        format!(
+            "design {design} on the drive does not open through the chain, so nothing is previewed on it: {}",
+            e.message()
+        )
+    })?;
+    // The release it holds is the drive's, byte for byte: never one the
+    // drive does not hold, nor another of that number.
+    let rel = format!("groups/{group}/releases/{group}-{version}.vleo");
+    let held = std::fs::read(drive.join(&rel)).map_err(|_| {
+        format!("the drive holds no {rel}: a preview is of a release that is there")
+    })?;
+    if f.media.first().map(|m| m.bytes.as_slice()) != Some(held.as_slice()) {
+        return Err(format!(
+            "the release it holds is not the drive's {rel}, byte for byte"
+        ));
+    }
+    let now = only_counting_now(&f, chain::FILE, me, at, &chain.programme);
+    let mut parents = vec![&chain.programme];
+    parents.extend(chain.systems.iter());
+    crate::design::open_preview(&now, &parents, &chain.programme, app).map_err(|e| {
+        format!(
+            "it does not check through the chain as the drive holds it now, signed by {me} with a key that counts at {at}: {}",
+            e.message()
+        )
+    })?;
+    Ok(format!(
+        "goes back: the preview of {group} {version} on design {design}, by {me}"
+    ))
+}
+
+/// Whether the answer `name` in `integration/<dir>/`, `bytes` in the copy,
+/// goes back as a new file written and signed by `me`.
+#[allow(clippy::too_many_arguments)]
+fn answer_verdict(
+    dir: &str,
+    name: &str,
+    bytes: &[u8],
+    theirs: Option<&[u8]>,
+    me: &str,
+    at: &str,
+    chain: &Chain,
+    drive: &Path,
+) -> Result<String, String> {
+    if theirs.is_some() {
+        return Err(
+            "the drive holds an answer at this path already: an answer is never written over"
+                .into(),
+        );
+    }
+    let f = save::parsed(bytes).map_err(|e| format!("it does not read: {}", e.message()))?;
+    match f.kind() {
+        Ok(Kind::PreviewAnswer) => {}
+        Ok(other) => {
+            return Err(format!(
+                "it is a {other}, and integration/ holds answers here"
+            ))
+        }
+        Err(e) => return Err(e.message().to_string()),
+    }
+    let said = |k: &str| f.meta.get(k).map_or("", String::as_str);
+    let (group, version, answering) = (said("group_id"), said("version"), said("answering_group"));
+    if format!("integration/{dir}/{name}") != crate::answer::path_of(group, version, answering) {
+        return Err(format!(
+            "it says it is {answering}'s answer to {group} {version}, so it is {}",
+            crate::answer::path_of(group, version, answering)
+        ));
+    }
+    crate::answer::said(&f).map_err(|e| e.message().to_string())?;
+    if said("writer") != me {
+        return Err(format!(
+            "it is {:?}'s answer: an answer goes back only by the person who wrote it",
+            said("writer")
+        ));
+    }
+    // An answer is to a release the drive holds, the one it names by its
+    // fingerprint: never to a version not sealed yet, nor to another of that
+    // number.
+    let rel = format!("groups/{group}/releases/{group}-{version}.vleo");
+    let held = crate::sqlite::read(&drive.join(&rel)).map_err(|_| {
+        format!("the drive holds no {rel}: an answer is to a release that is there")
+    })?;
+    let fingerprint = chain::digest(&held, chain::FILE).map_err(|e| e.message().to_string())?;
+    if said("answers") != fingerprint {
+        return Err(format!(
+            "it answers a release whose fingerprint is {:?}, and the drive's {group} {version} is {fingerprint}: it is not an answer to that release",
+            said("answers")
+        ));
+    }
+    let mut parents = vec![&chain.programme];
+    parents.extend(chain.systems.iter());
+    let (parent, _) = chain::mounted_by(answering, &parents).map_err(|e| {
+        format!(
+            "whose answer it is cannot be read through the chain: {}",
+            e.message()
+        )
+    })?;
+    let now = only_counting_now(&f, chain::FILE, me, at, &chain.programme);
+    chain::check_answer(&now, parent, &chain.programme).map_err(|e| {
+        format!(
+            "it does not check through the chain as the drive holds it now, signed by {me} with a key that counts at {at}: {}",
+            e.message()
+        )
+    })?;
+    Ok(format!(
+        "goes back: {answering}'s answer to {group} {version}, by {me}"
+    ))
 }
 
 /// Whether the release `name` in `group`'s `releases/`, `bytes` in the copy,
@@ -1179,13 +1362,25 @@ fn write_on_drive(
         .parent()
         .ok_or_else(|| refused(format!("{path} has no folder on the drive")))?;
     // A group's first release makes its `releases/`, in the group's folder
-    // the drive holds, and the first released design `design/` and
-    // `readable/` at the top; no other folder is made.
+    // the drive holds, the first released design `design/` and `readable/`
+    // at the top, and the first answer to a release its folder in
+    // `integration/`; no other folder is made.
     let top = matches!(
         path.split('/').collect::<Vec<_>>().as_slice(),
         ["design" | "readable", _]
     );
     if (top || dir.file_name().is_some_and(|n| n == "releases")) && !dir.exists() {
+        std::fs::create_dir(dir).map_err(|e| io(dir, e))?;
+        no_link_on_the_way(drive, path)?;
+    }
+    if path.starts_with("integration/") && path.split('/').count() == 3 && !dir.exists() {
+        // In the drive's `integration/`, which is the system engineer's to
+        // make: never made here.
+        if !drive.join("integration").is_dir() {
+            return Err(refused(
+                "the drive holds no integration/ folder: its system engineer makes it, and an answer goes into it",
+            ));
+        }
         std::fs::create_dir(dir).map_err(|e| io(dir, e))?;
         no_link_on_the_way(drive, path)?;
     }

@@ -823,3 +823,226 @@ fn edited(name: &str, params: &str, ctx: &Ctx) -> Result<String, String> {
     j.raw("}");
     Ok(j.0)
 }
+
+/// `GET /v1/branch/view?group=<id>` — today's view of a branch, from your
+/// copy, and its impact on the rest of the design (docs/briefs/F5.md, F5-d):
+/// today's design with every node of the branch its node engineer signed
+/// as it is (`today::branch_view`), the nodes left out and why, and every
+/// value outside the branch that moves, on the case the request carries
+/// (`today::impact`). It says what it is: a view, not a release.
+pub(super) fn view(params: &str, ctx: &Ctx) -> String {
+    match view_json(params, ctx) {
+        Ok(j) => j,
+        Err(why) => me::refusal(&why),
+    }
+}
+
+/// The last view's graph, by what it writes over today's design: a view
+/// asked again of an unchanged branch is not built again. A graph lives as
+/// long as the program, so one is kept, not one a request.
+static VIEW_GRAPH: std::sync::Mutex<Option<(String, &'static vleo_modules::Graph)>> =
+    std::sync::Mutex::new(None);
+
+fn view_json(params: &str, ctx: &Ctx) -> Result<String, String> {
+    let g = param(params, "group").map(decode).unwrap_or_default();
+    let group = group_id(&g)?;
+    let copy = the_copy(ctx)?;
+    let c = chain(&copy)?;
+    let mb = mounted_by(&c, group)?;
+    let now = results::now_utc();
+    let (_, f) = breakdown::group_file_in(&copy, group).map_err(|e| e.message().to_string())?;
+    let nodes =
+        breakdown::nodes_in(&copy, group, &how(&now)).map_err(|e| e.message().to_string())?;
+    let registry = chain::open_group_in(&f, mb, &c.programme).map_err(|e| {
+        format!(
+            "{group}'s group file does not open through the chain in your copy, so no signature in its branch counts: {}",
+            e.message()
+        )
+    })?;
+    let view = today::branch_view(ctx.tree.clone(), &ctx.root, group, &registry, &nodes)?;
+    let key = format!("{group}\0{}", view.written);
+    let held = VIEW_GRAPH
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .as_ref()
+        .filter(|(k, _)| *k == key)
+        .map(|(_, g)| *g);
+    let vg = match held {
+        Some(g) => g,
+        None if view.changes.is_empty() => vleo_modules::engine(),
+        None => {
+            let tree = vleo_sheet::load::load_all_from(&*view.files, &ctx.root)
+                .map_err(|e| format!("today's view of {group} does not load: {e}"))?;
+            let g = vleo_modules::opened::graph(&tree)
+                .map_err(|e| format!("today's view of {group} does not run: {e}"))?;
+            *VIEW_GRAPH.lock().unwrap_or_else(|e| e.into_inner()) = Some((key, g));
+            g
+        }
+    };
+    // Inside the branch: its group file's blocks, its node files', and every
+    // node of it the design holds.
+    let mut inside: std::collections::BTreeSet<String> =
+        f.blocks.iter().map(|b| b.id.clone()).collect();
+    inside.extend(
+        nodes
+            .iter()
+            .flat_map(|n| n.blocks.iter().map(|b| b.id.clone())),
+    );
+    inside.extend(
+        today::design_nodes(&ctx.root, group)?
+            .iter()
+            .flat_map(|n| n.blocks.iter().map(|b| b.id.clone())),
+    );
+    let case = build_case(params, ctx);
+    let im = today::impact(vleo_modules::engine(), vg, &case, &|id| inside.contains(id))?;
+    // What the seal would refuse now, said before anyone presses it: the
+    // view runs what is signed; the seal asks more of each node.
+    let blockers = vleo_files::release::blockers(&f, &nodes, &registry);
+    let mut j = Json::new();
+    j.raw("{");
+    j.bool_field("ok", true);
+    j.str_field("group", group);
+    j.str_field(
+        "says",
+        &format!(
+            "Today's view of {group}: today's design with every node of {group} signed as it is in your copy. A view, not a release: nothing of it is in today's design until {group} seals it."
+        ),
+    );
+    j.key("changes").open_arr();
+    for (i, n) in view.changes.iter().enumerate() {
+        if i > 0 {
+            j.raw(",");
+        }
+        j.push_string(n);
+    }
+    j.close_arr();
+    j.key("left_out").open_arr();
+    for (node, why) in &view.left_out {
+        j.open_obj();
+        j.str_field("node", node);
+        j.str_field("why", why);
+        j.close_obj();
+    }
+    j.close_arr();
+    j.key("seal_refuses").open_arr();
+    for (i, b) in blockers.iter().enumerate() {
+        if i > 0 {
+            j.raw(",");
+        }
+        j.push_string(b);
+    }
+    j.close_arr();
+    j.str_field(
+        "case",
+        &if case.base.is_empty() {
+            "the case saved in your copy, as every run reads it".to_string()
+        } else {
+            format!("the case {}", case.base)
+        },
+    );
+    for (k, ran) in [("today", &im.today), ("view", &im.view)] {
+        j.key(k).open_obj();
+        j.num_field("ran", ran.ran as f64);
+        j.key("blocked").open_arr();
+        for (node, why) in &ran.blocked {
+            j.open_obj();
+            j.str_field("node", node);
+            j.str_field("why", why);
+            j.close_obj();
+        }
+        j.close_arr();
+        j.close_obj();
+    }
+    j.key("impact").open_arr();
+    for m in &im.moved {
+        j.open_obj();
+        j.str_field("id", &m.id);
+        j.str_field("group", &m.group);
+        for (k, v, w) in [
+            ("before", m.before, &m.before_why),
+            ("after", m.after, &m.after_why),
+        ] {
+            match v {
+                Some(x) => j.num_field(k, x),
+                None => j.key(k).raw("null"),
+            };
+            if let Some(w) = w {
+                j.str_field(&format!("{k}_why"), w);
+            }
+        }
+        j.close_obj();
+    }
+    j.close_arr();
+    j.raw("}");
+    Ok(j.0)
+}
+
+/// `POST /v1/answer` — a group's answer to another group's release that
+/// moves its values (W7, `vleo_files::answer`), written in your copy as
+/// whoever's key is open: group and version, the release answered;
+/// answering, the group that answers; said, `fine` or `object`; because,
+/// why, for an objection. Refused unless the key's person owns the
+/// answering group, or is their deputy. An answer is never written over.
+/// It goes back to the drive by put-back. Carries the launch's word.
+pub(super) fn answer_route(params: &str, ctx: &Ctx) -> String {
+    match answered(params, ctx) {
+        Ok(j) => j,
+        Err(why) => me::refusal(&why),
+    }
+}
+
+fn answered(params: &str, ctx: &Ctx) -> Result<String, String> {
+    use vleo_files::answer::{self, Said};
+    me::carries_session(params)?;
+    let get = |k: &str| param(params, k).map(decode).unwrap_or_default();
+    let group = get("group");
+    let version = get("version");
+    let answering = get("answering");
+    let said = match get("said").trim() {
+        "fine" => Said::Fine,
+        "object" => Said::Object(get("because")),
+        other => {
+            return Err(format!(
+                "an answer says fine or object, and {other:?} is neither"
+            ))
+        }
+    };
+    let copy = the_copy(ctx)?;
+    let c = chain(&copy)?;
+    let parents: Vec<&Registry> = std::iter::once(&c.programme)
+        .chain(c.systems.iter())
+        .collect();
+    let (mb, _) =
+        chain::mounted_by(group_id(&answering)?, &parents).map_err(|e| e.message().to_string())?;
+    let at = results::now_utc();
+    let (rel, who) = me::with_key(|key, me| {
+        answer::answer_in_place(
+            &copy,
+            &group,
+            &version,
+            &answering,
+            &said,
+            &me.name,
+            key,
+            &at,
+            APP,
+            mb,
+            &c.programme,
+        )
+        .map(|rel| (rel, me.name.clone()))
+        .map_err(|e| e.message().to_string())
+    })
+    .ok_or("no key is open: open yours, and the answer is written and signed as you")??;
+    let mut j = Json::new();
+    j.raw("{");
+    j.bool_field("ok", true);
+    j.str_field("path", &rel);
+    j.str_field(
+        "message",
+        &format!(
+            "{who} answered {group} {version} for {answering}, in your copy: {rel}. It goes to the drive when you put your work back."
+        ),
+    );
+    j.raw("}");
+    Ok(j.0)
+}

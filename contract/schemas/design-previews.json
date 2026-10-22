@@ -1,0 +1,188 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "design-previews",
+  "description": "The previews of releases that move other groups' values, and the answers to them: each group whose release in today's design is not the one in the design released now, and every preview read back; or why there are none, when the design open is not today's.",
+  "type": "object",
+  "properties": {
+    "ok": {
+      "type": "boolean"
+    },
+    "previews_on": {
+      "type": "string",
+      "description": "The design released now, which a preview is on; empty before the first."
+    },
+    "previews_said": {
+      "type": "string",
+      "description": "Why there is no design to preview on, when there is none."
+    },
+    "pending": {
+      "type": "array",
+      "description": "Each group whose release in today's design is not the one in the design released now.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "group": {
+            "type": "string"
+          },
+          "version": {
+            "type": "string",
+            "description": "Today's release of it."
+          },
+          "held": {
+            "type": "string",
+            "description": "The release the design released now holds of it; empty where it holds none."
+          },
+          "preview": {
+            "type": "string",
+            "description": "The preview of it on the design released now, on the drive or in your copy; empty where there is none."
+          }
+        },
+        "required": [
+          "group",
+          "version",
+          "held",
+          "preview"
+        ]
+      }
+    },
+    "previews": {
+      "type": "array",
+      "description": "Every preview on the drive, and in your copy where the drive does not hold it, read back through the chain.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string",
+            "description": "integration/<g>-<v>/preview-<g>-<v>-on-<design>.vleo, or integration/ when that folder does not read."
+          },
+          "in": {
+            "type": "string",
+            "description": "the drive, or your copy, not put back yet"
+          },
+          "opens": {
+            "type": "boolean"
+          },
+          "why": {
+            "type": "string",
+            "description": "Why it does not open, when it does not."
+          },
+          "group": {
+            "type": "string"
+          },
+          "version": {
+            "type": "string"
+          },
+          "based_on": {
+            "type": "string",
+            "description": "The released design it is on."
+          },
+          "writer": {
+            "type": "string"
+          },
+          "stale": {
+            "type": "boolean",
+            "description": "Whether it is on a design other than the one released now."
+          },
+          "named": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Each group whose owner answers."
+          },
+          "moved": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "string",
+                  "description": "<node> or <node>.<port>, outside the release's group."
+                },
+                "group": {
+                  "type": "string",
+                  "description": "The group it hangs under, or the design."
+                },
+                "before": {
+                  "type": [
+                    "number",
+                    "null"
+                  ],
+                  "description": "The engine's answer on the design released now; null where it refused."
+                },
+                "after": {
+                  "type": [
+                    "number",
+                    "null"
+                  ],
+                  "description": "The engine's answer with the release in it; null where it refused."
+                },
+                "before_why": {
+                  "type": "string"
+                },
+                "after_why": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "value",
+                "group",
+                "before",
+                "after"
+              ]
+            }
+          },
+          "answers": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "group": {
+                  "type": "string",
+                  "description": "A group the preview names."
+                },
+                "said": {
+                  "enum": [
+                    "fine",
+                    "object",
+                    "unanswered",
+                    "refused"
+                  ]
+                },
+                "because": {
+                  "type": "string",
+                  "description": "Why, for an objection."
+                },
+                "why": {
+                  "type": "string",
+                  "description": "Why the answer there does not count, for one refused."
+                },
+                "in_copy": {
+                  "type": "boolean",
+                  "description": "Whether an answer is in your copy and not on the drive: written, not put back, so it does not count yet."
+                }
+              },
+              "required": [
+                "group",
+                "said",
+                "in_copy"
+              ]
+            },
+            "description": "What each group named has said, as the drive's answers say it, unanswered first."
+          }
+        },
+        "required": [
+          "path",
+          "in",
+          "opens"
+        ]
+      }
+    },
+    "message": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "ok"
+  ]
+}

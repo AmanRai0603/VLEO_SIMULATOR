@@ -14,8 +14,16 @@
 //!   node (F3-d); one that does not count, or says it is answered while no
 //!   answer is signed, is named as refused.
 //!
-//! Nodes failing their checks, issues, previews and decisions join as the
-//! stages that make them arrive (F3 to F7).
+//! - a preview on the design released now naming a group they answer for,
+//!   owner or deputy, that the group has not answered, or answered by a file
+//!   that does not count (F6-c): *Answer <group> <version>*, or *Put back*
+//!   an answer written in the copy. Previews, their answers and the design
+//!   released now count from the drive the program was started on, the copy
+//!   adding only a preview the drive does not hold; a preview that does not
+//!   open is said to whoever it may name.
+//!
+//! Nodes failing their checks, issues and decisions join as the stages that
+//! make them arrive (F3 to F7).
 //!
 //! Beside the items, `nodes` lists every node file that is the person's to
 //! write, or their deputy's, signed or not, for the Node workspace to open
@@ -436,6 +444,105 @@ fn items(me: &chain::Me, c: &me::Chain, database: &Path) -> Vec<Item> {
                     },
                 });
             }
+        }
+    }
+    // The previews on the design released now that name a group this person
+    // answers for, owner or deputy (F6-c): each unanswered, or answered by a
+    // file that does not count, is theirs to answer.
+    // A preview reaches them on the drive, where the system engineer puts
+    // it back, and the design released now is the drive's: the drive the
+    // program was started on is read first, then the copy.
+    let parents: Vec<&Registry> = std::iter::once(&c.programme)
+        .chain(c.systems.iter())
+        .collect();
+    // A preview counts from the drive the program was started on, where the
+    // system engineer puts it back, and so does the design released now; the
+    // copy only where there is no drive. A file that does not read or open is
+    // said to whoever it may name, never passed over.
+    let drive: PathBuf = std::env::var_os("VLEO_DRIVE")
+        .filter(|v| !v.is_empty())
+        .map_or_else(|| database.to_path_buf(), PathBuf::from);
+    let refused_preview = |says: String| Item {
+        kind: "preview refused",
+        group: String::new(),
+        node: String::new(),
+        says,
+    };
+    let now = match vleo_files::design::latest_in(&drive.join("design"), &c.programme) {
+        Ok(v) => v,
+        Err(e) => {
+            if !answers.is_empty() {
+                out.push(refused_preview(format!(
+                    "the design released now cannot be read, so no preview on it is read: {}",
+                    e.message()
+                )));
+            }
+            return out;
+        }
+    };
+    let (listed, unread) = crate::design::previews(&drive, database, &parents, &c.programme);
+    if !answers.is_empty() {
+        for (_, why) in &unread {
+            out.push(refused_preview(format!(
+                "integration/ does not read, so a preview naming you may be there unseen: {why}"
+            )));
+        }
+    }
+    for l in &listed {
+        let p = match &l.opened {
+            Ok(p) => p,
+            Err(why) => {
+                // Whom it names, as it says it and unchecked, or anyone who
+                // answers when it does not read at all.
+                let says_names: Option<Vec<String>> = l.file.as_ref().map(|f| {
+                    f.tables
+                        .iter()
+                        .filter(|t| t.path == "named.csv")
+                        .flat_map(|t| vleo_files::csv::read(&t.csv).rows)
+                        .filter_map(|r| r.first().cloned())
+                        .collect()
+                });
+                let mine = says_names.as_ref().map_or(!answers.is_empty(), |n| {
+                    n.iter().any(|g| answers.contains(g))
+                });
+                if mine {
+                    out.push(refused_preview(format!(
+                        "a preview that may name a group of yours does not count: {why}"
+                    )));
+                }
+                continue;
+            }
+        };
+        if now.as_deref() != Some(p.based_on.as_str()) {
+            continue;
+        }
+        for (g, said, in_copy) in
+            crate::design::answered_on(p, &drive, database, &parents, &c.programme)
+        {
+            if !answers.contains(&g) {
+                continue;
+            }
+            let says = match said {
+                vleo_files::design::Answered::Unanswered if in_copy => format!(
+                    "Put back {g}'s answer to {} {}: it is in your copy, and the drive does not hold it yet",
+                    p.group, p.version
+                ),
+                vleo_files::design::Answered::Unanswered => format!(
+                    "Answer {} {}: its preview on design {} names {g}, whose values it moves. Say fine, or object and why, in the System workspace on {g}",
+                    p.group, p.version, p.based_on
+                ),
+                vleo_files::design::Answered::Refused(why) => format!(
+                    "{g}'s answer to {} {} does not count, so {g} has not answered it: {why}",
+                    p.group, p.version
+                ),
+                _ => continue,
+            };
+            out.push(Item {
+                kind: "answer",
+                group: g,
+                node: String::new(),
+                says,
+            });
         }
     }
     out

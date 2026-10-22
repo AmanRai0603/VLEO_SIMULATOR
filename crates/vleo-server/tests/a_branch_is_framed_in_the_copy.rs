@@ -446,6 +446,15 @@ fn a_branch_is_framed_in_the_copy() {
 
     // Nia: read, not Nia's to frame, said whose; Nia's edit refused by name.
     assert!(open_key(port, "test-nia.vkey").contains("\"open\":true"));
+    // Today's view of solar (F5-d): nothing in the copy is signed as it is,
+    // so every node of it is left out, saying so, and nothing moves.
+    let v = ask(port, "GET", "/v1/branch/view?group=l3_solar", &[], false);
+    assert!(v.contains("\"ok\":true"), "{v}");
+    assert!(
+        v.contains("\"changes\":[]") && v.contains("\"impact\":[]"),
+        "{v}"
+    );
+    assert!(v.contains("not signed as it is"), "{v}");
     let r = tree();
     assert!(
         r.contains("\"ok\":true") && r.contains("\"yours\":false"),
@@ -709,6 +718,51 @@ fn a_branch_is_framed_in_the_copy() {
 
     // The systems' branch is the system engineer's: framed by Sam, read by Ola.
     assert!(open_key(port, "test-sam.vkey").contains("\"open\":true"));
+    // An answer is to a release the copy holds (W7): none, and nothing is
+    // answered.
+    let answer = |answering: &str| {
+        post(
+            port,
+            "/v1/answer",
+            &[
+                ("group", "l3_solar"),
+                ("version", "1.0"),
+                ("answering", answering),
+                ("said", "object"),
+                ("because", "the space environment moves past what is held"),
+            ],
+        )
+    };
+    let a = answer("systems");
+    assert!(
+        a.contains(
+            "your copy holds no release l3_solar 1.0: an answer is to a release that is there"
+        ),
+        "{a}"
+    );
+    // Solar's 1.0 in the copy: the systems' branch still does not answer
+    // it, for Sam decides an objection.
+    let mut rel =
+        vleo_files::model::File::new(vleo_files::meta::Kind::GroupRelease, "vleo 1.0.0 (test)");
+    rel.meta.insert("group_id".into(), "l3_solar".into());
+    rel.meta.insert("version".into(), "1.0".into());
+    let fingerprint = vleo_files::chain::digest(&rel, vleo_files::chain::FILE).unwrap();
+    rel.meta.insert("fingerprint".into(), fingerprint);
+    std::fs::create_dir_all(copy.join("groups/l3_solar/releases")).unwrap();
+    vleo_files::sqlite::write(
+        &rel,
+        &copy.join("groups/l3_solar/releases/l3_solar-1.0.vleo"),
+    )
+    .unwrap();
+    let a = answer("systems");
+    assert!(
+        a.contains(
+            "the systems' branch decides an objection to a release, and does not answer one"
+        ),
+        "{a}"
+    );
+    assert!(!copy.join("integration").exists());
+    std::fs::remove_dir_all(copy.join("groups/l3_solar/releases")).unwrap();
     let sys = || ask(port, "GET", "/v1/branch?group=systems", &[], false);
     let r = sys();
     assert!(

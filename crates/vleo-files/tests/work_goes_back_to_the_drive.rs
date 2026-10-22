@@ -220,6 +220,13 @@ fn world(name: &str) -> (PathBuf, PathBuf) {
         &key(73),
         "Test Pat",
     );
+    register(
+        &mut programme,
+        "Test Pia",
+        "subsystem engineer",
+        &key(79),
+        "Test Pat",
+    );
     mount(&mut programme, "root", "systems", "Test Sam");
     let mut systems = group("systems", "Test Sam");
     mount(
@@ -228,6 +235,8 @@ fn world(name: &str) -> (PathBuf, PathBuf) {
         "l3_solar",
         "Test Ola",
     );
+    // Power, Pia's, which answers solar's releases.
+    mount(&mut systems, "sys_power", "l3_power", "Test Pia");
     let mut solar = group("l3_solar", "Test Ola");
     register(
         &mut solar,
@@ -275,6 +284,8 @@ fn world(name: &str) -> (PathBuf, PathBuf) {
     std::fs::create_dir_all(drive.join("groups/programme/nodes")).unwrap();
     std::fs::create_dir_all(drive.join("groups/systems/nodes")).unwrap();
     std::fs::create_dir_all(drive.join("groups/l3_solar/nodes")).unwrap();
+    // The system engineer's folder for what is being integrated.
+    std::fs::create_dir_all(drive.join("integration")).unwrap();
     for (f, who, k, at) in [
         (
             programme,
@@ -2052,6 +2063,72 @@ fn a_released_design_and_its_record_go_back_by_the_system_engineer() {
     let _ = std::fs::remove_dir_all(drive.parent().unwrap());
 }
 
+// ── A group's answer to a release goes back as a new file (W7) ──
+
+/// Pia answers solar's 1.0 for power, in the copy, once 1.0 is sealed and,
+/// when `on_drive`, put back on the drive.
+fn pia_answers(
+    drive: &Path,
+    copy: &Path,
+    said: &vleo_files::answer::Said,
+    on_drive: bool,
+) -> String {
+    let rel = sealed_in(copy, "1.0");
+    if on_drive {
+        let r = pb(copy, drive, "Test Ola", Some(vec![named(copy, &rel)])).unwrap();
+        assert!(r.written, "{:?}", r.lines);
+    }
+    let o = opened(copy);
+    vleo_files::answer::answer_in_place(
+        copy,
+        "l3_solar",
+        "1.0",
+        "l3_power",
+        said,
+        "Test Pia",
+        &key(79),
+        AT,
+        APP,
+        &o.systems,
+        &o.programme,
+    )
+    .unwrap()
+}
+
+#[test]
+fn an_answer_goes_back_as_a_new_file_by_the_person_who_wrote_it() {
+    let (drive, copy) = world("answer");
+    let rel = pia_answers(
+        &drive,
+        &copy,
+        &vleo_files::answer::Said::Object(s("the array's margin falls below what power holds")),
+        true,
+    );
+    // Not Ola's to put back.
+    let r = pb(&copy, &drive, "Test Ola", None).unwrap();
+    let l = line(&r, &rel);
+    assert!(!l.back && l.why.contains("\"Test Pia\"'s answer"), "{l:?}");
+    // Pia's: it goes back, a new folder and file in the drive's integration/.
+    let r = pb(&copy, &drive, "Test Pia", None).unwrap();
+    assert_eq!(r.back(), std::slice::from_ref(&rel), "{:?}", r.lines);
+    assert!(line(&r, &rel)
+        .why
+        .contains("l3_power's answer to l3_solar 1.0"));
+    let r = pb(&copy, &drive, "Test Pia", Some(vec![named(&copy, &rel)])).unwrap();
+    assert!(r.written);
+    assert_eq!(
+        std::fs::read(drive.join(&rel)).unwrap(),
+        std::fs::read(copy.join(&rel)).unwrap()
+    );
+    let o = opened(&drive);
+    let f = sqlite::read(&drive.join(&rel)).unwrap();
+    chain::check_answer(&f, &o.systems, &o.programme).unwrap();
+    // One there already is never written over.
+    let r = pb(&copy, &drive, "Test Pia", None).unwrap();
+    assert!(!r.back().contains(&rel), "{:?}", r.lines);
+    let _ = std::fs::remove_dir_all(drive.parent().unwrap());
+}
+
 #[test]
 fn a_released_design_by_anyone_else_or_not_as_it_was_signed_does_not_go_back() {
     let (drive, copy) = world("design-refused");
@@ -2116,6 +2193,53 @@ fn a_released_design_by_anyone_else_or_not_as_it_was_signed_does_not_go_back() {
         !l.back && l.why.contains("Test Ola is not the system engineer"),
         "{l:?}"
     );
+    let _ = std::fs::remove_dir_all(drive.parent().unwrap());
+}
+
+#[test]
+fn an_answer_goes_back_only_to_a_release_the_drive_holds_into_its_integration_folder() {
+    // Solar 1.0 sealed in the copy, never put back: there is nothing on the
+    // drive it answers.
+    let (drive, copy) = world("answer-no-release");
+    let rel = pia_answers(&drive, &copy, &vleo_files::answer::Said::Fine, false);
+    let r = pb(&copy, &drive, "Test Pia", None).unwrap();
+    let l = line(&r, &rel);
+    assert!(
+        !l.back
+            && l.why
+                .contains("the drive holds no groups/l3_solar/releases/l3_solar-1.0.vleo"),
+        "{l:?}"
+    );
+    let _ = std::fs::remove_dir_all(drive.parent().unwrap());
+    // The drive's 1.0 is another release than the one answered.
+    let (drive, copy) = world("answer-other-release");
+    let rel = pia_answers(&drive, &copy, &vleo_files::answer::Said::Fine, true);
+    let on_drive = drive.join("groups/l3_solar/releases/l3_solar-1.0.vleo");
+    let mut other = sqlite::read(&on_drive).unwrap();
+    other.texts.push(Text {
+        scope: s(FILE),
+        kind: s("note"),
+        body: s("another release of that number"),
+    });
+    sqlite::write(&other, &on_drive).unwrap();
+    let r = pb(&copy, &drive, "Test Pia", None).unwrap();
+    let l = line(&r, &rel);
+    assert!(
+        !l.back && l.why.contains("it is not an answer to that release"),
+        "{l:?}"
+    );
+    let _ = std::fs::remove_dir_all(drive.parent().unwrap());
+    // A drive with no integration/: the system engineer makes it, not this.
+    let (drive, copy) = world("answer-no-integration");
+    let rel = pia_answers(&drive, &copy, &vleo_files::answer::Said::Fine, true);
+    std::fs::remove_dir_all(drive.join("integration")).unwrap();
+    let e = pb(&copy, &drive, "Test Pia", Some(vec![named(&copy, &rel)]));
+    let said = format!("{e:?}");
+    assert!(
+        said.contains("the drive holds no integration/ folder"),
+        "{said}"
+    );
+    assert!(!drive.join("integration").exists());
     let _ = std::fs::remove_dir_all(drive.parent().unwrap());
 }
 
@@ -2224,6 +2348,29 @@ fn a_design_not_named_for_its_version_or_planted_on_the_drive_is_refused_by_name
 }
 
 #[test]
+fn an_answer_changed_after_it_was_signed_does_not_go_back() {
+    let (drive, copy) = world("answer-changed");
+    let rel = pia_answers(&drive, &copy, &vleo_files::answer::Said::Fine, true);
+    let mut f = sqlite::read(&copy.join(&rel)).unwrap();
+    for t in f.texts.iter_mut().filter(|t| t.kind == "answer") {
+        t.body = s("object");
+    }
+    f.texts.push(Text {
+        scope: s(FILE),
+        kind: s("because"),
+        body: s("said by nobody who signed it"),
+    });
+    sqlite::write(&f, &copy.join(&rel)).unwrap();
+    let r = pb(&copy, &drive, "Test Pia", None).unwrap();
+    let l = line(&r, &rel);
+    assert!(
+        !l.back && l.why.contains("does not check through the chain"),
+        "{l:?}"
+    );
+    let _ = std::fs::remove_dir_all(drive.parent().unwrap());
+}
+
+#[test]
 fn a_release_carrying_a_group_file_the_drive_does_not_hold_does_not_go_back() {
     let (drive, copy) = world("release-group");
     // Ola registers a person in her copy's group file, which the drive's
@@ -2309,5 +2456,178 @@ fn a_release_never_goes_back_through_a_link_on_the_drive() {
     let r = pb(&copy, &drive, "Test Ola", None).unwrap();
     let l = line(&r, &rel);
     assert!(!l.back && l.why.contains("through a link"), "{l:?}");
+    let _ = std::fs::remove_dir_all(drive.parent().unwrap());
+}
+
+// ── A preview of a release goes back as a new file (F6-c) ──
+
+/// Sam's preview of the release at `rel` in the copy, on the released design
+/// `design` in the copy, moving power's value, written into the copy; its
+/// path.
+fn sam_previews(copy: &Path, rel: &str, design: &str) -> String {
+    let o = opened(copy);
+    let d = sqlite::read(&copy.join(design)).unwrap();
+    let held = vleo_files::design::open_held(&d, &o.programme, APP).unwrap();
+    let bytes = std::fs::read(copy.join(rel)).unwrap();
+    let f = vleo_files::design::preview(
+        &vleo_files::design::Whole {
+            path: rel,
+            bytes: &bytes,
+        },
+        &held,
+        &[vleo_files::design::Move {
+            value: s("power_array_margin"),
+            node: s("power_array_margin"),
+            group: s("l3_power"),
+            before: Some(0.25),
+            after: Some(0.125),
+            before_why: None,
+            after_why: None,
+        }],
+        &[&o.programme, &o.systems],
+        "Test Sam",
+        &key(72),
+        AT,
+        APP,
+        &o.programme,
+    )
+    .unwrap();
+    let f_meta = |k: &str| f.meta[k].clone();
+    let at = chain::preview_path(&f_meta("group_id"), &f_meta("version"), &f_meta("based_on"));
+    std::fs::create_dir_all(copy.join(&at).parent().unwrap()).unwrap();
+    sqlite::write(&f, &copy.join(&at)).unwrap();
+    at
+}
+
+#[test]
+fn a_preview_goes_back_as_a_new_file_by_the_system_engineer_who_wrote_it() {
+    let (drive, copy) = world("preview");
+    let rel = sealed_in(&copy, "1.0");
+    let r = pb(&copy, &drive, "Test Ola", Some(vec![named(&copy, &rel)])).unwrap();
+    assert!(r.written, "{:?}", r.lines);
+    let d = released_in(&copy, "2026.10.1", "", "Test Sam", 72);
+    let r = pb(&copy, &drive, "Test Sam", Some(vec![named(&copy, &d)])).unwrap();
+    assert!(r.written, "{:?}", r.lines);
+    let p = sam_previews(&copy, &rel, &d);
+    assert_eq!(
+        p,
+        "integration/l3_solar-1.0/preview-l3_solar-1.0-on-2026.10.1.vleo"
+    );
+    // Not Ola's to put back.
+    let r = pb(&copy, &drive, "Test Ola", None).unwrap();
+    let l = line(&r, &p);
+    assert!(!l.back && l.why.contains("\"Test Sam\"'s preview"), "{l:?}");
+    // Another file at its place on the drive when the copy was taken: never
+    // written over.
+    std::fs::create_dir_all(drive.join(&p).parent().unwrap()).unwrap();
+    std::fs::write(drive.join(&p), "another").unwrap();
+    let record = std::fs::read_to_string(copy.join(copied::FILE_NAME)).unwrap();
+    let mut taken = Copied::from_toml(&record).unwrap();
+    taken.files.insert(p.clone(), copied::digest(b"another"));
+    std::fs::write(copy.join(copied::FILE_NAME), taken.to_toml()).unwrap();
+    let r = pb(&copy, &drive, "Test Sam", None).unwrap();
+    let l = line(&r, &p);
+    assert!(
+        !l.back && l.why.contains("a preview is never written over"),
+        "{l:?}"
+    );
+    std::fs::remove_file(drive.join(&p)).unwrap();
+    std::fs::write(copy.join(copied::FILE_NAME), record).unwrap();
+    // Sam's: it goes back, a new folder and file in the drive's integration/.
+    let r = pb(&copy, &drive, "Test Sam", None).unwrap();
+    let l = line(&r, &p);
+    assert!(
+        l.back
+            && l.why
+                .contains("the preview of l3_solar 1.0 on design 2026.10.1, by Test Sam"),
+        "{l:?}"
+    );
+    let r = pb(&copy, &drive, "Test Sam", Some(vec![named(&copy, &p)])).unwrap();
+    assert!(r.written, "{:?}", r.lines);
+    let o = opened(&drive);
+    let f = sqlite::read(&drive.join(&p)).unwrap();
+    vleo_files::design::open_preview(&f, &[&o.programme, &o.systems], &o.programme, APP).unwrap();
+    // One there already is never written over.
+    let r = pb(&copy, &drive, "Test Sam", None).unwrap();
+    assert!(!r.back().contains(&p), "{:?}", r.lines);
+    let _ = std::fs::remove_dir_all(drive.parent().unwrap());
+}
+
+#[test]
+fn a_preview_of_a_release_or_on_a_design_the_drive_does_not_hold_does_not_go_back() {
+    let (drive, copy) = world("preview-refused");
+    let rel = sealed_in(&copy, "1.0");
+    let d = released_in(&copy, "2026.10.1", "", "Test Sam", 72);
+    // Neither the release nor the design is on the drive.
+    let p = sam_previews(&copy, &rel, &d);
+    let r = pb(&copy, &drive, "Test Sam", None).unwrap();
+    let l = line(&r, &p);
+    assert!(
+        !l.back && l.why.contains("the drive holds no design 2026.10.1"),
+        "{l:?}"
+    );
+    let r = pb(&copy, &drive, "Test Sam", Some(vec![named(&copy, &d)])).unwrap();
+    assert!(r.written, "{:?}", r.lines);
+    let r = pb(&copy, &drive, "Test Sam", None).unwrap();
+    let l = line(&r, &p);
+    assert!(
+        !l.back
+            && l.why.contains(
+                "the drive holds no groups/l3_solar/releases/l3_solar-1.0.vleo: a preview is of a release that is there"
+            ),
+        "{l:?}"
+    );
+    // The drive's release is another of that number: not the one held.
+    std::fs::create_dir_all(drive.join("groups/l3_solar/releases")).unwrap();
+    let mut other = sqlite::read(&copy.join(&rel)).unwrap();
+    other.meta.insert(s("sealed_at"), s("2026-10-16T09:00:00Z"));
+    sqlite::write(&other, &drive.join(&rel)).unwrap();
+    let r = pb(&copy, &drive, "Test Sam", None).unwrap();
+    let l = line(&r, &p);
+    assert!(
+        !l.back
+            && l.why.contains(
+                "is not the drive's groups/l3_solar/releases/l3_solar-1.0.vleo, byte for byte"
+            ),
+        "{l:?}"
+    );
+    // The drive's release as it was sealed again.
+    std::fs::remove_file(drive.join(&rel)).unwrap();
+    std::fs::copy(copy.join(&rel), drive.join(&rel)).unwrap();
+    // Written by Ola, who is its writer and not the system engineer.
+    let theirs = sqlite::read(&copy.join(&p)).unwrap();
+    let mut ola = theirs.clone();
+    ola.meta.insert(s("writer"), s("Test Ola"));
+    ola.signatures.clear();
+    let row = chain::sign(&ola, FILE, "Test Ola", &key(73), AT, "ok", "").unwrap();
+    ola.signatures.push(row);
+    sqlite::write(&ola, &copy.join(&p)).unwrap();
+    let r = pb(&copy, &drive, "Test Ola", None).unwrap();
+    let l = line(&r, &p);
+    assert!(
+        !l.back && l.why.contains("does not check through the chain"),
+        "{l:?}"
+    );
+    sqlite::write(&theirs, &copy.join(&p)).unwrap();
+    // Moved under another name, it says where it is.
+    let moved = "integration/l3_solar-1.0/preview-l3_solar-1.0-on-2026.10.2.vleo";
+    std::fs::rename(copy.join(&p), copy.join(moved)).unwrap();
+    let r = pb(&copy, &drive, "Test Sam", None).unwrap();
+    let l = line(&r, moved);
+    assert!(!l.back && l.why.contains(&format!("so it is {p}")), "{l:?}");
+    // At a sequence from 2 it is at its place (F6's answer (a)); never at 1,
+    // nor at a number written otherwise.
+    let mut at = moved.to_string();
+    for (n, back) in [("1", false), ("02", false), ("2x", false), ("2", true)] {
+        let to = p.replace(".vleo", &format!("-{n}.vleo"));
+        std::fs::rename(copy.join(&at), copy.join(&to)).unwrap();
+        at = to;
+        let r = pb(&copy, &drive, "Test Sam", None).unwrap();
+        let l = line(&r, &at);
+        assert_eq!(l.back, back, "-{n}: {l:?}");
+        if !back {
+            assert!(l.why.contains(&format!("so it is {p}")), "-{n}: {l:?}");
+        }
+    }
     let _ = std::fs::remove_dir_all(drive.parent().unwrap());
 }

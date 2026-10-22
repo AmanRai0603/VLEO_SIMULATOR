@@ -36,8 +36,16 @@
 //! Nothing is computed here: every number is a release's own, and what a
 //! closure does with it is the engine's.
 //!
+//! **A preview, and the answers to it** (`preview`, F6-c): see its module.
+//!
 //! Not here: the pointer that makes a design current and the archive (F7),
-//! previews and their answers (F6-c), the daily snapshot.
+//! the daily snapshot.
+
+mod preview;
+
+pub use preview::{answers, named, Answered, Move, OpenedPreview};
+#[cfg(not(target_arch = "wasm32"))]
+pub use preview::{open_preview, preview, to_preview};
 
 use crate::chain::{self, Registry, FILE};
 use crate::checks;

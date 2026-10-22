@@ -43,9 +43,9 @@
 
 import { $, esc, answerFirst, plural } from './dom.js';
 
-const W = { group: '', tree: null, sel: '', notice: null, stale: false, host: null, post: null, groups: [], why: '', seq: 0 };
+const W = { group: '', tree: null, sel: '', notice: null, stale: false, host: null, post: null, groups: [], why: '', seq: 0, view: null };
 /** The release panel: the checks as last read, what was typed, and the program's answer. */
-const R = { seq: 0, checks: null, version: '', changed: '', understood: new Set(), notice: null, sending: false };
+const R = { seq: 0, checks: null, version: '', changed: '', understood: new Set(), notice: null, sending: false, previewing: false, previewed: null };
 
 async function get(path) {
   try { return await (await fetch(path)).json(); } catch (e) { return { ok: false, message: 'the program did not answer: ' + e }; }
@@ -53,7 +53,7 @@ async function get(path) {
 
 /** Open the workspace at group `id`, the next time it is drawn. */
 export function openAt(id) {
-  if (id && id !== W.group) { W.group = id; W.tree = null; W.sel = ''; W.notice = null; W.stale = false; R.notice = null; }
+  if (id && id !== W.group) { W.group = id; W.tree = null; W.sel = ''; W.notice = null; W.stale = false; W.view = null; R.notice = null; R.previewed = null; }
 }
 
 /** Draw the workspace into `host`. `post(path, fields)` writes with the launch's word;
@@ -123,6 +123,8 @@ async function draw(keep) {
         esc(plural(t.blocks.filter(b => !b.archived).length, 'block')) + ', ' + esc(plural(t.open, 'part')) + ' still open.',
         esc(t.signed.says) + '.',
       ], 'reference') + frame(t) +
+    view() +
+    (t.yours ? answerForm() : '') +
     '<div class="sy-grid"><nav class="sy-tree" aria-label="the branch">' + tree(t) + '</nav>' +
     '<section class="sy-block">' + block(t) + '</section></div>' +
     (group === 'systems' ? '<section class="sy-release" id="sy-release"><p class="sh-loading">reading the integration checks…</p></section>' : '');
@@ -130,7 +132,8 @@ async function draw(keep) {
 }
 
 /** The release panel, read again from the program: the integration checks of
- *  today's design, its red marks, and Release design. */
+ *  today's design, its red marks, the previews and their answers, and
+ *  Release design. */
 async function drawRelease() {
   const seq = ++R.seq;
   const c = await get('/v1/design/integration');
@@ -162,11 +165,48 @@ async function drawRelease() {
     ], 'reference') +
     '<table class="sy-r-lines"><thead><tr><th>group</th><th>check</th><th></th><th>why</th></tr></thead><tbody>' +
     lines + '</tbody></table>' +
-    '<h4 class="seg-h">red marks</h4>' + marks +
+    '<h4 class="seg-h">red marks</h4>' + marks + previews(c) +
     '<div class="sy-r-form"><label>version <input id="sy-r-version" size="12" value="' + esc(R.version) + '"></label> ' +
     '<label>what changed <textarea id="sy-r-changed" rows="2" cols="60">' + esc(R.changed) + '</textarea></label> ' +
     '<button class="ctl" id="sy-r-release"' + (R.sending ? ' disabled' : '') + '>Release design</button></div>' +
     (n ? '<p class="' + (n.ok ? 'sh-said' : 'sh-refused') + ' sy-r-notice">' + esc(n.text) + '</p>' : '');
+}
+
+/** The previews and their answers (F6-c), as the integration checks carry
+ *  them: each group whose release in today's design is not the one in the
+ *  design released now, with Preview where it has none; then every preview,
+ *  what moved, and what each group it names has said, unanswered first. What
+ *  moved is the engine's, built when Preview is pressed, never here. */
+function previews(c) {
+  const num = (x, why) => x === null || x === undefined ? (why ? 'refused: ' + why : 'not in this design') : String(x);
+  const pending = (c.pending || []).map(p =>
+    '<li class="sy-p-pending">' + esc(p.group + ' ' + p.version) + ' is in today\'s design, and design ' + esc(c.previews_on) +
+    ' holds ' + esc(p.held ? p.group + ' ' + p.held : 'none of ' + p.group) + ': ' +
+    (p.preview ? 'previewed in ' + esc(p.preview)
+      : '<button class="ctl sy-p-preview" data-preview="' + esc(p.group) + '"' + (R.previewing ? ' disabled' : '') +
+        '>Preview ' + esc(p.group + ' ' + p.version) + '</button>') + '</li>').join('');
+  const said = a => '<li class="sy-p-said sy-p-' + esc(a.said) + '"><b>' + esc(a.group) + '</b>: ' + esc(a.said) +
+    (a.because ? ', because ' + esc(a.because) : '') + (a.why ? ': ' + esc(a.why) : '') +
+    (a.in_copy ? ' <span class="muted">answered in your copy, not put back yet, so not counted</span>' : '') + '</li>';
+  const one = p => p.opens === false
+    ? '<li class="sh-refused sy-p-refused">' + esc(p.why) + '</li>'
+    : '<li class="sy-p-one"><b>' + esc(p.group + ' ' + p.version) + '</b> on design ' + esc(p.based_on) +
+      (p.stale ? ' <b>stale</b>: the design released now is ' + esc(c.previews_on || 'none') : '') +
+      ', written by ' + esc(p.writer) + ', in ' + esc(p.in) + '. ' +
+      (p.named.length ? 'Named to answer: ' + esc(p.named.join(', ')) + '.' : 'It names no subsystem\'s group: what moved is shown, not answered.') +
+      '<ul class="sy-p-answers">' + p.answers.map(said).join('') + '</ul>' +
+      '<details><summary>' + esc(String(p.moved.length)) + ' value' + (p.moved.length === 1 ? '' : 's') + ' moved, the engine\'s</summary>' +
+      '<table class="sh-table sy-p-moved"><thead><tr><th>value</th><th>group</th><th>design ' + esc(p.based_on) +
+      '</th><th>with ' + esc(p.group + ' ' + p.version) + '</th></tr></thead><tbody>' +
+      p.moved.map(m => '<tr><td>' + esc(m.value) + '</td><td>' + esc(m.group) + '</td><td>' + esc(num(m.before, m.before_why)) +
+        '</td><td>' + esc(num(m.after, m.after_why)) + '</td></tr>').join('') + '</tbody></table></details></li>';
+  const n = R.previewed;
+  return '<h4 class="seg-h">previews</h4>' +
+    (c.previews_said ? '<p class="muted sy-p-none">' + esc(c.previews_said) + '</p>' : '') +
+    (pending ? '<ul class="sy-p-pendings">' + pending + '</ul>'
+      : (c.previews_said ? '' : '<p class="muted sy-p-none">every release in today\'s design is the one design ' + esc(c.previews_on) + ' holds</p>')) +
+    (n ? '<p class="' + (n.ok ? 'sh-said' : 'sh-refused') + ' sy-p-notice">' + esc(n.text) + '</p>' : '') +
+    ((c.previews || []).length ? '<ul class="sy-p-list">' + c.previews.map(one).join('') + '</ul>' : '');
 }
 
 /** The frame around the branch, as the systems' file says it: the valve
@@ -199,6 +239,29 @@ function frame(t) {
       'every margin as the engine computes it, never computed here</dd></dl></section>';
 }
 
+/** Today's view of the branch and its impact (F5-d), once asked for: what the
+ *  program built and ran, said as it said it. */
+function view() {
+  const v = W.view;
+  if (!v) return '<p><button class="ctl" id="sy-view">Today\'s view</button> today\'s design with every node of this branch signed as it is in your copy, and every value outside it that moves.</p>';
+  if (v.ok === false) return '<p class="sh-refused sy-view">' + esc(v.message || 'today\'s view cannot be built') + '</p>';
+  const num = (x, why) => x === null || x === undefined ? 'refused' + (why ? ': ' + why : '') : String(+x.toPrecision(6));
+  const ran = (k, r) => '<p>' + k + ': ' + r.ran + ' ran, ' + r.blocked.length + ' blocked' +
+    (r.blocked.length ? ' — ' + r.blocked.map(b => esc(b.node + ': ' + b.why)).join('<br>') : '') + '</p>';
+  return '<section class="sy-view"><h4>today\'s view</h4><p>' + esc(v.says) + '</p>' +
+    '<p>Run on ' + esc(v.case) + '.</p>' +
+    '<p>' + (v.changes.length ? 'It changes ' + esc(v.changes.join(', ')) + '.' : 'Nothing signed in your copy changes today\'s design.') + '</p>' +
+    (v.left_out.length ? '<p>Left out: ' + v.left_out.map(l => esc(l.node + ' — ' + l.why)).join('<br>') + '</p>' : '') +
+    (v.seal_refuses.length ? '<p class="sh-refused">Sealed now, it would be refused: ' + v.seal_refuses.map(esc).join('<br>') + '</p>' : '') +
+    ran('Today\'s design', v.today) + ran('The view', v.view) +
+    (v.impact.length
+      ? '<table class="sh-table sy-impact"><thead><tr><th>outside the branch</th><th>group</th><th>today</th><th>in the view</th></tr></thead><tbody>' +
+        v.impact.map(m => '<tr><td>' + esc(m.id) + '</td><td>' + esc(m.group) + '</td><td>' + esc(num(m.before, m.before_why)) + '</td><td>' + esc(num(m.after, m.after_why)) + '</td></tr>').join('') +
+        '</tbody></table>'
+      : '<p class="muted">No value outside the branch moves.</p>') +
+    '<p><button class="ctl" id="sy-view">Build it again</button></p></section>';
+}
+
 function picker() {
   return '<div class="nw-pick"><span class="nw-pick-k">your branches</span> ' +
     (W.groups.length ? W.groups.map(g =>
@@ -219,6 +282,16 @@ function stale() {
       (W.stale === 'systems' ? 'The systems\' file changed in your copy since. ' : 'Its group file changed in your copy since. ') +
       '<button class="ctl" id="sy-reopen">Open it again</button></div></div>'
     : '';
+}
+
+/** A release that moves this branch's values, answered by its owner (W7):
+ *  fine, or object, because…, signed, written in the copy. */
+function answerForm() {
+  return '<details class="sy-answer"><summary>answer a release that moves ' + esc(W.group) + '\'s values</summary>' +
+    '<p><input id="sy-an-group" size="14" placeholder="its group"> <input id="sy-an-version" size="6" placeholder="version"> ' +
+    '<select id="sy-an-said" class="ctl"><option value="fine">fine</option><option value="object">object, because…</option></select></p>' +
+    '<p><textarea id="sy-an-because" rows="2" class="nw-wide" placeholder="why, for an objection"></textarea></p>' +
+    '<p><button class="ctl" id="sy-answer">Answer</button></p></details>';
 }
 
 /** The branch as a tree: each block under its parent; a block whose parent the
@@ -387,6 +460,18 @@ async function click(e) {
   if (!t || !W.host.contains(t)) return;
   const v = id => ($('#' + id, W.host) || {}).value || '';
   if (t.dataset.groupOpen) { openAt(t.dataset.groupOpen); return draw(); }
+  if (t.dataset.preview) {
+    if (R.previewing) return;
+    R.previewing = true;
+    t.disabled = true;
+    t.textContent = 'building both designs…';
+    let r;
+    try {
+      r = await W.post('/v1/design/preview', { group: t.dataset.preview });
+    } finally { R.previewing = false; }
+    R.previewed = { ok: !!(r && r.ok), text: (r && r.message) || 'nothing was written' };
+    return drawRelease();
+  }
   if (t.dataset.block) {
     W.why = v('sy-why');
     W.sel = t.dataset.block;
@@ -411,6 +496,21 @@ async function click(e) {
     }
     case 'sy-go': { const id = v('sy-id').trim(); if (id) { openAt(id); return draw(); } return; }
     case 'sy-reopen': W.notice = null; return draw();
+    case 'sy-view': {
+      const group = W.group;
+      const r = await get('/v1/branch/view?group=' + encodeURIComponent(group));
+      if (group !== W.group) return;
+      W.view = r;
+      return draw(true);
+    }
+    case 'sy-answer': {
+      const r = await W.post('/v1/answer', {
+        group: v('sy-an-group').trim(), version: v('sy-an-version').trim(), answering: W.group,
+        said: v('sy-an-said'), because: v('sy-an-because'),
+      });
+      W.notice = { ok: !!(r && r.ok), text: (r && r.message) || 'nothing was answered' };
+      return draw(true);
+    }
     case 'sy-add': return send('add', { parent: b, id: v('sy-add-id').trim(), question: v('sy-add-q') });
     case 'sy-fill-q': return send('fill', { block: b, question: v('sy-q') });
     case 'sy-fill-p': return send('fill', {
