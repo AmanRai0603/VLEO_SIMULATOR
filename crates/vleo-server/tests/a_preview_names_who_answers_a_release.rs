@@ -778,30 +778,56 @@ fn the_system_engineer_previews_a_release_and_its_named_group_answers_it() {
     }
     // An allocation changed: a reallocate row of the drive's systems' file,
     // its rows signed with it, its why saying what the listing named, decides
-    // it with nothing in the copy. The file as it was, it is undecided again.
+    // it with nothing in the copy. In the copy's systems' file only, or in a
+    // drive's file that does not sign its rows, it does not, and the second
+    // is said. The file as it was, it is undecided again.
     let at = drive.join("groups/systems/systems.vgroup");
     let was = std::fs::read(&at).unwrap();
-    let mut sy = sqlite::read(&at).unwrap();
-    sy.changes.push(Change {
-        at: s("2026-10-20T09:00:00Z"),
-        who: s("Test Sam"),
-        scope: s("sys_orbit"),
-        what: format!(
-            "reallocate: the orbit's range widened, deciding {objection} answer {}",
-            &digest[..12]
-        ),
-        before: None,
-        after: None,
-    });
-    chain::sign_rows(&mut sy);
-    sy.signatures.retain(|r| r.scope != FILE);
-    sqlite::write(&signed(sy, "Test Sam", &key(92)), &at).unwrap();
+    let with_row = |marked: bool| {
+        let mut sy = sqlite::read(&at).unwrap();
+        sy.changes.push(Change {
+            at: s("2026-10-20T09:00:00Z"),
+            who: s("Test Sam"),
+            scope: s("sys_orbit"),
+            what: format!(
+                "reallocate: the orbit's range widened, deciding {objection} answer {}",
+                &digest[..12]
+            ),
+            before: Some(s("port \"range_allocated\" value=\"300\"\n")),
+            after: Some(s("port \"range_allocated\" value=\"320\"\n")),
+        });
+        if marked {
+            chain::sign_rows(&mut sy);
+        }
+        sy.signatures.retain(|r| r.scope != FILE);
+        signed(sy, "Test Sam", &key(92))
+    };
+    let undecided = format!("\"objection\":\"{objection}\",\"decision\":\"undecided\"");
+    let in_copy = copy.join("groups/systems/systems.vgroup");
+    let copy_was = std::fs::read(&in_copy).unwrap();
+    sqlite::write(&with_row(true), &in_copy).unwrap();
+    let p = previews();
+    assert!(
+        entries(&p, "previews")[0].contains(&undecided),
+        "in the copy only: {p}"
+    );
+    std::fs::write(&in_copy, &copy_was).unwrap();
+    sqlite::write(&with_row(false), &at).unwrap();
+    let p = previews();
+    assert!(
+        entries(&p, "previews")[0].contains(&undecided)
+            && p.contains("\"reallocations_not_counted\":[\"Test Sam's change at 2026-10-20T09:00:00Z")
+            && p.contains("does not decide it: the drive's systems' file does not sign its change rows (F6-d)"),
+        "unmarked: {p}"
+    );
+    sqlite::write(&with_row(true), &at).unwrap();
     let reallocated =
         "an allocation changed, by Test Sam at 2026-10-20T09:00:00Z, in the systems' file";
     let p = previews();
+    // Decided, nothing is offered for it, nor said not to count.
     assert!(
         entries(&p, "previews")[0].contains(&format!(
-            "\"objection\":\"{objection}\",\"decision\":\"{reallocated}\""
+            "\"objection\":\"{objection}\",\"decision\":\"{reallocated}\",\"in_copy\""
         )),
         "{p}"
     );

@@ -1484,12 +1484,19 @@ fn previews_into(j: &mut Json, ctx: &Ctx, drive: &Path, c: &me::Chain) {
                             let found = decided.iter().find(|d| d.objection().id() == id);
                             let d = found.and_then(|d| d.decision());
                             j.str_field("decision", &d.map_or("undecided".into(), |d| d.said()));
-                            // What a reallocation's why says to decide it.
-                            if let Some(o) = found {
-                                j.str_field(
-                                    "reallocation_names",
-                                    &design::reallocation_names(o.objection()),
-                                );
+                            // Undecided: what a reallocation's why says to
+                            // decide it, once its answer reads, and why each
+                            // change naming it does not.
+                            if let Some(o) = found.filter(|o| o.decision().is_none()) {
+                                if !o.objection().answer.is_empty() {
+                                    j.str_field(
+                                        "reallocation_names",
+                                        &design::reallocation_names(o.objection()),
+                                    );
+                                }
+                                if !o.not_counted().is_empty() {
+                                    strings(j, "reallocations_not_counted", o.not_counted());
+                                }
                             }
                         }
                         design::Answered::Refused(w) => {

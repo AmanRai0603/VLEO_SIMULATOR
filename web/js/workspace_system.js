@@ -237,7 +237,9 @@ function decide(a, p) {
     '<button class="ctl" data-decide="next"' + on + (R.deciding ? ' disabled' : '') + '>Ask for its next version</button> ' +
     '<button class="ctl" data-decide="anyway"' + on + (R.deciding ? ' disabled' : '') + '>Release anyway</button>' +
     (a.reallocation_names ? ' or change an allocation: Reallocate, its why saying <code class="sy-p-names">' +
-      esc(a.reallocation_names) + '</code>, then Put back the systems\' file' : '') + '</span>';
+      esc(a.reallocation_names) + '</code>, then Put back the systems\' file' : '') +
+    ((a.reallocations_not_counted || []).length ? '<ul class="sy-p-not-counted">' +
+      a.reallocations_not_counted.map(w => '<li class="sh-refused">' + esc(w) + '</li>').join('') + '</ul>' : '') + '</span>';
 }
 
 function previews(c) {

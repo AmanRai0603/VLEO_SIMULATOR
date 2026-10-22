@@ -766,19 +766,23 @@ fn reallocated(who: &str, names: &str) -> Change {
         who: s(who),
         scope: s("sys_drag"),
         what: format!("reallocate: the drag's mass widened, deciding {names}"),
-        before: None,
-        after: None,
+        before: Some(s("port \"drag_mass_allocated\" value=\"12\"\n")),
+        after: Some(s("port \"drag_mass_allocated\" value=\"14\"\n")),
     }
 }
 
 /// A reallocation decides an objection (F6-e), read from the systems' file
 /// as it opens through the chain, marked so its change rows are signed with
 /// it: a `reallocate` row by Sam, or Sid, naming the objection and its
-/// answer, by 12 characters of its digest or more. Nothing else decides: no
-/// systems' file, one unmarked, one that does not open, a row added after it
-/// was signed, a row by Ola, another edit's, one naming another answer, too
-/// little of it, or the place alone. Released, it is no red mark, and
-/// `objections.csv` keeps it.
+/// answer, by 12 characters of its digest or more, and changing an
+/// allocation on a mount. Nothing else decides, and each change naming the
+/// objection says why not: no systems' file, one unmarked, one that does
+/// not open, a row added after it was signed, a row by Ola, another edit's,
+/// one naming another answer, too little of it, a wrong 13th character, the
+/// place alone, nothing before or nothing changed, a block nothing is
+/// mounted on, Sid's key revoked before his change, or a deputy under an
+/// assistant's name. An issue decides first. Released, it is no red mark,
+/// and `objections.csv` keeps it.
 #[test]
 fn a_reallocation_in_the_systems_file_decides_an_objection() {
     let w = world();
@@ -823,7 +827,16 @@ fn a_reallocation_in_the_systems_file_decides_an_objection() {
     mount.what = format!("mount: {}", mount.what);
     let other = format!("{DRAG} answer {}", "b2".repeat(6));
     let little = format!("{DRAG} answer {}", "a1".repeat(4));
-    for (what, f) in [
+    // 12 characters of the digest right, then one wrong: never "more of it".
+    let wrong_13th = format!("{DRAG} answer {}f", "a1".repeat(6));
+    let changed = |f: &dyn Fn(&mut Change)| {
+        let mut c = reallocated("Sam Engel", &names);
+        f(&mut c);
+        with(vec![c], true, "Sam Engel", 12)
+    };
+    let sam_with = |names: &str| with(vec![reallocated("Sam Engel", names)], true, "Sam Engel", 12);
+    let not_counted = |f: &File| decided(Some(f)).remove(0).not_counted().to_vec();
+    for (what, f, why) in [
         (
             "unmarked",
             with(
@@ -832,41 +845,114 @@ fn a_reallocation_in_the_systems_file_decides_an_objection() {
                 "Sam Engel",
                 12,
             ),
+            "the drive's systems' file does not sign its change rows",
         ),
         (
             "signed by Ola",
             with(vec![reallocated("Sam Engel", &names)], true, "Ola Sun", 13),
+            "the drive's systems' file does not check through the chain",
         ),
-        ("a row added after it was signed", later),
+        (
+            "a row added after it was signed",
+            later,
+            "the drive's systems' file does not check through the chain",
+        ),
         (
             "a row by Ola",
             with(vec![reallocated("Ola Sun", &names)], true, "Sam Engel", 12),
+            "it is not made by the system engineer or their deputy",
         ),
-        ("another edit's", with(vec![mount], true, "Sam Engel", 12)),
+        (
+            "another edit's",
+            with(vec![mount], true, "Sam Engel", 12),
+            "it is not a reallocate edit's change",
+        ),
         (
             "another answer",
-            with(
-                vec![reallocated("Sam Engel", &other)],
-                true,
-                "Sam Engel",
-                12,
-            ),
+            sam_with(&other),
+            "it does not name the answer as",
         ),
         (
             "too little of it",
-            with(
-                vec![reallocated("Sam Engel", &little)],
-                true,
-                "Sam Engel",
-                12,
-            ),
+            sam_with(&little),
+            "it does not name the answer as",
+        ),
+        (
+            "a wrong 13th character",
+            sam_with(&wrong_13th),
+            "it does not name the answer as",
         ),
         (
             "the place alone",
-            with(vec![reallocated("Sam Engel", DRAG)], true, "Sam Engel", 12),
+            sam_with(DRAG),
+            "it does not name the answer as",
+        ),
+        (
+            "nothing before",
+            changed(&|c| c.before = None),
+            "it changes no allocation on a mount of the systems' file",
+        ),
+        (
+            "nothing changed",
+            changed(&|c| c.after = c.before.clone()),
+            "it changes no allocation on a mount of the systems' file",
+        ),
+        (
+            "on a block nothing is mounted on",
+            changed(&|c| c.scope = s("sys_nowhere")),
+            "it changes no allocation on a mount of the systems' file",
         ),
     ] {
         assert_eq!(decision(Some(&f)), None, "{what}");
+        let said = not_counted(&f);
+        assert!(
+            said.len() == 1 && said[0].contains(why) && said[0].contains("does not decide it"),
+            "{what}: {said:?}"
+        );
+    }
+    // Decided, nothing is said not to count.
+    assert!(not_counted(&sam).is_empty());
+    // An issue decides first.
+    let issue = decide(&w, &o, Decide::NextVersion, "Sam Engel", 12).unwrap();
+    let first = design::decisions(
+        std::slice::from_ref(&o),
+        &[issue],
+        Some(&sam),
+        &[&w.pr, &w.sy],
+        &w.pr,
+    );
+    assert!(
+        matches!(first[0].decision(), Some(Decision::NextVersion { .. })),
+        "{first:?}"
+    );
+    // Sid's key revoked before his change, and a deputy under an assistant's
+    // name: neither decides.
+    let mut pf = w.pr.file.clone();
+    for k in pf.keys.iter_mut().filter(|k| k.person == "Sid Side") {
+        k.revoked_from = s("2026-10-01");
+    }
+    register(&mut pf, "Claude", "system engineer", "Sam Engel", &key(19));
+    let pr = chain::open_programme(
+        signed(pf, "Pat Morgan", &key(11)),
+        &key(11).public().fingerprint(),
+    )
+    .unwrap();
+    for (who, why) in [
+        ("Sid Side", "Sid Side holds no key that counts at"),
+        (
+            "Claude",
+            "it is not made by the system engineer or their deputy",
+        ),
+    ] {
+        let f = with(vec![reallocated(who, &names)], true, "Sam Engel", 12);
+        let d = design::decisions(std::slice::from_ref(&o), &[], Some(&f), &[&pr, &w.sy], &pr)
+            .remove(0);
+        assert!(
+            d.decision().is_none()
+                && d.not_counted().len() == 1
+                && d.not_counted()[0].contains(why),
+            "{who}: {d:?}"
+        );
     }
     assert_eq!(decision(None), None, "no systems' file");
     // Released: no red mark of it, and its row in objections.csv.
@@ -877,6 +963,16 @@ fn a_reallocation_in_the_systems_file_decides_an_objection() {
         Answered::Object(s(BECAUSE)),
         Answered::Fine,
     )];
+    // A reallocation that does not count holds the release, saying why.
+    let by_ola = with(vec![reallocated("Ola Sun", &names)], true, "Sam Engel", 12);
+    let e = release_it(&w, &r, &previews, &decided(Some(&by_ola)), &[]).unwrap_err();
+    assert!(
+        e.contains("every objection is decided before the design is released (W7)")
+            && e.contains(
+                "does not decide it: it is not made by the system engineer or their deputy"
+            ),
+        "{e}"
+    );
     let d = release_it(&w, &r, &previews, &decided(Some(&sam)), &[]).expect("reallocated");
     assert!(
         !table(&d, "red_marks.csv").contains(DRAG),

@@ -35,10 +35,15 @@
 //!   folder holding something, and a systems' file that does not open are
 //!   refused, with nothing written; a group on solar's leaf starts with no
 //!   allocation, since none can be given there yet; a refused mount or
-//!   allocation leaves the systems' file's bytes as they were.
+//!   allocation leaves the systems' file's bytes as they were;
+//! - an allocation changed by Reallocate, its why naming an objection and its
+//!   answer as `design::reallocation_names` says them, decides the objection
+//!   as Sam's, read from the file the edit makes (F6-e); the same edit with
+//!   a why that names nothing decides nothing.
 
 use vleo_files::breakdown::{self, Edit, Part};
 use vleo_files::chain::{self, Registry, FILE};
+use vleo_files::design::{self, Decision, Objection};
 use vleo_files::frame::{self, Valve};
 use vleo_files::keys::SigningKey;
 use vleo_files::meta::Kind;
@@ -1478,4 +1483,55 @@ fn an_allocation_changed_is_refused_by_name() {
     )
     .unwrap_err();
     assert!(e.message().contains("mounts nothing"), "{}", e.message());
+}
+
+/// The why the page gives, through a real reallocation: the edit the
+/// application makes, read back as the system engineer's decision.
+#[test]
+fn a_reallocation_made_as_the_page_says_decides_the_objection() {
+    let pr = programme();
+    let o = Objection {
+        group: s("l3_solar"),
+        version: s("1.3"),
+        answering: s("l3_radiation"),
+        because: s("The shield is too heavy for solar maximum."),
+        answer: "c3".repeat(32),
+    };
+    let elsewhere = vec![pr.file.clone(), solar()];
+    let reallocated = |why: &str| {
+        breakdown::edit(
+            &radiation_allocated(),
+            &[],
+            &elsewhere,
+            &reallocate("shield_mass_allocated", "14", "", "", ""),
+            why,
+            "Sam Engel",
+            &key(12),
+            AT,
+            &pr,
+            &pr,
+        )
+        .map(|(f, _)| f)
+        .expect("Sam reallocates")
+    };
+    let read = |f: &File| {
+        let sy = chain::open_systems(f, &pr).expect("it opens");
+        design::decisions(std::slice::from_ref(&o), &[], Some(f), &[&pr, &sy], &pr).remove(0)
+    };
+    let f = reallocated(&format!(
+        "More shield, deciding {}.",
+        design::reallocation_names(&o)
+    ));
+    assert_eq!(
+        read(&f).decision(),
+        Some(&Decision::Reallocated {
+            by: s("Sam Engel"),
+            at: s(AT),
+        })
+    );
+    let d = read(&reallocated("More shield, for the objection."));
+    assert!(
+        d.decision().is_none() && d.not_counted().is_empty(),
+        "{d:?}"
+    );
 }
