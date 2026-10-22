@@ -505,6 +505,21 @@ fn the_system_engineer_releases_the_design_and_it_goes_back_to_the_drive() {
             && !c.contains("issue 1 on l3_solar, open:"),
         "{c}"
     );
+    // A mark of its own: one marked understood as Nia's issue is not
+    // understood as a file changed since.
+    assert!(
+        c.contains("\"id\":\"issue-file:1-l3_solar\"")
+            && !c.contains("\"id\":\"issue:1-l3_solar\""),
+        "{c}"
+    );
+    // Its reason said once, not once a file of the chain.
+    let said = c
+        .split("does not check through the chain: ")
+        .nth(1)
+        .and_then(|r| r.split('"').next())
+        .unwrap_or("");
+    let mut seen = std::collections::BTreeSet::new();
+    assert!(said.split("; ").all(|part| seen.insert(part)), "{said}");
     std::fs::write(&at, kept).unwrap();
     let version = field(&i, "next_version").to_string();
     let understood = mark_ids(&i).join(",");

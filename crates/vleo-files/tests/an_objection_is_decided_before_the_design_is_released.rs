@@ -719,6 +719,11 @@ fn a_decision_is_read_only_from_what_the_system_engineer_signed() {
         decisions(&w, &o2, &[shifted]).is_none(),
         "moved to another objection"
     );
+    // Its meta naming another writer than its raiser, signed again by Sam:
+    // not an issue file as every reader holds one (`chain::check_issue`).
+    let mut writer = good.clone();
+    writer.meta.insert(s("writer"), s("Sid Side"));
+    let writer = again(writer);
     let wrong = to_uma(good.clone());
     let wrong_owner = to_uma(decide(&w, &o, Decide::NextVersion, "Sam Engel", 12).unwrap());
     for (what, f) in [
@@ -728,6 +733,7 @@ fn a_decision_is_read_only_from_what_the_system_engineer_signed() {
         ("its row changed after it was signed", changed),
         ("its row and its text changed after it was signed", both),
         ("its number not its meta's", number),
+        ("its writer not its raiser", writer),
         ("its group not its meta's", moved),
         ("on the programme, to someone else", wrong),
         ("on solar, to someone else", wrong_owner),
@@ -747,4 +753,42 @@ fn a_decision_is_read_only_from_what_the_system_engineer_signed() {
     });
     let issues = [sy];
     assert!(decisions(&w, &o, &issues).is_none(), "a reallocation");
+}
+
+/// `chain::check_issue`, as every reader of an issue file holds it, on the
+/// files the system engineer raises: one as Sam signed it checks; its row
+/// changed after, it does not; one signed by Sid as Sam's does not; one from
+/// before F6-d, its row unsigned, checks with its row changed, as every file
+/// signed before is read.
+#[test]
+fn an_issue_file_checks_as_its_raiser_signed_it() {
+    let w = world();
+    let r = solar_13(&w);
+    let (_, o) = uma_objects(&w, &r);
+    let f = decide(&w, &o, Decide::NextVersion, "Sam Engel", 12).unwrap();
+    chain::check_issue(&f, &[&w.pr]).expect("as Sam signed it");
+    let mut changed = f.clone();
+    changed.issues[0].what = s("Nothing to decide.");
+    let e = chain::check_issue(&changed, &[&w.pr]).unwrap_err();
+    assert!(
+        e.message().contains("issue 7 on l3_solar, by Sam Engel,"),
+        "{}",
+        e.message()
+    );
+    let mut sid = f.clone();
+    sid.signatures.clear();
+    sid.signatures
+        .push(chain::sign(&sid, FILE, "Sid Side", &key(17), AT, "ok", "raised").unwrap());
+    assert!(
+        chain::check_issue(&sid, &[&w.pr]).is_err(),
+        "signed by Sid as Sam's"
+    );
+    let mut before = f.clone();
+    before.meta.remove(chain::SIGNED_ROWS);
+    before.signatures.clear();
+    before
+        .signatures
+        .push(chain::sign(&before, FILE, "Sam Engel", &key(12), AT, "ok", "raised").unwrap());
+    before.issues[0].what = s("Changed, and unsigned before F6-d.");
+    chain::check_issue(&before, &[&w.pr]).expect("read as it was before F6-d");
 }

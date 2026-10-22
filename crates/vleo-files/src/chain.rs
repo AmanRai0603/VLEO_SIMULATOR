@@ -1377,7 +1377,9 @@ pub fn seal_of<'a>(
 /// its signed meta says them, and signed as it is by the person who raised it,
 /// its meta's writer, with a key one of `registries` counts. Its row is what
 /// its signature covers once it is marked [`SIGNED_ROWS`]; one raised before
-/// F6-d is read as it was, its row unsigned.
+/// F6-d is read as it was, its row unsigned. An issue file is never changed
+/// once raised: it is closed by the release that names it (`crate::issues`),
+/// never by its row, which would then no longer check.
 pub fn check_issue(f: &File, registries: &[&Registry]) -> Result<(), Error> {
     let bad = |why: String| refused(ErrorKind::Malformed, why);
     if f.kind().ok() != Some(Kind::Issue) {
@@ -1406,13 +1408,36 @@ pub fn check_issue(f: &File, registries: &[&Registry]) -> Result<(), Error> {
             meta("writer")
         )));
     }
-    let mut whys = Vec::new();
+    // Signed as it is, said once; then whose key it is.
+    let rows: Vec<&SignatureRow> = f
+        .signatures
+        .iter()
+        .filter(|r| r.scope == FILE && r.signer == i.raised_by)
+        .collect();
+    let mut whys: Vec<String> = Vec::new();
+    for row in &rows {
+        if let Err(e) = check_row(f, row) {
+            whys.push(e.message().to_string());
+        }
+    }
+    if !rows.is_empty() && whys.len() == rows.len() {
+        whys.dedup();
+        return Err(none_counts(
+            &format!("issue {} on {}, by {},", i.number, i.group_id, i.raised_by),
+            &whys,
+        ));
+    }
+    whys.clear();
     for r in registries {
         let (ok, why) = counted(f, FILE, r, |name| name == i.raised_by);
         if !ok.is_empty() {
             return Ok(());
         }
-        whys.extend(why);
+        for w in why {
+            if !whys.contains(&w) {
+                whys.push(w);
+            }
+        }
     }
     Err(none_counts(
         &format!("issue {} on {}, by {},", i.number, i.group_id, i.raised_by),
