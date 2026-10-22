@@ -2766,7 +2766,7 @@ fn the_systems_file_goes_back_by_the_system_engineer_its_history_kept() {
 /// who owns each mounted group; mounts a group once; and adds changes only
 /// by the system engineer or their deputy, none dated before the one it
 /// follows. The change rows a drive's file kept unsigned are said to be
-/// signed with it now.
+/// signed with it now, but never a reallocation among them.
 #[test]
 fn the_systems_file_keeps_what_the_application_never_takes_away() {
     let (drive, copy) = world("systems-held");
@@ -2947,6 +2947,28 @@ fn the_systems_file_keeps_what_the_application_never_takes_away() {
                 "the 1 change row(s) the drive's file kept unsigned are signed by Test Sam with it now"
             ),
         "{l:?}"
+    );
+    // A reallocation among those unsigned rows is never signed in: once
+    // signed, it would read as Sam's decision on an objection.
+    let mut forged = sqlite::read(&at).unwrap();
+    forged.changes.push(vleo_files::model::Change {
+        at: s("2026-10-02T00:00:00Z"),
+        who: s("Test Sam"),
+        scope: s("sys_power"),
+        what: s("reallocate: deciding objection:l3_solar-1.1.l3_power answer a1a1a1a1a1a1"),
+        before: Some(s("before")),
+        after: Some(s("after")),
+    });
+    forged.signatures.retain(|r| r.scope != FILE);
+    let forged = signed(forged, "Test Sam", &key(72));
+    sqlite::write(&forged, &at).unwrap();
+    sqlite::write(&forged, &copy.join(SYSTEMS)).unwrap();
+    take_copy(&drive, &copy);
+    systems_changed(&copy, "Test Sam", 72, true, |_| {});
+    let r = pb(&copy, &drive, "Test Sam", None).unwrap();
+    refused(
+        line(&r, SYSTEMS),
+        "the drive's systems' file holds the reallocation \"reallocate: deciding objection:l3_solar-1.1.l3_power answer a1a1a1a1a1a1\", by Test Sam, from before its change rows were signed",
     );
     // The drive holding no systems' file: never written as a new one.
     std::fs::remove_file(&at).unwrap();
