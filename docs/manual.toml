@@ -2127,7 +2127,7 @@ what = "The engine's identity: the contract version it speaks, kernel, graph, ro
 [[route]]
 method = "GET"
 path = "/v1/my-work"
-what = "What needs the person whose key is open, now: a node of theirs unsigned, a group of theirs with nothing sealed, a file below them the chain refuses. And nodes: every node file that is theirs to write, or theirs as a deputy, in a file of the chain that counts their key, signed or not, which the Node workspace opens."
+what = "What needs the person whose key is open, now: a node of theirs unsigned, a group of theirs with nothing sealed, a group mounted for them to start, or, for the system engineer, one to allocate before its owner starts it, a file below them the chain refuses. And nodes: every node file that is theirs to write, or theirs as a deputy, in a file of the chain that counts their key, signed or not, which the Node workspace opens."
 
 [[route]]
 method = "GET"
@@ -2252,7 +2252,7 @@ what = "The node written by plain edits as its next revision in the working copy
 [[route]]
 method = "GET"
 path = "/v1/branch"
-what = "A group's branch as your copy holds it, said so: group, the group's id. Every block with where it is written and what is still open in it; each broken-down node, the child port that answers it, and whether its children reproduce its own cases, case by case beside its estimate; whether its group file opens through the chain; its owner, and whether the open key's person may frame it; its history; and the next step. The frame around it, read from the systems' file: the valve above it (the branch that holds the leaf it hangs on, and that branch's owner), what it is allocated with the sense each binds, every group the systems' file mounts below it, whether the open key's person may mount, and each block's group mounted on it. A group mounted and not started is said as that, started false, with whose step it is."
+what = "A group's branch as your copy holds it, said so: group, the group's id. Every block with where it is written and what is still open in it; each broken-down node, the child port that answers it, and whether its children reproduce its own cases, case by case beside its estimate; whether its group file opens through the chain; its owner, and whether the open key's person may frame it; its history; and the next step. The frame around it, read from the systems' file: the valve above it (the branch that holds the leaf it hangs on, and that branch's owner), what it is allocated with the sense each binds, every group the systems' file mounts below it, whether the open key's person may mount, and each block's group mounted on it. A group mounted and not started is said as that, started false, with whose step it is, and allocated, whether the systems' file allocates it what it must reach or may use, before which its owner does not start it (F6's question 43)."
 
 [[route]]
 method = "GET"
@@ -2272,7 +2272,7 @@ what = "One edit to a branch's breakdown — add, fill, break-down, move, rename
 [[route]]
 method = "POST"
 path = "/v1/group/start"
-what = "A group the systems' file mounts, started in your copy by the owner the mount names, or their deputy: group. Its file, groups/<group>/<group>.vgroup, new, holds one heading whose question is the mount's, its base copied from the systems' file, and a change row, signed by whoever started it, and opens through the chain or is not written. Refused for anyone else, a group nobody mounts, one started already, a folder that holds anything, and a systems' file that does not open. Carries session."
+what = "A group the systems' file mounts, started in your copy by the owner the mount names, or their deputy: group. Its file, groups/<group>/<group>.vgroup, new, holds one heading whose question is the mount's, its base copied from the systems' file, and a change row, signed by whoever started it, and opens through the chain or is not written. Refused for anyone else, a group nobody mounts, one started already, a folder that holds anything, a systems' file that does not open, and, for a group mounted on one of the systems' own blocks, while the systems' file allocates it nothing, neither what it must reach nor what it may use (F6's question 43); a group mounted on a subsystem's leaf is not held to that yet. Carries session."
 
 [[route]]
 method = "GET"

@@ -325,9 +325,12 @@ with it.
 1. **System engineer**, System workspace on the spacecraft: sets the mounts, the
    allocations handed to each group with their direction, the system budgets and
    margins, and the shared cases.
-2. **To start a new group:** adds its mount, then *Start group*. That writes
-   `groups/<group>/` with its group file, mount, base, and its subsystem engineer
-   from the programme file.
+2. **To start a new group:** adds its mount, and allocates the group at least
+   one value on it, what it must reach or what it may use; then its subsystem
+   engineer presses *Start group*. That writes `groups/<group>/` with its group
+   file, mount, base, and its subsystem engineer from the programme file. A
+   group mounted on a subsystem's leaf is not held to the allocation yet, since
+   none can be given there.
 3. **Programme manager:** shares a new group's folder; its subsystem engineer
    registers their node engineers' keys.
 4. A change to the frame shows at once in today's design, and goes out with the

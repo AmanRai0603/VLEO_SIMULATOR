@@ -295,6 +295,8 @@ function workList(items) {
       (it.node && (nodes.has(it.node) || it.kind === 'request')
         ? ' <button class="ctl" data-open-node="' + esc(it.node) + '">open in Node</button>' : '') +
       (it.kind === 'start' ? ' <a class="ctl" href="#system/' + encodeURIComponent(it.group) + '">open in System</a>' : '') +
+      // An allocation is given in the systems' branch, on the mount's block.
+      (it.kind === 'allocate' ? ' <a class="ctl" href="#system/systems/' + encodeURIComponent(it.node) + '">open in System</a>' : '') +
       '</li>').join('') + '</ul></section>';
 }
 
@@ -517,7 +519,7 @@ function nodeLink() {
 }
 
 /** `#system/<group>` opens the System workspace at that group's branch, as
- *  `#node/<id>` opens a node. */
+ *  `#node/<id>` opens a node; `#system/<group>/<block>` at that block. */
 function systemLink() {
   const n = location.hash.match(/^#system\/(.+)$/);
   if (!n) return false;

@@ -5,8 +5,10 @@ docs/briefs/F6.md, F6-a. A small drive of invented people is written
 (`cargo run -p vleo-server --example a_small_drive`), and the program is
 started on it. Then, as people would:
 
-- Test Sam, the system engineer, copies the drive and opens the systems'
-  branch in the System workspace: the frame says the valve above it is the
+- Test Sam, the system engineer, copies the drive: My work says *Allocate
+  l3_struct*, since structure is started only once it is allocated (F6's
+  question 43), and its link opens the systems' branch at structure's mount,
+  with the allocation form. There the frame says the valve above it is the
   programme's file, and lists every group mounted below, structure not
   started;
 - on structure's mount, an allocation with no sense chosen is refused on
@@ -103,6 +105,24 @@ def check():
             p.wait_for_selector('#sh-key-card', timeout=60000)
             copy_drive(p, drive)
             open_key(p, 'Test Sam', anchor)
+
+            # Structure is allocated nothing yet: My work says it is Sam's step
+            # first (F6's question 43).
+            item = p.locator('.sh-item[data-kind="allocate"]', has_text='Allocate l3_struct')
+            try:
+                item.first.wait_for(timeout=30000)
+            except Exception:
+                pass
+            step('My work says Allocate l3_struct to the system engineer', item.count() == 1,
+                 p.inner_text('#sh-main')[:400])
+            item.locator('a', has_text='open in System').click()
+            drawn(p, 'systems')
+            try:
+                p.wait_for_selector('#sy-allocate', timeout=30000)
+            except Exception:
+                pass
+            step("its link opens the systems' branch at structure's mount, with the allocation form",
+                 p.locator('#sy-allocate').count() == 1, p.inner_text('#sh-main')[:300])
 
             # The systems' branch, and the frame around it.
             open_group(p, port, 'systems')

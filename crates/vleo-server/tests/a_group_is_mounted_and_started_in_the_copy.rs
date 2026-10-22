@@ -13,8 +13,10 @@
 //! - to Rui, the systems' branch may not be mounted on, and Rui's mount is
 //!   refused with nothing written;
 //! - Sam mounts `l3_radiation` on `sys_radiation` for Rui; the systems'
-//!   branch then says it below, not started; an allocation with no sense is
-//!   refused, and one with `<=` is made;
+//!   branch then says it below, not started; allocated nothing, My work says
+//!   *Allocate l3_radiation* to Sam, and to Rui it is not yet Rui's to
+//!   start, and a start is refused (F6's question 43); an allocation with no
+//!   sense is refused, and one with `<=` is made;
 //! - to Sam, `l3_radiation` is mounted for Rui, not started, with its
 //!   allocation and its sense, and the system engineer above it; Sam's start
 //!   is refused, and My work says it is Rui's step;
@@ -327,6 +329,38 @@ fn a_group_is_mounted_and_started_in_the_copy() {
     );
     let r = tree("systems");
     assert!(r.contains("\"group\":\"l3_radiation\",\"block\":\"sys_radiation\",\"owner\":\"Test Rui\",\"started\":false"), "{r}");
+    // Allocated nothing yet: the system engineer's step first (F6's question
+    // 43). To Sam, My work says Allocate; to Rui, it is not Rui's to start
+    // yet, and a start is refused.
+    let wanted = "the systems' file allocates l3_radiation nothing yet";
+    let w = ask(port, "GET", "/v1/my-work", &[], false);
+    assert!(
+        w.contains("\"kind\":\"allocate\",\"group\":\"l3_radiation\",\"node\":\"sys_radiation\"")
+            && w.contains(&format!(
+                "Allocate l3_radiation: it is mounted for Test Rui, and {wanted}"
+            )),
+        "{w}"
+    );
+    let r = tree("l3_radiation");
+    assert!(field(&r, "next").contains(wanted), "{r}");
+    assert!(open_key(port, "test-rui.vkey").contains("\"open\":true"));
+    let r = tree("l3_radiation");
+    assert!(
+        r.contains("\"yours\":false")
+            && r.contains("\"allocated\":false")
+            && field(&r, "why_not").starts_with(&format!("Not yet: {wanted}")),
+        "{r}"
+    );
+    let w = ask(port, "GET", "/v1/my-work", &[], false);
+    assert!(
+        w.contains("\"kind\":\"not started\",\"group\":\"l3_radiation\"")
+            && !w.contains("\"kind\":\"start\""),
+        "{w}"
+    );
+    let r = post(port, "/v1/group/start", &[("group", "l3_radiation")]);
+    assert!(field(&r, "message").contains(wanted), "{r}");
+    assert!(!copy.join(NEW).exists());
+    assert!(open_key(port, "test-sam.vkey").contains("\"open\":true"));
     let alloc = |sense: &str| {
         frame(
             "allocate",
@@ -411,7 +445,9 @@ fn a_group_is_mounted_and_started_in_the_copy() {
     );
     let r = tree("l3_radiation");
     assert!(
-        r.contains("\"yours\":true") && field(&r, "next").starts_with("Start l3_radiation"),
+        r.contains("\"yours\":true")
+            && r.contains("\"allocated\":true")
+            && field(&r, "next").starts_with("Start l3_radiation"),
         "{r}"
     );
     // Without the launch's word, nothing is started.

@@ -47,7 +47,8 @@
               "request",
               "request refused",
               "start",
-              "not started"
+              "not started",
+              "allocate"
             ]
           },
           "group": {

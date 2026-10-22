@@ -57,9 +57,12 @@ async function get(path) {
   try { return await (await fetch(path)).json(); } catch (e) { return { ok: false, message: 'the program did not answer: ' + e }; }
 }
 
-/** Open the workspace at group `id`, the next time it is drawn. */
-export function openAt(id) {
+/** Open the workspace at group `id`, or `<group>/<block>` at that block, the
+ *  next time it is drawn. */
+export function openAt(at) {
+  const [id, block] = String(at || '').split('/');
   if (id && id !== W.group) { W.group = id; W.tree = null; W.sel = ''; W.notice = null; W.stale = false; W.view = null; R.notice = null; R.previewed = null; }
+  if (id && block) W.sel = block;
 }
 
 /** Draw the workspace into `host`. `post(path, fields)` writes with the launch's word;
