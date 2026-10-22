@@ -2631,3 +2631,101 @@ fn a_preview_of_a_release_or_on_a_design_the_drive_does_not_hold_does_not_go_bac
     }
     let _ = std::fs::remove_dir_all(drive.parent().unwrap());
 }
+
+// ── The systems' file goes back over the drive's (F6-e) ──
+
+const SYSTEMS: &str = "groups/systems/systems.vgroup";
+
+/// The systems' file in the copy changed as the application changes it: a
+/// change row added by `who`, its rows marked signed (F6-d) when `marked`,
+/// and signed again by `who` with key `k`; `more` changes it further first.
+fn systems_changed(copy: &Path, who: &str, k: u8, marked: bool, more: impl FnOnce(&mut File)) {
+    let at = copy.join(SYSTEMS);
+    let mut f = sqlite::read(&at).unwrap();
+    f.changes.push(vleo_files::model::Change {
+        at: s(AT),
+        who: s(who),
+        scope: s("sys_power"),
+        what: s("reallocate: power's mass, widened"),
+        before: None,
+        after: None,
+    });
+    more(&mut f);
+    if marked {
+        chain::sign_rows(&mut f);
+    }
+    f.signatures.retain(|r| r.scope != FILE);
+    let row = chain::sign(&f, FILE, who, &key(k), AT, "ok", "").unwrap();
+    f.signatures.push(row);
+    sqlite::write(&f, &at).unwrap();
+}
+
+#[test]
+fn the_systems_file_goes_back_by_the_system_engineer_its_history_kept() {
+    let (drive, copy) = world("systems-back");
+    let kept = std::fs::read(copy.join(SYSTEMS)).unwrap();
+    let back = |who: &str| {
+        let r = pb(&copy, &drive, who, None).unwrap();
+        line(&r, SYSTEMS).clone()
+    };
+    // Changed in the copy by Ola, who is not the system engineer: it does
+    // not check through the chain.
+    systems_changed(&copy, "Test Ola", 73, true, |_| {});
+    let l = back("Test Ola");
+    assert!(
+        !l.back
+            && l.why
+                .contains("does not check through the chain as the drive holds it now"),
+        "{l:?}"
+    );
+    // By Sam, its rows not signed with it.
+    std::fs::write(copy.join(SYSTEMS), &kept).unwrap();
+    systems_changed(&copy, "Test Sam", 72, false, |_| {});
+    let l = back("Test Sam");
+    assert!(
+        !l.back && l.why.contains("its change rows are not signed with it"),
+        "{l:?}"
+    );
+    // By Sam, saying it is another group's file.
+    std::fs::write(copy.join(SYSTEMS), &kept).unwrap();
+    systems_changed(&copy, "Test Sam", 72, true, |f| {
+        f.meta.insert(s("group_id"), s("l3_power"));
+    });
+    let l = back("Test Sam");
+    assert!(
+        !l.back && l.why.contains("it says it is group_id \"l3_power\""),
+        "{l:?}"
+    );
+    // By Sam, as the application makes it: it goes back, and opens on the
+    // drive through the chain.
+    std::fs::write(copy.join(SYSTEMS), &kept).unwrap();
+    systems_changed(&copy, "Test Sam", 72, true, |_| {});
+    let l = back("Test Sam");
+    assert!(
+        l.back
+            && l.why
+                .contains("the systems' file, by Test Sam, with 1 change(s) since the drive's"),
+        "{l:?}"
+    );
+    let r = pb(&copy, &drive, "Test Sam", Some(vec![named(&copy, SYSTEMS)])).unwrap();
+    assert!(r.written, "{:?}", r.lines);
+    let o = opened(&drive);
+    assert!(o
+        .systems
+        .file
+        .changes
+        .iter()
+        .any(|c| c.what == "reallocate: power's mass, widened"));
+    // Its history only grows: a change after it that leaves the first out is
+    // refused.
+    systems_changed(&copy, "Test Sam", 72, true, |f| {
+        f.changes.remove(0);
+        f.changes[0].what = s("reallocate: power's mass, widened again");
+    });
+    let l = back("Test Sam");
+    assert!(
+        !l.back && l.why.contains("a file's history only grows"),
+        "{l:?}"
+    );
+    let _ = std::fs::remove_dir_all(drive.parent().unwrap());
+}

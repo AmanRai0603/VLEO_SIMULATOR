@@ -58,9 +58,18 @@
 //! drive counts for them now (`chain::check_preview`). A preview is never
 //! written over.
 //!
-//! A group's file does not go back yet: what may change in it at its valve
-//! is not yet checked against the drive's file, so a change of its people
-//! stays in the copy.
+//! Or it is the systems' file (F6-e), changed in the copy by the system
+//! engineer or their deputy: over the drive's, which it is the same file as,
+//! marked so its change rows are signed with it (F6-d), keeping every change
+//! row the drive's records in order and adding only after them, and opening
+//! through the chain as the drive holds it now, signed as it is by the person
+//! putting it back with a key the drive counts for them now. It is all the
+//! system engineer's to change, so nothing in it is held to the drive's but
+//! its history.
+//!
+//! Another group's file does not go back yet: what may change in it at its
+//! valve is not yet checked against the drive's file, so a change of its
+//! people stays in the copy.
 //!
 //! Every other changed file is named, with the reason. Nothing is deleted on
 //! the drive, and a file gone from the copy is said, not followed.
@@ -712,11 +721,69 @@ fn verdict(
         ["integration", dir, name] if name.ends_with(".answer") => {
             answer_verdict(dir, name, bytes, theirs, me, at, chain, drive)
         }
+        ["groups", "systems", "systems.vgroup"] => systems_verdict(bytes, theirs, me, at, chain),
         ["groups", g, name] if *name == format!("{g}.vgroup") => Err(format!(
             "{g}'s group file does not go back yet: what may change in a group's file is not yet checked against the drive's, so a change of its people stays in your copy"
         )),
-        _ => Err("it is not a file the application puts back yet: a node's file, a group's release, a released design and its record, or a preview of a release and an answer to one, goes back".into()),
+        _ => Err("it is not a file the application puts back yet: a node's file, the systems' file, a group's release, a released design and its record, or a preview of a release and an answer to one, goes back".into()),
     }
+}
+
+/// Whether the systems' file, `bytes` in the copy, goes back over the drive's,
+/// `theirs`, as `me`'s work (F6-e): the systems' file, as the drive's is;
+/// marked so its change rows are signed with it (F6-d); every change row the
+/// drive's records kept, in order, and the copy's only added after; and
+/// opening through the chain as the drive holds it now, signed as it is by
+/// `me`, the system engineer or their deputy, with a key that counts at `at`.
+/// Another group's file does not go back yet.
+fn systems_verdict(
+    bytes: &[u8],
+    theirs: Option<&[u8]>,
+    me: &str,
+    at: &str,
+    chain: &Chain,
+) -> Result<String, String> {
+    let f = save::parsed(bytes).map_err(|e| format!("it does not read: {}", e.message()))?;
+    let Some(theirs) = theirs else {
+        return Err(
+            "the drive holds no systems' file: it goes back over the one the drive holds, never as a new one"
+                .into(),
+        );
+    };
+    let was = save::parsed(theirs)
+        .map_err(|e| format!("the drive's systems' file does not read: {}", e.message()))?;
+    for key in ["file_kind", "group_id"] {
+        if f.meta.get(key) != was.meta.get(key) {
+            return Err(format!(
+                "it says it is {key} {:?}, and the drive's systems' file is {:?}",
+                f.meta.get(key).map_or("", String::as_str),
+                was.meta.get(key).map_or("", String::as_str)
+            ));
+        }
+    }
+    if f.meta.get(chain::SIGNED_ROWS).map(String::as_str) != Some(chain::ROWS_SIGNED) {
+        return Err(
+            "its change rows are not signed with it: make the change again in this application, which signs them (F6-d)"
+                .into(),
+        );
+    }
+    if !f.changes.starts_with(&was.changes) {
+        return Err(
+            "it does not keep every change the drive's systems' file records, in order: a file's history only grows"
+                .into(),
+        );
+    }
+    let now = only_counting_now(&f, chain::FILE, me, at, &chain.programme);
+    chain::open_systems(&now, &chain.programme).map_err(|e| {
+        format!(
+            "it does not check through the chain as the drive holds it now, signed by {me} with a key that counts at {at}: {}",
+            e.message()
+        )
+    })?;
+    Ok(format!(
+        "the systems' file, by {me}, with {} change(s) since the drive's",
+        f.changes.len() - was.changes.len()
+    ))
 }
 
 /// Whether the preview `name` in `integration/<dir>/`, `bytes` in the copy,

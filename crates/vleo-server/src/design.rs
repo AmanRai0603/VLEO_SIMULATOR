@@ -1709,7 +1709,7 @@ fn deciding(params: &str, ctx: &Ctx) -> Result<String, String> {
         "anyway" => design::Decide::ReleaseAnyway,
         "allocation" => {
             return Err(format!(
-                "an allocation changed does not decide {} yet: it is changed in your copy's systems' file, by reallocate, and no group file goes back to the drive yet, where the release reads its decisions",
+                "an allocation changed does not decide {} yet: reallocate changes your copy's systems' file, which goes back to the drive with Put back, and a reallocation there is not yet read as a decision",
                 design::objection_id(group.trim(), version.trim(), answering.trim())
             ))
         }

@@ -13,9 +13,9 @@
 //!
 //! **Changing an allocation does not decide one yet.** `breakdown::
 //! Edit::Reallocate` changes it (question 48), in the copy's systems' file,
-//! and no group file goes back to the drive yet; and a file's `change` rows,
-//! where its why would name the objection, are not covered by its signature.
-//! A reallocation decides once what decides it is signed and on the drive.
+//! which goes back to the drive (F6-e), its `change` rows, where its why
+//! names the objection, signed with it (F6-d). A reallocation read there is
+//! not yet counted as a decision.
 //!
 //! [`decisions`] reads what was decided from the issue files, each held to
 //! the chain: an issue counts only signed by the system engineer, or their
