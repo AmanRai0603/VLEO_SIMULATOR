@@ -1481,11 +1481,16 @@ fn previews_into(j: &mut Json, ctx: &Ctx, drive: &Path, c: &me::Chain) {
                             // What was decided of it, or that nothing is.
                             let id = design::objection_id(&p.group, &p.version, &g);
                             j.str_field("objection", &id);
-                            let d = decided
-                                .iter()
-                                .find(|d| d.objection().id() == id)
-                                .and_then(|d| d.decision());
+                            let found = decided.iter().find(|d| d.objection().id() == id);
+                            let d = found.and_then(|d| d.decision());
                             j.str_field("decision", &d.map_or("undecided".into(), |d| d.said()));
+                            // What a reallocation's why says to decide it.
+                            if let Some(o) = found {
+                                j.str_field(
+                                    "reallocation_names",
+                                    &design::reallocation_names(o.objection()),
+                                );
+                            }
                         }
                         design::Answered::Refused(w) => {
                             j.str_field("why", w);
@@ -1684,7 +1689,13 @@ pub(crate) fn objections_now(
     Objections {
         previews,
         unread,
-        decided: design::decisions(&objections, &issues, &parents, &c.programme),
+        decided: design::decisions(
+            &objections,
+            &issues,
+            c.systems.as_ref().map(|r| &r.file),
+            &parents,
+            &c.programme,
+        ),
     }
 }
 
@@ -1704,18 +1715,15 @@ fn deciding(params: &str, ctx: &Ctx) -> Result<String, String> {
     }
     let get = |k: &str| param(params, k).map(decode).unwrap_or_default();
     let (group, version, answering) = (get("group"), get("version"), get("answering"));
+    // An allocation changed is a decision made by Reallocate and Put back,
+    // never written here: what this says is how.
     let decide = match get("decision").trim() {
-        "next" => design::Decide::NextVersion,
-        "anyway" => design::Decide::ReleaseAnyway,
-        "allocation" => {
-            return Err(format!(
-                "an allocation changed does not decide {} yet: reallocate changes your copy's systems' file, which goes back to the drive with Put back, and a reallocation there is not yet read as a decision",
-                design::objection_id(group.trim(), version.trim(), answering.trim())
-            ))
-        }
+        "next" => Some(design::Decide::NextVersion),
+        "anyway" => Some(design::Decide::ReleaseAnyway),
+        "allocation" => None,
         other => {
             return Err(format!(
-                "{other:?} is not a decision: next (ask for its next version) or anyway (release anyway); an allocation changed does not decide one yet"
+                "{other:?} is not a decision: next (ask for its next version), anyway (release anyway) or allocation (change an allocation)"
             ))
         }
     };
@@ -1754,6 +1762,12 @@ fn deciding(params: &str, ctx: &Ctx) -> Result<String, String> {
             "{id}'s answer on the drive does not read, so its digest cannot be named: nothing is decided"
         ));
     }
+    let Some(decide) = decide else {
+        return Err(format!(
+            "an allocation changed decides {id} from the drive, and nothing is written here: Reallocate in the systems' branch, its why saying {:?}, then Put back the systems' file",
+            design::reallocation_names(d.objection())
+        ));
+    };
     let parents: Vec<&Registry> = std::iter::once(&c.programme)
         .chain(c.systems.iter())
         .collect();

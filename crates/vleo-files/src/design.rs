@@ -53,8 +53,8 @@ mod decide;
 mod preview;
 
 pub use decide::{
-    asked_of, decision_issue, decisions, objection_id, Decide, Decided, Decision, Objection,
-    Standing, OBJECTIONS,
+    asked_of, decision_issue, decisions, objection_id, reallocation_names, Decide, Decided,
+    Decision, Objection, Standing, OBJECTIONS,
 };
 
 pub use preview::{answers, named, Answered, Move, OpenedPreview};

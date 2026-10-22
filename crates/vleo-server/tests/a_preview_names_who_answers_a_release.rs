@@ -30,9 +30,10 @@
 //! - Sam decides her objection, asking for solar's next version: an issue in
 //!   his copy to Ola at the objection's place, the listing saying what was
 //!   decided, and the issue a red mark on solar, open for Ola, as any issue
-//!   to a group is; decided again, by Uma, as
-//!   an allocation, which decides nothing yet, as no decision, or of no
-//!   objection, refused by name;
+//!   to a group is; decided again, by Uma, as no decision, or of no
+//!   objection, refused by name; as an allocation changed, it is not written
+//!   there, and the route, as the listing does, says what a reallocation's
+//!   why says to decide it;
 //! - changed on the drive after she signed it, her answer is refused, and My
 //!   work says it does not count;
 //! - the preview copied under another design's name is listed with why, and
@@ -723,9 +724,13 @@ fn the_system_engineer_previews_a_release_and_its_named_group_answers_it() {
     let r = post(port, "/v1/put-back", &[("files", &files)]);
     assert!(r.contains("\"written\":true"), "{r}");
     let p = previews();
+    // What a reallocation's why says to decide it: the place, and the first
+    // 12 characters of the answer's digest on the drive.
+    let digest = chain::digest(&sqlite::read(&drive.join(&answer)).unwrap(), FILE).unwrap();
     assert!(
         entries(&p, "previews")[0].contains(&format!(
-            "\"answers\":[{{\"group\":\"l3_x_envorbit\",\"said\":\"object\",\"because\":\"{because}\",\"objection\":\"objection:l3_solar-1.1.l3_x_envorbit\",\"decision\":\"undecided\",\"in_copy\":false}}]"
+            "\"answers\":[{{\"group\":\"l3_x_envorbit\",\"said\":\"object\",\"because\":\"{because}\",\"objection\":\"objection:l3_solar-1.1.l3_x_envorbit\",\"decision\":\"undecided\",\"reallocation_names\":\"objection:l3_solar-1.1.l3_x_envorbit answer {}\",\"in_copy\":false}}]",
+            &digest[..12]
         )),
         "{p}"
     );
@@ -755,7 +760,7 @@ fn the_system_engineer_previews_a_release_and_its_named_group_answers_it() {
         (
             "allocation",
             "l3_x_envorbit",
-            "an allocation changed does not decide objection:l3_solar-1.1.l3_x_envorbit yet",
+            "an allocation changed decides objection:l3_solar-1.1.l3_x_envorbit from the drive, and nothing is written here: Reallocate in the systems' branch, its why saying \\\"objection:l3_solar-1.1.l3_x_envorbit answer ",
         ),
         (
             "maybe",
@@ -771,6 +776,41 @@ fn the_system_engineer_previews_a_release_and_its_named_group_answers_it() {
         let r = decide(d, a);
         assert!(r.contains("\"ok\":false") && r.contains(why), "{d}: {r}");
     }
+    // An allocation changed: a reallocate row of the drive's systems' file,
+    // its rows signed with it, its why saying what the listing named, decides
+    // it with nothing in the copy. The file as it was, it is undecided again.
+    let at = drive.join("groups/systems/systems.vgroup");
+    let was = std::fs::read(&at).unwrap();
+    let mut sy = sqlite::read(&at).unwrap();
+    sy.changes.push(Change {
+        at: s("2026-10-20T09:00:00Z"),
+        who: s("Test Sam"),
+        scope: s("sys_orbit"),
+        what: format!(
+            "reallocate: the orbit's range widened, deciding {objection} answer {}",
+            &digest[..12]
+        ),
+        before: None,
+        after: None,
+    });
+    chain::sign_rows(&mut sy);
+    sy.signatures.retain(|r| r.scope != FILE);
+    sqlite::write(&signed(sy, "Test Sam", &key(92)), &at).unwrap();
+    let reallocated =
+        "an allocation changed, by Test Sam at 2026-10-20T09:00:00Z, in the systems' file";
+    let p = previews();
+    assert!(
+        entries(&p, "previews")[0].contains(&format!(
+            "\"objection\":\"{objection}\",\"decision\":\"{reallocated}\""
+        )),
+        "{p}"
+    );
+    let r = decide("next", "l3_x_envorbit");
+    assert!(
+        field(&r, "message").contains(&format!("{objection} is decided already: {reallocated}")),
+        "{r}"
+    );
+    std::fs::write(&at, was).unwrap();
     let r = decide("next", "l3_x_envorbit");
     assert!(r.contains("\"ok\":true"), "{r}");
     assert_eq!(field(&r, "objection"), objection);

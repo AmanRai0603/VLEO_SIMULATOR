@@ -9,27 +9,29 @@
 //!   owner, at the objection's place `objection:<g>-<v>.<a>`, resolved by the
 //!   release that names it (`crate::issues`);
 //! - **release anyway**: an issue on `programme`, to the programme manager,
-//!   holding the objection's words and the answer's digest.
-//!
-//! **Changing an allocation does not decide one yet.** `breakdown::
-//! Edit::Reallocate` changes it (question 48), in the copy's systems' file,
-//! which goes back to the drive (F6-e), its `change` rows, where its why
-//! names the objection, signed with it (F6-d). A reallocation read there is
-//! not yet counted as a decision.
+//!   holding the objection's words and the answer's digest;
+//! - **change an allocation** (question 48, F6-e): `breakdown::Edit::
+//!   Reallocate`, in the copy's systems' file, its why naming the objection
+//!   and its answer as [`reallocation_names`] says them, and that file put
+//!   back to the drive.
 //!
 //! [`decisions`] reads what was decided from the issue files, each held to
 //! the chain: an issue counts only signed by the system engineer, or their
 //! deputy, who raised it, naming the answer by its digest, and saying what
-//! it decides again in a text its signature covers. What it gives
-//! ([`Decided`]) only it makes, so a release is given no decision it did not
-//! read.
+//! it decides again in a text its signature covers. It reads a reallocation
+//! from the drive's systems' file, as it opens through the chain, marked so
+//! its change rows are signed with it (F6-d): a `reallocate` row made by the
+//! system engineer or their deputy, naming the objection and its answer.
+//! What it gives ([`Decided`]) only it makes, so a release is given no
+//! decision it did not read.
 //!
 //! The release asks it of today's design ([`asked_of`]): every preview on
 //! the design released now of a release today's design holds answered by
 //! every group it names; every objection decided; none decided *next
-//! version* while today's design still holds the release objected to. Each
-//! objection is a red mark, `objection:…`, never marked understood: one
-//! decided *release anyway* is raised by the programme manager's issue. A
+//! version* while today's design still holds the release objected to. One
+//! decided *release anyway* is a red mark, `objection:…`, never marked
+//! understood, raised by the programme manager's issue; one decided by an
+//! allocation changed is not, since what it objected to has changed. A
 //! preview that does not open, and may be one the release must hear, holds
 //! it as one unanswered does.
 //!
@@ -41,7 +43,7 @@ use crate::chain::{self, Registry, FILE};
 use crate::error::{Error, ErrorKind};
 use crate::keys::SigningKey;
 use crate::meta::Kind;
-use crate::model::{File, Issue, Text};
+use crate::model::{Change, File, Issue, Text};
 
 fn refused(message: impl Into<String>) -> Error {
     Error::new(ErrorKind::Malformed, message)
@@ -79,6 +81,9 @@ pub enum Decision {
     NextVersion { issue: i64, by: String },
     /// Released anyway, by the issue `issue` to the programme manager.
     ReleaseAnyway { issue: i64, by: String },
+    /// An allocation changed, by the `reallocate` change row of the drive's
+    /// systems' file that names it, made by `by` at `at`.
+    Reallocated { by: String, at: String },
 }
 
 impl Decision {
@@ -91,6 +96,9 @@ impl Decision {
             Decision::ReleaseAnyway { issue, by } => {
                 format!("released anyway, put by {by} to the programme manager in issue {issue}")
             }
+            Decision::Reallocated { by, at } => {
+                format!("an allocation changed, by {by} at {at}, in the systems' file")
+            }
         }
     }
 }
@@ -101,6 +109,39 @@ const DECISION: &str = "decision";
 
 fn decided_as(place: &str, group: &str, addressed_to: &str, answer: &str) -> String {
     format!("{place}\n{group}\n{addressed_to}\nanswer {answer}")
+}
+
+/// What the why of a reallocation says to decide `o`: the objection's place
+/// and its answer, by the first [`NAMED`] characters of its digest, so a
+/// reallocation made before the group answered again decides nothing of the
+/// answer it gives now. A reallocation naming more of the digest names it
+/// too.
+pub fn reallocation_names(o: &Objection) -> String {
+    let named = o.answer.get(..NAMED).unwrap_or(&o.answer);
+    format!("{} answer {named}", o.id())
+}
+
+/// How much of an answer's digest a reallocation names it by.
+const NAMED: usize = 12;
+
+/// Whether the change row `c` is a reallocation deciding `o`: its what is a
+/// `reallocate` edit's, and says the objection's place, then `answer` and as
+/// much of its answer's digest as [`reallocation_names`] gives, or more.
+fn reallocates(c: &Change, o: &Objection) -> bool {
+    let Some(why) = c.what.strip_prefix("reallocate:") else {
+        return false;
+    };
+    if o.answer.len() < NAMED {
+        return false;
+    }
+    let place = format!("{} answer ", o.id());
+    why.match_indices(&place).any(|(i, _)| {
+        let rest = &why[i + place.len()..];
+        let hex = rest
+            .find(|ch: char| !ch.is_ascii_hexdigit())
+            .map_or(rest, |end| &rest[..end]);
+        hex.len() >= NAMED && o.answer.starts_with(hex)
+    })
 }
 
 /// How the system engineer decides an objection by an issue.
@@ -218,13 +259,25 @@ pub fn decision_issue(
 /// row does, signed by the system engineer or their deputy who raised it, on
 /// the releasing group to its owner, as the file among `parents` that mounts
 /// it names them, or on `programme` to its programme manager. The first that
-/// holds is the decision; none, undecided.
+/// holds is the decision. Then `systems`, the drive's systems' file: when it
+/// opens through the chain and is marked so its change rows are signed with
+/// it, its first `reallocate` row naming the objection and its answer, made
+/// by the system engineer or their deputy. None, undecided.
 pub fn decisions(
     objections: &[Objection],
     issues: &[File],
+    systems: Option<&File>,
     parents: &[&Registry],
     programme: &Registry,
 ) -> Vec<Decided> {
+    // The rows a signature covers, of a file that opens through the chain:
+    // never a row added since it was signed, nor one from before F6-d.
+    let rows: &[Change] = systems
+        .filter(|f| {
+            f.meta.get(chain::SIGNED_ROWS).map(String::as_str) == Some(chain::ROWS_SIGNED)
+                && chain::open_systems(f, programme).is_ok()
+        })
+        .map_or(&[], |f| f.changes.as_slice());
     objections
         .iter()
         .map(|o| {
@@ -281,6 +334,18 @@ pub fn decisions(
                     by: i.raised_by.clone(),
                 })
             });
+            let decision = decision.or_else(|| {
+                rows.iter()
+                    .find(|c| {
+                        reallocates(c, o)
+                            && !crate::checks::is_assistant(&c.who)
+                            && programme.acts_as(&c.who, "system engineer")
+                    })
+                    .map(|c| Decision::Reallocated {
+                        by: c.who.clone(),
+                        at: c.at.clone(),
+                    })
+            });
             Decided {
                 objection: o.clone(),
                 decision,
@@ -325,8 +390,9 @@ impl Decided {
 /// not open, while an objection to one has no decision, or while one decided
 /// *next version* is of a release today's design still holds. A preview of
 /// another release, or on another design, is stale and asks nothing
-/// (question 46). Gives the red marks the objections are, each raised by its
-/// programme manager's issue, and the rows of `objections.csv`.
+/// (question 46). Gives the red marks the objections released anyway are,
+/// each raised by its programme manager's issue, and the rows of
+/// `objections.csv`, one for every objection decided.
 pub fn asked_of(
     previews: &[Standing],
     unread: &[String],
@@ -422,7 +488,7 @@ pub fn asked_of(
         let mut said = Vec::new();
         if !open.is_empty() {
             said.push(format!(
-                "every objection is decided before the design is released (W7), and these are not: {}. Ask for its next version, or release anyway",
+                "every objection is decided before the design is released (W7), and these are not: {}. Ask for its next version, release anyway, or change an allocation",
                 open.join("; ")
             ));
         }

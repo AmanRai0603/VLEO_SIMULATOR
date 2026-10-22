@@ -225,9 +225,9 @@ async function drawRelease() {
  *  what moved, and what each group it names has said, unanswered first. What
  *  moved is the engine's, built when Preview is pressed, never here. */
 /** What was decided of an objection, or the decisions offered (W7): ask for
- *  its next version, or release anyway. An allocation changed by Reallocate
- *  does not decide one yet: the systems' file it is written in does not go
- *  back to the drive, where the release reads its decisions. */
+ *  its next version, or release anyway; or change an allocation, which is
+ *  Reallocate in the systems' branch, its why saying what the server names,
+ *  and the systems' file put back to the drive, where it is read. */
 function decide(a, p) {
   if (a.decision && a.decision !== 'undecided') {
     return ' <span class="sy-p-decision">decided: ' + esc(a.decision) + '</span>';
@@ -235,7 +235,9 @@ function decide(a, p) {
   const on = ' data-group="' + esc(p.group) + '" data-version="' + esc(p.version) + '" data-answering="' + esc(a.group) + '"';
   return ' <span class="sy-p-decide"><b>undecided</b>: ' +
     '<button class="ctl" data-decide="next"' + on + (R.deciding ? ' disabled' : '') + '>Ask for its next version</button> ' +
-    '<button class="ctl" data-decide="anyway"' + on + (R.deciding ? ' disabled' : '') + '>Release anyway</button></span>';
+    '<button class="ctl" data-decide="anyway"' + on + (R.deciding ? ' disabled' : '') + '>Release anyway</button>' +
+    (a.reallocation_names ? ' or change an allocation: Reallocate, its why saying <code class="sy-p-names">' +
+      esc(a.reallocation_names) + '</code>, then Put back the systems\' file' : '') + '</span>';
 }
 
 function previews(c) {
