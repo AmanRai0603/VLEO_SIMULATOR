@@ -9,27 +9,33 @@
 //!   owner, at the objection's place `objection:<g>-<v>.<a>`, resolved by the
 //!   release that names it (`crate::issues`);
 //! - **release anyway**: an issue on `programme`, to the programme manager,
-//!   holding the objection's words and the answer's digest.
-//!
-//! **Changing an allocation does not decide one yet.** `breakdown::
-//! Edit::Reallocate` changes it (question 48), in the copy's systems' file,
-//! which goes back to the drive (F6-e), its `change` rows, where its why
-//! names the objection, signed with it (F6-d). A reallocation read there is
-//! not yet counted as a decision.
+//!   holding the objection's words and the answer's digest;
+//! - **change an allocation** (question 48, F6-e): `breakdown::Edit::
+//!   Reallocate`, in the copy's systems' file, its why naming the objection
+//!   and its answer as [`reallocation_names`] says them, and that file put
+//!   back to the drive.
 //!
 //! [`decisions`] reads what was decided from the issue files, each held to
 //! the chain: an issue counts only signed by the system engineer, or their
 //! deputy, who raised it, naming the answer by its digest, and saying what
-//! it decides again in a text its signature covers. What it gives
-//! ([`Decided`]) only it makes, so a release is given no decision it did not
-//! read.
+//! it decides again in a text its signature covers. It reads a reallocation
+//! from the drive's systems' file, as it opens through the chain, marked so
+//! its change rows are signed with it (F6-d): a `reallocate` row that changes
+//! an allocation on a mount, made by the system engineer or their deputy
+//! holding a key that counts then, naming the objection and its answer. An
+//! issue decides first: one raised in another copy and put back after a
+//! reallocation takes its place, and only ever towards a red mark or a
+//! release held back. A change naming the objection that does not decide it
+//! is said, with why ([`Decided::not_counted`]). What it gives ([`Decided`])
+//! only it makes, so a release is given no decision it did not read.
 //!
 //! The release asks it of today's design ([`asked_of`]): every preview on
 //! the design released now of a release today's design holds answered by
 //! every group it names; every objection decided; none decided *next
-//! version* while today's design still holds the release objected to. Each
-//! objection is a red mark, `objection:…`, never marked understood: one
-//! decided *release anyway* is raised by the programme manager's issue. A
+//! version* while today's design still holds the release objected to. One
+//! decided *release anyway* is a red mark, `objection:…`, never marked
+//! understood, raised by the programme manager's issue; one decided by an
+//! allocation changed is not, since what it objected to has changed. A
 //! preview that does not open, and may be one the release must hear, holds
 //! it as one unanswered does.
 //!
@@ -41,7 +47,7 @@ use crate::chain::{self, Registry, FILE};
 use crate::error::{Error, ErrorKind};
 use crate::keys::SigningKey;
 use crate::meta::Kind;
-use crate::model::{File, Issue, Text};
+use crate::model::{Change, File, Issue, Text};
 
 fn refused(message: impl Into<String>) -> Error {
     Error::new(ErrorKind::Malformed, message)
@@ -79,6 +85,9 @@ pub enum Decision {
     NextVersion { issue: i64, by: String },
     /// Released anyway, by the issue `issue` to the programme manager.
     ReleaseAnyway { issue: i64, by: String },
+    /// An allocation changed, by the `reallocate` change row of the drive's
+    /// systems' file that names it, made by `by` at `at`.
+    Reallocated { by: String, at: String },
 }
 
 impl Decision {
@@ -91,6 +100,9 @@ impl Decision {
             Decision::ReleaseAnyway { issue, by } => {
                 format!("released anyway, put by {by} to the programme manager in issue {issue}")
             }
+            Decision::Reallocated { by, at } => {
+                format!("an allocation changed, by {by} at {at}, in the systems' file")
+            }
         }
     }
 }
@@ -101,6 +113,87 @@ const DECISION: &str = "decision";
 
 fn decided_as(place: &str, group: &str, addressed_to: &str, answer: &str) -> String {
     format!("{place}\n{group}\n{addressed_to}\nanswer {answer}")
+}
+
+/// What the why of a reallocation says to decide `o`: the objection's place
+/// and its answer, by the first [`NAMED`] characters of its digest, so a
+/// reallocation made before the group answered again decides nothing of the
+/// answer it gives now. A reallocation naming more of the digest names it
+/// too.
+pub fn reallocation_names(o: &Objection) -> String {
+    let named = o.answer.get(..NAMED).unwrap_or(&o.answer);
+    format!("{} answer {named}", o.id())
+}
+
+/// How much of an answer's digest a reallocation names it by.
+const NAMED: usize = 12;
+
+/// Whether the change row `c` of the systems' file `f` decides `o`: `None`
+/// when it does not name the objection's place; otherwise that it does, or
+/// why not, by name. It does when it is a `reallocate` edit's change, on a
+/// block `f` mounts, its rows before and after given and not the same; says
+/// the objection's place, then `answer` and as much of its answer's digest
+/// as [`reallocation_names`] gives, or more of it; and is made by the system
+/// engineer or their deputy, never under an assistant's name, holding a key
+/// `programme` counts at the moment it was made.
+fn reallocation(
+    c: &Change,
+    o: &Objection,
+    f: &File,
+    programme: &Registry,
+) -> Option<Result<(), String>> {
+    let id = o.id();
+    if !c.what.contains(&id) {
+        return None;
+    }
+    let not = |why: String| {
+        Some(Err(format!(
+            "{}'s change at {}, {:?}, does not decide it: {why}",
+            c.who, c.at, c.what
+        )))
+    };
+    let Some(why) = c.what.strip_prefix("reallocate:") else {
+        return not("it is not a reallocate edit's change".into());
+    };
+    if o.answer.len() < NAMED {
+        return not(
+            "the objection's answer on the drive does not read, so nothing names it".into(),
+        );
+    }
+    let place = format!("{id} answer ");
+    let names = why.match_indices(&place).any(|(i, _)| {
+        let rest = &why[i + place.len()..];
+        let hex = rest
+            .find(|ch: char| !ch.is_ascii_hexdigit())
+            .map_or(rest, |end| &rest[..end]);
+        hex.len() >= NAMED && o.answer.starts_with(hex)
+    });
+    if !names {
+        return not(format!(
+            "it does not name the answer as {:?} does",
+            reallocation_names(o)
+        ));
+    }
+    if !f.mounts.iter().any(|m| m.block_uid == c.scope)
+        || c.before.is_none()
+        || c.after.is_none()
+        || c.before == c.after
+    {
+        return not("it changes no allocation on a mount of the systems' file".into());
+    }
+    if crate::checks::is_assistant(&c.who) || !programme.acts_as(&c.who, "system engineer") {
+        return not("it is not made by the system engineer or their deputy".into());
+    }
+    let counts = programme
+        .file
+        .keys
+        .iter()
+        .filter(|k| k.person == c.who)
+        .any(|k| programme.key(&c.who, &k.public_key, &c.at).is_ok());
+    if !counts {
+        return not(format!("{} holds no key that counts at {}", c.who, c.at));
+    }
+    Some(Ok(()))
 }
 
 /// How the system engineer decides an objection by an issue.
@@ -218,13 +311,35 @@ pub fn decision_issue(
 /// row does, signed by the system engineer or their deputy who raised it, on
 /// the releasing group to its owner, as the file among `parents` that mounts
 /// it names them, or on `programme` to its programme manager. The first that
-/// holds is the decision; none, undecided.
+/// holds is the decision. Then `systems`, the drive's systems' file: when it
+/// opens through the chain and is marked so its change rows are signed with
+/// it, its first change row that decides the objection ([`reallocation`]).
+/// None, undecided, with why each row of that file naming the objection's
+/// place does not decide it.
 pub fn decisions(
     objections: &[Objection],
     issues: &[File],
+    systems: Option<&File>,
     parents: &[&Registry],
     programme: &Registry,
 ) -> Vec<Decided> {
+    // The rows a signature covers, of a file that opens through the chain:
+    // never a row added since it was signed. A row from before F6-d reaches
+    // a marked file only by a put-back, which never signs in a reallocation
+    // among them (`put_back`).
+    let unread = systems.and_then(|f| {
+        if f.meta.get(chain::SIGNED_ROWS).map(String::as_str) != Some(chain::ROWS_SIGNED) {
+            return Some(
+                "the drive's systems' file does not sign its change rows (F6-d)".to_string(),
+            );
+        }
+        chain::open_systems(f, programme).err().map(|e| {
+            format!(
+                "the drive's systems' file does not check through the chain: {}",
+                e.message()
+            )
+        })
+    });
     objections
         .iter()
         .map(|o| {
@@ -281,9 +396,40 @@ pub fn decisions(
                     by: i.raised_by.clone(),
                 })
             });
+            // An issue decides first: a reallocation is read only of an
+            // objection no issue decides.
+            let mut not_counted = Vec::new();
+            let decision = decision.or_else(|| {
+                let f = systems?;
+                for c in &f.changes {
+                    let said = match &unread {
+                        Some(why) if c.what.contains(&id) => Some(Err(format!(
+                            "{}'s change at {}, {:?}, does not decide it: {why}",
+                            c.who, c.at, c.what
+                        ))),
+                        Some(_) => None,
+                        None => reallocation(c, o, f, programme),
+                    };
+                    match said {
+                        Some(Ok(())) => {
+                            return Some(Decision::Reallocated {
+                                by: c.who.clone(),
+                                at: c.at.clone(),
+                            })
+                        }
+                        Some(Err(why)) => not_counted.push(why),
+                        None => {}
+                    }
+                }
+                None
+            });
+            if decision.is_some() {
+                not_counted.clear();
+            }
             Decided {
                 objection: o.clone(),
                 decision,
+                not_counted,
             }
         })
         .collect()
@@ -305,6 +451,7 @@ pub struct Standing {
 pub struct Decided {
     objection: Objection,
     decision: Option<Decision>,
+    not_counted: Vec<String>,
 }
 
 impl Decided {
@@ -314,6 +461,12 @@ impl Decided {
 
     pub fn decision(&self) -> Option<&Decision> {
         self.decision.as_ref()
+    }
+
+    /// Why each change of the drive's systems' file naming the objection's
+    /// place does not decide it, when nothing does: never passed over.
+    pub fn not_counted(&self) -> &[String] {
+        &self.not_counted
     }
 }
 
@@ -325,8 +478,9 @@ impl Decided {
 /// not open, while an objection to one has no decision, or while one decided
 /// *next version* is of a release today's design still holds. A preview of
 /// another release, or on another design, is stale and asks nothing
-/// (question 46). Gives the red marks the objections are, each raised by its
-/// programme manager's issue, and the rows of `objections.csv`.
+/// (question 46). Gives the red marks the objections released anyway are,
+/// each raised by its programme manager's issue, and the rows of
+/// `objections.csv`, one for every objection decided.
 pub fn asked_of(
     previews: &[Standing],
     unread: &[String],
@@ -380,11 +534,23 @@ pub fn asked_of(
             let Some(Decided {
                 objection,
                 decision: Some(decision),
+                ..
             }) = d
             else {
+                // A change naming it that does not decide it is said, never
+                // passed over.
+                let not: Vec<&str> = d
+                    .map(|d| d.not_counted.iter().map(String::as_str).collect())
+                    .unwrap_or_default();
                 open.push(format!(
-                    "{g} objects to {} {}: {because}",
-                    p.group, p.version
+                    "{g} objects to {} {}: {because}{}",
+                    p.group,
+                    p.version,
+                    if not.is_empty() {
+                        String::new()
+                    } else {
+                        format!(" ({})", not.join("; "))
+                    }
                 ));
                 continue;
             };
@@ -422,7 +588,7 @@ pub fn asked_of(
         let mut said = Vec::new();
         if !open.is_empty() {
             said.push(format!(
-                "every objection is decided before the design is released (W7), and these are not: {}. Ask for its next version, or release anyway",
+                "every objection is decided before the design is released (W7), and these are not: {}. Ask for its next version, release anyway, or change an allocation",
                 open.join("; ")
             ));
         }
