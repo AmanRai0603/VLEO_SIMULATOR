@@ -155,3 +155,47 @@ fn an_unmarked_file_hashes_as_it_did_before_f6_d() {
     assert_eq!(chain::digest(&issue_file(false), FILE).unwrap(), BEFORE_F6D);
     assert_ne!(chain::digest(&issue_file(true), FILE).unwrap(), BEFORE_F6D);
 }
+
+/// What `chain::check_issue` refuses before any signature is read: a file of
+/// another kind, of no issue or two, whose row is not what its meta says, or
+/// raised by another than its writer. With no registry to count a key, a
+/// file as it should be is refused only for its signature.
+#[test]
+fn an_issue_file_is_refused_by_name_where_it_is_not_one() {
+    let good = signed(issue_file(true));
+    let e = chain::check_issue(&good, &[]).unwrap_err();
+    assert!(
+        e.message().contains("issue 4 on l3_solar, by Sam Engel,"),
+        "{}",
+        e.message()
+    );
+    let mut node = good.clone();
+    node.meta.insert(s("file_kind"), s("node"));
+    let mut none = good.clone();
+    none.issues.clear();
+    let mut two = good.clone();
+    two.issues.push(good.issues[0].clone());
+    let mut number = good.clone();
+    number.issues[0].number = 5;
+    let mut group = good.clone();
+    group.issues[0].group_id = s("l3_power");
+    let mut raiser = good.clone();
+    raiser.issues[0].raised_by = s("Ola Sun");
+    for (f, says) in [
+        (node, "it is not an issue file"),
+        (none, "it holds 0 issues, and an issue file holds one"),
+        (two, "it holds 2 issues"),
+        (
+            number,
+            "its row is issue 5 on l3_solar, and its meta says issue 4",
+        ),
+        (group, "its row is issue 4 on l3_power"),
+        (
+            raiser,
+            "it is raised by \"Ola Sun\", and its meta says \"Sam Engel\" wrote it",
+        ),
+    ] {
+        let e = chain::check_issue(&f, &[]).unwrap_err();
+        assert!(e.message().contains(says), "{says}: {}", e.message());
+    }
+}

@@ -799,6 +799,27 @@ fn issue_edit(copy: &Path, group: &str, params: &str) -> Result<Edit, String> {
     if f.meta.get("group_id").map(String::as_str) != Some(group) {
         return Err(format!("issue {number} is not addressed to {group}"));
     }
+    // Signed as it is by the person who raised it: what is assigned is what
+    // they raised.
+    let c = chain(copy)?;
+    let regs: Vec<&Registry> = std::iter::once(&c.programme)
+        .chain(c.systems.iter())
+        .chain(c.groups.iter())
+        .collect();
+    // The copy's chain, as the edit is made in the copy: a raiser
+    // registered there and not yet put back is counted here and not yet in
+    // today's red marks, which read the drive's.
+    vleo_files::chain::check_issue(&f, &regs).map_err(|e| {
+        format!(
+            "issues/{number}-{group}.vissue does not check through the chain: {}{}",
+            e.message(),
+            if c.left_out.is_empty() {
+                String::new()
+            } else {
+                format!("; left out of the chain: {}", c.left_out.join("; "))
+            }
+        )
+    })?;
     if let Some(by) = f
         .issues
         .iter()

@@ -230,6 +230,9 @@ pub fn decisions(
         .map(|o| {
             let id = o.id();
             let decision = issues.iter().find_map(|f| {
+                // An issue file as every reader holds it (`check_issue`),
+                // then a decision as only the system engineer makes one.
+                chain::check_issue(f, &[programme]).ok()?;
                 let [i] = f.issues.as_slice() else {
                     return None;
                 };

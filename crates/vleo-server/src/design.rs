@@ -194,7 +194,11 @@ fn today(ctx: &Ctx) -> Result<(Today, me::Chain), String> {
             });
         }
     }
-    marks.extend(red_marks(ctx, &drive));
+    let regs: Vec<&Registry> = std::iter::once(&c.programme)
+        .chain(c.systems.iter())
+        .chain(c.groups.iter())
+        .collect();
+    marks.extend(red_marks(ctx, &drive, &regs, &c.left_out));
     // An issue the previews count as an objection's raised mark is that
     // objection's (`design::asked_of`), never a mark of its own; every other
     // issue, a next version asked for, a decision of a stale objection or
@@ -251,9 +255,11 @@ fn declared_case(ctx: &Ctx) -> vleo_bus::Case {
 
 /// The red marks of today's design: each closure that fails, is refused or
 /// is blocked on the design as declared, raised when an issue open names it;
-/// each issue open on the drive or in the copy, the drive's first; and each
-/// issue file that does not read, said, never passed over.
-fn red_marks(ctx: &Ctx, drive: &Path) -> Vec<Mark> {
+/// each issue open on the drive or in the copy, the drive's first, that
+/// checks through the chain, signed by its raiser with a key one of `regs`
+/// counts; and each issue file that does not read, or does not check, said,
+/// never passed over.
+fn red_marks(ctx: &Ctx, drive: &Path, regs: &[&Registry], left_out: &[String]) -> Vec<Mark> {
     let mut open: Vec<(String, vleo_files::model::Issue)> = Vec::new();
     let mut seen: Vec<String> = Vec::new();
     let mut out = Vec::new();
@@ -275,13 +281,44 @@ fn red_marks(ctx: &Ctx, drive: &Path) -> Vec<Mark> {
             }
             seen.push(name.clone());
             match vleo_files::sqlite::read(&p) {
-                Ok(f) => {
-                    for i in f.issues.into_iter().filter(|i| i.closed_by.is_empty()) {
-                        open.push((name.clone(), i));
+                // An issue counts only as its raiser signed it; one that
+                // does not check is said with why, never passed over.
+                // A file that does not check, or does not read, is a mark of
+                // its own, never the issue's: one marked understood as the
+                // issue is not understood as a file changed since.
+                Ok(f) => match vleo_files::chain::check_issue(&f, regs) {
+                    Ok(()) => {
+                        // A row from before F6-d is not what its raiser
+                        // signed: it is listed, and neither closes the issue
+                        // nor raises a closure's mark.
+                        let signed = f.meta.contains_key(vleo_files::chain::SIGNED_ROWS);
+                        for mut i in f.issues.into_iter() {
+                            if !signed {
+                                i.closed_by.clear();
+                                i.place.clear();
+                                i.what = format!("{} (raised before its row was signed)", i.what);
+                            }
+                            if i.closed_by.is_empty() {
+                                open.push((name.clone(), i));
+                            }
+                        }
                     }
-                }
+                    Err(e) => out.push(Mark {
+                        id: format!("issue-file:{}", name.trim_end_matches(".vissue")),
+                        said: format!(
+                            "the issue file {name} does not check through the chain: {}{}",
+                            e.message(),
+                            if left_out.is_empty() {
+                                String::new()
+                            } else {
+                                format!("; left out of the chain: {}", left_out.join("; "))
+                            }
+                        ),
+                        raised: None,
+                    }),
+                },
                 Err(e) => out.push(Mark {
-                    id: format!("issue:{}", name.trim_end_matches(".vissue")),
+                    id: format!("issue-file:{}", name.trim_end_matches(".vissue")),
                     said: format!("the issue file {name} does not read: {}", e.message()),
                     raised: None,
                 }),
