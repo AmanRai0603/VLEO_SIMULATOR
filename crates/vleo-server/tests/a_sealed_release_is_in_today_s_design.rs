@@ -388,6 +388,10 @@ fn released(drive: &Path) -> File {
         changed: "Solar 1.0.",
         marks: &[],
         understood: &[],
+        margins: &[],
+        previews: &[],
+        unread: &[],
+        decided: &[],
     };
     let d = design::release(
         &checks,

@@ -44,6 +44,7 @@ narrative:
 | **What changed** | what this version does differently, and the benefit |
 | **Risks opened / closed** | `R-01 L5->L4`, `R-09 closed`, `R-12 opened` *(optional)* |
 | **Rests on now** · **Would break if** | the new belief, and what to watch for |
+| **Resolves** | the issues this version resolves, by number: `3, 7` *(optional)*. An entry that is not a number refuses the release's issue states, never skipped; the row is carried with the record, so a later version still resolves them |
 
 The kind of decision is not asked: the release's checks read it off what the release changes — an input, the
 output, the model (source, assumptions), the maths (the relation), the algorithm, the

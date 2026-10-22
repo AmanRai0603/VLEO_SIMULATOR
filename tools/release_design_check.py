@@ -129,6 +129,11 @@ def check():
                  p.locator('.sy-r-lines tbody tr').count() % 5 == 0
                  and p.locator('.sy-r-lines tbody tr:has-text("both ends of every declared range")').count()
                  == p.locator('.sy-r-lines tbody tr').count() // 5, p.locator('.sy-r-lines tbody tr').count())
+            p.wait_for_selector('.sy-budgets-said, .sy-budgets-refused', timeout=60000)
+            said = p.inner_text('.sy-budgets')
+            step('the budgets across releases are read from the drive\'s released designs, and none is released yet',
+                 p.locator('.sy-budgets-said').count() == 1
+                 and 'no design is released on the drive yet' in said, said[:300])
             marks = p.inner_text('.sy-r-marks')
             step('the closure solar 1.2 breaks is a red mark, to be understood or raised',
                  p.locator('.sy-r-understood[data-mark^="closure:"]').count() >= 1

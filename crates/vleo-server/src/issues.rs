@@ -51,7 +51,7 @@ pub(super) fn raise(params: &str, ctx: &Ctx) -> String {
 }
 
 /// The highest number an issue in `dir` carries in its name, `<number>-…`.
-fn highest(dir: &Path) -> u64 {
+pub(super) fn highest(dir: &Path) -> u64 {
     std::fs::read_dir(dir)
         .into_iter()
         .flatten()

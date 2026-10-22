@@ -93,6 +93,7 @@ pub mod folder;
 pub mod format_1;
 pub mod frame;
 pub mod intake;
+pub mod issues;
 pub mod keys;
 pub mod meta;
 pub mod model;

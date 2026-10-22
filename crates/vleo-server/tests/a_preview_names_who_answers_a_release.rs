@@ -27,6 +27,12 @@
 //!   written through `POST /v1/answer`, counts only once it is put back: in
 //!   her copy, it is unanswered and My work says to put it back; on the
 //!   drive, it is an objection with why, and My work says no more of it;
+//! - Sam decides her objection, asking for solar's next version: an issue in
+//!   his copy to Ola at the objection's place, the listing saying what was
+//!   decided, and the issue a red mark on solar, open for Ola, as any issue
+//!   to a group is; decided again, by Uma, as
+//!   an allocation, which decides nothing yet, as no decision, or of no
+//!   objection, refused by name;
 //! - changed on the drive after she signed it, her answer is refused, and My
 //!   work says it does not count;
 //! - the preview copied under another design's name is listed with why, and
@@ -393,6 +399,10 @@ fn released(drive: &Path, release: &[u8]) {
         changed: "Solar's long design F10.7.",
         marks: &[],
         understood: &[],
+        margins: &[],
+        previews: &[],
+        unread: &[],
+        decided: &[],
     };
     let d = design::release(
         &i,
@@ -715,12 +725,110 @@ fn the_system_engineer_previews_a_release_and_its_named_group_answers_it() {
     let p = previews();
     assert!(
         entries(&p, "previews")[0].contains(&format!(
-            "\"answers\":[{{\"group\":\"l3_x_envorbit\",\"said\":\"object\",\"because\":\"{because}\",\"in_copy\":false}}]"
+            "\"answers\":[{{\"group\":\"l3_x_envorbit\",\"said\":\"object\",\"because\":\"{because}\",\"objection\":\"objection:l3_solar-1.1.l3_x_envorbit\",\"decision\":\"undecided\",\"in_copy\":false}}]"
         )),
         "{p}"
     );
     let w = ask(port, "GET", "/v1/my-work", &[], false);
     assert!(!w.contains("\"kind\":\"answer\""), "{w}");
+    // Her objection decided by Sam, through the program (F6-c3b).
+    let decide = |decision: &str, answering: &str| {
+        post(
+            port,
+            "/v1/design/decide",
+            &[
+                ("group", "l3_solar"),
+                ("version", "1.1"),
+                ("answering", answering),
+                ("decision", decision),
+            ],
+        )
+    };
+    let r = decide("next", "l3_x_envorbit");
+    assert!(
+        field(&r, "message").contains("Test Uma may not decide an objection"),
+        "{r}"
+    );
+    assert!(open_key(port, "test-sam.vkey").contains("\"open\":true"));
+    let objection = "objection:l3_solar-1.1.l3_x_envorbit";
+    for (d, a, why) in [
+        (
+            "allocation",
+            "l3_x_envorbit",
+            "an allocation changed does not decide objection:l3_solar-1.1.l3_x_envorbit yet",
+        ),
+        (
+            "maybe",
+            "l3_x_envorbit",
+            "is not a decision: next (ask for its next version)",
+        ),
+        (
+            "next",
+            "l3_solar",
+            "no answer on the drive objects as objection:l3_solar-1.1.l3_solar",
+        ),
+    ] {
+        let r = decide(d, a);
+        assert!(r.contains("\"ok\":false") && r.contains(why), "{d}: {r}");
+    }
+    let r = decide("next", "l3_x_envorbit");
+    assert!(r.contains("\"ok\":true"), "{r}");
+    assert_eq!(field(&r, "objection"), objection);
+    assert_eq!(field(&r, "addressed_to"), "Test Ola");
+    let issue = field(&r, "file").to_string();
+    let f = sqlite::read(&copy.join(&issue)).unwrap();
+    assert_eq!(f.issues[0].place, objection);
+    assert_eq!(f.issues[0].group_id, "l3_solar");
+    let p = previews();
+    assert!(
+        entries(&p, "previews")[0].contains(&format!(
+            "\"objection\":\"{objection}\",\"decision\":\"its next version, asked for by Test Sam in issue "
+        )),
+        "{p}"
+    );
+    let r = decide("anyway", "l3_x_envorbit");
+    assert!(
+        field(&r, "message").contains(&format!("{objection} is decided already: its next version")),
+        "{r}"
+    );
+    // Its next version asked for is work for solar's owner: a red mark on
+    // solar, as any open issue to a group is, never hidden as the
+    // objection's.
+    let i = ask(port, "GET", "/v1/design/integration", &[], false);
+    assert!(i.contains("\"ok\":true"), "{i}");
+    let mark = format!(
+        "issue:{}",
+        issue
+            .trim_start_matches("issues/")
+            .trim_end_matches(".vissue")
+    );
+    assert!(
+        i.contains(&format!("{{\"id\":\"{mark}\",\"said\":\"issue 1 on l3_solar, open: l3_x_envorbit objects to l3_solar 1.1:")),
+        "{mark}: {i}"
+    );
+    // Released anyway in its place: the programme manager's issue raises the
+    // objection's mark, and is no red mark of its own.
+    std::fs::remove_file(copy.join(&issue)).unwrap();
+    let r = decide("anyway", "l3_x_envorbit");
+    assert!(r.contains("\"ok\":true"), "{r}");
+    let anyway = format!(
+        "issue:{}",
+        field(&r, "file")
+            .trim_start_matches("issues/")
+            .trim_end_matches(".vissue")
+    );
+    assert!(anyway.ends_with("-programme"), "{r}");
+    let i = ask(port, "GET", "/v1/design/integration", &[], false);
+    assert!(i.contains("\"ok\":true"), "{i}");
+    assert!(!i.contains(&format!("{{\"id\":\"{anyway}\"")), "{i}");
+    // Beside a preview that may be one and does not open, no objection
+    // stands: the issue is said as it is.
+    let odd = drive.join("integration/l3_solar-1.1/preview-of-something.vleo");
+    std::fs::write(&odd, b"not a file").unwrap();
+    let i = ask(port, "GET", "/v1/design/integration", &[], false);
+    assert!(i.contains(&format!("{{\"id\":\"{anyway}\"")), "{i}");
+    std::fs::remove_file(&odd).unwrap();
+    assert!(open_key(port, "test-uma.vkey").contains("\"open\":true"));
     // Changed on the drive after she signed it: refused, never her answer,
     // and My work says it does not count.
     let mut f = sqlite::read(&drive.join(&answer)).unwrap();

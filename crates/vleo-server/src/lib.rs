@@ -374,6 +374,17 @@ pub(crate) fn base_files() -> Option<std::sync::Arc<dyn Files>> {
     BASE.read().unwrap_or_else(|e| e.into_inner()).clone()
 }
 
+/// The fingerprint of today's design when the engine was last installed,
+/// `None` when it was installed for the design's own files. `BUILT_FROM` is
+/// read again without reinstalling the engine (a figure opens the tree), so
+/// the two are compared before the engine's answers are kept.
+static ENGINE_FOR: std::sync::RwLock<Option<String>> = std::sync::RwLock::new(None);
+
+/// The fingerprint of today's design the engine runs (`ENGINE_FOR`).
+pub(crate) fn engine_built_for() -> Option<String> {
+    ENGINE_FOR.read().unwrap_or_else(|e| e.into_inner()).clone()
+}
+
 /// What the design the tool opened last was built from (`BUILT_FROM`).
 pub fn built_from() -> Option<today::Report> {
     BUILT_FROM.read().unwrap_or_else(|e| e.into_inner()).clone()
@@ -524,6 +535,9 @@ fn run_on_the_files(files: &dyn Files, root: &Path) -> Result<String, String> {
     let graph = vleo_modules::opened::graph(&tree)
         .map_err(|e| format!("the design's files do not make a graph: {e}"))?;
     vleo_modules::run_on(graph);
+    // Which of today's designs the engine now runs: a release keeps the
+    // engine's margins, so it is refused once the two differ.
+    *ENGINE_FOR.write().unwrap_or_else(|e| e.into_inner()) = built_from().map(|r| r.fingerprint);
     Ok(format!(
         "the graph read from the design's files — {} rows, {} of them methods run by the interpreter",
         graph.nodes.len(),
@@ -656,8 +670,11 @@ fn route(
         // answers to it (F6-c).
         ("GET", "/v1/design/previews") => ok_json(design::previews_route(ctx)),
         ("POST", "/v1/design/preview") => ok_json(design::preview_route(params, ctx)),
+        // The decision on an objection to a release (F6-c).
+        ("POST", "/v1/design/decide") => ok_json(design::decide_route(params, ctx)),
         // A group's answer to a release that moves its values (W7).
         ("POST", "/v1/answer") => ok_json(branch::answer_route(params, ctx)),
+        ("GET", "/v1/design/budgets") => ok_json(design::budgets_route(ctx)),
         ("POST", p) if p.starts_with("/v1/branch/") => {
             ok_json(branch::edit_route(p.strip_prefix("/v1/branch/").unwrap_or_default(), params, ctx))
         }

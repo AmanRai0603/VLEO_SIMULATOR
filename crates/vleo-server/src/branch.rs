@@ -711,8 +711,145 @@ fn edit_of(name: &str, params: &str) -> Result<Edit, String> {
             sense: get("sense"),
             says: get("closure_says"),
         },
+        // An allocation given another value or range; its sense changes only
+        // when one is given (F6-c).
+        "reallocate" => Edit::Reallocate {
+            block: need("block")?,
+            port: need("name")?,
+            value: get("value"),
+            lower: get("lower"),
+            upper: get("upper"),
+            sense: get("sense"),
+        },
+        "assign" => Edit::Assign {
+            block: need("block")?,
+            person: need("person")?,
+        },
+        "contract" => Edit::Contract {
+            node: need("node")?,
+            // A port given by its name; none, and the contract is said again.
+            port: if get("name").trim().is_empty() {
+                None
+            } else {
+                Some(Box::new(vleo_files::model::Port {
+                    direction: need("direction")?,
+                    name: need("name")?,
+                    port_type: need("type")?,
+                    unit: get("unit"),
+                    lower: get("lower"),
+                    upper: get("upper"),
+                    state: get("state"),
+                    maturity: get("maturity"),
+                    says: get("says"),
+                    ..Default::default()
+                }))
+            },
+        },
+        "sheet" => Edit::Sheet {
+            csv: need("sheet")?,
+        },
+        "issue" => Edit::Issue {
+            block: need("block")?,
+            behaviour: need("behaviour")?,
+        },
+        "unassign" => Edit::Unassign {
+            block: need("block")?,
+        },
+        "wire" => Edit::Wire {
+            block: need("block")?,
+            port: need("port")?,
+            from: need("from")?,
+        },
         other => return Err(format!("{other:?} is not an edit of a branch")),
     })
+}
+
+/// The issue assignment `params` asks of `group` (W11): issue `number`, as
+/// the copy's `issues/` holds it, addressed to `group`, given to `person`.
+fn issue_edit(copy: &Path, group: &str, params: &str) -> Result<Edit, String> {
+    let get = |k: &str| param(params, k).map(decode).unwrap_or_default();
+    let number: u64 = get("number")
+        .trim()
+        .parse()
+        .map_err(|_| format!("{:?} is not an issue's number", get("number")))?;
+    let at = copy.join("issues").join(format!("{number}-{group}.vissue"));
+    let f = vleo_files::sqlite::read(&at)
+        .map_err(|_| format!("your copy holds no issue {number} addressed to {group}"))?;
+    // The file named for the issue is that issue: an issue file, of that
+    // number, addressed to the group, and not closed.
+    if f.kind() != Ok(vleo_files::meta::Kind::Issue) {
+        return Err(format!(
+            "issues/{number}-{group}.vissue is not an issue file"
+        ));
+    }
+    if f.meta.get("number").map(String::as_str) != Some(number.to_string().as_str()) {
+        return Err(format!(
+            "issues/{number}-{group}.vissue says it is issue {}, not {number}",
+            f.meta.get("number").map_or("none", String::as_str)
+        ));
+    }
+    if f.meta.get("group_id").map(String::as_str) != Some(group) {
+        return Err(format!("issue {number} is not addressed to {group}"));
+    }
+    if let Some(by) = f
+        .issues
+        .iter()
+        .map(|i| i.closed_by.trim())
+        .find(|b| !b.is_empty())
+    {
+        return Err(format!(
+            "issue {number} is closed, by {by}: a closed issue is not assigned"
+        ));
+    }
+    let person = get("person");
+    if person.trim().is_empty() {
+        return Err("assign-issue needs person".into());
+    }
+    Ok(Edit::AssignIssue {
+        number,
+        person: person.trim().to_string(),
+    })
+}
+
+/// The base update `params` asks of `group` (W12): the released design
+/// `design`, by its version, and the one the group is based on now, each
+/// read from the copy's `design/` or its `archive/`.
+fn base_edit(copy: &Path, group: &str, params: &str) -> Result<Edit, String> {
+    let version = param(params, "design").map(decode).unwrap_or_default();
+    let read = |v: &str| -> Result<Box<vleo_files::model::File>, String> {
+        if vleo_files::meta::DesignVersion::parse(v).is_none() {
+            return Err(format!(
+                "{v:?} is not a released design's version: year.month.sequence"
+            ));
+        }
+        let name = format!("design-{v}.vleo");
+        let at = [
+            copy.join("design").join(&name),
+            copy.join("design/archive").join(&name),
+        ]
+        .into_iter()
+        .find(|p| p.is_file())
+        .ok_or_else(|| format!("your copy holds no released design {v}: copy the drive again"))?;
+        let f = vleo_files::sqlite::read(&at)
+            .map_err(|e| format!("design/{name} does not read: {}", e.message()))?;
+        // The file named for a version is that version, or nothing is moved.
+        let holds = f.meta.get("version").map_or("", String::as_str);
+        if holds != v {
+            return Err(format!(
+                "design/{name} holds the released design {holds:?}, not {v}: it is not read as {v}"
+            ));
+        }
+        Ok(Box::new(f))
+    };
+    let design = read(version.trim())?;
+    let (_, f) = breakdown::group_file_in(copy, group).map_err(|e| e.message().to_string())?;
+    let based_on = f.meta.get("based_on").cloned().unwrap_or_default();
+    let previous = if based_on.is_empty() {
+        None
+    } else {
+        Some(read(&based_on)?)
+    };
+    Ok(Edit::UpdateBase { design, previous })
 }
 
 /// A breakdown's answers, one a line: `<output>=<child uid>.<port>`, an
@@ -763,9 +900,13 @@ fn edited(name: &str, params: &str, ctx: &Ctx) -> Result<String, String> {
     if me::with_key(|_, _| ()).is_none() {
         return Err("no key is open: open yours, and the edit is made and signed as you".into());
     }
-    let e = edit_of(name, params)?;
     let g = param(params, "group").map(decode).unwrap_or_default();
     let group = group_id(&g)?;
+    let e = match name {
+        "update-base" => base_edit(&the_copy(ctx)?, group, params)?,
+        "assign-issue" => issue_edit(&the_copy(ctx)?, group, params)?,
+        _ => edit_of(name, params)?,
+    };
     let opened = param(params, "opened").map(decode).unwrap_or_default();
     let why = param(params, "why").map(decode).unwrap_or_default();
     let copy = the_copy(ctx)?;

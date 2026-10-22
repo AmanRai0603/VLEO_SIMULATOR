@@ -20,7 +20,11 @@
     group here* on a leaf of any branch, and *allocate* on a mount framed in
     the systems' file, the sense chosen, never defaulted. A group mounted
     and not started says whose step it is, and *Start <g>* is its owner's.
-    Budgets and margins are a link to Explore's health map: the engine's.
+    Budgets across releases: each closure's state and margin in every
+    released design that kept them, read from its margins.csv as the engine
+    answered when it was released, never computed here (F6-c, item 7); a
+    design released before margins were kept is said. Today's margins are a
+    link to Explore's health map: the engine's.
 
   Every answer is the program's. Nothing here decides who may frame a
   branch, writes a file or judges a breakdown. A group file changed in the
@@ -41,11 +45,13 @@
 */
 'use strict';
 
-import { $, esc, answerFirst, plural } from './dom.js';
+import { $, esc, answerFirst, plural, fmt } from './dom.js';
 
 const W = { group: '', tree: null, sel: '', notice: null, stale: false, host: null, post: null, groups: [], why: '', seq: 0, view: null };
 /** The release panel: the checks as last read, what was typed, and the program's answer. */
-const R = { seq: 0, checks: null, version: '', changed: '', understood: new Set(), notice: null, sending: false, previewing: false, previewed: null };
+const R = { seq: 0, checks: null, version: '', changed: '', understood: new Set(), notice: null, sending: false, previewing: false, previewed: null, deciding: false };
+/** The budgets across releases, read again with each drawing of the frame. */
+const B = { seq: 0 };
 
 async function get(path) {
   try { return await (await fetch(path)).json(); } catch (e) { return { ok: false, message: 'the program did not answer: ' + e }; }
@@ -113,6 +119,7 @@ async function draw(keep) {
         ? '<p><button class="ctl" id="sy-start">Start ' + esc(group) + '</button> one heading, its question the mount\'s, signed by you. ' +
           'It shows in today\'s design once ' + esc(group) + ' seals a release (F5).</p>'
         : '<p class="muted sy-not-yours">' + esc(t.why_not || 'Not yours to start.') + '</p>');
+    await drawBudgets();
     return;
   }
   if (!W.sel || !t.blocks.some(b => b.uid === W.sel)) W.sel = (t.blocks.find(b => !b.archived) || {}).uid || '';
@@ -125,10 +132,47 @@ async function draw(keep) {
       ], 'reference') + frame(t) +
     view() +
     (t.yours ? answerForm() : '') +
+    (t.yours ? baseForm() : '') +
     '<div class="sy-grid"><nav class="sy-tree" aria-label="the branch">' + tree(t) + '</nav>' +
     '<section class="sy-block">' + block(t) + '</section></div>' +
     (group === 'systems' ? '<section class="sy-release" id="sy-release"><p class="sh-loading">reading the integration checks…</p></section>' : '');
-  if (group === 'systems') await drawRelease();
+  // The budgets and the release panel are read side by side: neither waits
+  // on the other.
+  await Promise.all([drawBudgets(), group === 'systems' ? drawRelease() : null]);
+}
+
+/** Budgets across releases, as the program reads them from each released
+ *  design's margins.csv: a row for each closure, a column for each design
+ *  that kept them, each cell its state and margin as the engine answered
+ *  when that design was released. Nothing is computed here. */
+async function drawBudgets() {
+  // A frame refused has no budgets drawn: it says why already.
+  if (!W.host || !W.host.querySelector('.sy-budgets')) return;
+  const seq = ++B.seq;
+  const b = await get('/v1/design/budgets');
+  const host = W.host && W.host.querySelector('.sy-budgets');
+  if (seq !== B.seq || !host) return;
+  if (!b || b.ok === false) {
+    host.innerHTML = '<p class="sh-refused sy-budgets-refused">' + esc((b && b.message) || 'the budgets cannot be read') + '</p>';
+    return;
+  }
+  const kept = b.designs.filter(d => d.kept);
+  const cell = (c, v) => {
+    const a = c.answers.find(x => x.version === v);
+    return a
+      ? '<td class="sy-b-' + esc(a.state) + '" title="' + esc(a.why) + '">' + esc(a.state) +
+        (a.margin === null ? '' : ' ' + esc(fmt(a.margin))) + '</td>'
+      : '<td class="muted">not a closure then</td>';
+  };
+  host.innerHTML = '<p class="sy-budgets-said">' + esc(b.message) + '</p>' +
+    (kept.length && b.closures.length
+      ? '<table class="nw-table sy-budgets-table"><thead><tr><th>group</th><th>closure</th>' +
+        kept.map(d => '<th>' + esc(d.version) + '</th>').join('') + '</tr></thead><tbody>' +
+        b.closures.map(c => '<tr><td>' + esc(c.group) + '</td><td>' + esc(c.node) + '</td>' +
+          kept.map(d => cell(c, d.version)).join('') + '</tr>').join('') +
+        '</tbody></table>'
+      : '') +
+    b.designs.filter(d => !d.kept).map(d => '<p class="muted sy-budgets-before">' + esc(d.says) + '</p>').join('');
 }
 
 /** The release panel, read again from the program: the integration checks of
@@ -177,6 +221,20 @@ async function drawRelease() {
  *  design released now, with Preview where it has none; then every preview,
  *  what moved, and what each group it names has said, unanswered first. What
  *  moved is the engine's, built when Preview is pressed, never here. */
+/** What was decided of an objection, or the decisions offered (W7): ask for
+ *  its next version, or release anyway. An allocation changed by Reallocate
+ *  does not decide one yet: the systems' file it is written in does not go
+ *  back to the drive, where the release reads its decisions. */
+function decide(a, p) {
+  if (a.decision && a.decision !== 'undecided') {
+    return ' <span class="sy-p-decision">decided: ' + esc(a.decision) + '</span>';
+  }
+  const on = ' data-group="' + esc(p.group) + '" data-version="' + esc(p.version) + '" data-answering="' + esc(a.group) + '"';
+  return ' <span class="sy-p-decide"><b>undecided</b>: ' +
+    '<button class="ctl" data-decide="next"' + on + (R.deciding ? ' disabled' : '') + '>Ask for its next version</button> ' +
+    '<button class="ctl" data-decide="anyway"' + on + (R.deciding ? ' disabled' : '') + '>Release anyway</button></span>';
+}
+
 function previews(c) {
   const num = (x, why) => x === null || x === undefined ? (why ? 'refused: ' + why : 'not in this design') : String(x);
   const pending = (c.pending || []).map(p =>
@@ -185,16 +243,17 @@ function previews(c) {
     (p.preview ? 'previewed in ' + esc(p.preview)
       : '<button class="ctl sy-p-preview" data-preview="' + esc(p.group) + '"' + (R.previewing ? ' disabled' : '') +
         '>Preview ' + esc(p.group + ' ' + p.version) + '</button>') + '</li>').join('');
-  const said = a => '<li class="sy-p-said sy-p-' + esc(a.said) + '"><b>' + esc(a.group) + '</b>: ' + esc(a.said) +
+  const said = (a, p) => '<li class="sy-p-said sy-p-' + esc(a.said) + '"><b>' + esc(a.group) + '</b>: ' + esc(a.said) +
     (a.because ? ', because ' + esc(a.because) : '') + (a.why ? ': ' + esc(a.why) : '') +
-    (a.in_copy ? ' <span class="muted">answered in your copy, not put back yet, so not counted</span>' : '') + '</li>';
+    (a.in_copy ? ' <span class="muted">answered in your copy, not put back yet, so not counted</span>' : '') +
+    (a.said === 'object' ? decide(a, p) : '') + '</li>';
   const one = p => p.opens === false
     ? '<li class="sh-refused sy-p-refused">' + esc(p.why) + '</li>'
     : '<li class="sy-p-one"><b>' + esc(p.group + ' ' + p.version) + '</b> on design ' + esc(p.based_on) +
       (p.stale ? ' <b>stale</b>: the design released now is ' + esc(c.previews_on || 'none') : '') +
       ', written by ' + esc(p.writer) + ', in ' + esc(p.in) + '. ' +
       (p.named.length ? 'Named to answer: ' + esc(p.named.join(', ')) + '.' : 'It names no subsystem\'s group: what moved is shown, not answered.') +
-      '<ul class="sy-p-answers">' + p.answers.map(said).join('') + '</ul>' +
+      '<ul class="sy-p-answers">' + p.answers.map(a => said(a, p)).join('') + '</ul>' +
       '<details><summary>' + esc(String(p.moved.length)) + ' value' + (p.moved.length === 1 ? '' : 's') + ' moved, the engine\'s</summary>' +
       '<table class="sh-table sy-p-moved"><thead><tr><th>value</th><th>group</th><th>design ' + esc(p.based_on) +
       '</th><th>with ' + esc(p.group + ' ' + p.version) + '</th></tr></thead><tbody>' +
@@ -235,7 +294,8 @@ function frame(t) {
           (m.valve_above && m.valve_above.branch !== 'systems' ? ', below ' + esc(m.valve_above.owner) + '\'s ' + esc(m.valve_above.branch) : '')).join('<br>')
         : 'nothing mounted') + '</dd>'
       : '') +
-    '<dt>budgets and margins</dt><dd><a href="#explore/design" class="sy-budgets">the health map, in Explore</a>: ' +
+    '<dt>budgets across releases</dt><dd class="sy-budgets"><p class="sh-loading">reading the released designs…</p></dd>' +
+    '<dt>margins today</dt><dd><a href="#explore/design" class="sy-margins-today">the health map, in Explore</a>: ' +
       'every margin as the engine computes it, never computed here</dd></dl></section>';
 }
 
@@ -292,6 +352,16 @@ function answerForm() {
     '<select id="sy-an-said" class="ctl"><option value="fine">fine</option><option value="object">object, because…</option></select></p>' +
     '<p><textarea id="sy-an-because" rows="2" class="nw-wide" placeholder="why, for an objection"></textarea></p>' +
     '<p><button class="ctl" id="sy-answer">Answer</button></p></details>';
+}
+
+/** The base moved to the next released design (W12): what changed under the
+ *  branch is said in its history, for the node engineers who read it. */
+function baseForm() {
+  return '<p class="sy-base"><b>update base</b> to the released design <input id="sy-base-design" size="12" placeholder="2026.11.1"> ' +
+    '<button class="ctl" id="sy-update-base">Update base</button></p>' +
+    // An issue addressed to the branch, given to a node engineer (W11).
+    '<p class="sy-issue"><b>assign issue</b> <input id="sy-is-number" size="5" placeholder="number"> to ' +
+    '<input id="sy-is-person" size="18" placeholder="a node engineer\'s name"> <button class="ctl" id="sy-assign-issue">Assign</button></p>';
 }
 
 /** The branch as a tree: each block under its parent; a block whose parent the
@@ -381,7 +451,8 @@ function frameEdits(t, b, children, outs) {
       '<input id="sy-a-lo" size="5" placeholder="from"> <input id="sy-a-hi" size="5" placeholder="to"> <input id="sy-a-unit" size="6" placeholder="unit"> ' +
       'bounding <select id="sy-a-bounds" class="ctl">' + outs.map(o => opt(o.name)).join('') + '</select> ' +
       '<select id="sy-a-sense" class="ctl">' + opt('', 'which way it binds') + opt('<=', '<= stays under it') + opt('>=', '>= reaches it') + '</select> ' +
-      '<input id="sy-a-says" size="24" placeholder="what the closure says"> <button class="ctl" id="sy-allocate">Allocate</button></p>';
+      '<input id="sy-a-says" size="24" placeholder="what the closure says"> <button class="ctl" id="sy-allocate">Allocate</button> ' +
+      '<button class="ctl" id="sy-reallocate" title="another value or range for the allocation named; its sense only when one is chosen">Reallocate</button></p>';
   }
   if (!h) return '';
   return '<h4>the frame, in the systems\' file</h4><p><label>why <textarea id="sy-f-why" rows="2" class="nw-wide" placeholder="which belief this follows from">' +
@@ -395,6 +466,10 @@ function edits(b, children, outs) {
   const opt = (v, l) => '<option value="' + esc(v) + '">' + esc(l || v) + '</option>';
   let h = '<h4>frame it</h4><p><label>why <textarea id="sy-why" rows="2" class="nw-wide" placeholder="which belief this follows from">' +
     esc(W.why) + '</textarea></label></p>';
+  h += '<details class="sy-sheet"><summary>set up many blocks from a sheet</summary>' +
+    '<p class="muted">A row a block: id,parent,question,output,type,unit,lower,upper,inputs,assign — inputs as name:unit=from, by ;. Every row or none.</p>' +
+    '<p><textarea id="sy-sheet" rows="5" class="nw-wide" placeholder="id,parent,question,output,type,unit,lower,upper,inputs,assign"></textarea></p>' +
+    '<p><button class="ctl" id="sy-sheet-go">Set up</button></p></details>';
   if (!b.archived) {
     h += '<p><b>add a block under it</b> <input id="sy-add-id" size="18" placeholder="its id"> ' +
       '<input id="sy-add-q" size="30" placeholder="the question it answers"> <button class="ctl" id="sy-add">Add</button></p>';
@@ -417,7 +492,29 @@ function edits(b, children, outs) {
       '<input class="sy-bd-port" size="16" placeholder="its output" value="' + esc(o.name) + '"></p>').join('') +
       '<p><button class="ctl" id="sy-break-down">Break down</button></p>';
   }
+  if (!inGroup && !b.archived && !b.mount) {
+    // A contract changes in the group file and issues the node's file again;
+    // it reads behind until its node engineer signs it again (W4).
+    h += '<p><b>change its contract</b> a port <select id="sy-c-dir" class="ctl">' + opt('out') + opt('in') + '</select> ' +
+      '<input id="sy-c-name" size="16" placeholder="its name, or none"> <input id="sy-c-type" size="8" placeholder="type" value="number"> ' +
+      '<input id="sy-c-unit" size="6" placeholder="unit"> <input id="sy-c-lo" size="5" placeholder="from"> <input id="sy-c-hi" size="5" placeholder="to"> ' +
+      '<button class="ctl" id="sy-contract">Change contract</button></p>';
+  }
   if (b.answers.length) h += '<p><button class="ctl" id="sy-fold-back">Fold back</button> its estimate answers again; its children stay.</p>';
+  // A node is assigned to one node engineer its group registers; a heading is nobody's.
+  if (!b.archived && !b.mount && !(inGroup && b.read_as === 'children')) {
+    h += '<p><b>assign</b> to <input id="sy-as-person" size="18" placeholder="a node engineer\'s name"> <button class="ctl" id="sy-assign">Assign</button> <button class="ctl" id="sy-unassign">Unassign</button></p>';
+  }
+  if (inGroup && !b.archived && !b.mount && b.read_as !== 'children') {
+    h += '<p><b>issue</b> it as a <select id="sy-is-behaviour" class="ctl">' + opt('method') + opt('stated') + '</select> node, ' +
+      'a file of its own for the node engineer it is assigned to <button class="ctl" id="sy-issue">Issue</button></p>';
+  }
+  if (inGroup && !b.archived) {
+    h += b.ports.filter(p => p.direction === 'in').map(p =>
+      '<p class="sy-wire-row" data-wire-port="' + esc(p.name) + '"><b>wire</b> its ' + esc(p.name) + ' from ' +
+      '<input class="sy-wire-from" size="28" placeholder="block.port, group.node.port or case"> ' +
+      '<button class="ctl sy-wire" type="button">Wire</button></p>').join('');
+  }
   if (inGroup && !b.archived) {
     h += '<p><b>move</b> under <input id="sy-mv-parent" size="18" placeholder="a block\'s uid"> <button class="ctl" id="sy-move">Move</button> ' +
       '<b>rename</b> <input id="sy-rn-id" size="18" placeholder="its new id"> <button class="ctl" id="sy-rename">Rename</button></p>' +
@@ -460,6 +557,19 @@ async function click(e) {
   if (!t || !W.host.contains(t)) return;
   const v = id => ($('#' + id, W.host) || {}).value || '';
   if (t.dataset.groupOpen) { openAt(t.dataset.groupOpen); return draw(); }
+  if (t.dataset.decide) {
+    if (R.deciding) return;
+    R.deciding = true;
+    t.disabled = true;
+    let r;
+    try {
+      r = await W.post('/v1/design/decide', {
+        group: t.dataset.group, version: t.dataset.version, answering: t.dataset.answering, decision: t.dataset.decide,
+      });
+    } finally { R.deciding = false; }
+    R.previewed = { ok: !!(r && r.ok), text: (r && r.message) || 'nothing was decided' };
+    return drawRelease();
+  }
   if (t.dataset.preview) {
     if (R.previewing) return;
     R.previewing = true;
@@ -478,6 +588,10 @@ async function click(e) {
     return draw(true);
   }
   const b = W.sel;
+  if (t.classList.contains('sy-wire')) {
+    const row = t.closest('.sy-wire-row');
+    return send('wire', { block: b, port: row.dataset.wirePort, from: row.querySelector('.sy-wire-from').value.trim() });
+  }
   switch (t.id) {
     case 'sy-r-release': {
       if (R.sending) return;
@@ -528,6 +642,10 @@ async function click(e) {
     case 'sy-split': return send('split', { block: b, id: v('sy-sp-id').trim(), ports: v('sy-sp-ports') });
     case 'sy-remove': return send('remove', { block: b });
     case 'sy-mount': return sendFrame('mount', { block: b, mounts: v('sy-m-group').trim(), owner: v('sy-m-owner').trim() });
+    case 'sy-reallocate': return sendFrame('reallocate', {
+      block: b, name: v('sy-a-name').trim(), value: v('sy-a-value').trim(), lower: v('sy-a-lo').trim(),
+      upper: v('sy-a-hi').trim(), sense: v('sy-a-sense'),
+    });
     case 'sy-allocate': return sendFrame('allocate', {
       block: b, name: v('sy-a-name').trim(), type: v('sy-a-type'), value: v('sy-a-value').trim(), lower: v('sy-a-lo').trim(),
       upper: v('sy-a-hi').trim(), unit: v('sy-a-unit').trim(), bounds: v('sy-a-bounds'), sense: v('sy-a-sense'), closure_says: v('sy-a-says'),
@@ -539,5 +657,15 @@ async function click(e) {
       W.notice = { ok: !!(r && r.ok), text: (r && r.message) || 'nothing was started' };
       return draw();
     }
+    case 'sy-contract': return send('contract', {
+      node: b, direction: v('sy-c-dir'), name: v('sy-c-name').trim(), type: v('sy-c-type').trim(),
+      unit: v('sy-c-unit').trim(), lower: v('sy-c-lo').trim(), upper: v('sy-c-hi').trim(), state: 'decided',
+    });
+    case 'sy-assign-issue': return send('assign-issue', { number: v('sy-is-number').trim(), person: v('sy-is-person').trim() });
+    case 'sy-update-base': return send('update-base', { design: v('sy-base-design').trim() });
+    case 'sy-sheet-go': return send('sheet', { sheet: v('sy-sheet') });
+    case 'sy-issue': return send('issue', { block: b, behaviour: v('sy-is-behaviour') });
+    case 'sy-assign': return send('assign', { block: b, person: v('sy-as-person').trim() });
+    case 'sy-unassign': return send('unassign', { block: b });
   }
 }

@@ -341,6 +341,10 @@ fn released(w: &World) -> design::Opened {
         changed: "Solar's bands.",
         marks: &[],
         understood: &[],
+        margins: &[],
+        previews: &[],
+        unread: &[],
+        decided: &[],
     };
     let d = design::release(&i, &held, &asked, "Sam Engel", &key(12), AT, APP, &w.pr).unwrap();
     design::open_held(&d, &w.pr, APP).unwrap()

@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "design-decided",
+  "description": "An objection decided by the system engineer or their deputy, by an issue written in your copy: on the releasing group to its owner, for its next version, or on the programme to the programme manager, to release anyway; or why not.",
+  "type": "object",
+  "properties": {
+    "ok": {
+      "type": "boolean"
+    },
+    "objection": {
+      "type": "string",
+      "description": "objection:<g>-<v>.<a>"
+    },
+    "file": {
+      "type": "string",
+      "description": "The issue's path inside the copy: issues/<number>-<group>.vissue."
+    },
+    "number": {
+      "type": "number"
+    },
+    "addressed_to": {
+      "type": "string",
+      "description": "The releasing group's owner, or the programme manager."
+    },
+    "message": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "ok"
+  ]
+}
