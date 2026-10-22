@@ -544,11 +544,19 @@ fn a_group_is_mounted_and_started_in_the_copy() {
     assert!(!drv.join(NEW).exists());
 
     // Put back by Sam, the systems' file goes over the drive's, as Sam signed
-    // it last, its history kept (F6-e); the group Rui started stays in the
-    // copy.
+    // it last, its history kept (F6-e), saying what it mounts with no group
+    // file on the drive; the group Rui started stays in the copy.
     assert!(open_key(port, "test-sam.vkey").contains("\"open\":true"));
     let r = post(port, "/v1/put-back", &[]);
     assert!(r.contains("the systems' file, by Test Sam, with"), "{r}");
+    // What it then mounts with no group file on the drive is said: Rui's
+    // l3_radiation, started in the copy, does not go back yet.
+    assert!(
+        r.contains("the drive then mounts ")
+            && r.contains("l3_radiation")
+            && r.contains("with no group file there yet"),
+        "{r}"
+    );
     let files = format!(
         "{} {SYSTEMS}",
         vleo_files::copied::digest(&std::fs::read(copy.join(SYSTEMS)).unwrap())

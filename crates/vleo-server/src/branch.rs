@@ -618,7 +618,7 @@ fn started(params: &str, ctx: &Ctx) -> Result<String, String> {
     j.str_field("opened", &digest);
     j.str_field(
         "message",
-        &format!("{who} started {group}, in your copy: one heading, signed by {who}. It stays in your copy until {group} is sealed (F5), and its file reaches the drive with F5's put-back."),
+        &format!("{who} started {group}, in your copy: one heading, signed by {who}. It stays in your copy: a group's file does not go back to the drive yet."),
     );
     j.raw("}");
     Ok(j.0)
@@ -971,11 +971,16 @@ fn edited(name: &str, params: &str, ctx: &Ctx) -> Result<String, String> {
             j.str_field(
                 "message",
                 &format!(
-                    "{who} made the edit {:?} to {group}'s breakdown, in your copy{}. It stays in your copy until {group} is sealed (F5).",
+                    "{who} made the edit {:?} to {group}'s breakdown, in your copy{}. {}",
                     e.name(),
                     reproduced
                         .map(|r| format!(": {}", r.says()))
-                        .unwrap_or_default()
+                        .unwrap_or_default(),
+                    if group == "systems" {
+                        "The systems' file can go back to the drive with Put back.".to_string()
+                    } else {
+                        format!("It stays in your copy until {group} is sealed (F5).")
+                    }
                 ),
             );
         }
