@@ -31,9 +31,11 @@
 //!   allocated, its file one heading whose question is the mount's, signed
 //!   by Rui, opening through the chain; Uma, Rui's deputy, starts it for
 //!   Rui; Sam, Sid and Ola may not; a group nobody mounts, one started
-//!   already, a folder holding something, and a systems' file that does not
-//!   open are refused, with nothing written; a refused mount or allocation
-//!   leaves the systems' file's bytes as they were.
+//!   already, one the systems' file allocates nothing (F6's question 43), a
+//!   folder holding something, and a systems' file that does not open are
+//!   refused, with nothing written; a group on solar's leaf starts with no
+//!   allocation, since none can be given there yet; a refused mount or
+//!   allocation leaves the systems' file's bytes as they were.
 
 use vleo_files::breakdown::{self, Edit, Part};
 use vleo_files::chain::{self, Registry, FILE};
@@ -821,16 +823,32 @@ fn the_owner_a_mount_names_starts_its_group_and_it_opens_through_the_chain() {
     let _ = std::fs::remove_dir_all(&copy);
 }
 
-#[test]
-fn a_deputy_starts_for_the_owner_and_nobody_else_does() {
-    let copy = a_copy("deputy", &systems_file());
+/// Radiation mounted for Rui in `copy`, and allocated its shield's mass.
+fn radiation_in(copy: &std::path::Path) {
     frame_in(
-        &copy,
+        copy,
         &mount_edit("sys_radiation", "l3_radiation", "Rui Ray"),
         "Sam Engel",
         &key(12),
     )
     .unwrap();
+    frame_in(
+        copy,
+        &allocate(
+            allocation("shield_mass_allocated", "12", "", ""),
+            "shield_mass",
+            "<=",
+        ),
+        "Sam Engel",
+        &key(12),
+    )
+    .unwrap();
+}
+
+#[test]
+fn a_deputy_starts_for_the_owner_and_nobody_else_does() {
+    let copy = a_copy("deputy", &systems_file());
+    radiation_in(&copy);
     for (who, k) in [("Sam Engel", 12), ("Ola Sun", 13), ("Sid Side", 17)] {
         let e = start_in(&copy, "l3_radiation", who, &key(k)).unwrap_err();
         assert!(
@@ -874,6 +892,27 @@ fn a_start_is_refused_by_name_with_nothing_written() {
         &key(12),
     )
     .unwrap();
+    // Mounted on the systems' own leaf and allocated nothing: the system
+    // engineer gives it what it must reach or may use first (F6's question
+    // 43).
+    let e = start_in(&copy, "l3_radiation", "Rui Ray", &key(15)).unwrap_err();
+    assert!(
+        e.contains("the systems' file allocates l3_radiation nothing yet")
+            && e.contains("on sys_radiation"),
+        "{e}"
+    );
+    assert!(!copy.join("groups/l3_radiation").exists());
+    frame_in(
+        &copy,
+        &allocate(
+            allocation("shield_mass_allocated", "12", "", ""),
+            "shield_mass",
+            "<=",
+        ),
+        "Sam Engel",
+        &key(12),
+    )
+    .unwrap();
     // A folder that holds something already.
     std::fs::create_dir_all(copy.join("groups/l3_radiation")).unwrap();
     std::fs::write(copy.join("groups/l3_radiation/notes.txt"), "kept").unwrap();
@@ -899,6 +938,24 @@ fn a_start_is_refused_by_name_with_nothing_written() {
     assert!(!copy
         .join("groups/l3_radiation/l3_radiation.vgroup")
         .exists());
+    let _ = std::fs::remove_dir_all(&copy);
+}
+
+#[test]
+fn a_group_on_a_subsystem_s_leaf_is_not_held_to_an_allocation_yet() {
+    // Its allocation is its valve owner's, in solar's file, and no edit
+    // gives one there: it starts as it did.
+    let copy = a_copy("w13-start", &systems_file());
+    frame_in(
+        &copy,
+        &mount_edit("sw_activity_count", "l3_activity", "Rui Ray"),
+        "Sam Engel",
+        &key(12),
+    )
+    .unwrap();
+    let sf = vleo_files::sqlite::read(&copy.join("groups/systems/systems.vgroup")).unwrap();
+    assert_eq!(start::allocation_wanted(&sf, "l3_activity"), None);
+    start_in(&copy, "l3_activity", "Rui Ray", &key(15)).expect("Rui starts it");
     let _ = std::fs::remove_dir_all(&copy);
 }
 

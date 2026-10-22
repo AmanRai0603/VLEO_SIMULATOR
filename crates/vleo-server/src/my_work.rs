@@ -273,6 +273,33 @@ fn items(me: &chain::Me, c: &me::Chain, database: &Path) -> Vec<Item> {
                 .unwrap_or("");
             let starts =
                 !owner.is_empty() && (me.name == owner || me.deputy_for.iter().any(|d| d == owner));
+            // Started only once the systems' file allocates it what it must
+            // reach or may use (F6's question 43): the system engineer's
+            // step first.
+            let wanted = c
+                .systems
+                .iter()
+                .find_map(|s| vleo_files::start::allocation_wanted(&s.file, group));
+            if let Some(why) = &wanted {
+                if me.owns.iter().any(|g| g == "systems") {
+                    out.push(Item {
+                        kind: "allocate",
+                        group: group.to_string(),
+                        node: String::new(),
+                        says: format!("Allocate {group}: it is mounted for {owner}, and {why}"),
+                    });
+                    continue;
+                }
+                if starts {
+                    out.push(Item {
+                        kind: "not started",
+                        group: group.to_string(),
+                        node: String::new(),
+                        says: format!("{group} is mounted for {owner}, and {why}"),
+                    });
+                    continue;
+                }
+            }
             if starts {
                 out.push(Item {
                     kind: "start",

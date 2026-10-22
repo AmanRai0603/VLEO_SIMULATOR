@@ -40,6 +40,10 @@
     "owner": {
       "type": "string"
     },
+    "allocated": {
+      "type": "boolean",
+      "description": "For a group mounted and not started: whether the systems' file allocates it what it must reach or may use, before which its owner does not start it (F6's question 43). True for a group mounted on a subsystem's leaf, which is not held to that yet."
+    },
     "started": {
       "type": "boolean",
       "description": "False for a group the systems' file mounts whose file is not started yet: its blocks and changes are empty, and next says whose step it is."

@@ -532,7 +532,10 @@ fn not_started(
         .map(|_| ())
         .map_err(|e| e.message().to_string())
     });
-    let yours = matches!(may, Some(Ok(())));
+    // Its owner starts it once the systems' file allocates it what it must
+    // reach or may use (F6's question 43).
+    let wanted = vleo_files::start::allocation_wanted(&mb.file, group);
+    let yours = matches!(may, Some(Ok(()))) && wanted.is_none();
     let mut j = Json::new();
     j.raw("{");
     j.bool_field("ok", true);
@@ -548,12 +551,15 @@ fn not_started(
     j.str_field("owner", &owner);
     j.bool_field("started", false);
     j.bool_field("yours", yours);
+    j.bool_field("allocated", wanted.is_none());
     j.str_field(
         "why_not",
         &match &may {
             None => "no key is open: open yours, and whether you start it is read from the chain"
                 .to_string(),
-            Some(Ok(())) => String::new(),
+            Some(Ok(())) => wanted
+                .as_ref()
+                .map_or(String::new(), |why| format!("Not yet: {why}.")),
             Some(Err(why)) => format!(
                 "Not yours to start: {group} is started by its owner {owner}, or their deputy. {why}"
             ),
@@ -567,6 +573,8 @@ fn not_started(
         "next",
         &if yours {
             format!("Start {group}: its file is yours to begin, with one heading whose question is the mount's. It shows in today's design once {group} seals a release (F5).")
+        } else if let Some(why) = &wanted {
+            format!("Nothing yet: {group} is mounted for {owner}, and {why}")
         } else {
             format!("Nothing yet: {group} is mounted for {owner}, who starts its file")
         },
