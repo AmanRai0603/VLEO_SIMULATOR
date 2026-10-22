@@ -657,12 +657,13 @@ struct Previewed {
     impact: today::Impact,
 }
 
-/// `first` is asked of the preview's path before anything is built.
+/// `first` is asked where the preview of the group's release, its version and
+/// the design it is on, would be written, before anything is built.
 fn previewed(
     group: &str,
     ctx: &Ctx,
     c: &me::Chain,
-    first: &dyn Fn(&str) -> Result<(), String>,
+    first: &dyn Fn(&str, &str, &str) -> Result<String, String>,
 ) -> Result<Previewed, String> {
     let report = built_from().ok_or(
         "the design open is the design's own files, not today's design: a preview is of a release in today's design, built from the drive",
@@ -691,11 +692,7 @@ fn previewed(
     }
     design::to_preview(&design, group, &t.version, &t.fingerprint)
         .map_err(|e| e.message().to_string())?;
-    first(&vleo_files::chain::preview_path(
-        group,
-        &t.version,
-        &design.version,
-    ))?;
+    first(group, &t.version, &design.version)?;
     let path = t
         .path
         .strip_prefix(&drive)
@@ -851,25 +848,43 @@ fn previewing(params: &str, ctx: &Ctx) -> Result<String, String> {
             may.0
         ));
     }
-    // A preview is never written over: asked before two designs are built,
-    // and again under the copy's lock before it is written.
-    let never_over = |rel: &str| -> Result<(), String> {
-        for (whose, at) in [
-            ("your copy", copy.join(rel)),
-            ("the drive", drive.join(rel)),
-        ] {
-            if at.exists() {
-                return Err(format!(
-                    "{whose} holds {rel} already: a preview is never written over"
-                ));
-            }
-        }
-        Ok(())
-    };
-    let p = previewed(group, ctx, &c, &never_over)?;
     let parents: Vec<&Registry> = std::iter::once(&c.programme)
         .chain(c.systems.iter())
         .collect();
+    // A preview is never written over: where it goes is asked before two
+    // designs are built, and again under the copy's lock before it is
+    // written. It goes at the first place free; a place taken by one that
+    // opens refuses it, and one taken by a file that no longer opens, as when
+    // its writer stops being the system engineer, is passed for the next.
+    let place = |g: &str, v: &str, d: &str| -> Result<String, String> {
+        for n in 1..=999 {
+            let rel = vleo_files::chain::preview_path_n(g, v, d, n);
+            let mut taken = false;
+            for (whose, at) in [
+                ("your copy", copy.join(&rel)),
+                ("the drive", drive.join(&rel)),
+            ] {
+                if !at.exists() {
+                    continue;
+                }
+                taken = true;
+                let opens = vleo_files::sqlite::read(&at)
+                    .is_ok_and(|f| design::open_preview(&f, &parents, &c.programme, APP).is_ok());
+                if opens {
+                    return Err(format!(
+                        "{whose} holds {rel} already, and it opens: a preview is never written over"
+                    ));
+                }
+            }
+            if !taken {
+                return Ok(rel);
+            }
+        }
+        Err(format!(
+            "every place a preview of {g} {v} on design {d} is written is taken"
+        ))
+    };
+    let p = previewed(group, ctx, &c, &place)?;
     let at = results::now_utc();
     let (f, who) = me::with_key(|key, me| {
         design::preview(
@@ -894,9 +909,8 @@ fn previewing(params: &str, ctx: &Ctx) -> Result<String, String> {
     let named = design::open_preview(&f, &parents, &c.programme, APP)
         .map_err(|e| e.message().to_string())?
         .named;
-    let rel = vleo_files::chain::preview_path(group, &p.version, &p.design.version);
     let _held = vleo_files::save::lock(&copy).map_err(|e| e.message().to_string())?;
-    never_over(&rel)?;
+    let rel = place(group, &p.version, &p.design.version)?;
     let at_file = copy.join(&rel);
     if let Some(dir) = at_file.parent() {
         std::fs::create_dir_all(dir).map_err(|e| format!("{}: {e}", dir.display()))?;
@@ -1052,7 +1066,8 @@ pub(crate) fn previews(
                     let o = design::open_preview(&f, parents, programme, APP)
                         .map_err(|e| e.message().to_string())?;
                     let place = vleo_files::chain::preview_path(&o.group, &o.version, &o.based_on);
-                    if place != rel {
+                    if !vleo_files::chain::is_preview_path(&rel, &o.group, &o.version, &o.based_on)
+                    {
                         return Err(format!(
                             "it says it is the preview of {} {} on design {}, so it is {place}",
                             o.group, o.version, o.based_on

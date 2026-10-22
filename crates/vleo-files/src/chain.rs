@@ -1462,7 +1462,34 @@ pub const PREVIEW_NAMED: &[&str] = &["group"];
 /// release, and named for the design it is on, since a release may be
 /// previewed again on a later one (F6's question 53).
 pub fn preview_path(group: &str, version: &str, design: &str) -> String {
-    format!("integration/{group}-{version}/preview-{group}-{version}-on-{design}.vleo")
+    preview_path_n(group, version, design, 1)
+}
+
+/// The `n`th place a preview of `group`'s release `version` on `design` may
+/// be: the first at [`preview_path`], each after it with `-<n>`, from 2. A
+/// preview is written at the next once the one before it is taken and no
+/// longer opens, as when its writer stops being the system engineer (F6's
+/// answer (a), 22 October).
+pub fn preview_path_n(group: &str, version: &str, design: &str, n: u32) -> String {
+    if n <= 1 {
+        format!("integration/{group}-{version}/preview-{group}-{version}-on-{design}.vleo")
+    } else {
+        format!("integration/{group}-{version}/preview-{group}-{version}-on-{design}-{n}.vleo")
+    }
+}
+
+/// Whether `rel` is one of the places [`preview_path_n`] names for a preview
+/// of `group`'s release `version` on `design`: its first, or a sequence
+/// from 2, written as [`preview_path_n`] writes it.
+pub fn is_preview_path(rel: &str, group: &str, version: &str, design: &str) -> bool {
+    if rel == preview_path(group, version, design) {
+        return true;
+    }
+    let stem = format!("integration/{group}-{version}/preview-{group}-{version}-on-{design}-");
+    rel.strip_prefix(&stem)
+        .and_then(|r| r.strip_suffix(".vleo"))
+        .and_then(|n| n.parse::<u32>().ok())
+        .is_some_and(|n| rel == preview_path_n(group, version, design, n))
 }
 
 /// A preview (F6-c, `design::preview`), checked through the chain, the one

@@ -2615,5 +2615,19 @@ fn a_preview_of_a_release_or_on_a_design_the_drive_does_not_hold_does_not_go_bac
     let r = pb(&copy, &drive, "Test Sam", None).unwrap();
     let l = line(&r, moved);
     assert!(!l.back && l.why.contains(&format!("so it is {p}")), "{l:?}");
+    // At a sequence from 2 it is at its place (F6's answer (a)); never at 1,
+    // nor at a number written otherwise.
+    let mut at = moved.to_string();
+    for (n, back) in [("1", false), ("02", false), ("2x", false), ("2", true)] {
+        let to = p.replace(".vleo", &format!("-{n}.vleo"));
+        std::fs::rename(copy.join(&at), copy.join(&to)).unwrap();
+        at = to;
+        let r = pb(&copy, &drive, "Test Sam", None).unwrap();
+        let l = line(&r, &at);
+        assert_eq!(l.back, back, "-{n}: {l:?}");
+        if !back {
+            assert!(l.why.contains(&format!("so it is {p}")), "-{n}: {l:?}");
+        }
+    }
     let _ = std::fs::remove_dir_all(drive.parent().unwrap());
 }

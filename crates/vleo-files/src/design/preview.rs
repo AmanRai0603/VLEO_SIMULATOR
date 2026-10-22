@@ -15,7 +15,9 @@
 //! The preview is at `integration/<g>-<v>/preview-<g>-<v>-on-<design>.vleo`
 //! ([`chain::preview_path`]), beside the answers to the release, never
 //! written over; on a later design the release is previewed again under a
-//! new name (question 53). It is read back by [`open_preview`], wherever one
+//! new name (question 53), and on the same design, once the one there no
+//! longer opens, at `...-on-<design>-<n>.vleo` from 2
+//! ([`chain::preview_path_n`]). It is read back by [`open_preview`], wherever one
 //! is relied on: `chain::check_preview`, and the release it holds read as
 //! the release it says it is.
 //!

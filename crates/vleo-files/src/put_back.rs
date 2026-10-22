@@ -756,7 +756,7 @@ fn preview_verdict(
     let said = |k: &str| f.meta.get(k).map_or("", String::as_str);
     let (group, version, design) = (said("group_id"), said("version"), said("based_on"));
     let place = chain::preview_path(group, version, design);
-    if format!("integration/{dir}/{name}") != place {
+    if !chain::is_preview_path(&format!("integration/{dir}/{name}"), group, version, design) {
         return Err(format!(
             "it says it is the preview of {group} {version} on design {design}, so it is {place}"
         ));

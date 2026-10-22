@@ -1434,6 +1434,14 @@ pub struct Impact {
     pub view: Ran,
 }
 
+/// Whether two answers of a value are the same: equal as numbers (F6's
+/// question 44, and its answer (b) of 22 October), so -0.0 and 0.0 are; two
+/// NaNs only by the same bits. No threshold is set here, outside the kernel,
+/// on what counts as the same.
+fn same_answer(a: f64, b: f64) -> bool {
+    a == b || a.to_bits() == b.to_bits()
+}
+
 /// Every value of a node not `inside` the branch that differs between
 /// `today` and `view`, each design run whole on `case`: the impact of the
 /// branch on the rest of the design. A value is a node's answer, `<node>`,
@@ -1493,9 +1501,6 @@ pub fn impact(
         }
         String::new()
     };
-    // Moved is answered differently by one bit (F6's question 44): no
-    // threshold is set here, outside the kernel, on what counts as the same.
-    let same = |a: f64, b: f64| a.to_bits() == b.to_bits();
     let ids: std::collections::BTreeSet<&String> = was.keys().chain(now.keys()).collect();
     let mut out = Vec::new();
     for id in ids {
@@ -1505,7 +1510,7 @@ pub fn impact(
         }
         let (b, a) = (was.get(id).copied(), now.get(id).copied());
         let moved = match (b, a) {
-            (Some(x), Some(y)) => !same(x, y),
+            (Some(x), Some(y)) => !same_answer(x, y),
             (None, None) => false,
             _ => true,
         };
@@ -1525,4 +1530,19 @@ pub fn impact(
         today: ran_today,
         view: ran_view,
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::same_answer;
+
+    #[test]
+    fn an_answer_moves_when_it_differs_as_a_number() {
+        assert!(same_answer(0.0, -0.0));
+        assert!(same_answer(1.5, 1.5));
+        assert!(!same_answer(1.0, 1.0 + f64::EPSILON));
+        assert!(!same_answer(1.0, f64::NAN));
+        assert!(same_answer(f64::NAN, f64::NAN));
+        assert!(!same_answer(f64::NAN, -f64::NAN));
+    }
 }
