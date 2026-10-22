@@ -193,6 +193,8 @@ pub fn answer(
         });
     }
     f.check_meta()?;
+    // Its issue and change rows are signed with it (F6-d).
+    chain::sign_rows(&mut f);
     let row = chain::sign(&f, FILE, by, key, at, "ok", "")?;
     f.signatures.push(row);
     chain::check_answer(&f, mounted_by, programme)?;

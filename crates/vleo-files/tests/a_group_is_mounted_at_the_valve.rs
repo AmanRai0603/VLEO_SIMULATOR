@@ -240,13 +240,19 @@ fn mount_edit(block: &str, group: &str, owner: &str) -> Edit {
 }
 
 fn radiation_mounted() -> File {
-    frame_it(
+    let f = frame_it(
         &systems_file(),
         &mount_edit("sys_radiation", "l3_radiation", "Rui Ray"),
         "Sam Engel",
         &key(12),
     )
-    .expect("Sam mounts radiation for Rui")
+    .expect("Sam mounts radiation for Rui");
+    assert_eq!(
+        f.meta.get("signed_rows").map(String::as_str),
+        Some("issue change"),
+        "its rows are signed with it (F6-d)"
+    );
+    f
 }
 
 #[test]
@@ -784,6 +790,11 @@ fn the_owner_a_mount_names_starts_its_group_and_it_opens_through_the_chain() {
     assert_eq!(made, digest(&at));
     let f = vleo_files::sqlite::read(&at).unwrap();
     assert_eq!(f.kind().unwrap(), Kind::Group);
+    assert_eq!(
+        f.meta.get("signed_rows").map(String::as_str),
+        Some("issue change"),
+        "its rows are signed with it (F6-d)"
+    );
     assert_eq!(
         f.meta.get("group_id").map(String::as_str),
         Some("l3_radiation")

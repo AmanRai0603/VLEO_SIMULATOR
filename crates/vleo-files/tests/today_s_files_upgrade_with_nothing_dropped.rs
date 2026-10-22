@@ -86,6 +86,8 @@ fn solar_1_1_upgrades_with_nothing_dropped() {
     assert_eq!(f.meta["based_on"], "", "no design was released before 1.0");
     assert_eq!(f.meta["sealed_by"], "Aman Rai");
     assert_eq!(f.meta["fingerprint"], SOLAR_1_1);
+    // It never signs its rows (F6-d): its fingerprint stays the one sealed.
+    assert!(!f.meta.contains_key("signed_rows"), "{:?}", f.meta);
 
     // Every row has a place.
     let nodes = count("SELECT count(*) FROM node");
@@ -262,8 +264,22 @@ fn what_cannot_come_back_is_not_upgraded() {
         .unwrap();
     let e = sqlite::open(&path2, &HOW).err().unwrap();
     assert!(e.message().contains("would read as a port"), "{e}");
+    // A meta key the library keeps for itself (F6-d): never one from before
+    // 1.0.
+    let (dir3, path3) = copy("marked");
+    unsealed(&path3);
+    Connection::open(&path3)
+        .unwrap()
+        .execute_batch("INSERT INTO meta (key, value) VALUES ('signed_rows', 'issue change');")
+        .unwrap();
+    let e = sqlite::open(&path3, &HOW).err().unwrap();
+    assert!(
+        e.message().contains("\"signed_rows\" is the library's own"),
+        "{e}"
+    );
     std::fs::remove_dir_all(&dir).unwrap();
     std::fs::remove_dir_all(&dir2).unwrap();
+    std::fs::remove_dir_all(&dir3).unwrap();
 }
 
 #[test]

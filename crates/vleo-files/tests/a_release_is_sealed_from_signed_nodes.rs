@@ -256,6 +256,11 @@ fn a_branch_of_signed_nodes_is_sealed_by_its_owner_and_checks_through_the_chain(
     let w = world();
     let r = seal(&w, &solar(), &[band(&w)], "1.2", Some("1.1"), "Ola Sun", 13).unwrap();
     assert_eq!(r.kind().unwrap(), Kind::GroupRelease);
+    assert_eq!(
+        r.meta.get("signed_rows").map(String::as_str),
+        Some("issue change"),
+        "its rows are signed with it (F6-d)"
+    );
     for (k, v) in [
         ("group_id", "l3_solar"),
         ("version", "1.2"),
@@ -278,6 +283,21 @@ fn a_branch_of_signed_nodes_is_sealed_by_its_owner_and_checks_through_the_chain(
     );
     let checked = chain::check_release_in(&r, &w.sy, &w.pr).unwrap();
     assert!(checked.holds(), "{:?}", checked.refused);
+    // Its change rows are what Ola sealed (F6-d): one added after, and the
+    // seal no longer checks.
+    let mut changed = r.clone();
+    changed.changes.push(Change {
+        at: s("2026-03-02"),
+        who: s("Ola Sun"),
+        scope: s(FILE),
+        what: s("a change nobody sealed"),
+        before: None,
+        after: None,
+    });
+    assert!(
+        chain::check_release_in(&changed, &w.sy, &w.pr).map_or(true, |c| !c.holds()),
+        "a change row added after the seal"
+    );
     assert!(
         checked.signed.iter().any(|b| b == BAND),
         "{:?}",

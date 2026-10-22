@@ -202,6 +202,14 @@ pub fn from_format_1(tables: Vec<Table>, how: &Upgrade) -> Result<Upgraded, Erro
             "the meta key {k:?} is one the upgrade keeps format 1's own values under"
         )));
     }
+    // A release from before 1.0 never signs its rows (F6-d): its
+    // fingerprint is the one every released design names.
+    if old.meta.contains_key(crate::chain::SIGNED_ROWS) {
+        return Err(malformed(format!(
+            "the meta key {:?} is the library's own, and a release from before 1.0 never carries it",
+            crate::chain::SIGNED_ROWS
+        )));
+    }
     let uids: Vec<&str> = old.nodes.iter().map(|n| n.uid.as_str()).collect();
     if uids.contains(&FILE) {
         return Err(malformed(format!(

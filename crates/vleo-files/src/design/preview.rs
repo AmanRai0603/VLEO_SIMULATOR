@@ -281,6 +281,8 @@ pub fn preview(
         csv: crate::csv::write(PREVIEW_NAMED, &names),
     });
     f.check_meta()?;
+    // Its issue and change rows are signed with it (F6-d).
+    chain::sign_rows(&mut f);
     let row = chain::sign(&f, FILE, by, key, at, "ok", "")?;
     f.signatures.push(row);
     chain::check_preview(&f, programme).map_err(|e| {

@@ -282,6 +282,8 @@ pub fn change(
     // was. None is signed content, and kept beside the new content one would
     // read as current, so all go.
     out.signatures.retain(|s| s.scope != FILE);
+    // Its issue and change rows are signed with it (F6-d).
+    chain::sign_rows(&mut out);
     let row = chain::sign(&out, FILE, by, key, at, "ok", "")?;
     out.signatures.push(row);
     valve.open(&out).map_err(|e| {

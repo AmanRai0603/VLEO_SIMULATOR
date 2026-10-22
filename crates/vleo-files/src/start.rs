@@ -174,6 +174,8 @@ pub fn start(
             f.blocks[0].question
         )),
     });
+    // Its issue and change rows are signed with it (F6-d).
+    chain::sign_rows(&mut f);
     let row = chain::sign(&f, FILE, by, key, at, "ok", "")?;
     f.signatures.push(row);
     f.check_meta()?;
