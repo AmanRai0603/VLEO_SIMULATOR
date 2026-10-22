@@ -160,6 +160,11 @@ fn the_programme_manager_registers_in_the_programme() {
         &new,
     )
     .unwrap();
+    assert_eq!(
+        f.meta.get("signed_rows").map(String::as_str),
+        Some("issue change"),
+        "its rows are signed with it (F6-d)"
+    );
     let pr = opened(f.clone());
     let tom = chain::whoami(&key(30).public().to_hex(), "2026-03-02", &pr, None, &[]).unwrap();
     assert_eq!(tom.name, "Tom Thermal");

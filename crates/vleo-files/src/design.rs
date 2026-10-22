@@ -816,6 +816,8 @@ pub fn release(
         path: "integration.csv".into(),
         csv: crate::csv::write(&["group", "check", "holds", "says"], &lines),
     });
+    // Its issue and change rows are signed with it (F6-d).
+    chain::sign_rows(&mut f);
     f.check_meta()?;
     let row = chain::sign(&f, FILE, by, key, at, "ok", "")?;
     f.signatures.push(row);

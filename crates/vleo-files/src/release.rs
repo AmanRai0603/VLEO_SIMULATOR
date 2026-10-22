@@ -342,6 +342,8 @@ pub fn seal(
         r.signatures
             .extend(n.signatures.iter().filter(|s| s.scope != FILE).cloned());
     }
+    // Its issue and change rows are signed with it (F6-d).
+    chain::sign_rows(&mut r);
     let fingerprint = chain::digest(&r, FILE)?;
     r.meta.insert("fingerprint".into(), fingerprint);
     r.meta.insert("sealed_by".into(), by.to_string());

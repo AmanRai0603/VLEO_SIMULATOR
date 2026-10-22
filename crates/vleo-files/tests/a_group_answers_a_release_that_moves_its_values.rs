@@ -161,6 +161,11 @@ fn a_group_s_owner_answers_fine_or_objects_saying_why_signed() {
     let pr = programme();
     let sy = systems(&pr);
     let fine = answered(&Said::Fine, "Pia Power", 15).unwrap();
+    assert_eq!(
+        fine.meta.get("signed_rows").map(String::as_str),
+        Some("issue change"),
+        "its rows are signed with it (F6-d)"
+    );
     assert_eq!(fine.kind().unwrap(), Kind::PreviewAnswer);
     let answers = chain::digest(&release_of("l3_solar", "1.2"), FILE).unwrap();
     for (k, v) in [

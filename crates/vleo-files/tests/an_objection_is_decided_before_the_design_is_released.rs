@@ -589,6 +589,11 @@ fn the_system_engineer_decides_an_objection_by_an_issue() {
     // Its next version: on solar, to its owner.
     let f = decide(&w, &o, Decide::NextVersion, "Sam Engel", 12).expect("Sam decides");
     assert_eq!(f.kind().unwrap(), Kind::Issue);
+    assert_eq!(
+        f.meta.get("signed_rows").map(String::as_str),
+        Some("issue change"),
+        "its rows are signed with it (F6-d)"
+    );
     let i = &f.issues[0];
     assert_eq!(
         (

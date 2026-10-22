@@ -23,7 +23,9 @@
 //! verdict and the note — so none of them can be changed afterwards either.
 //! What a file records about itself is not content and is not signed: its
 //! comments, issues, requests and changes, a key file's key, and the
-//! signatures of the file as a whole. The signatures of its blocks are: a
+//! signatures of the file as a whole. A file marked [`SIGNED_ROWS`] has its
+//! issues and changes signed too (F6-d): every file written signed from then
+//! on is, and one signed before is read as it was. The signatures of its blocks are: a
 //! seal covers the node signatures it seals. A request is signed on its own,
 //! by whoever asked ([`REQUEST`]): a seal covers that signature, and the
 //! request row is the request's own to sign.
@@ -52,7 +54,22 @@ pub fn request_scope(uid: &str) -> String {
 /// signed: the seal is made over the content, then recorded beside it.
 const UNSIGNED_META: &[&str] = &["fingerprint", "sealed_by", "sealed_at", "written_by_app"];
 
-/// Tables that are a file's record of itself, never part of what is signed.
+/// The meta key that brings a file's issue and change rows into its
+/// signature, with [`ROWS_SIGNED`] its one value (F6-d). It is signed, so it
+/// is never taken off a file without the file's signature failing.
+pub const SIGNED_ROWS: &str = "signed_rows";
+
+/// What [`SIGNED_ROWS`] says: the tables it signs.
+pub const ROWS_SIGNED: &str = "issue change";
+
+/// Mark `f` so its issue and change rows are signed with it, before it is
+/// signed as a whole.
+pub fn sign_rows(f: &mut File) {
+    f.meta.insert(SIGNED_ROWS.into(), ROWS_SIGNED.into());
+}
+
+/// Tables that are a file's record of itself, never part of what is signed,
+/// but for the issue and change rows of a file marked [`SIGNED_ROWS`].
 const UNSIGNED_TABLES: &[&str] = &[
     "signature",
     "comment",
@@ -144,6 +161,18 @@ pub fn digest(f: &File, scope: &str) -> Result<String, Error> {
             put_cell(&mut out, &Cell::Text(part.clone()));
         }
     } else if scope == FILE {
+        let rows_signed = match f.meta.get(SIGNED_ROWS).map(String::as_str) {
+            None => false,
+            Some(ROWS_SIGNED) => true,
+            Some(other) => {
+                return Err(refused(
+                    ErrorKind::Malformed,
+                    format!(
+                        "{SIGNED_ROWS} says {other:?}: a file signs its rows as {ROWS_SIGNED:?}, or does not say"
+                    ),
+                ))
+            }
+        };
         let meta: Vec<(&String, &String)> = f
             .meta
             .iter()
@@ -161,7 +190,9 @@ pub fn digest(f: &File, scope: &str) -> Result<String, Error> {
                 if let Some(col) = column(t, "scope") {
                     put_table(&mut out, t, |r| r[col] != Cell::Text(FILE.into()));
                 }
-            } else if !UNSIGNED_TABLES.contains(&t.name.as_str()) {
+            } else if !UNSIGNED_TABLES.contains(&t.name.as_str())
+                || (rows_signed && (t.name == "issue" || t.name == "change"))
+            {
                 put_table(&mut out, t, |_| true);
             }
         }

@@ -433,6 +433,11 @@ fn sam_previews_a_release_that_moves_other_groups_and_names_their_owners() {
     let r = solar_13(&w);
     let p = preview_of(&w, &d, &r, &what_moved(), "Sam Engel", &key(12))
         .expect("Sam writes the preview");
+    assert_eq!(
+        p.meta.get("signed_rows").map(String::as_str),
+        Some("issue change"),
+        "its rows are signed with it (F6-d)"
+    );
     assert_eq!(p.kind().unwrap(), Kind::Preview);
     for (k, v) in [
         ("group_id", "l3_solar"),

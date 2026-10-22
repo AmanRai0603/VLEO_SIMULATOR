@@ -211,6 +211,8 @@ fn raised(params: &str, ctx: &Ctx) -> Result<(String, u64, String, String), Stri
             addressed_to: addressed_to.clone(),
             closed_by: String::new(),
         });
+        // Its issue row is signed with it (F6-d).
+        chain::sign_rows(&mut f);
         let row = chain::sign(&f, FILE, &me.name, key, &at, "ok", "raised")
             .map_err(|e| e.message().to_string())?;
         f.signatures.push(row);

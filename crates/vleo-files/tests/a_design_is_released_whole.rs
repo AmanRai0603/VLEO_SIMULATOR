@@ -731,6 +731,11 @@ fn every_red_mark_is_understood_or_raised_before_the_design_is_released() {
         12,
     )
     .expect("released with every red mark understood or raised");
+    assert_eq!(
+        d.meta.get("signed_rows").map(String::as_str),
+        Some("issue change"),
+        "its rows are signed with it (F6-d)"
+    );
     let t = d.tables.iter().find(|t| t.path == "red_marks.csv").unwrap();
     assert_eq!(
         t.csv,

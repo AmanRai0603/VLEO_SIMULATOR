@@ -203,6 +203,8 @@ pub fn decision_issue(
         closed_by: String::new(),
     });
     f.check_meta()?;
+    // Its issue and change rows are signed with it (F6-d).
+    chain::sign_rows(&mut f);
     let row = chain::sign(&f, FILE, by, key, at, "ok", "raised")?;
     f.signatures.push(row);
     Ok(f)

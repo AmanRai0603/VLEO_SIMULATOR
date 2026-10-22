@@ -869,6 +869,8 @@ pub fn edited(
     // What was signed was the file as it was: signed afresh by whoever made
     // the edit, and opened as it will be read.
     out.signatures.retain(|s| s.scope != FILE);
+    // Its issue and change rows are signed with it (F6-d).
+    chain::sign_rows(&mut out);
     let row = chain::sign(&out, FILE, by, key, at, "ok", "")?;
     out.signatures.push(row);
     out.check_meta()?;

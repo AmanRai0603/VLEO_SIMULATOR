@@ -368,6 +368,11 @@ fn an_issue_is_raised_from_a_red_mark() {
         "the drive is never written: the issue is in the person's copy"
     );
     let f = sqlite::read(&copy.join("issues/1-l3_solar.vissue")).unwrap();
+    assert_eq!(
+        f.meta.get("signed_rows").map(String::as_str),
+        Some("issue change"),
+        "its rows are signed with it (F6-d)"
+    );
     assert_eq!(f.kind().unwrap(), Kind::Issue);
     assert_eq!(f.meta.get("number").map(String::as_str), Some("1"));
     assert_eq!(f.meta.get("group_id").map(String::as_str), Some("l3_solar"));
