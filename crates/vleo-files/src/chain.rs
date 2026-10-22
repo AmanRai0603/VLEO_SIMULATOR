@@ -24,8 +24,8 @@
 //! What a file records about itself is not content and is not signed: its
 //! comments, issues, requests and changes, a key file's key, and the
 //! signatures of the file as a whole. A file marked [`SIGNED_ROWS`] has its
-//! issues and changes signed too (F6-d): every file written signed from then
-//! on is, and one signed before is read as it was. The signatures of its blocks are: a
+//! issues and changes signed too (F6-d): every file the library signs whole
+//! is, and one signed before is read as it was. The signatures of its blocks are: a
 //! seal covers the node signatures it seals. A request is signed on its own,
 //! by whoever asked ([`REQUEST`]): a seal covers that signature, and the
 //! request row is the request's own to sign.

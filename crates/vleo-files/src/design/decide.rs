@@ -177,9 +177,10 @@ pub fn decision_issue(
     ] {
         f.meta.insert(k.to_string(), v);
     }
-    // An issue file's signature does not cover its issue row
-    // (`chain::digest` leaves the `issue` table out), so what decides is
-    // said again in a text it does cover, and read only where the two agree.
+    // What decides is said again in a text the signature covers, and read
+    // only where the two agree: an issue file signed before F6-d's
+    // `signed_rows` marker leaves its issue row out of its signature, and is
+    // still read.
     f.texts.push(Text {
         scope: FILE.into(),
         kind: DECISION.into(),

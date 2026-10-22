@@ -12,7 +12,9 @@
 //! - the marker taken off after it was signed, it does not; a marker with
 //!   any other value is refused by name;
 //! - unmarked, as every file signed before F6-d, its rows are read as they
-//!   were: changed after it was signed, it still checks.
+//!   were: changed after it was signed, it still checks, and its digest is
+//!   the one the library gave before F6-d, recorded at 1a65459d;
+//! - a release sealed whole, one of its change rows changed, does not check.
 
 use vleo_files::chain::{self, FILE, ROWS_SIGNED, SIGNED_ROWS};
 use vleo_files::keys::SigningKey;
@@ -141,4 +143,15 @@ fn an_unmarked_file_is_read_as_every_file_signed_before_it() {
     changed.issues[0].addressed_to = s("Pat Morgan");
     changed.changes[0].what = s("withdrawn");
     checks(&changed).expect("its rows are not what it signed");
+}
+
+/// The digest of the unmarked issue file as the library gave it before F6-d
+/// (1a65459d), not as this code gives it: a file signed before is hashed as
+/// it was, and so is every fingerprint a released design names.
+const BEFORE_F6D: &str = "b36844864047f71ea9ed3a043a9c4f616711c173cfca6a0157e7ae32ec1a1a3c";
+
+#[test]
+fn an_unmarked_file_hashes_as_it_did_before_f6_d() {
+    assert_eq!(chain::digest(&issue_file(false), FILE).unwrap(), BEFORE_F6D);
+    assert_ne!(chain::digest(&issue_file(true), FILE).unwrap(), BEFORE_F6D);
 }
