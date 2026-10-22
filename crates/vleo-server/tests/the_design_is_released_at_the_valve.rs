@@ -461,6 +461,11 @@ fn the_system_engineer_releases_the_design_and_it_goes_back_to_the_drive() {
         addressed_to: s("Test Ola"),
         closed_by: s(""),
     });
+    // Signed by Nia, who raised it: an issue counts only as its raiser signed
+    // it.
+    chain::sign_rows(&mut issue);
+    let row = chain::sign(&issue, FILE, "Test Nia", &key(94), AT, "ok", "raised").unwrap();
+    issue.signatures.push(row);
     std::fs::create_dir_all(copy.join("issues")).unwrap();
     sqlite::write(&issue, &copy.join("issues/1-l3_solar.vissue")).unwrap();
 
@@ -486,6 +491,21 @@ fn the_system_engineer_releases_the_design_and_it_goes_back_to_the_drive() {
         i.contains("l3_solar 1.0 is taken: sealed by Test Ola"),
         "{i}"
     );
+    assert!(i.contains("issue 1 on l3_solar, open:"), "{i}");
+    // Changed after Nia signed it, the issue is no issue of hers: said as a
+    // file that does not check, never as the issue she raised.
+    let at = copy.join("issues/1-l3_solar.vissue");
+    let kept = std::fs::read(&at).unwrap();
+    let mut changed = sqlite::read(&at).unwrap();
+    changed.issues[0].addressed_to = s("Test Ivo");
+    sqlite::write(&changed, &at).unwrap();
+    let c = checks();
+    assert!(
+        c.contains("the issue file 1-l3_solar.vissue does not check through the chain")
+            && !c.contains("issue 1 on l3_solar, open:"),
+        "{c}"
+    );
+    std::fs::write(&at, kept).unwrap();
     let version = field(&i, "next_version").to_string();
     let understood = mark_ids(&i).join(",");
     let release = |pairs: &[(&str, &str)]| post(port, "/v1/design/release", pairs);

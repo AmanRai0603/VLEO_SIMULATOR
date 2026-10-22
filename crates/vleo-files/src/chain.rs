@@ -1372,6 +1372,54 @@ pub fn seal_of<'a>(
         .ok_or_else(|| none_counts(&format!("{id}'s release, by its owner {owner},"), &why))
 }
 
+/// An issue file (F2.4, W11), checked through the chain wherever one is
+/// read for what it says: an issue file of one issue, its number and group as
+/// its signed meta says them, and signed as it is by the person who raised it,
+/// its meta's writer, with a key one of `registries` counts. Its row is what
+/// its signature covers once it is marked [`SIGNED_ROWS`]; one raised before
+/// F6-d is read as it was, its row unsigned.
+pub fn check_issue(f: &File, registries: &[&Registry]) -> Result<(), Error> {
+    let bad = |why: String| refused(ErrorKind::Malformed, why);
+    if f.kind().ok() != Some(Kind::Issue) {
+        return Err(bad("it is not an issue file".into()));
+    }
+    let [i] = f.issues.as_slice() else {
+        return Err(bad(format!(
+            "it holds {} issues, and an issue file holds one",
+            f.issues.len()
+        )));
+    };
+    let meta = |k: &str| f.meta.get(k).map_or("", String::as_str);
+    if meta("number") != i.number.to_string() || meta("group_id") != i.group_id {
+        return Err(bad(format!(
+            "its row is issue {} on {}, and its meta says issue {} on {}",
+            i.number,
+            i.group_id,
+            meta("number"),
+            meta("group_id")
+        )));
+    }
+    if meta("writer") != i.raised_by {
+        return Err(bad(format!(
+            "it is raised by {:?}, and its meta says {:?} wrote it",
+            i.raised_by,
+            meta("writer")
+        )));
+    }
+    let mut whys = Vec::new();
+    for r in registries {
+        let (ok, why) = counted(f, FILE, r, |name| name == i.raised_by);
+        if !ok.is_empty() {
+            return Ok(());
+        }
+        whys.extend(why);
+    }
+    Err(none_counts(
+        &format!("issue {} on {}, by {},", i.number, i.group_id, i.raised_by),
+        &whys,
+    ))
+}
+
 /// A group's answer to another group's release (W7, `crate::answer`),
 /// checked through the chain, the one rule wherever an answer is read:
 /// an answer file, its meta whole; another group's answer to the release,

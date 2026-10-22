@@ -194,7 +194,11 @@ fn today(ctx: &Ctx) -> Result<(Today, me::Chain), String> {
             });
         }
     }
-    marks.extend(red_marks(ctx, &drive));
+    let regs: Vec<&Registry> = std::iter::once(&c.programme)
+        .chain(c.systems.iter())
+        .chain(c.groups.iter())
+        .collect();
+    marks.extend(red_marks(ctx, &drive, &regs));
     // An issue the previews count as an objection's raised mark is that
     // objection's (`design::asked_of`), never a mark of its own; every other
     // issue, a next version asked for, a decision of a stale objection or
@@ -251,9 +255,11 @@ fn declared_case(ctx: &Ctx) -> vleo_bus::Case {
 
 /// The red marks of today's design: each closure that fails, is refused or
 /// is blocked on the design as declared, raised when an issue open names it;
-/// each issue open on the drive or in the copy, the drive's first; and each
-/// issue file that does not read, said, never passed over.
-fn red_marks(ctx: &Ctx, drive: &Path) -> Vec<Mark> {
+/// each issue open on the drive or in the copy, the drive's first, that
+/// checks through the chain, signed by its raiser with a key one of `regs`
+/// counts; and each issue file that does not read, or does not check, said,
+/// never passed over.
+fn red_marks(ctx: &Ctx, drive: &Path, regs: &[&Registry]) -> Vec<Mark> {
     let mut open: Vec<(String, vleo_files::model::Issue)> = Vec::new();
     let mut seen: Vec<String> = Vec::new();
     let mut out = Vec::new();
@@ -275,11 +281,23 @@ fn red_marks(ctx: &Ctx, drive: &Path) -> Vec<Mark> {
             }
             seen.push(name.clone());
             match vleo_files::sqlite::read(&p) {
-                Ok(f) => {
-                    for i in f.issues.into_iter().filter(|i| i.closed_by.is_empty()) {
-                        open.push((name.clone(), i));
+                // An issue counts only as its raiser signed it; one that
+                // does not check is said with why, never passed over.
+                Ok(f) => match vleo_files::chain::check_issue(&f, regs) {
+                    Ok(()) => {
+                        for i in f.issues.into_iter().filter(|i| i.closed_by.is_empty()) {
+                            open.push((name.clone(), i));
+                        }
                     }
-                }
+                    Err(e) => out.push(Mark {
+                        id: format!("issue:{}", name.trim_end_matches(".vissue")),
+                        said: format!(
+                            "the issue file {name} does not check through the chain: {}",
+                            e.message()
+                        ),
+                        raised: None,
+                    }),
+                },
                 Err(e) => out.push(Mark {
                     id: format!("issue:{}", name.trim_end_matches(".vissue")),
                     said: format!("the issue file {name} does not read: {}", e.message()),

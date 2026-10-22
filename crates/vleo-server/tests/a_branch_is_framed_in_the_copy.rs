@@ -955,11 +955,34 @@ fn a_branch_is_framed_in_the_copy() {
         f.issues.push(vleo_files::model::Issue {
             number: number.parse().unwrap(),
             group_id: "l3_solar".into(),
+            raised_by: "Test Nia".into(),
             closed_by: closed_by.into(),
             ..Default::default()
         });
+        // Signed by Nia, who raised it.
+        chain::sign_rows(&mut f);
+        let row =
+            chain::sign(&f, FILE, "Test Nia", &key(84), "2026-10-01", "ok", "raised").unwrap();
+        f.signatures.push(row);
         f
     };
+    // Changed after Nia signed it: not what she raised.
+    let mut changed = issue_file("3", "");
+    changed.issues[0].addressed_to = "Test Ivo".into();
+    // Nia's, signed by Ola: not signed by the person who raised it.
+    let mut ola = issue_file("3", "");
+    ola.signatures.clear();
+    let row = chain::sign(
+        &ola,
+        FILE,
+        "Test Ola",
+        &key(83),
+        "2026-10-01",
+        "ok",
+        "raised",
+    )
+    .unwrap();
+    ola.signatures.push(row);
     let assign = || {
         edit(
             "assign-issue",
@@ -979,6 +1002,14 @@ fn a_branch_is_framed_in_the_copy() {
         (
             issue_file("3", "Test Ola"),
             "issue 3 is closed, by Test Ola",
+        ),
+        (
+            changed,
+            "issues/3-l3_solar.vissue does not check through the chain",
+        ),
+        (
+            ola,
+            "issue 3 on l3_solar, by Test Nia, has no signature that counts",
         ),
     ] {
         vleo_files::sqlite::write(&f, &at).unwrap();
