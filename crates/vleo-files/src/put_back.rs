@@ -68,8 +68,10 @@
 //! one the system engineer's or their deputy's; and it keeps what the
 //! application never takes away: every person, every key, revoked only from
 //! that day or earlier, every mount, and who owns each mounted group, so no
-//! group's release the drive holds stops checking. What it then mounts with
-//! no group file on the drive is said.
+//! group's release the drive holds stops checking. A reallocation among the
+//! rows of a drive's file from before F6-d, which no signature covers, is
+//! never signed in. What it then mounts with no group file on the drive is
+//! said.
 //!
 //! Another group's file does not go back yet: what may change in it at its
 //! valve is not yet checked against the drive's file, so a change of its
@@ -800,6 +802,21 @@ fn systems_verdict(
                 .into(),
         );
     }
+    // Rows from before F6-d no signature covers. A reallocation among them is
+    // never signed in by putting the file back: once signed, it would be read
+    // as the system engineer's decision on an objection (F6-e).
+    let was_marked =
+        was.meta.get(chain::SIGNED_ROWS).map(String::as_str) == Some(chain::ROWS_SIGNED);
+    if let Some(c) = was
+        .changes
+        .iter()
+        .find(|c| !was_marked && c.what.starts_with("reallocate:"))
+    {
+        return Err(format!(
+            "the drive's systems' file holds the reallocation {:?}, by {}, from before its change rows were signed: no signature covers it, so putting the file back never signs it in",
+            c.what, c.who
+        ));
+    }
     let mut before = was.changes.last().map(|c| c.at.clone());
     for c in &f.changes[was.changes.len()..] {
         if checks::is_assistant(&c.who) || !chain.programme.acts_as(&c.who, "system engineer") {
@@ -831,9 +848,7 @@ fn systems_verdict(
         "the systems' file, by {me}, with {} change(s) since the drive's",
         f.changes.len() - was.changes.len()
     );
-    if was.meta.get(chain::SIGNED_ROWS).map(String::as_str) != Some(chain::ROWS_SIGNED)
-        && !was.changes.is_empty()
-    {
+    if !was_marked && !was.changes.is_empty() {
         said.push_str(&format!(
             "; the {} change row(s) the drive's file kept unsigned are signed by {me} with it now",
             was.changes.len()
