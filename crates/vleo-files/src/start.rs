@@ -13,8 +13,8 @@
 //! A group mounted on one of the systems' own blocks is started only once
 //! the systems' file allocates it at least one value, what it must reach
 //! (`>=`) or what it may use (`<=`): the system engineer says what is needed
-//! and what is available before the group begins (F6's question 43, as Aman
-//! answered it on 22 October). A group started already is never asked
+//! and what is available before the group begins (F6's question 43, as
+//! answered on 22 October). A group started already is never asked
 //! again. One mounted on a subsystem's leaf (W13) is not held to it yet: its
 //! allocation is its valve owner's, in that subsystem's file, and no edit
 //! gives one there.
@@ -35,20 +35,24 @@ fn refused(message: impl Into<String>) -> Error {
 }
 
 /// Why `group`, mounted by the systems' file `systems` on one of its own
-/// blocks, may not be started yet: the systems' file allocates it nothing,
-/// neither what it must reach nor what it may use. `None` once it allocates
-/// one, and for a group mounted elsewhere (W13), which is not held to it
-/// yet.
+/// blocks, may not be started yet: the systems' file allocates it nothing on
+/// that block, neither what it must reach nor what it may use. An allocation
+/// is one `allocate` gives: an input port of the block, allocated, with the
+/// closure it bounds and that closure's sense. `None` once there is one, and
+/// for a group mounted elsewhere (W13), which is not held to it yet. A block
+/// removed is still the systems' own, so a group on it is never started.
 pub fn allocation_wanted(systems: &File, group: &str) -> Option<String> {
     let mount = systems.mounts.iter().find(|m| m.group_id == group)?;
-    let own = systems
-        .blocks
-        .iter()
-        .any(|b| b.uid == mount.block_uid && b.archived == 0);
-    let allocated = systems
-        .ports
-        .iter()
-        .any(|p| p.block_uid == mount.block_uid && p.direction == "in" && p.state == "allocated");
+    let own = systems.blocks.iter().any(|b| b.uid == mount.block_uid);
+    let allocated = systems.ports.iter().any(|p| {
+        p.block_uid == mount.block_uid
+            && p.direction == "in"
+            && p.state == "allocated"
+            && systems.closures.iter().any(|c| {
+                c.required_ref == format!("{}.{}", p.block_uid, p.name)
+                    && (c.sense == "<=" || c.sense == ">=")
+            })
+    });
     (own && !allocated).then(|| {
         format!(
             "the systems' file allocates {group} nothing yet: the system engineer gives it, on {}, what it must reach or what it may use, by allocate, before it is started (F6's question 43)",

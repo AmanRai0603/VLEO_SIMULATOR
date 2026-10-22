@@ -288,15 +288,22 @@ def check():
             close_key()
 
             open_key('test-ivo.vkey')
+            # Mounted for him and allocated nothing yet: not his to start until
+            # the system engineer gives it what it must reach or may use (F6's
+            # question 43).
             step('who opens the application on the same folder and finds his role in My work',
                  'Test Ivo' in who() and 'subsystem engineer' in who()
-                 and any('Start l3_prop' in x for x in items('start')), main())
+                 and any('l3_prop' in x and 'allocates l3_prop nothing yet' in x for x in items('not started'))
+                 and not any('l3_prop' in x for x in items('start')), main())
 
             close_key()
             open_key('test-sam.vkey')
             step('the system engineer finds his role', 'Test Sam' in who() and 'system engineer' in who(), who())
             step('and a group his file mounts, refused, with why',
                  any('l3_thermal' in x and 'Test Ola' in x for x in items('refused')), main())
+            step('and the groups mounted and allocated nothing, his to allocate',
+                 any('Allocate l3_prop' in x for x in items('allocate'))
+                 and any('Allocate l3_struct' in x for x in items('allocate')), main())
 
             close_key()
             open_key('test-nia.vkey')
@@ -313,8 +320,8 @@ def check():
             step('and her own group refused', any('l3_thermal' in x for x in items('refused')), main())
             # Mounted for them and not started: their step, said as that, never
             # as a refusal (F6-a).
-            step('and a mounted group with no file yet, said as theirs to start, not passed over',
-                 any('Start l3_struct' in x for x in items('start'))
+            step('and a mounted group with no file yet, said as theirs once it is allocated, not passed over',
+                 any('l3_struct' in x and 'allocates l3_struct nothing yet' in x for x in items('not started'))
                  and not any('l3_struct' in x for x in items('refused')), main())
             act(lambda: p.select_option('#sh-pfile', 'l3_solar'))
             people = p.inner_text('#sh-people')

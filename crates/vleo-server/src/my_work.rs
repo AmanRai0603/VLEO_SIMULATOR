@@ -281,11 +281,19 @@ fn items(me: &chain::Me, c: &me::Chain, database: &Path) -> Vec<Item> {
                 .iter()
                 .find_map(|s| vleo_files::start::allocation_wanted(&s.file, group));
             if let Some(why) = &wanted {
-                if me.owns.iter().any(|g| g == "systems") {
+                // The system engineer, or their deputy, allocates; `node`
+                // names the mount's block, where the systems' branch gives it.
+                if c.programme.acts_as(&me.name, "system engineer") {
+                    let block = c
+                        .systems
+                        .iter()
+                        .flat_map(|s| s.file.mounts.iter())
+                        .find(|m| m.group_id == group)
+                        .map_or(String::new(), |m| m.block_uid.clone());
                     out.push(Item {
                         kind: "allocate",
                         group: group.to_string(),
-                        node: String::new(),
+                        node: block,
                         says: format!("Allocate {group}: it is mounted for {owner}, and {why}"),
                     });
                     continue;
@@ -311,7 +319,7 @@ fn items(me: &chain::Me, c: &me::Chain, database: &Path) -> Vec<Item> {
                 });
                 continue;
             }
-            if me.owns.iter().any(|g| g == "systems") {
+            if c.programme.acts_as(&me.name, "system engineer") {
                 out.push(Item {
                     kind: "not started",
                     group: group.to_string(),

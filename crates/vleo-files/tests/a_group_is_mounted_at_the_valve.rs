@@ -942,6 +942,56 @@ fn a_start_is_refused_by_name_with_nothing_written() {
 }
 
 #[test]
+fn an_allocation_counts_only_as_allocate_gives_it_on_the_mount_s_own_block() {
+    // Radiation, mounted on sys_radiation and given its shield's mass.
+    let f = radiation_allocated();
+    assert_eq!(start::allocation_wanted(&f, "l3_radiation"), None);
+    let refused = |f: &File, g: &str| {
+        start::allocation_wanted(f, g)
+            .is_some_and(|why| why.contains(&format!("allocates {g} nothing yet")))
+    };
+    // Another group mounted on another of the systems' leaves: radiation's
+    // allocation is not its own.
+    let mut other = f.clone();
+    other
+        .blocks
+        .push(block("sys_optics", "", "open", "What do the optics weigh?"));
+    other.mounts.push(Mount {
+        block_uid: s("sys_optics"),
+        group_id: s("l3_optics"),
+        release: s(""),
+    });
+    assert!(refused(&other, "l3_optics"));
+    assert_eq!(start::allocation_wanted(&other, "l3_radiation"), None);
+    // Not as allocate gives it: its closure gone, its closure saying no
+    // sense, or the port an output.
+    let mut no_closure = f.clone();
+    no_closure
+        .closures
+        .retain(|c| c.required_ref != "sys_radiation.shield_mass_allocated");
+    let mut no_sense = f.clone();
+    for c in no_sense.closures.iter_mut() {
+        c.sense = s("");
+    }
+    let mut output = f.clone();
+    for p in output.ports.iter_mut().filter(|p| p.state == "allocated") {
+        p.direction = s("out");
+    }
+    for (what, g) in [
+        ("its closure gone", &no_closure),
+        ("its closure with no sense", &no_sense),
+        ("an output", &output),
+    ] {
+        assert!(refused(g, "l3_radiation"), "{what}");
+    }
+    // A block removed is still the systems' own: a group on it allocated
+    // nothing is not started.
+    let mut removed = other.clone();
+    removed.blocks.last_mut().unwrap().archived = 1;
+    assert!(refused(&removed, "l3_optics"));
+}
+
+#[test]
 fn a_group_on_a_subsystem_s_leaf_is_not_held_to_an_allocation_yet() {
     // Its allocation is its valve owner's, in solar's file, and no edit
     // gives one there: it starts as it did.

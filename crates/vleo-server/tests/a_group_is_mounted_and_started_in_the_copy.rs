@@ -335,7 +335,7 @@ fn a_group_is_mounted_and_started_in_the_copy() {
     let wanted = "the systems' file allocates l3_radiation nothing yet";
     let w = ask(port, "GET", "/v1/my-work", &[], false);
     assert!(
-        w.contains("\"kind\":\"allocate\",\"group\":\"l3_radiation\"")
+        w.contains("\"kind\":\"allocate\",\"group\":\"l3_radiation\",\"node\":\"sys_radiation\"")
             && w.contains(&format!(
                 "Allocate l3_radiation: it is mounted for Test Rui, and {wanted}"
             )),
@@ -445,7 +445,9 @@ fn a_group_is_mounted_and_started_in_the_copy() {
     );
     let r = tree("l3_radiation");
     assert!(
-        r.contains("\"yours\":true") && field(&r, "next").starts_with("Start l3_radiation"),
+        r.contains("\"yours\":true")
+            && r.contains("\"allocated\":true")
+            && field(&r, "next").starts_with("Start l3_radiation"),
         "{r}"
     );
     // Without the launch's word, nothing is started.
