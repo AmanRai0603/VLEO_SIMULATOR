@@ -197,6 +197,10 @@ fn changed(kind: &str, params: &str, ctx: &Ctx) -> Result<(String, String), Stri
     };
     Ok((
         id.clone(),
-        format!("{what} in {id}'s file, signed by {by}, in your copy. It stays there for now: a group's file does not go back to the drive yet."),
+        if id == "systems" {
+            format!("{what} in {id}'s file, signed by {by}, in your copy. It can go back to the drive with Put back.")
+        } else {
+            format!("{what} in {id}'s file, signed by {by}, in your copy. It stays there for now: a group's file does not go back to the drive yet.")
+        },
     ))
 }

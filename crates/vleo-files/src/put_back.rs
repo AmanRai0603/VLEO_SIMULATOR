@@ -58,9 +58,24 @@
 //! drive counts for them now (`chain::check_preview`). A preview is never
 //! written over.
 //!
-//! A group's file does not go back yet: what may change in it at its valve
-//! is not yet checked against the drive's file, so a change of its people
-//! stays in the copy.
+//! Or it is the systems' file (F6-e), changed in the copy by the system
+//! engineer or their deputy: over the drive's, which it is the same file as,
+//! marked so its change rows are signed with it (F6-d), keeping every change
+//! row the drive's records in order and adding only after them, and opening
+//! through the chain as the drive holds it now, signed as it is by the person
+//! putting it back with a key the drive counts for them now. Only over a
+//! systems' file the drive's chain opened. Its change rows only grow, each new
+//! one the system engineer's or their deputy's; and it keeps what the
+//! application never takes away: every person, every key, revoked only from
+//! that day or earlier, every mount, and who owns each mounted group, so no
+//! group's release the drive holds stops checking. A reallocation among the
+//! rows of a drive's file from before F6-d, which no signature covers, is
+//! never signed in. What it then mounts with no group file on the drive is
+//! said.
+//!
+//! Another group's file does not go back yet: what may change in it at its
+//! valve is not yet checked against the drive's file, so a change of its
+//! people stays in the copy.
 //!
 //! Every other changed file is named, with the reason. Nothing is deleted on
 //! the drive, and a file gone from the copy is said, not followed.
@@ -712,11 +727,238 @@ fn verdict(
         ["integration", dir, name] if name.ends_with(".answer") => {
             answer_verdict(dir, name, bytes, theirs, me, at, chain, drive)
         }
+        ["groups", "systems", "systems.vgroup"] => {
+            systems_verdict(bytes, theirs, me, at, chain, drive)
+        }
         ["groups", g, name] if *name == format!("{g}.vgroup") => Err(format!(
             "{g}'s group file does not go back yet: what may change in a group's file is not yet checked against the drive's, so a change of its people stays in your copy"
         )),
-        _ => Err("it is not a file the application puts back yet: a node's file, a group's release, a released design and its record, or a preview of a release and an answer to one, goes back".into()),
+        _ => Err("it is not a file the application puts back yet: a node's file, the systems' file, a group's release, a released design and its record, or a preview of a release and an answer to one, goes back".into()),
     }
+}
+
+/// Whether the systems' file, `bytes` in the copy, goes back over the drive's,
+/// `theirs`, as `me`'s work (F6-e), onto the drive at `drive`: over a systems'
+/// file the drive's chain opened; the systems' file, as the drive's is, its
+/// meta whole; marked so its change rows are signed with it (F6-d); every
+/// change row the drive's records kept, in order, and the copy's only added
+/// after, each by the system engineer or their deputy and none dated before
+/// the row before it; and [`held`] to what the application makes of the
+/// drive's; and opening through the chain as the drive holds it now, signed
+/// as it is by `me`, the system engineer or their deputy, with a key that
+/// counts at `at`. What it then mounts with no group file on the drive is
+/// said. Another group's file does not go back yet.
+fn systems_verdict(
+    bytes: &[u8],
+    theirs: Option<&[u8]>,
+    me: &str,
+    at: &str,
+    chain: &Chain,
+    drive: &Path,
+) -> Result<String, String> {
+    let f = save::parsed(bytes).map_err(|e| format!("it does not read: {}", e.message()))?;
+    let Some(theirs) = theirs else {
+        return Err(
+            "the drive holds no systems' file: it goes back over the one the drive holds, never as a new one"
+                .into(),
+        );
+    };
+    let was = save::parsed(theirs)
+        .map_err(|e| format!("the drive's systems' file does not read: {}", e.message()))?;
+    // Only over a file the chain opened: one that does not is no history to
+    // keep, and nothing goes over it.
+    let opened = chain.systems.as_ref().ok_or_else(|| {
+        format!(
+            "the drive's systems' file does not check through the chain, so nothing goes over it: {}",
+            chain.left_out.join("; ")
+        )
+    })?;
+    let digest = |f: &File| chain::digest(f, chain::FILE).ok();
+    if digest(&opened.file).is_none() || digest(&opened.file) != digest(&was) {
+        return Err(
+            "the drive's systems' file is not the one its chain opened: copy it again".into(),
+        );
+    }
+    for key in ["file_kind", "group_id"] {
+        if f.meta.get(key) != was.meta.get(key) {
+            return Err(format!(
+                "it says it is {key} {:?}, and the drive's systems' file is {:?}",
+                f.meta.get(key).map_or("", String::as_str),
+                was.meta.get(key).map_or("", String::as_str)
+            ));
+        }
+    }
+    f.check_meta()
+        .map_err(|e| format!("its meta does not hold: {}", e.message()))?;
+    if f.meta.get(chain::SIGNED_ROWS).map(String::as_str) != Some(chain::ROWS_SIGNED) {
+        return Err(
+            "its change rows are not signed with it: make the change again in this application, which signs them (F6-d)"
+                .into(),
+        );
+    }
+    if !f.changes.starts_with(&was.changes) {
+        return Err(
+            "it does not keep every change the drive's systems' file records, in order: a file's history only grows"
+                .into(),
+        );
+    }
+    // Rows from before F6-d no signature covers. A reallocation among them is
+    // never signed in by putting the file back: once signed, it would be read
+    // as the system engineer's decision on an objection (F6-e).
+    let was_marked =
+        was.meta.get(chain::SIGNED_ROWS).map(String::as_str) == Some(chain::ROWS_SIGNED);
+    if let Some(c) = was
+        .changes
+        .iter()
+        .find(|c| !was_marked && c.what.starts_with("reallocate:"))
+    {
+        return Err(format!(
+            "the drive's systems' file holds the reallocation {:?}, by {}, from before its change rows were signed: no signature covers it, so putting the file back never signs it in",
+            c.what, c.who
+        ));
+    }
+    let mut before = was.changes.last().map(|c| c.at.clone());
+    for c in &f.changes[was.changes.len()..] {
+        if checks::is_assistant(&c.who) || !chain.programme.acts_as(&c.who, "system engineer") {
+            return Err(format!(
+                "its change {:?} is made by {}: a change of the systems' file is the system engineer's, or their deputy's",
+                c.what, c.who
+            ));
+        }
+        let when = chain::instant(&c.at, "a change's time").map_err(|e| e.message().to_string())?;
+        if let Some(b) = &before {
+            if chain::instant(b, "a change's time").is_ok_and(|b| when < b) {
+                return Err(format!(
+                    "its change {:?} is dated {}, before the change it follows, at {b}: a file's history only grows",
+                    c.what, c.at
+                ));
+            }
+        }
+        before = Some(c.at.clone());
+    }
+    held(&f, &was)?;
+    let now = only_counting_now(&f, chain::FILE, me, at, &chain.programme);
+    chain::open_systems(&now, &chain.programme).map_err(|e| {
+        format!(
+            "it does not check through the chain as the drive holds it now, signed by {me} with a key that counts at {at}: {}",
+            e.message()
+        )
+    })?;
+    let mut said = format!(
+        "the systems' file, by {me}, with {} change(s) since the drive's",
+        f.changes.len() - was.changes.len()
+    );
+    if !was_marked && !was.changes.is_empty() {
+        said.push_str(&format!(
+            "; the {} change row(s) the drive's file kept unsigned are signed by {me} with it now",
+            was.changes.len()
+        ));
+    }
+    let unfiled: Vec<&str> = f
+        .mounts
+        .iter()
+        .map(|m| m.group_id.as_str())
+        .filter(|g| {
+            !drive
+                .join("groups")
+                .join(g)
+                .join(format!("{g}.vgroup"))
+                .is_file()
+        })
+        .collect();
+    if !unfiled.is_empty() {
+        said.push_str(&format!(
+            "; the drive then mounts {} with no group file there yet: a group's file started in your copy does not go back yet",
+            unfiled.join(", ")
+        ));
+    }
+    Ok(said)
+}
+
+/// Whether the systems' file `f` keeps what the application never takes from
+/// the drive's, `was`: every person, as registered; every key, its
+/// revocation only made or brought earlier; every mount; and the assignment
+/// of every mounted block, its only one. A mount it adds is of a group it
+/// mounts nowhere else, and never the programme's or its own.
+fn held(f: &File, was: &File) -> Result<(), String> {
+    for p in &was.people {
+        if !f.people.contains(p) {
+            return Err(format!(
+                "it drops {} as {} from the people the drive's systems' file registers: a person is never taken out, their key is revoked",
+                p.name, p.role
+            ));
+        }
+    }
+    let from = |k: &crate::model::PersonKey| {
+        (!k.revoked_from.is_empty())
+            .then(|| chain::instant(&k.revoked_from, "a key's revoked_from").ok())
+    };
+    for k in &was.keys {
+        let kept = f.keys.iter().find(|n| {
+            (
+                &n.person,
+                &n.public_key,
+                &n.registered_at,
+                &n.registered_by,
+                &n.proof,
+            ) == (
+                &k.person,
+                &k.public_key,
+                &k.registered_at,
+                &k.registered_by,
+                &k.proof,
+            )
+        });
+        let revoked_as_kept = kept.is_some_and(|n| match (from(k), from(n)) {
+            (None, _) => true,
+            (Some(Some(was)), Some(Some(now))) => now <= was,
+            (Some(_), _) => n.revoked_from == k.revoked_from,
+        });
+        if !revoked_as_kept {
+            return Err(format!(
+                "it does not keep {}'s key {} as the drive's systems' file registers it: a key is only ever revoked, from that day or earlier",
+                k.person,
+                k.public_key.get(..12).unwrap_or(&k.public_key)
+            ));
+        }
+    }
+    for m in &was.mounts {
+        if !f.mounts.contains(m) {
+            return Err(format!(
+                "it does not keep {}'s mount on {} as the drive's systems' file holds it: a mount is never taken away or moved",
+                m.group_id, m.block_uid
+            ));
+        }
+        let given: Vec<_> = f
+            .assignments
+            .iter()
+            .filter(|a| a.block_uid == m.block_uid)
+            .collect();
+        let had: Vec<_> = was
+            .assignments
+            .iter()
+            .filter(|a| a.block_uid == m.block_uid)
+            .collect();
+        if given != had {
+            return Err(format!(
+                "it gives {}'s mount on {} to someone other than the drive's systems' file does: who owns a mounted group is never changed here",
+                m.group_id, m.block_uid
+            ));
+        }
+    }
+    let id = f.meta.get("group_id").map_or("", String::as_str);
+    for (i, m) in f.mounts.iter().enumerate() {
+        if m.group_id == "programme"
+            || m.group_id == id
+            || f.mounts[..i].iter().any(|o| o.group_id == m.group_id)
+        {
+            return Err(format!(
+                "it mounts {} more than once, or a group no mount may hold",
+                m.group_id
+            ));
+        }
+    }
+    Ok(())
 }
 
 /// Whether the preview `name` in `integration/<dir>/`, `bytes` in the copy,

@@ -213,6 +213,15 @@ fn world(name: &str) -> (PathBuf, PathBuf) {
         &key(72),
         "Test Pat",
     );
+    // Sid, Sam's deputy.
+    register(
+        &mut programme,
+        "Test Sid",
+        "system engineer",
+        &key(81),
+        "Test Pat",
+    );
+    programme.people.last_mut().unwrap().deputy_for = s("Test Sam");
     register(
         &mut programme,
         "Test Ola",
@@ -2629,5 +2638,352 @@ fn a_preview_of_a_release_or_on_a_design_the_drive_does_not_hold_does_not_go_bac
             assert!(l.why.contains(&format!("so it is {p}")), "-{n}: {l:?}");
         }
     }
+    let _ = std::fs::remove_dir_all(drive.parent().unwrap());
+}
+
+// ── The systems' file goes back over the drive's (F6-e) ──
+
+const SYSTEMS: &str = "groups/systems/systems.vgroup";
+
+/// The systems' file in the copy changed as the application changes it: a
+/// change row added by `who`, its rows marked signed (F6-d) when `marked`,
+/// and signed again by `who` with key `k`; `more` changes it further first.
+fn systems_changed(copy: &Path, who: &str, k: u8, marked: bool, more: impl FnOnce(&mut File)) {
+    let at = copy.join(SYSTEMS);
+    let mut f = sqlite::read(&at).unwrap();
+    f.changes.push(vleo_files::model::Change {
+        at: s(AT),
+        who: s(who),
+        scope: s("sys_power"),
+        what: s("reallocate: power's mass, widened"),
+        before: None,
+        after: None,
+    });
+    more(&mut f);
+    if marked {
+        chain::sign_rows(&mut f);
+    }
+    f.signatures.retain(|r| r.scope != FILE);
+    let row = chain::sign(&f, FILE, who, &key(k), AT, "ok", "").unwrap();
+    f.signatures.push(row);
+    sqlite::write(&f, &at).unwrap();
+}
+
+#[test]
+fn the_systems_file_goes_back_by_the_system_engineer_its_history_kept() {
+    let (drive, copy) = world("systems-back");
+    let kept = std::fs::read(copy.join(SYSTEMS)).unwrap();
+    let back = |who: &str| {
+        let r = pb(&copy, &drive, who, None).unwrap();
+        line(&r, SYSTEMS).clone()
+    };
+    // Changed in the copy by Ola, who is not the system engineer: her
+    // change is refused.
+    systems_changed(&copy, "Test Ola", 73, true, |_| {});
+    let l = back("Test Ola");
+    assert!(
+        !l.back
+            && l.why.contains(
+                "is made by Test Ola: a change of the systems' file is the system engineer's"
+            ),
+        "{l:?}"
+    );
+    // Sam's change, signed by Ola: it does not check through the chain.
+    std::fs::write(copy.join(SYSTEMS), &kept).unwrap();
+    systems_changed(&copy, "Test Sam", 72, true, |_| {});
+    let mut ola = sqlite::read(&copy.join(SYSTEMS)).unwrap();
+    ola.signatures.retain(|r| r.scope != FILE);
+    sqlite::write(&signed(ola, "Test Ola", &key(73)), &copy.join(SYSTEMS)).unwrap();
+    let l = back("Test Ola");
+    assert!(
+        !l.back
+            && l.why.contains(
+                "does not check through the chain as the drive holds it now, signed by Test Ola"
+            ),
+        "{l:?}"
+    );
+    // By Sam, its rows not signed with it.
+    std::fs::write(copy.join(SYSTEMS), &kept).unwrap();
+    systems_changed(&copy, "Test Sam", 72, false, |_| {});
+    let l = back("Test Sam");
+    assert!(
+        !l.back && l.why.contains("its change rows are not signed with it"),
+        "{l:?}"
+    );
+    // By Sam, saying it is another group's file.
+    std::fs::write(copy.join(SYSTEMS), &kept).unwrap();
+    systems_changed(&copy, "Test Sam", 72, true, |f| {
+        f.meta.insert(s("group_id"), s("l3_power"));
+    });
+    let l = back("Test Sam");
+    assert!(
+        !l.back && l.why.contains("it says it is group_id \"l3_power\""),
+        "{l:?}"
+    );
+    // By Sam, as the application makes it: it goes back, and opens on the
+    // drive through the chain.
+    std::fs::write(copy.join(SYSTEMS), &kept).unwrap();
+    systems_changed(&copy, "Test Sam", 72, true, |_| {});
+    let l = back("Test Sam");
+    assert!(
+        l.back
+            && l.why
+                .contains("the systems' file, by Test Sam, with 1 change(s) since the drive's")
+            && l.why.contains(
+                "the drive then mounts l3_power with no group file there yet: a group's file started in your copy does not go back yet"
+            )
+            && !l.why.contains("l3_solar"),
+        "{l:?}"
+    );
+    let r = pb(&copy, &drive, "Test Sam", Some(vec![named(&copy, SYSTEMS)])).unwrap();
+    assert!(r.written, "{:?}", r.lines);
+    let o = opened(&drive);
+    assert!(o
+        .systems
+        .file
+        .changes
+        .iter()
+        .any(|c| c.what == "reallocate: power's mass, widened"));
+    // Its history only grows: a change after it that leaves the first out is
+    // refused.
+    systems_changed(&copy, "Test Sam", 72, true, |f| {
+        f.changes.remove(0);
+        f.changes[0].what = s("reallocate: power's mass, widened again");
+    });
+    let l = back("Test Sam");
+    assert!(
+        !l.back && l.why.contains("a file's history only grows"),
+        "{l:?}"
+    );
+    let _ = std::fs::remove_dir_all(drive.parent().unwrap());
+}
+
+/// The systems' file goes back over the drive's only as the application
+/// makes it: by Sid, Sam's deputy, too; never by Sam with a key the drive
+/// revokes before he puts it back; never as another kind of file, nor over a
+/// systems' file the drive's chain did not open, nor where the drive holds
+/// none. It keeps every person, key and mount the drive's file holds, and
+/// who owns each mounted group; mounts a group once; and adds changes only
+/// by the system engineer or their deputy, none dated before the one it
+/// follows. The change rows a drive's file kept unsigned are said to be
+/// signed with it now, but never a reallocation among them.
+#[test]
+fn the_systems_file_keeps_what_the_application_never_takes_away() {
+    let (drive, copy) = world("systems-held");
+    let kept = std::fs::read(copy.join(SYSTEMS)).unwrap();
+    let again = |who: &str, k: u8, more: &dyn Fn(&mut File)| {
+        std::fs::write(copy.join(SYSTEMS), &kept).unwrap();
+        systems_changed(&copy, who, k, true, |f| more(f));
+        let r = pb(&copy, &drive, who, None).unwrap();
+        line(&r, SYSTEMS).clone()
+    };
+    let refused = |l: &vleo_files::put_back::Line, why: &str| {
+        assert!(!l.back && l.why.contains(why), "{why}: {l:?}");
+    };
+    // By Sid, Sam's deputy: it goes back.
+    let l = again("Test Sid", 81, &|_| {});
+    assert!(
+        l.back
+            && l.why
+                .contains("the systems' file, by Test Sid, with 1 change(s)"),
+        "{l:?}"
+    );
+    // Another kind of file.
+    let l = again("Test Sam", 72, &|f| {
+        f.meta.insert(s("file_kind"), s("node"));
+    });
+    refused(&l, "it says it is file_kind \"node\"");
+    // What the application never takes away.
+    for (what, more, why) in [
+        (
+            "a person dropped",
+            Box::new(|f: &mut File| {
+                f.people.retain(|p| p.name != "Test Uma");
+                f.keys.retain(|k| k.person != "Test Uma");
+                f.assignments.retain(|a| a.person != "Test Uma");
+            }) as Box<dyn Fn(&mut File)>,
+            "it drops Test Uma as node engineer",
+        ),
+        (
+            "a key changed",
+            Box::new(|f: &mut File| f.keys[0].registered_by = s("Test Pat"))
+                as Box<dyn Fn(&mut File)>,
+            "it does not keep Test Uma's key",
+        ),
+        (
+            "a mount taken away",
+            Box::new(|f: &mut File| f.mounts.retain(|m| m.group_id != "l3_solar"))
+                as Box<dyn Fn(&mut File)>,
+            "it does not keep l3_solar's mount on sys_space_environment",
+        ),
+        (
+            "a mounted group given to another",
+            Box::new(|f: &mut File| {
+                for a in f
+                    .assignments
+                    .iter_mut()
+                    .filter(|a| a.block_uid == "sys_power")
+                {
+                    a.person = s("Test Sam");
+                }
+            }) as Box<dyn Fn(&mut File)>,
+            "it gives l3_power's mount on sys_power to someone other",
+        ),
+        (
+            "a group mounted twice",
+            Box::new(|f: &mut File| {
+                f.mounts.push(Mount {
+                    block_uid: s("sys_node"),
+                    group_id: s("l3_solar"),
+                    release: s(""),
+                })
+            }) as Box<dyn Fn(&mut File)>,
+            "it mounts l3_solar more than once",
+        ),
+        (
+            "a change by Ola",
+            Box::new(|f: &mut File| f.changes.last_mut().unwrap().who = s("Test Ola"))
+                as Box<dyn Fn(&mut File)>,
+            "is made by Test Ola: a change of the systems' file is the system engineer's",
+        ),
+    ] {
+        let l = again("Test Sam", 72, &*more);
+        assert!(!l.back && l.why.contains(why), "{what}: {l:?}");
+    }
+    // A key the drive's file revokes is never brought back.
+    let at = drive.join(SYSTEMS);
+    let mut revoked = sqlite::read(&at).unwrap();
+    revoked.keys[0].revoked_from = s("2026-09-01");
+    revoked.signatures.retain(|r| r.scope != FILE);
+    let revoked = signed(revoked, "Test Sam", &key(72));
+    sqlite::write(&revoked, &at).unwrap();
+    sqlite::write(&revoked, &copy.join(SYSTEMS)).unwrap();
+    take_copy(&drive, &copy);
+    let kept_revoked = std::fs::read(copy.join(SYSTEMS)).unwrap();
+    let back = |more: &dyn Fn(&mut File)| {
+        std::fs::write(copy.join(SYSTEMS), &kept_revoked).unwrap();
+        systems_changed(&copy, "Test Sam", 72, true, |f| more(f));
+        let r = pb(&copy, &drive, "Test Sam", None).unwrap();
+        line(&r, SYSTEMS).clone()
+    };
+    for (what, from) in [("cleared", ""), ("later", "2026-09-20")] {
+        let l = back(&|f| f.keys[0].revoked_from = s(from));
+        assert!(
+            !l.back
+                && l.why
+                    .contains("a key is only ever revoked, from that day or earlier"),
+            "{what}: {l:?}"
+        );
+    }
+    let l = back(&|f| f.keys[0].revoked_from = s("2026-08-01"));
+    assert!(l.back, "brought earlier: {l:?}");
+    // Its changes only grow: one dated before the one it follows is refused.
+    let l = back(&|f| {
+        f.changes.push(vleo_files::model::Change {
+            at: s("2026-10-01T00:00:00Z"),
+            who: s("Test Sam"),
+            scope: s("sys_power"),
+            what: s("reallocate: power's mass, narrowed"),
+            before: None,
+            after: None,
+        })
+    });
+    refused(&l, "before the change it follows");
+    // Sam's key revoked on the drive's programme file before he puts it back.
+    std::fs::write(copy.join(SYSTEMS), &kept_revoked).unwrap();
+    systems_changed(&copy, "Test Sam", 72, true, |_| {});
+    let pr = drive.join("groups/programme/programme.vgroup");
+    let was = std::fs::read(&pr).unwrap();
+    let mut p = sqlite::read(&pr).unwrap();
+    for k in p.keys.iter_mut().filter(|k| k.person == "Test Sam") {
+        k.revoked_from = s("2026-10-15T13:00:00Z");
+    }
+    p.signatures.retain(|r| r.scope != FILE);
+    sqlite::write(&signed(p, "Test Pat", &key(71)), &pr).unwrap();
+    let r = pb(&copy, &drive, "Test Sam", None).unwrap();
+    refused(
+        line(&r, SYSTEMS),
+        "does not check through the chain as the drive holds it now",
+    );
+    std::fs::write(&pr, was).unwrap();
+    // Over a systems' file the drive's chain did not open.
+    let left_out = || {
+        let o = opened(&drive);
+        Ok(Chain {
+            anchor: o.anchor,
+            programme: o.programme,
+            systems: None,
+            groups: o.groups,
+            left_out: vec![s("the systems' file: its signature does not check")],
+        })
+    };
+    let r = put_back(&copy, &drive, "Test Sam", NOW, &left_out, None).unwrap();
+    refused(
+        line(&r, SYSTEMS),
+        "the drive's systems' file does not check through the chain, so nothing goes over it: the systems' file: its signature does not check",
+    );
+    // Change rows the drive's file kept unsigned are said to be signed now.
+    let mut unsigned = sqlite::read(&at).unwrap();
+    unsigned.changes.push(vleo_files::model::Change {
+        at: s("2026-10-01T00:00:00Z"),
+        who: s("Test Sam"),
+        scope: s("sys_power"),
+        what: s("mount: power, before the rows were signed"),
+        before: None,
+        after: None,
+    });
+    unsigned.meta.remove(chain::SIGNED_ROWS);
+    unsigned.signatures.retain(|r| r.scope != FILE);
+    let unsigned = signed(unsigned, "Test Sam", &key(72));
+    sqlite::write(&unsigned, &at).unwrap();
+    sqlite::write(&unsigned, &copy.join(SYSTEMS)).unwrap();
+    take_copy(&drive, &copy);
+    systems_changed(&copy, "Test Sam", 72, true, |_| {});
+    let r = pb(&copy, &drive, "Test Sam", None).unwrap();
+    let l = line(&r, SYSTEMS);
+    assert!(
+        l.back
+            && l.why.contains(
+                "the 1 change row(s) the drive's file kept unsigned are signed by Test Sam with it now"
+            ),
+        "{l:?}"
+    );
+    // A reallocation among those unsigned rows is never signed in: once
+    // signed, it would read as Sam's decision on an objection.
+    let mut forged = sqlite::read(&at).unwrap();
+    forged.changes.push(vleo_files::model::Change {
+        at: s("2026-10-02T00:00:00Z"),
+        who: s("Test Sam"),
+        scope: s("sys_power"),
+        what: s("reallocate: deciding objection:l3_solar-1.1.l3_power answer a1a1a1a1a1a1"),
+        before: Some(s("before")),
+        after: Some(s("after")),
+    });
+    forged.signatures.retain(|r| r.scope != FILE);
+    let forged = signed(forged, "Test Sam", &key(72));
+    sqlite::write(&forged, &at).unwrap();
+    sqlite::write(&forged, &copy.join(SYSTEMS)).unwrap();
+    take_copy(&drive, &copy);
+    systems_changed(&copy, "Test Sam", 72, true, |_| {});
+    let r = pb(&copy, &drive, "Test Sam", None).unwrap();
+    refused(
+        line(&r, SYSTEMS),
+        "the drive's systems' file holds the reallocation \"reallocate: deciding objection:l3_solar-1.1.l3_power answer a1a1a1a1a1a1\", by Test Sam, from before its change rows were signed",
+    );
+    // The drive holding no systems' file: never written as a new one.
+    std::fs::remove_file(&at).unwrap();
+    take_copy(&drive, &copy);
+    let from_copy = || {
+        let o = opened(&copy);
+        Ok(Chain {
+            anchor: o.anchor,
+            programme: o.programme,
+            systems: Some(o.systems),
+            groups: o.groups,
+            left_out: Vec::new(),
+        })
+    };
+    let r = put_back(&copy, &drive, "Test Sam", NOW, &from_copy, None).unwrap();
+    refused(line(&r, SYSTEMS), "the drive holds no systems' file");
     let _ = std::fs::remove_dir_all(drive.parent().unwrap());
 }

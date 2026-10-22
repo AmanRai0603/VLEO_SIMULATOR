@@ -29,7 +29,8 @@
 //!   mount; the valve above `l3_activity` is Ola;
 //! - a start without the launch's word, or with no key open, is refused;
 //! - a file of the copy that cannot be read: the frame says so, and why;
-//! - the drive holds what it held when it was copied.
+//! - the drive holds what it held when it was copied; then Sam puts the
+//!   systems' file back, and the drive's holds both mounts (F6-e).
 
 use std::io::{Read, Write};
 use std::net::TcpStream;
@@ -540,6 +541,35 @@ fn a_group_is_mounted_and_started_in_the_copy() {
         .map(|p| std::fs::read(drv.join(p)).unwrap())
         .collect();
     assert_eq!(after, on_drive, "the drive is never written");
+    assert!(!drv.join(NEW).exists());
+
+    // Put back by Sam, the systems' file goes over the drive's, as Sam signed
+    // it last, its history kept (F6-e), saying what it mounts with no group
+    // file on the drive; the group Rui started stays in the copy.
+    assert!(open_key(port, "test-sam.vkey").contains("\"open\":true"));
+    let r = post(port, "/v1/put-back", &[]);
+    assert!(r.contains("the systems' file, by Test Sam, with"), "{r}");
+    // What it then mounts with no group file on the drive is said: Rui's
+    // l3_radiation, started in the copy, does not go back yet.
+    assert!(
+        r.contains("the drive then mounts ")
+            && r.contains("l3_radiation")
+            && r.contains("with no group file there yet"),
+        "{r}"
+    );
+    let files = format!(
+        "{} {SYSTEMS}",
+        vleo_files::copied::digest(&std::fs::read(copy.join(SYSTEMS)).unwrap())
+    );
+    let r = post(port, "/v1/put-back", &[("files", &files)]);
+    assert!(r.contains("\"written\":true"), "{r}");
+    let back = sqlite::read(&drv.join(SYSTEMS)).unwrap();
+    assert!(
+        back.mounts.iter().any(|m| m.group_id == "l3_radiation")
+            && back.mounts.iter().any(|m| m.group_id == "l3_activity"),
+        "{:?}",
+        back.mounts
+    );
     assert!(!drv.join(NEW).exists());
     let _ = std::fs::remove_dir_all(&scratch);
 }
