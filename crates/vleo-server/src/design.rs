@@ -874,12 +874,13 @@ struct Previewed {
     impact: today::Impact,
 }
 
-/// `first` is asked of the preview's path before anything is built.
+/// `first` is asked where the preview of the group's release, its version and
+/// the design it is on, would be written, before anything is built.
 fn previewed(
     group: &str,
     ctx: &Ctx,
     c: &me::Chain,
-    first: &dyn Fn(&str) -> Result<(), String>,
+    first: &dyn Fn(&str, &str, &str) -> Result<String, String>,
 ) -> Result<Previewed, String> {
     let report = built_from().ok_or(
         "the design open is the design's own files, not today's design: a preview is of a release in today's design, built from the drive",
@@ -908,11 +909,7 @@ fn previewed(
     }
     design::to_preview(&design, group, &t.version, &t.fingerprint)
         .map_err(|e| e.message().to_string())?;
-    first(&vleo_files::chain::preview_path(
-        group,
-        &t.version,
-        &design.version,
-    ))?;
+    first(group, &t.version, &design.version)?;
     let path = t
         .path
         .strip_prefix(&drive)
@@ -1068,25 +1065,43 @@ fn previewing(params: &str, ctx: &Ctx) -> Result<String, String> {
             may.0
         ));
     }
-    // A preview is never written over: asked before two designs are built,
-    // and again under the copy's lock before it is written.
-    let never_over = |rel: &str| -> Result<(), String> {
-        for (whose, at) in [
-            ("your copy", copy.join(rel)),
-            ("the drive", drive.join(rel)),
-        ] {
-            if at.exists() {
-                return Err(format!(
-                    "{whose} holds {rel} already: a preview is never written over"
-                ));
-            }
-        }
-        Ok(())
-    };
-    let p = previewed(group, ctx, &c, &never_over)?;
     let parents: Vec<&Registry> = std::iter::once(&c.programme)
         .chain(c.systems.iter())
         .collect();
+    // A preview is never written over: where it goes is asked before two
+    // designs are built, and again under the copy's lock before it is
+    // written. It goes at the first place free; a place taken by one that
+    // opens refuses it, and one taken by a file that no longer opens, as when
+    // its writer stops being the system engineer, is passed for the next.
+    let place = |g: &str, v: &str, d: &str| -> Result<String, String> {
+        for n in 1..=999 {
+            let rel = vleo_files::chain::preview_path_n(g, v, d, n);
+            let mut taken = false;
+            for (whose, at) in [
+                ("your copy", copy.join(&rel)),
+                ("the drive", drive.join(&rel)),
+            ] {
+                if !at.exists() {
+                    continue;
+                }
+                taken = true;
+                let opens = vleo_files::sqlite::read(&at)
+                    .is_ok_and(|f| design::open_preview(&f, &parents, &c.programme, APP).is_ok());
+                if opens {
+                    return Err(format!(
+                        "{whose} holds {rel} already, and it opens: a preview is never written over"
+                    ));
+                }
+            }
+            if !taken {
+                return Ok(rel);
+            }
+        }
+        Err(format!(
+            "every place a preview of {g} {v} on design {d} is written is taken"
+        ))
+    };
+    let p = previewed(group, ctx, &c, &place)?;
     let at = results::now_utc();
     let (f, who) = me::with_key(|key, me| {
         design::preview(
@@ -1111,9 +1126,8 @@ fn previewing(params: &str, ctx: &Ctx) -> Result<String, String> {
     let named = design::open_preview(&f, &parents, &c.programme, APP)
         .map_err(|e| e.message().to_string())?
         .named;
-    let rel = vleo_files::chain::preview_path(group, &p.version, &p.design.version);
     let _held = vleo_files::save::lock(&copy).map_err(|e| e.message().to_string())?;
-    never_over(&rel)?;
+    let rel = place(group, &p.version, &p.design.version)?;
     let at_file = copy.join(&rel);
     if let Some(dir) = at_file.parent() {
         std::fs::create_dir_all(dir).map_err(|e| format!("{}: {e}", dir.display()))?;
@@ -1269,7 +1283,8 @@ pub(crate) fn previews(
                     let o = design::open_preview(&f, parents, programme, APP)
                         .map_err(|e| e.message().to_string())?;
                     let place = vleo_files::chain::preview_path(&o.group, &o.version, &o.based_on);
-                    if place != rel {
+                    if !vleo_files::chain::is_preview_path(&rel, &o.group, &o.version, &o.based_on)
+                    {
                         return Err(format!(
                             "it says it is the preview of {} {} on design {}, so it is {place}",
                             o.group, o.version, o.based_on
@@ -1494,7 +1509,42 @@ fn named_by(path: &str) -> Option<(String, String, String)> {
         .strip_suffix(".vleo")?
         .split_once("-on-")?;
     let (g, v) = gv.rsplit_once('-')?;
+    // A design's version holds no `-`: one after it is the place's sequence
+    // (F6's answer (a)).
+    let design = design
+        .rsplit_once('-')
+        .filter(|(_, n)| n.parse::<u32>().is_ok())
+        .map_or(design, |(d, _)| d);
     Some((g.to_string(), v.to_string(), design.to_string()))
+}
+
+/// A preview found, by its path: the release, its version and the design it
+/// is on, as it opens, or why it does not.
+type Seen<'a> = (&'a str, Result<(&'a str, &'a str, &'a str), &'a str>);
+
+/// Why each preview of `seen` that does not open may be one the release
+/// waits on: its path names a release today's design holds, `holding`, on
+/// the design released now, `released`, or names nothing it can be read by.
+/// One whose release and design another preview of `seen` opens for is
+/// passed: that one is written again in its place, as when its writer
+/// stopped being the system engineer.
+fn not_opening(seen: &[Seen], released: Option<&str>, holding: &[(&str, &str)]) -> Vec<String> {
+    let mut out = Vec::new();
+    for (path, opened) in seen {
+        let Err(why) = opened else { continue };
+        let named = named_by(path);
+        let live = named.as_ref().is_none_or(|(g, v, d)| {
+            Some(d.as_str()) == released && holding.iter().any(|(hg, hv)| hg == g && hv == v)
+        });
+        let again = named.as_ref().is_some_and(|(g, v, d)| {
+            seen.iter()
+                .any(|(_, o)| *o == Ok((g.as_str(), v.as_str(), d.as_str())))
+        });
+        if live && !again {
+            out.push(why.to_string());
+        }
+    }
+    out
 }
 
 /// Every issue file of the drive's `issues/` and the copy's, the drive's
@@ -1551,16 +1601,19 @@ pub(crate) fn objections_now(
             )
         })
         .collect();
-    for l in &listed {
-        if let Err(why) = &l.opened {
-            let live = named_by(&l.path).is_none_or(|(g, v, d)| {
-                Some(d.as_str()) == released && holding.iter().any(|(hg, hv)| *hg == g && *hv == v)
-            });
-            if live {
-                unread.push(why.clone());
-            }
-        }
-    }
+    let seen: Vec<Seen> = listed
+        .iter()
+        .map(|l| {
+            (
+                l.path.as_str(),
+                l.opened
+                    .as_ref()
+                    .map(|p| (p.group.as_str(), p.version.as_str(), p.based_on.as_str()))
+                    .map_err(String::as_str),
+            )
+        })
+        .collect();
+    unread.extend(not_opening(&seen, released, holding));
     let mut previews = Vec::new();
     let mut objections = Vec::new();
     for p in listed.iter().filter_map(|l| l.opened.as_ref().ok()) {
@@ -1724,7 +1777,40 @@ fn deciding(params: &str, ctx: &Ctx) -> Result<String, String> {
 
 #[cfg(test)]
 mod tests {
-    use super::engine_is_today_s;
+    use super::{engine_is_today_s, not_opening};
+
+    #[test]
+    fn a_preview_that_does_not_open_holds_the_release_unless_written_again() {
+        let on = Some("2026.10.1");
+        let holding = [("l3_solar", "1.1")];
+        let first = "integration/l3_solar-1.1/preview-l3_solar-1.1-on-2026.10.1.vleo";
+        let second = "integration/l3_solar-1.1/preview-l3_solar-1.1-on-2026.10.1-2.vleo";
+        let dead = Err("its writer is not the system engineer");
+        let opens = Ok(("l3_solar", "1.1", "2026.10.1"));
+        // Of a release held, on the design released now, at either place.
+        for at in [first, second] {
+            assert_eq!(
+                not_opening(&[(at, dead)], on, &holding),
+                ["its writer is not the system engineer"],
+                "{at}"
+            );
+        }
+        // Named by nothing it can be read by.
+        assert_eq!(
+            not_opening(&[("integration/x/preview-of.vleo", dead)], on, &holding).len(),
+            1
+        );
+        // Stale: another design, or a release today's design does not hold.
+        for at in [
+            "integration/l3_solar-1.1/preview-l3_solar-1.1-on-2026.9.1-2.vleo",
+            "integration/l3_solar-1.0/preview-l3_solar-1.0-on-2026.10.1.vleo",
+        ] {
+            assert!(not_opening(&[(at, dead)], on, &holding).is_empty(), "{at}");
+        }
+        // Written again at the next place: the one that does not open is
+        // passed.
+        assert!(not_opening(&[(first, dead), (second, opens)], on, &holding).is_empty());
+    }
 
     #[test]
     fn a_design_is_released_only_with_the_margins_of_the_engine_that_runs_it() {

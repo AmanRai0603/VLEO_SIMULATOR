@@ -21,7 +21,8 @@
 //!   outside solar that the engine answers differently on the two designs,
 //!   the orbit's environment's F10.7 among them, and the orbit's environment
 //!   named to answer; the systems' own value shown and not named. Asked
-//!   again, it is never written over;
+//!   again, it is never written over, and written again, at its place with
+//!   a sequence, only once the one there no longer opens;
 //! - put back, Uma's My work says *Answer l3_solar 1.1*; her objection,
 //!   written through `POST /v1/answer`, counts only once it is put back: in
 //!   her copy, it is unanswered and My work says to put it back; on the
@@ -863,6 +864,30 @@ fn the_system_engineer_previews_a_release_and_its_named_group_answers_it() {
     assert!(
         w.contains("\"kind\":\"preview refused\"") && w.contains(wrong),
         "{w}"
+    );
+    // Written again only once the one at its place no longer opens, as when
+    // its writer stops being the system engineer: then at the next place,
+    // with a sequence (F6's answer (a)).
+    assert!(open_key(port, "test-sam.vkey").contains("\"open\":true"));
+    let r = preview("l3_solar");
+    assert!(
+        field(&r, "message").contains(&format!("holds {path} already, and it opens")),
+        "{r}"
+    );
+    for at in [copy.join(&path), drive.join(&path)] {
+        std::fs::write(at, "no longer a preview").unwrap();
+    }
+    let r = preview("l3_solar");
+    assert!(r.contains("\"ok\":true"), "{r}");
+    let again = chain::preview_path_n("l3_solar", "1.1", DESIGN, 2);
+    assert!(again.ends_with("-on-2026.10.1-2.vleo"), "{again}");
+    assert_eq!(field(&r, "path"), again);
+    let p = previews();
+    assert!(
+        entries(&p, "previews")
+            .iter()
+            .any(|e| e.contains(&again) && e.contains("\"opens\":true")),
+        "{p}"
     );
     let _ = std::fs::remove_dir_all(&scratch);
 }
