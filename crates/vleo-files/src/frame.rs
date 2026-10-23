@@ -28,11 +28,12 @@
 //! Not here: changing or moving a mount or an allocation (F6-c), starting
 //! the group's file (`start`), issuing and unassigning (F5).
 
-use crate::breakdown::{port_ok, valid_id, Branch, Place};
+use crate::breakdown::{port_ok, unit_read, valid_id, Branch, Place};
 use crate::chain::Registry;
 use crate::error::{Error, ErrorKind};
 use crate::meta::Kind;
 use crate::model::{Assignment, Block, Closure, File, Mount, Port};
+use vleo_sheet::method as m;
 
 fn refused(message: impl Into<String>) -> Error {
     Error::new(ErrorKind::Malformed, message)
@@ -329,15 +330,15 @@ pub(crate) fn allocate(
         }
     }
     let ports = branch.ports(block);
-    if !ports
+    let Some(bound) = ports
         .iter()
-        .any(|p| p.direction == "out" && p.name == bounds)
-    {
+        .find(|p| p.direction == "out" && p.name == bounds)
+    else {
         return Err(refused(format!(
             "{} has no output {bounds:?} for the allocation to bound",
             b.id
         )));
-    }
+    };
     if ports.iter().any(|p| p.name == port.name) {
         return Err(refused(format!(
             "{} has a port {} already: an allocation is a port of its own",
@@ -373,21 +374,38 @@ pub(crate) fn allocate(
         }
         _ => {}
     }
-    // A number's allocation is numbers: what is not one is refused by name,
-    // never read as nothing.
-    if p.port_type == "number" || p.port_type == "integer" {
-        for (what, v) in [
-            ("value", &p.value),
-            ("lower end", &p.lower),
-            ("upper end", &p.upper),
-        ] {
-            if given(v) && v.trim().parse::<f64>().is_err() {
-                return Err(refused(format!(
-                    "{}'s allocation {} has the {what} {:?}, which is not a number",
-                    b.id, p.name, v
-                )));
-            }
+    // An allocation bounds its output, so it is of the output's dimension:
+    // a mass never bounds a power. Each unit is read as it is written, and
+    // one that does not read is refused by name, never passed.
+    let read = |u: &str, whose: &str| {
+        unit_read(u).map(|(_, d)| d).ok_or_else(|| {
+            refused(format!(
+                "{}'s {whose} is in [{u}], which does not read as a unit",
+                b.id
+            ))
+        })
+    };
+    let (mine, its) = (
+        read(&p.unit, &format!("allocation {}", p.name))?,
+        read(&bound.unit, &format!("output {bounds}"))?,
+    );
+    let shown = |u: &str| {
+        if u.trim().is_empty() {
+            "no unit".to_string()
+        } else {
+            format!("[{u}]")
         }
+    };
+    if mine != its {
+        return Err(refused(format!(
+            "{}'s allocation {} is in {}, of dimension {}, and bounds {bounds}, in {}, of dimension {}: an allocation is of the dimension of the output it bounds",
+            b.id,
+            p.name,
+            shown(&p.unit),
+            m::dim_text(mine),
+            shown(&bound.unit),
+            m::dim_text(its)
+        )));
     }
     let uid = format!("{block}.{}", p.name);
     if out.closures.iter().any(|c| c.uid == uid) {

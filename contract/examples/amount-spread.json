@@ -1,0 +1,10 @@
+{
+  "ok": true,
+  "typed": "55 ± 10% mN",
+  "shape": "spread",
+  "nominal": "55",
+  "lower": "49.5",
+  "upper": "60.5",
+  "unit": "mN",
+  "said": "55 mN, from 49.5 to 60.5, a Force"
+}

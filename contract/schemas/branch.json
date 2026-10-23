@@ -230,6 +230,30 @@
                 },
                 "state": {
                   "type": "string"
+                },
+                "value": {
+                  "type": "string",
+                  "description": "The port's value as written, in its unit; empty when it has none."
+                },
+                "lower": {
+                  "type": "string",
+                  "description": "Its range's lower end as written; empty when it has none."
+                },
+                "upper": {
+                  "type": "string",
+                  "description": "Its range's upper end."
+                },
+                "symbol": {
+                  "type": "string",
+                  "description": "How a method writes it, beside its name."
+                },
+                "range_reason": {
+                  "type": "string",
+                  "description": "Why its range is what it is."
+                },
+                "says": {
+                  "type": "string",
+                  "description": "What it says."
                 }
               },
               "required": [

@@ -321,6 +321,20 @@ path = "/v1/branch"
 params = [["group", "l3_solar"]]
 
 [[route]]
+method = "GET"
+path = "/v1/amount"
+answer = "json"
+schema = "amount"
+[[route.example]]
+name = "amount-spread"
+path = "/v1/amount"
+params = [["text", "55 ± 10% mN"], ["unit", ""]]
+[[route.example]]
+name = "amount-refused"
+path = "/v1/amount"
+params = [["text", "2.5e-11 to 1.5e-10 kg/m3"], ["unit", ""]]
+
+[[route]]
 method = "POST"
 path = "/v1/branch/<id>"
 answer = "json"

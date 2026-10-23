@@ -457,6 +457,12 @@ jobs:
       # the lines that fail, with nothing written (docs/briefs/F6.md, F6-b).
       - name: the System workspace, the design released or refused
         run: python3 tools/release_design_check.py
+      # Amounts typed in the frame's forms: one that does not read said so on
+      # screen, a spread filled and a range allocated as typed in the files,
+      # and an allocation of another dimension refused (docs/briefs/F8.md,
+      # F8-a4).
+      - name: the System workspace, amounts typed as a person writes them
+        run: python3 tools/amount_check.py
       # The manual in the browser tells people what to paste and what they will
       # see. `cargo test` already holds every name in it to the code; this holds
       # every command to what it DOES — run exactly as written, its output
