@@ -13,7 +13,11 @@
 //!   `explanation` text. One section is replaced alone; every other section,
 //!   and everything before the first, is kept byte for byte;
 //! - **the method** (`method_text`): its `pseudocode` text;
-//! - **the cases**: its `results/isolation.csv`, whole.
+//! - **the cases**: its `results/isolation.csv`, whole; or a table pasted
+//!   from a spreadsheet, or a CSV file's text, read as them against the
+//!   node's ports ([`table_of`], F8-b1), each number in its column's unit
+//!   said in its port's, and where its expected values came from said once
+//!   or by its own `origin` column, never filled in.
 //!
 //! Each is refused, with nothing written, by name:
 //!
@@ -154,6 +158,19 @@ pub enum Edit {
     /// A formula as the person types it (F8-a3), written as the method text
     /// [`formula_of`] makes of it, and held to everything a method is.
     Formula(Formula),
+    /// A table pasted from a spreadsheet, or a CSV file's text (F8-b1),
+    /// written as the cases [`table_of`] makes of it, and held to everything
+    /// cases are.
+    Table(Pasted),
+}
+
+/// A table as a person pastes it, or a CSV file's text (docs/briefs/F8.md,
+/// F8-b item 1), and where its expected values came from when the table
+/// does not say in its own `origin` column (question 72): never filled in.
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct Pasted {
+    pub text: String,
+    pub origin: String,
 }
 
 /// A formula as a person types it (docs/briefs/F8.md, F8-a items 3 and 4):
@@ -174,7 +191,7 @@ impl Edit {
             Edit::Question(_) => "question",
             Edit::Explain(p, _) => p.field(),
             Edit::Method(_) | Edit::Formula(_) => "method_text",
-            Edit::Cases(_) => "case",
+            Edit::Cases(_) | Edit::Table(_) => "case",
         }
     }
 }
@@ -441,6 +458,29 @@ pub fn formula_of(
     Ok(formula::read(&typed, &sig, &ins, &output, fm.fit.as_ref()))
 }
 
+/// A table pasted for node `uid` of `f`, read as its cases against the
+/// node's own ports (`crate::table::cases`): each cell said back, each input
+/// and the answer said in its port's unit. Nothing is written and nothing
+/// runs: what the method says of each case is the dry run's. Refused by name
+/// when the node has no output, or the table does not read.
+pub fn table_of(f: &File, uid: &str, t: &Pasted) -> Result<crate::table::Read, Error> {
+    let b = f
+        .blocks
+        .iter()
+        .find(|b| b.uid == uid)
+        .ok_or_else(|| refused(format!("no node {uid:?} is in the file")))?;
+    let ours = || f.ports.iter().filter(|p| p.block_uid == uid);
+    let inputs: Vec<&Port> = ours().filter(|p| p.direction == "in").collect();
+    let output = ours().find(|p| p.direction == "out").ok_or_else(|| {
+        refused(format!(
+            "{} has no output, so a table gives it no answer to check",
+            b.id
+        ))
+    })?;
+    crate::table::cases(&t.text, &inputs, output, &t.origin)
+        .map_err(|why| refused(format!("{}'s table is not read: {why}", b.id)))
+}
+
 /// The edits' content laid on `now`, before the declaration and the record
 /// are asked for: what a dry run shows while either is still missing.
 fn content(now: &File, uid: &str, id: &str, e: &Edits) -> Result<File, Error> {
@@ -463,6 +503,13 @@ fn content(now: &File, uid: &str, id: &str, e: &Edits) -> Result<File, Error> {
     {
         return Err(refused(format!(
             "{id} is given a method and a formula, both: a formula becomes its method, so give one"
+        )));
+    }
+    if e.edits.iter().any(|x| matches!(x, Edit::Cases(_)))
+        && e.edits.iter().any(|x| matches!(x, Edit::Table(_)))
+    {
+        return Err(refused(format!(
+            "{id} is given cases and a table, both: a table becomes its cases, so give one"
         )));
     }
     let spec = crate::folder::Spec::carried()?;
@@ -593,6 +640,12 @@ fn content(now: &File, uid: &str, id: &str, e: &Edits) -> Result<File, Error> {
                     .map_err(|why| refused(format!("{id}'s cases are not written: {why}")))?;
                 let body = format!("{}\n", text.replace('\r', "").trim_end_matches('\n'));
                 set_table(&mut out, uid, "results/isolation.csv", body);
+            }
+            Edit::Table(t) => {
+                let read = table_of(now, uid, t)?;
+                origins_refused(&read.csv)
+                    .map_err(|why| refused(format!("{id}'s cases are not written: {why}")))?;
+                set_table(&mut out, uid, "results/isolation.csv", read.csv);
             }
         }
     }

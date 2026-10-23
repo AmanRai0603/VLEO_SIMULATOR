@@ -433,6 +433,11 @@ jobs:
       # used as its method and saved (docs/briefs/F8.md, F8-a3).
       - name: the Node workspace, a formula typed as its method
         run: python3 tools/formula_check.py
+      # A table pasted in the Node workspace: refused until its origin is
+      # said, read back cell by cell and judged, a CSV file read the same way,
+      # and used as its cases and saved (docs/briefs/F8.md, F8-b1).
+      - name: the Node workspace, a table pasted as its cases
+        run: python3 tools/table_check.py
       # What `/`'s node view drew around a node, in the Node workspace: the
       # case, the depth switch, the what-if bar, and a group's and the inputs'
       # links (docs/briefs/F3.md, F3-h2).

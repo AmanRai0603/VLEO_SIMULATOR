@@ -257,6 +257,66 @@
         "note",
         "diags"
       ]
+    },
+    "table": {
+      "type": "object",
+      "description": "What a table pasted, or a CSV file's text, was read as (F8-b1), when one was sent: the cases it becomes and each number cell as typed and as read, its input or answer said in its port's unit; or why the table does not read.",
+      "properties": {
+        "ok": {
+          "type": "boolean",
+          "description": "Whether every cell read and the table became cases."
+        },
+        "refused": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Why it does not read, by line and column, with the fix."
+        },
+        "csv": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "The results/isolation.csv text it becomes."
+        },
+        "cases": {
+          "type": "number"
+        },
+        "cells": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "line": {
+                "type": "number"
+              },
+              "column": {
+                "type": "string"
+              },
+              "typed": {
+                "type": "string"
+              },
+              "said": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "line",
+              "column",
+              "typed",
+              "said"
+            ]
+          }
+        }
+      },
+      "required": [
+        "ok",
+        "refused",
+        "csv",
+        "cases",
+        "cells"
+      ]
     }
   },
   "required": [

@@ -536,3 +536,39 @@ fn the_method_language_names_a_character_it_does_not_read() {
     let e = parse("return ρ\n").unwrap_err();
     assert!(e.msg.contains("«ρ»"), "{}", e.msg);
 }
+
+/// A value said in another unit of its dimension, as a pasted case's cell is
+/// written in its port's unit (F8-b1, question 73): exact from the digits,
+/// a mantissa at two powers of ten (`km` and `m`) or a target unit that is
+/// one (`h` and `s`); refused by name otherwise, for a range, and across
+/// dimensions, never rounded.
+#[test]
+fn a_value_is_said_exactly_in_its_port_s_unit() {
+    let in_unit = |typed: &str, field: &str, unit: &str| {
+        amount::value_in(&amount::read(typed, field).unwrap(), unit)
+    };
+    assert_eq!(in_unit("7.7", "km/s", "m/s").unwrap(), "7700");
+    assert_eq!(in_unit("0.65219 mN", "N", "N").unwrap(), "0.00065219");
+    assert_eq!(in_unit("2 h", "s", "s").unwrap(), "7200");
+    assert_eq!(in_unit("250 km", "m", "km").unwrap(), "250");
+    assert_eq!(in_unit("1.5e-10", "kg/m^3", "kg/m^3").unwrap(), "1.5e-10");
+    for (typed, field, unit, why) in [
+        (
+            "2 h",
+            "s",
+            "min",
+            "differ by a factor no number of digits holds exactly",
+        ),
+        (
+            "1 to 2 km",
+            "m",
+            "m",
+            "is a range or a spread: a case holds one value",
+        ),
+        ("55 ± 10% mN", "N", "N", "is a range or a spread"),
+        ("3 kg", "kg", "m", "[kg] is a Mass"),
+    ] {
+        let e = in_unit(typed, field, unit).unwrap_err();
+        assert!(e.contains(why), "{typed} in {unit}: {e}");
+    }
+}

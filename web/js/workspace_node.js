@@ -73,6 +73,9 @@ const FIELDS = [
 const DECLARED = ['author', 'ai', 'source', 'checked_by'];
 /** A formula as typed, and its empirical fit's units (F8-a3). */
 const FORMULA = ['formula', 'formula.units', 'formula.answer'];
+/** A table pasted, or a CSV file's text, and where its expected values came
+ *  from (F8-b1). */
+const TABLE = ['case_paste', 'case_paste.origin'];
 const WHY = [
   ['believed', 'what was believed'], ['tested', 'how it was tested'], ['learned', 'what was learned'],
   ['changed', 'what changed'], ['rests_on', 'what it rests on'], ['breaks_if', 'what would break it'],
@@ -197,6 +200,7 @@ async function draw(keep) {
     '</div>';
   // A formula's reading, still the typing's, survives the page drawn again.
   if (W.formula) drawFormula(W.formula);
+  if (W.table) drawTable(W.table);
   if (row) {
     whatIf();
     mountParts($('.nw-parts', host), id);
@@ -419,7 +423,12 @@ function changes(forSave) {
   // shown: it is saved only as the method it became, used as its method and
   // seen there (F8-a3), never from the formula box.
   if (!forSave && (e.vals.formula || '').trim()) for (const k of FORMULA) out[k] = e.vals[k] || '';
-  if ('method_text' in out || 'case_csv' in out || 'formula' in out) for (const k of DECLARED) out['declared.' + k] = e.vals['declared.' + k];
+  // A table pasted is sent to be read and its cases judged: it is saved only
+  // as the cases it became, used as its cases and seen there (F8-b1).
+  if (!forSave && (e.vals.case_paste || '').trim()) for (const k of TABLE) out[k] = e.vals[k] || '';
+  if ('method_text' in out || 'case_csv' in out || 'formula' in out || 'case_paste' in out) {
+    for (const k of DECLARED) out['declared.' + k] = e.vals['declared.' + k];
+  }
   if (WHY.some(([k]) => (e.vals['why.' + k] || '').trim())) for (const [k] of WHY) out['why.' + k] = e.vals['why.' + k];
   return out;
 }
@@ -457,6 +466,18 @@ function writeIt(f) {
         '<label>its answer\'s unit <input data-edit="formula.answer" value="' + v('formula.answer') + '"></label></details>' +
       '<div class="nw-formula-read" aria-live="polite"></div></fieldset>' +
     '<p><label>its method<br>' + area('method_text', 10, 'nw-code') + '</label></p>' +
+    '<fieldset class="nw-table"><legend>paste a table</legend>' +
+      '<p class="muted">Copied from a spreadsheet, or a CSV file\'s rows: a header naming each input as its port, then ' +
+      '<code>answer</code> and <code>tolerance</code>, each with its unit, as <code>lead [d]</code>. Each number is read in its ' +
+      'column\'s unit and written in its port\'s, and nothing is saved until you use them as its cases and save.</p>' +
+      area('case_paste', 4, 'nw-code') +
+      '<p><label>or a CSV file <input type="file" id="nw-table-file" accept=".csv,text/csv"></label> ' +
+      '<label>where their expected values come from <select data-edit="case_paste.origin" class="ctl">' +
+        [['', 'say which, unless the table has an origin column'], ['hand', 'worked by hand'], ['spreadsheet', 'a spreadsheet'],
+          ['paper', 'a paper or a datasheet'], ['code', 'other code, not this method']]
+          .map(([o, l]) => '<option value="' + o + '"' + ((e.vals['case_paste.origin'] || '') === o ? ' selected' : '') + '>' + l + '</option>').join('') +
+      '</select></label></p>' +
+      '<div class="nw-table-read" aria-live="polite"></div></fieldset>' +
     '<p><label>its cases (results/isolation.csv)<br>' + area('case_csv', 6, 'nw-code') + '</label></p>' +
     '<fieldset class="nw-declared"><legend>who made the method and its numbers</legend>' +
       '<label>author <input data-edit="declared.author" value="' + v('declared.author') + '"></label> ' +
@@ -497,9 +518,35 @@ function drawFormula(f) {
     (missing ? '<p><button class="ctl" id="nw-ask-inputs">Ask for these inputs</button> a contract change, drafted for you to change</p>' : '');
 }
 
+/** What a table pasted was read as, drawn above its cases: how many cases,
+ *  each number as typed and as read, and the cases text it becomes; or why
+ *  it does not read. Each case agreeing or not is the dry run's, below. */
+function drawTable(t) {
+  const at = $('.nw-table-read', W.host);
+  W.table = t || null;
+  if (!at) return;
+  if (!t) { at.innerHTML = ''; return; }
+  if (!t.ok) {
+    at.innerHTML = '<p class="sh-refused nw-table-refused">' + esc(t.refused) + '</p>' +
+      '<p><button class="ctl" id="nw-clear-table">Clear the table</button></p>';
+    return;
+  }
+  const changed = t.cells.filter(c => c.said.includes('; written as '));
+  at.innerHTML =
+    '<p class="sh-said nw-table-cases">' + esc(plural(t.cases, 'case') + ' read, every number as below.') + '</p>' +
+    '<details' + (changed.length ? ' open' : '') + '><summary>' + esc(plural(t.cells.length, 'number') +
+      (changed.length ? ', ' + plural(changed.length, 'number') + ' written in its port\'s unit' : '')) + '</summary>' +
+      '<ul class="nw-list nw-table-cells">' + t.cells.map(c => '<li>line ' + esc(c.line) + ', ' + esc(c.column) + ': ' +
+        esc(c.typed) + ' is ' + esc(c.said) + '</li>').join('') + '</ul></details>' +
+    '<p class="muted">the cases it becomes</p><pre class="nw-code nw-table-csv">' + esc(t.csv) + '</pre>' +
+    '<p><button class="ctl" id="nw-use-table">Use these as its cases</button> ' +
+      '<button class="ctl" id="nw-clear-table">Clear the table</button></p>';
+}
+
 /** The program's answer to a dry run, drawn into the live part alone. */
 function drawLive(r) {
   drawFormula(r && r.formula);
+  drawTable(r && r.table);
   const at = $('.nw-live', W.host);
   if (!at) return;
   if (!r || r.conflict) {
@@ -542,9 +589,10 @@ function typed(e) {
   ed.touched.add(k);
   // A reading of older typing is no longer this typing's: it is not offered.
   if (FORMULA.includes(k)) drawFormula(null);
+  if (TABLE.includes(k)) drawTable(null);
   // A method or cases written anew are somebody's anew: who wrote, copied
   // and checked the old ones is not carried over to them.
-  if ((k === 'method_text' || k === 'case_csv' || k === 'formula') && ed.vals[k] !== (ed.base[k] || '')) {
+  if ((k === 'method_text' || k === 'case_csv' || k === 'formula' || k === 'case_paste') && ed.vals[k] !== (ed.base[k] || '')) {
     for (const d of ['author', 'source', 'checked_by']) {
       const f = 'declared.' + d;
       if (ed.touched.has(f) || !ed.vals[f]) continue;
@@ -627,6 +675,11 @@ async function click(e) {
         W.notice = { ok: false, text: 'A formula is typed and not used: use it as the method, and see it there, or clear it, then save.' };
         return draw(true);
       }
+      // So is a table: its cases are used and seen, or it is cleared.
+      if (W.editing && (W.editing.vals.case_paste || '').trim()) {
+        W.notice = { ok: false, text: 'A table is pasted and not used: use it as its cases, and see them there, or clear it, then save.' };
+        return draw(true);
+      }
       clearTimeout(W.timer); W.seq++;
       // Saved over the revision the typing began on: a file changed since is
       // a second writer, never written over.
@@ -653,6 +706,26 @@ async function click(e) {
       if (m) m.value = ed.vals.method_text;
       W.formula = null;
       drawFormula(null);
+      W.seq++;
+      return check();
+    }
+    case 'nw-use-table': {
+      // The cases it became go into its cases, as typed there; the table is
+      // cleared, and the cases are checked as any are.
+      const ed = W.editing;
+      if (!ed || !W.table || !W.table.ok || !W.table.csv) return;
+      ed.vals.case_csv = W.table.csv;
+      ed.touched.add('case_csv');
+      clearTable(ed);
+      const c = $('[data-edit="case_csv"]', W.host);
+      if (c) c.value = ed.vals.case_csv;
+      W.seq++;
+      return check();
+    }
+    case 'nw-clear-table': {
+      const ed = W.editing;
+      if (!ed) return;
+      clearTable(ed);
       W.seq++;
       return check();
     }
@@ -701,8 +774,29 @@ async function click(e) {
   }
 }
 
-/** A filled lesson form, read from the file the person picked, and saved. */
+/** The table pasted, and its origin, cleared from what is typed. */
+function clearTable(ed) {
+  for (const k of TABLE) {
+    ed.vals[k] = '';
+    const input = $('[data-edit="' + k + '"]', W.host);
+    if (input) input.value = '';
+  }
+  drawTable(null);
+}
+
+/** A filled lesson form, read from the file the person picked, and saved; or
+ *  a CSV file read into the table pasted, and checked (F8-b1). */
 async function changed(e) {
+  if (W.host && e.target.id === 'nw-table-file' && e.target.files.length && W.editing) {
+    const ed = W.editing;
+    ed.vals.case_paste = await e.target.files[0].text();
+    ed.touched.add('case_paste');
+    const area = $('[data-edit="case_paste"]', W.host);
+    if (area) area.value = ed.vals.case_paste;
+    drawTable(null);
+    W.seq++;
+    return check();
+  }
   if (!W.host || e.target.id !== 'nw-lesson' || !e.target.files.length) return;
   const id = W.id;
   const text = await e.target.files[0].text();

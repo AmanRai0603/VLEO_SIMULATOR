@@ -329,6 +329,56 @@ pub(crate) fn kind_of(dim: Dim) -> String {
     }
 }
 
+/// A value read by [`read`] said in `unit`, a unit of its own dimension, as
+/// decimal text (F8-b, question 73): worked out from the digits, exact when
+/// the two units' factors are one mantissa at two powers of ten (`km` and
+/// `m`) or `unit`'s is a power of ten (`h` and `s`), and refused by name
+/// otherwise, never rounded. A range or a spread is no one value.
+pub fn value_in(a: &Amount, unit: &str) -> Result<String, String> {
+    let n = match (a.shape, a.nominal.as_deref()) {
+        (Shape::Value, Some(n)) => n,
+        _ => {
+            return Err(format!(
+                "«{}» is a range or a spread: a case holds one value",
+                a.typed
+            ))
+        }
+    };
+    let target = field_symbol(unit);
+    let target = if target.is_empty() {
+        "1".to_string()
+    } else {
+        target
+    };
+    let (tf, td) = unit_of(&target)?;
+    if td != a.dim {
+        return Err(format!(
+            "[{}] is {}, and [{target}] is {}",
+            a.unit,
+            kind_of(a.dim),
+            kind_of(td)
+        ));
+    }
+    if bracketless(&a.unit) == target {
+        return Ok(n.to_string());
+    }
+    let v = Dec::read(n).ok_or_else(|| format!("«{n}» is not a number"))?;
+    let shifted = |x: Dec, by: i32| Dec::mul(x, Dec { m: 1, e: by });
+    let worked = match (Dec::of_factor(a.factor), Dec::of_factor(tf)) {
+        (Some(from), Some(to)) if from.m == to.m => shifted(v, from.e - to.e),
+        (Some(from), Some(to)) if to.m == 1 => Dec::mul(v, from).and_then(|x| shifted(x, -to.e)),
+        _ => {
+            return Err(format!(
+                "write it in [{target}]: [{}] and [{target}] differ by a factor no number of digits holds exactly",
+                a.unit
+            ))
+        }
+    };
+    worked
+        .map(Dec::text)
+        .ok_or_else(|| format!("«{n}» is too long a number to work out in [{target}] exactly"))
+}
+
 /// What a person typed in a field whose unit is `field_unit` (empty when the
 /// field has none), read as an amount, or why not, with the fix.
 pub fn read(typed: &str, field_unit: &str) -> Result<Amount, String> {
