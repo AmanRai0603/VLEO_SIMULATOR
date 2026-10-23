@@ -413,7 +413,9 @@ jobs:
   panels:
     name: the panels render, move and match
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    # 60, as the gate's and the shipping profile's: on a cold cache the
+    # browser checks' own builds take half of 45 minutes before any runs.
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
       - uses: actions/cache@v4
