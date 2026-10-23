@@ -894,7 +894,9 @@ fn lesson_saved(id: &str, params: &str, ctx: &Ctx) -> Result<String, String> {
 /// sent only when it changes: `question`, `explain_simply`, `explain_breaks`,
 /// `explain_wrong`, `method_text`, `case_csv`, or `formula` in place of
 /// `method_text`, with `formula.units` and `formula.answer` for an empirical
-/// fit (F8-a3, read as `formula_of` says); with a method or cases,
+/// fit (F8-a3, read as `formula_of` says), or `case_paste` in place of
+/// `case_csv`, a table pasted or a CSV file's text, with
+/// `case_paste.origin` unless the table has its own (F8-b1); with a method or cases,
 /// `declared.author`, `.ai`, `.source` and `.checked_by`; with a decision,
 /// the record `why.believed`, `.tested`, `.learned`, `.changed`, `.risks`,
 /// `.cost`, `.rests_on` and `.breaks_if`. Every rule is the library's
@@ -931,6 +933,51 @@ fn formula_of(params: &str, typed: String) -> edit::Formula {
         }
     });
     edit::Formula { typed, fit }
+}
+
+/// What a table pasted was read as (F8-b1), beside what the dry run found:
+/// the cases it becomes, how many, and each number cell as it was typed and
+/// what it was read as, or why the table does not read.
+fn table_field(j: &mut Json, file: &vleo_files::model::File, e: &Edits) {
+    let Some(t) = e.edits.iter().find_map(|x| match x {
+        Edit::Table(t) => Some(t),
+        _ => None,
+    }) else {
+        return;
+    };
+    let Some(uid) = file.blocks.first().map(|b| b.uid.clone()) else {
+        return;
+    };
+    j.key("table").raw("{");
+    match edit::table_of(file, &uid, t) {
+        Err(why) => {
+            j.bool_field("ok", false);
+            j.str_field("refused", why.message());
+            j.key("csv").raw("null");
+            j.num_field("cases", 0.0);
+            j.key("cells").raw("[]");
+        }
+        Ok(r) => {
+            j.bool_field("ok", true);
+            j.key("refused").raw("null");
+            j.str_field("csv", &r.csv);
+            j.num_field("cases", r.cases as f64);
+            j.key("cells").raw("[");
+            for (k, c) in r.cells.iter().enumerate() {
+                if k > 0 {
+                    j.raw(",");
+                }
+                j.raw("{");
+                j.num_field("line", c.line as f64);
+                j.str_field("column", &c.column);
+                j.str_field("typed", &c.typed);
+                j.str_field("said", &c.said);
+                j.raw("}");
+            }
+            j.raw("]");
+        }
+    }
+    j.raw("}");
 }
 
 /// What a formula typed was read as (F8-a3), beside what the dry run found:
@@ -1054,6 +1101,15 @@ fn edits_of(params: &str) -> Edits {
     }
     if let Some(c) = given("case_csv") {
         edits.push(Edit::Cases(c));
+    }
+    // A table pasted is the cases, laid before a formula is read, as cases
+    // typed are: whether a formula publishes beside its answer is read from
+    // the cases it will run on.
+    if let Some(text) = given("case_paste") {
+        edits.push(Edit::Table(edit::Pasted {
+            text,
+            origin: given("case_paste.origin").unwrap_or_default(),
+        }));
     }
     if let Some(typed) = given("formula") {
         edits.push(Edit::Formula(formula_of(params, typed)));
@@ -1222,6 +1278,7 @@ fn edited(id: &str, params: &str, ctx: &Ctx) -> Result<String, String> {
                     j.str_field("opened", &digest);
                     tried_fields(&mut j, &None, true, &findings, &report, &about);
                     formula_field(&mut j, &file, &e);
+                    table_field(&mut j, &file, &e);
                     j.str_field(
                         "message",
                         &format!(
@@ -1239,6 +1296,7 @@ fn edited(id: &str, params: &str, ctx: &Ctx) -> Result<String, String> {
                     j.str_field("opened", &opened);
                     tried_fields(&mut j, &refused, checked, &findings, &report, &about);
                     formula_field(&mut j, &file, &e);
+                    table_field(&mut j, &file, &e);
                     j.str_field(
                         "message",
                         &match (&refused, dry) {

@@ -528,6 +528,103 @@ fn a_node_is_written_in_the_copy() {
     assert!(r.contains("a method and a formula, both"), "{r}");
     assert_eq!(bytes(), before, "a formula's dry run writes nothing");
 
+    // A table pasted (F8-b1): the node's own cases copied as a spreadsheet
+    // copies them, with tabs, read back cell by cell and judged, nothing
+    // written; its origin said once, or by its own column, never both.
+    let isolation = {
+        let k = "\"case_csv\":\"";
+        let at = f.find(k).unwrap() + k.len();
+        let end = f[at..].find("\",\"").unwrap() + at;
+        f[at..end].replace("\\n", "\n").replace("\\\"", "\"")
+    };
+    let (head, rows) = vleo_files::csv::parse(&isolation);
+    let tabs = |cols: &dyn Fn(&[String]) -> Vec<String>| {
+        std::iter::once(cols(&head))
+            .chain(rows.iter().map(|r| cols(r)))
+            .map(|r| r.join("\t"))
+            .collect::<Vec<_>>()
+            .join("\n")
+    };
+    let origin_at = head.iter().position(|h| h == "origin").unwrap();
+    let pasted = |text: &str, origin: &str| {
+        let mut fields: Vec<(&str, &str)> = vec![
+            ("opened", field(&f, "opened")),
+            ("dry_run", "1"),
+            ("case_paste", text),
+            ("case_paste.origin", origin),
+            ("declared.author", "Test Nia"),
+            ("declared.ai", "none"),
+        ];
+        fields.extend(record);
+        post(port, EDIT, &fields)
+    };
+    let own = tabs(&|r| r.to_vec());
+    let r = pasted(&own, "");
+    assert!(
+        r.contains("\"table\":{\"ok\":true,\"refused\":null")
+            && r.contains(&format!("\"cases\":{}.0", rows.len())),
+        "{r}"
+    );
+    assert!(
+        r.contains("{\"line\":2.0,\"column\":\"f107\",\"typed\":\"64\",\"said\":\"64"),
+        "each cell said back: {r}"
+    );
+    let csv = {
+        let k = "\"csv\":\"";
+        let at = r.find(k).unwrap() + k.len();
+        let end = r[at..].find("\",\"").unwrap() + at;
+        r[at..end].replace("\\n", "\n").replace("\\\"", "\"")
+    };
+    assert_eq!(
+        csv,
+        isolation.replace("0.000000000001", "1e-12"),
+        "the cases it became are the band's own, each number said exactly"
+    );
+    let r = pasted(&own, "hand");
+    assert!(
+        r.contains("\"table\":{\"ok\":false") && r.contains("the table has its own origin column"),
+        "{r}"
+    );
+    let unsaid = tabs(&|r| {
+        let mut r = r.to_vec();
+        r.remove(origin_at);
+        r
+    });
+    let r = pasted(&unsaid, "");
+    assert!(
+        r.contains("\"table\":{\"ok\":false")
+            && r.contains("say where these cases' expected values come from"),
+        "{r}"
+    );
+    let r = pasted(&unsaid, "paper");
+    assert!(r.contains("\"table\":{\"ok\":true"), "{r}");
+    // A table and a formula sent together: the formula is read against the
+    // cases the table becomes, so a member beside the answer stops the edit,
+    // not only the formula's reading beside it.
+    let member = own
+        .lines()
+        .enumerate()
+        .map(|(k, l)| format!("{l}\t{}", if k == 0 { "answer.extra [1]" } else { "1" }))
+        .collect::<Vec<_>>()
+        .join("\n");
+    let mut fields: Vec<(&str, &str)> = vec![
+        ("opened", field(&f, "opened")),
+        ("dry_run", "1"),
+        ("case_paste", &member),
+        ("formula", "band = f107 / 50"),
+        ("declared.author", "Test Nia"),
+        ("declared.ai", "none"),
+    ];
+    fields.extend(record);
+    let r = post(port, EDIT, &fields);
+    assert!(
+        r.starts_with("{\"ok\":false")
+            && r.contains("\"table\":{\"ok\":true")
+            && field(&r, "refused").contains("it publishes extra beside its answer"),
+        "{r}"
+    );
+    assert_eq!(bytes(), before, "a table's dry run writes nothing");
+
     // Refused, with nothing written: a case that is the code's own, an
     // assistant's declaration, and a file changed since it was opened.
     let cases = {

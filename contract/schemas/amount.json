@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "amount",
+  "description": "One amount as typed in a field, read as the frame's forms read it: a value, a range or a spread, its numbers as typed in the unit it is written in, and what it is, said back; or why not, with the fix. Nothing is written.",
+  "type": "object",
+  "properties": {
+    "ok": {
+      "type": "boolean"
+    },
+    "typed": {
+      "type": "string"
+    },
+    "shape": {
+      "type": "string",
+      "enum": [
+        "value",
+        "range",
+        "spread"
+      ]
+    },
+    "nominal": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "The value, or a spread's nominal, as decimal text; null for a range."
+    },
+    "lower": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "A range's or a spread's lower end, as decimal text in the unit; null for a value."
+    },
+    "upper": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "unit": {
+      "type": "string",
+      "description": "The unit the numbers are in, as written; 1 for a pure number."
+    },
+    "said": {
+      "type": "string",
+      "description": "The amount said back, with its quantity and its value in SI."
+    },
+    "message": {
+      "type": "string",
+      "description": "Why it is not read, with the fix."
+    }
+  },
+  "required": [
+    "ok"
+  ]
+}

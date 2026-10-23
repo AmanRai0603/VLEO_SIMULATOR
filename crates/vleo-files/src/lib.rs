@@ -109,6 +109,7 @@ pub mod seal;
 #[cfg(not(target_arch = "wasm32"))]
 pub mod sqlite;
 pub mod start;
+pub mod table;
 pub mod upgrade;
 
 pub use error::{Error, ErrorKind};

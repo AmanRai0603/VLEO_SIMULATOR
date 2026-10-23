@@ -374,7 +374,9 @@ jobs:
   panels:
     name: the panels render, move and match
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    # 60, as the gate's and the shipping profile's: on a cold cache the
+    # browser checks' own builds take half of 45 minutes before any runs.
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
       - uses: actions/cache@v4
@@ -433,6 +435,11 @@ jobs:
       # used as its method and saved (docs/briefs/F8.md, F8-a3).
       - name: the Node workspace, a formula typed as its method
         run: python3 tools/formula_check.py
+      # A table pasted in the Node workspace: refused until its origin is
+      # said, read back cell by cell and judged, a CSV file read the same way,
+      # and used as its cases and saved (docs/briefs/F8.md, F8-b1).
+      - name: the Node workspace, a table pasted as its cases
+        run: python3 tools/table_check.py
       # What `/`'s node view drew around a node, in the Node workspace: the
       # case, the depth switch, the what-if bar, and a group's and the inputs'
       # links (docs/briefs/F3.md, F3-h2).
@@ -457,6 +464,12 @@ jobs:
       # the lines that fail, with nothing written (docs/briefs/F6.md, F6-b).
       - name: the System workspace, the design released or refused
         run: python3 tools/release_design_check.py
+      # Amounts typed in the frame's forms: one that does not read said so on
+      # screen, a spread filled and a range allocated as typed in the files,
+      # and an allocation of another dimension refused (docs/briefs/F8.md,
+      # F8-a4).
+      - name: the System workspace, amounts typed as a person writes them
+        run: python3 tools/amount_check.py
       # The manual in the browser tells people what to paste and what they will
       # see. `cargo test` already holds every name in it to the code; this holds
       # every command to what it DOES — run exactly as written, its output

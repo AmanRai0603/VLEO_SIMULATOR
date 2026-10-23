@@ -359,6 +359,74 @@ fn a_group_is_mounted_and_started_in_the_copy() {
     let r = alloc("<=");
     assert!(r.contains("\"ok\":true"), "{r}");
 
+    // An amount as typed (F8-a4): read and said back, nothing written.
+    let amount = |text: &str, unit: &str| {
+        ask(
+            port,
+            "GET",
+            &format!("/v1/amount?text={}&unit={}", enc(text), enc(unit)),
+            &[],
+            false,
+        )
+    };
+    let r = amount("55 ± 10% mN", "");
+    assert!(
+        r.contains("\"shape\":\"spread\",\"nominal\":\"55\",\"lower\":\"49.5\",\"upper\":\"60.5\",\"unit\":\"mN\""),
+        "{r}"
+    );
+    assert!(field(&r, "said").contains("a Force"), "{r}");
+    let r = amount("2.5e-11 to 1.5e-10 kg/m3", "");
+    assert!(
+        r.contains("\"ok\":false") && field(&r, "message").contains("kg/m3"),
+        "{r}"
+    );
+    // An allocation typed as an amount, written as typed and said back.
+    let band = |typed: &str, extra: &[(&str, &str)]| {
+        let mut pairs = vec![
+            ("block", "sys_radiation"),
+            ("name", "shield_mass_band"),
+            ("type", "number"),
+            ("amount", typed),
+            ("range_reason", "the launcher's margin"),
+            ("bounds", "shield_mass"),
+            ("sense", ">="),
+            ("closure_says", "the shield reaches the mass it is given"),
+        ];
+        pairs.extend_from_slice(extra);
+        frame("allocate", &pairs)
+    };
+    let before = systems_bytes();
+    let r = band("12 W", &[]);
+    assert!(
+        field(&r, "message").contains("an allocation is of the dimension of the output it bounds"),
+        "{r}"
+    );
+    let r = band("8 to 12 kg", &[("value", "10")]);
+    assert!(
+        field(&r, "message").contains("an amount and a value or ends beside it"),
+        "{r}"
+    );
+    // A fill is one part: an amount beside a question is refused, never
+    // dropped.
+    let r = frame(
+        "fill",
+        &[
+            ("block", "sys_radiation"),
+            ("question", "What dose?"),
+            ("amount", "12 kg"),
+        ],
+    );
+    assert!(
+        field(&r, "message").contains("is given a question and an amount"),
+        "{r}"
+    );
+    assert_eq!(systems_bytes(), before, "a refused amount writes nothing");
+    let r = band("8 to 12 kg", &[]);
+    assert!(
+        r.contains("\"ok\":true") && r.contains("The amount is 8 to 12 kg, a Mass"),
+        "{r}"
+    );
+
     // To Sam, radiation is mounted for Rui and not started, with what it is
     // allocated and who is above it; Sam does not start it.
     let r = tree("l3_radiation");
