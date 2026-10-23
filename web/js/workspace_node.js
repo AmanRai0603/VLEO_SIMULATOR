@@ -117,6 +117,8 @@ export function openAt(id) {
     clearTimeout(W.timer);
     W.id = id; W.file = null; W.notice = null; W.stale = null; W.asking = null;
     W.editing = null; W.behind = null; W.rebasing = false; W.seq++; W.view = 'today';
+    // A reading of another node's typing is never this one's to offer.
+    W.formula = null; W.table = null;
   }
 }
 
@@ -179,7 +181,10 @@ async function draw(keep) {
   if (file && file.ok !== false && file.content && !keep) {
     const e = W.editing;
     W.behind = null;
-    if (!e || (e.opened !== file.opened && !e.touched.size)) W.editing = fromFile(file);
+    if (!e || (e.opened !== file.opened && !e.touched.size)) {
+      W.editing = fromFile(file);
+      W.formula = null; W.table = null;
+    }
     else if (e.opened !== file.opened && W.rebasing) rebaseOn(e, file);
     else if (e.opened !== file.opened) W.behind = { writer: file.writer, revision: file.revision };
   }
@@ -469,7 +474,8 @@ function writeIt(f) {
     '<fieldset class="nw-table"><legend>paste a table</legend>' +
       '<p class="muted">Copied from a spreadsheet, or a CSV file\'s rows: a header naming each input as its port, then ' +
       '<code>answer</code> and <code>tolerance</code>, each with its unit, as <code>lead [d]</code>. Each number is read in its ' +
-      'column\'s unit and written in its port\'s, and nothing is saved until you use them as its cases and save.</p>' +
+      'column\'s unit; an input\'s and the answer\'s are written in its port\'s, the tolerance as a pure number, and nothing is ' +
+      'saved until you use them as its cases and save.</p>' +
       area('case_paste', 4, 'nw-code') +
       '<p><label>or a CSV file <input type="file" id="nw-table-file" accept=".csv,text/csv"></label> ' +
       '<label>where their expected values come from <select data-edit="case_paste.origin" class="ctl">' +
@@ -590,21 +596,25 @@ function typed(e) {
   // A reading of older typing is no longer this typing's: it is not offered.
   if (FORMULA.includes(k)) drawFormula(null);
   if (TABLE.includes(k)) drawTable(null);
-  // A method or cases written anew are somebody's anew: who wrote, copied
-  // and checked the old ones is not carried over to them.
-  if ((k === 'method_text' || k === 'case_csv' || k === 'formula' || k === 'case_paste') && ed.vals[k] !== (ed.base[k] || '')) {
-    for (const d of ['author', 'source', 'checked_by']) {
-      const f = 'declared.' + d;
-      if (ed.touched.has(f) || !ed.vals[f]) continue;
-      ed.vals[f] = '';
-      const input = $('[data-edit="' + f + '"]', W.host);
-      if (input) input.value = '';
-    }
-  }
+  written(ed, k);
   // Older typing's answer, still on its way, is no longer this typing's.
   W.seq++;
   clearTimeout(W.timer);
   W.timer = setTimeout(check, SETTLE_MS);
+}
+
+/** A method or cases written anew are somebody's anew: who wrote, copied and
+ *  checked the old ones is not carried over to them, however they came, typed
+ *  or from a file picked. */
+function written(ed, k) {
+  if (!['method_text', 'case_csv', 'formula', 'case_paste'].includes(k) || ed.vals[k] === (ed.base[k] || '')) return;
+  for (const d of ['author', 'source', 'checked_by']) {
+    const f = 'declared.' + d;
+    if (ed.touched.has(f) || !ed.vals[f]) continue;
+    ed.vals[f] = '';
+    const input = $('[data-edit="' + f + '"]', W.host);
+    if (input) input.value = '';
+  }
 }
 
 /** Ask for a dry run of what is typed; an answer to older typing is dropped. */
@@ -615,6 +625,9 @@ async function check() {
   if (!Object.keys(sent).length) { drawLive({ ok: true, dry_run: true, checked: false, refused: 'nothing has changed yet' }); return; }
   const r = await W.post('/v1/node/' + encodeURIComponent(id) + '/edit', { opened: ed.opened, dry_run: '1', ...sent });
   if (seq !== W.seq || id !== W.id) return;
+  // A table's reading is of the node, the text and the origin it was asked
+  // for: Use offers it only while all three are still these.
+  if (r && r.table) r.table.of = { id, text: sent.case_paste || '', origin: sent['case_paste.origin'] || '' };
   drawLive(r);
 }
 
@@ -712,8 +725,9 @@ async function click(e) {
     case 'nw-use-table': {
       // The cases it became go into its cases, as typed there; the table is
       // cleared, and the cases are checked as any are.
-      const ed = W.editing;
-      if (!ed || !W.table || !W.table.ok || !W.table.csv) return;
+      const ed = W.editing, t = W.table;
+      if (!ed || !t || !t.ok || !t.csv || !t.of || t.of.id !== W.id ||
+          t.of.text !== (ed.vals.case_paste || '') || t.of.origin !== (ed.vals['case_paste.origin'] || '')) return;
       ed.vals.case_csv = W.table.csv;
       ed.touched.add('case_csv');
       clearTable(ed);
@@ -781,6 +795,9 @@ function clearTable(ed) {
     const input = $('[data-edit="' + k + '"]', W.host);
     if (input) input.value = '';
   }
+  // The same file picked again is read again.
+  const file = $('#nw-table-file', W.host);
+  if (file) file.value = '';
   drawTable(null);
 }
 
@@ -791,6 +808,7 @@ async function changed(e) {
     const ed = W.editing;
     ed.vals.case_paste = await e.target.files[0].text();
     ed.touched.add('case_paste');
+    written(ed, 'case_paste');
     const area = $('[data-edit="case_paste"]', W.host);
     if (area) area.value = ed.vals.case_paste;
     drawTable(null);

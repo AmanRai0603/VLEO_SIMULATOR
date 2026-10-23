@@ -332,8 +332,12 @@ pub(crate) fn kind_of(dim: Dim) -> String {
 /// A value read by [`read`] said in `unit`, a unit of its own dimension, as
 /// decimal text (F8-b, question 73): worked out from the digits, exact when
 /// the two units' factors are one mantissa at two powers of ten (`km` and
-/// `m`) or `unit`'s is a power of ten (`h` and `s`), and refused by name
-/// otherwise, never rounded. A range or a spread is no one value.
+/// `m`), or `unit`'s is a power of ten and the other's a short decimal (`h`
+/// and `s`). Refused by name otherwise, never rounded: a factor an f64
+/// rounds (`km/h`, `deg`), pure numbers of two kinds (`dB` and `1`, `deg`
+/// and `%`; only a ratio's spellings or an angle's convert), a value too
+/// small or too large to hold, and a range or a spread, which is no one
+/// value.
 pub fn value_in(a: &Amount, unit: &str) -> Result<String, String> {
     let n = match (a.shape, a.nominal.as_deref()) {
         (Shape::Value, Some(n)) => n,
@@ -359,14 +363,34 @@ pub fn value_in(a: &Amount, unit: &str) -> Result<String, String> {
             kind_of(td)
         ));
     }
-    if bracketless(&a.unit) == target {
+    let from_unit = bracketless(&a.unit);
+    if from_unit == target {
         return Ok(n.to_string());
+    }
+    // Pure numbers of different kinds are never taken for each other by
+    // their factors: a level in dB is no ratio, an angle no count, a cost no
+    // size of data. Only a ratio's spellings, or an angle's, convert.
+    if a.dim == Dim::NONE {
+        const KINDS: [&[&str]; 2] = [&["1", "-", "%"], &["rad", "deg", "arcsec"]];
+        let kin = KINDS
+            .iter()
+            .any(|k| k.contains(&from_unit.as_str()) && k.contains(&target.as_str()));
+        if !kin {
+            return Err(format!(
+                "[{from_unit}] and [{target}] are both pure numbers, of different kinds, never one for the other: write it in [{target}]"
+            ));
+        }
     }
     let v = Dec::read(n).ok_or_else(|| format!("«{n}» is not a number"))?;
     let shifted = |x: Dec, by: i32| Dec::mul(x, Dec { m: 1, e: by });
+    // A factor is exact only when its digits are few: one an f64 rounds, as
+    // 1000/3600 for km/h or pi/180 for deg, is refused, never carried in.
+    let short = |d: Dec| d.m.unsigned_abs().to_string().len() <= 15;
     let worked = match (Dec::of_factor(a.factor), Dec::of_factor(tf)) {
         (Some(from), Some(to)) if from.m == to.m => shifted(v, from.e - to.e),
-        (Some(from), Some(to)) if to.m == 1 => Dec::mul(v, from).and_then(|x| shifted(x, -to.e)),
+        (Some(from), Some(to)) if to.m == 1 && short(from) => {
+            Dec::mul(v, from).and_then(|x| shifted(x, -to.e))
+        }
         _ => {
             return Err(format!(
                 "write it in [{target}]: [{}] and [{target}] differ by a factor no number of digits holds exactly",
@@ -374,9 +398,9 @@ pub fn value_in(a: &Amount, unit: &str) -> Result<String, String> {
             ))
         }
     };
-    worked
-        .map(Dec::text)
-        .ok_or_else(|| format!("«{n}» is too long a number to work out in [{target}] exactly"))
+    worked.filter(|d| d.holds()).map(Dec::text).ok_or_else(|| {
+        format!("«{n}» in [{target}] is too long, too large or too small a number to hold exactly")
+    })
 }
 
 /// What a person typed in a field whose unit is `field_unit` (empty when the

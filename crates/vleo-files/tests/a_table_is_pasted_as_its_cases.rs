@@ -479,3 +479,79 @@ fn a_table_is_refused_by_name_with_nothing_written() {
     assert_eq!(digest(&c), opened);
     let _ = std::fs::remove_dir_all(&c);
 }
+
+/// A table is read as the checks read cases, and as spreadsheets copy them:
+/// a refusal with no answer or tolerance and an input that is no number,
+/// `Yes` written as the checks' `yes`; a tolerance in per cent written as
+/// the pure relative number it is read as; a member kept in its own unit; a
+/// negative number converted; a row of empty cells and trailing empty
+/// columns dropped; a cell a spreadsheet quoted unquoted; a CSV file's
+/// byte-order mark and CRLF lines read. Refused by name: a tolerance with a
+/// length, `refuses` neither yes nor no, a column given twice, more cells
+/// than the header names, and CSV that does not read.
+#[test]
+fn a_table_is_read_as_the_checks_read_cases() {
+    let (c, opened) = copy("as-checked", &drag());
+    let f = vleo_files::sqlite::read(&c.join(PATH)).unwrap();
+    let read = |text: &str, origin: &str| {
+        edit::table_of(
+            &f,
+            DRAG,
+            &Pasted {
+                text: s(text),
+                origin: s(origin),
+            },
+        )
+        .map_err(|e| e.message().to_string())
+    };
+    let head = "rho [kg/m^3]\tv [km/s]\tcd\ta [m^2]\tanswer [mN]\tanswer.lift [mN]\ttolerance [%]\trefuses\tsays\t\t";
+    // Pasted with a byte-order mark, as a file read into the box may be.
+    let text = format!(
+        "\u{feff}{head}\n\
+         1e-11\t-7.7\t2.2\t1\t0.65219\t0.1\t0.1\tno\t\"worked, by \"\"hand\"\"\"\t\t\n\
+         \t\t\t\t\t\t\t\t\t\t\n\
+         NaN\t7.7\t2.2\t1\t\t\t\tYes\ta density that is no number\t\t\n"
+    );
+    let r = read(&text, "hand").unwrap();
+    assert_eq!(
+        r.csv,
+        "rho [kg/m^3],v [m/s],cd [1],a [m^2],answer [N],answer.lift [mN],tolerance,refuses,says,origin\n\
+         1e-11,-7700,2.2,1,0.00065219,0.1,0.001,no,\"worked, by \"\"hand\"\"\",hand\n\
+         NaN,7700,2.2,1,,,,yes,a density that is no number,hand\n"
+    );
+    assert_eq!(r.cases, 2, "the row of empty cells is dropped");
+    let nan = r
+        .cells
+        .iter()
+        .find(|x| x.column == "rho" && x.typed == "NaN")
+        .unwrap();
+    assert!(nan.said.contains("no number"), "{nan:?}");
+    let tol = r.cells.iter().find(|x| x.column == "tolerance").unwrap();
+    assert!(tol.said.ends_with("; written as 0.001"), "{tol:?}");
+    // A CSV file's byte-order mark and CRLF lines, as the CSV reader reads them.
+    let csv_file = "\u{feff}rho [kg/m^3],v [m/s],cd,a [m^2],answer [N],tolerance\r\n1e-11,7700,2.2,1,6.5219e-4,1e-9\r\n";
+    assert_eq!(read(csv_file, "paper").unwrap().cases, 1);
+    let one = "1e-11\t7700\t2.2\t1\t6.5219e-4";
+    let base = "rho [kg/m^3]\tv [m/s]\tcd\ta [m^2]\tanswer [N]";
+    for (what, text, why) in [
+        ("a tolerance with a length", format!("{base}\ttolerance [m]\n{one}\t1\n"), "line 2, tolerance: [m] is a Length"),
+        ("refuses neither yes nor no", format!("{base}\ttolerance\trefuses\n{one}\t1e-9\tmaybe\n"), "line 2: refuses is \"maybe\": write yes, or no"),
+        ("a column given twice", format!("{base}\ttolerance\tv [km/s]\n{one}\t1e-9\t7.7\n"), "two columns \"v\""),
+        ("more cells than the header names", format!("{base}\ttolerance\n{one}\t1e-9\textra\n"), "line 2 has more cells than the header names"),
+        ("CSV that does not read", "rho [kg/m^3],v [m/s],cd,a [m^2],answer [N],tolerance\n1e-11,7700,2.2,1,6.5219e-4,\"1e-9\n".to_string(), "the table does not read as CSV, line"),
+    ] {
+        let e = read(&text, "hand").unwrap_err();
+        assert!(e.contains(why), "{what}: {e}");
+    }
+    // A table is held to the declaration every cases edit is.
+    let undeclared = Edits {
+        declared: None,
+        ..pasted(PASTE, "hand")
+    };
+    match tried(&c, &opened, &undeclared) {
+        Tried::Would { refused, .. } => assert!(refused.is_some(), "a table with no declaration"),
+        Tried::SecondWriter { .. } => panic!("a second writer"),
+    }
+    assert_eq!(digest(&c), opened);
+    let _ = std::fs::remove_dir_all(&c);
+}

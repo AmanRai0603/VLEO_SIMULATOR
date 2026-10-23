@@ -540,8 +540,9 @@ fn the_method_language_names_a_character_it_does_not_read() {
 /// A value said in another unit of its dimension, as a pasted case's cell is
 /// written in its port's unit (F8-b1, question 73): exact from the digits,
 /// a mantissa at two powers of ten (`km` and `m`) or a target unit that is
-/// one (`h` and `s`); refused by name otherwise, for a range, and across
-/// dimensions, never rounded.
+/// one (`h` and `s`); refused by name otherwise, for a range, across
+/// dimensions, between pure numbers of different kinds (`dB` and `1`, `deg`
+/// and `%`), and for a number no exact decimal holds, never rounded.
 #[test]
 fn a_value_is_said_exactly_in_its_port_s_unit() {
     let in_unit = |typed: &str, field: &str, unit: &str| {
@@ -552,6 +553,10 @@ fn a_value_is_said_exactly_in_its_port_s_unit() {
     assert_eq!(in_unit("2 h", "s", "s").unwrap(), "7200");
     assert_eq!(in_unit("250 km", "m", "km").unwrap(), "250");
     assert_eq!(in_unit("1.5e-10", "kg/m^3", "kg/m^3").unwrap(), "1.5e-10");
+    assert_eq!(in_unit("-7.7 km/s", "m/s", "m/s").unwrap(), "-7700");
+    assert_eq!(in_unit("55 %", "1", "1").unwrap(), "0.55");
+    assert_eq!(in_unit("0.1 %", "", "").unwrap(), "0.001");
+    assert_eq!(in_unit("250 km", "m", "m").unwrap(), "250000");
     for (typed, field, unit, why) in [
         (
             "2 h",
@@ -567,6 +572,27 @@ fn a_value_is_said_exactly_in_its_port_s_unit() {
         ),
         ("55 ± 10% mN", "N", "N", "is a range or a spread"),
         ("3 kg", "kg", "m", "[kg] is a Mass"),
+        (
+            "36 km/h",
+            "m/s",
+            "m/s",
+            "differ by a factor no number of digits holds exactly",
+        ),
+        (
+            "180 deg",
+            "rad",
+            "rad",
+            "differ by a factor no number of digits holds exactly",
+        ),
+        ("30 dB", "1", "1", "both pure numbers, of different kinds"),
+        ("1000", "1", "dB", "both pure numbers, of different kinds"),
+        ("90 deg", "%", "%", "both pure numbers, of different kinds"),
+        (
+            "5e-320 nm",
+            "m",
+            "m",
+            "too long, too large or too small a number to hold exactly",
+        ),
     ] {
         let e = in_unit(typed, field, unit).unwrap_err();
         assert!(e.contains(why), "{typed} in {unit}: {e}");

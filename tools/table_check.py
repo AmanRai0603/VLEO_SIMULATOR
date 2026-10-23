@@ -14,8 +14,10 @@ started on it. Then, as Test Pia, the band's node engineer, would:
   runs the band's method on them, every one agreeing;
 - a save with that table in its box is refused on screen: a table is saved
   only as the cases it became, seen in *its cases*;
+- another node opened, and the band again, its old reading is not offered;
 - a CSV file of the same cases, picked as a file, is read into the box and
-  read back the same way;
+  read back the same way, and who made what the node holds is asked again,
+  though nothing was typed;
 - *Use these as its cases* puts the cases into *its cases* and clears the
   table; said who made them, they are saved as revision 2, and the file's
   cases are the ones the table became;
@@ -43,6 +45,7 @@ from edit_check import field, said_after  # noqa: E402
 
 NODE = 'sw_activity_band'
 PATH = 'groups/l3_solar/nodes/sw_activity_band.vnode'
+OTHER = 'sw_kp_from_ap'
 
 
 def read_after(p, has):
@@ -51,6 +54,13 @@ def read_after(p, has):
         "h => { const n = document.querySelector('.nw-table-read'); return n && n.innerText.includes(h); }",
         arg=has, timeout=60000)
     return p.inner_text('.nw-table-read')
+
+
+def opened(p, node, has='.nw-right h3'):
+    """`node` opened in the workspace already drawn, once it is drawn anew."""
+    p.evaluate("() => { document.querySelector('.nw-grid').dataset.was = '1'; }")
+    p.evaluate("n => { location.hash = '#node/' + n; }", node)
+    p.wait_for_selector(f'.nw-grid:not([data-was]) {has}', state='attached', timeout=120000)
 
 
 def check():
@@ -127,11 +137,21 @@ def check():
             dropped = os.path.join(scratch, 'band-cases.csv')
             with open(dropped, 'w') as out:
                 out.write(own)
-            field(p, 'case_paste.origin').select_option('')
+            # Another node opened, then the band again, nothing typed: the
+            # band's old reading is not offered, and its declaration is the
+            # file's own.
+            opened(p, OTHER)
+            opened(p, NODE, '[data-edit="case_paste"]')
+            step('the band opened again: its old reading is not offered',
+                 p.locator('#nw-use-table').count() == 0 and p.locator('.nw-table-cases').count() == 0)
+            had = field(p, 'declared.author').input_value()
             p.set_input_files('#nw-table-file', dropped)
             p.wait_for_function(
                 "() => { const n = document.querySelector('[data-edit=\"case_paste\"]'); return n && n.value.includes(','); }",
                 timeout=60000)
+            step('a file picked, nothing typed, still asks again who made what it holds',
+                 had != '' and field(p, 'declared.author').input_value() == '',
+                 f"{had!r} then {field(p, 'declared.author').input_value()!r}")
             read = read_after(p, f'{cases} cases read')
             step("a CSV file picked is read into the table, its own origin column kept", f'{cases} cases read' in read, read)
 

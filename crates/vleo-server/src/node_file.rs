@@ -1102,14 +1102,17 @@ fn edits_of(params: &str) -> Edits {
     if let Some(c) = given("case_csv") {
         edits.push(Edit::Cases(c));
     }
-    if let Some(typed) = given("formula") {
-        edits.push(Edit::Formula(formula_of(params, typed)));
-    }
+    // A table pasted is the cases, laid before a formula is read, as cases
+    // typed are: whether a formula publishes beside its answer is read from
+    // the cases it will run on.
     if let Some(text) = given("case_paste") {
         edits.push(Edit::Table(edit::Pasted {
             text,
             origin: given("case_paste.origin").unwrap_or_default(),
         }));
+    }
+    if let Some(typed) = given("formula") {
+        edits.push(Edit::Formula(formula_of(params, typed)));
     }
     let declared = ["author", "ai", "source", "checked_by"]
         .iter()
